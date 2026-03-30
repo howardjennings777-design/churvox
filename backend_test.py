@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 
 class ChurvoxAPITester:
-    def __init__(self, base_url="https://phase1-launch.preview.emergentagent.com"):
+    def __init__(self, base_url="https://dark-slate-build.preview.emergentagent.com"):
         self.base_url = base_url
         self.token = None
         self.user_id = None

@@ -45,22 +45,25 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0B10] flex">
+    <div className="min-h-screen bg-background flex">
       {/* Left side - Login form */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md animate-in">
           <div className="text-center mb-8">
-            <img 
-              src={LOGO_URL} 
-              alt="Churvox" 
-              className="h-12 mx-auto mb-6"
-              data-testid="churvox-logo"
-            />
-            <h1 className="text-3xl font-semibold text-white font-heading">Welcome back</h1>
-            <p className="text-muted-foreground mt-2">Sign in to your Churvox account</p>
+            <div className="inline-flex items-center justify-center gap-3 mb-6">
+              <img 
+                src={LOGO_URL} 
+                alt="Churvox" 
+                className="h-14 w-auto"
+                data-testid="churvox-logo"
+              />
+              <span className="text-3xl font-semibold text-white tracking-tight font-heading">Churvox</span>
+            </div>
+            <h1 className="text-2xl font-semibold text-white font-heading">Welcome back</h1>
+            <p className="text-muted-foreground mt-2">Sign in to manage your jobs</p>
           </div>
 
-          <Card className="bg-[#12141D] border-border">
+          <Card className="bg-card border-border">
             <CardHeader className="space-y-1 pb-4">
               <CardTitle className="text-xl font-heading">Sign in</CardTitle>
               <CardDescription>Enter your credentials to access your dashboard</CardDescription>
@@ -84,7 +87,7 @@ export default function LoginPage() {
                       placeholder="you@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 bg-background border-border"
+                      className="pl-10 bg-secondary border-border"
                       required
                       data-testid="login-email-input"
                     />
@@ -110,7 +113,7 @@ export default function LoginPage() {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 bg-background border-border"
+                      className="pl-10 bg-secondary border-border"
                       required
                       data-testid="login-password-input"
                     />
@@ -119,7 +122,7 @@ export default function LoginPage() {
 
                 <Button 
                   type="submit" 
-                  className="w-full bg-primary hover:bg-primary/90"
+                  className="w-full bg-primary hover:bg-primary/90 font-medium"
                   disabled={loading}
                   data-testid="login-submit-button"
                 >
@@ -138,7 +141,7 @@ export default function LoginPage() {
                     <span className="w-full border-t border-border" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-[#12141D] px-2 text-muted-foreground">Or</span>
+                    <span className="bg-card px-2 text-muted-foreground">Or</span>
                   </div>
                 </div>
 
@@ -170,16 +173,16 @@ export default function LoginPage() {
       </div>
 
       {/* Right side - Decorative */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-[#12141D] to-[#1A1D27] items-center justify-center p-12">
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-card to-secondary items-center justify-center p-12">
         <div className="max-w-lg text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-8">
-            <img src={LOGO_URL} alt="Churvox" className="h-12" />
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-primary/10 mb-8 ring-1 ring-primary/20">
+            <img src={LOGO_URL} alt="Churvox" className="h-14" />
           </div>
           <h2 className="text-3xl font-semibold text-white font-heading mb-4">
-            Manage your contracting business
+            Run your trade business smarter
           </h2>
           <p className="text-muted-foreground text-lg">
-            Track jobs, manage clients, send quotes and invoices — all in one place.
+            Manage jobs, track clients, send quotes and invoices — all in one place.
           </p>
         </div>
       </div>

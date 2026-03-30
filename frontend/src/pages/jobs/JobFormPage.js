@@ -13,23 +13,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
+  SelectLabel,
 } from "@/components/ui/select";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
-
-const JOB_TYPES = [
-  { value: "lawn_mowing", label: "Lawn Mowing" },
-  { value: "hedge_trimming", label: "Hedge Trimming" },
-  { value: "garden_maintenance", label: "Garden Maintenance" },
-  { value: "landscaping", label: "Landscaping" },
-  { value: "tree_services", label: "Tree Services" },
-  { value: "cleaning", label: "Cleaning" },
-  { value: "handyman", label: "Handyman" },
-  { value: "plumbing", label: "Plumbing" },
-  { value: "electrical", label: "Electrical" },
-  { value: "other", label: "Other" },
-];
+import { JOB_TYPES_BY_CATEGORY } from "@/lib/utils";
 
 const RECURRENCE_PATTERNS = [
   { value: "weekly", label: "Weekly" },
@@ -47,7 +37,7 @@ export default function JobFormPage() {
   const [clients, setClients] = useState([]);
   const [formData, setFormData] = useState({
     title: "",
-    job_type: "lawn_mowing",
+    job_type: "other",
     client_id: searchParams.get("client_id") || "",
     customer_name: "",
     address: "",
@@ -80,7 +70,7 @@ export default function JobFormPage() {
       const job = result.data;
       setFormData({
         title: job.title || "",
-        job_type: job.job_type || "lawn_mowing",
+        job_type: job.job_type || "other",
         client_id: job.client_id || "",
         customer_name: job.customer_name || "",
         address: job.address || "",
@@ -171,14 +161,14 @@ export default function JobFormPage() {
               {isEdit ? "Edit Job" : "New Job"}
             </h1>
             <p className="text-muted-foreground mt-1">
-              {isEdit ? "Update job details" : "Schedule a new job"}
+              {isEdit ? "Update job details" : "Schedule a new job for your client"}
             </p>
           </div>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          <Card className="bg-card border-border">
+          <Card className="card-surface">
             <CardHeader>
               <CardTitle className="text-lg font-heading">Job Details</CardTitle>
             </CardHeader>
@@ -190,8 +180,8 @@ export default function JobFormPage() {
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  placeholder="e.g., Weekly Lawn Mowing"
-                  className="bg-background border-border"
+                  placeholder="e.g., Weekly service, Kitchen renovation"
+                  className="bg-secondary border-border"
                   required
                   data-testid="job-title-input"
                 />
@@ -203,14 +193,21 @@ export default function JobFormPage() {
                   value={formData.job_type}
                   onValueChange={(value) => setFormData({ ...formData, job_type: value })}
                 >
-                  <SelectTrigger className="bg-background border-border" data-testid="job-type-select">
-                    <SelectValue />
+                  <SelectTrigger className="bg-secondary border-border" data-testid="job-type-select">
+                    <SelectValue placeholder="Select job type" />
                   </SelectTrigger>
-                  <SelectContent className="bg-card border-border">
-                    {JOB_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
+                  <SelectContent className="bg-card border-border max-h-[300px]">
+                    {Object.entries(JOB_TYPES_BY_CATEGORY).map(([category, types]) => (
+                      <SelectGroup key={category}>
+                        <SelectLabel className="text-muted-foreground text-xs uppercase tracking-wider">
+                          {category}
+                        </SelectLabel>
+                        {types.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
                     ))}
                   </SelectContent>
                 </Select>
@@ -222,7 +219,7 @@ export default function JobFormPage() {
                   value={formData.client_id}
                   onValueChange={handleClientChange}
                 >
-                  <SelectTrigger className="bg-background border-border" data-testid="job-client-select">
+                  <SelectTrigger className="bg-secondary border-border" data-testid="job-client-select">
                     <SelectValue placeholder="Select a client or enter manually" />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border">
@@ -245,21 +242,21 @@ export default function JobFormPage() {
                     value={formData.customer_name}
                     onChange={handleChange}
                     placeholder="Customer name for this job"
-                    className="bg-background border-border"
+                    className="bg-secondary border-border"
                     data-testid="job-customer-name-input"
                   />
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="address">Address *</Label>
+                <Label htmlFor="address">Job Address *</Label>
                 <Input
                   id="address"
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
                   placeholder="123 Main Street, Auckland"
-                  className="bg-background border-border"
+                  className="bg-secondary border-border"
                   required
                   data-testid="job-address-input"
                 />
@@ -267,7 +264,7 @@ export default function JobFormPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card border-border">
+          <Card className="card-surface">
             <CardHeader>
               <CardTitle className="text-lg font-heading">Schedule</CardTitle>
             </CardHeader>
@@ -281,7 +278,7 @@ export default function JobFormPage() {
                     type="date"
                     value={formData.scheduled_date}
                     onChange={handleChange}
-                    className="bg-background border-border"
+                    className="bg-secondary border-border"
                     required
                     data-testid="job-date-input"
                   />
@@ -294,7 +291,7 @@ export default function JobFormPage() {
                     type="time"
                     value={formData.scheduled_time}
                     onChange={handleChange}
-                    className="bg-background border-border"
+                    className="bg-secondary border-border"
                     data-testid="job-time-input"
                   />
                 </div>
@@ -310,7 +307,7 @@ export default function JobFormPage() {
                   onChange={handleChange}
                   min="15"
                   step="15"
-                  className="bg-background border-border"
+                  className="bg-secondary border-border"
                   data-testid="job-duration-input"
                 />
               </div>
@@ -335,7 +332,7 @@ export default function JobFormPage() {
                     value={formData.recurrence_pattern}
                     onValueChange={(value) => setFormData({ ...formData, recurrence_pattern: value })}
                   >
-                    <SelectTrigger className="bg-background border-border" data-testid="job-recurrence-select">
+                    <SelectTrigger className="bg-secondary border-border" data-testid="job-recurrence-select">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border">
@@ -351,7 +348,7 @@ export default function JobFormPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card border-border">
+          <Card className="card-surface">
             <CardHeader>
               <CardTitle className="text-lg font-heading">Pricing</CardTitle>
             </CardHeader>
@@ -367,7 +364,7 @@ export default function JobFormPage() {
                   placeholder="0.00"
                   min="0"
                   step="0.01"
-                  className="bg-background border-border"
+                  className="bg-secondary border-border"
                   required
                   data-testid="job-price-input"
                 />
@@ -381,7 +378,7 @@ export default function JobFormPage() {
                   value={formData.notes}
                   onChange={handleChange}
                   placeholder="Any additional notes about this job..."
-                  className="bg-background border-border min-h-[100px]"
+                  className="bg-secondary border-border min-h-[100px]"
                   data-testid="job-notes-input"
                 />
               </div>

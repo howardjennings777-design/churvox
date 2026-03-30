@@ -45,9 +45,9 @@ export default function DashboardPage() {
 
   const quickActions = [
     { label: "New Job", icon: Plus, href: "/jobs/new", color: "bg-primary" },
-    { label: "New Quote", icon: FileText, href: "/quotes/new", color: "bg-accent" },
-    { label: "New Client", icon: Users, href: "/clients/new", color: "bg-green-600" },
-    { label: "New Invoice", icon: DollarSign, href: "/invoices/new", color: "bg-purple-600" },
+    { label: "New Quote", icon: FileText, href: "/quotes/new", color: "bg-violet-600" },
+    { label: "New Client", icon: Users, href: "/clients/new", color: "bg-emerald-600" },
+    { label: "New Invoice", icon: DollarSign, href: "/invoices/new", color: "bg-amber-600" },
   ];
 
   return (
@@ -60,7 +60,7 @@ export default function DashboardPage() {
               Welcome back, {user?.name?.split(" ")[0]}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Here's what's happening with your business today.
+              Here's your business overview for today.
             </p>
           </div>
           <Link to="/jobs/new">
@@ -73,7 +73,7 @@ export default function DashboardPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card className="bg-card border-border" data-testid="stat-jobs-today">
+          <Card className="card-interactive" data-testid="stat-jobs-today">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -82,7 +82,7 @@ export default function DashboardPage() {
                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.jobs_today || 0}
                   </p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center">
                   <Calendar className="h-5 w-5 text-primary" />
                 </div>
               </div>
@@ -90,7 +90,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card border-border" data-testid="stat-jobs-week">
+          <Card className="card-interactive" data-testid="stat-jobs-week">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -99,15 +99,15 @@ export default function DashboardPage() {
                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.jobs_this_week || 0}
                   </p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                  <Briefcase className="h-5 w-5 text-accent" />
+                <div className="h-10 w-10 rounded-lg bg-blue-500/15 flex items-center justify-center">
+                  <Briefcase className="h-5 w-5 text-blue-400" />
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">Jobs scheduled</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-card border-border" data-testid="stat-completed">
+          <Card className="card-interactive" data-testid="stat-completed">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -116,15 +116,15 @@ export default function DashboardPage() {
                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.completed_this_month || 0}
                   </p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+                <div className="h-10 w-10 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                  <CheckCircle className="h-5 w-5 text-emerald-400" />
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">This month</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-card border-border" data-testid="stat-revenue">
+          <Card className="card-interactive" data-testid="stat-revenue">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -133,15 +133,15 @@ export default function DashboardPage() {
                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : formatCurrency(stats?.revenue_this_month || 0)}
                   </p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-purple-500" />
+                <div className="h-10 w-10 rounded-lg bg-violet-500/15 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-violet-400" />
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">This month</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-card border-border" data-testid="stat-invoices">
+          <Card className="card-interactive" data-testid="stat-invoices">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -150,15 +150,15 @@ export default function DashboardPage() {
                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.pending_invoices || 0}
                   </p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-yellow-500/10 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-yellow-500" />
+                <div className="h-10 w-10 rounded-lg bg-amber-500/15 flex items-center justify-center">
+                  <DollarSign className="h-5 w-5 text-amber-400" />
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">Pending</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-card border-border" data-testid="stat-clients">
+          <Card className="card-interactive" data-testid="stat-clients">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -167,8 +167,8 @@ export default function DashboardPage() {
                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.active_clients || 0}
                   </p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-blue-500" />
+                <div className="h-10 w-10 rounded-lg bg-cyan-500/15 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-cyan-400" />
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">Active</p>
@@ -177,7 +177,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <Card className="bg-card border-border">
+        <Card className="card-surface">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-heading">Quick Actions</CardTitle>
           </CardHeader>
@@ -187,7 +187,7 @@ export default function DashboardPage() {
                 <Link key={action.label} to={action.href}>
                   <Button
                     variant="outline"
-                    className="w-full h-auto py-4 flex flex-col items-center gap-2 border-border hover:bg-secondary"
+                    className="w-full h-auto py-4 flex flex-col items-center gap-2 border-border bg-secondary/30 hover:bg-secondary/60 hover:border-primary/30"
                     data-testid={`quick-action-${action.label.toLowerCase().replace(" ", "-")}`}
                   >
                     <div className={`h-10 w-10 rounded-lg ${action.color} flex items-center justify-center`}>
@@ -204,7 +204,7 @@ export default function DashboardPage() {
         {/* Jobs Today & This Week */}
         <div className="grid md:grid-cols-2 gap-6">
           {/* Jobs Today */}
-          <Card className="bg-card border-border">
+          <Card className="card-surface">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <CardTitle className="text-lg font-heading">Jobs Today</CardTitle>
               <Link to="/jobs" className="text-sm text-primary hover:text-primary/80">
@@ -231,7 +231,7 @@ export default function DashboardPage() {
                   {todayJobs.slice(0, 5).map((job) => (
                     <Link key={job.id} to={`/jobs/${job.id}`}>
                       <div 
-                        className="p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors border-l-4 border-l-primary"
+                        className="p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors border-l-2 border-l-primary"
                         data-testid={`today-job-${job.id}`}
                       >
                         <div className="flex items-center justify-between">
@@ -259,7 +259,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* Jobs This Week */}
-          <Card className="bg-card border-border">
+          <Card className="card-surface">
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <CardTitle className="text-lg font-heading">This Week</CardTitle>
               <Link to="/jobs" className="text-sm text-primary hover:text-primary/80">

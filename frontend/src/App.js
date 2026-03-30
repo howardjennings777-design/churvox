@@ -11,6 +11,7 @@ import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
 
 // App Pages
 import DashboardPage from "@/pages/DashboardPage";
+import CalendarPage from "@/pages/CalendarPage";
 import ClientsPage from "@/pages/clients/ClientsPage";
 import ClientFormPage from "@/pages/clients/ClientFormPage";
 import ClientDetailPage from "@/pages/clients/ClientDetailPage";
@@ -89,6 +90,9 @@ function AppRoutes() {
       <Route path="/jobs/new" element={<ProtectedRoute><JobFormPage /></ProtectedRoute>} />
       <Route path="/jobs/:id" element={<ProtectedRoute><JobDetailPage /></ProtectedRoute>} />
       <Route path="/jobs/:id/edit" element={<ProtectedRoute><JobFormPage /></ProtectedRoute>} />
+
+      {/* Calendar */}
+      <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
 
       {/* Quotes */}
       <Route path="/quotes" element={<ProtectedRoute><QuotesPage /></ProtectedRoute>} />

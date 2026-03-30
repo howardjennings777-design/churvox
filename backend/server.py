@@ -49,10 +49,19 @@ class JobType(str, Enum):
     GARDEN_MAINTENANCE = "garden_maintenance"
     LANDSCAPING = "landscaping"
     TREE_SERVICES = "tree_services"
+    GARDENING = "gardening"
     CLEANING = "cleaning"
+    WINDOW_CLEANING = "window_cleaning"
+    PRESSURE_WASHING = "pressure_washing"
     HANDYMAN = "handyman"
     PLUMBING = "plumbing"
     ELECTRICAL = "electrical"
+    PAINTING = "painting"
+    CARPENTRY = "carpentry"
+    PEST_CONTROL = "pest_control"
+    POOL_MAINTENANCE = "pool_maintenance"
+    HVAC = "hvac"
+    ROOFING = "roofing"
     OTHER = "other"
 
 class QuoteStatus(str, Enum):
@@ -169,7 +178,7 @@ class InvoiceCreate(BaseModel):
     client_id: Optional[str] = None
     customer_name: str
     customer_email: Optional[str] = None
-    address: str
+    address: Optional[str] = ""
     description: str
     subtotal: float
     gst_rate: Optional[float] = None
@@ -190,6 +199,9 @@ class PlanUpdate(BaseModel):
 
 class GSTUpdate(BaseModel):
     gst_rate: float
+
+class TradeUpdate(BaseModel):
+    trade_type: str
 
 # ===================== HELPERS =====================
 def hash_password(password: str) -> str:
@@ -338,6 +350,7 @@ async def login(user_data: UserLogin, response: Response, request: Request):
         "role": user.get("role", "contractor"),
         "plan": user.get("plan", "solo"),
         "gst_rate": user.get("gst_rate", DEFAULT_GST_RATE),
+        "trade_type": user.get("trade_type", "other"),
         "token": access_token
     }
 
@@ -436,6 +449,15 @@ async def update_gst(data: GSTUpdate, request: Request):
         {"$set": {"gst_rate": data.gst_rate}}
     )
     return {"message": "GST rate updated", "gst_rate": data.gst_rate}
+
+@api_router.patch("/user/trade")
+async def update_trade(data: TradeUpdate, request: Request):
+    user = await get_current_user(request)
+    await db.users.update_one(
+        {"_id": ObjectId(user["id"])},
+        {"$set": {"trade_type": data.trade_type}}
+    )
+    return {"message": "Trade type updated", "trade_type": data.trade_type}
 
 # ===================== CLIENTS =====================
 @api_router.post("/clients")

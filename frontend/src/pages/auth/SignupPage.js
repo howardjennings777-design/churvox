@@ -57,25 +57,25 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0B10] flex">
+    <div className="min-h-screen bg-background flex">
       {/* Left side - Decorative */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-[#12141D] to-[#1A1D27] items-center justify-center p-12">
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-card to-secondary items-center justify-center p-12">
         <div className="max-w-lg">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-8">
-            <img src={LOGO_URL} alt="Churvox" className="h-12" />
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-primary/10 mb-8 ring-1 ring-primary/20">
+            <img src={LOGO_URL} alt="Churvox" className="h-14" />
           </div>
           <h2 className="text-3xl font-semibold text-white font-heading mb-6">
             Start managing your business today
           </h2>
           <div className="space-y-4">
             {[
-              "Track jobs and schedules",
-              "Manage your clients",
+              "Schedule and track all your jobs",
+              "Manage clients across any trade",
               "Create professional quotes",
               "Send invoices with GST",
             ].map((feature, i) => (
               <div key={i} className="flex items-center gap-3 text-muted-foreground">
-                <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
+                <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
                 <span>{feature}</span>
               </div>
             ))}
@@ -87,17 +87,20 @@ export default function SignupPage() {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md animate-in">
           <div className="text-center mb-8">
-            <img 
-              src={LOGO_URL} 
-              alt="Churvox" 
-              className="h-12 mx-auto mb-6 lg:hidden"
-              data-testid="churvox-logo"
-            />
-            <h1 className="text-3xl font-semibold text-white font-heading">Create account</h1>
+            <div className="inline-flex items-center justify-center gap-3 mb-6 lg:hidden">
+              <img 
+                src={LOGO_URL} 
+                alt="Churvox" 
+                className="h-14 w-auto"
+                data-testid="churvox-logo"
+              />
+              <span className="text-3xl font-semibold text-white tracking-tight font-heading">Churvox</span>
+            </div>
+            <h1 className="text-2xl font-semibold text-white font-heading">Create account</h1>
             <p className="text-muted-foreground mt-2">Get started with Churvox for free</p>
           </div>
 
-          <Card className="bg-[#12141D] border-border">
+          <Card className="bg-card border-border">
             <CardHeader className="space-y-1 pb-4">
               <CardTitle className="text-xl font-heading">Sign up</CardTitle>
               <CardDescription>Fill in your details to create your account</CardDescription>
@@ -122,7 +125,7 @@ export default function SignupPage() {
                       placeholder="John Smith"
                       value={formData.name}
                       onChange={handleChange}
-                      className="pl-10 bg-background border-border"
+                      className="pl-10 bg-secondary border-border"
                       required
                       data-testid="signup-name-input"
                     />
@@ -140,7 +143,7 @@ export default function SignupPage() {
                       placeholder="you@example.com"
                       value={formData.email}
                       onChange={handleChange}
-                      className="pl-10 bg-background border-border"
+                      className="pl-10 bg-secondary border-border"
                       required
                       data-testid="signup-email-input"
                     />
@@ -158,7 +161,7 @@ export default function SignupPage() {
                       placeholder="Your Business Ltd"
                       value={formData.business_name}
                       onChange={handleChange}
-                      className="pl-10 bg-background border-border"
+                      className="pl-10 bg-secondary border-border"
                       data-testid="signup-business-input"
                     />
                   </div>
@@ -175,7 +178,7 @@ export default function SignupPage() {
                       placeholder="••••••••"
                       value={formData.password}
                       onChange={handleChange}
-                      className="pl-10 bg-background border-border"
+                      className="pl-10 bg-secondary border-border"
                       required
                       data-testid="signup-password-input"
                     />
@@ -193,7 +196,7 @@ export default function SignupPage() {
                       placeholder="••••••••"
                       value={formData.confirmPassword}
                       onChange={handleChange}
-                      className="pl-10 bg-background border-border"
+                      className="pl-10 bg-secondary border-border"
                       required
                       data-testid="signup-confirm-password-input"
                     />
@@ -202,7 +205,7 @@ export default function SignupPage() {
 
                 <Button 
                   type="submit" 
-                  className="w-full bg-primary hover:bg-primary/90"
+                  className="w-full bg-primary hover:bg-primary/90 font-medium"
                   disabled={loading}
                   data-testid="signup-submit-button"
                 >
