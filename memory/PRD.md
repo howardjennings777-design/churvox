@@ -1,94 +1,59 @@
-# Churvox Phase 1 - Product Requirements Document
+# Churvox - Product Requirements Document
 
 ## Original Problem Statement
-Build Churvox Phase 1 as a clean, usable contractor app with:
-1. Auth (signup, login, forgot/reset password)
-2. Dashboard (jobs today/this week, quick actions)
-3. Clients (CRUD)
-4. Jobs (create, edit, recurring/one-off, start/complete)
-5. Quotes (CRUD with status)
-6. Invoices (auto-create on job completion, GST)
-7. Plans (Solo/Solo+ active, Team/Pro coming soon)
+Build a multi-trade job management platform called Churvox. Core promise: jobs, quotes, invoices, team assignment, time tracking, customer reminders, MYOB sync. Phase 1 focuses on the foundation: rebranding, navigation, dark-slate/electric blue theme, and multi-trade wording.
 
-## User Personas
-- **Contractor (Primary)**: Independent service providers who need to manage jobs, clients, quotes, and invoices
-- **Admin**: Test/owner account with full access to all features
+## Phase 1 - Batch 1 Goals (COMPLETED)
+1. Rebrand fully to Churvox (remove all Grassly/Mowtix/lawn-only wording)
+2. Fix logo display everywhere (sharp, properly sized, aligned)
+3. Update theme to premium dark-slate and electric blue
+4. Remove lawn-only wording and make wording multi-trade
+5. Update navigation to Dashboard, Jobs, Calendar, Clients, More
+6. Keep changes credit-friendly and reuse existing working parts
 
-## Core Requirements (Implemented)
-- [x] JWT-based authentication (signup, login, logout)
-- [x] Forgot password flow (tokens logged for testing)
-- [x] Reset password flow
-- [x] Admin account bypass for plan restrictions
-- [x] Contractor dashboard with stats
-- [x] Jobs today/this week sections
-- [x] Quick actions (new job, quote, client, invoice)
-- [x] Client CRUD operations
-- [x] Job management (create, edit, start, complete)
-- [x] Recurring and one-off jobs
-- [x] Manual customer name entry for one-off jobs
-- [x] Quote creation and management
-- [x] Quote status workflow (draft → sent → accepted/declined)
-- [x] Invoice auto-creation on job completion
-- [x] 15% GST calculation (NZ default)
-- [x] Custom GST rate setting
-- [x] Invoice status management
-- [x] Plans page with Solo/Solo+ active, Team/Pro greyed
+## Architecture
+- Frontend: React + Tailwind CSS + shadcn/ui
+- Backend: FastAPI + MongoDB
+- Auth: Custom JWT (cookie + Bearer token)
+- Deployment: Kubernetes container
 
-## What's Been Implemented
-**Date: March 30, 2026**
+## Key DB Schema
+- `users`: email, password_hash, name, business_name, role, plan, gst_rate, trade_type
+- `clients`: name, email, phone, address, notes, contractor_id
+- `jobs`: title, job_type, client_id, customer_name, address, scheduled_date, scheduled_time, price, status, is_recurring, recurrence_pattern
+- `quotes`: customer_name, customer_email, address, job_description, price, status, quote_number
+- `invoices`: customer_name, description, subtotal, gst_rate, gst_amount, total, status, invoice_number
 
-### Backend (FastAPI + MongoDB)
-- Full auth system with JWT tokens and brute force protection
-- CRUD endpoints for clients, jobs, quotes, invoices
-- Job workflow (scheduled → in_progress → completed)
-- Auto-invoice generation on job completion
-- Dashboard stats aggregation
-- GST/tax calculation
+## API Endpoints
+- Auth: POST /api/auth/register, /api/auth/login, /api/auth/logout, GET /api/auth/me, POST /api/auth/forgot-password, /api/auth/reset-password, /api/auth/refresh
+- User: PATCH /api/user/plan, /api/user/gst, /api/user/trade
+- Clients: CRUD on /api/clients
+- Jobs: CRUD on /api/jobs, POST /api/jobs/{id}/start, /api/jobs/{id}/complete, GET /api/jobs/today, /api/jobs/week
+- Quotes: CRUD on /api/quotes, POST /api/quotes/{id}/send
+- Invoices: CRUD on /api/invoices, POST /api/invoices/{id}/send, /api/invoices/{id}/mark-paid
+- Dashboard: GET /api/dashboard/stats
 
-### Frontend (React + Tailwind + Shadcn)
-- Complete auth flow (login, signup, forgot/reset password)
-- Responsive dashboard with stats cards
-- Client management pages
-- Job management with start/complete flows
-- Quote management with status updates
-- Invoice management with GST display
-- Plans page with coming soon badges
-- Settings page for GST rate
+## What's Been Implemented (Batch 1 - March 2026)
+- Full Churvox branding (logo, text, colors) across all pages
+- Dark-slate + electric blue theme via CSS variables
+- 5-tab navigation: Dashboard, Jobs, Calendar, Clients, More
+- More dropdown: Quotes, Invoices, Plans, Settings
+- Mobile bottom nav with same structure
+- Multi-trade job types (19 types across 4 categories)
+- Trade type selection in Settings
+- Calendar page with job dots
+- Full CRUD for Clients, Jobs, Quotes, Invoices
+- Job workflow: create > start > complete (auto-creates invoice)
+- GST calculation on invoices
+- Plans page (Solo, Solo+, Team, Pro)
+- Auth: login, signup, forgot/reset password
+- Admin seed account
 
-## Prioritized Backlog
-
-### P0 (Critical - Not Yet Done)
-- None - MVP complete
-
-### P1 (High Priority - Future)
-- Email integration for password reset
-- Email notifications for quotes/invoices
-- PDF invoice generation
-- Recurring job automation
-
-### P2 (Medium Priority - Future)
-- Team plan features (multi-user)
-- Photo attachments for jobs
-- Customer portal for quotes
-- Payment integration (Stripe)
-
-### P3 (Nice to Have)
-- Mobile app (React Native)
-- Calendar view for jobs
-- Route optimization
-- Time tracking
-
-## Technical Architecture
-- **Backend**: FastAPI, MongoDB, JWT auth, bcrypt
-- **Frontend**: React 19, Tailwind CSS, Shadcn UI
-- **Deployment**: Emergent Cloud (Kubernetes)
-
-## Test Credentials
-- **Admin**: admin@churvox.com / Admin123!
-- **Role**: admin (bypasses plan restrictions)
-
-## Next Tasks
-1. Add email service for password reset (Resend/SendGrid)
-2. Implement PDF invoice generation
-3. Add recurring job automation
-4. Build Team plan features
+## Backlog (Future Phases)
+- P1: Team assignment and worker management
+- P1: Time tracking per job
+- P2: Customer reminders (SMS/email)
+- P2: MYOB accounting sync
+- P2: Advanced reporting and analytics
+- P3: Route optimization
+- P3: Fleet tracking
