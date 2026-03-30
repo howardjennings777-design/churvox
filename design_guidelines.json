@@ -1,0 +1,135 @@
+{
+  "theme": "dark",
+  "archetype": "4 (Swiss & High-Contrast - Dark Adaptation)",
+  "emotional_tone": "Reliable, Professional, Fast, Authoritative",
+  "design_philosophy": "Layered darkness replacing flat black. Tonal boundaries instead of borders where possible, mixed with crisp 'Technical Grid' elements for data density. Typography scales aggressively to help field workers quickly parse information on mobile.",
+  "colors": {
+    "background": {
+      "base": "#0A0B10",
+      "surface": "#12141D",
+      "surface_elevated": "#1A1D27"
+    },
+    "primary": {
+      "DEFAULT": "#2563EB",
+      "hover": "#3B82F6",
+      "active": "#1D4ED8",
+      "foreground": "#FFFFFF"
+    },
+    "secondary": {
+      "DEFAULT": "#1E293B",
+      "hover": "#334155",
+      "foreground": "#F8FAFC"
+    },
+    "accent": {
+      "DEFAULT": "#0EA5E9",
+      "foreground": "#FFFFFF"
+    },
+    "text": {
+      "primary": "#F8FAFC",
+      "secondary": "#94A3B8",
+      "disabled": "#475569"
+    },
+    "status": {
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "error": "#EF4444",
+      "info": "#3B82F6"
+    },
+    "border": "#272A37",
+    "ring": "#3B82F6"
+  },
+  "typography": {
+    "fonts": {
+      "heading": "'Outfit', sans-serif",
+      "body": "'IBM Plex Sans', sans-serif",
+      "mono": "'JetBrains Mono', monospace"
+    },
+    "scales": {
+      "h1": "text-4xl sm:text-5xl font-semibold tracking-tight",
+      "h2": "text-2xl sm:text-3xl font-medium tracking-tight",
+      "h3": "text-xl sm:text-2xl font-medium",
+      "h4": "text-lg font-medium",
+      "body": "text-base leading-relaxed",
+      "small": "text-sm text-secondary",
+      "label": "text-xs font-semibold uppercase tracking-[0.1em]"
+    }
+  },
+  "spacing": {
+    "container_padding": "p-6 md:p-8",
+    "section_gap": "gap-12 md:gap-16",
+    "item_gap": "gap-4 md:gap-6"
+  },
+  "layout": {
+    "dashboard_grid": "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6",
+    "form_layout": "space-y-6 md:max-w-2xl",
+    "card_style": "rounded-xl border border-border bg-surface shadow-sm",
+    "mobile_first_rules": [
+      "Stack inputs vertically on mobile",
+      "Use fixed bottom sheets or large full-width buttons for primary actions on mobile",
+      "Hide secondary tabular data columns on mobile"
+    ]
+  },
+  "components": {
+    "buttons": {
+      "primary": "rounded-lg px-6 py-3 bg-primary text-primary-foreground font-medium hover:bg-primary/90 active:scale-[0.98] transition-transform",
+      "secondary": "rounded-lg px-6 py-3 bg-secondary text-secondary-foreground font-medium hover:bg-secondary/80 transition-colors",
+      "ghost": "rounded-lg px-4 py-2 text-text-secondary hover:text-text-primary hover:bg-surface_elevated transition-colors"
+    },
+    "inputs": {
+      "default": "w-full rounded-lg border border-border bg-background px-4 py-3 text-base text-text-primary placeholder:text-text-disabled focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+    },
+    "cards": {
+      "dashboard_widget": "bg-surface border border-border rounded-xl p-6 hover:-translate-y-1 hover:shadow-lg transition-all duration-300",
+      "job_card": "relative overflow-hidden bg-surface border border-border rounded-xl p-5 border-l-4 border-l-primary"
+    },
+    "tables": {
+      "container": "w-full text-left border-collapse",
+      "header": "bg-surface_elevated text-xs font-semibold uppercase tracking-wider text-text-secondary py-3 px-4",
+      "row": "border-b border-border hover:bg-surface_elevated/50 transition-colors",
+      "cell": "py-4 px-4 text-sm text-text-primary"
+    },
+    "badges": {
+      "status_active": "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-status-success/10 text-status-success border border-status-success/20",
+      "status_pending": "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-status-warning/10 text-status-warning border border-status-warning/20"
+    }
+  },
+  "motion": {
+    "hover": "transition-all duration-200 ease-in-out",
+    "page_enter": "animate-in fade-in slide-in-from-bottom-4 duration-500",
+    "dialog_enter": "animate-in zoom-in-95 duration-200"
+  },
+  "media": {
+    "logos": {
+      "brand": {
+        "url": "https://customer-assets.emergentagent.com/job_phase1-launch/artifacts/j84zpsqt_1000049586.png",
+        "description": "Churvox Brand Logo"
+      }
+    },
+    "images": {
+      "login_background": {
+        "url": "https://images.unsplash.com/photo-1762343264418-1467f9394f49?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzl8MHwxfHNlYXJjaHwzfHxkYXJrJTIwYWJzdHJhY3QlMjBnZW9tZXRyaWMlMjB0ZXh0dXJlfGVufDB8fHx8MTc3NDkxMDUzNHww&ixlib=rb-4.1.0&q=85",
+        "description": "Dark geometric texture for the login split screen background"
+      },
+      "avatar_placeholder": {
+        "url": "https://images.pexels.com/photos/3932291/pexels-photo-3932291.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Contractor avatar placeholder"
+      }
+    }
+  },
+  "instructions_to_main_agent": [
+    "Install required dependencies: `yarn add @phosphor-icons/react date-fns react-hook-form @hookform/resolvers zod lucide-react`",
+    "Initialize Shadcn UI and add: `button`, `input`, `card`, `table`, `dropdown-menu`, `dialog`, `badge`, `tabs`, `select`, `toast`, `form`, `label`.",
+    "Map the provided colors to Tailwind CSS variables in index.css (using --background, --foreground, --card, etc.) ensuring a dark mode default.",
+    "MUST use `data-testid` attributes on ALL interactive elements (buttons, inputs, links, list items, dialog triggers) using kebab-case and role-based naming (e.g., `data-testid='login-submit-button'`, `data-testid='job-card-link'`).",
+    "Build the Auth flow with static dummy states (Login/Signup/Forgot Password) and include an 'Admin Test Account' fast-login button.",
+    "Implement the Dashboard showing 'Jobs Today', 'Jobs This Week', and 'Quick Actions' in a mobile-friendly grid.",
+    "Implement Client Management with a list view and add/edit forms.",
+    "Implement Jobs Management with create/edit forms, start/complete flows, job type dropdowns, and recurring/one-off options.",
+    "Implement Quotes flow allowing contractors to create quotes with customer name, address, price, notes, and status.",
+    "Implement Invoices flow: auto-create draft invoice on job completion. Calculate and display totals with 15% GST by default (for NZ), and invoice status.",
+    "Implement Plans View showing 'Solo' and 'Solo+' as active/usable, and 'Team' and 'Pro' greyed out with a 'coming soon' badge.",
+    "Use generous padding inside cards (`p-6` or `p-8`) to maintain E1's required visual density and breathing room.",
+    "For header/navigation, use glassmorphism effects (`backdrop-blur-xl bg-surface/80`) and ensure links are easily accessible on mobile via bottom tabs or an off-canvas menu.",
+    "Ensure all components are thoroughly responsive, focusing on mobile-first for contractors working in the field."
+  ]
+}
