@@ -1,275 +1,178 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
-import { useApi } from "@/hooks/useApi";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  ArrowLeft, 
-  Loader2, 
-  Pencil, 
-  Trash2, 
-  Send,
-  Calendar,
-  MapPin,
-  DollarSign,
-  Mail,
-  User,
-  CheckCircle,
-  Printer
-} from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import Layout from "../../components/Layout";
+import { ChurvoxLogo } from "../../components/ChurvoxLogo";
+import { useApi } from "../../hooks/useApi";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
+import { ArrowLeft, Trash2, Send, CheckCircle, DollarSign, MapPin, Mail, Briefcase, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { formatDate, formatCurrency, INVOICE_STATUSES } from "@/lib/utils";
-import Layout from "@/components/Layout";
-import { ChurvoxLogo } from "@/components/ChurvoxLogo";
+import { formatDate, formatCurrency, INVOICE_STATUSES } from "../../lib/utils";
 
 export default function InvoiceDetailPage() {
-  const navigate = useNavigate();
   const { id } = useParams();
-  const { get, del, post, loading } = useApi();
+  const navigate = useNavigate();
+  const { get, post, del, loading } = useApi();
   const [invoice, setInvoice] = useState(null);
   const [showDelete, setShowDelete] = useState(false);
 
-  useEffect(() => {
-    loadInvoice();
-  }, [id]);
+  const fetchInvoice = useCallback(async () => {
+    const res = await get(`/invoices/${id}`);
+    if (res.success) setInvoice(res.data);
+    else navigate("/invoices");
+  }, [get, id, navigate]);
 
-  const loadInvoice = async () => {
-    const result = await get(`/invoices/${id}`);
-    if (result.success) {
-      setInvoice(result.data);
-    } else {
-      toast.error("Invoice not found");
-      navigate("/invoices");
-    }
-  };
+  useEffect(() => { fetchInvoice(); }, [fetchInvoice]);
 
-  const handleDelete = async () => {
-    const result = await del(`/invoices/${id}`);
-    if (result.success) {
-      toast.success("Invoice deleted");
-      navigate("/invoices");
-    } else {
-      toast.error(result.error);
-    }
-  };
-
-  const handleSendInvoice = async () => {
-    const result = await post(`/invoices/${id}/send`);
-    if (result.success) {
-      toast.success("Invoice marked as sent");
-      loadInvoice();
-    } else {
-      toast.error(result.error);
-    }
+  const handleSend = async () => {
+    const res = await post(`/invoices/${id}/send`);
+    if (res.success) { toast.success("Invoice sent"); setInvoice(res.data); }
+    else toast.error(res.error || "Failed to send invoice");
   };
 
   const handleMarkPaid = async () => {
-    const result = await post(`/invoices/${id}/mark-paid`);
-    if (result.success) {
-      toast.success("Invoice marked as paid");
-      loadInvoice();
-    } else {
-      toast.error(result.error);
-    }
+    const res = await post(`/invoices/${id}/mark-paid`);
+    if (res.success) { toast.success("Marked as paid"); setInvoice(res.data); }
+    else toast.error(res.error || "Failed to mark as paid");
   };
 
-  if (loading || !invoice) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      </Layout>
-    );
-  }
+  const handleDelete = async () => {
+    const res = await del(`/invoices/${id}`);
+    if (res.success) { toast.success("Invoice deleted"); navigate("/invoices"); }
+  };
+
+  if (!invoice) return <Layout><div className="p-6 text-churvox-muted">Loading...</div></Layout>;
+
+  const statusInfo = INVOICE_STATUSES.find((s) => s.value === invoice.status);
+  const pricingLabel = { fixed: "Fixed", hourly: "Hourly", fixed_extras: "Fixed + Extras", hourly_extras: "Hourly + Extras" }[invoice.pricing_type] || "";
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto space-y-6 animate-in" data-testid="invoice-detail-page">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/invoices")}
-              data-testid="back-button"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-2xl font-semibold text-white font-heading">
-                  {invoice.invoice_number}
-                </h1>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-white ${INVOICE_STATUSES.find(s => s.value === invoice.status)?.color || "bg-slate-500"}`}>
-                  {INVOICE_STATUSES.find(s => s.value === invoice.status)?.label || invoice.status}
-                </span>
-              </div>
-              <p className="text-muted-foreground">Invoice for {invoice.customer_name}</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {invoice.status === "draft" && (
-              <Button
-                className="bg-primary hover:bg-primary/90"
-                onClick={handleSendInvoice}
-                data-testid="send-invoice-button"
-              >
-                <Send className="mr-2 h-4 w-4" />
-                Send Invoice
-              </Button>
-            )}
-            {invoice.status === "sent" && (
-              <Button
-                className="bg-green-600 hover:bg-green-700"
-                onClick={handleMarkPaid}
-                data-testid="mark-paid-button"
-              >
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Mark as Paid
-              </Button>
-            )}
-            <Link to={`/invoices/${id}/edit`}>
-              <Button variant="outline" className="border-border" data-testid="edit-invoice-button">
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit
-              </Button>
-            </Link>
-            <Button
-              variant="outline"
-              className="border-destructive text-destructive hover:bg-destructive hover:text-white"
-              onClick={() => setShowDelete(true)}
-              data-testid="delete-invoice-button"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
+      <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4" data-testid="invoice-detail-page">
+        <div className="flex items-center justify-between">
+          <button onClick={() => navigate("/invoices")} className="flex items-center gap-2 text-churvox-muted hover:text-white" data-testid="back-to-invoices">
+            <ArrowLeft size={18} /> Invoices
+          </button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowDelete(true)} className="border-red-500/30 text-red-400 hover:bg-red-500/10" data-testid="delete-invoice-trigger">
+              <Trash2 size={14} />
             </Button>
           </div>
         </div>
 
-        {/* Invoice Preview */}
-        <Card className="bg-card border-border overflow-hidden">
-          <CardContent className="p-0">
-            {/* Invoice Header */}
-            <div className="bg-gradient-to-r from-[#1A1D27] to-[#12141D] p-6 sm:p-8">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
-                <div>
-                  <ChurvoxLogo size="md" className="mb-4" />
-                  <h2 className="text-2xl font-bold text-white">INVOICE</h2>
-                  <p className="text-lg text-primary font-mono">{invoice.invoice_number}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Issue Date</p>
-                  <p className="text-white font-medium">{formatDate(invoice.created_at)}</p>
-                  {invoice.sent_at && (
-                    <>
-                      <p className="text-sm text-muted-foreground mt-2">Sent Date</p>
-                      <p className="text-white font-medium">{formatDate(invoice.sent_at)}</p>
-                    </>
-                  )}
-                  {invoice.paid_at && (
-                    <>
-                      <p className="text-sm text-muted-foreground mt-2">Paid Date</p>
-                      <p className="text-green-400 font-medium">{formatDate(invoice.paid_at)}</p>
-                    </>
-                  )}
-                </div>
+        {/* Invoice Card */}
+        <Card className="bg-churvox-card border-churvox-border" data-testid="invoice-card">
+          <CardContent className="p-6">
+            {/* Header */}
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <ChurvoxLogo size="md" className="mb-2" />
+                <p className="text-xs text-churvox-muted">{invoice.invoice_number}</p>
               </div>
+              <span className={`px-3 py-1 rounded text-xs font-semibold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`} data-testid="invoice-status-badge">
+                {statusInfo?.label || invoice.status}
+              </span>
             </div>
 
             {/* Bill To */}
-            <div className="p-6 sm:p-8 border-b border-border">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Bill To</p>
-              <p className="text-lg font-medium text-white">{invoice.customer_name}</p>
-              {invoice.customer_email && (
-                <p className="text-muted-foreground">{invoice.customer_email}</p>
-              )}
-              {invoice.address && (
-                <p className="text-muted-foreground">{invoice.address}</p>
-              )}
-            </div>
-
-            {/* Line Items */}
-            <div className="p-6 sm:p-8 border-b border-border">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left text-xs text-muted-foreground uppercase tracking-wider py-3">Description</th>
-                    <th className="text-right text-xs text-muted-foreground uppercase tracking-wider py-3">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="py-4">
-                      <p className="text-white">{invoice.description}</p>
-                    </td>
-                    <td className="text-right py-4 text-white font-medium">
-                      {formatCurrency(invoice.subtotal)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* Totals */}
-            <div className="p-6 sm:p-8">
-              <div className="max-w-xs ml-auto space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="text-white">{formatCurrency(invoice.subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">GST ({invoice.gst_rate}%)</span>
-                  <span className="text-white">{formatCurrency(invoice.gst_amount)}</span>
-                </div>
-                <div className="flex justify-between text-xl font-bold pt-3 border-t border-border">
-                  <span className="text-white">Total</span>
-                  <span className="text-primary">{formatCurrency(invoice.total)}</span>
-                </div>
+            <div className="grid grid-cols-2 gap-6 mb-6 text-sm">
+              <div>
+                <p className="text-xs text-churvox-muted mb-1">Bill To</p>
+                <p className="text-white font-medium">{invoice.customer_name}</p>
+                {invoice.customer_email && <p className="text-churvox-muted flex items-center gap-1 mt-0.5"><Mail size={12} /> {invoice.customer_email}</p>}
+                {invoice.address && <p className="text-churvox-muted flex items-center gap-1 mt-0.5"><MapPin size={12} /> {invoice.address}</p>}
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-churvox-muted mb-1">Date</p>
+                <p className="text-white">{formatDate(invoice.created_at)}</p>
+                {pricingLabel && <p className="text-xs text-churvox-accent mt-1">{pricingLabel}</p>}
               </div>
             </div>
 
-            {/* Notes */}
-            {invoice.notes && (
-              <div className="p-6 sm:p-8 bg-secondary/30 border-t border-border">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Notes</p>
-                <p className="text-muted-foreground whitespace-pre-wrap">{invoice.notes}</p>
+            {/* Description */}
+            <div className="border-t border-churvox-border pt-4 mb-4">
+              <p className="text-xs text-churvox-muted mb-2">Description</p>
+              <pre className="text-sm text-white whitespace-pre-wrap font-sans">{invoice.description}</pre>
+            </div>
+
+            {/* Time & extras detail */}
+            {(invoice.hours_worked > 0 || (invoice.extras && invoice.extras.length > 0)) && (
+              <div className="border-t border-churvox-border pt-4 mb-4 text-sm space-y-1">
+                {invoice.hours_worked > 0 && (
+                  <div className="flex items-center justify-between text-churvox-muted">
+                    <span className="flex items-center gap-1"><Clock size={12} /> {invoice.hours_worked}h @ {formatCurrency(invoice.hourly_rate)}/hr</span>
+                    <span className="text-white">{formatCurrency(invoice.hours_worked * invoice.hourly_rate)}</span>
+                  </div>
+                )}
+                {invoice.extras && invoice.extras.map((ex, i) => (
+                  <div key={i} className="flex items-center justify-between text-churvox-muted">
+                    <span>{ex.description}</span>
+                    <span className="text-white">{formatCurrency(ex.amount)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Totals */}
+            <div className="border-t border-churvox-border pt-4 space-y-2 text-sm">
+              <div className="flex justify-between text-churvox-muted">
+                <span>Subtotal</span>
+                <span className="text-white">{formatCurrency(invoice.subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-churvox-muted">
+                <span>GST ({invoice.gst_rate}%)</span>
+                <span className="text-white">{formatCurrency(invoice.gst_amount)}</span>
+              </div>
+              <div className="flex justify-between font-bold text-lg border-t border-churvox-border pt-2">
+                <span className="text-white">Total</span>
+                <span className="text-churvox-accent">{formatCurrency(invoice.total)}</span>
+              </div>
+            </div>
+
+            {/* Linked job */}
+            {invoice.job_id && (
+              <div className="mt-4 pt-4 border-t border-churvox-border">
+                <Link to={`/jobs/${invoice.job_id}`} className="text-xs text-churvox-accent hover:underline flex items-center gap-1" data-testid="linked-job">
+                  <Briefcase size={12} /> View linked job
+                </Link>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Delete Confirmation */}
-        <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
-          <AlertDialogContent className="bg-card border-border">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete this invoice? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="border-border">Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-destructive hover:bg-destructive/90"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Actions */}
+        <div className="flex gap-3" data-testid="invoice-actions">
+          {invoice.status === "draft" && (
+            <Button onClick={handleSend} disabled={loading} className="flex-1 bg-churvox-accent hover:bg-churvox-accent/90" data-testid="send-invoice-button">
+              <Send size={16} className="mr-2" /> Send Invoice
+            </Button>
+          )}
+          {invoice.status === "sent" && (
+            <Button onClick={handleMarkPaid} disabled={loading} className="flex-1 bg-green-600 hover:bg-green-700" data-testid="mark-paid-button">
+              <CheckCircle size={16} className="mr-2" /> Mark as Paid
+            </Button>
+          )}
+          {invoice.status === "paid" && (
+            <Card className="bg-green-900/20 border-green-500/30 w-full">
+              <CardContent className="p-4 text-center text-green-400 text-sm font-medium">
+                <CheckCircle size={18} className="inline mr-2" /> Paid {invoice.paid_at && `on ${formatDate(invoice.paid_at)}`}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Delete Dialog */}
+        <Dialog open={showDelete} onOpenChange={setShowDelete}>
+          <DialogContent className="bg-churvox-card border-churvox-border" data-testid="delete-invoice-dialog">
+            <DialogHeader><DialogTitle className="text-white">Delete Invoice</DialogTitle></DialogHeader>
+            <p className="text-churvox-muted">Are you sure? This cannot be undone.</p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDelete(false)} className="border-churvox-border text-churvox-muted">Cancel</Button>
+              <Button onClick={handleDelete} disabled={loading} className="bg-red-600 hover:bg-red-700" data-testid="confirm-delete-invoice">Delete</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

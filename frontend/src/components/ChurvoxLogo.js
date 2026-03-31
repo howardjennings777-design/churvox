@@ -3,7 +3,7 @@ import React from "react";
 // Single source of truth for the Churvox logo.
 // To swap the logo, change this one URL.
 export const LOGO_URL =
-  "https://customer-assets.emergentagent.com/job_phase1-launch/artifacts/j84zpsqt_1000049586.png";
+  "https://customer-assets.emergentagent.com/job_cabc92ae-f550-4ece-8cd0-4b58f21e045b/artifacts/c4td8x4w_1000049586%20%281%29.png";
 
 /**
  * Shared Churvox logo component.

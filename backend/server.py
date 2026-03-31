@@ -68,6 +68,12 @@ class JobType(str, Enum):
     ROOFING = "roofing"
     OTHER = "other"
 
+class PricingType(str, Enum):
+    FIXED = "fixed"
+    HOURLY = "hourly"
+    FIXED_EXTRAS = "fixed_extras"
+    HOURLY_EXTRAS = "hourly_extras"
+
 class QuoteStatus(str, Enum):
     DRAFT = "draft"
     SENT = "sent"
@@ -134,7 +140,10 @@ class JobCreate(BaseModel):
     scheduled_date: datetime
     scheduled_time: Optional[str] = None
     estimated_duration: Optional[int] = 60
-    price: float
+    price: float = 0
+    pricing_type: Optional[str] = "fixed"
+    hourly_rate: Optional[float] = 0
+    extras: Optional[List[dict]] = []
     notes: Optional[str] = None
     is_recurring: bool = False
     recurrence_pattern: Optional[str] = None
@@ -150,6 +159,9 @@ class JobUpdate(BaseModel):
     scheduled_time: Optional[str] = None
     estimated_duration: Optional[int] = None
     price: Optional[float] = None
+    pricing_type: Optional[str] = None
+    hourly_rate: Optional[float] = None
+    extras: Optional[List[dict]] = None
     notes: Optional[str] = None
     is_recurring: Optional[bool] = None
     recurrence_pattern: Optional[str] = None
@@ -158,12 +170,20 @@ class JobUpdate(BaseModel):
 class JobAssign(BaseModel):
     worker_id: str
 
+class TimeAdjust(BaseModel):
+    total_time_seconds: int
+
 class QuoteCreate(BaseModel):
+    client_id: Optional[str] = None
     customer_name: str
     customer_email: Optional[str] = None
     address: str
     job_description: str
+    job_type: Optional[str] = "other"
     price: float
+    pricing_type: Optional[str] = "fixed"
+    hourly_rate: Optional[float] = 0
+    extras: Optional[List[dict]] = []
     notes: Optional[str] = None
     valid_until: Optional[datetime] = None
 
@@ -600,6 +620,9 @@ async def create_job(job_data: JobCreate, request: Request):
         "started_at": None,
         "completed_at": None,
         "photos": [],
+        "time_entries": [],
+        "total_time_seconds": 0,
+        "timer_running": False,
         "created_at": datetime.now(timezone.utc)
     }
 
@@ -785,19 +808,46 @@ async def complete_job(job_id: str, request: Request):
     if job["status"] == JobStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="Job already completed")
 
-    await db.jobs.update_one(
-        {"_id": ObjectId(job_id)},
-        {"$set": {"status": JobStatus.COMPLETED, "completed_at": datetime.now(timezone.utc)}}
-    )
+    now = datetime.now(timezone.utc)
+    # Stop timer if running
+    timer_updates = {"status": JobStatus.COMPLETED, "completed_at": now, "timer_running": False}
+    if job.get("timer_running"):
+        entry = {"action": "pause", "timestamp": now}
+        elapsed = compute_elapsed(job.get("time_entries", []) + [entry])
+        timer_updates["total_time_seconds"] = elapsed
+        await db.jobs.update_one({"_id": ObjectId(job_id)}, {"$push": {"time_entries": entry}})
+    
+    await db.jobs.update_one({"_id": ObjectId(job_id)}, {"$set": timer_updates})
 
-    # Auto-create draft invoice
+    # Re-read job with final time
+    job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+    total_time = job.get("total_time_seconds", 0)
+
+    # Auto-create draft invoice with pricing-type logic
     user_doc = await db.users.find_one({"_id": ObjectId(user["business_id"])})
     if not user_doc:
         user_doc = await db.users.find_one({"_id": ObjectId(user["id"])})
     gst_rate = user_doc.get("gst_rate", DEFAULT_GST_RATE) if user_doc else DEFAULT_GST_RATE
-    subtotal = job.get("price", 0)
-    gst_amount = subtotal * (gst_rate / 100)
-    total = subtotal + gst_amount
+
+    pricing_type = job.get("pricing_type", "fixed")
+    hourly_rate = job.get("hourly_rate", 0)
+    extras = job.get("extras") or []
+    extras_total = sum(float(e.get("amount", 0)) for e in extras)
+    hours_worked = total_time / 3600 if total_time > 0 else 0
+
+    if pricing_type == "fixed":
+        subtotal = job.get("price", 0)
+    elif pricing_type == "hourly":
+        subtotal = round(hours_worked * hourly_rate, 2)
+    elif pricing_type == "fixed_extras":
+        subtotal = job.get("price", 0) + extras_total
+    elif pricing_type == "hourly_extras":
+        subtotal = round(hours_worked * hourly_rate, 2) + extras_total
+    else:
+        subtotal = job.get("price", 0)
+
+    gst_amount = round(subtotal * (gst_rate / 100), 2)
+    total = round(subtotal + gst_amount, 2)
 
     customer_name = job.get("customer_name", "")
     if job.get("client_id"):
@@ -805,13 +855,25 @@ async def complete_job(job_id: str, request: Request):
         if client_doc:
             customer_name = client_doc.get("name", customer_name)
 
+    # Build description line items
+    desc_parts = [f"{job.get('title', 'Service')} - {job.get('job_type', 'other').replace('_',' ')}"]
+    if pricing_type in ("hourly", "hourly_extras") and hours_worked > 0:
+        desc_parts.append(f"{hours_worked:.2f}h @ ${hourly_rate}/hr")
+    if extras:
+        for ex in extras:
+            desc_parts.append(f"{ex.get('description', 'Extra')}: ${float(ex.get('amount', 0)):.2f}")
+
     invoice_doc = {
         "job_id": ObjectId(job_id),
         "contractor_id": ObjectId(user["business_id"]),
         "client_id": job.get("client_id"),
         "customer_name": customer_name,
         "address": job.get("address", ""),
-        "description": f"{job.get('title', 'Service')} - {job.get('job_type', 'other')}",
+        "description": "\n".join(desc_parts),
+        "pricing_type": pricing_type,
+        "hours_worked": round(hours_worked, 2),
+        "hourly_rate": hourly_rate,
+        "extras": extras,
         "subtotal": subtotal, "gst_rate": gst_rate, "gst_amount": gst_amount, "total": total,
         "status": InvoiceStatus.DRAFT,
         "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}",
@@ -834,20 +896,138 @@ async def delete_job(job_id: str, request: Request):
         raise HTTPException(status_code=404, detail="Job not found")
     return {"message": "Job deleted"}
 
+# ===================== TIME TRACKING =====================
+def compute_elapsed(time_entries):
+    """Compute total elapsed seconds from time entries."""
+    total = 0
+    last_start = None
+    for entry in time_entries:
+        ts = entry.get("timestamp")
+        if isinstance(ts, str):
+            ts = datetime.fromisoformat(ts.replace('Z', '+00:00'))
+        if ts and ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        action = entry.get("action")
+        if action in ("start", "resume"):
+            last_start = ts
+        elif action == "pause" and last_start:
+            total += (ts - last_start).total_seconds()
+            last_start = None
+    if last_start:
+        total += (datetime.now(timezone.utc) - last_start).total_seconds()
+    return int(total)
+
+@api_router.post("/jobs/{job_id}/timer/start")
+async def timer_start(job_id: str, request: Request):
+    user = await get_current_user(request)
+    query = {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])}
+    if user.get("role") == "worker":
+        query["assigned_worker_id"] = ObjectId(user["id"])
+    job = await db.jobs.find_one(query)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.get("timer_running"):
+        raise HTTPException(status_code=400, detail="Timer already running")
+
+    entry = {"action": "start", "timestamp": datetime.now(timezone.utc)}
+    updates = {"$push": {"time_entries": entry}, "$set": {"timer_running": True}}
+    if job["status"] in (JobStatus.ASSIGNED, JobStatus.ACKNOWLEDGED):
+        updates["$set"]["status"] = JobStatus.IN_PROGRESS
+        updates["$set"]["started_at"] = datetime.now(timezone.utc)
+    await db.jobs.update_one({"_id": ObjectId(job_id)}, updates)
+    job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+    job_data = serialize_doc(job)
+    job_data["total_time_seconds"] = compute_elapsed(job.get("time_entries", []))
+    return job_data
+
+@api_router.post("/jobs/{job_id}/timer/pause")
+async def timer_pause(job_id: str, request: Request):
+    user = await get_current_user(request)
+    query = {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])}
+    if user.get("role") == "worker":
+        query["assigned_worker_id"] = ObjectId(user["id"])
+    job = await db.jobs.find_one(query)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if not job.get("timer_running"):
+        raise HTTPException(status_code=400, detail="Timer not running")
+
+    entry = {"action": "pause", "timestamp": datetime.now(timezone.utc)}
+    elapsed = compute_elapsed(job.get("time_entries", []) + [entry])
+    await db.jobs.update_one({"_id": ObjectId(job_id)}, {
+        "$push": {"time_entries": entry},
+        "$set": {"timer_running": False, "total_time_seconds": elapsed}
+    })
+    job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+    job_data = serialize_doc(job)
+    job_data["total_time_seconds"] = elapsed
+    return job_data
+
+@api_router.post("/jobs/{job_id}/timer/resume")
+async def timer_resume(job_id: str, request: Request):
+    user = await get_current_user(request)
+    query = {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])}
+    if user.get("role") == "worker":
+        query["assigned_worker_id"] = ObjectId(user["id"])
+    job = await db.jobs.find_one(query)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.get("timer_running"):
+        raise HTTPException(status_code=400, detail="Timer already running")
+
+    entry = {"action": "resume", "timestamp": datetime.now(timezone.utc)}
+    await db.jobs.update_one({"_id": ObjectId(job_id)}, {
+        "$push": {"time_entries": entry}, "$set": {"timer_running": True}
+    })
+    job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+    job_data = serialize_doc(job)
+    job_data["total_time_seconds"] = compute_elapsed(job.get("time_entries", []))
+    return job_data
+
+@api_router.patch("/jobs/{job_id}/timer/adjust")
+async def timer_adjust(job_id: str, data: TimeAdjust, request: Request):
+    user = await get_current_user(request)
+    if user.get("role") not in ("employer", "admin"):
+        raise HTTPException(status_code=403, detail="Only employers can adjust time")
+    result = await db.jobs.update_one(
+        {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])},
+        {"$set": {"total_time_seconds": max(0, data.total_time_seconds), "time_entries": [], "timer_running": False}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Job not found")
+    job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+    return serialize_doc(job)
+
+@api_router.get("/jobs/{job_id}/timer")
+async def get_timer(job_id: str, request: Request):
+    user = await get_current_user(request)
+    query = {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])}
+    if user.get("role") == "worker":
+        query["assigned_worker_id"] = ObjectId(user["id"])
+    job = await db.jobs.find_one(query)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    elapsed = compute_elapsed(job.get("time_entries", [])) if job.get("timer_running") else job.get("total_time_seconds", 0)
+    return {"total_time_seconds": elapsed, "timer_running": job.get("timer_running", False)}
+
 # ===================== QUOTES =====================
 @api_router.post("/quotes")
 async def create_quote(quote_data: QuoteCreate, request: Request):
     user = await get_current_user(request)
     quote_doc = {
-        **quote_data.model_dump(),
+        **quote_data.model_dump(exclude={"client_id"}),
         "contractor_id": ObjectId(user["business_id"]),
         "status": QuoteStatus.DRAFT,
         "quote_number": f"QT-{datetime.now().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}",
         "created_at": datetime.now(timezone.utc)
     }
+    if quote_data.client_id:
+        quote_doc["client_id"] = ObjectId(quote_data.client_id)
     result = await db.quotes.insert_one(quote_doc)
     quote_doc["id"] = str(result.inserted_id)
     quote_doc["contractor_id"] = user["business_id"]
+    if quote_data.client_id:
+        quote_doc["client_id"] = quote_data.client_id
     quote_doc.pop("_id", None)
     return quote_doc
 
@@ -906,6 +1086,59 @@ async def delete_quote(quote_id: str, request: Request):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Quote not found")
     return {"message": "Quote deleted"}
+
+@api_router.post("/quotes/{quote_id}/convert")
+async def convert_quote_to_job(quote_id: str, request: Request):
+    user = await require_employer(request)
+    quote = await db.quotes.find_one({
+        "_id": ObjectId(quote_id), "contractor_id": ObjectId(user["business_id"])
+    })
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    if quote.get("converted_job_id"):
+        raise HTTPException(status_code=400, detail="Quote already converted to a job")
+
+    job_doc = {
+        "title": quote.get("job_description", "Job from quote"),
+        "job_type": quote.get("job_type", "other"),
+        "customer_name": quote.get("customer_name", ""),
+        "address": quote.get("address", ""),
+        "price": quote.get("price", 0),
+        "pricing_type": quote.get("pricing_type", "fixed"),
+        "hourly_rate": quote.get("hourly_rate", 0),
+        "extras": quote.get("extras", []),
+        "notes": quote.get("notes", ""),
+        "scheduled_date": datetime.now(timezone.utc) + timedelta(days=1),
+        "contractor_id": ObjectId(user["business_id"]),
+        "created_by": ObjectId(user["id"]),
+        "status": JobStatus.ASSIGNED,
+        "assigned_worker_id": None,
+        "assigned_worker_name": None,
+        "acknowledged_at": None,
+        "started_at": None,
+        "completed_at": None,
+        "photos": [],
+        "time_entries": [],
+        "total_time_seconds": 0,
+        "timer_running": False,
+        "quote_id": ObjectId(quote_id),
+        "created_at": datetime.now(timezone.utc)
+    }
+    if quote.get("client_id"):
+        job_doc["client_id"] = ObjectId(quote["client_id"])
+    else:
+        job_doc["client_id"] = None
+
+    result = await db.jobs.insert_one(job_doc)
+    job_id = str(result.inserted_id)
+
+    # Mark quote as accepted and link to job
+    await db.quotes.update_one(
+        {"_id": ObjectId(quote_id)},
+        {"$set": {"status": QuoteStatus.ACCEPTED, "converted_job_id": job_id}}
+    )
+
+    return {"message": "Quote converted to job", "job_id": job_id}
 
 # ===================== INVOICES =====================
 @api_router.post("/invoices")

@@ -1,303 +1,211 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useApi } from "@/hooks/useApi";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import Layout from "../../components/Layout";
+import { useApi } from "../../hooks/useApi";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Textarea } from "../../components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "../../components/ui/select";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import Layout from "@/components/Layout";
+import { JOB_TYPES_BY_CATEGORY } from "../../lib/utils";
+
+const PRICING_TYPES = [
+  { value: "fixed", label: "Fixed Price" },
+  { value: "hourly", label: "Hourly" },
+  { value: "fixed_extras", label: "Fixed + Extras" },
+  { value: "hourly_extras", label: "Hourly + Extras" },
+];
 
 export default function QuoteFormPage() {
-  const navigate = useNavigate();
   const { id } = useParams();
-  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { get, post, patch, loading } = useApi();
-  const isEdit = !!id;
+  const isEditing = !!id;
 
   const [clients, setClients] = useState([]);
-  const [formData, setFormData] = useState({
-    customer_name: "",
-    customer_email: "",
-    address: "",
-    job_description: "",
-    price: "",
-    notes: "",
-    valid_until: "",
+  const [form, setForm] = useState({
+    client_id: "", customer_name: "", customer_email: "", address: "",
+    job_description: "", job_type: "other", price: "", pricing_type: "fixed",
+    hourly_rate: "", extras: [], notes: "", valid_until: "",
   });
 
-  useEffect(() => {
-    loadClients();
-    if (isEdit) {
-      loadQuote();
-    } else {
-      // Pre-fill from client if provided
-      const clientId = searchParams.get("client_id");
-      if (clientId) {
-        loadClientData(clientId);
-      }
-    }
-  }, [id]);
+  const fetchData = useCallback(async () => {
+    const clientsRes = await get("/clients");
+    if (clientsRes.success) setClients(clientsRes.data);
 
-  const loadClients = async () => {
-    const result = await get("/clients");
-    if (result.success) {
-      setClients(result.data);
+    if (isEditing) {
+      const res = await get(`/quotes/${id}`);
+      if (res.success) {
+        const q = res.data;
+        setForm({
+          client_id: q.client_id || "", customer_name: q.customer_name || "",
+          customer_email: q.customer_email || "", address: q.address || "",
+          job_description: q.job_description || "", job_type: q.job_type || "other",
+          price: q.price || "", pricing_type: q.pricing_type || "fixed",
+          hourly_rate: q.hourly_rate || "", extras: q.extras || [],
+          notes: q.notes || "",
+          valid_until: q.valid_until ? q.valid_until.split("T")[0] : "",
+        });
+      } else navigate("/quotes");
     }
+  }, [get, id, isEditing, navigate]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const handleClientChange = (clientId) => {
+    const client = clients.find((c) => c.id === clientId);
+    setForm((prev) => ({
+      ...prev, client_id: clientId,
+      customer_name: client?.name || prev.customer_name,
+      customer_email: client?.email || prev.customer_email,
+      address: client?.address || prev.address,
+    }));
   };
 
-  const loadClientData = async (clientId) => {
-    const result = await get(`/clients/${clientId}`);
-    if (result.success) {
-      setFormData((prev) => ({
-        ...prev,
-        customer_name: result.data.name || "",
-        customer_email: result.data.email || "",
-        address: result.data.address || "",
-      }));
-    }
-  };
-
-  const loadQuote = async () => {
-    const result = await get(`/quotes/${id}`);
-    if (result.success) {
-      const quote = result.data;
-      setFormData({
-        customer_name: quote.customer_name || "",
-        customer_email: quote.customer_email || "",
-        address: quote.address || "",
-        job_description: quote.job_description || "",
-        price: quote.price?.toString() || "",
-        notes: quote.notes || "",
-        valid_until: quote.valid_until ? quote.valid_until.split("T")[0] : "",
-      });
-    } else {
-      toast.error("Quote not found");
-      navigate("/quotes");
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
+  const addExtra = () => setForm((prev) => ({ ...prev, extras: [...prev.extras, { description: "", amount: "" }] }));
+  const removeExtra = (i) => setForm((prev) => ({ ...prev, extras: prev.extras.filter((_, idx) => idx !== i) }));
+  const updateExtra = (i, field, val) => setForm((prev) => {
+    const extras = [...prev.extras];
+    extras[i] = { ...extras[i], [field]: val };
+    return { ...prev, extras };
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!formData.customer_name.trim()) {
-      toast.error("Customer name is required");
-      return;
-    }
-    if (!formData.address.trim()) {
-      toast.error("Address is required");
-      return;
-    }
-    if (!formData.job_description.trim()) {
-      toast.error("Job description is required");
-      return;
-    }
-    if (!formData.price || Number(formData.price) <= 0) {
-      toast.error("Valid price is required");
-      return;
-    }
-
-    const quoteData = {
-      ...formData,
-      price: Number(formData.price),
-      valid_until: formData.valid_until ? new Date(formData.valid_until).toISOString() : null,
+    const payload = {
+      ...form,
+      price: parseFloat(form.price) || 0,
+      hourly_rate: parseFloat(form.hourly_rate) || 0,
+      client_id: form.client_id || null,
+      valid_until: form.valid_until ? new Date(form.valid_until + "T23:59:59Z").toISOString() : null,
+      extras: form.extras.map((e) => ({ description: e.description, amount: parseFloat(e.amount) || 0 })).filter((e) => e.description),
     };
+    if (!payload.client_id) delete payload.client_id;
+    if (!payload.valid_until) delete payload.valid_until;
 
-    const result = isEdit
-      ? await patch(`/quotes/${id}`, quoteData)
-      : await post("/quotes", quoteData);
-
-    if (result.success) {
-      toast.success(isEdit ? "Quote updated" : "Quote created");
-      navigate("/quotes");
-    } else {
-      toast.error(result.error);
-    }
+    const res = isEditing ? await patch(`/quotes/${id}`, payload) : await post("/quotes", payload);
+    if (res.success) { toast.success(isEditing ? "Quote updated" : "Quote created"); navigate("/quotes"); }
+    else toast.error(res.error || "Failed to save quote");
   };
 
-  // Calculate default valid_until (30 days from now)
-  const getDefaultValidUntil = () => {
-    const date = new Date();
-    date.setDate(date.getDate() + 30);
-    return date.toISOString().split("T")[0];
-  };
+  const showHourly = form.pricing_type === "hourly" || form.pricing_type === "hourly_extras";
+  const showFixed = form.pricing_type === "fixed" || form.pricing_type === "fixed_extras";
+  const showExtras = form.pricing_type === "fixed_extras" || form.pricing_type === "hourly_extras";
 
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto space-y-6 animate-in" data-testid="quote-form-page">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/quotes")}
-            data-testid="back-button"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-semibold text-white font-heading">
-              {isEdit ? "Edit Quote" : "New Quote"}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {isEdit ? "Update quote details" : "Create a quote for a customer"}
-            </p>
-          </div>
-        </div>
+      <div className="p-4 md:p-6 max-w-2xl mx-auto" data-testid="quote-form-page">
+        <button onClick={() => navigate("/quotes")} className="flex items-center gap-2 text-churvox-muted hover:text-white mb-4" data-testid="back-to-quotes">
+          <ArrowLeft size={18} /> Quotes
+        </button>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-lg font-heading">Customer Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="customer_name">Customer Name *</Label>
-                <Input
-                  id="customer_name"
-                  name="customer_name"
-                  value={formData.customer_name}
-                  onChange={handleChange}
-                  placeholder="John Smith"
-                  className="bg-background border-border"
-                  required
-                  data-testid="quote-customer-name-input"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="customer_email">Customer Email</Label>
-                <Input
-                  id="customer_email"
-                  name="customer_email"
-                  type="email"
-                  value={formData.customer_email}
-                  onChange={handleChange}
-                  placeholder="john@example.com"
-                  className="bg-background border-border"
-                  data-testid="quote-customer-email-input"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="address">Address *</Label>
-                <Input
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  placeholder="123 Main Street, Auckland"
-                  className="bg-background border-border"
-                  required
-                  data-testid="quote-address-input"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-lg font-heading">Quote Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="job_description">Job Description *</Label>
-                <Textarea
-                  id="job_description"
-                  name="job_description"
-                  value={formData.job_description}
-                  onChange={handleChange}
-                  placeholder="Describe the work to be done..."
-                  className="bg-background border-border min-h-[100px]"
-                  required
-                  data-testid="quote-description-input"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="price">Price (NZD) *</Label>
-                  <Input
-                    id="price"
-                    name="price"
-                    type="number"
-                    value={formData.price}
-                    onChange={handleChange}
-                    placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                    className="bg-background border-border"
-                    required
-                    data-testid="quote-price-input"
-                  />
+        <Card className="bg-churvox-card border-churvox-border">
+          <CardHeader><CardTitle className="text-white">{isEditing ? "Edit Quote" : "New Quote"}</CardTitle></CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-churvox-muted">Client</Label>
+                  <Select value={form.client_id} onValueChange={handleClientChange}>
+                    <SelectTrigger className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-client-select"><SelectValue placeholder="Select client" /></SelectTrigger>
+                    <SelectContent className="bg-churvox-card border-churvox-border">{clients.map((c) => <SelectItem key={c.id} value={c.id} className="text-white">{c.name}</SelectItem>)}</SelectContent>
+                  </Select>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="valid_until">Valid Until</Label>
-                  <Input
-                    id="valid_until"
-                    name="valid_until"
-                    type="date"
-                    value={formData.valid_until || getDefaultValidUntil()}
-                    onChange={handleChange}
-                    className="bg-background border-border"
-                    data-testid="quote-valid-until-input"
-                  />
+                <div>
+                  <Label className="text-churvox-muted">Job Type</Label>
+                  <Select value={form.job_type} onValueChange={(v) => setForm({ ...form, job_type: v })}>
+                    <SelectTrigger className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-job-type"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-churvox-card border-churvox-border max-h-60">
+                      {Object.entries(JOB_TYPES_BY_CATEGORY).map(([cat, types]) => (
+                        <SelectGroup key={cat}><SelectLabel className="text-churvox-muted text-xs">{cat}</SelectLabel>
+                          {types.map((t) => <SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>)}
+                        </SelectGroup>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleChange}
-                  placeholder="Any additional notes or terms..."
-                  className="bg-background border-border min-h-[80px]"
-                  data-testid="quote-notes-input"
-                />
+              <div>
+                <Label className="text-churvox-muted">Customer Name</Label>
+                <Input value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} required className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-customer-name" />
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <Label className="text-churvox-muted">Customer Email</Label>
+                <Input type="email" value={form.customer_email} onChange={(e) => setForm({ ...form, customer_email: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-customer-email" />
+              </div>
+              <div>
+                <Label className="text-churvox-muted">Address</Label>
+                <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-address" />
+              </div>
+              <div>
+                <Label className="text-churvox-muted">Job Description</Label>
+                <Textarea value={form.job_description} onChange={(e) => setForm({ ...form, job_description: e.target.value })} required className="bg-churvox-bg border-churvox-border text-white" rows={3} data-testid="quote-description" />
+              </div>
 
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1 border-border"
-              onClick={() => navigate("/quotes")}
-              data-testid="cancel-button"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1 bg-primary hover:bg-primary/90"
-              disabled={loading}
-              data-testid="save-quote-button"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : isEdit ? (
-                "Update Quote"
-              ) : (
-                "Create Quote"
+              {/* Pricing */}
+              <div className="pt-3 border-t border-churvox-border">
+                <Label className="text-churvox-muted">Pricing Type</Label>
+                <Select value={form.pricing_type} onValueChange={(v) => setForm({ ...form, pricing_type: v })}>
+                  <SelectTrigger className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-pricing-type"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-churvox-card border-churvox-border">
+                    {PRICING_TYPES.map((p) => <SelectItem key={p.value} value={p.value} className="text-white">{p.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {showFixed && (
+                  <div>
+                    <Label className="text-churvox-muted">Price ($)</Label>
+                    <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-price" />
+                  </div>
+                )}
+                {showHourly && (
+                  <div>
+                    <Label className="text-churvox-muted">Hourly Rate ($)</Label>
+                    <Input type="number" step="0.01" value={form.hourly_rate} onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-hourly-rate" />
+                  </div>
+                )}
+                <div>
+                  <Label className="text-churvox-muted">Valid Until</Label>
+                  <Input type="date" value={form.valid_until} onChange={(e) => setForm({ ...form, valid_until: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-valid-until" />
+                </div>
+              </div>
+
+              {showExtras && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-churvox-muted">Extras</Label>
+                    <Button type="button" variant="outline" size="sm" onClick={addExtra} className="border-churvox-border text-churvox-muted" data-testid="quote-add-extra"><Plus size={14} className="mr-1" /> Add Extra</Button>
+                  </div>
+                  {form.extras.map((ex, i) => (
+                    <div key={i} className="flex gap-2 items-center">
+                      <Input value={ex.description} onChange={(e) => updateExtra(i, "description", e.target.value)} placeholder="Description" className="flex-1 bg-churvox-bg border-churvox-border text-white" data-testid={`quote-extra-desc-${i}`} />
+                      <Input type="number" step="0.01" value={ex.amount} onChange={(e) => updateExtra(i, "amount", e.target.value)} placeholder="$" className="w-24 bg-churvox-bg border-churvox-border text-white" data-testid={`quote-extra-amount-${i}`} />
+                      <button type="button" onClick={() => removeExtra(i)} className="text-red-400 hover:text-red-300"><Trash2 size={14} /></button>
+                    </div>
+                  ))}
+                </div>
               )}
-            </Button>
-          </div>
-        </form>
+
+              <div>
+                <Label className="text-churvox-muted">Notes</Label>
+                <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" rows={2} data-testid="quote-notes" />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button type="button" variant="outline" onClick={() => navigate("/quotes")} className="flex-1 border-churvox-border text-churvox-muted">Cancel</Button>
+                <Button type="submit" disabled={loading} className="flex-1 bg-churvox-accent hover:bg-churvox-accent/90" data-testid="submit-quote-button">
+                  {loading ? "Saving..." : isEditing ? "Update Quote" : "Create Quote"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );
