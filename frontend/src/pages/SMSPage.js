@@ -61,7 +61,7 @@ export default function SMSPage() {
     if (!payload.invoice_id) delete payload.invoice_id;
     const res = await post("/sms/send", payload);
     if (res.success) {
-      toast.success("SMS sent (mock)");
+      toast.success("SMS sent");
       setShowSend(false);
       setSendForm({ recipient_phone: "", message_type: "customer_reminder", job_id: "", invoice_id: "" });
       fetchData();
@@ -170,7 +170,14 @@ export default function SMSPage() {
                           <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-churvox-accent/20 text-churvox-accent">
                             {sms.message_type?.replace(/_/g, " ")}
                           </span>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-yellow-500/20 text-yellow-400">mock</span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                            sms.provider === "mock" ? "bg-yellow-500/20 text-yellow-400" :
+                            sms.status === "COUNTRY_NOT_ENABLED" ? "bg-orange-500/20 text-orange-400" :
+                            sms.status?.toLowerCase().includes("fail") ? "bg-red-500/20 text-red-400" :
+                            "bg-green-500/20 text-green-400"
+                          }`}>
+                            {sms.provider === "mock" ? "mock" : sms.status || "sent"}
+                          </span>
                         </div>
                         <p className="text-sm text-white truncate">{sms.message}</p>
                         <p className="text-xs text-churvox-muted mt-1 flex items-center gap-2">
