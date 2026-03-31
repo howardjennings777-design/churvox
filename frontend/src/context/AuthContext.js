@@ -15,7 +15,7 @@ export function AuthProvider({ children }) {
       const response = await axios.get(`${API_URL}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }, withCredentials: true,
       });
-      setUser(response.data);
+      setUser({ ...response.data, token });
     } catch {
       localStorage.removeItem("token");
       setUser(null);
@@ -28,24 +28,54 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     const response = await axios.post(`${API_URL}/api/auth/login`, { email, password }, { withCredentials: true });
-    localStorage.setItem("token", response.data.token);
-    setUser(response.data);
+    const { token, ...userData } = response.data;
+    localStorage.setItem("token", token);
+    setUser({ ...userData, token });
     return response.data;
   }, []);
 
   const register = useCallback(async (userData) => {
     const response = await axios.post(`${API_URL}/api/auth/register`, userData, { withCredentials: true });
-    localStorage.setItem("token", response.data.token);
-    setUser(response.data);
+    const { token, ...restData } = response.data;
+    localStorage.setItem("token", token);
+    setUser({ ...restData, token });
     return response.data;
   }, []);
 
   const logout = useCallback(async () => {
     try {
-      await axios.post(`${API_URL}/api/auth/logout`, {}, { withCredentials: true });
+      const token = localStorage.getItem("token");
+      await axios.post(`${API_URL}/api/auth/logout`, {}, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        withCredentials: true,
+      });
     } catch {}
     localStorage.removeItem("token");
     setUser(null);
+  }, []);
+
+  const forgotPassword = useCallback(async (email) => {
+    try {
+      const response = await axios.post(`${API_URL}/api/auth/forgot-password`, { email });
+      return { success: true, token: response.data.debug_token || null };
+    } catch (err) {
+      return {
+        success: false,
+        error: err?.response?.data?.detail || "Failed to send reset link. Please try again.",
+      };
+    }
+  }, []);
+
+  const resetPassword = useCallback(async (token, newPassword) => {
+    try {
+      await axios.post(`${API_URL}/api/auth/reset-password`, { token, new_password: newPassword });
+      return { success: true };
+    } catch (err) {
+      return {
+        success: false,
+        error: err?.response?.data?.detail || "Failed to reset password.",
+      };
+    }
   }, []);
 
   const updateUser = useCallback((updates) => {
@@ -56,7 +86,7 @@ export function AuthProvider({ children }) {
   const isWorker = user?.role === "worker";
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, checkAuth, updateUser, isEmployer, isWorker }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, checkAuth, updateUser, forgotPassword, resetPassword, isEmployer, isWorker }}>
       {children}
     </AuthContext.Provider>
   );

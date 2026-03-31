@@ -470,7 +470,7 @@ async def logout(response: Response):
 @api_router.get("/auth/me")
 async def get_me(request: Request):
     user = await get_current_user(request)
-    return user
+    return build_user_response(user, user["id"])
 
 @api_router.post("/auth/refresh")
 async def refresh_token(request: Request, response: Response):
