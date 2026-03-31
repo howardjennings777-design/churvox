@@ -17,24 +17,31 @@ Multi-trade job management platform. Core promise: jobs, quotes, invoices, team 
 - Batch 6: Plans ($30/$70/$110/$240), feature gating, upgrade/downgrade, team limits
 - Final Batch: Onboarding, empty states, helper text, launch polish
 
-## Bugfixes (31 Mar 2026)
-- Fixed admin login: LoginPage.js checked `result.success` which didn't exist on API response. Changed to try/catch + `result?.token` check.
-- Fixed signup redirect: Same pattern applied to SignupPage.js.
-- Fixed transparent overlays: churvox-* Tailwind colors were used across entire app but never defined in tailwind.config.js. Added all 5 color definitions.
-- Improved popover contrast: Bumped --popover CSS variable lightness from 9% to 12%.
-- Removed demo "Quick Admin Login" button from login page.
+## Bugfixes & Legal Pages (31 Mar 2026)
+- Fixed admin login: LoginPage/SignupPage checked result.success (undefined). Changed to try/catch + result?.token
+- Restored Admin Dashboard button on login page
+- Fixed transparent overlays: Added 5 churvox-* color definitions to tailwind.config.js
+- Bumped --popover CSS lightness from 9% to 12% for better overlay contrast
+- Created 3 public legal pages: /privacy, /terms, /account-deletion (placeholder content)
+- Added legal links to: login page, signup page, sidebar footer, settings page
+- Added Help & Legal card in Settings with Privacy/Terms/Account Deletion links
+- Added Danger Zone / Delete Account card in Settings linking to /account-deletion
 
 ## Key URLs
-- Login: /login
-- Dashboard: /dashboard (role-based content)
-- Signup: /signup
+- Login: /login (with Admin Dashboard button)
+- Dashboard: /dashboard
+- Privacy: /privacy (public)
+- Terms: /terms (public)
+- Account Deletion: /account-deletion (public)
 
 ## Mocked/Placeholder Systems
 - SMS delivery (no real Twilio/provider)
 - MYOB sync (no real MYOB API)
 - Billing/payments (no real Stripe)
+- Legal page content (placeholder text — user will provide final content)
 
 ## Backlog
 - P1: Job photos upload
 - P2: Worker password change flow
 - P3: Wire real MYOB API, SMS provider, billing provider (Stripe)
+- Content: Replace legal page placeholder text with final content
