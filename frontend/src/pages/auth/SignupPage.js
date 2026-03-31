@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Lock, User, Building2, AlertCircle, Loader2, CheckCircle } from "lucide-react";
-
-const LOGO_URL = "https://customer-assets.emergentagent.com/job_phase1-launch/artifacts/j84zpsqt_1000049586.png";
+import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -61,8 +60,8 @@ export default function SignupPage() {
       {/* Left side - Decorative */}
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-card to-secondary items-center justify-center p-12">
         <div className="max-w-lg">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl mb-8">
-            <img src={LOGO_URL} alt="Churvox" className="h-14 w-auto churvox-logo" />
+          <div className="inline-flex items-center justify-center mb-8">
+            <ChurvoxLogo size="xl" />
           </div>
           <h2 className="text-3xl font-semibold text-white font-heading mb-6">
             Start managing your business today
@@ -87,14 +86,8 @@ export default function SignupPage() {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md animate-in">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center gap-3 mb-6 lg:hidden">
-              <img 
-                src={LOGO_URL} 
-                alt="Churvox" 
-                className="h-14 w-auto churvox-logo"
-                data-testid="churvox-logo"
-              />
-              <span className="text-3xl font-semibold text-white tracking-tight font-heading">Churvox</span>
+            <div className="inline-flex items-center justify-center mb-6 lg:hidden">
+              <ChurvoxLogo size="lg" />
             </div>
             <h1 className="text-2xl font-semibold text-white font-heading">Create account</h1>
             <p className="text-muted-foreground mt-2">Get started with Churvox for free</p>

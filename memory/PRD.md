@@ -70,6 +70,13 @@ Build a multi-trade job management platform called Churvox. Core promise: jobs, 
 - Logo cleanup (mix-blend-mode: screen for transparent logo on dark backgrounds)
 - Removed old statuses (scheduled, cancelled) — migrated to "assigned"
 
+## Logo Branding Fix — COMPLETED (March 2026)
+- Created shared `ChurvoxLogo` component at `/app/frontend/src/components/ChurvoxLogo.js`
+- Single `LOGO_URL` constant — one change swaps logo everywhere
+- Removed all "Churvox" text wordmarks beside the logo
+- Logo-only display: clean, centered, transparent, no background box
+- Applied across: login, signup, forgot-password, reset-password, sidebar header, mobile header, invoice detail
+
 ## Backlog (Future Batches)
 - P1: Time tracking per job
 - P1: Job photos upload support

@@ -30,8 +30,7 @@ import {
 import { toast } from "sonner";
 import { formatDate, formatCurrency, INVOICE_STATUSES } from "@/lib/utils";
 import Layout from "@/components/Layout";
-
-const LOGO_URL = "https://customer-assets.emergentagent.com/job_phase1-launch/artifacts/j84zpsqt_1000049586.png";
+import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 
 export default function InvoiceDetailPage() {
   const navigate = useNavigate();
@@ -166,7 +165,7 @@ export default function InvoiceDetailPage() {
             <div className="bg-gradient-to-r from-[#1A1D27] to-[#12141D] p-6 sm:p-8">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
                 <div>
-                  <img src={LOGO_URL} alt="Churvox" className="h-10 mb-4 churvox-logo" />
+                  <ChurvoxLogo size="md" className="mb-4" />
                   <h2 className="text-2xl font-bold text-white">INVOICE</h2>
                   <p className="text-lg text-primary font-mono">{invoice.invoice_number}</p>
                 </div>

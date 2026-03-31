@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, AlertCircle, Loader2, CheckCircle, ArrowLeft } from "lucide-react";
-
-const LOGO_URL = "https://customer-assets.emergentagent.com/job_phase1-launch/artifacts/j84zpsqt_1000049586.png";
+import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -61,12 +60,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen bg-[#0A0B10] flex items-center justify-center p-6">
       <div className="w-full max-w-md animate-in">
         <div className="text-center mb-8">
-          <img 
-            src={LOGO_URL} 
-            alt="Churvox" 
-            className="h-12 mx-auto mb-6 churvox-logo"
-            data-testid="churvox-logo"
-          />
+          <ChurvoxLogo size="lg" className="mx-auto mb-6" />
           <h1 className="text-3xl font-semibold text-white font-heading">Reset password</h1>
           <p className="text-muted-foreground mt-2">Enter your new password</p>
         </div>

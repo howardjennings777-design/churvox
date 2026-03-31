@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { ChurvoxLogo } from "./ChurvoxLogo";
 import { LayoutDashboard, Briefcase, Calendar, Users, MoreHorizontal, LogOut, Settings, FileText, Receipt, CreditCard, UserPlus } from "lucide-react";
-
-const LOGO_URL = "https://customer-assets.emergentagent.com/job_phase1-launch/artifacts/j84zpsqt_1000049586.png";
 
 export default function Layout({ children }) {
   const { user, logout, isEmployer } = useAuth();
@@ -42,9 +41,8 @@ export default function Layout({ children }) {
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-churvox-card border-r border-churvox-border z-40" data-testid="desktop-sidebar">
         {/* Logo */}
-        <div className="flex items-center gap-3 px-5 h-16 border-b border-churvox-border">
-          <img src={LOGO_URL} alt="Churvox" className="h-9 w-auto churvox-logo" data-testid="sidebar-logo" />
-          <span className="text-lg font-bold text-white tracking-wide">Churvox</span>
+        <div className="flex items-center px-5 h-16 border-b border-churvox-border">
+          <ChurvoxLogo size="md" dataTestId="sidebar-logo" />
         </div>
 
         {/* User Info */}
@@ -100,8 +98,7 @@ export default function Layout({ children }) {
       {/* Mobile Header */}
       <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-churvox-card border-b border-churvox-border flex items-center justify-between px-4 z-40" data-testid="mobile-header">
         <div className="flex items-center gap-2">
-          <img src={LOGO_URL} alt="Churvox" className="h-8 w-auto churvox-logo" data-testid="mobile-logo" />
-          <span className="text-base font-bold text-white">Churvox</span>
+          <ChurvoxLogo size="sm" dataTestId="mobile-logo" />
         </div>
         <div className="flex items-center gap-2">
           <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-churvox-accent/20 text-churvox-accent">
