@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ChurvoxLogo } from "./ChurvoxLogo";
-import { LayoutDashboard, Briefcase, Calendar, Users, MoreHorizontal, LogOut, Settings, FileText, Receipt, CreditCard, UserPlus } from "lucide-react";
+import { LayoutDashboard, Briefcase, Calendar, Users, MoreHorizontal, LogOut, Settings, FileText, Receipt, CreditCard, UserPlus, MessageSquare } from "lucide-react";
 
 export default function Layout({ children }) {
   const { user, logout, isEmployer } = useAuth();
@@ -27,6 +27,7 @@ export default function Layout({ children }) {
         { path: "/team", label: "Team", icon: UserPlus },
         { path: "/quotes", label: "Quotes", icon: FileText },
         { path: "/invoices", label: "Invoices", icon: Receipt },
+        { path: "/sms", label: "SMS", icon: MessageSquare },
         { path: "/plans", label: "Plans", icon: CreditCard },
         { path: "/settings", label: "Settings", icon: Settings },
       ]

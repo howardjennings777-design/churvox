@@ -24,6 +24,7 @@ import SettingsPage from "./pages/SettingsPage";
 import PlansPage from "./pages/PlansPage";
 import CalendarPage from "./pages/CalendarPage";
 import TeamPage from "./pages/TeamPage";
+import SMSPage from "./pages/SMSPage";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -66,6 +67,7 @@ function App() {
           <Route path="/invoices" element={<PrivateRoute><InvoicesPage /></PrivateRoute>} />
           <Route path="/invoices/new" element={<PrivateRoute><InvoiceFormPage /></PrivateRoute>} />
           <Route path="/invoices/:id" element={<PrivateRoute><InvoiceDetailPage /></PrivateRoute>} />
+          <Route path="/sms" element={<PrivateRoute><SMSPage /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
           <Route path="/plans" element={<PrivateRoute><PlansPage /></PrivateRoute>} />
 

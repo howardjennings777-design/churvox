@@ -6,7 +6,7 @@ import { useApi } from "../../hooks/useApi";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
-import { ArrowLeft, Trash2, Send, CheckCircle, DollarSign, MapPin, Mail, Briefcase, Clock } from "lucide-react";
+import { ArrowLeft, Trash2, Send, CheckCircle, DollarSign, MapPin, Mail, Briefcase, Clock, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, INVOICE_STATUSES } from "../../lib/utils";
 
@@ -40,6 +40,22 @@ export default function InvoiceDetailPage() {
   const handleDelete = async () => {
     const res = await del(`/invoices/${id}`);
     if (res.success) { toast.success("Invoice deleted"); navigate("/invoices"); }
+  };
+
+  const handleSendSMSReminder = async () => {
+    let phone = "";
+    if (invoice?.client_id) {
+      const cRes = await get(`/clients/${invoice.client_id}`);
+      if (cRes.success) phone = cRes.data.phone || "";
+    }
+    if (!phone) { toast.error("Client has no phone number"); return; }
+    const res = await post("/sms/send", {
+      recipient_phone: phone,
+      message_type: "invoice_reminder",
+      invoice_id: id,
+    });
+    if (res.success) toast.success(`Invoice reminder sent (mock) — ${res.data.balance} credits left`);
+    else toast.error(res.error || "Failed to send SMS reminder");
   };
 
   if (!invoice) return <Layout><div className="p-6 text-churvox-muted">Loading...</div></Layout>;
@@ -149,9 +165,15 @@ export default function InvoiceDetailPage() {
             </Button>
           )}
           {invoice.status === "sent" && (
-            <Button onClick={handleMarkPaid} disabled={loading} className="flex-1 bg-green-600 hover:bg-green-700" data-testid="mark-paid-button">
-              <CheckCircle size={16} className="mr-2" /> Mark as Paid
-            </Button>
+            <>
+              <Button onClick={handleMarkPaid} disabled={loading} className="flex-1 bg-green-600 hover:bg-green-700" data-testid="mark-paid-button">
+                <CheckCircle size={16} className="mr-2" /> Mark as Paid
+              </Button>
+              <Button variant="outline" onClick={handleSendSMSReminder} disabled={loading}
+                className="border-churvox-border text-churvox-muted hover:text-white hover:border-churvox-accent/50" data-testid="sms-invoice-reminder">
+                <MessageSquare size={16} className="mr-2" /> SMS Reminder
+              </Button>
+            </>
           )}
           {invoice.status === "paid" && (
             <Card className="bg-green-900/20 border-green-500/30 w-full">

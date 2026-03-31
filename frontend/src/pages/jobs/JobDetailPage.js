@@ -9,7 +9,7 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { ArrowLeft, MapPin, Clock, DollarSign, UserCheck, Play, Pause, RotateCcw, CheckCircle, Trash2, Edit, ThumbsUp, Timer } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, DollarSign, UserCheck, Play, Pause, RotateCcw, CheckCircle, Trash2, Edit, ThumbsUp, Timer, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, JOB_STATUS_MAP } from "../../lib/utils";
 
@@ -101,6 +101,22 @@ export default function JobDetailPage() {
   const handleDelete = async () => {
     const res = await del(`/jobs/${id}`);
     if (res.success) { toast.success("Job deleted"); navigate("/jobs"); }
+  };
+
+  const handleSendSMS = async (type) => {
+    let phone = "";
+    if (job?.client_id) {
+      const cRes = await get(`/clients/${job.client_id}`);
+      if (cRes.success) phone = cRes.data.phone || "";
+    }
+    if (!phone) { toast.error("Client has no phone number"); return; }
+    const res = await post("/sms/send", {
+      recipient_phone: phone,
+      message_type: type,
+      job_id: id,
+    });
+    if (res.success) toast.success(`SMS sent (mock) — ${res.data.balance} credits left`);
+    else toast.error(res.error || "Failed to send SMS");
   };
 
   if (!job) return <Layout><div className="p-6 text-churvox-muted">Loading...</div></Layout>;
@@ -240,6 +256,29 @@ export default function JobDetailPage() {
               {(job.total_time_seconds || 0) > 0 && (
                 <p className="text-green-400/80 text-xs mt-1">Total time: {formatDuration(job.total_time_seconds || 0)}</p>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* SMS Quick Actions */}
+        {isEmployer && job.status !== "completed" && (
+          <Card className="bg-churvox-card border-churvox-border" data-testid="sms-actions-card">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <MessageSquare size={14} className="text-churvox-accent" />
+                <span className="text-sm font-medium text-white">Quick SMS</span>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleSendSMS("on_the_way")} disabled={loading}
+                  className="flex-1 border-churvox-border text-churvox-muted hover:text-white hover:border-churvox-accent/50 text-xs" data-testid="sms-on-the-way">
+                  On the Way
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleSendSMS("customer_reminder")} disabled={loading}
+                  className="flex-1 border-churvox-border text-churvox-muted hover:text-white hover:border-churvox-accent/50 text-xs" data-testid="sms-customer-reminder">
+                  Reminder
+                </Button>
+              </div>
+              <p className="text-[10px] text-churvox-muted mt-2">Sends mock SMS to client. 1 credit per message.</p>
             </CardContent>
           </Card>
         )}

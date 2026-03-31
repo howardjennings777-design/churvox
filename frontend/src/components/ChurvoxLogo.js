@@ -6,9 +6,9 @@ const LOGO_PATH = "/churvox-logo.png";
 
 const SIZE_MAP = {
   sm: "h-10",
-  md: "h-14",
-  lg: "h-20",
-  xl: "h-28",
+  md: "h-16",
+  lg: "h-24",
+  xl: "h-32",
 };
 
 export function ChurvoxLogo({ size = "md", className = "", dataTestId = "churvox-logo" }) {
