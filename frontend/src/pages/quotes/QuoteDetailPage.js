@@ -29,7 +29,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { formatDate, formatCurrency, getStatusColor, getStatusLabel } from "@/lib/utils";
+import { formatDate, formatCurrency, QUOTE_STATUSES } from "@/lib/utils";
 import Layout from "@/components/Layout";
 
 export default function QuoteDetailPage() {
@@ -112,8 +112,8 @@ export default function QuoteDetailPage() {
                 <h1 className="text-2xl font-semibold text-white font-heading">
                   {quote.quote_number}
                 </h1>
-                <span className={`status-badge ${getStatusColor(quote.status)}`}>
-                  {getStatusLabel(quote.status)}
+                <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-white ${QUOTE_STATUSES.find(s => s.value === quote.status)?.color || "bg-slate-500"}`}>
+                  {QUOTE_STATUSES.find(s => s.value === quote.status)?.label || quote.status}
                 </span>
               </div>
               <p className="text-muted-foreground">Quote for {quote.customer_name}</p>

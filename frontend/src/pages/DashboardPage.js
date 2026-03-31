@@ -1,317 +1,200 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
-import { useApi } from "@/hooks/useApi";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Calendar, 
-  Users, 
-  FileText, 
-  DollarSign, 
-  Plus, 
-  Clock, 
-  CheckCircle,
-  ArrowRight,
-  Briefcase,
-  TrendingUp,
-  Loader2
-} from "lucide-react";
-import { formatCurrency, formatDate, getStatusColor, getStatusLabel, getJobTypeLabel } from "@/lib/utils";
-import Layout from "@/components/Layout";
+import Layout from "../components/Layout";
+import { useAuth } from "../context/AuthContext";
+import { useApi } from "../hooks/useApi";
+import { Card, CardContent } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Briefcase, Calendar, CheckCircle, DollarSign, FileText, Users, Plus, Clock, UserCheck } from "lucide-react";
+import { formatCurrency, formatDate, JOB_STATUS_MAP } from "../lib/utils";
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const { get, loading } = useApi();
+  const { user, isEmployer, isWorker } = useAuth();
+  const { get } = useApi();
   const [stats, setStats] = useState(null);
   const [todayJobs, setTodayJobs] = useState([]);
   const [weekJobs, setWeekJobs] = useState([]);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
+  const fetchData = useCallback(async () => {
     const [statsRes, todayRes, weekRes] = await Promise.all([
       get("/dashboard/stats"),
       get("/jobs/today"),
       get("/jobs/week"),
     ]);
-
     if (statsRes.success) setStats(statsRes.data);
     if (todayRes.success) setTodayJobs(todayRes.data);
     if (weekRes.success) setWeekJobs(weekRes.data);
-  };
+  }, [get]);
 
-  const quickActions = [
-    { label: "New Job", icon: Plus, href: "/jobs/new", color: "bg-primary" },
-    { label: "New Quote", icon: FileText, href: "/quotes/new", color: "bg-violet-600" },
-    { label: "New Client", icon: Users, href: "/clients/new", color: "bg-emerald-600" },
-    { label: "New Invoice", icon: DollarSign, href: "/invoices/new", color: "bg-amber-600" },
-  ];
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const statCards = isEmployer
+    ? [
+        { label: "Today's Jobs", value: stats?.jobs_today || 0, icon: Briefcase, color: "text-blue-400" },
+        { label: "This Week", value: stats?.jobs_this_week || 0, icon: Calendar, color: "text-purple-400" },
+        { label: "Completed", value: stats?.completed_this_month || 0, icon: CheckCircle, color: "text-green-400" },
+        { label: "Revenue", value: formatCurrency(stats?.revenue_this_month), icon: DollarSign, color: "text-emerald-400" },
+        { label: "Pending Invoices", value: stats?.pending_invoices || 0, icon: FileText, color: "text-yellow-400" },
+        { label: "Clients", value: stats?.active_clients || 0, icon: Users, color: "text-cyan-400" },
+      ]
+    : [
+        { label: "My Jobs Today", value: stats?.jobs_today || 0, icon: Briefcase, color: "text-blue-400" },
+        { label: "This Week", value: stats?.jobs_this_week || 0, icon: Calendar, color: "text-purple-400" },
+        { label: "Completed", value: stats?.completed_this_month || 0, icon: CheckCircle, color: "text-green-400" },
+      ];
 
   return (
     <Layout>
-      <div className="space-y-8 animate-in" data-testid="dashboard">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-6" data-testid="dashboard-page">
+        {/* Greeting */}
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-white font-heading">
+            <h1 className="text-2xl font-bold text-white" data-testid="dashboard-greeting">
               Welcome back, {user?.name?.split(" ")[0]}
             </h1>
-            <p className="text-muted-foreground mt-1">
-              Here's your business overview for today.
+            <p className="text-sm text-churvox-muted mt-1">
+              {isWorker ? "Here are your assigned jobs" : "Here's your business overview"}
             </p>
           </div>
-          <Link to="/jobs/new">
-            <Button className="bg-primary hover:bg-primary/90" data-testid="create-job-button">
-              <Plus className="mr-2 h-4 w-4" />
-              New Job
-            </Button>
-          </Link>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card className="card-interactive" data-testid="stat-jobs-today">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Today</p>
-                  <p className="text-2xl font-semibold text-white mt-1">
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.jobs_today || 0}
-                  </p>
-                </div>
-                <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center">
-                  <Calendar className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">Jobs scheduled</p>
-            </CardContent>
-          </Card>
-
-          <Card className="card-interactive" data-testid="stat-jobs-week">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">This Week</p>
-                  <p className="text-2xl font-semibold text-white mt-1">
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.jobs_this_week || 0}
-                  </p>
-                </div>
-                <div className="h-10 w-10 rounded-lg bg-blue-500/15 flex items-center justify-center">
-                  <Briefcase className="h-5 w-5 text-blue-400" />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">Jobs scheduled</p>
-            </CardContent>
-          </Card>
-
-          <Card className="card-interactive" data-testid="stat-completed">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Completed</p>
-                  <p className="text-2xl font-semibold text-white mt-1">
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.completed_this_month || 0}
-                  </p>
-                </div>
-                <div className="h-10 w-10 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-                  <CheckCircle className="h-5 w-5 text-emerald-400" />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">This month</p>
-            </CardContent>
-          </Card>
-
-          <Card className="card-interactive" data-testid="stat-revenue">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Revenue</p>
-                  <p className="text-2xl font-semibold text-white mt-1">
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : formatCurrency(stats?.revenue_this_month || 0)}
-                  </p>
-                </div>
-                <div className="h-10 w-10 rounded-lg bg-violet-500/15 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-violet-400" />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">This month</p>
-            </CardContent>
-          </Card>
-
-          <Card className="card-interactive" data-testid="stat-invoices">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Invoices</p>
-                  <p className="text-2xl font-semibold text-white mt-1">
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.pending_invoices || 0}
-                  </p>
-                </div>
-                <div className="h-10 w-10 rounded-lg bg-amber-500/15 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-amber-400" />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">Pending</p>
-            </CardContent>
-          </Card>
-
-          <Card className="card-interactive" data-testid="stat-clients">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Clients</p>
-                  <p className="text-2xl font-semibold text-white mt-1">
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : stats?.active_clients || 0}
-                  </p>
-                </div>
-                <div className="h-10 w-10 rounded-lg bg-cyan-500/15 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-cyan-400" />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">Active</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <Card className="card-surface">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-heading">Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {quickActions.map((action) => (
-                <Link key={action.label} to={action.href}>
-                  <Button
-                    variant="outline"
-                    className="w-full h-auto py-4 flex flex-col items-center gap-2 border-border bg-secondary/30 hover:bg-secondary/60 hover:border-primary/30"
-                    data-testid={`quick-action-${action.label.toLowerCase().replace(" ", "-")}`}
-                  >
-                    <div className={`h-10 w-10 rounded-lg ${action.color} flex items-center justify-center`}>
-                      <action.icon className="h-5 w-5 text-white" />
-                    </div>
-                    <span className="text-sm font-medium">{action.label}</span>
-                  </Button>
-                </Link>
-              ))}
+          {isEmployer && (
+            <div className="hidden sm:flex gap-2">
+              <Button asChild size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90">
+                <Link to="/jobs/new" data-testid="quick-new-job"><Plus size={14} className="mr-1" /> New Job</Link>
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
 
-        {/* Jobs Today & This Week */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Jobs Today */}
-          <Card className="card-surface">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-lg font-heading">Jobs Today</CardTitle>
-              <Link to="/jobs" className="text-sm text-primary hover:text-primary/80">
-                View all <ArrowRight className="inline h-4 w-4" />
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : todayJobs.length === 0 ? (
-                <div className="text-center py-8">
-                  <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">No jobs scheduled for today</p>
-                  <Link to="/jobs/new">
-                    <Button variant="link" className="mt-2 text-primary" data-testid="schedule-job-link">
-                      Schedule a job
-                    </Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {todayJobs.slice(0, 5).map((job) => (
-                    <Link key={job.id} to={`/jobs/${job.id}`}>
-                      <div 
-                        className="p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors border-l-2 border-l-primary"
-                        data-testid={`today-job-${job.id}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-white">{job.title}</h4>
-                          <span className={`status-badge ${getStatusColor(job.status)}`}>
-                            {getStatusLabel(job.status)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3.5 w-3.5" />
-                            {job.scheduled_time || "All day"}
-                          </span>
-                          <span>{getJobTypeLabel(job.job_type)}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1 truncate">
-                          {job.customer_name || job.address}
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
+        {/* Stats Grid */}
+        <div className={`grid gap-3 ${isEmployer ? "grid-cols-2 lg:grid-cols-3" : "grid-cols-1 sm:grid-cols-3"}`} data-testid="stats-grid">
+          {statCards.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <Card key={stat.label} className="bg-churvox-card border-churvox-border" data-testid={`stat-${stat.label.toLowerCase().replace(/[^a-z]/g, "-")}`}>
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className={`p-2.5 rounded-lg bg-white/5 ${stat.color}`}>
+                    <Icon size={20} />
+                  </div>
+                  <div>
+                    <p className="text-[22px] font-bold text-white leading-tight">{stat.value}</p>
+                    <p className="text-xs text-churvox-muted">{stat.label}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Team Count (employer only) */}
+        {isEmployer && stats?.team_count > 0 && (
+          <Card className="bg-churvox-card border-churvox-border">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <UserCheck size={20} className="text-churvox-accent" />
+                <span className="text-white font-medium">{stats.team_count} team member{stats.team_count !== 1 ? "s" : ""}</span>
+              </div>
+              <Button asChild variant="outline" size="sm" className="border-churvox-border text-churvox-muted hover:text-white">
+                <Link to="/team" data-testid="view-team-link">Manage Team</Link>
+              </Button>
             </CardContent>
           </Card>
+        )}
 
-          {/* Jobs This Week */}
-          <Card className="card-surface">
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="text-lg font-heading">This Week</CardTitle>
-              <Link to="/jobs" className="text-sm text-primary hover:text-primary/80">
-                View all <ArrowRight className="inline h-4 w-4" />
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : weekJobs.length === 0 ? (
-                <div className="text-center py-8">
-                  <Briefcase className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">No jobs scheduled this week</p>
-                  <Link to="/jobs/new">
-                    <Button variant="link" className="mt-2 text-primary" data-testid="schedule-week-job-link">
-                      Schedule a job
-                    </Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {weekJobs.slice(0, 5).map((job) => (
-                    <Link key={job.id} to={`/jobs/${job.id}`}>
-                      <div 
-                        className="p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
-                        data-testid={`week-job-${job.id}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-white">{job.title}</h4>
-                          <span className={`status-badge ${getStatusColor(job.status)}`}>
-                            {getStatusLabel(job.status)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3.5 w-3.5" />
-                            {formatDate(job.scheduled_date)}
-                          </span>
-                          <span>{getJobTypeLabel(job.job_type)}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1 truncate">
-                          {job.customer_name || job.address}
+        {/* Quick Actions (employer) */}
+        {isEmployer && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" data-testid="quick-actions">
+            {[
+              { label: "New Job", path: "/jobs/new", icon: Briefcase },
+              { label: "New Quote", path: "/quotes/new", icon: FileText },
+              { label: "New Client", path: "/clients/new", icon: Users },
+              { label: "New Invoice", path: "/invoices/new", icon: DollarSign },
+            ].map((action) => {
+              const Icon = action.icon;
+              return (
+                <Link key={action.path} to={action.path} data-testid={`quick-${action.label.toLowerCase().replace(" ", "-")}`}
+                  className="flex items-center gap-3 p-4 bg-churvox-card border border-churvox-border rounded-xl hover:border-churvox-accent/50 transition-all">
+                  <Icon size={18} className="text-churvox-accent" />
+                  <span className="text-sm font-medium text-white">{action.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Today's Jobs */}
+        <div data-testid="todays-jobs-section">
+          <h2 className="text-base font-semibold text-white mb-3">Today's Jobs</h2>
+          {todayJobs.length === 0 ? (
+            <Card className="bg-churvox-card border-churvox-border">
+              <CardContent className="p-6 text-center text-churvox-muted text-sm">No jobs scheduled for today</CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {todayJobs.map((job) => {
+                const statusInfo = JOB_STATUS_MAP[job.status];
+                return (
+                  <Link key={job.id} to={`/jobs/${job.id}`} data-testid={`today-job-${job.id}`}
+                    className="block bg-churvox-card border border-churvox-border rounded-xl p-4 hover:border-churvox-accent/50 transition-all">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-white font-medium">{job.title}</p>
+                        <p className="text-xs text-churvox-muted mt-0.5">
+                          {job.customer_name} {job.scheduled_time && `at ${job.scheduled_time}`}
                         </p>
+                        {job.assigned_worker_name && (
+                          <p className="text-xs text-churvox-accent mt-0.5 flex items-center gap-1">
+                            <UserCheck size={12} /> {job.assigned_worker_name}
+                          </p>
+                        )}
                       </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded text-[10px] font-semibold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`}>
+                          {statusInfo?.label || job.status}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* This Week */}
+        <div data-testid="week-jobs-section">
+          <h2 className="text-base font-semibold text-white mb-3">This Week</h2>
+          {weekJobs.length === 0 ? (
+            <Card className="bg-churvox-card border-churvox-border">
+              <CardContent className="p-6 text-center text-churvox-muted text-sm">No jobs this week</CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {weekJobs.slice(0, 5).map((job) => {
+                const statusInfo = JOB_STATUS_MAP[job.status];
+                return (
+                  <Link key={job.id} to={`/jobs/${job.id}`} data-testid={`week-job-${job.id}`}
+                    className="block bg-churvox-card border border-churvox-border rounded-xl p-4 hover:border-churvox-accent/50 transition-all">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-white font-medium">{job.title}</p>
+                        <p className="text-xs text-churvox-muted mt-0.5 flex items-center gap-1">
+                          <Clock size={12} /> {formatDate(job.scheduled_date)} {job.scheduled_time && `at ${job.scheduled_time}`}
+                        </p>
+                        {job.assigned_worker_name && (
+                          <p className="text-xs text-churvox-accent mt-0.5 flex items-center gap-1">
+                            <UserCheck size={12} /> {job.assigned_worker_name}
+                          </p>
+                        )}
+                      </div>
+                      <span className={`px-2 py-1 rounded text-[10px] font-semibold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`}>
+                        {statusInfo?.label || job.status}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </Layout>

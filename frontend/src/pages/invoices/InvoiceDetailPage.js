@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { formatDate, formatCurrency, getStatusColor, getStatusLabel } from "@/lib/utils";
+import { formatDate, formatCurrency, INVOICE_STATUSES } from "@/lib/utils";
 import Layout from "@/components/Layout";
 
 const LOGO_URL = "https://customer-assets.emergentagent.com/job_phase1-launch/artifacts/j84zpsqt_1000049586.png";
@@ -113,8 +113,8 @@ export default function InvoiceDetailPage() {
                 <h1 className="text-2xl font-semibold text-white font-heading">
                   {invoice.invoice_number}
                 </h1>
-                <span className={`status-badge ${getStatusColor(invoice.status)}`}>
-                  {getStatusLabel(invoice.status)}
+                <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-white ${INVOICE_STATUSES.find(s => s.value === invoice.status)?.color || "bg-slate-500"}`}>
+                  {INVOICE_STATUSES.find(s => s.value === invoice.status)?.label || invoice.status}
                 </span>
               </div>
               <p className="text-muted-foreground">Invoice for {invoice.customer_name}</p>
@@ -166,7 +166,7 @@ export default function InvoiceDetailPage() {
             <div className="bg-gradient-to-r from-[#1A1D27] to-[#12141D] p-6 sm:p-8">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
                 <div>
-                  <img src={LOGO_URL} alt="Churvox" className="h-10 mb-4" />
+                  <img src={LOGO_URL} alt="Churvox" className="h-10 mb-4 churvox-logo" />
                   <h2 className="text-2xl font-bold text-white">INVOICE</h2>
                   <p className="text-lg text-primary font-mono">{invoice.invoice_number}</p>
                 </div>

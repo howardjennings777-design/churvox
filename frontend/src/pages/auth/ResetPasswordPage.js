@@ -64,7 +64,7 @@ export default function ResetPasswordPage() {
           <img 
             src={LOGO_URL} 
             alt="Churvox" 
-            className="h-12 mx-auto mb-6"
+            className="h-12 mx-auto mb-6 churvox-logo"
             data-testid="churvox-logo"
           />
           <h1 className="text-3xl font-semibold text-white font-heading">Reset password</h1>

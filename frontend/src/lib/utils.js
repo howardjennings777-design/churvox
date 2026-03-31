@@ -5,129 +5,51 @@ export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
+export function formatCurrency(amount) {
+  return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(amount || 0);
+}
+
+export function formatDate(dateString) {
+  if (!dateString) return "";
+  return new Date(dateString).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+}
+
+export function formatTime(dateString) {
+  if (!dateString) return "";
+  return new Date(dateString).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" });
+}
+
 export function formatApiErrorDetail(detail) {
-  if (detail == null) return "Something went wrong. Please try again.";
+  if (!detail) return null;
   if (typeof detail === "string") return detail;
-  if (Array.isArray(detail))
-    return detail
-      .map((e) => (e && typeof e.msg === "string" ? e.msg : JSON.stringify(e)))
-      .filter(Boolean)
-      .join(" ");
-  if (detail && typeof detail.msg === "string") return detail.msg;
-  return String(detail);
+  if (Array.isArray(detail)) return detail.map((d) => d.msg || JSON.stringify(d)).join(", ");
+  return JSON.stringify(detail);
 }
 
-export function formatCurrency(amount, currency = "NZD") {
-  return new Intl.NumberFormat("en-NZ", {
-    style: "currency",
-    currency: currency,
-  }).format(amount);
-}
-
-export function formatDate(date) {
-  if (!date) return "";
-  const d = new Date(date);
-  return d.toLocaleDateString("en-NZ", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-export function formatTime(time) {
-  if (!time) return "";
-  return time;
-}
-
-export function formatDateTime(date) {
-  if (!date) return "";
-  const d = new Date(date);
-  return d.toLocaleString("en-NZ", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-export function getStatusColor(status) {
-  const colors = {
-    scheduled: "status-scheduled",
-    in_progress: "status-in-progress",
-    completed: "status-completed",
-    cancelled: "status-cancelled",
-    draft: "status-draft",
-    sent: "status-sent",
-    paid: "status-paid",
-    overdue: "status-overdue",
-    accepted: "status-completed",
-    declined: "status-cancelled",
-  };
-  return colors[status] || "status-draft";
-}
-
-// Multi-trade job types
-export function getJobTypeLabel(type) {
-  const labels = {
-    // Lawn & Garden
-    lawn_mowing: "Lawn Mowing",
-    hedge_trimming: "Hedge Trimming",
-    garden_maintenance: "Garden Maintenance",
-    landscaping: "Landscaping",
-    tree_services: "Tree Services",
-    gardening: "Gardening",
-    // Cleaning
-    cleaning: "Cleaning",
-    window_cleaning: "Window Cleaning",
-    pressure_washing: "Pressure Washing",
-    // Trades
-    handyman: "Handyman",
-    plumbing: "Plumbing",
-    electrical: "Electrical",
-    painting: "Painting",
-    carpentry: "Carpentry",
-    // Other services
-    pest_control: "Pest Control",
-    pool_maintenance: "Pool Maintenance",
-    hvac: "HVAC",
-    roofing: "Roofing",
-    other: "Other",
-  };
-  return labels[type] || type;
-}
-
-export function getStatusLabel(status) {
-  const labels = {
-    scheduled: "Scheduled",
-    in_progress: "In Progress",
-    completed: "Completed",
-    cancelled: "Cancelled",
-    draft: "Draft",
-    sent: "Sent",
-    paid: "Paid",
-    overdue: "Overdue",
-    accepted: "Accepted",
-    declined: "Declined",
-  };
-  return labels[status] || status;
-}
-
-// Trade types for settings/onboarding
-export const TRADE_TYPES = [
-  { value: "lawn_care", label: "Lawn Care" },
-  { value: "landscaping", label: "Landscaping" },
-  { value: "cleaning", label: "Cleaning" },
-  { value: "handyman", label: "Handyman" },
-  { value: "painting", label: "Painting" },
-  { value: "plumbing", label: "Plumbing" },
-  { value: "electrical", label: "Electrical" },
-  { value: "pest_control", label: "Pest Control" },
-  { value: "gardening", label: "Gardening" },
-  { value: "other", label: "Other" },
+export const JOB_STATUSES = [
+  { value: "assigned", label: "Assigned", color: "bg-blue-500" },
+  { value: "acknowledged", label: "Acknowledged", color: "bg-yellow-500" },
+  { value: "in_progress", label: "In Progress", color: "bg-emerald-500" },
+  { value: "completed", label: "Completed", color: "bg-green-600" },
 ];
 
-// Job types grouped by trade category
+export const JOB_STATUS_MAP = Object.fromEntries(JOB_STATUSES.map((s) => [s.value, s]));
+
+export const QUOTE_STATUSES = [
+  { value: "draft", label: "Draft", color: "bg-slate-500" },
+  { value: "sent", label: "Sent", color: "bg-blue-500" },
+  { value: "accepted", label: "Accepted", color: "bg-green-500" },
+  { value: "declined", label: "Declined", color: "bg-red-500" },
+];
+
+export const INVOICE_STATUSES = [
+  { value: "draft", label: "Draft", color: "bg-slate-500" },
+  { value: "sent", label: "Sent", color: "bg-blue-500" },
+  { value: "paid", label: "Paid", color: "bg-green-500" },
+  { value: "overdue", label: "Overdue", color: "bg-red-500" },
+  { value: "cancelled", label: "Cancelled", color: "bg-gray-500" },
+];
+
 export const JOB_TYPES_BY_CATEGORY = {
   "Lawn & Garden": [
     { value: "lawn_mowing", label: "Lawn Mowing" },
@@ -137,23 +59,38 @@ export const JOB_TYPES_BY_CATEGORY = {
     { value: "tree_services", label: "Tree Services" },
     { value: "gardening", label: "Gardening" },
   ],
-  "Cleaning": [
+  Cleaning: [
     { value: "cleaning", label: "General Cleaning" },
     { value: "window_cleaning", label: "Window Cleaning" },
     { value: "pressure_washing", label: "Pressure Washing" },
   ],
-  "Trades": [
+  Trades: [
     { value: "handyman", label: "Handyman" },
     { value: "plumbing", label: "Plumbing" },
     { value: "electrical", label: "Electrical" },
     { value: "painting", label: "Painting" },
     { value: "carpentry", label: "Carpentry" },
+    { value: "hvac", label: "HVAC" },
+    { value: "roofing", label: "Roofing" },
   ],
   "Other Services": [
     { value: "pest_control", label: "Pest Control" },
     { value: "pool_maintenance", label: "Pool Maintenance" },
-    { value: "hvac", label: "HVAC" },
-    { value: "roofing", label: "Roofing" },
     { value: "other", label: "Other" },
   ],
 };
+
+export const TRADE_TYPES = [
+  { value: "lawn_care", label: "Lawn Care" },
+  { value: "landscaping", label: "Landscaping" },
+  { value: "cleaning", label: "Cleaning" },
+  { value: "plumbing", label: "Plumbing" },
+  { value: "electrical", label: "Electrical" },
+  { value: "painting", label: "Painting" },
+  { value: "carpentry", label: "Carpentry" },
+  { value: "handyman", label: "Handyman" },
+  { value: "pest_control", label: "Pest Control" },
+  { value: "hvac", label: "HVAC" },
+  { value: "roofing", label: "Roofing" },
+  { value: "other", label: "Other" },
+];

@@ -60,10 +60,12 @@
   /* Churvox Logo Container */
   .churvox-logo {
     @apply h-9 w-auto object-contain;
+    mix-blend-mode: screen;
   }
   
   .churvox-logo-lg {
     @apply h-12 w-auto object-contain;
+    mix-blend-mode: screen;
   }
   
   .churvox-logo-container {

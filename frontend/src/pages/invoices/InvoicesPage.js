@@ -40,7 +40,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { formatDate, formatCurrency, getStatusColor, getStatusLabel } from "@/lib/utils";
+import { formatDate, formatCurrency, INVOICE_STATUSES } from "@/lib/utils";
 import Layout from "@/components/Layout";
 
 export default function InvoicesPage() {
@@ -192,8 +192,8 @@ export default function InvoicesPage() {
                           >
                             {invoice.invoice_number}
                           </span>
-                          <span className={`status-badge ${getStatusColor(invoice.status)}`}>
-                            {getStatusLabel(invoice.status)}
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-white ${INVOICE_STATUSES.find(s => s.value === invoice.status)?.color || "bg-slate-500"}`}>
+                            {INVOICE_STATUSES.find(s => s.value === invoice.status)?.label || invoice.status}
                           </span>
                         </div>
                         <p className="text-sm text-white mb-1">{invoice.customer_name}</p>

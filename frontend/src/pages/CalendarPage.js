@@ -1,249 +1,150 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { useApi } from "@/hooks/useApi";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Plus, 
-  Calendar as CalendarIcon,
-  Clock,
-  Loader2
-} from "lucide-react";
-import { formatCurrency, getStatusColor, getStatusLabel, getJobTypeLabel } from "@/lib/utils";
-import Layout from "@/components/Layout";
+import { useApi } from "../hooks/useApi";
+import { useAuth } from "../context/AuthContext";
+import { Card, CardContent } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { ChevronLeft, ChevronRight, Plus, Clock, UserCheck } from "lucide-react";
+import { formatCurrency, JOB_STATUS_MAP } from "../lib/utils";
+import Layout from "../components/Layout";
 
 export default function CalendarPage() {
-  const { get, loading } = useApi();
+  const { get } = useApi();
+  const { isEmployer } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [jobs, setJobs] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
 
-  useEffect(() => {
-    loadJobs();
-  }, [currentDate]);
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  const loadJobs = async () => {
-    const result = await get("/jobs");
-    if (result.success) {
-      setJobs(result.data);
-    }
+  const fetchJobs = useCallback(async () => {
+    const res = await get("/jobs");
+    if (res.success) setJobs(res.data);
+  }, [get]);
+
+  useEffect(() => { fetchJobs(); }, [fetchJobs]);
+
+  const getJobsForDay = (day) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    return jobs.filter((j) => j.scheduled_date?.startsWith(dateStr));
   };
 
-  // Calendar helpers
-  const getDaysInMonth = (date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDay = firstDay.getDay();
-    return { daysInMonth, startingDay };
-  };
+  const selectedJobs = selectedDate ? getJobsForDay(selectedDate) : [];
 
-  const { daysInMonth, startingDay } = getDaysInMonth(currentDate);
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-  const prevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-    setSelectedDate(null);
-  };
-
-  const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-    setSelectedDate(null);
-  };
-
-  const getJobsForDate = (day) => {
-    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    return jobs.filter(job => {
-      const jobDate = new Date(job.scheduled_date);
-      return jobDate.toDateString() === date.toDateString();
-    });
-  };
-
-  const formatMonthYear = (date) => {
-    return date.toLocaleDateString("en-NZ", { month: "long", year: "numeric" });
-  };
-
-  const isToday = (day) => {
-    const today = new Date();
-    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    return today.toDateString() === date.toDateString();
-  };
-
-  const isSelected = (day) => {
-    if (!selectedDate) return false;
-    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    return selectedDate.toDateString() === date.toDateString();
-  };
-
-  const handleDateClick = (day) => {
-    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    setSelectedDate(date);
-  };
-
-  const selectedDateJobs = selectedDate ? jobs.filter(job => {
-    const jobDate = new Date(job.scheduled_date);
-    return jobDate.toDateString() === selectedDate.toDateString();
-  }) : [];
-
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const today = new Date();
+  const isToday = (day) => today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
 
   return (
     <Layout>
-      <div className="space-y-6 animate-in" data-testid="calendar-page">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-white font-heading">Calendar</h1>
-            <p className="text-muted-foreground mt-1">View and manage your scheduled jobs</p>
-          </div>
-          <Link to="/jobs/new">
-            <Button className="bg-primary hover:bg-primary/90" data-testid="add-job-button">
-              <Plus className="mr-2 h-4 w-4" />
-              New Job
+      <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4" data-testid="calendar-page">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-white">Calendar</h1>
+          {isEmployer && (
+            <Button asChild size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90">
+              <Link to="/jobs/new" data-testid="calendar-new-job"><Plus size={14} className="mr-1" /> New Job</Link>
             </Button>
-          </Link>
+          )}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Calendar */}
-          <Card className="card-surface lg:col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <Button variant="ghost" size="icon" onClick={prevMonth} data-testid="prev-month">
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              <CardTitle className="text-lg font-heading">{formatMonthYear(currentDate)}</CardTitle>
-              <Button variant="ghost" size="icon" onClick={nextMonth} data-testid="next-month">
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <div className="grid grid-cols-7 gap-1">
-                  {/* Day names */}
-                  {dayNames.map((day) => (
-                    <div key={day} className="text-center text-xs text-muted-foreground font-medium py-2">
-                      {day}
-                    </div>
-                  ))}
-                  
-                  {/* Empty cells for days before start */}
-                  {Array.from({ length: startingDay }).map((_, i) => (
-                    <div key={`empty-${i}`} className="aspect-square" />
-                  ))}
-                  
-                  {/* Days */}
-                  {Array.from({ length: daysInMonth }).map((_, i) => {
-                    const day = i + 1;
-                    const dayJobs = getJobsForDate(day);
-                    const hasJobs = dayJobs.length > 0;
-                    
-                    return (
-                      <button
-                        key={day}
-                        onClick={() => handleDateClick(day)}
-                        className={`aspect-square p-1 rounded-lg flex flex-col items-center justify-center relative transition-all ${
-                          isSelected(day)
-                            ? "bg-primary text-white ring-2 ring-primary ring-offset-2 ring-offset-background"
-                            : isToday(day)
-                            ? "bg-primary/20 text-primary"
-                            : hasJobs
-                            ? "bg-secondary/50 hover:bg-secondary text-white"
-                            : "hover:bg-secondary/30 text-muted-foreground"
-                        }`}
-                        data-testid={`calendar-day-${day}`}
-                      >
-                        <span className="text-sm font-medium">{day}</span>
-                        {hasJobs && (
-                          <div className="flex gap-0.5 mt-0.5">
-                            {dayJobs.slice(0, 3).map((_, idx) => (
-                              <div
-                                key={idx}
-                                className={`w-1 h-1 rounded-full ${
-                                  isSelected(day) ? "bg-white" : "bg-primary"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {/* Month Navigation */}
+        <Card className="bg-churvox-card border-churvox-border">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setCurrentDate(new Date(year, month - 1))} className="p-2 text-churvox-muted hover:text-white rounded-lg hover:bg-white/5" data-testid="calendar-prev">
+                <ChevronLeft size={20} />
+              </button>
+              <h2 className="text-lg font-semibold text-white" data-testid="calendar-month">
+                {monthNames[month]} {year}
+              </h2>
+              <button onClick={() => setCurrentDate(new Date(year, month + 1))} className="p-2 text-churvox-muted hover:text-white rounded-lg hover:bg-white/5" data-testid="calendar-next">
+                <ChevronRight size={20} />
+              </button>
+            </div>
 
-          {/* Selected Date Jobs */}
-          <Card className="card-surface">
-            <CardHeader>
-              <CardTitle className="text-lg font-heading flex items-center gap-2">
-                <CalendarIcon className="h-5 w-5 text-primary" />
-                {selectedDate
-                  ? selectedDate.toLocaleDateString("en-NZ", { 
-                      weekday: "short", 
-                      month: "short", 
-                      day: "numeric" 
-                    })
-                  : "Select a date"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!selectedDate ? (
-                <div className="text-center py-8">
-                  <CalendarIcon className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">Click on a date to see scheduled jobs</p>
-                </div>
-              ) : selectedDateJobs.length === 0 ? (
-                <div className="text-center py-8">
-                  <CalendarIcon className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">No jobs scheduled</p>
-                  <Link to="/jobs/new">
-                    <Button variant="link" className="mt-2 text-primary">
-                      Schedule a job
-                    </Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-[400px] overflow-y-auto scrollbar-thin">
-                  {selectedDateJobs.map((job) => (
-                    <Link key={job.id} to={`/jobs/${job.id}`}>
-                      <div className="p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors border-l-2 border-l-primary">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-medium text-white text-sm truncate">{job.title}</h4>
-                          <span className={`status-badge text-[10px] ${getStatusColor(job.status)}`}>
-                            {getStatusLabel(job.status)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          {job.scheduled_time && (
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {job.scheduled_time}
-                            </span>
+            {/* Days Header */}
+            <div className="grid grid-cols-7 mb-2">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                <div key={d} className="text-center text-xs font-medium text-churvox-muted py-2">{d}</div>
+              ))}
+            </div>
+
+            {/* Days Grid */}
+            <div className="grid grid-cols-7 gap-1" data-testid="calendar-grid">
+              {Array.from({ length: firstDay }).map((_, i) => (
+                <div key={`empty-${i}`} className="aspect-square" />
+              ))}
+              {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
+                const dayJobs = getJobsForDay(day);
+                const hasJobs = dayJobs.length > 0;
+                const selected = selectedDate === day;
+                return (
+                  <button key={day} onClick={() => setSelectedDate(selected ? null : day)}
+                    className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm transition-all relative
+                      ${isToday(day) ? "ring-1 ring-churvox-accent" : ""}
+                      ${selected ? "bg-churvox-accent text-white" : "hover:bg-white/5 text-white"}
+                    `}>
+                    {day}
+                    {hasJobs && (
+                      <div className="flex gap-0.5 mt-0.5">
+                        {dayJobs.slice(0, 3).map((j, idx) => {
+                          const s = JOB_STATUS_MAP[j.status];
+                          return <div key={idx} className={`w-1.5 h-1.5 rounded-full ${s?.color || "bg-slate-500"}`} />;
+                        })}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Selected Day Jobs */}
+        {selectedDate && (
+          <div data-testid="calendar-day-jobs">
+            <h3 className="text-base font-semibold text-white mb-2">
+              {monthNames[month]} {selectedDate} — {selectedJobs.length} job{selectedJobs.length !== 1 ? "s" : ""}
+            </h3>
+            {selectedJobs.length === 0 ? (
+              <Card className="bg-churvox-card border-churvox-border">
+                <CardContent className="p-6 text-center text-churvox-muted text-sm">No jobs on this day</CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {selectedJobs.map((job) => {
+                  const statusInfo = JOB_STATUS_MAP[job.status];
+                  return (
+                    <Link key={job.id} to={`/jobs/${job.id}`} data-testid={`calendar-job-${job.id}`}
+                      className="block bg-churvox-card border border-churvox-border rounded-xl p-4 hover:border-churvox-accent/50 transition-all">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-white font-medium">{job.title}</p>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-churvox-muted">
+                            {job.scheduled_time && <span className="flex items-center gap-1"><Clock size={11} /> {job.scheduled_time}</span>}
+                            {job.price > 0 && <span className="text-churvox-accent">{formatCurrency(job.price)}</span>}
+                          </div>
+                          {job.assigned_worker_name && (
+                            <p className="text-xs text-churvox-accent mt-1 flex items-center gap-1">
+                              <UserCheck size={12} /> {job.assigned_worker_name}
+                            </p>
                           )}
-                          <span>{getJobTypeLabel(job.job_type)}</span>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1 truncate">
-                          {job.customer_name || job.address}
-                        </p>
-                        <p className="text-sm font-medium text-white mt-1">
-                          {formatCurrency(job.price)}
-                        </p>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`}>
+                          {statusInfo?.label || job.status}
+                        </span>
                       </div>
                     </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </Layout>
   );

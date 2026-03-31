@@ -1,310 +1,247 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
-import { useApi } from "@/hooks/useApi";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  ArrowLeft, 
-  Loader2, 
-  Pencil, 
-  Trash2, 
-  Calendar,
-  Clock,
-  MapPin,
-  DollarSign,
-  Play,
-  CheckCircle,
-  RefreshCw,
-  FileText
-} from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import Layout from "../../components/Layout";
+import { useAuth } from "../../context/AuthContext";
+import { useApi } from "../../hooks/useApi";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+import { ArrowLeft, MapPin, Clock, DollarSign, UserCheck, Play, CheckCircle, Trash2, Edit, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
-import { formatDate, formatDateTime, formatCurrency, getStatusColor, getStatusLabel, getJobTypeLabel } from "@/lib/utils";
-import Layout from "@/components/Layout";
+import { formatDate, formatTime, formatCurrency, JOB_STATUS_MAP } from "../../lib/utils";
 
 export default function JobDetailPage() {
-  const navigate = useNavigate();
   const { id } = useParams();
-  const { get, del, post, loading } = useApi();
+  const navigate = useNavigate();
+  const { isEmployer, isWorker } = useAuth();
+  const { get, post, del, loading } = useApi();
   const [job, setJob] = useState(null);
+  const [workers, setWorkers] = useState([]);
   const [showDelete, setShowDelete] = useState(false);
+  const [showAssign, setShowAssign] = useState(false);
+  const [selectedWorker, setSelectedWorker] = useState("");
 
-  useEffect(() => {
-    loadJob();
-  }, [id]);
+  const fetchJob = useCallback(async () => {
+    const res = await get(`/jobs/${id}`);
+    if (res.success) setJob(res.data);
+    else navigate("/jobs");
+  }, [get, id, navigate]);
 
-  const loadJob = async () => {
-    const result = await get(`/jobs/${id}`);
-    if (result.success) {
-      setJob(result.data);
+  const fetchWorkers = useCallback(async () => {
+    if (!isEmployer) return;
+    const res = await get("/team/workers");
+    if (res.success) setWorkers(res.data);
+  }, [get, isEmployer]);
+
+  useEffect(() => { fetchJob(); fetchWorkers(); }, [fetchJob, fetchWorkers]);
+
+  const handleAction = async (action, label) => {
+    const res = await post(`/jobs/${id}/${action}`);
+    if (res.success) {
+      toast.success(`Job ${label}`);
+      setJob(res.data);
     } else {
-      toast.error("Job not found");
-      navigate("/jobs");
+      toast.error(res.error || `Failed to ${label} job`);
+    }
+  };
+
+  const handleAssign = async () => {
+    if (!selectedWorker) return;
+    const res = await post(`/jobs/${id}/assign`, { worker_id: selectedWorker });
+    if (res.success) {
+      toast.success("Worker assigned");
+      setJob(res.data);
+      setShowAssign(false);
+    } else {
+      toast.error(res.error || "Failed to assign worker");
     }
   };
 
   const handleDelete = async () => {
-    const result = await del(`/jobs/${id}`);
-    if (result.success) {
+    const res = await del(`/jobs/${id}`);
+    if (res.success) {
       toast.success("Job deleted");
       navigate("/jobs");
-    } else {
-      toast.error(result.error);
     }
   };
 
-  const handleStartJob = async () => {
-    const result = await post(`/jobs/${id}/start`);
-    if (result.success) {
-      toast.success("Job started");
-      loadJob();
-    } else {
-      toast.error(result.error);
-    }
-  };
+  if (!job) return <Layout><div className="p-6 text-churvox-muted">Loading...</div></Layout>;
 
-  const handleCompleteJob = async () => {
-    const result = await post(`/jobs/${id}/complete`);
-    if (result.success) {
-      toast.success("Job completed! Invoice has been created.");
-      loadJob();
-    } else {
-      toast.error(result.error);
-    }
-  };
-
-  if (loading || !job) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      </Layout>
-    );
-  }
+  const statusInfo = JOB_STATUS_MAP[job.status];
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto space-y-6 animate-in" data-testid="job-detail-page">
+      <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4" data-testid="job-detail-page">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/jobs")}
-              data-testid="back-button"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-2xl font-semibold text-white font-heading">
-                  {job.title}
-                </h1>
-                <span className={`status-badge ${getStatusColor(job.status)}`}>
-                  {getStatusLabel(job.status)}
-                </span>
-              </div>
-              <p className="text-muted-foreground">{getJobTypeLabel(job.job_type)}</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {job.status === "scheduled" && (
-              <Button
-                className="bg-green-600 hover:bg-green-700"
-                onClick={handleStartJob}
-                data-testid="start-job-button"
-              >
-                <Play className="mr-2 h-4 w-4" />
-                Start Job
-              </Button>
+        <div className="flex items-center justify-between">
+          <button onClick={() => navigate("/jobs")} className="flex items-center gap-2 text-churvox-muted hover:text-white transition-colors" data-testid="back-to-jobs">
+            <ArrowLeft size={18} /> Jobs
+          </button>
+          <div className="flex items-center gap-2">
+            {isEmployer && (
+              <>
+                <Button asChild variant="outline" size="sm" className="border-churvox-border text-churvox-muted hover:text-white" data-testid="edit-job-button">
+                  <Link to={`/jobs/${id}/edit`}><Edit size={14} className="mr-1" /> Edit</Link>
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowDelete(true)} className="border-red-500/30 text-red-400 hover:bg-red-500/10" data-testid="delete-job-trigger">
+                  <Trash2 size={14} />
+                </Button>
+              </>
             )}
-            {job.status === "in_progress" && (
-              <Button
-                className="bg-green-600 hover:bg-green-700"
-                onClick={handleCompleteJob}
-                data-testid="complete-job-button"
-              >
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Complete Job
-              </Button>
-            )}
-            <Link to={`/jobs/${id}/edit`}>
-              <Button variant="outline" className="border-border" data-testid="edit-job-button">
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit
-              </Button>
-            </Link>
-            <Button
-              variant="outline"
-              className="border-destructive text-destructive hover:bg-destructive hover:text-white"
-              onClick={() => setShowDelete(true)}
-              data-testid="delete-job-button"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </Button>
           </div>
         </div>
 
         {/* Job Info */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-lg font-heading">Schedule</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Calendar className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Date</p>
-                  <p className="text-white">{formatDate(job.scheduled_date)}</p>
-                </div>
-              </div>
-              {job.scheduled_time && (
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-accent" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Time</p>
-                    <p className="text-white">{job.scheduled_time}</p>
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                  <MapPin className="h-5 w-5 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Location</p>
-                  <p className="text-white">{job.address}</p>
-                </div>
-              </div>
-              {job.is_recurring && (
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                    <RefreshCw className="h-5 w-5 text-purple-500" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Recurring</p>
-                    <p className="text-white capitalize">{job.recurrence_pattern}</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-lg font-heading">Pricing & Customer</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-yellow-500/10 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-yellow-500" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Price</p>
-                  <p className="text-2xl font-semibold text-white">{formatCurrency(job.price)}</p>
-                </div>
-              </div>
-              {(job.customer_name || job.client_id) && (
-                <div className="pt-2 border-t border-border">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Customer</p>
-                  <p className="text-white">{job.customer_name || "Linked Client"}</p>
-                </div>
-              )}
-              {job.estimated_duration && (
-                <div className="pt-2 border-t border-border">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Estimated Duration</p>
-                  <p className="text-white">{job.estimated_duration} minutes</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Notes */}
-        {job.notes && (
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-lg font-heading">Notes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground whitespace-pre-wrap">{job.notes}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Timeline */}
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-lg font-heading">Timeline</CardTitle>
+        <Card className="bg-churvox-card border-churvox-border" data-testid="job-info-card">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl text-white">{job.title}</CardTitle>
+              <span className={`px-3 py-1 rounded text-xs font-semibold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`} data-testid="job-status-badge">
+                {statusInfo?.label || job.status}
+              </span>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="h-2 w-2 rounded-full bg-blue-500" />
-                <div>
-                  <p className="text-sm text-white">Job Created</p>
-                  <p className="text-xs text-muted-foreground">{formatDateTime(job.created_at)}</p>
-                </div>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="flex items-center gap-2 text-churvox-muted">
+                <Clock size={14} /> {formatDate(job.scheduled_date)} {job.scheduled_time && `at ${job.scheduled_time}`}
               </div>
-              {job.started_at && (
-                <div className="flex items-center gap-3">
-                  <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                  <div>
-                    <p className="text-sm text-white">Job Started</p>
-                    <p className="text-xs text-muted-foreground">{formatDateTime(job.started_at)}</p>
-                  </div>
+              <div className="flex items-center gap-2 text-churvox-muted">
+                <DollarSign size={14} /> {formatCurrency(job.price)}
+              </div>
+              {job.address && (
+                <div className="flex items-center gap-2 text-churvox-muted col-span-2">
+                  <MapPin size={14} /> {job.address}
                 </div>
               )}
-              {job.completed_at && (
-                <div className="flex items-center gap-3">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <div>
-                    <p className="text-sm text-white">Job Completed</p>
-                    <p className="text-xs text-muted-foreground">{formatDateTime(job.completed_at)}</p>
-                  </div>
+              {job.customer_name && (
+                <div className="text-churvox-muted">Client: <span className="text-white">{job.customer_name}</span></div>
+              )}
+              <div className="text-churvox-muted">Type: <span className="text-white capitalize">{job.job_type?.replace(/_/g, " ")}</span></div>
+            </div>
+
+            {/* Worker Assignment */}
+            <div className="pt-3 border-t border-churvox-border">
+              {job.assigned_worker_name ? (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-churvox-muted flex items-center gap-2">
+                    <UserCheck size={14} className="text-churvox-accent" />
+                    Assigned to: <span className="text-white font-medium">{job.assigned_worker_name}</span>
+                  </p>
+                  {isEmployer && job.status === "assigned" && (
+                    <Button variant="outline" size="sm" onClick={() => setShowAssign(true)} className="border-churvox-border text-churvox-muted" data-testid="reassign-button">
+                      Reassign
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-churvox-muted">No worker assigned</p>
+                  {isEmployer && (
+                    <Button size="sm" onClick={() => setShowAssign(true)} className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="assign-worker-button">
+                      <UserCheck size={14} className="mr-1" /> Assign Worker
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
+
+            {/* Notes */}
+            {job.notes && (
+              <div className="pt-3 border-t border-churvox-border">
+                <p className="text-xs text-churvox-muted mb-1">Notes</p>
+                <p className="text-sm text-white">{job.notes}</p>
+              </div>
+            )}
+
+            {/* Photos placeholder */}
+            {job.photos && job.photos.length > 0 && (
+              <div className="pt-3 border-t border-churvox-border">
+                <p className="text-xs text-churvox-muted mb-2">Photos</p>
+                <div className="flex gap-2 flex-wrap">
+                  {job.photos.map((url, i) => (
+                    <img key={i} src={url} alt={`Job photo ${i + 1}`} className="h-20 w-20 rounded object-cover border border-churvox-border" />
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Delete Confirmation */}
-        <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
-          <AlertDialogContent className="bg-card border-border">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Job</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete this job? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="border-border">Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-destructive hover:bg-destructive/90"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Action Buttons */}
+        <div className="flex gap-3" data-testid="job-actions">
+          {/* Worker can acknowledge */}
+          {isWorker && job.status === "assigned" && (
+            <Button onClick={() => handleAction("acknowledge", "acknowledged")} disabled={loading} className="bg-yellow-500 hover:bg-yellow-600 text-black flex-1" data-testid="acknowledge-job-button">
+              <ThumbsUp size={16} className="mr-2" /> Acknowledge
+            </Button>
+          )}
+
+          {/* Start job */}
+          {(job.status === "assigned" || job.status === "acknowledged") && (
+            <Button onClick={() => handleAction("start", "started")} disabled={loading} className="bg-emerald-500 hover:bg-emerald-600 text-white flex-1" data-testid="start-job-button">
+              <Play size={16} className="mr-2" /> Start Job
+            </Button>
+          )}
+
+          {/* Complete job */}
+          {job.status === "in_progress" && (
+            <Button onClick={() => handleAction("complete", "completed")} disabled={loading} className="bg-green-600 hover:bg-green-700 text-white flex-1" data-testid="complete-job-button">
+              <CheckCircle size={16} className="mr-2" /> Complete Job
+            </Button>
+          )}
+
+          {job.status === "completed" && (
+            <Card className="bg-green-900/20 border-green-500/30 w-full">
+              <CardContent className="p-4 text-center text-green-400 text-sm font-medium">
+                <CheckCircle size={18} className="inline mr-2" /> Job completed {job.completed_at && `on ${formatDate(job.completed_at)}`}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Assign Worker Dialog */}
+        <Dialog open={showAssign} onOpenChange={setShowAssign}>
+          <DialogContent className="bg-churvox-card border-churvox-border" data-testid="assign-worker-dialog">
+            <DialogHeader><DialogTitle className="text-white">Assign Worker</DialogTitle></DialogHeader>
+            {workers.length === 0 ? (
+              <div className="text-churvox-muted text-center py-4">
+                <p>No workers yet.</p>
+                <Button asChild className="mt-2 bg-churvox-accent"><Link to="/team">Add Workers</Link></Button>
+              </div>
+            ) : (
+              <>
+                <Select value={selectedWorker} onValueChange={setSelectedWorker}>
+                  <SelectTrigger className="bg-churvox-bg border-churvox-border text-white" data-testid="select-worker">
+                    <SelectValue placeholder="Select a worker" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-churvox-card border-churvox-border">
+                    {workers.map((w) => (
+                      <SelectItem key={w.id} value={w.id} className="text-white">{w.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setShowAssign(false)} className="border-churvox-border text-churvox-muted">Cancel</Button>
+                  <Button onClick={handleAssign} disabled={!selectedWorker || loading} className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="confirm-assign-worker">Assign</Button>
+                </DialogFooter>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Dialog */}
+        <Dialog open={showDelete} onOpenChange={setShowDelete}>
+          <DialogContent className="bg-churvox-card border-churvox-border" data-testid="delete-job-detail-dialog">
+            <DialogHeader><DialogTitle className="text-white">Delete Job</DialogTitle></DialogHeader>
+            <p className="text-churvox-muted">Are you sure? This cannot be undone.</p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDelete(false)} className="border-churvox-border text-churvox-muted">Cancel</Button>
+              <Button onClick={handleDelete} disabled={loading} className="bg-red-600 hover:bg-red-700" data-testid="confirm-delete-job-detail">Delete</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

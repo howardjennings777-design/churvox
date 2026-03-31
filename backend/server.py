@@ -37,11 +37,15 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 # ===================== ENUMS =====================
+class UserRole(str, Enum):
+    EMPLOYER = "employer"
+    WORKER = "worker"
+
 class JobStatus(str, Enum):
-    SCHEDULED = "scheduled"
+    ASSIGNED = "assigned"
+    ACKNOWLEDGED = "acknowledged"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
-    CANCELLED = "cancelled"
 
 class JobType(str, Enum):
     LAWN_MOWING = "lawn_mowing"
@@ -101,15 +105,11 @@ class ResetPassword(BaseModel):
     token: str
     new_password: str
 
-class UserResponse(BaseModel):
-    id: str
-    email: str
+class WorkerCreate(BaseModel):
     name: str
-    business_name: Optional[str] = None
-    role: str
-    plan: str
-    gst_rate: float
-    created_at: datetime
+    email: EmailStr
+    password: str
+    phone: Optional[str] = None
 
 class ClientCreate(BaseModel):
     name: str
@@ -138,6 +138,7 @@ class JobCreate(BaseModel):
     notes: Optional[str] = None
     is_recurring: bool = False
     recurrence_pattern: Optional[str] = None
+    assigned_worker_id: Optional[str] = None
 
 class JobUpdate(BaseModel):
     title: Optional[str] = None
@@ -153,6 +154,9 @@ class JobUpdate(BaseModel):
     is_recurring: Optional[bool] = None
     recurrence_pattern: Optional[str] = None
     status: Optional[JobStatus] = None
+
+class JobAssign(BaseModel):
+    worker_id: str
 
 class QuoteCreate(BaseModel):
     customer_name: str
@@ -244,6 +248,12 @@ async def get_current_user(request: Request) -> dict:
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
         user["id"] = str(user["_id"])
+        # Ensure business_id is always a string
+        if "business_id" in user and isinstance(user["business_id"], ObjectId):
+            user["business_id"] = str(user["business_id"])
+        elif "business_id" not in user:
+            # Legacy fallback: use own id as business_id
+            user["business_id"] = user["id"]
         user.pop("_id", None)
         user.pop("password_hash", None)
         return user
@@ -251,6 +261,12 @@ async def get_current_user(request: Request) -> dict:
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+async def require_employer(request: Request) -> dict:
+    user = await get_current_user(request)
+    if user.get("role") not in ("employer", "admin"):
+        raise HTTPException(status_code=403, detail="Only employers can perform this action")
+    return user
 
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
     response.set_cookie(key="access_token", value=access_token, httponly=True, secure=False, samesite="lax", max_age=86400, path="/")
@@ -271,6 +287,22 @@ def serialize_doc(doc: dict) -> dict:
             doc[key] = str(value)
     return doc
 
+def build_user_response(user_doc: dict, user_id: str, token: str = None) -> dict:
+    resp = {
+        "id": user_id,
+        "email": user_doc["email"],
+        "name": user_doc["name"],
+        "business_name": user_doc.get("business_name"),
+        "role": user_doc.get("role", "employer"),
+        "plan": user_doc.get("plan", "solo"),
+        "gst_rate": user_doc.get("gst_rate", DEFAULT_GST_RATE),
+        "trade_type": user_doc.get("trade_type", "other"),
+        "business_id": str(user_doc.get("business_id", user_id)),
+    }
+    if token:
+        resp["token"] = token
+    return resp
+
 # ===================== AUTH ENDPOINTS =====================
 @api_router.post("/auth/register")
 async def register(user_data: UserCreate, response: Response):
@@ -278,40 +310,38 @@ async def register(user_data: UserCreate, response: Response):
     existing = await db.users.find_one({"email": email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
-    
+
     user_doc = {
         "email": email,
         "password_hash": hash_password(user_data.password),
         "name": user_data.name,
         "business_name": user_data.business_name,
-        "role": "contractor",
+        "role": "employer",
         "plan": "solo",
         "gst_rate": DEFAULT_GST_RATE,
         "created_at": datetime.now(timezone.utc)
     }
     result = await db.users.insert_one(user_doc)
     user_id = str(result.inserted_id)
-    
+
+    # Set business_id = own id for employers
+    await db.users.update_one(
+        {"_id": result.inserted_id},
+        {"$set": {"business_id": result.inserted_id}}
+    )
+
     access_token = create_access_token(user_id, email)
     refresh_token = create_refresh_token(user_id)
     set_auth_cookies(response, access_token, refresh_token)
-    
-    return {
-        "id": user_id,
-        "email": email,
-        "name": user_data.name,
-        "business_name": user_data.business_name,
-        "role": "contractor",
-        "plan": "solo",
-        "gst_rate": DEFAULT_GST_RATE,
-        "token": access_token
-    }
+
+    user_doc["business_id"] = user_id
+    return build_user_response(user_doc, user_id, access_token)
 
 @api_router.post("/auth/login")
 async def login(user_data: UserLogin, response: Response, request: Request):
     email = user_data.email.lower()
     identifier = f"{request.client.host}:{email}"
-    
+
     # Check brute force
     attempt = await db.login_attempts.find_one({"identifier": identifier})
     if attempt and attempt.get("count", 0) >= 5:
@@ -320,39 +350,24 @@ async def login(user_data: UserLogin, response: Response, request: Request):
             raise HTTPException(status_code=429, detail="Too many failed attempts. Try again later.")
         else:
             await db.login_attempts.delete_one({"identifier": identifier})
-    
+
     user = await db.users.find_one({"email": email})
     if not user or not verify_password(user_data.password, user["password_hash"]):
-        # Increment failed attempts
         await db.login_attempts.update_one(
             {"identifier": identifier},
-            {
-                "$inc": {"count": 1},
-                "$set": {"locked_until": datetime.now(timezone.utc) + timedelta(minutes=15)}
-            },
+            {"$inc": {"count": 1}, "$set": {"locked_until": datetime.now(timezone.utc) + timedelta(minutes=15)}},
             upsert=True
         )
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    
-    # Clear failed attempts
+
     await db.login_attempts.delete_one({"identifier": identifier})
-    
+
     user_id = str(user["_id"])
     access_token = create_access_token(user_id, email)
     refresh_token = create_refresh_token(user_id)
     set_auth_cookies(response, access_token, refresh_token)
-    
-    return {
-        "id": user_id,
-        "email": user["email"],
-        "name": user["name"],
-        "business_name": user.get("business_name"),
-        "role": user.get("role", "contractor"),
-        "plan": user.get("plan", "solo"),
-        "gst_rate": user.get("gst_rate", DEFAULT_GST_RATE),
-        "trade_type": user.get("trade_type", "other"),
-        "token": access_token
-    }
+
+    return build_user_response(user, user_id, access_token)
 
 @api_router.post("/auth/logout")
 async def logout(response: Response):
@@ -376,7 +391,6 @@ async def refresh_token(request: Request, response: Response):
         user = await db.users.find_one({"_id": ObjectId(payload["sub"])})
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
-        
         access_token = create_access_token(str(user["_id"]), user["email"])
         response.set_cookie(key="access_token", value=access_token, httponly=True, secure=False, samesite="lax", max_age=86400, path="/")
         return {"message": "Token refreshed"}
@@ -388,44 +402,30 @@ async def forgot_password(data: ForgotPassword):
     email = data.email.lower()
     user = await db.users.find_one({"email": email})
     if not user:
-        # Don't reveal if email exists
         return {"message": "If the email exists, a reset link has been sent"}
-    
     token = secrets.token_urlsafe(32)
     await db.password_reset_tokens.insert_one({
-        "token": token,
-        "user_id": user["_id"],
-        "expires_at": datetime.now(timezone.utc) + timedelta(hours=1),
-        "used": False
+        "token": token, "user_id": user["_id"],
+        "expires_at": datetime.now(timezone.utc) + timedelta(hours=1), "used": False
     })
-    
-    # Log the reset link for testing
-    reset_link = f"Reset token for {email}: {token}"
-    logger.info(reset_link)
-    print(f"\n{'='*50}\nPASSWORD RESET TOKEN\nEmail: {email}\nToken: {token}\n{'='*50}\n")
-    
+    logger.info(f"Reset token for {email}: {token}")
     return {"message": "If the email exists, a reset link has been sent", "debug_token": token}
 
 @api_router.post("/auth/reset-password")
 async def reset_password(data: ResetPassword):
     token_doc = await db.password_reset_tokens.find_one({
-        "token": data.token,
-        "used": False,
+        "token": data.token, "used": False,
         "expires_at": {"$gt": datetime.now(timezone.utc)}
     })
     if not token_doc:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
-    
-    new_hash = hash_password(data.new_password)
     await db.users.update_one(
         {"_id": token_doc["user_id"]},
-        {"$set": {"password_hash": new_hash}}
+        {"$set": {"password_hash": hash_password(data.new_password)}}
     )
     await db.password_reset_tokens.update_one(
-        {"_id": token_doc["_id"]},
-        {"$set": {"used": True}}
+        {"_id": token_doc["_id"]}, {"$set": {"used": True}}
     )
-    
     return {"message": "Password reset successfully"}
 
 # ===================== USER SETTINGS =====================
@@ -434,30 +434,76 @@ async def update_plan(data: PlanUpdate, request: Request):
     user = await get_current_user(request)
     if data.plan in [PlanType.TEAM, PlanType.PRO]:
         raise HTTPException(status_code=400, detail="Team and Pro plans are coming soon")
-    
-    await db.users.update_one(
-        {"_id": ObjectId(user["id"])},
-        {"$set": {"plan": data.plan}}
-    )
+    await db.users.update_one({"_id": ObjectId(user["id"])}, {"$set": {"plan": data.plan}})
     return {"message": "Plan updated", "plan": data.plan}
 
 @api_router.patch("/user/gst")
 async def update_gst(data: GSTUpdate, request: Request):
     user = await get_current_user(request)
-    await db.users.update_one(
-        {"_id": ObjectId(user["id"])},
-        {"$set": {"gst_rate": data.gst_rate}}
-    )
+    await db.users.update_one({"_id": ObjectId(user["id"])}, {"$set": {"gst_rate": data.gst_rate}})
     return {"message": "GST rate updated", "gst_rate": data.gst_rate}
 
 @api_router.patch("/user/trade")
 async def update_trade(data: TradeUpdate, request: Request):
     user = await get_current_user(request)
-    await db.users.update_one(
-        {"_id": ObjectId(user["id"])},
-        {"$set": {"trade_type": data.trade_type}}
-    )
+    await db.users.update_one({"_id": ObjectId(user["id"])}, {"$set": {"trade_type": data.trade_type}})
     return {"message": "Trade type updated", "trade_type": data.trade_type}
+
+# ===================== TEAM / WORKERS =====================
+@api_router.post("/team/workers")
+async def create_worker(worker_data: WorkerCreate, request: Request):
+    user = await require_employer(request)
+    email = worker_data.email.lower()
+    existing = await db.users.find_one({"email": email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    worker_doc = {
+        "email": email,
+        "password_hash": hash_password(worker_data.password),
+        "name": worker_data.name,
+        "phone": worker_data.phone,
+        "role": "worker",
+        "business_id": ObjectId(user["business_id"]),
+        "plan": user.get("plan", "solo"),
+        "gst_rate": user.get("gst_rate", DEFAULT_GST_RATE),
+        "created_at": datetime.now(timezone.utc)
+    }
+    result = await db.workers_collection_placeholder.insert_one({"_": 1})  # placeholder
+    await db.workers_collection_placeholder.delete_one({"_id": result.inserted_id})
+
+    result = await db.users.insert_one(worker_doc)
+    worker_id = str(result.inserted_id)
+
+    return {
+        "id": worker_id,
+        "name": worker_data.name,
+        "email": email,
+        "phone": worker_data.phone,
+        "role": "worker",
+        "created_at": worker_doc["created_at"].isoformat()
+    }
+
+@api_router.get("/team/workers")
+async def get_workers(request: Request):
+    user = await require_employer(request)
+    workers = await db.users.find(
+        {"business_id": ObjectId(user["business_id"]), "role": "worker"},
+        {"_id": 1, "name": 1, "email": 1, "phone": 1, "role": 1, "created_at": 1}
+    ).to_list(1000)
+    return [serialize_doc(w) for w in workers]
+
+@api_router.delete("/team/workers/{worker_id}")
+async def delete_worker(worker_id: str, request: Request):
+    user = await require_employer(request)
+    result = await db.users.delete_one({
+        "_id": ObjectId(worker_id),
+        "business_id": ObjectId(user["business_id"]),
+        "role": "worker"
+    })
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Worker not found")
+    return {"message": "Worker removed"}
 
 # ===================== CLIENTS =====================
 @api_router.post("/clients")
@@ -465,12 +511,12 @@ async def create_client(client_data: ClientCreate, request: Request):
     user = await get_current_user(request)
     client_doc = {
         **client_data.model_dump(),
-        "contractor_id": ObjectId(user["id"]),
+        "contractor_id": ObjectId(user["business_id"]),
         "created_at": datetime.now(timezone.utc)
     }
     result = await db.clients.insert_one(client_doc)
     client_doc["id"] = str(result.inserted_id)
-    client_doc["contractor_id"] = user["id"]
+    client_doc["contractor_id"] = user["business_id"]
     client_doc.pop("_id", None)
     return client_doc
 
@@ -478,7 +524,7 @@ async def create_client(client_data: ClientCreate, request: Request):
 async def get_clients(request: Request):
     user = await get_current_user(request)
     clients = await db.clients.find(
-        {"contractor_id": ObjectId(user["id"])},
+        {"contractor_id": ObjectId(user["business_id"])},
         {"_id": 1, "name": 1, "email": 1, "phone": 1, "address": 1, "notes": 1, "created_at": 1}
     ).to_list(1000)
     return [serialize_doc(c) for c in clients]
@@ -488,7 +534,7 @@ async def get_client(client_id: str, request: Request):
     user = await get_current_user(request)
     client = await db.clients.find_one({
         "_id": ObjectId(client_id),
-        "contractor_id": ObjectId(user["id"])
+        "contractor_id": ObjectId(user["business_id"])
     })
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
@@ -500,14 +546,12 @@ async def update_client(client_id: str, client_data: ClientUpdate, request: Requ
     update_data = {k: v for k, v in client_data.model_dump().items() if v is not None}
     if not update_data:
         raise HTTPException(status_code=400, detail="No data to update")
-    
     result = await db.clients.update_one(
-        {"_id": ObjectId(client_id), "contractor_id": ObjectId(user["id"])},
+        {"_id": ObjectId(client_id), "contractor_id": ObjectId(user["business_id"])},
         {"$set": update_data}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Client not found")
-    
     client = await db.clients.find_one({"_id": ObjectId(client_id)})
     return serialize_doc(client)
 
@@ -516,52 +560,94 @@ async def delete_client(client_id: str, request: Request):
     user = await get_current_user(request)
     result = await db.clients.delete_one({
         "_id": ObjectId(client_id),
-        "contractor_id": ObjectId(user["id"])
+        "contractor_id": ObjectId(user["business_id"])
     })
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Client not found")
     return {"message": "Client deleted"}
 
+@api_router.get("/clients/{client_id}/jobs")
+async def get_client_jobs(client_id: str, request: Request):
+    user = await get_current_user(request)
+    # Verify client belongs to business
+    client = await db.clients.find_one({
+        "_id": ObjectId(client_id),
+        "contractor_id": ObjectId(user["business_id"])
+    })
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    jobs = await db.jobs.find(
+        {"contractor_id": ObjectId(user["business_id"]), "client_id": ObjectId(client_id)}
+    ).sort("scheduled_date", -1).to_list(100)
+    return [serialize_doc(j) for j in jobs]
+
 # ===================== JOBS =====================
 @api_router.post("/jobs")
 async def create_job(job_data: JobCreate, request: Request):
     user = await get_current_user(request)
-    
+    # Only employers can create jobs
+    if user.get("role") not in ("employer", "admin"):
+        raise HTTPException(status_code=403, detail="Only employers can create jobs")
+
     job_doc = {
-        **job_data.model_dump(),
-        "contractor_id": ObjectId(user["id"]),
-        "status": JobStatus.SCHEDULED,
+        **job_data.model_dump(exclude={"assigned_worker_id", "client_id"}),
+        "contractor_id": ObjectId(user["business_id"]),
+        "created_by": ObjectId(user["id"]),
+        "status": JobStatus.ASSIGNED,
+        "assigned_worker_id": None,
+        "assigned_worker_name": None,
+        "acknowledged_at": None,
         "started_at": None,
         "completed_at": None,
         "photos": [],
         "created_at": datetime.now(timezone.utc)
     }
-    
+
     if job_data.client_id:
         job_doc["client_id"] = ObjectId(job_data.client_id)
-    
+    else:
+        job_doc["client_id"] = None
+
+    # Assign worker if provided
+    if job_data.assigned_worker_id:
+        worker = await db.users.find_one({
+            "_id": ObjectId(job_data.assigned_worker_id),
+            "business_id": ObjectId(user["business_id"]),
+            "role": "worker"
+        })
+        if not worker:
+            raise HTTPException(status_code=400, detail="Worker not found in your team")
+        job_doc["assigned_worker_id"] = ObjectId(job_data.assigned_worker_id)
+        job_doc["assigned_worker_name"] = worker["name"]
+
     result = await db.jobs.insert_one(job_doc)
     job_doc["id"] = str(result.inserted_id)
-    job_doc["contractor_id"] = user["id"]
+    job_doc["contractor_id"] = user["business_id"]
+    job_doc["created_by"] = user["id"]
     if job_data.client_id:
         job_doc["client_id"] = job_data.client_id
+    if job_data.assigned_worker_id:
+        job_doc["assigned_worker_id"] = job_data.assigned_worker_id
     job_doc.pop("_id", None)
     return job_doc
 
 @api_router.get("/jobs")
 async def get_jobs(request: Request, status: Optional[str] = None, date: Optional[str] = None):
     user = await get_current_user(request)
-    query = {"contractor_id": ObjectId(user["id"])}
-    
+    query = {"contractor_id": ObjectId(user["business_id"])}
+
+    # Workers only see their assigned jobs
+    if user.get("role") == "worker":
+        query["assigned_worker_id"] = ObjectId(user["id"])
+
     if status:
         query["status"] = status
-    
     if date:
         date_obj = datetime.fromisoformat(date.replace('Z', '+00:00'))
         start_of_day = date_obj.replace(hour=0, minute=0, second=0, microsecond=0)
         end_of_day = start_of_day + timedelta(days=1)
         query["scheduled_date"] = {"$gte": start_of_day, "$lt": end_of_day}
-    
+
     jobs = await db.jobs.find(query).sort("scheduled_date", 1).to_list(1000)
     return [serialize_doc(j) for j in jobs]
 
@@ -570,11 +656,13 @@ async def get_jobs_today(request: Request):
     user = await get_current_user(request)
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     tomorrow = today + timedelta(days=1)
-    
-    jobs = await db.jobs.find({
-        "contractor_id": ObjectId(user["id"]),
+    query = {
+        "contractor_id": ObjectId(user["business_id"]),
         "scheduled_date": {"$gte": today, "$lt": tomorrow}
-    }).sort("scheduled_date", 1).to_list(100)
+    }
+    if user.get("role") == "worker":
+        query["assigned_worker_id"] = ObjectId(user["id"])
+    jobs = await db.jobs.find(query).sort("scheduled_date", 1).to_list(100)
     return [serialize_doc(j) for j in jobs]
 
 @api_router.get("/jobs/week")
@@ -582,20 +670,22 @@ async def get_jobs_this_week(request: Request):
     user = await get_current_user(request)
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     week_end = today + timedelta(days=7)
-    
-    jobs = await db.jobs.find({
-        "contractor_id": ObjectId(user["id"]),
+    query = {
+        "contractor_id": ObjectId(user["business_id"]),
         "scheduled_date": {"$gte": today, "$lt": week_end}
-    }).sort("scheduled_date", 1).to_list(100)
+    }
+    if user.get("role") == "worker":
+        query["assigned_worker_id"] = ObjectId(user["id"])
+    jobs = await db.jobs.find(query).sort("scheduled_date", 1).to_list(100)
     return [serialize_doc(j) for j in jobs]
 
 @api_router.get("/jobs/{job_id}")
 async def get_job(job_id: str, request: Request):
     user = await get_current_user(request)
-    job = await db.jobs.find_one({
-        "_id": ObjectId(job_id),
-        "contractor_id": ObjectId(user["id"])
-    })
+    query = {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])}
+    if user.get("role") == "worker":
+        query["assigned_worker_id"] = ObjectId(user["id"])
+    job = await db.jobs.find_one(query)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     return serialize_doc(job)
@@ -603,95 +693,142 @@ async def get_job(job_id: str, request: Request):
 @api_router.patch("/jobs/{job_id}")
 async def update_job(job_id: str, job_data: JobUpdate, request: Request):
     user = await get_current_user(request)
+    if user.get("role") not in ("employer", "admin"):
+        raise HTTPException(status_code=403, detail="Only employers can edit jobs")
     update_data = {k: v for k, v in job_data.model_dump().items() if v is not None}
     if not update_data:
         raise HTTPException(status_code=400, detail="No data to update")
-    
     if "client_id" in update_data and update_data["client_id"]:
         update_data["client_id"] = ObjectId(update_data["client_id"])
-    
     result = await db.jobs.update_one(
-        {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["id"])},
+        {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])},
         {"$set": update_data}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Job not found")
-    
+    job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+    return serialize_doc(job)
+
+@api_router.post("/jobs/{job_id}/assign")
+async def assign_job(job_id: str, data: JobAssign, request: Request):
+    user = await require_employer(request)
+    worker = await db.users.find_one({
+        "_id": ObjectId(data.worker_id),
+        "business_id": ObjectId(user["business_id"]),
+        "role": "worker"
+    })
+    if not worker:
+        raise HTTPException(status_code=400, detail="Worker not found in your team")
+
+    result = await db.jobs.update_one(
+        {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])},
+        {"$set": {
+            "assigned_worker_id": ObjectId(data.worker_id),
+            "assigned_worker_name": worker["name"],
+            "status": JobStatus.ASSIGNED
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Job not found")
+    job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+    return serialize_doc(job)
+
+@api_router.post("/jobs/{job_id}/acknowledge")
+async def acknowledge_job(job_id: str, request: Request):
+    user = await get_current_user(request)
+    if user.get("role") not in ("worker",):
+        raise HTTPException(status_code=403, detail="Only workers can acknowledge jobs")
+    result = await db.jobs.update_one(
+        {
+            "_id": ObjectId(job_id),
+            "contractor_id": ObjectId(user["business_id"]),
+            "assigned_worker_id": ObjectId(user["id"]),
+            "status": JobStatus.ASSIGNED
+        },
+        {"$set": {"status": JobStatus.ACKNOWLEDGED, "acknowledged_at": datetime.now(timezone.utc)}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Job not found or not assigned to you")
     job = await db.jobs.find_one({"_id": ObjectId(job_id)})
     return serialize_doc(job)
 
 @api_router.post("/jobs/{job_id}/start")
 async def start_job(job_id: str, request: Request):
     user = await get_current_user(request)
+    query = {
+        "_id": ObjectId(job_id),
+        "contractor_id": ObjectId(user["business_id"]),
+        "status": {"$in": [JobStatus.ASSIGNED, JobStatus.ACKNOWLEDGED]}
+    }
+    if user.get("role") == "worker":
+        query["assigned_worker_id"] = ObjectId(user["id"])
+
     result = await db.jobs.update_one(
-        {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["id"]), "status": JobStatus.SCHEDULED},
+        query,
         {"$set": {"status": JobStatus.IN_PROGRESS, "started_at": datetime.now(timezone.utc)}}
     )
     if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Job not found or already started")
-    
+        raise HTTPException(status_code=404, detail="Job not found or cannot be started")
     job = await db.jobs.find_one({"_id": ObjectId(job_id)})
     return serialize_doc(job)
 
 @api_router.post("/jobs/{job_id}/complete")
 async def complete_job(job_id: str, request: Request):
     user = await get_current_user(request)
-    job = await db.jobs.find_one({
-        "_id": ObjectId(job_id),
-        "contractor_id": ObjectId(user["id"])
-    })
+    query = {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])}
+    if user.get("role") == "worker":
+        query["assigned_worker_id"] = ObjectId(user["id"])
+
+    job = await db.jobs.find_one(query)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-    
     if job["status"] == JobStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="Job already completed")
-    
+
     await db.jobs.update_one(
         {"_id": ObjectId(job_id)},
         {"$set": {"status": JobStatus.COMPLETED, "completed_at": datetime.now(timezone.utc)}}
     )
-    
-    # Get user's GST rate
-    user_doc = await db.users.find_one({"_id": ObjectId(user["id"])})
-    gst_rate = user_doc.get("gst_rate", DEFAULT_GST_RATE)
-    
+
     # Auto-create draft invoice
+    user_doc = await db.users.find_one({"_id": ObjectId(user["business_id"])})
+    if not user_doc:
+        user_doc = await db.users.find_one({"_id": ObjectId(user["id"])})
+    gst_rate = user_doc.get("gst_rate", DEFAULT_GST_RATE) if user_doc else DEFAULT_GST_RATE
     subtotal = job.get("price", 0)
     gst_amount = subtotal * (gst_rate / 100)
     total = subtotal + gst_amount
-    
+
     customer_name = job.get("customer_name", "")
     if job.get("client_id"):
-        client = await db.clients.find_one({"_id": job["client_id"]})
-        if client:
-            customer_name = client.get("name", customer_name)
-    
+        client_doc = await db.clients.find_one({"_id": job["client_id"]})
+        if client_doc:
+            customer_name = client_doc.get("name", customer_name)
+
     invoice_doc = {
         "job_id": ObjectId(job_id),
-        "contractor_id": ObjectId(user["id"]),
+        "contractor_id": ObjectId(user["business_id"]),
         "client_id": job.get("client_id"),
         "customer_name": customer_name,
         "address": job.get("address", ""),
         "description": f"{job.get('title', 'Service')} - {job.get('job_type', 'other')}",
-        "subtotal": subtotal,
-        "gst_rate": gst_rate,
-        "gst_amount": gst_amount,
-        "total": total,
+        "subtotal": subtotal, "gst_rate": gst_rate, "gst_amount": gst_amount, "total": total,
         "status": InvoiceStatus.DRAFT,
         "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}",
         "created_at": datetime.now(timezone.utc)
     }
     await db.invoices.insert_one(invoice_doc)
-    
+
     updated_job = await db.jobs.find_one({"_id": ObjectId(job_id)})
     return serialize_doc(updated_job)
 
 @api_router.delete("/jobs/{job_id}")
 async def delete_job(job_id: str, request: Request):
     user = await get_current_user(request)
+    if user.get("role") not in ("employer", "admin"):
+        raise HTTPException(status_code=403, detail="Only employers can delete jobs")
     result = await db.jobs.delete_one({
-        "_id": ObjectId(job_id),
-        "contractor_id": ObjectId(user["id"])
+        "_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])
     })
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -701,28 +838,25 @@ async def delete_job(job_id: str, request: Request):
 @api_router.post("/quotes")
 async def create_quote(quote_data: QuoteCreate, request: Request):
     user = await get_current_user(request)
-    
     quote_doc = {
         **quote_data.model_dump(),
-        "contractor_id": ObjectId(user["id"]),
+        "contractor_id": ObjectId(user["business_id"]),
         "status": QuoteStatus.DRAFT,
         "quote_number": f"QT-{datetime.now().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}",
         "created_at": datetime.now(timezone.utc)
     }
-    
     result = await db.quotes.insert_one(quote_doc)
     quote_doc["id"] = str(result.inserted_id)
-    quote_doc["contractor_id"] = user["id"]
+    quote_doc["contractor_id"] = user["business_id"]
     quote_doc.pop("_id", None)
     return quote_doc
 
 @api_router.get("/quotes")
 async def get_quotes(request: Request, status: Optional[str] = None):
     user = await get_current_user(request)
-    query = {"contractor_id": ObjectId(user["id"])}
+    query = {"contractor_id": ObjectId(user["business_id"])}
     if status:
         query["status"] = status
-    
     quotes = await db.quotes.find(query).sort("created_at", -1).to_list(1000)
     return [serialize_doc(q) for q in quotes]
 
@@ -730,8 +864,7 @@ async def get_quotes(request: Request, status: Optional[str] = None):
 async def get_quote(quote_id: str, request: Request):
     user = await get_current_user(request)
     quote = await db.quotes.find_one({
-        "_id": ObjectId(quote_id),
-        "contractor_id": ObjectId(user["id"])
+        "_id": ObjectId(quote_id), "contractor_id": ObjectId(user["business_id"])
     })
     if not quote:
         raise HTTPException(status_code=404, detail="Quote not found")
@@ -743,14 +876,12 @@ async def update_quote(quote_id: str, quote_data: QuoteUpdate, request: Request)
     update_data = {k: v for k, v in quote_data.model_dump().items() if v is not None}
     if not update_data:
         raise HTTPException(status_code=400, detail="No data to update")
-    
     result = await db.quotes.update_one(
-        {"_id": ObjectId(quote_id), "contractor_id": ObjectId(user["id"])},
+        {"_id": ObjectId(quote_id), "contractor_id": ObjectId(user["business_id"])},
         {"$set": update_data}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Quote not found")
-    
     quote = await db.quotes.find_one({"_id": ObjectId(quote_id)})
     return serialize_doc(quote)
 
@@ -758,12 +889,11 @@ async def update_quote(quote_id: str, quote_data: QuoteUpdate, request: Request)
 async def send_quote(quote_id: str, request: Request):
     user = await get_current_user(request)
     result = await db.quotes.update_one(
-        {"_id": ObjectId(quote_id), "contractor_id": ObjectId(user["id"])},
+        {"_id": ObjectId(quote_id), "contractor_id": ObjectId(user["business_id"])},
         {"$set": {"status": QuoteStatus.SENT, "sent_at": datetime.now(timezone.utc)}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Quote not found")
-    
     quote = await db.quotes.find_one({"_id": ObjectId(quote_id)})
     return serialize_doc(quote)
 
@@ -771,8 +901,7 @@ async def send_quote(quote_id: str, request: Request):
 async def delete_quote(quote_id: str, request: Request):
     user = await get_current_user(request)
     result = await db.quotes.delete_one({
-        "_id": ObjectId(quote_id),
-        "contractor_id": ObjectId(user["id"])
+        "_id": ObjectId(quote_id), "contractor_id": ObjectId(user["business_id"])
     })
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Quote not found")
@@ -782,31 +911,29 @@ async def delete_quote(quote_id: str, request: Request):
 @api_router.post("/invoices")
 async def create_invoice(invoice_data: InvoiceCreate, request: Request):
     user = await get_current_user(request)
-    user_doc = await db.users.find_one({"_id": ObjectId(user["id"])})
-    gst_rate = invoice_data.gst_rate if invoice_data.gst_rate is not None else user_doc.get("gst_rate", DEFAULT_GST_RATE)
-    
+    user_doc = await db.users.find_one({"_id": ObjectId(user["business_id"])})
+    if not user_doc:
+        user_doc = await db.users.find_one({"_id": ObjectId(user["id"])})
+    gst_rate = invoice_data.gst_rate if invoice_data.gst_rate is not None else (user_doc.get("gst_rate", DEFAULT_GST_RATE) if user_doc else DEFAULT_GST_RATE)
     gst_amount = invoice_data.subtotal * (gst_rate / 100)
     total = invoice_data.subtotal + gst_amount
-    
+
     invoice_doc = {
-        **invoice_data.model_dump(exclude={"gst_rate"}),
-        "contractor_id": ObjectId(user["id"]),
-        "gst_rate": gst_rate,
-        "gst_amount": gst_amount,
-        "total": total,
+        **invoice_data.model_dump(exclude={"gst_rate", "job_id", "client_id"}),
+        "contractor_id": ObjectId(user["business_id"]),
+        "gst_rate": gst_rate, "gst_amount": gst_amount, "total": total,
         "status": InvoiceStatus.DRAFT,
         "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}",
         "created_at": datetime.now(timezone.utc)
     }
-    
     if invoice_data.job_id:
         invoice_doc["job_id"] = ObjectId(invoice_data.job_id)
     if invoice_data.client_id:
         invoice_doc["client_id"] = ObjectId(invoice_data.client_id)
-    
+
     result = await db.invoices.insert_one(invoice_doc)
     invoice_doc["id"] = str(result.inserted_id)
-    invoice_doc["contractor_id"] = user["id"]
+    invoice_doc["contractor_id"] = user["business_id"]
     if invoice_data.job_id:
         invoice_doc["job_id"] = invoice_data.job_id
     if invoice_data.client_id:
@@ -817,10 +944,9 @@ async def create_invoice(invoice_data: InvoiceCreate, request: Request):
 @api_router.get("/invoices")
 async def get_invoices(request: Request, status: Optional[str] = None):
     user = await get_current_user(request)
-    query = {"contractor_id": ObjectId(user["id"])}
+    query = {"contractor_id": ObjectId(user["business_id"])}
     if status:
         query["status"] = status
-    
     invoices = await db.invoices.find(query).sort("created_at", -1).to_list(1000)
     return [serialize_doc(i) for i in invoices]
 
@@ -828,8 +954,7 @@ async def get_invoices(request: Request, status: Optional[str] = None):
 async def get_invoice(invoice_id: str, request: Request):
     user = await get_current_user(request)
     invoice = await db.invoices.find_one({
-        "_id": ObjectId(invoice_id),
-        "contractor_id": ObjectId(user["id"])
+        "_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])
     })
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
@@ -839,8 +964,6 @@ async def get_invoice(invoice_id: str, request: Request):
 async def update_invoice(invoice_id: str, invoice_data: InvoiceUpdate, request: Request):
     user = await get_current_user(request)
     update_data = {k: v for k, v in invoice_data.model_dump().items() if v is not None}
-    
-    # Recalculate totals if subtotal or gst_rate changed
     if "subtotal" in update_data or "gst_rate" in update_data:
         current = await db.invoices.find_one({"_id": ObjectId(invoice_id)})
         if current:
@@ -848,17 +971,14 @@ async def update_invoice(invoice_id: str, invoice_data: InvoiceUpdate, request: 
             gst_rate = update_data.get("gst_rate", current.get("gst_rate", DEFAULT_GST_RATE))
             update_data["gst_amount"] = subtotal * (gst_rate / 100)
             update_data["total"] = subtotal + update_data["gst_amount"]
-    
     if not update_data:
         raise HTTPException(status_code=400, detail="No data to update")
-    
     result = await db.invoices.update_one(
-        {"_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["id"])},
+        {"_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])},
         {"$set": update_data}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Invoice not found")
-    
     invoice = await db.invoices.find_one({"_id": ObjectId(invoice_id)})
     return serialize_doc(invoice)
 
@@ -866,12 +986,11 @@ async def update_invoice(invoice_id: str, invoice_data: InvoiceUpdate, request: 
 async def send_invoice(invoice_id: str, request: Request):
     user = await get_current_user(request)
     result = await db.invoices.update_one(
-        {"_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["id"])},
+        {"_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])},
         {"$set": {"status": InvoiceStatus.SENT, "sent_at": datetime.now(timezone.utc)}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Invoice not found")
-    
     invoice = await db.invoices.find_one({"_id": ObjectId(invoice_id)})
     return serialize_doc(invoice)
 
@@ -879,12 +998,11 @@ async def send_invoice(invoice_id: str, request: Request):
 async def mark_invoice_paid(invoice_id: str, request: Request):
     user = await get_current_user(request)
     result = await db.invoices.update_one(
-        {"_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["id"])},
+        {"_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])},
         {"$set": {"status": InvoiceStatus.PAID, "paid_at": datetime.now(timezone.utc)}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Invoice not found")
-    
     invoice = await db.invoices.find_one({"_id": ObjectId(invoice_id)})
     return serialize_doc(invoice)
 
@@ -892,8 +1010,7 @@ async def mark_invoice_paid(invoice_id: str, request: Request):
 async def delete_invoice(invoice_id: str, request: Request):
     user = await get_current_user(request)
     result = await db.invoices.delete_one({
-        "_id": ObjectId(invoice_id),
-        "contractor_id": ObjectId(user["id"])
+        "_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])
     })
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Invoice not found")
@@ -903,64 +1020,49 @@ async def delete_invoice(invoice_id: str, request: Request):
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(request: Request):
     user = await get_current_user(request)
-    user_id = ObjectId(user["id"])
-    
+    biz_id = ObjectId(user["business_id"])
+
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     tomorrow = today + timedelta(days=1)
     week_end = today + timedelta(days=7)
     month_start = today.replace(day=1)
-    
-    # Count jobs
-    jobs_today = await db.jobs.count_documents({
-        "contractor_id": user_id,
-        "scheduled_date": {"$gte": today, "$lt": tomorrow}
-    })
-    
-    jobs_this_week = await db.jobs.count_documents({
-        "contractor_id": user_id,
-        "scheduled_date": {"$gte": today, "$lt": week_end}
-    })
-    
-    completed_this_month = await db.jobs.count_documents({
-        "contractor_id": user_id,
-        "status": JobStatus.COMPLETED,
-        "completed_at": {"$gte": month_start}
-    })
-    
-    # Revenue this month
+
+    job_query_base = {"contractor_id": biz_id}
+    if user.get("role") == "worker":
+        job_query_base["assigned_worker_id"] = ObjectId(user["id"])
+
+    jobs_today = await db.jobs.count_documents({**job_query_base, "scheduled_date": {"$gte": today, "$lt": tomorrow}})
+    jobs_this_week = await db.jobs.count_documents({**job_query_base, "scheduled_date": {"$gte": today, "$lt": week_end}})
+    completed_this_month = await db.jobs.count_documents({**job_query_base, "status": JobStatus.COMPLETED, "completed_at": {"$gte": month_start}})
+
     revenue_pipeline = [
-        {"$match": {
-            "contractor_id": user_id,
-            "status": InvoiceStatus.PAID,
-            "paid_at": {"$gte": month_start}
-        }},
+        {"$match": {"contractor_id": biz_id, "status": InvoiceStatus.PAID, "paid_at": {"$gte": month_start}}},
         {"$group": {"_id": None, "total": {"$sum": "$total"}}}
     ]
     revenue_result = await db.invoices.aggregate(revenue_pipeline).to_list(1)
     revenue_this_month = revenue_result[0]["total"] if revenue_result else 0
-    
-    # Pending invoices
+
     pending_invoices = await db.invoices.count_documents({
-        "contractor_id": user_id,
-        "status": {"$in": [InvoiceStatus.DRAFT, InvoiceStatus.SENT]}
+        "contractor_id": biz_id, "status": {"$in": [InvoiceStatus.DRAFT, InvoiceStatus.SENT]}
     })
-    
-    # Active clients
-    active_clients = await db.clients.count_documents({"contractor_id": user_id})
-    
+    active_clients = await db.clients.count_documents({"contractor_id": biz_id})
+
+    # Team count (for employers)
+    team_count = 0
+    if user.get("role") in ("employer", "admin"):
+        team_count = await db.users.count_documents({"business_id": biz_id, "role": "worker"})
+
     return {
-        "jobs_today": jobs_today,
-        "jobs_this_week": jobs_this_week,
-        "completed_this_month": completed_this_month,
-        "revenue_this_month": revenue_this_month,
-        "pending_invoices": pending_invoices,
-        "active_clients": active_clients
+        "jobs_today": jobs_today, "jobs_this_week": jobs_this_week,
+        "completed_this_month": completed_this_month, "revenue_this_month": revenue_this_month,
+        "pending_invoices": pending_invoices, "active_clients": active_clients,
+        "team_count": team_count
     }
 
 # ===================== ROOT =====================
 @api_router.get("/")
 async def root():
-    return {"message": "Churvox API", "version": "1.0.0"}
+    return {"message": "Churvox API", "version": "2.0.0"}
 
 # Include router
 app.include_router(api_router)
@@ -977,59 +1079,85 @@ app.add_middleware(
 # Startup event
 @app.on_event("startup")
 async def startup_event():
-    # Create indexes
     await db.users.create_index("email", unique=True)
     await db.password_reset_tokens.create_index("expires_at", expireAfterSeconds=0)
     await db.login_attempts.create_index("identifier")
     await db.clients.create_index("contractor_id")
     await db.jobs.create_index([("contractor_id", 1), ("scheduled_date", 1)])
+    await db.jobs.create_index([("assigned_worker_id", 1)])
     await db.quotes.create_index("contractor_id")
     await db.invoices.create_index("contractor_id")
-    
+    await db.users.create_index("business_id")
+
     # Seed admin
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@churvox.com")
     admin_password = os.environ.get("ADMIN_PASSWORD", "Admin123!")
-    
+
     existing = await db.users.find_one({"email": admin_email})
     if existing is None:
-        await db.users.insert_one({
+        result = await db.users.insert_one({
             "email": admin_email,
             "password_hash": hash_password(admin_password),
             "name": "Admin",
             "business_name": "Churvox Admin",
-            "role": "admin",
+            "role": "employer",
             "plan": "pro",
             "gst_rate": DEFAULT_GST_RATE,
             "created_at": datetime.now(timezone.utc)
         })
-        logger.info(f"Admin user created: {admin_email}")
-    elif not verify_password(admin_password, existing["password_hash"]):
+        # Set business_id to own id
         await db.users.update_one(
-            {"email": admin_email},
-            {"$set": {"password_hash": hash_password(admin_password)}}
+            {"_id": result.inserted_id},
+            {"$set": {"business_id": result.inserted_id}}
         )
-        logger.info(f"Admin password updated")
-    
+        logger.info(f"Admin user created: {admin_email}")
+    else:
+        updates = {}
+        if not verify_password(admin_password, existing["password_hash"]):
+            updates["password_hash"] = hash_password(admin_password)
+        if "business_id" not in existing:
+            updates["business_id"] = existing["_id"]
+        if existing.get("role") not in ("employer", "admin"):
+            updates["role"] = "employer"
+        if updates:
+            await db.users.update_one({"_id": existing["_id"]}, {"$set": updates})
+            logger.info(f"Admin user updated")
+
+    # Migrate existing jobs with old statuses
+    await db.jobs.update_many(
+        {"status": {"$in": ["scheduled", "cancelled"]}},
+        {"$set": {"status": JobStatus.ASSIGNED}}
+    )
+
     # Write test credentials
-    import os as os_module
-    os_module.makedirs("/app/memory", exist_ok=True)
+    os.makedirs("/app/memory", exist_ok=True)
     with open("/app/memory/test_credentials.md", "w") as f:
         f.write(f"""# Churvox Test Credentials
 
-## Admin Account
+## Admin Account (Employer)
 - Email: {admin_email}
 - Password: {admin_password}
-- Role: admin
+- Role: employer
 
 ## Auth Endpoints
 - POST /api/auth/register
 - POST /api/auth/login
 - POST /api/auth/logout
 - GET /api/auth/me
-- POST /api/auth/forgot-password
-- POST /api/auth/reset-password
+
+## Team Endpoints
+- POST /api/team/workers (create worker)
+- GET /api/team/workers (list workers)
+- DELETE /api/team/workers/{{id}} (remove worker)
+
+## Job Workflow
+- POST /api/jobs (create, assign worker)
+- POST /api/jobs/{{id}}/assign (assign worker)
+- POST /api/jobs/{{id}}/acknowledge (worker acknowledges)
+- POST /api/jobs/{{id}}/start (start job)
+- POST /api/jobs/{{id}}/complete (complete job)
 """)
-    logger.info("Test credentials written to /app/memory/test_credentials.md")
+    logger.info("Test credentials written")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

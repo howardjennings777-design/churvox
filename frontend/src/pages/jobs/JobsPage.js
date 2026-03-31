@@ -1,314 +1,139 @@
-import React, { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { useApi } from "@/hooks/useApi";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { 
-  Plus, 
-  Search, 
-  Calendar,
-  Clock,
-  MapPin,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-  Loader2,
-  Briefcase,
-  Play,
-  CheckCircle,
-  Filter
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import React, { useState, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
+import Layout from "../../components/Layout";
+import { useAuth } from "../../context/AuthContext";
+import { useApi } from "../../hooks/useApi";
+import { Card, CardContent } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
+import { Plus, Search, MapPin, Clock, UserCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { formatDate, formatCurrency, getStatusColor, getStatusLabel, getJobTypeLabel } from "@/lib/utils";
-import Layout from "@/components/Layout";
+import { formatDate, formatCurrency, JOB_STATUSES, JOB_STATUS_MAP } from "../../lib/utils";
 
 export default function JobsPage() {
-  const [searchParams] = useSearchParams();
-  const { get, del, post, loading } = useApi();
+  const { isEmployer } = useAuth();
+  const { get, del, loading } = useApi();
   const [jobs, setJobs] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteId, setDeleteId] = useState(null);
 
-  useEffect(() => {
-    loadJobs();
-  }, []);
+  const fetchJobs = useCallback(async () => {
+    const params = statusFilter !== "all" ? `?status=${statusFilter}` : "";
+    const res = await get(`/jobs${params}`);
+    if (res.success) setJobs(res.data);
+  }, [get, statusFilter]);
 
-  const loadJobs = async () => {
-    const result = await get("/jobs");
-    if (result.success) {
-      setJobs(result.data);
-    }
-  };
+  useEffect(() => { fetchJobs(); }, [fetchJobs]);
 
   const handleDelete = async () => {
     if (!deleteId) return;
-    const result = await del(`/jobs/${deleteId}`);
-    if (result.success) {
-      toast.success("Job deleted successfully");
-      setJobs(jobs.filter((j) => j.id !== deleteId));
+    const res = await del(`/jobs/${deleteId}`);
+    if (res.success) {
+      toast.success("Job deleted");
+      setDeleteId(null);
+      fetchJobs();
     } else {
-      toast.error(result.error);
-    }
-    setDeleteId(null);
-  };
-
-  const handleStartJob = async (jobId) => {
-    const result = await post(`/jobs/${jobId}/start`);
-    if (result.success) {
-      toast.success("Job started");
-      loadJobs();
-    } else {
-      toast.error(result.error);
+      toast.error(res.error || "Failed to delete");
     }
   };
 
-  const handleCompleteJob = async (jobId) => {
-    const result = await post(`/jobs/${jobId}/complete`);
-    if (result.success) {
-      toast.success("Job completed! Invoice created.");
-      loadJobs();
-    } else {
-      toast.error(result.error);
-    }
-  };
-
-  const filteredJobs = jobs.filter((job) => {
-    const matchesSearch = 
-      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.address?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || job.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const filtered = jobs.filter((j) => {
+    const q = search.toLowerCase();
+    return (j.title?.toLowerCase().includes(q) || j.customer_name?.toLowerCase().includes(q) || j.address?.toLowerCase().includes(q));
   });
 
   return (
     <Layout>
-      <div className="space-y-6 animate-in" data-testid="jobs-page">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-white font-heading">Jobs</h1>
-            <p className="text-muted-foreground mt-1">Manage your scheduled jobs</p>
-          </div>
-          <Link to="/jobs/new">
-            <Button className="bg-primary hover:bg-primary/90" data-testid="add-job-button">
-              <Plus className="mr-2 h-4 w-4" />
-              New Job
+      <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4" data-testid="jobs-page">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-white" data-testid="jobs-heading">Jobs</h1>
+          {isEmployer && (
+            <Button asChild className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="new-job-button">
+              <Link to="/jobs/new"><Plus size={16} className="mr-2" /> New Job</Link>
             </Button>
-          </Link>
+          )}
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search jobs..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-card border-border"
-              data-testid="job-search-input"
-            />
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-churvox-muted" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search jobs..." className="pl-9 bg-churvox-card border-churvox-border text-white" data-testid="jobs-search" />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-[180px] bg-card border-border" data-testid="status-filter">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Filter by status" />
+            <SelectTrigger className="w-40 bg-churvox-card border-churvox-border text-white" data-testid="jobs-status-filter">
+              <SelectValue placeholder="Status" />
             </SelectTrigger>
-            <SelectContent className="bg-card border-border">
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="scheduled">Scheduled</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectContent className="bg-churvox-card border-churvox-border">
+              <SelectItem value="all" className="text-white">All</SelectItem>
+              {JOB_STATUSES.map((s) => (
+                <SelectItem key={s.value} value={s.value} className="text-white">{s.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
         {/* Jobs List */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : filteredJobs.length === 0 ? (
-          <Card className="bg-card border-border">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Briefcase className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-white mb-2">
-                {searchTerm || statusFilter !== "all" ? "No jobs found" : "No jobs yet"}
-              </h3>
-              <p className="text-muted-foreground text-center mb-4">
-                {searchTerm || statusFilter !== "all"
-                  ? "Try a different search or filter"
-                  : "Create your first job to get started"}
-              </p>
-              {!searchTerm && statusFilter === "all" && (
-                <Link to="/jobs/new">
-                  <Button className="bg-primary hover:bg-primary/90" data-testid="add-first-job-button">
-                    <Plus className="mr-2 h-4 w-4" />
-                    New Job
-                  </Button>
-                </Link>
-              )}
+        {filtered.length === 0 ? (
+          <Card className="bg-churvox-card border-churvox-border">
+            <CardContent className="p-8 text-center text-churvox-muted">
+              {search ? "No jobs match your search" : "No jobs yet"}
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
-            {filteredJobs.map((job) => (
-              <Card 
-                key={job.id} 
-                className="bg-card border-border hover:bg-card/80 transition-colors job-card"
-                data-testid={`job-card-${job.id}`}
-              >
-                <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Link 
-                          to={`/jobs/${job.id}`}
-                          className="text-lg font-medium text-white hover:text-primary transition-colors truncate"
-                          data-testid={`job-title-${job.id}`}
-                        >
-                          {job.title}
-                        </Link>
-                        <span className={`status-badge ${getStatusColor(job.status)}`}>
-                          {getStatusLabel(job.status)}
-                        </span>
-                        {job.is_recurring && (
-                          <span className="status-badge bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                            Recurring
+          <div className="space-y-2">
+            {filtered.map((job) => {
+              const statusInfo = JOB_STATUS_MAP[job.status];
+              return (
+                <Card key={job.id} className="bg-churvox-card border-churvox-border hover:border-churvox-accent/40 transition-all" data-testid={`job-card-${job.id}`}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <Link to={`/jobs/${job.id}`} className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-white font-medium truncate">{job.title}</h3>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`}>
+                            {statusInfo?.label || job.status}
                           </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-churvox-muted">
+                          {job.customer_name && <span>{job.customer_name}</span>}
+                          {job.address && <span className="flex items-center gap-1"><MapPin size={11} /> {job.address}</span>}
+                          <span className="flex items-center gap-1"><Clock size={11} /> {formatDate(job.scheduled_date)}</span>
+                          {job.price > 0 && <span className="text-churvox-accent font-medium">{formatCurrency(job.price)}</span>}
+                        </div>
+                        {job.assigned_worker_name && (
+                          <p className="text-xs text-churvox-accent mt-1 flex items-center gap-1">
+                            <UserCheck size={12} /> {job.assigned_worker_name}
+                          </p>
                         )}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1.5">
-                          <Calendar className="h-4 w-4" />
-                          {formatDate(job.scheduled_date)}
-                        </span>
-                        {job.scheduled_time && (
-                          <span className="flex items-center gap-1.5">
-                            <Clock className="h-4 w-4" />
-                            {job.scheduled_time}
-                          </span>
-                        )}
-                        <span>{getJobTypeLabel(job.job_type)}</span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4" />
-                        <span className="truncate">{job.customer_name || job.address}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg font-semibold text-white">
-                        {formatCurrency(job.price)}
-                      </span>
-                      
-                      {/* Action Buttons */}
-                      {job.status === "scheduled" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
-                          onClick={() => handleStartJob(job.id)}
-                          data-testid={`start-job-${job.id}`}
-                        >
-                          <Play className="h-4 w-4 mr-1" />
-                          Start
+                      </Link>
+                      {isEmployer && (
+                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(job.id)} className="text-churvox-muted hover:text-red-400 ml-2" data-testid={`delete-job-${job.id}`}>
+                          <Trash2 size={14} />
                         </Button>
                       )}
-                      {job.status === "in_progress" && (
-                        <Button
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() => handleCompleteJob(job.id)}
-                          data-testid={`complete-job-${job.id}`}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Complete
-                        </Button>
-                      )}
-                      
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" data-testid={`job-menu-${job.id}`}>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-card border-border">
-                          <DropdownMenuItem asChild>
-                            <Link to={`/jobs/${job.id}`} className="cursor-pointer">
-                              View Details
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link to={`/jobs/${job.id}/edit`} className="flex items-center cursor-pointer" data-testid={`edit-job-${job.id}`}>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              Edit
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setDeleteId(job.id)}
-                            className="text-destructive focus:text-destructive cursor-pointer"
-                            data-testid={`delete-job-${job.id}`}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
 
-        {/* Delete Confirmation */}
-        <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-          <AlertDialogContent className="bg-card border-border">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Job</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete this job? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="border-border">Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-destructive hover:bg-destructive/90"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Delete Dialog */}
+        <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+          <DialogContent className="bg-churvox-card border-churvox-border" data-testid="delete-job-dialog">
+            <DialogHeader><DialogTitle className="text-white">Delete Job</DialogTitle></DialogHeader>
+            <p className="text-churvox-muted">Are you sure? This cannot be undone.</p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteId(null)} className="border-churvox-border text-churvox-muted">Cancel</Button>
+              <Button onClick={handleDelete} disabled={loading} className="bg-red-600 hover:bg-red-700" data-testid="confirm-delete-job">Delete</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

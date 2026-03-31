@@ -54,7 +54,7 @@ export default function LoginPage() {
               <img 
                 src={LOGO_URL} 
                 alt="Churvox" 
-                className="h-14 w-auto"
+                className="h-14 w-auto churvox-logo"
                 data-testid="churvox-logo"
               />
               <span className="text-3xl font-semibold text-white tracking-tight font-heading">Churvox</span>
@@ -175,8 +175,8 @@ export default function LoginPage() {
       {/* Right side - Decorative */}
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-card to-secondary items-center justify-center p-12">
         <div className="max-w-lg text-center">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-primary/10 mb-8 ring-1 ring-primary/20">
-            <img src={LOGO_URL} alt="Churvox" className="h-14" />
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl mb-8">
+            <img src={LOGO_URL} alt="Churvox" className="h-14 w-auto churvox-logo" />
           </div>
           <h2 className="text-3xl font-semibold text-white font-heading mb-4">
             Run your trade business smarter
