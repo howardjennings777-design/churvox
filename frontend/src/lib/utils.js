@@ -50,6 +50,13 @@ export const INVOICE_STATUSES = [
   { value: "cancelled", label: "Cancelled", color: "bg-gray-500" },
 ];
 
+export const MYOB_SYNC_STATUSES = {
+  not_synced: { label: "Not Synced", color: "text-churvox-muted", bg: "bg-slate-500/20" },
+  syncing: { label: "Syncing", color: "text-yellow-400", bg: "bg-yellow-500/20" },
+  synced: { label: "Synced", color: "text-green-400", bg: "bg-green-500/20" },
+  sync_failed: { label: "Sync Failed", color: "text-red-400", bg: "bg-red-500/20" },
+};
+
 export const JOB_TYPES_BY_CATEGORY = {
   "Lawn & Garden": [
     { value: "lawn_mowing", label: "Lawn Mowing" },

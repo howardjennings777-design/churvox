@@ -159,6 +159,7 @@ export default function SMSPage() {
                         <p className="text-xs text-churvox-muted mt-1 flex items-center gap-2">
                           <Phone size={11} /> {sms.recipient_phone}
                           <Clock size={11} /> {formatDate(sms.created_at)}
+                          {sms.sent_by_name && <><span className="text-churvox-accent/70">by {sms.sent_by_name}</span></>}
                         </p>
                       </div>
                     </div>

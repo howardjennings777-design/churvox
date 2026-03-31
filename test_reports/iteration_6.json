@@ -1,0 +1,121 @@
+{
+  "summary": "Completed comprehensive testing of Churvox Batch 5: MYOB Integration + Business-owned SMS Credits + SMS Permissions. All 18 backend API tests passed. Frontend UI verified for MYOB settings, invoice sync, and SMS sent_by_name display.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "POST /api/invoices, POST /api/jobs",
+        "issue": "Returns 200 instead of 201 for create operations (functional but non-standard REST)",
+        "priority": "LOW"
+      }
+    ]
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "GET /api/myob/settings returns MYOB connection settings (initially not connected)",
+    "POST /api/myob/settings saves API key and company file info (employer only)",
+    "GET /api/myob/settings after save shows connected=true with masked key (••••xxxx)",
+    "POST /api/myob/sync/{invoice_id} sets sync status to synced and generates MYOB ID (mock)",
+    "POST /api/myob/sync/{invoice_id} returns 404 for non-existent invoice",
+    "GET /api/myob/status/{invoice_id} returns sync status, MYOB ID, last sync time",
+    "POST /api/myob/webhook marks invoice as paid when given myob_id",
+    "Invoice creation adds myob_sync_status=not_synced by default",
+    "SMS history includes sent_by_name field showing who sent each message",
+    "Workers can send SMS using business credits (API returns 200)",
+    "Workers cannot buy SMS credits (API returns 403)",
+    "Workers cannot access MYOB settings (API returns 403)",
+    "Business isolation verified for SMS credits and MYOB settings",
+    "Auth /me endpoint works (regression)",
+    "Jobs CRUD works (regression)",
+    "Invoices CRUD works (regression)",
+    "SMS balance endpoint works (regression)",
+    "Jobs list endpoint works (regression)",
+    "Settings page has MYOB Integration card with API key, company file name, file ID inputs",
+    "Settings MYOB card shows Connected badge when MYOB is connected",
+    "Invoice list page shows MYOB sync badge for synced invoices (MYOB SYNCED)",
+    "Invoice detail page shows MYOB sync section with status badge and Sync to MYOB button",
+    "Invoice detail Sync to MYOB button triggers sync and updates status display",
+    "SMS page shows sent_by_name in message history (by John Worker, by Admin)"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_batch5_myob_sms.py",
+    "/app/test_reports/pytest/pytest_batch5_results.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_batch5_myob_sms.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (18/18 tests passed)",
+    "frontend": "100% (all Batch 5 UI features verified)"
+  },
+
+  "test_credentials": {
+    "admin_email": "admin@churvox.com",
+    "admin_password": "Admin123!",
+    "worker_email": "john@churvox.com",
+    "worker_password": "Worker123!"
+  },
+
+  "seed_data_creation": "Test invoices created during API tests for MYOB sync testing. SMS credits purchased during testing.",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Churvox Batch 5 is complete. Features added: (1) MYOB Integration with settings management (GET/POST /api/myob/settings), invoice sync (POST /api/myob/sync/{id}), status tracking (GET /api/myob/status/{id}), and payment webhook (POST /api/myob/webhook). MYOB sync is MOCKED - no real MYOB API. (2) Business-owned SMS credits confirmed working with sent_by_name tracking. (3) SMS permissions: workers can send SMS via API but cannot buy credits (403). UI shows Buy Credits and Send SMS buttons only for employers. All Batch 1-4 features remain intact.",
+
+  "batch5_verification": {
+    "myob_integration": {
+      "settings_endpoint_get": true,
+      "settings_endpoint_post": true,
+      "settings_masked_api_key": true,
+      "settings_connected_badge": true,
+      "sync_endpoint": true,
+      "sync_generates_myob_id": true,
+      "sync_updates_status": true,
+      "status_endpoint": true,
+      "webhook_marks_paid": true,
+      "invoice_default_not_synced": true,
+      "invoice_list_myob_badge": true,
+      "invoice_detail_myob_section": true,
+      "invoice_detail_sync_button": true,
+      "settings_ui_card": true,
+      "mock_implementation": true
+    },
+    "sms_business_owned": {
+      "shared_balance_per_business": true,
+      "employer_can_buy_credits": true,
+      "worker_can_send_sms_api": true,
+      "worker_cannot_buy_credits": true,
+      "sent_by_name_tracking": true,
+      "sent_by_name_in_history": true,
+      "business_isolation": true
+    },
+    "sms_permissions": {
+      "employer_buy_credits_button": true,
+      "employer_send_sms_button": true,
+      "worker_buy_credits_hidden": true,
+      "worker_send_sms_hidden_on_sms_page": true,
+      "worker_can_send_via_api": true
+    },
+    "mocked_apis": {
+      "myob_sync": "POST /api/myob/sync/{id} - mock MYOB sync, generates fake MYOB ID (MYOB-XXXXXXXX)",
+      "myob_webhook": "POST /api/myob/webhook - mock payment sync-back",
+      "sms_delivery": "POST /api/sms/send - mock SMS delivery, deducts 1 credit, logs to DB"
+    }
+  }
+}

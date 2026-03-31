@@ -12,16 +12,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Building2, Briefcase, Receipt } from "lucide-react";
+import { Loader2, Building2, Briefcase, Receipt, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { TRADE_TYPES } from "@/lib/utils";
 
 export default function SettingsPage() {
   const { user, updateUser } = useAuth();
-  const { patch, loading } = useApi();
+  const { patch, get, post, loading } = useApi();
   const [gstRate, setGstRate] = useState(user?.gst_rate?.toString() || "15");
   const [tradeType, setTradeType] = useState(user?.trade_type || "other");
+  const [myobKey, setMyobKey] = useState("");
+  const [myobFileId, setMyobFileId] = useState("");
+  const [myobFileName, setMyobFileName] = useState("");
+  const [myobConnected, setMyobConnected] = useState(false);
+  const [myobLoading, setMyobLoading] = useState(true);
+
+  React.useEffect(() => {
+    (async () => {
+      const res = await get("/myob/settings");
+      if (res.success) {
+        setMyobConnected(res.data.connected);
+        setMyobFileId(res.data.company_file_id || "");
+        setMyobFileName(res.data.company_file_name || "");
+      }
+      setMyobLoading(false);
+    })();
+  }, [get]);
 
   const handleUpdateGST = async (e) => {
     e.preventDefault();
@@ -49,6 +66,20 @@ export default function SettingsPage() {
     } else {
       toast.error(result.error);
     }
+  };
+
+  const handleSaveMyob = async (e) => {
+    e.preventDefault();
+    if (!myobKey) { toast.error("Please enter your MYOB API key"); return; }
+    const payload = { api_key: myobKey };
+    if (myobFileId) payload.company_file_id = myobFileId;
+    if (myobFileName) payload.company_file_name = myobFileName;
+    const res = await post("/myob/settings", payload);
+    if (res.success) {
+      toast.success("MYOB settings saved");
+      setMyobConnected(true);
+      setMyobKey("");
+    } else toast.error(res.error || "Failed to save MYOB settings");
   };
 
   return (
@@ -173,6 +204,74 @@ export default function SettingsPage() {
                 </p>
               </div>
             </form>
+          </CardContent>
+        </Card>
+
+        {/* MYOB Integration */}
+        <Card className="card-surface" data-testid="myob-settings-card">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-blue-500/15 flex items-center justify-center">
+                <RefreshCw className="h-5 w-5 text-blue-400" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-heading">MYOB Integration</CardTitle>
+                <CardDescription>Sync invoices and payments with MYOB</CardDescription>
+              </div>
+              {myobConnected && (
+                <span className="ml-auto px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-green-500/20 text-green-400" data-testid="myob-connected-badge">
+                  Connected
+                </span>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {myobLoading ? (
+              <div className="flex items-center justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            ) : (
+              <form onSubmit={handleSaveMyob} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="myob_key">MYOB API Key</Label>
+                  <Input
+                    id="myob_key"
+                    type="password"
+                    value={myobKey}
+                    onChange={(e) => setMyobKey(e.target.value)}
+                    placeholder={myobConnected ? "••••••••" : "Enter MYOB API key"}
+                    className="bg-secondary border-border max-w-sm"
+                    data-testid="myob-api-key-input"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="myob_file">Company File Name (optional)</Label>
+                  <Input
+                    id="myob_file"
+                    value={myobFileName}
+                    onChange={(e) => setMyobFileName(e.target.value)}
+                    placeholder="e.g. My Business Pty Ltd"
+                    className="bg-secondary border-border max-w-sm"
+                    data-testid="myob-company-name-input"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="myob_file_id">Company File ID (optional)</Label>
+                  <Input
+                    id="myob_file_id"
+                    value={myobFileId}
+                    onChange={(e) => setMyobFileId(e.target.value)}
+                    placeholder="e.g. cf-12345"
+                    className="bg-secondary border-border max-w-sm"
+                    data-testid="myob-file-id-input"
+                  />
+                </div>
+                <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={loading} data-testid="save-myob-button">
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : myobConnected ? "Update Connection" : "Connect MYOB"}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  MYOB sync is currently a placeholder. Once connected, invoices can be synced from the invoice detail page.
+                </p>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>

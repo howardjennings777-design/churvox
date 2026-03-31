@@ -87,6 +87,12 @@ class InvoiceStatus(str, Enum):
     OVERDUE = "overdue"
     CANCELLED = "cancelled"
 
+class MyobSyncStatus(str, Enum):
+    NOT_SYNCED = "not_synced"
+    SYNCING = "syncing"
+    SYNCED = "synced"
+    SYNC_FAILED = "sync_failed"
+
 class PlanType(str, Enum):
     SOLO = "solo"
     SOLO_PLUS = "solo_plus"
@@ -236,6 +242,11 @@ class SmsSend(BaseModel):
 
 class SmsBuyCredits(BaseModel):
     pack: str  # 100, 500, 1000
+
+class MyobSettingsUpdate(BaseModel):
+    api_key: Optional[str] = None
+    company_file_id: Optional[str] = None
+    company_file_name: Optional[str] = None
 
 SMS_PACKS = {
     "100": {"credits": 100, "price": 10.00},
@@ -1173,6 +1184,10 @@ async def create_invoice(invoice_data: InvoiceCreate, request: Request):
         "gst_rate": gst_rate, "gst_amount": gst_amount, "total": total,
         "status": InvoiceStatus.DRAFT,
         "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}",
+        "myob_sync_status": MyobSyncStatus.NOT_SYNCED,
+        "myob_id": None,
+        "myob_last_sync": None,
+        "myob_error": None,
         "created_at": datetime.now(timezone.utc)
     }
     if invoice_data.job_id:
@@ -1392,6 +1407,7 @@ async def send_sms(data: SmsSend, request: Request):
         "invoice_id": ObjectId(data.invoice_id) if data.invoice_id else None,
         "status": "delivered_mock",
         "sent_by": ObjectId(user["id"]),
+        "sent_by_name": user.get("name", "Unknown"),
         "created_at": datetime.now(timezone.utc)
     }
     await db.sms_log.insert_one(sms_log)
@@ -1409,11 +1425,138 @@ async def get_sms_history(request: Request):
     user = await get_current_user(request)
     biz_id = ObjectId(user["business_id"])
     logs = await db.sms_log.find({"business_id": biz_id}).sort("created_at", -1).to_list(100)
-    return [serialize_doc(l) for l in logs]
+    return [serialize_doc(log) for log in logs]
 
 @api_router.get("/sms/packs")
 async def get_sms_packs():
     return [{"id": k, "credits": v["credits"], "price": v["price"]} for k, v in SMS_PACKS.items()]
+
+# ===================== MYOB INTEGRATION =====================
+@api_router.get("/myob/settings")
+async def get_myob_settings(request: Request):
+    user = await require_employer(request)
+    biz_id = ObjectId(user["business_id"])
+    settings = await db.myob_settings.find_one({"business_id": biz_id})
+    if not settings:
+        return {"connected": False, "api_key": None, "company_file_id": None, "company_file_name": None}
+    return {
+        "connected": bool(settings.get("api_key")),
+        "api_key": "••••" + (settings.get("api_key", "")[-4:]) if settings.get("api_key") else None,
+        "company_file_id": settings.get("company_file_id"),
+        "company_file_name": settings.get("company_file_name"),
+        "updated_at": settings.get("updated_at").isoformat() if settings.get("updated_at") else None,
+    }
+
+@api_router.post("/myob/settings")
+async def update_myob_settings(data: MyobSettingsUpdate, request: Request):
+    user = await require_employer(request)
+    biz_id = ObjectId(user["business_id"])
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc)
+    await db.myob_settings.update_one(
+        {"business_id": biz_id},
+        {"$set": update_data, "$setOnInsert": {"business_id": biz_id}},
+        upsert=True,
+    )
+    return {"message": "MYOB settings saved"}
+
+@api_router.post("/myob/sync/{invoice_id}")
+async def sync_invoice_to_myob(invoice_id: str, request: Request):
+    user = await require_employer(request)
+    biz_id = ObjectId(user["business_id"])
+
+    invoice = await db.invoices.find_one({"_id": ObjectId(invoice_id), "contractor_id": biz_id})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    # Check MYOB connection
+    settings = await db.myob_settings.find_one({"business_id": biz_id})
+    if not settings or not settings.get("api_key"):
+        raise HTTPException(status_code=400, detail="MYOB not connected. Add your API key in Settings first.")
+
+    # Set status to syncing
+    await db.invoices.update_one(
+        {"_id": ObjectId(invoice_id)},
+        {"$set": {"myob_sync_status": MyobSyncStatus.SYNCING, "myob_error": None}}
+    )
+
+    # PLACEHOLDER: This is where the real MYOB API call would go.
+    # For now, simulate a successful sync.
+    mock_myob_id = f"MYOB-{secrets.token_hex(4).upper()}"
+    await db.invoices.update_one(
+        {"_id": ObjectId(invoice_id)},
+        {"$set": {
+            "myob_sync_status": MyobSyncStatus.SYNCED,
+            "myob_id": mock_myob_id,
+            "myob_last_sync": datetime.now(timezone.utc),
+            "myob_error": None,
+        }}
+    )
+
+    # Log sync event
+    await db.myob_sync_log.insert_one({
+        "business_id": biz_id,
+        "invoice_id": ObjectId(invoice_id),
+        "action": "sync_to_myob",
+        "myob_id": mock_myob_id,
+        "status": "success",
+        "mock": True,
+        "created_at": datetime.now(timezone.utc),
+    })
+
+    logger.info(f"[MYOB MOCK] Invoice {invoice.get('invoice_number')} synced as {mock_myob_id}")
+
+    updated = await db.invoices.find_one({"_id": ObjectId(invoice_id)})
+    return serialize_doc(updated)
+
+@api_router.get("/myob/status/{invoice_id}")
+async def get_myob_sync_status(invoice_id: str, request: Request):
+    user = await get_current_user(request)
+    biz_id = ObjectId(user["business_id"])
+    invoice = await db.invoices.find_one({"_id": ObjectId(invoice_id), "contractor_id": biz_id})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    return {
+        "myob_sync_status": invoice.get("myob_sync_status", "not_synced"),
+        "myob_id": invoice.get("myob_id"),
+        "myob_last_sync": invoice.get("myob_last_sync").isoformat() if invoice.get("myob_last_sync") else None,
+        "myob_error": invoice.get("myob_error"),
+    }
+
+@api_router.post("/myob/webhook")
+async def myob_payment_webhook(request: Request):
+    """PLACEHOLDER: Receives payment notification from MYOB and marks invoice as paid.
+    In production, this would validate MYOB webhook signatures."""
+    body = await request.json()
+    myob_id = body.get("myob_id")
+    if not myob_id:
+        raise HTTPException(status_code=400, detail="Missing myob_id")
+
+    invoice = await db.invoices.find_one({"myob_id": myob_id})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found for this MYOB reference")
+
+    await db.invoices.update_one(
+        {"_id": invoice["_id"]},
+        {"$set": {
+            "status": InvoiceStatus.PAID,
+            "paid_at": datetime.now(timezone.utc),
+            "myob_sync_status": MyobSyncStatus.SYNCED,
+        }}
+    )
+
+    await db.myob_sync_log.insert_one({
+        "business_id": invoice["contractor_id"],
+        "invoice_id": invoice["_id"],
+        "action": "payment_sync_back",
+        "myob_id": myob_id,
+        "status": "success",
+        "mock": True,
+        "created_at": datetime.now(timezone.utc),
+    })
+
+    logger.info(f"[MYOB MOCK] Payment received for {myob_id}, invoice marked paid")
+    return {"message": "Payment synced", "invoice_id": str(invoice["_id"])}
 
 # ===================== ROOT =====================
 @api_router.get("/")
@@ -1446,6 +1589,8 @@ async def startup_event():
     await db.users.create_index("business_id")
     await db.sms_credits.create_index("business_id", unique=True)
     await db.sms_log.create_index([("business_id", 1), ("created_at", -1)])
+    await db.myob_settings.create_index("business_id", unique=True)
+    await db.myob_sync_log.create_index([("business_id", 1), ("created_at", -1)])
 
     # Seed admin
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@churvox.com")
@@ -1479,12 +1624,18 @@ async def startup_event():
             updates["role"] = "employer"
         if updates:
             await db.users.update_one({"_id": existing["_id"]}, {"$set": updates})
-            logger.info(f"Admin user updated")
+            logger.info("Admin user updated")
 
     # Migrate existing jobs with old statuses
     await db.jobs.update_many(
         {"status": {"$in": ["scheduled", "cancelled"]}},
         {"$set": {"status": JobStatus.ASSIGNED}}
+    )
+
+    # Migrate existing invoices without MYOB fields
+    await db.invoices.update_many(
+        {"myob_sync_status": {"$exists": False}},
+        {"$set": {"myob_sync_status": MyobSyncStatus.NOT_SYNCED, "myob_id": None, "myob_last_sync": None, "myob_error": None}}
     )
 
     # Write test credentials

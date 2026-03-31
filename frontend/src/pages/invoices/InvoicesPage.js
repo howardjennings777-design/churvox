@@ -40,7 +40,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { formatDate, formatCurrency, INVOICE_STATUSES } from "@/lib/utils";
+import { formatDate, formatCurrency, INVOICE_STATUSES, MYOB_SYNC_STATUSES } from "@/lib/utils";
 import Layout from "@/components/Layout";
 
 export default function InvoicesPage() {
@@ -195,6 +195,14 @@ export default function InvoicesPage() {
                           <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-white ${INVOICE_STATUSES.find(s => s.value === invoice.status)?.color || "bg-slate-500"}`}>
                             {INVOICE_STATUSES.find(s => s.value === invoice.status)?.label || invoice.status}
                           </span>
+                          {invoice.myob_sync_status && invoice.myob_sync_status !== "not_synced" && (() => {
+                            const si = MYOB_SYNC_STATUSES[invoice.myob_sync_status];
+                            return si ? (
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${si.bg} ${si.color}`} data-testid={`myob-badge-${invoice.id}`}>
+                                MYOB {si.label}
+                              </span>
+                            ) : null;
+                          })()}
                         </div>
                         <p className="text-sm text-white mb-1">{invoice.customer_name}</p>
                         <p className="text-sm text-muted-foreground truncate">{invoice.description}</p>
