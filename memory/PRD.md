@@ -31,42 +31,44 @@ Multi-trade job management platform. Core promise: jobs, quotes, invoices, team 
 - Client-job-invoice linking throughout
 - Logo asset updated to transparent PNG, shared ChurvoxLogo component
 
-## Batch 4 — COMPLETED (31 Mar 2026)
-- Calendar scheduling: month grid view, job dots on days, daily overview with job cards
-- Calendar daily overview: click day to see jobs, click job to open detail
-- Month navigation and "X jobs this month" count
+## Batch 4 — COMPLETED
+- Calendar scheduling: month grid, job dots, daily overview with job cards
 - SMS system: balance tracking, credit packs (100/$10, 500/$45, 1000/$80)
 - SMS page with balance card, credit packs, send dialog, message history
-- SMS types: customer_reminder, on_the_way, invoice_reminder
-- Quick SMS buttons on Job detail (On the Way, Reminder) for employers
-- SMS Reminder button on Invoice detail (for sent invoices)
-- SMS navigation link in sidebar under "More"
-- SMS delivery is MOCKED (no real Twilio/provider)
-- Logo size polish (bigger in sidebar/header)
+- Quick SMS buttons on Job detail and Invoice detail
+- SMS delivery is MOCKED
 
-## Batch 5 — COMPLETED (31 Mar 2026)
-- MYOB integration structure (placeholder/service-layer ready):
-  - Settings management (API key, company file ID/name)
-  - Invoice sync to MYOB (mock: generates MYOB-XXXXXXXX ID)
-  - Sync status tracking: not_synced > syncing > synced / sync_failed
-  - Payment sync-back webhook (marks invoice paid when MYOB payment received)
-  - MYOB sync log for audit trail
-  - Invoice migration adds MYOB fields to existing invoices
-- MYOB UI:
-  - Settings page: MYOB Integration card with API key, company fields, Connected badge
-  - Invoice detail: MYOB sync section with status badge, Sync to MYOB button, last sync time
-  - Invoice list: MYOB sync badge for synced invoices
-- Business-owned SMS credits:
-  - Shared balance per business (was already business_id-based, confirmed)
-  - Employer/admin can buy/top-up credits
-  - Workers can send SMS using business credits
-  - Workers CANNOT buy credits (403)
-  - sent_by_name tracking on every SMS log entry
-  - SMS history shows who sent each message
-- MYOB sync is MOCKED (no real MYOB API connected yet)
+## Batch 5 — COMPLETED
+- MYOB integration structure (placeholder/service-layer ready)
+- Invoice sync to MYOB (mock), payment sync-back webhook
+- Sync status: not_synced > syncing > synced / sync_failed
+- MYOB settings management in Settings page
+- Business-owned SMS credits with sent_by_name tracking
+- MYOB sync is MOCKED
+
+## Batch 6 — COMPLETED (31 Mar 2026)
+- Plans & Pricing page: Solo=$30, Team=$70, Pro=$110, Enterprise=$240
+- +$100 per additional 50-user block (Enterprise)
+- Clean upgrade/downgrade flow with confirmation dialog
+- Current plan banner with usage stats (workers, clients)
+- Feature gating by plan:
+  - Solo: jobs, quotes, invoices, time tracking, scheduling, 50 clients
+  - Team: + team management (5 workers), SMS, unlimited clients
+  - Pro: + MYOB integration, 20 workers, priority support
+  - Enterprise: 50 workers base, extra blocks, dedicated support
+- UpgradePrompt component for locked features
+- Team page: gated on Solo (shows upgrade prompt)
+- SMS page: gated on Solo (shows upgrade prompt)
+- MYOB settings: gated below Pro (shows locked card)
+- Team limit enforcement in worker creation (403 when limit reached)
+- Client limit enforcement in client creation (403 on Solo at 50+)
+- Plan management is employer-only (workers see read-only notice)
+- Plan changes propagate to all workers in the business
+- Billing is PLACEHOLDER (no real payment provider)
 
 ## Key API Endpoints
 ### Auth: register, login, logout, me, refresh, forgot/reset-password
+### Plan: GET /plan/limits, GET /plan/all, PATCH /user/plan
 ### User: PATCH plan, gst, trade
 ### Team: POST/GET/DELETE /api/team/workers
 ### Clients: CRUD + GET /api/clients/{id}/jobs
@@ -81,5 +83,6 @@ Multi-trade job management platform. Core promise: jobs, quotes, invoices, team 
 ## Backlog
 - P1: Job photos upload (job documentation/evidence)
 - P2: Worker password change flow
-- P3: Advanced reporting and analytics
-- P3: Route optimization
+- P3: Wire real MYOB API (replace mock)
+- P3: Wire real SMS provider (replace mock)
+- P3: Wire real billing provider (Stripe) for plan subscriptions
