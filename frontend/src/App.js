@@ -25,6 +25,9 @@ import PlansPage from "./pages/PlansPage";
 import CalendarPage from "./pages/CalendarPage";
 import TeamPage from "./pages/TeamPage";
 import SMSPage from "./pages/SMSPage";
+import PrivacyPage from "./pages/legal/PrivacyPage";
+import TermsPage from "./pages/legal/TermsPage";
+import AccountDeletionPage from "./pages/legal/AccountDeletionPage";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -70,6 +73,11 @@ function App() {
           <Route path="/sms" element={<PrivateRoute><SMSPage /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
           <Route path="/plans" element={<PrivateRoute><PlansPage /></PrivateRoute>} />
+
+          {/* Public legal pages */}
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/account-deletion" element={<AccountDeletionPage />} />
 
           <Route path="/" element={<Navigate to="/dashboard" />} />
           <Route path="*" element={<Navigate to="/dashboard" />} />

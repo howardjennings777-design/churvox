@@ -87,12 +87,16 @@ export default function Layout({ children }) {
           </div>
         </nav>
 
-        {/* Logout */}
+        {/* Logout & Footer */}
         <div className="p-3 border-t border-churvox-border">
           <button onClick={handleLogout} data-testid="logout-button"
             className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all">
             <LogOut size={18} /> Logout
           </button>
+          <div className="flex gap-3 px-3 pt-2 text-[10px] text-churvox-muted/50">
+            <Link to="/privacy" className="hover:text-churvox-muted transition-colors">Privacy</Link>
+            <Link to="/terms" className="hover:text-churvox-muted transition-colors">Terms</Link>
+          </div>
         </div>
       </aside>
 

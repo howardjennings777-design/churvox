@@ -12,11 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Building2, Briefcase, Receipt, RefreshCw, Lock } from "lucide-react";
+import { Loader2, Building2, Briefcase, Receipt, RefreshCw, Lock, FileText, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { TRADE_TYPES } from "@/lib/utils";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { Link } from "react-router-dom";
 
 export default function SettingsPage() {
   const { user, updateUser } = useAuth();
@@ -288,6 +289,55 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Help & Legal */}
+        <Card className="card-surface" data-testid="help-legal-card">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-slate-500/15 flex items-center justify-center">
+                <FileText className="h-5 w-5 text-slate-400" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-heading">Help & Legal</CardTitle>
+                <CardDescription>Legal information and support</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Link to="/privacy" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all" data-testid="settings-privacy-link">
+              <FileText size={16} /> Privacy Policy
+            </Link>
+            <Link to="/terms" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all" data-testid="settings-terms-link">
+              <FileText size={16} /> Terms of Service
+            </Link>
+            <Link to="/account-deletion" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all" data-testid="settings-account-deletion-link">
+              <FileText size={16} /> Account Deletion
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Delete Account */}
+        <Card className="card-surface border-red-500/20" data-testid="delete-account-card">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-red-500/15 flex items-center justify-center">
+                <Trash2 className="h-5 w-5 text-red-400" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-heading text-red-400">Danger Zone</CardTitle>
+                <CardDescription>Permanently delete your account and all data</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground mb-4">
+              This will permanently delete your account, all jobs, clients, invoices, quotes, team members, and associated data. This action cannot be undone.
+            </p>
+            <Button asChild variant="outline" className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300" data-testid="delete-account-button">
+              <Link to="/account-deletion">Delete Account</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );
