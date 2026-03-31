@@ -40,17 +40,21 @@ export default function SignupPage() {
     }
 
     setLoading(true);
-    const result = await register({
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      business_name: formData.business_name || null,
-    });
+    try {
+      const result = await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        business_name: formData.business_name || null,
+      });
 
-    if (result.success) {
-      navigate("/dashboard");
-    } else {
-      setError(result.error);
+      if (result?.token) {
+        navigate("/dashboard");
+      } else {
+        setError("Registration failed. Please try again.");
+      }
+    } catch (err) {
+      setError(err?.response?.data?.detail || "Registration failed. Please try again.");
     }
     setLoading(false);
   };

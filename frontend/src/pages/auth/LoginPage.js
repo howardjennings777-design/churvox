@@ -21,12 +21,15 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    const result = await login(email, password);
-    
-    if (result.success) {
-      navigate("/dashboard");
-    } else {
-      setError(result.error);
+    try {
+      const result = await login(email, password);
+      if (result?.token) {
+        navigate("/dashboard");
+      } else {
+        setError("Login failed. Please try again.");
+      }
+    } catch (err) {
+      setError(err?.response?.data?.detail || "Invalid email or password.");
     }
     setLoading(false);
   };
