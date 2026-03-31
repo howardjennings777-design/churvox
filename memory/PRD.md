@@ -23,48 +23,40 @@ Multi-trade job management platform. Core promise: jobs, quotes, invoices, team 
 
 ## Batch 3 — COMPLETED
 - Quotes module: create, edit, send, view status, convert to job
-- Quote pricing types: fixed, hourly, fixed_extras, hourly_extras
-- Quote-to-job conversion (auto-creates job from quote details)
-- Time tracking: start/pause/resume/complete, manual time adjustment
-- Time-based invoicing: fixed, hourly, fixed+extras, hourly+extras
+- Quote-to-job conversion, time tracking, time-based invoicing
 - Invoice draft flow: job completed > draft invoice > send > paid
-- Client-job-invoice linking throughout
-- Logo asset updated to transparent PNG, shared ChurvoxLogo component
+- Logo asset transparent PNG, centralized ChurvoxLogo component
 
 ## Batch 4 — COMPLETED
-- Calendar scheduling: month grid, job dots, daily overview with job cards
-- SMS system: balance tracking, credit packs (100/$10, 500/$45, 1000/$80)
-- SMS page with balance card, credit packs, send dialog, message history
-- Quick SMS buttons on Job detail and Invoice detail
+- Calendar scheduling: month grid, daily overview, job cards
+- SMS system: balance, credit packs (100/$10, 500/$45, 1000/$80)
+- SMS triggers on Job/Invoice detail pages
 - SMS delivery is MOCKED
 
 ## Batch 5 — COMPLETED
 - MYOB integration structure (placeholder/service-layer ready)
-- Invoice sync to MYOB (mock), payment sync-back webhook
-- Sync status: not_synced > syncing > synced / sync_failed
-- MYOB settings management in Settings page
+- Invoice sync, payment sync-back webhook, sync status tracking
 - Business-owned SMS credits with sent_by_name tracking
 - MYOB sync is MOCKED
 
-## Batch 6 — COMPLETED (31 Mar 2026)
-- Plans & Pricing page: Solo=$30, Team=$70, Pro=$110, Enterprise=$240
+## Batch 6 — COMPLETED
+- Plans: Solo=$30, Team=$70, Pro=$110, Enterprise=$240
 - +$100 per additional 50-user block (Enterprise)
-- Clean upgrade/downgrade flow with confirmation dialog
-- Current plan banner with usage stats (workers, clients)
-- Feature gating by plan:
-  - Solo: jobs, quotes, invoices, time tracking, scheduling, 50 clients
-  - Team: + team management (5 workers), SMS, unlimited clients
-  - Pro: + MYOB integration, 20 workers, priority support
-  - Enterprise: 50 workers base, extra blocks, dedicated support
-- UpgradePrompt component for locked features
-- Team page: gated on Solo (shows upgrade prompt)
-- SMS page: gated on Solo (shows upgrade prompt)
-- MYOB settings: gated below Pro (shows locked card)
-- Team limit enforcement in worker creation (403 when limit reached)
-- Client limit enforcement in client creation (403 on Solo at 50+)
-- Plan management is employer-only (workers see read-only notice)
-- Plan changes propagate to all workers in the business
-- Billing is PLACEHOLDER (no real payment provider)
+- Upgrade/downgrade flow with confirmation dialog
+- Feature gating by plan (team, SMS, MYOB)
+- Team/client limit enforcement
+- Plan management employer-only
+- Billing is PLACEHOLDER
+
+## Final Batch — COMPLETED (31 Mar 2026)
+- Dashboard: "Getting Started" checklist for new businesses, improved empty states
+- Login: Removed demo "Quick Admin Login" button, polished right-side copy with feature tags
+- Signup: Improved business name field with helper text, updated feature list
+- Empty states improved across all pages (jobs, clients, quotes, invoices, team, SMS, calendar)
+- Helper text: contextual guidance on jobs, clients, quotes, invoices, team, SMS
+- Team page shows worker count with plan max (e.g. "1 / 20 max")
+- SMS empty state guides users to send from job/invoice detail pages
+- Launch cleanup: removed demo clutter, consistent wording, placeholder notices retained
 
 ## Key API Endpoints
 ### Auth: register, login, logout, me, refresh, forgot/reset-password
@@ -80,9 +72,14 @@ Multi-trade job management platform. Core promise: jobs, quotes, invoices, team 
 ### MYOB: GET/POST settings, POST sync/{id}, GET status/{id}, POST webhook
 ### Dashboard: GET stats
 
+## Mocked/Placeholder Systems
+- SMS delivery (no real Twilio/provider)
+- MYOB sync (no real MYOB API)
+- Billing/payments (no real Stripe)
+
 ## Backlog
 - P1: Job photos upload (job documentation/evidence)
 - P2: Worker password change flow
-- P3: Wire real MYOB API (replace mock)
-- P3: Wire real SMS provider (replace mock)
-- P3: Wire real billing provider (Stripe) for plan subscriptions
+- P3: Wire real MYOB API
+- P3: Wire real SMS provider
+- P3: Wire real billing provider (Stripe)
