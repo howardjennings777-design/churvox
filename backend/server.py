@@ -227,6 +227,22 @@ class GSTUpdate(BaseModel):
 class TradeUpdate(BaseModel):
     trade_type: str
 
+class SmsSend(BaseModel):
+    recipient_phone: str
+    message_type: str  # customer_reminder, on_the_way, invoice_reminder
+    job_id: Optional[str] = None
+    invoice_id: Optional[str] = None
+    custom_message: Optional[str] = None
+
+class SmsBuyCredits(BaseModel):
+    pack: str  # 100, 500, 1000
+
+SMS_PACKS = {
+    "100": {"credits": 100, "price": 10.00},
+    "500": {"credits": 500, "price": 45.00},
+    "1000": {"credits": 1000, "price": 80.00},
+}
+
 # ===================== HELPERS =====================
 def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
@@ -1282,15 +1298,122 @@ async def get_dashboard_stats(request: Request):
 
     # Team count (for employers)
     team_count = 0
+    sms_balance = 0
     if user.get("role") in ("employer", "admin"):
         team_count = await db.users.count_documents({"business_id": biz_id, "role": "worker"})
+        credit_doc = await db.sms_credits.find_one({"business_id": biz_id})
+        sms_balance = credit_doc.get("balance", 0) if credit_doc else 0
 
     return {
         "jobs_today": jobs_today, "jobs_this_week": jobs_this_week,
         "completed_this_month": completed_this_month, "revenue_this_month": revenue_this_month,
         "pending_invoices": pending_invoices, "active_clients": active_clients,
-        "team_count": team_count
+        "team_count": team_count, "sms_balance": sms_balance
     }
+
+# ===================== SMS =====================
+SMS_TEMPLATES = {
+    "customer_reminder": "Hi {name}, this is a reminder about your upcoming job on {date}. - {business}",
+    "on_the_way": "Hi {name}, your technician is on the way and should arrive shortly. - {business}",
+    "invoice_reminder": "Hi {name}, you have an outstanding invoice ({invoice_number}) for {total}. - {business}",
+}
+
+@api_router.get("/sms/balance")
+async def get_sms_balance(request: Request):
+    user = await get_current_user(request)
+    biz_id = user["business_id"]
+    credit_doc = await db.sms_credits.find_one({"business_id": ObjectId(biz_id)})
+    balance = credit_doc.get("balance", 0) if credit_doc else 0
+    return {"balance": balance, "low_credit": balance < 20}
+
+@api_router.post("/sms/buy-credits")
+async def buy_sms_credits(data: SmsBuyCredits, request: Request):
+    user = await require_employer(request)
+    pack = SMS_PACKS.get(data.pack)
+    if not pack:
+        raise HTTPException(status_code=400, detail="Invalid pack")
+    biz_id = ObjectId(user["business_id"])
+
+    # Add credits (payment is PLACEHOLDER — no real charge)
+    await db.sms_credits.update_one(
+        {"business_id": biz_id},
+        {"$inc": {"balance": pack["credits"]}, "$setOnInsert": {"business_id": biz_id}},
+        upsert=True
+    )
+    # Log purchase
+    await db.sms_purchases.insert_one({
+        "business_id": biz_id,
+        "pack": data.pack,
+        "credits": pack["credits"],
+        "price": pack["price"],
+        "created_at": datetime.now(timezone.utc),
+        "note": "PLACEHOLDER — no real payment processed"
+    })
+    credit_doc = await db.sms_credits.find_one({"business_id": biz_id})
+    return {"message": f"{pack['credits']} credits added", "balance": credit_doc.get("balance", 0)}
+
+@api_router.post("/sms/send")
+async def send_sms(data: SmsSend, request: Request):
+    user = await get_current_user(request)
+    biz_id = ObjectId(user["business_id"])
+
+    # Check balance
+    credit_doc = await db.sms_credits.find_one({"business_id": biz_id})
+    balance = credit_doc.get("balance", 0) if credit_doc else 0
+    if balance < 1:
+        raise HTTPException(status_code=400, detail="Insufficient SMS credits")
+
+    # Build message from template
+    template = SMS_TEMPLATES.get(data.message_type, data.custom_message or "Message from {business}")
+    business_name = user.get("business_name") or "Churvox"
+
+    fill = {"business": business_name, "name": "", "date": "", "invoice_number": "", "total": ""}
+    if data.job_id:
+        job = await db.jobs.find_one({"_id": ObjectId(data.job_id), "contractor_id": biz_id})
+        if job:
+            fill["name"] = job.get("customer_name", "")
+            fill["date"] = job.get("scheduled_date", datetime.now(timezone.utc)).strftime("%d %b %Y")
+    if data.invoice_id:
+        inv = await db.invoices.find_one({"_id": ObjectId(data.invoice_id), "contractor_id": biz_id})
+        if inv:
+            fill["name"] = fill["name"] or inv.get("customer_name", "")
+            fill["invoice_number"] = inv.get("invoice_number", "")
+            fill["total"] = f"${inv.get('total', 0):.2f}"
+
+    message = template.format(**fill)
+
+    # PLACEHOLDER: Log SMS instead of sending via real provider
+    sms_log = {
+        "business_id": biz_id,
+        "recipient_phone": data.recipient_phone,
+        "message_type": data.message_type,
+        "message": message,
+        "job_id": ObjectId(data.job_id) if data.job_id else None,
+        "invoice_id": ObjectId(data.invoice_id) if data.invoice_id else None,
+        "status": "delivered_mock",
+        "sent_by": ObjectId(user["id"]),
+        "created_at": datetime.now(timezone.utc)
+    }
+    await db.sms_log.insert_one(sms_log)
+
+    # Deduct 1 credit
+    await db.sms_credits.update_one({"business_id": biz_id}, {"$inc": {"balance": -1}})
+    new_balance = balance - 1
+
+    logger.info(f"[SMS MOCK] To: {data.recipient_phone} | Type: {data.message_type} | Msg: {message}")
+
+    return {"message": "SMS sent (mock)", "sms_message": message, "balance": new_balance, "mock": True}
+
+@api_router.get("/sms/history")
+async def get_sms_history(request: Request):
+    user = await get_current_user(request)
+    biz_id = ObjectId(user["business_id"])
+    logs = await db.sms_log.find({"business_id": biz_id}).sort("created_at", -1).to_list(100)
+    return [serialize_doc(l) for l in logs]
+
+@api_router.get("/sms/packs")
+async def get_sms_packs():
+    return [{"id": k, "credits": v["credits"], "price": v["price"]} for k, v in SMS_PACKS.items()]
 
 # ===================== ROOT =====================
 @api_router.get("/")
@@ -1321,6 +1444,8 @@ async def startup_event():
     await db.quotes.create_index("contractor_id")
     await db.invoices.create_index("contractor_id")
     await db.users.create_index("business_id")
+    await db.sms_credits.create_index("business_id", unique=True)
+    await db.sms_log.create_index([("business_id", 1), ("created_at", -1)])
 
     # Seed admin
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@churvox.com")
