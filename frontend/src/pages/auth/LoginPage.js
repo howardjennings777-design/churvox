@@ -31,18 +31,6 @@ export default function LoginPage() {
     setLoading(false);
   };
 
-  const handleAdminLogin = async () => {
-    setError("");
-    setLoading(true);
-    const result = await login("admin@churvox.com", "Admin123!");
-    if (result.success) {
-      navigate("/dashboard");
-    } else {
-      setError(result.error);
-    }
-    setLoading(false);
-  };
-
   return (
     <div className="min-h-screen bg-background flex">
       {/* Left side - Login form */}
@@ -128,26 +116,6 @@ export default function LoginPage() {
                     "Sign in"
                   )}
                 </Button>
-
-                <div className="relative my-4">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">Or</span>
-                  </div>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full border-border hover:bg-secondary"
-                  onClick={handleAdminLogin}
-                  disabled={loading}
-                  data-testid="admin-quick-login-button"
-                >
-                  Quick Admin Login (Testing)
-                </Button>
               </form>
 
               <p className="text-center text-sm text-muted-foreground mt-6">
@@ -174,9 +142,15 @@ export default function LoginPage() {
           <h2 className="text-3xl font-semibold text-white font-heading mb-4">
             Run your trade business smarter
           </h2>
-          <p className="text-muted-foreground text-lg">
-            Manage jobs, track clients, send quotes and invoices — all in one place.
+          <p className="text-muted-foreground text-lg mb-6">
+            Jobs, quotes, invoices, team management, and scheduling — all in one platform built for contractors.
           </p>
+          <div className="flex flex-wrap justify-center gap-3 text-sm text-muted-foreground/70">
+            <span className="px-3 py-1 rounded-full bg-white/5">Multi-trade</span>
+            <span className="px-3 py-1 rounded-full bg-white/5">Mobile-first</span>
+            <span className="px-3 py-1 rounded-full bg-white/5">MYOB sync</span>
+            <span className="px-3 py-1 rounded-full bg-white/5">SMS reminders</span>
+          </div>
         </div>
       </div>
     </div>

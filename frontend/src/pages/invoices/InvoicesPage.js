@@ -158,10 +158,10 @@ export default function InvoicesPage() {
               <h3 className="text-lg font-medium text-white mb-2">
                 {searchTerm || statusFilter !== "all" ? "No invoices found" : "No invoices yet"}
               </h3>
-              <p className="text-muted-foreground text-center mb-4">
+              <p className="text-muted-foreground text-center mb-4 max-w-xs mx-auto">
                 {searchTerm || statusFilter !== "all"
                   ? "Try a different search or filter"
-                  : "Invoices are automatically created when jobs are completed"}
+                  : "Complete a job to create a draft invoice, or create one manually. Track from draft to sent to paid."}
               </p>
               {!searchTerm && statusFilter === "all" && (
                 <Link to="/invoices/new">

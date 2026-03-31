@@ -8,7 +8,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
-import { Plus, Search, MapPin, Clock, UserCheck, Trash2 } from "lucide-react";
+import { Plus, Search, MapPin, Clock, UserCheck, Trash2, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, JOB_STATUSES, JOB_STATUS_MAP } from "../../lib/utils";
 
@@ -79,8 +79,17 @@ export default function JobsPage() {
         {/* Jobs List */}
         {filtered.length === 0 ? (
           <Card className="bg-churvox-card border-churvox-border">
-            <CardContent className="p-8 text-center text-churvox-muted">
-              {search ? "No jobs match your search" : "No jobs yet"}
+            <CardContent className="p-8 text-center">
+              <Briefcase size={32} className="mx-auto mb-3 text-churvox-muted/40" />
+              <p className="text-white font-medium mb-1">{search ? "No jobs match your search" : "No jobs yet"}</p>
+              <p className="text-xs text-churvox-muted mb-4">
+                {search ? "Try a different search term or clear filters" : "Create your first job to start tracking work, scheduling, and invoicing"}
+              </p>
+              {!search && isEmployer && (
+                <Button asChild size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90">
+                  <Link to="/jobs/new" data-testid="create-first-job"><Plus size={14} className="mr-1" /> Create Your First Job</Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (

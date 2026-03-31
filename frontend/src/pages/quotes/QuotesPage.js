@@ -147,10 +147,10 @@ export default function QuotesPage() {
               <h3 className="text-lg font-medium text-white mb-2">
                 {searchTerm || statusFilter !== "all" ? "No quotes found" : "No quotes yet"}
               </h3>
-              <p className="text-muted-foreground text-center mb-4">
+              <p className="text-muted-foreground text-center mb-4 max-w-xs mx-auto">
                 {searchTerm || statusFilter !== "all"
                   ? "Try a different search or filter"
-                  : "Create your first quote to send to customers"}
+                  : "Send professional quotes to clients. Accepted quotes can be converted directly into jobs."}
               </p>
               {!searchTerm && statusFilter === "all" && (
                 <Link to="/quotes/new">

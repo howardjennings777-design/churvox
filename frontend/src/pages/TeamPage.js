@@ -96,9 +96,12 @@ export default function TeamPage() {
         {workers.length === 0 && !loading ? (
           <Card className="bg-churvox-card border-churvox-border">
             <CardContent className="p-8 text-center">
-              <UserPlus className="mx-auto mb-3 text-churvox-muted" size={40} />
-              <p className="text-white font-medium">No team members yet</p>
-              <p className="text-churvox-muted text-sm mt-1">Add workers to assign them to jobs</p>
+              <UserPlus className="mx-auto mb-3 text-churvox-muted/40" size={32} />
+              <p className="text-white font-medium mb-1">No team members yet</p>
+              <p className="text-xs text-churvox-muted mb-4 max-w-xs mx-auto">Add workers to assign them to jobs. They'll get their own login to view and update their assigned work.</p>
+              <Button onClick={() => setShowAdd(true)} size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="add-first-worker">
+                <UserPlus size={14} className="mr-1" /> Add Your First Worker
+              </Button>
             </CardContent>
           </Card>
         ) : (

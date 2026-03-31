@@ -153,7 +153,11 @@ export default function SMSPage() {
           <h2 className="text-base font-semibold text-white mb-3">Recent Messages ({history.length})</h2>
           {history.length === 0 ? (
             <Card className="bg-churvox-card border-churvox-border">
-              <CardContent className="p-6 text-center text-churvox-muted text-sm">No messages sent yet</CardContent>
+              <CardContent className="p-6 text-center">
+                <Send size={24} className="mx-auto mb-2 text-churvox-muted/40" />
+                <p className="text-churvox-muted text-sm mb-1">No messages sent yet</p>
+                <p className="text-xs text-churvox-muted/60">Send customer reminders, on-the-way alerts, or invoice reminders. You can also send from job and invoice detail pages.</p>
+              </CardContent>
             </Card>
           ) : (
             <div className="space-y-2">

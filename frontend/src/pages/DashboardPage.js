@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Briefcase, Calendar, CheckCircle, DollarSign, FileText, Users, Plus, Clock, UserCheck } from "lucide-react";
+import { Briefcase, Calendar, CheckCircle, DollarSign, FileText, Users, Plus, Clock, UserCheck, ArrowRight, CircleDot } from "lucide-react";
 import { formatCurrency, formatDate, JOB_STATUS_MAP } from "../lib/utils";
 
 export default function DashboardPage() {
@@ -28,6 +28,8 @@ export default function DashboardPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const isNewBusiness = stats && isEmployer && (stats.active_clients === 0 && stats.jobs_today === 0 && stats.jobs_this_week === 0 && stats.completed_this_month === 0);
+
   const statCards = isEmployer
     ? [
         { label: "Today's Jobs", value: stats?.jobs_today || 0, icon: Briefcase, color: "text-blue-400" },
@@ -43,6 +45,13 @@ export default function DashboardPage() {
         { label: "Completed", value: stats?.completed_this_month || 0, icon: CheckCircle, color: "text-green-400" },
       ];
 
+  const setupSteps = isNewBusiness ? [
+    { label: "Add your first client", path: "/clients/new", done: (stats?.active_clients || 0) > 0, hint: "Your client list is your business backbone" },
+    { label: "Create a job", path: "/jobs/new", done: false, hint: "Track work from start to finish" },
+    { label: "Send a quote", path: "/quotes/new", done: false, hint: "Win work with professional quotes" },
+    { label: "Set your trade type", path: "/settings", done: !!user?.trade_type && user.trade_type !== "other", hint: "Personalise your Churvox experience" },
+  ] : null;
+
   return (
     <Layout>
       <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-6" data-testid="dashboard-page">
@@ -50,13 +59,13 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white" data-testid="dashboard-greeting">
-              Welcome back, {user?.name?.split(" ")[0]}
+              {isNewBusiness ? `Welcome to Churvox, ${user?.name?.split(" ")[0]}` : `Welcome back, ${user?.name?.split(" ")[0]}`}
             </h1>
             <p className="text-sm text-churvox-muted mt-1">
-              {isWorker ? "Here are your assigned jobs" : "Here's your business overview"}
+              {isWorker ? "Here are your assigned jobs" : isNewBusiness ? "Let's get your business set up" : "Here's your business overview"}
             </p>
           </div>
-          {isEmployer && (
+          {isEmployer && !isNewBusiness && (
             <div className="hidden sm:flex gap-2">
               <Button asChild size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90">
                 <Link to="/jobs/new" data-testid="quick-new-job"><Plus size={14} className="mr-1" /> New Job</Link>
@@ -64,6 +73,29 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+
+        {/* Getting Started for new businesses */}
+        {setupSteps && (
+          <Card className="bg-gradient-to-br from-churvox-accent/10 to-churvox-card border-churvox-accent/20" data-testid="getting-started-card">
+            <CardContent className="p-5">
+              <h2 className="text-base font-semibold text-white mb-1">Getting started</h2>
+              <p className="text-xs text-churvox-muted mb-4">Complete these steps to make the most of Churvox</p>
+              <div className="space-y-3">
+                {setupSteps.map((step, i) => (
+                  <Link key={i} to={step.path} data-testid={`setup-step-${i}`}
+                    className={`flex items-center gap-3 p-3 rounded-lg transition-all ${step.done ? "bg-green-500/10" : "bg-white/5 hover:bg-white/10"}`}>
+                    <CircleDot size={18} className={step.done ? "text-green-400" : "text-churvox-accent"} />
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium ${step.done ? "text-green-400 line-through" : "text-white"}`}>{step.label}</p>
+                      <p className="text-[11px] text-churvox-muted">{step.hint}</p>
+                    </div>
+                    {!step.done && <ArrowRight size={14} className="text-churvox-muted" />}
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Grid */}
         <div className={`grid gap-3 ${isEmployer ? "grid-cols-2 lg:grid-cols-3" : "grid-cols-1 sm:grid-cols-3"}`} data-testid="stats-grid">
@@ -100,8 +132,8 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        {/* Quick Actions (employer) */}
-        {isEmployer && (
+        {/* Quick Actions (employer, not new) */}
+        {isEmployer && !isNewBusiness && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" data-testid="quick-actions">
             {[
               { label: "New Job", path: "/jobs/new", icon: Briefcase },
@@ -126,7 +158,11 @@ export default function DashboardPage() {
           <h2 className="text-base font-semibold text-white mb-3">Today's Jobs</h2>
           {todayJobs.length === 0 ? (
             <Card className="bg-churvox-card border-churvox-border">
-              <CardContent className="p-6 text-center text-churvox-muted text-sm">No jobs scheduled for today</CardContent>
+              <CardContent className="p-6 text-center">
+                <Briefcase size={24} className="mx-auto mb-2 text-churvox-muted/40" />
+                <p className="text-churvox-muted text-sm">No jobs scheduled for today</p>
+                {isEmployer && <p className="text-xs text-churvox-muted/60 mt-1">Jobs appear here on their scheduled date</p>}
+              </CardContent>
             </Card>
           ) : (
             <div className="space-y-2">
@@ -147,11 +183,9 @@ export default function DashboardPage() {
                           </p>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 rounded text-[10px] font-semibold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`}>
-                          {statusInfo?.label || job.status}
-                        </span>
-                      </div>
+                      <span className={`px-2 py-1 rounded text-[10px] font-semibold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`}>
+                        {statusInfo?.label || job.status}
+                      </span>
                     </div>
                   </Link>
                 );
@@ -165,7 +199,11 @@ export default function DashboardPage() {
           <h2 className="text-base font-semibold text-white mb-3">This Week</h2>
           {weekJobs.length === 0 ? (
             <Card className="bg-churvox-card border-churvox-border">
-              <CardContent className="p-6 text-center text-churvox-muted text-sm">No jobs this week</CardContent>
+              <CardContent className="p-6 text-center">
+                <Calendar size={24} className="mx-auto mb-2 text-churvox-muted/40" />
+                <p className="text-churvox-muted text-sm">No jobs this week</p>
+                {isEmployer && <p className="text-xs text-churvox-muted/60 mt-1">Schedule jobs from the Jobs page to see them here</p>}
+              </CardContent>
             </Card>
           ) : (
             <div className="space-y-2">

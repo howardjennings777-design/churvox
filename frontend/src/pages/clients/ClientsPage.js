@@ -111,10 +111,10 @@ export default function ClientsPage() {
               <h3 className="text-lg font-medium text-white mb-2">
                 {searchTerm ? "No clients found" : "No clients yet"}
               </h3>
-              <p className="text-muted-foreground text-center mb-4">
+              <p className="text-muted-foreground text-center mb-4 max-w-xs mx-auto">
                 {searchTerm
                   ? "Try a different search term"
-                  : "Add your first client to get started"}
+                  : "Clients link to jobs, quotes, and invoices. Add your first client to get started."}
               </p>
               {!searchTerm && (
                 <Link to="/clients/new">

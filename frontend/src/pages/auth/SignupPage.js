@@ -68,10 +68,10 @@ export default function SignupPage() {
           </h2>
           <div className="space-y-4">
             {[
-              "Schedule and track all your jobs",
-              "Manage clients across any trade",
-              "Create professional quotes",
-              "Send invoices with GST",
+              "Schedule and track jobs across any trade",
+              "Manage clients and team members",
+              "Send professional quotes and invoices",
+              "Time tracking with GST-ready billing",
             ].map((feature, i) => (
               <div key={i} className="flex items-center gap-3 text-muted-foreground">
                 <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
@@ -144,20 +144,21 @@ export default function SignupPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="business_name">Business Name (Optional)</Label>
+                  <Label htmlFor="business_name">Business Name</Label>
                   <div className="relative">
                     <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="business_name"
                       name="business_name"
                       type="text"
-                      placeholder="Your Business Ltd"
+                      placeholder="e.g. Smith Plumbing Pty Ltd"
                       value={formData.business_name}
                       onChange={handleChange}
                       className="pl-10 bg-secondary border-border"
                       data-testid="signup-business-input"
                     />
                   </div>
+                  <p className="text-[11px] text-muted-foreground/70">Appears on quotes and invoices. You can change this later.</p>
                 </div>
 
                 <div className="space-y-2">
