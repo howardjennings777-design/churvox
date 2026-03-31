@@ -18,22 +18,31 @@ Multi-trade job management platform. Core promise: jobs, quotes, invoices, team 
 - Business isolation (all data filtered by business_id)
 - Employer/Worker roles with role-based UI
 - Team management (employer creates worker accounts)
-- Job assignment workflow: assigned → acknowledged → in_progress → completed
+- Job assignment workflow: assigned > acknowledged > in_progress > completed
 - Client detail with job history
-- Logo cleanup (mix-blend-mode: screen)
 
 ## Batch 3 — COMPLETED
 - Quotes module: create, edit, send, view status, convert to job
 - Quote pricing types: fixed, hourly, fixed_extras, hourly_extras
 - Quote-to-job conversion (auto-creates job from quote details)
 - Time tracking: start/pause/resume/complete, manual time adjustment
-- Timer auto-transitions job to in_progress on start
 - Time-based invoicing: fixed, hourly, fixed+extras, hourly+extras
-- Invoice draft flow: job completed → draft invoice auto-created → user reviews → sends
-- Invoice detail: line items, hours worked, extras breakdown, GST, total
-- Invoice status flow: draft → sent → paid
+- Invoice draft flow: job completed > draft invoice > send > paid
 - Client-job-invoice linking throughout
-- Logo asset updated to new uploaded PNG, shared ChurvoxLogo component
+- Logo asset updated to transparent PNG, shared ChurvoxLogo component
+
+## Batch 4 — COMPLETED (31 Mar 2026)
+- Calendar scheduling: month grid view, job dots on days, daily overview with job cards
+- Calendar daily overview: click day to see jobs, click job to open detail
+- Month navigation and "X jobs this month" count
+- SMS system: balance tracking, credit packs (100/$10, 500/$45, 1000/$80)
+- SMS page with balance card, credit packs, send dialog, message history
+- SMS types: customer_reminder, on_the_way, invoice_reminder
+- Quick SMS buttons on Job detail (On the Way, Reminder) for employers
+- SMS Reminder button on Invoice detail (for sent invoices)
+- SMS navigation link in sidebar under "More"
+- SMS delivery is MOCKED (no real Twilio/provider)
+- Logo size polish (bigger in sidebar/header)
 
 ## Key API Endpoints
 ### Auth: register, login, logout, me, refresh, forgot/reset-password
@@ -44,11 +53,12 @@ Multi-trade job management platform. Core promise: jobs, quotes, invoices, team 
 ### Timer: POST start/pause/resume, PATCH adjust, GET timer
 ### Quotes: CRUD + send + convert
 ### Invoices: CRUD + send + mark-paid
+### SMS: GET balance, POST buy-credits, POST send, GET history, GET packs
 ### Dashboard: GET stats
 
 ## Backlog
-- P1: Job photos upload
-- P2: Customer reminders (SMS/email)
-- P2: MYOB accounting sync
+- P1: Job photos upload (job documentation/evidence)
 - P2: Worker password change flow
-- P3: Advanced reporting
+- P2: MYOB accounting sync
+- P3: Advanced reporting and analytics
+- P3: Route optimization
