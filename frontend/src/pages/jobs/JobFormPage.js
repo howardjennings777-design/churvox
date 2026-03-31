@@ -20,6 +20,14 @@ const PRICING_TYPES = [
   { value: "hourly_extras", label: "Hourly + Extras" },
 ];
 
+function getJobTypeLabel(value) {
+  for (const types of Object.values(JOB_TYPES_BY_CATEGORY)) {
+    const found = types.find((t) => t.value === value);
+    if (found) return found.label;
+  }
+  return value;
+}
+
 export default function JobFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -84,8 +92,14 @@ export default function JobFormPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Auto-generate title from [Job Type] - [Client Name]
+    const typeLabel = getJobTypeLabel(form.job_type);
+    const clientName = form.customer_name || "No Client";
+    const autoTitle = `${typeLabel} - ${clientName}`;
+
     const payload = {
       ...form,
+      title: form.title || autoTitle,
       price: parseFloat(form.price) || 0,
       hourly_rate: parseFloat(form.hourly_rate) || 0,
       estimated_duration: parseInt(form.estimated_duration) || 60,
@@ -119,11 +133,6 @@ export default function JobFormPage() {
           <CardHeader><CardTitle className="text-white">{isEditing ? "Edit Job" : "New Job"}</CardTitle></CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label className="text-churvox-muted">Job Title</Label>
-                <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required className="bg-churvox-bg border-churvox-border text-white" placeholder="e.g., Fix kitchen plumbing" data-testid="job-title-input" />
-              </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-churvox-muted">Job Type</Label>

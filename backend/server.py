@@ -175,7 +175,7 @@ class ClientUpdate(BaseModel):
     notes: Optional[str] = None
 
 class JobCreate(BaseModel):
-    title: str
+    title: Optional[str] = None
     job_type: JobType
     client_id: Optional[str] = None
     customer_name: Optional[str] = None
@@ -1075,6 +1075,12 @@ async def create_job(job_data: JobCreate, request: Request):
         "timer_running": False,
         "created_at": datetime.now(timezone.utc)
     }
+
+    # Auto-generate title if not provided
+    if not job_doc.get("title"):
+        job_type_label = job_data.job_type.value.replace("_", " ").title()
+        client_name = job_data.customer_name or "No Client"
+        job_doc["title"] = f"{job_type_label} - {client_name}"
 
     if job_data.client_id:
         job_doc["client_id"] = ObjectId(job_data.client_id)
