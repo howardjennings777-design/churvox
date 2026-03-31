@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ChurvoxLogo } from "./ChurvoxLogo";
+import { InstallPrompt } from "./InstallPrompt";
 import { LayoutDashboard, Briefcase, Calendar, Users, MoreHorizontal, LogOut, Settings, FileText, Receipt, CreditCard, UserPlus, MessageSquare } from "lucide-react";
 
 export default function Layout({ children }) {
@@ -165,6 +166,7 @@ export default function Layout({ children }) {
           </div>
         </div>
       </nav>
+      <InstallPrompt />
     </div>
   );
 }
