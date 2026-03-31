@@ -44,6 +44,27 @@ Multi-trade job management platform. Core promise: jobs, quotes, invoices, team 
 - SMS delivery is MOCKED (no real Twilio/provider)
 - Logo size polish (bigger in sidebar/header)
 
+## Batch 5 — COMPLETED (31 Mar 2026)
+- MYOB integration structure (placeholder/service-layer ready):
+  - Settings management (API key, company file ID/name)
+  - Invoice sync to MYOB (mock: generates MYOB-XXXXXXXX ID)
+  - Sync status tracking: not_synced > syncing > synced / sync_failed
+  - Payment sync-back webhook (marks invoice paid when MYOB payment received)
+  - MYOB sync log for audit trail
+  - Invoice migration adds MYOB fields to existing invoices
+- MYOB UI:
+  - Settings page: MYOB Integration card with API key, company fields, Connected badge
+  - Invoice detail: MYOB sync section with status badge, Sync to MYOB button, last sync time
+  - Invoice list: MYOB sync badge for synced invoices
+- Business-owned SMS credits:
+  - Shared balance per business (was already business_id-based, confirmed)
+  - Employer/admin can buy/top-up credits
+  - Workers can send SMS using business credits
+  - Workers CANNOT buy credits (403)
+  - sent_by_name tracking on every SMS log entry
+  - SMS history shows who sent each message
+- MYOB sync is MOCKED (no real MYOB API connected yet)
+
 ## Key API Endpoints
 ### Auth: register, login, logout, me, refresh, forgot/reset-password
 ### User: PATCH plan, gst, trade
@@ -54,11 +75,11 @@ Multi-trade job management platform. Core promise: jobs, quotes, invoices, team 
 ### Quotes: CRUD + send + convert
 ### Invoices: CRUD + send + mark-paid
 ### SMS: GET balance, POST buy-credits, POST send, GET history, GET packs
+### MYOB: GET/POST settings, POST sync/{id}, GET status/{id}, POST webhook
 ### Dashboard: GET stats
 
 ## Backlog
 - P1: Job photos upload (job documentation/evidence)
 - P2: Worker password change flow
-- P2: MYOB accounting sync
 - P3: Advanced reporting and analytics
 - P3: Route optimization
