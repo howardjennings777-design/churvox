@@ -1,26 +1,30 @@
 # Churvox - Product Requirements Document
 
 ## Original Problem Statement
-Multi-trade job management platform. Core: jobs, quotes, invoices, team, time tracking, SMS, MYOB sync. Mobile-first.
+Multi-trade job management platform. Mobile-first, production-ready.
 
 ## Architecture
 - Frontend: React + Tailwind CSS + shadcn/ui (PWA-enabled)
 - Backend: FastAPI + MongoDB
-- Auth: Custom JWT
+- Auth: Custom JWT (no bypasses, proper session validation)
 
 ## Completed
-- Batch 1-6: Full app (branding, isolation, roles, jobs, quotes, invoices, time tracking, calendar, SMS, MYOB, plans, gating)
-- Final Batch: Onboarding, empty states, polish
-- Bugfixes: Admin login, transparent overlays (churvox-* colors), legal pages
-- PWA: Manifest, icons, service worker, InstallPrompt component
+- Batches 1-6 + Final: Full app (branding, isolation, roles, jobs, quotes, invoices, time tracking, calendar, SMS, MYOB, plans, gating, onboarding, empty states)
+- PWA install support
+- Legal pages (/privacy, /terms, /account-deletion)
+- Launch cleanup (31 Mar 2026): Removed admin bypass, cleaned test data, verified all empty states
 
-## PWA Support (31 Mar 2026)
-- manifest.json with 4 icons (192+512, any+maskable), display:standalone
-- sw.js minimal service worker (network-first)
-- Service worker registration in index.js
-- Apple meta tags (apple-mobile-web-app-capable, apple-touch-icon)
-- InstallPrompt component: beforeinstallprompt capture, iOS fallback instructions, 7-day dismiss
-- Install banner in Layout (appears on mobile devices)
+## Key URLs
+- Login: /login (email + password only, no bypass)
+- Dashboard: /dashboard
+- Privacy: /privacy (public)
+- Terms: /terms (public)
+- Account Deletion: /account-deletion (public)
+
+## Production State
+- Database: Clean (only admin@churvox.com user, no test data)
+- Auth: No bypass, no demo mode, proper session validation
+- All pages show clean empty states when no data exists
 
 ## Mocked/Placeholder
 - SMS delivery, MYOB sync, billing/payments, legal page content
