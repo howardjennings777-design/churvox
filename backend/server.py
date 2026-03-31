@@ -95,9 +95,33 @@ class MyobSyncStatus(str, Enum):
 
 class PlanType(str, Enum):
     SOLO = "solo"
-    SOLO_PLUS = "solo_plus"
     TEAM = "team"
     PRO = "pro"
+    ENTERPRISE = "enterprise"
+
+PLAN_LIMITS = {
+    "solo": {
+        "price": 30, "max_workers": 0, "max_clients": 50,
+        "sms": False, "myob": False, "team": False,
+        "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
+    },
+    "team": {
+        "price": 70, "max_workers": 5, "max_clients": -1,
+        "sms": True, "myob": False, "team": True,
+        "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
+    },
+    "pro": {
+        "price": 110, "max_workers": 20, "max_clients": -1,
+        "sms": True, "myob": True, "team": True,
+        "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
+    },
+    "enterprise": {
+        "price": 240, "max_workers": 50, "max_clients": -1,
+        "sms": True, "myob": True, "team": True,
+        "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
+        "extra_blocks": True,
+    },
+}
 
 # ===================== MODELS =====================
 class UserCreate(BaseModel):
@@ -478,11 +502,74 @@ async def reset_password(data: ResetPassword):
 # ===================== USER SETTINGS =====================
 @api_router.patch("/user/plan")
 async def update_plan(data: PlanUpdate, request: Request):
+    user = await require_employer(request)
+    biz_id = ObjectId(user["business_id"])
+
+    # Additional user blocks for enterprise
+    extra_blocks = 0
+    if data.plan == PlanType.ENTERPRISE:
+        # Count current team to see if extra blocks needed
+        team_count = await db.users.count_documents({"business_id": biz_id, "role": "worker"})
+        base_limit = PLAN_LIMITS["enterprise"]["max_workers"]
+        if team_count > base_limit:
+            extra_blocks = (team_count - base_limit + 49) // 50  # ceil division
+
+    # Update plan on the employer (business owner) record
+    update = {"plan": data.plan}
+    if data.plan == PlanType.ENTERPRISE:
+        update["extra_user_blocks"] = extra_blocks
+    else:
+        update["extra_user_blocks"] = 0
+
+    await db.users.update_one({"_id": ObjectId(user["id"])}, {"$set": update})
+    # Also update plan on all workers in this business
+    await db.users.update_many({"business_id": biz_id, "role": "worker"}, {"$set": {"plan": data.plan}})
+
+    limits = PLAN_LIMITS.get(data.plan, PLAN_LIMITS["solo"])
+    return {"message": "Plan updated", "plan": data.plan, "limits": limits}
+
+@api_router.get("/plan/limits")
+async def get_plan_limits(request: Request):
     user = await get_current_user(request)
-    if data.plan in [PlanType.TEAM, PlanType.PRO]:
-        raise HTTPException(status_code=400, detail="Team and Pro plans are coming soon")
-    await db.users.update_one({"_id": ObjectId(user["id"])}, {"$set": {"plan": data.plan}})
-    return {"message": "Plan updated", "plan": data.plan}
+    plan = user.get("plan", "solo")
+    # Normalize legacy plans
+    if plan not in PLAN_LIMITS:
+        plan = "solo"
+    limits = PLAN_LIMITS[plan]
+    biz_id = ObjectId(user["business_id"])
+
+    # Get actual usage
+    team_count = await db.users.count_documents({"business_id": biz_id, "role": "worker"})
+    client_count = await db.clients.count_documents({"contractor_id": biz_id})
+
+    # Extra user blocks
+    employer_doc = await db.users.find_one({"_id": biz_id})
+    extra_blocks = 0
+    if employer_doc:
+        extra_blocks = employer_doc.get("extra_user_blocks", 0)
+    else:
+        employer_doc = await db.users.find_one({"_id": ObjectId(user["id"])})
+        extra_blocks = employer_doc.get("extra_user_blocks", 0) if employer_doc else 0
+
+    max_workers = limits["max_workers"]
+    if plan == "enterprise":
+        max_workers += extra_blocks * 50
+
+    return {
+        "plan": plan,
+        "limits": limits,
+        "usage": {
+            "workers": team_count,
+            "clients": client_count,
+        },
+        "max_workers": max_workers,
+        "extra_user_blocks": extra_blocks,
+        "extra_block_price": 100,
+    }
+
+@api_router.get("/plan/all")
+async def get_all_plans():
+    return {plan_id: {**info, "id": plan_id} for plan_id, info in PLAN_LIMITS.items()}
 
 @api_router.patch("/user/gst")
 async def update_gst(data: GSTUpdate, request: Request):
@@ -500,6 +587,28 @@ async def update_trade(data: TradeUpdate, request: Request):
 @api_router.post("/team/workers")
 async def create_worker(worker_data: WorkerCreate, request: Request):
     user = await require_employer(request)
+    biz_id = ObjectId(user["business_id"])
+
+    # Plan-based team limit check
+    plan = user.get("plan", "solo")
+    if plan not in PLAN_LIMITS:
+        plan = "solo"
+    limits = PLAN_LIMITS[plan]
+    if not limits.get("team"):
+        raise HTTPException(status_code=403, detail="Your plan does not include team management. Upgrade to Team or higher.")
+
+    team_count = await db.users.count_documents({"business_id": biz_id, "role": "worker"})
+    max_workers = limits["max_workers"]
+    if plan == "enterprise":
+        employer_doc = await db.users.find_one({"_id": biz_id})
+        if not employer_doc:
+            employer_doc = await db.users.find_one({"_id": ObjectId(user["id"])})
+        extra_blocks = employer_doc.get("extra_user_blocks", 0) if employer_doc else 0
+        max_workers += extra_blocks * 50
+
+    if max_workers >= 0 and team_count >= max_workers:
+        raise HTTPException(status_code=403, detail=f"Team limit reached ({max_workers} workers). Upgrade your plan for more team members.")
+
     email = worker_data.email.lower()
     existing = await db.users.find_one({"email": email})
     if existing:
@@ -556,9 +665,21 @@ async def delete_worker(worker_id: str, request: Request):
 @api_router.post("/clients")
 async def create_client(client_data: ClientCreate, request: Request):
     user = await get_current_user(request)
+    biz_id = ObjectId(user["business_id"])
+
+    # Plan-based client limit check
+    plan = user.get("plan", "solo")
+    if plan not in PLAN_LIMITS:
+        plan = "solo"
+    max_clients = PLAN_LIMITS[plan]["max_clients"]
+    if max_clients > 0:
+        client_count = await db.clients.count_documents({"contractor_id": biz_id})
+        if client_count >= max_clients:
+            raise HTTPException(status_code=403, detail=f"Client limit reached ({max_clients}). Upgrade your plan for unlimited clients.")
+
     client_doc = {
         **client_data.model_dump(),
-        "contractor_id": ObjectId(user["business_id"]),
+        "contractor_id": biz_id,
         "created_at": datetime.now(timezone.utc)
     }
     result = await db.clients.insert_one(client_doc)
@@ -1637,6 +1758,9 @@ async def startup_event():
         {"myob_sync_status": {"$exists": False}},
         {"$set": {"myob_sync_status": MyobSyncStatus.NOT_SYNCED, "myob_id": None, "myob_last_sync": None, "myob_error": None}}
     )
+
+    # Migrate legacy solo_plus plan to solo
+    await db.users.update_many({"plan": "solo_plus"}, {"$set": {"plan": "solo"}})
 
     # Write test credentials
     os.makedirs("/app/memory", exist_ok=True)

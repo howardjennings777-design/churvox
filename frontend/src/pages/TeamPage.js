@@ -9,10 +9,13 @@ import { Label } from "../components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../components/ui/dialog";
 import { UserPlus, Trash2, Phone, Mail, Shield } from "lucide-react";
 import { toast } from "sonner";
+import { usePlanLimits } from "../hooks/usePlanLimits";
+import { UpgradePrompt } from "../components/UpgradePrompt";
 
 export default function TeamPage() {
   const { isEmployer } = useAuth();
   const { get, post, del, loading } = useApi();
+  const { planData, isFeatureEnabled, canAddWorker } = usePlanLimits();
   const [workers, setWorkers] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "", phone: "" });
@@ -68,12 +71,24 @@ export default function TeamPage() {
   return (
     <Layout>
       <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6" data-testid="team-page">
+        {!isFeatureEnabled("team") ? (
+          <UpgradePrompt feature="team" message="Team management requires a Team plan or higher." />
+        ) : (
+        <>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white" data-testid="team-heading">Team</h1>
-            <p className="text-sm text-churvox-muted mt-1">{workers.length} worker{workers.length !== 1 ? "s" : ""}</p>
+            <p className="text-sm text-churvox-muted mt-1">
+              {workers.length} worker{workers.length !== 1 ? "s" : ""}
+              {planData && planData.max_workers >= 0 && (
+                <span className="text-churvox-muted/60"> / {planData.max_workers} max</span>
+              )}
+            </p>
           </div>
-          <Button onClick={() => setShowAdd(true)} className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="add-worker-button">
+          <Button onClick={() => {
+            if (!canAddWorker()) { toast.error("Team limit reached. Upgrade your plan."); return; }
+            setShowAdd(true);
+          }} className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="add-worker-button">
             <UserPlus size={16} className="mr-2" /> Add Worker
           </Button>
         </div>
@@ -160,6 +175,8 @@ export default function TeamPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </>
+        )}
       </div>
     </Layout>
   );

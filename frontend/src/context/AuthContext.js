@@ -48,11 +48,15 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const updateUser = useCallback((updates) => {
+    setUser((prev) => prev ? { ...prev, ...updates } : prev);
+  }, []);
+
   const isEmployer = user?.role === "employer" || user?.role === "admin";
   const isWorker = user?.role === "worker";
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, checkAuth, isEmployer, isWorker }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, checkAuth, updateUser, isEmployer, isWorker }}>
       {children}
     </AuthContext.Provider>
   );

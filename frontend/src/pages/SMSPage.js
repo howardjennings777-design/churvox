@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { MessageSquare, CreditCard, AlertTriangle, Send, Clock, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency } from "../lib/utils";
+import { usePlanLimits } from "../hooks/usePlanLimits";
+import { UpgradePrompt } from "../components/UpgradePrompt";
 
 const PACKS = [
   { id: "100", credits: 100, price: 10 },
@@ -27,6 +29,7 @@ const MSG_TYPES = [
 export default function SMSPage() {
   const { isEmployer } = useAuth();
   const { get, post, loading } = useApi();
+  const { isFeatureEnabled } = usePlanLimits();
   const [balance, setBalance] = useState(0);
   const [lowCredit, setLowCredit] = useState(false);
   const [history, setHistory] = useState([]);
@@ -74,6 +77,16 @@ export default function SMSPage() {
       setShowBuy(false);
     } else toast.error(res.error || "Failed to buy credits");
   };
+
+  if (!isFeatureEnabled("sms")) {
+    return (
+      <Layout>
+        <div className="p-4 md:p-6 max-w-4xl mx-auto">
+          <UpgradePrompt feature="sms" message="SMS notifications require a Team plan or higher." />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

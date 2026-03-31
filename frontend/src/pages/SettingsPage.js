@@ -12,14 +12,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Building2, Briefcase, Receipt, RefreshCw } from "lucide-react";
+import { Loader2, Building2, Briefcase, Receipt, RefreshCw, Lock } from "lucide-react";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { TRADE_TYPES } from "@/lib/utils";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 export default function SettingsPage() {
   const { user, updateUser } = useAuth();
   const { patch, get, post, loading } = useApi();
+  const { isFeatureEnabled } = usePlanLimits();
   const [gstRate, setGstRate] = useState(user?.gst_rate?.toString() || "15");
   const [tradeType, setTradeType] = useState(user?.trade_type || "other");
   const [myobKey, setMyobKey] = useState("");
@@ -208,6 +210,7 @@ export default function SettingsPage() {
         </Card>
 
         {/* MYOB Integration */}
+        {isFeatureEnabled("myob") ? (
         <Card className="card-surface" data-testid="myob-settings-card">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -274,6 +277,17 @@ export default function SettingsPage() {
             )}
           </CardContent>
         </Card>
+        ) : (
+          <Card className="card-surface border-border" data-testid="myob-locked-card">
+            <CardContent className="p-6 text-center space-y-3">
+              <div className="h-10 w-10 rounded-full bg-churvox-accent/15 flex items-center justify-center mx-auto">
+                <Lock size={18} className="text-churvox-accent" />
+              </div>
+              <p className="text-sm text-white font-medium">MYOB integration requires a Pro plan or higher</p>
+              <a href="/plans" className="text-xs text-churvox-accent hover:underline" data-testid="myob-upgrade-link">View Plans</a>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </Layout>
   );
