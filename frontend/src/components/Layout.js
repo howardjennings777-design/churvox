@@ -41,8 +41,8 @@ export default function Layout({ children }) {
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-churvox-card border-r border-churvox-border z-40" data-testid="desktop-sidebar">
         {/* Logo */}
-        <div className="flex items-center px-5 h-16 border-b border-churvox-border">
-          <ChurvoxLogo size="md" dataTestId="sidebar-logo" />
+        <div className="flex items-center justify-center px-5 h-20 border-b border-churvox-border">
+          <ChurvoxLogo size="lg" dataTestId="sidebar-logo" />
         </div>
 
         {/* User Info */}
@@ -98,7 +98,7 @@ export default function Layout({ children }) {
       {/* Mobile Header */}
       <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-churvox-card border-b border-churvox-border flex items-center justify-between px-4 z-40" data-testid="mobile-header">
         <div className="flex items-center gap-2">
-          <ChurvoxLogo size="sm" dataTestId="mobile-logo" />
+          <ChurvoxLogo size="md" dataTestId="mobile-logo" />
         </div>
         <div className="flex items-center gap-2">
           <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-churvox-accent/20 text-churvox-accent">

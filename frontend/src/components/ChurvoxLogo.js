@@ -1,29 +1,22 @@
 import React from "react";
 
 // Single source of truth for the Churvox logo.
-// To swap the logo, change this one URL.
-export const LOGO_URL =
-  "https://customer-assets.emergentagent.com/job_cabc92ae-f550-4ece-8cd0-4b58f21e045b/artifacts/c4td8x4w_1000049586%20%281%29.png";
+// To swap the logo, replace /public/churvox-logo.png
+const LOGO_PATH = "/churvox-logo.png";
 
-/**
- * Shared Churvox logo component.
- * @param {"sm"|"md"|"lg"|"xl"} size  – predefined size preset
- * @param {string}  className         – extra Tailwind classes
- * @param {string}  dataTestId        – data-testid override
- */
 const SIZE_MAP = {
-  sm: "h-8",
-  md: "h-10",
-  lg: "h-14",
-  xl: "h-20",
+  sm: "h-10",
+  md: "h-14",
+  lg: "h-20",
+  xl: "h-28",
 };
 
 export function ChurvoxLogo({ size = "md", className = "", dataTestId = "churvox-logo" }) {
   return (
     <img
-      src={LOGO_URL}
+      src={LOGO_PATH}
       alt="Churvox"
-      className={`w-auto object-contain churvox-logo ${SIZE_MAP[size] || SIZE_MAP.md} ${className}`}
+      className={`w-auto object-contain ${SIZE_MAP[size] || SIZE_MAP.md} ${className}`}
       data-testid={dataTestId}
     />
   );
