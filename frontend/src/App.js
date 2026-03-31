@@ -5,6 +5,8 @@ import { Toaster } from "./components/ui/sonner";
 
 import LoginPage from "./pages/auth/LoginPage";
 import SignupPage from "./pages/auth/SignupPage";
+import AdminLoginPage from "./pages/auth/AdminLoginPage";
+import InviteSetupPage from "./pages/auth/InviteSetupPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -49,6 +51,8 @@ function App() {
         <Routes>
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
+          <Route path="/admin/login" element={<PublicRoute><AdminLoginPage /></PublicRoute>} />
+          <Route path="/invite/setup/:token" element={<InviteSetupPage />} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
           <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
 

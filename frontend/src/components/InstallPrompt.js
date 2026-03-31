@@ -6,18 +6,26 @@ const DISMISS_KEY = "churvox_install_dismissed";
 const DISMISS_DAYS = 7;
 
 function isDismissed() {
-  const ts = localStorage.getItem(DISMISS_KEY);
-  if (!ts) return false;
-  return Date.now() - parseInt(ts, 10) < DISMISS_DAYS * 86400000;
+  try {
+    const ts = localStorage.getItem(DISMISS_KEY);
+    if (!ts) return false;
+    return Date.now() - parseInt(ts, 10) < DISMISS_DAYS * 86400000;
+  } catch {
+    return false;
+  }
 }
 
 function isStandalone() {
-  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true ||
+    document.referrer.includes("android-app://")
+  );
 }
 
 function getDeviceType() {
   const ua = navigator.userAgent;
-  if (/iPad|iPhone|iPod/.test(ua)) return "ios";
+  if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) return "ios";
   if (/android/i.test(ua)) return "android";
   return "desktop";
 }
@@ -26,53 +34,75 @@ export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showBanner, setShowBanner] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [installed, setInstalled] = useState(false);
   const device = getDeviceType();
 
   useEffect(() => {
+    // Don't show anything if already installed or dismissed
     if (isStandalone() || isDismissed()) return;
 
-    const handler = (e) => {
+    const handleBeforeInstall = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setShowBanner(true);
     };
-    window.addEventListener("beforeinstallprompt", handler);
 
-    // If no prompt event after 3s on mobile, show banner with manual instructions
+    const handleAppInstalled = () => {
+      setInstalled(true);
+      setShowBanner(false);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    // Fallback: show banner on mobile after 4s if no native prompt fires
     const timer = setTimeout(() => {
-      if (device !== "desktop" && !isStandalone()) {
+      if (device !== "desktop" && !isStandalone() && !isDismissed()) {
         setShowBanner(true);
       }
-    }, 3000);
+    }, 4000);
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+      window.removeEventListener("appinstalled", handleAppInstalled);
       clearTimeout(timer);
     };
   }, [device]);
 
   const handleInstall = useCallback(async () => {
     if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const result = await deferredPrompt.userChoice;
-      if (result.outcome === "accepted") {
-        setShowBanner(false);
+      try {
+        deferredPrompt.prompt();
+        const result = await deferredPrompt.userChoice;
+        if (result.outcome === "accepted") {
+          setShowBanner(false);
+          setInstalled(true);
+        }
+      } catch {
+        // prompt() can only be called once
       }
       setDeferredPrompt(null);
     } else {
+      // No native prompt available — show manual instructions
       setShowInstructions(true);
     }
   }, [deferredPrompt]);
 
   const handleDismiss = useCallback(() => {
-    localStorage.setItem(DISMISS_KEY, Date.now().toString());
+    try {
+      localStorage.setItem(DISMISS_KEY, Date.now().toString());
+    } catch {
+      // localStorage might be full or unavailable
+    }
     setShowBanner(false);
     setShowInstructions(false);
   }, []);
 
-  if (!showBanner || isStandalone()) return null;
+  // Don't render if installed, standalone, or banner not triggered
+  if (installed || !showBanner || isStandalone()) return null;
 
-  // Instruction overlay
+  // Manual instruction overlay
   if (showInstructions) {
     return (
       <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60" data-testid="install-instructions-overlay">

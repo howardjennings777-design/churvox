@@ -1,16 +1,19 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../components/ui/dialog";
-import { UserPlus, Trash2, Phone, Mail, Shield } from "lucide-react";
+import { UserPlus, Trash2, Phone, Mail, Shield, Upload, RefreshCw, Clock, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { usePlanLimits } from "../hooks/usePlanLimits";
 import { UpgradePrompt } from "../components/UpgradePrompt";
+import axios from "axios";
+
+const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 export default function TeamPage() {
   const { isEmployer } = useAuth();
@@ -18,8 +21,12 @@ export default function TeamPage() {
   const { planData, isFeatureEnabled, canAddWorker } = usePlanLimits();
   const [workers, setWorkers] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "", phone: "" });
+  const [showImport, setShowImport] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [deleteId, setDeleteId] = useState(null);
+  const [importResults, setImportResults] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef(null);
 
   const fetchWorkers = useCallback(async () => {
     const res = await get("/team/workers");
@@ -32,12 +39,12 @@ export default function TeamPage() {
     e.preventDefault();
     const res = await post("/team/workers", form);
     if (res.success) {
-      toast.success(`${form.name} added to your team`);
-      setForm({ name: "", email: "", password: "", phone: "" });
+      toast.success(`Invite sent to ${form.email}`);
+      setForm({ name: "", email: "", phone: "" });
       setShowAdd(false);
       fetchWorkers();
     } else {
-      toast.error(res.error || "Failed to add worker");
+      toast.error(res.error || "Failed to invite worker");
     }
   };
 
@@ -50,6 +57,45 @@ export default function TeamPage() {
       fetchWorkers();
     } else {
       toast.error(res.error || "Failed to remove worker");
+    }
+  };
+
+  const handleResendInvite = async (workerId, email) => {
+    const res = await post(`/team/resend-invite/${workerId}`);
+    if (res.success) {
+      toast.success(`Invite resent to ${email}`);
+    } else {
+      toast.error(res.error || "Failed to resend invite");
+    }
+  };
+
+  const handleCSVImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    setImportResults(null);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.post(`${API_URL}/api/team/import-csv`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+        withCredentials: true,
+      });
+      setImportResults(res.data);
+      toast.success(`${res.data.invited} worker(s) invited`);
+      fetchWorkers();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "CSV import failed");
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -85,23 +131,82 @@ export default function TeamPage() {
               )}
             </p>
           </div>
-          <Button onClick={() => {
-            if (!canAddWorker()) { toast.error("Team limit reached. Upgrade your plan."); return; }
-            setShowAdd(true);
-          }} className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="add-worker-button">
-            <UserPlus size={16} className="mr-2" /> Add Worker
-          </Button>
+          <div className="flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleCSVImport}
+              className="hidden"
+              data-testid="csv-file-input"
+            />
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importing}
+              className="border-churvox-border text-churvox-muted hover:text-white"
+              data-testid="csv-import-button"
+            >
+              <Upload size={16} className="mr-2" />
+              {importing ? "Importing..." : "CSV Import"}
+            </Button>
+            <Button onClick={() => {
+              if (!canAddWorker()) { toast.error("Team limit reached. Upgrade your plan."); return; }
+              setShowAdd(true);
+            }} className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="add-worker-button">
+              <UserPlus size={16} className="mr-2" /> Invite Worker
+            </Button>
+          </div>
         </div>
+
+        {/* CSV Import Results */}
+        {importResults && (
+          <Card className="bg-churvox-card border-churvox-border" data-testid="csv-import-results">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-white">Import Results</p>
+                <button onClick={() => setImportResults(null)} className="text-churvox-muted hover:text-white text-xs">
+                  Dismiss
+                </button>
+              </div>
+              <p className="text-sm text-churvox-muted mb-2">
+                {importResults.invited} invited, {importResults.skipped} skipped of {importResults.total} rows
+              </p>
+              {importResults.details?.filter(d => d.status !== "invited").length > 0 && (
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {importResults.details.filter(d => d.status !== "invited").map((d, i) => (
+                    <p key={i} className="text-xs text-churvox-muted/70">
+                      Row {d.row}: {d.reason}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {workers.length === 0 && !loading ? (
           <Card className="bg-churvox-card border-churvox-border">
             <CardContent className="p-8 text-center">
               <UserPlus className="mx-auto mb-3 text-churvox-muted/40" size={32} />
               <p className="text-white font-medium mb-1">No team members yet</p>
-              <p className="text-xs text-churvox-muted mb-4 max-w-xs mx-auto">Add workers to assign them to jobs. They'll get their own login to view and update their assigned work.</p>
-              <Button onClick={() => setShowAdd(true)} size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="add-first-worker">
-                <UserPlus size={14} className="mr-1" /> Add Your First Worker
-              </Button>
+              <p className="text-xs text-churvox-muted mb-4 max-w-xs mx-auto">
+                Invite workers to join your team. They'll receive an email to set up their account and can then view and update their assigned work.
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button onClick={() => setShowAdd(true)} size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="add-first-worker">
+                  <UserPlus size={14} className="mr-1" /> Invite Your First Worker
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-churvox-border text-churvox-muted hover:text-white"
+                  data-testid="csv-import-first"
+                >
+                  <Upload size={14} className="mr-1" /> Import CSV
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : (
@@ -114,16 +219,41 @@ export default function TeamPage() {
                       {w.name?.charAt(0)?.toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-white font-medium">{w.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-white font-medium">{w.name}</p>
+                        {w.status === "invited" ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20" data-testid={`worker-status-invited-${w.id}`}>
+                            <Clock size={10} /> Pending
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-500/10 text-green-400 border border-green-500/20" data-testid={`worker-status-active-${w.id}`}>
+                            <CheckCircle size={10} /> Active
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-3 text-xs text-churvox-muted mt-0.5">
                         <span className="flex items-center gap-1"><Mail size={12} /> {w.email}</span>
                         {w.phone && <span className="flex items-center gap-1"><Phone size={12} /> {w.phone}</span>}
                       </div>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => setDeleteId(w.id)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10" data-testid={`delete-worker-${w.id}`}>
-                    <Trash2 size={16} />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    {w.status === "invited" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleResendInvite(w.id, w.email)}
+                        className="text-churvox-muted hover:text-white hover:bg-white/5"
+                        data-testid={`resend-invite-${w.id}`}
+                        title="Resend invite email"
+                      >
+                        <RefreshCw size={14} />
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteId(w.id)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10" data-testid={`delete-worker-${w.id}`}>
+                      <Trash2 size={16} />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -134,7 +264,7 @@ export default function TeamPage() {
         <Dialog open={showAdd} onOpenChange={setShowAdd}>
           <DialogContent className="bg-churvox-card border-churvox-border" data-testid="add-worker-dialog">
             <DialogHeader>
-              <DialogTitle className="text-white">Add Worker</DialogTitle>
+              <DialogTitle className="text-white">Invite Worker</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleAdd} className="space-y-4">
               <div>
@@ -146,17 +276,16 @@ export default function TeamPage() {
                 <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required className="bg-churvox-bg border-churvox-border text-white" placeholder="email@example.com" data-testid="worker-email-input" />
               </div>
               <div>
-                <Label className="text-churvox-muted">Temporary Password</Label>
-                <Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={6} className="bg-churvox-bg border-churvox-border text-white" placeholder="Min 6 characters" data-testid="worker-password-input" />
-              </div>
-              <div>
                 <Label className="text-churvox-muted">Phone (optional)</Label>
                 <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" placeholder="0400 000 000" data-testid="worker-phone-input" />
               </div>
+              <p className="text-xs text-churvox-muted/70">
+                An invite email will be sent. The worker will set their own password when they accept.
+              </p>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setShowAdd(false)} className="border-churvox-border text-churvox-muted">Cancel</Button>
                 <Button type="submit" disabled={loading} className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="submit-worker-button">
-                  {loading ? "Adding..." : "Add Worker"}
+                  {loading ? "Sending..." : "Send Invite"}
                 </Button>
               </DialogFooter>
             </form>

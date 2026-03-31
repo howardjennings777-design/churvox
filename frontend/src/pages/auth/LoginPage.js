@@ -135,6 +135,7 @@ export default function LoginPage() {
               <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground/60">
                 <Link to="/privacy" className="hover:text-muted-foreground transition-colors" data-testid="login-privacy-link">Privacy</Link>
                 <Link to="/terms" className="hover:text-muted-foreground transition-colors" data-testid="login-terms-link">Terms</Link>
+                <Link to="/admin/login" className="hover:text-muted-foreground transition-colors" data-testid="admin-login-link">Admin</Link>
               </div>
             </CardContent>
           </Card>

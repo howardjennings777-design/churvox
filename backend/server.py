@@ -144,8 +144,13 @@ class ResetPassword(BaseModel):
 class WorkerCreate(BaseModel):
     name: str
     email: EmailStr
-    password: str
+    password: Optional[str] = None
     phone: Optional[str] = None
+
+class InviteAccept(BaseModel):
+    token: str
+    password: str
+    name: Optional[str] = None
 
 class ClientCreate(BaseModel):
     name: str
@@ -388,6 +393,7 @@ async def register(user_data: UserCreate, response: Response):
         "name": user_data.name,
         "business_name": user_data.business_name,
         "role": "employer",
+        "status": "active",
         "plan": "solo",
         "gst_rate": DEFAULT_GST_RATE,
         "created_at": datetime.now(timezone.utc)
@@ -430,6 +436,10 @@ async def login(user_data: UserLogin, response: Response, request: Request):
             upsert=True
         )
         raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # Block invited users who haven't completed setup
+    if user.get("status") == "invited":
+        raise HTTPException(status_code=403, detail="Please complete your account setup using the invite link sent to your email.")
 
     await db.login_attempts.delete_one({"identifier": identifier})
 
@@ -584,19 +594,15 @@ async def update_trade(data: TradeUpdate, request: Request):
     return {"message": "Trade type updated", "trade_type": data.trade_type}
 
 # ===================== TEAM / WORKERS =====================
-@api_router.post("/team/workers")
-async def create_worker(worker_data: WorkerCreate, request: Request):
-    user = await require_employer(request)
+async def check_team_limits(user):
+    """Check plan-based team limits. Returns (biz_id, max_workers) or raises HTTPException."""
     biz_id = ObjectId(user["business_id"])
-
-    # Plan-based team limit check
     plan = user.get("plan", "solo")
     if plan not in PLAN_LIMITS:
         plan = "solo"
     limits = PLAN_LIMITS[plan]
     if not limits.get("team"):
         raise HTTPException(status_code=403, detail="Your plan does not include team management. Upgrade to Team or higher.")
-
     team_count = await db.users.count_documents({"business_id": biz_id, "role": "worker"})
     max_workers = limits["max_workers"]
     if plan == "enterprise":
@@ -605,47 +611,88 @@ async def create_worker(worker_data: WorkerCreate, request: Request):
             employer_doc = await db.users.find_one({"_id": ObjectId(user["id"])})
         extra_blocks = employer_doc.get("extra_user_blocks", 0) if employer_doc else 0
         max_workers += extra_blocks * 50
-
     if max_workers >= 0 and team_count >= max_workers:
         raise HTTPException(status_code=403, detail=f"Team limit reached ({max_workers} workers). Upgrade your plan for more team members.")
+    return biz_id
+
+async def create_invite_for_worker(email: str, name: str, phone: str, user: dict, biz_id: ObjectId):
+    """Create a worker user with invited status and generate invite token."""
+    invite_token = secrets.token_urlsafe(32)
+    worker_doc = {
+        "email": email,
+        "password_hash": hash_password(secrets.token_urlsafe(32)),
+        "name": name,
+        "phone": phone,
+        "role": "worker",
+        "status": "invited",
+        "business_id": biz_id,
+        "plan": user.get("plan", "solo"),
+        "gst_rate": user.get("gst_rate", DEFAULT_GST_RATE),
+        "created_at": datetime.now(timezone.utc)
+    }
+    result = await db.users.insert_one(worker_doc)
+    worker_id = str(result.inserted_id)
+
+    # Store invite token
+    await db.invite_tokens.insert_one({
+        "token": invite_token,
+        "user_id": result.inserted_id,
+        "business_id": biz_id,
+        "email": email,
+        "expires_at": datetime.now(timezone.utc) + timedelta(days=7),
+        "used": False,
+        "created_at": datetime.now(timezone.utc)
+    })
+
+    # Get business name for email
+    employer_doc = await db.users.find_one({"_id": biz_id})
+    business_name = employer_doc.get("business_name", "your employer") if employer_doc else "your employer"
+    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+    invite_link = f"{frontend_url}/invite/setup/{invite_token}"
+
+    # MOCK EMAIL: Log invite instead of sending real email
+    await db.invite_emails.insert_one({
+        "to": email,
+        "subject": f"You've been invited to join {business_name} on Churvox",
+        "body": f"Hi {name},\n\n{business_name} has invited you to join their team on Churvox.\n\nClick the link below to set up your account:\n{invite_link}\n\nThis link expires in 7 days.",
+        "invite_link": invite_link,
+        "business_id": biz_id,
+        "worker_id": result.inserted_id,
+        "status": "sent_mock",
+        "created_at": datetime.now(timezone.utc)
+    })
+    logger.info(f"[EMAIL MOCK] Invite sent to {email} | Link: {invite_link}")
+
+    return {
+        "id": worker_id,
+        "name": name,
+        "email": email,
+        "phone": phone,
+        "role": "worker",
+        "status": "invited",
+        "invite_link": invite_link,
+        "created_at": worker_doc["created_at"].isoformat()
+    }
+
+@api_router.post("/team/workers")
+async def create_worker(worker_data: WorkerCreate, request: Request):
+    user = await require_employer(request)
+    biz_id = await check_team_limits(user)
 
     email = worker_data.email.lower()
     existing = await db.users.find_one({"email": email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    worker_doc = {
-        "email": email,
-        "password_hash": hash_password(worker_data.password),
-        "name": worker_data.name,
-        "phone": worker_data.phone,
-        "role": "worker",
-        "business_id": ObjectId(user["business_id"]),
-        "plan": user.get("plan", "solo"),
-        "gst_rate": user.get("gst_rate", DEFAULT_GST_RATE),
-        "created_at": datetime.now(timezone.utc)
-    }
-    result = await db.workers_collection_placeholder.insert_one({"_": 1})  # placeholder
-    await db.workers_collection_placeholder.delete_one({"_id": result.inserted_id})
-
-    result = await db.users.insert_one(worker_doc)
-    worker_id = str(result.inserted_id)
-
-    return {
-        "id": worker_id,
-        "name": worker_data.name,
-        "email": email,
-        "phone": worker_data.phone,
-        "role": "worker",
-        "created_at": worker_doc["created_at"].isoformat()
-    }
+    result = await create_invite_for_worker(email, worker_data.name, worker_data.phone, user, biz_id)
+    return result
 
 @api_router.get("/team/workers")
 async def get_workers(request: Request):
     user = await require_employer(request)
     workers = await db.users.find(
         {"business_id": ObjectId(user["business_id"]), "role": "worker"},
-        {"_id": 1, "name": 1, "email": 1, "phone": 1, "role": 1, "created_at": 1}
+        {"_id": 1, "name": 1, "email": 1, "phone": 1, "role": 1, "status": 1, "created_at": 1}
     ).to_list(1000)
     return [serialize_doc(w) for w in workers]
 
@@ -659,7 +706,207 @@ async def delete_worker(worker_id: str, request: Request):
     })
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Worker not found")
+    # Clean up invite tokens for this worker
+    await db.invite_tokens.delete_many({"user_id": ObjectId(worker_id)})
     return {"message": "Worker removed"}
+
+# ===================== INVITE ENDPOINTS =====================
+@api_router.get("/invite/verify/{token}")
+async def verify_invite(token: str):
+    """Public endpoint - verify invite token validity."""
+    token_doc = await db.invite_tokens.find_one({
+        "token": token, "used": False,
+        "expires_at": {"$gt": datetime.now(timezone.utc)}
+    })
+    if not token_doc:
+        raise HTTPException(status_code=400, detail="Invalid or expired invite link")
+
+    user_doc = await db.users.find_one({"_id": token_doc["user_id"]})
+    if not user_doc:
+        raise HTTPException(status_code=400, detail="User account not found")
+
+    employer_doc = await db.users.find_one({"_id": token_doc["business_id"]})
+    business_name = employer_doc.get("business_name", "Unknown Business") if employer_doc else "Unknown Business"
+
+    return {
+        "valid": True,
+        "email": user_doc["email"],
+        "name": user_doc["name"],
+        "business_name": business_name,
+    }
+
+@api_router.post("/invite/accept")
+async def accept_invite(data: InviteAccept):
+    """Public endpoint - accept invite and set password."""
+    token_doc = await db.invite_tokens.find_one({
+        "token": data.token, "used": False,
+        "expires_at": {"$gt": datetime.now(timezone.utc)}
+    })
+    if not token_doc:
+        raise HTTPException(status_code=400, detail="Invalid or expired invite link")
+
+    if len(data.password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
+    update_fields = {
+        "password_hash": hash_password(data.password),
+        "status": "active",
+    }
+    if data.name:
+        update_fields["name"] = data.name
+
+    await db.users.update_one(
+        {"_id": token_doc["user_id"]},
+        {"$set": update_fields}
+    )
+    await db.invite_tokens.update_one(
+        {"_id": token_doc["_id"]},
+        {"$set": {"used": True}}
+    )
+
+    user_doc = await db.users.find_one({"_id": token_doc["user_id"]})
+    return {
+        "message": "Account set up successfully. You can now sign in.",
+        "email": user_doc["email"],
+        "name": user_doc["name"],
+    }
+
+@api_router.post("/team/resend-invite/{worker_id}")
+async def resend_invite(worker_id: str, request: Request):
+    """Resend invite email to an invited worker."""
+    user = await require_employer(request)
+    biz_id = ObjectId(user["business_id"])
+
+    worker = await db.users.find_one({
+        "_id": ObjectId(worker_id), "business_id": biz_id, "role": "worker"
+    })
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+    if worker.get("status") != "invited":
+        raise HTTPException(status_code=400, detail="Worker has already accepted the invite")
+
+    # Invalidate old tokens
+    await db.invite_tokens.update_many(
+        {"user_id": ObjectId(worker_id)},
+        {"$set": {"used": True}}
+    )
+
+    # Create new token
+    invite_token = secrets.token_urlsafe(32)
+    await db.invite_tokens.insert_one({
+        "token": invite_token,
+        "user_id": ObjectId(worker_id),
+        "business_id": biz_id,
+        "email": worker["email"],
+        "expires_at": datetime.now(timezone.utc) + timedelta(days=7),
+        "used": False,
+        "created_at": datetime.now(timezone.utc)
+    })
+
+    employer_doc = await db.users.find_one({"_id": biz_id})
+    business_name = employer_doc.get("business_name", "your employer") if employer_doc else "your employer"
+    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+    invite_link = f"{frontend_url}/invite/setup/{invite_token}"
+
+    await db.invite_emails.insert_one({
+        "to": worker["email"],
+        "subject": f"Reminder: Join {business_name} on Churvox",
+        "body": f"Hi {worker['name']},\n\nThis is a reminder to set up your Churvox account.\n\nClick here: {invite_link}\n\nThis link expires in 7 days.",
+        "invite_link": invite_link,
+        "business_id": biz_id,
+        "worker_id": ObjectId(worker_id),
+        "status": "sent_mock",
+        "created_at": datetime.now(timezone.utc)
+    })
+    logger.info(f"[EMAIL MOCK] Invite resent to {worker['email']} | Link: {invite_link}")
+
+    return {"message": f"Invite resent to {worker['email']}", "invite_link": invite_link}
+
+@api_router.post("/team/import-csv")
+async def import_csv_workers(request: Request):
+    """Import workers from CSV. Expects multipart form data with a 'file' field.
+    CSV format: name,email,phone (header row optional)."""
+    user = await require_employer(request)
+    biz_id = await check_team_limits(user)
+
+    form = await request.form()
+    file = form.get("file")
+    if not file:
+        raise HTTPException(status_code=400, detail="No file uploaded")
+
+    content = await file.read()
+    try:
+        text = content.decode("utf-8")
+    except UnicodeDecodeError:
+        text = content.decode("latin-1")
+
+    import csv
+    import io
+    reader = csv.reader(io.StringIO(text))
+    rows = list(reader)
+
+    if not rows:
+        raise HTTPException(status_code=400, detail="CSV file is empty")
+
+    # Skip header if it looks like one
+    start = 0
+    if rows[0] and rows[0][0].lower().strip() in ("name", "full name", "employee name"):
+        start = 1
+
+    results = []
+    for i, row in enumerate(rows[start:], start=start + 1):
+        if len(row) < 2:
+            results.append({"row": i, "status": "skipped", "reason": "Missing name or email"})
+            continue
+
+        name = row[0].strip()
+        email = row[1].strip().lower()
+        phone = row[2].strip() if len(row) > 2 else None
+
+        if not name or not email:
+            results.append({"row": i, "status": "skipped", "reason": "Empty name or email"})
+            continue
+
+        # Basic email validation
+        if "@" not in email or "." not in email:
+            results.append({"row": i, "status": "skipped", "reason": f"Invalid email: {email}"})
+            continue
+
+        # Check existing
+        existing = await db.users.find_one({"email": email})
+        if existing:
+            results.append({"row": i, "status": "skipped", "reason": f"Email already registered: {email}"})
+            continue
+
+        # Check team limit
+        team_count = await db.users.count_documents({"business_id": biz_id, "role": "worker"})
+        plan = user.get("plan", "solo")
+        limits = PLAN_LIMITS.get(plan, PLAN_LIMITS["solo"])
+        max_workers = limits["max_workers"]
+        if plan == "enterprise":
+            emp_doc = await db.users.find_one({"_id": biz_id})
+            extra_blocks = emp_doc.get("extra_user_blocks", 0) if emp_doc else 0
+            max_workers += extra_blocks * 50
+        if max_workers >= 0 and team_count >= max_workers:
+            results.append({"row": i, "status": "skipped", "reason": "Team limit reached"})
+            continue
+
+        try:
+            invite_result = await create_invite_for_worker(email, name, phone, user, biz_id)
+            results.append({"row": i, "status": "invited", "email": email, "name": name})
+        except Exception as e:
+            results.append({"row": i, "status": "error", "reason": str(e)})
+
+    invited = sum(1 for r in results if r["status"] == "invited")
+    skipped = sum(1 for r in results if r["status"] in ("skipped", "error"))
+
+    return {
+        "message": f"{invited} worker(s) invited, {skipped} skipped",
+        "total": len(results),
+        "invited": invited,
+        "skipped": skipped,
+        "details": results
+    }
 
 # ===================== CLIENTS =====================
 @api_router.post("/clients")
@@ -1712,6 +1959,9 @@ async def startup_event():
     await db.sms_log.create_index([("business_id", 1), ("created_at", -1)])
     await db.myob_settings.create_index("business_id", unique=True)
     await db.myob_sync_log.create_index([("business_id", 1), ("created_at", -1)])
+    await db.invite_tokens.create_index("token", unique=True)
+    await db.invite_tokens.create_index("expires_at", expireAfterSeconds=0)
+    await db.invite_emails.create_index([("business_id", 1), ("created_at", -1)])
 
     # Seed admin
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@churvox.com")
@@ -1725,6 +1975,7 @@ async def startup_event():
             "name": "Admin",
             "business_name": "Churvox Admin",
             "role": "employer",
+            "status": "active",
             "plan": "pro",
             "gst_rate": DEFAULT_GST_RATE,
             "created_at": datetime.now(timezone.utc)
