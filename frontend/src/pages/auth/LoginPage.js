@@ -34,22 +34,6 @@ export default function LoginPage() {
     setLoading(false);
   };
 
-  const handleAdminLogin = async () => {
-    setError("");
-    setLoading(true);
-    try {
-      const result = await login("admin@churvox.com", "Admin123!");
-      if (result?.token) {
-        navigate("/dashboard");
-      } else {
-        setError("Admin login failed.");
-      }
-    } catch (err) {
-      setError(err?.response?.data?.detail || "Admin login failed.");
-    }
-    setLoading(false);
-  };
-
   return (
     <div className="min-h-screen bg-background flex">
       {/* Left side - Login form */}
@@ -134,26 +118,6 @@ export default function LoginPage() {
                   ) : (
                     "Sign in"
                   )}
-                </Button>
-
-                <div className="relative my-4">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">Or</span>
-                  </div>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full border-border hover:bg-secondary"
-                  onClick={handleAdminLogin}
-                  disabled={loading}
-                  data-testid="admin-quick-login-button"
-                >
-                  Admin Dashboard
                 </Button>
               </form>
 
