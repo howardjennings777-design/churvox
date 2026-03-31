@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 from enum import Enum
+from sms_provider import get_sms_provider, format_phone_au_nz
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -31,6 +32,9 @@ DEFAULT_GST_RATE = float(os.environ.get('DEFAULT_GST_RATE', '15'))
 # Create the main app
 app = FastAPI(title="Churvox API")
 api_router = APIRouter(prefix="/api")
+
+# SMS Provider (abstracted — swap providers by changing env config)
+sms_provider = get_sms_provider()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -264,10 +268,14 @@ class TradeUpdate(BaseModel):
 
 class SmsSend(BaseModel):
     recipient_phone: str
-    message_type: str  # customer_reminder, on_the_way, invoice_reminder
+    message_type: str  # customer_reminder, on_the_way, invoice_reminder, custom
     job_id: Optional[str] = None
     invoice_id: Optional[str] = None
     custom_message: Optional[str] = None
+
+class SmsTestSend(BaseModel):
+    phone: str
+    message: Optional[str] = "Test SMS from Churvox"
 
 class SmsBuyCredits(BaseModel):
     pack: str  # 100, 500, 1000
@@ -1699,6 +1707,7 @@ SMS_TEMPLATES = {
     "customer_reminder": "Hi {name}, this is a reminder about your upcoming job on {date}. - {business}",
     "on_the_way": "Hi {name}, your technician is on the way and should arrive shortly. - {business}",
     "invoice_reminder": "Hi {name}, you have an outstanding invoice ({invoice_number}) for {total}. - {business}",
+    "custom": "{custom_message}",
 }
 
 @api_router.get("/sms/balance")
@@ -1708,6 +1717,13 @@ async def get_sms_balance(request: Request):
     credit_doc = await db.sms_credits.find_one({"business_id": ObjectId(biz_id)})
     balance = credit_doc.get("balance", 0) if credit_doc else 0
     return {"balance": balance, "low_credit": balance < 20}
+
+@api_router.get("/sms/provider-balance")
+async def get_sms_provider_balance(request: Request):
+    """Check ClickSend account balance (admin/employer only)."""
+    await require_employer(request)
+    balance = await sms_provider.check_balance()
+    return {"provider": sms_provider.__class__.__name__, "balance": balance}
 
 @api_router.post("/sms/buy-credits")
 async def buy_sms_credits(data: SmsBuyCredits, request: Request):
@@ -1747,10 +1763,15 @@ async def send_sms(data: SmsSend, request: Request):
         raise HTTPException(status_code=400, detail="Insufficient SMS credits")
 
     # Build message from template
-    template = SMS_TEMPLATES.get(data.message_type, data.custom_message or "Message from {business}")
-    business_name = user.get("business_name") or "Churvox"
+    template = SMS_TEMPLATES.get(data.message_type)
+    if not template and data.message_type == "custom" and data.custom_message:
+        template = data.custom_message
+    elif not template:
+        template = data.custom_message or "Message from {business}"
 
-    fill = {"business": business_name, "name": "", "date": "", "invoice_number": "", "total": ""}
+    business_name = user.get("business_name") or "Churvox"
+    fill = {"business": business_name, "name": "", "date": "", "invoice_number": "", "total": "", "custom_message": data.custom_message or ""}
+
     if data.job_id:
         job = await db.jobs.find_one({"_id": ObjectId(data.job_id), "contractor_id": biz_id})
         if job:
@@ -1765,28 +1786,64 @@ async def send_sms(data: SmsSend, request: Request):
 
     message = template.format(**fill)
 
-    # PLACEHOLDER: Log SMS instead of sending via real provider
+    # Send via provider (ClickSend in production, Mock in dev)
+    result = await sms_provider.send(
+        to=data.recipient_phone,
+        body=message,
+        source="Churvox"
+    )
+
     sms_log = {
         "business_id": biz_id,
         "recipient_phone": data.recipient_phone,
+        "formatted_phone": format_phone_au_nz(data.recipient_phone),
         "message_type": data.message_type,
         "message": message,
         "job_id": ObjectId(data.job_id) if data.job_id else None,
         "invoice_id": ObjectId(data.invoice_id) if data.invoice_id else None,
-        "status": "delivered_mock",
+        "status": result.status if result.success else "failed",
+        "provider": result.provider,
+        "message_id": result.message_id,
+        "cost": result.cost,
+        "error": result.error,
         "sent_by": ObjectId(user["id"]),
         "sent_by_name": user.get("name", "Unknown"),
         "created_at": datetime.now(timezone.utc)
     }
     await db.sms_log.insert_one(sms_log)
 
-    # Deduct 1 credit
+    if not result.success:
+        raise HTTPException(status_code=502, detail=f"SMS delivery failed: {result.error}")
+
+    # Deduct 1 credit on success
     await db.sms_credits.update_one({"business_id": biz_id}, {"$inc": {"balance": -1}})
     new_balance = balance - 1
 
-    logger.info(f"[SMS MOCK] To: {data.recipient_phone} | Type: {data.message_type} | Msg: {message}")
+    return {
+        "message": "SMS sent",
+        "sms_message": message,
+        "balance": new_balance,
+        "provider": result.provider,
+        "message_id": result.message_id,
+    }
 
-    return {"message": "SMS sent (mock)", "sms_message": message, "balance": new_balance, "mock": True}
+@api_router.post("/sms/test")
+async def send_test_sms(data: SmsTestSend, request: Request):
+    """Development endpoint — send a test SMS without deducting credits."""
+    await require_employer(request)
+    result = await sms_provider.send(
+        to=data.phone,
+        body=data.message or "Test SMS from Churvox",
+        source="Churvox-Test"
+    )
+    return {
+        "success": result.success,
+        "message_id": result.message_id,
+        "status": result.status,
+        "provider": result.provider,
+        "error": result.error,
+        "cost": result.cost,
+    }
 
 @api_router.get("/sms/history")
 async def get_sms_history(request: Request):
