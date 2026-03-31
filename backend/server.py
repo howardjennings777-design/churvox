@@ -18,6 +18,7 @@ from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 from sms_provider import get_sms_provider, format_phone_au_nz
+from email_provider import get_email_provider, build_invite_email, build_resend_invite_email, build_password_reset_email
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -35,6 +36,9 @@ api_router = APIRouter(prefix="/api")
 
 # SMS Provider (abstracted — swap providers by changing env config)
 sms_provider = get_sms_provider()
+
+# Email Provider (abstracted — swap providers by changing env config)
+email_provider = get_email_provider()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -658,18 +662,29 @@ async def create_invite_for_worker(email: str, name: str, phone: str, user: dict
     frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
     invite_link = f"{frontend_url}/invite/setup/{invite_token}"
 
-    # MOCK EMAIL: Log invite instead of sending real email
+    # Send real invite email via Resend
+    email_content = build_invite_email(name, business_name, invite_link)
+    email_result = await email_provider.send(
+        to=email,
+        subject=email_content["subject"],
+        html=email_content["html"],
+    )
+
     await db.invite_emails.insert_one({
         "to": email,
-        "subject": f"You've been invited to join {business_name} on Churvox",
-        "body": f"Hi {name},\n\n{business_name} has invited you to join their team on Churvox.\n\nClick the link below to set up your account:\n{invite_link}\n\nThis link expires in 7 days.",
+        "subject": email_content["subject"],
         "invite_link": invite_link,
         "business_id": biz_id,
         "worker_id": result.inserted_id,
-        "status": "sent_mock",
+        "status": "sent" if email_result.success else "failed",
+        "provider": email_result.provider,
+        "email_id": email_result.email_id,
+        "error": email_result.error,
         "created_at": datetime.now(timezone.utc)
     })
-    logger.info(f"[EMAIL MOCK] Invite sent to {email} | Link: {invite_link}")
+
+    if not email_result.success:
+        logger.warning(f"[Email] Invite email to {email} failed: {email_result.error} — invite link still valid")
 
     return {
         "id": worker_id,
@@ -816,17 +831,26 @@ async def resend_invite(worker_id: str, request: Request):
     frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
     invite_link = f"{frontend_url}/invite/setup/{invite_token}"
 
+    # Send real reminder email via Resend
+    email_content = build_resend_invite_email(worker["name"], business_name, invite_link)
+    email_result = await email_provider.send(
+        to=worker["email"],
+        subject=email_content["subject"],
+        html=email_content["html"],
+    )
+
     await db.invite_emails.insert_one({
         "to": worker["email"],
-        "subject": f"Reminder: Join {business_name} on Churvox",
-        "body": f"Hi {worker['name']},\n\nThis is a reminder to set up your Churvox account.\n\nClick here: {invite_link}\n\nThis link expires in 7 days.",
+        "subject": email_content["subject"],
         "invite_link": invite_link,
         "business_id": biz_id,
         "worker_id": ObjectId(worker_id),
-        "status": "sent_mock",
+        "status": "sent" if email_result.success else "failed",
+        "provider": email_result.provider,
+        "email_id": email_result.email_id,
+        "error": email_result.error,
         "created_at": datetime.now(timezone.utc)
     })
-    logger.info(f"[EMAIL MOCK] Invite resent to {worker['email']} | Link: {invite_link}")
 
     return {"message": f"Invite resent to {worker['email']}", "invite_link": invite_link}
 
@@ -914,6 +938,29 @@ async def import_csv_workers(request: Request):
         "invited": invited,
         "skipped": skipped,
         "details": results
+    }
+
+
+# ===================== EMAIL TEST =====================
+class EmailTestSend(BaseModel):
+    to: EmailStr
+    subject: Optional[str] = "Churvox Test Email"
+    message: Optional[str] = "This is a test email from Churvox to confirm email delivery is working."
+
+@api_router.post("/email/test")
+async def send_test_email(data: EmailTestSend, request: Request):
+    """Send a test email to confirm Resend integration works."""
+    await require_employer(request)
+    from email_provider import _base_wrapper, TEXT_COLOR
+    html = _base_wrapper(f"""
+<p style="margin:0 0 12px;font-size:15px;color:{TEXT_COLOR};">Test Email</p>
+<p style="margin:0;font-size:15px;color:{TEXT_COLOR};">{data.message}</p>""")
+    result = await email_provider.send(to=data.to, subject=data.subject, html=html)
+    return {
+        "success": result.success,
+        "email_id": result.email_id,
+        "provider": result.provider,
+        "error": result.error,
     }
 
 # ===================== CLIENTS =====================
