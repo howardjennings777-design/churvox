@@ -2124,8 +2124,8 @@ async def startup_event():
     await db.users.update_many({"plan": "solo_plus"}, {"$set": {"plan": "solo"}})
 
     # Write test credentials
-    os.makedirs("/app/memory", exist_ok=True)
-    with open("/app/memory/test_credentials.md", "w") as f:
+    os.makedirs("/tmp/memory", exist_ok=True)
+    with open("/tmp/memory/test_credentials.md", "w") as f:
         f.write(f"""# Churvox Test Credentials
 
 ## Admin Account (Employer)
