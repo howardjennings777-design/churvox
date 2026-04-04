@@ -16,7 +16,7 @@ const PLANS = [
       { name: "Jobs & scheduling", included: true },
       { name: "Quotes & invoices", included: true },
       { name: "Time tracking", included: true },
-      { name: "Up to 50 clients", included: true },
+      { name: "Up to 20 clients", included: true },
       { name: "Team management", included: false },
       { name: "SMS notifications", included: false },
       { name: "MYOB integration", included: false },
@@ -27,7 +27,7 @@ const PLANS = [
     icon: Users,
     features: [
       { name: "Everything in Solo", included: true },
-      { name: "Unlimited clients", included: true },
+      { name: "Up to 30 clients", included: true },
       { name: "Up to 5 team members", included: true },
       { name: "SMS notifications", included: true },
       { name: "Team assignment", included: true },
@@ -39,7 +39,7 @@ const PLANS = [
     icon: Crown,
     features: [
       { name: "Everything in Team", included: true },
-      { name: "Up to 20 team members", included: true },
+      { name: "Up to 35 clients", included: true },
       { name: "MYOB integration", included: true },
       { name: "Priority support", included: true },
     ],
@@ -49,7 +49,7 @@ const PLANS = [
     icon: Building2,
     features: [
       { name: "Everything in Pro", included: true },
-      { name: "50 team members included", included: true },
+      { name: "Up to 50 clients", included: true },
       { name: "+$100 per extra 50-user block", included: true },
       { name: "Dedicated support", included: true },
     ],
