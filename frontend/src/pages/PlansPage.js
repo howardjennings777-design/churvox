@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
@@ -57,6 +58,7 @@ const PLANS = [
 ];
 
 export default function PlansPage() {
+  const navigate = useNavigate();
   const { user, isEmployer, updateUser } = useAuth();
   const { get, patch, loading } = useApi();
   const [planData, setPlanData] = useState(null);
@@ -71,18 +73,28 @@ export default function PlansPage() {
 
   useEffect(() => { fetchPlan(); }, [fetchPlan]);
 
-  const handlePlanChange = async () => {
-    if (!confirmDialog) return;
-    const res = await patch("/user/plan", { plan: confirmDialog.id });
-    if (res.success) {
-      updateUser({ plan: confirmDialog.id });
-      toast.success(`Plan changed to ${confirmDialog.name}`);
-      setConfirmDialog(null);
-      fetchPlan();
-    } else {
-      toast.error(res.error || "Failed to change plan");
+  const handleUpgrade = async (planKey) => {
+  try {
+    const res = await api.post('/stripe/create-checkout-session', {
+      plan_type: planKey
+    });
+
+    if (res.data?.checkout_url) {
+      window.location.href = res.data.checkout_url;
+      return;
     }
-  };
+
+    if (res.data?.url) {
+      window.location.href = res.data.url;
+      return;
+    }
+
+    alert('Could not start payment checkout');
+  } catch (err) {
+    console.error('Upgrade checkout error:', err);
+    alert(err?.response?.data?.detail || 'Failed to start payment checkout');
+  }
+};
 
   const isUpgrade = (planId) => {
     const order = ["solo", "team", "pro", "enterprise"];

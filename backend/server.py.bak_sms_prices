@@ -43,13 +43,6 @@ FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com")
 
 stripe.api_key = STRIPE_SECRET_KEY
 
-PLAN_PRICE_IDS = {
-    "solo": STRIPE_PRICE_SOLO,
-    "team": STRIPE_PRICE_TEAM,
-    "pro": STRIPE_PRICE_PRO,
-    "enterprise": STRIPE_PRICE_ENTERPRISE,
-}
-
 # Create the main app
 app = FastAPI(title="Churvox API")
 
@@ -2362,43 +2355,6 @@ async def stripe_sms_webhook(request: Request):
 
     return {"received": True}
 
-
-
-
-@api_router.post("/stripe/create-checkout-session")
-async def create_checkout_session(payload: dict, request: Request, user=Depends(get_current_user)):
-    plan_type = (payload.get("plan_type") or "").lower().strip()
-    price_id = PLAN_PRICE_IDS.get(plan_type)
-
-    if not price_id:
-        raise HTTPException(status_code=400, detail="Missing Stripe price ID for this plan")
-
-    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000").rstrip("/")
-    customer_email = user.get("email")
-    business_id = str(user.get("business_id") or user.get("id"))
-
-    try:
-        session = stripe.checkout.Session.create(
-            mode="subscription",
-            payment_method_types=["card"],
-            line_items=[{
-                "price": price_id,
-                "quantity": 1,
-            }],
-            success_url=f"{frontend_url}/billing?success=1",
-            cancel_url=f"{frontend_url}/plans?canceled=1",
-            customer_email=customer_email,
-            metadata={
-                "business_id": business_id,
-                "user_id": str(user.get("id")),
-                "plan_type": plan_type,
-                "purchase_type": "plan_upgrade",
-            },
-        )
-        return {"checkout_url": session.url}
-    except Exception as e:
-        logger.error(f"Stripe checkout session error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Stripe checkout error: {str(e)}")
 
 app.include_router(api_router)
 

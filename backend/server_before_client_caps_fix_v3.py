@@ -43,13 +43,6 @@ FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com")
 
 stripe.api_key = STRIPE_SECRET_KEY
 
-PLAN_PRICE_IDS = {
-    "solo": STRIPE_PRICE_SOLO,
-    "team": STRIPE_PRICE_TEAM,
-    "pro": STRIPE_PRICE_PRO,
-    "enterprise": STRIPE_PRICE_ENTERPRISE,
-}
-
 # Create the main app
 app = FastAPI(title="Churvox API")
 
@@ -146,17 +139,17 @@ PLAN_LIMITS = {
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
     },
     "team": {
-        "price": 70, "max_workers": 5, "max_clients": 30,
+        "price": 70, "max_workers": 5, "max_clients": -1,
         "sms": True, "myob": False, "team": True,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
     },
     "pro": {
-        "price": 110, "max_workers": 20, "max_clients": 35,
+        "price": 110, "max_workers": 20, "max_clients": -1,
         "sms": True, "myob": True, "team": True,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
     },
     "enterprise": {
-        "price": 240, "max_workers": 50, "max_clients": 50,
+        "price": 240, "max_workers": 50, "max_clients": -1,
         "sms": True, "myob": True, "team": True,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
         "extra_blocks": True,
@@ -514,17 +507,7 @@ async def login(user_data: UserLogin, response: Response, request: Request):
             await db.login_attempts.delete_one({"identifier": identifier})
 
     user = await db.users.find_one({"email": email})
-
-    password_ok = False
-    if user:
-        stored_hash = user.get("password_hash")
-        if isinstance(stored_hash, str) and stored_hash.strip():
-            try:
-                password_ok = verify_password(user_data.password, stored_hash)
-            except Exception:
-                password_ok = False
-
-    if not user or not password_ok:
+    if not user or not verify_password(user_data.password, user["password_hash"]):
         await db.login_attempts.update_one(
             {"identifier": identifier},
             {"$inc": {"count": 1}, "$set": {"locked_until": datetime.now(timezone.utc) + timedelta(minutes=15)}},
@@ -1846,77 +1829,6 @@ SMS_TEMPLATES = {
     "custom": "{custom_message}",
 }
 
-
-async def get_business_owner_for_user(user: dict):
-    business_id = user.get("business_id") or user.get("id")
-    try:
-        owner = await db.users.find_one({"_id": ObjectId(business_id)})
-    except Exception:
-        owner = None
-    if owner:
-        return owner
-    return await db.users.find_one({"_id": ObjectId(user["id"])})
-
-async def create_sms_checkout_session_for_user(user: dict, pack_key: str):
-    pack = SMS_PACKS.get(pack_key)
-    if not pack:
-        raise HTTPException(status_code=400, detail="Invalid SMS pack")
-
-    owner = await get_business_owner_for_user(user)
-    if not owner:
-        raise HTTPException(status_code=404, detail="Business owner not found")
-
-    stripe_customer_id = owner.get("stripe_customer_id")
-    if not stripe_customer_id:
-        customer = stripe.Customer.create(
-            email=owner.get("email"),
-            name=owner.get("business_name") or owner.get("name") or owner.get("email"),
-            metadata={
-                "business_id": str(owner.get("business_id", owner["_id"])),
-                "owner_user_id": str(owner["_id"]),
-                "kind": "churvox_business_owner"
-            }
-        )
-        stripe_customer_id = customer.id
-        await db.users.update_one(
-            {"_id": owner["_id"]},
-            {"$set": {"stripe_customer_id": stripe_customer_id}}
-        )
-
-    currency = os.environ.get("STRIPE_CURRENCY", "nzd").lower()
-    frontend_base = (FRONTEND_URL or "https://www.churvox.com").rstrip("/")
-
-    business_id = owner.get("business_id", owner["_id"])
-    if isinstance(business_id, str):
-        business_id = ObjectId(business_id)
-
-    session = stripe.checkout.Session.create(
-        mode="payment",
-        customer=stripe_customer_id,
-        success_url=f"{frontend_base}/sms?checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
-        cancel_url=f"{frontend_base}/sms?checkout=cancelled",
-        line_items=[{
-            "price_data": {
-                "currency": currency,
-                "product_data": {
-                    "name": f"SMS Credits ({pack['credits']})",
-                    "description": f"Churvox SMS credit pack: {pack['credits']} credits"
-                },
-                "unit_amount": int(round(float(pack["price"]) * 100))
-            },
-            "quantity": 1
-        }],
-        metadata={
-            "purpose": "sms_credits",
-            "pack": pack_key,
-            "credits": str(pack["credits"]),
-            "business_id": str(business_id),
-            "owner_user_id": str(owner["_id"])
-        }
-    )
-    return session
-
-
 @api_router.get("/sms/balance")
 async def get_sms_balance(request: Request):
     user = await get_current_user(request)
@@ -1935,12 +1847,28 @@ async def get_sms_provider_balance(request: Request):
 @api_router.post("/sms/buy-credits")
 async def buy_sms_credits(data: SmsBuyCredits, request: Request):
     user = await require_employer(request)
-    session = await create_sms_checkout_session_for_user(user, data.pack)
-    return {
-        "message": "Stripe Checkout session created",
-        "checkout_url": session.url,
-        "session_id": session.id
-    }
+    pack = SMS_PACKS.get(data.pack)
+    if not pack:
+        raise HTTPException(status_code=400, detail="Invalid pack")
+    biz_id = ObjectId(user["business_id"])
+
+    # Add credits (payment is PLACEHOLDER — no real charge)
+    await db.sms_credits.update_one(
+        {"business_id": biz_id},
+        {"$inc": {"balance": pack["credits"]}, "$setOnInsert": {"business_id": biz_id}},
+        upsert=True
+    )
+    # Log purchase
+    await db.sms_purchases.insert_one({
+        "business_id": biz_id,
+        "pack": data.pack,
+        "credits": pack["credits"],
+        "price": pack["price"],
+        "created_at": datetime.now(timezone.utc),
+        "note": "PLACEHOLDER — no real payment processed"
+    })
+    credit_doc = await db.sms_credits.find_one({"business_id": biz_id})
+    return {"message": f"{pack['credits']} credits added", "balance": credit_doc.get("balance", 0)}
 
 @api_router.post("/sms/send")
 async def send_sms(data: SmsSend, request: Request):
@@ -2280,126 +2208,6 @@ async def billing_subscription_status(request: Request):
     }
 
 
-
-@api_router.post("/stripe/webhook-sms")
-async def stripe_sms_webhook(request: Request):
-    payload = await request.body()
-    sig_header = request.headers.get("stripe-signature")
-    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET_SMS") or STRIPE_WEBHOOK_SECRET
-
-    if not webhook_secret:
-        raise HTTPException(status_code=500, detail="Missing Stripe webhook secret for SMS payments")
-
-    try:
-        event = stripe.Webhook.construct_event(
-            payload=payload,
-            sig_header=sig_header,
-            secret=webhook_secret
-        )
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid webhook payload")
-    except stripe.error.SignatureVerificationError:
-        raise HTTPException(status_code=400, detail="Invalid webhook signature")
-
-    event_id = event.get("id")
-    if event_id:
-        existing = await db.stripe_events.find_one({"event_id": event_id})
-        if existing:
-            return {"received": True, "duplicate": True}
-
-    event_type = event.get("type")
-    obj = event["data"]["object"]
-
-    if event_type in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
-        metadata = obj.get("metadata", {}) or {}
-        if metadata.get("purpose") == "sms_credits":
-            if obj.get("payment_status") == "paid" or event_type == "checkout.session.async_payment_succeeded":
-                business_id = metadata.get("business_id")
-                owner_user_id = metadata.get("owner_user_id")
-                credits = int(metadata.get("credits", "0") or 0)
-                pack = metadata.get("pack", "")
-                session_id = obj.get("id")
-                amount_total = obj.get("amount_total", 0)
-                currency = (obj.get("currency") or "").lower()
-
-                if not business_id or credits <= 0:
-                    raise HTTPException(status_code=400, detail="Missing SMS credit metadata")
-
-                await db.sms_credits.update_one(
-                    {"business_id": ObjectId(business_id)},
-                    {"$inc": {"balance": credits}},
-                    upsert=True
-                )
-
-                purchase_doc = {
-                    "business_id": ObjectId(business_id),
-                    "pack": pack,
-                    "credits": credits,
-                    "amount_total": amount_total,
-                    "currency": currency,
-                    "stripe_session_id": session_id,
-                    "stripe_event_id": event_id,
-                    "created_at": datetime.now(timezone.utc),
-                }
-                if owner_user_id:
-                    try:
-                        purchase_doc["owner_user_id"] = ObjectId(owner_user_id)
-                    except Exception:
-                        purchase_doc["owner_user_id"] = owner_user_id
-
-                await db.sms_credit_purchases.insert_one(purchase_doc)
-
-    if event_id:
-        await db.stripe_events.update_one(
-            {"event_id": event_id},
-            {"$set": {
-                "event_id": event_id,
-                "type": event_type,
-                "created_at": datetime.now(timezone.utc)
-            }},
-            upsert=True
-        )
-
-    return {"received": True}
-
-
-
-
-@api_router.post("/stripe/create-checkout-session")
-async def create_checkout_session(payload: dict, request: Request, user=Depends(get_current_user)):
-    plan_type = (payload.get("plan_type") or "").lower().strip()
-    price_id = PLAN_PRICE_IDS.get(plan_type)
-
-    if not price_id:
-        raise HTTPException(status_code=400, detail="Missing Stripe price ID for this plan")
-
-    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000").rstrip("/")
-    customer_email = user.get("email")
-    business_id = str(user.get("business_id") or user.get("id"))
-
-    try:
-        session = stripe.checkout.Session.create(
-            mode="subscription",
-            payment_method_types=["card"],
-            line_items=[{
-                "price": price_id,
-                "quantity": 1,
-            }],
-            success_url=f"{frontend_url}/billing?success=1",
-            cancel_url=f"{frontend_url}/plans?canceled=1",
-            customer_email=customer_email,
-            metadata={
-                "business_id": business_id,
-                "user_id": str(user.get("id")),
-                "plan_type": plan_type,
-                "purchase_type": "plan_upgrade",
-            },
-        )
-        return {"checkout_url": session.url}
-    except Exception as e:
-        logger.error(f"Stripe checkout session error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Stripe checkout error: {str(e)}")
-
 app.include_router(api_router)
 
 # CORS
@@ -2422,8 +2230,6 @@ async def startup_event():
     await db.invite_tokens.create_index("token", unique=True)
     await db.invite_tokens.create_index("expires_at", expireAfterSeconds=0)
     await db.invite_emails.create_index([("business_id", 1), ("created_at", -1)])
-    await db.stripe_events.create_index("event_id", unique=True)
-    await db.sms_credit_purchases.create_index([("business_id", 1), ("created_at", -1)])
 
     # Seed admin
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@churvox.com")
