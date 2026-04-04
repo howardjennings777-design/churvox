@@ -1839,6 +1839,74 @@ SMS_TEMPLATES = {
     "custom": "{custom_message}",
 }
 
+
+async def get_business_owner_for_user(user: dict):
+    business_id = user.get("business_id", user.get("id"))
+    owner = await db.users.find_one({"_id": ObjectId(business_id)})
+    if owner:
+        return owner
+    return await db.users.find_one({"_id": ObjectId(user["id"])})
+
+async def create_sms_checkout_session_for_user(user: dict, pack_key: str):
+    pack = SMS_PACKS.get(pack_key)
+    if not pack:
+        raise HTTPException(status_code=400, detail="Invalid SMS pack")
+
+    owner = await get_business_owner_for_user(user)
+    if not owner:
+        raise HTTPException(status_code=404, detail="Business owner not found")
+
+    stripe_customer_id = owner.get("stripe_customer_id")
+    if not stripe_customer_id:
+        customer = stripe.Customer.create(
+            email=owner.get("email"),
+            name=owner.get("business_name") or owner.get("name") or owner.get("email"),
+            metadata={
+                "business_id": str(owner.get("business_id", owner["_id"])),
+                "owner_user_id": str(owner["_id"]),
+                "kind": "churvox_business_owner"
+            }
+        )
+        stripe_customer_id = customer.id
+        await db.users.update_one(
+            {"_id": owner["_id"]},
+            {"$set": {"stripe_customer_id": stripe_customer_id}}
+        )
+
+    currency = os.environ.get("STRIPE_CURRENCY", "nzd").lower()
+    frontend_base = (FRONTEND_URL or "https://www.churvox.com").rstrip("/")
+
+    business_id = owner.get("business_id", owner["_id"])
+    if isinstance(business_id, str):
+        business_id = ObjectId(business_id)
+
+    session = stripe.checkout.Session.create(
+        mode="payment",
+        customer=stripe_customer_id,
+        success_url=f"{frontend_base}/sms?checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{frontend_base}/sms?checkout=cancelled",
+        line_items=[{
+            "price_data": {
+                "currency": currency,
+                "product_data": {
+                    "name": f"SMS Credits ({pack['credits']})",
+                    "description": f"Churvox SMS credit pack: {pack['credits']} credits"
+                },
+                "unit_amount": int(round(float(pack["price"]) * 100))
+            },
+            "quantity": 1
+        }],
+        metadata={
+            "purpose": "sms_credits",
+            "pack": pack_key,
+            "credits": str(pack["credits"]),
+            "business_id": str(business_id),
+            "owner_user_id": str(owner["_id"])
+        }
+    )
+    return session
+
+
 @api_router.get("/sms/balance")
 async def get_sms_balance(request: Request):
     user = await get_current_user(request)
@@ -1857,480 +1925,10 @@ async def get_sms_provider_balance(request: Request):
 @api_router.post("/sms/buy-credits")
 async def buy_sms_credits(data: SmsBuyCredits, request: Request):
     user = await require_employer(request)
-    pack = SMS_PACKS.get(data.pack)
-    if not pack:
-        raise HTTPException(status_code=400, detail="Invalid pack")
-    biz_id = ObjectId(user["business_id"])
-
-    # Add credits (payment is PLACEHOLDER — no real charge)
-    await db.sms_credits.update_one(
-        {"business_id": biz_id},
-        {"$inc": {"balance": pack["credits"]}, "$setOnInsert": {"business_id": biz_id}},
-        upsert=True
-    )
-    # Log purchase
-    await db.sms_purchases.insert_one({
-        "business_id": biz_id,
-        "pack": data.pack,
-        "credits": pack["credits"],
-        "price": pack["price"],
-        "created_at": datetime.now(timezone.utc),
-        "note": "PLACEHOLDER — no real payment processed"
-    })
-    credit_doc = await db.sms_credits.find_one({"business_id": biz_id})
-    return {"message": f"{pack['credits']} credits added", "balance": credit_doc.get("balance", 0)}
-
-@api_router.post("/sms/send")
-async def send_sms(data: SmsSend, request: Request):
-    user = await get_current_user(request)
-    biz_id = ObjectId(user["business_id"])
-
-    # Check balance
-    credit_doc = await db.sms_credits.find_one({"business_id": biz_id})
-    balance = credit_doc.get("balance", 0) if credit_doc else 0
-    if balance < 1:
-        raise HTTPException(status_code=400, detail="Insufficient SMS credits")
-
-    # Build message from template
-    template = SMS_TEMPLATES.get(data.message_type)
-    if not template and data.message_type == "custom" and data.custom_message:
-        template = data.custom_message
-    elif not template:
-        template = data.custom_message or "Message from {business}"
-
-    business_name = user.get("business_name") or "Churvox"
-    fill = {"business": business_name, "name": "", "date": "", "invoice_number": "", "total": "", "custom_message": data.custom_message or ""}
-
-    if data.job_id:
-        job = await db.jobs.find_one({"_id": ObjectId(data.job_id), "contractor_id": biz_id})
-        if job:
-            fill["name"] = job.get("customer_name", "")
-            fill["date"] = job.get("scheduled_date", datetime.now(timezone.utc)).strftime("%d %b %Y")
-    if data.invoice_id:
-        inv = await db.invoices.find_one({"_id": ObjectId(data.invoice_id), "contractor_id": biz_id})
-        if inv:
-            fill["name"] = fill["name"] or inv.get("customer_name", "")
-            fill["invoice_number"] = inv.get("invoice_number", "")
-            fill["total"] = f"${inv.get('total', 0):.2f}"
-
-    message = template.format(**fill)
-
-    # Send via provider (ClickSend in production, Mock in dev)
-    result = await sms_provider.send(
-        to=data.recipient_phone,
-        body=message,
-        source="Churvox"
-    )
-
-    sms_log = {
-        "business_id": biz_id,
-        "recipient_phone": data.recipient_phone,
-        "formatted_phone": format_phone_au_nz(data.recipient_phone),
-        "message_type": data.message_type,
-        "message": message,
-        "job_id": ObjectId(data.job_id) if data.job_id else None,
-        "invoice_id": ObjectId(data.invoice_id) if data.invoice_id else None,
-        "status": result.status if result.success else "failed",
-        "provider": result.provider,
-        "message_id": result.message_id,
-        "cost": result.cost,
-        "error": result.error,
-        "sent_by": ObjectId(user["id"]),
-        "sent_by_name": user.get("name", "Unknown"),
-        "created_at": datetime.now(timezone.utc)
-    }
-    await db.sms_log.insert_one(sms_log)
-
-    if not result.success:
-        raise HTTPException(status_code=502, detail=f"SMS delivery failed: {result.error}")
-
-    # Deduct 1 credit on success
-    await db.sms_credits.update_one({"business_id": biz_id}, {"$inc": {"balance": -1}})
-    new_balance = balance - 1
-
+    session = await create_sms_checkout_session_for_user(user, data.pack)
     return {
-        "message": "SMS sent",
-        "sms_message": message,
-        "balance": new_balance,
-        "provider": result.provider,
-        "message_id": result.message_id,
+        "message": "Stripe Checkout session created",
+        "checkout_url": session.url,
+        "session_id": session.id
     }
 
-@api_router.post("/sms/test")
-async def send_test_sms(data: SmsTestSend, request: Request):
-    """Development endpoint — send a test SMS without deducting credits."""
-    await require_employer(request)
-    result = await sms_provider.send(
-        to=data.phone,
-        body=data.message or "Test SMS from Churvox",
-        source="Churvox-Test"
-    )
-    return {
-        "success": result.success,
-        "message_id": result.message_id,
-        "status": result.status,
-        "provider": result.provider,
-        "error": result.error,
-        "cost": result.cost,
-    }
-
-@api_router.get("/sms/history")
-async def get_sms_history(request: Request):
-    user = await get_current_user(request)
-    biz_id = ObjectId(user["business_id"])
-    logs = await db.sms_log.find({"business_id": biz_id}).sort("created_at", -1).to_list(100)
-    return [serialize_doc(log) for log in logs]
-
-@api_router.get("/sms/packs")
-async def get_sms_packs():
-    return [{"id": k, "credits": v["credits"], "price": v["price"]} for k, v in SMS_PACKS.items()]
-
-# ===================== MYOB INTEGRATION =====================
-@api_router.get("/myob/settings")
-async def get_myob_settings(request: Request):
-    user = await require_employer(request)
-    biz_id = ObjectId(user["business_id"])
-    settings = await db.myob_settings.find_one({"business_id": biz_id})
-    if not settings:
-        return {"connected": False, "api_key": None, "company_file_id": None, "company_file_name": None}
-    return {
-        "connected": bool(settings.get("api_key")),
-        "api_key": "••••" + (settings.get("api_key", "")[-4:]) if settings.get("api_key") else None,
-        "company_file_id": settings.get("company_file_id"),
-        "company_file_name": settings.get("company_file_name"),
-        "updated_at": settings.get("updated_at").isoformat() if settings.get("updated_at") else None,
-    }
-
-@api_router.post("/myob/settings")
-async def update_myob_settings(data: MyobSettingsUpdate, request: Request):
-    user = await require_employer(request)
-    biz_id = ObjectId(user["business_id"])
-    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
-    update_data["updated_at"] = datetime.now(timezone.utc)
-    await db.myob_settings.update_one(
-        {"business_id": biz_id},
-        {"$set": update_data, "$setOnInsert": {"business_id": biz_id}},
-        upsert=True,
-    )
-    return {"message": "MYOB settings saved"}
-
-@api_router.post("/myob/sync/{invoice_id}")
-async def sync_invoice_to_myob(invoice_id: str, request: Request):
-    user = await require_employer(request)
-    biz_id = ObjectId(user["business_id"])
-
-    invoice = await db.invoices.find_one({"_id": ObjectId(invoice_id), "contractor_id": biz_id})
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found")
-
-    # Check MYOB connection
-    settings = await db.myob_settings.find_one({"business_id": biz_id})
-    if not settings or not settings.get("api_key"):
-        raise HTTPException(status_code=400, detail="MYOB not connected. Add your API key in Settings first.")
-
-    # Set status to syncing
-    await db.invoices.update_one(
-        {"_id": ObjectId(invoice_id)},
-        {"$set": {"myob_sync_status": MyobSyncStatus.SYNCING, "myob_error": None}}
-    )
-
-    # PLACEHOLDER: This is where the real MYOB API call would go.
-    # For now, simulate a successful sync.
-    mock_myob_id = f"MYOB-{secrets.token_hex(4).upper()}"
-    await db.invoices.update_one(
-        {"_id": ObjectId(invoice_id)},
-        {"$set": {
-            "myob_sync_status": MyobSyncStatus.SYNCED,
-            "myob_id": mock_myob_id,
-            "myob_last_sync": datetime.now(timezone.utc),
-            "myob_error": None,
-        }}
-    )
-
-    # Log sync event
-    await db.myob_sync_log.insert_one({
-        "business_id": biz_id,
-        "invoice_id": ObjectId(invoice_id),
-        "action": "sync_to_myob",
-        "myob_id": mock_myob_id,
-        "status": "success",
-        "mock": True,
-        "created_at": datetime.now(timezone.utc),
-    })
-
-    logger.info(f"[MYOB MOCK] Invoice {invoice.get('invoice_number')} synced as {mock_myob_id}")
-
-    updated = await db.invoices.find_one({"_id": ObjectId(invoice_id)})
-    return serialize_doc(updated)
-
-@api_router.get("/myob/status/{invoice_id}")
-async def get_myob_sync_status(invoice_id: str, request: Request):
-    user = await get_current_user(request)
-    biz_id = ObjectId(user["business_id"])
-    invoice = await db.invoices.find_one({"_id": ObjectId(invoice_id), "contractor_id": biz_id})
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found")
-    return {
-        "myob_sync_status": invoice.get("myob_sync_status", "not_synced"),
-        "myob_id": invoice.get("myob_id"),
-        "myob_last_sync": invoice.get("myob_last_sync").isoformat() if invoice.get("myob_last_sync") else None,
-        "myob_error": invoice.get("myob_error"),
-    }
-
-@api_router.post("/myob/webhook")
-async def myob_payment_webhook(request: Request):
-    """PLACEHOLDER: Receives payment notification from MYOB and marks invoice as paid.
-    In production, this would validate MYOB webhook signatures."""
-    body = await request.json()
-    myob_id = body.get("myob_id")
-    if not myob_id:
-        raise HTTPException(status_code=400, detail="Missing myob_id")
-
-    invoice = await db.invoices.find_one({"myob_id": myob_id})
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found for this MYOB reference")
-
-    await db.invoices.update_one(
-        {"_id": invoice["_id"]},
-        {"$set": {
-            "status": InvoiceStatus.PAID,
-            "paid_at": datetime.now(timezone.utc),
-            "myob_sync_status": MyobSyncStatus.SYNCED,
-        }}
-    )
-
-    await db.myob_sync_log.insert_one({
-        "business_id": invoice["contractor_id"],
-        "invoice_id": invoice["_id"],
-        "action": "payment_sync_back",
-        "myob_id": myob_id,
-        "status": "success",
-        "mock": True,
-        "created_at": datetime.now(timezone.utc),
-    })
-
-    logger.info(f"[MYOB MOCK] Payment received for {myob_id}, invoice marked paid")
-    return {"message": "Payment synced", "invoice_id": str(invoice["_id"])}
-
-# ===================== ROOT =====================
-@api_router.get("/")
-async def root():
-    return {"message": "Churvox API", "version": "2.0.0"}
-
-# Include router
-
-@api_router.post("/billing/create-checkout-session")
-async def create_checkout_session(payload: CreateCheckoutSessionRequest, request: Request):
-    user = await require_employer(request)
-
-    if not STRIPE_SECRET_KEY:
-        raise HTTPException(status_code=500, detail="Stripe secret key not configured")
-
-    plan_value = payload.plan.value if hasattr(payload.plan, "value") else str(payload.plan)
-    price_id = get_stripe_price_id(plan_value)
-
-    session = stripe.checkout.Session.create(
-        mode="subscription",
-        line_items=[{"price": price_id, "quantity": 1}],
-        success_url=f"{FRONTEND_URL}/billing/success?session_id={{CHECKOUT_SESSION_ID}}",
-        cancel_url=f"{FRONTEND_URL}/billing/cancel",
-        customer_email=user["email"],
-        metadata={
-            "user_id": user["id"],
-            "business_id": user["business_id"],
-            "plan": plan_value,
-        },
-    )
-    return {"url": session.url}
-
-@api_router.post("/billing/webhook")
-async def stripe_webhook(request: Request):
-    if not STRIPE_WEBHOOK_SECRET:
-        raise HTTPException(status_code=500, detail="Stripe webhook secret not configured")
-
-    payload = await request.body()
-    sig_header = request.headers.get("stripe-signature")
-
-    try:
-        event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid payload")
-    except stripe.error.SignatureVerificationError:
-        raise HTTPException(status_code=400, detail="Invalid signature")
-
-    if event["type"] == "checkout.session.completed":
-        session = event["data"]["object"]
-        metadata = session.get("metadata", {})
-        user_id = metadata.get("user_id")
-        plan = metadata.get("plan")
-        stripe_customer_id = session.get("customer")
-        stripe_subscription_id = session.get("subscription")
-
-        if user_id and plan:
-            await set_business_plan_from_checkout(
-                user_id=user_id,
-                plan=plan,
-                stripe_customer_id=stripe_customer_id,
-                stripe_subscription_id=stripe_subscription_id,
-            )
-
-    elif event["type"] == "customer.subscription.deleted":
-        subscription = event["data"]["object"]
-        stripe_customer_id = subscription.get("customer")
-
-        if stripe_customer_id:
-            owner = await db.users.find_one({
-                "stripe_customer_id": stripe_customer_id,
-                "role": {"$in": ["employer", "admin"]}
-            })
-            if owner:
-                business_id = owner.get("business_id", owner["_id"])
-                if isinstance(business_id, str):
-                    business_id = ObjectId(business_id)
-
-                await db.users.update_one(
-                    {"_id": business_id},
-                    {"$set": {"plan": "solo"}, "$unset": {"stripe_subscription_id": "", "stripe_customer_id": ""}}
-                )
-
-                await db.users.update_many(
-                    {"business_id": business_id, "role": "worker"},
-                    {"$set": {"plan": "solo"}}
-                )
-
-    return {"received": True}
-
-@api_router.get("/billing/subscription-status")
-async def billing_subscription_status(request: Request):
-    user = await get_current_user(request)
-
-    owner = await db.users.find_one({"_id": ObjectId(user["business_id"])})
-    if not owner:
-        owner = await db.users.find_one({"_id": ObjectId(user["id"])})
-
-    if not owner:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    return {
-        "plan": owner.get("plan", "solo"),
-        "stripe_customer_id": owner.get("stripe_customer_id"),
-        "stripe_subscription_id": owner.get("stripe_subscription_id"),
-    }
-
-
-app.include_router(api_router)
-
-# CORS
-# Startup event
-@app.on_event("startup")
-async def startup_event():
-    await db.users.create_index("email", unique=True)
-    await db.password_reset_tokens.create_index("expires_at", expireAfterSeconds=0)
-    await db.login_attempts.create_index("identifier")
-    await db.clients.create_index("contractor_id")
-    await db.jobs.create_index([("contractor_id", 1), ("scheduled_date", 1)])
-    await db.jobs.create_index([("assigned_worker_id", 1)])
-    await db.quotes.create_index("contractor_id")
-    await db.invoices.create_index("contractor_id")
-    await db.users.create_index("business_id")
-    await db.sms_credits.create_index("business_id", unique=True)
-    await db.sms_log.create_index([("business_id", 1), ("created_at", -1)])
-    await db.myob_settings.create_index("business_id", unique=True)
-    await db.myob_sync_log.create_index([("business_id", 1), ("created_at", -1)])
-    await db.invite_tokens.create_index("token", unique=True)
-    await db.invite_tokens.create_index("expires_at", expireAfterSeconds=0)
-    await db.invite_emails.create_index([("business_id", 1), ("created_at", -1)])
-
-    # Seed admin
-    admin_email = os.environ.get("ADMIN_EMAIL", "admin@churvox.com")
-    admin_password = os.environ.get("ADMIN_PASSWORD", "Admin123!")
-
-    existing = await db.users.find_one({"email": admin_email})
-    if existing is None:
-        result = await db.users.insert_one({
-            "email": admin_email,
-            "password_hash": hash_password(admin_password),
-            "name": "Admin",
-            "business_name": "Churvox Admin",
-            "role": "employer",
-            "status": "active",
-            "plan": "pro",
-            "gst_rate": DEFAULT_GST_RATE,
-            "created_at": datetime.now(timezone.utc)
-        })
-        # Set business_id to own id
-        await db.users.update_one(
-            {"_id": result.inserted_id},
-            {"$set": {"business_id": result.inserted_id}}
-        )
-        logger.info(f"Admin user created: {admin_email}")
-    else:
-        updates = {}
-        if not verify_password(admin_password, existing["password_hash"]):
-            updates["password_hash"] = hash_password(admin_password)
-        if "business_id" not in existing:
-            updates["business_id"] = existing["_id"]
-        if existing.get("role") not in ("employer", "admin"):
-            updates["role"] = "employer"
-        if updates:
-            await db.users.update_one({"_id": existing["_id"]}, {"$set": updates})
-            logger.info("Admin user updated")
-
-    # Migrate existing jobs with old statuses
-    await db.jobs.update_many(
-        {"status": {"$in": ["scheduled", "cancelled"]}},
-        {"$set": {"status": JobStatus.ASSIGNED}}
-    )
-
-    # Migrate existing invoices without MYOB fields
-    await db.invoices.update_many(
-        {"myob_sync_status": {"$exists": False}},
-        {"$set": {"myob_sync_status": MyobSyncStatus.NOT_SYNCED, "myob_id": None, "myob_last_sync": None, "myob_error": None}}
-    )
-
-    # Migrate legacy solo_plus plan to solo
-    await db.users.update_many({"plan": "solo_plus"}, {"$set": {"plan": "solo"}})
-
-    # Write test credentials
-    os.makedirs("/tmp/memory", exist_ok=True)
-    with open("/tmp/memory/test_credentials.md", "w") as f:
-        f.write(f"""# Churvox Test Credentials
-
-## Admin Account (Employer)
-- Email: {admin_email}
-- Password: {admin_password}
-- Role: employer
-
-## Auth Endpoints
-- POST /api/auth/register
-- POST /api/auth/login
-- POST /api/auth/logout
-- GET /api/auth/me
-
-## Team Endpoints
-- POST /api/team/workers (create worker)
-- GET /api/team/workers (list workers)
-- DELETE /api/team/workers/{{id}} (remove worker)
-
-## Job Workflow
-- POST /api/jobs (create, assign worker)
-- POST /api/jobs/{{id}}/assign (assign worker)
-- POST /api/jobs/{{id}}/acknowledge (worker acknowledges)
-- POST /api/jobs/{{id}}/start (start job)
-- POST /api/jobs/{{id}}/complete (complete job)
-""")
-    logger.info("Test credentials written")
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
-
-
-
-
-@app.get("/api/health-login")
-def health_login():
-    return {
-        "ok": True,
-        "frontend_url": FRONTEND_URL
-    }
