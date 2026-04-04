@@ -15,8 +15,7 @@ import pytest
 import requests
 import os
 import time
-
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
+BASE_URL = "https://grassley-backend.onrender.com"
 
 # Test credentials
 ADMIN_EMAIL = "admin@churvox.com"

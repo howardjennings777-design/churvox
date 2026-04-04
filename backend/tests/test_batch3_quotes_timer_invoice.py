@@ -9,8 +9,7 @@ import pytest
 import requests
 import os
 import time
-
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
+BASE_URL = "https://grassley-backend.onrender.com"
 
 class TestBatch3QuotesTimerInvoice:
     """Batch 3: Quotes, Timer, and Invoice tests"""

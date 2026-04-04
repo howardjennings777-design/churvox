@@ -22,9 +22,9 @@ import time
 from datetime import datetime
 
 # Use the public URL for testing
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
+BASE_URL = "https://grassley-backend.onrender.com"
 if not BASE_URL:
-    BASE_URL = "https://jobflow-preview.preview.emergentagent.com"
+BASE_URL = "https://grassley-backend.onrender.com"
 
 # Test email that Resend can deliver to (account owner)
 RESEND_TEST_EMAIL = "howardjennings77@gmail.com"
