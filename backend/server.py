@@ -39,7 +39,7 @@ STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
 STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
 STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
 STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com")
 
 stripe.api_key = STRIPE_SECRET_KEY
 
@@ -47,11 +47,11 @@ stripe.api_key = STRIPE_SECRET_KEY
 app = FastAPI(title="Churvox API")
 
 
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "").rstrip("/")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["", "http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=["https://www.churvox.com", "http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

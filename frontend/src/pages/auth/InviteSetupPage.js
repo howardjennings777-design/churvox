@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Lock, AlertCircle, Loader2, CheckCircle, User } from "lucide-react";
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 
-const API_URL = "";
+const API_URL = "https://grassley-backend.onrender.com";
 
 export default function InviteSetupPage() {
   const { token } = useParams();

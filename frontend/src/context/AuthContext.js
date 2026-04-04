@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import axios from "axios";
 
 const AuthContext = createContext(null);
-const API_URL = "";
+const API_URL = "https://grassley-backend.onrender.com";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
