@@ -185,7 +185,7 @@ function PlansPage() {
     <div className="min-h-screen bg-slate-950 text-white px-4 py-8 md:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-10">
-          <div className="inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-1 text-sm text-cyan-300 mb-4">
+          <div className="inline-flex items-center rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1 text-sm text-blue-300 mb-4">
             Simple pricing for tradies
           </div>
           <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-3">
@@ -206,7 +206,7 @@ function PlansPage() {
                 key={plan.key}
                 className={`relative rounded-3xl border p-6 shadow-xl transition-all ${
                   isCurrent
-                    ? 'border-cyan-400 bg-slate-900 ring-2 ring-cyan-400/30'
+                    ? 'border-blue-500 bg-slate-900 ring-2 ring-blue-500/30'
                     : plan.popular
                     ? 'border-blue-500 bg-slate-900/95'
                     : 'border-slate-800 bg-slate-900/80'
@@ -219,7 +219,7 @@ function PlansPage() {
                 ) : null}
 
                 {isCurrent ? (
-                  <div className="absolute -top-3 left-6 rounded-full bg-cyan-500 px-3 py-1 text-xs font-semibold text-slate-950 shadow-lg">
+                  <div className="absolute -top-3 left-6 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-lg">
                     Your Current Plan
                   </div>
                 ) : null}
@@ -230,7 +230,7 @@ function PlansPage() {
                     <span className="text-4xl font-extrabold">{plan.price}</span>
                     <span className="text-slate-400 mb-1">/month</span>
                   </div>
-                  <div className="inline-flex rounded-full bg-emerald-500/15 border border-emerald-400/30 px-3 py-1 text-sm text-emerald-300 mb-3">
+                  <div className="inline-flex rounded-full bg-blue-500/15 border border-blue-400/30 px-3 py-1 text-sm text-blue-300 mb-3">
                     {plan.trial}
                   </div>
                   <p className="text-slate-300">{plan.description}</p>
@@ -250,7 +250,7 @@ function PlansPage() {
                   <ul className="space-y-3">
                     {plan.features.map((feature, index) => (
                       <li key={index} className="flex items-start gap-3 text-slate-200">
-                        <span className="mt-1 h-2.5 w-2.5 rounded-full bg-cyan-400 shrink-0"></span>
+                        <span className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-400 shrink-0"></span>
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -263,7 +263,7 @@ function PlansPage() {
                   className={`w-full rounded-2xl px-4 py-3.5 font-semibold transition-all ${
                     isCurrent
                       ? 'bg-slate-700 text-slate-300 cursor-not-allowed'
-                      : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/20'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20'
                   }`}
                 >
                   {isCurrent ? 'Current Plan' : isBusy ? 'Opening Checkout...' : 'Start 14-Day Free Trial'}
