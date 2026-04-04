@@ -98,7 +98,7 @@ export default function QuoteFormPage() {
   return (
     <Layout>
       <div className="p-4 md:p-6 max-w-2xl mx-auto" data-testid="quote-form-page">
-        <button onClick={() => { window.location.href="/emergency-job.html"; }} className="flex items-center gap-2 text-churvox-muted hover:text-white mb-4" data-testid="back-to-quotes">
+        <button onClick={() => { window.location.href="/jobs/new"; }} className="flex items-center gap-2 text-churvox-muted hover:text-white mb-4" data-testid="back-to-quotes">
           <ArrowLeft size={18} /> Quotes
         </button>
 
@@ -198,7 +198,7 @@ export default function QuoteFormPage() {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={() => { window.location.href="/emergency-job.html"; }} className="flex-1 border-churvox-border text-churvox-muted">Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => { window.location.href="/jobs/new"; }} className="flex-1 border-churvox-border text-churvox-muted">Cancel</Button>
                 <Button type="submit" disabled={loading} className="flex-1 bg-churvox-accent hover:bg-churvox-accent/90" data-testid="submit-quote-button">
                   {loading ? "Saving..." : isEditing ? "Update Quote" : "Create Quote"}
                 </Button>

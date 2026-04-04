@@ -77,7 +77,7 @@ const { user, isEmployer, isWorker } = useAuth();
 
   const setupSteps = isNewBusiness ? [
     { label: "Add your first client", path: "/clients/new", done: (stats?.active_clients || 0) > 0, hint: "Your client list is your business backbone" },
-    { label: "Create a job", path: "/emergency-job.html", done: false, hint: "Track work from start to finish" },
+    { label: "Create a job", path: "/jobs/new", done: false, hint: "Track work from start to finish" },
     { label: "Send a quote", path: "/quotes/new", done: false, hint: "Win work with professional quotes" },
     { label: "Set your trade type", path: "/settings", done: !!user?.trade_type && user.trade_type !== "other", hint: "Personalise your Churvox experience" },
   ] : null;
@@ -96,12 +96,16 @@ const { user, isEmployer, isWorker } = useAuth();
             </p>
           </div>
           {isEmployer && !isNewBusiness && (
-            <div className="hidden sm:flex gap-2">
-              <Button asChild size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90">
-                <Link to="/emergency-job.html" data-testid="quick-new-job"><Plus size={14} className="mr-1" /> New Job</Link>
-              </Button>
-            </div>
-          )}
+          <div className="hidden sm:flex gap-2">
+            <button
+              className="bg-churvox-accent hover:bg-churvox-accent/90 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+              onClick={() => { window.location.href="/jobs/new"; }}
+            >
+              <Plus size={14} className="mr-1" />
+              New Job
+            </button>
+          </div>
+        )}
         </div>
 
         {/* Getting Started for new businesses */}
@@ -166,7 +170,7 @@ const { user, isEmployer, isWorker } = useAuth();
         {isEmployer && !isNewBusiness && (
           <div className="tap-target grid grid-cols-2 sm:grid-cols-4 gap-3" data-testid="quick-actions">
             {[
-              { label: "New Job", path: "/emergency-job.html", icon: Briefcase },
+              { label: "New Job", path: "/jobs/new", icon: Briefcase },
               { label: "New Quote", path: "/quotes/new", icon: FileText },
               { label: "New Client", path: "/clients/new", icon: Users },
               { label: "New Invoice", path: "/invoices/new", icon: DollarSign },

@@ -62,8 +62,8 @@ class RouteErrorBoundary extends React.Component {
           <h2>Page failed to load</h2>
           <p>Redirecting back to Jobs is usually the fastest fix.</p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <button onClick={() => window.location.href="/jobs"}>Go to Jobs</button>
-            <button onClick={() => window.location.href="/emergency-job.html"}>Open Emergency Job</button>
+            <button onClick={() => { window.location.href="/jobs"; }}>Go to Jobs</button>
+            <button onClick={() => { window.location.href="/jobs/new"; }}>Open New Job</button>
             <button onClick={() => window.location.reload()}>Reload</button>
           </div>
         </div>
@@ -102,7 +102,7 @@ function App() {
 
           <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
           <Route path="/jobs" element={<PrivateRoute><JobsPage /></PrivateRoute>} />
-          <Route path="/emergency-job.html" element={<PrivateRoute><JobFormPage /></PrivateRoute>} />
+          <Route path="/jobs/new" element={<PrivateRoute><JobFormPage /></PrivateRoute>} />
           <Route path="/jobs/:id" element={<PrivateRoute><JobDetailPage /></PrivateRoute>} />
           <Route path="/jobs/:id/edit" element={<PrivateRoute><JobFormPage /></PrivateRoute>} />
           <Route path="/calendar" element={<PrivateRoute><CalendarPage /></PrivateRoute>} />
@@ -130,13 +130,13 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" />} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         
-          <Route path="/emergency-job.html" element={<Navigate to="/emergency-job.html" replace />} />
-          <Route path="/emergency-job.html" element={<Navigate to="/emergency-job.html" replace />} />
-          <Route path="/emergency-job.html" element={<Navigate to="/emergency-job.html" replace />} />
+          <Route path="/jobs/new" element={<Navigate to="/jobs/new" replace />} />
+          <Route path="/jobs/new" element={<Navigate to="/jobs/new" replace />} />
+          <Route path="/jobs/new" element={<Navigate to="/jobs/new" replace />} />
 
-                  <Route path="/emergency-job.html" element={<Navigate to="/emergency-job.html" replace />} />
-                  <Route path="/emergency-job.html" element={<Navigate to="/emergency-job.html" replace />} />
-                  <Route path="/emergency-job.html" element={<Navigate to="/emergency-job.html" replace />} />
+                  <Route path="/jobs/new" element={<Navigate to="/jobs/new" replace />} />
+                  <Route path="/jobs/new" element={<Navigate to="/jobs/new" replace />} />
+                  <Route path="/jobs/new" element={<Navigate to="/jobs/new" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter></RouteErrorBoundary>

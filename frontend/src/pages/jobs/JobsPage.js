@@ -52,7 +52,7 @@ export default function JobsPage() {
           <h1 className="text-2xl font-bold text-white" data-testid="jobs-heading">Jobs</h1>
           {isEmployer && (
             <Button asChild className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="new-job-button">
-              <Link to="/emergency-job.html"><Plus size={16} className="mr-2" /> New Job</Link>
+              <Link to="/jobs/new"><Plus size={16} className="mr-2" /> New Job</Link>
             </Button>
           )}
         </div>
@@ -87,7 +87,7 @@ export default function JobsPage() {
               </p>
               {!search && isEmployer && (
                 <Button asChild size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90">
-                  <Link to="/emergency-job.html" data-testid="create-first-job"><Plus size={14} className="mr-1" /> Create Your First Job</Link>
+                  <Link to="/jobs/new" data-testid="create-first-job"><Plus size={14} className="mr-1" /> Create Your First Job</Link>
                 </Button>
               )}
             </CardContent>

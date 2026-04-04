@@ -159,9 +159,14 @@ export default function JobFormPage() {
   return (
     <Layout>
       <div className="p-4 md:p-6 max-w-2xl mx-auto" data-testid="job-form-page">
-        <button onClick={() => { window.location.href="/emergency-job.html"; }} className="flex items-center gap-2 text-churvox-muted hover:text-white mb-4" data-testid="back-to-jobs">
-          <ArrowLeft size={18} /> Jobs
-        </button>
+        <button
+            onClick={() => { window.location.href="/jobs"; }}
+            className="flex items-center gap-2 text-churvox-muted hover:text-white mb-4"
+            data-testid="back-to-jobs"
+          >
+            <ArrowLeft size={18} />
+            Jobs
+          </button>
 
         <Card className="bg-churvox-card border-churvox-border">
           <CardHeader><CardTitle className="text-white">{isEditing ? "Edit Job" : "New Job"}</CardTitle></CardHeader>
@@ -246,9 +251,17 @@ export default function JobFormPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-churvox-muted">Extras</Label>
-                    <Button type="button" variant="outline" size="sm" onClick={addExtra} className="border-churvox-border text-churvox-muted" data-testid="add-extra-button">
-                      <Plus size={14} className="mr-1" /> Add Extra
-                    </Button>
+                    <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addExtra}
+                  className="border-churvox-border text-churvox-muted"
+                  data-testid="add-extra-button"
+                >
+                  <Plus size={14} className="mr-1" />
+                  Add Extra
+                </Button>
                   </div>
                   {form.extras.map((ex, i) => (
                     <div key={i} className="flex gap-2 items-center">
@@ -277,7 +290,7 @@ export default function JobFormPage() {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={() => { window.location.href="/emergency-job.html"; }} className="flex-1 border-churvox-border text-churvox-muted">Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => { window.location.href="/jobs/new"; }} className="flex-1 border-churvox-border text-churvox-muted">Cancel</Button>
                 
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-4">
         <div className="flex items-center justify-between gap-4">

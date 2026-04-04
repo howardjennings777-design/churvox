@@ -347,7 +347,7 @@ export default function EmergencyJobCreatePage() {
           </button>
           <button
             type="button"
-            onClick={() => { window.location.href="/emergency-job.html"; }}
+            onClick={() => { window.location.href="/jobs/new"; }}
             style={{ padding: "12px 16px" }}
           >
             Cancel

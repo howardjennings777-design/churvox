@@ -114,7 +114,7 @@ export default function InviteSetupPage() {
                 Your account is ready. You can now sign in with your email and the password you just created.
               </p>
               <Button
-                onClick={() => { window.location.href="/emergency-job.html"; }}
+                onClick={() => { window.location.href="/jobs/new"; }}
                 className="bg-primary hover:bg-primary/90 w-full"
                 data-testid="invite-success-login-button"
               >
