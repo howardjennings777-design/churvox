@@ -139,17 +139,17 @@ PLAN_LIMITS = {
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
     },
     "team": {
-        "price": 70, "max_workers": 5, "max_clients": -1,
+        "price": 70, "max_workers": 5, "max_clients": 30,
         "sms": True, "myob": False, "team": True,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
     },
     "pro": {
-        "price": 110, "max_workers": 20, "max_clients": -1,
+        "price": 110, "max_workers": 20, "max_clients": 35,
         "sms": True, "myob": True, "team": True,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
     },
     "enterprise": {
-        "price": 240, "max_workers": 50, "max_clients": -1,
+        "price": 240, "max_workers": 50, "max_clients": 50,
         "sms": True, "myob": True, "team": True,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
         "extra_blocks": True,
