@@ -195,7 +195,7 @@ const { user, isEmployer, isWorker } = useAuth();
 
         {/* Today's Jobs */}
         <div data-testid="todays-jobs-section">
-          <h2 className="text-base font-semibold text-white mb-3" onClick={() => dashboardCardClick('Today's Jobs')}>Today's Jobs</h2>
+          <h2 className="text-base font-semibold text-white mb-3">Today's Jobs</h2>
           {todayJobs.length === 0 ? (
             <Card className="bg-churvox-card border-churvox-border">
               <CardContent className="p-6 text-center">
