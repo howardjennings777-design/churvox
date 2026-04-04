@@ -13,6 +13,7 @@ import logging
 import bcrypt
 import jwt
 import secrets
+import stripe
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
@@ -29,6 +30,17 @@ db = client[os.environ['DB_NAME']]
 JWT_SECRET = os.environ.get('JWT_SECRET', 'default_secret_change_me')
 JWT_ALGORITHM = "HS256"
 DEFAULT_GST_RATE = float(os.environ.get('DEFAULT_GST_RATE', '15'))
+
+# Stripe Config
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+
+stripe.api_key = STRIPE_SECRET_KEY
 
 # Create the main app
 app = FastAPI(title="Churvox API")
@@ -264,6 +276,9 @@ class InvoiceUpdate(BaseModel):
 class PlanUpdate(BaseModel):
     plan: PlanType
 
+class CreateCheckoutSessionRequest(BaseModel):
+    plan: PlanType
+
 class GSTUpdate(BaseModel):
     gst_rate: float
 
@@ -390,6 +405,44 @@ def build_user_response(user_doc: dict, user_id: str, token: str = None) -> dict
     if token:
         resp["token"] = token
     return resp
+
+
+def get_stripe_price_id(plan: str) -> str:
+    plan = (plan or "solo").lower()
+    price_map = {
+        "solo": STRIPE_PRICE_SOLO,
+        "team": STRIPE_PRICE_TEAM,
+        "pro": STRIPE_PRICE_PRO,
+        "enterprise": STRIPE_PRICE_ENTERPRISE,
+    }
+    price_id = price_map.get(plan, "")
+    if not price_id:
+        raise HTTPException(status_code=400, detail=f"Missing Stripe price ID for plan: {plan}")
+    return price_id
+
+async def set_business_plan_from_checkout(user_id: str, plan: str, stripe_customer_id: str = None, stripe_subscription_id: str = None):
+    user_obj_id = ObjectId(user_id)
+    user_doc = await db.users.find_one({"_id": user_obj_id})
+    if not user_doc:
+        return
+
+    business_id = user_doc.get("business_id", user_obj_id)
+    if isinstance(business_id, str):
+        business_id = ObjectId(business_id)
+
+    await db.users.update_one(
+        {"_id": business_id},
+        {"$set": {
+            "plan": plan,
+            "stripe_customer_id": stripe_customer_id,
+            "stripe_subscription_id": stripe_subscription_id,
+        }}
+    )
+
+    await db.users.update_many(
+        {"business_id": business_id, "role": "worker"},
+        {"$set": {"plan": plan}}
+    )
 
 # ===================== AUTH ENDPOINTS =====================
 @api_router.post("/auth/register")
@@ -2042,6 +2095,106 @@ async def root():
     return {"message": "Churvox API", "version": "2.0.0"}
 
 # Include router
+
+@api_router.post("/billing/create-checkout-session")
+async def create_checkout_session(payload: CreateCheckoutSessionRequest, request: Request):
+    user = await require_employer(request)
+
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=500, detail="Stripe secret key not configured")
+
+    plan_value = payload.plan.value if hasattr(payload.plan, "value") else str(payload.plan)
+    price_id = get_stripe_price_id(plan_value)
+
+    session = stripe.checkout.Session.create(
+        mode="subscription",
+        line_items=[{"price": price_id, "quantity": 1}],
+        success_url=f"{FRONTEND_URL}/billing/success?session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{FRONTEND_URL}/billing/cancel",
+        customer_email=user["email"],
+        metadata={
+            "user_id": user["id"],
+            "business_id": user["business_id"],
+            "plan": plan_value,
+        },
+    )
+    return {"url": session.url}
+
+@api_router.post("/billing/webhook")
+async def stripe_webhook(request: Request):
+    if not STRIPE_WEBHOOK_SECRET:
+        raise HTTPException(status_code=500, detail="Stripe webhook secret not configured")
+
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid payload")
+    except stripe.error.SignatureVerificationError:
+        raise HTTPException(status_code=400, detail="Invalid signature")
+
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+        metadata = session.get("metadata", {})
+        user_id = metadata.get("user_id")
+        plan = metadata.get("plan")
+        stripe_customer_id = session.get("customer")
+        stripe_subscription_id = session.get("subscription")
+
+        if user_id and plan:
+            await set_business_plan_from_checkout(
+                user_id=user_id,
+                plan=plan,
+                stripe_customer_id=stripe_customer_id,
+                stripe_subscription_id=stripe_subscription_id,
+            )
+
+    elif event["type"] == "customer.subscription.deleted":
+        subscription = event["data"]["object"]
+        stripe_customer_id = subscription.get("customer")
+
+        if stripe_customer_id:
+            owner = await db.users.find_one({
+                "stripe_customer_id": stripe_customer_id,
+                "role": {"$in": ["employer", "admin"]}
+            })
+            if owner:
+                business_id = owner.get("business_id", owner["_id"])
+                if isinstance(business_id, str):
+                    business_id = ObjectId(business_id)
+
+                await db.users.update_one(
+                    {"_id": business_id},
+                    {"$set": {"plan": "solo"}, "$unset": {"stripe_subscription_id": "", "stripe_customer_id": ""}}
+                )
+
+                await db.users.update_many(
+                    {"business_id": business_id, "role": "worker"},
+                    {"$set": {"plan": "solo"}}
+                )
+
+    return {"received": True}
+
+@api_router.get("/billing/subscription-status")
+async def billing_subscription_status(request: Request):
+    user = await get_current_user(request)
+
+    owner = await db.users.find_one({"_id": ObjectId(user["business_id"])})
+    if not owner:
+        owner = await db.users.find_one({"_id": ObjectId(user["id"])})
+
+    if not owner:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {
+        "plan": owner.get("plan", "solo"),
+        "stripe_customer_id": owner.get("stripe_customer_id"),
+        "stripe_subscription_id": owner.get("stripe_subscription_id"),
+    }
+
+
 app.include_router(api_router)
 
 # CORS
