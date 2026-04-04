@@ -12,13 +12,7 @@ import { formatCurrency, formatDate, JOB_STATUS_MAP } from "../lib/utils";
 export default function DashboardPage() {
   const navigate = useNavigate();
 
-  const goDashboardCard = (route) => {
-    if (route) navigate(route);
-  };
-
-  
-
-  const dashboardRouteForLabel = (label) => {
+  const statCardRoute = (label) => {
     switch (label) {
       case "Today's Jobs":
         return "/jobs";
@@ -32,23 +26,11 @@ export default function DashboardPage() {
         return "/invoices";
       case "Clients":
         return "/clients";
-      case "New Job":
-        return "/jobs";
-      case "New Quote":
-        return "/quotes";
-      case "New Client":
-        return "/clients";
-      case "New Invoice":
-        return "/invoices";
       default:
         return "";
     }
   };
 
-  const dashboardCardClick = (label) => {
-    const route = dashboardRouteForLabel(label);
-    if (route) navigate(route);
-  };
 const { user, isEmployer, isWorker } = useAuth();
   const { get } = useApi();
   const [stats, setStats] = useState(null);
@@ -72,17 +54,25 @@ const { user, isEmployer, isWorker } = useAuth();
 
   const statCards = isEmployer
     ? [
-        { label: "Today's Jobs", value: stats?.jobs_today || 0, icon: Briefcase, color: "text-blue-400" },
-        { label: "This Week", value: stats?.jobs_this_week || 0, icon: Calendar, color: "text-purple-400" },
-        { label: "Completed", value: stats?.completed_this_month || 0, icon: CheckCircle, color: "text-green-400" },
-        { label: "Revenue", value: formatCurrency(stats?.revenue_this_month), icon: DollarSign, color: "text-emerald-400" },
-        { label: "Pending Invoices", value: stats?.pending_invoices || 0, icon: FileText, color: "text-yellow-400" },
-        { label: "Clients", value: stats?.active_clients || 0, icon: Users, color: "text-cyan-400" },
+        { label: "Today's Jobs",
+      onClick: () => navigate("/jobs"), value: stats?.jobs_today || 0, icon: Briefcase, color: "text-blue-400" },
+        { label: "This Week",
+      onClick: () => navigate("/calendar"), value: stats?.jobs_this_week || 0, icon: Calendar, color: "text-purple-400" },
+        { label: "Completed",
+      onClick: () => navigate("/jobs"), value: stats?.completed_this_month || 0, icon: CheckCircle, color: "text-green-400" },
+        { label: "Revenue",
+      onClick: () => navigate("/invoices"), value: formatCurrency(stats?.revenue_this_month), icon: DollarSign, color: "text-emerald-400" },
+        { label: "Pending Invoices",
+      onClick: () => navigate("/invoices"), value: stats?.pending_invoices || 0, icon: FileText, color: "text-yellow-400" },
+        { label: "Clients",
+      onClick: () => navigate("/clients"), value: stats?.active_clients || 0, icon: Users, color: "text-cyan-400" },
       ]
     : [
         { label: "My Jobs Today", value: stats?.jobs_today || 0, icon: Briefcase, color: "text-blue-400" },
-        { label: "This Week", value: stats?.jobs_this_week || 0, icon: Calendar, color: "text-purple-400" },
-        { label: "Completed", value: stats?.completed_this_month || 0, icon: CheckCircle, color: "text-green-400" },
+        { label: "This Week",
+      onClick: () => navigate("/calendar"), value: stats?.jobs_this_week || 0, icon: Calendar, color: "text-purple-400" },
+        { label: "Completed",
+      onClick: () => navigate("/jobs"), value: stats?.completed_this_month || 0, icon: CheckCircle, color: "text-green-400" },
       ];
 
   const setupSteps = isNewBusiness ? [
