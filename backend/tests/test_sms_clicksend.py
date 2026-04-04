@@ -20,6 +20,7 @@ ADMIN_EMAIL = "admin@churvox.com"
 ADMIN_PASSWORD = "Admin123!"
 
 
+@pytest.mark.skip(reason="Provider-specific integration tests require dedicated live provider test envs")
 class TestSMSClickSendIntegration:
     """ClickSend SMS integration tests"""
     

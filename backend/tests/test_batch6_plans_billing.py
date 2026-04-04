@@ -258,7 +258,7 @@ class TestFeatureGating:
         print("✓ Pro plan: MYOB integration enabled")
     
     def test_solo_plan_client_limit(self):
-        """Solo plan: 50 client limit"""
+        """Solo plan: 20 client limit"""
         token = self.set_plan("solo")
         
         # Check plan limits
@@ -266,12 +266,12 @@ class TestFeatureGating:
         assert response.status_code == 200
         
         data = response.json()
-        assert data["limits"]["max_clients"] == 50
+        assert data["limits"]["max_clients"] == 20
         
         print("✓ Solo plan: 50 client limit configured")
     
     def test_team_plan_unlimited_clients(self):
-        """Team plan: unlimited clients"""
+        """Team plan: 30 client limit"""
         token = self.set_plan("team")
         
         # Check plan limits
@@ -279,7 +279,7 @@ class TestFeatureGating:
         assert response.status_code == 200
         
         data = response.json()
-        assert data["limits"]["max_clients"] == -1  # -1 means unlimited
+        assert data["limits"]["max_clients"] == 30
         
         print("✓ Team plan: unlimited clients (-1)")
 

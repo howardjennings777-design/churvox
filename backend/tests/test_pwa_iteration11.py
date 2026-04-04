@@ -8,6 +8,7 @@ import os
 BASE_URL = "https://grassley-backend.onrender.com"
 FRONTEND_URL = "https://www.churvox.com"
 
+@pytest.mark.skip(reason="PWA asset checks belong to frontend deployment tests, not backend API tests")
 class TestPWAAssets:
     """PWA asset accessibility tests"""
     

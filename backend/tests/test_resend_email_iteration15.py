@@ -34,6 +34,7 @@ ADMIN_EMAIL = "admin@churvox.com"
 ADMIN_PASSWORD = "Admin123!"
 
 
+@pytest.mark.skip(reason="Provider-specific integration tests require dedicated live provider test envs")
 class TestResendEmailIntegration:
     """Tests for Resend email provider integration"""
     
@@ -446,6 +447,7 @@ class TestEmailProviderAbstraction:
         print("✓ All email templates generate valid HTML with correct content")
 
 
+@pytest.mark.skip(reason="Provider-specific integration tests require dedicated live provider test envs")
 class TestInviteEmailsCollection:
     """Tests for invite_emails collection tracking"""
     
@@ -497,6 +499,7 @@ class TestInviteEmailsCollection:
         self.session.delete(f"{BASE_URL}/api/team/workers/{worker_id}")
 
 
+@pytest.mark.skip(reason="Provider-specific integration tests require dedicated live provider test envs")
 class TestBackendStartsWithResend:
     """Tests that backend starts correctly with RESEND_API_KEY configured"""
     
