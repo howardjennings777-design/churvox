@@ -51,9 +51,14 @@ export default function JobsPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-white" data-testid="jobs-heading">Jobs</h1>
           {isEmployer && (
-            <Button asChild className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="new-job-button">
-              <Link to="/emergency-job.html"><Plus size={16} className="mr-2" /> New Job</Link>
-            </Button>
+            <button
+              className="bg-churvox-accent hover:bg-churvox-accent/90 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+              data-testid="new-job-button"
+              onClick={() => { window.location.href="/emergency-job.html"; }}
+            >
+              <Plus size={16} className="mr-2" />
+              New Job
+            </button>
           )}
         </div>
 
