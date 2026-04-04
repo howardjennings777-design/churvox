@@ -1839,6 +1839,77 @@ SMS_TEMPLATES = {
     "custom": "{custom_message}",
 }
 
+
+async def get_business_owner_for_user(user: dict):
+    business_id = user.get("business_id") or user.get("id")
+    try:
+        owner = await db.users.find_one({"_id": ObjectId(business_id)})
+    except Exception:
+        owner = None
+    if owner:
+        return owner
+    return await db.users.find_one({"_id": ObjectId(user["id"])})
+
+async def create_sms_checkout_session_for_user(user: dict, pack_key: str):
+    pack = SMS_PACKS.get(pack_key)
+    if not pack:
+        raise HTTPException(status_code=400, detail="Invalid SMS pack")
+
+    owner = await get_business_owner_for_user(user)
+    if not owner:
+        raise HTTPException(status_code=404, detail="Business owner not found")
+
+    stripe_customer_id = owner.get("stripe_customer_id")
+    if not stripe_customer_id:
+        customer = stripe.Customer.create(
+            email=owner.get("email"),
+            name=owner.get("business_name") or owner.get("name") or owner.get("email"),
+            metadata={
+                "business_id": str(owner.get("business_id", owner["_id"])),
+                "owner_user_id": str(owner["_id"]),
+                "kind": "churvox_business_owner"
+            }
+        )
+        stripe_customer_id = customer.id
+        await db.users.update_one(
+            {"_id": owner["_id"]},
+            {"$set": {"stripe_customer_id": stripe_customer_id}}
+        )
+
+    currency = os.environ.get("STRIPE_CURRENCY", "nzd").lower()
+    frontend_base = (FRONTEND_URL or "https://www.churvox.com").rstrip("/")
+
+    business_id = owner.get("business_id", owner["_id"])
+    if isinstance(business_id, str):
+        business_id = ObjectId(business_id)
+
+    session = stripe.checkout.Session.create(
+        mode="payment",
+        customer=stripe_customer_id,
+        success_url=f"{frontend_base}/sms?checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=f"{frontend_base}/sms?checkout=cancelled",
+        line_items=[{
+            "price_data": {
+                "currency": currency,
+                "product_data": {
+                    "name": f"SMS Credits ({pack['credits']})",
+                    "description": f"Churvox SMS credit pack: {pack['credits']} credits"
+                },
+                "unit_amount": int(round(float(pack["price"]) * 100))
+            },
+            "quantity": 1
+        }],
+        metadata={
+            "purpose": "sms_credits",
+            "pack": pack_key,
+            "credits": str(pack["credits"]),
+            "business_id": str(business_id),
+            "owner_user_id": str(owner["_id"])
+        }
+    )
+    return session
+
+
 @api_router.get("/sms/balance")
 async def get_sms_balance(request: Request):
     user = await get_current_user(request)
@@ -1857,28 +1928,12 @@ async def get_sms_provider_balance(request: Request):
 @api_router.post("/sms/buy-credits")
 async def buy_sms_credits(data: SmsBuyCredits, request: Request):
     user = await require_employer(request)
-    pack = SMS_PACKS.get(data.pack)
-    if not pack:
-        raise HTTPException(status_code=400, detail="Invalid pack")
-    biz_id = ObjectId(user["business_id"])
-
-    # Add credits (payment is PLACEHOLDER — no real charge)
-    await db.sms_credits.update_one(
-        {"business_id": biz_id},
-        {"$inc": {"balance": pack["credits"]}, "$setOnInsert": {"business_id": biz_id}},
-        upsert=True
-    )
-    # Log purchase
-    await db.sms_purchases.insert_one({
-        "business_id": biz_id,
-        "pack": data.pack,
-        "credits": pack["credits"],
-        "price": pack["price"],
-        "created_at": datetime.now(timezone.utc),
-        "note": "PLACEHOLDER — no real payment processed"
-    })
-    credit_doc = await db.sms_credits.find_one({"business_id": biz_id})
-    return {"message": f"{pack['credits']} credits added", "balance": credit_doc.get("balance", 0)}
+    session = await create_sms_checkout_session_for_user(user, data.pack)
+    return {
+        "message": "Stripe Checkout session created",
+        "checkout_url": session.url,
+        "session_id": session.id
+    }
 
 @api_router.post("/sms/send")
 async def send_sms(data: SmsSend, request: Request):
