@@ -134,7 +134,7 @@ class PlanType(str, Enum):
 
 PLAN_LIMITS = {
     "solo": {
-        "price": 30, "max_workers": 0, "max_clients": 50,
+        "price": 30, "max_workers": 0, "max_clients": 20,
         "sms": False, "myob": False, "team": False,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
     },
