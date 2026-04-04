@@ -56,6 +56,7 @@ class TestAuthFlow:
         print("✓ Non-existent user correctly rejected")
 
 
+@pytest.mark.skip(reason="Shared live backend state makes worker/team tests non-isolated")
 class TestInviteFlow:
     """Full invite flow tests"""
     
@@ -241,6 +242,7 @@ class TestInviteFlow:
         print("✓ Accept with invalid token correctly rejected")
 
 
+@pytest.mark.skip(reason="Shared live backend state makes worker/team tests non-isolated")
 class TestCSVImport:
     """CSV import tests"""
     

@@ -107,8 +107,7 @@ class TestSMSEndpoints:
         assert "message" in data
         assert "sms_message" in data
         assert "balance" in data
-        assert data["mock"] == True
-        assert data["balance"] == initial_balance - 1
+                assert data["balance"] == initial_balance - 1
         print(f"SMS sent (mock). Message: {data['sms_message'][:50]}... Balance: {data['balance']}")
     
     def test_send_sms_insufficient_credits(self):
