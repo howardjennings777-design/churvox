@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Layout from "../components/Layout";
@@ -9,7 +10,46 @@ import { Briefcase, Calendar, CheckCircle, DollarSign, FileText, Users, Plus, Cl
 import { formatCurrency, formatDate, JOB_STATUS_MAP } from "../lib/utils";
 
 export default function DashboardPage() {
-  const { user, isEmployer, isWorker } = useAuth();
+  const navigate = useNavigate();
+
+  const goDashboardCard = (route) => {
+    if (route) navigate(route);
+  };
+
+  
+
+  const dashboardRouteForLabel = (label) => {
+    switch (label) {
+      case "Today's Jobs":
+        return "/jobs";
+      case "This Week":
+        return "/calendar";
+      case "Completed":
+        return "/jobs";
+      case "Revenue":
+        return "/invoices";
+      case "Pending Invoices":
+        return "/invoices";
+      case "Clients":
+        return "/clients";
+      case "New Job":
+        return "/jobs";
+      case "New Quote":
+        return "/quotes";
+      case "New Client":
+        return "/clients";
+      case "New Invoice":
+        return "/invoices";
+      default:
+        return "";
+    }
+  };
+
+  const dashboardCardClick = (label) => {
+    const route = dashboardRouteForLabel(label);
+    if (route) navigate(route);
+  };
+const { user, isEmployer, isWorker } = useAuth();
   const { get } = useApi();
   const [stats, setStats] = useState(null);
   const [todayJobs, setTodayJobs] = useState([]);
@@ -102,7 +142,7 @@ export default function DashboardPage() {
           {statCards.map((stat) => {
             const Icon = stat.icon;
             return (
-              <Card key={stat.label} className="bg-churvox-card border-churvox-border" data-testid={`stat-${stat.label.toLowerCase().replace(/[^a-z]/g, "-")}`}>
+              <Card key={stat.label} className="bg-churvox-card border-churvox-border" data-testid={`stat-${stat.label.toLowerCase().replace(/[^a-z]/g, "-")}`} onClick={stat.onClick} style={{ cursor: "pointer" }}>
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className={`p-2.5 rounded-lg bg-white/5 ${stat.color}`}>
                     <Icon size={20} />
@@ -155,7 +195,7 @@ export default function DashboardPage() {
 
         {/* Today's Jobs */}
         <div data-testid="todays-jobs-section">
-          <h2 className="text-base font-semibold text-white mb-3">Today's Jobs</h2>
+          <h2 className="text-base font-semibold text-white mb-3" onClick={() => dashboardCardClick('Today's Jobs')}>Today's Jobs</h2>
           {todayJobs.length === 0 ? (
             <Card className="bg-churvox-card border-churvox-border">
               <CardContent className="p-6 text-center">
