@@ -2400,6 +2400,173 @@ async def create_checkout_session(payload: dict, request: Request, user=Depends(
         logger.error(f"Stripe checkout session error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Stripe checkout error: {str(e)}")
 
+
+# =========================
+# Recurring Job Helpers
+# =========================
+
+RECURRING_JOB_ALLOWED_FREQUENCIES = {
+    "weekly": 7,
+    "fortnightly": 14,
+    "monthly": "monthly",
+    "custom": "custom",
+}
+
+def _safe_parse_datetime(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except Exception:
+            return None
+    return None
+
+def _add_months_keep_day(dt_value: datetime, months: int = 1):
+    if not dt_value:
+        return None
+    year = dt_value.year
+    month = dt_value.month + months
+    while month > 12:
+        month -= 12
+        year += 1
+    day = min(dt_value.day, monthrange(year, month)[1])
+    return dt_value.replace(year=year, month=month, day=day)
+
+def calculate_next_recurring_date(base_date, frequency, custom_days=None):
+    dt_value = _safe_parse_datetime(base_date)
+    if not dt_value:
+        dt_value = datetime.now(timezone.utc)
+
+    if frequency == "weekly":
+        return dt_value + timedelta(days=7)
+    if frequency == "fortnightly":
+        return dt_value + timedelta(days=14)
+    if frequency == "monthly":
+        return _add_months_keep_day(dt_value, 1)
+    if frequency == "custom":
+        try:
+            days = int(custom_days or 0)
+        except Exception:
+            days = 0
+        if days <= 0:
+            raise HTTPException(status_code=400, detail="custom_repeat_days must be greater than 0")
+        return dt_value + timedelta(days=days)
+
+    raise HTTPException(status_code=400, detail="Invalid recurring frequency")
+
+def normalize_recurring_job_fields(job_data: dict):
+    is_recurring = bool(job_data.get("is_recurring", False))
+    frequency = job_data.get("recurring_frequency")
+    custom_days = job_data.get("custom_repeat_days")
+    parent_job_id = job_data.get("recurring_parent_job_id")
+    next_due = job_data.get("next_recurring_due_date")
+
+    if not is_recurring:
+        job_data["is_recurring"] = False
+        job_data["recurring_frequency"] = None
+        job_data["custom_repeat_days"] = None
+        job_data["recurring_parent_job_id"] = None
+        job_data["next_recurring_due_date"] = None
+        return job_data
+
+    if frequency not in RECURRING_JOB_ALLOWED_FREQUENCIES:
+        raise HTTPException(
+            status_code=400,
+            detail="recurring_frequency must be weekly, fortnightly, monthly, or custom"
+        )
+
+    if frequency == "custom":
+        try:
+            custom_days = int(custom_days or 0)
+        except Exception:
+            custom_days = 0
+        if custom_days <= 0:
+            raise HTTPException(status_code=400, detail="custom_repeat_days must be greater than 0")
+        job_data["custom_repeat_days"] = custom_days
+    else:
+        job_data["custom_repeat_days"] = None
+
+    base_date = (
+        job_data.get("scheduled_date")
+        or job_data.get("scheduled_start")
+        or job_data.get("date")
+        or datetime.now(timezone.utc)
+    )
+
+    if not next_due:
+        job_data["next_recurring_due_date"] = calculate_next_recurring_date(
+            base_date,
+            frequency,
+            job_data.get("custom_repeat_days")
+        )
+    else:
+        parsed_next_due = _safe_parse_datetime(next_due)
+        job_data["next_recurring_due_date"] = parsed_next_due or calculate_next_recurring_date(
+            base_date,
+            frequency,
+            job_data.get("custom_repeat_days")
+        )
+
+    job_data["is_recurring"] = True
+    job_data["recurring_frequency"] = frequency
+    job_data["recurring_parent_job_id"] = parent_job_id
+    return job_data
+
+async def create_next_recurring_job_if_needed(completed_job: dict):
+    if not completed_job or not completed_job.get("is_recurring"):
+        return None
+
+    frequency = completed_job.get("recurring_frequency")
+    custom_days = completed_job.get("custom_repeat_days")
+    next_due = completed_job.get("next_recurring_due_date")
+    source_date = next_due or completed_job.get("scheduled_date") or completed_job.get("created_at") or datetime.now(timezone.utc)
+    next_job_date = calculate_next_recurring_date(source_date, frequency, custom_days)
+
+    source_job_id = str(completed_job.get("_id"))
+    parent_job_id = completed_job.get("recurring_parent_job_id") or source_job_id
+
+    duplicate = await db.jobs.find_one({
+        "business_id": completed_job.get("business_id"),
+        "recurring_parent_job_id": parent_job_id,
+        "scheduled_date": next_job_date,
+        "is_archived": {"$ne": True}
+    })
+    if duplicate:
+        return duplicate
+
+    new_job = dict(completed_job)
+    new_job.pop("_id", None)
+
+    for field in ["completed_at", "started_at", "acknowledged_at", "invoice_id", "paid_at"]:
+        if field in new_job:
+            new_job[field] = None
+
+    new_job["status"] = "assigned"
+    new_job["scheduled_date"] = next_job_date
+    new_job["created_at"] = datetime.now(timezone.utc)
+    new_job["updated_at"] = datetime.now(timezone.utc)
+    new_job["completed_at"] = None
+    new_job["next_recurring_due_date"] = calculate_next_recurring_date(
+        next_job_date,
+        frequency,
+        custom_days
+    )
+    new_job["recurring_parent_job_id"] = parent_job_id
+    new_job["source_job_id"] = source_job_id
+
+    if "title" in new_job and new_job["title"]:
+        new_job["title"] = new_job["title"]
+    elif "job_title" in new_job and new_job["job_title"]:
+        new_job["job_title"] = new_job["job_title"]
+
+    result = await db.jobs.insert_one(new_job)
+    created = await db.jobs.find_one({"_id": result.inserted_id})
+    return created
+
+
 app.include_router(api_router)
 
 # CORS
@@ -2447,6 +2614,13 @@ async def startup_event():
             {"_id": result.inserted_id},
             {"$set": {"business_id": result.inserted_id}}
         )
+    try:
+        await db.jobs.create_index([("business_id", 1), ("scheduled_date", 1)])
+        await db.jobs.create_index([("recurring_parent_job_id", 1), ("scheduled_date", 1)])
+        await db.jobs.create_index([("is_recurring", 1), ("status", 1)])
+    except Exception:
+        pass
+
         logger.info(f"Admin user created: {admin_email}")
     else:
         updates = {}
