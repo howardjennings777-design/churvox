@@ -507,7 +507,17 @@ async def login(user_data: UserLogin, response: Response, request: Request):
             await db.login_attempts.delete_one({"identifier": identifier})
 
     user = await db.users.find_one({"email": email})
-    if not user or not verify_password(user_data.password, user["password_hash"]):
+
+    password_ok = False
+    if user:
+        stored_hash = user.get("password_hash")
+        if isinstance(stored_hash, str) and stored_hash.strip():
+            try:
+                password_ok = verify_password(user_data.password, stored_hash)
+            except Exception:
+                password_ok = False
+
+    if not user or not password_ok:
         await db.login_attempts.update_one(
             {"identifier": identifier},
             {"$inc": {"count": 1}, "$set": {"locked_until": datetime.now(timezone.utc) + timedelta(minutes=15)}},
