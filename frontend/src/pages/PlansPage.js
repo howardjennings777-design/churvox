@@ -59,14 +59,14 @@ function PlansPage() {
       name: 'Enterprise',
       price: '$240',
       description: 'For larger businesses needing stronger systems.',
-      clients: 'Larger business support',
+      clients: '50 users included',
       trial: '14-day free trial',
       popular: false,
       features: [
         'Everything in Pro',
+        '50 users included',
         'MYOB features',
-        'Priority tools',
-        'Larger team support'
+        'Priority support'
       ]
     }
   ];
