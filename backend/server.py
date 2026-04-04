@@ -2273,6 +2273,89 @@ async def billing_subscription_status(request: Request):
     }
 
 
+
+@api_router.post("/stripe/webhook-sms")
+async def stripe_sms_webhook(request: Request):
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET_SMS") or STRIPE_WEBHOOK_SECRET
+
+    if not webhook_secret:
+        raise HTTPException(status_code=500, detail="Missing Stripe webhook secret for SMS payments")
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload=payload,
+            sig_header=sig_header,
+            secret=webhook_secret
+        )
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid webhook payload")
+    except stripe.error.SignatureVerificationError:
+        raise HTTPException(status_code=400, detail="Invalid webhook signature")
+
+    event_id = event.get("id")
+    if event_id:
+        existing = await db.stripe_events.find_one({"event_id": event_id})
+        if existing:
+            return {"received": True, "duplicate": True}
+
+    event_type = event.get("type")
+    obj = event["data"]["object"]
+
+    if event_type in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
+        metadata = obj.get("metadata", {}) or {}
+        if metadata.get("purpose") == "sms_credits":
+            if obj.get("payment_status") == "paid" or event_type == "checkout.session.async_payment_succeeded":
+                business_id = metadata.get("business_id")
+                owner_user_id = metadata.get("owner_user_id")
+                credits = int(metadata.get("credits", "0") or 0)
+                pack = metadata.get("pack", "")
+                session_id = obj.get("id")
+                amount_total = obj.get("amount_total", 0)
+                currency = (obj.get("currency") or "").lower()
+
+                if not business_id or credits <= 0:
+                    raise HTTPException(status_code=400, detail="Missing SMS credit metadata")
+
+                await db.sms_credits.update_one(
+                    {"business_id": ObjectId(business_id)},
+                    {"$inc": {"balance": credits}},
+                    upsert=True
+                )
+
+                purchase_doc = {
+                    "business_id": ObjectId(business_id),
+                    "pack": pack,
+                    "credits": credits,
+                    "amount_total": amount_total,
+                    "currency": currency,
+                    "stripe_session_id": session_id,
+                    "stripe_event_id": event_id,
+                    "created_at": datetime.now(timezone.utc),
+                }
+                if owner_user_id:
+                    try:
+                        purchase_doc["owner_user_id"] = ObjectId(owner_user_id)
+                    except Exception:
+                        purchase_doc["owner_user_id"] = owner_user_id
+
+                await db.sms_credit_purchases.insert_one(purchase_doc)
+
+    if event_id:
+        await db.stripe_events.update_one(
+            {"event_id": event_id},
+            {"$set": {
+                "event_id": event_id,
+                "type": event_type,
+                "created_at": datetime.now(timezone.utc)
+            }},
+            upsert=True
+        )
+
+    return {"received": True}
+
+
 app.include_router(api_router)
 
 # CORS
@@ -2295,6 +2378,8 @@ async def startup_event():
     await db.invite_tokens.create_index("token", unique=True)
     await db.invite_tokens.create_index("expires_at", expireAfterSeconds=0)
     await db.invite_emails.create_index([("business_id", 1), ("created_at", -1)])
+    await db.stripe_events.create_index("event_id", unique=True)
+    await db.sms_credit_purchases.create_index([("business_id", 1), ("created_at", -1)])
 
     # Seed admin
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@churvox.com")
