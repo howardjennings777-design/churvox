@@ -6,19 +6,20 @@ import pytest
 import requests
 import os
 BASE_URL = "https://grassley-backend.onrender.com"
+FRONTEND_URL = "https://www.churvox.com"
 
 class TestPWAAssets:
     """PWA asset accessibility tests"""
     
     def test_manifest_json_accessible(self):
         """Manifest.json returns HTTP 200"""
-        response = requests.get(f"{BASE_URL}/manifest.json")
+        response = requests.get(f"{FRONTEND_URL}/manifest.json")
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         print("✓ manifest.json accessible (HTTP 200)")
     
     def test_manifest_json_valid_structure(self):
         """Manifest.json has valid PWA structure"""
-        response = requests.get(f"{BASE_URL}/manifest.json")
+        response = requests.get(f"{FRONTEND_URL}/manifest.json")
         assert response.status_code == 200
         data = response.json()
         
@@ -32,7 +33,7 @@ class TestPWAAssets:
     
     def test_manifest_icons_correct(self):
         """Manifest has correct icon definitions"""
-        response = requests.get(f"{BASE_URL}/manifest.json")
+        response = requests.get(f"{FRONTEND_URL}/manifest.json")
         data = response.json()
         icons = data.get("icons", [])
         
@@ -53,35 +54,35 @@ class TestPWAAssets:
     
     def test_service_worker_accessible(self):
         """Service worker at /sw.js returns HTTP 200"""
-        response = requests.get(f"{BASE_URL}/sw.js")
+        response = requests.get(f"{FRONTEND_URL}/sw.js")
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         assert "serviceWorker" in response.text or "self.addEventListener" in response.text, "sw.js doesn't look like a service worker"
         print("✓ sw.js accessible (HTTP 200)")
     
     def test_icon_192x192_accessible(self):
         """Icon 192x192 returns HTTP 200"""
-        response = requests.get(f"{BASE_URL}/icon-192x192.png")
+        response = requests.get(f"{FRONTEND_URL}/icon-192x192.png")
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         assert response.headers.get("content-type", "").startswith("image/"), "Not an image"
         print("✓ icon-192x192.png accessible (HTTP 200)")
     
     def test_icon_512x512_accessible(self):
         """Icon 512x512 returns HTTP 200"""
-        response = requests.get(f"{BASE_URL}/icon-512x512.png")
+        response = requests.get(f"{FRONTEND_URL}/icon-512x512.png")
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         assert response.headers.get("content-type", "").startswith("image/"), "Not an image"
         print("✓ icon-512x512.png accessible (HTTP 200)")
     
     def test_icon_192x192_maskable_accessible(self):
         """Maskable icon 192x192 returns HTTP 200"""
-        response = requests.get(f"{BASE_URL}/icon-192x192-maskable.png")
+        response = requests.get(f"{FRONTEND_URL}/icon-192x192-maskable.png")
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         assert response.headers.get("content-type", "").startswith("image/"), "Not an image"
         print("✓ icon-192x192-maskable.png accessible (HTTP 200)")
     
     def test_icon_512x512_maskable_accessible(self):
         """Maskable icon 512x512 returns HTTP 200"""
-        response = requests.get(f"{BASE_URL}/icon-512x512-maskable.png")
+        response = requests.get(f"{FRONTEND_URL}/icon-512x512-maskable.png")
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         assert response.headers.get("content-type", "").startswith("image/"), "Not an image"
         print("✓ icon-512x512-maskable.png accessible (HTTP 200)")

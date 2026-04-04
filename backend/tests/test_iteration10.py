@@ -10,6 +10,7 @@ import pytest
 import requests
 import os
 BASE_URL = "https://grassley-backend.onrender.com"
+FRONTEND_URL = "https://www.churvox.com"
 
 class TestAuthEndpoints:
     """Authentication endpoint tests"""
@@ -64,21 +65,21 @@ class TestPublicLegalPages:
     
     def test_privacy_page_accessible(self):
         """Privacy page should be publicly accessible"""
-        response = requests.get(f"{BASE_URL}/privacy")
+        response = requests.get(f"{FRONTEND_URL}/privacy")
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         assert "text/html" in response.headers.get("content-type", "")
         print("✓ Privacy page accessible (200)")
     
     def test_terms_page_accessible(self):
         """Terms page should be publicly accessible"""
-        response = requests.get(f"{BASE_URL}/terms")
+        response = requests.get(f"{FRONTEND_URL}/terms")
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         assert "text/html" in response.headers.get("content-type", "")
         print("✓ Terms page accessible (200)")
     
     def test_account_deletion_page_accessible(self):
         """Account deletion page should be publicly accessible"""
-        response = requests.get(f"{BASE_URL}/account-deletion")
+        response = requests.get(f"{FRONTEND_URL}/account-deletion")
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
         assert "text/html" in response.headers.get("content-type", "")
         print("✓ Account deletion page accessible (200)")
@@ -112,7 +113,7 @@ class TestAuthenticatedEndpoints:
     def test_settings_requires_auth(self):
         """Settings page should redirect to login without auth"""
         # Note: This tests the frontend route behavior
-        response = requests.get(f"{BASE_URL}/settings", allow_redirects=False)
+        response = requests.get(f"{FRONTEND_URL}/settings", allow_redirects=False)
         # Frontend SPA will return 200 but redirect via JS
         assert response.status_code == 200
         print("✓ Settings page returns 200 (SPA handles auth redirect)")

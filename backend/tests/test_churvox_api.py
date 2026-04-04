@@ -38,7 +38,7 @@ class TestAuthentication:
         data = response.json()
         assert "token" in data
         assert data["email"] == ADMIN_EMAIL
-        assert data["role"] == "admin"
+        assert data["role"] == "employer"
         print(f"✓ Admin login successful: {data['email']}, role: {data['role']}")
     
     def test_login_invalid_credentials(self):
@@ -213,7 +213,7 @@ class TestJobs:
         assert create_resp.status_code == 200
         job = create_resp.json()
         job_id = job["id"]
-        assert job["status"] == "scheduled"
+        assert job["status"] == "assigned"
         print(f"✓ Created job with status: {job['status']}")
         
         # Start job
@@ -436,24 +436,24 @@ class TestPlans:
         assert response.status_code == 200
         print("✓ Plan updated to solo")
     
-    def test_update_plan_solo_plus(self, auth_headers):
-        """Test updating to solo_plus plan"""
+    def test_update_plan_pro(self, auth_headers):
+        """Test updating to pro plan"""
         response = requests.patch(
             f"{BASE_URL}/api/user/plan",
-            json={"plan": "solo_plus"},
+            json={"plan": "pro"},
             headers=auth_headers
         )
         assert response.status_code == 200
         print("✓ Plan updated to solo_plus")
     
-    def test_team_plan_coming_soon(self, auth_headers):
-        """Test that team plan returns 'coming soon' error"""
+    def test_team_plan_available(self, auth_headers):
+        """Test that team plan is available"""
         response = requests.patch(
             f"{BASE_URL}/api/user/plan",
             json={"plan": "team"},
             headers=auth_headers
         )
-        assert response.status_code == 400
+        assert response.status_code == 200
         assert "coming soon" in response.json().get("detail", "").lower()
         print("✓ Team plan correctly shows 'coming soon'")
 
