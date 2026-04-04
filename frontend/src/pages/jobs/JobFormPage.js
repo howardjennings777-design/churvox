@@ -159,7 +159,7 @@ export default function JobFormPage() {
   return (
     <Layout>
       <div className="p-4 md:p-6 max-w-2xl mx-auto" data-testid="job-form-page">
-        <button onClick={() => navigate("/jobs")} className="flex items-center gap-2 text-churvox-muted hover:text-white mb-4" data-testid="back-to-jobs">
+        <button onClick={() => { window.location.href="/emergency-job.html"; }} className="flex items-center gap-2 text-churvox-muted hover:text-white mb-4" data-testid="back-to-jobs">
           <ArrowLeft size={18} /> Jobs
         </button>
 
@@ -185,7 +185,7 @@ export default function JobFormPage() {
                   <Label className="text-churvox-muted">Client</Label>
                   <Select value={form.client_id} onValueChange={handleClientChange}>
                     <SelectTrigger className="bg-churvox-bg border-churvox-border text-white" data-testid="job-client-select"><SelectValue placeholder="Select client" /></SelectTrigger>
-                    <SelectContent className="bg-churvox-card border-churvox-border">{clients.map((c) => <SelectItem key={c.id} value={c.id} className="text-white">{c.name}</SelectItem>)}</SelectContent>
+                    <SelectContent className="bg-churvox-card border-churvox-border">{(clients || []).map((c) => <SelectItem key={c.id} value={c.id} className="text-white">{c.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
               </div>
@@ -266,7 +266,7 @@ export default function JobFormPage() {
                   <Label className="text-churvox-muted">Assign Worker (optional)</Label>
                   <Select value={form.assigned_worker_id} onValueChange={(v) => setForm({ ...form, assigned_worker_id: v })}>
                     <SelectTrigger className="bg-churvox-bg border-churvox-border text-white" data-testid="job-worker-select"><SelectValue placeholder="Unassigned" /></SelectTrigger>
-                    <SelectContent className="bg-churvox-card border-churvox-border">{workers.map((w) => <SelectItem key={w.id} value={w.id} className="text-white">{w.name}</SelectItem>)}</SelectContent>
+                    <SelectContent className="bg-churvox-card border-churvox-border">{(workers || []).map((w) => <SelectItem key={w.id} value={w.id} className="text-white">{w.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
               )}
@@ -277,7 +277,7 @@ export default function JobFormPage() {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={() => navigate("/jobs")} className="flex-1 border-churvox-border text-churvox-muted">Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => { window.location.href="/emergency-job.html"; }} className="flex-1 border-churvox-border text-churvox-muted">Cancel</Button>
                 
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-4">
         <div className="flex items-center justify-between gap-4">

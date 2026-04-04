@@ -347,7 +347,7 @@ export default function EmergencyJobCreatePage() {
           </button>
           <button
             type="button"
-            onClick={() => navigate("/jobs")}
+            onClick={() => { window.location.href="/emergency-job.html"; }}
             style={{ padding: "12px 16px" }}
           >
             Cancel

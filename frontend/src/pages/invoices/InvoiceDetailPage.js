@@ -73,7 +73,7 @@ export default function InvoiceDetailPage() {
     <Layout>
       <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4" data-testid="invoice-detail-page">
         <div className="flex items-center justify-between">
-          <button onClick={() => navigate("/invoices")} className="flex items-center gap-2 text-churvox-muted hover:text-white" data-testid="back-to-invoices">
+          <button onClick={() => { window.location.href="/emergency-job.html"; }} className="flex items-center gap-2 text-churvox-muted hover:text-white" data-testid="back-to-invoices">
             <ArrowLeft size={18} /> Invoices
           </button>
           <div className="flex items-center gap-2">

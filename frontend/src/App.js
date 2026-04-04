@@ -102,7 +102,7 @@ function App() {
 
           <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
           <Route path="/jobs" element={<PrivateRoute><JobsPage /></PrivateRoute>} />
-          <Route path="/jobs/new" element={<PrivateRoute><JobFormPage /></PrivateRoute>} />
+          <Route path="/emergency-job.html" element={<PrivateRoute><JobFormPage /></PrivateRoute>} />
           <Route path="/jobs/:id" element={<PrivateRoute><JobDetailPage /></PrivateRoute>} />
           <Route path="/jobs/:id/edit" element={<PrivateRoute><JobFormPage /></PrivateRoute>} />
           <Route path="/calendar" element={<PrivateRoute><CalendarPage /></PrivateRoute>} />
@@ -130,13 +130,13 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" />} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         
-          <Route path="/jobs/new" element={<Navigate to="/emergency-job.html" replace />} />
-          <Route path="/jobs/new" element={<Navigate to="/emergency-job.html" replace />} />
-          <Route path="/jobs/new" element={<Navigate to="/emergency-job.html" replace />} />
+          <Route path="/emergency-job.html" element={<Navigate to="/emergency-job.html" replace />} />
+          <Route path="/emergency-job.html" element={<Navigate to="/emergency-job.html" replace />} />
+          <Route path="/emergency-job.html" element={<Navigate to="/emergency-job.html" replace />} />
 
-                  <Route path="/job/new" element={<Navigate to="/emergency-job.html" replace />} />
-                  <Route path="/create-job" element={<Navigate to="/emergency-job.html" replace />} />
-                  <Route path="/jobs/create" element={<Navigate to="/emergency-job.html" replace />} />
+                  <Route path="/emergency-job.html" element={<Navigate to="/emergency-job.html" replace />} />
+                  <Route path="/emergency-job.html" element={<Navigate to="/emergency-job.html" replace />} />
+                  <Route path="/emergency-job.html" element={<Navigate to="/emergency-job.html" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter></RouteErrorBoundary>

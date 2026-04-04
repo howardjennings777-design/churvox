@@ -106,7 +106,7 @@ export default function InvoiceFormPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/invoices")}
+            onClick={() => { window.location.href="/emergency-job.html"; }}
             data-testid="back-button"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -261,7 +261,7 @@ export default function InvoiceFormPage() {
               type="button"
               variant="outline"
               className="flex-1 border-border"
-              onClick={() => navigate("/invoices")}
+              onClick={() => { window.location.href="/emergency-job.html"; }}
               data-testid="cancel-button"
             >
               Cancel

@@ -63,7 +63,7 @@ export default function CalendarPage() {
           </div>
           {isEmployer && (
             <Button asChild size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90">
-              <Link to="/jobs/new" data-testid="calendar-new-job"><Plus size={14} className="mr-1" /> New Job</Link>
+              <Link to="/emergency-job.html" data-testid="calendar-new-job"><Plus size={14} className="mr-1" /> New Job</Link>
             </Button>
           )}
         </div>
@@ -134,7 +134,7 @@ export default function CalendarPage() {
                 <p className="text-churvox-muted text-sm">No jobs scheduled</p>
                 {isEmployer && (
                   <Button asChild size="sm" variant="outline" className="mt-3 border-churvox-border text-churvox-muted hover:text-white">
-                    <Link to="/jobs/new">Schedule a Job</Link>
+                    <Link to="/emergency-job.html">Schedule a Job</Link>
                   </Button>
                 )}
               </CardContent>
