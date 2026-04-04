@@ -134,7 +134,7 @@ export default function DashboardPage() {
 
         {/* Quick Actions (employer, not new) */}
         {isEmployer && !isNewBusiness && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" data-testid="quick-actions">
+          <div className="tap-target grid grid-cols-2 sm:grid-cols-4 gap-3" data-testid="quick-actions">
             {[
               { label: "New Job", path: "/jobs/new", icon: Briefcase },
               { label: "New Quote", path: "/quotes/new", icon: FileText },

@@ -98,3 +98,50 @@ select {
 .transition-smooth {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+
+/* tap fix */
+.tap-safe-root,
+.tap-safe-root * {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tap-overlay-ignore {
+  pointer-events: none !important;
+}
+
+.tap-target,
+.tap-target * {
+  pointer-events: auto !important;
+}
+
+@media (max-width: 768px) {
+  header,
+  nav,
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role="button"] {
+    position: relative;
+    z-index: 60;
+    pointer-events: auto !important;
+  }
+
+  main,
+  .main-content,
+  .page-content,
+  .dashboard-content,
+  .mobile-bottom-nav {
+    position: relative;
+    z-index: 40;
+    pointer-events: auto !important;
+  }
+
+  .fixed,
+  .absolute {
+    z-index: auto;
+  }
+}
+

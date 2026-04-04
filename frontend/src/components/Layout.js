@@ -39,7 +39,7 @@ export default function Layout({ children }) {
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
 
   return (
-    <div className="min-h-screen bg-churvox-bg" data-testid="layout-container">
+    <div className="tap-safe-root min-h-screen bg-churvox-bg" data-testid="layout-container">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-churvox-card border-r border-churvox-border z-40" data-testid="desktop-sidebar">
         {/* Logo */}
@@ -57,7 +57,7 @@ export default function Layout({ children }) {
         </div>
 
         {/* Nav Links */}
-        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto" data-testid="desktop-nav">
+        <nav className="tap-target" className="flex-1 py-4 px-3 space-y-1 overflow-y-auto" data-testid="desktop-nav">
           {mainNavItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
@@ -117,12 +117,12 @@ export default function Layout({ children }) {
       </header>
 
       {/* Main Content */}
-      <main className="md:ml-64 pt-14 md:pt-0 pb-20 md:pb-0 min-h-screen" data-testid="main-content">
+      <main className="tap-target" className="md:ml-64 pt-14 md:pt-0 pb-20 md:pb-0 min-h-screen" data-testid="main-content">
         {children}
       </main>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-churvox-card border-t border-churvox-border z-40 safe-area-bottom" data-testid="mobile-bottom-nav">
+      <nav className="tap-target" className="md:hidden fixed bottom-0 left-0 right-0 bg-churvox-card border-t border-churvox-border z-40 safe-area-bottom" data-testid="mobile-bottom-nav">
         <div className="flex items-center justify-around h-16">
           {mainNavItems.map((item) => {
             const Icon = item.icon;
@@ -148,7 +148,7 @@ export default function Layout({ children }) {
 
             {moreOpen && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setMoreOpen(false)} />
+                <div className="fixed inset-0 tap-overlay-ignore z-40" onClick={() => setMoreOpen(false)} />
                 <div className="absolute bottom-full right-0 mb-2 bg-churvox-card border border-churvox-border rounded-xl shadow-2xl py-2 min-w-[180px] z-50" data-testid="mobile-more-dropdown">
                   {moreItems.map((item) => {
                     const Icon = item.icon;
