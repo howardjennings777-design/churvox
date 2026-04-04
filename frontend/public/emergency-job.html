@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emergency Job</title>
+</head>
+<body style="font-family:Arial,sans-serif;background:#0f172a;color:#fff;padding:24px;">
+  <h1>Create Job</h1>
+  <p>This is the standalone emergency page.</p>
+  <form id="f">
+    <input id="title" placeholder="Job title" required style="display:block;width:100%;padding:12px;margin:0 0 12px;" />
+    <input id="client_name" placeholder="Client name" style="display:block;width:100%;padding:12px;margin:0 0 12px;" />
+    <input id="address" placeholder="Address" style="display:block;width:100%;padding:12px;margin:0 0 12px;" />
+    <textarea id="notes" placeholder="Notes" style="display:block;width:100%;padding:12px;margin:0 0 12px;"></textarea>
+    <button type="submit" style="padding:12px 16px;">Create Job</button>
+  </form>
+  <pre id="msg"></pre>
+  <script>
+    document.getElementById("f").addEventListener("submit", async function(e){
+      e.preventDefault();
+      const msg = document.getElementById("msg");
+      msg.textContent = "Creating...";
+      const payload = {
+        title: document.getElementById("title").value || "New Job",
+        job_title: document.getElementById("title").value || "New Job",
+        client_name: document.getElementById("client_name").value || null,
+        customer_name: document.getElementById("client_name").value || null,
+        address: document.getElementById("address").value || "",
+        notes: document.getElementById("notes").value || "",
+        description: document.getElementById("notes").value || "",
+        status: "assigned"
+      };
+      try {
+        const res = await fetch("/api/jobs", {
+          method: "POST",
+          credentials: "include",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify(payload)
+        });
+        const text = await res.text();
+        msg.textContent = text;
+        if (res.ok) window.location.href = "/jobs";
+      } catch (e) {
+        msg.textContent = String(e);
+      }
+    });
+  </script>
+</body>
+</html>

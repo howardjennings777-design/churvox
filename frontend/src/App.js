@@ -63,7 +63,7 @@ class RouteErrorBoundary extends React.Component {
           <p>Redirecting back to Jobs is usually the fastest fix.</p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <button onClick={() => window.location.href="/jobs"}>Go to Jobs</button>
-            <button onClick={() => window.location.href="/jobs/new"}>Open New Job</button>
+            <button onClick={() => window.location.href="/emergency-job.html"}>Open Emergency Job</button>
             <button onClick={() => window.location.reload()}>Reload</button>
           </div>
         </div>
@@ -130,10 +130,13 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" />} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         
-          <Route path="/jobs/new" element={<Navigate to="/jobs/new" replace />} />
-          <Route path="/jobs/new" element={<Navigate to="/jobs/new" replace />} />
-          <Route path="/jobs/new" element={<Navigate to="/jobs/new" replace />} />
+          <Route path="/jobs/new" element={<Navigate to="/emergency-job.html" replace />} />
+          <Route path="/jobs/new" element={<Navigate to="/emergency-job.html" replace />} />
+          <Route path="/jobs/new" element={<Navigate to="/emergency-job.html" replace />} />
 
+                  <Route path="/job/new" element={<Navigate to="/emergency-job.html" replace />} />
+                  <Route path="/create-job" element={<Navigate to="/emergency-job.html" replace />} />
+                  <Route path="/jobs/create" element={<Navigate to="/emergency-job.html" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter></RouteErrorBoundary>
