@@ -13,6 +13,40 @@ import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { JOB_TYPES_BY_CATEGORY } from "../../lib/utils";
 
+
+const normalizeRecurringJobPayload = (formData) => {
+  const isRecurring = !!formData?.is_recurring;
+  const frequency = isRecurring ? (formData?.recurring_frequency || '') : '';
+  const customDays =
+    isRecurring && frequency === 'custom'
+      ? Number(formData?.custom_repeat_days || 0)
+      : null;
+
+  return {
+    ...formData,
+    is_recurring: isRecurring,
+    recurring_frequency: isRecurring ? frequency : null,
+    custom_repeat_days: isRecurring ? customDays : null,
+    recurring_parent_job_id: formData?.recurring_parent_job_id || null,
+    next_recurring_due_date: formData?.next_recurring_due_date || null,
+  };
+
+
+const handleRecurringToggleChange = (e, formData, setFormData) => {
+  const checked = !!e.target.checked;
+  setFormData({
+    ...formData,
+    is_recurring: checked,
+    recurring_frequency: checked ? (formData.recurring_frequency || 'weekly') : '',
+    custom_repeat_days: checked ? formData.custom_repeat_days : '',
+  });
+};
+
+
+};
+
+
+
 const PRICING_TYPES = [
   { value: "fixed", label: "Fixed Price" },
   { value: "hourly", label: "Hourly" },
@@ -244,7 +278,72 @@ export default function JobFormPage() {
 
               <div className="flex gap-3 pt-2">
                 <Button type="button" variant="outline" onClick={() => navigate("/jobs")} className="flex-1 border-churvox-border text-churvox-muted">Cancel</Button>
-                <Button type="submit" disabled={loading} className="flex-1 bg-churvox-accent hover:bg-churvox-accent/90" data-testid="submit-job-button">
+                
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="text-sm font-semibold text-slate-900">Recurring job</div>
+            <div className="text-xs text-slate-500">Turn this on for weekly, fortnightly, monthly or custom repeat work.</div>
+          </div>
+          <label className="inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="h-4 w-4"
+              checked={!!formData.is_recurring}
+              onChange={(e) => handleRecurringToggleChange(e, formData, setFormData)}
+            />
+          </label>
+        </div>
+
+        {formData.is_recurring && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Repeat</label>
+              <select
+                value={formData.recurring_frequency || 'weekly'}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    recurring_frequency: e.target.value,
+                    custom_repeat_days:
+                      e.target.value === 'custom'
+                        ? (formData.custom_repeat_days || '')
+                        : '',
+                  })
+                }
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
+              >
+                <option value="weekly">Weekly</option>
+                <option value="fortnightly">Fortnightly</option>
+                <option value="monthly">Monthly</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+
+            {formData.recurring_frequency === 'custom' && (
+              <div>
+                <label className="block text-sm font-medium mb-1">Repeat every how many days?</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.custom_repeat_days || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      custom_repeat_days: e.target.value,
+                    })
+                  }
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
+                  placeholder="e.g. 10"
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+
+<Button type="submit" disabled={loading} className="flex-1 bg-churvox-accent hover:bg-churvox-accent/90" data-testid="submit-job-button">
                   {loading ? "Saving..." : isEditing ? "Update Job" : "Create Job"}
                 </Button>
               </div>
