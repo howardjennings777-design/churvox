@@ -233,3 +233,36 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+
+/* MOBILE TAP FIX */
+@media (max-width: 768px) {
+  .tap-safe,
+  .tap-safe * {
+    pointer-events: auto !important;
+  }
+
+  .tap-pass-through {
+    pointer-events: none !important;
+  }
+
+  nav,
+  header,
+  button,
+  a,
+  [role="button"] {
+    pointer-events: auto !important;
+    position: relative;
+    z-index: 60 !important;
+  }
+
+  main,
+  .main-content,
+  .page-content,
+  .dashboard-content,
+  .mobile-bottom-nav {
+    position: relative;
+    z-index: 40 !important;
+    pointer-events: auto !important;
+  }
+}

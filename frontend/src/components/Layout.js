@@ -148,7 +148,7 @@ export default function Layout({ children }) {
 
             {moreOpen && (
               <>
-                <div className="fixed inset-0 tap-overlay-ignore z-40" onClick={() => setMoreOpen(false)} />
+                <div className="tap-pass-through fixed inset-0 tap-overlay-ignore z-40" onClick={() => setMoreOpen(false)} />
                 <div className="absolute bottom-full right-0 mb-2 bg-churvox-card border border-churvox-border rounded-xl shadow-2xl py-2 min-w-[180px] z-50" data-testid="mobile-more-dropdown">
                   {moreItems.map((item) => {
                     const Icon = item.icon;
