@@ -43,9 +43,53 @@ function PublicRoute({ children }) {
   return user ? <Navigate to="/dashboard" /> : children;
 }
 
+
+class RouteErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, info) {
+    console.error("Route crash:", error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 24 }}>
+          <h2>Page failed to load</h2>
+          <p>Redirecting back to Jobs is usually the fastest fix.</p>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button onClick={() => window.location.href="/jobs"}>Go to Jobs</button>
+            <button onClick={() => window.location.href="/jobs/new"}>Open New Job</button>
+            <button onClick={() => window.location.reload()}>Reload</button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+
+function EmergencyNewJobPage() {
+  return (
+    <div style={{ padding: 24 }}>
+      <h2>New Job</h2>
+      <p>The normal job form failed or is missing. Use the Jobs page for now, or wire this route to your real job form page.</p>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <button onClick={() => { window.location.href = "/jobs"; }}>Back to Jobs</button>
+        <button onClick={() => { window.location.reload(); }}>Reload</button>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   return (
-    <BrowserRouter>
+    <RouteErrorBoundary><BrowserRouter>
       <AuthProvider>
         <Toaster position="top-right" richColors />
         <Routes>
@@ -85,9 +129,14 @@ function App() {
 
           <Route path="/" element={<Navigate to="/dashboard" />} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
+        
+          <Route path="/jobs/new" element={<Navigate to="/jobs/new" replace />} />
+          <Route path="/jobs/new" element={<Navigate to="/jobs/new" replace />} />
+          <Route path="/jobs/new" element={<Navigate to="/jobs/new" replace />} />
+
         </Routes>
       </AuthProvider>
-    </BrowserRouter>
+    </BrowserRouter></RouteErrorBoundary>
   );
 }
 
