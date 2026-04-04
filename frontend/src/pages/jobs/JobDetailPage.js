@@ -129,7 +129,7 @@ export default function JobDetailPage() {
       <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4" data-testid="job-detail-page">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <button onClick={() => { window.location.href="/jobs/new"; }} className="flex items-center gap-2 text-churvox-muted hover:text-white" data-testid="back-to-jobs">
+          <button onClick={() => navigate("/jobs")} className="flex items-center gap-2 text-churvox-muted hover:text-white" data-testid="back-to-jobs">
             <ArrowLeft size={18} /> Jobs
           </button>
           {isEmployer && (
@@ -307,7 +307,7 @@ export default function JobDetailPage() {
               <>
                 <Select value={selectedWorker} onValueChange={setSelectedWorker}>
                   <SelectTrigger className="bg-churvox-bg border-churvox-border text-white" data-testid="select-worker"><SelectValue placeholder="Select a worker" /></SelectTrigger>
-                  <SelectContent className="bg-churvox-card border-churvox-border">{(workers || []).map((w) => <SelectItem key={w.id} value={w.id} className="text-white">{w.name}</SelectItem>)}</SelectContent>
+                  <SelectContent className="bg-churvox-card border-churvox-border">{workers.map((w) => <SelectItem key={w.id} value={w.id} className="text-white">{w.name}</SelectItem>)}</SelectContent>
                 </Select>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setShowAssign(false)} className="border-churvox-border text-churvox-muted">Cancel</Button>

@@ -96,16 +96,12 @@ const { user, isEmployer, isWorker } = useAuth();
             </p>
           </div>
           {isEmployer && !isNewBusiness && (
-          <div className="hidden sm:flex gap-2">
-            <button
-              className="bg-churvox-accent hover:bg-churvox-accent/90 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-              onClick={() => { window.location.href="/jobs/new"; }}
-            >
-              <Plus size={14} className="mr-1" />
-              New Job
-            </button>
-          </div>
-        )}
+            <div className="hidden sm:flex gap-2">
+              <Button asChild size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90">
+                <Link to="/jobs/new" data-testid="quick-new-job"><Plus size={14} className="mr-1" /> New Job</Link>
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Getting Started for new businesses */}

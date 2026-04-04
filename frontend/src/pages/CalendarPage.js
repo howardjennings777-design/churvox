@@ -62,14 +62,10 @@ export default function CalendarPage() {
             <p className="text-xs text-churvox-muted mt-0.5">{monthJobCount} job{monthJobCount !== 1 ? "s" : ""} this month</p>
           </div>
           {isEmployer && (
-          <button
-            className="bg-churvox-accent hover:bg-churvox-accent/90 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-            onClick={() => { window.location.href="/jobs/new"; }}
-          >
-            <Plus size={14} className="mr-2" />
-            New Job
-          </button>
-        )}
+            <Button asChild size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90">
+              <Link to="/jobs/new" data-testid="calendar-new-job"><Plus size={14} className="mr-1" /> New Job</Link>
+            </Button>
+          )}
         </div>
 
         {/* Month Navigation */}
