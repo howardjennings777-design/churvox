@@ -454,8 +454,7 @@ class TestPlans:
             headers=auth_headers
         )
         assert response.status_code == 200
-                print("✓ Team plan correctly shows 'coming soon'")
-
+        
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
