@@ -1,4 +1,3 @@
-from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -39,24 +38,12 @@ STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
 STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
 STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
 STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 
 stripe.api_key = STRIPE_SECRET_KEY
 
 # Create the main app
 app = FastAPI(title="Churvox API")
-
-
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "").rstrip("/")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["", "http://localhost:3000", "http://127.0.0.1:3000"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 api_router = APIRouter(prefix="/api")
 
 # SMS Provider (abstracted — swap providers by changing env config)
@@ -2211,6 +2198,19 @@ async def billing_subscription_status(request: Request):
 app.include_router(api_router)
 
 # CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=[
+                "http://localhost:3000",
+                "https://grassley-frontend.onrender.com",
+                "https://www.churvox.com",
+                "https://churvox.com",
+            ],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Startup event
 @app.on_event("startup")
 async def startup_event():
@@ -2314,13 +2314,3 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
-
-
-
-
-@app.get("/api/health-login")
-def health_login():
-    return {
-        "ok": True,
-        "frontend_url": FRONTEND_URL
-    }

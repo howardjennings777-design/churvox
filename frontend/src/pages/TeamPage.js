@@ -13,7 +13,7 @@ import { usePlanLimits } from "../hooks/usePlanLimits";
 import { UpgradePrompt } from "../components/UpgradePrompt";
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_BACKEND_URL;
+const API_URL = "";
 
 export default function TeamPage() {
   const { isEmployer } = useAuth();
