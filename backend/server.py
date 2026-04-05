@@ -9,6 +9,104 @@ from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depend
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
+
+# =========================
+# BUSINESS ISOLATION HELPERS
+# =========================
+def normalize_object_id(value):
+    try:
+        if not value:
+            return None
+        return ObjectId(str(value))
+    except Exception:
+        return None
+
+async def get_user_business_id(user: dict):
+    """
+    Always return the OWNER business id.
+    Owner: own id
+    Worker/sub-user: parent business_id
+    """
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    raw_business_id = user.get("business_id")
+    raw_user_id = user.get("id") or user.get("_id")
+
+    if raw_business_id:
+        return str(raw_business_id)
+    if raw_user_id:
+        return str(raw_user_id)
+
+    raise HTTPException(status_code=401, detail="User business not found")
+
+def business_filter(business_id: str, extra: dict | None = None):
+    query = {"business_id": str(business_id)}
+    if extra:
+        query.update(extra)
+    return query
+
+def ensure_same_business_or_404(doc: dict | None, business_id: str):
+    if not doc:
+        raise HTTPException(status_code=404, detail="Record not found")
+    if str(doc.get("business_id", "")) != str(business_id):
+        raise HTTPException(status_code=404, detail="Record not found")
+    return doc
+
+async def create_with_business(collection, payload: dict, business_id: str):
+    payload = dict(payload)
+    payload["business_id"] = str(business_id)
+    await collection.insert_one(payload)
+    return payload
+
+async def find_one_in_business(collection, business_id: str, extra: dict):
+    doc = await collection.find_one(business_filter(business_id, extra))
+    return ensure_same_business_or_404(doc, business_id) if doc else None
+
+async def list_in_business(collection, business_id: str, extra: dict | None = None, sort=None, limit: int = 1000):
+    q = business_filter(business_id, extra or {})
+    cursor = collection.find(q)
+    if sort:
+        cursor = cursor.sort(sort)
+    if limit:
+        cursor = cursor.limit(limit)
+    return await cursor.to_list(length=limit)
+
+async def update_one_in_business(collection, business_id: str, extra: dict, update_data: dict):
+    result = await collection.update_one(
+        business_filter(business_id, extra),
+        {"$set": update_data}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Record not found")
+    return result
+
+async def delete_one_in_business(collection, business_id: str, extra: dict):
+    result = await collection.delete_one(business_filter(business_id, extra))
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Record not found")
+    return result
+
+def force_business_on_payload(payload: dict, business_id: str):
+    """
+    Never trust business_id from frontend.
+    Always overwrite it.
+    """
+    payload["business_id"] = str(business_id)
+    return payload
+
+def safe_doc(doc):
+    if not doc:
+        return doc
+    doc = dict(doc)
+    if "_id" in doc:
+        doc["id"] = str(doc["_id"])
+        del doc["_id"]
+    return doc
+
+def safe_docs(items):
+    return [safe_doc(x) for x in items]
+
 import os
 import logging
 import bcrypt
@@ -781,7 +879,8 @@ async def create_invite_for_worker(email: str, name: str, phone: str, user: dict
     }
 
 @api_router.post("/team/workers")
-async def create_worker(worker_data: WorkerCreate, request: Request):
+async def create_worker(worker_data: WorkerCreate, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await require_employer(request)
     biz_id = await check_team_limits(user)
 
@@ -792,7 +891,6 @@ async def create_worker(worker_data: WorkerCreate, request: Request):
 
     result = await create_invite_for_worker(email, worker_data.name, worker_data.phone, user, biz_id)
     return result
-
 @api_router.get("/team/workers")
 async def get_workers(request: Request):
     user = await require_employer(request)
@@ -803,7 +901,8 @@ async def get_workers(request: Request):
     return [serialize_doc(w) for w in workers]
 
 @api_router.delete("/team/workers/{worker_id}")
-async def delete_worker(worker_id: str, request: Request):
+async def delete_worker(worker_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await require_employer(request)
     result = await db.users.delete_one({
         "_id": ObjectId(worker_id),
@@ -878,7 +977,8 @@ async def accept_invite(data: InviteAccept):
     }
 
 @api_router.post("/team/resend-invite/{worker_id}")
-async def resend_invite(worker_id: str, request: Request):
+async def resend_invite(worker_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     """Resend invite email to an invited worker."""
     user = await require_employer(request)
     biz_id = ObjectId(user["business_id"])
@@ -936,9 +1036,9 @@ async def resend_invite(worker_id: str, request: Request):
     })
 
     return {"message": f"Invite resent to {worker['email']}", "invite_link": invite_link}
-
 @api_router.post("/team/import-csv")
-async def import_csv_workers(request: Request):
+async def import_csv_workers(request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     """Import workers from CSV. Expects multipart form data with a 'file' field.
     CSV format: name,email,phone (header row optional)."""
     user = await require_employer(request)
@@ -1029,7 +1129,6 @@ class EmailTestSend(BaseModel):
     to: EmailStr
     subject: Optional[str] = "Churvox Test Email"
     message: Optional[str] = "This is a test email from Churvox to confirm email delivery is working."
-
 @api_router.post("/email/test")
 async def send_test_email(data: EmailTestSend, request: Request):
     """Send a test email to confirm Resend integration works."""
@@ -1048,7 +1147,8 @@ async def send_test_email(data: EmailTestSend, request: Request):
 
 # ===================== CLIENTS =====================
 @api_router.post("/clients")
-async def create_client(client_data: ClientCreate, request: Request):
+async def create_client(client_data: ClientCreate, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     biz_id = ObjectId(user["business_id"])
 
@@ -1072,9 +1172,9 @@ async def create_client(client_data: ClientCreate, request: Request):
     client_doc["contractor_id"] = user["business_id"]
     client_doc.pop("_id", None)
     return client_doc
-
 @api_router.get("/clients")
-async def get_clients(request: Request):
+async def get_clients(request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     clients = await db.clients.find(
         {"contractor_id": ObjectId(user["business_id"])},
@@ -1083,18 +1183,19 @@ async def get_clients(request: Request):
     return [serialize_doc(c) for c in clients]
 
 @api_router.get("/clients/{client_id}")
-async def get_client(client_id: str, request: Request):
+async def get_client(client_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
-    client = await db.clients.find_one({
+    client = await db.clients.find_one({"business_id": str(business_id), 
         "_id": ObjectId(client_id),
         "contractor_id": ObjectId(user["business_id"])
     })
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
     return serialize_doc(client)
-
 @api_router.patch("/clients/{client_id}")
-async def update_client(client_id: str, client_data: ClientUpdate, request: Request):
+async def update_client(client_id: str, request: Request, client_data: ClientUpdate, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     update_data = {k: v for k, v in client_data.model_dump().items() if v is not None}
     if not update_data:
@@ -1109,7 +1210,8 @@ async def update_client(client_id: str, client_data: ClientUpdate, request: Requ
     return serialize_doc(client)
 
 @api_router.delete("/clients/{client_id}")
-async def delete_client(client_id: str, request: Request):
+async def delete_client(client_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     result = await db.clients.delete_one({
         "_id": ObjectId(client_id),
@@ -1120,23 +1222,24 @@ async def delete_client(client_id: str, request: Request):
     return {"message": "Client deleted"}
 
 @api_router.get("/clients/{client_id}/jobs")
-async def get_client_jobs(client_id: str, request: Request):
+async def get_client_jobs(client_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     # Verify client belongs to business
-    client = await db.clients.find_one({
+    client = await db.clients.find_one({"business_id": str(business_id), 
         "_id": ObjectId(client_id),
         "contractor_id": ObjectId(user["business_id"])
     })
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    jobs = await db.jobs.find(
-        {"contractor_id": ObjectId(user["business_id"]), "client_id": ObjectId(client_id)}
+    jobs = await db.jobs.find({"business_id": str(business_id), "contractor_id": ObjectId(user["business_id"]), "client_id": ObjectId(client_id)}
     ).sort("scheduled_date", -1).to_list(100)
     return [serialize_doc(j) for j in jobs]
 
 # ===================== JOBS =====================
 @api_router.post("/jobs")
-async def create_job(job_data: JobCreate, request: Request):
+async def create_job(job_data: JobCreate, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     # Only employers can create jobs
     if user.get("role") not in ("employer", "admin"):
@@ -1172,7 +1275,7 @@ async def create_job(job_data: JobCreate, request: Request):
 
     # Assign worker if provided
     if job_data.assigned_worker_id:
-        worker = await db.users.find_one({
+        worker = await db.users.find_one({"business_id": str(business_id), 
             "_id": ObjectId(job_data.assigned_worker_id),
             "business_id": ObjectId(user["business_id"]),
             "role": "worker"
@@ -1192,9 +1295,9 @@ async def create_job(job_data: JobCreate, request: Request):
         job_doc["assigned_worker_id"] = job_data.assigned_worker_id
     job_doc.pop("_id", None)
     return job_doc
-
 @api_router.get("/jobs")
-async def get_jobs(request: Request, status: Optional[str] = None, date: Optional[str] = None):
+async def get_jobs(request: Request, status: Optional[str] = None, date: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     query = {"contractor_id": ObjectId(user["business_id"])}
 
@@ -1214,7 +1317,8 @@ async def get_jobs(request: Request, status: Optional[str] = None, date: Optiona
     return [serialize_doc(j) for j in jobs]
 
 @api_router.get("/jobs/today")
-async def get_jobs_today(request: Request):
+async def get_jobs_today(request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     tomorrow = today + timedelta(days=1)
@@ -1226,9 +1330,9 @@ async def get_jobs_today(request: Request):
         query["assigned_worker_id"] = ObjectId(user["id"])
     jobs = await db.jobs.find(query).sort("scheduled_date", 1).to_list(100)
     return [serialize_doc(j) for j in jobs]
-
 @api_router.get("/jobs/week")
-async def get_jobs_this_week(request: Request):
+async def get_jobs_this_week(request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     week_end = today + timedelta(days=7)
@@ -1240,9 +1344,9 @@ async def get_jobs_this_week(request: Request):
         query["assigned_worker_id"] = ObjectId(user["id"])
     jobs = await db.jobs.find(query).sort("scheduled_date", 1).to_list(100)
     return [serialize_doc(j) for j in jobs]
-
 @api_router.get("/jobs/{job_id}")
-async def get_job(job_id: str, request: Request):
+async def get_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     query = {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])}
     if user.get("role") == "worker":
@@ -1251,9 +1355,9 @@ async def get_job(job_id: str, request: Request):
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     return serialize_doc(job)
-
 @api_router.patch("/jobs/{job_id}")
-async def update_job(job_id: str, job_data: JobUpdate, request: Request):
+async def update_job(job_id: str, request: Request, job_data: JobUpdate, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     if user.get("role") not in ("employer", "admin"):
         raise HTTPException(status_code=403, detail="Only employers can edit jobs")
@@ -1272,7 +1376,8 @@ async def update_job(job_id: str, job_data: JobUpdate, request: Request):
     return serialize_doc(job)
 
 @api_router.post("/jobs/{job_id}/assign")
-async def assign_job(job_id: str, data: JobAssign, request: Request):
+async def assign_job(job_id: str, data: JobAssign, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await require_employer(request)
     worker = await db.users.find_one({
         "_id": ObjectId(data.worker_id),
@@ -1294,14 +1399,13 @@ async def assign_job(job_id: str, data: JobAssign, request: Request):
         raise HTTPException(status_code=404, detail="Job not found")
     job = await db.jobs.find_one({"_id": ObjectId(job_id)})
     return serialize_doc(job)
-
 @api_router.post("/jobs/{job_id}/acknowledge")
-async def acknowledge_job(job_id: str, request: Request):
+async def acknowledge_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     if user.get("role") not in ("worker",):
         raise HTTPException(status_code=403, detail="Only workers can acknowledge jobs")
-    result = await db.jobs.update_one(
-        {
+    result = await db.jobs.update_one({"business_id": str(business_id), 
             "_id": ObjectId(job_id),
             "contractor_id": ObjectId(user["business_id"]),
             "assigned_worker_id": ObjectId(user["id"]),
@@ -1311,11 +1415,11 @@ async def acknowledge_job(job_id: str, request: Request):
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Job not found or not assigned to you")
-    job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+    job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(job_id)})
     return serialize_doc(job)
-
 @api_router.post("/jobs/{job_id}/start")
-async def start_job(job_id: str, request: Request):
+async def start_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     query = {
         "_id": ObjectId(job_id),
@@ -1331,11 +1435,11 @@ async def start_job(job_id: str, request: Request):
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Job not found or cannot be started")
-    job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+    job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(job_id)})
     return serialize_doc(job)
-
 @api_router.post("/jobs/{job_id}/complete")
-async def complete_job(job_id: str, request: Request):
+async def complete_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     query = {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])}
     if user.get("role") == "worker":
@@ -1354,18 +1458,18 @@ async def complete_job(job_id: str, request: Request):
         entry = {"action": "pause", "timestamp": now}
         elapsed = compute_elapsed(job.get("time_entries", []) + [entry])
         timer_updates["total_time_seconds"] = elapsed
-        await db.jobs.update_one({"_id": ObjectId(job_id)}, {"$push": {"time_entries": entry}})
+        await db.jobs.update_one({"business_id": str(business_id), "_id": ObjectId(job_id)}, {"$push": {"time_entries": entry}})
     
-    await db.jobs.update_one({"_id": ObjectId(job_id)}, {"$set": timer_updates})
+    await db.jobs.update_one({"business_id": str(business_id), "_id": ObjectId(job_id)}, {"$set": timer_updates})
 
     # Re-read job with final time
-    job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+    job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(job_id)})
     total_time = job.get("total_time_seconds", 0)
 
     # Auto-create draft invoice with pricing-type logic
-    user_doc = await db.users.find_one({"_id": ObjectId(user["business_id"])})
+    user_doc = await db.users.find_one({"business_id": str(business_id), "_id": ObjectId(user["business_id"])})
     if not user_doc:
-        user_doc = await db.users.find_one({"_id": ObjectId(user["id"])})
+        user_doc = await db.users.find_one({"business_id": str(business_id), "_id": ObjectId(user["id"])})
     gst_rate = user_doc.get("gst_rate", DEFAULT_GST_RATE) if user_doc else DEFAULT_GST_RATE
 
     pricing_type = job.get("pricing_type", "fixed")
@@ -1390,7 +1494,7 @@ async def complete_job(job_id: str, request: Request):
 
     customer_name = job.get("customer_name", "")
     if job.get("client_id"):
-        client_doc = await db.clients.find_one({"_id": job["client_id"]})
+        client_doc = await db.clients.find_one({"business_id": str(business_id), "_id": job["client_id"]})
         if client_doc:
             customer_name = client_doc.get("name", customer_name)
 
@@ -1420,11 +1524,11 @@ async def complete_job(job_id: str, request: Request):
     }
     await db.invoices.insert_one(invoice_doc)
 
-    updated_job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+    updated_job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(job_id)})
     return serialize_doc(updated_job)
-
 @api_router.delete("/jobs/{job_id}")
-async def delete_job(job_id: str, request: Request):
+async def delete_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     if user.get("role") not in ("employer", "admin"):
         raise HTTPException(status_code=403, detail="Only employers can delete jobs")
@@ -1457,7 +1561,8 @@ def compute_elapsed(time_entries):
     return int(total)
 
 @api_router.post("/jobs/{job_id}/timer/start")
-async def timer_start(job_id: str, request: Request):
+async def timer_start(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     query = {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])}
     if user.get("role") == "worker":
@@ -1473,14 +1578,15 @@ async def timer_start(job_id: str, request: Request):
     if job["status"] in (JobStatus.ASSIGNED, JobStatus.ACKNOWLEDGED):
         updates["$set"]["status"] = JobStatus.IN_PROGRESS
         updates["$set"]["started_at"] = datetime.now(timezone.utc)
-    await db.jobs.update_one({"_id": ObjectId(job_id)}, updates)
-    job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+    await db.jobs.update_one({"business_id": str(business_id), "_id": ObjectId(job_id)}, updates)
+    job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(job_id)})
     job_data = serialize_doc(job)
+    job_data["business_id"] = str(business_id)
     job_data["total_time_seconds"] = compute_elapsed(job.get("time_entries", []))
     return job_data
-
 @api_router.post("/jobs/{job_id}/timer/pause")
-async def timer_pause(job_id: str, request: Request):
+async def timer_pause(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     query = {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])}
     if user.get("role") == "worker":
@@ -1493,17 +1599,18 @@ async def timer_pause(job_id: str, request: Request):
 
     entry = {"action": "pause", "timestamp": datetime.now(timezone.utc)}
     elapsed = compute_elapsed(job.get("time_entries", []) + [entry])
-    await db.jobs.update_one({"_id": ObjectId(job_id)}, {
+    await db.jobs.update_one({"business_id": str(business_id), "_id": ObjectId(job_id)}, {
         "$push": {"time_entries": entry},
         "$set": {"timer_running": False, "total_time_seconds": elapsed}
     })
-    job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+    job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(job_id)})
     job_data = serialize_doc(job)
+    job_data["business_id"] = str(business_id)
     job_data["total_time_seconds"] = elapsed
     return job_data
-
 @api_router.post("/jobs/{job_id}/timer/resume")
-async def timer_resume(job_id: str, request: Request):
+async def timer_resume(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     query = {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])}
     if user.get("role") == "worker":
@@ -1515,30 +1622,30 @@ async def timer_resume(job_id: str, request: Request):
         raise HTTPException(status_code=400, detail="Timer already running")
 
     entry = {"action": "resume", "timestamp": datetime.now(timezone.utc)}
-    await db.jobs.update_one({"_id": ObjectId(job_id)}, {
+    await db.jobs.update_one({"business_id": str(business_id), "_id": ObjectId(job_id)}, {
         "$push": {"time_entries": entry}, "$set": {"timer_running": True}
     })
-    job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+    job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(job_id)})
     job_data = serialize_doc(job)
+    job_data["business_id"] = str(business_id)
     job_data["total_time_seconds"] = compute_elapsed(job.get("time_entries", []))
     return job_data
-
 @api_router.patch("/jobs/{job_id}/timer/adjust")
-async def timer_adjust(job_id: str, data: TimeAdjust, request: Request):
+async def timer_adjust(job_id: str, data: TimeAdjust, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     if user.get("role") not in ("employer", "admin"):
         raise HTTPException(status_code=403, detail="Only employers can adjust time")
-    result = await db.jobs.update_one(
-        {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])},
+    result = await db.jobs.update_one({"business_id": str(business_id), "_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])},
         {"$set": {"total_time_seconds": max(0, data.total_time_seconds), "time_entries": [], "timer_running": False}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Job not found")
-    job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+    job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(job_id)})
     return serialize_doc(job)
-
 @api_router.get("/jobs/{job_id}/timer")
-async def get_timer(job_id: str, request: Request):
+async def get_timer(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     query = {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])}
     if user.get("role") == "worker":
@@ -1551,7 +1658,8 @@ async def get_timer(job_id: str, request: Request):
 
 # ===================== QUOTES =====================
 @api_router.post("/quotes")
-async def create_quote(quote_data: QuoteCreate, request: Request):
+async def create_quote(quote_data: QuoteCreate, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     quote_doc = {
         **quote_data.model_dump(exclude={"client_id"}),
@@ -1569,9 +1677,9 @@ async def create_quote(quote_data: QuoteCreate, request: Request):
         quote_doc["client_id"] = quote_data.client_id
     quote_doc.pop("_id", None)
     return quote_doc
-
 @api_router.get("/quotes")
-async def get_quotes(request: Request, status: Optional[str] = None):
+async def get_quotes(request: Request, status: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     query = {"contractor_id": ObjectId(user["business_id"])}
     if status:
@@ -1580,17 +1688,18 @@ async def get_quotes(request: Request, status: Optional[str] = None):
     return [serialize_doc(q) for q in quotes]
 
 @api_router.get("/quotes/{quote_id}")
-async def get_quote(quote_id: str, request: Request):
+async def get_quote(quote_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
-    quote = await db.quotes.find_one({
+    quote = await db.quotes.find_one({"business_id": str(business_id), 
         "_id": ObjectId(quote_id), "contractor_id": ObjectId(user["business_id"])
     })
     if not quote:
         raise HTTPException(status_code=404, detail="Quote not found")
     return serialize_doc(quote)
-
 @api_router.patch("/quotes/{quote_id}")
-async def update_quote(quote_id: str, quote_data: QuoteUpdate, request: Request):
+async def update_quote(quote_id: str, request: Request, quote_data: QuoteUpdate, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     update_data = {k: v for k, v in quote_data.model_dump().items() if v is not None}
     if not update_data:
@@ -1605,19 +1714,19 @@ async def update_quote(quote_id: str, quote_data: QuoteUpdate, request: Request)
     return serialize_doc(quote)
 
 @api_router.post("/quotes/{quote_id}/send")
-async def send_quote(quote_id: str, request: Request):
+async def send_quote(quote_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
-    result = await db.quotes.update_one(
-        {"_id": ObjectId(quote_id), "contractor_id": ObjectId(user["business_id"])},
+    result = await db.quotes.update_one({"business_id": str(business_id), "_id": ObjectId(quote_id), "contractor_id": ObjectId(user["business_id"])},
         {"$set": {"status": QuoteStatus.SENT, "sent_at": datetime.now(timezone.utc)}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Quote not found")
-    quote = await db.quotes.find_one({"_id": ObjectId(quote_id)})
+    quote = await db.quotes.find_one({"business_id": str(business_id), "_id": ObjectId(quote_id)})
     return serialize_doc(quote)
-
 @api_router.delete("/quotes/{quote_id}")
-async def delete_quote(quote_id: str, request: Request):
+async def delete_quote(quote_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     result = await db.quotes.delete_one({
         "_id": ObjectId(quote_id), "contractor_id": ObjectId(user["business_id"])
@@ -1627,9 +1736,10 @@ async def delete_quote(quote_id: str, request: Request):
     return {"message": "Quote deleted"}
 
 @api_router.post("/quotes/{quote_id}/convert")
-async def convert_quote_to_job(quote_id: str, request: Request):
+async def convert_quote_to_job(quote_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await require_employer(request)
-    quote = await db.quotes.find_one({
+    quote = await db.quotes.find_one({"business_id": str(business_id), 
         "_id": ObjectId(quote_id), "contractor_id": ObjectId(user["business_id"])
     })
     if not quote:
@@ -1672,8 +1782,7 @@ async def convert_quote_to_job(quote_id: str, request: Request):
     job_id = str(result.inserted_id)
 
     # Mark quote as accepted and link to job
-    await db.quotes.update_one(
-        {"_id": ObjectId(quote_id)},
+    await db.quotes.update_one({"business_id": str(business_id), "_id": ObjectId(quote_id)},
         {"$set": {"status": QuoteStatus.ACCEPTED, "converted_job_id": job_id}}
     )
 
@@ -1681,11 +1790,12 @@ async def convert_quote_to_job(quote_id: str, request: Request):
 
 # ===================== INVOICES =====================
 @api_router.post("/invoices")
-async def create_invoice(invoice_data: InvoiceCreate, request: Request):
+async def create_invoice(invoice_data: InvoiceCreate, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
-    user_doc = await db.users.find_one({"_id": ObjectId(user["business_id"])})
+    user_doc = await db.users.find_one({"business_id": str(business_id), "_id": ObjectId(user["business_id"])})
     if not user_doc:
-        user_doc = await db.users.find_one({"_id": ObjectId(user["id"])})
+        user_doc = await db.users.find_one({"business_id": str(business_id), "_id": ObjectId(user["id"])})
     gst_rate = invoice_data.gst_rate if invoice_data.gst_rate is not None else (user_doc.get("gst_rate", DEFAULT_GST_RATE) if user_doc else DEFAULT_GST_RATE)
     gst_amount = invoice_data.subtotal * (gst_rate / 100)
     total = invoice_data.subtotal + gst_amount
@@ -1716,9 +1826,9 @@ async def create_invoice(invoice_data: InvoiceCreate, request: Request):
         invoice_doc["client_id"] = invoice_data.client_id
     invoice_doc.pop("_id", None)
     return invoice_doc
-
 @api_router.get("/invoices")
-async def get_invoices(request: Request, status: Optional[str] = None):
+async def get_invoices(request: Request, status: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     query = {"contractor_id": ObjectId(user["business_id"])}
     if status:
@@ -1727,17 +1837,18 @@ async def get_invoices(request: Request, status: Optional[str] = None):
     return [serialize_doc(i) for i in invoices]
 
 @api_router.get("/invoices/{invoice_id}")
-async def get_invoice(invoice_id: str, request: Request):
+async def get_invoice(invoice_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
-    invoice = await db.invoices.find_one({
+    invoice = await db.invoices.find_one({"business_id": str(business_id), 
         "_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])
     })
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
     return serialize_doc(invoice)
-
 @api_router.patch("/invoices/{invoice_id}")
-async def update_invoice(invoice_id: str, invoice_data: InvoiceUpdate, request: Request):
+async def update_invoice(invoice_id: str, request: Request, invoice_data: InvoiceUpdate, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     update_data = {k: v for k, v in invoice_data.model_dump().items() if v is not None}
     if "subtotal" in update_data or "gst_rate" in update_data:
@@ -1759,31 +1870,30 @@ async def update_invoice(invoice_id: str, invoice_data: InvoiceUpdate, request: 
     return serialize_doc(invoice)
 
 @api_router.post("/invoices/{invoice_id}/send")
-async def send_invoice(invoice_id: str, request: Request):
+async def send_invoice(invoice_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
-    result = await db.invoices.update_one(
-        {"_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])},
+    result = await db.invoices.update_one({"business_id": str(business_id), "_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])},
         {"$set": {"status": InvoiceStatus.SENT, "sent_at": datetime.now(timezone.utc)}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Invoice not found")
-    invoice = await db.invoices.find_one({"_id": ObjectId(invoice_id)})
+    invoice = await db.invoices.find_one({"business_id": str(business_id), "_id": ObjectId(invoice_id)})
     return serialize_doc(invoice)
-
 @api_router.post("/invoices/{invoice_id}/mark-paid")
-async def mark_invoice_paid(invoice_id: str, request: Request):
+async def mark_invoice_paid(invoice_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
-    result = await db.invoices.update_one(
-        {"_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])},
+    result = await db.invoices.update_one({"business_id": str(business_id), "_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])},
         {"$set": {"status": InvoiceStatus.PAID, "paid_at": datetime.now(timezone.utc)}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Invoice not found")
-    invoice = await db.invoices.find_one({"_id": ObjectId(invoice_id)})
+    invoice = await db.invoices.find_one({"business_id": str(business_id), "_id": ObjectId(invoice_id)})
     return serialize_doc(invoice)
-
 @api_router.delete("/invoices/{invoice_id}")
-async def delete_invoice(invoice_id: str, request: Request):
+async def delete_invoice(invoice_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     result = await db.invoices.delete_one({
         "_id": ObjectId(invoice_id), "contractor_id": ObjectId(user["business_id"])
@@ -1794,7 +1904,8 @@ async def delete_invoice(invoice_id: str, request: Request):
 
 # ===================== DASHBOARD STATS =====================
 @api_router.get("/dashboard/stats")
-async def get_dashboard_stats(request: Request):
+async def get_dashboard_stats(request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     biz_id = ObjectId(user["business_id"])
 
@@ -1828,7 +1939,7 @@ async def get_dashboard_stats(request: Request):
     sms_balance = 0
     if user.get("role") in ("employer", "admin"):
         team_count = await db.users.count_documents({"business_id": biz_id, "role": "worker"})
-        credit_doc = await db.sms_credits.find_one({"business_id": biz_id})
+        credit_doc = await db.sms_credits.find_one({"business_id": str(business_id), "business_id": biz_id})
         sms_balance = credit_doc.get("balance", 0) if credit_doc else 0
 
     return {
@@ -1850,12 +1961,12 @@ SMS_TEMPLATES = {
 async def get_business_owner_for_user(user: dict):
     business_id = user.get("business_id") or user.get("id")
     try:
-        owner = await db.users.find_one({"_id": ObjectId(business_id)})
+        owner = await db.users.find_one({"business_id": str(business_id), "_id": ObjectId(business_id)})
     except Exception:
         owner = None
     if owner:
         return owner
-    return await db.users.find_one({"_id": ObjectId(user["id"])})
+    return await db.users.find_one({"business_id": str(business_id), "_id": ObjectId(user["id"])})
 
 async def create_sms_checkout_session_for_user(user: dict, pack_key: str):
     pack = SMS_PACKS.get(pack_key)
@@ -1878,8 +1989,7 @@ async def create_sms_checkout_session_for_user(user: dict, pack_key: str):
             }
         )
         stripe_customer_id = customer.id
-        await db.users.update_one(
-            {"_id": owner["_id"]},
+        await db.users.update_one({"business_id": str(business_id), "_id": owner["_id"]},
             {"$set": {"stripe_customer_id": stripe_customer_id}}
         )
 
@@ -1916,24 +2026,24 @@ async def create_sms_checkout_session_for_user(user: dict, pack_key: str):
     )
     return session
 
-
 @api_router.get("/sms/balance")
-async def get_sms_balance(request: Request):
+async def get_sms_balance(request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     biz_id = user["business_id"]
-    credit_doc = await db.sms_credits.find_one({"business_id": ObjectId(biz_id)})
+    credit_doc = await db.sms_credits.find_one({"business_id": str(business_id), "business_id": ObjectId(biz_id)})
     balance = credit_doc.get("balance", 0) if credit_doc else 0
     return {"balance": balance, "low_credit": balance < 20}
-
 @api_router.get("/sms/provider-balance")
-async def get_sms_provider_balance(request: Request):
+async def get_sms_provider_balance(request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     """Check ClickSend account balance (admin/employer only)."""
     await require_employer(request)
     balance = await sms_provider.check_balance()
     return {"provider": sms_provider.__class__.__name__, "balance": balance}
-
 @api_router.post("/sms/buy-credits")
-async def buy_sms_credits(data: SmsBuyCredits, request: Request):
+async def buy_sms_credits(data: SmsBuyCredits, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await require_employer(request)
     session = await create_sms_checkout_session_for_user(user, data.pack)
     return {
@@ -1941,14 +2051,14 @@ async def buy_sms_credits(data: SmsBuyCredits, request: Request):
         "checkout_url": session.url,
         "session_id": session.id
     }
-
 @api_router.post("/sms/send")
-async def send_sms(data: SmsSend, request: Request):
+async def send_sms(data: SmsSend, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     biz_id = ObjectId(user["business_id"])
 
     # Check balance
-    credit_doc = await db.sms_credits.find_one({"business_id": biz_id})
+    credit_doc = await db.sms_credits.find_one({"business_id": str(business_id), "business_id": biz_id})
     balance = credit_doc.get("balance", 0) if credit_doc else 0
     if balance < 1:
         raise HTTPException(status_code=400, detail="Insufficient SMS credits")
@@ -1964,12 +2074,12 @@ async def send_sms(data: SmsSend, request: Request):
     fill = {"business": business_name, "name": "", "date": "", "invoice_number": "", "total": "", "custom_message": data.custom_message or ""}
 
     if data.job_id:
-        job = await db.jobs.find_one({"_id": ObjectId(data.job_id), "contractor_id": biz_id})
+        job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(data.job_id), "contractor_id": biz_id})
         if job:
             fill["name"] = job.get("customer_name", "")
             fill["date"] = job.get("scheduled_date", datetime.now(timezone.utc)).strftime("%d %b %Y")
     if data.invoice_id:
-        inv = await db.invoices.find_one({"_id": ObjectId(data.invoice_id), "contractor_id": biz_id})
+        inv = await db.invoices.find_one({"business_id": str(business_id), "_id": ObjectId(data.invoice_id), "contractor_id": biz_id})
         if inv:
             fill["name"] = fill["name"] or inv.get("customer_name", "")
             fill["invoice_number"] = inv.get("invoice_number", "")
@@ -2007,7 +2117,7 @@ async def send_sms(data: SmsSend, request: Request):
         raise HTTPException(status_code=502, detail=f"SMS delivery failed: {result.error}")
 
     # Deduct 1 credit on success
-    await db.sms_credits.update_one({"business_id": biz_id}, {"$inc": {"balance": -1}})
+    await db.sms_credits.update_one({"business_id": str(business_id), "business_id": biz_id}, {"$inc": {"balance": -1}})
     new_balance = balance - 1
 
     return {
@@ -2017,9 +2127,9 @@ async def send_sms(data: SmsSend, request: Request):
         "provider": result.provider,
         "message_id": result.message_id,
     }
-
 @api_router.post("/sms/test")
-async def send_test_sms(data: SmsTestSend, request: Request):
+async def send_test_sms(data: SmsTestSend, request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     """Development endpoint — send a test SMS without deducting credits."""
     await require_employer(request)
     result = await sms_provider.send(
@@ -2035,16 +2145,16 @@ async def send_test_sms(data: SmsTestSend, request: Request):
         "error": result.error,
         "cost": result.cost,
     }
-
 @api_router.get("/sms/history")
-async def get_sms_history(request: Request):
+async def get_sms_history(request: Request, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
     biz_id = ObjectId(user["business_id"])
-    logs = await db.sms_log.find({"business_id": biz_id}).sort("created_at", -1).to_list(100)
+    logs = await db.sms_log.find({"business_id": str(business_id), "business_id": biz_id}).sort("created_at", -1).to_list(100)
     return [serialize_doc(log) for log in logs]
-
 @api_router.get("/sms/packs")
-async def get_sms_packs():
+async def get_sms_packs(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     return [{"id": k, "credits": v["credits"], "price": v["price"]} for k, v in SMS_PACKS.items()]
 
 # ===================== MYOB INTEGRATION =====================
@@ -2692,3 +2802,61 @@ def health_login():
         "ok": True,
         "frontend_url": FRONTEND_URL
     }
+
+
+
+# =========================
+# BUSINESS ISOLATION EXAMPLES
+# COPY THIS PATTERN INTO ALL CLIENT/JOB/QUOTE/INVOICE/TIMER/SMS ROUTES
+# =========================
+
+# Example secure list pattern:
+# @api_router.get("/clients")
+# async def get_clients(current_user: dict = Depends(get_current_user), current_user: dict = Depends(get_current_user)):
+#     business_id = await get_user_business_id(current_user)
+#     clients = await list_in_business(db.clients, business_id, sort=[("created_at", -1)])
+#     return safe_docs(clients)
+
+# Example secure get-one pattern:
+# @api_router.get("/clients/{client_id}")
+# async def get_client(client_id: str, current_user: dict = Depends(get_current_user)):
+#     business_id = await get_user_business_id(current_user)
+#     client = await find_one_in_business(
+#         db.clients,
+#         business_id,
+#         {"_id": ObjectId(client_id)}
+#     )
+#     return safe_doc(client)
+
+# Example secure create pattern:
+# @api_router.post("/clients")
+# async def create_client(payload: dict, current_user: dict = Depends(get_current_user)):
+#     business_id = await get_user_business_id(current_user)
+#     data = force_business_on_payload(dict(payload), business_id)
+#     await db.clients.insert_one(data)
+#     return {"success": True}
+
+# Example secure update pattern:
+# @api_router.put("/clients/{client_id}")
+# async def update_client(client_id: str, current_user: dict = Depends(get_current_user), payload: dict, current_user: dict = Depends(get_current_user)):
+#     business_id = await get_user_business_id(current_user)
+#     payload = dict(payload)
+#     payload.pop("business_id", None)
+#     await update_one_in_business(
+#         db.clients,
+#         business_id,
+#         {"_id": ObjectId(client_id)},
+#         payload
+#     )
+#     return {"success": True}
+
+# Example secure delete pattern:
+# @api_router.delete("/clients/{client_id}")
+# async def delete_client(client_id: str, current_user: dict = Depends(get_current_user), current_user: dict = Depends(get_current_user)):
+#     business_id = await get_user_business_id(current_user)
+#     await delete_one_in_business(
+#         db.clients,
+#         business_id,
+#         {"_id": ObjectId(client_id)}
+#     )
+#     return {"success": True}
