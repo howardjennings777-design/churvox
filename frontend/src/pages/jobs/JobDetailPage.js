@@ -26,6 +26,7 @@ export default function JobDetailPage() {
   const { isEmployer, isWorker } = useAuth();
   const { get, post, patch, del, loading } = useApi();
   const [job, setJob] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [workers, setWorkers] = useState([]);
   const [showDelete, setShowDelete] = useState(false);
   const [showAssign, setShowAssign] = useState(false);
