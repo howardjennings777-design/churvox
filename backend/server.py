@@ -1578,8 +1578,8 @@ async def timer_start(job_id: str, request: Request, current_user: dict = Depend
     if job["status"] in (JobStatus.ASSIGNED, JobStatus.ACKNOWLEDGED):
         updates["$set"]["status"] = JobStatus.IN_PROGRESS
         updates["$set"]["started_at"] = datetime.now(timezone.utc)
-    await db.jobs.update_one({"business_id": str(business_id), "_id": ObjectId(job_id)}, updates)
-    job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(job_id)})
+    await db.jobs.update_one(query, updates)
+    job = await db.jobs.find_one(query)
     job_data = serialize_doc(job)
     job_data["business_id"] = str(business_id)
     job_data["total_time_seconds"] = compute_elapsed(job.get("time_entries", []))
@@ -1636,12 +1636,14 @@ async def timer_adjust(job_id: str, data: TimeAdjust, request: Request, current_
     user = await get_current_user(request)
     if user.get("role") not in ("employer", "admin"):
         raise HTTPException(status_code=403, detail="Only employers can adjust time")
-    result = await db.jobs.update_one({"business_id": str(business_id), "_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])},
+    query = {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])}
+    result = await db.jobs.update_one(
+        query,
         {"$set": {"total_time_seconds": max(0, data.total_time_seconds), "time_entries": [], "timer_running": False}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Job not found")
-    job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(job_id)})
+    job = await db.jobs.find_one(query)
     return serialize_doc(job)
 @api_router.get("/jobs/{job_id}/timer")
 async def get_timer(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
