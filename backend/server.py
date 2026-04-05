@@ -2685,7 +2685,7 @@ async def create_next_recurring_job_if_needed(completed_job: dict):
 @api_router.get("/admin/usage-summary")
 async def get_admin_usage_summary(current_user: dict = Depends(get_current_user)):
     role = str(current_user.get("role", "")).lower()
-    is_allowed = bool(current_user.get("is_admin")) or role in ["admin", "owner", "superadmin"]
+    is_allowed = bool(current_user.get("is_admin")) or role in ["admin", "owner", "superadmin", "business_owner", "employer"]
     if not is_allowed:
         raise HTTPException(status_code=403, detail="Not allowed")
 
