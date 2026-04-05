@@ -1,0 +1,147 @@
+import React from "react";
+import PageErrorBoundary from "./components/PageErrorBoundary";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { Toaster } from "./components/ui/sonner";
+
+import LoginPage from "./pages/auth/LoginPage";
+import SignupPage from "./pages/auth/SignupPage";
+import AdminLoginPage from "./pages/auth/AdminLoginPage";
+import InviteSetupPage from "./pages/auth/InviteSetupPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import DashboardPage from "./pages/DashboardPage";
+import JobsPage from "./pages/jobs/JobsPage";
+import JobFormPage from "./pages/jobs/JobFormPage";
+import JobDetailPage from "./pages/jobs/JobDetailPage";
+import ClientsPage from "./pages/clients/ClientsPage";
+import ClientFormPage from "./pages/clients/ClientFormPage";
+import ClientDetailPage from "./pages/clients/ClientDetailPage";
+import QuotesPage from "./pages/quotes/QuotesPage";
+import QuoteFormPage from "./pages/quotes/QuoteFormPage";
+import QuoteDetailPage from "./pages/quotes/QuoteDetailPage";
+import InvoicesPage from "./pages/invoices/InvoicesPage";
+import InvoiceFormPage from "./pages/invoices/InvoiceFormPage";
+import InvoiceDetailPage from "./pages/invoices/InvoiceDetailPage";
+import SettingsPage from "./pages/SettingsPage";
+import PlansPage from "./pages/PlansPage";
+import CalendarPage from "./pages/CalendarPage";
+import TeamPage from "./pages/TeamPage";
+import SMSPage from "./pages/SMSPage";
+import PrivacyPage from "./pages/legal/PrivacyPage";
+import TermsPage from "./pages/legal/TermsPage";
+import AccountDeletionPage from "./pages/legal/AccountDeletionPage";
+
+function PrivateRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="min-h-screen bg-churvox-bg flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" /></div>;
+  return user ? children : <Navigate to="/login" />;
+}
+
+function PublicRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="min-h-screen bg-churvox-bg flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" /></div>;
+  return user ? <Navigate to="/dashboard" /> : children;
+}
+
+
+function RuntimeCrashReporter() {
+  const [msg, setMsg] = React.useState("");
+
+  React.useEffect(() => {
+    const onErr = (e) => {
+      const text = (e?.error?.stack || e?.message || "Unknown JS error");
+      console.error("Runtime crash:", e);
+      setMsg(String(text));
+    };
+    const onRej = (e) => {
+      const text = (e?.reason?.stack || e?.reason?.message || String(e?.reason || "Unknown promise rejection"));
+      console.error("Unhandled rejection:", e);
+      setMsg(String(text));
+    };
+
+    window.addEventListener("error", onErr);
+    window.addEventListener("unhandledrejection", onRej);
+
+    return (
+    <PageErrorBoundary>
+) => {
+      window.removeEventListener("error", onErr);
+      window.removeEventListener("unhandledrejection", onRej);
+    };
+  }, []);
+
+  if (!msg) return null;
+
+  return (
+    <div style={{
+      position: "fixed",
+      left: 12,
+      right: 12,
+      bottom: 12,
+      zIndex: 999999,
+      background: "#1f2937",
+      color: "white",
+      border: "1px solid rgba(255,255,255,0.2)",
+      borderRadius: 12,
+      padding: 12,
+      maxHeight: "40vh",
+      overflow: "auto",
+      fontSize: 12,
+      whiteSpace: "pre-wrap"
+    }}>
+      <div style={{ fontWeight: 700, marginBottom: 8 }}>Runtime error</div>
+      <div>{msg}</div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <RuntimeCrashReporter />
+      <AuthProvider>
+        <Toaster position="top-right" richColors />
+        <Routes>
+          <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+          <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
+          <Route path="/admin/login" element={<PublicRoute><AdminLoginPage /></PublicRoute>} />
+          <Route path="/invite/setup/:token" element={<InviteSetupPage />} />
+          <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+          <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
+
+          <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+          <Route path="/jobs" element={<PrivateRoute><JobsPage /></PrivateRoute>} />
+          <Route path="/jobs/new" element={<PrivateRoute><JobFormPage /></PrivateRoute>} />
+          <Route path="/jobs/:id" element={<PrivateRoute><JobDetailPage /></PrivateRoute>} />
+          <Route path="/jobs/:id/edit" element={<PrivateRoute><JobFormPage /></PrivateRoute>} />
+          <Route path="/calendar" element={<PrivateRoute><CalendarPage /></PrivateRoute>} />
+          <Route path="/clients" element={<PrivateRoute><ClientsPage /></PrivateRoute>} />
+          <Route path="/clients/new" element={<PrivateRoute><ClientFormPage /></PrivateRoute>} />
+          <Route path="/clients/:id" element={<PrivateRoute><ClientDetailPage /></PrivateRoute>} />
+          <Route path="/clients/:id/edit" element={<PrivateRoute><ClientFormPage /></PrivateRoute>} />
+          <Route path="/team" element={<PrivateRoute><TeamPage /></PrivateRoute>} />
+          <Route path="/quotes" element={<PrivateRoute><QuotesPage /></PrivateRoute>} />
+          <Route path="/quotes/new" element={<PrivateRoute><QuoteFormPage /></PrivateRoute>} />
+          <Route path="/quotes/:id" element={<PrivateRoute><QuoteDetailPage /></PrivateRoute>} />
+          <Route path="/quotes/:id/edit" element={<PrivateRoute><QuoteFormPage /></PrivateRoute>} />
+          <Route path="/invoices" element={<PrivateRoute><InvoicesPage /></PrivateRoute>} />
+          <Route path="/invoices/new" element={<PrivateRoute><InvoiceFormPage /></PrivateRoute>} />
+          <Route path="/invoices/:id" element={<PrivateRoute><InvoiceDetailPage /></PrivateRoute>} />
+          <Route path="/sms" element={<PrivateRoute><SMSPage /></PrivateRoute>} />
+          <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
+          <Route path="/plans" element={<PrivateRoute><PlansPage /></PrivateRoute>} />
+
+          {/* Public legal pages */}
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/account-deletion" element={<AccountDeletionPage />} />
+
+          <Route path="/" element={<Navigate to="/dashboard" />} />
+          <Route path="*" element={<Navigate to="/dashboard" />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+    </PageErrorBoundary>
+  );
+}
