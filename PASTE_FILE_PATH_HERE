@@ -1,0 +1,182 @@
+import React from "react";
+
+export default function PrivacyPolicyPage() {
+  return (
+    <div className="min-h-screen bg-[#0b1120] text-white px-4 py-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-[#111827] border border-[#1f2937] rounded-2xl p-6 md:p-10 shadow-xl">
+          <h1 className="text-3xl md:text-4xl font-bold mb-3">Churvox Privacy Policy</h1>
+          <p className="text-sm text-gray-400 mb-8">Last updated: 6 April 2026</p>
+
+          <p className="text-gray-300 leading-7 mb-8">
+            Churvox respects your privacy and is committed to protecting your personal
+            information. This Privacy Policy explains what information we collect, how
+            we use it, how we store it, and the choices you have when using Churvox.
+          </p>
+
+          <p className="text-gray-300 leading-7 mb-8">
+            Churvox is a job management platform for trade and service businesses. By
+            using Churvox, you agree to the collection and use of information in line
+            with this Privacy Policy.
+          </p>
+
+          <hr className="border-[#243041] my-8" />
+
+          <h2 className="text-2xl font-bold mb-4">Information We Collect</h2>
+
+          <h3 className="text-xl font-semibold mt-6 mb-2">1. Account Information</h3>
+          <p className="text-gray-300 leading-7 mb-4">
+            When you create an account, we may collect your name, business name, email
+            address, phone number, password, and login details.
+          </p>
+
+          <h3 className="text-xl font-semibold mt-6 mb-2">2. Business and Customer Information</h3>
+          <p className="text-gray-300 leading-7 mb-4">
+            When using Churvox, you may add and store customer names, customer phone
+            numbers, customer email addresses, service addresses, job notes, invoices,
+            quotes, payment records, and employee or team member details.
+          </p>
+
+          <h3 className="text-xl font-semibold mt-6 mb-2">3. Job and Usage Data</h3>
+          <p className="text-gray-300 leading-7 mb-4">
+            We may collect data related to how you use the platform, including job
+            status updates, scheduling information, time tracking entries, uploaded job
+            photos or files, app activity, device information, browser information, and
+            system log data.
+          </p>
+
+          <h3 className="text-xl font-semibold mt-6 mb-2">4. Payment and Billing Information</h3>
+          <p className="text-gray-300 leading-7 mb-4">
+            If you purchase a subscription, SMS credits, or other paid services,
+            payment information may be processed by third-party payment providers.
+            Churvox does not store full card details directly on its own servers.
+          </p>
+
+          <h3 className="text-xl font-semibold mt-6 mb-2">5. Integration Data</h3>
+          <p className="text-gray-300 leading-7 mb-6">
+            If you connect third-party services such as accounting, messaging, or
+            payment tools, we may collect and process the data needed to provide those
+            integrations.
+          </p>
+
+          <hr className="border-[#243041] my-8" />
+
+          <h2 className="text-2xl font-bold mb-4">How We Use Your Information</h2>
+          <p className="text-gray-300 leading-7 mb-6">
+            We use your information to create and manage your account, provide the
+            Churvox platform and its features, manage jobs, customers, invoices,
+            schedules, and team workflows, process subscriptions and SMS credit
+            purchases, send service-related emails and account updates, improve app
+            performance and security, provide customer support, detect misuse or fraud,
+            and comply with legal obligations.
+          </p>
+
+          <hr className="border-[#243041] my-8" />
+
+          <h2 className="text-2xl font-bold mb-4">How We Share Information</h2>
+          <p className="text-gray-300 leading-7 mb-6">
+            We do not sell your personal information. We may share information with
+            service providers that help us operate Churvox, with third-party tools you
+            choose to connect, where required by law, or where necessary to protect the
+            rights, safety, security, or integrity of Churvox, our users, or others.
+          </p>
+
+          <hr className="border-[#243041] my-8" />
+
+          <h2 className="text-2xl font-bold mb-4">Data Security</h2>
+          <p className="text-gray-300 leading-7 mb-6">
+            We take reasonable steps to protect your information from unauthorized
+            access, loss, misuse, disclosure, or alteration. However, no online service
+            can guarantee absolute security. You are responsible for keeping your login
+            details secure and protecting access to your devices and account.
+          </p>
+
+          <hr className="border-[#243041] my-8" />
+
+          <h2 className="text-2xl font-bold mb-4">Data Retention</h2>
+          <p className="text-gray-300 leading-7 mb-6">
+            We keep information for as long as needed to provide the service, meet
+            legal and operational requirements, resolve disputes, and enforce our
+            agreements. If you close your account, we may retain certain information
+            where required for legal, tax, accounting, security, fraud prevention, or
+            legitimate business purposes.
+          </p>
+
+          <hr className="border-[#243041] my-8" />
+
+          <h2 className="text-2xl font-bold mb-4">Your Rights and Choices</h2>
+          <p className="text-gray-300 leading-7 mb-6">
+            You may request access to the personal information we hold about you,
+            request correction of inaccurate information, or request deletion of your
+            account or personal information where applicable. Some information may also
+            be updated directly inside your account.
+          </p>
+
+          <p className="text-gray-300 leading-7 mb-6">
+            To make a privacy request, contact us at <span className="font-semibold">hello@churvox.com</span>.
+          </p>
+
+          <hr className="border-[#243041] my-8" />
+
+          <h2 className="text-2xl font-bold mb-4">Cookies and Technical Data</h2>
+          <p className="text-gray-300 leading-7 mb-6">
+            Churvox may use cookies, session tools, and similar technologies to keep
+            you signed in, remember preferences, improve security, understand platform
+            usage, and support app performance. Disabling some of these may affect how
+            the service works.
+          </p>
+
+          <hr className="border-[#243041] my-8" />
+
+          <h2 className="text-2xl font-bold mb-4">Third-Party Services</h2>
+          <p className="text-gray-300 leading-7 mb-6">
+            Churvox may rely on third-party providers to operate parts of the platform,
+            including payment processing, hosting, messaging, analytics, and
+            integrations. Those providers may collect, use, and store information under
+            their own privacy policies.
+          </p>
+
+          <hr className="border-[#243041] my-8" />
+
+          <h2 className="text-2xl font-bold mb-4">Children’s Privacy</h2>
+          <p className="text-gray-300 leading-7 mb-6">
+            Churvox is not intended for children under 13, and we do not knowingly
+            collect personal information from children.
+          </p>
+
+          <hr className="border-[#243041] my-8" />
+
+          <h2 className="text-2xl font-bold mb-4">International Data Use</h2>
+          <p className="text-gray-300 leading-7 mb-6">
+            Your information may be stored or processed in countries outside your local
+            jurisdiction, depending on the service providers used to operate Churvox.
+            By using Churvox, you understand that your information may be transferred,
+            stored, and processed outside your country.
+          </p>
+
+          <hr className="border-[#243041] my-8" />
+
+          <h2 className="text-2xl font-bold mb-4">Changes to This Privacy Policy</h2>
+          <p className="text-gray-300 leading-7 mb-6">
+            We may update this Privacy Policy from time to time. If we make important
+            changes, we may update the date above and, where appropriate, provide
+            notice through the app or website. Your continued use of Churvox after
+            changes are posted means you accept the updated Privacy Policy.
+          </p>
+
+          <hr className="border-[#243041] my-8" />
+
+          <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
+          <p className="text-gray-300 leading-7">
+            If you have questions about this Privacy Policy or want to make a privacy
+            request, contact:
+          </p>
+          <p className="text-gray-200 leading-7 mt-4 font-medium">
+            Churvox<br />
+            Email: hello@churvox.com
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
