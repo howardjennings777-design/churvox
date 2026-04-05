@@ -892,13 +892,13 @@ async def create_worker(worker_data: WorkerCreate, request: Request, current_use
     result = await create_invite_for_worker(email, worker_data.name, worker_data.phone, user, biz_id)
     return result
 @api_router.get("/team/workers")
-async def get_workers(request: Request):
-    user = await require_employer(request)
-    workers = await db.users.find(
-        {"business_id": ObjectId(user["business_id"]), "role": "worker"},
-        {"_id": 1, "name": 1, "email": 1, "phone": 1, "role": 1, "status": 1, "created_at": 1}
-    ).to_list(1000)
-    return [serialize_doc(w) for w in workers]
+async def get_team_workers(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    workers = await db.users.find({
+        "business_id": str(business_id),
+        "role": "worker"
+    }).to_list(length=500)
+    return safe_docs(workers)
 
 @api_router.delete("/team/workers/{worker_id}")
 async def delete_worker(worker_id: str, request: Request, current_user: dict = Depends(get_current_user)):
