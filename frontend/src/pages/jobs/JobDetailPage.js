@@ -86,9 +86,25 @@ export default function JobDetailPage() {
   };
 
   const handleAction = async (action, label) => {
-    const res = await post(`/jobs/${id}/${action}`);
-    if (res.success) { toast.success(`Job ${label}`); setJob(res.data); setElapsed(res.data.total_time_seconds || 0); }
-    else toast.error(res.error || `Failed to ${label} job`);
+    try {
+      setLoading(true);
+      const res = await post(`/jobs/${id}/${action}`);
+      if (res.success) {
+        toast.success(`Job ${label}`);
+        if (action === "complete") {
+          navigate("/jobs");
+          return;
+        }
+        setJob(res.data);
+        setElapsed(res.data?.total_time_seconds || 0);
+      } else {
+        toast.error(res.error || `Failed to ${label.toLowerCase()} job`);
+      }
+    } catch (err) {
+      toast.error(err?.message || `Failed to ${label.toLowerCase()} job`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAssign = async () => {
@@ -119,7 +135,8 @@ export default function JobDetailPage() {
     else toast.error(res.error || "Failed to send SMS");
   };
 
-  if (!job) return <Layout><div className="p-6 text-churvox-muted">Loading...</div></Layout>;
+  if (!job && loading) return <Layout><div className="p-6 text-churvox-muted">Loading...</div></Layout>;
+  if (!job && !loading) return <Layout><div className="p-6 text-churvox-muted">Job not found</div></Layout>;
 
   const statusInfo = JOB_STATUS_MAP[job.status];
   const pricingLabel = { fixed: "Fixed Price", hourly: "Hourly", fixed_extras: "Fixed + Extras", hourly_extras: "Hourly + Extras" }[job.pricing_type] || "Fixed";
