@@ -8,44 +8,9 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "../../components/ui/select";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { JOB_TYPES_BY_CATEGORY } from "../../lib/utils";
-
-
-const normalizeRecurringJobPayload = (formData) => {
-  const isRecurring = !!formData?.is_recurring;
-  const frequency = isRecurring ? (formData?.recurring_frequency || '') : '';
-  const customDays =
-    isRecurring && frequency === 'custom'
-      ? Number(formData?.custom_repeat_days || 0)
-      : null;
-
-  return {
-    ...formData,
-    is_recurring: isRecurring,
-    recurring_frequency: isRecurring ? frequency : null,
-    custom_repeat_days: isRecurring ? customDays : null,
-    recurring_parent_job_id: formData?.recurring_parent_job_id || null,
-    next_recurring_due_date: formData?.next_recurring_due_date || null,
-  };
-
-
-const handleRecurringToggleChange = (e, formData, setFormData) => {
-  const checked = !!e.target.checked;
-  setFormData({
-    ...formData,
-    is_recurring: checked,
-    recurring_frequency: checked ? (formData.recurring_frequency || 'weekly') : '',
-    custom_repeat_days: checked ? formData.custom_repeat_days : '',
-  });
-};
-
-
-};
-
-
 
 const PRICING_TYPES = [
   { value: "fixed", label: "Fixed Price" },
@@ -55,299 +20,520 @@ const PRICING_TYPES = [
 ];
 
 function getJobTypeLabel(value) {
-  for (const types of Object.values(JOB_TYPES_BY_CATEGORY)) {
-    const found = types.find((t) => t.value === value);
+  for (const types of Object.values(JOB_TYPES_BY_CATEGORY || {})) {
+    const found = (types || []).find((t) => t.value === value);
     if (found) return found.label;
   }
-  return value;
+  return value || "Other";
+}
+
+function getAllJobTypeOptions() {
+  const categories = Object.entries(JOB_TYPES_BY_CATEGORY || {});
+  if (!categories.length) {
+    return [{ value: "other", label: "Other", category: "General" }];
+  }
+
+  const options = [];
+  for (const [category, items] of categories) {
+    for (const item of items || []) {
+      options.push({
+        value: item.value,
+        label: item.label,
+        category,
+      });
+    }
+  }
+
+  if (!options.find((x) => x.value === "other")) {
+    options.push({ value: "other", label: "Other", category: "General" });
+  }
+
+  return options;
 }
 
 export default function JobFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isEmployer } = useAuth();
-  const { get, post, patch, loading } = useApi();
+  const auth = useAuth() || {};
+  const isEmployer = !!auth.isEmployer;
+  const { get, post, patch } = useApi();
   const isEditing = !!id;
 
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [clients, setClients] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [form, setForm] = useState({
-    title: "", job_type: "other", client_id: "", customer_name: "", address: "",
-    scheduled_date: "", scheduled_time: "", estimated_duration: 60, price: "",
-    pricing_type: "fixed", hourly_rate: "", extras: [],
-    notes: "", is_recurring: false, recurrence_pattern: "", assigned_worker_id: "",
+    title: "",
+    job_type: "other",
+    client_id: "",
+    customer_name: "",
+    address: "",
+    scheduled_date: "",
+    scheduled_time: "",
+    estimated_duration: "60",
+    price: "",
+    pricing_type: "fixed",
+    hourly_rate: "",
+    extras: [],
+    notes: "",
+    assigned_worker_id: "",
+    is_recurring: false,
+    recurring_frequency: "weekly",
+    custom_repeat_days: "",
   });
 
-  const fetchData = useCallback(async () => {
-    const [clientsRes, workersRes] = await Promise.all([
-      get("/clients"),
-      isEmployer ? get("/team/workers") : Promise.resolve({ success: true, data: [] }),
-    ]);
-    if (clientsRes.success) setClients(clientsRes.data);
-    if (workersRes.success) setWorkers(workersRes.data);
+  const jobTypeOptions = getAllJobTypeOptions();
 
-    if (isEditing) {
-      const res = await get(`/jobs/${id}`);
-      if (res.success) {
-        const j = res.data;
+  const setField = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const [clientsRes, workersRes] = await Promise.all([
+        get("/clients"),
+        isEmployer ? get("/team/workers") : Promise.resolve({ success: true, data: [] }),
+      ]);
+
+      const nextClients =
+        clientsRes?.success && Array.isArray(clientsRes.data) ? clientsRes.data : [];
+      const nextWorkers =
+        workersRes?.success && Array.isArray(workersRes.data) ? workersRes.data : [];
+
+      setClients(nextClients);
+      setWorkers(nextWorkers);
+
+      if (isEditing) {
+        const res = await get(`/jobs/${id}`);
+        if (!res?.success) {
+          toast.error("Could not load job");
+          navigate("/jobs");
+          return;
+        }
+
+        const j = res.data || {};
         setForm({
-          title: j.title || "", job_type: j.job_type || "other", client_id: j.client_id || "",
-          customer_name: j.customer_name || "", address: j.address || "",
-          scheduled_date: j.scheduled_date ? j.scheduled_date.split("T")[0] : "",
-          scheduled_time: j.scheduled_time || "", estimated_duration: j.estimated_duration || 60,
-          price: j.price || "", pricing_type: j.pricing_type || "fixed",
-          hourly_rate: j.hourly_rate || "", extras: j.extras || [],
-          notes: j.notes || "", is_recurring: j.is_recurring || false,
-          recurrence_pattern: j.recurrence_pattern || "",
+          title: j.title || "",
+          job_type: j.job_type || "other",
+          client_id: j.client_id || "",
+          customer_name: j.customer_name || "",
+          address: j.address || "",
+          scheduled_date: j.scheduled_date ? String(j.scheduled_date).split("T")[0] : "",
+          scheduled_time: j.scheduled_time || "",
+          estimated_duration: String(j.estimated_duration ?? 60),
+          price: j.price ?? "",
+          pricing_type: j.pricing_type || "fixed",
+          hourly_rate: j.hourly_rate ?? "",
+          extras: Array.isArray(j.extras) ? j.extras : [],
+          notes: j.notes || "",
           assigned_worker_id: j.assigned_worker_id || "",
+          is_recurring: !!j.is_recurring,
+          recurring_frequency: j.recurring_frequency || "weekly",
+          custom_repeat_days: j.custom_repeat_days ? String(j.custom_repeat_days) : "",
         });
-      } else navigate("/jobs");
+      }
+    } catch (err) {
+      console.error("Job form load error:", err);
+      toast.error("Failed to load job form");
+    } finally {
+      setLoading(false);
     }
   }, [get, id, isEditing, isEmployer, navigate]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleClientChange = (clientId) => {
-    const client = clients.find((c) => c.id === clientId);
+    const client = clients.find((c) => String(c.id) === String(clientId));
     setForm((prev) => ({
-      ...prev, client_id: clientId,
+      ...prev,
+      client_id: clientId,
       customer_name: client?.name || prev.customer_name,
       address: client?.address || prev.address,
     }));
   };
 
-  const addExtra = () => setForm((prev) => ({ ...prev, extras: [...prev.extras, { description: "", amount: "" }] }));
-  const removeExtra = (i) => setForm((prev) => ({ ...prev, extras: prev.extras.filter((_, idx) => idx !== i) }));
-  const updateExtra = (i, field, val) => setForm((prev) => {
-    const extras = [...prev.extras];
-    extras[i] = { ...extras[i], [field]: val };
-    return { ...prev, extras };
-  });
+  const addExtra = () => {
+    setForm((prev) => ({
+      ...prev,
+      extras: [...(prev.extras || []), { description: "", amount: "" }],
+    }));
+  };
+
+  const removeExtra = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      extras: (prev.extras || []).filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateExtra = (index, field, value) => {
+    setForm((prev) => {
+      const extras = [...(prev.extras || [])];
+      extras[index] = { ...(extras[index] || {}), [field]: value };
+      return { ...prev, extras };
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Auto-generate title from [Job Type] - [Client Name]
-    const typeLabel = getJobTypeLabel(form.job_type);
-    const clientName = form.customer_name || "No Client";
-    const autoTitle = `${typeLabel} - ${clientName}`;
 
-    const payload = {
-      ...form,
-      title: form.title || autoTitle,
-      price: parseFloat(form.price) || 0,
-      hourly_rate: parseFloat(form.hourly_rate) || 0,
-      estimated_duration: parseInt(form.estimated_duration) || 60,
-      scheduled_date: form.scheduled_date ? new Date(form.scheduled_date + "T00:00:00Z").toISOString() : null,
-      client_id: form.client_id || null,
-      assigned_worker_id: form.assigned_worker_id || null,
-      extras: form.extras.map((e) => ({ description: e.description, amount: parseFloat(e.amount) || 0 })).filter((e) => e.description),
-    };
-    if (!payload.client_id) delete payload.client_id;
-    if (!payload.assigned_worker_id) delete payload.assigned_worker_id;
+    try {
+      setSaving(true);
 
-    const res = isEditing ? await patch(`/jobs/${id}`, payload) : await post("/jobs", payload);
-    if (res.success) { toast.success(isEditing ? "Job updated" : "Job created"); navigate("/jobs"); }
-    else toast.error(res.error || "Failed to save job");
+      const typeLabel = getJobTypeLabel(form.job_type);
+      const clientName = form.customer_name || "No Client";
+      const autoTitle = `${typeLabel} - ${clientName}`;
+
+      const payload = {
+        ...form,
+        title: form.title || autoTitle,
+        price: parseFloat(form.price) || 0,
+        hourly_rate: parseFloat(form.hourly_rate) || 0,
+        estimated_duration: parseInt(form.estimated_duration, 10) || 60,
+        scheduled_date: form.scheduled_date
+          ? new Date(`${form.scheduled_date}T00:00:00Z`).toISOString()
+          : null,
+        client_id: form.client_id || null,
+        assigned_worker_id: form.assigned_worker_id || null,
+        extras: (form.extras || [])
+          .map((item) => ({
+            description: item.description || "",
+            amount: parseFloat(item.amount) || 0,
+          }))
+          .filter((item) => item.description),
+        is_recurring: !!form.is_recurring,
+        recurring_frequency: form.is_recurring ? form.recurring_frequency : null,
+        custom_repeat_days:
+          form.is_recurring && form.recurring_frequency === "custom"
+            ? parseInt(form.custom_repeat_days, 10) || null
+            : null,
+      };
+
+      if (!payload.client_id) delete payload.client_id;
+      if (!payload.assigned_worker_id) delete payload.assigned_worker_id;
+
+      const res = isEditing
+        ? await patch(`/jobs/${id}`, payload)
+        : await post("/jobs", payload);
+
+      if (res?.success) {
+        toast.success(isEditing ? "Job updated" : "Job created");
+        navigate("/jobs");
+      } else {
+        toast.error(res?.error || "Failed to save job");
+      }
+    } catch (err) {
+      console.error("Job save error:", err);
+      toast.error("Failed to save job");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (!isEmployer) return <Layout><div className="p-6 text-churvox-muted text-center">Only employers can create or edit jobs.</div></Layout>;
+  if (!isEmployer) {
+    return (
+      <Layout>
+        <div className="p-6 text-churvox-muted text-center">
+          Only employers can create or edit jobs.
+        </div>
+      </Layout>
+    );
+  }
 
-  const showHourly = form.pricing_type === "hourly" || form.pricing_type === "hourly_extras";
-  const showFixed = form.pricing_type === "fixed" || form.pricing_type === "fixed_extras";
-  const showExtras = form.pricing_type === "fixed_extras" || form.pricing_type === "hourly_extras";
+  const showHourly =
+    form.pricing_type === "hourly" || form.pricing_type === "hourly_extras";
+  const showFixed =
+    form.pricing_type === "fixed" || form.pricing_type === "fixed_extras";
+  const showExtras =
+    form.pricing_type === "fixed_extras" || form.pricing_type === "hourly_extras";
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 max-w-2xl mx-auto" data-testid="job-form-page">
-        <button onClick={() => navigate("/jobs")} className="flex items-center gap-2 text-churvox-muted hover:text-white mb-4" data-testid="back-to-jobs">
-          <ArrowLeft size={18} /> Jobs
+      <div className="p-4 md:p-6 max-w-3xl mx-auto" data-testid="job-form-page">
+        <button
+          onClick={() => navigate("/jobs")}
+          className="flex items-center gap-2 text-churvox-muted hover:text-white mb-4"
+          data-testid="back-to-jobs"
+          type="button"
+        >
+          <ArrowLeft size={18} />
+          Back to Jobs
         </button>
 
         <Card className="bg-churvox-card border-churvox-border">
-          <CardHeader><CardTitle className="text-white">{isEditing ? "Edit Job" : "New Job"}</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>{isEditing ? "Edit Job" : "New Job"}</CardTitle>
+          </CardHeader>
+
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-churvox-muted">Job Type</Label>
-                  <Select value={form.job_type} onValueChange={(v) => setForm({ ...form, job_type: v })}>
-                    <SelectTrigger className="bg-churvox-bg border-churvox-border text-white" data-testid="job-type-select"><SelectValue /></SelectTrigger>
-                    <SelectContent className="bg-churvox-card border-churvox-border max-h-60">
-                      {Object.entries(JOB_TYPES_BY_CATEGORY).map(([cat, types]) => (
-                        <SelectGroup key={cat}><SelectLabel className="text-churvox-muted text-xs">{cat}</SelectLabel>
-                          {types.map((t) => <SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>)}
-                        </SelectGroup>
+            {loading ? (
+              <div className="py-8 text-center text-churvox-muted">Loading job form...</div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="job_type">Job Type</Label>
+                    <select
+                      id="job_type"
+                      value={form.job_type}
+                      onChange={(e) => setField("job_type", e.target.value)}
+                      className="w-full h-10 rounded-md border border-churvox-border bg-transparent px-3"
+                    >
+                      {jobTypeOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.category} - {opt.label}
+                        </option>
                       ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-churvox-muted">Client</Label>
-                  <Select value={form.client_id} onValueChange={handleClientChange}>
-                    <SelectTrigger className="bg-churvox-bg border-churvox-border text-white" data-testid="job-client-select"><SelectValue placeholder="Select client" /></SelectTrigger>
-                    <SelectContent className="bg-churvox-card border-churvox-border">{clients.map((c) => <SelectItem key={c.id} value={c.id} className="text-white">{c.name}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-churvox-muted">Customer Name</Label>
-                <Input value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" data-testid="job-customer-name" />
-              </div>
-
-              <div>
-                <Label className="text-churvox-muted">Address</Label>
-                <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required className="bg-churvox-bg border-churvox-border text-white" data-testid="job-address-input" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-churvox-muted">Date</Label>
-                  <Input type="date" value={form.scheduled_date} onChange={(e) => setForm({ ...form, scheduled_date: e.target.value })} required className="bg-churvox-bg border-churvox-border text-white" data-testid="job-date-input" />
-                </div>
-                <div>
-                  <Label className="text-churvox-muted">Time</Label>
-                  <Input type="time" value={form.scheduled_time} onChange={(e) => setForm({ ...form, scheduled_time: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" data-testid="job-time-input" />
-                </div>
-              </div>
-
-              {/* Pricing Type */}
-              <div className="pt-3 border-t border-churvox-border">
-                <Label className="text-churvox-muted">Pricing Type</Label>
-                <Select value={form.pricing_type} onValueChange={(v) => setForm({ ...form, pricing_type: v })}>
-                  <SelectTrigger className="bg-churvox-bg border-churvox-border text-white" data-testid="pricing-type-select"><SelectValue /></SelectTrigger>
-                  <SelectContent className="bg-churvox-card border-churvox-border">
-                    {PRICING_TYPES.map((p) => <SelectItem key={p.value} value={p.value} className="text-white">{p.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                {showFixed && (
-                  <div>
-                    <Label className="text-churvox-muted">Fixed Price ($)</Label>
-                    <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" data-testid="job-price-input" />
+                    </select>
                   </div>
-                )}
-                {showHourly && (
-                  <div>
-                    <Label className="text-churvox-muted">Hourly Rate ($)</Label>
-                    <Input type="number" step="0.01" value={form.hourly_rate} onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" data-testid="job-hourly-rate" />
-                  </div>
-                )}
-                <div>
-                  <Label className="text-churvox-muted">Duration (min)</Label>
-                  <Input type="number" value={form.estimated_duration} onChange={(e) => setForm({ ...form, estimated_duration: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" data-testid="job-duration-input" />
-                </div>
-              </div>
 
-              {/* Extras */}
-              {showExtras && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-churvox-muted">Extras</Label>
-                    <Button type="button" variant="outline" size="sm" onClick={addExtra} className="border-churvox-border text-churvox-muted" data-testid="add-extra-button">
-                      <Plus size={14} className="mr-1" /> Add Extra
-                    </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="client_id">Client</Label>
+                    <select
+                      id="client_id"
+                      value={form.client_id}
+                      onChange={(e) => handleClientChange(e.target.value)}
+                      className="w-full h-10 rounded-md border border-churvox-border bg-transparent px-3"
+                    >
+                      <option value="">No saved client</option>
+                      {clients.map((client) => (
+                        <option key={client.id} value={client.id}>
+                          {client.name || "Unnamed client"}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  {form.extras.map((ex, i) => (
-                    <div key={i} className="flex gap-2 items-center">
-                      <Input value={ex.description} onChange={(e) => updateExtra(i, "description", e.target.value)} placeholder="Description" className="flex-1 bg-churvox-bg border-churvox-border text-white" data-testid={`extra-desc-${i}`} />
-                      <Input type="number" step="0.01" value={ex.amount} onChange={(e) => updateExtra(i, "amount", e.target.value)} placeholder="$" className="w-24 bg-churvox-bg border-churvox-border text-white" data-testid={`extra-amount-${i}`} />
-                      <button type="button" onClick={() => removeExtra(i)} className="text-red-400 hover:text-red-300"><Trash2 size={14} /></button>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="customer_name">Customer Name</Label>
+                    <Input
+                      id="customer_name"
+                      value={form.customer_name}
+                      onChange={(e) => setField("customer_name", e.target.value)}
+                      placeholder="Customer name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="assigned_worker_id">Assigned Worker</Label>
+                    <select
+                      id="assigned_worker_id"
+                      value={form.assigned_worker_id}
+                      onChange={(e) => setField("assigned_worker_id", e.target.value)}
+                      className="w-full h-10 rounded-md border border-churvox-border bg-transparent px-3"
+                    >
+                      <option value="">Unassigned</option>
+                      {workers.map((worker) => (
+                        <option key={worker.id} value={worker.id}>
+                          {worker.full_name || worker.name || worker.email || "Worker"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Input
+                      id="address"
+                      value={form.address}
+                      onChange={(e) => setField("address", e.target.value)}
+                      placeholder="Job address"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduled_date">Scheduled Date</Label>
+                    <Input
+                      id="scheduled_date"
+                      type="date"
+                      value={form.scheduled_date}
+                      onChange={(e) => setField("scheduled_date", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduled_time">Scheduled Time</Label>
+                    <Input
+                      id="scheduled_time"
+                      type="time"
+                      value={form.scheduled_time}
+                      onChange={(e) => setField("scheduled_time", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="estimated_duration">Estimated Duration (mins)</Label>
+                    <Input
+                      id="estimated_duration"
+                      type="number"
+                      min="0"
+                      value={form.estimated_duration}
+                      onChange={(e) => setField("estimated_duration", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="pricing_type">Pricing Type</Label>
+                    <select
+                      id="pricing_type"
+                      value={form.pricing_type}
+                      onChange={(e) => setField("pricing_type", e.target.value)}
+                      className="w-full h-10 rounded-md border border-churvox-border bg-transparent px-3"
+                    >
+                      {PRICING_TYPES.map((type) => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {showFixed && (
+                    <div className="space-y-2">
+                      <Label htmlFor="price">Fixed Price</Label>
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={form.price}
+                        onChange={(e) => setField("price", e.target.value)}
+                      />
                     </div>
-                  ))}
+                  )}
+
+                  {showHourly && (
+                    <div className="space-y-2">
+                      <Label htmlFor="hourly_rate">Hourly Rate</Label>
+                      <Input
+                        id="hourly_rate"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={form.hourly_rate}
+                        onChange={(e) => setField("hourly_rate", e.target.value)}
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
 
-              {/* Worker */}
-              {workers.length > 0 && (
-                <div>
-                  <Label className="text-churvox-muted">Assign Worker (optional)</Label>
-                  <Select value={form.assigned_worker_id} onValueChange={(v) => setForm({ ...form, assigned_worker_id: v })}>
-                    <SelectTrigger className="bg-churvox-bg border-churvox-border text-white" data-testid="job-worker-select"><SelectValue placeholder="Unassigned" /></SelectTrigger>
-                    <SelectContent className="bg-churvox-card border-churvox-border">{workers.map((w) => <SelectItem key={w.id} value={w.id} className="text-white">{w.name}</SelectItem>)}</SelectContent>
-                  </Select>
+                <div className="space-y-3 rounded-lg border border-churvox-border p-4">
+                  <div className="flex items-center gap-3">
+                    <input
+                      id="is_recurring"
+                      type="checkbox"
+                      checked={form.is_recurring}
+                      onChange={(e) => setField("is_recurring", e.target.checked)}
+                    />
+                    <Label htmlFor="is_recurring" className="mb-0">
+                      Recurring job
+                    </Label>
+                  </div>
+
+                  {form.is_recurring && (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="recurring_frequency">Repeat</Label>
+                        <select
+                          id="recurring_frequency"
+                          value={form.recurring_frequency}
+                          onChange={(e) => setField("recurring_frequency", e.target.value)}
+                          className="w-full h-10 rounded-md border border-churvox-border bg-transparent px-3"
+                        >
+                          <option value="weekly">Weekly</option>
+                          <option value="fortnightly">Fortnightly</option>
+                          <option value="monthly">Monthly</option>
+                          <option value="custom">Custom</option>
+                        </select>
+                      </div>
+
+                      {form.recurring_frequency === "custom" && (
+                        <div className="space-y-2">
+                          <Label htmlFor="custom_repeat_days">Repeat every X days</Label>
+                          <Input
+                            id="custom_repeat_days"
+                            type="number"
+                            min="1"
+                            value={form.custom_repeat_days}
+                            onChange={(e) => setField("custom_repeat_days", e.target.value)}
+                            placeholder="e.g. 10"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
 
-              <div>
-                <Label className="text-churvox-muted">Notes</Label>
-                <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" rows={3} data-testid="job-notes-input" />
-              </div>
+                {showExtras && (
+                  <div className="space-y-3 rounded-lg border border-churvox-border p-4">
+                    <div className="flex items-center justify-between">
+                      <Label>Extras</Label>
+                      <Button type="button" variant="outline" onClick={addExtra}>
+                        <Plus size={16} className="mr-2" />
+                        Add Extra
+                      </Button>
+                    </div>
 
-              <div className="flex gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={() => navigate("/jobs")} className="flex-1 border-churvox-border text-churvox-muted">Cancel</Button>
-                
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <div className="text-sm font-semibold text-slate-900">Recurring job</div>
-            <div className="text-xs text-slate-500">Turn this on for weekly, fortnightly, monthly or custom repeat work.</div>
-          </div>
-          <label className="inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="h-4 w-4"
-              checked={!!formData.is_recurring}
-              onChange={(e) => handleRecurringToggleChange(e, formData, setFormData)}
-            />
-          </label>
-        </div>
+                    {(form.extras || []).length === 0 ? (
+                      <div className="text-sm text-churvox-muted">No extras added yet.</div>
+                    ) : (
+                      <div className="space-y-3">
+                        {(form.extras || []).map((extra, index) => (
+                          <div key={index} className="grid gap-3 md:grid-cols-[1fr_160px_auto]">
+                            <Input
+                              value={extra.description || ""}
+                              onChange={(e) => updateExtra(index, "description", e.target.value)}
+                              placeholder="Extra description"
+                            />
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={extra.amount || ""}
+                              onChange={(e) => updateExtra(index, "amount", e.target.value)}
+                              placeholder="Amount"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => removeExtra(index)}
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-        {formData.is_recurring && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Repeat</label>
-              <select
-                value={formData.recurring_frequency || 'weekly'}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    recurring_frequency: e.target.value,
-                    custom_repeat_days:
-                      e.target.value === 'custom'
-                        ? (formData.custom_repeat_days || '')
-                        : '',
-                  })
-                }
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
-              >
-                <option value="weekly">Weekly</option>
-                <option value="fortnightly">Fortnightly</option>
-                <option value="monthly">Monthly</option>
-                <option value="custom">Custom</option>
-              </select>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    value={form.notes}
+                    onChange={(e) => setField("notes", e.target.value)}
+                    placeholder="Job notes"
+                    rows={5}
+                  />
+                </div>
 
-            {formData.recurring_frequency === 'custom' && (
-              <div>
-                <label className="block text-sm font-medium mb-1">Repeat every how many days?</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={formData.custom_repeat_days || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      custom_repeat_days: e.target.value,
-                    })
-                  }
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
-                  placeholder="e.g. 10"
-                />
-              </div>
+                <div className="flex gap-3 pt-2">
+                  <Button type="submit" disabled={saving}>
+                    {saving ? "Saving..." : isEditing ? "Update Job" : "Create Job"}
+                  </Button>
+
+                  <Button type="button" variant="outline" onClick={() => navigate("/jobs")}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
             )}
-          </div>
-        )}
-      </div>
-
-
-<Button type="submit" disabled={loading} className="flex-1 bg-churvox-accent hover:bg-churvox-accent/90" data-testid="submit-job-button">
-                  {loading ? "Saving..." : isEditing ? "Update Job" : "Create Job"}
-                </Button>
-              </div>
-            </form>
           </CardContent>
         </Card>
       </div>
