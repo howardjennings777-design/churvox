@@ -2677,6 +2677,134 @@ async def create_next_recurring_job_if_needed(completed_job: dict):
     return created
 
 
+
+
+# =========================
+# OWNER / ADMIN USAGE DASHBOARD
+# =========================
+@api_router.get("/admin/usage-summary")
+async def get_admin_usage_summary(current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role", "")).lower()
+    is_allowed = bool(current_user.get("is_admin")) or role in ["admin", "owner", "superadmin"]
+    if not is_allowed:
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    now = datetime.now(timezone.utc)
+    since_7d = now - timedelta(days=7)
+
+    def to_utc(dt):
+        if not dt:
+            return None
+        try:
+            if dt.tzinfo is None:
+                return dt.replace(tzinfo=timezone.utc)
+            return dt.astimezone(timezone.utc)
+        except Exception:
+            return None
+
+    async def safe_count(collection_name, query=None):
+        try:
+            collection = getattr(db, collection_name)
+            return await collection.count_documents(query or {})
+        except Exception:
+            return 0
+
+    async def safe_recent_count(collection_name, field_name="created_at"):
+        try:
+            collection = getattr(db, collection_name)
+            return await collection.count_documents({field_name: {"$gte": since_7d}})
+        except Exception:
+            return 0
+
+    # users scan
+    users = []
+    try:
+        users = await db.users.find({}, {
+            "_id": 1,
+            "business_id": 1,
+            "role": 1,
+            "plan": 1,
+            "created_at": 1,
+            "last_login_at": 1,
+            "updated_at": 1,
+            "last_seen_at": 1,
+        }).to_list(length=100000)
+    except Exception:
+        users = []
+
+    total_users = len(users)
+    total_workers = 0
+    recent_signups_7d = 0
+    active_users_7d = 0
+    business_keys = set()
+    plan_counts = {}
+
+    for u in users:
+        role_value = str(u.get("role", "")).lower()
+        if role_value in ["worker", "employee", "staff", "subuser", "team"]:
+            total_workers += 1
+
+        plan_value = str(u.get("plan", "solo") or "solo").lower()
+        plan_counts[plan_value] = plan_counts.get(plan_value, 0) + 1
+
+        business_key = str(u.get("business_id") or u.get("_id") or "")
+        if business_key:
+            business_keys.add(business_key)
+
+        created_at = to_utc(u.get("created_at"))
+        if created_at and created_at >= since_7d:
+            recent_signups_7d += 1
+
+        last_seen = to_utc(u.get("last_login_at")) or to_utc(u.get("last_seen_at")) or to_utc(u.get("updated_at"))
+        if last_seen and last_seen >= since_7d:
+            active_users_7d += 1
+
+    total_businesses = len(business_keys)
+
+    async def recent_active_businesses():
+        active = set()
+        for collection_name in ["jobs", "quotes", "invoices", "clients"]:
+            try:
+                collection = getattr(db, collection_name)
+                docs = await collection.find(
+                    {"created_at": {"$gte": since_7d}},
+                    {"business_id": 1}
+                ).to_list(length=100000)
+                for d in docs:
+                    bid = d.get("business_id")
+                    if bid:
+                        active.add(str(bid))
+            except Exception:
+                pass
+        return len(active)
+
+    response = {
+        "generated_at": now.isoformat(),
+        "users": {
+            "total": total_users,
+            "workers": total_workers,
+            "recent_signups_7d": recent_signups_7d,
+            "active_users_7d": active_users_7d,
+        },
+        "businesses": {
+            "total": total_businesses,
+            "active_businesses_7d": await recent_active_businesses(),
+        },
+        "records": {
+            "clients_total": await safe_count("clients"),
+            "jobs_total": await safe_count("jobs"),
+            "quotes_total": await safe_count("quotes"),
+            "invoices_total": await safe_count("invoices"),
+            "clients_7d": await safe_recent_count("clients"),
+            "jobs_7d": await safe_recent_count("jobs"),
+            "quotes_7d": await safe_recent_count("quotes"),
+            "invoices_7d": await safe_recent_count("invoices"),
+        },
+        "plans": plan_counts,
+    }
+    return response
+
+
 app.include_router(api_router)
 
 # CORS

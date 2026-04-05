@@ -31,6 +31,7 @@ import PrivacyPage from "./pages/legal/PrivacyPage";
 import TermsPage from "./pages/legal/TermsPage";
 import AccountDeletionPage from "./pages/legal/AccountDeletionPage";
 
+import AdminUsagePage from "./pages/AdminUsagePage";
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="min-h-screen bg-churvox-bg flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" /></div>;
@@ -85,7 +86,8 @@ function App() {
 
           <Route path="/" element={<Navigate to="/dashboard" />} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
-        </Routes>
+          <Route path="/admin/usage" element={<AdminUsagePage />} />
+</Routes>
       </AuthProvider>
     </BrowserRouter>
   );
