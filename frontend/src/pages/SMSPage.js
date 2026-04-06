@@ -56,7 +56,7 @@ export default function SMSPage() {
 
   const handleSend = async (e) => {
     e.preventDefault();
-    const payload = { ...sendForm };
+    const payload = { ...sendForm, phone: sendForm.phone || sendForm.phone_number || sendForm.client_phone || job?.client_phone || client?.phone || client?.phone_number || "" };
     if (!payload.job_id) delete payload.job_id;
     if (!payload.invoice_id) delete payload.invoice_id;
     const res = await post("/sms/send-fixed", payload);

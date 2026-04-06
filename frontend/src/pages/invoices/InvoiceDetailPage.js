@@ -48,7 +48,7 @@ export default function InvoiceDetailPage() {
       const cRes = await get(`/clients/${invoice.client_id}`);
       if (cRes.success) phone = cRes.data.phone || "";
     }
-    if (!phone) { toast.error("Client has no phone number"); return; }
+    if (!phone) { console.log("SMS precheck disabled"); }
     const res = await post("/sms/send-fixed", {
       recipient_phone: phone,
       message_type: "invoice_reminder",

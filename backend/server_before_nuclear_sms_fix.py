@@ -3232,7 +3232,7 @@ async def send_sms_hard_fix_v1(payload: dict, current_user: dict = Depends(get_c
         phone = pick_client_phone(job=job, client=client)
 
     if not phone:
-        raise HTTPException(status_code=400, detail="SMS_FIXED_ROUTE_NO_PHONE")
+        raise HTTPException(status_code=400, detail="Client has no phone number")
 
     # SMS cost locked to 2 credits
     sms_cost = 2
