@@ -1,6 +1,7 @@
 const MIN_LOADING_MS = 350;
 import { useState, useCallback } from "react";
-import axios from "axios";
+import axios from "axios"
+axios.defaults.withCredentials = true;
 import { formatApiErrorDetail } from "../lib/utils";
 
 const API_URL = "https://grassley-backend.onrender.com";

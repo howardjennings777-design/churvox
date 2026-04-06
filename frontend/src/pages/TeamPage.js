@@ -11,7 +11,8 @@ import { UserPlus, Trash2, Phone, Mail, Shield, Upload, RefreshCw, Clock, CheckC
 import { toast } from "sonner";
 import { usePlanLimits } from "../hooks/usePlanLimits";
 import { UpgradePrompt } from "../components/UpgradePrompt";
-import axios from "axios";
+import axios from "axios"
+axios.defaults.withCredentials = true;
 
 const API_URL = "https://grassley-backend.onrender.com";
 

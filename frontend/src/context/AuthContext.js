@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import axios from "axios";
+import axios from "axios"
+axios.defaults.withCredentials = true;
 
 const AuthContext = createContext(null);
 const API_URL = "https://grassley-backend.onrender.com";
