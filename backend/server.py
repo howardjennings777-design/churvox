@@ -1,3 +1,42 @@
+
+def normalize_job_status_for_response(job: dict):
+    if not job:
+        return job
+
+    status = str(job.get("status", "")).lower().strip()
+    job_status = str(job.get("job_status", "")).lower().strip()
+    workflow_status = str(job.get("workflow_status", "")).lower().strip()
+    completed = job.get("completed") is True
+    completed_at = bool(job.get("completed_at"))
+
+    if (
+        status == "completed" or
+        job_status == "completed" or
+        workflow_status == "completed" or
+        completed or
+        completed_at
+    ):
+        job["status"] = "completed"
+        job["job_status"] = "completed"
+        job["workflow_status"] = "completed"
+        job["completed"] = True
+
+    elif (
+        status in ["in progress", "in_progress"] or
+        job_status in ["in progress", "in_progress"] or
+        workflow_status in ["in progress", "in_progress"]
+    ):
+        job["status"] = "in_progress"
+
+    elif status == "paused" or job_status == "paused" or workflow_status == "paused":
+        job["status"] = "paused"
+
+    elif status == "assigned" or job_status == "assigned" or workflow_status == "assigned":
+        job["status"] = "assigned"
+
+    return job
+
+
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from pathlib import Path
@@ -1354,7 +1393,7 @@ async def get_job(job_id: str, request: Request, current_user: dict = Depends(ge
     job = await db.jobs.find_one(query)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-    return serialize_doc(job)
+    return normalize_job_status_for_response(serialize_doc(job))
 @api_router.patch("/jobs/{job_id}")
 async def update_job(job_id: str, request: Request, job_data: JobUpdate, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
@@ -1373,7 +1412,7 @@ async def update_job(job_id: str, request: Request, job_data: JobUpdate, current
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Job not found")
     job = await db.jobs.find_one({"_id": ObjectId(job_id)})
-    return serialize_doc(job)
+    return normalize_job_status_for_response(serialize_doc(job))
 
 @api_router.post("/jobs/{job_id}/assign")
 async def assign_job(job_id: str, data: JobAssign, request: Request, current_user: dict = Depends(get_current_user)):
@@ -1398,7 +1437,7 @@ async def assign_job(job_id: str, data: JobAssign, request: Request, current_use
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Job not found")
     job = await db.jobs.find_one({"_id": ObjectId(job_id)})
-    return serialize_doc(job)
+    return normalize_job_status_for_response(serialize_doc(job))
 @api_router.post("/jobs/{job_id}/acknowledge")
 async def acknowledge_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
@@ -1416,7 +1455,7 @@ async def acknowledge_job(job_id: str, request: Request, current_user: dict = De
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Job not found or not assigned to you")
     job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(job_id)})
-    return serialize_doc(job)
+    return normalize_job_status_for_response(serialize_doc(job))
 @api_router.post("/jobs/{job_id}/start")
 async def start_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
@@ -1436,7 +1475,7 @@ async def start_job(job_id: str, request: Request, current_user: dict = Depends(
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Job not found or cannot be started")
     job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(job_id)})
-    return serialize_doc(job)
+    return normalize_job_status_for_response(serialize_doc(job))
 @api_router.post("/jobs/{job_id}/complete")
 async def complete_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
@@ -1525,7 +1564,7 @@ async def complete_job(job_id: str, request: Request, current_user: dict = Depen
     await db.invoices.insert_one(invoice_doc)
 
     updated_job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(job_id)})
-    return serialize_doc(updated_job)
+    return normalize_job_status_for_response(serialize_doc(updated_job))
 @api_router.delete("/jobs/{job_id}")
 async def delete_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
@@ -1644,7 +1683,7 @@ async def timer_adjust(job_id: str, data: TimeAdjust, request: Request, current_
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Job not found")
     job = await db.jobs.find_one(query)
-    return serialize_doc(job)
+    return normalize_job_status_for_response(serialize_doc(job))
 @api_router.get("/jobs/{job_id}/timer")
 async def get_timer(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
