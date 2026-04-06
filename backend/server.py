@@ -2988,3 +2988,15 @@ def health_login():
 #         {"_id": ObjectId(client_id)}
 #     )
 #     return {"success": True}
+
+
+@api_router.post("/jobs/{job_id}/pause")
+async def pause_job(job_id: str, current_user: dict = Depends(get_current_user)):
+    job = await db.jobs.find_one({"id": job_id})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    await db.jobs.update_one(
+        {"id": job_id},
+        {"$set": {"status": "paused", "updated_at": datetime.now(timezone.utc)}}
+    )
+    return {"success": True, "status": "paused"}

@@ -14,7 +14,9 @@ export default function InviteSetupPage() {
   const { token } = useParams();
   const navigate = useNavigate();
   const [verifying, setVerifying] = useState(true);
-  const [inviteData, setInviteData] = useState(null);
+  
+  const [actionLoading, setActionLoading] = useState(false);
+const [inviteData, setInviteData] = useState(null);
   const [verifyError, setVerifyError] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");

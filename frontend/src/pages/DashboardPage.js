@@ -8,6 +8,7 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Briefcase, Calendar, CheckCircle, DollarSign, FileText, Users, Plus, Clock, UserCheck, ArrowRight, CircleDot } from "lucide-react";
 import { formatCurrency, formatDate, JOB_STATUS_MAP } from "../lib/utils";
+import PageState from "../components/ui/PageState";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -34,7 +35,9 @@ export default function DashboardPage() {
 const { user, isEmployer, isWorker } = useAuth();
   const { get } = useApi();
   const [stats, setStats] = useState(null);
-  const [todayJobs, setTodayJobs] = useState([]);
+  
+  const [actionLoading, setActionLoading] = useState(false);
+const [todayJobs, setTodayJobs] = useState([]);
   const [weekJobs, setWeekJobs] = useState([]);
 
   const fetchData = useCallback(async () => {

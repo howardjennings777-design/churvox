@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Plus, Search, MapPin, Clock, UserCheck, Trash2, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, JOB_STATUSES, JOB_STATUS_MAP } from "../../lib/utils";
+import PageState from "../../components/ui/PageState";
 
 export default function JobsPage() {
   const { isEmployer } = useAuth();

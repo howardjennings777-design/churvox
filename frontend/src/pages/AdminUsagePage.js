@@ -17,7 +17,7 @@ export default function AdminUsagePage() {
     const run = async () => {
       for (const url of urls) {
         try {
-          const res = await fetch(url, { credentials: "include" });
+          const res = await fetch(url, { credentials: "include" }, { credentials: "include" });
           if (!res.ok) continue;
           const json = await res.json();
           setData(json);

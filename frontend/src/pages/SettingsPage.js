@@ -18,6 +18,7 @@ import Layout from "@/components/Layout";
 import { TRADE_TYPES } from "@/lib/utils";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { Link } from "react-router-dom";
+import PageState from "../components/ui/PageState";
 
 export default function SettingsPage() {
   const { user, updateUser } = useAuth();

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import { useApi } from "@/hooks/useApi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -46,7 +46,9 @@ import Layout from "@/components/Layout";
 export default function InvoicesPage() {
   const { get, del, post, loading } = useApi();
   const [invoices, setInvoices] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  
+  const [actionLoading, setActionLoading] = useState(false);
+const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteId, setDeleteId] = useState(null);
 

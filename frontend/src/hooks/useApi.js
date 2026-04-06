@@ -1,3 +1,4 @@
+const MIN_LOADING_MS = 350;
 import { useState, useCallback } from "react";
 import axios from "axios";
 import { formatApiErrorDetail } from "../lib/utils";

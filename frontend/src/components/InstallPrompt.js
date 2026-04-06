@@ -32,7 +32,9 @@ function getDeviceType() {
 
 export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showBanner, setShowBanner] = useState(false);
+  
+  const [actionLoading, setActionLoading] = useState(false);
+const [showBanner, setShowBanner] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [installed, setInstalled] = useState(false);
   const device = getDeviceType();
