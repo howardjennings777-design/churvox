@@ -10,19 +10,9 @@ export default function AccountDeletionPage() {
         </div>
 
         <div className="space-y-4 text-sm text-churvox-muted leading-7">
-          <p>
-            Deleting your account permanently removes your account and associated business data,
-            including jobs, clients, invoices, quotes, schedules, and team records, unless some
-            information must be retained for legal, tax, fraud-prevention, or operational reasons.
-          </p>
-
-          <p>
-            This action cannot be undone. Make sure you export any important records before deleting.
-          </p>
-
-          <p>
-            If you need help before deleting your account, contact: hello@churvox.com
-          </p>
+          <p>Deleting your account permanently removes your account and associated business data, including jobs, clients, invoices, quotes, schedules, and team records, unless some information must be retained for legal, tax, fraud-prevention, or operational reasons.</p>
+          <p>This action cannot be undone. Make sure you export any important records before deleting.</p>
+          <p>If you need help before deleting your account, contact: hello@churvox.com</p>
         </div>
       </div>
     </div>
