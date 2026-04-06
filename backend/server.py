@@ -266,6 +266,19 @@ JWT_SECRET = os.environ.get('JWT_SECRET', 'default_secret_change_me')
 JWT_ALGORITHM = "HS256"
 DEFAULT_GST_RATE = float(os.environ.get('DEFAULT_GST_RATE', '15'))
 
+
+PLATFORM_OWNER_EMAILS = [
+    e.strip().lower()
+    for e in os.environ.get("PLATFORM_OWNER_EMAILS", "hello@churvox.com").split(",")
+    if e.strip()
+]
+
+def is_platform_owner(user: dict) -> bool:
+    if not user:
+        return False
+    email = (user.get("email") or "").strip().lower()
+    return user.get("is_platform_owner") is True or email in PLATFORM_OWNER_EMAILS
+
 # Stripe Config
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
@@ -3001,6 +3014,68 @@ async def get_platform_stats():
     }
 
 
+
+
+
+@api_router.get("/owner/stats")
+async def get_owner_stats(current_user: dict = Depends(get_current_user)):
+    if not is_platform_owner(current_user):
+        raise HTTPException(status_code=403, detail="Owner access required")
+
+    total_users = await db.users.count_documents({})
+    total_businesses = await db.users.count_documents({"role": "owner"})
+    total_jobs = await db.jobs.count_documents({})
+    total_clients = await db.clients.count_documents({})
+    total_invoices = await db.invoices.count_documents({})
+
+    active_timers = 0
+    try:
+        active_timers = await db.time_entries.count_documents({
+            "$or": [
+                {"status": "running"},
+                {"is_running": True},
+                {"end_time": None}
+            ]
+        })
+    except Exception:
+        active_timers = 0
+
+    recent_users_cursor = db.users.find(
+        {},
+        {
+            "email": 1,
+            "full_name": 1,
+            "business_name": 1,
+            "created_at": 1,
+            "role": 1,
+            "plan": 1
+        }
+    ).sort("created_at", -1).limit(10)
+
+    recent_users = []
+    async for u in recent_users_cursor:
+        recent_users.append({
+            "id": str(u.get("_id")),
+            "email": u.get("email"),
+            "full_name": u.get("full_name"),
+            "business_name": u.get("business_name"),
+            "created_at": u.get("created_at"),
+            "role": u.get("role"),
+            "plan": u.get("plan", "solo")
+        })
+
+    return {
+        "ok": True,
+        "stats": {
+            "total_users": total_users,
+            "total_businesses": total_businesses,
+            "total_jobs": total_jobs,
+            "total_clients": total_clients,
+            "total_invoices": total_invoices,
+            "active_timers": active_timers
+        },
+        "recent_users": recent_users
+    }
 
 app.include_router(api_router)
 
