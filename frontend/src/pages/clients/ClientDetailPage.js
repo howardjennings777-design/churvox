@@ -9,60 +9,6 @@ import { ArrowLeft, Edit, Trash2, Phone, Mail, MapPin, FileText, Clock } from "l
 import { toast } from "sonner";
 import { formatDate, formatCurrency, JOB_STATUS_MAP } from "../../lib/utils";
 
-
-const resolveDisplayStatus = (job) => {
-  if (!job) return "pending";
-  const status = String(resolveDisplayStatus(job) || "").trim().toLowerCase();
-  const jobStatus = String(job.job_status || "").trim().toLowerCase();
-  const workflowStatus = String(job.workflow_status || "").trim().toLowerCase();
-
-  if (
-    status === "completed" ||
-    jobStatus === "completed" ||
-    workflowStatus === "completed" ||
-    job.completed === true ||
-    !!job.completed_at
-  ) return "completed";
-
-  if (
-    status === "paused" ||
-    jobStatus === "paused" ||
-    workflowStatus === "paused"
-  ) return "paused";
-
-  if (
-    status === "in progress" || status === "in_progress" ||
-    jobStatus === "in progress" || jobStatus === "in_progress" ||
-    workflowStatus === "in progress" || workflowStatus === "in_progress"
-  ) return "in_progress";
-
-  if (
-    status === "assigned" ||
-    jobStatus === "assigned" ||
-    workflowStatus === "assigned"
-  ) return "assigned";
-
-  return status || jobStatus || workflowStatus || "pending";
-};
-
-const resolveDisplayStatusLabel = (job) => {
-  const s = resolveDisplayStatus(job);
-  if (s === "completed") return "COMPLETED";
-  if (s === "in_progress") return "IN PROGRESS";
-  if (s === "assigned") return "ASSIGNED";
-  if (s === "paused") return "PAUSED";
-  return String(s || "PENDING").replace(/_/g, " ").toUpperCase();
-};
-
-const forceNormalizeJobs = (jobs) =>
-  (Array.isArray(jobs) ? jobs : []).map(job => ({
-    ...job,
-    status: resolveDisplayStatus(job),
-    job_status: resolveDisplayStatus(job),
-    workflow_status: resolveDisplayStatus(job),
-  }));
-
-
 export default function ClientDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -78,7 +24,7 @@ export default function ClientDetailPage() {
     ]);
     if (clientRes.success) setClient(clientRes.data);
     else navigate("/clients");
-    if (jobsRes.success) setJobs(forceNormalizeJobs(jobsRes.data));
+    if (jobsRes.success) setJobs(jobsRes.data);
   }, [get, id, navigate]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -146,7 +92,7 @@ export default function ClientDetailPage() {
           ) : (
             <div className="space-y-2">
               {jobs.map((job) => {
-                const statusInfo = JOB_STATUS_MAP[resolveDisplayStatus(job)];
+                const statusInfo = JOB_STATUS_MAP[job.status];
                 return (
                   <Link key={job.id} to={`/jobs/${job.id}`} data-testid={`client-job-${job.id}`}
                     className="block bg-churvox-card border border-churvox-border rounded-xl p-4 hover:border-churvox-accent/50 transition-all">
@@ -159,7 +105,7 @@ export default function ClientDetailPage() {
                         </div>
                       </div>
                       <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`}>
-                        {statusInfo?.label || resolveDisplayStatus(job)}
+                        {statusInfo?.label || job.status}
                       </span>
                     </div>
                   </Link>

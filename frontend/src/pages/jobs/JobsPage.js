@@ -13,60 +13,6 @@ import { toast } from "sonner";
 import { formatDate, formatCurrency, JOB_STATUSES, JOB_STATUS_MAP } from "../../lib/utils";
 import PageState from "../../components/ui/PageState";
 
-
-const resolveDisplayStatus = (job) => {
-  if (!job) return "pending";
-  const status = String(resolveDisplayStatus(job) || "").trim().toLowerCase();
-  const jobStatus = String(job.job_status || "").trim().toLowerCase();
-  const workflowStatus = String(job.workflow_status || "").trim().toLowerCase();
-
-  if (
-    status === "completed" ||
-    jobStatus === "completed" ||
-    workflowStatus === "completed" ||
-    job.completed === true ||
-    !!job.completed_at
-  ) return "completed";
-
-  if (
-    status === "paused" ||
-    jobStatus === "paused" ||
-    workflowStatus === "paused"
-  ) return "paused";
-
-  if (
-    status === "in progress" || status === "in_progress" ||
-    jobStatus === "in progress" || jobStatus === "in_progress" ||
-    workflowStatus === "in progress" || workflowStatus === "in_progress"
-  ) return "in_progress";
-
-  if (
-    status === "assigned" ||
-    jobStatus === "assigned" ||
-    workflowStatus === "assigned"
-  ) return "assigned";
-
-  return status || jobStatus || workflowStatus || "pending";
-};
-
-const resolveDisplayStatusLabel = (job) => {
-  const s = resolveDisplayStatus(job);
-  if (s === "completed") return "COMPLETED";
-  if (s === "in_progress") return "IN PROGRESS";
-  if (s === "assigned") return "ASSIGNED";
-  if (s === "paused") return "PAUSED";
-  return String(s || "PENDING").replace(/_/g, " ").toUpperCase();
-};
-
-const forceNormalizeJobs = (jobs) =>
-  (Array.isArray(jobs) ? jobs : []).map(job => ({
-    ...job,
-    status: resolveDisplayStatus(job),
-    job_status: resolveDisplayStatus(job),
-    workflow_status: resolveDisplayStatus(job),
-  }));
-
-
 export default function JobsPage() {
   const { isEmployer } = useAuth();
   const { get, del, loading } = useApi();
@@ -78,7 +24,7 @@ export default function JobsPage() {
   const fetchJobs = useCallback(async () => {
     const params = statusFilter !== "all" ? `?status=${statusFilter}` : "";
     const res = await get(`/jobs${params}`);
-    if (res.success) setJobs(forceNormalizeJobs(forceNormalizeJobs(res.data)));
+    if (res.success) setJobs(res.data);
   }, [get, statusFilter]);
 
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
@@ -150,7 +96,7 @@ export default function JobsPage() {
         ) : (
           <div className="space-y-2">
             {filtered.map((job) => {
-              const statusInfo = JOB_STATUS_MAP[resolveDisplayStatus(job)];
+              const statusInfo = JOB_STATUS_MAP[job.status];
               return (
                 <Card key={job.id} className="bg-churvox-card border-churvox-border hover:border-churvox-accent/40 transition-all" data-testid={`job-card-${job.id}`}>
                   <CardContent className="p-4">
@@ -159,7 +105,7 @@ export default function JobsPage() {
                         <div className="flex items-center gap-2">
                           <h3 className="text-white font-medium truncate">{job.title}</h3>
                           <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`}>
-                            {statusInfo?.label || resolveDisplayStatus(job)}
+                            {statusInfo?.label || job.status}
                           </span>
                         </div>
                         <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-churvox-muted">

@@ -13,60 +13,6 @@ import { ArrowLeft, MapPin, Clock, DollarSign, UserCheck, Play, Pause, RotateCcw
 import { toast } from "sonner";
 import { formatDate, formatCurrency, JOB_STATUS_MAP } from "../../lib/utils";
 
-
-const resolveDisplayStatus = (job) => {
-  if (!job) return "pending";
-  const status = String(resolveDisplayStatus(job) || "").trim().toLowerCase();
-  const jobStatus = String(job.job_status || "").trim().toLowerCase();
-  const workflowStatus = String(job.workflow_status || "").trim().toLowerCase();
-
-  if (
-    status === "completed" ||
-    jobStatus === "completed" ||
-    workflowStatus === "completed" ||
-    job.completed === true ||
-    !!job.completed_at
-  ) return "completed";
-
-  if (
-    status === "paused" ||
-    jobStatus === "paused" ||
-    workflowStatus === "paused"
-  ) return "paused";
-
-  if (
-    status === "in progress" || status === "in_progress" ||
-    jobStatus === "in progress" || jobStatus === "in_progress" ||
-    workflowStatus === "in progress" || workflowStatus === "in_progress"
-  ) return "in_progress";
-
-  if (
-    status === "assigned" ||
-    jobStatus === "assigned" ||
-    workflowStatus === "assigned"
-  ) return "assigned";
-
-  return status || jobStatus || workflowStatus || "pending";
-};
-
-const resolveDisplayStatusLabel = (job) => {
-  const s = resolveDisplayStatus(job);
-  if (s === "completed") return "COMPLETED";
-  if (s === "in_progress") return "IN PROGRESS";
-  if (s === "assigned") return "ASSIGNED";
-  if (s === "paused") return "PAUSED";
-  return String(s || "PENDING").replace(/_/g, " ").toUpperCase();
-};
-
-const forceNormalizeJobs = (jobs) =>
-  (Array.isArray(jobs) ? jobs : []).map(job => ({
-    ...job,
-    status: resolveDisplayStatus(job),
-    job_status: resolveDisplayStatus(job),
-    workflow_status: resolveDisplayStatus(job),
-  }));
-
-
 function formatDuration(seconds) {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -191,7 +137,7 @@ const [workers, setWorkers] = useState([]);
   if (!job && loading) return <Layout><div className="p-6 text-churvox-muted">Loading...</div></Layout>;
   if (!job && !loading) return <Layout><div className="p-6 text-churvox-muted">Job not found</div></Layout>;
 
-  const statusInfo = JOB_STATUS_MAP[resolveDisplayStatus(job)];
+  const statusInfo = JOB_STATUS_MAP[job.status];
   const pricingLabel = { fixed: "Fixed Price", hourly: "Hourly", fixed_extras: "Fixed + Extras", hourly_extras: "Hourly + Extras" }[job.pricing_type] || "Fixed";
 
   return (
@@ -220,7 +166,7 @@ const [workers, setWorkers] = useState([]);
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl text-white">{job.title}</CardTitle>
               <span className={`px-3 py-1 rounded text-xs font-semibold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`} data-testid="job-status-badge">
-                {statusInfo?.label || resolveDisplayStatus(job)}
+                {statusInfo?.label || job.status}
               </span>
             </div>
           </CardHeader>
@@ -257,7 +203,7 @@ const [workers, setWorkers] = useState([]);
                   <p className="text-sm text-churvox-muted flex items-center gap-2">
                     <UserCheck size={14} className="text-churvox-accent" /> Assigned to: <span className="text-white font-medium">{job.assigned_worker_name}</span>
                   </p>
-                  {isEmployer && resolveDisplayStatus(job) === "assigned" && (
+                  {isEmployer && job.status === "assigned" && (
                     <Button variant="outline" size="sm" onClick={() => setShowAssign(true)} className="border-churvox-border text-churvox-muted" data-testid="reassign-button">Reassign</Button>
                   )}
                 </div>
@@ -280,7 +226,7 @@ const [workers, setWorkers] = useState([]);
         </Card>
 
         {/* Time Tracker */}
-        {resolveDisplayStatus(job) !== "completed" && (
+        {job.status !== "completed" && (
           <Card className="bg-churvox-card border-churvox-border" data-testid="time-tracker-card">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
@@ -316,7 +262,7 @@ const [workers, setWorkers] = useState([]);
         )}
 
         {/* Completed banner + time summary */}
-        {resolveDisplayStatus(job) === "completed" && (
+        {job.status === "completed" && (
           <Card className="bg-green-900/20 border-green-500/30">
             <CardContent className="p-4 text-center">
               <CheckCircle size={18} className="inline mr-2 text-green-400" />
@@ -331,7 +277,7 @@ const [workers, setWorkers] = useState([]);
         )}
 
         {/* SMS Quick Actions */}
-        {isEmployer && resolveDisplayStatus(job) !== "completed" && (
+        {isEmployer && job.status !== "completed" && (
           <Card className="bg-churvox-card border-churvox-border" data-testid="sms-actions-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-3">
@@ -355,12 +301,12 @@ const [workers, setWorkers] = useState([]);
 
         {/* Action Buttons */}
         <div className="flex gap-3" data-testid="job-actions">
-          {isWorker && resolveDisplayStatus(job) === "assigned" && (
+          {isWorker && job.status === "assigned" && (
             <Button onClick={() => handleAction("acknowledge", "acknowledged")} disabled={loading} className="bg-yellow-500 hover:bg-yellow-600 text-black flex-1" data-testid="acknowledge-job-button">
               <ThumbsUp size={16} className="mr-2" /> Acknowledge
             </Button>
           )}
-          {(resolveDisplayStatus(job) === "in_progress") && (
+          {(job.status === "in_progress") && (
             <Button onClick={() => handleAction("complete", "completed")} disabled={loading} className="bg-green-600 hover:bg-green-700 text-white flex-1" data-testid="complete-job-button">
               <CheckCircle size={16} className="mr-2" /> Complete Job
             </Button>
