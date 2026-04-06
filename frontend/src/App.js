@@ -2,6 +2,7 @@ import TermsOfServicePage from "./pages/legal/TermsOfServicePage";
 import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import PlatformOwnerDashboard from "./pages/admin/PlatformOwnerDashboard";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Toaster } from "./components/ui/sonner";
 
@@ -86,7 +87,8 @@ function App() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/account-deletion" element={<AccountDeletionPage />} />
 
-          <Route path="/" element={<Navigate to="/dashboard" />} />
+          <Route path="/" element={<Navigate to="/dashboard" />} />        <Route path="/platform-dashboard" element={<PlatformOwnerDashboard />} />
+
           <Route path="*" element={<Navigate to="/dashboard" />} />
           <Route path="/admin/usage" element={<AdminUsagePage />} />
 
