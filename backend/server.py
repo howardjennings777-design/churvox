@@ -1679,6 +1679,18 @@ def compute_elapsed(time_entries):
     return int(total)
 
 @api_router.post("/jobs/{job_id}/timer/start")
+
+
+@api_router.post("/jobs/{job_id}/time/start")
+
+
+@api_router.post("/jobs/{job_id}/start-timer")
+
+
+@api_router.post("/jobs/{job_id}/timer/begin")
+
+
+@api_router.post("/time-tracking/{job_id}/start")
 async def timer_start(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
@@ -1703,6 +1715,12 @@ async def timer_start(job_id: str, request: Request, current_user: dict = Depend
     job_data["total_time_seconds"] = compute_elapsed(job.get("time_entries", []))
     return job_data
 @api_router.post("/jobs/{job_id}/timer/pause")
+
+@api_router.post("/jobs/{job_id}/time/pause")
+
+@api_router.post("/jobs/{job_id}/pause-timer")
+
+@api_router.post("/time-tracking/{job_id}/pause")
 async def timer_pause(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
@@ -1727,6 +1745,12 @@ async def timer_pause(job_id: str, request: Request, current_user: dict = Depend
     job_data["total_time_seconds"] = elapsed
     return job_data
 @api_router.post("/jobs/{job_id}/timer/resume")
+
+@api_router.post("/jobs/{job_id}/time/resume")
+
+@api_router.post("/jobs/{job_id}/resume-timer")
+
+@api_router.post("/time-tracking/{job_id}/resume")
 async def timer_resume(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
