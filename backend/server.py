@@ -1477,49 +1477,60 @@ async def start_job(job_id: str, request: Request, current_user: dict = Depends(
     job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(job_id)})
     return normalize_job_status_for_response(serialize_doc(job))
 @api_router.post("/jobs/{job_id}/complete")
-async def complete_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+async def complete_job(job_id: str, current_user: dict = Depends(get_current_user)):
     now = datetime.now(timezone.utc)
-    set_data = {
-        'status': 'completed',
-        'job_status': 'completed',
-        'timer_status': 'stopped',
-        'completed_at': now,
-        'updated_at': now,
-    }
-    
-    job = None
+
     queries = []
-    
     try:
-        queries.append({'_id': ObjectId(job_id)})
+        queries.append({"_id": ObjectId(job_id)})
     except Exception:
         pass
-    
-    queries.append({'id': job_id})
-    
+    queries.append({"id": job_id})
+
+    job = None
     for q in queries:
         try:
-            await db.jobs.update_one(q, {'$set': set_data})
-            job = await db.jobs.find_one(q)
-            if job:
+            existing = await db.jobs.find_one(q)
+            if existing:
+                job = existing
                 break
         except Exception:
-            continue
-    
+            pass
+
     if not job:
-        raise HTTPException(status_code=404, detail='Job not found')
-    
-    try:
-        job['id'] = str(job.get('_id', job.get('id', '')))
-    except Exception:
-        pass
-    
-    return {
-        'success': True,
-        'message': 'Job completed',
-        'job': job,
-        **job,
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    update_data = {
+        "status": "completed",
+        "job_status": "completed",
+        "timer_status": "stopped",
+        "is_timer_running": False,
+        "completed_at": now,
+        "updated_at": now,
     }
+
+    updated = None
+    for q in queries:
+        try:
+            await db.jobs.update_one(q, {"$set": update_data})
+            updated = await db.jobs.find_one(q)
+            if updated:
+                break
+        except Exception:
+            pass
+
+    if not updated:
+        raise HTTPException(status_code=500, detail="Failed to complete job")
+
+    updated["id"] = str(updated.get("_id", updated.get("id", job_id)))
+    return {
+        "success": True,
+        "message": "Job completed",
+        "job": updated
+    }
+
+
+
 @api_router.delete("/jobs/{job_id}")
 async def delete_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
