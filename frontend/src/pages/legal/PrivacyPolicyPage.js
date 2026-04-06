@@ -5,40 +5,79 @@ export default function PrivacyPolicyPage() {
     <div className="min-h-screen bg-churvox-dark text-white p-4 pb-24">
       <div className="max-w-3xl mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Privacy Policy</h1>
-          <p className="text-churvox-muted mt-2">How Churvox collects, uses, and protects your information.</p>
+          <h1 className="text-3xl font-bold">Privacy Policy</h1>
+          <p className="text-churvox-muted mt-2">Last updated: April 2026</p>
         </div>
 
-        <div className="space-y-4 text-sm text-churvox-muted leading-7">
-          <section>
-            <h2 className="text-white font-semibold mb-2">Information We Collect</h2>
-            <p>We may collect account details, business information, customer details, job records, invoices, quotes, team member information, and usage data needed to run the app.</p>
-          </section>
+        <div className="rounded-2xl border border-churvox-border bg-churvox-card p-5 space-y-6 text-sm leading-7 text-churvox-muted">
+          <p>
+            Churvox respects your privacy. This Privacy Policy explains what information we collect,
+            how we use it, and the choices you have when using the Churvox app and related services.
+          </p>
 
-          <section>
-            <h2 className="text-white font-semibold mb-2">How We Use Information</h2>
-            <p>We use your information to provide job management features, improve reliability, support your account, process subscriptions, and maintain security.</p>
-          </section>
+          <div className="border-t border-churvox-border pt-6">
+            <h2 className="text-white text-xl font-semibold mb-3">Information We Collect</h2>
+            <p>
+              We may collect information you provide directly to us, including your name, email
+              address, business name, contact details, billing details, client records, job details,
+              quotes, invoices, schedules, team member details, and any notes, files, or images you
+              upload to the service.
+            </p>
+          </div>
 
-          <section>
-            <h2 className="text-white font-semibold mb-2">Data Sharing</h2>
-            <p>We do not sell your personal data. We may share limited information with service providers needed for hosting, payments, notifications, analytics, and support.</p>
-          </section>
+          <div className="border-t border-churvox-border pt-6">
+            <h2 className="text-white text-xl font-semibold mb-3">How We Use Your Information</h2>
+            <p>
+              We use your information to operate the service, manage your account, support your
+              workflow, process payments, improve app performance, provide customer support, maintain
+              security, and communicate important product or account updates.
+            </p>
+          </div>
 
-          <section>
-            <h2 className="text-white font-semibold mb-2">Data Storage and Security</h2>
-            <p>We take reasonable steps to protect your data, but no system can guarantee absolute security. You are responsible for keeping your login details secure.</p>
-          </section>
+          <div className="border-t border-churvox-border pt-6">
+            <h2 className="text-white text-xl font-semibold mb-3">Data Sharing</h2>
+            <p>
+              We do not sell your personal information. We may share limited information with trusted
+              service providers that help us run Churvox, such as hosting, payment, analytics,
+              authentication, notification, and support providers. We may also disclose information
+              where required by law or to protect the security, rights, or operation of the service.
+            </p>
+          </div>
 
-          <section>
-            <h2 className="text-white font-semibold mb-2">Your Choices</h2>
-            <p>You can update your account information inside the app. You can also request account deletion, which removes your account and associated business data subject to legal and operational requirements.</p>
-          </section>
+          <div className="border-t border-churvox-border pt-6">
+            <h2 className="text-white text-xl font-semibold mb-3">Data Security</h2>
+            <p>
+              We take reasonable steps to protect your information from unauthorized access, loss,
+              misuse, or disclosure. However, no system is completely secure, and we cannot guarantee
+              absolute security.
+            </p>
+          </div>
 
-          <section>
-            <h2 className="text-white font-semibold mb-2">Contact</h2>
-            <p>For privacy questions, contact: hello@churvox.com</p>
-          </section>
+          <div className="border-t border-churvox-border pt-6">
+            <h2 className="text-white text-xl font-semibold mb-3">Data Retention</h2>
+            <p>
+              We keep information for as long as needed to provide the service, meet legal or tax
+              obligations, resolve disputes, enforce agreements, and maintain business records. If
+              you delete your account, some records may be retained where required for legal,
+              compliance, fraud-prevention, or operational reasons.
+            </p>
+          </div>
+
+          <div className="border-t border-churvox-border pt-6">
+            <h2 className="text-white text-xl font-semibold mb-3">Your Choices</h2>
+            <p>
+              You can review and update some account information inside the app. You may also request
+              account deletion. You are responsible for keeping your login details secure and for the
+              information entered by users under your business account.
+            </p>
+          </div>
+
+          <div className="border-t border-churvox-border pt-6">
+            <h2 className="text-white text-xl font-semibold mb-3">Contact Us</h2>
+            <p>
+              If you have questions about this Privacy Policy, contact us at hello@churvox.com.
+            </p>
+          </div>
         </div>
       </div>
     </div>
