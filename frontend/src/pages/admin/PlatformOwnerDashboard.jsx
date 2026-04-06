@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Users,
   Building2,
@@ -11,66 +11,122 @@ import {
   Briefcase,
   TrendingUp,
 } from "lucide-react";
+import axios from "axios";
 
-const stats = [
-  { title: "Total Users", value: "1,284", change: "+42 this week", icon: <Users size={20} /> },
-  { title: "Total Businesses", value: "312", change: "+11 this week", icon: <Building2 size={20} /> },
-  { title: "Active Today", value: "427", change: "+9.4%", icon: <Activity size={20} /> },
-  { title: "MRR", value: "$8,420", change: "+$630 this month", icon: <DollarSign size={20} /> },
-  { title: "Trial Users", value: "186", change: "42 ending soon", icon: <UserPlus size={20} /> },
-  { title: "Paid Users", value: "241", change: "77% conversion", icon: <CreditCard size={20} /> },
-];
+const API_BASE =
+  process.env.REACT_APP_BACKEND_URL ||
+  process.env.REACT_APP_API_URL ||
+  "";
 
-const topBusinesses = [
-  { name: "GreenCut Lawn Care", plan: "Pro", jobs: 84, revenue: "$2,140" },
-  { name: "Rapid Property Services", plan: "Team", jobs: 63, revenue: "$1,620" },
-  { name: "Apex Garden Works", plan: "Solo", jobs: 47, revenue: "$980" },
-  { name: "Blue Trim Solutions", plan: "Pro", jobs: 44, revenue: "$1,410" },
-];
-
-const problemAccounts = [
-  { name: "Fresh Edge Mowing", issue: "Payment failed", status: "Urgent" },
-  { name: "Topline Exterior", issue: "Trial expired", status: "Follow up" },
-  { name: "Prime Cuts NZ", issue: "Setup incomplete", status: "Check" },
-  { name: "Eco Yard Team", issue: "No recent activity", status: "Watch" },
-];
-
-const recentActivity = [
-  "12 new users signed up today",
-  "4 businesses upgraded to paid plans",
-  "2 failed subscription renewals detected",
-  "97 jobs created across the platform today",
-  "41 invoices sent in the last 24 hours",
-];
+const money = (value) => {
+  const n = Number(value || 0);
+  return new Intl.NumberFormat("en-NZ", {
+    style: "currency",
+    currency: "NZD",
+    maximumFractionDigits: 0,
+  }).format(n);
+};
 
 export default function PlatformOwnerDashboard() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        const res = await axios.get(`${API_BASE}/api/admin/platform-stats`, {
+          withCredentials: true,
+        });
+        if (mounted) setData(res.data || {});
+      } catch (err) {
+        if (mounted) {
+          setError(
+            err?.response?.data?.detail ||
+            err?.message ||
+            "Failed to load platform stats"
+          );
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    load();
+    return () => { mounted = false; };
+  }, []);
+
+  const stats = useMemo(() => {
+    const d = data || {};
+    return [
+      {
+        title: "Total Users",
+        value: d.totalUsers ?? 0,
+        change: `${d.newSignupsThisWeek ?? 0} new this week`,
+        icon: <Users size={20} />,
+      },
+      {
+        title: "Total Businesses",
+        value: d.totalBusinesses ?? 0,
+        change: "Live total",
+        icon: <Building2 size={20} />,
+      },
+      {
+        title: "Active Today",
+        value: d.activeToday ?? 0,
+        change: `${d.activeThisWeek ?? 0} active this week`,
+        icon: <Activity size={20} />,
+      },
+      {
+        title: "Monthly Revenue",
+        value: money(d.monthlyRevenue ?? 0),
+        change: "Paid invoices this month",
+        icon: <DollarSign size={20} />,
+      },
+      {
+        title: "Trial Users",
+        value: d.trialUsers ?? 0,
+        change: "On trial now",
+        icon: <UserPlus size={20} />,
+      },
+      {
+        title: "Paid Users",
+        value: d.paidUsers ?? 0,
+        change: `${d.cancelledUsers ?? 0} cancelled/expired`,
+        icon: <CreditCard size={20} />,
+      },
+    ];
+  }, [data]);
+
+  const topPlans = useMemo(() => Object.entries(data?.topPlans || {}), [data]);
+
   return (
     <div className="min-h-screen bg-slate-950 text-white p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Platform Dashboard</h1>
-            <p className="text-slate-400 mt-1">
-              Full app overview for Churvox owner/admin
-            </p>
-          </div>
-
-          <div className="flex gap-3 flex-wrap">
-            <button className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 transition font-medium">
-              View Users
-            </button>
-            <button className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition font-medium border border-slate-700">
-              View Businesses
-            </button>
+            <p className="text-slate-400 mt-1">Full app overview for Churvox owner/admin</p>
           </div>
         </div>
 
+        {loading ? (
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 text-slate-300">
+            Loading platform stats...
+          </div>
+        ) : error ? (
+          <div className="rounded-2xl border border-red-800 bg-red-950/40 p-5 text-red-200">
+            {error}
+          </div>
+        ) : null}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {stats.map((stat) => (
-            <div
-              key={stat.title}
-              className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-sm"
-            >
+            <div key={stat.title} className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-slate-400 text-sm">{stat.title}</div>
                 <div className="text-blue-400">{stat.icon}</div>
@@ -89,17 +145,17 @@ export default function PlatformOwnerDashboard() {
                   <TrendingUp size={18} />
                   <span className="font-medium">New Signups</span>
                 </div>
-                <div className="text-2xl font-bold">42</div>
+                <div className="text-2xl font-bold">{data?.newSignupsThisWeek ?? 0}</div>
                 <div className="text-sm text-slate-500 mt-1">This week</div>
               </div>
 
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <div className="flex items-center gap-2 text-slate-300 mb-2">
                   <BarChart3 size={18} />
-                  <span className="font-medium">Conversion Rate</span>
+                  <span className="font-medium">Outstanding Balance</span>
                 </div>
-                <div className="text-2xl font-bold">77%</div>
-                <div className="text-sm text-slate-500 mt-1">Trial to paid</div>
+                <div className="text-2xl font-bold">{money(data?.outstandingBalance ?? 0)}</div>
+                <div className="text-sm text-slate-500 mt-1">Unpaid invoices</div>
               </div>
 
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
@@ -107,78 +163,49 @@ export default function PlatformOwnerDashboard() {
                   <Briefcase size={18} />
                   <span className="font-medium">Jobs Today</span>
                 </div>
-                <div className="text-2xl font-bold">97</div>
+                <div className="text-2xl font-bold">{data?.jobsToday ?? 0}</div>
                 <div className="text-sm text-slate-500 mt-1">Across all businesses</div>
               </div>
             </div>
 
             <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <h2 className="text-xl font-semibold mb-4">Top Active Businesses</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-slate-400 border-b border-slate-800">
-                      <th className="py-3 pr-4">Business</th>
-                      <th className="py-3 pr-4">Plan</th>
-                      <th className="py-3 pr-4">Jobs</th>
-                      <th className="py-3 pr-4">Revenue</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topBusinesses.map((business) => (
-                      <tr
-                        key={business.name}
-                        className="border-b border-slate-800 last:border-0"
-                      >
-                        <td className="py-3 pr-4 font-medium">{business.name}</td>
-                        <td className="py-3 pr-4 text-slate-300">{business.plan}</td>
-                        <td className="py-3 pr-4 text-slate-300">{business.jobs}</td>
-                        <td className="py-3 pr-4 text-slate-300">{business.revenue}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <h2 className="text-xl font-semibold mb-4">Plans In Use</h2>
+              <div className="space-y-3">
+                {topPlans.length === 0 ? (
+                  <div className="rounded-xl bg-slate-800/60 border border-slate-800 px-4 py-3 text-slate-300">
+                    No plan data yet
+                  </div>
+                ) : (
+                  topPlans.map(([plan, count]) => (
+                    <div key={plan} className="rounded-xl bg-slate-800/60 border border-slate-800 px-4 py-3 flex items-center justify-between">
+                      <span className="capitalize text-slate-200">{plan}</span>
+                      <span className="font-semibold">{count}</span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
             <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <h2 className="text-xl font-semibold mb-4">Recent Platform Activity</h2>
+              <h2 className="text-xl font-semibold mb-4">Recent Platform Snapshot</h2>
               <div className="space-y-3">
-                {recentActivity.map((item, index) => (
-                  <div
-                    key={index}
-                    className="rounded-xl bg-slate-800/60 border border-slate-800 px-4 py-3 text-slate-300"
-                  >
-                    {item}
-                  </div>
-                ))}
+                <div className="rounded-xl bg-slate-800/60 border border-slate-800 px-4 py-3 text-slate-300">
+                  {data?.activeToday ?? 0} users active today
+                </div>
+                <div className="rounded-xl bg-slate-800/60 border border-slate-800 px-4 py-3 text-slate-300">
+                  {data?.activeThisWeek ?? 0} users active this week
+                </div>
+                <div className="rounded-xl bg-slate-800/60 border border-slate-800 px-4 py-3 text-slate-300">
+                  {data?.overdueInvoices ?? 0} overdue invoices across the platform
+                </div>
+                <div className="rounded-xl bg-slate-800/60 border border-slate-800 px-4 py-3 text-slate-300">
+                  {data?.trialUsers ?? 0} users currently on trial
+                </div>
               </div>
             </div>
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <h2 className="text-xl font-semibold mb-4">Problem Accounts</h2>
-              <div className="space-y-3">
-                {problemAccounts.map((account) => (
-                  <div
-                    key={account.name}
-                    className="rounded-xl border border-slate-800 bg-slate-800/50 p-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="font-medium">{account.name}</div>
-                        <div className="text-sm text-slate-400 mt-1">{account.issue}</div>
-                      </div>
-                      <div className="text-xs px-2 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/20">
-                        {account.status}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
               <div className="flex items-center gap-2 mb-4">
                 <AlertTriangle className="text-amber-400" size={18} />
@@ -186,32 +213,32 @@ export default function PlatformOwnerDashboard() {
               </div>
               <div className="space-y-3 text-sm text-slate-300">
                 <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
-                  2 failed payments need checking
+                  {data?.overdueInvoices ?? 0} overdue invoices need attention
                 </div>
                 <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
-                  5 trials ending in the next 3 days
+                  {data?.cancelledUsers ?? 0} cancelled or expired accounts
                 </div>
                 <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-800">
-                  3 businesses have incomplete setup
+                  {data?.trialUsers ?? 0} trial users currently active
                 </div>
               </div>
             </div>
 
             <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+              <h2 className="text-xl font-semibold mb-4">Quick Numbers</h2>
               <div className="grid grid-cols-1 gap-3">
-                <button className="rounded-xl bg-blue-600 hover:bg-blue-500 transition px-4 py-3 text-left font-medium">
-                  View All Users
-                </button>
-                <button className="rounded-xl bg-slate-800 hover:bg-slate-700 transition px-4 py-3 text-left font-medium border border-slate-700">
-                  View All Businesses
-                </button>
-                <button className="rounded-xl bg-slate-800 hover:bg-slate-700 transition px-4 py-3 text-left font-medium border border-slate-700">
-                  Check Failed Payments
-                </button>
-                <button className="rounded-xl bg-slate-800 hover:bg-slate-700 transition px-4 py-3 text-left font-medium border border-slate-700">
-                  Review Trials Ending Soon
-                </button>
+                <div className="rounded-xl bg-slate-800 px-4 py-3 border border-slate-700">
+                  Outstanding: {money(data?.outstandingBalance ?? 0)}
+                </div>
+                <div className="rounded-xl bg-slate-800 px-4 py-3 border border-slate-700">
+                  Monthly Revenue: {money(data?.monthlyRevenue ?? 0)}
+                </div>
+                <div className="rounded-xl bg-slate-800 px-4 py-3 border border-slate-700">
+                  Businesses: {data?.totalBusinesses ?? 0}
+                </div>
+                <div className="rounded-xl bg-slate-800 px-4 py-3 border border-slate-700">
+                  Users: {data?.totalUsers ?? 0}
+                </div>
               </div>
             </div>
           </div>
