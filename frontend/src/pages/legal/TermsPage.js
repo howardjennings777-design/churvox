@@ -24,23 +24,23 @@ export default function TermsPage() {
             </p>
             <div className="border-t border-churvox-border pt-6 space-y-4">
               <h2 className="text-lg font-semibold text-white">Acceptance of Terms</h2>
-              <p className="text-churvox-muted text-sm leading-relaxed">Details about acceptance of terms will be added here.</p>
+              <p className="text-churvox-muted text-sm leading-relaxed">By creating an account, subscribing to a plan, or using Churvox, you agree to these Terms of Service and any updated terms posted in the app or website.</p>
             </div>
             <div className="border-t border-churvox-border pt-6 space-y-4">
               <h2 className="text-lg font-semibold text-white">Use of Service</h2>
-              <p className="text-churvox-muted text-sm leading-relaxed">Details about permitted use of the service will be added here.</p>
+              <p className="text-churvox-muted text-sm leading-relaxed">You may use Churvox only for lawful business purposes. You must not misuse the platform, interfere with its operation, attempt unauthorized access, or use the service in a way that harms Churvox or other users.</p>
             </div>
             <div className="border-t border-churvox-border pt-6 space-y-4">
               <h2 className="text-lg font-semibold text-white">User Obligations</h2>
-              <p className="text-churvox-muted text-sm leading-relaxed">Details about user obligations will be added here.</p>
+              <p className="text-churvox-muted text-sm leading-relaxed">You are responsible for keeping your login secure, providing accurate account information, managing your team users, and ensuring that the data you enter into Churvox is lawful and that you have the right to use it.</p>
             </div>
             <div className="border-t border-churvox-border pt-6 space-y-4">
               <h2 className="text-lg font-semibold text-white">Limitation of Liability</h2>
-              <p className="text-churvox-muted text-sm leading-relaxed">Details about limitation of liability will be added here.</p>
+              <p className="text-churvox-muted text-sm leading-relaxed">To the extent permitted by law, Churvox is provided on an as-available basis and we are not liable for indirect, incidental, special, consequential, or data-loss related damages arising from use of the service.</p>
             </div>
             <div className="border-t border-churvox-border pt-6 space-y-4">
               <h2 className="text-lg font-semibold text-white">Contact</h2>
-              <p className="text-churvox-muted text-sm leading-relaxed">If you have questions about these Terms, please contact us.</p>
+              <p className="text-churvox-muted text-sm leading-relaxed">If you have questions about these Terms of Service, contact us at hello@churvox.com.</p>
             </div>
           </div>
         </div>
