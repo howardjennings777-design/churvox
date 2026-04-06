@@ -3009,6 +3009,13 @@ def health_login():
 @api_router.post("/jobs/{job_id}/pause")
 async def pause_job(job_id: str, current_user: dict = Depends(get_current_user)):
     job = await db.jobs.find_one({"id": job_id})
+
+    if not job:
+        try:
+            job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+        except Exception:
+            job = None
+
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     await db.jobs.update_one(
