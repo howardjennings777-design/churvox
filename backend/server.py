@@ -483,11 +483,12 @@ class MyobSettingsUpdate(BaseModel):
     company_file_name: Optional[str] = None
 
 SMS_PACKS = {
-SMS_CREDITS_PER_MESSAGE = 2
     "100": {"credits": 100, "price": 10.00},
     "500": {"credits": 500, "price": 45.00},
     "1000": {"credits": 1000, "price": 80.00},
 }
+
+SMS_CREDITS_PER_MESSAGE = 2
 
 # ===================== HELPERS =====================
 def hash_password(password: str) -> str:
