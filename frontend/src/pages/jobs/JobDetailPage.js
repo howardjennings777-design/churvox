@@ -294,7 +294,7 @@ const [workers, setWorkers] = useState([]);
               <div className="flex items-center gap-2 mb-3">
                 <MessageSquare size={14} className="text-churvox-accent" />
                 <span className="text-sm font-medium text-white"><span className="flex items-center justify-between w-full">
-  <span>Quick SMS</span>
+  <span>Quick SMS <span className="ml-2 inline-flex items-center rounded-full border border-churvox-border bg-churvox-surface px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-churvox-muted">Coming Soon</span></span>
   <span className="ml-2 inline-flex items-center rounded-full border border-slate-600 bg-slate-800/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300">
     Coming Soon
   </span>
