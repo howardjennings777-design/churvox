@@ -1487,58 +1487,65 @@ async def start_job(job_id: str, request: Request, current_user: dict = Depends(
     return normalize_job_status_for_response(serialize_doc(job))
 @api_router.post("/jobs/{job_id}/complete")
 async def complete_job(job_id: str, request: Request, user = Depends(get_current_user)):
-    job = await db.jobs.find_one({"id": job_id})
+    try:
+        job = await db.jobs.find_one({"id": job_id})
 
-    if not job:
-        try:
-            job = await db.jobs.find_one({"_id": ObjectId(job_id)})
-        except Exception:
-            job = None
-
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-
-    now = datetime.now(timezone.utc)
-
-    elapsed_to_add = 0
-    if job.get("timer_running"):
-        started_at = job.get("timer_started_at")
-        if started_at:
+        if not job:
             try:
-                if isinstance(started_at, str):
-                    started_dt = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
-                else:
-                    started_dt = started_at
-                elapsed_to_add = max(0, int((now - started_dt).total_seconds()))
+                job = await db.jobs.find_one({"_id": ObjectId(job_id)})
             except Exception:
-                elapsed_to_add = 0
+                job = None
 
-    existing_total = int(job.get("total_time_seconds", 0) or 0)
-    new_total = existing_total + elapsed_to_add
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
 
-    await db.jobs.update_one(
-        {"_id": job["_id"]},
-        {"$set": {
-            "status": JobStatus.COMPLETED,
-            "completed": True,
-            "completed_at": now,
-            "timer_running": False,
-            "timer_started_at": None,
-            "total_time_seconds": new_total,
-            "updated_at": now,
-        }}
-    )
+        now = datetime.now(timezone.utc)
 
-    updated_job = await db.jobs.find_one({"_id": job["_id"]})
-    if not updated_job:
-        raise HTTPException(status_code=500, detail="Failed to reload completed job")
+        elapsed_to_add = 0
+        if job.get("timer_running"):
+            started_at = job.get("timer_started_at")
+            if started_at:
+                try:
+                    if isinstance(started_at, str):
+                        started_dt = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+                    else:
+                        started_dt = started_at
+                    elapsed_to_add = max(0, int((now - started_dt).total_seconds()))
+                except Exception:
+                    elapsed_to_add = 0
 
-    updated_job["_id"] = str(updated_job["_id"])
-    return {
-        "success": True,
-        "message": "Job completed successfully",
-        "job": updated_job
-    }
+        existing_total = int(job.get("total_time_seconds", 0) or 0)
+        new_total = existing_total + elapsed_to_add
+
+        await db.jobs.update_one(
+            {"_id": job["_id"]},
+            {"$set": {
+                "status": JobStatus.COMPLETED,
+                "completed": True,
+                "completed_at": now,
+                "timer_running": False,
+                "timer_started_at": None,
+                "total_time_seconds": new_total,
+                "updated_at": now,
+            }}
+        )
+
+        updated_job = await db.jobs.find_one({"_id": job["_id"]})
+        if not updated_job:
+            raise HTTPException(status_code=500, detail="Failed to reload completed job")
+
+        updated_job["_id"] = str(updated_job["_id"])
+
+        return {
+            "success": True,
+            "message": "Job completed successfully",
+            "job": updated_job
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Complete job failed: {str(e)}")
 
 @api_router.delete("/jobs/{job_id}")
 async def delete_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
