@@ -483,6 +483,7 @@ class MyobSettingsUpdate(BaseModel):
     company_file_name: Optional[str] = None
 
 SMS_PACKS = {
+SMS_CREDITS_PER_MESSAGE = 2
     "100": {"credits": 100, "price": 10.00},
     "500": {"credits": 500, "price": 45.00},
     "1000": {"credits": 1000, "price": 80.00},
@@ -3041,3 +3042,54 @@ async def pause_job(job_id: str, current_user: dict = Depends(get_current_user))
         {"$set": {"status": "paused", "updated_at": datetime.now(timezone.utc)}}
     )
     return {"success": True, "status": "paused"}
+
+
+
+def pick_client_phone(job=None, client=None):
+    candidates = []
+
+    if isinstance(job, dict):
+        candidates.extend([
+            job.get("client_phone"),
+            job.get("phone"),
+            job.get("phone_number"),
+            job.get("mobile"),
+            job.get("mobile_number"),
+            job.get("customer_phone"),
+        ])
+        jc = job.get("client")
+        if isinstance(jc, dict):
+            candidates.extend([
+                jc.get("phone"),
+                jc.get("phone_number"),
+                jc.get("mobile"),
+                jc.get("mobile_number"),
+                jc.get("telephone"),
+            ])
+
+    if isinstance(client, dict):
+        candidates.extend([
+            client.get("phone"),
+            client.get("phone_number"),
+            client.get("mobile"),
+            client.get("mobile_number"),
+            client.get("telephone"),
+            client.get("tel"),
+        ])
+        contact = client.get("contact")
+        if isinstance(contact, dict):
+            candidates.extend([
+                contact.get("phone"),
+                contact.get("phone_number"),
+                contact.get("mobile"),
+                contact.get("mobile_number"),
+            ])
+
+    for value in candidates:
+        if value is None:
+            continue
+        value = str(value).strip()
+        if value:
+            return value
+
+    return None

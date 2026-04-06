@@ -280,7 +280,7 @@ const [workers, setWorkers] = useState([]);
                   Reminder
                 </Button>
               </div>
-              <p className="text-[10px] text-churvox-muted mt-2">Sends mock SMS to client. 1 credit per message.</p>
+              <p className="text-[10px] text-churvox-muted mt-2">Sends mock SMS to client. 2 credits per message.</p>
             </CardContent>
           </Card>
         )}

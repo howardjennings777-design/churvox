@@ -234,7 +234,7 @@ export default function SMSPage() {
                   </Select>
                 </div>
               )}
-              <p className="text-[10px] text-churvox-muted">SMS delivery is currently mocked. 1 credit per message.</p>
+              <p className="text-[10px] text-churvox-muted">SMS delivery is currently mocked. 2 credits per message.</p>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setShowSend(false)} className="border-churvox-border text-churvox-muted">Cancel</Button>
                 <Button type="submit" disabled={loading || balance < 1} className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="confirm-send-sms">
