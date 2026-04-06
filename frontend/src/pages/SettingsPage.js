@@ -17,11 +17,10 @@ import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { TRADE_TYPES } from "@/lib/utils";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import PageState from "../components/ui/PageState";
 
 export default function SettingsPage() {
-  const navigate = useNavigate();
   const { user, updateUser } = useAuth();
   const { patch, get, post, loading } = useApi();
   const { isFeatureEnabled } = usePlanLimits();
@@ -309,15 +308,12 @@ export default function SettingsPage() {
             <Link to="/privacy" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all" data-testid="settings-privacy-link">
               <FileText size={16} /> Privacy Policy
             </Link>
-                
             <Link to="/terms" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all" data-testid="settings-terms-link">
               <FileText size={16} /> Terms of Service
             </Link>
-                
             <Link to="/account-deletion" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all" data-testid="settings-account-deletion-link">
               <FileText size={16} /> Account Deletion
             </Link>
-                
           </CardContent>
         </Card>
 
