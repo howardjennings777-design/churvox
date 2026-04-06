@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { TRADE_TYPES } from "@/lib/utils";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import PageState from "../components/ui/PageState";
 
 export default function SettingsPage() {
@@ -307,20 +307,17 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-2">
             <Link to="/privacy" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all" data-testid="settings-privacy-link">
-              <button type="button" onClick={() => navigate("/privacy-policy")} className="w-full text-left active:scale-[0.99] transition-transform">
-                  <FileText size={16} /> Privacy Policy
+              <FileText size={16} /> Privacy Policy
             </Link>
-                </button>
+                
             <Link to="/terms" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all" data-testid="settings-terms-link">
-              <button type="button" onClick={() => navigate("/terms-of-service")} className="w-full text-left active:scale-[0.99] transition-transform">
-                  <FileText size={16} /> Terms of Service
+              <FileText size={16} /> Terms of Service
             </Link>
-                </button>
+                
             <Link to="/account-deletion" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all" data-testid="settings-account-deletion-link">
-              <button type="button" onClick={() => navigate("/account-deletion")} className="w-full text-left active:scale-[0.99] transition-transform">
-                  <FileText size={16} /> Account Deletion
+              <FileText size={16} /> Account Deletion
             </Link>
-                </button>
+                
           </CardContent>
         </Card>
 
