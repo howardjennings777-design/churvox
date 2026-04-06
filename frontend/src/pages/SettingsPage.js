@@ -309,8 +309,8 @@ export default function SettingsPage() {
               <FileText size={16} /> Privacy Policy
             </Link>
             <Link to="/terms" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all" data-testid="settings-terms-link">
-              <FileText size={16} /> Terms of Service
-            </Link>
+<Link to="/terms-of-service" className="inline-flex w-full rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all" data-testid="settings-terms-of-service-link">\n              <FileText size={16} /> Terms of Service
+            </Link>\n</Link>
             <Link to="/account-deletion" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all" data-testid="settings-account-deletion-link">
               <FileText size={16} /> Account Deletion
             </Link>
