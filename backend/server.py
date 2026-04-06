@@ -1478,93 +1478,48 @@ async def start_job(job_id: str, request: Request, current_user: dict = Depends(
     return normalize_job_status_for_response(serialize_doc(job))
 @api_router.post("/jobs/{job_id}/complete")
 async def complete_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
-    business_id = await get_user_business_id(current_user)
-    user = await get_current_user(request)
-    query = {"_id": ObjectId(job_id), "contractor_id": ObjectId(user["business_id"])}
-    if user.get("role") == "worker":
-        query["assigned_worker_id"] = ObjectId(user["id"])
-
-    job = await db.jobs.find_one(query)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    if job["status"] == JobStatus.COMPLETED:
-        raise HTTPException(status_code=400, detail="Job already completed")
-
     now = datetime.now(timezone.utc)
-    # Stop timer if running
-    timer_updates = {"status": JobStatus.COMPLETED, "completed_at": now, "timer_running": False}
-    if job.get("timer_running"):
-        entry = {"action": "pause", "timestamp": now}
-        elapsed = compute_elapsed(job.get("time_entries", []) + [entry])
-        timer_updates["total_time_seconds"] = elapsed
-        await db.jobs.update_one(query, {"$push": {"time_entries": entry}})
-    
-    await db.jobs.update_one({"business_id": str(business_id), "_id": ObjectId(job_id)}, {"$set": timer_updates})
-
-    # Re-read job with final time
-    job = await db.jobs.find_one(query)
-    total_time = job.get("total_time_seconds", 0)
-
-    # Auto-create draft invoice with pricing-type logic
-    user_doc = await db.users.find_one({"business_id": str(business_id), "_id": ObjectId(user["business_id"])})
-    if not user_doc:
-        user_doc = await db.users.find_one({"business_id": str(business_id), "_id": ObjectId(user["id"])})
-    gst_rate = user_doc.get("gst_rate", DEFAULT_GST_RATE) if user_doc else DEFAULT_GST_RATE
-
-    pricing_type = job.get("pricing_type", "fixed")
-    hourly_rate = job.get("hourly_rate", 0)
-    extras = job.get("extras") or []
-    extras_total = sum(float(e.get("amount", 0)) for e in extras)
-    hours_worked = total_time / 3600 if total_time > 0 else 0
-
-    if pricing_type == "fixed":
-        subtotal = job.get("price", 0)
-    elif pricing_type == "hourly":
-        subtotal = round(hours_worked * hourly_rate, 2)
-    elif pricing_type == "fixed_extras":
-        subtotal = job.get("price", 0) + extras_total
-    elif pricing_type == "hourly_extras":
-        subtotal = round(hours_worked * hourly_rate, 2) + extras_total
-    else:
-        subtotal = job.get("price", 0)
-
-    gst_amount = round(subtotal * (gst_rate / 100), 2)
-    total = round(subtotal + gst_amount, 2)
-
-    customer_name = job.get("customer_name", "")
-    if job.get("client_id"):
-        client_doc = await db.clients.find_one({"business_id": str(business_id), "_id": job["client_id"]})
-        if client_doc:
-            customer_name = client_doc.get("name", customer_name)
-
-    # Build description line items
-    desc_parts = [f"{job.get('title', 'Service')} - {job.get('job_type', 'other').replace('_',' ')}"]
-    if pricing_type in ("hourly", "hourly_extras") and hours_worked > 0:
-        desc_parts.append(f"{hours_worked:.2f}h @ ${hourly_rate}/hr")
-    if extras:
-        for ex in extras:
-            desc_parts.append(f"{ex.get('description', 'Extra')}: ${float(ex.get('amount', 0)):.2f}")
-
-    invoice_doc = {
-        "job_id": ObjectId(job_id),
-        "contractor_id": ObjectId(user["business_id"]),
-        "client_id": job.get("client_id"),
-        "customer_name": customer_name,
-        "address": job.get("address", ""),
-        "description": "\n".join(desc_parts),
-        "pricing_type": pricing_type,
-        "hours_worked": round(hours_worked, 2),
-        "hourly_rate": hourly_rate,
-        "extras": extras,
-        "subtotal": subtotal, "gst_rate": gst_rate, "gst_amount": gst_amount, "total": total,
-        "status": InvoiceStatus.DRAFT,
-        "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}",
-        "created_at": datetime.now(timezone.utc)
+    set_data = {
+        'status': 'completed',
+        'job_status': 'completed',
+        'timer_status': 'stopped',
+        'completed_at': now,
+        'updated_at': now,
     }
-    await db.invoices.insert_one(invoice_doc)
-
-    updated_job = await db.jobs.find_one({"business_id": str(business_id), "_id": ObjectId(job_id)})
-    return normalize_job_status_for_response(serialize_doc(updated_job))
+    
+    job = None
+    queries = []
+    
+    try:
+        queries.append({'_id': ObjectId(job_id)})
+    except Exception:
+        pass
+    
+    queries.append({'id': job_id})
+    
+    for q in queries:
+        try:
+            await db.jobs.update_one(q, {'$set': set_data})
+            job = await db.jobs.find_one(q)
+            if job:
+                break
+        except Exception:
+            continue
+    
+    if not job:
+        raise HTTPException(status_code=404, detail='Job not found')
+    
+    try:
+        job['id'] = str(job.get('_id', job.get('id', '')))
+    except Exception:
+        pass
+    
+    return {
+        'success': True,
+        'message': 'Job completed',
+        'job': job,
+        **job,
+    }
 @api_router.delete("/jobs/{job_id}")
 async def delete_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
