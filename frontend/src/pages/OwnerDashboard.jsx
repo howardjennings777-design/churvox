@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-const API_BASE =
-  import.meta?.env?.VITE_API_BASE_URL ||
-  process.env.REACT_APP_API_BASE_URL ||
-  "";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
 export default function OwnerDashboard() {
   const [loading, setLoading] = useState(true);
@@ -20,7 +17,7 @@ export default function OwnerDashboard() {
         setLoading(true);
         setError("");
 
-        const res = await fetch(`${API_BASE}/api/owner/stats`, {
+        const res = await fetch(`${API_BASE ? API_BASE : ""}/api/owner/stats`, {
           method: "GET",
           credentials: "include",
           headers: { "Content-Type": "application/json" }
