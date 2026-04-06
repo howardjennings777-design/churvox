@@ -15,12 +15,12 @@ export default function TermsPage() {
             <ChurvoxLogo size="md" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-white" data-testid="terms-heading">Terms of Service</h1>
-          <p className="text-churvox-muted mt-2 text-sm">Last updated: March 2026</p>
+          <p className="text-churvox-muted mt-2 text-sm">Last updated: April 2026</p>
         </div>
         <div className="prose prose-invert max-w-none space-y-6" data-testid="terms-content">
           <div className="bg-churvox-card border border-churvox-border rounded-xl p-6 md:p-8 space-y-6">
             <p className="text-churvox-muted text-sm leading-relaxed">
-              Churvox Terms of Service placeholder text will be added here.
+              Churvox These Terms of Service govern your use of the Churvox app and related services. By using Churvox, you agree to these terms.
             </p>
             <div className="border-t border-churvox-border pt-6 space-y-4">
               <h2 className="text-lg font-semibold text-white">Acceptance of Terms</h2>
