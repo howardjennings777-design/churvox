@@ -1,4 +1,16 @@
 
+def make_json_safe(value):
+    if isinstance(value, dict):
+        return {k: make_json_safe(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [make_json_safe(v) for v in value]
+    if isinstance(value, ObjectId):
+        return str(value)
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return value
+
+
 def normalize_job_status_for_response(job: dict):
     if not job:
         return job
@@ -1530,16 +1542,15 @@ async def complete_job(job_id: str, request: Request, user = Depends(get_current
             }}
         )
 
-        updated_job = await db.jobs.find_one({"_id": job["_id"]})
-        if not updated_job:
-            raise HTTPException(status_code=500, detail="Failed to reload completed job")
-
-        updated_job["_id"] = str(updated_job["_id"])
-
         return {
             "success": True,
             "message": "Job completed successfully",
-            "job": updated_job
+            "job_id": str(job["_id"]),
+            "status": "completed",
+            "completed": True,
+            "timer_running": False,
+            "total_time_seconds": new_total,
+            "completed_at": now.isoformat()
         }
 
     except HTTPException:
