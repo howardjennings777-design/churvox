@@ -2952,130 +2952,41 @@ async def get_admin_usage_summary(current_user: dict = Depends(get_current_user)
 
 
 
+
 @api_router.get("/admin/platform-stats")
-async def get_platform_stats(days: int = Query(7, ge=1, le=365)):
-    from datetime import datetime, timedelta, timezone
-
-    now = datetime.now(timezone.utc)
-    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    range_start = now - timedelta(days=days)
-
-    def to_dt(value):
-        if not value:
-            return None
-        if isinstance(value, datetime):
-            return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
-        if isinstance(value, str):
-            try:
-                if value.endswith("Z"):
-                    value = value.replace("Z", "+00:00")
-                parsed = datetime.fromisoformat(value)
-                return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
-            except Exception:
-                return None
-        return None
-
+async def get_platform_stats():
     try:
-        users = await db.users.find({}).to_list(length=50000)
+        total_users = await db.users.count_documents({})
     except Exception:
-        users = []
+        total_users = 0
 
+    total_businesses = 0
     try:
-        jobs = await db.jobs.find({}).to_list(length=50000)
+        users = await db.users.find({}, {"business_id": 1, "businessId": 1}).to_list(length=50000)
+        business_ids = set()
+        for u in users:
+            bid = str(u.get("business_id") or u.get("businessId") or "").strip()
+            if bid:
+                business_ids.add(bid)
+        total_businesses = len(business_ids)
     except Exception:
-        jobs = []
+        total_businesses = 0
 
-    try:
-        invoices = await db.invoices.find({}).to_list(length=50000)
-    except Exception:
-        invoices = []
-
-    total_users = len(users)
-    business_ids = set()
-    paid_users = 0
-    trial_users = 0
-    cancelled_users = 0
     active_today = 0
     active_this_week = 0
+    trial_users = 0
+    paid_users = 0
+    cancelled_users = 0
     new_signups_this_week = 0
-    plan_counter = Counter()
-
-    for u in users:
-        uid = str(u.get("_id") or "")
-        bid = str(u.get("business_id") or u.get("businessId") or uid or "")
-        if bid:
-            business_ids.add(bid)
-
-        plan = str(u.get("plan") or u.get("subscription_plan") or u.get("subscriptionTier") or "solo").lower()
-        status = str(u.get("subscription_status") or u.get("plan_status") or u.get("status") or "").lower()
-        role = str(u.get("role") or "").lower()
-
-        if role != "employee":
-            plan_counter[plan] += 1
-
-        if status in {"trial", "trialing"}:
-            trial_users += 1
-        elif status in {"cancelled", "canceled", "expired"}:
-            cancelled_users += 1
-        elif plan not in {"free", "", "trial"}:
-            paid_users += 1
-
-        created_at = to_dt(u.get("created_at") or u.get("createdAt") or u.get("signup_date"))
-        if created_at and created_at >= range_start:
-            new_signups_this_week += 1
-
-        last_activity = None
-        for v in [
-            u.get("last_seen_at"),
-            u.get("lastSeenAt"),
-            u.get("last_login"),
-            u.get("lastLogin"),
-            u.get("updated_at"),
-            u.get("updatedAt"),
-        ]:
-            last_activity = to_dt(v)
-            if last_activity:
-                break
-
-        if last_activity and last_activity >= today_start:
-            active_today += 1
-        if last_activity and last_activity >= range_start:
-            active_this_week += 1
-
     jobs_today = 0
-    for j in jobs:
-        job_dt = to_dt(j.get("created_at") or j.get("createdAt") or j.get("scheduled_date") or j.get("date"))
-        if job_dt and job_dt >= today_start:
-            jobs_today += 1
-
-    monthly_revenue = 0.0
-    outstanding_balance = 0.0
+    monthly_revenue = 0
+    outstanding_balance = 0
     overdue_invoices = 0
-
-    for inv in invoices:
-        amount = inv.get("total") or inv.get("amount") or inv.get("grand_total") or 0
-        try:
-            amount = float(amount)
-        except Exception:
-            amount = 0.0
-
-        status = str(inv.get("status") or "").lower()
-        paid = status in {"paid", "complete", "completed"}
-
-        inv_date = to_dt(inv.get("created_at") or inv.get("createdAt") or inv.get("issue_date"))
-        due_date = to_dt(inv.get("due_date") or inv.get("dueDate"))
-
-        if paid and inv_date and inv_date.year == now.year and inv_date.month == now.month:
-            monthly_revenue += amount
-
-        if not paid:
-            outstanding_balance += amount
-            if due_date and due_date < now:
-                overdue_invoices += 1
+    topPlans = {}
 
     return {
         "totalUsers": total_users,
-        "totalBusinesses": len(business_ids),
+        "totalBusinesses": total_businesses,
         "activeToday": active_today,
         "activeThisWeek": active_this_week,
         "trialUsers": trial_users,
@@ -3083,11 +2994,12 @@ async def get_platform_stats(days: int = Query(7, ge=1, le=365)):
         "cancelledUsers": cancelled_users,
         "newSignupsThisWeek": new_signups_this_week,
         "jobsToday": jobs_today,
-        "monthlyRevenue": round(monthly_revenue, 2),
-        "outstandingBalance": round(outstanding_balance, 2),
+        "monthlyRevenue": monthly_revenue,
+        "outstandingBalance": outstanding_balance,
         "overdueInvoices": overdue_invoices,
-        "topPlans": dict(plan_counter.most_common(5)),
+        "topPlans": topPlans,
     }
+
 
 
 app.include_router(api_router)
