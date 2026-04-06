@@ -1,5 +1,5 @@
 /* Churvox Service Worker — minimal for PWA installability */
-const CACHE_NAME = 'churvox-v1';
+const CACHE_NAME = "churvox-v2-legal-refresh";
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
