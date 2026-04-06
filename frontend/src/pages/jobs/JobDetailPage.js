@@ -282,7 +282,12 @@ const [workers, setWorkers] = useState([]);
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-3">
                 <MessageSquare size={14} className="text-churvox-accent" />
+                <div className="flex items-center justify-between w-full gap-3">
                 <span className="text-sm font-medium text-white">Quick SMS</span>
+                <span className="inline-flex items-center rounded-full border border-churvox-border bg-churvox-surface px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-churvox-muted whitespace-nowrap">
+                  Coming Soon
+                </span>
+              </div>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => handleSendSMS("on_the_way")} disabled={loading}
