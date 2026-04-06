@@ -36,6 +36,7 @@ import AccountDeletionPage from "./pages/legal/AccountDeletionPage";
 
 import AdminUsagePage from "./pages/AdminUsagePage";
 import PlatformAdminRoute from "./components/admin/PlatformAdminRoute";
+import PlatformUnlock from "./pages/admin/PlatformUnlock";
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="min-h-screen bg-churvox-bg flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" /></div>;
@@ -97,7 +98,8 @@ function App() {
           <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           <Route path="/account-deletion" element={<AccountDeletionPage />} />
 
-        </Routes>
+                <Route path="/platform-unlock" element={<PlatformUnlock />} />
+</Routes>
       </AuthProvider>
     </BrowserRouter>
   );

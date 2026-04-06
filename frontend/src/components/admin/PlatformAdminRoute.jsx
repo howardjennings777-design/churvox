@@ -2,28 +2,23 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 
 export default function PlatformAdminRoute({ children }) {
-  let rawUser = null;
+  let hasPlatformAccess = false;
+  let user = null;
 
   try {
-    rawUser =
-      localStorage.getItem("user") ||
-      sessionStorage.getItem("user");
+    hasPlatformAccess = localStorage.getItem("platform_owner_access") === "true";
   } catch (e) {
-    rawUser = null;
+    hasPlatformAccess = false;
   }
 
-  let user = null;
   try {
+    const rawUser =
+      localStorage.getItem("user") ||
+      sessionStorage.getItem("user");
     user = rawUser ? JSON.parse(rawUser) : null;
   } catch (e) {
     user = null;
   }
-
-  const email = String(
-    user?.email ||
-    user?.user?.email ||
-    ""
-  ).toLowerCase();
 
   const role = String(
     user?.role ||
@@ -31,18 +26,14 @@ export default function PlatformAdminRoute({ children }) {
     ""
   ).toLowerCase();
 
-  const allowedEmails = [
-    "hello@churvox.com"
-  ];
-
   const isAllowed =
+    hasPlatformAccess ||
     role === "admin" ||
     role === "super_admin" ||
-    role === "superadmin" ||
-    allowedEmails.includes(email);
+    role === "superadmin";
 
   if (!isAllowed) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/platform-unlock" replace />;
   }
 
   return children;
