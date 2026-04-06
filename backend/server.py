@@ -3179,7 +3179,7 @@ def pick_client_phone(job=None, client=None):
 
     return None
 
-@api_router.post("/sms/send")
+@api_router.post("/sms/send-fixed")
 async def send_sms_hard_fix_v1(payload: dict, current_user: dict = Depends(get_current_user)):
     user = current_user
     business_id = str(user.get("business_id") or user.get("id"))

@@ -59,7 +59,7 @@ export default function SMSPage() {
     const payload = { ...sendForm };
     if (!payload.job_id) delete payload.job_id;
     if (!payload.invoice_id) delete payload.invoice_id;
-    const res = await post("/sms/send", payload);
+    const res = await post("/sms/send-fixed", payload);
     if (res.success) {
       toast.success("SMS sent");
       setShowSend(false);

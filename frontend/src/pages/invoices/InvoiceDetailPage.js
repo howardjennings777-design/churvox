@@ -49,7 +49,7 @@ export default function InvoiceDetailPage() {
       if (cRes.success) phone = cRes.data.phone || "";
     }
     if (!phone) { toast.error("Client has no phone number"); return; }
-    const res = await post("/sms/send", {
+    const res = await post("/sms/send-fixed", {
       recipient_phone: phone,
       message_type: "invoice_reminder",
       invoice_id: id,
