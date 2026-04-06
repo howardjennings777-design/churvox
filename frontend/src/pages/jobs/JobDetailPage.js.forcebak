@@ -293,24 +293,19 @@ const [workers, setWorkers] = useState([]);
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-3">
                 <MessageSquare size={14} className="text-churvox-accent" />
-                <span className="text-sm font-medium text-white"><span className="flex items-center justify-between w-full">
-  <span>Quick SMS</span>
-  <span className="ml-2 inline-flex items-center rounded-full border border-slate-600 bg-slate-800/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300">
-    Coming Soon
-  </span>
-</span> · Coming Soon <span className="text-slate-500 text-sm font-medium ml-2">Coming Soon</span></span>
+                <span className="text-sm font-medium text-white">Quick SMS <span className="text-slate-500 text-sm font-medium ml-2">Coming Soon</span></span>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => handleSendSMS("on_the_way")} disabled={loading}
                   className="flex-1 border-churvox-border text-churvox-muted hover:text-white hover:border-churvox-accent/50 text-xs" data-testid="sms-on-the-way">
-                  Coming Soon
+                  On the Way
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => handleSendSMS("customer_reminder")} disabled={loading}
                   className="flex-1 border-churvox-border text-churvox-muted hover:text-white hover:border-churvox-accent/50 text-xs" data-testid="sms-customer-reminder">
-                  Coming Soon
+                  Reminder
                 </Button>
               </div>
-              <p className="text-[10px] text-churvox-muted mt-2">SMS feature coming soon.</p>
+              <p className="text-[10px] text-churvox-muted mt-2">Sends mock SMS to client. 2 credits per message.</p>
             </CardContent>
           </Card>
         )}
