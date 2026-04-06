@@ -26,7 +26,6 @@ const money = (value) => {
 
 export default function PlatformOwnerDashboard() {
   const [data, setData] = useState(null);
-  const [openPanel, setOpenPanel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -225,86 +224,19 @@ export default function PlatformOwnerDashboard() {
             <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
               <h2 className="text-xl font-semibold mb-4">Quick Numbers</h2>
               <div className="grid grid-cols-1 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setOpenPanel(openPanel === 'outstanding' ? null : 'outstanding')}
-                      className="rounded-xl bg-slate-800 px-4 py-3 border border-slate-700 text-left transition hover:bg-slate-700 active:scale-[0.99] cursor-pointer w-full"
-                    >
-                      <div className="font-semibold">Outstanding</div>
-                      <div>{money(data?.outstandingBalance ?? 0)}</div>
-                      <div className="text-xs text-slate-400 mt-1">Tap to view more</div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setOpenPanel(openPanel === 'monthlyRevenue' ? null : 'monthlyRevenue')}
-                      className="rounded-xl bg-slate-800 px-4 py-3 border border-slate-700 text-left transition hover:bg-slate-700 active:scale-[0.99] cursor-pointer w-full"
-                    >
-                      <div className="font-semibold">Monthly Revenue</div>
-                      <div>{money(data?.monthlyRevenue ?? 0)}</div>
-                      <div className="text-xs text-slate-400 mt-1">Tap to view more</div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setOpenPanel(openPanel === 'businesses' ? null : 'businesses')}
-                      className="rounded-xl bg-slate-800 px-4 py-3 border border-slate-700 text-left transition hover:bg-slate-700 active:scale-[0.99] cursor-pointer w-full"
-                    >
-                      <div className="font-semibold">Businesses</div>
-                      <div>{data?.totalBusinesses ?? 0}</div>
-                      <div className="text-xs text-slate-400 mt-1">Tap to view more</div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setOpenPanel(openPanel === 'users' ? null : 'users')}
-                      className="rounded-xl bg-slate-800 px-4 py-3 border border-slate-700 text-left transition hover:bg-slate-700 active:scale-[0.99] cursor-pointer w-full"
-                    >
-                      <div className="font-semibold">Users</div>
-                      <div>{data?.totalUsers ?? 0}</div>
-                      <div className="text-xs text-slate-400 mt-1">Tap to view more</div>
-                    </button>
-                  </div>
-
-                  {openPanel && (
-                    <div className="mt-3 rounded-xl border border-blue-500/30 bg-slate-900/70 p-4">
-                      {openPanel === 'outstanding' && (
-                        <div>
-                          <div className="text-sm font-semibold text-white">Outstanding balance details</div>
-                          <div className="mt-2 text-sm text-slate-300">
-                            Total unpaid amount across the platform: <span className="font-semibold text-white">{money(data?.outstandingBalance ?? 0)}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {openPanel === 'monthlyRevenue' && (
-                        <div>
-                          <div className="text-sm font-semibold text-white">Monthly revenue details</div>
-                          <div className="mt-2 text-sm text-slate-300">
-                            Current monthly revenue total: <span className="font-semibold text-white">{money(data?.monthlyRevenue ?? 0)}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {openPanel === 'businesses' && (
-                        <div>
-                          <div className="text-sm font-semibold text-white">Business count details</div>
-                          <div className="mt-2 text-sm text-slate-300">
-                            Total businesses on the platform: <span className="font-semibold text-white">{data?.totalBusinesses ?? 0}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {openPanel === 'users' && (
-                        <div>
-                          <div className="text-sm font-semibold text-white">User count details</div>
-                          <div className="mt-2 text-sm text-slate-300">
-                            Total users on the platform: <span className="font-semibold text-white">{data?.totalUsers ?? 0}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}</div>
+                <div className="rounded-xl bg-slate-800 px-4 py-3 border border-slate-700">
+                  Outstanding: {money(data?.outstandingBalance ?? 0)}
+                </div>
+                <div className="rounded-xl bg-slate-800 px-4 py-3 border border-slate-700">
+                  Monthly Revenue: {money(data?.monthlyRevenue ?? 0)}
+                </div>
+                <div className="rounded-xl bg-slate-800 px-4 py-3 border border-slate-700">
+                  Businesses: {data?.totalBusinesses ?? 0}
+                </div>
+                <div className="rounded-xl bg-slate-800 px-4 py-3 border border-slate-700">
+                  Users: {data?.totalUsers ?? 0}
+                </div>
+              </div>
             </div>
           </div>
         </div>
