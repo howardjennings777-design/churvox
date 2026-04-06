@@ -8,6 +8,60 @@ import { ChevronLeft, ChevronRight, Plus, Clock, UserCheck, MapPin, Briefcase } 
 import { formatCurrency, JOB_STATUS_MAP } from "../lib/utils";
 import Layout from "../components/Layout";
 
+
+const resolveDisplayStatus = (job) => {
+  if (!job) return "pending";
+  const status = String(resolveDisplayStatus(job) || "").trim().toLowerCase();
+  const jobStatus = String(job.job_status || "").trim().toLowerCase();
+  const workflowStatus = String(job.workflow_status || "").trim().toLowerCase();
+
+  if (
+    status === "completed" ||
+    jobStatus === "completed" ||
+    workflowStatus === "completed" ||
+    job.completed === true ||
+    !!job.completed_at
+  ) return "completed";
+
+  if (
+    status === "paused" ||
+    jobStatus === "paused" ||
+    workflowStatus === "paused"
+  ) return "paused";
+
+  if (
+    status === "in progress" || status === "in_progress" ||
+    jobStatus === "in progress" || jobStatus === "in_progress" ||
+    workflowStatus === "in progress" || workflowStatus === "in_progress"
+  ) return "in_progress";
+
+  if (
+    status === "assigned" ||
+    jobStatus === "assigned" ||
+    workflowStatus === "assigned"
+  ) return "assigned";
+
+  return status || jobStatus || workflowStatus || "pending";
+};
+
+const resolveDisplayStatusLabel = (job) => {
+  const s = resolveDisplayStatus(job);
+  if (s === "completed") return "COMPLETED";
+  if (s === "in_progress") return "IN PROGRESS";
+  if (s === "assigned") return "ASSIGNED";
+  if (s === "paused") return "PAUSED";
+  return String(s || "PENDING").replace(/_/g, " ").toUpperCase();
+};
+
+const forceNormalizeJobs = (jobs) =>
+  (Array.isArray(jobs) ? jobs : []).map(job => ({
+    ...job,
+    status: resolveDisplayStatus(job),
+    job_status: resolveDisplayStatus(job),
+    workflow_status: resolveDisplayStatus(job),
+  }));
+
+
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -25,7 +79,7 @@ export default function CalendarPage() {
 
   const fetchJobs = useCallback(async () => {
     const res = await get("/jobs");
-    if (res.success) setJobs(res.data);
+    if (res.success) setJobs(forceNormalizeJobs(res.data));
   }, [get]);
 
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
@@ -142,7 +196,7 @@ export default function CalendarPage() {
           ) : (
             <div className="space-y-2">
               {selectedJobs.map((job) => {
-                const statusInfo = JOB_STATUS_MAP[job.status];
+                const statusInfo = JOB_STATUS_MAP[resolveDisplayStatus(job)];
                 return (
                   <Link key={job.id} to={`/jobs/${job.id}`} data-testid={`calendar-job-${job.id}`}
                     className="block bg-churvox-card border border-churvox-border rounded-xl p-4 hover:border-churvox-accent/50 transition-all group">
@@ -170,7 +224,7 @@ export default function CalendarPage() {
                         )}
                       </div>
                       <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-white shrink-0 ${statusInfo?.color || "bg-slate-500"}`} data-testid={`calendar-job-status-${job.id}`}>
-                        {statusInfo?.label || job.status}
+                        {statusInfo?.label || resolveDisplayStatus(job)}
                       </span>
                     </div>
                   </Link>

@@ -12,6 +12,60 @@ import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { JOB_TYPES_BY_CATEGORY } from "../../lib/utils";
 
+
+const resolveDisplayStatus = (job) => {
+  if (!job) return "pending";
+  const status = String(resolveDisplayStatus(job) || "").trim().toLowerCase();
+  const jobStatus = String(job.job_status || "").trim().toLowerCase();
+  const workflowStatus = String(job.workflow_status || "").trim().toLowerCase();
+
+  if (
+    status === "completed" ||
+    jobStatus === "completed" ||
+    workflowStatus === "completed" ||
+    job.completed === true ||
+    !!job.completed_at
+  ) return "completed";
+
+  if (
+    status === "paused" ||
+    jobStatus === "paused" ||
+    workflowStatus === "paused"
+  ) return "paused";
+
+  if (
+    status === "in progress" || status === "in_progress" ||
+    jobStatus === "in progress" || jobStatus === "in_progress" ||
+    workflowStatus === "in progress" || workflowStatus === "in_progress"
+  ) return "in_progress";
+
+  if (
+    status === "assigned" ||
+    jobStatus === "assigned" ||
+    workflowStatus === "assigned"
+  ) return "assigned";
+
+  return status || jobStatus || workflowStatus || "pending";
+};
+
+const resolveDisplayStatusLabel = (job) => {
+  const s = resolveDisplayStatus(job);
+  if (s === "completed") return "COMPLETED";
+  if (s === "in_progress") return "IN PROGRESS";
+  if (s === "assigned") return "ASSIGNED";
+  if (s === "paused") return "PAUSED";
+  return String(s || "PENDING").replace(/_/g, " ").toUpperCase();
+};
+
+const forceNormalizeJobs = (jobs) =>
+  (Array.isArray(jobs) ? jobs : []).map(job => ({
+    ...job,
+    status: resolveDisplayStatus(job),
+    job_status: resolveDisplayStatus(job),
+    workflow_status: resolveDisplayStatus(job),
+  }));
+
+
 const PRICING_TYPES = [
   { value: "fixed", label: "Fixed Price" },
   { value: "hourly", label: "Hourly" },

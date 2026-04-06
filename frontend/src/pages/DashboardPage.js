@@ -10,6 +10,60 @@ import { Briefcase, Calendar, CheckCircle, DollarSign, FileText, Users, Plus, Cl
 import { formatCurrency, formatDate, JOB_STATUS_MAP } from "../lib/utils";
 import PageState from "../components/ui/PageState";
 
+
+const resolveDisplayStatus = (job) => {
+  if (!job) return "pending";
+  const status = String(resolveDisplayStatus(job) || "").trim().toLowerCase();
+  const jobStatus = String(job.job_status || "").trim().toLowerCase();
+  const workflowStatus = String(job.workflow_status || "").trim().toLowerCase();
+
+  if (
+    status === "completed" ||
+    jobStatus === "completed" ||
+    workflowStatus === "completed" ||
+    job.completed === true ||
+    !!job.completed_at
+  ) return "completed";
+
+  if (
+    status === "paused" ||
+    jobStatus === "paused" ||
+    workflowStatus === "paused"
+  ) return "paused";
+
+  if (
+    status === "in progress" || status === "in_progress" ||
+    jobStatus === "in progress" || jobStatus === "in_progress" ||
+    workflowStatus === "in progress" || workflowStatus === "in_progress"
+  ) return "in_progress";
+
+  if (
+    status === "assigned" ||
+    jobStatus === "assigned" ||
+    workflowStatus === "assigned"
+  ) return "assigned";
+
+  return status || jobStatus || workflowStatus || "pending";
+};
+
+const resolveDisplayStatusLabel = (job) => {
+  const s = resolveDisplayStatus(job);
+  if (s === "completed") return "COMPLETED";
+  if (s === "in_progress") return "IN PROGRESS";
+  if (s === "assigned") return "ASSIGNED";
+  if (s === "paused") return "PAUSED";
+  return String(s || "PENDING").replace(/_/g, " ").toUpperCase();
+};
+
+const forceNormalizeJobs = (jobs) =>
+  (Array.isArray(jobs) ? jobs : []).map(job => ({
+    ...job,
+    status: resolveDisplayStatus(job),
+    job_status: resolveDisplayStatus(job),
+    workflow_status: resolveDisplayStatus(job),
+  }));
+
+
 export default function DashboardPage() {
   const navigate = useNavigate();
 
@@ -47,7 +101,7 @@ const [todayJobs, setTodayJobs] = useState([]);
       get("/jobs/week"),
     ]);
     if (statsRes.success) setStats(statsRes.data);
-    if (todayRes.success) setTodayJobs(todayRes.data);
+    if (todayRes.success) setTodayJobs(forceNormalizeJobs(todayRes.data));
     if (weekRes.success) setWeekJobs(weekRes.data);
   }, [get]);
 
@@ -200,7 +254,7 @@ const [todayJobs, setTodayJobs] = useState([]);
           ) : (
             <div className="space-y-2">
               {todayJobs.map((job) => {
-                const statusInfo = JOB_STATUS_MAP[job.status];
+                const statusInfo = JOB_STATUS_MAP[resolveDisplayStatus(job)];
                 return (
                   <Link key={job.id} to={`/jobs/${job.id}`} data-testid={`today-job-${job.id}`}
                     className="block bg-churvox-card border border-churvox-border rounded-xl p-4 hover:border-churvox-accent/50 transition-all">
@@ -217,7 +271,7 @@ const [todayJobs, setTodayJobs] = useState([]);
                         )}
                       </div>
                       <span className={`px-2 py-1 rounded text-[10px] font-semibold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`}>
-                        {statusInfo?.label || job.status}
+                        {statusInfo?.label || resolveDisplayStatus(job)}
                       </span>
                     </div>
                   </Link>
@@ -241,7 +295,7 @@ const [todayJobs, setTodayJobs] = useState([]);
           ) : (
             <div className="space-y-2">
               {weekJobs.slice(0, 5).map((job) => {
-                const statusInfo = JOB_STATUS_MAP[job.status];
+                const statusInfo = JOB_STATUS_MAP[resolveDisplayStatus(job)];
                 return (
                   <Link key={job.id} to={`/jobs/${job.id}`} data-testid={`week-job-${job.id}`}
                     className="block bg-churvox-card border border-churvox-border rounded-xl p-4 hover:border-churvox-accent/50 transition-all">
@@ -258,7 +312,7 @@ const [todayJobs, setTodayJobs] = useState([]);
                         )}
                       </div>
                       <span className={`px-2 py-1 rounded text-[10px] font-semibold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`}>
-                        {statusInfo?.label || job.status}
+                        {statusInfo?.label || resolveDisplayStatus(job)}
                       </span>
                     </div>
                   </Link>
