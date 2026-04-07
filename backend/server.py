@@ -141,6 +141,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile, Query
+from fastapi.responses import HTMLResponse
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
@@ -265,6 +266,40 @@ db = client[os.environ['DB_NAME']]
 JWT_SECRET = os.environ.get('JWT_SECRET', 'default_secret_change_me')
 JWT_ALGORITHM = "HS256"
 DEFAULT_GST_RATE = float(os.environ.get('DEFAULT_GST_RATE', '15'))
+
+
+PLATFORM_ADMIN_EMAILS = [
+    x.strip().lower()
+    for x in os.environ.get("PLATFORM_ADMIN_EMAILS", "hello@churvox.com").split(",")
+    if x.strip()
+]
+
+def is_platform_admin(user: dict) -> bool:
+    if not user:
+        return False
+    email = (user.get("email") or "").strip().lower()
+    return user.get("is_platform_admin") is True or email in PLATFORM_ADMIN_EMAILS
+
+def admin_clean(doc: dict):
+    if not doc:
+        return {}
+    out = {}
+    for k, v in doc.items():
+        if k == "_id":
+            out["id"] = str(v)
+            continue
+        try:
+            if hasattr(v, "isoformat"):
+                out[k] = v.isoformat()
+            elif k.endswith("_id"):
+                out[k] = str(v)
+            else:
+                out[k] = v
+        except Exception:
+            out[k] = str(v)
+    if "id" not in out and doc.get("_id") is not None:
+        out["id"] = str(doc.get("_id"))
+    return out
 
 
 PLATFORM_OWNER_EMAILS = [
@@ -3076,6 +3111,461 @@ async def get_owner_stats(current_user: dict = Depends(get_current_user)):
         },
         "recent_users": recent_users
     }
+
+
+
+@api_router.get("/admin/stats")
+async def admin_stats(current_user: dict = Depends(get_current_user)):
+    if not is_platform_admin(current_user):
+        raise HTTPException(status_code=403, detail="Platform admin access required")
+
+    total_users = await db.users.count_documents({})
+    total_jobs = await db.jobs.count_documents({})
+    total_clients = await db.clients.count_documents({})
+    total_invoices = await db.invoices.count_documents({})
+
+    total_businesses = 0
+    for q in [
+        {"role": "owner"},
+        {"user_type": "owner"},
+        {"account_type": "owner"},
+        {"business_name": {"$exists": True, "$ne": ""}},
+    ]:
+        try:
+            total_businesses = max(total_businesses, await db.users.count_documents(q))
+        except Exception:
+            pass
+
+    active_timers = 0
+    try:
+        active_timers = await db.time_entries.count_documents({
+            "$or": [
+                {"status": "running"},
+                {"is_running": True},
+                {"end_time": None},
+            ]
+        })
+    except Exception:
+        active_timers = 0
+
+    plan_counts = {"solo": 0, "team": 0, "pro": 0, "enterprise": 0, "other": 0}
+    try:
+        cursor = db.users.find({}, {"plan": 1})
+        async for u in cursor:
+            plan = (u.get("plan") or "").strip().lower()
+            if plan in plan_counts:
+                plan_counts[plan] += 1
+            else:
+                plan_counts["other"] += 1
+    except Exception:
+        pass
+
+    recent_users = []
+    try:
+        cursor = db.users.find(
+            {},
+            {
+                "email": 1,
+                "full_name": 1,
+                "business_name": 1,
+                "role": 1,
+                "plan": 1,
+                "created_at": 1,
+            },
+        ).sort("created_at", -1).limit(20)
+
+        async for u in cursor:
+            recent_users.append(admin_clean(u))
+    except Exception:
+        recent_users = []
+
+    return {
+        "ok": True,
+        "admin_email": (current_user.get("email") or "").lower(),
+        "stats": {
+            "total_users": total_users,
+            "total_businesses": total_businesses,
+            "total_jobs": total_jobs,
+            "total_clients": total_clients,
+            "total_invoices": total_invoices,
+            "active_timers": active_timers,
+            "plan_counts": plan_counts,
+        },
+        "recent_users": recent_users,
+    }
+
+
+@api_router.get("/admin/drilldown/{kind}")
+async def admin_drilldown(kind: str, current_user: dict = Depends(get_current_user)):
+    if not is_platform_admin(current_user):
+        raise HTTPException(status_code=403, detail="Platform admin access required")
+
+    kind = (kind or "").strip().lower()
+
+    if kind == "users":
+        items = []
+        cursor = db.users.find(
+            {},
+            {
+                "email": 1,
+                "full_name": 1,
+                "business_name": 1,
+                "role": 1,
+                "plan": 1,
+                "created_at": 1,
+            },
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        return {"ok": True, "title": "All Users", "items": items}
+
+    if kind == "businesses":
+        items = []
+        cursor = db.users.find(
+            {
+                "$or": [
+                    {"role": "owner"},
+                    {"user_type": "owner"},
+                    {"account_type": "owner"},
+                    {"business_name": {"$exists": True, "$ne": ""}},
+                ]
+            },
+            {
+                "email": 1,
+                "full_name": 1,
+                "business_name": 1,
+                "role": 1,
+                "plan": 1,
+                "created_at": 1,
+            },
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        return {"ok": True, "title": "Businesses", "items": items}
+
+    if kind == "jobs":
+        items = []
+        cursor = db.jobs.find(
+            {},
+            {
+                "title": 1,
+                "status": 1,
+                "client_name": 1,
+                "customer_name": 1,
+                "assigned_to": 1,
+                "scheduled_date": 1,
+                "created_at": 1,
+            },
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        return {"ok": True, "title": "Jobs", "items": items}
+
+    if kind == "clients":
+        items = []
+        cursor = db.clients.find(
+            {},
+            {
+                "name": 1,
+                "email": 1,
+                "phone": 1,
+                "address": 1,
+                "created_at": 1,
+            },
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        return {"ok": True, "title": "Clients", "items": items}
+
+    if kind == "invoices":
+        items = []
+        cursor = db.invoices.find(
+            {},
+            {
+                "invoice_number": 1,
+                "status": 1,
+                "client_name": 1,
+                "total": 1,
+                "amount": 1,
+                "created_at": 1,
+            },
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        return {"ok": True, "title": "Invoices", "items": items}
+
+    if kind == "timers":
+        items = []
+        try:
+            cursor = db.time_entries.find(
+                {
+                    "$or": [
+                        {"status": "running"},
+                        {"is_running": True},
+                        {"end_time": None},
+                    ]
+                },
+                {
+                    "job_id": 1,
+                    "user_id": 1,
+                    "status": 1,
+                    "start_time": 1,
+                    "end_time": 1,
+                    "created_at": 1,
+                },
+            ).sort("created_at", -1).limit(100)
+            async for row in cursor:
+                items.append(admin_clean(row))
+        except Exception:
+            items = []
+        return {"ok": True, "title": "Active Timers", "items": items}
+
+    if kind == "plans":
+        items = []
+        cursor = db.users.find(
+            {},
+            {
+                "email": 1,
+                "full_name": 1,
+                "business_name": 1,
+                "role": 1,
+                "plan": 1,
+                "created_at": 1,
+            },
+        ).sort("created_at", -1).limit(200)
+        async for row in cursor:
+            clean = admin_clean(row)
+            clean["_group"] = (clean.get("plan") or "other")
+            items.append(clean)
+        return {"ok": True, "title": "Plan Breakdown", "items": items}
+
+    raise HTTPException(status_code=404, detail="Unknown admin drilldown")
+
+
+@api_router.get("/admin/platform", response_class=HTMLResponse)
+async def admin_platform_page():
+    return """
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Churvox Platform Admin</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 18px;
+      background: #08111f;
+      color: #fff;
+      font-family: Inter, Arial, sans-serif;
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .title { font-size: 28px; font-weight: 800; margin: 0 0 6px 0; }
+    .muted { color: rgba(255,255,255,.7); }
+    .card {
+      background: #0f172a;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .tapbox {
+      width: 100%;
+      text-align: left;
+      background: #111827;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding: 16px;
+      cursor: pointer;
+      min-height: 110px;
+    }
+    .tapbox:active { transform: scale(.99); }
+    .label { color: rgba(255,255,255,.72); font-size: 14px; margin-bottom: 8px; }
+    .value { font-size: 30px; font-weight: 800; }
+    .sub { margin-top: 8px; color: #93c5fd; font-size: 12px; }
+    .btn {
+      display: inline-block;
+      background: #2563eb;
+      color: #fff;
+      text-decoration: none;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-weight: 700;
+      border: 0;
+      cursor: pointer;
+    }
+    .item {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 14px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .ok { border-color: rgba(34,197,94,.35); }
+    .error { border-color: rgba(239,68,68,.45); color: #fecaca; }
+    .section-title { font-size: 22px; font-weight: 800; margin: 0 0 8px 0; }
+    .small { font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1 class="title">Platform Admin</h1>
+        <div class="muted">Real app-wide stats for you</div>
+      </div>
+      <button class="btn" id="reloadBtn" type="button">Reload</button>
+    </div>
+
+    <div id="status" class="card">Loading platform admin...</div>
+    <div id="stats" class="grid" style="display:none;"></div>
+    <div id="details" class="card" style="display:none;"></div>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    const statsEl = document.getElementById("stats");
+    const detailsEl = document.getElementById("details");
+
+    function esc(v) {
+      return String(v ?? "").replace(/[&<>"']/g, m => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[m]));
+    }
+
+    function itemHtml(obj) {
+      const entries = Object.entries(obj || {}).filter(([k,v]) => v !== null && v !== undefined && v !== "");
+      const title =
+        obj.full_name ||
+        obj.business_name ||
+        obj.title ||
+        obj.name ||
+        obj.client_name ||
+        obj.customer_name ||
+        obj.invoice_number ||
+        obj.email ||
+        obj.id ||
+        "Record";
+
+      return `
+        <div class="item">
+          <div style="font-weight:800; margin-bottom:8px;">${esc(title)}</div>
+          ${entries.map(([k,v]) => `<div class="small"><span class="muted">${esc(k)}:</span> ${esc(v)}</div>`).join("")}
+        </div>
+      `;
+    }
+
+    async function loadDetails(kind) {
+      detailsEl.style.display = "block";
+      detailsEl.className = "card";
+      detailsEl.innerHTML = "Loading " + esc(kind) + "...";
+
+      try {
+        const res = await fetch("/api/admin/drilldown/" + encodeURIComponent(kind), {
+          credentials: "include"
+        });
+
+        if (!res.ok) {
+          const t = await res.text();
+          throw new Error(t || "Failed to load " + kind);
+        }
+
+        const data = await res.json();
+        const items = data.items || [];
+
+        detailsEl.innerHTML =
+          `<div class="section-title">${esc(data.title || kind)}</div>` +
+          `<div class="muted">Latest ${items.length} records</div>` +
+          (items.length ? items.map(itemHtml).join("") : `<div class="item muted">No records found.</div>`);
+      } catch (err) {
+        detailsEl.className = "card error";
+        detailsEl.textContent = err.message || "Failed to load details";
+      }
+    }
+
+    async function loadAdmin() {
+      statusEl.className = "card";
+      statusEl.textContent = "Loading platform admin...";
+      statsEl.style.display = "none";
+      detailsEl.style.display = "none";
+      detailsEl.innerHTML = "";
+
+      try {
+        const res = await fetch("/api/admin/stats", {
+          credentials: "include"
+        });
+
+        if (res.status === 403) {
+          statusEl.className = "card error";
+          statusEl.innerHTML = "Platform admin access blocked. Make sure your login email is in <b>PLATFORM_ADMIN_EMAILS</b> on Render backend.";
+          return;
+        }
+
+        if (!res.ok) {
+          const t = await res.text();
+          throw new Error(t || "Failed to load admin stats");
+        }
+
+        const data = await res.json();
+        const s = data.stats || {};
+        const plans = s.plan_counts || {};
+
+        statusEl.className = "card ok";
+        statusEl.innerHTML = "Logged in as <b>" + esc(data.admin_email || "admin") + "</b>";
+
+        const cards = [
+          ["users", "Total Users", s.total_users || 0],
+          ["businesses", "Businesses", s.total_businesses || 0],
+          ["jobs", "Jobs", s.total_jobs || 0],
+          ["clients", "Clients", s.total_clients || 0],
+          ["invoices", "Invoices", s.total_invoices || 0],
+          ["timers", "Active Timers", s.active_timers || 0],
+          ["plans", "Solo / Team / Pro / Ent", `${plans.solo || 0} / ${plans.team || 0} / ${plans.pro || 0} / ${plans.enterprise || 0}`]
+        ];
+
+        statsEl.innerHTML = cards.map(([kind, label, value]) => `
+          <button class="tapbox" type="button" data-kind="${esc(kind)}">
+            <div class="label">${esc(label)}</div>
+            <div class="value">${esc(value)}</div>
+            <div class="sub">Tap to open</div>
+          </button>
+        `).join("");
+
+        statsEl.style.display = "grid";
+
+        document.querySelectorAll(".tapbox").forEach(btn => {
+          btn.addEventListener("click", () => loadDetails(btn.dataset.kind));
+        });
+
+        loadDetails("users");
+      } catch (err) {
+        statusEl.className = "card error";
+        statusEl.textContent = err.message || "Failed to load platform admin";
+      }
+    }
+
+    document.getElementById("reloadBtn").addEventListener("click", loadAdmin);
+    loadAdmin();
+  </script>
+</body>
+</html>
+"""
 
 app.include_router(api_router)
 
