@@ -1,39 +1,19 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 
+function getOwnerSession() {
+  try {
+    return JSON.parse(localStorage.getItem("owner_portal_session") || "null");
+  } catch {
+    return null;
+  }
+}
+
 export default function PlatformAdminRoute({ children }) {
-  let hasPlatformAccess = false;
-  let user = null;
+  const session = getOwnerSession();
 
-  try {
-    hasPlatformAccess = localStorage.getItem("platform_owner_access") === "true";
-  } catch (e) {
-    hasPlatformAccess = false;
-  }
-
-  try {
-    const rawUser =
-      localStorage.getItem("user") ||
-      sessionStorage.getItem("user");
-    user = rawUser ? JSON.parse(rawUser) : null;
-  } catch (e) {
-    user = null;
-  }
-
-  const role = String(
-    user?.role ||
-    user?.user?.role ||
-    ""
-  ).toLowerCase();
-
-  const isAllowed =
-    hasPlatformAccess ||
-    role === "admin" ||
-    role === "super_admin" ||
-    role === "superadmin";
-
-  if (!isAllowed) {
-    return <Navigate to="/platform-unlock" replace />;
+  if (!session?.is_owner) {
+    return <Navigate to="/owner/login" replace />;
   }
 
   return children;

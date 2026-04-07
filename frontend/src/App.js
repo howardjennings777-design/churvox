@@ -37,6 +37,8 @@ import AccountDeletionPage from "./pages/legal/AccountDeletionPage";
 import AdminUsagePage from "./pages/AdminUsagePage";
 import PlatformAdminRoute from "./components/admin/PlatformAdminRoute";
 import PlatformUnlock from "./pages/admin/PlatformUnlock";
+import OwnerLoginPage from "./pages/owner/OwnerLoginPage";
+import OwnerDashboardPage from "./pages/owner/OwnerDashboardPage";
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="min-h-screen bg-churvox-bg flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" /></div>;
@@ -56,8 +58,7 @@ function App() {
         <Toaster position="top-right" richColors />
         <Routes>
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-          <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
-          <Route path="/admin/login" element={<PublicRoute><AdminLoginPage /></PublicRoute>} />
+          <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} /></PublicRoute>} />
           <Route path="/invite/setup/:token" element={<InviteSetupPage />} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
           <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
@@ -89,17 +90,36 @@ function App() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/account-deletion" element={<AccountDeletionPage />} />
 
-          <Route path="/" element={<Navigate to="/dashboard" />} />        <Route path="/platform-dashboard" element={<PlatformAdminRoute><PlatformOwnerDashboard /></PlatformAdminRoute>} />
+          <Route path="/" element={<Navigate to="/dashboard" />} /></PlatformAdminRoute>} />
 
-          <Route path="*" element={<Navigate to="/dashboard" />} />
-          <Route path="/admin/usage" element={<AdminUsagePage />} />
+          <Route path="*" element={<Navigate to="/dashboard" />} />} />
 
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/terms-of-service" element={<TermsOfServicePage />} />
-          <Route path="/account-deletion" element={<AccountDeletionPage />} />
+          <Route path="/account-deletion" element={<AccountDeletionPage />} />} />
 
-                <Route path="/platform-unlock" element={<PlatformUnlock />} />
-</Routes>
+          <Route path="/owner/login" element={<OwnerLoginPage />} />
+          <Route
+            path="/owner/dashboard"
+            element={
+              <PlatformAdminRoute>
+                <OwnerDashboardPage />
+              </PlatformAdminRoute>
+            }
+          />
+          <Route path="/admin/login" element={<Navigate to="/owner/login" replace />} />
+          <Route path="/platform-unlock" element={<Navigate to="/owner/login" replace />} />
+          <Route path="/platform-dashboard" element={<Navigate to="/owner/dashboard" replace />} />
+          <Route
+            path="/admin/usage"
+            element={
+              <PlatformAdminRoute>
+                <AdminUsagePage />
+              </PlatformAdminRoute>
+            }
+          />
+
+        </Routes>
       </AuthProvider>
     </BrowserRouter>
   );
