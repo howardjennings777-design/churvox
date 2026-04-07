@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Churvox Owner Platform</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: #08111f;
+      color: #ffffff;
+      padding: 18px;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .btn {
+      display: inline-block;
+      background: #2563eb;
+      color: #fff;
+      text-decoration: none;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-weight: 700;
+      border: 0;
+      cursor: pointer;
+    }
+    .muted { color: rgba(255,255,255,.72); }
+    .card {
+      background: #0f172a;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .stat {
+      background: #111827;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding: 16px;
+    }
+    .stat .label {
+      color: rgba(255,255,255,.7);
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .stat .value {
+      font-size: 30px;
+      font-weight: 800;
+    }
+    .user {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 14px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .error {
+      border-color: rgba(239,68,68,.5);
+      color: #fecaca;
+    }
+    .ok {
+      border-color: rgba(34,197,94,.35);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1 style="margin:0 0 8px 0;">Owner Platform</h1>
+        <div class="muted">Separate safe owner page for Churvox</div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a class="btn" href="/dashboard">Back to App</a>
+        <button class="btn" id="reloadBtn" type="button">Reload</button>
+      </div>
+    </div>
+
+    <div id="status" class="card">Loading owner stats...</div>
+    <div id="stats" class="grid" style="display:none;"></div>
+    <div id="users" class="card" style="display:none;"></div>
+  </div>
+
+  <script>
+    async function loadOwner() {
+      const status = document.getElementById("status");
+      const stats = document.getElementById("stats");
+      const users = document.getElementById("users");
+
+      status.className = "card";
+      status.textContent = "Loading owner stats...";
+      stats.style.display = "none";
+      users.style.display = "none";
+      stats.innerHTML = "";
+      users.innerHTML = "";
+
+      try {
+        const res = await fetch("/api/owner/stats", {
+          method: "GET",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" }
+        });
+
+        if (res.status === 403) {
+          status.className = "card error";
+          status.innerHTML = "This login is not allowed into Owner Platform yet.<br><br>Make sure you are signed in as <b>hello@churvox.com</b> or add your email to <b>PLATFORM_OWNER_EMAILS</b> in Render backend env.";
+          return;
+        }
+
+        if (!res.ok) {
+          const t = await res.text();
+          throw new Error(t || "Failed to load owner stats");
+        }
+
+        const data = await res.json();
+        const s = data.stats || {};
+
+        status.className = "card ok";
+        status.innerHTML = "Logged in as <b>" + (data.owner_email || "owner") + "</b>";
+
+        const statItems = [
+          ["Total Users", s.total_users || 0],
+          ["Businesses", s.total_businesses || 0],
+          ["Jobs", s.total_jobs || 0],
+          ["Clients", s.total_clients || 0],
+          ["Invoices", s.total_invoices || 0],
+          ["Active Timers", s.active_timers || 0]
+        ];
+
+        stats.innerHTML = statItems.map(([label, value]) => `
+          <div class="stat">
+            <div class="label">${label}</div>
+            <div class="value">${value}</div>
+          </div>
+        `).join("");
+        stats.style.display = "grid";
+
+        const recent = data.recent_users || [];
+        users.style.display = "block";
+        users.innerHTML = "<h2 style='margin-top:0;'>Recent Users</h2>" +
+          (recent.length ? recent.map(u => `
+            <div class="user">
+              <div style="font-weight:700;">${u.full_name || u.email || "User"}</div>
+              <div class="muted">${u.email || ""}</div>
+              <div class="muted">${u.business_name || "No business"} • ${u.role || "user"} • ${u.plan || "solo"}</div>
+            </div>
+          `).join("") : "<div class='muted'>No recent users found.</div>");
+      } catch (err) {
+        status.className = "card error";
+        status.textContent = err.message || "Failed to load owner stats";
+      }
+    }
+
+    document.getElementById("reloadBtn").addEventListener("click", loadOwner);
+    loadOwner();
+  </script>
+</body>
+</html>
