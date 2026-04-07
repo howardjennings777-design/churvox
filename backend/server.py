@@ -3500,6 +3500,36 @@ async def delete_my_account(response: Response, current_user: dict = Depends(get
     }
 
 
+
+
+OWNER_BOOTSTRAP_EMAIL = "hello@churvox.com"
+OWNER_BOOTSTRAP_PASSWORD = "ChurvoxOwner123!"
+
+async def ensure_owner_account():
+    owner = await db.users.find_one({"email": OWNER_BOOTSTRAP_EMAIL.lower()})
+    password_hash = get_password_hash(OWNER_BOOTSTRAP_PASSWORD)
+
+    if owner:
+        await db.users.update_one(
+            {"_id": owner["_id"]},
+            {"$set": {
+                "email": OWNER_BOOTSTRAP_EMAIL.lower(),
+                "password_hash": password_hash,
+                "role": "owner",
+                "is_admin": True,
+                "full_name": "App Owner"
+            }}
+        )
+    else:
+        await db.users.insert_one({
+            "email": OWNER_BOOTSTRAP_EMAIL.lower(),
+            "password_hash": password_hash,
+            "role": "owner",
+            "is_admin": True,
+            "full_name": "App Owner",
+            "business_id": None
+        })
+
 app.include_router(api_router)
 
 # CORS
