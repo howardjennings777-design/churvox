@@ -50,6 +50,7 @@ def normalize_job_status_for_response(job: dict):
 
 
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -304,6 +305,8 @@ PLAN_PRICE_IDS = {
 app = FastAPI(title="Churvox API")
 
 
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
 
 app.add_middleware(
