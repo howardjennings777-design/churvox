@@ -61,6 +61,7 @@ function PlansPage() {
       price: '$240',
       description: 'For larger businesses needing stronger systems.',
       clients: '50 users included',
+    extraUsers: '$100 per additional 50 users',
       trial: '14-day free trial',
       popular: false,
       features: [
