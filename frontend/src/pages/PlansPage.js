@@ -61,15 +61,12 @@ function PlansPage() {
       price: '$240',
       description: 'For larger businesses needing stronger systems.',
       clients: '50 users included',
-        ...(plan.extraUsers ? [plan.extraUsers] : []),
-    extraUsers: '$100 per additional 50 users',
     extraUsers: '$100 per additional 50 users',
       trial: '14-day free trial',
       popular: false,
       features: [
         'Everything in Pro',
         '50 users included',
-        ...(plan.extraUsers ? [plan.extraUsers] : []),
         'MYOB features',
         'Priority support'
       ]
