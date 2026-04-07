@@ -100,7 +100,11 @@ function App() {
 
                 <Route path="/platform-unlock" element={<PlatformUnlock />} />
 
-        <Route path="/owner/login" element={<AdminLoginPage />} />
+        <Route path="/owner"
+          element={<AdminLoginPage />}
+        />
+        <Route
+          path="/owner/login" element={<AdminLoginPage />} />
         <Route
           path="/owner/dashboard"
           element={

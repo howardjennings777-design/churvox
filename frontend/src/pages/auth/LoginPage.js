@@ -8,6 +8,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 
+
+const getPostLoginPath = (payload = {}) => {
+  const user = payload?.user || payload || {};
+  const email = String(user?.email || payload?.email || "").trim().toLowerCase();
+  const role = String(user?.role || payload?.role || "").trim().toLowerCase();
+  const isAdmin = user?.is_admin === true || payload?.is_admin === true;
+  const isOwner =
+    email === "hello@churvox.com" ||
+    role === "owner" ||
+    role === "superadmin" ||
+    role === "super_admin" ||
+    role === "admin" ||
+    isAdmin;
+
+  return isOwner ? "/owner" : "/dashboard";
+};
+
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -24,7 +42,7 @@ export default function LoginPage() {
     try {
       const result = await login(email, password);
       if (result?.token) {
-        navigate("/dashboard");
+        navigate(getPostLoginPath(response?.data || data || result || user || {}));
       } else {
         setError("Login failed. Please try again.");
       }
