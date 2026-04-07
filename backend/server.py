@@ -3346,31 +3346,68 @@ async def admin_drilldown(kind: str, current_user: dict = Depends(get_current_us
 async def admin_platform_page():
     return """
 <!doctype html>
-<html lang="en">
+<html lang=\"en\">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset=\"UTF-8\" />
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, viewport-fit=cover\" />
   <title>Churvox Platform Admin</title>
   <style>
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; }
     body {
-      margin: 0;
-      padding: 18px;
       background: #08111f;
-      color: #fff;
+      color: #ffffff;
       font-family: Inter, Arial, sans-serif;
+      min-height: 100vh;
     }
-    .wrap { max-width: 1200px; margin: 0 auto; }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 16px 28px;
+    }
     .top {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
       flex-wrap: wrap;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
-    .title { font-size: 28px; font-weight: 800; margin: 0 0 6px 0; }
-    .muted { color: rgba(255,255,255,.7); }
+    .title {
+      font-size: 30px;
+      font-weight: 800;
+      margin: 0 0 6px 0;
+    }
+    .muted {
+      color: rgba(255,255,255,.72);
+    }
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    .btn {
+      appearance: none;
+      border: 0;
+      outline: 0;
+      background: #2563eb;
+      color: #fff;
+      text-decoration: none;
+      padding: 14px 16px;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 15px;
+      cursor: pointer;
+      min-height: 52px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn.secondary {
+      background: #1f2937;
+      border: 1px solid rgba(255,255,255,.08);
+    }
     .card {
       background: #0f172a;
       border: 1px solid rgba(255,255,255,.08);
@@ -3378,9 +3415,16 @@ async def admin_platform_page():
       padding: 16px;
       margin-bottom: 14px;
     }
+    .ok {
+      border-color: rgba(34,197,94,.35);
+    }
+    .error {
+      border-color: rgba(239,68,68,.45);
+      color: #fecaca;
+    }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
       gap: 12px;
       margin-bottom: 14px;
     }
@@ -3390,25 +3434,58 @@ async def admin_platform_page():
       background: #111827;
       color: #fff;
       border: 1px solid rgba(255,255,255,.08);
-      border-radius: 16px;
-      padding: 16px;
+      border-radius: 18px;
+      padding: 18px;
       cursor: pointer;
-      min-height: 110px;
+      min-height: 122px;
+      display: block;
     }
-    .tapbox:active { transform: scale(.99); }
-    .label { color: rgba(255,255,255,.72); font-size: 14px; margin-bottom: 8px; }
-    .value { font-size: 30px; font-weight: 800; }
-    .sub { margin-top: 8px; color: #93c5fd; font-size: 12px; }
-    .btn {
-      display: inline-block;
-      background: #2563eb;
-      color: #fff;
-      text-decoration: none;
-      padding: 12px 16px;
-      border-radius: 12px;
+    .tapbox.active {
+      border-color: rgba(37,99,235,.9);
+      box-shadow: 0 0 0 2px rgba(37,99,235,.18) inset;
+    }
+    .label {
+      color: rgba(255,255,255,.72);
+      font-size: 14px;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .value {
+      font-size: 32px;
+      line-height: 1.1;
+      font-weight: 900;
+      word-break: break-word;
+    }
+    .sub {
+      margin-top: 10px;
+      color: #93c5fd;
+      font-size: 13px;
       font-weight: 700;
-      border: 0;
+    }
+    .quick-nav {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .quick-chip {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,.08);
+      background: #111827;
+      color: #fff;
+      border-radius: 999px;
+      padding: 12px 14px;
+      min-height: 46px;
+      font-weight: 700;
       cursor: pointer;
+    }
+    .section-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin: 0 0 8px 0;
+    }
+    .small {
+      font-size: 13px;
     }
     .item {
       background: rgba(255,255,255,.04);
@@ -3417,41 +3494,87 @@ async def admin_platform_page():
       padding: 12px;
       margin-top: 10px;
     }
-    .ok { border-color: rgba(34,197,94,.35); }
-    .error { border-color: rgba(239,68,68,.45); color: #fecaca; }
-    .section-title { font-size: 22px; font-weight: 800; margin: 0 0 8px 0; }
-    .small { font-size: 13px; }
+    .item-title {
+      font-weight: 800;
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+    .row {
+      margin-top: 4px;
+      line-height: 1.35;
+    }
+    .sticky-top {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: linear-gradient(180deg, rgba(8,17,31,1) 0%, rgba(8,17,31,.98) 80%, rgba(8,17,31,0) 100%);
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: 8px;
+    }
+    @media (max-width: 640px) {
+      .wrap { padding: 12px 12px 24px; }
+      .title { font-size: 26px; }
+      .grid { grid-template-columns: 1fr 1fr; }
+      .tapbox { min-height: 116px; padding: 16px; }
+      .value { font-size: 28px; }
+      .toolbar .btn { flex: 1 1 auto; }
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div>
-        <h1 class="title">Platform Admin</h1>
-        <div class="muted">Real app-wide stats for you</div>
+  <div class=\"wrap\">
+    <div class=\"sticky-top\">
+      <div class=\"top\">
+        <div>
+          <h1 class=\"title\">Platform Admin</h1>
+          <div class=\"muted\">App owner view with real stats and easy tap boxes</div>
+        </div>
       </div>
-      <button class="btn" id="reloadBtn" type="button">Reload</button>
+
+      <div class=\"toolbar\">
+        <button class=\"btn\" id=\"reloadBtn\" type=\"button\">Reload Stats</button>
+        <button class=\"btn secondary\" id=\"openUsersBtn\" type=\"button\">Open Users</button>
+        <button class=\"btn secondary\" id=\"openBusinessesBtn\" type=\"button\">Open Businesses</button>
+      </div>
     </div>
 
-    <div id="status" class="card">Loading platform admin...</div>
-    <div id="stats" class="grid" style="display:none;"></div>
-    <div id="details" class="card" style="display:none;"></div>
+    <div id=\"status\" class=\"card\">Loading platform admin...</div>
+
+    <div class=\"quick-nav\" id=\"quickNav\" style=\"display:none;\">
+      <button class=\"quick-chip\" data-kind=\"users\" type=\"button\">Users</button>
+      <button class=\"quick-chip\" data-kind=\"businesses\" type=\"button\">Businesses</button>
+      <button class=\"quick-chip\" data-kind=\"jobs\" type=\"button\">Jobs</button>
+      <button class=\"quick-chip\" data-kind=\"clients\" type=\"button\">Clients</button>
+      <button class=\"quick-chip\" data-kind=\"invoices\" type=\"button\">Invoices</button>
+      <button class=\"quick-chip\" data-kind=\"timers\" type=\"button\">Timers</button>
+      <button class=\"quick-chip\" data-kind=\"plans\" type=\"button\">Plans</button>
+    </div>
+
+    <div id=\"stats\" class=\"grid\" style=\"display:none;\"></div>
+    <div id=\"details\" class=\"card\" style=\"display:none;\"></div>
   </div>
 
   <script>
     const statusEl = document.getElementById("status");
     const statsEl = document.getElementById("stats");
     const detailsEl = document.getElementById("details");
+    const quickNavEl = document.getElementById("quickNav");
+    let currentKind = "users";
 
     function esc(v) {
-      return String(v ?? "").replace(/[&<>"']/g, m => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      return String(v ?? "").replace(/[&<>\\"']/g, m => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;","\\\"":"&quot;","'":"&#39;"
       }[m]));
     }
 
-    function itemHtml(obj) {
-      const entries = Object.entries(obj || {}).filter(([k,v]) => v !== null && v !== undefined && v !== "");
-      const title =
+    function setActiveBox(kind) {
+      document.querySelectorAll(".tapbox").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.kind === kind);
+      });
+    }
+
+    function itemTitle(obj) {
+      return (
         obj.full_name ||
         obj.business_name ||
         obj.title ||
@@ -3461,17 +3584,23 @@ async def admin_platform_page():
         obj.invoice_number ||
         obj.email ||
         obj.id ||
-        "Record";
+        "Record"
+      );
+    }
 
+    function itemHtml(obj) {
+      const entries = Object.entries(obj || {}).filter(([k,v]) => v !== null && v !== undefined && v !== "");
       return `
-        <div class="item">
-          <div style="font-weight:800; margin-bottom:8px;">${esc(title)}</div>
-          ${entries.map(([k,v]) => `<div class="small"><span class="muted">${esc(k)}:</span> ${esc(v)}</div>`).join("")}
+        <div class=\"item\">
+          <div class=\"item-title\">${esc(itemTitle(obj))}</div>
+          ${entries.map(([k,v]) => `<div class=\"row small\"><span class=\"muted\">${esc(k)}:</span> ${esc(v)}</div>`).join("")}
         </div>
       `;
     }
 
     async function loadDetails(kind) {
+      currentKind = kind;
+      setActiveBox(kind);
       detailsEl.style.display = "block";
       detailsEl.className = "card";
       detailsEl.innerHTML = "Loading " + esc(kind) + "...";
@@ -3490,30 +3619,56 @@ async def admin_platform_page():
         const items = data.items || [];
 
         detailsEl.innerHTML =
-          `<div class="section-title">${esc(data.title || kind)}</div>` +
-          `<div class="muted">Latest ${items.length} records</div>` +
-          (items.length ? items.map(itemHtml).join("") : `<div class="item muted">No records found.</div>`);
+          `<div class=\"section-title\">${esc(data.title || kind)}</div>` +
+          `<div class=\"muted\">Showing latest ${items.length} records</div>` +
+          (items.length ? items.map(itemHtml).join("") : `<div class=\"item muted\">No records found.</div>`);
+
+        detailsEl.scrollIntoView({ behavior: "smooth", block: "start" });
       } catch (err) {
         detailsEl.className = "card error";
         detailsEl.textContent = err.message || "Failed to load details";
       }
     }
 
+    function buildCards(stats) {
+      const plans = stats.plan_counts || {};
+      const cards = [
+        ["users", "Total Users", stats.total_users || 0],
+        ["businesses", "Businesses", stats.total_businesses || 0],
+        ["jobs", "Jobs", stats.total_jobs || 0],
+        ["clients", "Clients", stats.total_clients || 0],
+        ["invoices", "Invoices", stats.total_invoices || 0],
+        ["timers", "Active Timers", stats.active_timers || 0],
+        ["plans", "Plans", `${plans.solo || 0}/${plans.team || 0}/${plans.pro || 0}/${plans.enterprise || 0}`]
+      ];
+
+      statsEl.innerHTML = cards.map(([kind, label, value]) => `
+        <button class=\"tapbox\" type=\"button\" data-kind=\"${esc(kind)}\">
+          <div class=\"label\">${esc(label)}</div>
+          <div class=\"value\">${esc(value)}</div>
+          <div class=\"sub\">Tap to open</div>
+        </button>
+      `).join("");
+
+      document.querySelectorAll(".tapbox").forEach(btn => {
+        btn.addEventListener("click", () => loadDetails(btn.dataset.kind));
+      });
+    }
+
     async function loadAdmin() {
       statusEl.className = "card";
       statusEl.textContent = "Loading platform admin...";
       statsEl.style.display = "none";
+      quickNavEl.style.display = "none";
       detailsEl.style.display = "none";
       detailsEl.innerHTML = "";
 
       try {
-        const res = await fetch("/api/admin/stats", {
-          credentials: "include"
-        });
+        const res = await fetch("/api/admin/stats", { credentials: "include" });
 
         if (res.status === 403) {
           statusEl.className = "card error";
-          statusEl.innerHTML = "Platform admin access blocked. Make sure your login email is in <b>PLATFORM_ADMIN_EMAILS</b> on Render backend.";
+          statusEl.innerHTML = "Platform admin access blocked.";
           return;
         }
 
@@ -3523,37 +3678,18 @@ async def admin_platform_page():
         }
 
         const data = await res.json();
-        const s = data.stats || {};
-        const plans = s.plan_counts || {};
+        const stats = data.stats || {};
 
         statusEl.className = "card ok";
-        statusEl.innerHTML = "Logged in as <b>" + esc(data.admin_email || "admin") + "</b>";
+        statusEl.innerHTML =
+          "Logged in as <b>" + esc(data.admin_email || "admin") + "</b><br>" +
+          "<span class=\"muted\">Tap any box below to open real records.</span>";
 
-        const cards = [
-          ["users", "Total Users", s.total_users || 0],
-          ["businesses", "Businesses", s.total_businesses || 0],
-          ["jobs", "Jobs", s.total_jobs || 0],
-          ["clients", "Clients", s.total_clients || 0],
-          ["invoices", "Invoices", s.total_invoices || 0],
-          ["timers", "Active Timers", s.active_timers || 0],
-          ["plans", "Solo / Team / Pro / Ent", `${plans.solo || 0} / ${plans.team || 0} / ${plans.pro || 0} / ${plans.enterprise || 0}`]
-        ];
-
-        statsEl.innerHTML = cards.map(([kind, label, value]) => `
-          <button class="tapbox" type="button" data-kind="${esc(kind)}">
-            <div class="label">${esc(label)}</div>
-            <div class="value">${esc(value)}</div>
-            <div class="sub">Tap to open</div>
-          </button>
-        `).join("");
-
+        buildCards(stats);
         statsEl.style.display = "grid";
+        quickNavEl.style.display = "flex";
 
-        document.querySelectorAll(".tapbox").forEach(btn => {
-          btn.addEventListener("click", () => loadDetails(btn.dataset.kind));
-        });
-
-        loadDetails("users");
+        loadDetails(currentKind || "users");
       } catch (err) {
         statusEl.className = "card error";
         statusEl.textContent = err.message || "Failed to load platform admin";
@@ -3561,6 +3697,13 @@ async def admin_platform_page():
     }
 
     document.getElementById("reloadBtn").addEventListener("click", loadAdmin);
+    document.getElementById("openUsersBtn").addEventListener("click", () => loadDetails("users"));
+    document.getElementById("openBusinessesBtn").addEventListener("click", () => loadDetails("businesses"));
+
+    document.querySelectorAll(".quick-chip").forEach(btn => {
+      btn.addEventListener("click", () => loadDetails(btn.dataset.kind));
+    });
+
     loadAdmin();
   </script>
 </body>
