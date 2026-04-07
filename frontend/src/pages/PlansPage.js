@@ -241,7 +241,7 @@ function PlansPage() {
 
                 <div className="rounded-2xl bg-slate-800/60 border border-slate-700 px-4 py-3 mb-5">
                   <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">
-                    Client allowance
+                    User allowance
                   </div>
                   <div className="text-sm font-medium text-white">{plan.clients}</div>
                 </div>
