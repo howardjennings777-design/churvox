@@ -58,7 +58,8 @@ function PlansPage() {
     {
       key: 'enterprise',
       name: 'Enterprise',
-      price: '$240',
+      price: '$240
+Need more staff? Add 50 extra users for $100',
       description: 'For larger businesses needing stronger systems.',
       clients: '50 users included',
       trial: '14-day free trial',
