@@ -3342,6 +3342,9 @@ async def admin_drilldown(kind: str, current_user: dict = Depends(get_current_us
     raise HTTPException(status_code=404, detail="Unknown admin drilldown")
 
 
+
+
+
 @api_router.get("/admin/platform", response_class=HTMLResponse)
 async def admin_platform_page(request: Request, current_user: dict = Depends(get_current_user)):
     if not is_platform_admin(current_user):
@@ -3462,7 +3465,7 @@ async def admin_platform_page(request: Request, current_user: dict = Depends(get
         ).sort("created_at", -1).limit(200)
         async for row in cursor:
             clean = admin_clean(row)
-            clean["_group"] = (clean.get("plan") or "other")
+            clean["_group"] = clean.get("plan") or "other"
             items.append(clean)
         title = "Plan Breakdown"
 
@@ -3496,8 +3499,8 @@ async def admin_platform_page(request: Request, current_user: dict = Depends(get
             rows.append(f"<div class='row'><span class='muted'>{esc(k)}:</span> {esc(v)}</div>")
         return f"<div class='item'><div class='item-title'>{esc(title_text)}</div>{''.join(rows)}</div>"
 
-    def stat_box(label, value, key, active_key):
-        active = " active" if key == active_key else ""
+    def stat_box(label, value, key):
+        active = " active" if key == kind else ""
         return f"""
         <a class="tapbox{active}" href="/api/admin/platform?kind={esc(key)}">
           <div class="label">{esc(label)}</div>
@@ -3508,7 +3511,7 @@ async def admin_platform_page(request: Request, current_user: dict = Depends(get
 
     details_html = "".join(detail_card(x) for x in items) or "<div class='item muted'>No records found.</div>"
 
-    html = f"""
+    return f"""
 <!doctype html>
 <html lang="en">
 <head>
@@ -3519,16 +3522,15 @@ async def admin_platform_page(request: Request, current_user: dict = Depends(get
     * {{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }}
     body {{ margin:0; background:#08111f; color:#fff; font-family:Inter, Arial, sans-serif; }}
     .wrap {{ max-width:1200px; margin:0 auto; padding:16px 16px 28px; }}
-    .top {{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }}
     .title {{ font-size:30px; font-weight:800; margin:0 0 6px 0; }}
     .muted {{ color:rgba(255,255,255,.72); }}
-    .toolbar {{ display:flex; gap:10px; flex-wrap:wrap; width:100%; }}
-    .btn {{ appearance:none; border:0; outline:0; background:#2563eb; color:#fff; text-decoration:none; padding:14px 16px; border-radius:14px; font-weight:800; font-size:15px; cursor:pointer; min-height:52px; display:inline-flex; align-items:center; justify-content:center; }}
+    .toolbar {{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }}
+    .btn {{ text-decoration:none; background:#2563eb; color:#fff; padding:14px 16px; border-radius:14px; font-weight:800; min-height:52px; display:inline-flex; align-items:center; justify-content:center; }}
     .btn.secondary {{ background:#1f2937; border:1px solid rgba(255,255,255,.08); }}
     .card {{ background:#0f172a; border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:16px; margin-bottom:14px; }}
-    .ok {{ border-color: rgba(34,197,94,.35); }}
+    .ok {{ border-color:rgba(34,197,94,.35); }}
     .grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; margin-bottom:14px; }}
-    .tapbox {{ width:100%; text-align:left; background:#111827; color:#fff; border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:18px; cursor:pointer; min-height:122px; display:block; text-decoration:none; }}
+    .tapbox {{ width:100%; text-align:left; background:#111827; color:#fff; border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:18px; min-height:122px; display:block; text-decoration:none; }}
     .tapbox.active {{ border-color:rgba(37,99,235,.9); box-shadow:0 0 0 2px rgba(37,99,235,.18) inset; }}
     .label {{ color:rgba(255,255,255,.72); font-size:14px; margin-bottom:10px; font-weight:600; }}
     .value {{ font-size:32px; line-height:1.1; font-weight:900; word-break:break-word; }}
@@ -3537,36 +3539,27 @@ async def admin_platform_page(request: Request, current_user: dict = Depends(get
     .quick-chip {{ text-decoration:none; border:1px solid rgba(255,255,255,.08); background:#111827; color:#fff; border-radius:999px; padding:12px 14px; min-height:46px; font-weight:700; display:inline-flex; align-items:center; }}
     .quick-chip.active {{ border-color:rgba(37,99,235,.9); }}
     .section-title {{ font-size:22px; font-weight:800; margin:0 0 8px 0; }}
-    .small, .row {{ font-size:13px; }}
     .item {{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:12px; margin-top:10px; }}
     .item-title {{ font-weight:800; margin-bottom:8px; font-size:15px; }}
-    .row {{ margin-top:4px; line-height:1.35; }}
-    .sticky-top {{ position:sticky; top:0; z-index:10; background:linear-gradient(180deg, rgba(8,17,31,1) 0%, rgba(8,17,31,.98) 80%, rgba(8,17,31,0) 100%); padding-top:env(safe-area-inset-top); padding-bottom:8px; }}
+    .row {{ margin-top:4px; line-height:1.35; font-size:13px; }}
     @media (max-width:640px) {{
       .wrap {{ padding:12px 12px 24px; }}
       .title {{ font-size:26px; }}
       .grid {{ grid-template-columns:1fr 1fr; }}
       .tapbox {{ min-height:116px; padding:16px; }}
       .value {{ font-size:28px; }}
-      .toolbar .btn {{ flex:1 1 auto; }}
     }}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="sticky-top">
-      <div class="top">
-        <div>
-          <h1 class="title">Platform Admin</h1>
-          <div class="muted">Real app-wide stats for app owner</div>
-        </div>
-      </div>
+    <h1 class="title">Platform Admin</h1>
+    <div class="muted" style="margin-bottom:14px;">Real app-wide stats for app owner</div>
 
-      <div class="toolbar">
-        <a class="btn" href="/api/admin/platform">Reload Stats</a>
-        <a class="btn secondary" href="/api/admin/platform?kind=users">Open Users</a>
-        <a class="btn secondary" href="/api/admin/platform?kind=businesses">Open Businesses</a>
-      </div>
+    <div class="toolbar">
+      <a class="btn" href="/api/admin/platform">Reload Stats</a>
+      <a class="btn secondary" href="/api/admin/platform?kind=users">Users</a>
+      <a class="btn secondary" href="/api/admin/platform?kind=businesses">Businesses</a>
     </div>
 
     <div class="card ok">
@@ -3585,13 +3578,13 @@ async def admin_platform_page(request: Request, current_user: dict = Depends(get
     </div>
 
     <div class="grid">
-      {stat_box("Total Users", total_users, "users", kind)}
-      {stat_box("Businesses", total_businesses, "businesses", kind)}
-      {stat_box("Jobs", total_jobs, "jobs", kind)}
-      {stat_box("Clients", total_clients, "clients", kind)}
-      {stat_box("Invoices", total_invoices, "invoices", kind)}
-      {stat_box("Active Timers", active_timers, "timers", kind)}
-      {stat_box("Plans", f"{plan_counts['solo']}/{plan_counts['team']}/{plan_counts['pro']}/{plan_counts['enterprise']}", "plans", kind)}
+      {stat_box("Total Users", total_users, "users")}
+      {stat_box("Businesses", total_businesses, "businesses")}
+      {stat_box("Jobs", total_jobs, "jobs")}
+      {stat_box("Clients", total_clients, "clients")}
+      {stat_box("Invoices", total_invoices, "invoices")}
+      {stat_box("Active Timers", active_timers, "timers")}
+      {stat_box("Plans", f"{plan_counts['solo']}/{plan_counts['team']}/{plan_counts['pro']}/{plan_counts['enterprise']}", "plans")}
     </div>
 
     <div class="card">
@@ -3603,7 +3596,6 @@ async def admin_platform_page(request: Request, current_user: dict = Depends(get
 </body>
 </html>
 """
-    return html
 
 app.include_router(api_router)
 
