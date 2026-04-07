@@ -268,6 +268,38 @@ JWT_ALGORITHM = "HS256"
 DEFAULT_GST_RATE = float(os.environ.get('DEFAULT_GST_RATE', '15'))
 
 
+PLATFORM_ADMIN_EMAILS = [
+    x.strip().lower()
+    for x in os.environ.get("PLATFORM_ADMIN_EMAILS", "hello@churvox.com").split(",")
+    if x.strip()
+]
+
+def is_platform_admin(user: dict) -> bool:
+    if not user:
+        return False
+    email = (user.get("email") or "").strip().lower()
+    return user.get("is_platform_admin") is True or email in PLATFORM_ADMIN_EMAILS
+
+def admin_clean(doc: dict):
+    if not doc:
+        return {}
+    out = {}
+    for k, v in doc.items():
+        if k == "_id":
+            out["id"] = str(v)
+            continue
+        try:
+            if hasattr(v, "isoformat"):
+                out[k] = v.isoformat()
+            elif k.endswith("_id"):
+                out[k] = str(v)
+            else:
+                out[k] = v
+        except Exception:
+            out[k] = str(v)
+    if "id" not in out and doc.get("_id") is not None:
+        out["id"] = str(doc.get("_id"))
+    return out
 
 
 PLATFORM_OWNER_EMAILS = [
@@ -3082,52 +3114,6 @@ async def get_owner_stats(current_user: dict = Depends(get_current_user)):
 
 
 
-
-
-
-
-
-
-
-
-PLATFORM_ADMIN_EMAILS = [
-    x.strip().lower()
-    for x in os.environ.get("PLATFORM_ADMIN_EMAILS", "hello@churvox.com").split(",")
-    if x.strip()
-]
-
-def is_platform_admin(user: dict) -> bool:
-    if not user:
-        return False
-    email = (user.get("email") or "").strip().lower()
-    if email == "hello@churvox.com":
-        return True
-    if user.get("is_platform_admin") is True:
-        return True
-    return email in PLATFORM_ADMIN_EMAILS
-
-def admin_clean(doc: dict):
-    if not doc:
-        return {}
-    out = {}
-    for k, v in doc.items():
-        if k == "_id":
-            out["id"] = str(v)
-            continue
-        try:
-            if hasattr(v, "isoformat"):
-                out[k] = v.isoformat()
-            elif k.endswith("_id"):
-                out[k] = str(v)
-            else:
-                out[k] = v
-        except Exception:
-            out[k] = str(v)
-    if "id" not in out and doc.get("_id") is not None:
-        out["id"] = str(doc.get("_id"))
-    return out
-
-
 @api_router.get("/admin/stats")
 async def admin_stats(current_user: dict = Depends(get_current_user)):
     if not is_platform_admin(current_user):
@@ -3174,9 +3160,27 @@ async def admin_stats(current_user: dict = Depends(get_current_user)):
     except Exception:
         pass
 
+    recent_users = []
+    try:
+        cursor = db.users.find(
+            {},
+            {
+                "email": 1,
+                "full_name": 1,
+                "business_name": 1,
+                "role": 1,
+                "plan": 1,
+                "created_at": 1,
+            },
+        ).sort("created_at", -1).limit(20)
+
+        async for u in cursor:
+            recent_users.append(admin_clean(u))
+    except Exception:
+        recent_users = []
+
     return {
         "ok": True,
-        "version": "ADMIN CLEAN V1",
         "admin_email": (current_user.get("email") or "").lower(),
         "stats": {
             "total_users": total_users,
@@ -3187,6 +3191,7 @@ async def admin_stats(current_user: dict = Depends(get_current_user)):
             "active_timers": active_timers,
             "plan_counts": plan_counts,
         },
+        "recent_users": recent_users,
     }
 
 
@@ -3195,9 +3200,201 @@ async def admin_drilldown(kind: str, current_user: dict = Depends(get_current_us
     if not is_platform_admin(current_user):
         raise HTTPException(status_code=403, detail="Platform admin access required")
 
-    kind = (kind or "users").strip().lower()
-    items = []
+    kind = (kind or "").strip().lower()
+
+    if kind == "users":
+        items = []
+        cursor = db.users.find(
+            {},
+            {
+                "email": 1,
+                "full_name": 1,
+                "business_name": 1,
+                "role": 1,
+                "plan": 1,
+                "created_at": 1,
+            },
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        return {"ok": True, "title": "All Users", "items": items}
+
+    if kind == "businesses":
+        items = []
+        cursor = db.users.find(
+            {
+                "$or": [
+                    {"role": "owner"},
+                    {"user_type": "owner"},
+                    {"account_type": "owner"},
+                    {"business_name": {"$exists": True, "$ne": ""}},
+                ]
+            },
+            {
+                "email": 1,
+                "full_name": 1,
+                "business_name": 1,
+                "role": 1,
+                "plan": 1,
+                "created_at": 1,
+            },
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        return {"ok": True, "title": "Businesses", "items": items}
+
+    if kind == "jobs":
+        items = []
+        cursor = db.jobs.find(
+            {},
+            {
+                "title": 1,
+                "status": 1,
+                "client_name": 1,
+                "customer_name": 1,
+                "assigned_to": 1,
+                "scheduled_date": 1,
+                "created_at": 1,
+            },
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        return {"ok": True, "title": "Jobs", "items": items}
+
+    if kind == "clients":
+        items = []
+        cursor = db.clients.find(
+            {},
+            {
+                "name": 1,
+                "email": 1,
+                "phone": 1,
+                "address": 1,
+                "created_at": 1,
+            },
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        return {"ok": True, "title": "Clients", "items": items}
+
+    if kind == "invoices":
+        items = []
+        cursor = db.invoices.find(
+            {},
+            {
+                "invoice_number": 1,
+                "status": 1,
+                "client_name": 1,
+                "total": 1,
+                "amount": 1,
+                "created_at": 1,
+            },
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        return {"ok": True, "title": "Invoices", "items": items}
+
+    if kind == "timers":
+        items = []
+        try:
+            cursor = db.time_entries.find(
+                {
+                    "$or": [
+                        {"status": "running"},
+                        {"is_running": True},
+                        {"end_time": None},
+                    ]
+                },
+                {
+                    "job_id": 1,
+                    "user_id": 1,
+                    "status": 1,
+                    "start_time": 1,
+                    "end_time": 1,
+                    "created_at": 1,
+                },
+            ).sort("created_at", -1).limit(100)
+            async for row in cursor:
+                items.append(admin_clean(row))
+        except Exception:
+            items = []
+        return {"ok": True, "title": "Active Timers", "items": items}
+
+    if kind == "plans":
+        items = []
+        cursor = db.users.find(
+            {},
+            {
+                "email": 1,
+                "full_name": 1,
+                "business_name": 1,
+                "role": 1,
+                "plan": 1,
+                "created_at": 1,
+            },
+        ).sort("created_at", -1).limit(200)
+        async for row in cursor:
+            clean = admin_clean(row)
+            clean["_group"] = (clean.get("plan") or "other")
+            items.append(clean)
+        return {"ok": True, "title": "Plan Breakdown", "items": items}
+
+    raise HTTPException(status_code=404, detail="Unknown admin drilldown")
+
+
+
+
+
+@api_router.get("/admin/platform", response_class=HTMLResponse)
+async def admin_platform_page(request: Request, current_user: dict = Depends(get_current_user)):
+    if not is_platform_admin(current_user):
+        raise HTTPException(status_code=403, detail="Platform admin access required")
+
+    kind = (request.query_params.get("kind") or "users").strip().lower()
+
+    total_users = await db.users.count_documents({})
+    total_jobs = await db.jobs.count_documents({})
+    total_clients = await db.clients.count_documents({})
+    total_invoices = await db.invoices.count_documents({})
+
+    total_businesses = 0
+    for q in [
+        {"role": "owner"},
+        {"user_type": "owner"},
+        {"account_type": "owner"},
+        {"business_name": {"$exists": True, "$ne": ""}},
+    ]:
+        try:
+            total_businesses = max(total_businesses, await db.users.count_documents(q))
+        except Exception:
+            pass
+
+    active_timers = 0
+    try:
+        active_timers = await db.time_entries.count_documents({
+            "$or": [
+                {"status": "running"},
+                {"is_running": True},
+                {"end_time": None},
+            ]
+        })
+    except Exception:
+        active_timers = 0
+
+    plan_counts = {"solo": 0, "team": 0, "pro": 0, "enterprise": 0, "other": 0}
+    try:
+        cursor = db.users.find({}, {"plan": 1})
+        async for u in cursor:
+            plan = (u.get("plan") or "").strip().lower()
+            if plan in plan_counts:
+                plan_counts[plan] += 1
+            else:
+                plan_counts["other"] += 1
+    except Exception:
+        pass
+
     title = "All Users"
+    items = []
 
     if kind == "users":
         cursor = db.users.find(
@@ -3272,22 +3469,6 @@ async def admin_drilldown(kind: str, current_user: dict = Depends(get_current_us
             items.append(clean)
         title = "Plan Breakdown"
 
-    return {"ok": True, "version": "ADMIN CLEAN V1", "title": title, "items": items}
-
-
-@api_router.get("/admin/platform", response_class=HTMLResponse)
-async def admin_platform_page(request: Request, current_user: dict = Depends(get_current_user)):
-    if not is_platform_admin(current_user):
-        raise HTTPException(status_code=403, detail="Platform admin access required")
-
-    kind = (request.query_params.get("kind") or "users").strip().lower()
-
-    stats_data = await admin_stats(current_user)
-    stats = stats_data["stats"]
-    drill = await admin_drilldown(kind, current_user)
-    items = drill["items"]
-    title = drill["title"]
-
     def esc(v):
         text = "" if v is None else str(v)
         return (
@@ -3298,7 +3479,7 @@ async def admin_platform_page(request: Request, current_user: dict = Depends(get
                 .replace("'", "&#39;")
         )
 
-    def item_card(obj):
+    def detail_card(obj):
         title_text = (
             obj.get("full_name")
             or obj.get("business_name")
@@ -3328,8 +3509,7 @@ async def admin_platform_page(request: Request, current_user: dict = Depends(get
         </a>
         """
 
-    details_html = "".join(item_card(x) for x in items) or "<div class='item muted'>No records found.</div>"
-    plans = stats["plan_counts"]
+    details_html = "".join(detail_card(x) for x in items) or "<div class='item muted'>No records found.</div>"
 
     return f"""
 <!doctype html>
@@ -3337,33 +3517,33 @@ async def admin_platform_page(request: Request, current_user: dict = Depends(get
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Platform Admin</title>
+  <title>Churvox Platform Admin</title>
   <style>
     * {{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }}
     body {{ margin:0; background:#08111f; color:#fff; font-family:Inter, Arial, sans-serif; }}
-    .wrap {{ max-width:1200px; margin:0 auto; padding:16px; }}
-    .title {{ font-size:30px; font-weight:900; margin:0 0 6px 0; }}
+    .wrap {{ max-width:1200px; margin:0 auto; padding:16px 16px 28px; }}
+    .title {{ font-size:30px; font-weight:800; margin:0 0 6px 0; }}
     .muted {{ color:rgba(255,255,255,.72); }}
-    .badge {{ display:inline-block; margin:8px 0 14px; padding:8px 12px; border-radius:999px; background:#1d4ed8; font-weight:800; }}
     .toolbar {{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }}
     .btn {{ text-decoration:none; background:#2563eb; color:#fff; padding:14px 16px; border-radius:14px; font-weight:800; min-height:52px; display:inline-flex; align-items:center; justify-content:center; }}
     .btn.secondary {{ background:#1f2937; border:1px solid rgba(255,255,255,.08); }}
     .card {{ background:#0f172a; border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:16px; margin-bottom:14px; }}
+    .ok {{ border-color:rgba(34,197,94,.35); }}
     .grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; margin-bottom:14px; }}
-    .tapbox {{ background:#111827; color:#fff; border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:18px; min-height:122px; display:block; text-decoration:none; }}
-    .tapbox.active {{ border-color:#3b82f6; box-shadow:0 0 0 2px rgba(59,130,246,.18) inset; }}
+    .tapbox {{ width:100%; text-align:left; background:#111827; color:#fff; border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:18px; min-height:122px; display:block; text-decoration:none; }}
+    .tapbox.active {{ border-color:rgba(37,99,235,.9); box-shadow:0 0 0 2px rgba(37,99,235,.18) inset; }}
     .label {{ color:rgba(255,255,255,.72); font-size:14px; margin-bottom:10px; font-weight:600; }}
     .value {{ font-size:32px; line-height:1.1; font-weight:900; word-break:break-word; }}
     .sub {{ margin-top:10px; color:#93c5fd; font-size:13px; font-weight:700; }}
-    .chips {{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }}
-    .chip {{ text-decoration:none; border:1px solid rgba(255,255,255,.08); background:#111827; color:#fff; border-radius:999px; padding:12px 14px; min-height:46px; font-weight:700; display:inline-flex; align-items:center; }}
-    .chip.active {{ border-color:#3b82f6; }}
+    .quick-nav {{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }}
+    .quick-chip {{ text-decoration:none; border:1px solid rgba(255,255,255,.08); background:#111827; color:#fff; border-radius:999px; padding:12px 14px; min-height:46px; font-weight:700; display:inline-flex; align-items:center; }}
+    .quick-chip.active {{ border-color:rgba(37,99,235,.9); }}
     .section-title {{ font-size:22px; font-weight:800; margin:0 0 8px 0; }}
     .item {{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:12px; margin-top:10px; }}
     .item-title {{ font-weight:800; margin-bottom:8px; font-size:15px; }}
     .row {{ margin-top:4px; line-height:1.35; font-size:13px; }}
     @media (max-width:640px) {{
-      .wrap {{ padding:12px; }}
+      .wrap {{ padding:12px 12px 24px; }}
       .title {{ font-size:26px; }}
       .grid {{ grid-template-columns:1fr 1fr; }}
       .tapbox {{ min-height:116px; padding:16px; }}
@@ -3374,37 +3554,37 @@ async def admin_platform_page(request: Request, current_user: dict = Depends(get
 <body>
   <div class="wrap">
     <h1 class="title">Platform Admin</h1>
-    <div class="muted">Real app-wide stats for app owner</div>
-    <div class="badge">ADMIN CLEAN V1</div>
+    <div class="muted" style="margin-bottom:14px;">Real app-wide stats for app owner</div>
 
     <div class="toolbar">
-      <a class="btn" href="/api/admin/platform">Reload</a>
+      <a class="btn" href="/api/admin/platform">Reload Stats</a>
       <a class="btn secondary" href="/api/admin/platform?kind=users">Users</a>
       <a class="btn secondary" href="/api/admin/platform?kind=businesses">Businesses</a>
     </div>
 
-    <div class="card">
-      Logged in as <b>{esc((current_user.get("email") or "").lower())}</b>
+    <div class="card ok">
+      Logged in as <b>{esc((current_user.get("email") or "").lower())}</b><br>
+      <span class="muted">Tap any box below to open real records.</span>
     </div>
 
-    <div class="chips">
-      <a class="chip{' active' if kind == 'users' else ''}" href="/api/admin/platform?kind=users">Users</a>
-      <a class="chip{' active' if kind == 'businesses' else ''}" href="/api/admin/platform?kind=businesses">Businesses</a>
-      <a class="chip{' active' if kind == 'jobs' else ''}" href="/api/admin/platform?kind=jobs">Jobs</a>
-      <a class="chip{' active' if kind == 'clients' else ''}" href="/api/admin/platform?kind=clients">Clients</a>
-      <a class="chip{' active' if kind == 'invoices' else ''}" href="/api/admin/platform?kind=invoices">Invoices</a>
-      <a class="chip{' active' if kind == 'timers' else ''}" href="/api/admin/platform?kind=timers">Timers</a>
-      <a class="chip{' active' if kind == 'plans' else ''}" href="/api/admin/platform?kind=plans">Plans</a>
+    <div class="quick-nav">
+      <a class="quick-chip{' active' if kind == 'users' else ''}" href="/api/admin/platform?kind=users">Users</a>
+      <a class="quick-chip{' active' if kind == 'businesses' else ''}" href="/api/admin/platform?kind=businesses">Businesses</a>
+      <a class="quick-chip{' active' if kind == 'jobs' else ''}" href="/api/admin/platform?kind=jobs">Jobs</a>
+      <a class="quick-chip{' active' if kind == 'clients' else ''}" href="/api/admin/platform?kind=clients">Clients</a>
+      <a class="quick-chip{' active' if kind == 'invoices' else ''}" href="/api/admin/platform?kind=invoices">Invoices</a>
+      <a class="quick-chip{' active' if kind == 'timers' else ''}" href="/api/admin/platform?kind=timers">Timers</a>
+      <a class="quick-chip{' active' if kind == 'plans' else ''}" href="/api/admin/platform?kind=plans">Plans</a>
     </div>
 
     <div class="grid">
-      {stat_box("Total Users", stats["total_users"], "users")}
-      {stat_box("Businesses", stats["total_businesses"], "businesses")}
-      {stat_box("Jobs", stats["total_jobs"], "jobs")}
-      {stat_box("Clients", stats["total_clients"], "clients")}
-      {stat_box("Invoices", stats["total_invoices"], "invoices")}
-      {stat_box("Active Timers", stats["active_timers"], "timers")}
-      {stat_box("Plans", f"{plans['solo']}/{plans['team']}/{plans['pro']}/{plans['enterprise']}", "plans")}
+      {stat_box("Total Users", total_users, "users")}
+      {stat_box("Businesses", total_businesses, "businesses")}
+      {stat_box("Jobs", total_jobs, "jobs")}
+      {stat_box("Clients", total_clients, "clients")}
+      {stat_box("Invoices", total_invoices, "invoices")}
+      {stat_box("Active Timers", active_timers, "timers")}
+      {stat_box("Plans", f"{plan_counts['solo']}/{plan_counts['team']}/{plan_counts['pro']}/{plan_counts['enterprise']}", "plans")}
     </div>
 
     <div class="card">
