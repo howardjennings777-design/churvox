@@ -1,0 +1,249 @@
+CHURVOX PLAN / PAYMENT ROUTE CHECK
+==================================
+
+1. PRICE IDS
+backend/server.py.bak_20260406_024543:175:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server.py.bak_20260406_024543:176:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server.py.bak_20260406_024543:177:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server.py.bak_20260406_024543:178:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server.py.bak_20260406_024543:184:    "solo": STRIPE_PRICE_SOLO,
+backend/server.py.bak_20260406_024543:185:    "team": STRIPE_PRICE_TEAM,
+backend/server.py.bak_20260406_024543:186:    "pro": STRIPE_PRICE_PRO,
+backend/server.py.bak_20260406_024543:187:    "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.bak_20260406_024543:579:        "solo": STRIPE_PRICE_SOLO,
+backend/server.py.bak_20260406_024543:580:        "team": STRIPE_PRICE_TEAM,
+backend/server.py.bak_20260406_024543:581:        "pro": STRIPE_PRICE_PRO,
+backend/server.py.bak_20260406_024543:582:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.bak_fix_sms_syntax_20260406_041703:187:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server.py.bak_fix_sms_syntax_20260406_041703:188:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server.py.bak_fix_sms_syntax_20260406_041703:189:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server.py.bak_fix_sms_syntax_20260406_041703:190:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server.py.bak_fix_sms_syntax_20260406_041703:196:    "solo": STRIPE_PRICE_SOLO,
+backend/server.py.bak_fix_sms_syntax_20260406_041703:197:    "team": STRIPE_PRICE_TEAM,
+backend/server.py.bak_fix_sms_syntax_20260406_041703:198:    "pro": STRIPE_PRICE_PRO,
+backend/server.py.bak_fix_sms_syntax_20260406_041703:199:    "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.bak_fix_sms_syntax_20260406_041703:592:        "solo": STRIPE_PRICE_SOLO,
+backend/server.py.bak_fix_sms_syntax_20260406_041703:593:        "team": STRIPE_PRICE_TEAM,
+backend/server.py.bak_fix_sms_syntax_20260406_041703:594:        "pro": STRIPE_PRICE_PRO,
+backend/server.py.bak_fix_sms_syntax_20260406_041703:595:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.bak_20260406_023511:175:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server.py.bak_20260406_023511:176:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server.py.bak_20260406_023511:177:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server.py.bak_20260406_023511:178:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server.py.bak_20260406_023511:184:    "solo": STRIPE_PRICE_SOLO,
+backend/server.py.bak_20260406_023511:185:    "team": STRIPE_PRICE_TEAM,
+backend/server.py.bak_20260406_023511:186:    "pro": STRIPE_PRICE_PRO,
+backend/server.py.bak_20260406_023511:187:    "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.bak_20260406_023511:579:        "solo": STRIPE_PRICE_SOLO,
+backend/server.py.bak_20260406_023511:580:        "team": STRIPE_PRICE_TEAM,
+backend/server.py.bak_20260406_023511:581:        "pro": STRIPE_PRICE_PRO,
+backend/server.py.bak_20260406_023511:582:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server_before_client_caps_fix_v2.py:38:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server_before_client_caps_fix_v2.py:39:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server_before_client_caps_fix_v2.py:40:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server_before_client_caps_fix_v2.py:41:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server_before_client_caps_fix_v2.py:426:        "solo": STRIPE_PRICE_SOLO,
+backend/server_before_client_caps_fix_v2.py:427:        "team": STRIPE_PRICE_TEAM,
+backend/server_before_client_caps_fix_v2.py:428:        "pro": STRIPE_PRICE_PRO,
+backend/server_before_client_caps_fix_v2.py:429:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server_before_login_fix.py:38:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server_before_login_fix.py:39:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server_before_login_fix.py:40:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server_before_login_fix.py:41:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server_before_login_fix.py:414:        "solo": STRIPE_PRICE_SOLO,
+backend/server_before_login_fix.py:415:        "team": STRIPE_PRICE_TEAM,
+backend/server_before_login_fix.py:416:        "pro": STRIPE_PRICE_PRO,
+backend/server_before_login_fix.py:417:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.bak_20260406_033511:187:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server.py.bak_20260406_033511:188:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server.py.bak_20260406_033511:189:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server.py.bak_20260406_033511:190:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server.py.bak_20260406_033511:196:    "solo": STRIPE_PRICE_SOLO,
+backend/server.py.bak_20260406_033511:197:    "team": STRIPE_PRICE_TEAM,
+backend/server.py.bak_20260406_033511:198:    "pro": STRIPE_PRICE_PRO,
+backend/server.py.bak_20260406_033511:199:    "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.bak_20260406_033511:591:        "solo": STRIPE_PRICE_SOLO,
+backend/server.py.bak_20260406_033511:592:        "team": STRIPE_PRICE_TEAM,
+backend/server.py.bak_20260406_033511:593:        "pro": STRIPE_PRICE_PRO,
+backend/server.py.bak_20260406_033511:594:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server_before_sms_send_hard_fix.py:271:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server_before_sms_send_hard_fix.py:272:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server_before_sms_send_hard_fix.py:273:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server_before_sms_send_hard_fix.py:274:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server_before_sms_send_hard_fix.py:280:    "solo": STRIPE_PRICE_SOLO,
+backend/server_before_sms_send_hard_fix.py:281:    "team": STRIPE_PRICE_TEAM,
+backend/server_before_sms_send_hard_fix.py:282:    "pro": STRIPE_PRICE_PRO,
+backend/server_before_sms_send_hard_fix.py:283:    "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server_before_sms_send_hard_fix.py:677:        "solo": STRIPE_PRICE_SOLO,
+backend/server_before_sms_send_hard_fix.py:678:        "team": STRIPE_PRICE_TEAM,
+backend/server_before_sms_send_hard_fix.py:679:        "pro": STRIPE_PRICE_PRO,
+backend/server_before_sms_send_hard_fix.py:680:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.bak_20260406_020640:175:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server.py.bak_20260406_020640:176:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server.py.bak_20260406_020640:177:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server.py.bak_20260406_020640:178:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server.py.bak_20260406_020640:184:    "solo": STRIPE_PRICE_SOLO,
+backend/server.py.bak_20260406_020640:185:    "team": STRIPE_PRICE_TEAM,
+backend/server.py.bak_20260406_020640:186:    "pro": STRIPE_PRICE_PRO,
+backend/server.py.bak_20260406_020640:187:    "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.bak_20260406_020640:570:        "solo": STRIPE_PRICE_SOLO,
+backend/server.py.bak_20260406_020640:571:        "team": STRIPE_PRICE_TEAM,
+backend/server.py.bak_20260406_020640:572:        "pro": STRIPE_PRICE_PRO,
+backend/server.py.bak_20260406_020640:573:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server_before_clean_admin_reset.py:320:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server_before_clean_admin_reset.py:321:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server_before_clean_admin_reset.py:322:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server_before_clean_admin_reset.py:323:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server_before_clean_admin_reset.py:329:    "solo": STRIPE_PRICE_SOLO,
+backend/server_before_clean_admin_reset.py:330:    "team": STRIPE_PRICE_TEAM,
+backend/server_before_clean_admin_reset.py:331:    "pro": STRIPE_PRICE_PRO,
+backend/server_before_clean_admin_reset.py:332:    "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server_before_clean_admin_reset.py:726:        "solo": STRIPE_PRICE_SOLO,
+backend/server_before_clean_admin_reset.py:727:        "team": STRIPE_PRICE_TEAM,
+backend/server_before_clean_admin_reset.py:728:        "pro": STRIPE_PRICE_PRO,
+backend/server_before_clean_admin_reset.py:729:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/sms_report.txt:122:271: STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/sms_report.txt:123:272: STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/sms_report.txt:124:273: STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/sms_report.txt:125:274: STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/sms_report.txt:131:280:     "solo": STRIPE_PRICE_SOLO,
+backend/sms_report.txt:132:281:     "team": STRIPE_PRICE_TEAM,
+backend/sms_report.txt:133:282:     "pro": STRIPE_PRICE_PRO,
+backend/sms_report.txt:134:283:     "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.before_complete_rebuild:175:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server.py.before_complete_rebuild:176:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server.py.before_complete_rebuild:177:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server.py.before_complete_rebuild:178:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server.py.before_complete_rebuild:184:    "solo": STRIPE_PRICE_SOLO,
+backend/server.py.before_complete_rebuild:185:    "team": STRIPE_PRICE_TEAM,
+backend/server.py.before_complete_rebuild:186:    "pro": STRIPE_PRICE_PRO,
+backend/server.py.before_complete_rebuild:187:    "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.before_complete_rebuild:570:        "solo": STRIPE_PRICE_SOLO,
+backend/server.py.before_complete_rebuild:571:        "team": STRIPE_PRICE_TEAM,
+backend/server.py.before_complete_rebuild:572:        "pro": STRIPE_PRICE_PRO,
+backend/server.py.before_complete_rebuild:573:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server_before_sms_fix_v2.py:187:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server_before_sms_fix_v2.py:188:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server_before_sms_fix_v2.py:189:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server_before_sms_fix_v2.py:190:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server_before_sms_fix_v2.py:196:    "solo": STRIPE_PRICE_SOLO,
+backend/server_before_sms_fix_v2.py:197:    "team": STRIPE_PRICE_TEAM,
+backend/server_before_sms_fix_v2.py:198:    "pro": STRIPE_PRICE_PRO,
+backend/server_before_sms_fix_v2.py:199:    "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server_before_sms_fix_v2.py:593:        "solo": STRIPE_PRICE_SOLO,
+backend/server_before_sms_fix_v2.py:594:        "team": STRIPE_PRICE_TEAM,
+backend/server_before_sms_fix_v2.py:595:        "pro": STRIPE_PRICE_PRO,
+backend/server_before_sms_fix_v2.py:596:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server_before_nuclear_sms_fix.py:271:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server_before_nuclear_sms_fix.py:272:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server_before_nuclear_sms_fix.py:273:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server_before_nuclear_sms_fix.py:274:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server_before_nuclear_sms_fix.py:280:    "solo": STRIPE_PRICE_SOLO,
+backend/server_before_nuclear_sms_fix.py:281:    "team": STRIPE_PRICE_TEAM,
+backend/server_before_nuclear_sms_fix.py:282:    "pro": STRIPE_PRICE_PRO,
+backend/server_before_nuclear_sms_fix.py:283:    "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server_before_nuclear_sms_fix.py:677:        "solo": STRIPE_PRICE_SOLO,
+backend/server_before_nuclear_sms_fix.py:678:        "team": STRIPE_PRICE_TEAM,
+backend/server_before_nuclear_sms_fix.py:679:        "pro": STRIPE_PRICE_PRO,
+backend/server_before_nuclear_sms_fix.py:680:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server_before_client_caps_fix.py:38:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server_before_client_caps_fix.py:39:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server_before_client_caps_fix.py:40:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server_before_client_caps_fix.py:41:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server_before_client_caps_fix.py:426:        "solo": STRIPE_PRICE_SOLO,
+backend/server_before_client_caps_fix.py:427:        "team": STRIPE_PRICE_TEAM,
+backend/server_before_client_caps_fix.py:428:        "pro": STRIPE_PRICE_PRO,
+backend/server_before_client_caps_fix.py:429:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server_before_client_caps_fix_v3.py:38:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server_before_client_caps_fix_v3.py:39:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server_before_client_caps_fix_v3.py:40:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server_before_client_caps_fix_v3.py:41:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server_before_client_caps_fix_v3.py:426:        "solo": STRIPE_PRICE_SOLO,
+backend/server_before_client_caps_fix_v3.py:427:        "team": STRIPE_PRICE_TEAM,
+backend/server_before_client_caps_fix_v3.py:428:        "pro": STRIPE_PRICE_PRO,
+backend/server_before_client_caps_fix_v3.py:429:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.bak_20260406_031331:175:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server.py.bak_20260406_031331:176:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server.py.bak_20260406_031331:177:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server.py.bak_20260406_031331:178:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server.py.bak_20260406_031331:184:    "solo": STRIPE_PRICE_SOLO,
+backend/server.py.bak_20260406_031331:185:    "team": STRIPE_PRICE_TEAM,
+backend/server.py.bak_20260406_031331:186:    "pro": STRIPE_PRICE_PRO,
+backend/server.py.bak_20260406_031331:187:    "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.bak_20260406_031331:579:        "solo": STRIPE_PRICE_SOLO,
+backend/server.py.bak_20260406_031331:580:        "team": STRIPE_PRICE_TEAM,
+backend/server.py.bak_20260406_031331:581:        "pro": STRIPE_PRICE_PRO,
+backend/server.py.bak_20260406_031331:582:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server_before_sms_phone_fix.py:187:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server_before_sms_phone_fix.py:188:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server_before_sms_phone_fix.py:189:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server_before_sms_phone_fix.py:190:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server_before_sms_phone_fix.py:196:    "solo": STRIPE_PRICE_SOLO,
+backend/server_before_sms_phone_fix.py:197:    "team": STRIPE_PRICE_TEAM,
+backend/server_before_sms_phone_fix.py:198:    "pro": STRIPE_PRICE_PRO,
+backend/server_before_sms_phone_fix.py:199:    "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server_before_sms_phone_fix.py:593:        "solo": STRIPE_PRICE_SOLO,
+backend/server_before_sms_phone_fix.py:594:        "team": STRIPE_PRICE_TEAM,
+backend/server_before_sms_phone_fix.py:595:        "pro": STRIPE_PRICE_PRO,
+backend/server_before_sms_phone_fix.py:596:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.bak_20260406_032449:187:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server.py.bak_20260406_032449:188:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server.py.bak_20260406_032449:189:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server.py.bak_20260406_032449:190:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server.py.bak_20260406_032449:196:    "solo": STRIPE_PRICE_SOLO,
+backend/server.py.bak_20260406_032449:197:    "team": STRIPE_PRICE_TEAM,
+backend/server.py.bak_20260406_032449:198:    "pro": STRIPE_PRICE_PRO,
+backend/server.py.bak_20260406_032449:199:    "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.bak_20260406_032449:591:        "solo": STRIPE_PRICE_SOLO,
+backend/server.py.bak_20260406_032449:592:        "team": STRIPE_PRICE_TEAM,
+backend/server.py.bak_20260406_032449:593:        "pro": STRIPE_PRICE_PRO,
+backend/server.py.bak_20260406_032449:594:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.bak_20260406_040337:187:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server.py.bak_20260406_040337:188:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server.py.bak_20260406_040337:189:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server.py.bak_20260406_040337:190:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server.py.bak_20260406_040337:196:    "solo": STRIPE_PRICE_SOLO,
+backend/server.py.bak_20260406_040337:197:    "team": STRIPE_PRICE_TEAM,
+backend/server.py.bak_20260406_040337:198:    "pro": STRIPE_PRICE_PRO,
+backend/server.py.bak_20260406_040337:199:    "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.bak_20260406_040337:591:        "solo": STRIPE_PRICE_SOLO,
+backend/server.py.bak_20260406_040337:592:        "team": STRIPE_PRICE_TEAM,
+backend/server.py.bak_20260406_040337:593:        "pro": STRIPE_PRICE_PRO,
+backend/server.py.bak_20260406_040337:594:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py:288:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server.py:289:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server.py:290:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server.py:291:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server.py:297:    "solo": STRIPE_PRICE_SOLO,
+backend/server.py:298:    "team": STRIPE_PRICE_TEAM,
+backend/server.py:299:    "pro": STRIPE_PRICE_PRO,
+backend/server.py:300:    "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py:694:        "solo": STRIPE_PRICE_SOLO,
+backend/server.py:695:        "team": STRIPE_PRICE_TEAM,
+backend/server.py:696:        "pro": STRIPE_PRICE_PRO,
+backend/server.py:697:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server.py.bak_sms_prices:38:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server.py.bak_sms_prices:39:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server.py.bak_sms_prices:40:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server.py.bak_sms_prices:41:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server.py.bak_sms_prices:426:        "solo": STRIPE_PRICE_SOLO,
+backend/server.py.bak_sms_prices:427:        "team": STRIPE_PRICE_TEAM,
+backend/server.py.bak_sms_prices:428:        "pro": STRIPE_PRICE_PRO,
+backend/server.py.bak_sms_prices:429:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server_before_stripe_backup.py:37:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server_before_stripe_backup.py:38:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server_before_stripe_backup.py:39:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server_before_stripe_backup.py:40:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server_before_stripe_backup.py:413:        "solo": STRIPE_PRICE_SOLO,
+backend/server_before_stripe_backup.py:414:        "team": STRIPE_PRICE_TEAM,
+backend/server_before_stripe_backup.py:415:        "pro": STRIPE_PRICE_PRO,
+backend/server_before_stripe_backup.py:416:        "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server_before_sms_nuclear_rewrite.py:187:STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
+backend/server_before_sms_nuclear_rewrite.py:188:STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
+backend/server_before_sms_nuclear_rewrite.py:189:STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
+backend/server_before_sms_nuclear_rewrite.py:190:STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
+backend/server_before_sms_nuclear_rewrite.py:196:    "solo": STRIPE_PRICE_SOLO,
+backend/server_before_sms_nuclear_rewrite.py:197:    "team": STRIPE_PRICE_TEAM,
+backend/server_before_sms_nuclear_rewrite.py:198:    "pro": STRIPE_PRICE_PRO,
+backend/server_before_sms_nuclear_rewrite.py:199:    "enterprise": STRIPE_PRICE_ENTERPRISE,
+backend/server_before_sms_nuclear_rewrite.py:593:   

@@ -1,0 +1,106 @@
+CHURVOX PLAN / PAYMENT ROUTE AUDIT
+==================================================
+
+solo_price_id_found: YES
+  - /workspaces/grassleyapp/backend/server.py
+  - /workspaces/grassleyapp/backend/server_before_clean_admin_reset.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix_v2.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix_v3.py
+  - /workspaces/grassleyapp/backend/server_before_login_fix.py
+  - /workspaces/grassleyapp/backend/server_before_nuclear_sms_fix.py
+  - /workspaces/grassleyapp/backend/server_before_sms_fix_v2.py
+
+team_price_id_found: YES
+  - /workspaces/grassleyapp/backend/server.py
+  - /workspaces/grassleyapp/backend/server_before_clean_admin_reset.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix_v2.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix_v3.py
+  - /workspaces/grassleyapp/backend/server_before_login_fix.py
+  - /workspaces/grassleyapp/backend/server_before_nuclear_sms_fix.py
+  - /workspaces/grassleyapp/backend/server_before_sms_fix_v2.py
+
+pro_price_id_found: YES
+  - /workspaces/grassleyapp/backend/server.py
+  - /workspaces/grassleyapp/backend/server_before_clean_admin_reset.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix_v2.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix_v3.py
+  - /workspaces/grassleyapp/backend/server_before_login_fix.py
+  - /workspaces/grassleyapp/backend/server_before_nuclear_sms_fix.py
+  - /workspaces/grassleyapp/backend/server_before_sms_fix_v2.py
+
+enterprise_price_id_found: YES
+  - /workspaces/grassleyapp/backend/server.py
+  - /workspaces/grassleyapp/backend/server_before_clean_admin_reset.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix_v2.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix_v3.py
+  - /workspaces/grassleyapp/backend/server_before_login_fix.py
+  - /workspaces/grassleyapp/backend/server_before_nuclear_sms_fix.py
+  - /workspaces/grassleyapp/backend/server_before_sms_fix_v2.py
+
+checkout_route_found: YES
+  - /workspaces/grassleyapp/backend/server.py
+  - /workspaces/grassleyapp/backend/server_before_clean_admin_reset.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix_v2.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix_v3.py
+  - /workspaces/grassleyapp/backend/server_before_login_fix.py
+  - /workspaces/grassleyapp/backend/server_before_nuclear_sms_fix.py
+  - /workspaces/grassleyapp/backend/server_before_sms_fix_v2.py
+
+stripe_session_create_found: YES
+  - /workspaces/grassleyapp/backend/server.py
+  - /workspaces/grassleyapp/backend/server_before_clean_admin_reset.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix_v2.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix_v3.py
+  - /workspaces/grassleyapp/backend/server_before_login_fix.py
+  - /workspaces/grassleyapp/backend/server_before_nuclear_sms_fix.py
+  - /workspaces/grassleyapp/backend/server_before_sms_fix_v2.py
+
+frontend_checkout_call_found: YES
+  - /workspaces/grassleyapp/frontend/build/static/js/main.c8fcc52c.js
+  - /workspaces/grassleyapp/frontend/src/pages/PlansPage.js
+  - /workspaces/grassleyapp/frontend/src/pages/PlansPage.js.bak
+  - /workspaces/grassleyapp/frontend/src/pages/PlansPage.js.pre_enterprise_text_fix
+
+extra_50_users_text_found: YES
+  - /workspaces/grassleyapp/frontend/build/static/js/main.c8fcc52c.js
+  - /workspaces/grassleyapp/frontend/src/pages/PlansPage.js
+  - /workspaces/grassleyapp/frontend/src/pages/PlansPage.js.bak
+  - /workspaces/grassleyapp/frontend/src/pages/PlansPage.js.pre_enterprise_text_fix
+
+extra_100_price_text_found: YES
+  - /workspaces/grassleyapp/backend/email_provider.py
+  - /workspaces/grassleyapp/backend/server.py
+  - /workspaces/grassleyapp/backend/server_before_clean_admin_reset.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix_v2.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix_v3.py
+  - /workspaces/grassleyapp/backend/server_before_login_fix.py
+  - /workspaces/grassleyapp/backend/server_before_nuclear_sms_fix.py
+
+extra_50_users_payment_route_found: YES
+  - /workspaces/grassleyapp/backend/server.py
+  - /workspaces/grassleyapp/backend/server_before_clean_admin_reset.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix_v2.py
+  - /workspaces/grassleyapp/backend/server_before_client_caps_fix_v3.py
+  - /workspaces/grassleyapp/backend/server_before_login_fix.py
+  - /workspaces/grassleyapp/backend/server_before_nuclear_sms_fix.py
+  - /workspaces/grassleyapp/backend/server_before_sms_fix_v2.py
+
+LINKED RESULT CHECKS
+--------------------------------------------------
+solo_has_price_and_checkout: YES
+team_has_price_and_checkout: YES
+pro_has_price_and_checkout: YES
+enterprise_has_price_and_checkout: YES
+extra_50_users_has_price_and_checkout: YES
+
+FINAL VERDICT
+--------------------------------------------------
+PASS: Plans and extra 50 users look attached to payment routing.

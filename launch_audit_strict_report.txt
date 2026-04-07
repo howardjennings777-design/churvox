@@ -1,0 +1,168 @@
+CHURVOX STRICT LAUNCH AUDIT
+============================================================
+FILES CHECKED: 125
+PASS: 11   FAIL: 1   TOTAL: 12
+
+[PASS] Recurring jobs
+Why: Needs backend recurring fields/logic and frontend recurring options, not just old scripts.
+Files:
+  - backend/server.py
+  - frontend/src/pages/admin/PlatformOwnerDashboard.jsx
+  - frontend/src/pages/jobs/JobFormPage.js
+
+[PASS] Time tracking flow
+Why: Needs backend timer logic and frontend controls.
+Files:
+  - backend/server.py
+  - backend/tests/test_batch3_quotes_timer_invoice.py
+  - frontend/src/pages/PlansPage.js
+  - frontend/src/pages/auth/SignupPage.js
+  - frontend/src/pages/jobs/JobDetailPage.js
+  - frontend/src/pages/legal/TermsOfServicePage.js
+
+[PASS] Quote to job conversion
+Why: Looked for real quote-to-job code in frontend/backend.
+Files:
+  - backend/tests/test_batch3_quotes_timer_invoice.py
+  - frontend/src/pages/quotes/QuoteDetailPage.js
+
+[PASS] Invoice statuses
+Why: Looked for invoice status support in current files.
+Files:
+  - backend/email_provider.py
+  - backend/server.py
+  - backend/sms_provider.py
+  - backend/tests/test_batch2_roles_team.py
+  - backend/tests/test_batch3_quotes_timer_invoice.py
+  - backend/tests/test_batch4_sms_calendar.py
+  - backend/tests/test_batch5_myob_sms.py
+  - backend/tests/test_batch6_plans_billing.py
+  - backend/tests/test_churvox_api.py
+  - backend/tests/test_invite_flow_iteration13.py
+  - backend/tests/test_launch_readiness_iteration12.py
+  - backend/tests/test_resend_email_iteration15.py
+  - backend/tests/test_sms_clicksend.py
+  - frontend/owner.html
+  - frontend/public/index.html
+
+[FAIL] Plans page extra-user pricing
+Why: Looked for visible Enterprise extra-user wording in frontend.
+Files:
+  - frontend/src/pages/PlansPage.js
+
+[PASS] SMS marked Coming Soon
+Why: Looked for SMS text in current frontend only.
+Files:
+  - frontend/package-lock.json
+  - frontend/src/App.js
+  - frontend/src/components/Layout.js
+  - frontend/src/pages/SMSPage.js
+  - frontend/src/pages/auth/LoginPage.js
+  - frontend/src/pages/invoices/InvoiceDetailPage.js
+  - frontend/src/pages/jobs/JobDetailPage.js
+
+[PASS] Legal pages present
+Why: Looked for current Privacy Policy and Terms content/routes.
+Files:
+  - backend/tests/test_iteration10.py
+  - frontend/public/sw.js
+  - frontend/src/App.js
+  - frontend/src/components/Layout.js
+  - frontend/src/pages/SettingsPage.js
+  - frontend/src/pages/auth/LoginPage.js
+  - frontend/src/pages/auth/SignupPage.js
+  - frontend/src/pages/invoices/InvoiceFormPage.js
+  - frontend/src/pages/legal/AccountDeletionPage.js
+  - frontend/src/pages/legal/PrivacyPage.js
+  - frontend/src/pages/legal/PrivacyPolicyPage.js
+  - frontend/src/pages/legal/TermsOfServicePage.js
+  - frontend/src/pages/legal/TermsPage.js
+
+[PASS] Owner platform stats
+Why: Needs owner/admin UI plus backend stats source.
+Files:
+  - backend/server.py
+  - backend/tests/test_batch2_roles_team.py
+  - backend/tests/test_batch3_quotes_timer_invoice.py
+  - backend/tests/test_batch4_sms_calendar.py
+  - backend/tests/test_batch5_myob_sms.py
+  - backend/tests/test_batch6_plans_billing.py
+  - backend/tests/test_churvox_api.py
+  - backend/tests/test_invite_flow_iteration13.py
+  - backend/tests/test_iteration10.py
+  - backend/tests/test_launch_readiness_iteration12.py
+  - backend/tests/test_pwa_iteration11.py
+  - backend/tests/test_resend_email_iteration15.py
+  - backend/tests/test_sms_clicksend.py
+  - frontend/owner.html
+  - frontend/public/owner.html
+
+[PASS] General tappable navigation hooks
+Why: Broad check for clickable/tappable frontend hooks.
+Files:
+  - frontend/public/index.html
+  - frontend/src/App.js
+  - frontend/src/components/InstallPrompt.js
+  - frontend/src/components/Layout.js
+  - frontend/src/components/UpgradePrompt.js
+  - frontend/src/components/admin/PlatformAdminRoute.jsx
+  - frontend/src/components/ui/carousel.jsx
+  - frontend/src/components/ui/switch.jsx
+  - frontend/src/pages/CalendarPage.js
+  - frontend/src/pages/DashboardPage.js
+  - frontend/src/pages/PlansPage.js
+  - frontend/src/pages/SMSPage.js
+  - frontend/src/pages/SettingsPage.js
+  - frontend/src/pages/TeamPage.js
+  - frontend/src/pages/admin/PlatformUnlock.jsx
+
+[PASS] Loading / error / empty states
+Why: Looked for visible UI state handling in frontend.
+Files:
+  - frontend/README.md
+  - frontend/craco.config.js
+  - frontend/owner.html
+  - frontend/package-lock.json
+  - frontend/plugins/health-check/health-endpoints.js
+  - frontend/plugins/health-check/webpack-health-plugin.js
+  - frontend/public/owner.html
+  - frontend/src/App.js
+  - frontend/src/components/InstallPrompt.js
+  - frontend/src/components/ui/PageState.jsx
+  - frontend/src/components/ui/carousel.jsx
+  - frontend/src/components/ui/command.jsx
+  - frontend/src/components/ui/form.jsx
+  - frontend/src/context/AuthContext.js
+  - frontend/src/hard-tap-fix.css
+
+[PASS] Client phone/reminder mapping
+Why: Needs phone fields and reminder references in current app files.
+Files:
+  - backend/email_provider.py
+  - backend/server.py
+  - backend/sms_provider.py
+  - backend/tests/test_batch2_roles_team.py
+  - backend/tests/test_batch3_quotes_timer_invoice.py
+  - backend/tests/test_batch4_sms_calendar.py
+  - backend/tests/test_batch5_myob_sms.py
+  - backend/tests/test_churvox_api.py
+  - backend/tests/test_invite_flow_iteration13.py
+  - backend/tests/test_resend_email_iteration15.py
+  - backend/tests/test_sms_clicksend.py
+  - frontend/public/index.html
+  - frontend/src/App.css
+  - frontend/src/components/InstallPrompt.js
+  - frontend/src/components/Layout.js
+
+[PASS] MYOB integration present
+Why: Looked for current MYOB references only.
+Files:
+  - backend/server.py
+  - backend/tests/test_batch5_myob_sms.py
+  - backend/tests/test_batch6_plans_billing.py
+  - frontend/src/lib/utils.js
+  - frontend/src/pages/PlansPage.js
+  - frontend/src/pages/SettingsPage.js
+  - frontend/src/pages/auth/LoginPage.js
+  - frontend/src/pages/invoices/InvoiceDetailPage.js
+  - frontend/src/pages/invoices/InvoicesPage.js

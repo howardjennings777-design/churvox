@@ -1,0 +1,183 @@
+{
+  "summary": {
+    "passed": 11,
+    "failed": 1,
+    "total": 12,
+    "real_files_checked": 112
+  },
+  "results": [
+    {
+      "item": "Recurring jobs",
+      "status": "PASS",
+      "why": "Needs real backend recurring logic and real frontend recurring options.",
+      "files": [
+        "backend/server.py",
+        "frontend/src/pages/admin/PlatformOwnerDashboard.jsx",
+        "frontend/src/pages/jobs/JobFormPage.js"
+      ]
+    },
+    {
+      "item": "Time tracking flow",
+      "status": "PASS",
+      "why": "Needs real backend timer logic and frontend controls.",
+      "files": [
+        "backend/server.py",
+        "frontend/src/pages/PlansPage.js",
+        "frontend/src/pages/auth/SignupPage.js",
+        "frontend/src/pages/jobs/JobDetailPage.js",
+        "frontend/src/pages/legal/TermsOfServicePage.js"
+      ]
+    },
+    {
+      "item": "Quote to job conversion",
+      "status": "PASS",
+      "why": "Needs real quote conversion code in current app files.",
+      "files": [
+        "frontend/src/pages/quotes/QuoteDetailPage.js"
+      ]
+    },
+    {
+      "item": "Invoice statuses",
+      "status": "PASS",
+      "why": "Checked current invoice status support in real app files.",
+      "files": [
+        "backend/email_provider.py",
+        "backend/server.py",
+        "backend/sms_provider.py",
+        "frontend/owner.html",
+        "frontend/public/index.html",
+        "frontend/public/manifest.json",
+        "frontend/public/owner.html",
+        "frontend/src/App.js",
+        "frontend/src/components/Layout.js",
+        "frontend/src/components/ui/breadcrumb.jsx",
+        "frontend/src/index.css",
+        "frontend/src/lib/utils.js"
+      ]
+    },
+    {
+      "item": "Plans page extra-user pricing",
+      "status": "FAIL",
+      "why": "Checked visible Enterprise extra-user wording in frontend.",
+      "files": [
+        "frontend/src/pages/PlansPage.js"
+      ]
+    },
+    {
+      "item": "SMS marked Coming Soon",
+      "status": "PASS",
+      "why": "Checked current frontend SMS wording only.",
+      "files": [
+        "frontend/package-lock.json",
+        "frontend/src/App.js",
+        "frontend/src/components/Layout.js",
+        "frontend/src/pages/SMSPage.js",
+        "frontend/src/pages/auth/LoginPage.js",
+        "frontend/src/pages/invoices/InvoiceDetailPage.js",
+        "frontend/src/pages/jobs/JobDetailPage.js"
+      ]
+    },
+    {
+      "item": "Legal pages present",
+      "status": "PASS",
+      "why": "Checked current Privacy Policy and Terms in real app files.",
+      "files": [
+        "frontend/public/sw.js",
+        "frontend/src/App.js",
+        "frontend/src/components/Layout.js",
+        "frontend/src/pages/SettingsPage.js",
+        "frontend/src/pages/auth/LoginPage.js",
+        "frontend/src/pages/auth/SignupPage.js",
+        "frontend/src/pages/invoices/InvoiceFormPage.js",
+        "frontend/src/pages/legal/AccountDeletionPage.js",
+        "frontend/src/pages/legal/PrivacyPage.js",
+        "frontend/src/pages/legal/PrivacyPolicyPage.js",
+        "frontend/src/pages/legal/TermsOfServicePage.js",
+        "frontend/src/pages/legal/TermsPage.js"
+      ]
+    },
+    {
+      "item": "Owner platform stats",
+      "status": "PASS",
+      "why": "Needs owner/admin UI and backend stats source in current app files.",
+      "files": [
+        "backend/server.py",
+        "frontend/owner.html",
+        "frontend/public/owner.html",
+        "frontend/src/pages/AdminUsagePage.js",
+        "frontend/src/pages/admin/PlatformOwnerDashboard.jsx"
+      ]
+    },
+    {
+      "item": "General tappable navigation hooks",
+      "status": "PASS",
+      "why": "Broad check for clickable/tappable frontend hooks.",
+      "files": [
+        "frontend/public/index.html",
+        "frontend/src/App.js",
+        "frontend/src/components/InstallPrompt.js",
+        "frontend/src/components/Layout.js",
+        "frontend/src/components/UpgradePrompt.js",
+        "frontend/src/components/admin/PlatformAdminRoute.jsx",
+        "frontend/src/components/ui/carousel.jsx",
+        "frontend/src/components/ui/switch.jsx",
+        "frontend/src/pages/CalendarPage.js",
+        "frontend/src/pages/DashboardPage.js",
+        "frontend/src/pages/PlansPage.js",
+        "frontend/src/pages/SMSPage.js"
+      ]
+    },
+    {
+      "item": "Loading / error / empty states",
+      "status": "PASS",
+      "why": "Checked visible UI states in current frontend.",
+      "files": [
+        "frontend/craco.config.js",
+        "frontend/owner.html",
+        "frontend/package-lock.json",
+        "frontend/plugins/health-check/health-endpoints.js",
+        "frontend/plugins/health-check/webpack-health-plugin.js",
+        "frontend/public/owner.html",
+        "frontend/src/App.js",
+        "frontend/src/components/InstallPrompt.js",
+        "frontend/src/components/ui/PageState.jsx",
+        "frontend/src/components/ui/carousel.jsx",
+        "frontend/src/components/ui/command.jsx",
+        "frontend/src/components/ui/form.jsx"
+      ]
+    },
+    {
+      "item": "Client phone/reminder mapping",
+      "status": "PASS",
+      "why": "Needs phone and reminder references in current app files.",
+      "files": [
+        "backend/email_provider.py",
+        "backend/server.py",
+        "backend/sms_provider.py",
+        "frontend/public/index.html",
+        "frontend/src/App.css",
+        "frontend/src/components/InstallPrompt.js",
+        "frontend/src/components/Layout.js",
+        "frontend/src/index.css",
+        "frontend/src/pages/PlansPage.js",
+        "frontend/src/pages/SMSPage.js",
+        "frontend/src/pages/TeamPage.js",
+        "frontend/src/pages/auth/LoginPage.js"
+      ]
+    },
+    {
+      "item": "MYOB integration present",
+      "status": "PASS",
+      "why": "Checked for MYOB references in real app files only.",
+      "files": [
+        "backend/server.py",
+        "frontend/src/lib/utils.js",
+        "frontend/src/pages/PlansPage.js",
+        "frontend/src/pages/SettingsPage.js",
+        "frontend/src/pages/auth/LoginPage.js",
+        "frontend/src/pages/invoices/InvoiceDetailPage.js",
+        "frontend/src/pages/invoices/InvoicesPage.js"
+      ]
+    }
+  ]
+}

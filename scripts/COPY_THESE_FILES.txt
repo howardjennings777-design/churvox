@@ -1,0 +1,2 @@
+/workspaces/grassleyapp/scripts/server_py_extract.txt
+/workspaces/grassleyapp/scripts/PlansPage_js_extract.txt

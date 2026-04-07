@@ -53,10 +53,95 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from pathlib import Path
 
+
+def clean_phone(value):
+    if value is None:
+        return None
+    value = str(value).strip()
+    if not value:
+        return None
+    if value.startswith("+"):
+        return "+" + "".join(ch for ch in value[1:] if ch.isdigit())
+    return "".join(ch for ch in value if ch.isdigit()) or None
+
+def get_phone_from_dict(data):
+    if not isinstance(data, dict):
+        return None
+    for key in [
+        "phone",
+        "phone_number",
+        "mobile",
+        "mobile_number",
+        "cell",
+        "cell_phone",
+        "contact_phone",
+        "client_phone",
+        "sms_phone",
+    ]:
+        val = clean_phone(data.get(key))
+        if val:
+            return val
+    return None
+
+async def resolve_job_sms_phone(job):
+    if not isinstance(job, dict):
+        return None
+
+    # 1) direct on job
+    phone = get_phone_from_dict(job)
+    if phone:
+        return phone
+
+    # 2) nested client/customer object
+    for nested_key in ["client", "customer"]:
+        nested = job.get(nested_key)
+        phone = get_phone_from_dict(nested)
+        if phone:
+            return phone
+
+    # 3) by client/customer id
+    client_id = job.get("client_id") or job.get("customer_id")
+    if client_id:
+        try:
+            client = await db.clients.find_one({"_id": ObjectId(client_id)})
+            phone = get_phone_from_dict(client)
+            if phone:
+                return phone
+        except Exception:
+            pass
+
+        try:
+            client = await db.clients.find_one({"id": str(client_id)})
+            phone = get_phone_from_dict(client)
+            if phone:
+                return phone
+        except Exception:
+            pass
+
+    # 4) by client/customer name
+    client_name = (
+        job.get("client_name")
+        or job.get("customer_name")
+        or (job.get("client") if isinstance(job.get("client"), str) else None)
+        or (job.get("customer") if isinstance(job.get("customer"), str) else None)
+    )
+    if client_name:
+        try:
+            client = await db.clients.find_one({"name": client_name})
+            phone = get_phone_from_dict(client)
+            if phone:
+                return phone
+        except Exception:
+            pass
+
+    return None
+
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile, Query
+from fastapi.responses import HTMLResponse
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
@@ -159,6 +244,7 @@ def safe_docs(items):
     return [safe_doc(x) for x in items]
 
 import os
+from collections import Counter
 import logging
 import bcrypt
 import jwt
@@ -180,6 +266,21 @@ db = client[os.environ['DB_NAME']]
 JWT_SECRET = os.environ.get('JWT_SECRET', 'default_secret_change_me')
 JWT_ALGORITHM = "HS256"
 DEFAULT_GST_RATE = float(os.environ.get('DEFAULT_GST_RATE', '15'))
+
+
+
+
+PLATFORM_OWNER_EMAILS = [
+    e.strip().lower()
+    for e in os.environ.get("PLATFORM_OWNER_EMAILS", "hello@churvox.com").split(",")
+    if e.strip()
+]
+
+def is_platform_owner(user: dict) -> bool:
+    if not user:
+        return False
+    email = (user.get("email") or "").strip().lower()
+    return user.get("is_platform_owner") is True or email in PLATFORM_OWNER_EMAILS
 
 # Stripe Config
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
@@ -1595,6 +1696,18 @@ def compute_elapsed(time_entries):
     return int(total)
 
 @api_router.post("/jobs/{job_id}/timer/start")
+
+
+@api_router.post("/jobs/{job_id}/time/start")
+
+
+@api_router.post("/jobs/{job_id}/start-timer")
+
+
+@api_router.post("/jobs/{job_id}/timer/begin")
+
+
+@api_router.post("/time-tracking/{job_id}/start")
 async def timer_start(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
@@ -1619,6 +1732,12 @@ async def timer_start(job_id: str, request: Request, current_user: dict = Depend
     job_data["total_time_seconds"] = compute_elapsed(job.get("time_entries", []))
     return job_data
 @api_router.post("/jobs/{job_id}/timer/pause")
+
+@api_router.post("/jobs/{job_id}/time/pause")
+
+@api_router.post("/jobs/{job_id}/pause-timer")
+
+@api_router.post("/time-tracking/{job_id}/pause")
 async def timer_pause(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
@@ -1643,6 +1762,12 @@ async def timer_pause(job_id: str, request: Request, current_user: dict = Depend
     job_data["total_time_seconds"] = elapsed
     return job_data
 @api_router.post("/jobs/{job_id}/timer/resume")
+
+@api_router.post("/jobs/{job_id}/time/resume")
+
+@api_router.post("/jobs/{job_id}/resume-timer")
+
+@api_router.post("/time-tracking/{job_id}/resume")
 async def timer_resume(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
     user = await get_current_user(request)
@@ -2841,6 +2966,457 @@ async def get_admin_usage_summary(current_user: dict = Depends(get_current_user)
     return response
 
 
+
+
+
+@api_router.get("/admin/platform-stats")
+async def get_platform_stats():
+    try:
+        total_users = await db.users.count_documents({})
+    except Exception:
+        total_users = 0
+
+    total_businesses = 0
+    try:
+        users = await db.users.find({}, {"business_id": 1, "businessId": 1}).to_list(length=50000)
+        business_ids = set()
+        for u in users:
+            bid = str(u.get("business_id") or u.get("businessId") or "").strip()
+            if bid:
+                business_ids.add(bid)
+        total_businesses = len(business_ids)
+    except Exception:
+        total_businesses = 0
+
+    active_today = 0
+    active_this_week = 0
+    trial_users = 0
+    paid_users = 0
+    cancelled_users = 0
+    new_signups_this_week = 0
+    jobs_today = 0
+    monthly_revenue = 0
+    outstanding_balance = 0
+    overdue_invoices = 0
+    topPlans = {}
+
+    return {
+        "totalUsers": total_users,
+        "totalBusinesses": total_businesses,
+        "activeToday": active_today,
+        "activeThisWeek": active_this_week,
+        "trialUsers": trial_users,
+        "paidUsers": paid_users,
+        "cancelledUsers": cancelled_users,
+        "newSignupsThisWeek": new_signups_this_week,
+        "jobsToday": jobs_today,
+        "monthlyRevenue": monthly_revenue,
+        "outstandingBalance": outstanding_balance,
+        "overdueInvoices": overdue_invoices,
+        "topPlans": topPlans,
+    }
+
+
+
+
+
+@api_router.get("/owner/stats")
+async def get_owner_stats(current_user: dict = Depends(get_current_user)):
+    if not is_platform_owner(current_user):
+        raise HTTPException(status_code=403, detail="Owner access required")
+
+    total_users = await db.users.count_documents({})
+    total_businesses = await db.users.count_documents({"role": "owner"})
+    total_jobs = await db.jobs.count_documents({})
+    total_clients = await db.clients.count_documents({})
+    total_invoices = await db.invoices.count_documents({})
+
+    active_timers = 0
+    try:
+        active_timers = await db.time_entries.count_documents({
+            "$or": [
+                {"status": "running"},
+                {"is_running": True},
+                {"end_time": None}
+            ]
+        })
+    except Exception:
+        active_timers = 0
+
+    recent_users_cursor = db.users.find(
+        {},
+        {
+            "email": 1,
+            "full_name": 1,
+            "business_name": 1,
+            "created_at": 1,
+            "role": 1,
+            "plan": 1
+        }
+    ).sort("created_at", -1).limit(10)
+
+    recent_users = []
+    async for u in recent_users_cursor:
+        recent_users.append({
+            "id": str(u.get("_id")),
+            "email": u.get("email"),
+            "full_name": u.get("full_name"),
+            "business_name": u.get("business_name"),
+            "created_at": u.get("created_at"),
+            "role": u.get("role"),
+            "plan": u.get("plan", "solo")
+        })
+
+    return {
+        "ok": True,
+        "stats": {
+            "total_users": total_users,
+            "total_businesses": total_businesses,
+            "total_jobs": total_jobs,
+            "total_clients": total_clients,
+            "total_invoices": total_invoices,
+            "active_timers": active_timers
+        },
+        "recent_users": recent_users
+    }
+
+
+
+
+
+
+
+
+
+
+
+PLATFORM_ADMIN_EMAILS = [
+    x.strip().lower()
+    for x in os.environ.get("PLATFORM_ADMIN_EMAILS", "hello@churvox.com").split(",")
+    if x.strip()
+]
+
+def is_platform_admin(user: dict) -> bool:
+    if not user:
+        return False
+    email = (user.get("email") or "").strip().lower()
+    if email == "hello@churvox.com":
+        return True
+    if user.get("is_platform_admin") is True:
+        return True
+    return email in PLATFORM_ADMIN_EMAILS
+
+def admin_clean(doc: dict):
+    if not doc:
+        return {}
+    out = {}
+    for k, v in doc.items():
+        if k == "_id":
+            out["id"] = str(v)
+            continue
+        try:
+            if hasattr(v, "isoformat"):
+                out[k] = v.isoformat()
+            elif k.endswith("_id"):
+                out[k] = str(v)
+            else:
+                out[k] = v
+        except Exception:
+            out[k] = str(v)
+    if "id" not in out and doc.get("_id") is not None:
+        out["id"] = str(doc.get("_id"))
+    return out
+
+
+@api_router.get("/admin/stats")
+async def admin_stats(current_user: dict = Depends(get_current_user)):
+    if not is_platform_admin(current_user):
+        raise HTTPException(status_code=403, detail="Platform admin access required")
+
+    total_users = await db.users.count_documents({})
+    total_jobs = await db.jobs.count_documents({})
+    total_clients = await db.clients.count_documents({})
+    total_invoices = await db.invoices.count_documents({})
+
+    total_businesses = 0
+    for q in [
+        {"role": "owner"},
+        {"user_type": "owner"},
+        {"account_type": "owner"},
+        {"business_name": {"$exists": True, "$ne": ""}},
+    ]:
+        try:
+            total_businesses = max(total_businesses, await db.users.count_documents(q))
+        except Exception:
+            pass
+
+    active_timers = 0
+    try:
+        active_timers = await db.time_entries.count_documents({
+            "$or": [
+                {"status": "running"},
+                {"is_running": True},
+                {"end_time": None},
+            ]
+        })
+    except Exception:
+        active_timers = 0
+
+    plan_counts = {"solo": 0, "team": 0, "pro": 0, "enterprise": 0, "other": 0}
+    try:
+        cursor = db.users.find({}, {"plan": 1})
+        async for u in cursor:
+            plan = (u.get("plan") or "").strip().lower()
+            if plan in plan_counts:
+                plan_counts[plan] += 1
+            else:
+                plan_counts["other"] += 1
+    except Exception:
+        pass
+
+    return {
+        "ok": True,
+        "version": "ADMIN CLEAN V1",
+        "admin_email": (current_user.get("email") or "").lower(),
+        "stats": {
+            "total_users": total_users,
+            "total_businesses": total_businesses,
+            "total_jobs": total_jobs,
+            "total_clients": total_clients,
+            "total_invoices": total_invoices,
+            "active_timers": active_timers,
+            "plan_counts": plan_counts,
+        },
+    }
+
+
+@api_router.get("/admin/drilldown/{kind}")
+async def admin_drilldown(kind: str, current_user: dict = Depends(get_current_user)):
+    if not is_platform_admin(current_user):
+        raise HTTPException(status_code=403, detail="Platform admin access required")
+
+    kind = (kind or "users").strip().lower()
+    items = []
+    title = "All Users"
+
+    if kind == "users":
+        cursor = db.users.find(
+            {},
+            {"email": 1, "full_name": 1, "business_name": 1, "role": 1, "plan": 1, "created_at": 1},
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        title = "All Users"
+
+    elif kind == "businesses":
+        cursor = db.users.find(
+            {"$or": [
+                {"role": "owner"},
+                {"user_type": "owner"},
+                {"account_type": "owner"},
+                {"business_name": {"$exists": True, "$ne": ""}},
+            ]},
+            {"email": 1, "full_name": 1, "business_name": 1, "role": 1, "plan": 1, "created_at": 1},
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        title = "Businesses"
+
+    elif kind == "jobs":
+        cursor = db.jobs.find(
+            {},
+            {"title": 1, "status": 1, "client_name": 1, "customer_name": 1, "assigned_to": 1, "scheduled_date": 1, "created_at": 1},
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        title = "Jobs"
+
+    elif kind == "clients":
+        cursor = db.clients.find(
+            {},
+            {"name": 1, "email": 1, "phone": 1, "address": 1, "created_at": 1},
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        title = "Clients"
+
+    elif kind == "invoices":
+        cursor = db.invoices.find(
+            {},
+            {"invoice_number": 1, "status": 1, "client_name": 1, "total": 1, "amount": 1, "created_at": 1},
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        title = "Invoices"
+
+    elif kind == "timers":
+        try:
+            cursor = db.time_entries.find(
+                {"$or": [{"status": "running"}, {"is_running": True}, {"end_time": None}]},
+                {"job_id": 1, "user_id": 1, "status": 1, "start_time": 1, "end_time": 1, "created_at": 1},
+            ).sort("created_at", -1).limit(100)
+            async for row in cursor:
+                items.append(admin_clean(row))
+        except Exception:
+            items = []
+        title = "Active Timers"
+
+    elif kind == "plans":
+        cursor = db.users.find(
+            {},
+            {"email": 1, "full_name": 1, "business_name": 1, "role": 1, "plan": 1, "created_at": 1},
+        ).sort("created_at", -1).limit(200)
+        async for row in cursor:
+            clean = admin_clean(row)
+            clean["_group"] = clean.get("plan") or "other"
+            items.append(clean)
+        title = "Plan Breakdown"
+
+    return {"ok": True, "version": "ADMIN CLEAN V1", "title": title, "items": items}
+
+
+@api_router.get("/admin/platform", response_class=HTMLResponse)
+async def admin_platform_page(request: Request, current_user: dict = Depends(get_current_user)):
+    if not is_platform_admin(current_user):
+        raise HTTPException(status_code=403, detail="Platform admin access required")
+
+    kind = (request.query_params.get("kind") or "users").strip().lower()
+
+    stats_data = await admin_stats(current_user)
+    stats = stats_data["stats"]
+    drill = await admin_drilldown(kind, current_user)
+    items = drill["items"]
+    title = drill["title"]
+
+    def esc(v):
+        text = "" if v is None else str(v)
+        return (
+            text.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace('"', "&quot;")
+                .replace("'", "&#39;")
+        )
+
+    def item_card(obj):
+        title_text = (
+            obj.get("full_name")
+            or obj.get("business_name")
+            or obj.get("title")
+            or obj.get("name")
+            or obj.get("client_name")
+            or obj.get("customer_name")
+            or obj.get("invoice_number")
+            or obj.get("email")
+            or obj.get("id")
+            or "Record"
+        )
+        rows = []
+        for k, v in obj.items():
+            if v is None or v == "":
+                continue
+            rows.append(f"<div class='row'><span class='muted'>{esc(k)}:</span> {esc(v)}</div>")
+        return f"<div class='item'><div class='item-title'>{esc(title_text)}</div>{''.join(rows)}</div>"
+
+    def stat_box(label, value, key):
+        active = " active" if key == kind else ""
+        return f"""
+        <a class="tapbox{active}" href="/api/admin/platform?kind={esc(key)}">
+          <div class="label">{esc(label)}</div>
+          <div class="value">{esc(value)}</div>
+          <div class="sub">Tap to open</div>
+        </a>
+        """
+
+    details_html = "".join(item_card(x) for x in items) or "<div class='item muted'>No records found.</div>"
+    plans = stats["plan_counts"]
+
+    return f"""
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Platform Admin</title>
+  <style>
+    * {{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }}
+    body {{ margin:0; background:#08111f; color:#fff; font-family:Inter, Arial, sans-serif; }}
+    .wrap {{ max-width:1200px; margin:0 auto; padding:16px; }}
+    .title {{ font-size:30px; font-weight:900; margin:0 0 6px 0; }}
+    .muted {{ color:rgba(255,255,255,.72); }}
+    .badge {{ display:inline-block; margin:8px 0 14px; padding:8px 12px; border-radius:999px; background:#1d4ed8; font-weight:800; }}
+    .toolbar {{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }}
+    .btn {{ text-decoration:none; background:#2563eb; color:#fff; padding:14px 16px; border-radius:14px; font-weight:800; min-height:52px; display:inline-flex; align-items:center; justify-content:center; }}
+    .btn.secondary {{ background:#1f2937; border:1px solid rgba(255,255,255,.08); }}
+    .card {{ background:#0f172a; border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:16px; margin-bottom:14px; }}
+    .grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; margin-bottom:14px; }}
+    .tapbox {{ background:#111827; color:#fff; border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:18px; min-height:122px; display:block; text-decoration:none; }}
+    .tapbox.active {{ border-color:#3b82f6; box-shadow:0 0 0 2px rgba(59,130,246,.18) inset; }}
+    .label {{ color:rgba(255,255,255,.72); font-size:14px; margin-bottom:10px; font-weight:600; }}
+    .value {{ font-size:32px; line-height:1.1; font-weight:900; word-break:break-word; }}
+    .sub {{ margin-top:10px; color:#93c5fd; font-size:13px; font-weight:700; }}
+    .chips {{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }}
+    .chip {{ text-decoration:none; border:1px solid rgba(255,255,255,.08); background:#111827; color:#fff; border-radius:999px; padding:12px 14px; min-height:46px; font-weight:700; display:inline-flex; align-items:center; }}
+    .chip.active {{ border-color:#3b82f6; }}
+    .section-title {{ font-size:22px; font-weight:800; margin:0 0 8px 0; }}
+    .item {{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:12px; margin-top:10px; }}
+    .item-title {{ font-weight:800; margin-bottom:8px; font-size:15px; }}
+    .row {{ margin-top:4px; line-height:1.35; font-size:13px; }}
+    @media (max-width:640px) {{
+      .wrap {{ padding:12px; }}
+      .title {{ font-size:26px; }}
+      .grid {{ grid-template-columns:1fr 1fr; }}
+      .tapbox {{ min-height:116px; padding:16px; }}
+      .value {{ font-size:28px; }}
+    }}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 class="title">Platform Admin</h1>
+    <div class="muted">Real app-wide stats for app owner</div>
+    <div class="badge">ADMIN CLEAN V1</div>
+
+    <div class="toolbar">
+      <a class="btn" href="/api/admin/platform">Reload</a>
+      <a class="btn secondary" href="/api/admin/platform?kind=users">Users</a>
+      <a class="btn secondary" href="/api/admin/platform?kind=businesses">Businesses</a>
+    </div>
+
+    <div class="card">
+      Logged in as <b>{esc((current_user.get("email") or "").lower())}</b>
+    </div>
+
+    <div class="chips">
+      <a class="chip{' active' if kind == 'users' else ''}" href="/api/admin/platform?kind=users">Users</a>
+      <a class="chip{' active' if kind == 'businesses' else ''}" href="/api/admin/platform?kind=businesses">Businesses</a>
+      <a class="chip{' active' if kind == 'jobs' else ''}" href="/api/admin/platform?kind=jobs">Jobs</a>
+      <a class="chip{' active' if kind == 'clients' else ''}" href="/api/admin/platform?kind=clients">Clients</a>
+      <a class="chip{' active' if kind == 'invoices' else ''}" href="/api/admin/platform?kind=invoices">Invoices</a>
+      <a class="chip{' active' if kind == 'timers' else ''}" href="/api/admin/platform?kind=timers">Timers</a>
+      <a class="chip{' active' if kind == 'plans' else ''}" href="/api/admin/platform?kind=plans">Plans</a>
+    </div>
+
+    <div class="grid">
+      {stat_box("Total Users", stats["total_users"], "users")}
+      {stat_box("Businesses", stats["total_businesses"], "businesses")}
+      {stat_box("Jobs", stats["total_jobs"], "jobs")}
+      {stat_box("Clients", stats["total_clients"], "clients")}
+      {stat_box("Invoices", stats["total_invoices"], "invoices")}
+      {stat_box("Active Timers", stats["active_timers"], "timers")}
+      {stat_box("Plans", f"{plans['solo']}/{plans['team']}/{plans['pro']}/{plans['enterprise']}", "plans")}
+    </div>
+
+    <div class="card">
+      <div class="section-title">{esc(title)}</div>
+      <div class="muted">Showing latest {len(items)} records</div>
+      {details_html}
+    </div>
+  </div>
+</body>
+</html>
+"""
+
 app.include_router(api_router)
 
 # CORS
@@ -3094,3 +3670,123 @@ def pick_client_phone(job=None, client=None):
             return value
 
     return None
+
+@api_router.post("/sms/send-fixed")
+async def send_sms_hard_fix_v1(payload: dict, current_user: dict = Depends(get_current_user)):
+    user = current_user
+    business_id = str(user.get("business_id") or user.get("id"))
+    sms_type = str(payload.get("type") or payload.get("message_type") or "").strip().lower()
+    custom_message = str(payload.get("message") or "").strip()
+
+    job = None
+    client = None
+
+    job_id = payload.get("job_id")
+    client_id = payload.get("client_id")
+
+    if job_id:
+        job = await db.jobs.find_one({"id": str(job_id)})
+        if not job:
+            try:
+                job = await db.jobs.find_one({"_id": ObjectId(str(job_id))})
+            except Exception:
+                job = None
+
+    if client_id:
+        client = await db.clients.find_one({"id": str(client_id)})
+        if not client:
+            try:
+                client = await db.clients.find_one({"_id": ObjectId(str(client_id))})
+            except Exception:
+                client = None
+
+    if not client and isinstance(job, dict):
+        linked_client_id = job.get("client_id") or job.get("customer_id")
+        if linked_client_id:
+            client = await db.clients.find_one({"id": str(linked_client_id)})
+            if not client:
+                try:
+                    client = await db.clients.find_one({"_id": ObjectId(str(linked_client_id))})
+                except Exception:
+                    client = None
+
+    phone = None
+
+    # 1) explicit phone from payload wins
+    for key in ["phone", "phone_number", "mobile", "mobile_number", "client_phone"]:
+        value = payload.get(key)
+        if value is not None and str(value).strip():
+            phone = str(value).strip()
+            break
+
+    # 2) fallback to existing helper
+    if not phone:
+        phone = pick_client_phone(job=job, client=client)
+
+    if not phone:
+        raise HTTPException(status_code=400, detail="SMS_FIXED_ROUTE_NO_PHONE")
+
+    # SMS cost locked to 2 credits
+    sms_cost = 2
+
+    sms_credits = await db.sms_credits.find_one({"business_id": business_id})
+    if not sms_credits:
+        raise HTTPException(status_code=400, detail="Not enough SMS credits")
+
+    current_balance = int(
+        sms_credits.get("balance", sms_credits.get("credits", 0)) or 0
+    )
+
+    if current_balance < sms_cost:
+        raise HTTPException(status_code=400, detail="Not enough SMS credits")
+
+    if "balance" in sms_credits:
+        await db.sms_credits.update_one(
+            {"business_id": business_id},
+            {
+                "$inc": {"balance": -sms_cost},
+                "$set": {"updated_at": datetime.now(timezone.utc)}
+            }
+        )
+        new_balance = current_balance - sms_cost
+    else:
+        await db.sms_credits.update_one(
+            {"business_id": business_id},
+            {
+                "$inc": {"credits": -sms_cost},
+                "$set": {"updated_at": datetime.now(timezone.utc)}
+            }
+        )
+        new_balance = current_balance - sms_cost
+
+    if custom_message:
+        sms_message = custom_message
+    elif sms_type in ["on_the_way", "on the way", "ontheway"]:
+        sms_message = "On the way"
+    elif sms_type == "reminder":
+        sms_message = "Reminder"
+    else:
+        sms_message = "Quick SMS"
+
+    await db.sms_log.insert_one({
+        "business_id": business_id,
+        "job_id": str(job_id) if job_id else None,
+        "client_id": str(client_id) if client_id else (str(client.get("id")) if isinstance(client, dict) and client.get("id") else None),
+        "phone": phone,
+        "message": sms_message,
+        "type": sms_type or "quick_sms",
+        "cost": sms_cost,
+        "created_at": datetime.now(timezone.utc),
+        "status": "mock_sent"
+    })
+
+    return {
+        "success": True,
+        "data": {
+            "phone": phone,
+            "message": sms_message,
+            "cost": sms_cost,
+            "balance": new_balance
+        }
+    }
+

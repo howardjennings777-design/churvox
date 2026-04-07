@@ -1,0 +1,191 @@
+CHURVOX LAUNCH AUDIT
+============================================================
+PASS: 12   FAIL: 0   TOTAL: 12
+
+[PASS] Recurring jobs
+Why: Looked for recurring job fields/options and schedule words like weekly, fortnightly, and monthly.
+Files:
+  - backend/server.py
+  - backend/server_before_clean_admin_reset.py
+  - backend/server_before_client_caps_fix.py
+  - backend/server_before_client_caps_fix_v2.py
+  - backend/server_before_client_caps_fix_v3.py
+  - backend/server_before_login_fix.py
+  - backend/server_before_nuclear_sms_fix.py
+  - backend/server_before_sms_fix_v2.py
+  - backend/server_before_sms_nuclear_rewrite.py
+  - backend/server_before_sms_phone_fix.py
+  - backend/server_before_sms_send_hard_fix.py
+  - backend/server_before_stripe_backup.py
+
+[PASS] Time tracking flow
+Why: Checked for start, pause, resume, and complete timer actions/endpoints.
+Files:
+  - backend/server.py
+  - backend/server_before_clean_admin_reset.py
+  - backend/server_before_client_caps_fix.py
+  - backend/server_before_client_caps_fix_v2.py
+  - backend/server_before_client_caps_fix_v3.py
+  - backend/server_before_login_fix.py
+  - backend/server_before_nuclear_sms_fix.py
+  - backend/server_before_sms_fix_v2.py
+  - backend/server_before_sms_nuclear_rewrite.py
+  - backend/server_before_sms_phone_fix.py
+  - backend/server_before_sms_send_hard_fix.py
+  - backend/server_before_stripe_backup.py
+
+[PASS] Invoice statuses
+Why: Checked for invoice support including draft/sent-viewed/paid/overdue markers.
+Files:
+  - backend/server.py
+  - backend/server_before_clean_admin_reset.py
+  - backend/server_before_client_caps_fix.py
+  - backend/server_before_client_caps_fix_v2.py
+  - backend/server_before_client_caps_fix_v3.py
+  - backend/server_before_login_fix.py
+  - backend/server_before_nuclear_sms_fix.py
+  - backend/server_before_sms_fix_v2.py
+  - backend/server_before_sms_nuclear_rewrite.py
+  - backend/server_before_sms_phone_fix.py
+  - backend/server_before_sms_send_hard_fix.py
+  - backend/server_before_stripe_backup.py
+
+[PASS] Quote to job conversion
+Why: Checked for code paths or labels that convert quotes into jobs.
+Files:
+  - backend/server.py
+  - backend/server_before_clean_admin_reset.py
+  - backend/server_before_client_caps_fix.py
+  - backend/server_before_client_caps_fix_v2.py
+  - backend/server_before_client_caps_fix_v3.py
+  - backend/server_before_login_fix.py
+  - backend/server_before_nuclear_sms_fix.py
+  - backend/server_before_sms_fix_v2.py
+  - backend/server_before_sms_nuclear_rewrite.py
+  - backend/server_before_sms_phone_fix.py
+  - backend/server_before_sms_send_hard_fix.py
+  - backend/server_before_stripe_backup.py
+
+[PASS] Owner platform stats
+Why: Checked for owner/admin dashboard plus real stats labels.
+Files:
+  - backend/server.py
+  - backend/server_before_clean_admin_reset.py
+  - frontend/owner.html
+  - frontend/public/owner.html
+  - frontend/src/pages/AdminUsagePage.js
+  - frontend/src/pages/admin/PlatformOwnerDashboard.jsx
+  - scripts/launch_audit.py
+  - test_reports/iteration_10.json
+
+[PASS] Plans page extra-user pricing
+Why: Checked for Enterprise extra-user wording.
+Files:
+  - backend/email_provider.py
+  - backend/server.py
+  - backend/server_before_clean_admin_reset.py
+  - backend/server_before_client_caps_fix.py
+  - backend/server_before_client_caps_fix_v2.py
+  - backend/server_before_client_caps_fix_v3.py
+  - backend/server_before_login_fix.py
+  - backend/server_before_nuclear_sms_fix.py
+  - backend/server_before_sms_fix_v2.py
+  - backend/server_before_sms_nuclear_rewrite.py
+  - backend/server_before_sms_phone_fix.py
+  - backend/server_before_sms_send_hard_fix.py
+
+[PASS] SMS marked Coming Soon
+Why: Checked that SMS exists and is marked Coming Soon in the UI text.
+Files:
+  - backend/server.py
+  - backend/server_before_clean_admin_reset.py
+  - backend/server_before_client_caps_fix.py
+  - backend/server_before_client_caps_fix_v2.py
+  - backend/server_before_client_caps_fix_v3.py
+  - backend/server_before_login_fix.py
+  - backend/server_before_nuclear_sms_fix.py
+  - backend/server_before_sms_fix_v2.py
+  - backend/server_before_sms_nuclear_rewrite.py
+  - backend/server_before_sms_phone_fix.py
+  - backend/server_before_sms_send_hard_fix.py
+  - backend/server_before_stripe_backup.py
+
+[PASS] Legal pages present
+Why: Checked for Privacy Policy and Terms content/routes.
+Files:
+  - backend/tests/test_iteration10.py
+  - frontend/public/sw.js
+  - frontend/src/App.js
+  - frontend/src/components/Layout.js
+  - frontend/src/pages/SettingsPage.js
+  - frontend/src/pages/auth/LoginPage.js
+  - frontend/src/pages/auth/SignupPage.js
+  - frontend/src/pages/invoices/InvoiceFormPage.js
+  - frontend/src/pages/legal/AccountDeletionPage.js
+  - frontend/src/pages/legal/PrivacyPage.js
+  - frontend/src/pages/legal/PrivacyPolicyPage.js
+  - frontend/src/pages/legal/TermsOfServicePage.js
+
+[PASS] General tappable navigation hooks
+Why: Broad check for click/tap navigation hooks in frontend files.
+Files:
+  - frontend/src/components/InstallPrompt.js
+  - frontend/src/components/Layout.js
+  - frontend/src/components/UpgradePrompt.js
+  - frontend/src/components/ui/carousel.jsx
+  - frontend/src/components/ui/switch.jsx
+  - frontend/src/pages/CalendarPage.js
+  - frontend/src/pages/DashboardPage.js
+  - frontend/src/pages/PlansPage.js
+  - frontend/src/pages/SMSPage.js
+  - frontend/src/pages/SettingsPage.js
+  - frontend/src/pages/TeamPage.js
+  - frontend/src/pages/admin/PlatformUnlock.jsx
+
+[PASS] Loading / error / empty states
+Why: Checked for loading, error, and empty-state copy/components.
+Files:
+  - backend/email_provider.py
+  - backend/server.py
+  - backend/server_before_clean_admin_reset.py
+  - backend/server_before_client_caps_fix.py
+  - backend/server_before_client_caps_fix_v2.py
+  - backend/server_before_client_caps_fix_v3.py
+  - backend/server_before_login_fix.py
+  - backend/server_before_nuclear_sms_fix.py
+  - backend/server_before_sms_fix_v2.py
+  - backend/server_before_sms_nuclear_rewrite.py
+  - backend/server_before_sms_phone_fix.py
+  - backend/server_before_sms_send_hard_fix.py
+
+[PASS] Client phone/reminder mapping
+Why: Checked for phone fields and reminder logic references.
+Files:
+  - backend/email_provider.py
+  - backend/server.py
+  - backend/server_before_clean_admin_reset.py
+  - backend/server_before_client_caps_fix.py
+  - backend/server_before_client_caps_fix_v2.py
+  - backend/server_before_client_caps_fix_v3.py
+  - backend/server_before_login_fix.py
+  - backend/server_before_nuclear_sms_fix.py
+  - backend/server_before_sms_fix_v2.py
+  - backend/server_before_sms_nuclear_rewrite.py
+  - backend/server_before_sms_phone_fix.py
+  - backend/server_before_sms_send_hard_fix.py
+
+[PASS] MYOB integration present
+Why: Checked for MYOB integration code or config references.
+Files:
+  - backend/server.py
+  - backend/server_before_clean_admin_reset.py
+  - backend/server_before_client_caps_fix.py
+  - backend/server_before_client_caps_fix_v2.py
+  - backend/server_before_client_caps_fix_v3.py
+  - backend/server_before_login_fix.py
+  - backend/server_before_nuclear_sms_fix.py
+  - backend/server_before_sms_fix_v2.py
+  - backend/server_before_sms_nuclear_rewrite.py
+  - backend/server_before_sms_phone_fix.py
+  - backend/server_before_sms_send_hard_fix.py
+  - backend/server_before_stripe_backup.py
