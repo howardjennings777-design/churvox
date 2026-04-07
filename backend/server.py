@@ -3420,6 +3420,86 @@ async def admin_platform_page(request: Request, current_user: dict = Depends(get
 </html>
 """
 
+
+
+@api_router.delete("/auth/delete-account")
+@api_router.post("/auth/delete-account")
+@api_router.delete("/auth/account-delete")
+@api_router.post("/auth/account-delete")
+async def delete_my_account(response: Response, current_user: dict = Depends(get_current_user)):
+    user_id = current_user.get("id")
+    user_email = (current_user.get("email") or "").lower()
+
+    # Delete the current user record
+    deleted = 0
+
+    try:
+        if user_id:
+            result = await db.users.delete_one({"_id": ObjectId(user_id)})
+            deleted = getattr(result, "deleted_count", 0)
+    except Exception:
+        pass
+
+    if not deleted and user_email:
+        try:
+            result = await db.users.delete_one({"email": user_email})
+            deleted = getattr(result, "deleted_count", 0)
+        except Exception:
+            pass
+
+    # Clean up common related records if they exist for this user
+    related_collections = [
+        "login_attempts",
+        "password_reset_tokens",
+        "email_verification_tokens",
+        "user_sessions",
+        "notifications",
+    ]
+
+    for name in related_collections:
+        try:
+            collection = getattr(db, name, None)
+            if collection is not None:
+                if user_id:
+                    try:
+                        await collection.delete_many({"user_id": user_id})
+                    except Exception:
+                        pass
+                if user_email:
+                    try:
+                        await collection.delete_many({"email": user_email})
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+    # Clear common auth cookies
+    cookie_names = [
+        "access_token",
+        "auth_token",
+        "token",
+        "session",
+        "session_token",
+    ]
+
+    for cookie_name in cookie_names:
+        try:
+            response.delete_cookie(cookie_name, path="/")
+        except Exception:
+            pass
+        try:
+            response.delete_cookie(cookie_name, path="/", samesite="none", secure=True)
+        except Exception:
+            pass
+
+    return {
+        "success": True,
+        "message": "Account deleted successfully",
+        "deleted": bool(deleted),
+        "email": user_email
+    }
+
+
 app.include_router(api_router)
 
 # CORS
