@@ -67,6 +67,7 @@ function PlansPage() {
       features: [
         'Everything in Pro',
         '50 users included',
+        '$100 per additional 50 users',
         'MYOB features',
         'Priority support'
       ]
