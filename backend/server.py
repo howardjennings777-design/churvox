@@ -3378,9 +3378,7 @@ async def admin_platform_page():
       font-weight: 800;
       margin: 0 0 6px 0;
     }
-    .muted {
-      color: rgba(255,255,255,.72);
-    }
+    .muted { color: rgba(255,255,255,.72); }
     .toolbar {
       display: flex;
       gap: 10px;
@@ -3415,13 +3413,8 @@ async def admin_platform_page():
       padding: 16px;
       margin-bottom: 14px;
     }
-    .ok {
-      border-color: rgba(34,197,94,.35);
-    }
-    .error {
-      border-color: rgba(239,68,68,.45);
-      color: #fecaca;
-    }
+    .ok { border-color: rgba(34,197,94,.35); }
+    .error { border-color: rgba(239,68,68,.45); color: #fecaca; }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -3484,24 +3477,63 @@ async def admin_platform_page():
       font-weight: 800;
       margin: 0 0 8px 0;
     }
-    .small {
-      font-size: 13px;
-    }
+    .small { font-size: 13px; }
     .item {
       background: rgba(255,255,255,.04);
       border: 1px solid rgba(255,255,255,.06);
-      border-radius: 14px;
-      padding: 12px;
+      border-radius: 16px;
+      padding: 14px;
       margin-top: 10px;
     }
-    .item-title {
-      font-weight: 800;
-      margin-bottom: 8px;
-      font-size: 15px;
+    .item-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
     }
-    .row {
-      margin-top: 4px;
+    .item-title {
+      font-weight: 900;
+      font-size: 16px;
+      line-height: 1.25;
+    }
+    .pill {
+      background: rgba(37,99,235,.18);
+      color: #bfdbfe;
+      border: 1px solid rgba(37,99,235,.35);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .fields {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+    .field {
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.05);
+      border-radius: 12px;
+      padding: 10px;
+      min-height: 62px;
+    }
+    .field-label {
+      font-size: 12px;
+      color: rgba(255,255,255,.6);
+      margin-bottom: 6px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+    .field-value {
+      font-size: 14px;
+      color: #fff;
+      font-weight: 700;
       line-height: 1.35;
+      word-break: break-word;
     }
     .sticky-top {
       position: sticky;
@@ -3518,6 +3550,7 @@ async def admin_platform_page():
       .tapbox { min-height: 116px; padding: 16px; }
       .value { font-size: 28px; }
       .toolbar .btn { flex: 1 1 auto; }
+      .fields { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -3571,29 +3604,115 @@ async def admin_platform_page():
       document.querySelectorAll(".tapbox").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.kind === kind);
       });
+      document.querySelectorAll(".quick-chip").forEach(btn => {
+        btn.style.borderColor = btn.dataset.kind === kind ? "rgba(37,99,235,.9)" : "rgba(255,255,255,.08)";
+      });
     }
 
-    function itemTitle(obj) {
-      return (
-        obj.full_name ||
-        obj.business_name ||
-        obj.title ||
-        obj.name ||
-        obj.client_name ||
-        obj.customer_name ||
-        obj.invoice_number ||
-        obj.email ||
-        obj.id ||
-        "Record"
-      );
+    function getDisplayFields(obj, kind) {
+      const pick = (...keys) => {
+        for (const k of keys) {
+          if (obj[k] !== undefined && obj[k] !== null && obj[k] !== "") return obj[k];
+        }
+        return "";
+      };
+
+      if (kind === "users" || kind === "businesses" || kind === "plans") {
+        return [
+          ["Email", pick("email")],
+          ["Business", pick("business_name")],
+          ["Plan", pick("plan", "_group")],
+          ["Role", pick("role")],
+          ["Created", pick("created_at")]
+        ];
+      }
+
+      if (kind === "jobs") {
+        return [
+          ["Status", pick("status")],
+          ["Client", pick("client_name", "customer_name")],
+          ["Assigned To", pick("assigned_to")],
+          ["Scheduled", pick("scheduled_date")],
+          ["Created", pick("created_at")]
+        ];
+      }
+
+      if (kind === "clients") {
+        return [
+          ["Email", pick("email")],
+          ["Phone", pick("phone")],
+          ["Address", pick("address")],
+          ["Created", pick("created_at")]
+        ];
+      }
+
+      if (kind === "invoices") {
+        return [
+          ["Status", pick("status")],
+          ["Client", pick("client_name")],
+          ["Total", pick("total", "amount")],
+          ["Created", pick("created_at")]
+        ];
+      }
+
+      if (kind === "timers") {
+        return [
+          ["Status", pick("status")],
+          ["Job ID", pick("job_id")],
+          ["User ID", pick("user_id")],
+          ["Start", pick("start_time")],
+          ["End", pick("end_time")],
+          ["Created", pick("created_at")]
+        ];
+      }
+
+      return Object.entries(obj || {}).filter(([k,v]) => v !== null && v !== undefined && v !== "");
     }
 
-    function itemHtml(obj) {
-      const entries = Object.entries(obj || {}).filter(([k,v]) => v !== null && v !== undefined && v !== "");
+    function itemTitle(obj, kind) {
+      if (kind === "users" || kind === "businesses" || kind === "plans") {
+        return obj.full_name || obj.email || obj.business_name || obj.id || "User";
+      }
+      if (kind === "jobs") {
+        return obj.title || obj.client_name || obj.customer_name || obj.id || "Job";
+      }
+      if (kind === "clients") {
+        return obj.name || obj.email || obj.id || "Client";
+      }
+      if (kind === "invoices") {
+        return obj.invoice_number || obj.client_name || obj.id || "Invoice";
+      }
+      if (kind === "timers") {
+        return obj.job_id || obj.user_id || obj.id || "Timer";
+      }
+      return obj.full_name || obj.business_name || obj.title || obj.name || obj.email || obj.id || "Record";
+    }
+
+    function itemPill(obj, kind) {
+      if (kind === "users" || kind === "businesses" || kind === "plans") return obj.plan || obj._group || obj.role || "record";
+      if (kind === "jobs") return obj.status || "job";
+      if (kind === "clients") return "client";
+      if (kind === "invoices") return obj.status || "invoice";
+      if (kind === "timers") return obj.status || "running";
+      return "record";
+    }
+
+    function itemHtml(obj, kind) {
+      const fields = getDisplayFields(obj, kind).filter(([,v]) => v !== null && v !== undefined && v !== "");
       return `
         <div class=\"item\">
-          <div class=\"item-title\">${esc(itemTitle(obj))}</div>
-          ${entries.map(([k,v]) => `<div class=\"row small\"><span class=\"muted\">${esc(k)}:</span> ${esc(v)}</div>`).join("")}
+          <div class=\"item-head\">
+            <div class=\"item-title\">${esc(itemTitle(obj, kind))}</div>
+            <div class=\"pill\">${esc(itemPill(obj, kind))}</div>
+          </div>
+          <div class=\"fields\">
+            ${fields.map(([k,v]) => `
+              <div class=\"field\">
+                <div class=\"field-label\">${esc(k)}</div>
+                <div class=\"field-value\">${esc(v)}</div>
+              </div>
+            `).join("")}
+          </div>
         </div>
       `;
     }
@@ -3621,7 +3740,7 @@ async def admin_platform_page():
         detailsEl.innerHTML =
           `<div class=\"section-title\">${esc(data.title || kind)}</div>` +
           `<div class=\"muted\">Showing latest ${items.length} records</div>` +
-          (items.length ? items.map(itemHtml).join("") : `<div class=\"item muted\">No records found.</div>`);
+          (items.length ? items.map(obj => itemHtml(obj, kind)).join("") : `<div class=\"item muted\">No records found.</div>`);
 
         detailsEl.scrollIntoView({ behavior: "smooth", block: "start" });
       } catch (err) {
