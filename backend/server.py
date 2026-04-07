@@ -3343,491 +3343,267 @@ async def admin_drilldown(kind: str, current_user: dict = Depends(get_current_us
 
 
 @api_router.get("/admin/platform", response_class=HTMLResponse)
-async def admin_platform_page():
-    return """
+async def admin_platform_page(request: Request, current_user: dict = Depends(get_current_user)):
+    if not is_platform_admin(current_user):
+        raise HTTPException(status_code=403, detail="Platform admin access required")
+
+    kind = (request.query_params.get("kind") or "users").strip().lower()
+
+    total_users = await db.users.count_documents({})
+    total_jobs = await db.jobs.count_documents({})
+    total_clients = await db.clients.count_documents({})
+    total_invoices = await db.invoices.count_documents({})
+
+    total_businesses = 0
+    for q in [
+        {"role": "owner"},
+        {"user_type": "owner"},
+        {"account_type": "owner"},
+        {"business_name": {"$exists": True, "$ne": ""}},
+    ]:
+        try:
+            total_businesses = max(total_businesses, await db.users.count_documents(q))
+        except Exception:
+            pass
+
+    active_timers = 0
+    try:
+        active_timers = await db.time_entries.count_documents({
+            "$or": [
+                {"status": "running"},
+                {"is_running": True},
+                {"end_time": None},
+            ]
+        })
+    except Exception:
+        active_timers = 0
+
+    plan_counts = {"solo": 0, "team": 0, "pro": 0, "enterprise": 0, "other": 0}
+    try:
+        cursor = db.users.find({}, {"plan": 1})
+        async for u in cursor:
+            plan = (u.get("plan") or "").strip().lower()
+            if plan in plan_counts:
+                plan_counts[plan] += 1
+            else:
+                plan_counts["other"] += 1
+    except Exception:
+        pass
+
+    title = "All Users"
+    items = []
+
+    if kind == "users":
+        cursor = db.users.find(
+            {},
+            {"email": 1, "full_name": 1, "business_name": 1, "role": 1, "plan": 1, "created_at": 1},
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        title = "All Users"
+
+    elif kind == "businesses":
+        cursor = db.users.find(
+            {"$or": [
+                {"role": "owner"},
+                {"user_type": "owner"},
+                {"account_type": "owner"},
+                {"business_name": {"$exists": True, "$ne": ""}},
+            ]},
+            {"email": 1, "full_name": 1, "business_name": 1, "role": 1, "plan": 1, "created_at": 1},
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        title = "Businesses"
+
+    elif kind == "jobs":
+        cursor = db.jobs.find(
+            {},
+            {"title": 1, "status": 1, "client_name": 1, "customer_name": 1, "assigned_to": 1, "scheduled_date": 1, "created_at": 1},
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        title = "Jobs"
+
+    elif kind == "clients":
+        cursor = db.clients.find(
+            {},
+            {"name": 1, "email": 1, "phone": 1, "address": 1, "created_at": 1},
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        title = "Clients"
+
+    elif kind == "invoices":
+        cursor = db.invoices.find(
+            {},
+            {"invoice_number": 1, "status": 1, "client_name": 1, "total": 1, "amount": 1, "created_at": 1},
+        ).sort("created_at", -1).limit(100)
+        async for row in cursor:
+            items.append(admin_clean(row))
+        title = "Invoices"
+
+    elif kind == "timers":
+        try:
+            cursor = db.time_entries.find(
+                {"$or": [{"status": "running"}, {"is_running": True}, {"end_time": None}]},
+                {"job_id": 1, "user_id": 1, "status": 1, "start_time": 1, "end_time": 1, "created_at": 1},
+            ).sort("created_at", -1).limit(100)
+            async for row in cursor:
+                items.append(admin_clean(row))
+        except Exception:
+            items = []
+        title = "Active Timers"
+
+    elif kind == "plans":
+        cursor = db.users.find(
+            {},
+            {"email": 1, "full_name": 1, "business_name": 1, "role": 1, "plan": 1, "created_at": 1},
+        ).sort("created_at", -1).limit(200)
+        async for row in cursor:
+            clean = admin_clean(row)
+            clean["_group"] = (clean.get("plan") or "other")
+            items.append(clean)
+        title = "Plan Breakdown"
+
+    def esc(v):
+        text = "" if v is None else str(v)
+        return (
+            text.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace('"', "&quot;")
+                .replace("'", "&#39;")
+        )
+
+    def detail_card(obj):
+        title_text = (
+            obj.get("full_name")
+            or obj.get("business_name")
+            or obj.get("title")
+            or obj.get("name")
+            or obj.get("client_name")
+            or obj.get("customer_name")
+            or obj.get("invoice_number")
+            or obj.get("email")
+            or obj.get("id")
+            or "Record"
+        )
+        rows = []
+        for k, v in obj.items():
+            if v is None or v == "":
+                continue
+            rows.append(f"<div class='row'><span class='muted'>{esc(k)}:</span> {esc(v)}</div>")
+        return f"<div class='item'><div class='item-title'>{esc(title_text)}</div>{''.join(rows)}</div>"
+
+    def stat_box(label, value, key, active_key):
+        active = " active" if key == active_key else ""
+        return f"""
+        <a class="tapbox{active}" href="/api/admin/platform?kind={esc(key)}">
+          <div class="label">{esc(label)}</div>
+          <div class="value">{esc(value)}</div>
+          <div class="sub">Tap to open</div>
+        </a>
+        """
+
+    details_html = "".join(detail_card(x) for x in items) or "<div class='item muted'>No records found.</div>"
+
+    html = f"""
 <!doctype html>
-<html lang=\"en\">
+<html lang="en">
 <head>
-  <meta charset=\"UTF-8\" />
-  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, viewport-fit=cover\" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Churvox Platform Admin</title>
   <style>
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body { margin: 0; padding: 0; }
-    body {
-      background: #08111f;
-      color: #ffffff;
-      font-family: Inter, Arial, sans-serif;
-      min-height: 100vh;
-    }
-    .wrap {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 16px 16px 28px;
-    }
-    .top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 14px;
-    }
-    .title {
-      font-size: 30px;
-      font-weight: 800;
-      margin: 0 0 6px 0;
-    }
-    .muted { color: rgba(255,255,255,.72); }
-    .toolbar {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      width: 100%;
-    }
-    .btn {
-      appearance: none;
-      border: 0;
-      outline: 0;
-      background: #2563eb;
-      color: #fff;
-      text-decoration: none;
-      padding: 14px 16px;
-      border-radius: 14px;
-      font-weight: 800;
-      font-size: 15px;
-      cursor: pointer;
-      min-height: 52px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .btn.secondary {
-      background: #1f2937;
-      border: 1px solid rgba(255,255,255,.08);
-    }
-    .card {
-      background: #0f172a;
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 18px;
-      padding: 16px;
-      margin-bottom: 14px;
-    }
-    .ok { border-color: rgba(34,197,94,.35); }
-    .error { border-color: rgba(239,68,68,.45); color: #fecaca; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-    .tapbox {
-      width: 100%;
-      text-align: left;
-      background: #111827;
-      color: #fff;
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 18px;
-      padding: 18px;
-      cursor: pointer;
-      min-height: 122px;
-      display: block;
-    }
-    .tapbox.active {
-      border-color: rgba(37,99,235,.9);
-      box-shadow: 0 0 0 2px rgba(37,99,235,.18) inset;
-    }
-    .label {
-      color: rgba(255,255,255,.72);
-      font-size: 14px;
-      margin-bottom: 10px;
-      font-weight: 600;
-    }
-    .value {
-      font-size: 32px;
-      line-height: 1.1;
-      font-weight: 900;
-      word-break: break-word;
-    }
-    .sub {
-      margin-top: 10px;
-      color: #93c5fd;
-      font-size: 13px;
-      font-weight: 700;
-    }
-    .quick-nav {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 14px;
-    }
-    .quick-chip {
-      appearance: none;
-      border: 1px solid rgba(255,255,255,.08);
-      background: #111827;
-      color: #fff;
-      border-radius: 999px;
-      padding: 12px 14px;
-      min-height: 46px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .section-title {
-      font-size: 22px;
-      font-weight: 800;
-      margin: 0 0 8px 0;
-    }
-    .small { font-size: 13px; }
-    .item {
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.06);
-      border-radius: 16px;
-      padding: 14px;
-      margin-top: 10px;
-    }
-    .item-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 10px;
-    }
-    .item-title {
-      font-weight: 900;
-      font-size: 16px;
-      line-height: 1.25;
-    }
-    .pill {
-      background: rgba(37,99,235,.18);
-      color: #bfdbfe;
-      border: 1px solid rgba(37,99,235,.35);
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 12px;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-    .fields {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 10px;
-    }
-    .field {
-      background: rgba(255,255,255,.03);
-      border: 1px solid rgba(255,255,255,.05);
-      border-radius: 12px;
-      padding: 10px;
-      min-height: 62px;
-    }
-    .field-label {
-      font-size: 12px;
-      color: rgba(255,255,255,.6);
-      margin-bottom: 6px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .03em;
-    }
-    .field-value {
-      font-size: 14px;
-      color: #fff;
-      font-weight: 700;
-      line-height: 1.35;
-      word-break: break-word;
-    }
-    .sticky-top {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      background: linear-gradient(180deg, rgba(8,17,31,1) 0%, rgba(8,17,31,.98) 80%, rgba(8,17,31,0) 100%);
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: 8px;
-    }
-    @media (max-width: 640px) {
-      .wrap { padding: 12px 12px 24px; }
-      .title { font-size: 26px; }
-      .grid { grid-template-columns: 1fr 1fr; }
-      .tapbox { min-height: 116px; padding: 16px; }
-      .value { font-size: 28px; }
-      .toolbar .btn { flex: 1 1 auto; }
-      .fields { grid-template-columns: 1fr; }
-    }
+    * {{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }}
+    body {{ margin:0; background:#08111f; color:#fff; font-family:Inter, Arial, sans-serif; }}
+    .wrap {{ max-width:1200px; margin:0 auto; padding:16px 16px 28px; }}
+    .top {{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }}
+    .title {{ font-size:30px; font-weight:800; margin:0 0 6px 0; }}
+    .muted {{ color:rgba(255,255,255,.72); }}
+    .toolbar {{ display:flex; gap:10px; flex-wrap:wrap; width:100%; }}
+    .btn {{ appearance:none; border:0; outline:0; background:#2563eb; color:#fff; text-decoration:none; padding:14px 16px; border-radius:14px; font-weight:800; font-size:15px; cursor:pointer; min-height:52px; display:inline-flex; align-items:center; justify-content:center; }}
+    .btn.secondary {{ background:#1f2937; border:1px solid rgba(255,255,255,.08); }}
+    .card {{ background:#0f172a; border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:16px; margin-bottom:14px; }}
+    .ok {{ border-color: rgba(34,197,94,.35); }}
+    .grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; margin-bottom:14px; }}
+    .tapbox {{ width:100%; text-align:left; background:#111827; color:#fff; border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:18px; cursor:pointer; min-height:122px; display:block; text-decoration:none; }}
+    .tapbox.active {{ border-color:rgba(37,99,235,.9); box-shadow:0 0 0 2px rgba(37,99,235,.18) inset; }}
+    .label {{ color:rgba(255,255,255,.72); font-size:14px; margin-bottom:10px; font-weight:600; }}
+    .value {{ font-size:32px; line-height:1.1; font-weight:900; word-break:break-word; }}
+    .sub {{ margin-top:10px; color:#93c5fd; font-size:13px; font-weight:700; }}
+    .quick-nav {{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }}
+    .quick-chip {{ text-decoration:none; border:1px solid rgba(255,255,255,.08); background:#111827; color:#fff; border-radius:999px; padding:12px 14px; min-height:46px; font-weight:700; display:inline-flex; align-items:center; }}
+    .quick-chip.active {{ border-color:rgba(37,99,235,.9); }}
+    .section-title {{ font-size:22px; font-weight:800; margin:0 0 8px 0; }}
+    .small, .row {{ font-size:13px; }}
+    .item {{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:12px; margin-top:10px; }}
+    .item-title {{ font-weight:800; margin-bottom:8px; font-size:15px; }}
+    .row {{ margin-top:4px; line-height:1.35; }}
+    .sticky-top {{ position:sticky; top:0; z-index:10; background:linear-gradient(180deg, rgba(8,17,31,1) 0%, rgba(8,17,31,.98) 80%, rgba(8,17,31,0) 100%); padding-top:env(safe-area-inset-top); padding-bottom:8px; }}
+    @media (max-width:640px) {{
+      .wrap {{ padding:12px 12px 24px; }}
+      .title {{ font-size:26px; }}
+      .grid {{ grid-template-columns:1fr 1fr; }}
+      .tapbox {{ min-height:116px; padding:16px; }}
+      .value {{ font-size:28px; }}
+      .toolbar .btn {{ flex:1 1 auto; }}
+    }}
   </style>
 </head>
 <body>
-  <div class=\"wrap\">
-    <div class=\"sticky-top\">
-      <div class=\"top\">
+  <div class="wrap">
+    <div class="sticky-top">
+      <div class="top">
         <div>
-          <h1 class=\"title\">Platform Admin</h1>
-          <div class=\"muted\">App owner view with real stats and easy tap boxes</div>
+          <h1 class="title">Platform Admin</h1>
+          <div class="muted">Real app-wide stats for app owner</div>
         </div>
       </div>
 
-      <div class=\"toolbar\">
-        <button class=\"btn\" id=\"reloadBtn\" type=\"button\">Reload Stats</button>
-        <button class=\"btn secondary\" id=\"openUsersBtn\" type=\"button\">Open Users</button>
-        <button class=\"btn secondary\" id=\"openBusinessesBtn\" type=\"button\">Open Businesses</button>
+      <div class="toolbar">
+        <a class="btn" href="/api/admin/platform">Reload Stats</a>
+        <a class="btn secondary" href="/api/admin/platform?kind=users">Open Users</a>
+        <a class="btn secondary" href="/api/admin/platform?kind=businesses">Open Businesses</a>
       </div>
     </div>
 
-    <div id=\"status\" class=\"card\">Loading platform admin...</div>
-
-    <div class=\"quick-nav\" id=\"quickNav\" style=\"display:none;\">
-      <button class=\"quick-chip\" data-kind=\"users\" type=\"button\">Users</button>
-      <button class=\"quick-chip\" data-kind=\"businesses\" type=\"button\">Businesses</button>
-      <button class=\"quick-chip\" data-kind=\"jobs\" type=\"button\">Jobs</button>
-      <button class=\"quick-chip\" data-kind=\"clients\" type=\"button\">Clients</button>
-      <button class=\"quick-chip\" data-kind=\"invoices\" type=\"button\">Invoices</button>
-      <button class=\"quick-chip\" data-kind=\"timers\" type=\"button\">Timers</button>
-      <button class=\"quick-chip\" data-kind=\"plans\" type=\"button\">Plans</button>
+    <div class="card ok">
+      Logged in as <b>{esc((current_user.get("email") or "").lower())}</b><br>
+      <span class="muted">Tap any box below to open real records.</span>
     </div>
 
-    <div id=\"stats\" class=\"grid\" style=\"display:none;\"></div>
-    <div id=\"details\" class=\"card\" style=\"display:none;\"></div>
+    <div class="quick-nav">
+      <a class="quick-chip{' active' if kind == 'users' else ''}" href="/api/admin/platform?kind=users">Users</a>
+      <a class="quick-chip{' active' if kind == 'businesses' else ''}" href="/api/admin/platform?kind=businesses">Businesses</a>
+      <a class="quick-chip{' active' if kind == 'jobs' else ''}" href="/api/admin/platform?kind=jobs">Jobs</a>
+      <a class="quick-chip{' active' if kind == 'clients' else ''}" href="/api/admin/platform?kind=clients">Clients</a>
+      <a class="quick-chip{' active' if kind == 'invoices' else ''}" href="/api/admin/platform?kind=invoices">Invoices</a>
+      <a class="quick-chip{' active' if kind == 'timers' else ''}" href="/api/admin/platform?kind=timers">Timers</a>
+      <a class="quick-chip{' active' if kind == 'plans' else ''}" href="/api/admin/platform?kind=plans">Plans</a>
+    </div>
+
+    <div class="grid">
+      {stat_box("Total Users", total_users, "users", kind)}
+      {stat_box("Businesses", total_businesses, "businesses", kind)}
+      {stat_box("Jobs", total_jobs, "jobs", kind)}
+      {stat_box("Clients", total_clients, "clients", kind)}
+      {stat_box("Invoices", total_invoices, "invoices", kind)}
+      {stat_box("Active Timers", active_timers, "timers", kind)}
+      {stat_box("Plans", f"{plan_counts['solo']}/{plan_counts['team']}/{plan_counts['pro']}/{plan_counts['enterprise']}", "plans", kind)}
+    </div>
+
+    <div class="card">
+      <div class="section-title">{esc(title)}</div>
+      <div class="muted">Showing latest {len(items)} records</div>
+      {details_html}
+    </div>
   </div>
-
-  <script>
-    const statusEl = document.getElementById("status");
-    const statsEl = document.getElementById("stats");
-    const detailsEl = document.getElementById("details");
-    const quickNavEl = document.getElementById("quickNav");
-    let currentKind = "users";
-
-    function esc(v) {
-      return String(v ?? "").replace(/[&<>\\"']/g, m => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;","\\\"":"&quot;","'":"&#39;"
-      }[m]));
-    }
-
-    function setActiveBox(kind) {
-      document.querySelectorAll(".tapbox").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.kind === kind);
-      });
-      document.querySelectorAll(".quick-chip").forEach(btn => {
-        btn.style.borderColor = btn.dataset.kind === kind ? "rgba(37,99,235,.9)" : "rgba(255,255,255,.08)";
-      });
-    }
-
-    function getDisplayFields(obj, kind) {
-      const pick = (...keys) => {
-        for (const k of keys) {
-          if (obj[k] !== undefined && obj[k] !== null && obj[k] !== "") return obj[k];
-        }
-        return "";
-      };
-
-      if (kind === "users" || kind === "businesses" || kind === "plans") {
-        return [
-          ["Email", pick("email")],
-          ["Business", pick("business_name")],
-          ["Plan", pick("plan", "_group")],
-          ["Role", pick("role")],
-          ["Created", pick("created_at")]
-        ];
-      }
-
-      if (kind === "jobs") {
-        return [
-          ["Status", pick("status")],
-          ["Client", pick("client_name", "customer_name")],
-          ["Assigned To", pick("assigned_to")],
-          ["Scheduled", pick("scheduled_date")],
-          ["Created", pick("created_at")]
-        ];
-      }
-
-      if (kind === "clients") {
-        return [
-          ["Email", pick("email")],
-          ["Phone", pick("phone")],
-          ["Address", pick("address")],
-          ["Created", pick("created_at")]
-        ];
-      }
-
-      if (kind === "invoices") {
-        return [
-          ["Status", pick("status")],
-          ["Client", pick("client_name")],
-          ["Total", pick("total", "amount")],
-          ["Created", pick("created_at")]
-        ];
-      }
-
-      if (kind === "timers") {
-        return [
-          ["Status", pick("status")],
-          ["Job ID", pick("job_id")],
-          ["User ID", pick("user_id")],
-          ["Start", pick("start_time")],
-          ["End", pick("end_time")],
-          ["Created", pick("created_at")]
-        ];
-      }
-
-      return Object.entries(obj || {}).filter(([k,v]) => v !== null && v !== undefined && v !== "");
-    }
-
-    function itemTitle(obj, kind) {
-      if (kind === "users" || kind === "businesses" || kind === "plans") {
-        return obj.full_name || obj.email || obj.business_name || obj.id || "User";
-      }
-      if (kind === "jobs") {
-        return obj.title || obj.client_name || obj.customer_name || obj.id || "Job";
-      }
-      if (kind === "clients") {
-        return obj.name || obj.email || obj.id || "Client";
-      }
-      if (kind === "invoices") {
-        return obj.invoice_number || obj.client_name || obj.id || "Invoice";
-      }
-      if (kind === "timers") {
-        return obj.job_id || obj.user_id || obj.id || "Timer";
-      }
-      return obj.full_name || obj.business_name || obj.title || obj.name || obj.email || obj.id || "Record";
-    }
-
-    function itemPill(obj, kind) {
-      if (kind === "users" || kind === "businesses" || kind === "plans") return obj.plan || obj._group || obj.role || "record";
-      if (kind === "jobs") return obj.status || "job";
-      if (kind === "clients") return "client";
-      if (kind === "invoices") return obj.status || "invoice";
-      if (kind === "timers") return obj.status || "running";
-      return "record";
-    }
-
-    function itemHtml(obj, kind) {
-      const fields = getDisplayFields(obj, kind).filter(([,v]) => v !== null && v !== undefined && v !== "");
-      return `
-        <div class=\"item\">
-          <div class=\"item-head\">
-            <div class=\"item-title\">${esc(itemTitle(obj, kind))}</div>
-            <div class=\"pill\">${esc(itemPill(obj, kind))}</div>
-          </div>
-          <div class=\"fields\">
-            ${fields.map(([k,v]) => `
-              <div class=\"field\">
-                <div class=\"field-label\">${esc(k)}</div>
-                <div class=\"field-value\">${esc(v)}</div>
-              </div>
-            `).join("")}
-          </div>
-        </div>
-      `;
-    }
-
-    async function loadDetails(kind) {
-      currentKind = kind;
-      setActiveBox(kind);
-      detailsEl.style.display = "block";
-      detailsEl.className = "card";
-      detailsEl.innerHTML = "Loading " + esc(kind) + "...";
-
-      try {
-        const res = await fetch("/api/admin/drilldown/" + encodeURIComponent(kind), {
-          credentials: "include"
-        });
-
-        if (!res.ok) {
-          const t = await res.text();
-          throw new Error(t || "Failed to load " + kind);
-        }
-
-        const data = await res.json();
-        const items = data.items || [];
-
-        detailsEl.innerHTML =
-          `<div class=\"section-title\">${esc(data.title || kind)}</div>` +
-          `<div class=\"muted\">Showing latest ${items.length} records</div>` +
-          (items.length ? items.map(obj => itemHtml(obj, kind)).join("") : `<div class=\"item muted\">No records found.</div>`);
-
-        detailsEl.scrollIntoView({ behavior: "smooth", block: "start" });
-      } catch (err) {
-        detailsEl.className = "card error";
-        detailsEl.textContent = err.message || "Failed to load details";
-      }
-    }
-
-    function buildCards(stats) {
-      const plans = stats.plan_counts || {};
-      const cards = [
-        ["users", "Total Users", stats.total_users || 0],
-        ["businesses", "Businesses", stats.total_businesses || 0],
-        ["jobs", "Jobs", stats.total_jobs || 0],
-        ["clients", "Clients", stats.total_clients || 0],
-        ["invoices", "Invoices", stats.total_invoices || 0],
-        ["timers", "Active Timers", stats.active_timers || 0],
-        ["plans", "Plans", `${plans.solo || 0}/${plans.team || 0}/${plans.pro || 0}/${plans.enterprise || 0}`]
-      ];
-
-      statsEl.innerHTML = cards.map(([kind, label, value]) => `
-        <button class=\"tapbox\" type=\"button\" data-kind=\"${esc(kind)}\">
-          <div class=\"label\">${esc(label)}</div>
-          <div class=\"value\">${esc(value)}</div>
-          <div class=\"sub\">Tap to open</div>
-        </button>
-      `).join("");
-
-      document.querySelectorAll(".tapbox").forEach(btn => {
-        btn.addEventListener("click", () => loadDetails(btn.dataset.kind));
-      });
-    }
-
-    async function loadAdmin() {
-      statusEl.className = "card";
-      statusEl.textContent = "Loading platform admin...";
-      statsEl.style.display = "none";
-      quickNavEl.style.display = "none";
-      detailsEl.style.display = "none";
-      detailsEl.innerHTML = "";
-
-      try {
-        const res = await fetch("/api/admin/stats", { credentials: "include" });
-
-        if (res.status === 403) {
-          statusEl.className = "card error";
-          statusEl.innerHTML = "Platform admin access blocked.";
-          return;
-        }
-
-        if (!res.ok) {
-          const t = await res.text();
-          throw new Error(t || "Failed to load admin stats");
-        }
-
-        const data = await res.json();
-        const stats = data.stats || {};
-
-        statusEl.className = "card ok";
-        statusEl.innerHTML =
-          "Logged in as <b>" + esc(data.admin_email || "admin") + "</b><br>" +
-          "<span class=\"muted\">Tap any box below to open real records.</span>";
-
-        buildCards(stats);
-        statsEl.style.display = "grid";
-        quickNavEl.style.display = "flex";
-
-        loadDetails(currentKind || "users");
-      } catch (err) {
-        statusEl.className = "card error";
-        statusEl.textContent = err.message || "Failed to load platform admin";
-      }
-    }
-
-    document.getElementById("reloadBtn").addEventListener("click", loadAdmin);
-    document.getElementById("openUsersBtn").addEventListener("click", () => loadDetails("users"));
-    document.getElementById("openBusinessesBtn").addEventListener("click", () => loadDetails("businesses"));
-
-    document.querySelectorAll(".quick-chip").forEach(btn => {
-      btn.addEventListener("click", () => loadDetails(btn.dataset.kind));
-    });
-
-    loadAdmin();
-  </script>
 </body>
 </html>
 """
+    return html
 
 app.include_router(api_router)
 
