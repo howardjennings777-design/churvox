@@ -99,7 +99,26 @@ function App() {
           <Route path="/account-deletion" element={<AccountDeletionPage />} />
 
                 <Route path="/platform-unlock" element={<PlatformUnlock />} />
-</Routes>
+
+        <Route path="/owner/login" element={<AdminLoginPage />} />
+        <Route
+          path="/owner/dashboard"
+          element={
+            <PlatformAdminRoute>
+              <PlatformOwnerDashboard />
+            </PlatformAdminRoute>
+          }
+        />
+        <Route
+          path="/owner/usage"
+          element={
+            <PlatformAdminRoute>
+              <AdminUsagePage />
+            </PlatformAdminRoute>
+          }
+        />
+
+      </Routes>
       </AuthProvider>
     </BrowserRouter>
   );
