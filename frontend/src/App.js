@@ -56,6 +56,8 @@ function App() {
         <Toaster position="top-right" richColors />
         <Routes>
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/owner-login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/owner" element={<Navigate to="/dashboard" replace />} />
           <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
           <Route path="/admin/login" element={<PublicRoute><AdminLoginPage /></PublicRoute>} />
           <Route path="/invite/setup/:token" element={<InviteSetupPage />} />

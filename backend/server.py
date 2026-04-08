@@ -3536,6 +3536,7 @@ app.include_router(api_router)
 # Startup event
 @app.on_event("startup")
 async def startup_event():
+    await ensure_owner_account()
     await db.users.create_index("email", unique=True)
     await db.password_reset_tokens.create_index("expires_at", expireAfterSeconds=0)
     await db.login_attempts.create_index("identifier")
