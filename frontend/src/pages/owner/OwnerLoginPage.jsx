@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom";
 
 const OWNER_EMAIL = "hello@churvox.com";
 
@@ -142,6 +143,25 @@ export default function OwnerLoginPage() {
             {loading ? "Signing in..." : "Open Owner Dashboard"}
           </button>
         </form>
+
+<div style={{ marginTop: "12px", textAlign: "center" }}>
+  <a
+    href="/owner"
+    style={{
+      display: "inline-block",
+      padding: "10px 14px",
+      borderRadius: "12px",
+      border: "1px solid #cbd5e1",
+      background: "#fff",
+      color: "#0f172a",
+      textDecoration: "none",
+      fontWeight: 600
+    }}
+  >
+    Open Owner Page
+  </a>
+</div>
+
       </div>
     </div>
   );

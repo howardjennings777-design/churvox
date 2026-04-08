@@ -56,6 +56,7 @@ function App() {
       <AuthProvider>
         <Toaster position="top-right" richColors />
         <Routes>
+  <Route path="/owner" element={<AppOwnerPage />} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/owner-login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/owner" element={<Navigate to="/dashboard" replace />} />
