@@ -3503,14 +3503,20 @@ async def delete_my_account(response: Response, current_user: dict = Depends(get
 
 
 
-OWNER_BOOTSTRAP_EMAIL = "hello@churvox.com"
+OWNER_BOOTSTRAP_EMAIL = "howardjennings77@gmail.com"
 OWNER_BOOTSTRAP_PASSWORD = "OwnerReset123!"
 
 async def ensure_owner_account():
     owner_email = OWNER_BOOTSTRAP_EMAIL.lower().strip()
     owner_password_hash = get_password_hash(OWNER_BOOTSTRAP_PASSWORD)
 
-    existing = await db.users.find_one({"email": owner_email})
+    existing = await db.users.find_one({
+        "email": {"$in": [
+            owner_email,
+            "hello@churvox.com",
+            "howardjennings77@gmail.com"
+        ]}
+    })
 
     if existing:
         await db.users.update_one(
@@ -3521,7 +3527,7 @@ async def ensure_owner_account():
                 "role": "owner",
                 "is_admin": True,
                 "is_active": True,
-                "full_name": existing.get("full_name") or "Churvox Owner",
+                "full_name": existing.get("full_name") or "Howard Jennings",
                 "business_name": existing.get("business_name") or "Churvox"
             }}
         )
@@ -3532,7 +3538,7 @@ async def ensure_owner_account():
             "role": "owner",
             "is_admin": True,
             "is_active": True,
-            "full_name": "Churvox Owner",
+            "full_name": "Howard Jennings",
             "business_name": "Churvox"
         })
 
