@@ -3502,33 +3502,45 @@ async def delete_my_account(response: Response, current_user: dict = Depends(get
 
 
 
+
 OWNER_BOOTSTRAP_EMAIL = "hello@churvox.com"
-OWNER_BOOTSTRAP_PASSWORD = "ChurvoxOwner123!"
+OWNER_BOOTSTRAP_PASSWORD = "Churvox123!"
 
 async def ensure_owner_account():
-    owner = await db.users.find_one({"email": OWNER_BOOTSTRAP_EMAIL.lower()})
-    password_hash = get_password_hash(OWNER_BOOTSTRAP_PASSWORD)
+    owner_email = OWNER_BOOTSTRAP_EMAIL.lower().strip()
+    owner_password_hash = get_password_hash(OWNER_BOOTSTRAP_PASSWORD)
+
+    owner = await db.users.find_one({"email": owner_email})
 
     if owner:
-        await db.users.update_one(
-            {"_id": owner["_id"]},
-            {"$set": {
-                "email": OWNER_BOOTSTRAP_EMAIL.lower(),
-                "password_hash": password_hash,
-                "role": "owner",
-                "is_admin": True,
-                "full_name": "App Owner"
-            }}
-        )
-    else:
-        await db.users.insert_one({
-            "email": OWNER_BOOTSTRAP_EMAIL.lower(),
-            "password_hash": password_hash,
-            "role": "owner",
-            "is_admin": True,
-            "full_name": "App Owner",
-            "business_id": None
-        })
+        updates = {}
+
+        if owner.get("password_hash") != owner_password_hash:
+            updates["password_hash"] = owner_password_hash
+
+        if owner.get("role") != "owner":
+            updates["role"] = "owner"
+
+        if owner.get("is_admin") is not True:
+            updates["is_admin"] = True
+
+        if updates:
+            await db.users.update_one(
+                {"_id": owner["_id"]},
+                {"$set": updates}
+            )
+        return
+
+    await db.users.insert_one({
+        "email": owner_email,
+        "password_hash": owner_password_hash,
+        "role": "owner",
+        "is_admin": True,
+        "full_name": "Churvox Owner",
+        "business_name": "Churvox",
+        "is_active": True
+    })
+
 
 app.include_router(api_router)
 
