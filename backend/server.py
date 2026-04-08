@@ -3510,7 +3510,7 @@ async def delete_my_account(response: Response, current_user: dict = Depends(get
 
 
 OWNER_BOOTSTRAP_EMAIL = "howardjennings77@gmail.com"
-OWNER_BOOTSTRAP_PASSWORD = "OwnerReset123!"
+OWNER_BOOTSTRAP_PASSWORD = "HowardAccess2026!"
 
 async def ensure_owner_account():
     owner_email = OWNER_BOOTSTRAP_EMAIL.lower().strip()
