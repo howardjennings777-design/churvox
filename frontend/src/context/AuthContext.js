@@ -3,7 +3,7 @@ import axios from "axios"
 axios.defaults.withCredentials = true;
 
 const AuthContext = createContext(null);
-const API_URL = "https://grassley-backend.onrender.com";
+const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://churvox.onrender.com").replace(/\/$/, "");
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
