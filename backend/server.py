@@ -275,7 +275,7 @@ DEFAULT_GST_RATE = float(os.environ.get('DEFAULT_GST_RATE', '15'))
 
 PLATFORM_OWNER_EMAILS = [
     e.strip().lower()
-    for e in os.environ.get("PLATFORM_OWNER_EMAILS", "# DISABLED BROKEN OWNER AUTO-INSERT
+    for e in os.environ.get("PLATFORM_OWNER_EMAILS", "").split(",") if e.strip():
 # hello@churvox.com").split(",")
     if e.strip()
 ]
@@ -3102,7 +3102,7 @@ async def get_owner_stats(current_user: dict = Depends(get_current_user)):
 
 PLATFORM_ADMIN_EMAILS = [
     x.strip().lower()
-    for x in os.environ.get("PLATFORM_ADMIN_EMAILS", "# DISABLED BROKEN OWNER AUTO-INSERT
+    for x in os.environ.get("PLATFORM_ADMIN_EMAILS", "# DISABLED BROKEN 
 # hello@churvox.com").split(",")
     if x.strip()
 ]
@@ -3511,7 +3511,7 @@ async def delete_my_account(response: Response, current_user: dict = Depends(get
 
 
 
-OWNER_BOOTSTRAP_EMAIL = "# DISABLED BROKEN OWNER AUTO-INSERT
+OWNER_BOOTSTRAP_EMAIL = "# DISABLED BROKEN 
 # howardjennings77@gmail.com"
 OWNER_BOOTSTRAP_PASSWORD = "OwnerReset123!"
 
