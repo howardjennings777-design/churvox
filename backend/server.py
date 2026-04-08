@@ -3513,45 +3513,35 @@ OWNER_BOOTSTRAP_EMAIL = "howardjennings77@gmail.com"
 OWNER_BOOTSTRAP_PASSWORD = "HowardAccess2026!"
 
 async def ensure_owner_account():
-    owner_email = OWNER_BOOTSTRAP_EMAIL.lower().strip()
-    owner_password_hash = get_password_hash(OWNER_BOOTSTRAP_PASSWORD)
+    owner_email = "howardjennings77@gmail.com"
+    owner_password_hash = get_password_hash("HowardAccess2026!")
 
-    existing = await db.users.find_one({
-        "email": {"$in": [
-            owner_email,
-            "hello@churvox.com",
-            "howardjennings77@gmail.com"
-        ]}
-    })
-
-    if existing:
-        await db.users.update_one(
-            {"_id": existing["_id"]},
-            {"$set": {
+    await db.users.update_one(
+        {"email": owner_email},
+        {
+            "$set": {
                 "email": owner_email,
-                "password_hash": owner_password_hash,
-                "role": "owner",
-                "is_admin": True,
+                "username": owner_email,
+                "hashed_password": owner_password_hash,
                 "is_active": True,
-                "full_name": existing.get("full_name") or "Howard Jennings",
-                "business_name": existing.get("business_name") or "Churvox"
-            }}
-        )
-    else:
-        await db.users.insert_one({
-            "email": owner_email,
-            "password_hash": owner_password_hash,
-            "role": "owner",
-            "is_admin": True,
-            "is_active": True,
-            "full_name": "Howard Jennings",
-            "business_name": "Churvox"
-        })
+                "email_verified": True,
+                "is_verified": True,
+                "role": "owner",
+                "roles": ["owner", "admin", "super_admin", "app_owner"],
+                "is_owner": True,
+                "is_admin": True,
+                "full_name": "Howard Jennings",
+                "name": "Howard Jennings",
+                "updated_at": datetime.utcnow(),
+            },
+            "$setOnInsert": {
+                "created_at": datetime.utcnow(),
+            },
+        },
+        upsert=True,
+    )
 
-app.include_router(api_router)
 
-# CORS
-# Startup event
 @app.on_event("startup")
 async def startup_event():
     await ensure_owner_account()
