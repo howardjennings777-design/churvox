@@ -1454,6 +1454,7 @@ async def app_platform_stats(current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone, timedelta
 
     now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     week_ago = now - timedelta(days=7)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
@@ -1486,6 +1487,23 @@ async def app_platform_stats(current_user: dict = Depends(get_current_user)):
                 return 0.0
         return 0.0
 
+    def pick_plan(doc):
+        plan = str(
+            doc.get("plan_name")
+            or doc.get("subscription_plan")
+            or doc.get("plan")
+            or doc.get("selected_plan")
+            or "solo"
+        ).strip().lower()
+
+        if "enterprise" in plan:
+            return "enterprise"
+        if "pro" in plan:
+            return "pro"
+        if "team" in plan:
+            return "team"
+        return "solo"
+
     total_users = await db.users.count_documents({})
     total_jobs = await db.jobs.count_documents({})
     total_clients = await db.clients.count_documents({})
@@ -1493,13 +1511,19 @@ async def app_platform_stats(current_user: dict = Depends(get_current_user)):
     total_invoices = await db.invoices.count_documents({})
 
     business_ids = set()
-    trial_users = 0
     paid_users = 0
+    trial_users = 0
     cancelled_users = 0
     new_signups_this_week = 0
-    top_plans = {}
+    plan_counts = {"solo": 0, "team": 0, "pro": 0, "enterprise": 0}
+    users_list = []
+    paid_users_list = []
 
-    async for user in db.users.find({}, {
+    user_projection = {
+        "_id": 1,
+        "email": 1,
+        "name": 1,
+        "business_name": 1,
         "business_id": 1,
         "role": 1,
         "plan": 1,
@@ -1507,34 +1531,40 @@ async def app_platform_stats(current_user: dict = Depends(get_current_user)):
         "subscription_plan": 1,
         "subscription_status": 1,
         "plan_status": 1,
-        "created_at": 1
-    }):
+        "created_at": 1,
+        "updated_at": 1,
+        "last_login": 1,
+        "is_platform_owner": 1,
+    }
+
+    async for user in db.users.find({}, user_projection):
         business_id = user.get("business_id")
         if business_id:
             business_ids.add(str(business_id))
+        else:
+            business_ids.add(f'user:{user.get("_id")}')
 
-        if str(user.get("role", "")).lower() == "owner":
-            business_ids.add(f'owner:{user.get("_id")}')
-
-        plan_name = str(
-            user.get("plan_name")
-            or user.get("subscription_plan")
-            or user.get("plan")
-            or "unknown"
-        ).strip()
+        plan = pick_plan(user)
+        plan_counts[plan] = plan_counts.get(plan, 0) + 1
 
         plan_status = str(
             user.get("subscription_status")
             or user.get("plan_status")
             or ""
-        ).lower()
+        ).strip().lower()
 
-        top_plans[plan_name] = top_plans.get(plan_name, 0) + 1
-
-        if "trial" in plan_name.lower() or "trial" in plan_status:
+        if "trial" in plan_status or "trial" in str(user.get("plan", "")).lower() or "trial" in str(user.get("plan_name", "")).lower():
             trial_users += 1
-        elif plan_status in {"active", "paid"} or plan_name.lower() not in {"unknown", "", "free"}:
+        elif plan_status in {"active", "paid"} or plan in {"team", "pro", "enterprise"}:
             paid_users += 1
+            paid_users_list.append({
+                "id": str(user.get("_id")),
+                "email": user.get("email"),
+                "name": user.get("name"),
+                "business_name": user.get("business_name"),
+                "plan": plan,
+                "subscription_status": plan_status or "active",
+            })
 
         if plan_status in {"cancelled", "canceled", "expired", "inactive"}:
             cancelled_users += 1
@@ -1543,17 +1573,51 @@ async def app_platform_stats(current_user: dict = Depends(get_current_user)):
         if created_at and created_at >= week_ago:
             new_signups_this_week += 1
 
+        users_list.append({
+            "id": str(user.get("_id")),
+            "email": user.get("email"),
+            "name": user.get("name"),
+            "business_name": user.get("business_name"),
+            "role": user.get("role"),
+            "plan": plan,
+            "created_at": created_at.isoformat() if created_at else None,
+        })
+
+    try:
+        async for biz in db.businesses.find({}, {"_id": 1, "name": 1, "business_name": 1, "plan": 1, "created_at": 1}):
+            business_ids.add(str(biz.get("_id")))
+    except Exception:
+        pass
+
     total_businesses = len(business_ids)
 
-    active_today = await db.jobs.count_documents({
-        "status": {"$in": ["assigned", "acknowledged", "in_progress", "scheduled", "active"]}
-    })
+    active_today_user_ids = set()
+    active_today_list = []
+
+    async for user in db.users.find({}, {"_id": 1, "email": 1, "name": 1, "business_name": 1, "updated_at": 1, "last_login": 1}):
+        last_seen = as_dt(user.get("last_login")) or as_dt(user.get("updated_at"))
+        if last_seen and last_seen >= today_start:
+            uid = str(user.get("_id"))
+            active_today_user_ids.add(uid)
+            active_today_list.append({
+                "id": uid,
+                "email": user.get("email"),
+                "name": user.get("name"),
+                "business_name": user.get("business_name"),
+                "last_seen": last_seen.isoformat(),
+            })
+
+    active_today = len(active_today_user_ids)
 
     monthly_revenue = 0.0
     outstanding_balance = 0.0
     overdue_invoices = 0
+    invoices_list = []
 
-    async for invoice in db.invoices.find({}, {
+    invoice_projection = {
+        "_id": 1,
+        "invoice_number": 1,
+        "client_name": 1,
         "status": 1,
         "total": 1,
         "amount": 1,
@@ -1563,52 +1627,114 @@ async def app_platform_stats(current_user: dict = Depends(get_current_user)):
         "paid_amount": 1,
         "due_date": 1,
         "created_at": 1,
-        "paid_at": 1
-    }):
-        status = str(invoice.get("status") or "").lower()
+        "paid_at": 1,
+        "business_id": 1,
+    }
+
+    async for invoice in db.invoices.find({}, invoice_projection):
+        status = str(invoice.get("status") or "").strip().lower()
+        created_at = as_dt(invoice.get("created_at"))
+        paid_at = as_dt(invoice.get("paid_at"))
+        due_date = as_dt(invoice.get("due_date"))
 
         total_value = max(
             as_num(invoice.get("total")),
             as_num(invoice.get("amount")),
             as_num(invoice.get("paid_amount")),
-            as_num(invoice.get("balance_due")) + as_num(invoice.get("paid_amount")),
-            as_num(invoice.get("amount_due")) + as_num(invoice.get("paid_amount"))
         )
 
         due_value = max(
-            as_num(invoice.get("remaining_balance")),
-            as_num(invoice.get("balance_due")),
             as_num(invoice.get("amount_due")),
-            0.0
+            as_num(invoice.get("balance_due")),
+            as_num(invoice.get("remaining_balance")),
+            0.0,
         )
 
-        paid_at = as_dt(invoice.get("paid_at")) or as_dt(invoice.get("created_at"))
-        due_date = as_dt(invoice.get("due_date"))
+        if status == "paid":
+            paid_when = paid_at or created_at
+            if paid_when and paid_when >= month_start:
+                monthly_revenue += total_value
 
-        if status in {"paid", "completed"} and paid_at and paid_at >= month_start:
-            monthly_revenue += total_value or as_num(invoice.get("paid_amount"))
+        if status in {"sent", "overdue"}:
+            outstanding_balance += due_value or total_value
 
-        if status not in {"paid", "completed", "cancelled", "canceled", "void"}:
-            outstanding_balance += due_value if due_value else total_value
-            if due_date and due_date < now:
-                overdue_invoices += 1
+        if status == "overdue" or (due_date and due_date < now and status != "paid"):
+            overdue_invoices += 1
 
-    top_plans = dict(sorted(top_plans.items(), key=lambda item: item[1], reverse=True)[:5])
+        invoices_list.append({
+            "id": str(invoice.get("_id")),
+            "invoice_number": invoice.get("invoice_number"),
+            "client_name": invoice.get("client_name"),
+            "status": status,
+            "total": total_value,
+            "amount_due": due_value,
+            "due_date": due_date.isoformat() if due_date else None,
+        })
+
+    jobs_list = []
+    async for job in db.jobs.find({}, {
+        "_id": 1,
+        "title": 1,
+        "client_name": 1,
+        "status": 1,
+        "business_id": 1,
+        "created_at": 1,
+        "updated_at": 1,
+        "scheduled_date": 1,
+    }).sort("updated_at", -1).limit(100):
+        jobs_list.append({
+            "id": str(job.get("_id")),
+            "title": job.get("title"),
+            "client_name": job.get("client_name"),
+            "status": job.get("status"),
+            "business_id": str(job.get("business_id")) if job.get("business_id") else None,
+            "created_at": as_dt(job.get("created_at")).isoformat() if as_dt(job.get("created_at")) else None,
+            "updated_at": as_dt(job.get("updated_at")).isoformat() if as_dt(job.get("updated_at")) else None,
+            "scheduled_date": as_dt(job.get("scheduled_date")).isoformat() if as_dt(job.get("scheduled_date")) else None,
+        })
+
+    businesses_list = []
+    try:
+        async for biz in db.businesses.find({}, {
+            "_id": 1,
+            "name": 1,
+            "business_name": 1,
+            "email": 1,
+            "plan": 1,
+            "created_at": 1,
+        }).limit(200):
+            businesses_list.append({
+                "id": str(biz.get("_id")),
+                "business_name": biz.get("business_name") or biz.get("name"),
+                "email": biz.get("email"),
+                "plan": pick_plan(biz),
+                "created_at": as_dt(biz.get("created_at")).isoformat() if as_dt(biz.get("created_at")) else None,
+            })
+    except Exception:
+        pass
 
     return {
-        "totalUsers": total_users,
-        "totalBusinesses": total_businesses,
-        "totalJobs": total_jobs,
-        "totalClients": total_clients,
-        "totalQuotes": total_quotes,
-        "totalInvoices": total_invoices,
-        "activeToday": active_today,
-        "trialUsers": trial_users,
-        "paidUsers": paid_users,
-        "cancelledUsers": cancelled_users,
-        "newSignupsThisWeek": new_signups_this_week,
-        "monthlyRevenue": monthly_revenue,
-        "outstandingBalance": outstanding_balance,
-        "overdueInvoices": overdue_invoices,
-        "topPlans": top_plans
+        "total_users": int(total_users),
+        "total_businesses": int(total_businesses),
+        "active_today": int(active_today),
+        "paid_users": int(paid_users),
+        "trial_users": int(trial_users),
+        "cancelled_users": int(cancelled_users),
+        "new_signups_this_week": int(new_signups_this_week),
+        "total_jobs": int(total_jobs),
+        "total_clients": int(total_clients),
+        "total_quotes": int(total_quotes),
+        "total_invoices": int(total_invoices),
+        "monthly_revenue": round(monthly_revenue, 2),
+        "outstanding_balance": round(outstanding_balance, 2),
+        "overdue_invoices": int(overdue_invoices),
+        "plan_counts": plan_counts,
+        "users_list": users_list[:200],
+        "businesses_list": businesses_list[:200],
+        "active_today_list": active_today_list[:200],
+        "paid_users_list": paid_users_list[:200],
+        "invoices_list": invoices_list[:200],
+        "jobs_list": jobs_list[:200],
     }
+
+
