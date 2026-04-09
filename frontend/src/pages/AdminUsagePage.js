@@ -1,48 +1,137 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+
+const API_BASE =
+  ((typeof import.meta !== "undefined" &&
+    import.meta.env &&
+    import.meta.env.VITE_BACKEND_URL) ||
+    "").replace(/\/$/, "");
+
+const money = (value) => {
+  const n = Number(value || 0);
+  return `$${n.toLocaleString()}`;
+};
 
 export default function AdminUsagePage() {
   const [data, setData] = useState(null);
+  const [selected, setSelected] = useState("businesses");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const backend =
-      ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "")
-        .replace(/\/$/, "");
+    let alive = true;
 
-    const urls = [
-      backend ? `${backend}/api/admin/usage-summary` : null,
-      "/api/admin/usage-summary",
-      backend ? `${backend}/admin/usage-summary` : null,
-      "/admin/usage-summary",
-    ].filter(Boolean);
+    const load = async () => {
+      setLoading(true);
+      setError("");
 
-    const run = async () => {
-      for (const url of urls) {
-        try {
-          const res = await fetch(url, { credentials: "include" });
-          if (!res.ok) continue;
-          const json = await res.json();
-          setData(json);
-          setLoading(false);
-          return;
-        } catch (e) {}
+      const urls = [
+        API_BASE ? `${API_BASE}/api/admin/platform-stats` : null,
+        "/api/admin/platform-stats",
+      ].filter(Boolean);
+
+      try {
+        let json = null;
+        let lastError = null;
+
+        for (const url of urls) {
+          try {
+            const res = await fetch(url, { credentials: "include" });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            json = await res.json();
+            break;
+          } catch (err) {
+            lastError = err;
+          }
+        }
+
+        if (!json) throw lastError || new Error("No stats response");
+
+        if (!alive) return;
+        setData(json);
+      } catch (err) {
+        if (!alive) return;
+        setError("Could not load usage dashboard");
+        console.error("Owner usage load failed:", err);
+      } finally {
+        if (alive) setLoading(false);
       }
-
-      setError("Could not load usage dashboard");
-      setLoading(false);
     };
 
-    run();
+    load();
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  const card = (title, value, sub = "") => (
-    <div className="rounded-2xl border border-slate-700 bg-slate-900 p-4 shadow-sm">
-      <div className="text-sm text-slate-400">{title}</div>
-      <div className="mt-2 text-3xl font-bold text-white">{value ?? 0}</div>
-      {sub ? <div className="mt-1 text-xs text-slate-500">{sub}</div> : null}
-    </div>
-  );
+  const metrics = useMemo(() => {
+    const d = data || {};
+    return {
+      businesses: {
+        label: "Businesses",
+        value: d.totalBusinesses ?? d.total_businesses ?? d.businesses ?? 0,
+        note: "Total businesses on the platform",
+      },
+      users: {
+        label: "Users",
+        value: d.totalUsers ?? d.total_users ?? d.users ?? 0,
+        note: "All users across all businesses",
+      },
+      activeToday: {
+        label: "Active Today",
+        value: d.activeToday ?? d.active_today ?? 0,
+        note: "Users active today",
+      },
+      trialUsers: {
+        label: "Trial Users",
+        value: d.trialUsers ?? d.trial_users ?? 0,
+        note: "Users currently on trial",
+      },
+      paidUsers: {
+        label: "Paid Users",
+        value: d.paidUsers ?? d.paid_users ?? 0,
+        note: "Users on paid plans",
+      },
+      monthlyRevenue: {
+        label: "Monthly Revenue",
+        value: money(d.monthlyRevenue ?? d.monthly_revenue ?? 0),
+        note: "Current monthly recurring revenue estimate",
+      },
+      outstanding: {
+        label: "Outstanding Balance",
+        value: money(d.outstandingBalance ?? d.outstanding_balance ?? 0),
+        note: "Outstanding invoice balance across businesses",
+      },
+      jobsThisWeek: {
+        label: "Jobs This Week",
+        value: d.jobsThisWeek ?? d.jobs_this_week ?? 0,
+        note: "Jobs scheduled or created this week",
+      },
+    };
+  }, [data]);
+
+  const selectedMetric = metrics[selected];
+
+  const card = (key) => {
+    const item = metrics[key];
+    const active = selected === key;
+
+    return (
+      <button
+        key={key}
+        type="button"
+        onClick={() => setSelected(key)}
+        className={`w-full rounded-2xl border p-4 text-left transition ${
+          active
+            ? "border-cyan-400 bg-slate-800 shadow-lg"
+            : "border-slate-700 bg-slate-900 hover:border-slate-500 hover:bg-slate-800"
+        }`}
+      >
+        <div className="text-sm text-slate-400">{item.label}</div>
+        <div className="mt-2 text-3xl font-bold text-white">{item.value}</div>
+        <div className="mt-2 text-xs text-slate-500">{item.note}</div>
+      </button>
+    );
+  };
 
   if (loading) {
     return <div className="p-6 text-white">Loading usage dashboard...</div>;
@@ -52,54 +141,82 @@ export default function AdminUsagePage() {
     return <div className="p-6 text-red-400">{error}</div>;
   }
 
-  const plans = data?.plans || {};
-  const planEntries = Object.entries(plans);
-
   return (
-    <div className="min-h-screen bg-slate-950 p-4 text-white md:p-6">
+    <div className="min-h-screen bg-slate-950 p-6 text-white">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">Usage Dashboard</h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Real owner/admin snapshot of app usage and growth
-          </p>
+        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Owner Usage Dashboard</h1>
+            <p className="mt-1 text-slate-400">
+              Real owner/admin snapshot of app usage and growth
+            </p>
+          </div>
+
+          <div className="flex gap-3">
+            <a
+              href="/owner/dashboard"
+              className="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700"
+            >
+              Back to Owner Dashboard
+            </a>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="rounded-xl bg-cyan-600 px-4 py-2 text-sm font-semibold hover:bg-cyan-500"
+            >
+              Reload Stats
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {card("Total users", data?.users?.total)}
-          {card("Worker accounts", data?.users?.workers)}
-          {card("Recent signups (7d)", data?.users?.recent_signups_7d)}
-          {card("Active users (7d)", data?.users?.active_users_7d, "Uses last_login_at if available")}
-          {card("Total businesses", data?.businesses?.total)}
-          {card("Active businesses (7d)", data?.businesses?.active_businesses_7d)}
-          {card("Clients total", data?.records?.clients_total)}
-          {card("Jobs total", data?.records?.jobs_total)}
-          {card("Quotes total", data?.records?.quotes_total)}
-          {card("Invoices total", data?.records?.invoices_total)}
-          {card("Clients added (7d)", data?.records?.clients_7d)}
-          {card("Jobs added (7d)", data?.records?.jobs_7d)}
-          {card("Quotes added (7d)", data?.records?.quotes_7d)}
-          {card("Invoices added (7d)", data?.records?.invoices_7d)}
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {[
+            "businesses",
+            "users",
+            "activeToday",
+            "trialUsers",
+            "paidUsers",
+            "monthlyRevenue",
+            "outstanding",
+            "jobsThisWeek",
+          ].map(card)}
         </div>
 
-        <div className="mt-8 rounded-2xl border border-slate-700 bg-slate-900 p-4 shadow-sm">
-          <h2 className="text-lg font-semibold">Plan breakdown</h2>
-          {planEntries.length === 0 ? (
-            <div className="mt-3 text-slate-400">No plan data found yet.</div>
-          ) : (
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-              {planEntries.map(([name, count]) => (
-                <div key={name} className="rounded-xl border border-slate-700 bg-slate-950 p-4">
-                  <div className="text-sm capitalize text-slate-400">{name}</div>
-                  <div className="mt-2 text-2xl font-bold">{count}</div>
-                </div>
-              ))}
+        <div className="mt-6 grid gap-6 lg:grid-cols-3">
+          <div className="rounded-2xl border border-slate-700 bg-slate-900 p-5 lg:col-span-2">
+            <div className="text-sm text-slate-400">Selected metric</div>
+            <h2 className="mt-2 text-2xl font-bold">{selectedMetric?.label}</h2>
+            <div className="mt-3 text-4xl font-extrabold text-cyan-400">
+              {selectedMetric?.value}
             </div>
-          )}
-        </div>
+            <p className="mt-4 text-slate-300">{selectedMetric?.note}</p>
 
-        <div className="mt-6 text-xs text-slate-500">
-          Generated at: {data?.generated_at || "unknown"}
+            <div className="mt-6 rounded-xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-400">
+              Click any card above to switch between real platform stats.
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-700 bg-slate-900 p-5">
+            <div className="text-sm text-slate-400">Quick summary</div>
+            <div className="mt-4 space-y-3 text-sm">
+              <div className="rounded-xl bg-slate-950 p-3">
+                <span className="text-slate-400">Businesses:</span>{" "}
+                <span className="font-semibold text-white">{metrics.businesses.value}</span>
+              </div>
+              <div className="rounded-xl bg-slate-950 p-3">
+                <span className="text-slate-400">Users:</span>{" "}
+                <span className="font-semibold text-white">{metrics.users.value}</span>
+              </div>
+              <div className="rounded-xl bg-slate-950 p-3">
+                <span className="text-slate-400">Paid Users:</span>{" "}
+                <span className="font-semibold text-white">{metrics.paidUsers.value}</span>
+              </div>
+              <div className="rounded-xl bg-slate-950 p-3">
+                <span className="text-slate-400">Monthly Revenue:</span>{" "}
+                <span className="font-semibold text-white">{metrics.monthlyRevenue.value}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
