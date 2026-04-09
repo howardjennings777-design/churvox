@@ -24,7 +24,7 @@ export default function AdminLoginPage() {
     try {
       const result = await login(email, password);
       if (result?.token) {
-        navigate("/dashboard");
+        navigate("/admin");
       } else {
         setError("Login failed. Please try again.");
       }
