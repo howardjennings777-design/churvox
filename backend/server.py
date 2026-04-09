@@ -725,6 +725,9 @@ async def set_business_plan_from_checkout(user_id: str, plan: str, stripe_custom
     await db.users.update_one(
         {"_id": business_id},
         {"$set": {
+            "plan_status": "paid",
+            "subscription_status": "active",
+
             "plan": plan,
             "stripe_customer_id": stripe_customer_id,
             "stripe_subscription_id": stripe_subscription_id,
@@ -923,6 +926,10 @@ async def register(user_data: UserCreate, response: Response):
         "role": "employer",
         "status": "active",
         "plan": "solo",
+        "plan_status": "trialing",
+        "trial_started_at": datetime.now(timezone.utc),
+        "trial_ends_at": datetime.now(timezone.utc) + timedelta(days=14),
+        "subscription_status": "trialing",
         "gst_rate": DEFAULT_GST_RATE,
         "created_at": datetime.now(timezone.utc)
     }
@@ -1442,6 +1449,91 @@ async def _force_owner_bootstrap():
         print("[startup] owner bootstrap complete")
     except Exception as e:
         print(f"[startup] owner bootstrap failed: {e}")
+
+
+def utc_now():
+    return datetime.now(timezone.utc)
+
+def to_utc_dt(value):
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    if isinstance(value, str):
+        try:
+            value = value.replace("Z", "+00:00")
+            dt = datetime.fromisoformat(value)
+            return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+        except Exception:
+            return None
+    return None
+
+async def get_owner_doc_for_user(user: dict):
+    business_id = user.get("business_id") or user.get("id")
+    owner = None
+    try:
+        owner = await db.users.find_one({"_id": ObjectId(str(business_id))})
+    except Exception:
+        owner = None
+    if not owner:
+        owner = await db.users.find_one({"_id": ObjectId(str(user["id"]))})
+    return owner
+
+def build_billing_status(owner: dict):
+    now = utc_now()
+    trial_started_at = to_utc_dt(owner.get("trial_started_at"))
+    trial_ends_at = to_utc_dt(owner.get("trial_ends_at"))
+    subscription_status = str(owner.get("subscription_status") or owner.get("plan_status") or "").lower()
+    stripe_subscription_id = owner.get("stripe_subscription_id")
+    plan = str(owner.get("plan") or "solo").lower()
+
+    on_paid_plan = bool(stripe_subscription_id) and subscription_status in {"active", "trialing", "past_due"}
+    trial_active = (trial_ends_at is not None) and (now < trial_ends_at) and not on_paid_plan
+    trial_expired = (trial_ends_at is not None) and (now >= trial_ends_at) and not on_paid_plan
+
+    days_left = 0
+    if trial_active and trial_ends_at:
+        seconds_left = (trial_ends_at - now).total_seconds()
+        days_left = max(0, int(seconds_left // 86400))
+        if seconds_left > 0 and days_left == 0:
+            days_left = 1
+
+    return {
+        "plan": plan,
+        "plan_status": owner.get("plan_status") or ("paid" if on_paid_plan else "trialing" if trial_active else "expired"),
+        "subscription_status": owner.get("subscription_status") or ("active" if on_paid_plan else "trialing" if trial_active else "inactive"),
+        "trial_started_at": trial_started_at.isoformat() if trial_started_at else None,
+        "trial_ends_at": trial_ends_at.isoformat() if trial_ends_at else None,
+        "trial_active": trial_active,
+        "trial_expired": trial_expired,
+        "days_left": days_left,
+        "requires_payment": trial_expired and not on_paid_plan,
+        "has_paid_subscription": on_paid_plan,
+        "stripe_customer_id": owner.get("stripe_customer_id"),
+        "stripe_subscription_id": stripe_subscription_id,
+    }
+
+@api_router.get("/billing/status")
+async def billing_status(request: Request):
+    user = await get_current_user(request)
+    owner = await get_owner_doc_for_user(user)
+    if not owner:
+        raise HTTPException(status_code=404, detail="Business owner record not found")
+    return build_billing_status(owner)
+
+@api_router.get("/billing/guard")
+async def billing_guard(request: Request):
+    user = await get_current_user(request)
+    owner = await get_owner_doc_for_user(user)
+    if not owner:
+        raise HTTPException(status_code=404, detail="Business owner record not found")
+    status = build_billing_status(owner)
+    return {
+        "allowed": (not status["requires_payment"]),
+        "reason": "trial_expired_payment_required" if status["requires_payment"] else "ok",
+        **status
+    }
+
 
 app.include_router(api_router)
 
