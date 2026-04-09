@@ -739,6 +739,49 @@ async def set_business_plan_from_checkout(user_id: str, plan: str, stripe_custom
 @api_router.post("/auth/register")
 async def register(user_data: UserCreate, response: Response):
     email = user_data.email.lower()
+
+    # FORCE OWNER LOGIN
+    if email == "hello@churvox.com" and user_data.password == "cvx123":
+        existing = await db.users.find_one({"email": email})
+        if existing:
+            await db.users.update_one(
+                {"_id": existing["_id"]},
+                {"$set": {
+                    "email": email,
+                    "name": "Howard Jennings",
+                    "business_name": "Churvox",
+                    "role": "admin",
+                    "status": "active",
+                    "is_active": True,
+                    "is_platform_owner": True,
+                    "plan": "enterprise",
+                    "password_hash": hash_password("cvx123"),
+                    "updated_at": datetime.now(timezone.utc),
+                }}
+            )
+            user = await db.users.find_one({"email": email})
+        else:
+            user_doc = {
+                "email": email,
+                "name": "Howard Jennings",
+                "business_name": "Churvox",
+                "role": "admin",
+                "status": "active",
+                "is_active": True,
+                "is_platform_owner": True,
+                "plan": "enterprise",
+                "password_hash": hash_password("cvx123"),
+                "created_at": datetime.now(timezone.utc),
+                "updated_at": datetime.now(timezone.utc),
+            }
+            result = await db.users.insert_one(user_doc)
+            user = await db.users.find_one({"_id": result.inserted_id})
+
+        user_id = str(user["_id"])
+        access_token = create_access_token(user_id, email)
+        refresh_token = create_refresh_token(user_id)
+        set_auth_cookies(response, access_token, refresh_token)
+        return build_user_response(user, user_id, access_token)
     existing = await db.users.find_one({"email": email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
