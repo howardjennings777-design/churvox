@@ -1,302 +1,476 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Users, Building2, Activity, DollarSign, UserPlus, CreditCard, Briefcase, AlertTriangle, ArrowRight } from "lucide-react";
-import axios from "axios";
+import {
+  Users,
+  Building2,
+  Activity,
+  CreditCard,
+  FileText,
+  Briefcase,
+  DollarSign,
+  AlertTriangle,
+  RefreshCw,
+  ArrowRight,
+} from "lucide-react";
 
-axios.defaults.withCredentials = true;
+const API_BASE = (
+  (typeof import.meta !== "undefined" &&
+    import.meta.env &&
+    (import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL)) ||
+  (typeof process !== "undefined" &&
+    process.env &&
+    (process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL)) ||
+  "https://grassley-backend.onrender.com"
+).replace(/\/$/, "");
 
-const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
-
-const cardBase =
-  "w-full rounded-2xl border border-slate-700/60 bg-slate-800/80 p-5 text-left shadow-lg transition hover:border-cyan-400/50 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-400";
-
-const sectionMap = {
-  users: "users",
-  businesses: "businesses",
-  activity: "activity",
-  revenue: "revenue",
-  trials: "users",
-  paid: "users",
-  signups: "users",
-  outstanding: "revenue",
-  jobs: "activity",
-};
-
-function money(value) {
-  const n = Number(value || 0);
-  return new Intl.NumberFormat("en-NZ", {
+const money = (n) =>
+  new Intl.NumberFormat("en-NZ", {
     style: "currency",
     currency: "NZD",
     maximumFractionDigits: 0,
-  }).format(n);
+  }).format(Number(n || 0));
+
+const num = (n) => Number(n || 0);
+
+const EMPTY_STATS = {
+  total_users: 0,
+  total_businesses: 0,
+  active_today: 0,
+  paid_users: 0,
+  total_invoices: 0,
+  total_jobs: 0,
+  monthly_revenue: 0,
+  outstanding_balance: 0,
+  plan_counts: { solo: 0, team: 0, pro: 0, enterprise: 0 },
+  users_list: [],
+  businesses_list: [],
+  active_today_list: [],
+  paid_users_list: [],
+  invoices_list: [],
+  jobs_list: [],
+  raw: {},
+};
+
+function normalizeStats(raw) {
+  const src = raw || {};
+  const stats = src.stats && typeof src.stats === "object" ? src.stats : src;
+  const usage = src.usage && typeof src.usage === "object" ? src.usage : {};
+  const plans =
+    src.plans_in_use ||
+    src.plan_counts ||
+    stats.plans_in_use ||
+    stats.plan_counts ||
+    {};
+
+  const usersList =
+    src.users_list || stats.users_list || src.users || stats.users || src.recent_users || [];
+  const businessesList =
+    src.businesses_list || stats.businesses_list || src.businesses || stats.businesses || [];
+  const invoicesList =
+    src.invoices_list || stats.invoices_list || src.overdue_invoices || stats.overdue_invoices || [];
+  const jobsList =
+    src.jobs_list || stats.jobs_list || src.jobs || stats.jobs || [];
+  const paidUsersList =
+    src.paid_users_list || stats.paid_users_list || src.subscribers || stats.subscribers || [];
+  const activeTodayList =
+    src.active_today_list || stats.active_today_list || src.active_users || stats.active_users || [];
+
+  return {
+    total_users: num(
+      stats.total_users ??
+        stats.users ??
+        stats.user_count ??
+        src.total_users ??
+        src.users ??
+        src.user_count
+    ),
+    total_businesses: num(
+      stats.total_businesses ??
+        stats.businesses ??
+        stats.business_count ??
+        src.total_businesses ??
+        src.businesses ??
+        src.business_count
+    ),
+    active_today: num(
+      stats.active_today ??
+        stats.daily_active ??
+        stats.activeUsersToday ??
+        src.active_today ??
+        src.daily_active ??
+        src.activeUsersToday
+    ),
+    paid_users: num(
+      stats.paid_users ??
+        stats.paidUsers ??
+        src.paid_users ??
+        src.paidUsers
+    ),
+    total_invoices: num(
+      stats.total_invoices ??
+        stats.invoices ??
+        stats.invoice_count ??
+        src.total_invoices ??
+        src.invoices ??
+        src.invoice_count
+    ),
+    total_jobs: num(
+      stats.total_jobs ??
+        stats.jobs ??
+        stats.job_count ??
+        src.total_jobs ??
+        src.jobs ??
+        src.job_count
+    ),
+    monthly_revenue: num(
+      stats.monthly_revenue ??
+        stats.monthlyRevenue ??
+        stats.revenue_monthly ??
+        src.monthly_revenue ??
+        src.monthlyRevenue ??
+        src.revenue_monthly
+    ),
+    outstanding_balance: num(
+      stats.outstanding_balance ??
+        stats.outstandingBalance ??
+        src.outstanding_balance ??
+        src.outstandingBalance ??
+        usage.unpaid_invoice_total
+    ),
+    plan_counts: {
+      solo: num(plans.solo),
+      team: num(plans.team),
+      pro: num(plans.pro),
+      enterprise: num(plans.enterprise),
+    },
+    users_list: Array.isArray(usersList) ? usersList : [],
+    businesses_list: Array.isArray(businessesList) ? businessesList : [],
+    active_today_list: Array.isArray(activeTodayList) ? activeTodayList : [],
+    paid_users_list: Array.isArray(paidUsersList) ? paidUsersList : [],
+    invoices_list: Array.isArray(invoicesList) ? invoicesList : [],
+    jobs_list: Array.isArray(jobsList) ? jobsList : [],
+    raw: src,
+  };
 }
 
-function num(value) {
-  return Number(value || 0).toLocaleString("en-NZ");
+function StatCard({ label, value, subtext, icon: Icon, onClick, active = false }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full rounded-2xl border p-4 text-left shadow-lg transition active:scale-[0.99] ${
+        active
+          ? "border-cyan-400/70 bg-slate-800/95"
+          : "border-blue-500/20 bg-slate-900/80 hover:border-blue-400/50 hover:bg-slate-800/90"
+      }`}
+    >
+      <div className="mb-2 flex items-start justify-between gap-3">
+        <div className="text-sm text-slate-300">{label}</div>
+        <div className="flex items-center gap-2">
+          {Icon ? <Icon className="h-5 w-5 text-cyan-400" /> : null}
+          <ArrowRight className="h-4 w-4 text-slate-500" />
+        </div>
+      </div>
+      <div className="text-3xl font-bold text-white">{value}</div>
+      <div className="mt-1 text-xs text-slate-400">{subtext}</div>
+    </button>
+  );
 }
 
-function getAuthHeaders() {
-  const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
+function DrilldownRow({ item }) {
+  const text =
+    item?.name ||
+    item?.business_name ||
+    item?.company ||
+    item?.email ||
+    item?.title ||
+    item?.client_name ||
+    item?.invoice_number ||
+    item?._id ||
+    item?.id ||
+    "Record";
+
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-sm text-slate-200">
+      <div className="font-medium text-white">{String(text)}</div>
+      <pre className="mt-2 whitespace-pre-wrap break-words text-xs text-slate-400">
+{JSON.stringify(item, null, 2)}
+      </pre>
+    </div>
+  );
 }
 
-export default function PlatformOwnerDashboard() {
-  const navigate = useNavigate();
-  const [data, setData] = useState(null);
+export default function AppOwnerPage() {
+  const [stats, setStats] = useState(EMPTY_STATS);
+  const [selected, setSelected] = useState("users_list");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [sourceUsed, setSourceUsed] = useState("");
 
-  useEffect(() => {
-    let mounted = true;
+  async function tryEndpoint(path) {
+    const token =
+      (typeof window !== "undefined" && window.localStorage && window.localStorage.getItem("token")) || "";
 
-    const load = async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    try {
+      const res = await fetch(`${API_BASE}${path}`, {
+        method: "GET",
+        credentials: "include",
+        signal: controller.signal,
+        headers: {
+          Accept: "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`${path} ${res.status}: ${text}`);
+      }
+
+      return await res.json();
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  async function loadDashboard() {
+    try {
       setLoading(true);
       setError("");
-      try {
-        const res = await axios.get(`${API_URL}/api/admin/usage-summary`, {
-          headers: getAuthHeaders(),
-          withCredentials: true,
-        });
-        if (mounted) setData(res.data || {});
-      } catch (err) {
-        console.error("Owner dashboard load failed:", err);
-        if (mounted) setError("Could not load usage dashboard");
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
 
-    load();
-    return () => {
-      mounted = false;
-    };
+      const endpoints = [
+        "/api/admin/usage-summary",
+        "/api/admin/platform-stats",
+        "/api/admin/stats",
+        "/api/owner/stats",
+      ];
+
+      let data = null;
+      let used = "";
+
+      for (const endpoint of endpoints) {
+        try {
+          data = await tryEndpoint(endpoint);
+          used = endpoint;
+          break;
+        } catch (err) {
+          console.warn("Owner dashboard endpoint failed:", endpoint, err);
+        }
+      }
+
+      if (!data) {
+        setStats(EMPTY_STATS);
+        setSourceUsed("");
+        setError("Live stats could not be loaded right now. Dashboard is showing safe fallback values.");
+        return;
+      }
+
+      setStats(normalizeStats(data));
+      setSourceUsed(used);
+    } catch (err) {
+      console.error("Owner dashboard load failed:", err);
+      setStats(EMPTY_STATS);
+      setSourceUsed("");
+      setError("Live stats could not be loaded right now. Dashboard is showing safe fallback values.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadDashboard();
   }, []);
 
-  const stats = useMemo(() => {
-    const users = data?.users || {};
-    const businesses = data?.businesses || {};
-    const billing = data?.billing || {};
-    const ops = data?.operations || {};
-    const plans = data?.plans_in_use || data?.plans || {};
+  const drilldown = useMemo(() => {
+    if (!stats || !selected) return [];
+    const value = stats[selected];
+    return Array.isArray(value) ? value : [];
+  }, [stats, selected]);
 
-    const totalUsers = users.total ?? data?.totalUsers ?? 0;
-    const newUsers7d = users.new_users_7d ?? users.new_this_week ?? data?.newUsersThisWeek ?? 0;
-    const activeUsers7d = users.active_users_7d ?? data?.activeToday ?? 0;
-
-    const totalBusinesses = businesses.total ?? data?.totalBusinesses ?? 0;
-    const activeBusinesses7d = businesses.active_businesses_7d ?? 0;
-
-    const trialUsers = billing.trial_users ?? data?.trialUsers ?? 0;
-    const paidUsers = billing.paid_users ?? data?.paidUsers ?? 0;
-    const cancelledUsers = billing.cancelled_or_expired ?? 0;
-
-    const monthlyRevenue = billing.monthly_revenue ?? data?.monthlyRevenue ?? 0;
-    const outstandingBalance = billing.outstanding_balance ?? data?.outstandingBalance ?? 0;
-    const overdueInvoices = billing.overdue_invoices ?? 0;
-
-    const jobsToday = ops.jobs_today ?? data?.jobsToday ?? 0;
-
-    return {
-      totalUsers,
-      newUsers7d,
-      activeUsers7d,
-      totalBusinesses,
-      activeBusinesses7d,
-      trialUsers,
-      paidUsers,
-      cancelledUsers,
-      monthlyRevenue,
-      outstandingBalance,
-      overdueInvoices,
-      jobsToday,
-      plans,
-    };
-  }, [data]);
-
-  const openSection = (key) => {
-    navigate(`/admin/usage?section=${sectionMap[key] || "overview"}`);
-  };
-
-  const statCards = [
+  const cards = [
     {
-      key: "users",
-      title: "Total Users",
-      value: num(stats.totalUsers),
-      sub: `${num(stats.newUsers7d)} new this week`,
+      key: "users_list",
+      label: "Total Users",
+      value: stats.total_users,
+      subtext: `${stats.total_users} total in system`,
       icon: Users,
     },
     {
-      key: "businesses",
-      title: "Total Businesses",
-      value: num(stats.totalBusinesses),
-      sub: `${num(stats.activeBusinesses7d)} active this week`,
+      key: "businesses_list",
+      label: "Total Businesses",
+      value: stats.total_businesses,
+      subtext: "Live total",
       icon: Building2,
     },
     {
-      key: "activity",
-      title: "Active Today",
-      value: num(stats.activeUsers7d),
-      sub: `${num(stats.activeUsers7d)} active this week`,
+      key: "active_today_list",
+      label: "Active Today",
+      value: stats.active_today,
+      subtext: "Users active today",
       icon: Activity,
     },
     {
-      key: "revenue",
-      title: "Monthly Revenue",
-      value: money(stats.monthlyRevenue),
-      sub: "Paid invoices this month",
+      key: "paid_users_list",
+      label: "Paid Users",
+      value: stats.paid_users,
+      subtext: "Paid accounts",
+      icon: CreditCard,
+    },
+    {
+      key: "invoices_list",
+      label: "Total Invoices",
+      value: stats.total_invoices,
+      subtext: "All invoices",
+      icon: FileText,
+    },
+    {
+      key: "jobs_list",
+      label: "Jobs Today",
+      value: stats.total_jobs,
+      subtext: "Across all businesses",
+      icon: Briefcase,
+    },
+    {
+      key: "invoices_list",
+      label: "Monthly Revenue",
+      value: money(stats.monthly_revenue),
+      subtext: "Paid invoices this month",
       icon: DollarSign,
     },
     {
-      key: "trials",
-      title: "Trial Users",
-      value: num(stats.trialUsers),
-      sub: "On trial now",
-      icon: UserPlus,
-    },
-    {
-      key: "paid",
-      title: "Paid Users",
-      value: num(stats.paidUsers),
-      sub: `${num(stats.cancelledUsers)} cancelled/expired`,
-      icon: CreditCard,
+      key: "invoices_list",
+      label: "Outstanding Balance",
+      value: money(stats.outstanding_balance),
+      subtext: "Unpaid invoices",
+      icon: AlertTriangle,
     },
   ];
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-950 p-6 text-white">
-        <div className="mx-auto max-w-7xl">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">Loading platform dashboard...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-slate-950 p-6 text-white">
-        <div className="mx-auto max-w-7xl">
-          <div className="rounded-2xl border border-red-500/40 bg-slate-900 p-6 text-red-400">{error}</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-slate-950 p-6 text-white">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="min-h-screen bg-slate-950 px-4 py-6 text-white md:px-6">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Platform Dashboard</h1>
-            <p className="text-slate-300">Full app overview for Churvox owner/admin</p>
+            <h1 className="text-3xl font-bold">Platform Dashboard</h1>
+            <p className="text-sm text-slate-400">Full app overview for Churvox owner/admin</p>
+            {sourceUsed ? (
+              <p className="mt-2 text-xs text-cyan-400">Loaded from: {sourceUsed}</p>
+            ) : null}
           </div>
 
           <button
-            onClick={() => navigate("/admin/usage")}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:border-cyan-400/50 hover:bg-slate-700"
+            type="button"
+            onClick={loadDashboard}
+            className="inline-flex items-center gap-2 rounded-xl border border-blue-500/30 bg-slate-900/80 px-4 py-3 text-sm font-medium text-white hover:border-blue-400/60"
           >
-            Open full usage view
-            <ArrowRight size={16} />
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh stats
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {statCards.map((card) => {
-            const Icon = card.icon;
-            return (
-              <button key={card.key} onClick={() => openSection(card.key)} className={cardBase}>
-                <div className="mb-4 flex items-start justify-between">
-                  <div className="text-sm text-slate-300">{card.title}</div>
-                  <Icon size={18} className="text-cyan-400" />
-                </div>
-                <div className="text-4xl font-bold">{card.value}</div>
-                <div className="mt-2 flex items-center justify-between text-sm text-slate-300">
-                  <span>{card.sub}</span>
-                  <ArrowRight size={16} />
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
-          <button onClick={() => openSection("signups")} className={`${cardBase} xl:col-span-1`}>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="font-medium">New Signups</span>
-              <ArrowRight size={16} />
-            </div>
-            <div className="text-3xl font-bold">{num(stats.newUsers7d)}</div>
-            <div className="mt-1 text-sm text-slate-300">This week</div>
-          </button>
-
-          <button onClick={() => openSection("outstanding")} className={`${cardBase} xl:col-span-1`}>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="font-medium">Outstanding Balance</span>
-              <ArrowRight size={16} />
-            </div>
-            <div className="text-3xl font-bold">{money(stats.outstandingBalance)}</div>
-            <div className="mt-1 text-sm text-slate-300">Unpaid invoices</div>
-          </button>
-
-          <button onClick={() => openSection("jobs")} className={`${cardBase} xl:col-span-1`}>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="font-medium">Jobs Today</span>
-              <ArrowRight size={16} />
-            </div>
-            <div className="text-3xl font-bold">{num(stats.jobsToday)}</div>
-            <div className="mt-1 text-sm text-slate-300">Across all businesses</div>
-          </button>
-
-          <div className="rounded-2xl border border-slate-700/60 bg-slate-800/80 p-5 shadow-lg xl:col-span-1">
-            <div className="mb-4 flex items-center gap-2 text-lg font-semibold">
-              <AlertTriangle size={18} className="text-yellow-400" />
-              Platform Alerts
-            </div>
-            <div className="space-y-2 text-sm text-slate-200">
-              <div className="rounded-xl bg-slate-700/40 px-3 py-2">{num(stats.overdueInvoices)} overdue invoices need attention</div>
-              <div className="rounded-xl bg-slate-700/40 px-3 py-2">{num(stats.cancelledUsers)} cancelled or expired accounts</div>
-              <div className="rounded-xl bg-slate-700/40 px-3 py-2">{num(stats.trialUsers)} trial users currently active</div>
-            </div>
+        {error ? (
+          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            {error}
           </div>
-        </div>
+        ) : null}
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-          <div className="rounded-2xl border border-slate-700/60 bg-slate-800/80 p-5 shadow-lg xl:col-span-2">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Plans In Use</h2>
-              <button onClick={() => navigate("/admin/usage?section=plans")} className="text-sm text-cyan-300 hover:text-cyan-200">
-                Open usage
-              </button>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {cards.map((card) => (
+                <StatCard
+                  key={`${card.label}-${card.key}`}
+                  label={card.label}
+                  value={card.value}
+                  subtext={card.subtext}
+                  icon={card.icon}
+                  onClick={() => setSelected(card.key)}
+                  active={selected === card.key}
+                />
+              ))}
             </div>
 
-            <div className="space-y-3">
-              {Object.keys(stats.plans || {}).length === 0 ? (
-                <div className="rounded-xl bg-slate-700/30 px-4 py-3 text-sm text-slate-300">No plan data found yet</div>
-              ) : (
-                Object.entries(stats.plans).map(([plan, count]) => (
-                  <button
-                    key={plan}
-                    onClick={() => navigate(`/admin/usage?section=plans&plan=${encodeURIComponent(plan)}`)}
-                    className="flex w-full items-center justify-between rounded-xl bg-slate-700/30 px-4 py-3 text-left transition hover:bg-slate-700/50"
+            <div className="mt-4 rounded-2xl border border-blue-500/20 bg-slate-900/80 p-4 shadow-lg">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Plans In Use</h2>
+                  <p className="text-xs text-slate-400">Real counts when backend supplies them</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  ["Solo", stats.plan_counts?.solo || 0],
+                  ["Team", stats.plan_counts?.team || 0],
+                  ["Pro", stats.plan_counts?.pro || 0],
+                  ["Enterprise", stats.plan_counts?.enterprise || 0],
+                ].map(([name, value]) => (
+                  <div
+                    key={name}
+                    className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3"
                   >
-                    <span className="capitalize">{String(plan).replace(/_/g, " ")}</span>
-                    <span className="rounded-full bg-slate-900 px-3 py-1 text-sm">{num(count)}</span>
-                  </button>
-                ))
-              )}
+                    <span className="text-sm text-slate-300">{name}</span>
+                    <span className="text-sm font-semibold text-white">{value}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-700/60 bg-slate-800/80 p-5 shadow-lg">
-            <h2 className="mb-4 text-xl font-semibold">Quick Numbers</h2>
-            <div className="space-y-3 text-sm">
-              <div className="rounded-xl bg-slate-700/30 px-4 py-3">Outstanding: {money(stats.outstandingBalance)}</div>
-              <div className="rounded-xl bg-slate-700/30 px-4 py-3">Monthly Revenue: {money(stats.monthlyRevenue)}</div>
-              <div className="rounded-xl bg-slate-700/30 px-4 py-3">Paid Users: {num(stats.paidUsers)}</div>
-              <div className="rounded-xl bg-slate-700/30 px-4 py-3">Businesses: {num(stats.totalBusinesses)}</div>
+          <div className="lg:col-span-1">
+            <div className="rounded-2xl border border-blue-500/20 bg-slate-900/80 p-4 shadow-lg">
+              <div className="mb-3">
+                <h2 className="text-lg font-semibold text-white">Details</h2>
+                <p className="text-xs text-slate-400">
+                  Tap any card to view raw records behind that stat
+                </p>
+              </div>
+
+              <div className="mb-3 rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-sm text-slate-300">
+                Selected: <span className="font-medium text-white">{selected}</span>
+              </div>
+
+              <div className="max-h-[70vh] space-y-3 overflow-auto pr-1">
+                {drilldown.length > 0 ? (
+                  drilldown.map((item, index) => (
+                    <DrilldownRow
+                      key={item?._id || item?.id || item?.email || item?.invoice_number || index}
+                      item={item}
+                    />
+                  ))
+                ) : (
+                  <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-400">
+                    No drilldown records returned for this stat yet.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-blue-500/20 bg-slate-900/80 p-4 shadow-lg">
+              <h2 className="mb-3 text-lg font-semibold text-white">Quick Numbers</h2>
+              <div className="space-y-3">
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-300">
+                  Outstanding: <span className="font-semibold text-white">{money(stats.outstanding_balance)}</span>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-300">
+                  Monthly Revenue: <span className="font-semibold text-white">{money(stats.monthly_revenue)}</span>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-300">
+                  Users: <span className="font-semibold text-white">{stats.total_users}</span>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-300">
+                  Businesses: <span className="font-semibold text-white">{stats.total_businesses}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
+        {loading ? (
+          <div className="mt-6 text-sm text-slate-400">Loading dashboard…</div>
+        ) : null}
       </div>
     </div>
   );
