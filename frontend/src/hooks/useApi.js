@@ -4,7 +4,7 @@ import axios from "axios"
 axios.defaults.withCredentials = true;
 import { formatApiErrorDetail } from "../lib/utils";
 
-const API_URL = "https://grassley-backend.onrender.com";
+const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
 
 export function useApi() {
   const [loading, setLoading] = useState(false);

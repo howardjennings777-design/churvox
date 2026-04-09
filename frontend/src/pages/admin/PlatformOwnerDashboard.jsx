@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 
-const API_BASE = "https://grassley-backend.onrender.com";
+const API_BASE = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
 
 const money = (value) => {
   const n = Number(value || 0);
