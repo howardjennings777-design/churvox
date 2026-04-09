@@ -1695,23 +1695,86 @@ async def app_platform_stats(current_user: dict = Depends(get_current_user)):
 
     businesses_list = []
     try:
+        seen_business_ids = set()
+
         async for biz in db.businesses.find({}, {
             "_id": 1,
             "name": 1,
             "business_name": 1,
             "email": 1,
+            "phone": 1,
+            "address": 1,
             "plan": 1,
+            "status": 1,
             "created_at": 1,
+            "owner_name": 1,
+            "owner": 1,
+            "user_name": 1,
         }).limit(200):
+            biz_id = str(biz.get("_id"))
+            seen_business_ids.add(biz_id)
             businesses_list.append({
-                "id": str(biz.get("_id")),
+                "id": biz_id,
                 "business_name": biz.get("business_name") or biz.get("name"),
                 "email": biz.get("email"),
+                "phone": biz.get("phone"),
+                "address": biz.get("address"),
+                "owner_name": biz.get("owner_name") or biz.get("owner") or biz.get("user_name"),
                 "plan": pick_plan(biz),
+                "status": biz.get("status"),
                 "created_at": as_dt(biz.get("created_at")).isoformat() if as_dt(biz.get("created_at")) else None,
             })
-    except Exception:
-        pass
+
+        if len(businesses_list) < min(int(total_businesses), 200):
+            async for user in db.users.find({
+                "$or": [
+                    {"business_id": {"$exists": True, "$ne": None}},
+                    {"business_name": {"$exists": True, "$ne": ""}},
+                    {"company_name": {"$exists": True, "$ne": ""}},
+                ]
+            }, {
+                "_id": 1,
+                "full_name": 1,
+                "name": 1,
+                "email": 1,
+                "phone": 1,
+                "mobile": 1,
+                "address": 1,
+                "plan": 1,
+                "status": 1,
+                "created_at": 1,
+                "business_id": 1,
+                "business_name": 1,
+                "company_name": 1,
+            }).limit(500):
+                raw_business_id = user.get("business_id")
+                fallback_id = str(raw_business_id) if raw_business_id else f"user-{user.get('_id')}"
+                if fallback_id in seen_business_ids:
+                    continue
+
+                business_name = user.get("business_name") or user.get("company_name")
+                if not business_name and not raw_business_id:
+                    continue
+
+                seen_business_ids.add(fallback_id)
+                businesses_list.append({
+                    "id": fallback_id,
+                    "business_name": business_name or f"Business {fallback_id}",
+                    "email": user.get("email"),
+                    "phone": user.get("phone") or user.get("mobile"),
+                    "address": user.get("address"),
+                    "owner_name": user.get("full_name") or user.get("name"),
+                    "plan": pick_plan(user),
+                    "status": user.get("status"),
+                    "created_at": as_dt(user.get("created_at")).isoformat() if as_dt(user.get("created_at")) else None,
+                })
+
+                if len(businesses_list) >= 200:
+                    break
+
+        businesses_list = businesses_list[:200]
+    except Exception as e:
+        print("platform-stats businesses_list error:", e)
 
     return {
         "total_users": int(total_users),
