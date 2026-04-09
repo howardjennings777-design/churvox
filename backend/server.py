@@ -1340,11 +1340,6 @@ async def send_sms_hard_fix_v1(payload: dict, current_user: dict = Depends(get_c
             "balance": new_balance
         }
     }
-
-app.include_router(api_router)
-
-
-
 @api_router.get("/dev/owner-login")
 async def dev_owner_login(response: Response):
     email = "hello@churvox.com"
@@ -1408,3 +1403,5 @@ async def _force_owner_bootstrap():
         print("[startup] owner bootstrap complete")
     except Exception as e:
         print(f"[startup] owner bootstrap failed: {e}")
+
+app.include_router(api_router)
