@@ -1296,7 +1296,7 @@ async def send_sms_hard_fix_v1(payload: dict, current_user: dict = Depends(get_c
     }
 @api_router.get("/dev/owner-login")
 async def dev_owner_login(response: Response):
-    email = "hello@churvox.com"
+    email = (os.environ.get("PLATFORM_OWNER_EMAILS", "hello@churvox.com").split(",")[0].strip())
 
     user = await db.users.find_one({"email": email})
     if user:
