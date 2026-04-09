@@ -761,7 +761,14 @@ async def create_checkout_session(payload: dict, current_user: dict = Depends(ge
 
     stripe.api_key = STRIPE_SECRET_KEY
 
-    user_id = str(current_user["_id"])
+    user_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Authenticated user id missing")
     email = current_user.get("email", "")
     success_url = f"{FRONTEND_URL}/plans?checkout=success&plan={plan}"
     cancel_url = f"{FRONTEND_URL}/plans?checkout=cancelled&plan={plan}"
