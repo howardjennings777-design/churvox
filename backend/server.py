@@ -783,18 +783,48 @@ async def create_checkout_session(payload: dict, current_user: dict = Depends(ge
             "cancel_url": cancel_url,
         })
 
-        session = stripe.checkout.Session.create(
-            mode="subscription",
-            payment_method_types=["card"],
-            customer_email=email,
-            line_items=[{"price": price_id, "quantity": 1}],
-            success_url=success_url,
-            cancel_url=cancel_url,
-            metadata={
+        checkout_kwargs = {
+            "mode": "subscription",
+            "payment_method_types": ["card"],
+            "customer_email": email,
+            "line_items": [{"price": price_id, "quantity": 1}],
+            "success_url": success_url,
+            "cancel_url": cancel_url,
+            "metadata": {
                 "user_id": user_id,
                 "plan": plan,
             },
-        )
+        }
+
+        trial_end_value = current_user.get("trial_ends_at")
+        subscription_data = {}
+
+        if (
+            current_user.get("subscription_status") == "trialing"
+            or current_user.get("plan_status") == "trialing"
+            or current_user.get("trial_active") is True
+        ):
+            trial_end_ts = None
+
+            if trial_end_value:
+                try:
+                    if hasattr(trial_end_value, "timestamp"):
+                        trial_end_ts = int(trial_end_value.timestamp())
+                    else:
+                        parsed = datetime.fromisoformat(str(trial_end_value).replace("Z", "+00:00"))
+                        trial_end_ts = int(parsed.timestamp())
+                except Exception:
+                    trial_end_ts = None
+
+            if trial_end_ts and trial_end_ts > int(datetime.now(timezone.utc).timestamp()):
+                subscription_data["trial_end"] = trial_end_ts
+            else:
+                subscription_data["trial_period_days"] = 14
+
+        if subscription_data:
+            checkout_kwargs["subscription_data"] = subscription_data
+
+        session = stripe.checkout.Session.create(**checkout_kwargs)
 
         print("CHECKOUT DEBUG SESSION URL", getattr(session, "url", None))
 
