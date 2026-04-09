@@ -1444,3 +1444,171 @@ async def _force_owner_bootstrap():
         print(f"[startup] owner bootstrap failed: {e}")
 
 app.include_router(api_router)
+
+
+@app.get("/api/admin/platform-stats")
+async def app_platform_stats(current_user: dict = Depends(get_current_user)):
+    if not is_platform_owner(current_user):
+        raise HTTPException(status_code=403, detail="Owner access required")
+
+    from datetime import datetime, timezone, timedelta
+
+    now = datetime.now(timezone.utc)
+    week_ago = now - timedelta(days=7)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    def as_dt(value):
+        if value is None:
+            return None
+        if isinstance(value, datetime):
+            return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+        if isinstance(value, str):
+            try:
+                value = value.replace("Z", "+00:00")
+                parsed = datetime.fromisoformat(value)
+                return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+            except Exception:
+                return None
+        return None
+
+    def as_num(value):
+        if value is None:
+            return 0.0
+        if isinstance(value, (int, float)):
+            return float(value)
+        if isinstance(value, str):
+            cleaned = "".join(ch for ch in value if ch in "0123456789.-")
+            if not cleaned:
+                return 0.0
+            try:
+                return float(cleaned)
+            except Exception:
+                return 0.0
+        return 0.0
+
+    total_users = await db.users.count_documents({})
+    total_jobs = await db.jobs.count_documents({})
+    total_clients = await db.clients.count_documents({})
+    total_quotes = await db.quotes.count_documents({})
+    total_invoices = await db.invoices.count_documents({})
+
+    business_ids = set()
+    trial_users = 0
+    paid_users = 0
+    cancelled_users = 0
+    new_signups_this_week = 0
+    top_plans = {}
+
+    async for user in db.users.find({}, {
+        "business_id": 1,
+        "role": 1,
+        "plan": 1,
+        "plan_name": 1,
+        "subscription_plan": 1,
+        "subscription_status": 1,
+        "plan_status": 1,
+        "created_at": 1
+    }):
+        business_id = user.get("business_id")
+        if business_id:
+            business_ids.add(str(business_id))
+
+        if str(user.get("role", "")).lower() == "owner":
+            business_ids.add(f'owner:{user.get("_id")}')
+
+        plan_name = str(
+            user.get("plan_name")
+            or user.get("subscription_plan")
+            or user.get("plan")
+            or "unknown"
+        ).strip()
+
+        plan_status = str(
+            user.get("subscription_status")
+            or user.get("plan_status")
+            or ""
+        ).lower()
+
+        top_plans[plan_name] = top_plans.get(plan_name, 0) + 1
+
+        if "trial" in plan_name.lower() or "trial" in plan_status:
+            trial_users += 1
+        elif plan_status in {"active", "paid"} or plan_name.lower() not in {"unknown", "", "free"}:
+            paid_users += 1
+
+        if plan_status in {"cancelled", "canceled", "expired", "inactive"}:
+            cancelled_users += 1
+
+        created_at = as_dt(user.get("created_at"))
+        if created_at and created_at >= week_ago:
+            new_signups_this_week += 1
+
+    total_businesses = len(business_ids)
+
+    active_today = await db.jobs.count_documents({
+        "status": {"$in": ["assigned", "acknowledged", "in_progress", "scheduled", "active"]}
+    })
+
+    monthly_revenue = 0.0
+    outstanding_balance = 0.0
+    overdue_invoices = 0
+
+    async for invoice in db.invoices.find({}, {
+        "status": 1,
+        "total": 1,
+        "amount": 1,
+        "amount_due": 1,
+        "balance_due": 1,
+        "remaining_balance": 1,
+        "paid_amount": 1,
+        "due_date": 1,
+        "created_at": 1,
+        "paid_at": 1
+    }):
+        status = str(invoice.get("status") or "").lower()
+
+        total_value = max(
+            as_num(invoice.get("total")),
+            as_num(invoice.get("amount")),
+            as_num(invoice.get("paid_amount")),
+            as_num(invoice.get("balance_due")) + as_num(invoice.get("paid_amount")),
+            as_num(invoice.get("amount_due")) + as_num(invoice.get("paid_amount"))
+        )
+
+        due_value = max(
+            as_num(invoice.get("remaining_balance")),
+            as_num(invoice.get("balance_due")),
+            as_num(invoice.get("amount_due")),
+            0.0
+        )
+
+        paid_at = as_dt(invoice.get("paid_at")) or as_dt(invoice.get("created_at"))
+        due_date = as_dt(invoice.get("due_date"))
+
+        if status in {"paid", "completed"} and paid_at and paid_at >= month_start:
+            monthly_revenue += total_value or as_num(invoice.get("paid_amount"))
+
+        if status not in {"paid", "completed", "cancelled", "canceled", "void"}:
+            outstanding_balance += due_value if due_value else total_value
+            if due_date and due_date < now:
+                overdue_invoices += 1
+
+    top_plans = dict(sorted(top_plans.items(), key=lambda item: item[1], reverse=True)[:5])
+
+    return {
+        "totalUsers": total_users,
+        "totalBusinesses": total_businesses,
+        "totalJobs": total_jobs,
+        "totalClients": total_clients,
+        "totalQuotes": total_quotes,
+        "totalInvoices": total_invoices,
+        "activeToday": active_today,
+        "trialUsers": trial_users,
+        "paidUsers": paid_users,
+        "cancelledUsers": cancelled_users,
+        "newSignupsThisWeek": new_signups_this_week,
+        "monthlyRevenue": monthly_revenue,
+        "outstandingBalance": outstanding_balance,
+        "overdueInvoices": overdue_invoices,
+        "topPlans": top_plans
+    }
