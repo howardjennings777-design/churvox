@@ -22,14 +22,12 @@ export default function PlatformAdminRoute({ children }) {
     ownerSession ||
     ownerEmail === "hello@churvox.com" ||
     userEmail === "hello@churvox.com" ||
-    user?.role === "owner" ||
     user?.role === "admin" ||
-    user?.is_owner === true ||
     user?.is_admin === true ||
     user?.is_platform_owner === true;
 
   if (!isAllowed) {
-    return <Navigate to="/admin" replace state={{ from: location }} />;
+    return <Navigate to="/admin/login" replace state={{ from: location }} />;
   }
 
   return children ? children : <Outlet />;

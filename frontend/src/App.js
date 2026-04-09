@@ -3,7 +3,6 @@ import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppOwnerPage from "./pages/AppOwnerPage";
-import PlatformOwnerDashboard from "./pages/admin/PlatformOwnerDashboard";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Toaster } from "./components/ui/sonner";
 
@@ -82,7 +81,7 @@ function App() {
             path="/admin"
             element={
               <PlatformAdminRoute>
-                <PlatformOwnerDashboard />
+                <AppOwnerPage />
               </PlatformAdminRoute>
             }
           />
@@ -90,7 +89,7 @@ function App() {
             path="/owner/dashboard"
             element={
               <PlatformAdminRoute>
-                <PlatformOwnerDashboard />
+                <AppOwnerPage />
               </PlatformAdminRoute>
             }
           />
@@ -98,7 +97,15 @@ function App() {
             path="/platform-dashboard"
             element={
               <PlatformAdminRoute>
-                <PlatformOwnerDashboard />
+                <AppOwnerPage />
+              </PlatformAdminRoute>
+            }
+          />
+          <Route
+            path="/app-owner"
+            element={
+              <PlatformAdminRoute>
+                <AppOwnerPage />
               </PlatformAdminRoute>
             }
           />
@@ -147,7 +154,6 @@ function App() {
           <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           <Route path="/account-deletion" element={<AccountDeletionPage />} />
           <Route path="/platform-unlock" element={<PlatformUnlock />} />
-          <Route path="/app-owner" element={<AppOwnerPage />} />
 
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
