@@ -163,6 +163,10 @@ function PlansPage() {
         plan_type: planKey
       });
 
+      if (res && res.success === false) {
+        throw new Error(res.error || 'Failed to start checkout');
+      }
+
       const data = getData(res) || {};
       const url = data.checkout_url || data.url;
 
@@ -171,7 +175,7 @@ function PlansPage() {
         return;
       }
 
-      alert('Could not open payment page');
+      throw new Error('Checkout URL was not returned by the server');
     } catch (err) {
       console.error('Upgrade error:', err);
       alert(

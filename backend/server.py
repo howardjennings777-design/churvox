@@ -745,7 +745,21 @@ async def set_business_plan_from_checkout(user_id: str, plan: str, stripe_custom
 @api_router.post("/stripe/create-checkout-session")
 async def create_checkout_session(payload: dict, current_user: dict = Depends(get_current_user)):
     plan = (payload.get("plan_type") or "solo").lower()
-    price_id = get_stripe_price_id(plan)
+
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=500, detail="Stripe secret key is missing on the server")
+
+    price_map = {
+        "solo": STRIPE_PRICE_SOLO,
+        "team": STRIPE_PRICE_TEAM,
+        "pro": STRIPE_PRICE_PRO,
+        "enterprise": STRIPE_PRICE_ENTERPRISE,
+    }
+    price_id = (price_map.get(plan) or "").strip()
+    if not price_id:
+        raise HTTPException(status_code=400, detail=f"Missing Stripe price ID for plan: {plan}")
+
+    stripe.api_key = STRIPE_SECRET_KEY
 
     user_id = str(current_user["_id"])
     email = current_user.get("email", "")
@@ -765,7 +779,13 @@ async def create_checkout_session(payload: dict, current_user: dict = Depends(ge
                 "plan": plan,
             },
         )
+
+        if not getattr(session, "url", None):
+            raise HTTPException(status_code=500, detail="Stripe session created without a checkout URL")
+
         return {"checkout_url": session.url}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Stripe checkout failed: {str(e)}")
 
