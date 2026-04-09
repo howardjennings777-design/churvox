@@ -311,25 +311,24 @@ app = FastAPI(title="Churvox API")
 
 
 
-app.add_middleware(GZipMiddleware, minimum_size=1000)
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://www.churvox.com",
         "https://churvox.com",
-        "https://www.churvox.onrender.com",
-        "https://churvox.onrender.com",
+        "https://grassley-frontend.onrender.com",
         "http://localhost:3000",
-        "http://localhost:5173",
         "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
+
 
 api_router = APIRouter(prefix="/api")
 
