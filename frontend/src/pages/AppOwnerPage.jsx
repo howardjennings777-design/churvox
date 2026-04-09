@@ -55,6 +55,86 @@ const EMPTY_STATS = {
   raw: {},
 };
 
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function textOf(item) {
+  return [
+    item?.name,
+    item?.full_name,
+    item?.first_name,
+    item?.last_name,
+    item?.business_name,
+    item?.company,
+    item?.title,
+    item?.email,
+    item?.owner_email,
+    item?.client_name,
+    item?.phone,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function isFakeRecord(item) {
+  const t = textOf(item);
+
+  const protectedRealEmails = [
+    "hello@churvox.com",
+    "howardjennings77@gmail.com",
+    "howardjennings77@outlook.com",
+  ];
+
+  if (protectedRealEmails.some((email) => t.includes(email))) return false;
+
+  const fakeMarkers = [
+    "test",
+    "demo",
+    "sample",
+    "fake",
+    "mock",
+    "preview",
+    "seed",
+    "john worker",
+    "john worier",
+    "test user",
+    "demo user",
+    "sample user",
+    "fake user",
+    "john@churvox.co",
+    "john@churvox.com",
+    "johnworker@churvox.com",
+    "test@churvox.com",
+    "demo@churvox.com",
+    "sample@churvox.com",
+    "example.com",
+    "mailinator",
+    "tempmail",
+  ];
+
+  return fakeMarkers.some((marker) => t.includes(marker));
+}
+
+function filterFake(list) {
+  return asArray(list).filter((item) => !isFakeRecord(item));
+}
+
+function countPlansFromUsers(users) {
+  const counts = { solo: 0, team: 0, pro: 0, enterprise: 0 };
+
+  users.forEach((user) => {
+    const rawPlan = String(user?.plan || user?.subscription_plan || "").toLowerCase().trim();
+    if (rawPlan === "solo") counts.solo += 1;
+    else if (rawPlan === "team") counts.team += 1;
+    else if (rawPlan === "pro") counts.pro += 1;
+    else if (rawPlan === "enterprise") counts.enterprise += 1;
+  });
+
+  return counts;
+}
+
 function normalizeStats(raw) {
   const src = raw || {};
   const stats = src.stats && typeof src.stats === "object" ? src.stats : src;
@@ -66,21 +146,30 @@ function normalizeStats(raw) {
     stats.plan_counts ||
     {};
 
-  const usersList =
+  const rawUsersList =
     src.users_list || stats.users_list || src.users || stats.users || src.recent_users || [];
-  const businessesList =
+  const rawBusinessesList =
     src.businesses_list || stats.businesses_list || src.businesses || stats.businesses || [];
-  const invoicesList =
+  const rawInvoicesList =
     src.invoices_list || stats.invoices_list || src.overdue_invoices || stats.overdue_invoices || [];
-  const jobsList =
+  const rawJobsList =
     src.jobs_list || stats.jobs_list || src.jobs || stats.jobs || [];
-  const paidUsersList =
+  const rawPaidUsersList =
     src.paid_users_list || stats.paid_users_list || src.subscribers || stats.subscribers || [];
-  const activeTodayList =
+  const rawActiveTodayList =
     src.active_today_list || stats.active_today_list || src.active_users || stats.active_users || [];
 
+  const users_list = filterFake(rawUsersList);
+  const businesses_list = filterFake(rawBusinessesList);
+  const invoices_list = filterFake(rawInvoicesList);
+  const jobs_list = filterFake(rawJobsList);
+  const paid_users_list = filterFake(rawPaidUsersList);
+  const active_today_list = filterFake(rawActiveTodayList);
+
+  const filteredPlanCounts = countPlansFromUsers(users_list);
+
   return {
-    total_users: num(
+    total_users: users_list.length || num(
       stats.total_users ??
         stats.users ??
         stats.user_count ??
@@ -88,7 +177,7 @@ function normalizeStats(raw) {
         src.users ??
         src.user_count
     ),
-    total_businesses: num(
+    total_businesses: businesses_list.length || num(
       stats.total_businesses ??
         stats.businesses ??
         stats.business_count ??
@@ -96,7 +185,7 @@ function normalizeStats(raw) {
         src.businesses ??
         src.business_count
     ),
-    active_today: num(
+    active_today: active_today_list.length || num(
       stats.active_today ??
         stats.daily_active ??
         stats.activeUsersToday ??
@@ -104,13 +193,13 @@ function normalizeStats(raw) {
         src.daily_active ??
         src.activeUsersToday
     ),
-    paid_users: num(
+    paid_users: paid_users_list.length || num(
       stats.paid_users ??
         stats.paidUsers ??
         src.paid_users ??
         src.paidUsers
     ),
-    total_invoices: num(
+    total_invoices: invoices_list.length || num(
       stats.total_invoices ??
         stats.invoices ??
         stats.invoice_count ??
@@ -118,7 +207,7 @@ function normalizeStats(raw) {
         src.invoices ??
         src.invoice_count
     ),
-    total_jobs: num(
+    total_jobs: jobs_list.length || num(
       stats.total_jobs ??
         stats.jobs ??
         stats.job_count ??
@@ -142,17 +231,17 @@ function normalizeStats(raw) {
         usage.unpaid_invoice_total
     ),
     plan_counts: {
-      solo: num(plans.solo),
-      team: num(plans.team),
-      pro: num(plans.pro),
-      enterprise: num(plans.enterprise),
+      solo: filteredPlanCounts.solo || num(plans.solo),
+      team: filteredPlanCounts.team || num(plans.team),
+      pro: filteredPlanCounts.pro || num(plans.pro),
+      enterprise: filteredPlanCounts.enterprise || num(plans.enterprise),
     },
-    users_list: Array.isArray(usersList) ? usersList : [],
-    businesses_list: Array.isArray(businessesList) ? businessesList : [],
-    active_today_list: Array.isArray(activeTodayList) ? activeTodayList : [],
-    paid_users_list: Array.isArray(paidUsersList) ? paidUsersList : [],
-    invoices_list: Array.isArray(invoicesList) ? invoicesList : [],
-    jobs_list: Array.isArray(jobsList) ? jobsList : [],
+    users_list,
+    businesses_list,
+    active_today_list,
+    paid_users_list,
+    invoices_list,
+    jobs_list,
     raw: src,
   };
 }
@@ -396,62 +485,14 @@ export default function AppOwnerPage() {
   }, [stats, selected]);
 
   const cards = [
-    {
-      key: "users_list",
-      label: "Total Users",
-      value: stats.total_users,
-      subtext: null,
-      icon: Users,
-    },
-    {
-      key: "businesses_list",
-      label: "Total Businesses",
-      value: stats.total_businesses,
-      subtext: null,
-      icon: Building2,
-    },
-    {
-      key: "active_today_list",
-      label: "Active Today",
-      value: stats.active_today,
-      subtext: null,
-      icon: Activity,
-    },
-    {
-      key: "paid_users_list",
-      label: "Paid Users",
-      value: stats.paid_users,
-      subtext: null,
-      icon: CreditCard,
-    },
-    {
-      key: "invoices_list",
-      label: "Total Invoices",
-      value: stats.total_invoices,
-      subtext: null,
-      icon: FileText,
-    },
-    {
-      key: "jobs_list",
-      label: "Jobs Today",
-      value: stats.total_jobs,
-      subtext: null,
-      icon: Briefcase,
-    },
-    {
-      key: "invoices_list",
-      label: "Monthly Revenue",
-      value: money(stats.monthly_revenue),
-      subtext: null,
-      icon: DollarSign,
-    },
-    {
-      key: "invoices_list",
-      label: "Outstanding Balance",
-      value: money(stats.outstanding_balance),
-      subtext: null,
-      icon: AlertTriangle,
-    },
+    { key: "users_list", label: "Total Users", value: stats.total_users, icon: Users },
+    { key: "businesses_list", label: "Total Businesses", value: stats.total_businesses, icon: Building2 },
+    { key: "active_today_list", label: "Active Today", value: stats.active_today, icon: Activity },
+    { key: "paid_users_list", label: "Paid Users", value: stats.paid_users, icon: CreditCard },
+    { key: "invoices_list", label: "Total Invoices", value: stats.total_invoices, icon: FileText },
+    { key: "jobs_list", label: "Jobs Today", value: stats.total_jobs, icon: Briefcase },
+    { key: "invoices_list", label: "Monthly Revenue", value: money(stats.monthly_revenue), icon: DollarSign },
+    { key: "invoices_list", label: "Outstanding Balance", value: money(stats.outstanding_balance), icon: AlertTriangle },
   ];
 
   const selectedLabel =
@@ -471,9 +512,7 @@ export default function AppOwnerPage() {
           <div>
             <h1 className="text-3xl font-bold">Platform Dashboard</h1>
             <p className="text-sm text-slate-400">Live owner/admin data</p>
-            {sourceUsed ? (
-              <p className="mt-2 text-xs text-cyan-400">Loaded from: {sourceUsed}</p>
-            ) : null}
+            {sourceUsed ? <p className="mt-2 text-xs text-cyan-400">Loaded from: {sourceUsed}</p> : null}
           </div>
 
           <button
@@ -500,7 +539,6 @@ export default function AppOwnerPage() {
                   key={`${card.label}-${card.key}`}
                   label={card.label}
                   value={card.value}
-                  subtext={card.subtext}
                   icon={card.icon}
                   onClick={() => setSelected(card.key)}
                   active={selected === card.key}
@@ -533,9 +571,7 @@ export default function AppOwnerPage() {
             <div className="rounded-2xl border border-blue-500/20 bg-slate-900/80 p-4 shadow-lg">
               <div className="mb-3">
                 <h2 className="text-lg font-semibold text-white">Details</h2>
-                <p className="text-xs text-slate-400">
-                  Tap a box to view real records
-                </p>
+                <p className="text-xs text-slate-400">Tap a box to view real records</p>
               </div>
 
               <div className="mb-3 rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-sm text-slate-300">
@@ -561,9 +597,7 @@ export default function AppOwnerPage() {
           </div>
         </div>
 
-        {loading ? (
-          <div className="mt-6 text-sm text-slate-400">Loading dashboard…</div>
-        ) : null}
+        {loading ? <div className="mt-6 text-sm text-slate-400">Loading dashboard…</div> : null}
       </div>
     </div>
   );
