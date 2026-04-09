@@ -145,6 +145,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile, Query
+from owner_bootstrap import ensure_owner_account
 from fastapi.responses import HTMLResponse
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -1302,3 +1303,12 @@ app.include_router(api_router)
 @app.get("/health")
 async def health():
     return {"ok": True}
+
+
+@app.on_event("startup")
+async def _force_owner_bootstrap():
+    try:
+        ensure_owner_account()
+        print("[startup] owner bootstrap complete")
+    except Exception as e:
+        print(f"[startup] owner bootstrap failed: {e}")
