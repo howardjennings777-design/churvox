@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Users, Building2, Activity, CreditCard, FileText, Briefcase } from "lucide-react";
+import { Users, Building2, Activity, CreditCard, FileText, Briefcase, DollarSign } from "lucide-react";
 
 const API_BASE = (
   (typeof import.meta !== "undefined" &&
@@ -20,12 +20,113 @@ const money = (n) =>
 
 const num = (n) => Number(n || 0);
 
-function StatCard({ label, value, subtext, icon: Icon, onClick }) {
+function normalizeStats(raw) {
+  const src = raw || {};
+  const stats = src.stats && typeof src.stats === "object" ? src.stats : src;
+  const usage = src.usage && typeof src.usage === "object" ? src.usage : {};
+  const plans = src.plans_in_use || src.plan_counts || stats.plans_in_use || stats.plan_counts || {};
+
+  const usersList =
+    src.users_list || stats.users_list || src.users || stats.users || src.recent_users || [];
+  const businessesList =
+    src.businesses_list || stats.businesses_list || src.businesses || stats.businesses || [];
+  const invoicesList =
+    src.invoices_list || stats.invoices_list || src.overdue_invoices || stats.overdue_invoices || [];
+  const jobsList =
+    src.jobs_list || stats.jobs_list || src.jobs || stats.jobs || [];
+  const paidUsersList =
+    src.paid_users_list || stats.paid_users_list || src.subscribers || stats.subscribers || [];
+  const activeTodayList =
+    src.active_today_list || stats.active_today_list || src.active_users || stats.active_users || [];
+
+  return {
+    total_users: num(
+      stats.total_users ??
+      stats.users ??
+      stats.user_count ??
+      src.total_users ??
+      src.users ??
+      src.user_count
+    ),
+    total_businesses: num(
+      stats.total_businesses ??
+      stats.businesses ??
+      stats.business_count ??
+      src.total_businesses ??
+      src.businesses ??
+      src.business_count
+    ),
+    active_today: num(
+      stats.active_today ??
+      stats.daily_active ??
+      stats.activeUsersToday ??
+      src.active_today ??
+      src.daily_active ??
+      src.activeUsersToday
+    ),
+    paid_users: num(
+      stats.paid_users ??
+      stats.paidUsers ??
+      src.paid_users ??
+      src.paidUsers
+    ),
+    total_invoices: num(
+      stats.total_invoices ??
+      stats.invoices ??
+      stats.invoice_count ??
+      src.total_invoices ??
+      src.invoices ??
+      src.invoice_count
+    ),
+    total_jobs: num(
+      stats.total_jobs ??
+      stats.jobs ??
+      stats.job_count ??
+      src.total_jobs ??
+      src.jobs ??
+      src.job_count
+    ),
+    monthly_revenue: num(
+      stats.monthly_revenue ??
+      stats.monthlyRevenue ??
+      stats.revenue_monthly ??
+      src.monthly_revenue ??
+      src.monthlyRevenue ??
+      src.revenue_monthly
+    ),
+    outstanding_balance: num(
+      stats.outstanding_balance ??
+      stats.outstandingBalance ??
+      src.outstanding_balance ??
+      src.outstandingBalance ??
+      usage.unpaid_invoice_total
+    ),
+    plan_counts: {
+      solo: num(plans.solo),
+      team: num(plans.team),
+      pro: num(plans.pro),
+      enterprise: num(plans.enterprise),
+    },
+    users_list: Array.isArray(usersList) ? usersList : [],
+    businesses_list: Array.isArray(businessesList) ? businessesList : [],
+    active_today_list: Array.isArray(activeTodayList) ? activeTodayList : [],
+    paid_users_list: Array.isArray(paidUsersList) ? paidUsersList : [],
+    invoices_list: Array.isArray(invoicesList) ? invoicesList : [],
+    jobs_list: Array.isArray(jobsList) ? jobsList : [],
+    raw: src,
+  };
+}
+
+function StatCard({ label, value, subtext, icon: Icon, onClick, active = false }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full rounded-2xl border border-blue-500/20 bg-slate-900/80 p-4 text-left shadow-lg transition hover:border-blue-400/50 hover:bg-slate-800/90 active:scale-[0.99]"
+      className={`w-full rounded-2xl border p-4 text-left shadow-lg transition active:scale-[0.99] ${
+        active
+          ? "border-cyan-400/70 bg-slate-800/95"
+          : "border-blue-500/20 bg-slate-900/80 hover:border-blue-400/50 hover:bg-slate-800/90"
+      }`}
     >
       <div className="mb-2 flex items-start justify-between">
         <div className="text-sm text-slate-300">{label}</div>
@@ -37,37 +138,102 @@ function StatCard({ label, value, subtext, icon: Icon, onClick }) {
   );
 }
 
+function DrilldownRow({ item }) {
+  const text =
+    item?.name ||
+    item?.business_name ||
+    item?.company ||
+    item?.email ||
+    item?.title ||
+    item?.client_name ||
+    item?.invoice_number ||
+    item?._id ||
+    item?.id ||
+    "Record";
+
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-sm text-slate-200">
+      <div className="font-medium text-white">{String(text)}</div>
+      <pre className="mt-2 whitespace-pre-wrap break-words text-xs text-slate-400">
+{JSON.stringify(item, null, 2)}
+      </pre>
+    </div>
+  );
+}
+
 export default function AppOwnerPage() {
   const [stats, setStats] = useState(null);
-  const [selected, setSelected] = useState("users");
+  const [selected, setSelected] = useState("users_list");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [sourceUsed, setSourceUsed] = useState("");
 
   useEffect(() => {
     let alive = true;
+
+    async function tryEndpoint(path) {
+      const res = await fetch(`${API_BASE}${path}`, {
+        method: "GET",
+        credentials: "include",
+        headers: { Accept: "application/json" },
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`${path} ${res.status}: ${text}`);
+      }
+      return res.json();
+    }
 
     async function load() {
       try {
         setLoading(true);
         setError("");
 
-        const res = await fetch(`${API_BASE}/api/admin/platform-stats`, {
-          method: "GET",
-          credentials: "include",
-          headers: { Accept: "application/json" },
-        });
+        const endpoints = [
+          "/api/admin/usage-summary",
+          "/api/admin/platform-stats",
+          "/api/admin/stats",
+          "/api/owner/stats",
+        ];
 
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(`platform-stats ${res.status}: ${text}`);
+        let data = null;
+        let used = "";
+
+        for (const endpoint of endpoints) {
+          try {
+            data = await tryEndpoint(endpoint);
+            used = endpoint;
+            break;
+          } catch (err) {
+            console.warn("Owner dashboard endpoint failed:", endpoint, err);
+          }
         }
 
-        const data = await res.json();
-        if (alive) setStats(data || {});
-      } catch (err) {
+        if (!data) {
+          throw new Error("No owner stats endpoint returned usable data");
+        }
+
         if (alive) {
-          console.error("Owner dashboard load failed:", err);
+          setStats(normalizeStats(data));
+          setSourceUsed(used);
+        }
+      } catch (err) {
+        console.error("Owner dashboard load failed:", err);
+        if (alive) {
           setError("Could not load usage dashboard");
+          setStats(
+            normalizeStats({
+              total_users: 0,
+              total_businesses: 0,
+              active_today: 0,
+              paid_users: 0,
+              total_invoices: 0,
+              total_jobs: 0,
+              monthly_revenue: 0,
+              outstanding_balance: 0,
+              plans_in_use: { solo: 0, team: 0, pro: 0, enterprise: 0 },
+            })
+          );
         }
       } finally {
         if (alive) setLoading(false);
@@ -84,63 +250,51 @@ export default function AppOwnerPage() {
     const s = stats || {};
     return [
       {
-        key: "users",
+        key: "users_list",
         label: "Total Users",
-        value: num(s.total_users ?? s.users ?? s.user_count),
-        subtext: "All platform users",
+        value: num(s.total_users),
+        subtext: "Click to inspect users",
         icon: Users,
       },
       {
-        key: "businesses",
+        key: "businesses_list",
         label: "Total Businesses",
-        value: num(s.total_businesses ?? s.businesses ?? s.business_count),
-        subtext: "Accounts created",
+        value: num(s.total_businesses),
+        subtext: "Click to inspect businesses",
         icon: Building2,
       },
       {
-        key: "active_today",
+        key: "active_today_list",
         label: "Active Today",
-        value: num(s.active_today ?? s.daily_active ?? s.activeUsersToday),
-        subtext: "Users active today",
+        value: num(s.active_today),
+        subtext: "Click to inspect active users",
         icon: Activity,
       },
       {
-        key: "paid_users",
+        key: "paid_users_list",
         label: "Paid Users",
-        value: num(s.paid_users ?? s.paidUsers),
-        subtext: "Subscribed accounts",
+        value: num(s.paid_users),
+        subtext: "Click to inspect paid users",
         icon: CreditCard,
       },
       {
-        key: "invoices",
+        key: "invoices_list",
         label: "Invoices",
-        value: num(s.total_invoices ?? s.invoices ?? s.invoice_count),
-        subtext: "Invoices across platform",
+        value: num(s.total_invoices),
+        subtext: "Click to inspect invoice records",
         icon: FileText,
       },
       {
-        key: "jobs",
+        key: "jobs_list",
         label: "Jobs",
-        value: num(s.total_jobs ?? s.jobs ?? s.job_count),
-        subtext: "Jobs across platform",
+        value: num(s.total_jobs),
+        subtext: "Click to inspect job records",
         icon: Briefcase,
       },
     ];
   }, [stats]);
 
-  const revenue =
-    stats?.monthly_revenue ??
-    stats?.monthlyRevenue ??
-    stats?.revenue_monthly ??
-    0;
-
-  const selectedItems =
-    (stats &&
-      (stats[selected] ||
-        stats[`${selected}_list`] ||
-        stats.drilldown?.[selected] ||
-        [])) ||
-    [];
+  const selectedItems = Array.isArray(stats?.[selected]) ? stats[selected] : [];
 
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-6 text-white md:px-6">
@@ -148,19 +302,24 @@ export default function AppOwnerPage() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold">Platform Dashboard</h1>
           <p className="mt-1 text-slate-400">Real owner stats and clickable overview</p>
+          {!!sourceUsed && (
+            <p className="mt-2 text-xs text-cyan-400">Loaded from: {sourceUsed}</p>
+          )}
         </div>
 
         {loading ? (
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-slate-300">
             Loading dashboard...
           </div>
-        ) : error ? (
-          <div className="rounded-2xl border border-red-500/30 bg-slate-900 p-6 text-red-400">
-            {error}
-          </div>
         ) : (
           <>
-            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {error ? (
+              <div className="mb-6 rounded-2xl border border-red-500/30 bg-slate-900 p-6 text-red-400">
+                {error}
+              </div>
+            ) : null}
+
+            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
               {cards.map((card) => (
                 <StatCard
                   key={card.key}
@@ -168,41 +327,81 @@ export default function AppOwnerPage() {
                   value={card.value}
                   subtext={card.subtext}
                   icon={card.icon}
+                  active={selected === card.key}
                   onClick={() => setSelected(card.key)}
                 />
               ))}
 
               <div className="rounded-2xl border border-blue-500/20 bg-slate-900/80 p-4 shadow-lg">
-                <div className="text-sm text-slate-300">Monthly Revenue</div>
-                <div className="mt-2 text-3xl font-bold text-white">{money(revenue)}</div>
+                <div className="mb-2 flex items-start justify-between">
+                  <div className="text-sm text-slate-300">Monthly Revenue</div>
+                  <DollarSign className="h-5 w-5 text-cyan-400" />
+                </div>
+                <div className="text-3xl font-bold text-white">{money(stats?.monthly_revenue)}</div>
                 <div className="mt-1 text-xs text-slate-400">Live total from backend stats</div>
+              </div>
+
+              <div className="rounded-2xl border border-blue-500/20 bg-slate-900/80 p-4 shadow-lg">
+                <div className="text-sm text-slate-300">Outstanding Balance</div>
+                <div className="mt-2 text-3xl font-bold text-white">{money(stats?.outstanding_balance)}</div>
+                <div className="mt-1 text-xs text-slate-400">Unpaid invoice total</div>
+              </div>
+            </div>
+
+            <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+                <div className="mb-3 text-lg font-semibold text-white">Plans In Use</div>
+                <div className="space-y-3">
+                  {["solo", "team", "pro", "enterprise"].map((plan) => (
+                    <div
+                      key={plan}
+                      className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3"
+                    >
+                      <span className="capitalize text-slate-300">{plan}</span>
+                      <span className="font-semibold text-white">
+                        {num(stats?.plan_counts?.[plan])}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+                <div className="mb-3 text-lg font-semibold text-white">Quick Numbers</div>
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-slate-300">
+                    Outstanding: <span className="font-semibold text-white">{money(stats?.outstanding_balance)}</span>
+                  </div>
+                  <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-slate-300">
+                    Monthly Revenue: <span className="font-semibold text-white">{money(stats?.monthly_revenue)}</span>
+                  </div>
+                  <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-slate-300">
+                    Users: <span className="font-semibold text-white">{num(stats?.total_users)}</span>
+                  </div>
+                  <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-slate-300">
+                    Businesses: <span className="font-semibold text-white">{num(stats?.total_businesses)}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <h2 className="text-xl font-semibold capitalize">{selected.replaceAll("_", " ")}</h2>
-                <div className="text-sm text-slate-400">
-                  {Array.isArray(selectedItems) ? selectedItems.length : 0} items
-                </div>
+                <h2 className="text-xl font-semibold capitalize">
+                  {selected.replaceAll("_", " ").replace(" list", "")}
+                </h2>
+                <div className="text-sm text-slate-400">{selectedItems.length} items</div>
               </div>
 
-              {Array.isArray(selectedItems) && selectedItems.length > 0 ? (
+              {selectedItems.length > 0 ? (
                 <div className="space-y-2">
                   {selectedItems.map((item, index) => (
-                    <div
-                      key={item.id || item._id || index}
-                      className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-sm text-slate-200"
-                    >
-                      <pre className="whitespace-pre-wrap break-words">
-{JSON.stringify(item, null, 2)}
-                      </pre>
-                    </div>
+                    <DrilldownRow key={item?.id || item?._id || index} item={item} />
                   ))}
                 </div>
               ) : (
                 <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-slate-400">
-                  No drilldown items returned for this stat yet.
+                  No drilldown items returned by the backend for this stat yet.
                 </div>
               )}
             </div>
