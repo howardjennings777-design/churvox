@@ -160,7 +160,7 @@ function normalizeStats(raw) {
     src.active_today_list || stats.active_today_list || src.active_users || stats.active_users || [];
 
   const users_list = filterFake(rawUsersList);
-  const businesses_list = filterFake(rawBusinessesList);
+  const businesses_list = Array.isArray(rawBusinessesList) ? rawBusinessesList : [];
   const invoices_list = filterFake(rawInvoicesList);
   const jobs_list = filterFake(rawJobsList);
   const paid_users_list = filterFake(rawPaidUsersList);
