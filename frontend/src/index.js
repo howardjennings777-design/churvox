@@ -1,5 +1,16 @@
 
 if (typeof window !== "undefined") {
+  window.__CHURVOX_BUILD_FORCE__ = "checkout-hard-force-v4";
+}
+if (typeof navigator !== "undefined" && navigator.serviceWorker) {
+  navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((reg) => reg.unregister()));
+}
+if (typeof window !== "undefined" && window.caches) {
+  caches.keys().then((keys) => keys.forEach((key) => caches.delete(key)));
+}
+
+
+if (typeof window !== "undefined") {
   window.__CHURVOX_BUILD_FORCE__ = "checkout-hard-force-v3";
 }
 
