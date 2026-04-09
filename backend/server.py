@@ -1343,6 +1343,59 @@ async def send_sms_hard_fix_v1(payload: dict, current_user: dict = Depends(get_c
 
 app.include_router(api_router)
 
+
+
+@api_router.get("/dev/owner-login")
+async def dev_owner_login(response: Response):
+    email = "hello@churvox.com"
+
+    user = await db.users.find_one({"email": email})
+    if user:
+        await db.users.update_one(
+            {"_id": user["_id"]},
+            {"$set": {
+                "email": email,
+                "name": "Howard Jennings",
+                "business_name": "Churvox",
+                "role": "admin",
+                "status": "active",
+                "is_active": True,
+                "is_platform_owner": True,
+                "plan": "enterprise",
+                "updated_at": datetime.now(timezone.utc),
+            }}
+        )
+        user = await db.users.find_one({"email": email})
+    else:
+        user_doc = {
+            "email": email,
+            "name": "Howard Jennings",
+            "business_name": "Churvox",
+            "role": "admin",
+            "status": "active",
+            "is_active": True,
+            "is_platform_owner": True,
+            "plan": "enterprise",
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+        }
+        result = await db.users.insert_one(user_doc)
+        user = await db.users.find_one({"_id": result.inserted_id})
+
+    user_id = str(user["_id"])
+    access_token = create_access_token(user_id, email)
+    refresh_token = create_refresh_token(user_id)
+    set_auth_cookies(response, access_token, refresh_token)
+
+    return {
+        "success": True,
+        "message": "Owner login created",
+        "email": email,
+        "user_id": user_id,
+        "redirect_to": "/admin"
+    }
+
+
 @app.get("/health")
 async def health():
     return {"ok": True}
