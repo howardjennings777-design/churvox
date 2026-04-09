@@ -164,7 +164,7 @@ function PlansPage() {
       });
 
       if (res && res.success === false) {
-        throw new Error(res.error || 'Failed to start checkout');
+        throw new Error(res.error || 'Checkout failed v2');
       }
 
       const data = getData(res) || {};
@@ -175,14 +175,14 @@ function PlansPage() {
         return;
       }
 
-      throw new Error('Checkout URL was not returned by the server');
+      throw new Error('Checkout URL missing v2');
     } catch (err) {
       console.error('Upgrade error:', err);
       alert(
         err?.response?.data?.detail ||
         err?.data?.detail ||
         err?.message ||
-        'Failed to start checkout'
+        'Checkout failed v2'
       );
     } finally {
       setBusyPlan('');

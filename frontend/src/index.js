@@ -1,3 +1,10 @@
+
+if (typeof navigator !== "undefined" && navigator.serviceWorker) {
+  navigator.serviceWorker.getRegistrations().then((regs) => {
+    regs.forEach((reg) => reg.unregister());
+  });
+}
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "@/index.css";
