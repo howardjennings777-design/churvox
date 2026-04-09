@@ -1,3 +1,4 @@
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
 import asyncio
 from passlib.context import CryptContext
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
@@ -747,6 +748,9 @@ async def register(user_data: UserCreate, response: Response):
     # FORCE OWNER LOGIN HARD FIX
     if email == "hello@churvox.com" and user_data.password in ["TemPass123!", "cvx123"]:
         user = await db.users.find_one({"email": email})
+
+    if user and not user.get("email_verified", False) and not user.get("is_platform_owner", False):
+        raise HTTPException(status_code=403, detail="Email not verified. Please check your inbox.")
         if user:
             await db.users.update_one(
                 {"_id": user["_id"]},
@@ -782,6 +786,12 @@ async def register(user_data: UserCreate, response: Response):
         user_id = str(user["_id"])
         access_token = create_access_token(user_id, email)
         refresh_token = create_refresh_token(user_id)
+        verify_token = user.get("email_verification_token")
+        if verify_token and not user.get("email_verified", False):
+            verify_link = f"{FRONTEND_URL}/verify-email?token={verify_token}"
+            print(f"VERIFY EMAIL LINK: {verify_link}")
+
+
         set_auth_cookies(response, access_token, refresh_token)
         return build_user_response(user, user_id, access_token)
 
@@ -926,6 +936,9 @@ async def register(user_data: UserCreate, response: Response):
         "role": "employer",
         "status": "active",
         "plan": "solo",
+        "email_verified": False,
+        "email_verification_token": secrets.token_urlsafe(32),
+        "email_verification_sent_at": datetime.now(timezone.utc),
         "plan_status": "trialing",
         "trial_started_at": datetime.now(timezone.utc),
         "trial_ends_at": datetime.now(timezone.utc) + timedelta(days=14),
@@ -1532,6 +1545,33 @@ async def billing_guard(request: Request):
         "allowed": (not status["requires_payment"]),
         "reason": "trial_expired_payment_required" if status["requires_payment"] else "ok",
         **status
+    }
+
+
+
+@api_router.get("/auth/verify-email")
+async def verify_email(token: str):
+    if not token:
+        raise HTTPException(status_code=400, detail="Missing token")
+
+    user = await db.users.find_one({"email_verification_token": token})
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification token")
+
+    await db.users.update_one(
+        {"_id": user["_id"]},
+        {"$set": {
+            "email_verified": True,
+            "email_verification_token": None,
+            "email_verified_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+        }}
+    )
+
+    return {
+        "message": "Email verified successfully",
+        "email": user.get("email"),
+        "email_verified": True
     }
 
 
