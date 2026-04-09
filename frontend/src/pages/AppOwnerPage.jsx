@@ -148,8 +148,15 @@ function normalizeStats(raw) {
 
   const rawUsersList =
     src.users_list || stats.users_list || src.users || stats.users || src.recent_users || [];
+  const pickBestArray = (...values) => {
+    const nonEmpty = values.find((value) => Array.isArray(value) && value.length > 0);
+    if (nonEmpty) return nonEmpty;
+    const anyArray = values.find((value) => Array.isArray(value));
+    return anyArray || [];
+  };
+
   const rawBusinessesList =
-    src.businesses_list || stats.businesses_list || src.businesses || stats.businesses || [];
+    pickBestArray(src.businesses_list, stats.businesses_list, src.businesses, stats.businesses);
   const rawInvoicesList =
     src.invoices_list || stats.invoices_list || src.overdue_invoices || stats.overdue_invoices || [];
   const rawJobsList =
