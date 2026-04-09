@@ -309,9 +309,6 @@ PLAN_PRICE_IDS = {
 # Create the main app
 app = FastAPI(title="Churvox API")
 
-
-
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -325,6 +322,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+
+
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
