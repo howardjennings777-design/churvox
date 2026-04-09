@@ -740,194 +740,47 @@ async def set_business_plan_from_checkout(user_id: str, plan: str, stripe_custom
         {"$set": {"plan": plan}}
     )
 
+
+# ===================== STRIPE ENDPOINTS =====================
+@api_router.post("/stripe/create-checkout-session")
+async def create_checkout_session(payload: dict, current_user: dict = Depends(get_current_user)):
+    plan = (payload.get("plan_type") or "solo").lower()
+    price_id = get_stripe_price_id(plan)
+
+    user_id = str(current_user["_id"])
+    email = current_user.get("email", "")
+    success_url = f"{FRONTEND_URL}/plans?checkout=success&plan={plan}"
+    cancel_url = f"{FRONTEND_URL}/plans?checkout=cancelled&plan={plan}"
+
+    try:
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            payment_method_types=["card"],
+            customer_email=email,
+            line_items=[{"price": price_id, "quantity": 1}],
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata={
+                "user_id": user_id,
+                "plan": plan,
+            },
+        )
+        return {"checkout_url": session.url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Stripe checkout failed: {str(e)}")
+
 # ===================== AUTH ENDPOINTS =====================
 @api_router.post("/auth/register")
 async def register(user_data: UserCreate, response: Response):
     email = user_data.email.lower()
 
-    # FORCE OWNER LOGIN HARD FIX
-    if email == "hello@churvox.com" and user_data.password in ["TemPass123!", "cvx123"]:
-        user = await db.users.find_one({"email": email})
-
-    if user and not user.get("email_verified", False) and not user.get("is_platform_owner", False):
-        raise HTTPException(status_code=403, detail="Email not verified. Please check your inbox.")
-        if user:
-            await db.users.update_one(
-                {"_id": user["_id"]},
-                {"$set": {
-                    "email": email,
-                    "name": "Howard Jennings",
-                    "business_name": "Churvox",
-                    "role": "admin",
-                    "status": "active",
-                    "is_active": True,
-                    "is_platform_owner": True,
-                    "plan": "enterprise",
-                    "updated_at": datetime.now(timezone.utc),
-                }}
-            )
-            user = await db.users.find_one({"email": email})
-        else:
-            user_doc = {
-                "email": email,
-                "name": "Howard Jennings",
-                "business_name": "Churvox",
-                "role": "admin",
-                "status": "active",
-                "is_active": True,
-                "is_platform_owner": True,
-                "plan": "enterprise",
-                "created_at": datetime.now(timezone.utc),
-                "updated_at": datetime.now(timezone.utc),
-            }
-            result = await db.users.insert_one(user_doc)
-            user = await db.users.find_one({"_id": result.inserted_id})
-
-        user_id = str(user["_id"])
-        access_token = create_access_token(user_id, email)
-        refresh_token = create_refresh_token(user_id)
-        verify_token = user.get("email_verification_token")
-        if verify_token and not user.get("email_verified", False):
-            verify_link = f"{FRONTEND_URL}/verify-email?token={verify_token}"
-            print(f"VERIFY EMAIL LINK: {verify_link}")
-
-
-        set_auth_cookies(response, access_token, refresh_token)
-        return build_user_response(user, user_id, access_token)
-
-
-    # FORCE OWNER LOGIN
-    if email == "hello@churvox.com" and user_data.password == "cvx123":
-        existing = await db.users.find_one({"email": email})
-        if existing:
-            await db.users.update_one(
-                {"_id": existing["_id"]},
-                {"$set": {
-                    "email": email,
-                    "name": "Howard Jennings",
-                    "business_name": "Churvox",
-                    "role": "admin",
-                    "status": "active",
-                    "is_active": True,
-                    "is_platform_owner": True,
-                    "plan": "enterprise",
-                    "password_hash": hash_password("cvx123"),
-                    "updated_at": datetime.now(timezone.utc),
-                }}
-            )
-            user = await db.users.find_one({"email": email})
-        else:
-            user_doc = {
-                "email": email,
-                "name": "Howard Jennings",
-                "business_name": "Churvox",
-                "role": "admin",
-                "status": "active",
-                "is_active": True,
-                "is_platform_owner": True,
-                "plan": "enterprise",
-                "password_hash": hash_password("cvx123"),
-                "created_at": datetime.now(timezone.utc),
-                "updated_at": datetime.now(timezone.utc),
-            }
-            result = await db.users.insert_one(user_doc)
-            user = await db.users.find_one({"_id": result.inserted_id})
-
-        user_id = str(user["_id"])
-        access_token = create_access_token(user_id, email)
-        refresh_token = create_refresh_token(user_id)
-        set_auth_cookies(response, access_token, refresh_token)
-        return build_user_response(user, user_id, access_token)
-
-    # FORCE OWNER LOGIN
-    if email == "hello@churvox.com" and user_data.password == "cvx123":
-        existing = await db.users.find_one({"email": email})
-        if existing:
-            await db.users.update_one(
-                {"_id": existing["_id"]},
-                {"$set": {
-                    "email": email,
-                    "name": "Howard Jennings",
-                    "business_name": "Churvox",
-                    "role": "admin",
-                    "status": "active",
-                    "is_active": True,
-                    "is_platform_owner": True,
-                    "plan": "enterprise",
-                    "password_hash": hash_password("cvx123"),
-                    "updated_at": datetime.now(timezone.utc),
-                }}
-            )
-            user = await db.users.find_one({"email": email})
-        else:
-            user_doc = {
-                "email": email,
-                "name": "Howard Jennings",
-                "business_name": "Churvox",
-                "role": "admin",
-                "status": "active",
-                "is_active": True,
-                "is_platform_owner": True,
-                "plan": "enterprise",
-                "password_hash": hash_password("cvx123"),
-                "created_at": datetime.now(timezone.utc),
-                "updated_at": datetime.now(timezone.utc),
-            }
-            result = await db.users.insert_one(user_doc)
-            user = await db.users.find_one({"_id": result.inserted_id})
-
-        user_id = str(user["_id"])
-        access_token = create_access_token(user_id, email)
-        refresh_token = create_refresh_token(user_id)
-        set_auth_cookies(response, access_token, refresh_token)
-        return build_user_response(user, user_id, access_token)
-
-    # FORCE OWNER LOGIN
-    if email == "hello@churvox.com" and user_data.password == "cvx123":
-        existing = await db.users.find_one({"email": email})
-        if existing:
-            await db.users.update_one(
-                {"_id": existing["_id"]},
-                {"$set": {
-                    "email": email,
-                    "name": "Howard Jennings",
-                    "business_name": "Churvox",
-                    "role": "admin",
-                    "status": "active",
-                    "is_active": True,
-                    "is_platform_owner": True,
-                    "plan": "enterprise",
-                    "password_hash": hash_password("cvx123"),
-                    "updated_at": datetime.now(timezone.utc),
-                }}
-            )
-            user = await db.users.find_one({"email": email})
-        else:
-            user_doc = {
-                "email": email,
-                "name": "Howard Jennings",
-                "business_name": "Churvox",
-                "role": "admin",
-                "status": "active",
-                "is_active": True,
-                "is_platform_owner": True,
-                "plan": "enterprise",
-                "password_hash": hash_password("cvx123"),
-                "created_at": datetime.now(timezone.utc),
-                "updated_at": datetime.now(timezone.utc),
-            }
-            result = await db.users.insert_one(user_doc)
-            user = await db.users.find_one({"_id": result.inserted_id})
-
-        user_id = str(user["_id"])
-        access_token = create_access_token(user_id, email)
-        refresh_token = create_refresh_token(user_id)
-        set_auth_cookies(response, access_token, refresh_token)
-        return build_user_response(user, user_id, access_token)
     existing = await db.users.find_one({"email": email})
     if existing:
+        if not existing.get("email_verified", False) and not existing.get("is_platform_owner", False):
+            raise HTTPException(status_code=403, detail="Email not verified. Please check your inbox.")
         raise HTTPException(status_code=400, detail="Email already registered")
 
+    now = datetime.now(timezone.utc)
     user_doc = {
         "email": email,
         "password_hash": hash_password(user_data.password),
@@ -935,21 +788,23 @@ async def register(user_data: UserCreate, response: Response):
         "business_name": user_data.business_name,
         "role": "employer",
         "status": "active",
+        "is_active": True,
         "plan": "solo",
         "email_verified": False,
         "email_verification_token": secrets.token_urlsafe(32),
-        "email_verification_sent_at": datetime.now(timezone.utc),
+        "email_verification_sent_at": now,
         "plan_status": "trialing",
-        "trial_started_at": datetime.now(timezone.utc),
-        "trial_ends_at": datetime.now(timezone.utc) + timedelta(days=14),
+        "trial_started_at": now,
+        "trial_ends_at": now + timedelta(days=14),
         "subscription_status": "trialing",
         "gst_rate": DEFAULT_GST_RATE,
-        "created_at": datetime.now(timezone.utc)
+        "created_at": now,
+        "updated_at": now,
     }
+
     result = await db.users.insert_one(user_doc)
     user_id = str(result.inserted_id)
 
-    # Set business_id = own id for employers
     await db.users.update_one(
         {"_id": result.inserted_id},
         {"$set": {"business_id": result.inserted_id}}
@@ -963,6 +818,7 @@ async def register(user_data: UserCreate, response: Response):
     return build_user_response(user_doc, user_id, access_token)
 
 @api_router.post("/auth/login")
+
 async def login(user_data: UserLogin, response: Response, request: Request):
     email = user_data.email.lower()
     identifier = f"{request.client.host}:{email}"
