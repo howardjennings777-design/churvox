@@ -1,3 +1,4 @@
+import os
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
 import asyncio
 from passlib.context import CryptContext
@@ -249,7 +250,6 @@ def safe_doc(doc):
 def safe_docs(items):
     return [safe_doc(x) for x in items]
 
-import os
 from collections import Counter
 import logging
 import bcrypt
