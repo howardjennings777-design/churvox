@@ -441,34 +441,43 @@ export default function AppOwnerPage() {
       setError("");
 
       const endpoints = [
-        "/api/admin/usage-summary",
         "/api/admin/platform-stats",
         "/api/admin/stats",
         "/api/owner/stats",
+        "/api/admin/usage-summary",
       ];
 
-      let data = null;
-      let used = "";
+      let collected = [];
+      let used = [];
 
       for (const endpoint of endpoints) {
         try {
-          data = await tryEndpoint(endpoint);
-          used = endpoint;
-          break;
+          const result = await tryEndpoint(endpoint);
+          if (result) {
+            collected.push(result);
+            used.push(endpoint);
+          }
         } catch (err) {
           console.warn("Owner dashboard endpoint failed:", endpoint, err);
         }
       }
 
-      if (!data) {
+      if (!collected.length) {
         setStats(EMPTY_STATS);
         setSourceUsed("");
         setError("Could not load live platform data.");
         return;
       }
 
-      setStats(normalizeStats(data));
-      setSourceUsed(used);
+      const merged = collected.reduce((acc, item) => {
+        if (item && typeof item === "object") {
+          return { ...acc, ...item };
+        }
+        return acc;
+      }, {});
+
+      setStats(normalizeStats(merged));
+      setSourceUsed(used.join(", "));
     } catch (err) {
       console.error("Owner dashboard load failed:", err);
       setStats(EMPTY_STATS);
