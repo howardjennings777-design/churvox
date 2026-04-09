@@ -949,6 +949,9 @@ async def forgot_password(data: ForgotPassword):
     logger.info("Test credentials written")
 
 @app.on_event("shutdown")
+
+app.include_router(api_router)
+
 async def shutdown_db_client():
     client.close()
 
@@ -1209,3 +1212,8 @@ async def send_sms_hard_fix_v1(payload: dict, current_user: dict = Depends(get_c
         }
     }
 
+
+
+@app.get("/health")
+async def health():
+    return {"ok": True}
