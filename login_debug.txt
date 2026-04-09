@@ -1,0 +1,134 @@
+=== backend/server.py auth area ===
+48-    48	    elif status == "assigned" or job_status == "assigned" or workflow_status == "assigned":
+49-    49	        job["status"] = "assigned"
+50-    50	
+51-    51	    return job
+52-    52	
+53-    53	
+54:    54	from fastapi.middleware.cors import CORSMiddleware
+55-    55	from fastapi.middleware.gzip import GZipMiddleware
+56-    56	from dotenv import load_dotenv
+57-    57	from pathlib import Path
+58-    58	
+59-    59	
+60-    60	def clean_phone(value):
+--
+140-   140	    return None
+141-   141	
+142-   142	
+143-   143	ROOT_DIR = Path(__file__).parent
+144-   144	load_dotenv(ROOT_DIR / '.env')
+145-   145	
+146:   146	from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile, Query
+147-   147	from fastapi.responses import HTMLResponse
+148:   148	from starlette.middleware.cors import CORSMiddleware
+149-   149	from motor.motor_asyncio import AsyncIOMotorClient
+150-   150	from bson import ObjectId
+151-   151	
+152-   152	# =========================
+153-   153	# BUSINESS ISOLATION HELPERS
+154-   154	# =========================
+--
+164-   164	    """
+165-   165	    Always return the OWNER business id.
+166-   166	    Owner: own id
+167-   167	    Worker/sub-user: parent business_id
+168-   168	    """
+169-   169	    if not user:
+170:   170	        raise HTTPException(status_code=401, detail="Not authenticated")
+171-   171	
+172-   172	    raw_business_id = user.get("business_id")
+173-   173	    raw_user_id = user.get("id") or user.get("_id")
+174-   174	
+175-   175	    if raw_business_id:
+176-   176	        return str(raw_business_id)
+
+=== frontend auth files ===
+frontend/src/pages/auth/SignupPage.js
+frontend/src/pages/auth/LoginPage.js
+frontend/src/pages/auth/AdminLoginPage.js
+frontend/src/pages/owner/OwnerLoginPage.jsx
+frontend/src/context/AuthContext.js
+
+=== frontend login calls ===
+frontend/src/components/Layout.js:16:    navigate("/login");
+frontend/src/components/admin/PlatformAdminRoute.jsx:16:    return <Navigate to="/owner/login" replace />;
+frontend/src/App.js:44:  return user ? children : <Navigate to="/login" />;
+frontend/src/App.js:60:          <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+frontend/src/App.js:64:          <Route path="/admin/login" element={<PublicRoute><AdminLoginPage /></PublicRoute>} />
+frontend/src/App.js:111:          path="/owner/login" element={<AdminLoginPage />} />
+frontend/src/hooks/useApi.js:3:import axios from "axios"
+frontend/src/hooks/useApi.js:4:axios.defaults.withCredentials = true;
+frontend/src/hooks/useApi.js:36:        const response = await axios(config);
+frontend/src/pages/SettingsPage.js:55:          const res = await fetch(`${backendBase}${endpoint}`, {
+frontend/src/pages/SettingsPage.js:71:            window.location.href = "/login";
+frontend/src/pages/AppOwnerPage.jsx:39:        const res = await fetch(url, {
+frontend/src/pages/legal/PrivacyPage.js:11:          <Link to="/login" className="inline-flex items-center gap-2 text-sm text-churvox-muted hover:text-white transition-colors mb-6" data-testid="back-link">
+frontend/src/pages/legal/TermsPage.js:11:          <Link to="/login" className="inline-flex items-center gap-2 text-sm text-churvox-muted hover:text-white transition-colors mb-6" data-testid="back-link">
+frontend/src/pages/legal/AccountDeletionPage.js:35:          const res = await fetch(`${backendBase}${attempt.url}`, {
+frontend/src/pages/legal/AccountDeletionPage.js:60:      window.location.href = "/login";
+frontend/src/pages/auth/SignupPage.js:224:                  to="/login" 
+frontend/src/pages/auth/ResetPasswordPage.js:86:                <Link to="/login">
+frontend/src/pages/auth/ResetPasswordPage.js:165:                <Link to="/login" className="block">
+frontend/src/pages/auth/LoginPage.js:43:      const result = await login(email, password);
+frontend/src/pages/auth/LoginPage.js:156:                <Link to="/admin/login" className="hover:text-muted-foreground transition-colors" data-testid="admin-login-link">Admin</Link>
+frontend/src/pages/auth/ForgotPasswordPage.js:82:                <Link to="/login">
+frontend/src/pages/auth/ForgotPasswordPage.js:131:                <Link to="/login" className="block">
+frontend/src/pages/auth/InviteSetupPage.js:3:import axios from "axios"
+frontend/src/pages/auth/InviteSetupPage.js:4:axios.defaults.withCredentials = true;
+frontend/src/pages/auth/InviteSetupPage.js:32:        const res = await axios.get(`${API_URL}/api/invite/verify/${token}`);
+frontend/src/pages/auth/InviteSetupPage.js:59:      await axios.post(`${API_URL}/api/invite/accept`, {
+frontend/src/pages/auth/InviteSetupPage.js:95:              <Link to="/login">
+frontend/src/pages/auth/InviteSetupPage.js:120:                onClick={() => navigate("/login")}
+frontend/src/pages/auth/InviteSetupPage.js:232:                to="/login"
+frontend/src/pages/auth/AdminLoginPage.js:25:      const result = await login(email, password);
+frontend/src/pages/auth/AdminLoginPage.js:119:                to="/login"
+frontend/src/pages/TeamPage.js:14:import axios from "axios"
+frontend/src/pages/TeamPage.js:15:axios.defaults.withCredentials = true;
+frontend/src/pages/TeamPage.js:85:      const res = await axios.post(`${API_URL}/api/team/import-csv`, formData, {
+frontend/src/pages/owner/OwnerDashboardPage.jsx:29:                window.location.href = "/owner/login";
+frontend/src/pages/owner/OwnerLoginPage.jsx:46:      const loginRes = await fetch(`${backendBase}/api/auth/login`, {
+frontend/src/pages/owner/OwnerLoginPage.jsx:62:      const meRes = await fetch(`${backendBase}/api/auth/me`, {
+frontend/src/pages/admin/PlatformOwnerDashboard.jsx:14:import axios from "axios";
+frontend/src/pages/admin/PlatformOwnerDashboard.jsx:39:        const res = await axios.get(`${API_BASE}/api/admin/platform-stats`, {
+frontend/src/pages/AdminUsagePage.js:20:          const res = await fetch(url, { credentials: "include",  credentials: "include" }, { credentials: "include" }, { credentials: "include" });
+frontend/src/context/AuthContext.js:2:import axios from "axios"
+frontend/src/context/AuthContext.js:3:axios.defaults.withCredentials = true;
+frontend/src/context/AuthContext.js:16:      const response = await axios.get(`${API_URL}/api/auth/me`, {
+frontend/src/context/AuthContext.js:31:    const response = await axios.post(`${API_URL}/api/auth/login`, { email, password }, { withCredentials: true });
+frontend/src/context/AuthContext.js:39:    const response = await axios.post(`${API_URL}/api/auth/register`, userData, { withCredentials: true });
+frontend/src/context/AuthContext.js:49:      await axios.post(`${API_URL}/api/auth/logout`, {}, {
+frontend/src/context/AuthContext.js:60:      const response = await axios.post(`${API_URL}/api/auth/forgot-password`, { email });
+frontend/src/context/AuthContext.js:72:      await axios.post(`${API_URL}/api/auth/reset-password`, { token, new_password: newPassword });
+
+=== frontend API base ===
+frontend/src/hooks/useApi.js:7:const API_URL = "https://grassley-backend.onrender.com";
+frontend/src/hooks/useApi.js:25:          url: `${API_URL}/api${endpoint}`,
+frontend/src/pages/SettingsPage.js:36:      import.meta.env &&
+frontend/src/pages/SettingsPage.js:37:      import.meta.env.VITE_BACKEND_URL
+frontend/src/pages/SettingsPage.js:38:      ? import.meta.env.VITE_BACKEND_URL
+frontend/src/pages/AppOwnerPage.jsx:5:  (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_URL) ||
+frontend/src/pages/AppOwnerPage.jsx:6:  process.env.REACT_APP_API_URL ||
+frontend/src/pages/legal/AccountDeletionPage.js:17:      import.meta.env &&
+frontend/src/pages/legal/AccountDeletionPage.js:18:      import.meta.env.VITE_BACKEND_URL
+frontend/src/pages/legal/AccountDeletionPage.js:19:        ? import.meta.env.VITE_BACKEND_URL
+frontend/src/pages/auth/InviteSetupPage.js:12:const API_URL = "https://grassley-backend.onrender.com";
+frontend/src/pages/auth/InviteSetupPage.js:32:        const res = await axios.get(`${API_URL}/api/invite/verify/${token}`);
+frontend/src/pages/auth/InviteSetupPage.js:59:      await axios.post(`${API_URL}/api/invite/accept`, {
+frontend/src/pages/TeamPage.js:17:const API_URL = "https://grassley-backend.onrender.com";
+frontend/src/pages/TeamPage.js:85:      const res = await axios.post(`${API_URL}/api/team/import-csv`, formData, {
+frontend/src/pages/owner/OwnerLoginPage.jsx:9:    (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL)
+frontend/src/pages/owner/OwnerLoginPage.jsx:10:      ? import.meta.env.VITE_BACKEND_URL
+frontend/src/pages/AdminUsagePage.js:9:    const backend = (process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
+frontend/src/context/AuthContext.js:6:const API_URL = "https://grassley-backend.onrender.com";
+frontend/src/context/AuthContext.js:16:      const response = await axios.get(`${API_URL}/api/auth/me`, {
+frontend/src/context/AuthContext.js:31:    const response = await axios.post(`${API_URL}/api/auth/login`, { email, password }, { withCredentials: true });
+frontend/src/context/AuthContext.js:39:    const response = await axios.post(`${API_URL}/api/auth/register`, userData, { withCredentials: true });
+frontend/src/context/AuthContext.js:49:      await axios.post(`${API_URL}/api/auth/logout`, {}, {
+frontend/src/context/AuthContext.js:60:      const response = await axios.post(`${API_URL}/api/auth/forgot-password`, { email });
+frontend/src/context/AuthContext.js:72:      await axios.post(`${API_URL}/api/auth/reset-password`, { token, new_password: newPassword });
+
+=== frontend env files ===
+frontend/.env.production
+--- frontend/.env.production ---
+REACT_APP_BACKEND_URL=https://grassley-backend.onrender.com
