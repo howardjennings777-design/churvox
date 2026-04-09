@@ -1,4 +1,21 @@
 
+if (typeof window !== "undefined") {
+  window.__CHURVOX_BUILD_FORCE__ = "checkout-hard-force-v3";
+}
+
+if (typeof navigator !== "undefined" && navigator.serviceWorker) {
+  navigator.serviceWorker.getRegistrations().then((regs) => {
+    regs.forEach((reg) => reg.unregister());
+  });
+}
+
+if (typeof window !== "undefined" && window.caches) {
+  caches.keys().then((keys) => {
+    keys.forEach((key) => caches.delete(key));
+  });
+}
+
+
 if (typeof navigator !== "undefined" && navigator.serviceWorker) {
   navigator.serviceWorker.getRegistrations().then((regs) => {
     regs.forEach((reg) => reg.unregister());

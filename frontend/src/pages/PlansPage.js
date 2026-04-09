@@ -171,7 +171,7 @@ function PlansPage() {
       const url = data.checkout_url || data.url;
 
       if (url) {
-        window.location.href = url;
+        window.location.assign(url);
         return;
       }
 
