@@ -176,19 +176,21 @@ function StatCard({ label, value, subtext, icon: Icon, onClick, active = false }
         </div>
       </div>
       <div className="text-3xl font-bold text-white">{value}</div>
-      <div className="mt-1 text-xs text-slate-400">{subtext}</div>
+      {subtext ? <div className="mt-1 text-xs text-slate-400">{subtext}</div> : null}
     </button>
   );
 }
 
-function Field({ icon: Icon, label, value }) {
+function Field({ icon: Icon, label, value, moneyValue = false }) {
   if (value === undefined || value === null || value === "") return null;
   return (
     <div className="flex items-start gap-2 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
       {Icon ? <Icon className="mt-0.5 h-4 w-4 text-cyan-400" /> : null}
       <div className="min-w-0">
         <div className="text-[11px] uppercase tracking-wide text-slate-500">{label}</div>
-        <div className="break-words text-sm text-white">{String(value)}</div>
+        <div className="break-words text-sm text-white">
+          {moneyValue ? money(value) : String(value)}
+        </div>
       </div>
     </div>
   );
@@ -263,8 +265,8 @@ function DetailCard({ item, type }) {
         <div className="mb-3 text-sm font-semibold text-white">{item?.invoice_number || recordTitle(item)}</div>
         <div className="grid grid-cols-1 gap-2">
           <Field icon={Users} label="Client" value={item?.client_name || item?.customer_name} />
-          <Field icon={DollarSign} label="Total" value={money(item?.total || item?.amount_total)} />
-          <Field icon={AlertTriangle} label="Amount Due" value={money(item?.amount_due || item?.balance_due)} />
+          <Field icon={DollarSign} label="Total" value={item?.total || item?.amount_total} moneyValue />
+          <Field icon={AlertTriangle} label="Amount Due" value={item?.amount_due || item?.balance_due} moneyValue />
           <Field icon={Activity} label="Status" value={item?.status} />
           <Field icon={CalendarDays} label="Due Date" value={item?.due_date} />
           <Field icon={CalendarDays} label="Created" value={item?.created_at || item?.createdAt} />
@@ -365,7 +367,7 @@ export default function AppOwnerPage() {
       if (!data) {
         setStats(EMPTY_STATS);
         setSourceUsed("");
-        setError("Live stats could not be loaded right now. Dashboard is showing safe fallback values.");
+        setError("Could not load live platform data.");
         return;
       }
 
@@ -375,7 +377,7 @@ export default function AppOwnerPage() {
       console.error("Owner dashboard load failed:", err);
       setStats(EMPTY_STATS);
       setSourceUsed("");
-      setError("Live stats could not be loaded right now. Dashboard is showing safe fallback values.");
+      setError("Could not load live platform data.");
     } finally {
       setLoading(false);
     }
@@ -398,56 +400,56 @@ export default function AppOwnerPage() {
       key: "users_list",
       label: "Total Users",
       value: stats.total_users,
-      subtext: `${stats.total_users} total in system`,
+      subtext: null,
       icon: Users,
     },
     {
       key: "businesses_list",
       label: "Total Businesses",
       value: stats.total_businesses,
-      subtext: "Live total",
+      subtext: null,
       icon: Building2,
     },
     {
       key: "active_today_list",
       label: "Active Today",
       value: stats.active_today,
-      subtext: "Users active today",
+      subtext: null,
       icon: Activity,
     },
     {
       key: "paid_users_list",
       label: "Paid Users",
       value: stats.paid_users,
-      subtext: "Paid accounts",
+      subtext: null,
       icon: CreditCard,
     },
     {
       key: "invoices_list",
       label: "Total Invoices",
       value: stats.total_invoices,
-      subtext: "All invoices",
+      subtext: null,
       icon: FileText,
     },
     {
       key: "jobs_list",
       label: "Jobs Today",
       value: stats.total_jobs,
-      subtext: "Across all businesses",
+      subtext: null,
       icon: Briefcase,
     },
     {
       key: "invoices_list",
       label: "Monthly Revenue",
       value: money(stats.monthly_revenue),
-      subtext: "Paid invoices this month",
+      subtext: null,
       icon: DollarSign,
     },
     {
       key: "invoices_list",
       label: "Outstanding Balance",
       value: money(stats.outstanding_balance),
-      subtext: "Unpaid invoices",
+      subtext: null,
       icon: AlertTriangle,
     },
   ];
@@ -455,13 +457,20 @@ export default function AppOwnerPage() {
   const selectedLabel =
     cards.find((card) => card.key === selected)?.label || selected;
 
+  const planRows = [
+    ["Solo", stats.plan_counts?.solo || 0],
+    ["Team", stats.plan_counts?.team || 0],
+    ["Pro", stats.plan_counts?.pro || 0],
+    ["Enterprise", stats.plan_counts?.enterprise || 0],
+  ].filter(([, value]) => value > 0);
+
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-6 text-white md:px-6">
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold">Platform Dashboard</h1>
-            <p className="text-sm text-slate-400">Full app overview for Churvox owner/admin</p>
+            <p className="text-sm text-slate-400">Live owner/admin data</p>
             {sourceUsed ? (
               <p className="mt-2 text-xs text-cyan-400">Loaded from: {sourceUsed}</p>
             ) : null}
@@ -499,31 +508,25 @@ export default function AppOwnerPage() {
               ))}
             </div>
 
-            <div className="mt-4 rounded-2xl border border-blue-500/20 bg-slate-900/80 p-4 shadow-lg">
-              <div className="mb-3 flex items-center justify-between">
-                <div>
+            {planRows.length > 0 ? (
+              <div className="mt-4 rounded-2xl border border-blue-500/20 bg-slate-900/80 p-4 shadow-lg">
+                <div className="mb-3">
                   <h2 className="text-lg font-semibold text-white">Plans In Use</h2>
-                  <p className="text-xs text-slate-400">Real counts when backend supplies them</p>
+                </div>
+
+                <div className="space-y-3">
+                  {planRows.map(([name, value]) => (
+                    <div
+                      key={name}
+                      className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3"
+                    >
+                      <span className="text-sm text-slate-300">{name}</span>
+                      <span className="text-sm font-semibold text-white">{value}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              <div className="space-y-3">
-                {[
-                  ["Solo", stats.plan_counts?.solo || 0],
-                  ["Team", stats.plan_counts?.team || 0],
-                  ["Pro", stats.plan_counts?.pro || 0],
-                  ["Enterprise", stats.plan_counts?.enterprise || 0],
-                ].map(([name, value]) => (
-                  <div
-                    key={name}
-                    className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3"
-                  >
-                    <span className="text-sm text-slate-300">{name}</span>
-                    <span className="text-sm font-semibold text-white">{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            ) : null}
           </div>
 
           <div className="lg:col-span-1">
@@ -531,7 +534,7 @@ export default function AppOwnerPage() {
               <div className="mb-3">
                 <h2 className="text-lg font-semibold text-white">Details</h2>
                 <p className="text-xs text-slate-400">
-                  Tap any card to view account, business, invoice, or job details
+                  Tap a box to view real records
                 </p>
               </div>
 
@@ -550,27 +553,9 @@ export default function AppOwnerPage() {
                   ))
                 ) : (
                   <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-400">
-                    No detail records returned for this box yet.
+                    No records returned for this section.
                   </div>
                 )}
-              </div>
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-blue-500/20 bg-slate-900/80 p-4 shadow-lg">
-              <h2 className="mb-3 text-lg font-semibold text-white">Quick Numbers</h2>
-              <div className="space-y-3">
-                <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-300">
-                  Outstanding: <span className="font-semibold text-white">{money(stats.outstanding_balance)}</span>
-                </div>
-                <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-300">
-                  Monthly Revenue: <span className="font-semibold text-white">{money(stats.monthly_revenue)}</span>
-                </div>
-                <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-300">
-                  Users: <span className="font-semibold text-white">{stats.total_users}</span>
-                </div>
-                <div className="rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-sm text-slate-300">
-                  Businesses: <span className="font-semibold text-white">{stats.total_businesses}</span>
-                </div>
               </div>
             </div>
           </div>
