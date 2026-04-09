@@ -8,6 +8,7 @@ function PlansPage() {
   const [currentPlan, setCurrentPlan] = useState('solo');
   const [loading, setLoading] = useState(true);
   const [busyPlan, setBusyPlan] = useState('');
+  const [billing, setBilling] = useState(null);
 
   const fallbackPlans = [
     {
@@ -57,11 +58,11 @@ function PlansPage() {
     },
     {
       key: 'enterprise',
-      name: 'Enterprise\nNeed more staff? Add 50 extra users for $100/month',
+      name: 'Enterprise',
       price: '$240',
       description: 'For larger businesses needing stronger systems.',
       clients: '50 users included',
-    extraUsers: '$100 per additional 50 users',
+      extraUsers: '$100 per additional 50 users',
       trial: '14-day free trial',
       popular: false,
       features: [
@@ -94,9 +95,10 @@ function PlansPage() {
 
   const loadPlans = async () => {
     try {
-      const [plansRes, meRes] = await Promise.allSettled([
+      const [plansRes, meRes, billingRes] = await Promise.allSettled([
         safeGet('/plan/all'),
-        safeGet('/auth/me')
+        safeGet('/auth/me'),
+        safeGet('/billing/status')
       ]);
 
       if (
@@ -135,10 +137,17 @@ function PlansPage() {
       } else {
         setCurrentPlan('solo');
       }
+
+      if (billingRes.status === 'fulfilled') {
+        setBilling(getData(billingRes.value) || null);
+      } else {
+        setBilling(null);
+      }
     } catch (err) {
       console.error('Failed to load plans:', err);
       setPlans(fallbackPlans);
       setCurrentPlan('solo');
+      setBilling(null);
     } finally {
       setLoading(false);
     }
@@ -176,6 +185,20 @@ function PlansPage() {
     }
   };
 
+  const banner = billing?.trial_expired
+    ? {
+        title: 'Your free trial has ended',
+        text: 'Choose a paid plan to keep using Churvox.',
+        style: 'border-amber-500/30 bg-amber-500/10 text-amber-200'
+      }
+    : billing?.trial_active
+    ? {
+        title: `Free trial active${billing?.days_left ? ` · ${billing.days_left} day${billing.days_left === 1 ? '' : 's'} left` : ''}`,
+        text: 'No card required during trial. Upgrade any time to keep going after trial ends.',
+        style: 'border-blue-500/30 bg-blue-500/10 text-blue-200'
+      }
+    : null;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-6">
@@ -195,14 +218,22 @@ function PlansPage() {
             Pick the plan that fits your business
           </h1>
           <p className="text-slate-300 text-base md:text-lg max-w-2xl mx-auto">
-            Start with a 14-day free trial, then move onto the plan that suits your workflow.
+            Start with a 14-day free trial with no card required, then move onto the plan that suits your workflow.
           </p>
         </div>
+
+        {banner ? (
+          <div className={`mb-8 rounded-2xl border px-5 py-4 ${banner.style}`}>
+            <div className="font-semibold mb-1">{banner.title}</div>
+            <div className="text-sm opacity-90">{banner.text}</div>
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
           {plans.map((plan) => {
             const isCurrent = plan.key === currentPlan;
             const isBusy = busyPlan === plan.key;
+            const mustUpgrade = !!billing?.trial_expired;
 
             return (
               <div
@@ -228,7 +259,7 @@ function PlansPage() {
                 ) : null}
 
                 <div className="mb-5">
-                  <h2 className="text-2xl font-bold mb-2">{plan.name}</h2>
+                  <h2 className="text-2xl font-bold mb-2 whitespace-pre-line">{plan.name}</h2>
                   <div className="flex items-end gap-2 mb-2">
                     <span className="text-4xl font-extrabold">{plan.price}</span>
                     <span className="text-slate-400 mb-1">/month</span>
@@ -237,6 +268,9 @@ function PlansPage() {
                     {plan.trial}
                   </div>
                   <p className="text-slate-300">{plan.description}</p>
+                  {plan.extraUsers ? (
+                    <p className="text-xs text-slate-400 mt-2">{plan.extraUsers}</p>
+                  ) : null}
                 </div>
 
                 <div className="rounded-2xl bg-slate-800/60 border border-slate-700 px-4 py-3 mb-5">
@@ -263,13 +297,19 @@ function PlansPage() {
                 <button
                   onClick={() => handleUpgrade(plan.key)}
                   disabled={isCurrent || isBusy}
-                  className={`w-full rounded-2xl px-4 py-3.5 font-semibold transition-all ${
+                  className={`w-full rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                     isCurrent
                       ? 'bg-slate-700 text-slate-300 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20'
+                      : 'bg-blue-600 hover:bg-blue-500 text-white'
                   }`}
                 >
-                  {isCurrent ? 'Current Plan' : isBusy ? 'Opening Checkout...' : 'Start 14-Day Free Trial'}
+                  {isCurrent
+                    ? 'Current plan'
+                    : isBusy
+                    ? 'Opening checkout...'
+                    : mustUpgrade
+                    ? `Upgrade to ${plan.name.split(' ')[0]}`
+                    : `Choose ${plan.name.split(' ')[0]}`}
                 </button>
               </div>
             );
