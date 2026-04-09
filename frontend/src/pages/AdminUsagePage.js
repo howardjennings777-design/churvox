@@ -6,7 +6,10 @@ export default function AdminUsagePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const backend = (process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
+    const backend =
+      ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "")
+        .replace(/\/$/, "");
+
     const urls = [
       backend ? `${backend}/api/admin/usage-summary` : null,
       "/api/admin/usage-summary",
@@ -17,7 +20,7 @@ export default function AdminUsagePage() {
     const run = async () => {
       for (const url of urls) {
         try {
-          const res = await fetch(url, { credentials: "include",  credentials: "include" }, { credentials: "include" }, { credentials: "include" });
+          const res = await fetch(url, { credentials: "include" });
           if (!res.ok) continue;
           const json = await res.json();
           setData(json);
@@ -25,6 +28,7 @@ export default function AdminUsagePage() {
           return;
         } catch (e) {}
       }
+
       setError("Could not load usage dashboard");
       setLoading(false);
     };
@@ -57,7 +61,7 @@ export default function AdminUsagePage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Usage Dashboard</h1>
           <p className="mt-1 text-sm text-slate-400">
-            Simple owner/admin snapshot of app usage and growth
+            Real owner/admin snapshot of app usage and growth
           </p>
         </div>
 
