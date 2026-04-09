@@ -767,6 +767,15 @@ async def create_checkout_session(payload: dict, current_user: dict = Depends(ge
     cancel_url = f"{FRONTEND_URL}/plans?checkout=cancelled&plan={plan}"
 
     try:
+        print("CHECKOUT DEBUG START", {
+            "plan": plan,
+            "price_id": price_id,
+            "user_id": user_id,
+            "email": email,
+            "success_url": success_url,
+            "cancel_url": cancel_url,
+        })
+
         session = stripe.checkout.Session.create(
             mode="subscription",
             payment_method_types=["card"],
@@ -780,6 +789,8 @@ async def create_checkout_session(payload: dict, current_user: dict = Depends(ge
             },
         )
 
+        print("CHECKOUT DEBUG SESSION URL", getattr(session, "url", None))
+
         if not getattr(session, "url", None):
             raise HTTPException(status_code=500, detail="Stripe session created without a checkout URL")
 
@@ -787,6 +798,7 @@ async def create_checkout_session(payload: dict, current_user: dict = Depends(ge
     except HTTPException:
         raise
     except Exception as e:
+        print("CHECKOUT DEBUG ERROR", repr(e))
         raise HTTPException(status_code=500, detail=f"Stripe checkout failed: {str(e)}")
 
 # ===================== AUTH ENDPOINTS =====================
