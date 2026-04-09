@@ -10,6 +10,11 @@ import {
   AlertTriangle,
   RefreshCw,
   ArrowRight,
+  Mail,
+  Phone,
+  MapPin,
+  CalendarDays,
+  BadgeDollarSign,
 } from "lucide-react";
 
 const API_BASE = (
@@ -176,22 +181,119 @@ function StatCard({ label, value, subtext, icon: Icon, onClick, active = false }
   );
 }
 
-function DrilldownRow({ item }) {
-  const text =
+function Field({ icon: Icon, label, value }) {
+  if (value === undefined || value === null || value === "") return null;
+  return (
+    <div className="flex items-start gap-2 rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2">
+      {Icon ? <Icon className="mt-0.5 h-4 w-4 text-cyan-400" /> : null}
+      <div className="min-w-0">
+        <div className="text-[11px] uppercase tracking-wide text-slate-500">{label}</div>
+        <div className="break-words text-sm text-white">{String(value)}</div>
+      </div>
+    </div>
+  );
+}
+
+function recordTitle(item) {
+  return (
     item?.name ||
+    item?.full_name ||
     item?.business_name ||
     item?.company ||
     item?.email ||
     item?.title ||
     item?.client_name ||
     item?.invoice_number ||
+    item?.job_number ||
     item?._id ||
     item?.id ||
-    "Record";
+    "Record"
+  );
+}
+
+function getDetailType(selected) {
+  if (selected === "users_list") return "user";
+  if (selected === "paid_users_list") return "paid_user";
+  if (selected === "active_today_list") return "active_user";
+  if (selected === "businesses_list") return "business";
+  if (selected === "invoices_list") return "invoice";
+  if (selected === "jobs_list") return "job";
+  return "raw";
+}
+
+function DetailCard({ item, type }) {
+  if (type === "user" || type === "paid_user" || type === "active_user") {
+    return (
+      <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+        <div className="mb-3 text-sm font-semibold text-white">{recordTitle(item)}</div>
+        <div className="grid grid-cols-1 gap-2">
+          <Field icon={Mail} label="Email" value={item?.email} />
+          <Field icon={Phone} label="Phone" value={item?.phone || item?.mobile} />
+          <Field icon={BadgeDollarSign} label="Plan" value={item?.plan || item?.subscription_plan} />
+          <Field icon={Activity} label="Status" value={item?.status || item?.account_status} />
+          <Field icon={CalendarDays} label="Created" value={item?.created_at || item?.createdAt} />
+          <Field icon={CalendarDays} label="Last Active" value={item?.last_active || item?.last_login || item?.updated_at} />
+          <Field label="User ID" value={item?._id || item?.id} />
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "business") {
+    return (
+      <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+        <div className="mb-3 text-sm font-semibold text-white">{recordTitle(item)}</div>
+        <div className="grid grid-cols-1 gap-2">
+          <Field icon={Users} label="Owner" value={item?.owner_name || item?.owner || item?.user_name} />
+          <Field icon={Mail} label="Email" value={item?.email} />
+          <Field icon={Phone} label="Phone" value={item?.phone} />
+          <Field icon={MapPin} label="Address" value={item?.address} />
+          <Field icon={BadgeDollarSign} label="Plan" value={item?.plan || item?.subscription_plan} />
+          <Field icon={Activity} label="Status" value={item?.status} />
+          <Field icon={CalendarDays} label="Created" value={item?.created_at || item?.createdAt} />
+          <Field label="Business ID" value={item?._id || item?.id} />
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "invoice") {
+    return (
+      <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+        <div className="mb-3 text-sm font-semibold text-white">{item?.invoice_number || recordTitle(item)}</div>
+        <div className="grid grid-cols-1 gap-2">
+          <Field icon={Users} label="Client" value={item?.client_name || item?.customer_name} />
+          <Field icon={DollarSign} label="Total" value={money(item?.total || item?.amount_total)} />
+          <Field icon={AlertTriangle} label="Amount Due" value={money(item?.amount_due || item?.balance_due)} />
+          <Field icon={Activity} label="Status" value={item?.status} />
+          <Field icon={CalendarDays} label="Due Date" value={item?.due_date} />
+          <Field icon={CalendarDays} label="Created" value={item?.created_at || item?.createdAt} />
+          <Field label="Invoice ID" value={item?._id || item?.id} />
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "job") {
+    return (
+      <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+        <div className="mb-3 text-sm font-semibold text-white">{item?.title || item?.job_title || recordTitle(item)}</div>
+        <div className="grid grid-cols-1 gap-2">
+          <Field icon={Users} label="Client" value={item?.client_name} />
+          <Field icon={Building2} label="Business" value={item?.business_name} />
+          <Field icon={MapPin} label="Address" value={item?.address || item?.service_address} />
+          <Field icon={Activity} label="Status" value={item?.status} />
+          <Field icon={CalendarDays} label="Scheduled" value={item?.scheduled_date || item?.start_date} />
+          <Field icon={CalendarDays} label="Created" value={item?.created_at || item?.createdAt} />
+          <Field label="Job ID" value={item?._id || item?.id} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3 text-sm text-slate-200">
-      <div className="font-medium text-white">{String(text)}</div>
+      <div className="font-medium text-white">{recordTitle(item)}</div>
       <pre className="mt-2 whitespace-pre-wrap break-words text-xs text-slate-400">
 {JSON.stringify(item, null, 2)}
       </pre>
@@ -283,6 +385,8 @@ export default function AppOwnerPage() {
     loadDashboard();
   }, []);
 
+  const detailType = getDetailType(selected);
+
   const drilldown = useMemo(() => {
     if (!stats || !selected) return [];
     const value = stats[selected];
@@ -347,6 +451,9 @@ export default function AppOwnerPage() {
       icon: AlertTriangle,
     },
   ];
+
+  const selectedLabel =
+    cards.find((card) => card.key === selected)?.label || selected;
 
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-6 text-white md:px-6">
@@ -424,25 +531,26 @@ export default function AppOwnerPage() {
               <div className="mb-3">
                 <h2 className="text-lg font-semibold text-white">Details</h2>
                 <p className="text-xs text-slate-400">
-                  Tap any card to view raw records behind that stat
+                  Tap any card to view account, business, invoice, or job details
                 </p>
               </div>
 
               <div className="mb-3 rounded-xl border border-slate-800 bg-slate-950/70 px-3 py-2 text-sm text-slate-300">
-                Selected: <span className="font-medium text-white">{selected}</span>
+                Selected: <span className="font-medium text-white">{selectedLabel}</span>
               </div>
 
               <div className="max-h-[70vh] space-y-3 overflow-auto pr-1">
                 {drilldown.length > 0 ? (
                   drilldown.map((item, index) => (
-                    <DrilldownRow
+                    <DetailCard
                       key={item?._id || item?.id || item?.email || item?.invoice_number || index}
                       item={item}
+                      type={detailType}
                     />
                   ))
                 ) : (
                   <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-400">
-                    No drilldown records returned for this stat yet.
+                    No detail records returned for this box yet.
                   </div>
                 )}
               </div>
