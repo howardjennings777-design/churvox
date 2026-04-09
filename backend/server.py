@@ -1735,6 +1735,12 @@ async def app_platform_stats(current_user: dict = Depends(get_current_user)):
         "paid_users_list": paid_users_list[:200],
         "invoices_list": invoices_list[:200],
         "jobs_list": jobs_list[:200],
+        "debug_db_name": getattr(db, "name", None),
+        "debug_collection_names": sorted(await db.list_collection_names()),
+        "debug_users_count": await db.users.count_documents({}) if "users" in await db.list_collection_names() else 0,
+        "debug_businesses_count": await db.businesses.count_documents({}) if "businesses" in await db.list_collection_names() else 0,
+        "debug_jobs_count": await db.jobs.count_documents({}) if "jobs" in await db.list_collection_names() else 0,
+        "debug_invoices_count": await db.invoices.count_documents({}) if "invoices" in await db.list_collection_names() else 0,
     }
 
 
