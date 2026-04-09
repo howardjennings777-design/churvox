@@ -24,9 +24,22 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
-      navigate("/admin");
+      const result = await login(email, password);
+
+      localStorage.setItem("owner_portal_session", "true");
+      localStorage.setItem("platform_owner_email", email);
+
+      if (result?.token) {
+        localStorage.setItem("token", result.token);
+      }
+
+      navigate("/admin", { replace: true });
+      setTimeout(() => {
+        window.location.href = "/admin";
+      }, 150);
     } catch (err) {
+      localStorage.removeItem("owner_portal_session");
+      localStorage.removeItem("platform_owner_email");
       setError(
         err?.response?.data?.detail ||
         err?.message ||
