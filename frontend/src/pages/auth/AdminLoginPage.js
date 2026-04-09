@@ -11,27 +11,30 @@ import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 export default function AdminLoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("hello@churvox.com");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
+
     setError("");
     setLoading(true);
 
     try {
-      const result = await login(email, password);
-      if (result?.token) {
-        navigate("/admin");
-      } else {
-        setError("Login failed. Please try again.");
-      }
+      await login(email, password);
+      navigate("/admin");
     } catch (err) {
-      setError(err?.response?.data?.detail || "Invalid credentials.");
+      setError(
+        err?.response?.data?.detail ||
+        err?.message ||
+        "Invalid credentials."
+      );
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -70,7 +73,7 @@ export default function AdminLoginPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="admin@churvox.com"
+                    placeholder="hello@churvox.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10 bg-secondary border-border"
