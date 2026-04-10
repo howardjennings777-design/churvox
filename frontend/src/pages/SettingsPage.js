@@ -95,7 +95,31 @@ const handleDeleteAccount = async () => {
   const { user, updateUser } = useAuth();
   const { patch, get, post, loading } = useApi();
   const planLimits = usePlanLimits(user?.plan);
-  const isFeatureEnabled = (key) => Boolean(planLimits?.features?.[key]);
+  const isFeatureEnabled = (key) => {
+    const features = planLimits?.features || {};
+    const normalized = String(key || "").trim().toLowerCase();
+
+    if (normalized === "team" || normalized === "teammanagement" || normalized === "team_management") {
+      return !!features.teamManagement;
+    }
+    if (normalized === "csvteamimport" || normalized === "csv_team_import") {
+      return !!features.csvTeamImport;
+    }
+    if (normalized === "csvclientimport" || normalized === "csv_client_import") {
+      return !!features.csvClientImport;
+    }
+    if (normalized === "recurringjobs" || normalized === "recurring_jobs") {
+      return !!features.recurringJobs;
+    }
+    if (normalized === "myob" || normalized === "myobsync" || normalized === "myob_sync") {
+      return !!features.myobSync;
+    }
+    if (normalized === "enterpriseuserblocks" || normalized === "enterprise_user_blocks") {
+      return !!features.enterpriseUserBlocks;
+    }
+
+    return !!features[key];
+  };
   const [gstRate, setGstRate] = useState(user?.gst_rate?.toString() || "15");
   const [tradeType, setTradeType] = useState(user?.trade_type || "other");
   const [myobKey, setMyobKey] = useState("");
