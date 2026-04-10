@@ -785,7 +785,7 @@ async def create_checkout_session(payload: dict, current_user: dict = Depends(ge
 
         checkout_kwargs = {
             "mode": "subscription",
-            "payment_method_types": ["card"],
+            "payment_method_collection": "if_required",
             "customer_email": email,
             "line_items": [{"price": price_id, "quantity": 1}],
             "success_url": success_url,
@@ -820,6 +820,11 @@ async def create_checkout_session(payload: dict, current_user: dict = Depends(ge
                 subscription_data["trial_end"] = trial_end_ts
             else:
                 subscription_data["trial_period_days"] = 14
+
+        subscription_data.setdefault(
+            "trial_settings",
+            {"end_behavior": {"missing_payment_method": "cancel"}}
+        )
 
         if subscription_data:
             checkout_kwargs["subscription_data"] = subscription_data
