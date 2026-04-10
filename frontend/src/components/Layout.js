@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ChurvoxLogo } from "./ChurvoxLogo";
+import { hasPlanAccess, normalizePlan } from "../utils/planRules";
 import { InstallPrompt } from "./InstallPrompt";
 import { LayoutDashboard, Briefcase, Calendar, Users, MoreHorizontal, LogOut, Settings, FileText, Receipt, CreditCard, UserPlus, MessageSquare } from "lucide-react";
 
@@ -10,6 +11,8 @@ export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
+  const safePlan = normalizePlan(user?.plan || "solo");
+  const canUseTeamNav = !!isEmployer && hasPlanAccess(safePlan, "team");
 
   const handleLogout = async () => {
     await logout();
@@ -23,18 +26,16 @@ export default function Layout({ children }) {
     { path: "/clients", label: "Clients", icon: Users },
   ];
 
-  const moreItems = isEmployer
-    ? [
-        { path: "/team", label: "Team", icon: UserPlus },
-        { path: "/quotes", label: "Quotes", icon: FileText },
-        { path: "/invoices", label: "Invoices", icon: Receipt },
-        { path: "/sms", label: "SMS", icon: MessageSquare },
-        { path: "/plans", label: "Plans", icon: CreditCard },
-        { path: "/settings", label: "Settings", icon: Settings },
-      ]
-    : [
-        { path: "/settings", label: "Settings", icon: Settings },
-      ];
+  const moreItems = [
+    ...(canUseTeamNav ? [{ path: "/team", label: "Team", icon: UserPlus }] : []),
+    ...(isEmployer ? [
+      { path: "/quotes", label: "Quotes", icon: FileText },
+      { path: "/invoices", label: "Invoices", icon: Receipt },
+      { path: "/sms", label: "SMS", icon: MessageSquare },
+      { path: "/plans", label: "Plans", icon: CreditCard },
+    ] : []),
+    { path: "/settings", label: "Settings", icon: Settings },
+  ];
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
 
