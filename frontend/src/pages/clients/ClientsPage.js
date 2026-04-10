@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useApi } from "@/hooks/useApi";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,8 @@ import {
   Pencil,
   Trash2,
   Loader2,
-  Users
+  Users,
+  Upload
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -36,14 +38,21 @@ import { toast } from "sonner";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import Layout from "@/components/Layout";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
-import PageState from "../../components/ui/PageState";
+import axios from "axios";
+axios.defaults.withCredentials = true;
+
+const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
 
 export default function ClientsPage() {
+  const { user } = useAuth();
   const { get, del, loading } = useApi();
   const [clients, setClients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteId, setDeleteId] = useState(null);
-  const { maxClients, canUseCsvClientImport, plan } = usePlanLimits();
+  const [importing, setImporting] = useState(false);
+  const [importResults, setImportResults] = useState(null);
+  const [fileInputKey, setFileInputKey] = useState(0);
+  const { maxClients, canUseCsvClientImport, plan } = usePlanLimits(user?.plan);
 
   useEffect(() => {
     loadClients();
@@ -68,6 +77,53 @@ export default function ClientsPage() {
     setDeleteId(null);
   };
 
+  const handleCSVImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!canUseCsvClientImport) {
+      toast.error("CSV client import requires a Pro plan or higher.");
+      setFileInputKey((k) => k + 1);
+      return;
+    }
+
+    setImporting(true);
+    setImportResults(null);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(`${API_URL}/api/clients/import-csv`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+        withCredentials: true,
+      });
+
+      const data = response?.data || {};
+      setImportResults(data);
+      await loadClients();
+
+      const imported = Number(data.imported || data.created || 0);
+      const skipped = Number(data.skipped || 0);
+      const total = Number(data.total || 0);
+
+      toast.success(
+        total > 0
+          ? `${imported} client(s) imported, ${skipped} skipped`
+          : "Client CSV import completed"
+      );
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Client CSV import failed");
+    } finally {
+      setImporting(false);
+      setFileInputKey((k) => k + 1);
+    }
+  };
+
   const filteredClients = clients.filter((client) =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,6 +140,15 @@ export default function ClientsPage() {
             <p className="text-muted-foreground mt-1">Manage your client database</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <input
+              key={fileInputKey}
+              type="file"
+              accept=".csv"
+              onChange={handleCSVImport}
+              className="hidden"
+              id="client-csv-file-input"
+              data-testid="client-csv-file-input"
+            />
             {clients.length >= maxClients ? (
               <Button className="bg-primary/60 hover:bg-primary/60 cursor-not-allowed" disabled data-testid="add-client-button-disabled">
                 <Plus className="mr-2 h-4 w-4" />
@@ -98,11 +163,24 @@ export default function ClientsPage() {
               </Link>
             )}
             {canUseCsvClientImport ? (
-              <Button variant="outline" className="border-border" data-testid="client-csv-import-button">
-                CSV Import
+              <Button
+                variant="outline"
+                className="border-border"
+                onClick={() => document.getElementById("client-csv-file-input")?.click()}
+                disabled={importing}
+                data-testid="client-csv-import-button"
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                {importing ? "Importing..." : "CSV Import"}
               </Button>
             ) : (
-              <Button variant="outline" className="border-border opacity-60" disabled data-testid="client-csv-import-locked">
+              <Button
+                variant="outline"
+                className="border-border opacity-60"
+                disabled
+                data-testid="client-csv-import-locked"
+              >
+                <Upload className="mr-2 h-4 w-4" />
                 CSV Import locked
               </Button>
             )}
@@ -114,6 +192,31 @@ export default function ClientsPage() {
             feature="client-limit"
             message={`You have reached your ${maxClients}-client limit on the ${String(plan || "solo").replace(/^./, (m) => m.toUpperCase())} plan.`}
           />
+        )}
+
+        {importResults && (
+          <Card className="bg-card border-border" data-testid="client-csv-import-results">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Client CSV Import Results</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                {Number(importResults.imported || importResults.created || 0)} imported, {Number(importResults.skipped || 0)} skipped
+                {importResults.total ? ` of ${importResults.total} rows` : ""}
+              </p>
+              {Array.isArray(importResults.details) && importResults.details.filter((d) => (d.status || "").toLowerCase() !== "imported" && (d.status || "").toLowerCase() !== "created").length > 0 && (
+                <div className="space-y-1 max-h-36 overflow-y-auto rounded-md border border-border p-3">
+                  {importResults.details
+                    .filter((d) => (d.status || "").toLowerCase() !== "imported" && (d.status || "").toLowerCase() !== "created")
+                    .map((d, i) => (
+                      <p key={i} className="text-xs text-muted-foreground">
+                        Row {d.row}: {d.reason || d.status || "Skipped"}
+                      </p>
+                    ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* Search */}

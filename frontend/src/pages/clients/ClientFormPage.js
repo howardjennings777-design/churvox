@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useApi } from "@/hooks/useApi";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,9 +16,10 @@ import { usePlanLimits } from "@/hooks/usePlanLimits";
 export default function ClientFormPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { user } = useAuth();
   const { get, post, patch, loading } = useApi();
   const isEdit = !!id;
-  const { getPlanFeatures, maxClients } = usePlanLimits();
+  const { maxClients } = usePlanLimits(user?.plan);
   const [clientCount, setClientCount] = useState(0);
 
   const [formData, setFormData] = useState({
