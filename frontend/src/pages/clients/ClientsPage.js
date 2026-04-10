@@ -95,6 +95,16 @@ export default function ClientsPage() {
 
     try {
       const token = localStorage.getItem("token");
+      console.log("CLIENT CSV IMPORT START", {
+        apiUrl: `${API_URL}/api/clients/import-csv`,
+        hasToken: !!token,
+        fileName: file?.name,
+        fileSize: file?.size,
+        userPlan: user?.plan,
+        userId: user?.id,
+        businessId: user?.business_id,
+      });
+
       const response = await axios.post(`${API_URL}/api/clients/import-csv`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -104,8 +114,16 @@ export default function ClientsPage() {
       });
 
       const data = response?.data || {};
+      console.log("CLIENT CSV IMPORT RESPONSE", data);
+
       setImportResults(data);
-      await loadClients();
+
+      const reloadResult = await get("/clients");
+      console.log("CLIENTS RELOAD RESULT", reloadResult);
+
+      if (reloadResult?.success) {
+        setClients(reloadResult.data || []);
+      }
 
       const imported = Number(data.imported || data.created || 0);
       const skipped = Number(data.skipped || 0);
@@ -117,7 +135,12 @@ export default function ClientsPage() {
           : "Client CSV import completed"
       );
     } catch (err) {
-      toast.error(err?.response?.data?.detail || "Client CSV import failed");
+      console.error("CLIENT CSV IMPORT ERROR", {
+        message: err?.message,
+        status: err?.response?.status,
+        data: err?.response?.data,
+      });
+      toast.error(err?.response?.data?.detail || err?.message || "Client CSV import failed");
     } finally {
       setImporting(false);
       setFileInputKey((k) => k + 1);
