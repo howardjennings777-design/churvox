@@ -17,7 +17,7 @@ axios.defaults.withCredentials = true;
 const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
 
 export default function TeamPage() {
-  const { user, isEmployer } = useAuth();
+  const { user, isEmployer, loading: authLoading } = useAuth();
   const { get, post, del, loading } = useApi();
   const {
     plan,
@@ -61,7 +61,10 @@ export default function TeamPage() {
     if (res.success) setWorkers(res.data);
   }, [get]);
 
-  useEffect(() => { fetchWorkers(); }, [fetchWorkers]);
+  useEffect(() => {
+    if (authLoading || !user?.token) return;
+    fetchWorkers();
+  }, [authLoading, user?.token, fetchWorkers]);
 
   const handleAdd = async (e) => {
     e.preventDefault();

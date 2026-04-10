@@ -44,7 +44,7 @@ axios.defaults.withCredentials = true;
 const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
 
 export default function ClientsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { get, del, loading } = useApi();
   const [clients, setClients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,8 +55,9 @@ export default function ClientsPage() {
   const { maxClients, canUseCsvClientImport, plan } = usePlanLimits(user?.plan);
 
   useEffect(() => {
+    if (authLoading || !user?.token) return;
     loadClients();
-  }, []);
+  }, [authLoading, user?.token]);
 
   const loadClients = async () => {
     const result = await get("/clients");
