@@ -1240,6 +1240,50 @@ def health_login():
 #     return {"success": True}
 
 
+
+@api_router.get("/clients")
+async def get_clients(current_user: dict = Depends(get_current_user)):
+    business_id = str(get_business_id_for_user(current_user))
+    docs = []
+    async for client in db.clients.find({"business_id": business_id}).sort("created_at", -1):
+        docs.append({
+            "id": str(client.get("id") or client.get("_id")),
+            "name": client.get("name") or client.get("client_name") or client.get("contact_name") or "Unnamed Client",
+            "client_name": client.get("client_name") or client.get("name"),
+            "contact_name": client.get("contact_name"),
+            "email": client.get("email"),
+            "phone": client.get("phone"),
+            "address": client.get("address"),
+            "notes": client.get("notes"),
+            "business_id": str(client.get("business_id")) if client.get("business_id") is not None else None,
+            "created_at": client.get("created_at").isoformat() if client.get("created_at") else None,
+            "updated_at": client.get("updated_at").isoformat() if client.get("updated_at") else None,
+        })
+    return docs
+
+
+@api_router.get("/team/workers")
+async def get_team_workers(current_user: dict = Depends(get_current_user)):
+    business_id = str(get_business_id_for_user(current_user))
+    docs = []
+    async for worker in db.business_users.find({
+        "business_id": business_id,
+        "role": "worker"
+    }).sort("created_at", -1):
+        docs.append({
+            "id": str(worker.get("_id")),
+            "name": worker.get("name") or "Unnamed Worker",
+            "email": worker.get("email"),
+            "phone": worker.get("phone"),
+            "role": worker.get("role", "worker"),
+            "status": worker.get("status", "invited"),
+            "business_id": str(worker.get("business_id")) if worker.get("business_id") is not None else None,
+            "created_at": worker.get("created_at").isoformat() if worker.get("created_at") else None,
+            "updated_at": worker.get("updated_at").isoformat() if worker.get("updated_at") else None,
+        })
+    return docs
+
+
 @api_router.post("/jobs/{job_id}/pause")
 async def pause_job(job_id: str, current_user: dict = Depends(get_current_user)):
     job = await db.jobs.find_one({"id": job_id})
