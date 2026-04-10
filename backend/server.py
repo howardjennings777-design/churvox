@@ -1684,8 +1684,11 @@ async def import_csv_clients(request: Request, current_user: dict = Depends(get_
         rows = rows[1:]
 
     owner_id = current_user.get("_id") or current_user.get("id") or current_user.get("user_id")
-    business_id = current_user.get("business_id")
+    business_id = str(get_business_id_for_user(current_user))
     owner_email = current_user.get("email")
+
+    if not business_id:
+        raise HTTPException(status_code=400, detail="Could not determine business ID for client import")
 
     imported = 0
     skipped = 0
@@ -1745,6 +1748,7 @@ async def import_csv_clients(request: Request, current_user: dict = Depends(get_
         "success": True,
         "imported": imported,
         "skipped": skipped,
+        "total": len(rows),
         "total_rows": len(rows),
         "message": f"Imported {imported} clients, skipped {skipped} rows."
     }
