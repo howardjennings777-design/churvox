@@ -33,7 +33,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import Layout from "@/components/Layout";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 import PageState from "../../components/ui/PageState";
 
 export default function ClientsPage() {
@@ -41,6 +43,7 @@ export default function ClientsPage() {
   const [clients, setClients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteId, setDeleteId] = useState(null);
+  const { maxClients, canUseCsvClientImport, plan } = usePlanLimits();
 
   useEffect(() => {
     loadClients();
@@ -80,13 +83,38 @@ export default function ClientsPage() {
             <h1 className="text-2xl sm:text-3xl font-semibold text-white font-heading">Clients</h1>
             <p className="text-muted-foreground mt-1">Manage your client database</p>
           </div>
-          <Link to="/clients/new">
-            <Button className="bg-primary hover:bg-primary/90" data-testid="add-client-button">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Client
-            </Button>
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            {clients.length >= maxClients ? (
+              <Button className="bg-primary/60 hover:bg-primary/60 cursor-not-allowed" disabled data-testid="add-client-button-disabled">
+                <Plus className="mr-2 h-4 w-4" />
+                Client limit reached
+              </Button>
+            ) : (
+              <Link to="/clients/new">
+                <Button className="bg-primary hover:bg-primary/90" data-testid="add-client-button">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Client
+                </Button>
+              </Link>
+            )}
+            {canUseCsvClientImport ? (
+              <Button variant="outline" className="border-border" data-testid="client-csv-import-button">
+                CSV Import
+              </Button>
+            ) : (
+              <Button variant="outline" className="border-border opacity-60" disabled data-testid="client-csv-import-locked">
+                CSV Import locked
+              </Button>
+            )}
+          </div>
         </div>
+
+        {clients.length >= maxClients && (
+          <UpgradePrompt
+            feature="client-limit"
+            message={`You have reached your ${maxClients}-client limit on the ${String(plan || "solo").replace(/^./, (m) => m.toUpperCase())} plan.`}
+          />
+        )}
 
         {/* Search */}
         <div className="relative max-w-md">
@@ -118,12 +146,19 @@ export default function ClientsPage() {
                   : "Clients link to jobs, quotes, and invoices. Add your first client to get started."}
               </p>
               {!searchTerm && (
-                <Link to="/clients/new">
-                  <Button className="bg-primary hover:bg-primary/90" data-testid="add-first-client-button">
+                clients.length >= maxClients ? (
+                  <Button className="bg-primary/60 hover:bg-primary/60 cursor-not-allowed" disabled data-testid="add-first-client-button-disabled">
                     <Plus className="mr-2 h-4 w-4" />
-                    Add Client
+                    Client limit reached
                   </Button>
-                </Link>
+                ) : (
+                  <Link to="/clients/new">
+                    <Button className="bg-primary hover:bg-primary/90" data-testid="add-first-client-button">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Client
+                    </Button>
+                  </Link>
+                )
               )}
             </CardContent>
           </Card>

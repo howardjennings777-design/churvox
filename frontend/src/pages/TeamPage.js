@@ -19,7 +19,7 @@ const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && impor
 export default function TeamPage() {
   const { isEmployer } = useAuth();
   const { get, post, del, loading } = useApi();
-  const { planData, isFeatureEnabled, canAddWorker } = usePlanLimits();
+  const { planData, isFeatureEnabled, canAddWorker, includedUsers } = usePlanLimits();
   const [workers, setWorkers] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
@@ -152,7 +152,7 @@ export default function TeamPage() {
               {importing ? "Importing..." : "CSV Import"}
             </Button>
             <Button onClick={() => {
-              if (!canAddWorker()) { toast.error("Team limit reached. Upgrade your plan."); return; }
+              if (!canAddWorker(workers.length)) { toast.error(`Team limit reached for your plan (${includedUsers || 1} users). Upgrade your plan.`); return; }
               setShowAdd(true);
             }} className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="add-worker-button">
               <UserPlus size={16} className="mr-2" /> Invite Worker

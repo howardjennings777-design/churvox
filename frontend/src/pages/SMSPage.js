@@ -29,7 +29,7 @@ const MSG_TYPES = [
 export default function SMSPage() {
   const { isEmployer } = useAuth();
   const { get, post, loading } = useApi();
-  const { isFeatureEnabled } = usePlanLimits();
+  const { isFeatureEnabled, planData } = usePlanLimits();
   const [balance, setBalance] = useState(0);
   const [lowCredit, setLowCredit] = useState(false);
   const [history, setHistory] = useState([]);

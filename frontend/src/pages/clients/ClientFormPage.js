@@ -8,13 +8,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import Layout from "@/components/Layout";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 export default function ClientFormPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { get, post, patch, loading } = useApi();
   const isEdit = !!id;
+  const { getPlanFeatures, maxClients } = usePlanLimits();
+  const [clientCount, setClientCount] = useState(0);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -27,6 +31,8 @@ export default function ClientFormPage() {
   useEffect(() => {
     if (isEdit) {
       loadClient();
+    } else {
+      loadClientCount();
     }
   }, [id]);
 
@@ -46,6 +52,13 @@ export default function ClientFormPage() {
     }
   };
 
+  const loadClientCount = async () => {
+    const result = await get("/clients");
+    if (result.success && Array.isArray(result.data)) {
+      setClientCount(result.data.length);
+    }
+  };
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -55,6 +68,11 @@ export default function ClientFormPage() {
 
     if (!formData.name.trim()) {
       toast.error("Client name is required");
+      return;
+    }
+
+    if (!isEdit && clientCount >= maxClients) {
+      toast.error(`Client limit reached for your plan (${maxClients} clients). Upgrade to add more.`);
       return;
     }
 
@@ -92,6 +110,13 @@ export default function ClientFormPage() {
             </p>
           </div>
         </div>
+
+        {!isEdit && clientCount >= maxClients && (
+          <UpgradePrompt
+            feature="client-limit-form"
+            message={`You have reached your ${maxClients}-client limit. Upgrade your plan to add more clients.`}
+          />
+        )}
 
         {/* Form */}
         <Card className="bg-card border-border">
@@ -180,7 +205,7 @@ export default function ClientFormPage() {
                 <Button
                   type="submit"
                   className="flex-1 bg-primary hover:bg-primary/90"
-                  disabled={loading}
+                  disabled={loading || (!isEdit && clientCount >= maxClients)}
                   data-testid="save-client-button"
                 >
                   {loading ? (
@@ -191,7 +216,7 @@ export default function ClientFormPage() {
                   ) : isEdit ? (
                     "Update Client"
                   ) : (
-                    "Create Client"
+                    clientCount >= maxClients ? "Client limit reached" : "Create Client"
                   )}
                 </Button>
               </div>

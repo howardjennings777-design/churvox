@@ -357,7 +357,7 @@ const handleDeleteAccount = async () => {
               <div className="h-10 w-10 rounded-full bg-churvox-accent/15 flex items-center justify-center mx-auto">
                 <Lock size={18} className="text-churvox-accent" />
               </div>
-              <p className="text-sm text-white font-medium">MYOB integration requires a Pro plan or higher</p>
+              <p className="text-sm text-white font-medium">MYOB integration requires an Enterprise plan</p>
               <a href="/plans" className="text-xs text-churvox-accent hover:underline" data-testid="myob-upgrade-link">View Plans</a>
             </CardContent>
           </Card>
