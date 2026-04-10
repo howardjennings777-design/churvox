@@ -1704,6 +1704,7 @@ async def import_csv_clients(request: Request, current_user: dict = Depends(get_
     """
     import csv
     import io
+    import re
 
     form = await request.form()
     upload = form.get("file")
