@@ -1642,7 +1642,10 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
         or current_user.get("user_id")
     )
     owner_email = current_user.get("email")
-    business_id = current_user.get("business_id")
+    business_id = str(get_business_id_for_user(current_user))
+
+    if not business_id:
+        raise HTTPException(status_code=400, detail="Could not determine business ID for team import")
 
     imported = 0
     skipped = 0
@@ -1685,7 +1688,9 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
     return {
         "success": True,
         "imported": imported,
+        "invited": imported,
         "skipped": skipped,
+        "total": len(rows),
         "total_rows": len(rows),
         "message": f"Imported {imported} workers, skipped {skipped} rows."
     }

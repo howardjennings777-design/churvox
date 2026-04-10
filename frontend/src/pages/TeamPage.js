@@ -120,8 +120,9 @@ export default function TeamPage() {
         withCredentials: true,
       });
       setImportResults(res.data);
-      toast.success(`${res.data.invited} worker(s) invited`);
-      fetchWorkers();
+      const invited = Number(res?.data?.invited ?? res?.data?.imported ?? 0);
+      toast.success(`${invited} worker(s) invited`);
+      await fetchWorkers();
     } catch (err) {
       toast.error(err?.response?.data?.detail || "CSV import failed");
     } finally {
