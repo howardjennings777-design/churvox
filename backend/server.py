@@ -1645,7 +1645,9 @@ def build_billing_status(owner: dict):
 async def import_csv_workers(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Import workers from CSV. Expects multipart form data with a 'file' field.
-    CSV format: name,email,phone (header row optional).
+    Supports either:
+    - header-based CSVs with columns like name,email,phone
+    - simple positional CSVs in this order: name,email,phone
     """
     import csv
     import io
@@ -1666,16 +1668,46 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
     except Exception:
         text_data = content.decode("utf-8", errors="ignore")
 
-    reader = csv.reader(io.StringIO(text_data))
-    rows = [row for row in reader if row and any(str(cell).strip() for cell in row)]
+    rows = list(csv.reader(io.StringIO(text_data)))
+    rows = [row for row in rows if row and any(str(cell).strip() for cell in row)]
 
     if not rows:
         raise HTTPException(status_code=400, detail="CSV file is empty")
 
-    first = [str(v).strip().lower() for v in rows[0]]
-    has_header = len(first) >= 3 and ("name" in first[0] or "email" in ",".join(first))
+    def norm_header(value: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "", str(value or "").strip().lower())
+
+    header_aliases = {
+        "name": {"name", "fullname", "workername", "employee", "employeename", "staffname"},
+        "email": {"email", "emailaddress", "workeremail", "employeeemail", "staffemail"},
+        "phone": {"phone", "phonenumber", "mobile", "mobilenumber", "cell", "telephone"},
+    }
+
+    first = [norm_header(v) for v in rows[0]]
+
+    def detect_header_map(first_row):
+        mapping = {}
+        for idx, col in enumerate(first_row):
+            for target, aliases in header_aliases.items():
+                if col in aliases:
+                    mapping[target] = idx
+                    break
+        return mapping
+
+    header_map = detect_header_map(first)
+    has_header = "name" in header_map or "email" in header_map or "phone" in header_map
+
     if has_header:
-        rows = rows[1:]
+        data_rows = rows[1:]
+    else:
+        data_rows = rows
+        header_map = {"name": 0, "email": 1, "phone": 2}
+
+    def get_cell(cells, field_name):
+        idx = header_map.get(field_name)
+        if idx is None or idx >= len(cells):
+            return ""
+        return str(cells[idx]).strip()
 
     owner_id = (
         current_user.get("_id")
@@ -1690,24 +1722,31 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
 
     imported = 0
     skipped = 0
+    details = []
 
-    for row in rows:
+    for i, row in enumerate(data_rows, start=2 if has_header else 1):
         cells = [str(v).strip() for v in row]
-        if len(cells) < 2:
+        if not cells or not any(cells):
             skipped += 1
+            details.append({"row": i, "status": "skipped", "reason": "Blank row"})
             continue
 
-        name = cells[0] if len(cells) > 0 else ""
-        email = cells[1].lower() if len(cells) > 1 else ""
-        phone = cells[2] if len(cells) > 2 else ""
+        name = get_cell(cells, "name")
+        email = get_cell(cells, "email").lower()
+        phone = get_cell(cells, "phone")
 
         if not name or not email:
             skipped += 1
+            details.append({"row": i, "status": "skipped", "reason": "Missing name or email"})
             continue
 
-        existing = await db.business_users.find_one({"email": email})
+        existing = await db.business_users.find_one({
+            "business_id": business_id,
+            "email": email,
+        })
         if existing:
             skipped += 1
+            details.append({"row": i, "status": "skipped", "reason": "Duplicate worker"})
             continue
 
         worker_doc = {
@@ -1725,19 +1764,18 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
 
         await db.business_users.insert_one(worker_doc)
         imported += 1
+        details.append({"row": i, "status": "invited", "reason": ""})
 
     return {
         "success": True,
         "imported": imported,
         "invited": imported,
         "skipped": skipped,
-        "total": len(rows),
-        "total_rows": len(rows),
+        "total": len(data_rows),
+        "total_rows": len(data_rows),
+        "details": details,
         "message": f"Imported {imported} workers, skipped {skipped} rows."
     }
-
-
-
 
 @api_router.post("/clients/import-csv")
 async def import_csv_clients(request: Request, current_user: dict = Depends(get_current_user)):
