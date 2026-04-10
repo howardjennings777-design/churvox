@@ -148,6 +148,21 @@ export default function TeamPage() {
   return (
     <Layout>
       <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6" data-testid="team-page">
+        <Card className="bg-yellow-500/10 border-yellow-500/30" data-testid="team-auth-debug">
+          <CardContent className="p-3 text-xs text-yellow-100 space-y-1">
+            <div><strong>AUTH DEBUG</strong></div>
+            <div>authLoading: {String(authLoading)}</div>
+            <div>isEmployer: {String(isEmployer)}</div>
+            <div>userEmail: {user?.email || "none"}</div>
+            <div>userId: {user?.id || "none"}</div>
+            <div>businessId: {user?.business_id || "none"}</div>
+            <div>plan: {user?.plan || "none"}</div>
+            <div>tokenPresent: {debugToken ? "yes" : "no"}</div>
+            <div>tokenStart: {debugToken ? debugToken.slice(0, 20) + "..." : "none"}</div>
+            <div>apiError: {error || "none"}</div>
+            <div>workersLoaded: {Array.isArray(workers) ? workers.length : 0}</div>
+          </CardContent>
+        </Card>
         {!isFeatureEnabled("team") ? (
           <UpgradePrompt feature="team" message="Team management requires a Team plan or higher." />
         ) : (
