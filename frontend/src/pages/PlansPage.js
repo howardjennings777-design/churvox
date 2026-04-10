@@ -47,6 +47,7 @@ export default function PlansPage() {
   const [currentPlan, setCurrentPlan] = useState("solo");
   const [busyPlan, setBusyPlan] = useState("");
   const [loading, setLoading] = useState(true);
+  const [checkoutNotice, setCheckoutNotice] = useState(null);
 
   const getPayload = (res) => {
     if (!res) return null;
@@ -79,6 +80,32 @@ export default function PlansPage() {
   };
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get("checkout");
+    const plan = (params.get("plan") || "").toLowerCase();
+
+    if (checkout === "success") {
+      setCheckoutNotice({
+        type: "success",
+        title: "Trial started",
+        text: `Your ${plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : ""} plan trial has started successfully.`,
+      });
+      if (plan) setCurrentPlan(plan);
+    } else if (checkout === "cancelled") {
+      setCheckoutNotice({
+        type: "warning",
+        title: "Checkout cancelled",
+        text: "No changes were made to your plan.",
+      });
+    }
+
+    if (checkout) {
+      const cleanUrl = `${window.location.pathname}`;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+  }, []);
+
+  useEffect(() => {
     const loadPlans = async () => {
       setLoading(true);
       try {
@@ -101,7 +128,9 @@ export default function PlansPage() {
           setCurrentPlan("solo");
         } else {
           setBilling(billingData || null);
-          setCurrentPlan(String(billingData?.plan || "solo").toLowerCase());
+          if (billingData?.plan) {
+            setCurrentPlan(String(billingData.plan).toLowerCase());
+          }
         }
       } catch (err) {
         console.error("Failed to load plans:", err);
@@ -114,7 +143,7 @@ export default function PlansPage() {
     };
 
     loadPlans();
-  }, []); // keep simple and stable
+  }, []);
 
   const banner = useMemo(() => {
     if (billing?.trial_expired) {
@@ -191,6 +220,19 @@ export default function PlansPage() {
             Start with a 14-day free trial. No card required. Upgrade when you&apos;re ready.
           </p>
         </div>
+
+        {checkoutNotice && (
+          <div
+            className={`mx-auto mt-6 mb-6 max-w-3xl rounded-2xl border px-5 py-4 ${
+              checkoutNotice.type === "success"
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+                : "border-amber-500/30 bg-amber-500/10 text-amber-200"
+            }`}
+          >
+            <div className="font-semibold">{checkoutNotice.title}</div>
+            <div className="mt-1 text-sm opacity-90">{checkoutNotice.text}</div>
+          </div>
+        )}
 
         {banner && (
           <div className={`mx-auto mt-6 mb-8 max-w-3xl rounded-2xl border px-5 py-4 ${banner.classes}`}>
