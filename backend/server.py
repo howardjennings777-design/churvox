@@ -714,34 +714,52 @@ def get_stripe_price_id(plan: str) -> str:
     return price_id
 
 async def set_business_plan_from_checkout(user_id: str, plan: str, stripe_customer_id: str = None, stripe_subscription_id: str = None):
-    user_obj_id = ObjectId(user_id)
-    user_doc = await db.users.find_one({"_id": user_obj_id})
-    if not user_doc:
-        return
+    plan = (plan or "solo").lower().strip()
+    now = datetime.now(timezone.utc)
 
-    business_id = user_doc.get("business_id", user_obj_id)
-    if isinstance(business_id, str):
-        business_id = ObjectId(business_id)
+    user_filters = [
+        {"_id": user_id},
+        {"id": user_id},
+        {"user_id": user_id},
+    ]
 
-    await db.users.update_one(
-        {"_id": business_id},
-        {"$set": {
-            "plan_status": "paid",
-            "subscription_status": "active",
+    try:
+        user_filters.insert(0, {"_id": ObjectId(user_id)})
+    except Exception:
+        pass
 
-            "plan": plan,
-            "stripe_customer_id": stripe_customer_id,
-            "stripe_subscription_id": stripe_subscription_id,
-        }}
+    update_payload = {
+        "plan": plan,
+        "plan_status": "paid",
+        "subscription_status": "active",
+        "updated_at": now,
+    }
+
+    if stripe_customer_id:
+        update_payload["stripe_customer_id"] = stripe_customer_id
+    if stripe_subscription_id:
+        update_payload["stripe_subscription_id"] = stripe_subscription_id
+
+    result = await db.users.update_one(
+        {"$or": user_filters},
+        {"$set": update_payload}
     )
 
-    await db.users.update_many(
-        {"business_id": business_id, "role": "worker"},
-        {"$set": {"plan": plan}}
-    )
+    print("PLAN SAVE DEBUG", {
+        "user_id": user_id,
+        "plan": plan,
+        "matched_count": getattr(result, "matched_count", None),
+        "modified_count": getattr(result, "modified_count", None),
+        "stripe_customer_id": stripe_customer_id,
+        "stripe_subscription_id": stripe_subscription_id,
+    })
+
+    if getattr(result, "matched_count", 0) == 0:
+        raise HTTPException(status_code=404, detail=f"Could not find user to update for checkout plan save: {user_id}")
+
+    return True
 
 
-# ===================== STRIPE ENDPOINTS =====================
 @api_router.post("/stripe/create-checkout-session")
 async def create_checkout_session(payload: dict, current_user: dict = Depends(get_current_user)):
     plan = (payload.get("plan_type") or "solo").lower()
