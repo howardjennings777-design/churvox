@@ -47,18 +47,20 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     const response = await axios.post(`${API_URL}/api/auth/login`, { email, password }, { withCredentials: true });
-    const { token, ...userData } = response.data;
-    localStorage.setItem("token", token);
-    setUser({ ...userData, token });
-    return response.data;
+    const { token, ...userData } = response.data || {};
+    if (token) localStorage.setItem("token", token);
+    const nextUser = mapUserPlanData(userData, token || null);
+    setUser(nextUser);
+    return { ...nextUser, token };
   }, []);
 
   const register = useCallback(async (userData) => {
     const response = await axios.post(`${API_URL}/api/auth/register`, userData, { withCredentials: true });
-    const { token, ...restData } = response.data;
-    localStorage.setItem("token", token);
-    setUser({ ...restData, token });
-    return response.data;
+    const { token, ...restData } = response.data || {};
+    if (token) localStorage.setItem("token", token);
+    const nextUser = mapUserPlanData(restData, token || null);
+    setUser(nextUser);
+    return { ...nextUser, token };
   }, []);
 
   const logout = useCallback(async () => {
