@@ -728,7 +728,7 @@ async def set_business_plan_from_checkout(user_id: str, plan: str, stripe_custom
     except Exception:
         pass
 
-    update_payload = {
+    base_update = {
         "plan": plan,
         "plan_status": "paid",
         "subscription_status": "active",
@@ -736,25 +736,64 @@ async def set_business_plan_from_checkout(user_id: str, plan: str, stripe_custom
     }
 
     if stripe_customer_id:
-        update_payload["stripe_customer_id"] = stripe_customer_id
+        base_update["stripe_customer_id"] = stripe_customer_id
     if stripe_subscription_id:
-        update_payload["stripe_subscription_id"] = stripe_subscription_id
+        base_update["stripe_subscription_id"] = stripe_subscription_id
 
-    result = await db.users.update_one(
-        {"$or": user_filters},
-        {"$set": update_payload}
+    # Find a source user record first so we can reuse email/business_id if available
+    source_user = await db.users.find_one({"$or": user_filters})         or await db.app_users.find_one({"$or": user_filters})         or await db.business_users.find_one({"$or": user_filters})
+
+    email = (source_user or {}).get("email")
+    business_id = (source_user or {}).get("business_id")
+
+    users_match = {"$or": user_filters}
+    app_users_match = {"$or": user_filters}
+    business_users_match = {"$or": user_filters}
+
+    if email:
+        users_match = {"$or": user_filters + [{"email": email}]}
+        app_users_match = {"$or": user_filters + [{"email": email}]}
+        business_users_match = {"$or": user_filters + [{"email": email}]}
+
+    users_result = await db.users.update_many(users_match, {"$set": base_update})
+    app_users_result = await db.app_users.update_many(app_users_match, {"$set": base_update})
+    business_users_result = await db.business_users.update_many(business_users_match, {"$set": base_update})
+
+    # Optional business-level mirror if a business record exists
+    business_result = None
+    if business_id:
+        try:
+            business_result = await db.businesses.update_many(
+                {"$or": [{"_id": business_id}, {"business_id": business_id}]},
+                {"$set": {"plan": plan, "updated_at": now}}
+            )
+        except Exception:
+            business_result = None
+
+    total_matched = (
+        getattr(users_result, "matched_count", 0)
+        + getattr(app_users_result, "matched_count", 0)
+        + getattr(business_users_result, "matched_count", 0)
     )
 
     print("PLAN SAVE DEBUG", {
         "user_id": user_id,
+        "email": email,
+        "business_id": str(business_id) if business_id else None,
         "plan": plan,
-        "matched_count": getattr(result, "matched_count", None),
-        "modified_count": getattr(result, "modified_count", None),
+        "users_matched": getattr(users_result, "matched_count", None),
+        "users_modified": getattr(users_result, "modified_count", None),
+        "app_users_matched": getattr(app_users_result, "matched_count", None),
+        "app_users_modified": getattr(app_users_result, "modified_count", None),
+        "business_users_matched": getattr(business_users_result, "matched_count", None),
+        "business_users_modified": getattr(business_users_result, "modified_count", None),
+        "businesses_matched": getattr(business_result, "matched_count", None) if business_result else None,
+        "businesses_modified": getattr(business_result, "modified_count", None) if business_result else None,
         "stripe_customer_id": stripe_customer_id,
         "stripe_subscription_id": stripe_subscription_id,
     })
 
-    if getattr(result, "matched_count", 0) == 0:
+    if total_matched == 0:
         raise HTTPException(status_code=404, detail=f"Could not find user to update for checkout plan save: {user_id}")
 
     return True
