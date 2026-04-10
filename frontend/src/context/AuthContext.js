@@ -103,8 +103,17 @@ export function AuthProvider({ children }) {
     setUser((prev) => prev ? { ...prev, ...updates } : prev);
   }, []);
 
-  const isEmployer = user?.role === "employer" || user?.role === "admin";
-  const isWorker = user?.role === "worker";
+  const normalizedRole = String(user?.role || "").trim().toLowerCase();
+  const isEmployer =
+    normalizedRole === "employer" ||
+    normalizedRole === "admin" ||
+    normalizedRole === "owner" ||
+    normalizedRole === "superadmin" ||
+    normalizedRole === "super_admin" ||
+    normalizedRole === "business_owner" ||
+    user?.is_admin === true ||
+    user?.is_owner === true;
+  const isWorker = normalizedRole === "worker";
 
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout, checkAuth, updateUser, forgotPassword, resetPassword, isEmployer, isWorker }}>

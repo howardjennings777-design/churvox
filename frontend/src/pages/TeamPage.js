@@ -17,9 +17,36 @@ axios.defaults.withCredentials = true;
 const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
 
 export default function TeamPage() {
-  const { isEmployer } = useAuth();
+  const { user, isEmployer } = useAuth();
   const { get, post, del, loading } = useApi();
-  const { planData, isFeatureEnabled, canAddWorker, includedUsers } = usePlanLimits();
+  const {
+    plan,
+    maxClients,
+    includedUsers,
+    canUseTeamManagement,
+    canUseCsvTeamImport,
+    features,
+  } = usePlanLimits(user?.plan);
+
+  const isFeatureEnabled = (key) => {
+    const normalized = String(key || "").trim().toLowerCase();
+    if (normalized === "team" || normalized === "teammanagement" || normalized === "team_management") {
+      return !!canUseTeamManagement;
+    }
+    if (normalized === "csvteamimport" || normalized === "csv_team_import") {
+      return !!canUseCsvTeamImport;
+    }
+    return !!features?.[key];
+  };
+
+  const canAddWorker = (currentCount) => {
+    const included = Number(includedUsers || 1);
+    return currentCount < included;
+  };
+
+  const planData = {
+    max_workers: Number(includedUsers || 1),
+  };
   const [workers, setWorkers] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
@@ -143,7 +170,13 @@ export default function TeamPage() {
             />
             <Button
               variant="outline"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => {
+                if (!isFeatureEnabled("csv_team_import")) {
+                  toast.error("CSV team import requires a Team plan or higher.");
+                  return;
+                }
+                fileInputRef.current?.click();
+              }}
               disabled={importing}
               className="border-churvox-border text-churvox-muted hover:text-white"
               data-testid="csv-import-button"
@@ -201,7 +234,13 @@ export default function TeamPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => {
+                    if (!isFeatureEnabled("csv_team_import")) {
+                      toast.error("CSV team import requires a Team plan or higher.");
+                      return;
+                    }
+                    fileInputRef.current?.click();
+                  }}
                   className="border-churvox-border text-churvox-muted hover:text-white"
                   data-testid="csv-import-first"
                 >
