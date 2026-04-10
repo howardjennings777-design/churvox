@@ -1553,6 +1553,98 @@ def build_billing_status(owner: dict):
         "stripe_subscription_id": stripe_subscription_id,
     }
 
+
+
+@api_router.post("/team/import-csv")
+async def import_csv_workers(request: Request, current_user: dict = Depends(get_current_user)):
+    """
+    Import workers from CSV. Expects multipart form data with a 'file' field.
+    CSV format: name,email,phone (header row optional).
+    """
+    import csv
+    import io
+
+    form = await request.form()
+    upload = form.get("file")
+
+    if not upload:
+        raise HTTPException(status_code=400, detail="No CSV file uploaded")
+
+    content = await upload.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="CSV file is empty")
+
+    try:
+        text_data = content.decode("utf-8-sig")
+    except Exception:
+        text_data = content.decode("utf-8", errors="ignore")
+
+    reader = csv.reader(io.StringIO(text_data))
+    rows = [row for row in reader if row and any(str(cell).strip() for cell in row)]
+
+    if not rows:
+        raise HTTPException(status_code=400, detail="CSV file is empty")
+
+    first = [str(v).strip().lower() for v in rows[0]]
+    has_header = len(first) >= 3 and ("name" in first[0] or "email" in ",".join(first))
+    if has_header:
+        rows = rows[1:]
+
+    owner_id = (
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+    )
+    owner_email = current_user.get("email")
+    business_id = current_user.get("business_id")
+
+    imported = 0
+    skipped = 0
+
+    for row in rows:
+        cells = [str(v).strip() for v in row]
+        if len(cells) < 2:
+            skipped += 1
+            continue
+
+        name = cells[0] if len(cells) > 0 else ""
+        email = cells[1].lower() if len(cells) > 1 else ""
+        phone = cells[2] if len(cells) > 2 else ""
+
+        if not name or not email:
+            skipped += 1
+            continue
+
+        existing = await db.business_users.find_one({"email": email})
+        if existing:
+            skipped += 1
+            continue
+
+        worker_doc = {
+            "name": name,
+            "email": email,
+            "phone": phone,
+            "role": "worker",
+            "status": "invited",
+            "business_id": business_id,
+            "owner_id": str(owner_id) if owner_id else None,
+            "owner_email": owner_email,
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+        }
+
+        await db.business_users.insert_one(worker_doc)
+        imported += 1
+
+    return {
+        "success": True,
+        "imported": imported,
+        "skipped": skipped,
+        "total_rows": len(rows),
+        "message": f"Imported {imported} workers, skipped {skipped} rows."
+    }
+
+
 @api_router.get("/billing/status")
 async def billing_status(request: Request):
     user = await get_current_user(request)
