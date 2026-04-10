@@ -84,11 +84,12 @@ export default function PlansPage() {
       const params = new URLSearchParams(window.location.search);
       const checkout = params.get("checkout");
       const plan = (params.get("plan") || "").toLowerCase();
+      const sessionId = params.get("session_id") || "";
 
       if (checkout === "success") {
         try {
-          if (plan) {
-            await api.post("/stripe/confirm-checkout", { plan });
+          if (plan && sessionId) {
+            await api.post("/stripe/confirm-checkout", { plan, session_id: sessionId });
             setCurrentPlan(plan);
           }
 
