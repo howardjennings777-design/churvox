@@ -788,7 +788,7 @@ async def create_checkout_session(payload: dict, current_user: dict = Depends(ge
     if not user_id:
         raise HTTPException(status_code=401, detail="Authenticated user id missing")
     email = current_user.get("email", "")
-    success_url = f"{FRONTEND_URL}/plans?checkout=success&plan={plan}"
+    success_url = f"{FRONTEND_URL}/plans?checkout=success&plan={plan}&session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{FRONTEND_URL}/plans?checkout=cancelled&plan={plan}"
 
     try:
