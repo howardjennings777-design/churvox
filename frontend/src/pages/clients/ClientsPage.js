@@ -157,21 +157,6 @@ export default function ClientsPage() {
   return (
     <Layout>
       <div className="space-y-6 animate-in" data-testid="clients-page">
-        <Card className="bg-yellow-500/10 border-yellow-500/30" data-testid="clients-auth-debug">
-          <CardContent className="p-3 text-xs text-yellow-100 space-y-1">
-            <div><strong>AUTH DEBUG</strong></div>
-            <div>authLoading: {String(authLoading)}</div>
-            <div>userEmail: {user?.email || "none"}</div>
-            <div>userId: {user?.id || "none"}</div>
-            <div>businessId: {user?.business_id || "none"}</div>
-            <div>plan: {user?.plan || "none"}</div>
-            <div>tokenPresent: {debugToken ? "yes" : "no"}</div>
-            <div>tokenStart: {debugToken ? debugToken.slice(0, 20) + "..." : "none"}</div>
-            <div>apiError: {error || "none"}</div>
-            <div>clientsLoaded: {Array.isArray(clients) ? clients.length : 0}</div>
-          </CardContent>
-        </Card>
-
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
