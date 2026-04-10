@@ -148,7 +148,7 @@ load_dotenv(ROOT_DIR / '.env')
 
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile, Query
 from owner_bootstrap import ensure_owner_account
-from fastapi.responses import HTMLResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
@@ -329,6 +329,7 @@ app.add_middleware(
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
+BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", "https://grassley-backend.onrender.com").rstrip("/")
 
 
 api_router = APIRouter(prefix="/api")
@@ -799,6 +800,45 @@ async def set_business_plan_from_checkout(user_id: str, plan: str, stripe_custom
     return True
 
 
+
+@api_router.get("/stripe/checkout-success")
+async def stripe_checkout_success(session_id: str):
+    if not session_id or not STRIPE_SECRET_KEY:
+        return RedirectResponse(url=f"{FRONTEND_URL}/plans?checkout=cancelled")
+
+    stripe.api_key = STRIPE_SECRET_KEY
+
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        metadata = getattr(session, "metadata", {}) or {}
+        user_id = str(metadata.get("user_id") or "")
+        plan = str(metadata.get("plan") or "solo").lower().strip()
+        stripe_customer_id = getattr(session, "customer", None)
+        stripe_subscription_id = getattr(session, "subscription", None)
+
+        print("BACKEND RETURN DEBUG", {
+            "session_id": session_id,
+            "user_id": user_id,
+            "plan": plan,
+            "stripe_customer_id": str(stripe_customer_id) if stripe_customer_id else None,
+            "stripe_subscription_id": str(stripe_subscription_id) if stripe_subscription_id else None,
+        })
+
+        if user_id and plan in {"solo", "team", "pro", "enterprise"}:
+            await set_business_plan_from_checkout(
+                user_id,
+                plan,
+                str(stripe_customer_id) if stripe_customer_id else None,
+                str(stripe_subscription_id) if stripe_subscription_id else None,
+            )
+            return RedirectResponse(url=f"{FRONTEND_URL}/plans?checkout=success&plan={plan}")
+
+        return RedirectResponse(url=f"{FRONTEND_URL}/plans?checkout=cancelled")
+    except Exception as e:
+        print("BACKEND RETURN ERROR", repr(e))
+        return RedirectResponse(url=f"{FRONTEND_URL}/plans?checkout=cancelled")
+
+
 @api_router.post("/stripe/create-checkout-session")
 async def create_checkout_session(payload: dict, current_user: dict = Depends(get_current_user)):
     plan = (payload.get("plan_type") or "solo").lower()
@@ -827,7 +867,7 @@ async def create_checkout_session(payload: dict, current_user: dict = Depends(ge
     if not user_id:
         raise HTTPException(status_code=401, detail="Authenticated user id missing")
     email = current_user.get("email", "")
-    success_url = f"{FRONTEND_URL}/plans?checkout=success&plan={plan}&session_id={{CHECKOUT_SESSION_ID}}"
+    success_url = f"{BACKEND_PUBLIC_URL}/api/stripe/checkout-success?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{FRONTEND_URL}/plans?checkout=cancelled&plan={plan}"
 
     try:
