@@ -94,7 +94,8 @@ const handleDeleteAccount = async () => {
 
   const { user, updateUser } = useAuth();
   const { patch, get, post, loading } = useApi();
-  const { isFeatureEnabled } = usePlanLimits();
+  const planLimits = usePlanLimits(user?.plan);
+  const isFeatureEnabled = (key) => Boolean(planLimits?.features?.[key]);
   const [gstRate, setGstRate] = useState(user?.gst_rate?.toString() || "15");
   const [tradeType, setTradeType] = useState(user?.trade_type || "other");
   const [myobKey, setMyobKey] = useState("");
