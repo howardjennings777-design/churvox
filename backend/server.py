@@ -1652,7 +1652,10 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
 async def import_csv_clients(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Import clients from CSV. Expects multipart form data with a 'file' field.
-    CSV format: client_name,contact_name,email,phone,address (header row optional).
+    Supports either:
+    - header-based CSVs with common client column names, or
+    - simple positional CSVs in this order:
+      client_name,contact_name,email,phone,address,notes
     """
     import csv
     import io
@@ -1672,16 +1675,53 @@ async def import_csv_clients(request: Request, current_user: dict = Depends(get_
     except Exception:
         text_data = content.decode("utf-8", errors="ignore")
 
-    reader = csv.reader(io.StringIO(text_data))
-    rows = [row for row in reader if row and any(str(cell).strip() for cell in row)]
+    lines = [line for line in text_data.splitlines() if str(line).strip()]
+    if not lines:
+        raise HTTPException(status_code=400, detail="CSV file is empty")
 
+    def norm_header(value: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "", str(value or "").strip().lower())
+
+    header_aliases = {
+        "client_name": {"clientname", "name", "customername", "client", "customer"},
+        "contact_name": {"contactname", "contact", "primarycontact", "contactperson"},
+        "email": {"email", "emailaddress"},
+        "phone": {"phone", "phonenumber", "mobile", "mobilenumber", "cell", "telephone"},
+        "address": {"address", "street", "streetaddress", "fulladdress"},
+        "notes": {"notes", "note", "comments", "comment"},
+    }
+
+    raw_reader = list(csv.reader(io.StringIO(text_data)))
+    rows = [row for row in raw_reader if row and any(str(cell).strip() for cell in row)]
     if not rows:
         raise HTTPException(status_code=400, detail="CSV file is empty")
 
-    first = [str(v).strip().lower() for v in rows[0]]
-    has_header = any(h in ",".join(first) for h in ["client_name", "contact_name", "email", "phone", "address", "name"])
+    first = [norm_header(v) for v in rows[0]]
+
+    def detect_header_map(first_row):
+        mapping = {}
+        for idx, col in enumerate(first_row):
+            for target, aliases in header_aliases.items():
+                if col in aliases:
+                    mapping[target] = idx
+                    break
+        return mapping
+
+    header_map = detect_header_map(first)
+    has_header = "client_name" in header_map or "email" in header_map or "phone" in header_map or "address" in header_map
+
     if has_header:
-        rows = rows[1:]
+        data_rows = rows[1:]
+    else:
+        data_rows = rows
+        header_map = {
+            "client_name": 0,
+            "contact_name": 1,
+            "email": 2,
+            "phone": 3,
+            "address": 4,
+            "notes": 5,
+        }
 
     owner_id = current_user.get("_id") or current_user.get("id") or current_user.get("user_id")
     business_id = str(get_business_id_for_user(current_user))
@@ -1692,21 +1732,33 @@ async def import_csv_clients(request: Request, current_user: dict = Depends(get_
 
     imported = 0
     skipped = 0
+    details = []
 
-    for row in rows:
+    def get_cell(cells, field_name):
+        idx = header_map.get(field_name)
+        if idx is None:
+            return ""
+        if idx >= len(cells):
+            return ""
+        return str(cells[idx]).strip()
+
+    for i, row in enumerate(data_rows, start=2 if has_header else 1):
         cells = [str(v).strip() for v in row]
-        if len(cells) < 1:
+        if not cells or not any(cells):
             skipped += 1
+            details.append({"row": i, "status": "skipped", "reason": "Blank row"})
             continue
 
-        client_name = cells[0] if len(cells) > 0 else ""
-        contact_name = cells[1] if len(cells) > 1 else ""
-        email = cells[2].lower() if len(cells) > 2 and cells[2] else ""
-        phone = cells[3] if len(cells) > 3 else ""
-        address = cells[4] if len(cells) > 4 else ""
+        client_name = get_cell(cells, "client_name")
+        contact_name = get_cell(cells, "contact_name")
+        email = get_cell(cells, "email").lower()
+        phone = get_cell(cells, "phone")
+        address = get_cell(cells, "address")
+        notes = get_cell(cells, "notes")
 
         if not client_name:
             skipped += 1
+            details.append({"row": i, "status": "skipped", "reason": "Missing client name"})
             continue
 
         dup_query = {
@@ -1716,15 +1768,16 @@ async def import_csv_clients(request: Request, current_user: dict = Depends(get_
                     "$or": [
                         {"client_name": client_name},
                         {"name": client_name},
-                        *([{"email": email}] if email else [])
+                        *([{"email": email}] if email else []),
                     ]
-                }
+                },
             ]
         }
 
         existing = await db.clients.find_one(dup_query)
         if existing:
             skipped += 1
+            details.append({"row": i, "status": "skipped", "reason": "Duplicate client"})
             continue
 
         client_doc = {
@@ -1734,6 +1787,7 @@ async def import_csv_clients(request: Request, current_user: dict = Depends(get_
             "email": email,
             "phone": phone,
             "address": address,
+            "notes": notes,
             "business_id": business_id,
             "owner_id": str(owner_id) if owner_id else None,
             "owner_email": owner_email,
@@ -1743,13 +1797,15 @@ async def import_csv_clients(request: Request, current_user: dict = Depends(get_
 
         await db.clients.insert_one(client_doc)
         imported += 1
+        details.append({"row": i, "status": "imported", "reason": ""})
 
     return {
         "success": True,
         "imported": imported,
         "skipped": skipped,
-        "total": len(rows),
-        "total_rows": len(rows),
+        "total": len(data_rows),
+        "total_rows": len(data_rows),
+        "details": details,
         "message": f"Imported {imported} clients, skipped {skipped} rows."
     }
 
