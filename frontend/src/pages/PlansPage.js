@@ -80,29 +80,46 @@ export default function PlansPage() {
   };
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const checkout = params.get("checkout");
-    const plan = (params.get("plan") || "").toLowerCase();
+    const handleCheckoutReturn = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const checkout = params.get("checkout");
+      const plan = (params.get("plan") || "").toLowerCase();
 
-    if (checkout === "success") {
-      setCheckoutNotice({
-        type: "success",
-        title: "Trial started",
-        text: `Your ${plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : ""} plan trial has started successfully.`,
-      });
-      if (plan) setCurrentPlan(plan);
-    } else if (checkout === "cancelled") {
-      setCheckoutNotice({
-        type: "warning",
-        title: "Checkout cancelled",
-        text: "No changes were made to your plan.",
-      });
-    }
+      if (checkout === "success") {
+        try {
+          if (plan) {
+            await api.post("/stripe/confirm-checkout", { plan });
+            setCurrentPlan(plan);
+          }
 
-    if (checkout) {
-      const cleanUrl = `${window.location.pathname}`;
-      window.history.replaceState({}, document.title, cleanUrl);
-    }
+          setCheckoutNotice({
+            type: "success",
+            title: "Plan updated",
+            text: `Your ${plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : ""} plan is now active.`,
+          });
+        } catch (err) {
+          console.error("Failed to confirm checkout:", err);
+          setCheckoutNotice({
+            type: "warning",
+            title: "Checkout completed, but plan refresh failed",
+            text: "Refresh the page once. If it still shows the old plan, try the upgrade again once.",
+          });
+        }
+      } else if (checkout === "cancelled") {
+        setCheckoutNotice({
+          type: "warning",
+          title: "Checkout cancelled",
+          text: "No changes were made to your plan.",
+        });
+      }
+
+      if (checkout) {
+        const cleanUrl = `${window.location.pathname}`;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    };
+
+    handleCheckoutReturn();
   }, []);
 
   useEffect(() => {
