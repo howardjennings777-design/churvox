@@ -42,7 +42,7 @@ export default function LoginPage() {
     try {
       const result = await login(email, password);
       if (result?.token) {
-        navigate(getPostLoginPath(response?.data || data || result || user || {}));
+        navigate(getPostLoginPath(result));
       } else {
         setError("Login failed. Please try again.");
       }
