@@ -38,13 +38,14 @@ import { toast } from "sonner";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import Layout from "@/components/Layout";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { hasPlanAccess, normalizePlan } from "@/utils/planRules";
 import axios from "axios";
 axios.defaults.withCredentials = true;
 
 const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
 
 export default function ClientsPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isEmployer } = useAuth();
   const { get, del, loading } = useApi();
   const [clients, setClients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,6 +54,8 @@ export default function ClientsPage() {
   const [importResults, setImportResults] = useState(null);
   const [fileInputKey, setFileInputKey] = useState(0);
   const { maxClients, canUseCsvClientImport, plan } = usePlanLimits(user?.plan);
+  const safePlan = normalizePlan(user?.plan || plan || "solo");
+  const canUseOwnerCsv = !!isEmployer && hasPlanAccess(safePlan, "team");
 
   useEffect(() => {
     if (authLoading || !user?.token) return;
@@ -82,8 +85,8 @@ export default function ClientsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!canUseCsvClientImport) {
-      toast.error("CSV client import requires a Pro plan or higher.");
+    if (!canUseOwnerCsv) {
+      toast.error("CSV client import is for owners on Team, Pro, or Enterprise.");
       setFileInputKey((k) => k + 1);
       return;
     }
@@ -186,7 +189,7 @@ export default function ClientsPage() {
                 </Button>
               </Link>
             )}
-            {canUseCsvClientImport ? (
+            {canUseOwnerCsv ? (
               <Button
                 variant="outline"
                 className="border-border"

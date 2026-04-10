@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { UserPlus, Trash2, Phone, Mail, Shield, Upload, RefreshCw, Clock, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { usePlanLimits } from "../hooks/usePlanLimits";
+import { hasPlanAccess, normalizePlan } from "../utils/planRules";
 import { UpgradePrompt } from "../components/UpgradePrompt";
 import axios from "axios"
 axios.defaults.withCredentials = true;
@@ -28,13 +29,16 @@ export default function TeamPage() {
     features,
   } = usePlanLimits(user?.plan);
 
+  const safePlan = normalizePlan(user?.plan || plan || "solo");
+  const canUseOwnerCsv = !!isEmployer && hasPlanAccess(safePlan, "team");
+
   const isFeatureEnabled = (key) => {
     const normalized = String(key || "").trim().toLowerCase();
     if (normalized === "team" || normalized === "teammanagement" || normalized === "team_management") {
       return !!canUseTeamManagement;
     }
     if (normalized === "csvteamimport" || normalized === "csv_team_import") {
-      return !!canUseCsvTeamImport;
+      return !!canUseOwnerCsv;
     }
     return !!features?.[key];
   };
@@ -240,7 +244,7 @@ export default function TeamPage() {
                   size="sm"
                   onClick={() => {
                     if (!isFeatureEnabled("csv_team_import")) {
-                      toast.error("CSV team import requires a Team plan or higher.");
+                      toast.error("CSV team import is for owners on Team, Pro, or Enterprise.");
                       return;
                     }
                     fileInputRef.current?.click();
