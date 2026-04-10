@@ -147,6 +147,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile, Query
+from app.plan_rules import normalize_plan, get_plan_features, can_use_feature, get_max_clients
 from owner_bootstrap import ensure_owner_account
 from fastapi.responses import RedirectResponse, HTMLResponse
 from starlette.middleware.cors import CORSMiddleware
@@ -691,7 +692,7 @@ def build_user_response(user_doc: dict, user_id: str, token: str = None) -> dict
         "name": user_doc["name"],
         "business_name": user_doc.get("business_name"),
         "role": user_doc.get("role", "employer"),
-        "plan": user_doc.get("plan", "solo"),
+        "plan": normalize_plan(user_doc.get("plan", "solo")),
         "gst_rate": user_doc.get("gst_rate", DEFAULT_GST_RATE),
         "trade_type": user_doc.get("trade_type", "other"),
         "business_id": str(user_doc.get("business_id", user_id)),
@@ -812,7 +813,7 @@ async def stripe_checkout_success(session_id: str):
         session = stripe.checkout.Session.retrieve(session_id)
         metadata = getattr(session, "metadata", {}) or {}
         user_id = str(metadata.get("user_id") or "")
-        plan = str(metadata.get("plan") or "solo").lower().strip()
+        plan = str(normalize_plan(metadata.get("plan") or "solo")).lower().strip()
         stripe_customer_id = getattr(session, "customer", None)
         stripe_subscription_id = getattr(session, "subscription", None)
 
@@ -1525,7 +1526,7 @@ def build_billing_status(owner: dict):
     trial_ends_at = to_utc_dt(owner.get("trial_ends_at"))
     subscription_status = str(owner.get("subscription_status") or owner.get("plan_status") or "").lower()
     stripe_subscription_id = owner.get("stripe_subscription_id")
-    plan = str(owner.get("plan") or "solo").lower()
+    plan = str(normalize_plan(owner.get("plan") or "solo")).lower()
 
     on_paid_plan = bool(stripe_subscription_id) and subscription_status in {"active", "trialing", "past_due"}
     trial_active = (trial_ends_at is not None) and (now < trial_ends_at) and not on_paid_plan
@@ -1795,6 +1796,53 @@ async def verify_email(token: str):
         "message": "Email verified successfully",
         "email": user.get("email"),
         "email_verified": True
+    }
+
+
+
+
+class ConfirmCheckoutRequest(BaseModel):
+    session_id: str
+
+@api_router.post("/billing/confirm-checkout")
+async def confirm_checkout(request: ConfirmCheckoutRequest, current_user: dict = Depends(get_current_user)):
+    try:
+        session = stripe.checkout.Session.retrieve(request.session_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Unable to verify checkout session: {str(e)}")
+
+    if not session:
+        raise HTTPException(status_code=400, detail="Checkout session not found")
+
+    payment_status = getattr(session, "payment_status", None) or session.get("payment_status")
+    metadata = getattr(session, "metadata", None) or session.get("metadata") or {}
+    selected_plan = normalize_plan(metadata.get("plan") or metadata.get("selected_plan") or current_user.get("plan", "solo"))
+
+    if payment_status not in ("paid", "no_payment_required", "unpaid"):
+        raise HTTPException(status_code=400, detail="Checkout session not completed")
+
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$set": {
+            "plan": selected_plan,
+            "updated_at": datetime.utcnow()
+        }}
+    )
+
+    if current_user.get("business_id"):
+        await db.businesses.update_one(
+            {"_id": ObjectId(current_user["business_id"])},
+            {"$set": {
+                "plan": selected_plan,
+                "updated_at": datetime.utcnow()
+            }}
+        )
+
+    refreshed_user = await db.users.find_one({"_id": current_user["_id"]})
+    return {
+        "success": True,
+        "plan": normalize_plan((refreshed_user or {}).get("plan", selected_plan)),
+        "plan_features": get_plan_features((refreshed_user or {}).get("plan", selected_plan)),
     }
 
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useApi } from "../hooks/useApi";
+import { normalizePlan, getPlanFeatures, hasPlanAccess } from "../utils/planRules";
 
 const fallbackPlans = [
   {
@@ -90,6 +91,7 @@ export default function PlansPage() {
         try {
           if (plan && sessionId) {
             await api.post("/stripe/confirm-checkout", { plan, session_id: sessionId });
+            window.dispatchEvent(new Event("churvox-auth-refresh"));
             setCurrentPlan(plan);
           }
 

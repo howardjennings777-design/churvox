@@ -36,6 +36,7 @@ import AccountDeletionPage from "./pages/legal/AccountDeletionPage";
 import AdminUsagePage from "./pages/AdminUsagePage";
 import PlatformAdminRoute from "./components/admin/PlatformAdminRoute";
 import PlatformUnlock from "./pages/admin/PlatformUnlock";
+import { normalizePlan } from "./utils/planRules";
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -62,6 +63,41 @@ function PublicRoute({ children }) {
 }
 
 function App() {
+
+  React.useEffect(() => {
+    const syncCheckoutPlan = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get("session_id");
+        if (!sessionId) return;
+
+        const token = localStorage.getItem("token");
+        const backendUrl = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
+        if (!token || !backendUrl) return;
+
+        await fetch(`${backendUrl}/api/billing/confirm-checkout`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          credentials: "include",
+          body: JSON.stringify({ session_id: sessionId }),
+        });
+
+        const cleaned = new URL(window.location.href);
+        cleaned.searchParams.delete("session_id");
+        window.history.replaceState({}, "", cleaned.toString());
+
+        window.location.reload();
+      } catch (err) {
+        console.error("Checkout sync failed", err);
+      }
+    };
+
+    syncCheckoutPlan();
+  }, []);
+
   return (
     <BrowserRouter>
       <AuthProvider>

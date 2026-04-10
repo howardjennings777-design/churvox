@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import axios from "axios";
+import { normalizePlan, getPlanFeatures } from "../utils/planRules";
 
 axios.defaults.withCredentials = true;
 
@@ -12,6 +13,18 @@ const RAW_API_URL =
   "https://churvox-backend.onrender.com";
 
 const API_URL = RAW_API_URL.replace(/\/$/, "");
+
+
+const mapUserPlanData = (rawUser, tokenOverride = null) => {
+  const normalizedPlan = normalizePlan(rawUser?.plan);
+  const nextUser = {
+    ...(rawUser || {}),
+    plan: normalizedPlan,
+    plan_features: rawUser?.plan_features || getPlanFeatures(normalizedPlan),
+  };
+  if (tokenOverride) nextUser.token = tokenOverride;
+  return nextUser;
+};
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -29,7 +42,7 @@ export function AuthProvider({ children }) {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
-      setUser({ ...response.data, token });
+      setUser(mapUserPlanData(response.data, token));
     } catch (err) {
       localStorage.removeItem("token");
       localStorage.removeItem("owner_portal_session");

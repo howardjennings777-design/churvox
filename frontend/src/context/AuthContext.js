@@ -1,9 +1,22 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import axios from "axios"
+import { normalizePlan, getPlanFeatures } from "../utils/planRules";
 axios.defaults.withCredentials = true;
 
 const AuthContext = createContext(null);
 const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
+
+
+const mapUserPlanData = (rawUser, tokenOverride = null) => {
+  const normalizedPlan = normalizePlan(rawUser?.plan);
+  const nextUser = {
+    ...(rawUser || {}),
+    plan: normalizedPlan,
+    plan_features: rawUser?.plan_features || getPlanFeatures(normalizedPlan),
+  };
+  if (tokenOverride) nextUser.token = tokenOverride;
+  return nextUser;
+};
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -16,7 +29,7 @@ export function AuthProvider({ children }) {
       const response = await axios.get(`${API_URL}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }, withCredentials: true,
       });
-      setUser({ ...response.data, token });
+      setUser(mapUserPlanData(response.data, token));
     } catch {
       localStorage.removeItem("token");
       setUser(null);
@@ -26,6 +39,11 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => { checkAuth(); }, [checkAuth]);
+
+  useEffect(() => {
+    window.addEventListener("churvox-auth-refresh", checkAuth);
+    return () => window.removeEventListener("churvox-auth-refresh", checkAuth);
+  }, [checkAuth]);
 
   const login = useCallback(async (email, password) => {
     const response = await axios.post(`${API_URL}/api/auth/login`, { email, password }, { withCredentials: true });
