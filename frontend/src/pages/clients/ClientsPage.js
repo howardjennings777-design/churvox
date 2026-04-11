@@ -1,113 +1,105 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { useApi } from "@/hooks/useApi";
-import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { 
-  Plus, 
-  Search, 
-  Phone, 
-  Mail, 
-  MapPin,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-  Loader2,
-  Users,
-  Upload
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import Layout from "../../components/Layout";
+import { useAuth } from "../../context/AuthContext";
+import { useApi } from "../../hooks/useApi";
+import { Card, CardContent } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
+import { Users, UserPlus, Trash2, Upload, Mail, Phone, MapPin } from "lucide-react";
 import { toast } from "sonner";
-import { UpgradePrompt } from "@/components/UpgradePrompt";
-import Layout from "@/components/Layout";
-import { usePlanLimits } from "@/hooks/usePlanLimits";
-import { hasPlanAccess, normalizePlan } from "@/utils/planRules";
 import axios from "axios";
-axios.defaults.withCredentials = true;
-
 import API_BASE from "../../lib/apiBase";
 
+axios.defaults.withCredentials = true;
+
 export default function ClientsPage() {
-  const { user, loading: authLoading, isEmployer } = useAuth();
-  const { get, del, loading } = useApi();
+  const { user, isEmployer } = useAuth();
+  const { get, post, del, loading } = useApi();
+
   const [clients, setClients] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [importing, setImporting] = useState(false);
   const [importResults, setImportResults] = useState(null);
-  const [fileInputKey, setFileInputKey] = useState(0);
-  const { maxClients, canUseCsvClientImport, plan } = usePlanLimits(user?.plan);
-  const safePlan = normalizePlan(user?.plan || plan || "solo");
-  const canUseOwnerCsv = !!isEmployer && hasPlanAccess(safePlan, "team");
+  const fileInputRef = useRef(null);
+
+  const [form, setForm] = useState({
+    client_name: "",
+    contact_name: "",
+    email: "",
+    phone: "",
+    address: "",
+    notes: "",
+  });
+
+  const fetchClients = useCallback(async () => {
+    const res = await get("/clients");
+    if (res.success) {
+      setClients(Array.isArray(res.data) ? res.data : []);
+    } else {
+      setClients([]);
+    }
+  }, [get]);
 
   useEffect(() => {
-    if (authLoading || !user?.token) return;
-    loadClients();
-  }, [authLoading, user?.token]);
+    if (!user?.token) return;
+    fetchClients();
+  }, [user?.token, fetchClients]);
 
-  const loadClients = async () => {
-    const result = await get("/clients");
-    if (result.success) {
-      setClients(result.data);
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    const payload = {
+      client_name: form.client_name.trim(),
+      contact_name: form.contact_name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      address: form.address.trim(),
+      notes: form.notes.trim(),
+    };
+
+    const res = await post("/clients", payload);
+    if (res.success) {
+      toast.success("Client added");
+      setForm({
+        client_name: "",
+        contact_name: "",
+        email: "",
+        phone: "",
+        address: "",
+        notes: "",
+      });
+      setShowAdd(false);
+      fetchClients();
+    } else {
+      toast.error(res.error || "Failed to add client");
     }
   };
 
   const handleDelete = async () => {
     if (!deleteId) return;
-    const result = await del(`/clients/${deleteId}`);
-    if (result.success) {
-      toast.success("Client deleted successfully");
-      setClients(clients.filter((c) => c.id !== deleteId));
+    const res = await del(`/clients/${deleteId}`);
+    if (res.success) {
+      toast.success("Client removed");
+      setDeleteId(null);
+      fetchClients();
     } else {
-      toast.error(result.error);
+      toast.error(res.error || "Failed to remove client");
     }
-    setDeleteId(null);
   };
 
   const handleCSVImport = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!canUseOwnerCsv) {
-      toast.error("CSV client import is for owners on Team, Pro, or Enterprise.");
-      setFileInputKey((k) => k + 1);
-      return;
-    }
-
     setImporting(true);
     setImportResults(null);
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     try {
       const token = localStorage.getItem("token");
-      console.log("CLIENT CSV IMPORT START", {
-        apiUrl: `${API_BASE}/api/clients/import-csv`,
-        hasToken: !!token,
-        fileName: file?.name,
-        fileSize: file?.size,
-        userPlan: user?.plan,
-        userId: user?.id,
-        businessId: user?.business_id,
-      });
+      const formData = new FormData();
+      formData.append("file", file);
 
       const response = await axios.post(`${API_BASE}/api/clients/import-csv`, formData, {
         headers: {
@@ -117,246 +109,141 @@ export default function ClientsPage() {
         withCredentials: true,
       });
 
-      const data = response?.data || {};
-      console.log("CLIENT CSV IMPORT RESPONSE", data);
-
-      setImportResults(data);
-
-      const reloadResult = await get("/clients");
-      console.log("CLIENTS RELOAD RESULT", reloadResult);
-
-      if (reloadResult?.success) {
-        setClients(reloadResult.data || []);
-      }
-
-      const imported = Number(data.imported || data.created || 0);
-      const skipped = Number(data.skipped || 0);
-      const total = Number(data.total || 0);
-
-      toast.success(
-        total > 0
-          ? `${imported} client(s) imported, ${skipped} skipped`
-          : "Client CSV import completed"
-      );
+      setImportResults(response.data || null);
+      toast.success("CSV import completed");
+      await fetchClients();
     } catch (err) {
-      console.error("CLIENT CSV IMPORT ERROR", {
-        message: err?.message,
-        status: err?.response?.status,
-        data: err?.response?.data,
-      });
-      toast.error(err?.response?.data?.detail || err?.message || "Client CSV import failed");
+      toast.error(err?.response?.data?.detail || "CSV import failed");
     } finally {
       setImporting(false);
-      setFileInputKey((k) => k + 1);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  const filteredClients = clients.filter((client) =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
     <Layout>
-      <div className="space-y-6 animate-in" data-testid="clients-page">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6" data-testid="clients-page">
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-white font-heading">Clients</h1>
-            <p className="text-muted-foreground mt-1">Manage your client database</p>
+            <h1 className="text-2xl font-bold text-white">Clients</h1>
+            <p className="text-sm text-churvox-muted mt-1">
+              {clients.length} client{clients.length !== 1 ? "s" : ""}
+            </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+
+          <div className="flex gap-2">
             <input
-              key={fileInputKey}
+              ref={fileInputRef}
               type="file"
               accept=".csv"
               onChange={handleCSVImport}
               className="hidden"
-              id="client-csv-file-input"
-              data-testid="client-csv-file-input"
             />
-            {clients.length >= maxClients ? (
-              <Button className="bg-primary/60 hover:bg-primary/60 cursor-not-allowed" disabled data-testid="add-client-button-disabled">
-                <Plus className="mr-2 h-4 w-4" />
-                Client limit reached
-              </Button>
-            ) : (
-              <Link to="/clients/new">
-                <Button className="bg-primary hover:bg-primary/90" data-testid="add-client-button">
-                  <Plus className="mr-2 h-4 w-4" />
+
+            {isEmployer && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={importing}
+                  className="border-churvox-border text-churvox-muted hover:text-white"
+                >
+                  <Upload size={16} className="mr-2" />
+                  {importing ? "Importing..." : "CSV Import"}
+                </Button>
+
+                <Button
+                  onClick={() => setShowAdd(true)}
+                  className="bg-churvox-accent hover:bg-churvox-accent/90"
+                >
+                  <UserPlus size={16} className="mr-2" />
                   Add Client
                 </Button>
-              </Link>
-            )}
-            {canUseOwnerCsv ? (
-              <Button
-                variant="outline"
-                className="border-border"
-                onClick={() => document.getElementById("client-csv-file-input")?.click()}
-                disabled={importing}
-                data-testid="client-csv-import-button"
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                {importing ? "Importing..." : "CSV Import"}
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                className="border-border opacity-60"
-                disabled
-                data-testid="client-csv-import-locked"
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                CSV Import locked
-              </Button>
+              </>
             )}
           </div>
         </div>
 
-        {clients.length >= maxClients && (
-          <UpgradePrompt
-            feature="client-limit"
-            message={`You have reached your ${maxClients}-client limit on the ${String(plan || "solo").replace(/^./, (m) => m.toUpperCase())} plan.`}
-          />
+        {importResults && (
+          <Card className="bg-churvox-card border-churvox-border">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-white font-medium">Import Results</p>
+                <button
+                  onClick={() => setImportResults(null)}
+                  className="text-xs text-churvox-muted hover:text-white"
+                >
+                  Dismiss
+                </button>
+              </div>
+
+              <p className="text-sm text-churvox-muted">
+                Imported: {importResults.imported ?? 0} | Skipped: {importResults.skipped ?? 0} | Total: {importResults.total ?? 0}
+              </p>
+            </CardContent>
+          </Card>
         )}
 
-        {importResults && (
-          <Card className="bg-card border-border" data-testid="client-csv-import-results">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Client CSV Import Results</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                {Number(importResults.imported || importResults.created || 0)} imported, {Number(importResults.skipped || 0)} skipped
-                {importResults.total ? ` of ${importResults.total} rows` : ""}
+        {clients.length === 0 && !loading ? (
+          <Card className="bg-churvox-card border-churvox-border">
+            <CardContent className="p-8 text-center">
+              <Users className="mx-auto mb-3 text-churvox-muted/40" size={32} />
+              <p className="text-white font-medium mb-1">No clients yet</p>
+              <p className="text-xs text-churvox-muted mb-4">
+                Add your first client or import clients by CSV.
               </p>
-              {Array.isArray(importResults.details) && importResults.details.filter((d) => (d.status || "").toLowerCase() !== "imported" && (d.status || "").toLowerCase() !== "created").length > 0 && (
-                <div className="space-y-1 max-h-36 overflow-y-auto rounded-md border border-border p-3">
-                  {importResults.details
-                    .filter((d) => (d.status || "").toLowerCase() !== "imported" && (d.status || "").toLowerCase() !== "created")
-                    .map((d, i) => (
-                      <p key={i} className="text-xs text-muted-foreground">
-                        Row {d.row}: {d.reason || d.status || "Skipped"}
-                      </p>
-                    ))}
+              {isEmployer && (
+                <div className="flex gap-2 justify-center">
+                  <Button
+                    onClick={() => setShowAdd(true)}
+                    size="sm"
+                    className="bg-churvox-accent hover:bg-churvox-accent/90"
+                  >
+                    <UserPlus size={14} className="mr-1" />
+                    Add Client
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-churvox-border text-churvox-muted hover:text-white"
+                  >
+                    <Upload size={14} className="mr-1" />
+                    Import CSV
+                  </Button>
                 </div>
               )}
             </CardContent>
           </Card>
-        )}
-
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search clients..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-card border-border"
-            data-testid="client-search-input"
-          />
-        </div>
-
-        {/* Clients List */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : filteredClients.length === 0 ? (
-          <Card className="bg-card border-border">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Users className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-white mb-2">
-                {searchTerm ? "No clients found" : "No clients yet"}
-              </h3>
-              <p className="text-muted-foreground text-center mb-4 max-w-xs mx-auto">
-                {searchTerm
-                  ? "Try a different search term"
-                  : "Clients link to jobs, quotes, and invoices. Add your first client to get started."}
-              </p>
-              {!searchTerm && (
-                clients.length >= maxClients ? (
-                  <Button className="bg-primary/60 hover:bg-primary/60 cursor-not-allowed" disabled data-testid="add-first-client-button-disabled">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Client limit reached
-                  </Button>
-                ) : (
-                  <Link to="/clients/new">
-                    <Button className="bg-primary hover:bg-primary/90" data-testid="add-first-client-button">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Client
-                    </Button>
-                  </Link>
-                )
-              )}
-            </CardContent>
-          </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredClients.map((client) => (
-              <Card key={client.id} className="bg-card border-border hover:bg-card/80 transition-colors" data-testid={`client-card-${client.id}`}>
-                <CardHeader className="flex flex-row items-start justify-between pb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-                      <span className="text-sm font-medium text-primary">
-                        {client.name.charAt(0).toUpperCase()}
-                      </span>
+          <div className="grid gap-3">
+            {clients.map((client) => (
+              <Card key={client.id || client._id} className="bg-churvox-card border-churvox-border">
+                <CardContent className="p-4 flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-medium">{client.client_name || client.name || "Unnamed Client"}</p>
+
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-churvox-muted mt-2">
+                      {client.contact_name && <span>{client.contact_name}</span>}
+                      {client.email && <span className="flex items-center gap-1"><Mail size={12} /> {client.email}</span>}
+                      {client.phone && <span className="flex items-center gap-1"><Phone size={12} /> {client.phone}</span>}
+                      {client.address && <span className="flex items-center gap-1"><MapPin size={12} /> {client.address}</span>}
                     </div>
-                    <div>
-                      <CardTitle className="text-base font-medium">
-                        <Link 
-                          to={`/clients/${client.id}`} 
-                          className="hover:text-primary transition-colors"
-                          data-testid={`client-name-${client.id}`}
-                        >
-                          {client.name}
-                        </Link>
-                      </CardTitle>
-                    </div>
+
+                    {client.notes ? (
+                      <p className="text-xs text-churvox-muted mt-2">{client.notes}</p>
+                    ) : null}
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" data-testid={`client-menu-${client.id}`}>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-card border-border">
-                      <DropdownMenuItem asChild>
-                        <Link to={`/clients/${client.id}/edit`} className="flex items-center cursor-pointer" data-testid={`edit-client-${client.id}`}>
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Edit
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setDeleteId(client.id)}
-                        className="text-destructive focus:text-destructive cursor-pointer"
-                        data-testid={`delete-client-${client.id}`}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {client.email && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Mail className="h-4 w-4" />
-                      <span className="truncate">{client.email}</span>
-                    </div>
-                  )}
-                  {client.phone && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Phone className="h-4 w-4" />
-                      <span>{client.phone}</span>
-                    </div>
-                  )}
-                  {client.address && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin className="h-4 w-4" />
-                      <span className="truncate">{client.address}</span>
-                    </div>
+
+                  {isEmployer && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDeleteId(client.id || client._id)}
+                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
                   )}
                 </CardContent>
               </Card>
@@ -364,27 +251,114 @@ export default function ClientsPage() {
           </div>
         )}
 
-        {/* Delete Confirmation */}
-        <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-          <AlertDialogContent className="bg-card border-border">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Client</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete this client? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="border-border" data-testid="cancel-delete-button">Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-destructive hover:bg-destructive/90"
-                data-testid="confirm-delete-button"
+        <Dialog open={showAdd} onOpenChange={setShowAdd}>
+          <DialogContent className="bg-churvox-card border-churvox-border">
+            <DialogHeader>
+              <DialogTitle className="text-white">Add Client</DialogTitle>
+            </DialogHeader>
+
+            <form onSubmit={handleAdd} className="space-y-4">
+              <div>
+                <Label className="text-churvox-muted">Client Name</Label>
+                <Input
+                  value={form.client_name}
+                  onChange={(e) => setForm({ ...form, client_name: e.target.value })}
+                  required
+                  className="bg-churvox-bg border-churvox-border text-white"
+                />
+              </div>
+
+              <div>
+                <Label className="text-churvox-muted">Contact Name</Label>
+                <Input
+                  value={form.contact_name}
+                  onChange={(e) => setForm({ ...form, contact_name: e.target.value })}
+                  className="bg-churvox-bg border-churvox-border text-white"
+                />
+              </div>
+
+              <div>
+                <Label className="text-churvox-muted">Email</Label>
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="bg-churvox-bg border-churvox-border text-white"
+                />
+              </div>
+
+              <div>
+                <Label className="text-churvox-muted">Phone</Label>
+                <Input
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  className="bg-churvox-bg border-churvox-border text-white"
+                />
+              </div>
+
+              <div>
+                <Label className="text-churvox-muted">Address</Label>
+                <Input
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  className="bg-churvox-bg border-churvox-border text-white"
+                />
+              </div>
+
+              <div>
+                <Label className="text-churvox-muted">Notes</Label>
+                <Input
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  className="bg-churvox-bg border-churvox-border text-white"
+                />
+              </div>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowAdd(false)}
+                  className="border-churvox-border text-churvox-muted"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-churvox-accent hover:bg-churvox-accent/90"
+                >
+                  {loading ? "Saving..." : "Save Client"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+          <DialogContent className="bg-churvox-card border-churvox-border">
+            <DialogHeader>
+              <DialogTitle className="text-white">Delete Client</DialogTitle>
+            </DialogHeader>
+            <p className="text-churvox-muted">Are you sure you want to delete this client?</p>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteId(null)}
+                className="border-churvox-border text-churvox-muted"
               >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDelete}
+                disabled={loading}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {loading ? "Deleting..." : "Delete"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
