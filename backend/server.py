@@ -1273,8 +1273,36 @@ async def get_clients(current_user: dict = Depends(get_current_user)):
 @api_router.get("/clients")
 async def get_clients(current_user: dict = Depends(get_current_user)):
     business_id = str(get_business_id_for_user(current_user))
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    def safe_iso(value):
+        if value is None:
+            return None
+        if hasattr(value, "isoformat"):
+            try:
+                return value.isoformat()
+            except Exception:
+                pass
+        try:
+            return str(value)
+        except Exception:
+            return None
+
+    query = {
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]
+    }
+
     docs = []
-    async for client in db.clients.find({"business_id": business_id}).sort("created_at", -1):
+    async for client in db.clients.find(query).sort("created_at", -1):
         docs.append({
             "id": str(client.get("id") or client.get("_id")),
             "name": client.get("name") or client.get("client_name") or client.get("contact_name") or "Unnamed Client",
@@ -1285,8 +1313,8 @@ async def get_clients(current_user: dict = Depends(get_current_user)):
             "address": client.get("address"),
             "notes": client.get("notes"),
             "business_id": str(client.get("business_id")) if client.get("business_id") is not None else None,
-            "created_at": client.get("created_at").isoformat() if client.get("created_at") else None,
-            "updated_at": client.get("updated_at").isoformat() if client.get("updated_at") else None,
+            "created_at": safe_iso(client.get("created_at")),
+            "updated_at": safe_iso(client.get("updated_at")),
         })
     return docs
 
