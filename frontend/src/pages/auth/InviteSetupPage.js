@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Lock, AlertCircle, Loader2, CheckCircle, User } from "lucide-react";
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 
-const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
+import API_BASE from "../lib/apiBase";
 
 export default function InviteSetupPage() {
   const { token } = useParams();
@@ -29,7 +29,7 @@ const [inviteData, setInviteData] = useState(null);
   useEffect(() => {
     async function verifyToken() {
       try {
-        const res = await axios.get(`${API_URL}/api/invite/verify/${token}`);
+        const res = await axios.get(`${API_BASE}/api/invite/verify/${token}`);
         setInviteData(res.data);
         setName(res.data.name || "");
       } catch (err) {
@@ -56,7 +56,7 @@ const [inviteData, setInviteData] = useState(null);
 
     setLoading(true);
     try {
-      await axios.post(`${API_URL}/api/invite/accept`, {
+      await axios.post(`${API_BASE}/api/invite/accept`, {
         token,
         password,
         name: name || undefined,

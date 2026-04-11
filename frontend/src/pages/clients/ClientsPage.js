@@ -42,7 +42,7 @@ import { hasPlanAccess, normalizePlan } from "@/utils/planRules";
 import axios from "axios";
 axios.defaults.withCredentials = true;
 
-const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
+import API_BASE from "../lib/apiBase";
 
 export default function ClientsPage() {
   const { user, loading: authLoading, isEmployer } = useAuth();
@@ -100,7 +100,7 @@ export default function ClientsPage() {
     try {
       const token = localStorage.getItem("token");
       console.log("CLIENT CSV IMPORT START", {
-        apiUrl: `${API_URL}/api/clients/import-csv`,
+        apiUrl: `${API_BASE}/api/clients/import-csv`,
         hasToken: !!token,
         fileName: file?.name,
         fileSize: file?.size,
@@ -109,7 +109,7 @@ export default function ClientsPage() {
         businessId: user?.business_id,
       });
 
-      const response = await axios.post(`${API_URL}/api/clients/import-csv`, formData, {
+      const response = await axios.post(`${API_BASE}/api/clients/import-csv`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",

@@ -4,7 +4,7 @@ import { normalizePlan, getPlanFeatures } from "../utils/planRules";
 axios.defaults.withCredentials = true;
 
 const AuthContext = createContext(null);
-const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
+import API_BASE from "../lib/apiBase";
 
 
 const mapUserPlanData = (rawUser, tokenOverride = null) => {
@@ -26,7 +26,7 @@ export function AuthProvider({ children }) {
     const token = localStorage.getItem("token");
     if (!token) { setLoading(false); return; }
     try {
-      const response = await axios.get(`${API_URL}/api/auth/me`, {
+      const response = await axios.get(`${API_BASE}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }, withCredentials: true,
       });
       setUser(mapUserPlanData(response.data, token));
@@ -46,7 +46,7 @@ export function AuthProvider({ children }) {
   }, [checkAuth]);
 
   const login = useCallback(async (email, password) => {
-    const response = await axios.post(`${API_URL}/api/auth/login`, { email, password }, { withCredentials: true });
+    const response = await axios.post(`${API_BASE}/api/auth/login`, { email, password }, { withCredentials: true });
     const { token, ...userData } = response.data || {};
     if (token) localStorage.setItem("token", token);
     const nextUser = mapUserPlanData(userData, token || null);
@@ -55,7 +55,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const register = useCallback(async (userData) => {
-    const response = await axios.post(`${API_URL}/api/auth/register`, userData, { withCredentials: true });
+    const response = await axios.post(`${API_BASE}/api/auth/register`, userData, { withCredentials: true });
     const { token, ...restData } = response.data || {};
     if (token) localStorage.setItem("token", token);
     const nextUser = mapUserPlanData(restData, token || null);
@@ -66,7 +66,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.post(`${API_URL}/api/auth/logout`, {}, {
+      await axios.post(`${API_BASE}/api/auth/logout`, {}, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         withCredentials: true,
       });
@@ -77,7 +77,7 @@ export function AuthProvider({ children }) {
 
   const forgotPassword = useCallback(async (email) => {
     try {
-      const response = await axios.post(`${API_URL}/api/auth/forgot-password`, { email });
+      const response = await axios.post(`${API_BASE}/api/auth/forgot-password`, { email });
       return { success: true, token: response.data.debug_token || null };
     } catch (err) {
       return {
@@ -89,7 +89,7 @@ export function AuthProvider({ children }) {
 
   const resetPassword = useCallback(async (token, newPassword) => {
     try {
-      await axios.post(`${API_URL}/api/auth/reset-password`, { token, new_password: newPassword });
+      await axios.post(`${API_BASE}/api/auth/reset-password`, { token, new_password: newPassword });
       return { success: true };
     } catch (err) {
       return {

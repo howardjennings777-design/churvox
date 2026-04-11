@@ -15,7 +15,7 @@ import { UpgradePrompt } from "../components/UpgradePrompt";
 import axios from "axios"
 axios.defaults.withCredentials = true;
 
-const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
+import API_BASE from "../lib/apiBase";
 
 export default function TeamPage() {
   const { user, isEmployer, loading: authLoading } = useAuth();
@@ -116,7 +116,7 @@ export default function TeamPage() {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.post(`${API_URL}/api/team/import-csv`, formData, {
+      const res = await axios.post(`${API_BASE}/api/team/import-csv`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
