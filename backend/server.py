@@ -150,7 +150,6 @@ from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depend
 from app.plan_rules import normalize_plan, get_plan_features, can_use_feature, get_max_clients
 from owner_bootstrap import ensure_owner_account
 from fastapi.responses import RedirectResponse, HTMLResponse
-from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
 
@@ -310,22 +309,25 @@ PLAN_PRICE_IDS = {
 # Create the main app
 app = FastAPI(title="Churvox API")
 
+ALLOWED_ORIGINS = [
+    "https://www.churvox.com",
+    "https://churvox.com",
+    "https://grassley-frontend.onrender.com",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://www.churvox.com",
-        "https://churvox.com",
-        "https://grassley-frontend.onrender.com",
-        "https://grassley-backend.onrender.com",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
 BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", "https://grassley-backend.onrender.com").rstrip("/")
