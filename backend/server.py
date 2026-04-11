@@ -56,6 +56,7 @@ def normalize_job_status_for_response(job: dict):
 
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -149,7 +150,7 @@ load_dotenv(ROOT_DIR / '.env')
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile, Query
 from app.plan_rules import normalize_plan, get_plan_features, can_use_feature, get_max_clients
 from owner_bootstrap import ensure_owner_account
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
 
@@ -2037,6 +2038,29 @@ async def confirm_checkout(request: ConfirmCheckoutRequest, current_user: dict =
 
 
 app.include_router(api_router)
+
+FRONTEND_DIST_DIR = Path(__file__).resolve().parent / "frontend_dist"
+
+if FRONTEND_DIST_DIR.exists():
+    static_dir = FRONTEND_DIST_DIR / "static"
+    if static_dir.exists():
+        app.mount("/static", StaticFiles(directory=str(static_dir)), name="frontend-static")
+
+    @app.get("/", include_in_schema=False)
+    async def serve_frontend_root():
+        return FileResponse(str(FRONTEND_DIST_DIR / "index.html"))
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_frontend_app(full_path: str):
+        if full_path.startswith("api"):
+            raise HTTPException(status_code=404, detail="Not found")
+
+        file_path = FRONTEND_DIST_DIR / full_path
+        if full_path and file_path.exists() and file_path.is_file():
+            return FileResponse(str(file_path))
+
+        return FileResponse(str(FRONTEND_DIST_DIR / "index.html"))
+
 
 
 @app.get("/api/admin/platform-stats")
