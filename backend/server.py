@@ -320,6 +320,13 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -2055,51 +2062,6 @@ async def confirm_checkout(request: ConfirmCheckoutRequest, current_user: dict =
         "success": True,
         "plan": normalize_plan((refreshed_user or {}).get("plan", selected_plan)),
         "plan_features": get_plan_features((refreshed_user or {}).get("plan", selected_plan)),
-    }
-
-
-
-
-# HARD FIX FALLBACK ROUTES
-@api_router.get("/dashboard/stats")
-async def dashboard_stats_fallback(current_user: dict = Depends(get_current_user)):
-    business_id = current_user.get("business_id") or current_user.get("_id")
-    total_clients = await db.clients.count_documents({"business_id": business_id})
-    total_jobs = await db.jobs.count_documents({"business_id": business_id})
-    total_quotes = await db.quotes.count_documents({"business_id": business_id})
-    total_invoices = await db.invoices.count_documents({"business_id": business_id})
-    return {
-        "total_clients": total_clients,
-        "total_jobs": total_jobs,
-        "total_quotes": total_quotes,
-        "total_invoices": total_invoices,
-        "jobs_today": 0,
-        "jobs_this_week": 0,
-        "revenue_this_month": 0,
-        "outstanding_amount": 0,
-    }
-
-@api_router.get("/jobs/today")
-async def jobs_today_fallback(current_user: dict = Depends(get_current_user)):
-    return []
-
-@api_router.get("/jobs/week")
-async def jobs_week_fallback(current_user: dict = Depends(get_current_user)):
-    return []
-
-@api_router.get("/myob/settings")
-async def myob_settings_fallback(current_user: dict = Depends(get_current_user)):
-    business_id = current_user.get("business_id") or current_user.get("_id")
-    settings = await db.settings.find_one({"business_id": business_id, "type": "myob"})
-    if settings:
-        settings["_id"] = str(settings["_id"])
-        return settings
-    return {
-        "connected": False,
-        "enabled": False,
-        "client_id": "",
-        "redirect_uri": "",
-        "tenant_id": "",
     }
 
 
