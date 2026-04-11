@@ -42,7 +42,7 @@ import { hasPlanAccess, normalizePlan } from "@/utils/planRules";
 import axios from "axios";
 axios.defaults.withCredentials = true;
 
-import API_BASE from "../lib/apiBase";
+import API_BASE from "../../lib/apiBase";
 
 export default function ClientsPage() {
   const { user, loading: authLoading, isEmployer } = useAuth();

@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Lock, AlertCircle, Loader2, CheckCircle, User } from "lucide-react";
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 
-import API_BASE from "../lib/apiBase";
+import API_BASE from "../../lib/apiBase";
 
 export default function InviteSetupPage() {
   const { token } = useParams();
