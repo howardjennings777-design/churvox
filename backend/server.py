@@ -1329,6 +1329,19 @@ async def get_team_workers(current_user: dict = Depends(get_current_user)):
         or ""
     )
 
+    def safe_iso(value):
+        if value is None:
+            return None
+        if hasattr(value, "isoformat"):
+            try:
+                return value.isoformat()
+            except Exception:
+                pass
+        try:
+            return str(value)
+        except Exception:
+            return None
+
     query = {
         "role": "worker",
         "$or": [
@@ -1341,15 +1354,15 @@ async def get_team_workers(current_user: dict = Depends(get_current_user)):
     docs = []
     async for worker in db.business_users.find(query).sort("created_at", -1):
         docs.append({
-            "id": str(worker.get("_id")),
+            "id": str(worker.get("id") or worker.get("_id")),
             "name": worker.get("name") or "Unnamed Worker",
             "email": worker.get("email"),
             "phone": worker.get("phone"),
             "role": worker.get("role", "worker"),
             "status": worker.get("status", "invited"),
             "business_id": str(worker.get("business_id")) if worker.get("business_id") is not None else None,
-            "created_at": worker.get("created_at").isoformat() if worker.get("created_at") else None,
-            "updated_at": worker.get("updated_at").isoformat() if worker.get("updated_at") else None,
+            "created_at": safe_iso(worker.get("created_at")),
+            "updated_at": safe_iso(worker.get("updated_at")),
         })
     return docs
 
