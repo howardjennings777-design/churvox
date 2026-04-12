@@ -322,11 +322,18 @@ ALLOWED_ORIGINS = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=[
+        "https://www.churvox.com",
+        "https://churvox.com",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
+
 
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -2561,3 +2568,5 @@ async def app_platform_stats(current_user: dict = Depends(get_current_user)):
     }
 
 
+
+# CORS_HARD_FIX_20260412
