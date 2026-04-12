@@ -286,7 +286,7 @@ export default function JobFormPage() {
                       id="job_type"
                       value={form.job_type}
                       onChange={(e) => setField("job_type", e.target.value)}
-                      className="w-full h-10 rounded-md border border-churvox-border bg-transparent px-3"
+                      className="w-full h-10 rounded-md border border-churvox-border bg-transparent px-3 text-white"
                     >
                       {jobTypeOptions.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -333,9 +333,9 @@ export default function JobFormPage() {
                       id="assigned_worker_id"
                       value={form.assigned_worker_id}
                       onChange={(e) => setField("assigned_worker_id", e.target.value)}
-                      className="w-full h-10 rounded-md border border-churvox-border bg-transparent px-3"
+                      className="w-full h-10 rounded-md border border-churvox-border bg-transparent px-3 text-white"
                     >
-                      <option value="">Unassigned</option>
+                      <option value="" style={{ color: "#111827", backgroundColor: "#ffffff" }}>Unassigned</option>
                       {workers.map((worker) => (
                         <option key={worker.id} value={worker.id}>
                           {worker.full_name || worker.name || worker.email || "Worker"}
@@ -391,10 +391,10 @@ export default function JobFormPage() {
                       id="pricing_type"
                       value={form.pricing_type}
                       onChange={(e) => setField("pricing_type", e.target.value)}
-                      className="w-full h-10 rounded-md border border-churvox-border bg-transparent px-3"
+                      className="w-full h-10 rounded-md border border-churvox-border bg-transparent px-3 text-white"
                     >
                       {PRICING_TYPES.map((type) => (
-                        <option key={type.value} value={type.value}>
+                        <option key={type.value} value={type.value} style={{ color: "#111827", backgroundColor: "#ffffff" }}>
                           {type.label}
                         </option>
                       ))}
@@ -451,12 +451,12 @@ export default function JobFormPage() {
                           id="recurring_frequency"
                           value={form.recurring_frequency}
                           onChange={(e) => setField("recurring_frequency", e.target.value)}
-                          className="w-full h-10 rounded-md border border-churvox-border bg-transparent px-3"
+                          className="w-full h-10 rounded-md border border-churvox-border bg-transparent px-3 text-white"
                         >
-                          <option value="weekly">Weekly</option>
-                          <option value="fortnightly">Fortnightly</option>
-                          <option value="monthly">Monthly</option>
-                          <option value="custom">Custom</option>
+                          <option value="weekly" style={{ color: "#111827", backgroundColor: "#ffffff" }}>Weekly</option>
+                          <option value="fortnightly" style={{ color: "#111827", backgroundColor: "#ffffff" }}>Fortnightly</option>
+                          <option value="monthly" style={{ color: "#111827", backgroundColor: "#ffffff" }}>Monthly</option>
+                          <option value="custom" style={{ color: "#111827", backgroundColor: "#ffffff" }}>Custom</option>
                         </select>
                       </div>
 
