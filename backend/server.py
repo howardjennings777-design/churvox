@@ -322,12 +322,7 @@ ALLOWED_ORIGINS = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://www.churvox.com",
-        "https://churvox.com",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -1907,7 +1902,7 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
 
 @api_router.options("/clients/import-csv")
 async def options_import_csv_clients():
-    return {"ok": True}
+    return Response(status_code=204)
 
 
 @api_router.post("/clients/import-csv")
