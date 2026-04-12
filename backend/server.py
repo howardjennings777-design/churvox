@@ -1190,6 +1190,7 @@ def health_login():
 # =========================
 
 # Example secure list pattern:
+
 @api_router.get("/clients")
 async def get_clients(current_user: dict = Depends(get_current_user)):
     business_id = str(get_business_id_for_user(current_user))
@@ -1242,6 +1243,7 @@ async def get_clients(current_user: dict = Depends(get_current_user)):
             continue
 
     return docs
+
 
 @api_router.get("/team/workers")
 async def get_team_workers(current_user: dict = Depends(get_current_user)):
@@ -1277,73 +1279,20 @@ async def get_team_workers(current_user: dict = Depends(get_current_user)):
 
     docs = []
     async for worker in db.business_users.find(query).sort("created_at", -1):
-        docs.append({
-            "id": str(worker.get("id") or worker.get("_id")),
-            "name": worker.get("name") or "Unnamed Worker",
-            "email": worker.get("email"),
-            "phone": worker.get("phone"),
-            "role": worker.get("role", "worker"),
-            "status": worker.get("status", "invited"),
-            "business_id": str(worker.get("business_id")) if worker.get("business_id") is not None else None,
-            "created_at": safe_iso(worker.get("created_at")),
-            "updated_at": safe_iso(worker.get("updated_at")),
-        })
-    return docs
-
-
-
-
-
-
-@api_router.get("/clients")
-async def get_clients(current_user: dict = Depends(get_current_user)):
-    business_id = str(get_business_id_for_user(current_user))
-    owner_id = str(
-        current_user.get("_id")
-        or current_user.get("id")
-        or current_user.get("user_id")
-        or ""
-    )
-
-    def safe_iso(value):
-        if value is None:
-            return None
-        if hasattr(value, "isoformat"):
-            try:
-                return value.isoformat()
-            except Exception:
-                pass
-        try:
-            return str(value)
-        except Exception:
-            return None
-
-    query = {
-        "$or": [
-            {"business_id": business_id},
-            {"business_id": str(business_id)},
-            {"owner_id": owner_id},
-        ]
-    }
-
-    docs = []
-    async for client in db.clients.find(query).sort("created_at", -1):
         try:
             docs.append({
-                "id": str(client.get("id") or client.get("_id") or ""),
-                "name": client.get("name") or client.get("client_name") or client.get("contact_name") or "Unnamed Client",
-                "client_name": client.get("client_name") or client.get("name") or "",
-                "contact_name": client.get("contact_name") or "",
-                "email": client.get("email") or "",
-                "phone": client.get("phone") or "",
-                "address": client.get("address") or "",
-                "notes": client.get("notes") or "",
-                "business_id": str(client.get("business_id")) if client.get("business_id") is not None else None,
-                "created_at": safe_iso(client.get("created_at")),
-                "updated_at": safe_iso(client.get("updated_at")),
+                "id": str(worker.get("id") or worker.get("_id") or ""),
+                "name": worker.get("name") or "Unnamed Worker",
+                "email": worker.get("email") or "",
+                "phone": worker.get("phone") or "",
+                "role": worker.get("role", "worker"),
+                "status": worker.get("status", "invited"),
+                "business_id": str(worker.get("business_id")) if worker.get("business_id") is not None else None,
+                "created_at": safe_iso(worker.get("created_at")),
+                "updated_at": safe_iso(worker.get("updated_at")),
             })
         except Exception as e:
-            print("CLIENT_ROW_SKIP", str(client.get("_id")), str(e))
+            print("WORKER_ROW_SKIP", str(worker.get("_id")), str(e))
             continue
 
     return docs
@@ -1354,15 +1303,16 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     business_id = str(get_business_id_for_user(current_user))
     owner_id = str(current_user.get("_id") or current_user.get("id") or current_user.get("user_id") or "")
 
-    client_query = {"$or": [{"business_id": business_id}, {"business_id": str(business_id)}, {"owner_id": owner_id}]}
-    job_query = {"$or": [{"business_id": business_id}, {"business_id": str(business_id)}, {"owner_id": owner_id}]}
-    invoice_query = {"$or": [{"business_id": business_id}, {"business_id": str(business_id)}, {"owner_id": owner_id}]}
-    worker_query = {"role": "worker", "$or": [{"business_id": business_id}, {"business_id": str(business_id)}, {"owner_id": owner_id}]}
+    base_query = {"$or": [
+        {"business_id": business_id},
+        {"business_id": str(business_id)},
+        {"owner_id": owner_id},
+    ]}
 
-    clients = await db.clients.count_documents(client_query)
-    jobs = await db.jobs.count_documents(job_query)
-    invoices = await db.invoices.count_documents(invoice_query)
-    team_count = await db.business_users.count_documents(worker_query)
+    clients = await db.clients.count_documents(base_query)
+    jobs = await db.jobs.count_documents(base_query)
+    invoices = await db.invoices.count_documents(base_query)
+    team_count = await db.business_users.count_documents({"role": "worker", **base_query})
 
     return {
         "jobs_today": 0,
@@ -1373,7 +1323,7 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         "clients": clients,
         "team_count": team_count,
         "jobs": jobs,
-        "invoices": invoices
+        "invoices": invoices,
     }
 
 
@@ -1381,7 +1331,11 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
 async def get_jobs_today(current_user: dict = Depends(get_current_user)):
     business_id = str(get_business_id_for_user(current_user))
     owner_id = str(current_user.get("_id") or current_user.get("id") or current_user.get("user_id") or "")
-    query = {"$or": [{"business_id": business_id}, {"business_id": str(business_id)}, {"owner_id": owner_id}]}
+    query = {"$or": [
+        {"business_id": business_id},
+        {"business_id": str(business_id)},
+        {"owner_id": owner_id},
+    ]}
     docs = []
     async for job in db.jobs.find(query).sort("created_at", -1).limit(20):
         docs.append(make_json_safe(job))
@@ -1392,7 +1346,11 @@ async def get_jobs_today(current_user: dict = Depends(get_current_user)):
 async def get_jobs_week(current_user: dict = Depends(get_current_user)):
     business_id = str(get_business_id_for_user(current_user))
     owner_id = str(current_user.get("_id") or current_user.get("id") or current_user.get("user_id") or "")
-    query = {"$or": [{"business_id": business_id}, {"business_id": str(business_id)}, {"owner_id": owner_id}]}
+    query = {"$or": [
+        {"business_id": business_id},
+        {"business_id": str(business_id)},
+        {"owner_id": owner_id},
+    ]}
     docs = []
     async for job in db.jobs.find(query).sort("created_at", -1).limit(50):
         docs.append(make_json_safe(job))
