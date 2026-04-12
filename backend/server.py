@@ -1193,6 +1193,68 @@ def health_login():
 
 # Example secure list pattern:
 
+
+
+@api_router.post("/quotes")
+async def create_quote(request: Request, current_user: dict = Depends(get_current_user)):
+    from datetime import datetime, timezone
+
+    if current_user.get("role") not in ["owner", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    payload = await request.json()
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    if not business_id:
+        raise HTTPException(status_code=400, detail="Business ID missing")
+
+    def to_float(value, default=0):
+        try:
+            return float(value)
+        except Exception:
+            return default
+
+    quote_doc = {
+        "client_id": payload.get("client_id"),
+        "customer_name": payload.get("customer_name") or "",
+        "customer_email": payload.get("customer_email") or "",
+        "address": payload.get("address") or "",
+        "job_type": payload.get("job_type") or "other",
+        "job_description": payload.get("job_description") or "",
+        "price": to_float(payload.get("price"), 0),
+        "pricing_type": payload.get("pricing_type") or "fixed",
+        "hourly_rate": to_float(payload.get("hourly_rate"), 0),
+        "extras": payload.get("extras") or [],
+        "valid_until": payload.get("valid_until"),
+        "status": payload.get("status") or "draft",
+        "business_id": business_id,
+        "owner_id": owner_id,
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+    }
+
+    result = await db.quotes.insert_one(quote_doc)
+
+    return {
+        "success": True,
+        "id": str(result.inserted_id),
+        "message": "Quote created"
+    }
+
 @api_router.get("/clients")
 async def get_clients(current_user: dict = Depends(get_current_user)):
     try:
