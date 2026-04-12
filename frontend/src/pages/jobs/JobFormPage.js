@@ -55,6 +55,7 @@ export default function JobFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const auth = useAuth() || {};
+  const user = auth.user || null;
   const isEmployer = !!auth.isEmployer;
   const { get, post, patch } = useApi();
   const isEditing = !!id;
