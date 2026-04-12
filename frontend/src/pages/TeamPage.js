@@ -6,26 +6,24 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../components/ui/dialog";
 import { UserPlus, Trash2, Phone, Mail, Shield, Upload, RefreshCw, Clock, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { usePlanLimits } from "../hooks/usePlanLimits";
 import { hasPlanAccess, normalizePlan } from "../utils/planRules";
 import { UpgradePrompt } from "../components/UpgradePrompt";
-import axios from "axios"
+import axios from "axios";
 axios.defaults.withCredentials = true;
 
-import API_BASE from "../lib/apiBase";
+const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
 
 export default function TeamPage() {
   const { user, isEmployer, loading: authLoading } = useAuth();
   const { get, post, del, loading } = useApi();
   const {
     plan,
-    maxClients,
     includedUsers,
     canUseTeamManagement,
-    canUseCsvTeamImport,
     features,
   } = usePlanLimits(user?.plan);
 
@@ -51,9 +49,9 @@ export default function TeamPage() {
   const planData = {
     max_workers: Number(includedUsers || 1),
   };
+
   const [workers, setWorkers] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
-  const [showImport, setShowImport] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const [deleteId, setDeleteId] = useState(null);
   const [importResults, setImportResults] = useState(null);
@@ -116,7 +114,7 @@ export default function TeamPage() {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.post(`${API_BASE}/api/team/import-csv`, formData, {
+      const res = await axios.post(`${API_URL}/api/team/import-csv`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -156,262 +154,210 @@ export default function TeamPage() {
         {!isFeatureEnabled("team") ? (
           <UpgradePrompt feature="team" message="Team management requires a Team plan or higher." />
         ) : (
-        <>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white" data-testid="team-heading">Team</h1>
-            <p className="text-sm text-churvox-muted mt-1">
-              {workers.length} worker{workers.length !== 1 ? "s" : ""}
-              {planData && planData.max_workers >= 0 && (
-                <span className="text-churvox-muted/60"> / {planData.max_workers} max</span>
-              )}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv"
-              onChange={handleCSVImport}
-              className="hidden"
-              data-testid="csv-file-input"
-            />
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (!isFeatureEnabled("csv_team_import")) {
-                  toast.error("CSV team import requires a Team plan or higher.");
-                  return;
-                }
-                fileInputRef.current?.click();
-              }}
-              disabled={importing}
-              className="border-churvox-border text-churvox-muted hover:text-white"
-              data-testid="csv-import-button"
-            >
-              <Upload size={16} className="mr-2" />
-              {importing ? "Importing..." : "CSV Import"}
-            </Button>
-            <Button onClick={() => {
-              if (!canAddWorker(workers.length)) { toast.error(`Team limit reached for your plan (${includedUsers || 1} users). Upgrade your plan.`); return; }
-              setShowAdd(true);
-            }} className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="add-worker-button">
-              <UserPlus size={16} className="mr-2" /> Invite Worker
-            </Button>
-          </div>
-        </div>
-
-        {/* CSV Import Results */}
-        {importResults && (
-          <Card className="bg-churvox-card border-churvox-border" data-testid="csv-import-results">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-medium text-white">Import Results</p>
-                <button onClick={() => setImportResults(null)} className="text-churvox-muted hover:text-white text-xs">
-                  Dismiss
-                </button>
+          <>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-white" data-testid="team-heading">Team</h1>
+                <p className="text-sm text-churvox-muted mt-1">
+                  {workers.length} worker{workers.length !== 1 ? "s" : ""}
+                  {planData && planData.max_workers >= 0 && (
+                    <span className="text-churvox-muted/60"> / {planData.max_workers} max</span>
+                  )}
+                </p>
               </div>
-              <p className="text-sm text-churvox-muted mb-2">
-                {importResults.invited} invited, {importResults.skipped} skipped of {importResults.total} rows
-              </p>
-              {importResults.details?.filter(d => d.status !== "invited").length > 0 && (
-                <div className="space-y-1 max-h-32 overflow-y-auto">
-                  {importResults.details.filter(d => d.status !== "invited").map((d, i) => (
-                    <p key={i} className="text-xs text-churvox-muted/70">
-                      Row {d.row}: {d.reason}
-                    </p>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {workers.length === 0 && !loading ? (
-          <Card className="bg-churvox-card border-churvox-border">
-            <CardContent className="p-8 text-center">
-              <UserPlus className="mx-auto mb-3 text-churvox-muted/40" size={32} />
-              <p className="text-white font-medium mb-1">No team members yet</p>
-              <p className="text-xs text-churvox-muted mb-4 max-w-xs mx-auto">
-                Invite workers to join your team. They'll receive an email to set up their account and can then view and update their assigned work.
-              </p>
-              <div className="flex gap-2 justify-center">
-                <Button onClick={() => setShowAdd(true)} size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="add-first-worker">
-                  <UserPlus size={14} className="mr-1" /> Invite Your First Worker
-                </Button>
+              <div className="flex gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  onChange={handleCSVImport}
+                  className="hidden"
+                  data-testid="csv-file-input"
+                />
                 <Button
                   variant="outline"
-                  size="sm"
                   onClick={() => {
                     if (!isFeatureEnabled("csv_team_import")) {
-                      toast.error("CSV team import is for owners on Team, Pro, or Enterprise.");
+                      toast.error("CSV team import requires a Team plan or higher.");
                       return;
                     }
                     fileInputRef.current?.click();
                   }}
+                  disabled={importing}
                   className="border-churvox-border text-churvox-muted hover:text-white"
-                  data-testid="csv-import-first"
+                  data-testid="csv-import-button"
                 >
-                  <Upload size={14} className="mr-1" /> Import CSV
+                  <Upload size={16} className="mr-2" />
+                  {importing ? "Importing..." : "CSV Import"}
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (!canAddWorker(workers.length)) {
+                      toast.error(`Team limit reached for your plan (${includedUsers || 1} users). Upgrade your plan.`);
+                      return;
+                    }
+                    setShowAdd(true);
+                  }}
+                  className="bg-churvox-accent hover:bg-churvox-accent/90"
+                  data-testid="add-worker-button"
+                >
+                  <UserPlus size={16} className="mr-2" /> Invite Worker
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-3">
-            {workers.map((w) => (
-              <Card key={w.id} className="bg-churvox-card border-churvox-border" data-testid={`worker-card-${w.id}`}>
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full bg-churvox-accent/20 flex items-center justify-center text-churvox-accent font-bold text-sm">
-                      {w.name?.charAt(0)?.toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="text-white font-medium">{w.name}</p>
-                        {w.status === "invited" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20" data-testid={`worker-status-invited-${w.id}`}>
-                            <Clock size={10} /> Pending
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-500/10 text-green-400 border border-green-500/20" data-testid={`worker-status-active-${w.id}`}>
-                            <CheckCircle size={10} /> Active
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-churvox-muted mt-0.5">
-                        <span className="flex items-center gap-1"><Mail size={12} /> {w.email}</span>
-                        {w.phone && <span className="flex items-center gap-1"><Phone size={12} /> {w.phone}</span>}
-                      </div>
-                    </div>
+            </div>
+
+            {importResults && (
+              <Card className="bg-churvox-card border-churvox-border" data-testid="csv-import-results">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-white">Import Results</p>
+                    <button onClick={() => setImportResults(null)} className="text-churvox-muted hover:text-white text-xs">
+                      Dismiss
+                    </button>
                   </div>
-                  <div className="flex items-center gap-1">
-                    {w.status === "invited" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleResendInvite(w.id, w.email)}
-                        className="text-churvox-muted hover:text-white hover:bg-white/5"
-                        data-testid={`resend-invite-${w.id}`}
-                        title="Resend invite email"
-                      >
-                        <RefreshCw size={14} />
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="sm" onClick={() => setDeleteId(w.id)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10" data-testid={`delete-worker-${w.id}`}>
-                      <Trash2 size={16} />
+                  <p className="text-sm text-churvox-muted mb-2">
+                    {importResults.invited} invited, {importResults.skipped} skipped of {importResults.total} rows
+                  </p>
+                  {importResults.details?.filter((d) => d.status !== "invited").length > 0 && (
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {importResults.details.filter((d) => d.status !== "invited").map((d, i) => (
+                        <p key={i} className="text-xs text-churvox-muted/70">
+                          Row {d.row}: {d.reason}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {workers.length === 0 && !loading ? (
+              <Card className="bg-churvox-card border-churvox-border">
+                <CardContent className="p-8 text-center">
+                  <UserPlus className="mx-auto mb-3 text-churvox-muted/40" size={32} />
+                  <p className="text-white font-medium mb-1">No team members yet</p>
+                  <p className="text-xs text-churvox-muted mb-4 max-w-xs mx-auto">
+                    Invite workers to join your team. They'll receive an email to set up their account and can then view and update their assigned work.
+                  </p>
+                  <div className="flex gap-2 justify-center">
+                    <Button onClick={() => setShowAdd(true)} size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="add-first-worker">
+                      <UserPlus size={14} className="mr-1" /> Invite Your First Worker
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (!isFeatureEnabled("csv_team_import")) {
+                          toast.error("CSV team import is for owners on Team, Pro, or Enterprise.");
+                          return;
+                        }
+                        fileInputRef.current?.click();
+                      }}
+                      className="border-churvox-border text-churvox-muted hover:text-white"
+                      data-testid="csv-import-first"
+                    >
+                      <Upload size={14} className="mr-1" /> Import CSV
                     </Button>
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
-
-        {/* Add Worker Modal */}
-        {showAdd && (
-          <div
-            className="fixed inset-0 z-[1000] bg-black/60 flex items-center justify-center p-4"
-            onClick={() => setShowAdd(false)}
-            data-testid="add-worker-modal-overlay"
-          >
-            <div
-              className="w-full max-w-md rounded-2xl border border-churvox-border bg-churvox-card shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-              data-testid="add-worker-modal"
-            >
-              <div className="flex items-center justify-between p-4 border-b border-churvox-border">
-                <h2 className="text-white font-semibold text-lg">Invite Worker</h2>
-                <button
-                  type="button"
-                  onClick={() => setShowAdd(false)}
-                  className="text-churvox-muted hover:text-white text-xl leading-none"
-                  data-testid="close-add-worker-modal"
-                >
-                  ×
-                </button>
+            ) : (
+              <div className="grid gap-3">
+                {workers.map((w) => (
+                  <Card key={w.id} className="bg-churvox-card border-churvox-border" data-testid={`worker-card-${w.id}`}>
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-full bg-churvox-accent/20 flex items-center justify-center text-churvox-accent font-bold text-sm">
+                          {w.name?.charAt(0)?.toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-white font-medium">{w.name}</p>
+                            {w.status === "invited" ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20" data-testid={`worker-status-invited-${w.id}`}>
+                                <Clock size={10} /> Pending
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-500/10 text-green-400 border border-green-500/20" data-testid={`worker-status-active-${w.id}`}>
+                                <CheckCircle size={10} /> Active
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-churvox-muted mt-0.5">
+                            <span className="flex items-center gap-1"><Mail size={12} /> {w.email}</span>
+                            {w.phone && <span className="flex items-center gap-1"><Phone size={12} /> {w.phone}</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {w.status === "invited" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleResendInvite(w.id, w.email)}
+                            className="text-churvox-muted hover:text-white hover:bg-white/5"
+                            data-testid={`resend-invite-${w.id}`}
+                            title="Resend invite email"
+                          >
+                            <RefreshCw size={14} />
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(w.id)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10" data-testid={`delete-worker-${w.id}`}>
+                          <Trash2 size={16} />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
+            )}
 
-              <form onSubmit={handleAdd} className="p-4 space-y-4">
-                <div>
-                  <Label className="text-churvox-muted">Name</Label>
-                  <Input
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    required
-                    className="bg-churvox-bg border-churvox-border text-white"
-                    placeholder="Full name"
-                    data-testid="worker-name-input"
-                  />
-                </div>
+            <Dialog open={showAdd} onOpenChange={setShowAdd}>
+              <DialogContent className="bg-churvox-card border-churvox-border" data-testid="add-worker-dialog">
+                <DialogHeader>
+                  <DialogTitle className="text-white">Invite Worker</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleAdd} className="space-y-4">
+                  <div>
+                    <Label className="text-churvox-muted">Name</Label>
+                    <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="bg-churvox-bg border-churvox-border text-white" placeholder="Full name" data-testid="worker-name-input" />
+                  </div>
+                  <div>
+                    <Label className="text-churvox-muted">Email</Label>
+                    <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required className="bg-churvox-bg border-churvox-border text-white" placeholder="email@example.com" data-testid="worker-email-input" />
+                  </div>
+                  <div>
+                    <Label className="text-churvox-muted">Phone (optional)</Label>
+                    <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" placeholder="0400 000 000" data-testid="worker-phone-input" />
+                  </div>
+                  <p className="text-xs text-churvox-muted/70">
+                    An invite email will be sent. The worker will set their own password when they accept.
+                  </p>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setShowAdd(false)} className="border-churvox-border text-churvox-muted">Cancel</Button>
+                    <Button type="submit" disabled={loading} className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="submit-worker-button">
+                      {loading ? "Sending..." : "Send Invite"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
 
-                <div>
-                  <Label className="text-churvox-muted">Email</Label>
-                  <Input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    required
-                    className="bg-churvox-bg border-churvox-border text-white"
-                    placeholder="email@example.com"
-                    data-testid="worker-email-input"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-churvox-muted">Phone (optional)</Label>
-                  <Input
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="bg-churvox-bg border-churvox-border text-white"
-                    placeholder="0400 000 000"
-                    data-testid="worker-phone-input"
-                  />
-                </div>
-
-                <p className="text-xs text-churvox-muted/70">
-                  An invite email will be sent. The worker will set their own password when they accept.
-                </p>
-
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowAdd(false)}
-                    className="border-churvox-border text-churvox-muted"
-                  >
-                    Cancel
+            <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+              <DialogContent className="bg-churvox-card border-churvox-border" data-testid="delete-worker-dialog">
+                <DialogHeader>
+                  <DialogTitle className="text-white">Remove Worker</DialogTitle>
+                </DialogHeader>
+                <p className="text-churvox-muted">Are you sure you want to remove this worker? This cannot be undone.</p>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setDeleteId(null)} className="border-churvox-border text-churvox-muted">Cancel</Button>
+                  <Button onClick={handleDelete} disabled={loading} className="bg-red-600 hover:bg-red-700 text-white" data-testid="confirm-delete-worker">
+                    {loading ? "Removing..." : "Remove"}
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="bg-churvox-accent hover:bg-churvox-accent/90"
-                    data-testid="submit-worker-button"
-                  >
-                    {loading ? "Sending..." : "Send Invite"}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Delete Confirmation */}
-        <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-          <DialogContent className="bg-churvox-card border-churvox-border" data-testid="delete-worker-dialog">
-            <DialogHeader>
-              <DialogTitle className="text-white">Remove Worker</DialogTitle>
-            </DialogHeader>
-            <p className="text-churvox-muted">Are you sure you want to remove this worker? This cannot be undone.</p>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteId(null)} className="border-churvox-border text-churvox-muted">Cancel</Button>
-              <Button onClick={handleDelete} disabled={loading} className="bg-red-600 hover:bg-red-700 text-white" data-testid="confirm-delete-worker">
-                {loading ? "Removing..." : "Remove"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        </>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </>
         )}
       </div>
     </Layout>
