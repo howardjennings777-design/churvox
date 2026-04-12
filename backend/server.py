@@ -1375,6 +1375,63 @@ async def get_jobs_week(current_user: dict = Depends(get_current_user)):
     return docs
 
 
+
+
+@api_router.delete("/team/workers/{worker_id}")
+async def delete_team_worker(worker_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    query = {
+        "role": "worker",
+        "$or": [
+            {"_id": ObjectId(worker_id)},
+            {"id": worker_id},
+        ],
+        "$and": [{
+            "$or": [
+                {"business_id": business_id},
+                {"business_id": str(business_id)},
+                {"owner_id": owner_id},
+            ]
+        }]
+    }
+
+    worker = None
+    try:
+        worker = await db.business_users.find_one(query)
+    except Exception:
+        query = {
+            "role": "worker",
+            "id": worker_id,
+            "$or": [
+                {"business_id": business_id},
+                {"business_id": str(business_id)},
+                {"owner_id": owner_id},
+            ]
+        }
+        worker = await db.business_users.find_one(query)
+
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+
+    delete_query = {"_id": worker.get("_id")}
+    await db.business_users.delete_one(delete_query)
+
+    return {"success": True, "message": "Worker removed"}
+
 @api_router.post("/jobs/{job_id}/pause")
 async def pause_job(job_id: str, current_user: dict = Depends(get_current_user)):
     job = await db.jobs.find_one({"id": job_id})
