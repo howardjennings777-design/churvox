@@ -289,7 +289,11 @@ export default function JobFormPage() {
                       className="w-full h-10 rounded-md border border-churvox-border bg-transparent px-3 text-white"
                     >
                       {jobTypeOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
+                        <option
+                          key={opt.value}
+                          value={opt.value}
+                          style={{ color: "#111827", backgroundColor: "#ffffff" }}
+                        >
                           {opt.category} - {opt.label}
                         </option>
                       ))}
@@ -337,7 +341,11 @@ export default function JobFormPage() {
                     >
                       <option value="" style={{ color: "#111827", backgroundColor: "#ffffff" }}>Unassigned</option>
                       {workers.map((worker) => (
-                        <option key={worker.id} value={worker.id}>
+                        <option
+                          key={worker.id}
+                          value={worker.id}
+                          style={{ color: "#111827", backgroundColor: "#ffffff" }}
+                        >
                           {worker.full_name || worker.name || worker.email || "Worker"}
                         </option>
                       ))}
