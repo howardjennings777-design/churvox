@@ -1266,6 +1266,61 @@ async def get_quotes(current_user: dict = Depends(get_current_user)):
         print("QUOTES_ROUTE_ERROR", str(e), current_user)
         return []
 
+
+
+@api_router.post("/quotes/{quote_id}/send")
+async def send_quote(quote_id: str, current_user: dict = Depends(get_current_user)):
+    from datetime import datetime, timezone
+
+    if current_user.get("role") not in ["owner", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    try:
+        obj_id = ObjectId(quote_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid quote ID")
+
+    quote = await db.quotes.find_one({
+        "_id": obj_id,
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]
+    })
+
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    await db.quotes.update_one(
+        {"_id": obj_id},
+        {"$set": {
+            "status": "sent",
+            "sent_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+        }}
+    )
+
+    return {
+        "success": True,
+        "message": "Quote marked as sent"
+    }
+
 @api_router.post("/quotes")
 async def create_quote(request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
