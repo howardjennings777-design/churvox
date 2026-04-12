@@ -1190,7 +1190,8 @@ def health_login():
 # =========================
 
 # Example secure list pattern:
-# old sample removed
+@api_router.get("/clients")
+async def get_clients(current_user: dict = Depends(get_current_user)):
     business_id = str(get_business_id_for_user(current_user))
     owner_id = str(
         current_user.get("_id")
@@ -1223,14 +1224,9 @@ def health_login():
     docs = []
     async for client in db.clients.find(query).sort("created_at", -1):
         try:
-            doc = {
+            docs.append({
                 "id": str(client.get("id") or client.get("_id") or ""),
-                "name": (
-                    client.get("name")
-                    or client.get("client_name")
-                    or client.get("contact_name")
-                    or "Unnamed Client"
-                ),
+                "name": client.get("name") or client.get("client_name") or client.get("contact_name") or "Unnamed Client",
                 "client_name": client.get("client_name") or client.get("name") or "",
                 "contact_name": client.get("contact_name") or "",
                 "email": client.get("email") or "",
@@ -1240,14 +1236,12 @@ def health_login():
                 "business_id": str(client.get("business_id")) if client.get("business_id") is not None else None,
                 "created_at": safe_iso(client.get("created_at")),
                 "updated_at": safe_iso(client.get("updated_at")),
-            }
-            docs.append(make_json_safe(doc))
+            })
         except Exception as e:
             print("CLIENT_ROW_SKIP", str(client.get("_id")), str(e))
             continue
 
     return docs
-
 
 @api_router.get("/team/workers")
 async def get_team_workers(current_user: dict = Depends(get_current_user)):
