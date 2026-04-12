@@ -203,13 +203,9 @@ export default function ClientFormPage() {
                 >
                   Cancel
                 </Button>
-                <Button
+                <button
                   type="submit"
-                  onTouchEnd={(e) => {
-                    e.preventDefault();
-                    handleSubmit(e);
-                  }}
-                  className="flex-1 bg-primary hover:bg-primary/90 touch-manipulation"
+                  className="flex-1 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 touch-manipulation"
                   disabled={loading}
                   data-testid="save-client-button"
                 >
@@ -223,7 +219,7 @@ export default function ClientFormPage() {
                   ) : (
                     "Create Client"
                   )}
-                </Button>
+                </button>
               </div>
             </form>
           </CardContent>
