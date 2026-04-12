@@ -343,20 +343,57 @@ export default function TeamPage() {
               </DialogContent>
             </Dialog>
 
-            <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-              <DialogContent className="bg-churvox-card border-churvox-border" data-testid="delete-worker-dialog">
-                <DialogHeader>
-                  <DialogTitle className="text-white">Remove Worker</DialogTitle>
-                </DialogHeader>
-                <p className="text-churvox-muted">Are you sure you want to remove this worker? This cannot be undone.</p>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setDeleteId(null)} className="border-churvox-border text-churvox-muted">Cancel</Button>
-                  <Button onClick={handleDelete} disabled={loading} className="bg-red-600 hover:bg-red-700 text-white" data-testid="confirm-delete-worker">
+                    {!!deleteId && (
+          <div
+            className="fixed inset-0 z-[1000] bg-black/60 flex items-center justify-center p-4"
+            onClick={() => setDeleteId(null)}
+            data-testid="delete-worker-modal-overlay"
+          >
+            <div
+              className="w-full max-w-md rounded-2xl border border-churvox-border bg-churvox-card shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+              data-testid="delete-worker-modal"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-churvox-border">
+                <h2 className="text-white font-semibold text-lg">Remove Worker</h2>
+                <button
+                  type="button"
+                  onClick={() => setDeleteId(null)}
+                  className="text-churvox-muted hover:text-white text-xl leading-none"
+                  data-testid="close-delete-worker-modal"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="p-4">
+                <p className="text-churvox-muted">
+                  Are you sure you want to remove this worker? This cannot be undone.
+                </p>
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDeleteId(null)}
+                    className="border-churvox-border text-churvox-muted"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={loading}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                    data-testid="confirm-delete-worker"
+                  >
                     {loading ? "Removing..." : "Remove"}
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
           </>
         )}
       </div>
