@@ -2570,32 +2570,48 @@ async def create_job(request: Request, current_user: dict = Depends(get_current_
 
 @api_router.get("/jobs/today")
 async def get_jobs_today(current_user: dict = Depends(get_current_user)):
-    business_id = str(get_business_id_for_user(current_user))
-    owner_id = str(current_user.get("_id") or current_user.get("id") or current_user.get("user_id") or "")
-    query = {"$or": [
-        {"business_id": business_id},
-        {"business_id": str(business_id)},
-        {"owner_id": owner_id},
-    ]}
-    docs = []
-    async for job in db.jobs.find(query).sort("created_at", -1).limit(20):
-        docs.append(make_json_safe(job))
-    return docs
+    try:
+        business_id = str(get_business_id_for_user(current_user))
+        owner_id = str(current_user.get("_id") or current_user.get("id") or current_user.get("user_id") or "")
+        query = {"$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]}
+        docs = []
+        async for job in db.jobs.find(query).sort("created_at", -1).limit(20):
+            try:
+                docs.append(make_json_safe(job))
+            except Exception as row_err:
+                print("JOB_TODAY_ROW_SKIP", str(job.get("_id")), str(row_err))
+                continue
+        return docs
+    except Exception as e:
+        print("JOBS_TODAY_ERROR", str(e), current_user)
+        return []
 
 
 @api_router.get("/jobs/week")
 async def get_jobs_week(current_user: dict = Depends(get_current_user)):
-    business_id = str(get_business_id_for_user(current_user))
-    owner_id = str(current_user.get("_id") or current_user.get("id") or current_user.get("user_id") or "")
-    query = {"$or": [
-        {"business_id": business_id},
-        {"business_id": str(business_id)},
-        {"owner_id": owner_id},
-    ]}
-    docs = []
-    async for job in db.jobs.find(query).sort("created_at", -1).limit(50):
-        docs.append(make_json_safe(job))
-    return docs
+    try:
+        business_id = str(get_business_id_for_user(current_user))
+        owner_id = str(current_user.get("_id") or current_user.get("id") or current_user.get("user_id") or "")
+        query = {"$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]}
+        docs = []
+        async for job in db.jobs.find(query).sort("created_at", -1).limit(50):
+            try:
+                docs.append(make_json_safe(job))
+            except Exception as row_err:
+                print("JOB_WEEK_ROW_SKIP", str(job.get("_id")), str(row_err))
+                continue
+        return docs
+    except Exception as e:
+        print("JOBS_WEEK_ERROR", str(e), current_user)
+        return []
 
 
 
@@ -2803,6 +2819,90 @@ def pick_client_phone(job=None, client=None):
             return value
 
     return None
+
+
+
+@api_router.get("/myob/settings")
+async def get_myob_settings(current_user: dict = Depends(get_current_user)):
+    try:
+        business_id = str(
+            current_user.get("business_id")
+            or current_user.get("businessId")
+            or current_user.get("id")
+            or current_user.get("_id")
+            or current_user.get("user_id")
+            or ""
+        )
+        settings = await db.myob_settings.find_one({"business_id": business_id}) if hasattr(db, "myob_settings") else None
+        return {
+            "success": True,
+            "data": settings or {
+                "enabled": False,
+                "connected": False,
+                "company_name": "",
+                "last_sync_at": None,
+            }
+        }
+    except Exception as e:
+        print("MYOB_SETTINGS_ERROR", str(e), current_user)
+        return {
+            "success": True,
+            "data": {
+                "enabled": False,
+                "connected": False,
+                "company_name": "",
+                "last_sync_at": None,
+            }
+        }
+
+
+@api_router.get("/user/gst")
+async def get_user_gst(current_user: dict = Depends(get_current_user)):
+    try:
+        return {
+            "success": True,
+            "gst_enabled": bool(current_user.get("gst_enabled", True)),
+            "gst_rate": float(current_user.get("gst_rate", 15) or 15),
+        }
+    except Exception as e:
+        print("GET_USER_GST_ERROR", str(e), current_user)
+        return {
+            "success": True,
+            "gst_enabled": True,
+            "gst_rate": 15,
+        }
+
+
+@api_router.patch("/user/gst")
+async def update_user_gst(request: Request, current_user: dict = Depends(get_current_user)):
+    try:
+        payload = await request.json()
+        gst_enabled = bool(payload.get("gst_enabled", True))
+        try:
+            gst_rate = float(payload.get("gst_rate", 15) or 15)
+        except Exception:
+            gst_rate = 15.0
+
+        user_id = current_user.get("_id") or current_user.get("id") or current_user.get("user_id")
+        update_doc = {
+            "gst_enabled": gst_enabled,
+            "gst_rate": gst_rate,
+        }
+
+        try:
+            if user_id:
+                await db.users.update_one({"_id": user_id} if not isinstance(user_id, str) else {"$or":[{"_id": ObjectId(user_id)}] if len(user_id)==24 else {"id": user_id}}, {"$set": update_doc})
+        except Exception:
+            pass
+
+        return {
+            "success": True,
+            "gst_enabled": gst_enabled,
+            "gst_rate": gst_rate,
+        }
+    except Exception as e:
+        print("PATCH_USER_GST_ERROR", str(e), current_user)
+        raise HTTPException(status_code=500, detail="Failed to update GST")
 
 @api_router.post("/sms/send-fixed")
 async def send_sms_hard_fix_v1(payload: dict, current_user: dict = Depends(get_current_user)):
