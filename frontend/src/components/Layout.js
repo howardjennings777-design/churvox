@@ -118,7 +118,7 @@ export default function Layout({ children }) {
       </header>
 
       {/* Main Content */}
-      <main className="tap-target" className="md:ml-64 pt-14 md:pt-0 pb-20 md:pb-0 min-h-screen" data-testid="main-content">
+      <main className="md:ml-64 pt-14 md:pt-0 pb-36 md:pb-0 min-h-screen relative z-0" data-testid="main-content">
         {children}
       </main>
 
