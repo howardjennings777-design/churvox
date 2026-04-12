@@ -302,11 +302,15 @@ export default function JobFormPage() {
                       id="client_id"
                       value={form.client_id}
                       onChange={(e) => handleClientChange(e.target.value)}
-                      className="w-full h-10 rounded-md border border-churvox-border bg-transparent px-3"
+                      className="w-full h-10 rounded-md border border-churvox-border bg-transparent px-3 text-white"
                     >
-                      <option value="">No saved client</option>
+                      <option value="" style={{ color: "#111827", backgroundColor: "#ffffff" }}>No saved client</option>
                       {clients.map((client) => (
-                        <option key={client.id || client._id} value={client.id || client._id}>
+                        <option
+                          key={client.id || client._id}
+                          value={client.id || client._id}
+                          style={{ color: "#111827", backgroundColor: "#ffffff" }}
+                        >
                           {client.client_name || client.name || client.contact_name || "Unnamed client"}
                         </option>
                       ))}
