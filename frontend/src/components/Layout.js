@@ -123,8 +123,8 @@ export default function Layout({ children }) {
       </main>
 
       {/* Mobile Bottom Nav */}
-      <nav className="tap-target" className="md:hidden fixed bottom-0 left-0 right-0 bg-churvox-card border-t border-churvox-border z-40 safe-area-bottom" data-testid="mobile-bottom-nav">
-        <div className="flex items-center justify-around h-16">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-churvox-card border-t border-churvox-border z-40 safe-area-bottom pointer-events-none" data-testid="mobile-bottom-nav">
+        <div className="flex items-center justify-around h-16 pointer-events-auto">
           {mainNavItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
