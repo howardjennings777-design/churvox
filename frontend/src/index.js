@@ -1,70 +1,35 @@
-
-if (typeof window !== "undefined") {
-  window.__CHURVOX_BUILD_FORCE__ = "checkout-hard-force-v5";
-}
-if (typeof navigator !== "undefined" && navigator.serviceWorker) {
-  navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((reg) => reg.unregister()));
-}
-if (typeof window !== "undefined" && window.caches) {
-  caches.keys().then((keys) => keys.forEach((key) => caches.delete(key)));
-}
-
-
-if (typeof window !== "undefined") {
-  window.__CHURVOX_BUILD_FORCE__ = "checkout-hard-force-v4";
-}
-if (typeof navigator !== "undefined" && navigator.serviceWorker) {
-  navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((reg) => reg.unregister()));
-}
-if (typeof window !== "undefined" && window.caches) {
-  caches.keys().then((keys) => keys.forEach((key) => caches.delete(key)));
-}
-
-
-if (typeof window !== "undefined") {
-  window.__CHURVOX_BUILD_FORCE__ = "checkout-hard-force-v3";
-}
-
-if (typeof navigator !== "undefined" && navigator.serviceWorker) {
-  navigator.serviceWorker.getRegistrations().then((regs) => {
-    regs.forEach((reg) => reg.unregister());
-  });
-}
-
-if (typeof window !== "undefined" && window.caches) {
-  caches.keys().then((keys) => {
-    keys.forEach((key) => caches.delete(key));
-  });
-}
-
-
-if (typeof navigator !== "undefined" && navigator.serviceWorker) {
-  navigator.serviceWorker.getRegistrations().then((regs) => {
-    regs.forEach((reg) => reg.unregister());
-  });
-}
-
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "@/index.css";
-import App from "@/App";
-import "./hard-tap-fix.css";
-if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
-  navigator.serviceWorker.getRegistrations().then((regs) => {
-    regs.forEach((reg) => reg.unregister());
-  }).catch(() => {});
+import App from "./App";
+import "./index.css";
+
+async function killOldCaches() {
+  try {
+    if (typeof navigator !== "undefined" && navigator.serviceWorker) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const reg of regs) {
+        await reg.unregister();
+      }
+    }
+
+    if (typeof window !== "undefined" && "caches" in window) {
+      const keys = await window.caches.keys();
+      for (const key of keys) {
+        await window.caches.delete(key);
+      }
+    }
+
+    console.log("Old service workers and caches cleared");
+  } catch (err) {
+    console.error("CACHE_CLEAR_ERROR", err);
+  }
 }
 
-// Register service worker for PWA install support
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
-  });
-}
-
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+killOldCaches().finally(() => {
+  const root = ReactDOM.createRoot(document.getElementById("root"));
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+});
