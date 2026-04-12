@@ -96,17 +96,17 @@ export default function JobFormPage() {
     try {
       setLoading(true);
 
-      const [clientsRes, workersRes] = await Promise.all([
-        get("/clients"),
-        isEmployer ? get("/team/workers") : Promise.resolve({ success: true, data: [] }),
-      ]);
-
+      const clientsRes = await get("/clients");
       const nextClients =
         clientsRes?.success && Array.isArray(clientsRes.data) ? clientsRes.data : [];
-      const nextWorkers =
-        workersRes?.success && Array.isArray(workersRes.data) ? workersRes.data : [];
-
       setClients(nextClients);
+
+      let nextWorkers = [];
+      if (isEmployer) {
+        const workersRes = await get("/team/workers");
+        nextWorkers =
+          workersRes?.success && Array.isArray(workersRes.data) ? workersRes.data : [];
+      }
       setWorkers(nextWorkers);
 
       if (isEditing) {
