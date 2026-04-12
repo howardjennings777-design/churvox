@@ -18,7 +18,9 @@ export default function InvoiceFormPage() {
   const { get, post, patch, loading } = useApi();
   const isEdit = !!id;
 
+  const [clients, setClients] = useState([]);
   const [formData, setFormData] = useState({
+    client_id: "",
     customer_name: "",
     customer_email: "",
     address: "",
@@ -29,16 +31,27 @@ export default function InvoiceFormPage() {
   });
 
   useEffect(() => {
+    loadClients();
     if (isEdit) {
       loadInvoice();
     }
   }, [id]);
+
+  const loadClients = async () => {
+    const result = await get("/clients");
+    if (result.success && Array.isArray(result.data)) {
+      setClients(result.data);
+    } else {
+      setClients([]);
+    }
+  };
 
   const loadInvoice = async () => {
     const result = await get(`/invoices/${id}`);
     if (result.success) {
       const invoice = result.data;
       setFormData({
+        client_id: invoice.client_id || "",
         customer_name: invoice.customer_name || "",
         customer_email: invoice.customer_email || "",
         address: invoice.address || "",
@@ -56,6 +69,17 @@ export default function InvoiceFormPage() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const handleClientSelect = (clientId) => {
+    const client = clients.find((c) => String(c.id || c._id) === String(clientId));
+    setFormData((prev) => ({
+      ...prev,
+      client_id: clientId,
+      customer_name: client?.client_name || client?.name || client?.contact_name || "",
+      customer_email: client?.email || "",
+      address: client?.address || "",
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -76,6 +100,7 @@ export default function InvoiceFormPage() {
 
     const invoiceData = {
       ...formData,
+      client_id: formData.client_id || null,
       subtotal: Number(formData.subtotal),
       gst_rate: Number(formData.gst_rate),
     };
@@ -128,6 +153,29 @@ export default function InvoiceFormPage() {
               <CardTitle className="text-lg font-heading">Customer Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="client_id">Client</Label>
+                <select
+                  id="client_id"
+                  name="client_id"
+                  value={formData.client_id}
+                  onChange={(e) => handleClientSelect(e.target.value)}
+                  className="w-full h-10 rounded-md border border-border bg-background px-3 text-white"
+                  data-testid="invoice-client-select"
+                >
+                  <option value="" style={{ color: "#111827", backgroundColor: "#ffffff" }}>Select saved client</option>
+                  {clients.map((client) => (
+                    <option
+                      key={client.id || client._id}
+                      value={client.id || client._id}
+                      style={{ color: "#111827", backgroundColor: "#ffffff" }}
+                    >
+                      {client.client_name || client.name || client.contact_name || "Unnamed client"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="customer_name">Customer Name *</Label>
                 <Input
