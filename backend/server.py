@@ -1197,6 +1197,424 @@ def health_login():
 
 
 
+
+
+@api_router.get("/invoices")
+async def get_invoices(current_user: dict = Depends(get_current_user)):
+    try:
+        business_id = str(
+            current_user.get("business_id")
+            or current_user.get("businessId")
+            or current_user.get("id")
+            or current_user.get("_id")
+            or current_user.get("user_id")
+            or ""
+        )
+        owner_id = str(
+            current_user.get("_id")
+            or current_user.get("id")
+            or current_user.get("user_id")
+            or ""
+        )
+
+        def safe_iso(value):
+            if value is None:
+                return None
+            if hasattr(value, "isoformat"):
+                try:
+                    return value.isoformat()
+                except Exception:
+                    pass
+            try:
+                return str(value)
+            except Exception:
+                return None
+
+        query = {
+            "$or": [
+                {"business_id": business_id},
+                {"business_id": str(business_id)},
+                {"owner_id": owner_id},
+            ]
+        }
+
+        docs = []
+        async for invoice in db.invoices.find(query).sort("created_at", -1):
+            try:
+                subtotal = float(invoice.get("subtotal") or 0)
+                gst_rate = float(invoice.get("gst_rate") or 15)
+                total = subtotal + (subtotal * gst_rate / 100.0)
+                docs.append({
+                    "id": str(invoice.get("_id") or invoice.get("id") or ""),
+                    "invoice_number": invoice.get("invoice_number") or f"INV-{str(invoice.get('_id') or '')[-6:]}",
+                    "client_id": invoice.get("client_id"),
+                    "customer_name": invoice.get("customer_name") or "",
+                    "customer_email": invoice.get("customer_email") or "",
+                    "address": invoice.get("address") or "",
+                    "description": invoice.get("description") or "",
+                    "subtotal": subtotal,
+                    "gst_rate": gst_rate,
+                    "total": total,
+                    "status": invoice.get("status") or "draft",
+                    "pricing_type": invoice.get("pricing_type") or "fixed",
+                    "hourly_rate": float(invoice.get("hourly_rate") or 0),
+                    "hours_worked": float(invoice.get("hours_worked") or 0),
+                    "extras": invoice.get("extras") or [],
+                    "notes": invoice.get("notes") or "",
+                    "myob_sync_status": invoice.get("myob_sync_status") or "not_synced",
+                    "created_at": safe_iso(invoice.get("created_at")),
+                    "updated_at": safe_iso(invoice.get("updated_at")),
+                })
+            except Exception as e:
+                print("INVOICE_ROW_SKIP", str(invoice.get("_id")), str(e))
+                continue
+
+        return docs
+    except Exception as e:
+        print("INVOICES_ROUTE_ERROR", str(e), current_user)
+        return []
+
+
+@api_router.post("/invoices")
+async def create_invoice(request: Request, current_user: dict = Depends(get_current_user)):
+    from datetime import datetime, timezone
+
+    if current_user.get("role") not in ["owner", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    payload = await request.json()
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    if not business_id:
+        raise HTTPException(status_code=400, detail="Business ID missing")
+
+    def to_float(value, default=0):
+        try:
+            return float(value)
+        except Exception:
+            return default
+
+    now = datetime.now(timezone.utc)
+
+    invoice_doc = {
+        "invoice_number": payload.get("invoice_number") or f"INV-{int(now.timestamp())}",
+        "client_id": payload.get("client_id"),
+        "customer_name": payload.get("customer_name") or "",
+        "customer_email": payload.get("customer_email") or "",
+        "address": payload.get("address") or "",
+        "description": payload.get("description") or "",
+        "subtotal": to_float(payload.get("subtotal"), 0),
+        "gst_rate": to_float(payload.get("gst_rate"), 15),
+        "status": payload.get("status") or "draft",
+        "pricing_type": payload.get("pricing_type") or "fixed",
+        "hourly_rate": to_float(payload.get("hourly_rate"), 0),
+        "hours_worked": to_float(payload.get("hours_worked"), 0),
+        "extras": payload.get("extras") or [],
+        "notes": payload.get("notes") or "",
+        "myob_sync_status": payload.get("myob_sync_status") or "not_synced",
+        "business_id": business_id,
+        "owner_id": owner_id,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    result = await db.invoices.insert_one(invoice_doc)
+
+    return {
+        "success": True,
+        "id": str(result.inserted_id),
+        "message": "Invoice created"
+    }
+
+
+@api_router.get("/invoices/{invoice_id}")
+async def get_invoice(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    try:
+        obj_id = ObjectId(invoice_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid invoice ID")
+
+    invoice = await db.invoices.find_one({
+        "_id": obj_id,
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]
+    })
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    subtotal = float(invoice.get("subtotal") or 0)
+    gst_rate = float(invoice.get("gst_rate") or 15)
+    total = subtotal + (subtotal * gst_rate / 100.0)
+
+    def safe_iso(value):
+        if value is None:
+            return None
+        if hasattr(value, "isoformat"):
+            try:
+                return value.isoformat()
+            except Exception:
+                pass
+        return str(value)
+
+    return {
+        "id": str(invoice.get("_id") or invoice.get("id") or ""),
+        "invoice_number": invoice.get("invoice_number") or f"INV-{str(invoice.get('_id') or '')[-6:]}",
+        "client_id": invoice.get("client_id"),
+        "customer_name": invoice.get("customer_name") or "",
+        "customer_email": invoice.get("customer_email") or "",
+        "address": invoice.get("address") or "",
+        "description": invoice.get("description") or "",
+        "subtotal": subtotal,
+        "gst_rate": gst_rate,
+        "total": total,
+        "status": invoice.get("status") or "draft",
+        "pricing_type": invoice.get("pricing_type") or "fixed",
+        "hourly_rate": float(invoice.get("hourly_rate") or 0),
+        "hours_worked": float(invoice.get("hours_worked") or 0),
+        "extras": invoice.get("extras") or [],
+        "notes": invoice.get("notes") or "",
+        "myob_sync_status": invoice.get("myob_sync_status") or "not_synced",
+        "created_at": safe_iso(invoice.get("created_at")),
+        "updated_at": safe_iso(invoice.get("updated_at")),
+    }
+
+
+@api_router.patch("/invoices/{invoice_id}")
+async def update_invoice(invoice_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    from datetime import datetime, timezone
+
+    if current_user.get("role") not in ["owner", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    try:
+        obj_id = ObjectId(invoice_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid invoice ID")
+
+    payload = await request.json()
+
+    invoice = await db.invoices.find_one({
+        "_id": obj_id,
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]
+    })
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    update_data = {
+        "client_id": payload.get("client_id"),
+        "customer_name": payload.get("customer_name") or "",
+        "customer_email": payload.get("customer_email") or "",
+        "address": payload.get("address") or "",
+        "description": payload.get("description") or "",
+        "subtotal": float(payload.get("subtotal") or 0),
+        "gst_rate": float(payload.get("gst_rate") or 15),
+        "notes": payload.get("notes") or "",
+        "updated_at": datetime.now(timezone.utc),
+    }
+
+    await db.invoices.update_one({"_id": obj_id}, {"$set": update_data})
+    updated = await db.invoices.find_one({"_id": obj_id})
+    return {
+        "success": True,
+        "id": str(updated.get("_id")),
+    }
+
+
+@api_router.post("/invoices/{invoice_id}/send")
+async def send_invoice(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    from datetime import datetime, timezone
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    try:
+        obj_id = ObjectId(invoice_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid invoice ID")
+
+    invoice = await db.invoices.find_one({
+        "_id": obj_id,
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]
+    })
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    await db.invoices.update_one(
+        {"_id": obj_id},
+        {"$set": {
+            "status": "sent",
+            "sent_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+        }}
+    )
+
+    updated = await db.invoices.find_one({"_id": obj_id})
+    return {"success": True, "data": {
+        "id": str(updated.get("_id")),
+        "status": updated.get("status") or "sent",
+    }}
+
+
+@api_router.post("/invoices/{invoice_id}/mark-paid")
+async def mark_invoice_paid(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    from datetime import datetime, timezone
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    try:
+        obj_id = ObjectId(invoice_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid invoice ID")
+
+    invoice = await db.invoices.find_one({
+        "_id": obj_id,
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]
+    })
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    await db.invoices.update_one(
+        {"_id": obj_id},
+        {"$set": {
+            "status": "paid",
+            "paid_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+        }}
+    )
+
+    updated = await db.invoices.find_one({"_id": obj_id})
+    return {"success": True, "data": {
+        "id": str(updated.get("_id")),
+        "status": updated.get("status") or "paid",
+    }}
+
+
+@api_router.delete("/invoices/{invoice_id}")
+async def delete_invoice(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["owner", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    try:
+        obj_id = ObjectId(invoice_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid invoice ID")
+
+    invoice = await db.invoices.find_one({
+        "_id": obj_id,
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]
+    })
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    result = await db.invoices.delete_one({"_id": obj_id})
+    if result.deleted_count != 1:
+        raise HTTPException(status_code=500, detail="Failed to delete invoice")
+
+    return {"success": True, "message": "Invoice deleted"}
+
 @api_router.get("/quotes")
 async def get_quotes(current_user: dict = Depends(get_current_user)):
     try:
