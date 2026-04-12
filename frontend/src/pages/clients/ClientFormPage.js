@@ -122,12 +122,7 @@ export default function ClientFormPage() {
           </div>
         </div>
 
-        {!isEdit && Number(maxClients) > 0 && clientCount >= Number(maxClients) && (
-          <UpgradePrompt
-            feature="client-limit-form"
-            message={`You have reached your ${maxClients}-client limit. Upgrade your plan to add more clients.`}
-          />
-        )}
+        {/* client limit prompt temporarily disabled on this page */}
 
         {/* Form */}
         <Card className="bg-card border-border">
@@ -217,7 +212,7 @@ export default function ClientFormPage() {
                   type="button"
                   onClick={() => handleSubmit({ preventDefault: () => {} })}
                   className="flex-1 bg-primary hover:bg-primary/90"
-                  disabled={loading || (!isEdit && Number(maxClients) > 0 && clientCount >= Number(maxClients))}
+                  disabled={loading}
                   data-testid="save-client-button"
                 >
                   {loading ? (
@@ -228,7 +223,7 @@ export default function ClientFormPage() {
                   ) : isEdit ? (
                     "Update Client"
                   ) : (
-                    Number(maxClients) > 0 && clientCount >= Number(maxClients) ? "Client limit reached" : "Create Client"
+                    "Create Client"
                   )}
                 </Button>
               </div>
