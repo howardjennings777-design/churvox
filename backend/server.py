@@ -1987,7 +1987,14 @@ async def import_csv_clients(request: Request, current_user: dict = Depends(get_
         return str(cells[idx]).strip()
 
     owner_id = current_user.get("_id") or current_user.get("id") or current_user.get("user_id")
-    business_id = str(get_business_id_for_user(current_user))
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
     owner_email = current_user.get("email")
 
     if not business_id:
