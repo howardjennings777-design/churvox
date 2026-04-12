@@ -73,20 +73,29 @@ export default function ClientFormPage() {
       return;
     }
 
-    if (!isEdit && Number(maxClients) > 0 && clientCount >= Number(maxClients)) {
-      toast.error(`Client limit reached for your plan (${maxClients} clients). Upgrade to add more.`);
-      return;
-    }
+    const payload = {
+      ...formData,
+      name: formData.name?.trim() || "",
+      email: formData.email?.trim() || "",
+      phone: formData.phone?.trim() || "",
+      address: formData.address?.trim() || "",
+      notes: formData.notes?.trim() || "",
+    };
 
-    const result = isEdit
-      ? await patch(`/clients/${id}`, formData)
-      : await post("/clients", formData);
+    try {
+      const result = isEdit
+        ? await patch(`/clients/${id}`, payload)
+        : await post("/clients", payload);
 
-    if (result.success) {
-      toast.success(isEdit ? "Client updated" : "Client created");
-      navigate("/clients");
-    } else {
-      toast.error(result.error);
+      if (result?.success) {
+        toast.success(isEdit ? "Client updated" : "Client created");
+        navigate("/clients");
+      } else {
+        toast.error(result?.error || "Failed to save client");
+      }
+    } catch (err) {
+      console.error("CLIENT_SAVE_ERROR", err);
+      toast.error("Failed to save client");
     }
   };
 
