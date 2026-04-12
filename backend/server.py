@@ -1367,6 +1367,58 @@ async def get_team_workers(current_user: dict = Depends(get_current_user)):
     return docs
 
 
+
+
+@api_router.get("/dashboard/stats")
+async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
+    business_id = str(get_business_id_for_user(current_user))
+    owner_id = str(current_user.get("_id") or current_user.get("id") or current_user.get("user_id") or "")
+
+    client_query = {"$or": [{"business_id": business_id}, {"business_id": str(business_id)}, {"owner_id": owner_id}]}
+    job_query = {"$or": [{"business_id": business_id}, {"business_id": str(business_id)}, {"owner_id": owner_id}]}
+    invoice_query = {"$or": [{"business_id": business_id}, {"business_id": str(business_id)}, {"owner_id": owner_id}]}
+    worker_query = {"role": "worker", "$or": [{"business_id": business_id}, {"business_id": str(business_id)}, {"owner_id": owner_id}]}
+
+    clients = await db.clients.count_documents(client_query)
+    jobs = await db.jobs.count_documents(job_query)
+    invoices = await db.invoices.count_documents(invoice_query)
+    team_count = await db.business_users.count_documents(worker_query)
+
+    return {
+        "jobs_today": 0,
+        "jobs_this_week": 0,
+        "completed": 0,
+        "revenue": 0,
+        "pending_invoices": invoices,
+        "clients": clients,
+        "team_count": team_count,
+        "jobs": jobs,
+        "invoices": invoices
+    }
+
+
+@api_router.get("/jobs/today")
+async def get_jobs_today(current_user: dict = Depends(get_current_user)):
+    business_id = str(get_business_id_for_user(current_user))
+    owner_id = str(current_user.get("_id") or current_user.get("id") or current_user.get("user_id") or "")
+    query = {"$or": [{"business_id": business_id}, {"business_id": str(business_id)}, {"owner_id": owner_id}]}
+    docs = []
+    async for job in db.jobs.find(query).sort("created_at", -1).limit(20):
+        docs.append(make_json_safe(job))
+    return docs
+
+
+@api_router.get("/jobs/week")
+async def get_jobs_week(current_user: dict = Depends(get_current_user)):
+    business_id = str(get_business_id_for_user(current_user))
+    owner_id = str(current_user.get("_id") or current_user.get("id") or current_user.get("user_id") or "")
+    query = {"$or": [{"business_id": business_id}, {"business_id": str(business_id)}, {"owner_id": owner_id}]}
+    docs = []
+    async for job in db.jobs.find(query).sort("created_at", -1).limit(50):
+        docs.append(make_json_safe(job))
+    return docs
+
+
 @api_router.post("/jobs/{job_id}/pause")
 async def pause_job(job_id: str, current_user: dict = Depends(get_current_user)):
     job = await db.jobs.find_one({"id": job_id})

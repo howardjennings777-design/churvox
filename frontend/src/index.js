@@ -49,6 +49,11 @@ import ReactDOM from "react-dom/client";
 import "@/index.css";
 import App from "@/App";
 import "./hard-tap-fix.css";
+if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistrations().then((regs) => {
+    regs.forEach((reg) => reg.unregister());
+  }).catch(() => {});
+}
 
 // Register service worker for PWA install support
 if ('serviceWorker' in navigator) {
