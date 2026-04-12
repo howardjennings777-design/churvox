@@ -100,7 +100,7 @@ export default function ClientFormPage() {
 
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto space-y-6 animate-in relative z-10 pointer-events-auto" data-testid="client-form-page">
+      <div className="max-w-2xl mx-auto space-y-6 animate-in relative z-10 pointer-events-auto pb-32 md:pb-6" data-testid="client-form-page">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
