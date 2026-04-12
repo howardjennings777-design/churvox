@@ -30,9 +30,13 @@ export function AuthProvider({ children }) {
         headers: { Authorization: `Bearer ${token}` }, withCredentials: true,
       });
       setUser(mapUserPlanData(response.data, token));
-    } catch {
-      localStorage.removeItem("token");
+    } catch (err) {
+      try { localStorage.removeItem("token"); } catch (_) {}
+      try { sessionStorage.removeItem("token"); } catch (_) {}
+      try { localStorage.removeItem("owner_portal_session"); } catch (_) {}
+      try { localStorage.removeItem("platform_owner_email"); } catch (_) {}
       setUser(null);
+      console.error("Auth check failed", err?.response?.data || err?.message || err);
     } finally {
       setLoading(false);
     }
