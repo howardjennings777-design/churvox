@@ -204,9 +204,12 @@ export default function ClientFormPage() {
                   Cancel
                 </Button>
                 <Button
-                  type="button"
-                  onClick={() => handleSubmit({ preventDefault: () => {} })}
-                  className="flex-1 bg-primary hover:bg-primary/90"
+                  type="submit"
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    handleSubmit(e);
+                  }}
+                  className="flex-1 bg-primary hover:bg-primary/90 touch-manipulation"
                   disabled={loading}
                   data-testid="save-client-button"
                 >
