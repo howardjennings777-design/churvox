@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
@@ -18,6 +19,10 @@ axios.defaults.withCredentials = true;
 const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
 
 export default function TeamPage() {
+  const navigate = useNavigate();
+  const [selectedWorker, setSelectedWorker] = useState(null);
+  const [workerJobs, setWorkerJobs] = useState([]);
+  const [workerModalOpen, setWorkerModalOpen] = useState(false);
   const { user, isEmployer, loading: authLoading } = useAuth();
   const { get, post, del, loading } = useApi();
   const {
@@ -397,6 +402,62 @@ export default function TeamPage() {
           </>
         )}
       </div>
+
+      {workerModalOpen && selectedWorker && (
+        <div className="fixed inset-0 z-[1000] bg-black/60 flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl rounded-xl border border-churvox-border bg-churvox-card p-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div>
+                <h2 className="text-xl font-semibold text-white">{selectedWorker.name || "Worker"}</h2>
+                <p className="text-sm text-churvox-muted">{selectedWorker.email || ""}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setWorkerModalOpen(false)}
+                className="px-3 py-2 rounded-md border border-churvox-border text-churvox-muted"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="grid gap-4">
+              <div className="rounded-lg border border-churvox-border p-3">
+                <div className="text-sm text-churvox-muted mb-1">Phone</div>
+                <div className="text-white">{selectedWorker.phone || "-"}</div>
+              </div>
+
+              <div className="rounded-lg border border-churvox-border p-3">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="text-white font-medium">Assigned Jobs</div>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/jobs/new?workerId=${selectedWorker.id || selectedWorker._id}`)}
+                    className="px-3 py-2 rounded-md bg-churvox-accent text-white"
+                  >
+                    Add / Assign Job
+                  </button>
+                </div>
+
+                {workerJobs.length === 0 ? (
+                  <div className="text-sm text-churvox-muted">No jobs assigned yet.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {workerJobs.map((job) => (
+                      <div key={job.id || job._id} className="rounded-lg border border-churvox-border p-3">
+                        <div className="text-white font-medium">{job.title || "Untitled Job"}</div>
+                        <div className="text-sm text-churvox-muted">{job.customer_name || "No client"}</div>
+                        <div className="text-sm text-churvox-muted">{job.address || "No address"}</div>
+                        <div className="text-sm text-churvox-muted">Status: {job.status || "assigned"}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </Layout>
   );
 }
