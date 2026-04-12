@@ -1347,6 +1347,80 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     }
 
 
+
+
+@api_router.post("/jobs")
+async def create_job(request: Request, current_user: dict = Depends(get_current_user)):
+    from datetime import datetime, timezone
+
+    if current_user.get("role") not in ["owner", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    payload = await request.json()
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    if not business_id:
+        raise HTTPException(status_code=400, detail="Business ID missing")
+
+    def to_int(value, default=0):
+        try:
+            return int(value)
+        except Exception:
+            return default
+
+    def to_float(value, default=0):
+        try:
+            return float(value)
+        except Exception:
+            return default
+
+    job_doc = {
+        "title": payload.get("title") or "Untitled Job",
+        "job_type": payload.get("job_type") or "other",
+        "client_id": payload.get("client_id"),
+        "customer_name": payload.get("customer_name") or "",
+        "address": payload.get("address") or "",
+        "scheduled_date": payload.get("scheduled_date"),
+        "scheduled_time": payload.get("scheduled_time") or "",
+        "estimated_duration": to_int(payload.get("estimated_duration"), 60),
+        "price": to_float(payload.get("price"), 0),
+        "pricing_type": payload.get("pricing_type") or "fixed",
+        "hourly_rate": to_float(payload.get("hourly_rate"), 0),
+        "extras": payload.get("extras") or [],
+        "notes": payload.get("notes") or "",
+        "assigned_worker_id": payload.get("assigned_worker_id"),
+        "is_recurring": bool(payload.get("is_recurring") or False),
+        "recurring_frequency": payload.get("recurring_frequency"),
+        "custom_repeat_days": payload.get("custom_repeat_days"),
+        "status": payload.get("status") or "assigned",
+        "business_id": business_id,
+        "owner_id": owner_id,
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+    }
+
+    result = await db.jobs.insert_one(job_doc)
+
+    return {
+        "success": True,
+        "id": str(result.inserted_id),
+        "message": "Job created"
+    }
+
 @api_router.get("/jobs/today")
 async def get_jobs_today(current_user: dict = Depends(get_current_user)):
     business_id = str(get_business_id_for_user(current_user))
