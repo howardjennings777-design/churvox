@@ -1963,6 +1963,236 @@ async def create_quote(request: Request, current_user: dict = Depends(get_curren
         "message": "Quote created"
     }
 
+
+
+@api_router.post("/clients")
+async def create_client(request: Request, current_user: dict = Depends(get_current_user)):
+    from datetime import datetime, timezone
+
+    if current_user.get("role") not in ["owner", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    payload = await request.json()
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    if not business_id:
+        raise HTTPException(status_code=400, detail="Business ID missing")
+
+    now = datetime.now(timezone.utc)
+
+    client_doc = {
+        "name": payload.get("name") or payload.get("client_name") or payload.get("contact_name") or "Unnamed Client",
+        "client_name": payload.get("client_name") or payload.get("name") or "",
+        "contact_name": payload.get("contact_name") or payload.get("name") or payload.get("client_name") or "",
+        "email": payload.get("email") or "",
+        "phone": payload.get("phone") or "",
+        "address": payload.get("address") or "",
+        "notes": payload.get("notes") or "",
+        "business_id": business_id,
+        "owner_id": owner_id,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    result = await db.clients.insert_one(client_doc)
+
+    return {
+        "success": True,
+        "id": str(result.inserted_id),
+        "message": "Client created",
+    }
+
+
+@api_router.get("/clients/{client_id}")
+async def get_client(client_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    try:
+        obj_id = ObjectId(client_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid client ID")
+
+    client = await db.clients.find_one({
+        "_id": obj_id,
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]
+    })
+
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    def safe_iso(value):
+        if value is None:
+            return None
+        if hasattr(value, "isoformat"):
+            try:
+                return value.isoformat()
+            except Exception:
+                pass
+        return str(value)
+
+    return {
+        "id": str(client.get("_id") or client.get("id") or ""),
+        "name": client.get("name") or client.get("client_name") or client.get("contact_name") or "Unnamed Client",
+        "client_name": client.get("client_name") or client.get("name") or "",
+        "contact_name": client.get("contact_name") or "",
+        "email": client.get("email") or "",
+        "phone": client.get("phone") or "",
+        "address": client.get("address") or "",
+        "notes": client.get("notes") or "",
+        "business_id": str(client.get("business_id")) if client.get("business_id") is not None else None,
+        "created_at": safe_iso(client.get("created_at")),
+        "updated_at": safe_iso(client.get("updated_at")),
+    }
+
+
+@api_router.patch("/clients/{client_id}")
+async def update_client(client_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    from datetime import datetime, timezone
+
+    if current_user.get("role") not in ["owner", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    try:
+        obj_id = ObjectId(client_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid client ID")
+
+    existing = await db.clients.find_one({
+        "_id": obj_id,
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]
+    })
+    if not existing:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    payload = await request.json()
+
+    update_data = {
+        "name": payload.get("name") or payload.get("client_name") or payload.get("contact_name") or existing.get("name") or "Unnamed Client",
+        "client_name": payload.get("client_name") or payload.get("name") or existing.get("client_name") or "",
+        "contact_name": payload.get("contact_name") or payload.get("name") or existing.get("contact_name") or "",
+        "email": payload.get("email") or "",
+        "phone": payload.get("phone") or "",
+        "address": payload.get("address") or "",
+        "notes": payload.get("notes") or "",
+        "updated_at": datetime.now(timezone.utc),
+    }
+
+    await db.clients.update_one({"_id": obj_id}, {"$set": update_data})
+
+    return {
+        "success": True,
+        "id": client_id,
+        "message": "Client updated",
+    }
+
+
+@api_router.get("/clients/{client_id}/jobs")
+async def get_client_jobs(client_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    query = {
+        "client_id": client_id,
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]
+    }
+
+    def safe_iso(value):
+        if value is None:
+            return None
+        if hasattr(value, "isoformat"):
+            try:
+                return value.isoformat()
+            except Exception:
+                pass
+        return str(value)
+
+    docs = []
+    async for job in db.jobs.find(query).sort("created_at", -1):
+        try:
+            docs.append({
+                "id": str(job.get("_id") or job.get("id") or ""),
+                "title": job.get("title") or "Untitled Job",
+                "status": job.get("status") or "assigned",
+                "client_id": job.get("client_id"),
+                "customer_name": job.get("customer_name") or "",
+                "address": job.get("address") or "",
+                "scheduled_date": safe_iso(job.get("scheduled_date")),
+                "scheduled_time": job.get("scheduled_time") or "",
+                "created_at": safe_iso(job.get("created_at")),
+                "updated_at": safe_iso(job.get("updated_at")),
+            })
+        except Exception as e:
+            print("CLIENT_JOB_ROW_SKIP", str(job.get("_id")), str(e))
+            continue
+
+    return docs
+
 @api_router.get("/clients")
 async def get_clients(current_user: dict = Depends(get_current_user)):
     try:
