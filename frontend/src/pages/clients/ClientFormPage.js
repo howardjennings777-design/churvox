@@ -73,7 +73,7 @@ export default function ClientFormPage() {
       return;
     }
 
-    if (!isEdit && clientCount >= maxClients) {
+    if (!isEdit && Number(maxClients) > 0 && clientCount >= Number(maxClients)) {
       toast.error(`Client limit reached for your plan (${maxClients} clients). Upgrade to add more.`);
       return;
     }
@@ -113,7 +113,7 @@ export default function ClientFormPage() {
           </div>
         </div>
 
-        {!isEdit && clientCount >= maxClients && (
+        {!isEdit && Number(maxClients) > 0 && clientCount >= Number(maxClients) && (
           <UpgradePrompt
             feature="client-limit-form"
             message={`You have reached your ${maxClients}-client limit. Upgrade your plan to add more clients.`}
@@ -208,7 +208,7 @@ export default function ClientFormPage() {
                   type="button"
                   onClick={() => handleSubmit({ preventDefault: () => {} })}
                   className="flex-1 bg-primary hover:bg-primary/90"
-                  disabled={loading || (!isEdit && clientCount >= maxClients)}
+                  disabled={loading || (!isEdit && Number(maxClients) > 0 && clientCount >= Number(maxClients))}
                   data-testid="save-client-button"
                 >
                   {loading ? (
@@ -219,7 +219,7 @@ export default function ClientFormPage() {
                   ) : isEdit ? (
                     "Update Client"
                   ) : (
-                    clientCount >= maxClients ? "Client limit reached" : "Create Client"
+                    Number(maxClients) > 0 && clientCount >= Number(maxClients) ? "Client limit reached" : "Create Client"
                   )}
                 </Button>
               </div>
