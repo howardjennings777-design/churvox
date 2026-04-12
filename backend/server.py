@@ -2856,6 +2856,70 @@ async def get_myob_settings(current_user: dict = Depends(get_current_user)):
         }
 
 
+
+
+@api_router.get("/user/trade")
+async def get_user_trade(current_user: dict = Depends(get_current_user)):
+    try:
+        return {
+            "success": True,
+            "trade": current_user.get("trade") or current_user.get("industry") or "lawn_care"
+        }
+    except Exception as e:
+        print("GET_USER_TRADE_ERROR", str(e), current_user)
+        return {
+            "success": True,
+            "trade": "lawn_care"
+        }
+
+
+@api_router.patch("/user/trade")
+async def update_user_trade(request: Request, current_user: dict = Depends(get_current_user)):
+    try:
+        payload = await request.json()
+        trade = str(payload.get("trade") or payload.get("industry") or "").strip()
+
+        if not trade:
+            raise HTTPException(status_code=400, detail="Trade is required")
+
+        user_id = current_user.get("_id") or current_user.get("id") or current_user.get("user_id")
+        business_id = current_user.get("business_id") or current_user.get("businessId") or current_user.get("id") or current_user.get("_id")
+
+        update_doc = {
+            "trade": trade,
+            "industry": trade,
+        }
+
+        # update user record
+        try:
+            if user_id:
+                if isinstance(user_id, str) and len(user_id) == 24:
+                    await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": update_doc})
+                else:
+                    await db.users.update_one({"id": str(user_id)}, {"$set": update_doc})
+        except Exception as e:
+            print("USER_TRADE_USERS_UPDATE_SKIP", str(e))
+
+        # update business record too if possible
+        try:
+            if business_id:
+                if isinstance(business_id, str) and len(business_id) == 24:
+                    await db.businesses.update_one({"_id": ObjectId(business_id)}, {"$set": update_doc})
+                else:
+                    await db.businesses.update_one({"id": str(business_id)}, {"$set": update_doc})
+        except Exception as e:
+            print("USER_TRADE_BUSINESS_UPDATE_SKIP", str(e))
+
+        return {
+            "success": True,
+            "trade": trade
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("PATCH_USER_TRADE_ERROR", str(e), current_user)
+        raise HTTPException(status_code=500, detail="Failed to update trade")
+
 @api_router.get("/user/gst")
 async def get_user_gst(current_user: dict = Depends(get_current_user)):
     try:
