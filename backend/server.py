@@ -1788,9 +1788,11 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
         return re.sub(r"[^a-z0-9]+", "", str(value or "").strip().lower())
 
     header_aliases = {
-        "name": {"name", "fullname", "workername", "employee", "employeename", "staffname"},
-        "email": {"email", "emailaddress", "workeremail", "employeeemail", "staffemail"},
-        "phone": {"phone", "phonenumber", "mobile", "mobilenumber", "cell", "telephone"},
+        "name": {"name", "fullname", "full_name", "workername", "worker_name", "employee", "employeename", "employee_name", "staffname", "staff_name"},
+        "first_name": {"firstname", "first_name", "givenname", "given_name"},
+        "last_name": {"lastname", "last_name", "surname", "familyname", "family_name"},
+        "email": {"email", "emailaddress", "email_address", "workeremail", "worker_email", "employeeemail", "employee_email", "staffemail", "staff_email"},
+        "phone": {"phone", "phonenumber", "phone_number", "mobile", "mobilenumber", "mobile_number", "cell", "telephone"},
     }
 
     first = [norm_header(v) for v in rows[0]]
@@ -1844,8 +1846,14 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
     for row_num, row in enumerate(data_rows, start=2 if has_header else 1):
         try:
             name = get_cell(row, "name")
+            first_name = get_cell(row, "first_name")
+            last_name = get_cell(row, "last_name")
             email = get_cell(row, "email").lower()
             phone = get_cell(row, "phone")
+
+            if not name:
+                combined_name = " ".join(part for part in [first_name, last_name] if part).strip()
+                name = combined_name
 
             if not name:
                 skipped += 1
