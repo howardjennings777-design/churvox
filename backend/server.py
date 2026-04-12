@@ -1688,6 +1688,7 @@ async def get_quotes(current_user: dict = Depends(get_current_user)):
 
 
 
+# FORCE_RENDER_BACKEND_REDEPLOY_QUOTES
 @api_router.get("/quotes/{quote_id}")
 async def get_quote(quote_id: str, current_user: dict = Depends(get_current_user)):
     business_id = str(
