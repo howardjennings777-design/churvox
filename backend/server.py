@@ -2320,37 +2320,65 @@ async def get_team_workers(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
-    business_id = str(get_business_id_for_user(current_user))
-    owner_id = str(current_user.get("_id") or current_user.get("id") or current_user.get("user_id") or "")
+    try:
+        business_id = str(
+            current_user.get("business_id")
+            or current_user.get("businessId")
+            or current_user.get("id")
+            or current_user.get("_id")
+            or current_user.get("user_id")
+            or ""
+        )
+        owner_id = str(
+            current_user.get("_id")
+            or current_user.get("id")
+            or current_user.get("user_id")
+            or ""
+        )
 
-    base_query = {"$or": [
-        {"business_id": business_id},
-        {"business_id": str(business_id)},
-        {"owner_id": owner_id},
-    ]}
+        base_query = {"$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]}
 
-    clients = await db.clients.count_documents(base_query)
-    jobs = await db.jobs.count_documents(base_query)
-    invoices = await db.invoices.count_documents(base_query)
-    team_count = await db.business_users.count_documents({"role": "worker", **base_query})
+        clients = await db.clients.count_documents(base_query)
+        jobs = await db.jobs.count_documents(base_query)
+        invoices = await db.invoices.count_documents(base_query)
+        team_query = {
+            "role": "worker",
+            "$or": [
+                {"business_id": business_id},
+                {"business_id": str(business_id)},
+                {"owner_id": owner_id},
+            ]
+        }
+        team_count = await db.business_users.count_documents(team_query)
 
-    return {
-        "jobs_today": 0,
-        "jobs_this_week": 0,
-        "completed": 0,
-        "revenue": 0,
-        "pending_invoices": invoices,
-        "clients": clients,
-        "team_count": team_count,
-        "jobs": jobs,
-        "invoices": invoices,
-    }
-
-
-
-
-
-
+        return {
+            "jobs_today": 0,
+            "jobs_this_week": 0,
+            "completed": 0,
+            "revenue": 0,
+            "pending_invoices": invoices,
+            "clients": clients,
+            "team_count": team_count,
+            "jobs": jobs,
+            "invoices": invoices,
+        }
+    except Exception as e:
+        print("DASHBOARD_STATS_ERROR", str(e), current_user)
+        return {
+            "jobs_today": 0,
+            "jobs_this_week": 0,
+            "completed": 0,
+            "revenue": 0,
+            "pending_invoices": 0,
+            "clients": 0,
+            "team_count": 0,
+            "jobs": 0,
+            "invoices": 0,
+        }
 
 
 @api_router.get("/jobs/{job_id}")
@@ -2571,8 +2599,20 @@ async def create_job(request: Request, current_user: dict = Depends(get_current_
 @api_router.get("/jobs/today")
 async def get_jobs_today(current_user: dict = Depends(get_current_user)):
     try:
-        business_id = str(get_business_id_for_user(current_user))
-        owner_id = str(current_user.get("_id") or current_user.get("id") or current_user.get("user_id") or "")
+        business_id = str(
+            current_user.get("business_id")
+            or current_user.get("businessId")
+            or current_user.get("id")
+            or current_user.get("_id")
+            or current_user.get("user_id")
+            or ""
+        )
+        owner_id = str(
+            current_user.get("_id")
+            or current_user.get("id")
+            or current_user.get("user_id")
+            or ""
+        )
         query = {"$or": [
             {"business_id": business_id},
             {"business_id": str(business_id)},
@@ -2594,8 +2634,20 @@ async def get_jobs_today(current_user: dict = Depends(get_current_user)):
 @api_router.get("/jobs/week")
 async def get_jobs_week(current_user: dict = Depends(get_current_user)):
     try:
-        business_id = str(get_business_id_for_user(current_user))
-        owner_id = str(current_user.get("_id") or current_user.get("id") or current_user.get("user_id") or "")
+        business_id = str(
+            current_user.get("business_id")
+            or current_user.get("businessId")
+            or current_user.get("id")
+            or current_user.get("_id")
+            or current_user.get("user_id")
+            or ""
+        )
+        owner_id = str(
+            current_user.get("_id")
+            or current_user.get("id")
+            or current_user.get("user_id")
+            or ""
+        )
         query = {"$or": [
             {"business_id": business_id},
             {"business_id": str(business_id)},
@@ -2612,8 +2664,6 @@ async def get_jobs_week(current_user: dict = Depends(get_current_user)):
     except Exception as e:
         print("JOBS_WEEK_ERROR", str(e), current_user)
         return []
-
-
 
 
 @api_router.delete("/team/workers/{worker_id}")
