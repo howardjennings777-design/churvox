@@ -20,7 +20,6 @@ export default function ClientsPage() {
 
   const [clients, setClients] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
-  const [deleteId, setDeleteId] = useState(null);
   const [importing, setImporting] = useState(false);
   const [importResults, setImportResults] = useState(null);
   const fileInputRef = useRef(null);
@@ -77,12 +76,19 @@ export default function ClientsPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    const res = await del(`/clients/${deleteId}`);
+  const handleDelete = async (client) => {
+    const clientId = client?.id || client?._id;
+    if (!clientId) {
+      toast.error("Client ID missing");
+      return;
+    }
+
+    const ok = window.confirm("Delete this client?");
+    if (!ok) return;
+
+    const res = await del(`/clients/${clientId}`);
     if (res.success) {
       toast.success("Client removed");
-      setDeleteId(null);
       fetchClients();
     } else {
       toast.error(res.error || "Failed to remove client");
@@ -239,7 +245,7 @@ export default function ClientsPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setDeleteId(client.id || client._id)}
+                      onClick={() => handleDelete(client)}
                       className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                     >
                       <Trash2 size={16} />
@@ -332,31 +338,6 @@ export default function ClientsPage() {
                 </Button>
               </DialogFooter>
             </form>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-          <DialogContent className="bg-churvox-card border-churvox-border">
-            <DialogHeader>
-              <DialogTitle className="text-white">Delete Client</DialogTitle>
-            </DialogHeader>
-            <p className="text-churvox-muted">Are you sure you want to delete this client?</p>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setDeleteId(null)}
-                className="border-churvox-border text-churvox-muted"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleDelete}
-                disabled={loading}
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
-                {loading ? "Deleting..." : "Delete"}
-              </Button>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
