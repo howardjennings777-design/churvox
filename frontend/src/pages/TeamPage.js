@@ -73,6 +73,24 @@ export default function TeamPage() {
     fetchWorkers();
   }, [authLoading, user?.token, fetchWorkers]);
 
+
+  const openWorkerDetail = async (worker) => {
+    setSelectedWorker(worker);
+    setWorkerJobs([]);
+    setWorkerModalOpen(true);
+
+    try {
+      const res = await get("/jobs");
+      const allJobs = res?.success && Array.isArray(res.data) ? res.data : [];
+      const workerId = String(worker?.id || worker?._id || "");
+      const filtered = allJobs.filter((job) => String(job.assigned_worker_id || "") === workerId);
+      setWorkerJobs(filtered);
+    } catch (err) {
+      console.error("WORKER_DETAIL_LOAD_ERROR", err);
+      setWorkerJobs([]);
+    }
+  };
+
   const handleAdd = async (e) => {
     e.preventDefault();
     const res = await post("/team/workers", form);
