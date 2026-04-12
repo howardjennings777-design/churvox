@@ -1760,7 +1760,7 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
     import csv
     import io
     import re
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     if current_user.get("role") not in ["owner", "admin"]:
         raise HTTPException(status_code=403, detail="Not authorized")
@@ -1781,6 +1781,7 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
 
     rows = list(csv.reader(io.StringIO(text_data)))
     rows = [row for row in rows if row and any(str(cell).strip() for cell in row)]
+
     if not rows:
         raise HTTPException(status_code=400, detail="CSV file is empty")
 
@@ -1788,11 +1789,9 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
         return re.sub(r"[^a-z0-9]+", "", str(value or "").strip().lower())
 
     header_aliases = {
-        "name": {"name", "fullname", "full_name", "workername", "worker_name", "employee", "employeename", "employee_name", "staffname", "staff_name"},
-        "first_name": {"firstname", "first_name", "givenname", "given_name"},
-        "last_name": {"lastname", "last_name", "surname", "familyname", "family_name"},
-        "email": {"email", "emailaddress", "email_address", "workeremail", "worker_email", "employeeemail", "employee_email", "staffemail", "staff_email"},
-        "phone": {"phone", "phonenumber", "phone_number", "mobile", "mobilenumber", "mobile_number", "cell", "telephone"},
+        "name": {"name", "fullname", "workername", "employee", "employeename", "staffname"},
+        "email": {"email", "emailaddress", "workeremail", "employeeemail", "staffemail"},
+        "phone": {"phone", "phonenumber", "mobile", "mobilenumber", "cell", "telephone"},
     }
 
     first = [norm_header(v) for v in rows[0]]
@@ -1821,59 +1820,39 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
             return ""
         return str(cells[idx]).strip()
 
-    business_id = str(
-        current_user.get("business_id")
-        or current_user.get("businessId")
-        or current_user.get("id")
-        or current_user.get("_id")
-        or current_user.get("user_id")
-        or ""
-    )
-    owner_id = str(
-        current_user.get("_id")
-        or current_user.get("id")
-        or current_user.get("user_id")
-        or ""
-    )
-
+    business_id = current_user.get("business_id") or current_user.get("id") or current_user.get("_id")
     if not business_id:
         raise HTTPException(status_code=400, detail="Could not determine business ID for team import")
 
-    invited = 0
+    imported = 0
     skipped = 0
-    details = []
+    errors = []
 
     for row_num, row in enumerate(data_rows, start=2 if has_header else 1):
         try:
             name = get_cell(row, "name")
-            first_name = get_cell(row, "first_name")
-            last_name = get_cell(row, "last_name")
             email = get_cell(row, "email").lower()
             phone = get_cell(row, "phone")
 
             if not name:
-                combined_name = " ".join(part for part in [first_name, last_name] if part).strip()
-                name = combined_name
-
-            if not name:
                 skipped += 1
-                details.append({"row": row_num, "status": "skipped", "reason": "Missing name"})
+                errors.append(f"Row {row_num}: missing name")
                 continue
 
             if not email:
                 skipped += 1
-                details.append({"row": row_num, "status": "skipped", "reason": "Missing email"})
+                errors.append(f"Row {row_num}: missing email")
                 continue
 
-            existing = await db.business_users.find_one({
-                "business_id": business_id,
+            existing = await db.users.find_one({
+                "business_id": str(business_id),
                 "email": email,
-                "role": "worker"
+                "role": {"$in": ["worker", "staff", "employee"]}
             })
 
             if existing:
                 skipped += 1
-                details.append({"row": row_num, "status": "skipped", "reason": "Worker already exists"})
+                errors.append(f"Row {row_num}: worker already exists")
                 continue
 
             worker_doc = {
@@ -1881,30 +1860,27 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
                 "email": email,
                 "phone": phone,
                 "role": "worker",
-                "status": "invited",
-                "business_id": business_id,
-                "owner_id": owner_id,
-                "created_at": datetime.now(timezone.utc),
-                "updated_at": datetime.now(timezone.utc),
+                "business_id": str(business_id),
+                "status": "active",
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow(),
             }
 
-            await db.business_users.insert_one(worker_doc)
-            invited += 1
-            details.append({"row": row_num, "status": "invited", "reason": ""})
+            await db.users.insert_one(worker_doc)
+            imported += 1
 
         except Exception as row_error:
             skipped += 1
-            details.append({"row": row_num, "status": "skipped", "reason": str(row_error)})
+            errors.append(f"Row {row_num}: {str(row_error)}")
 
     return {
         "success": True,
-        "invited": invited,
-        "imported": invited,
+        "imported": imported,
         "skipped": skipped,
-        "total": len(data_rows),
-        "details": details,
-        "message": f"Invited {invited} workers, skipped {skipped} rows."
+        "total": imported + skipped,
+        "errors": errors[:20],
     }
+
 
 @api_router.post("/clients/import-csv")
 async def import_csv_clients(request: Request, current_user: dict = Depends(get_current_user)):
