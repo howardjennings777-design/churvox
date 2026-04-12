@@ -1195,6 +1195,77 @@ def health_login():
 
 
 
+
+
+@api_router.get("/quotes")
+async def get_quotes(current_user: dict = Depends(get_current_user)):
+    try:
+        business_id = str(
+            current_user.get("business_id")
+            or current_user.get("businessId")
+            or current_user.get("id")
+            or current_user.get("_id")
+            or current_user.get("user_id")
+            or ""
+        )
+        owner_id = str(
+            current_user.get("_id")
+            or current_user.get("id")
+            or current_user.get("user_id")
+            or ""
+        )
+
+        def safe_iso(value):
+            if value is None:
+                return None
+            if hasattr(value, "isoformat"):
+                try:
+                    return value.isoformat()
+                except Exception:
+                    pass
+            try:
+                return str(value)
+            except Exception:
+                return None
+
+        query = {
+            "$or": [
+                {"business_id": business_id},
+                {"business_id": str(business_id)},
+                {"owner_id": owner_id},
+            ]
+        }
+
+        docs = []
+        async for quote in db.quotes.find(query).sort("created_at", -1):
+            try:
+                docs.append({
+                    "id": str(quote.get("_id") or quote.get("id") or ""),
+                    "client_id": quote.get("client_id"),
+                    "customer_name": quote.get("customer_name") or "",
+                    "customer_email": quote.get("customer_email") or "",
+                    "address": quote.get("address") or "",
+                    "job_type": quote.get("job_type") or "other",
+                    "job_description": quote.get("job_description") or "",
+                    "price": quote.get("price") or 0,
+                    "pricing_type": quote.get("pricing_type") or "fixed",
+                    "hourly_rate": quote.get("hourly_rate") or 0,
+                    "extras": quote.get("extras") or [],
+                    "valid_until": safe_iso(quote.get("valid_until")),
+                    "status": quote.get("status") or "draft",
+                    "business_id": str(quote.get("business_id")) if quote.get("business_id") is not None else None,
+                    "created_at": safe_iso(quote.get("created_at")),
+                    "updated_at": safe_iso(quote.get("updated_at")),
+                })
+            except Exception as e:
+                print("QUOTE_ROW_SKIP", str(quote.get("_id")), str(e))
+                continue
+
+        return docs
+    except Exception as e:
+        print("QUOTES_ROUTE_ERROR", str(e), current_user)
+        return []
+
 @api_router.post("/quotes")
 async def create_quote(request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
