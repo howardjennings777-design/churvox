@@ -148,11 +148,11 @@ export default function JobFormPage() {
   }, [fetchData]);
 
   const handleClientChange = (clientId) => {
-    const client = clients.find((c) => String(c.id) === String(clientId));
+    const client = clients.find((c) => String(c.id || c._id) === String(clientId));
     setForm((prev) => ({
       ...prev,
       client_id: clientId,
-      customer_name: client?.name || prev.customer_name,
+      customer_name: client?.client_name || client?.name || client?.contact_name || prev.customer_name,
       address: client?.address || prev.address,
     }));
   };
@@ -302,8 +302,8 @@ export default function JobFormPage() {
                     >
                       <option value="">No saved client</option>
                       {clients.map((client) => (
-                        <option key={client.id} value={client.id}>
-                          {client.name || "Unnamed client"}
+                        <option key={client.id || client._id} value={client.id || client._id}>
+                          {client.client_name || client.name || client.contact_name || "Unnamed client"}
                         </option>
                       ))}
                     </select>
