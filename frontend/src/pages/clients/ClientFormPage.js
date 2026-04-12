@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { UpgradePrompt } from "@/components/UpgradePrompt";
 import Layout from "@/components/Layout";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 
@@ -102,7 +101,6 @@ export default function ClientFormPage() {
   return (
     <Layout>
       <div className="max-w-2xl mx-auto space-y-6 animate-in" data-testid="client-form-page">
-        {/* Header */}
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -122,9 +120,6 @@ export default function ClientFormPage() {
           </div>
         </div>
 
-        {/* client limit prompt temporarily disabled on this page */}
-
-        {/* Form */}
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-lg font-heading">Client Details</CardTitle>
