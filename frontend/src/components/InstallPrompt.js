@@ -162,7 +162,7 @@ const [showBanner, setShowBanner] = useState(false);
 
   // Install banner
   return (
-    <div className="fixed bottom-20 sm:bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-40" data-testid="install-banner">
+    <div className="fixed bottom-24 sm:bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-30 pointer-events-auto" data-testid="install-banner">
       <div className="bg-churvox-card border border-churvox-border rounded-2xl p-4 shadow-2xl flex items-start gap-3">
         <div className="h-10 w-10 rounded-xl bg-churvox-accent/15 flex items-center justify-center shrink-0">
           <Download size={20} className="text-churvox-accent" />

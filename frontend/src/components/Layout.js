@@ -58,7 +58,7 @@ export default function Layout({ children }) {
         </div>
 
         {/* Nav Links */}
-        <nav className="tap-target" className="flex-1 py-4 px-3 space-y-1 overflow-y-auto" data-testid="desktop-nav">
+        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto" data-testid="desktop-nav">
           {mainNavItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);

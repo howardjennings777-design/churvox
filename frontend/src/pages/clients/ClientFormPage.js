@@ -100,7 +100,7 @@ export default function ClientFormPage() {
 
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto space-y-6 animate-in relative z-10 pointer-events-auto pb-32 md:pb-6" data-testid="client-form-page">
+      <div className="max-w-2xl mx-auto space-y-6 animate-in pb-36 md:pb-6" data-testid="client-form-page">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -120,12 +120,12 @@ export default function ClientFormPage() {
           </div>
         </div>
 
-        <Card className="bg-card border-border relative z-20 pointer-events-auto">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-lg font-heading">Client Details</CardTitle>
           </CardHeader>
-          <CardContent className="relative z-20 pointer-events-auto">
-            <form onSubmit={handleSubmit} className="space-y-4 relative z-20 pointer-events-auto">
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
                 <Input
@@ -193,7 +193,7 @@ export default function ClientFormPage() {
                 />
               </div>
 
-              <div className="flex gap-3 pt-4 relative z-30 pointer-events-auto">
+              <div className="flex gap-3 pt-4">
                 <Button
                   type="button"
                   variant="outline"
@@ -205,7 +205,7 @@ export default function ClientFormPage() {
                 </Button>
                 <button
                   type="submit"
-                  className="flex-1 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 touch-manipulation relative z-40 pointer-events-auto"
+                  className="flex-1 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 cursor-pointer touch-manipulation select-none"
                   disabled={loading}
                   data-testid="save-client-button"
                 >
