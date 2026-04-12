@@ -1900,6 +1900,7 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
         "message": f"Invited {invited} workers, skipped {skipped} rows."
     }
 
+# CLIENT_IMPORT_CORS_REDEPLOY_MARKER
 @api_router.options("/clients/import-csv")
 async def options_import_csv_clients():
     return Response(status_code=204)
