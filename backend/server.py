@@ -2145,6 +2145,7 @@ async def confirm_checkout(request: ConfirmCheckoutRequest, current_user: dict =
 
 
 
+# CLIENT_DELETE_ROUTE_FORCE_REDEPLOY
 @api_router.delete("/clients/{client_id}")
 async def delete_client(client_id: str, current_user: dict = Depends(get_current_user)):
     if current_user.get("role") not in ["owner", "admin"]:
