@@ -2143,6 +2143,36 @@ async def confirm_checkout(request: ConfirmCheckoutRequest, current_user: dict =
     }
 
 
+
+
+@api_router.delete("/clients/{client_id}")
+async def delete_client(client_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["owner", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    user_business_id = current_user.get("business_id") or current_user.get("id")
+    if not user_business_id:
+        raise HTTPException(status_code=400, detail="Business ID missing")
+
+    try:
+        obj_id = ObjectId(client_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid client ID")
+
+    client = await db.clients.find_one({"_id": obj_id})
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    client_business_id = str(client.get("business_id") or "")
+    if client_business_id != str(user_business_id):
+        raise HTTPException(status_code=403, detail="Not authorized to delete this client")
+
+    result = await db.clients.delete_one({"_id": obj_id})
+    if result.deleted_count != 1:
+        raise HTTPException(status_code=500, detail="Failed to delete client")
+
+    return {"success": True, "message": "Client deleted"}
+
 app.include_router(api_router)
 
 FRONTEND_DIST_DIR = Path(__file__).resolve().parent / "frontend_dist"
