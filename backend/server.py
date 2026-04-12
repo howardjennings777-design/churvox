@@ -1351,6 +1351,84 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
 
 
 
+
+
+@api_router.get("/jobs/{job_id}")
+async def get_job(job_id: str, current_user: dict = Depends(get_current_user)):
+    try:
+        business_id = str(
+            current_user.get("business_id")
+            or current_user.get("businessId")
+            or current_user.get("id")
+            or current_user.get("_id")
+            or current_user.get("user_id")
+            or ""
+        )
+        owner_id = str(
+            current_user.get("_id")
+            or current_user.get("id")
+            or current_user.get("user_id")
+            or ""
+        )
+
+        try:
+            obj_id = ObjectId(job_id)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid job ID")
+
+        query = {
+            "_id": obj_id,
+            "$or": [
+                {"business_id": business_id},
+                {"business_id": str(business_id)},
+                {"owner_id": owner_id},
+            ]
+        }
+
+        job = await db.jobs.find_one(query)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+
+        def safe_iso(value):
+            if value is None:
+                return None
+            if hasattr(value, "isoformat"):
+                try:
+                    return value.isoformat()
+                except Exception:
+                    pass
+            return str(value)
+
+        return {
+            "id": str(job.get("_id") or job.get("id") or ""),
+            "title": job.get("title") or "Untitled Job",
+            "job_type": job.get("job_type") or "other",
+            "client_id": job.get("client_id"),
+            "customer_name": job.get("customer_name") or "",
+            "address": job.get("address") or "",
+            "scheduled_date": safe_iso(job.get("scheduled_date")),
+            "scheduled_time": job.get("scheduled_time") or "",
+            "estimated_duration": job.get("estimated_duration") or 60,
+            "price": job.get("price") or 0,
+            "pricing_type": job.get("pricing_type") or "fixed",
+            "hourly_rate": job.get("hourly_rate") or 0,
+            "extras": job.get("extras") or [],
+            "notes": job.get("notes") or "",
+            "assigned_worker_id": job.get("assigned_worker_id"),
+            "status": job.get("status") or "assigned",
+            "is_recurring": bool(job.get("is_recurring") or False),
+            "recurring_frequency": job.get("recurring_frequency"),
+            "custom_repeat_days": job.get("custom_repeat_days"),
+            "business_id": str(job.get("business_id")) if job.get("business_id") is not None else None,
+            "created_at": safe_iso(job.get("created_at")),
+            "updated_at": safe_iso(job.get("updated_at")),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("JOB_DETAIL_ROUTE_ERROR", str(e), job_id, current_user)
+        raise HTTPException(status_code=500, detail="Failed to load job")
+
 @api_router.get("/jobs")
 async def get_jobs(current_user: dict = Depends(get_current_user)):
     try:
