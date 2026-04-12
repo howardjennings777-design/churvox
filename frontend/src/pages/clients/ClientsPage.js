@@ -330,7 +330,8 @@ export default function ClientsPage() {
                   Cancel
                 </Button>
                 <Button
-                  type="submit"
+                  type="button"
+                  onClick={() => handleAdd({ preventDefault: () => {} })}
                   disabled={loading}
                   className="bg-churvox-accent hover:bg-churvox-accent/90"
                 >

@@ -205,7 +205,8 @@ export default function ClientFormPage() {
                   Cancel
                 </Button>
                 <Button
-                  type="submit"
+                  type="button"
+                  onClick={() => handleSubmit({ preventDefault: () => {} })}
                   className="flex-1 bg-primary hover:bg-primary/90"
                   disabled={loading || (!isEdit && clientCount >= maxClients)}
                   data-testid="save-client-button"
