@@ -90,6 +90,8 @@ export default function JobFormPage() {
   };
 
   const fetchData = useCallback(async () => {
+    if (!user?.token) return;
+
     try {
       setLoading(true);
 
@@ -141,11 +143,12 @@ export default function JobFormPage() {
     } finally {
       setLoading(false);
     }
-  }, [get, id, isEditing, isEmployer, navigate]);
+  }, [get, id, isEditing, isEmployer, navigate, user?.token]);
 
   useEffect(() => {
+    if (!user?.token) return;
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, user?.token]);
 
   const handleClientChange = (clientId) => {
     const client = clients.find((c) => String(c.id || c._id) === String(clientId));
