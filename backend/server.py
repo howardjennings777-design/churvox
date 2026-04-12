@@ -1686,6 +1686,70 @@ async def get_quotes(current_user: dict = Depends(get_current_user)):
 
 
 
+
+
+@api_router.get("/quotes/{quote_id}")
+async def get_quote(quote_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    try:
+        obj_id = ObjectId(quote_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid quote ID")
+
+    quote = await db.quotes.find_one({
+        "_id": obj_id,
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]
+    })
+
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    def safe_iso(value):
+        if value is None:
+            return None
+        if hasattr(value, "isoformat"):
+            try:
+                return value.isoformat()
+            except Exception:
+                pass
+        return str(value)
+
+    return {
+        "id": str(quote.get("_id") or quote.get("id") or ""),
+        "client_id": quote.get("client_id"),
+        "customer_name": quote.get("customer_name") or "",
+        "customer_email": quote.get("customer_email") or "",
+        "address": quote.get("address") or "",
+        "job_type": quote.get("job_type") or "other",
+        "job_description": quote.get("job_description") or "",
+        "price": float(quote.get("price") or 0),
+        "pricing_type": quote.get("pricing_type") or "fixed",
+        "hourly_rate": float(quote.get("hourly_rate") or 0),
+        "extras": quote.get("extras") or [],
+        "valid_until": safe_iso(quote.get("valid_until")),
+        "status": quote.get("status") or "draft",
+        "created_at": safe_iso(quote.get("created_at")),
+        "updated_at": safe_iso(quote.get("updated_at")),
+    }
+
 @api_router.post("/quotes/{quote_id}/send")
 async def send_quote(quote_id: str, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
