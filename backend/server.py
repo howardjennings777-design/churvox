@@ -1200,86 +1200,6 @@ async def get_clients(current_user: dict = Depends(get_current_user)):
         or ""
     )
 
-    query = {
-        "$or": [
-            {"business_id": business_id},
-            {"business_id": str(business_id)},
-            {"owner_id": owner_id},
-        ]
-    }
-
-    clients_list = []
-    async for client in db.clients.find(query).sort("created_at", -1):
-        clients_list.append({
-            "id": str(client.get("_id")),
-            "name": client.get("client_name") or client.get("name") or "Unnamed Client",
-            "client_name": client.get("client_name") or client.get("name"),
-            "contact_name": client.get("contact_name"),
-            "email": client.get("email"),
-            "phone": client.get("phone"),
-            "address": client.get("address"),
-            "notes": client.get("notes"),
-            "business_id": str(client.get("business_id")) if client.get("business_id") is not None else None,
-            "created_at": client.get("created_at").isoformat() if client.get("created_at") else None,
-            "updated_at": client.get("updated_at").isoformat() if client.get("updated_at") else None,
-        })
-    return clients_list
-
-@api_router.get("/clients/{client_id}")
-# async def get_client(client_id: str, current_user: dict = Depends(get_current_user)):
-#     business_id = await get_user_business_id(current_user)
-#     client = await find_one_in_business(
-#         db.clients,
-#         business_id,
-#         {"_id": ObjectId(client_id)}
-#     )
-#     return safe_doc(client)
-
-# Example secure create pattern:
-# @api_router.post("/clients")
-# async def create_client(payload: dict, current_user: dict = Depends(get_current_user)):
-#     business_id = await get_user_business_id(current_user)
-#     data = force_business_on_payload(dict(payload), business_id)
-#     await db.clients.insert_one(data)
-#     return {"success": True}
-
-# Example secure update pattern:
-# @api_router.put("/clients/{client_id}")
-# async def update_client(client_id: str, current_user: dict = Depends(get_current_user), payload: dict, current_user: dict = Depends(get_current_user)):
-#     business_id = await get_user_business_id(current_user)
-#     payload = dict(payload)
-#     payload.pop("business_id", None)
-#     await update_one_in_business(
-#         db.clients,
-#         business_id,
-#         {"_id": ObjectId(client_id)},
-#         payload
-#     )
-#     return {"success": True}
-
-# Example secure delete pattern:
-# @api_router.delete("/clients/{client_id}")
-# async def delete_client(client_id: str, current_user: dict = Depends(get_current_user), current_user: dict = Depends(get_current_user)):
-#     business_id = await get_user_business_id(current_user)
-#     await delete_one_in_business(
-#         db.clients,
-#         business_id,
-#         {"_id": ObjectId(client_id)}
-#     )
-#     return {"success": True}
-
-
-
-@api_router.get("/clients")
-async def get_clients(current_user: dict = Depends(get_current_user)):
-    business_id = str(get_business_id_for_user(current_user))
-    owner_id = str(
-        current_user.get("_id")
-        or current_user.get("id")
-        or current_user.get("user_id")
-        or ""
-    )
-
     def safe_iso(value):
         if value is None:
             return None
@@ -1303,19 +1223,30 @@ async def get_clients(current_user: dict = Depends(get_current_user)):
 
     docs = []
     async for client in db.clients.find(query).sort("created_at", -1):
-        docs.append({
-            "id": str(client.get("id") or client.get("_id")),
-            "name": client.get("name") or client.get("client_name") or client.get("contact_name") or "Unnamed Client",
-            "client_name": client.get("client_name") or client.get("name"),
-            "contact_name": client.get("contact_name"),
-            "email": client.get("email"),
-            "phone": client.get("phone"),
-            "address": client.get("address"),
-            "notes": client.get("notes"),
-            "business_id": str(client.get("business_id")) if client.get("business_id") is not None else None,
-            "created_at": safe_iso(client.get("created_at")),
-            "updated_at": safe_iso(client.get("updated_at")),
-        })
+        try:
+            doc = {
+                "id": str(client.get("id") or client.get("_id") or ""),
+                "name": (
+                    client.get("name")
+                    or client.get("client_name")
+                    or client.get("contact_name")
+                    or "Unnamed Client"
+                ),
+                "client_name": client.get("client_name") or client.get("name") or "",
+                "contact_name": client.get("contact_name") or "",
+                "email": client.get("email") or "",
+                "phone": client.get("phone") or "",
+                "address": client.get("address") or "",
+                "notes": client.get("notes") or "",
+                "business_id": str(client.get("business_id")) if client.get("business_id") is not None else None,
+                "created_at": safe_iso(client.get("created_at")),
+                "updated_at": safe_iso(client.get("updated_at")),
+            }
+            docs.append(make_json_safe(doc))
+        except Exception as e:
+            print("CLIENT_ROW_SKIP", str(client.get("_id")), str(e))
+            continue
+
     return docs
 
 
