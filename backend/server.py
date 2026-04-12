@@ -1751,6 +1751,105 @@ async def get_quote(quote_id: str, current_user: dict = Depends(get_current_user
         "updated_at": safe_iso(quote.get("updated_at")),
     }
 
+
+
+@api_router.patch("/quotes/{quote_id}")
+async def update_quote(quote_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    from datetime import datetime, timezone
+
+    if current_user.get("role") not in ["owner", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    try:
+        obj_id = ObjectId(quote_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid quote ID")
+
+    quote = await db.quotes.find_one({
+        "_id": obj_id,
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]
+    })
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    payload = await request.json()
+
+    def to_float(value, default=0):
+        try:
+            return float(value)
+        except Exception:
+            return default
+
+    update_data = {
+        "client_id": payload.get("client_id"),
+        "customer_name": payload.get("customer_name") or "",
+        "customer_email": payload.get("customer_email") or "",
+        "address": payload.get("address") or "",
+        "job_type": payload.get("job_type") or "other",
+        "job_description": payload.get("job_description") or "",
+        "price": to_float(payload.get("price"), 0),
+        "pricing_type": payload.get("pricing_type") or "fixed",
+        "hourly_rate": to_float(payload.get("hourly_rate"), 0),
+        "extras": payload.get("extras") or [],
+        "valid_until": payload.get("valid_until"),
+        "status": payload.get("status") or quote.get("status") or "draft",
+        "updated_at": datetime.now(timezone.utc),
+    }
+
+    await db.quotes.update_one({"_id": obj_id}, {"$set": update_data})
+
+    updated = await db.quotes.find_one({"_id": obj_id})
+
+    def safe_iso(value):
+        if value is None:
+            return None
+        if hasattr(value, "isoformat"):
+            try:
+                return value.isoformat()
+            except Exception:
+                pass
+        return str(value)
+
+    return {
+        "success": True,
+        "data": {
+            "id": str(updated.get("_id") or updated.get("id") or ""),
+            "client_id": updated.get("client_id"),
+            "customer_name": updated.get("customer_name") or "",
+            "customer_email": updated.get("customer_email") or "",
+            "address": updated.get("address") or "",
+            "job_type": updated.get("job_type") or "other",
+            "job_description": updated.get("job_description") or "",
+            "price": float(updated.get("price") or 0),
+            "pricing_type": updated.get("pricing_type") or "fixed",
+            "hourly_rate": float(updated.get("hourly_rate") or 0),
+            "extras": updated.get("extras") or [],
+            "valid_until": safe_iso(updated.get("valid_until")),
+            "status": updated.get("status") or "draft",
+            "created_at": safe_iso(updated.get("created_at")),
+            "updated_at": safe_iso(updated.get("updated_at")),
+        }
+    }
+
 @api_router.post("/quotes/{quote_id}/send")
 async def send_quote(quote_id: str, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
