@@ -2877,7 +2877,12 @@ async def get_user_trade(current_user: dict = Depends(get_current_user)):
 async def update_user_trade(request: Request, current_user: dict = Depends(get_current_user)):
     try:
         payload = await request.json()
-        trade = str(payload.get("trade") or payload.get("industry") or "").strip()
+        trade = str(
+            payload.get("trade_type")
+            or payload.get("trade")
+            or payload.get("industry")
+            or ""
+        ).strip()
 
         if not trade:
             raise HTTPException(status_code=400, detail="Trade is required")
