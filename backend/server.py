@@ -1882,6 +1882,12 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
     }
 
 
+
+@api_router.options("/clients/import-csv")
+async def options_import_csv_clients():
+    return {"ok": True}
+
+
 @api_router.post("/clients/import-csv")
 async def import_csv_clients(request: Request, current_user: dict = Depends(get_current_user)):
     """
@@ -1894,6 +1900,9 @@ async def import_csv_clients(request: Request, current_user: dict = Depends(get_
     import csv
     import io
     import re
+
+    if current_user.get("role") not in ["owner", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
 
     form = await request.form()
     upload = form.get("file")
@@ -1909,10 +1918,6 @@ async def import_csv_clients(request: Request, current_user: dict = Depends(get_
         text_data = content.decode("utf-8-sig")
     except Exception:
         text_data = content.decode("utf-8", errors="ignore")
-
-    lines = [line for line in text_data.splitlines() if str(line).strip()]
-    if not lines:
-        raise HTTPException(status_code=400, detail="CSV file is empty")
 
     def norm_header(value: str) -> str:
         return re.sub(r"[^a-z0-9]+", "", str(value or "").strip().lower())
@@ -1958,6 +1963,12 @@ async def import_csv_clients(request: Request, current_user: dict = Depends(get_
             "notes": 5,
         }
 
+    def get_cell(cells, field_name):
+        idx = header_map.get(field_name)
+        if idx is None or idx >= len(cells):
+            return ""
+        return str(cells[idx]).strip()
+
     owner_id = current_user.get("_id") or current_user.get("id") or current_user.get("user_id")
     business_id = str(get_business_id_for_user(current_user))
     owner_email = current_user.get("email")
@@ -1969,81 +1980,76 @@ async def import_csv_clients(request: Request, current_user: dict = Depends(get_
     skipped = 0
     details = []
 
-    def get_cell(cells, field_name):
-        idx = header_map.get(field_name)
-        if idx is None:
-            return ""
-        if idx >= len(cells):
-            return ""
-        return str(cells[idx]).strip()
-
     for i, row in enumerate(data_rows, start=2 if has_header else 1):
-        cells = [str(v).strip() for v in row]
-        if not cells or not any(cells):
+        try:
+            cells = [str(v).strip() for v in row]
+            if not cells or not any(cells):
+                skipped += 1
+                details.append({"row": i, "status": "skipped", "reason": "Blank row"})
+                continue
+
+            client_name = get_cell(cells, "client_name")
+            contact_name = get_cell(cells, "contact_name")
+            email = get_cell(cells, "email").lower()
+            phone = get_cell(cells, "phone")
+            address = get_cell(cells, "address")
+            notes = get_cell(cells, "notes")
+
+            if not client_name:
+                skipped += 1
+                details.append({"row": i, "status": "skipped", "reason": "Missing client name"})
+                continue
+
+            dup_query = {
+                "$and": [
+                    {"business_id": business_id},
+                    {
+                        "$or": [
+                            {"client_name": client_name},
+                            {"name": client_name},
+                            *([{"email": email}] if email else []),
+                        ]
+                    },
+                ]
+            }
+
+            existing = await db.clients.find_one(dup_query)
+            if existing:
+                skipped += 1
+                details.append({"row": i, "status": "skipped", "reason": "Duplicate client"})
+                continue
+
+            client_doc = {
+                "client_name": client_name,
+                "name": client_name,
+                "contact_name": contact_name or client_name,
+                "email": email,
+                "phone": phone,
+                "address": address,
+                "notes": notes,
+                "business_id": business_id,
+                "owner_id": str(owner_id) if owner_id else None,
+                "owner_email": owner_email,
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow(),
+            }
+
+            await db.clients.insert_one(client_doc)
+            imported += 1
+            details.append({"row": i, "status": "imported", "reason": ""})
+
+        except Exception as row_error:
             skipped += 1
-            details.append({"row": i, "status": "skipped", "reason": "Blank row"})
-            continue
-
-        client_name = get_cell(cells, "client_name")
-        contact_name = get_cell(cells, "contact_name")
-        email = get_cell(cells, "email").lower()
-        phone = get_cell(cells, "phone")
-        address = get_cell(cells, "address")
-        notes = get_cell(cells, "notes")
-
-        if not client_name:
-            skipped += 1
-            details.append({"row": i, "status": "skipped", "reason": "Missing client name"})
-            continue
-
-        dup_query = {
-            "$and": [
-                {"business_id": business_id},
-                {
-                    "$or": [
-                        {"client_name": client_name},
-                        {"name": client_name},
-                        *([{"email": email}] if email else []),
-                    ]
-                },
-            ]
-        }
-
-        existing = await db.clients.find_one(dup_query)
-        if existing:
-            skipped += 1
-            details.append({"row": i, "status": "skipped", "reason": "Duplicate client"})
-            continue
-
-        client_doc = {
-            "client_name": client_name,
-            "name": client_name,
-            "contact_name": contact_name or client_name,
-            "email": email,
-            "phone": phone,
-            "address": address,
-            "notes": notes,
-            "business_id": business_id,
-            "owner_id": str(owner_id) if owner_id else None,
-            "owner_email": owner_email,
-            "created_at": datetime.now(timezone.utc),
-            "updated_at": datetime.now(timezone.utc),
-        }
-
-        await db.clients.insert_one(client_doc)
-        imported += 1
-        details.append({"row": i, "status": "imported", "reason": ""})
+            details.append({"row": i, "status": "skipped", "reason": str(row_error)})
 
     return {
         "success": True,
         "imported": imported,
         "skipped": skipped,
         "total": len(data_rows),
-        "total_rows": len(data_rows),
-        "details": details,
+        "details": details[:100],
         "message": f"Imported {imported} clients, skipped {skipped} rows."
     }
-
 
 @api_router.get("/billing/status")
 async def billing_status(request: Request):
