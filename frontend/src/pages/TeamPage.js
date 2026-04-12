@@ -6,7 +6,7 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../components/ui/dialog";
+
 import { UserPlus, Trash2, Phone, Mail, Shield, Upload, RefreshCw, Clock, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { usePlanLimits } from "../hooks/usePlanLimits";
@@ -308,37 +308,93 @@ export default function TeamPage() {
           </div>
         )}
 
-        {/* Add Worker Dialog */}
-        <Dialog open={showAdd} onOpenChange={setShowAdd}>
-          <DialogContent className="bg-churvox-card border-churvox-border" data-testid="add-worker-dialog">
-            <DialogHeader>
-              <DialogTitle className="text-white">Invite Worker</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleAdd} className="space-y-4">
-              <div>
-                <Label className="text-churvox-muted">Name</Label>
-                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="bg-churvox-bg border-churvox-border text-white" placeholder="Full name" data-testid="worker-name-input" />
+        {/* Add Worker Modal */}
+        {showAdd && (
+          <div
+            className="fixed inset-0 z-[1000] bg-black/60 flex items-center justify-center p-4"
+            onClick={() => setShowAdd(false)}
+            data-testid="add-worker-modal-overlay"
+          >
+            <div
+              className="w-full max-w-md rounded-2xl border border-churvox-border bg-churvox-card shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+              data-testid="add-worker-modal"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-churvox-border">
+                <h2 className="text-white font-semibold text-lg">Invite Worker</h2>
+                <button
+                  type="button"
+                  onClick={() => setShowAdd(false)}
+                  className="text-churvox-muted hover:text-white text-xl leading-none"
+                  data-testid="close-add-worker-modal"
+                >
+                  ×
+                </button>
               </div>
-              <div>
-                <Label className="text-churvox-muted">Email</Label>
-                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required className="bg-churvox-bg border-churvox-border text-white" placeholder="email@example.com" data-testid="worker-email-input" />
-              </div>
-              <div>
-                <Label className="text-churvox-muted">Phone (optional)</Label>
-                <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" placeholder="0400 000 000" data-testid="worker-phone-input" />
-              </div>
-              <p className="text-xs text-churvox-muted/70">
-                An invite email will be sent. The worker will set their own password when they accept.
-              </p>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setShowAdd(false)} className="border-churvox-border text-churvox-muted">Cancel</Button>
-                <Button type="submit" disabled={loading} className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="submit-worker-button">
-                  {loading ? "Sending..." : "Send Invite"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+
+              <form onSubmit={handleAdd} className="p-4 space-y-4">
+                <div>
+                  <Label className="text-churvox-muted">Name</Label>
+                  <Input
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    required
+                    className="bg-churvox-bg border-churvox-border text-white"
+                    placeholder="Full name"
+                    data-testid="worker-name-input"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-churvox-muted">Email</Label>
+                  <Input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    required
+                    className="bg-churvox-bg border-churvox-border text-white"
+                    placeholder="email@example.com"
+                    data-testid="worker-email-input"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-churvox-muted">Phone (optional)</Label>
+                  <Input
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    className="bg-churvox-bg border-churvox-border text-white"
+                    placeholder="0400 000 000"
+                    data-testid="worker-phone-input"
+                  />
+                </div>
+
+                <p className="text-xs text-churvox-muted/70">
+                  An invite email will be sent. The worker will set their own password when they accept.
+                </p>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowAdd(false)}
+                    className="border-churvox-border text-churvox-muted"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="bg-churvox-accent hover:bg-churvox-accent/90"
+                    data-testid="submit-worker-button"
+                  >
+                    {loading ? "Sending..." : "Send Invite"}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Delete Confirmation */}
         <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
