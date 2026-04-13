@@ -2369,7 +2369,6 @@ async def create_team_worker(payload: dict, current_user: dict = Depends(get_cur
 
     now = datetime.utcnow()
     worker_doc = {
-        "id": str(ObjectId()),
         "name": name,
         "email": email,
         "phone": phone,
@@ -2382,6 +2381,10 @@ async def create_team_worker(payload: dict, current_user: dict = Depends(get_cur
         "updated_at": now,
     }
     result = await db.business_users.insert_one(worker_doc)
+    await db.business_users.update_one(
+        {"_id": result.inserted_id},
+        {"$set": {"id": str(result.inserted_id)}}
+    )
 
     try:
         invite_token = str(result.inserted_id)
