@@ -4090,6 +4090,68 @@ async def delete_client(client_id: str, current_user: dict = Depends(get_current
 
     return {"success": True, "message": "Client deleted"}
 
+
+
+@app.post("/billing/webhook")
+async def stripe_billing_webhook(request: Request):
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+
+    try:
+        webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET", "").strip()
+
+        # If webhook secret is configured, verify signature
+        if webhook_secret:
+            event = stripe.Webhook.construct_event(
+                payload=payload,
+                sig_header=sig_header,
+                secret=webhook_secret,
+            )
+        else:
+            event = json.loads(payload.decode("utf-8"))
+
+        event_type = event.get("type")
+        data_object = ((event.get("data") or {}).get("object") or {})
+
+        print("STRIPE_WEBHOOK_EVENT", event_type)
+
+        # Checkout completed -> update user/business plan if metadata exists
+        if event_type == "checkout.session.completed":
+            customer_email = (
+                data_object.get("customer_details", {}) or {}
+            ).get("email") or data_object.get("customer_email")
+
+            selected_plan = (
+                data_object.get("metadata", {}) or {}
+            ).get("plan")
+
+            if customer_email and selected_plan:
+                await db.users.update_many(
+                    {"email": str(customer_email).strip().lower()},
+                    {"$set": {
+                        "plan": str(selected_plan).strip().lower(),
+                        "updated_at": datetime.now(timezone.utc),
+                    }}
+                )
+                await db.businesses.update_many(
+                    {"email": str(customer_email).strip().lower()},
+                    {"$set": {
+                        "plan": str(selected_plan).strip().lower(),
+                        "updated_at": datetime.now(timezone.utc),
+                    }}
+                )
+                print("STRIPE_WEBHOOK_PLAN_UPDATED", customer_email, selected_plan)
+
+        return {"received": True}
+
+    except stripe.error.SignatureVerificationError as e:
+        print("STRIPE_WEBHOOK_SIGNATURE_ERROR", str(e))
+        raise HTTPException(status_code=400, detail="Invalid Stripe signature")
+    except Exception as e:
+        print("STRIPE_WEBHOOK_ERROR", str(e))
+        raise HTTPException(status_code=500, detail="Webhook handler failed")
+
+
 app.include_router(api_router)
 
 FRONTEND_DIST_DIR = Path(__file__).resolve().parent / "frontend_dist"
