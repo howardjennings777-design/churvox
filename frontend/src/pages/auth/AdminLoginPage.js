@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import axios from "axios";
+import API_BASE from "@/lib/apiBase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,9 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Mail, Lock, AlertCircle, Loader2, ShieldCheck } from "lucide-react";
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 
+axios.defaults.withCredentials = true;
+
 export default function AdminLoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
   const [email, setEmail] = useState("hello@churvox.com");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -24,13 +26,26 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     try {
-      const result = await login(email, password);
+      const response = await axios.post(
+        `${API_BASE}/api/auth/login`,
+        { email: email.trim(), password },
+        { withCredentials: true }
+      );
 
+      const data = response?.data || {};
+      const token = data?.token || data?.access_token || "";
+      const user = data?.user || data || {};
+
+      if (!token) {
+        throw new Error("No token returned from login");
+      }
+
+      localStorage.setItem("token", token);
       localStorage.setItem("owner_portal_session", "true");
-      localStorage.setItem("platform_owner_email", email);
+      localStorage.setItem("platform_owner_email", email.trim());
 
-      if (result?.token) {
-        localStorage.setItem("token", result.token);
+      if (user?.email) {
+        localStorage.setItem("user_email", user.email);
       }
 
       navigate("/admin", { replace: true });
@@ -38,10 +53,13 @@ export default function AdminLoginPage() {
         window.location.href = "/admin";
       }, 150);
     } catch (err) {
+      localStorage.removeItem("token");
       localStorage.removeItem("owner_portal_session");
       localStorage.removeItem("platform_owner_email");
+
       setError(
         err?.response?.data?.detail ||
+        err?.response?.data?.message ||
         err?.message ||
         "Invalid credentials."
       );
