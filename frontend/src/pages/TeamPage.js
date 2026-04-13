@@ -279,38 +279,74 @@ export default function TeamPage() {
             </div>
 
             {selectedWorker && (
-              <Card className="bg-churvox-card border-churvox-border">
-                <CardContent className="p-6 space-y-4 text-white">
+              <Card className="bg-churvox-card border-churvox-border shadow-lg shadow-black/20 overflow-hidden">
+                <div className="h-1 w-full bg-churvox-accent/80" />
+                <CardContent className="p-6 space-y-5 text-white">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="text-xl font-semibold">{selectedWorker?.name || "Worker"}</div>
-                    <Button type="button" variant="outline" onClick={closeWorkerPanel}>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <div className="h-10 w-10 rounded-full bg-churvox-accent/15 border border-churvox-accent/30 flex items-center justify-center text-sm font-bold text-churvox-accent">
+                          {String(selectedWorker?.name || "W").trim().charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="text-xl font-semibold leading-tight">{selectedWorker?.name || "Worker"}</div>
+                          <div className="text-xs text-churvox-muted">
+                            Team member details and assigned work
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <span className="inline-flex items-center rounded-full border border-churvox-border bg-churvox-bg px-3 py-1 text-xs text-churvox-muted">
+                          {selectedWorker?.status ? `Status: ${selectedWorker.status}` : "Status: active"}
+                        </span>
+                        <span className="inline-flex items-center rounded-full border border-churvox-border bg-churvox-bg px-3 py-1 text-xs text-churvox-muted">
+                          Region: {selectedWorker?.region || "-"}
+                        </span>
+                        <span className="inline-flex items-center rounded-full border border-churvox-border bg-churvox-bg px-3 py-1 text-xs text-churvox-muted">
+                          {workerJobs.length} assigned job{workerJobs.length !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={closeWorkerPanel}
+                      className="border-churvox-border text-churvox-muted hover:text-white"
+                    >
                       Close
                     </Button>
                   </div>
 
-                  <div className="rounded-lg border border-churvox-border p-4">
-                    <div className="text-sm text-churvox-muted">Email</div>
-                    <div className="text-white">{selectedWorker.email || "-"}</div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="rounded-xl border border-churvox-border bg-churvox-bg/40 p-4">
+                      <div className="text-xs uppercase tracking-wide text-churvox-muted mb-1">Email</div>
+                      <div className="text-white break-all font-medium">{selectedWorker.email || "-"}</div>
+                    </div>
+
+                    <div className="rounded-xl border border-churvox-border bg-churvox-bg/40 p-4">
+                      <div className="text-xs uppercase tracking-wide text-churvox-muted mb-1">Phone</div>
+                      <div className="text-white font-medium">{selectedWorker.phone || "-"}</div>
+                    </div>
+
+                    <div className="rounded-xl border border-churvox-border bg-churvox-bg/40 p-4">
+                      <div className="text-xs uppercase tracking-wide text-churvox-muted mb-1">Region</div>
+                      <div className="text-white font-medium">{selectedWorker.region || "-"}</div>
+                    </div>
                   </div>
 
-                  <div className="rounded-lg border border-churvox-border p-4">
-                    <div className="text-sm text-churvox-muted">Phone</div>
-                    <div className="text-white">{selectedWorker.phone || "-"}</div>
-                  </div>
-
-                  <div className="rounded-lg border border-churvox-border p-4">
-                    <div className="text-sm text-churvox-muted">Region</div>
-                    <div className="text-white">{selectedWorker.region || "-"}</div>
-                  </div>
-
-                  <div className="rounded-lg border border-churvox-border p-4 space-y-3">
+                  <div className="rounded-xl border border-churvox-border bg-churvox-bg/25 p-4 space-y-3">
                     <div className="flex items-center justify-between gap-3">
-                      <div className="text-white font-medium">Worker Notes</div>
+                      <div>
+                        <div className="text-white font-semibold">Worker Notes</div>
+                        <div className="text-xs text-churvox-muted">Private notes for this team member</div>
+                      </div>
                       <Button
                         type="button"
                         onClick={saveWorkerNotes}
                         disabled={savingNotes}
-                        className="bg-churvox-accent hover:bg-churvox-accent/90"
+                        className="bg-churvox-accent hover:bg-churvox-accent/90 min-w-[120px]"
                       >
                         {savingNotes ? "Saving..." : "Save Notes"}
                       </Button>
@@ -321,13 +357,16 @@ export default function TeamPage() {
                       onChange={(e) => setWorkerNotes(e.target.value)}
                       placeholder="Add notes for this worker..."
                       rows={5}
-                      className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3 outline-none"
+                      className="w-full rounded-xl border border-churvox-border bg-churvox-bg text-white p-3 outline-none"
                     />
                   </div>
 
-                  <div className="rounded-lg border border-churvox-border p-4 space-y-3">
+                  <div className="rounded-xl border border-churvox-border bg-churvox-bg/25 p-4 space-y-3">
                     <div className="flex items-center justify-between gap-3">
-                      <div className="text-white font-medium">Assigned Jobs</div>
+                      <div>
+                        <div className="text-white font-semibold">Assigned Jobs</div>
+                        <div className="text-xs text-churvox-muted">Jobs currently linked to this worker</div>
+                      </div>
                       <Button
                         type="button"
                         onClick={() => navigate(`/jobs/new?workerId=${selectedWorker.id || selectedWorker._id}`)}
@@ -425,7 +464,7 @@ export default function TeamPage() {
                   return (
                     <Card
                       key={workerId}
-                      className="bg-churvox-card border-churvox-border"
+                      className="bg-churvox-card border-churvox-border hover:border-churvox-accent/40 transition-colors shadow-sm shadow-black/10"
                       data-testid={`worker-card-${workerId}`}
                     >
                       <CardContent className="p-4">
@@ -435,23 +474,36 @@ export default function TeamPage() {
                             className="flex-1 text-left"
                             onClick={() => openWorkerPanel(worker)}
                           >
-                            <div className="text-white font-semibold">
-                              {worker.name || "Unnamed Worker"}
-                            </div>
-                            <div className="text-sm text-churvox-muted">
-                              {worker.email || "-"}
-                            </div>
-                            <div className="text-sm text-churvox-muted">
-                              {worker.phone || "-"}
-                            </div>
-                            <div className="text-sm text-churvox-muted">
-                              {worker.region || "-"}
-                            </div>
-                            {worker.status && (
-                              <div className="text-xs text-churvox-muted mt-1">
-                                Status: {worker.status}
+                            <div className="flex items-start gap-3">
+                              <div className="h-11 w-11 rounded-full bg-churvox-accent/15 border border-churvox-accent/30 flex items-center justify-center text-sm font-bold text-churvox-accent shrink-0">
+                                {String(worker.name || "W").trim().charAt(0).toUpperCase()}
                               </div>
-                            )}
+
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <div className="text-white font-semibold">
+                                    {worker.name || "Unnamed Worker"}
+                                  </div>
+                                  {worker.status && (
+                                    <span className="inline-flex items-center rounded-full border border-churvox-border bg-churvox-bg px-2.5 py-0.5 text-[11px] text-churvox-muted">
+                                      {worker.status}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="text-sm text-churvox-muted mt-1 break-all">
+                                  {worker.email || "-"}
+                                </div>
+                                <div className="text-sm text-churvox-muted">
+                                  {worker.phone || "-"}
+                                </div>
+                                <div className="mt-2">
+                                  <span className="inline-flex items-center rounded-full border border-churvox-border bg-churvox-bg px-2.5 py-1 text-xs text-churvox-muted">
+                                    Region: {worker.region || "-"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
                           </button>
 
                           <div className="flex items-center gap-2 shrink-0">
