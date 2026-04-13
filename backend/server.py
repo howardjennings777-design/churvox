@@ -2465,7 +2465,7 @@ async def update_team_worker_notes(worker_id: str, request: Request, current_use
 
     await db.business_users.update_one(
         {"_id": worker.get("_id")},
-        {"$set": {"notes": notes}}
+        {"$set": {"notes": notes, "updated_at": datetime.utcnow(), "id": str(worker.get("_id"))}}
     )
 
     return {"success": True, "notes": notes, "message": "Worker notes saved"}

@@ -189,18 +189,11 @@ export default function TeamPage() {
       });
 
       if (res?.success) {
-        toast.success("Worker notes saved");
-
-        setWorkers((prev) =>
-          prev.map((worker) => {
-            const id = worker.id || worker._id;
-            return id === workerId ? { ...worker, notes: workerNotes } : worker;
-          })
-        );
-
+        await fetchWorkers();
         setSelectedWorker((prev) =>
-          prev ? { ...prev, notes: workerNotes } : prev
+          prev ? { ...prev, notes: workerNotes, id: workerId, _id: workerId } : prev
         );
+        toast.success("Worker notes saved");
       } else {
         toast.error(res?.error || "Failed to save notes");
       }
