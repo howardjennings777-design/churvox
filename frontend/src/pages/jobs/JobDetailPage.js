@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Layout from "../../components/Layout";
 import { useApi } from "../../hooks/useApi";
+import { useAuth } from "../../context/AuthContext";
 import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { toast } from "sonner";
@@ -32,6 +33,7 @@ export default function JobDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { get, post, patch } = useApi();
+  const { isEmployer, isWorker } = useAuth();
 
   const [job, setJob] = useState(null);
   const [workers, setWorkers] = useState([]);
@@ -79,6 +81,22 @@ export default function JobDetailPage() {
 
   useEffect(() => {
     loadPage();
+  }, [loadPage]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadPage();
+    }, 10000);
+
+    const handleFocus = () => loadPage();
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
   }, [loadPage]);
 
   const handleAssign = async () => {
@@ -232,7 +250,7 @@ export default function JobDetailPage() {
           </CardContent>
         </Card>
 
-        {currentStatus === "assigned" && (
+        {isWorker && currentStatus === "assigned" && (
           <Card className="bg-churvox-card border-churvox-border">
             <CardContent className="p-5 space-y-4">
               <div className="text-white font-semibold">Worker Acceptance</div>
@@ -247,9 +265,10 @@ export default function JobDetailPage() {
           </Card>
         )}
 
-        <Card className="bg-churvox-card border-churvox-border">
-          <CardContent className="p-5 space-y-4">
-            <div className="text-white font-semibold">Assign Worker</div>
+        {isEmployer && (
+          <Card className="bg-churvox-card border-churvox-border">
+            <CardContent className="p-5 space-y-4">
+              <div className="text-white font-semibold">Assign Worker</div>
 
             <select
               value={selectedWorker}
@@ -276,12 +295,14 @@ export default function JobDetailPage() {
             >
               {saving ? "Saving..." : "Assign Worker"}
             </Button>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
-        <Card className="bg-churvox-card border-churvox-border">
-          <CardContent className="p-5 space-y-4">
-            <div className="text-white font-semibold">Update Status</div>
+        {isWorker && (
+          <Card className="bg-churvox-card border-churvox-border">
+            <CardContent className="p-5 space-y-4">
+              <div className="text-white font-semibold">Update Status</div>
 
             <div className="flex gap-2 flex-wrap">
               {STATUS_OPTIONS.map((status) => (
@@ -296,8 +317,9 @@ export default function JobDetailPage() {
                 </Button>
               ))}
             </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </Layout>
   );
