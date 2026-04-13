@@ -29,6 +29,16 @@ function safeDate(value) {
   }
 }
 
+function formatMinutes(totalMinutes) {
+  const mins = Number(totalMinutes || 0);
+  if (!mins || mins <= 0) return "0m";
+  const hours = Math.floor(mins / 60);
+  const minutes = mins % 60;
+  if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h`;
+  return `${minutes}m`;
+}
+
 export default function JobDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -243,6 +253,32 @@ export default function JobDetailPage() {
             </div>
           </CardContent>
         </Card>
+
+        {isOwnerView && (
+          <Card className="bg-churvox-card border-churvox-border">
+            <CardContent className="p-5 space-y-4">
+              <div className="text-white font-semibold">Progress Summary</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Accepted</div>
+                  <div className="text-white">{safeDate(job?.accepted_at)}</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Started</div>
+                  <div className="text-white">{safeDate(job?.started_at)}</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Completed</div>
+                  <div className="text-white">{safeDate(job?.completed_at)}</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Time Spent</div>
+                  <div className="text-white">{formatMinutes(job?.time_spent_minutes)}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {(!isOwnerView || !hasAssignedWorker) && (
           <Card className="bg-churvox-card border-churvox-border">
