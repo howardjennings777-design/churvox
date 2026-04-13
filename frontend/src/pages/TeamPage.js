@@ -80,6 +80,15 @@ export default function TeamPage() {
     fetchWorkers();
   }, [authLoading, user?.token, fetchWorkers]);
 
+  useEffect(() => {
+    if (!workerModalOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [workerModalOpen]);
+
   const openWorkerModal = (worker) => {
     const jobs = Array.isArray(worker?.assigned_jobs)
       ? worker.assigned_jobs
