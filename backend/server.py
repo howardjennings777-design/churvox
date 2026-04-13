@@ -2465,11 +2465,22 @@ async def update_team_worker(worker_id: str, payload: dict, current_user: dict =
     if user_role not in ["owner", "admin", "employer"] and not current_user.get("is_admin") and not current_user.get("is_owner"):
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    business_id = current_user.get("business_id") or current_user.get("_id")
-    if not business_id:
-        raise HTTPException(status_code=400, detail="Missing business id")
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
 
-    update_data = {}
+    update_data = {"updated_at": datetime.utcnow()}
 
     if "country" in payload:
         update_data["country"] = str(payload.get("country") or "New Zealand").strip() or "New Zealand"
@@ -2489,45 +2500,57 @@ async def update_team_worker(worker_id: str, payload: dict, current_user: dict =
     if "notes" in payload:
         update_data["notes"] = str(payload.get("notes") or "").strip()
 
-    update_data["updated_at"] = datetime.utcnow()
+    id_queries = [{"id": worker_id}]
+    try:
+        id_queries.append({"_id": ObjectId(worker_id)})
+    except Exception:
+        pass
 
-    result = await db.users.update_one(
-        {
-            "_id": ObjectId(worker_id),
-            "business_id": str(business_id),
-            "role": {"$in": ["worker", "employee", "staff"]}
-        },
+    scope_queries = []
+    if business_id:
+        scope_queries.append({"business_id": business_id})
+        scope_queries.append({"business_id": str(business_id)})
+    if owner_id:
+        scope_queries.append({"owner_id": owner_id})
+
+    worker_query = {"$or": id_queries}
+    if scope_queries:
+        worker_query = {
+            "$and": [
+                {"$or": id_queries},
+                {"$or": scope_queries}
+            ]
+        }
+
+    worker = await db.business_users.find_one(worker_query)
+
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+
+    worker_role = str(worker.get("role") or "").strip().lower()
+    if worker_role in ["owner", "admin", "employer"]:
+        raise HTTPException(status_code=400, detail="Cannot update owner/admin from worker panel")
+
+    await db.business_users.update_one(
+        {"_id": worker["_id"]},
         {"$set": update_data}
     )
 
-    if result.matched_count == 0:
-        result = await db.users.update_one(
-            {
-                "_id": ObjectId(worker_id),
-                "business_id": business_id,
-                "role": {"$in": ["worker", "employee", "staff"]}
-            },
-            {"$set": update_data}
-        )
-
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Worker not found")
-
-    worker = await db.users.find_one({"_id": ObjectId(worker_id)})
-    if not worker:
-        raise HTTPException(status_code=404, detail="Worker not found")
+    updated_worker = await db.business_users.find_one({"_id": worker["_id"]})
+    if not updated_worker:
+        raise HTTPException(status_code=404, detail="Worker not found after update")
 
     return {
         "success": True,
         "data": {
-            "id": str(worker.get("_id")),
-            "name": worker.get("name", ""),
-            "email": worker.get("email", ""),
-            "phone": worker.get("phone", ""),
-            "country": worker.get("country", "New Zealand"),
-            "region": worker.get("region", ""),
-            "notes": worker.get("notes", ""),
-            "status": worker.get("status", "active"),
+            "id": str(updated_worker.get("id") or updated_worker.get("_id") or ""),
+            "name": updated_worker.get("name", ""),
+            "email": updated_worker.get("email", ""),
+            "phone": updated_worker.get("phone", ""),
+            "country": updated_worker.get("country", "New Zealand"),
+            "region": updated_worker.get("region") or updated_worker.get("state") or "",
+            "notes": updated_worker.get("notes", ""),
+            "status": updated_worker.get("status", "active"),
         }
     }
 
