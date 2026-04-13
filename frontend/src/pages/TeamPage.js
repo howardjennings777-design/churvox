@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
@@ -7,26 +7,22 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../components/ui/dialog";
-import { UserPlus, Trash2, Phone, Mail, Shield, Upload, RefreshCw, Clock, CheckCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import { UserPlus, Trash2, Upload, RefreshCw, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { usePlanLimits } from "../hooks/usePlanLimits";
 import { hasPlanAccess, normalizePlan } from "../utils/planRules";
 import { UpgradePrompt } from "../components/UpgradePrompt";
 import axios from "axios";
+
 axios.defaults.withCredentials = true;
 
 const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
 
 export default function TeamPage() {
   const navigate = useNavigate();
-  const [savingNotes, setSavingNotes] = useState(false);
-  const [selectedWorker, setSelectedWorker] = useState(null);
-  const [workerJobs, setWorkerJobs] = useState([]);
-  const [workerModalOpen, setWorkerModalOpen] = useState(false);
-  const [workerNotes, setWorkerNotes] = useState("");
   const { user, isEmployer, loading: authLoading } = useAuth();
-  const { get, post, patch, del, loading } = useApi();
+  const { get, post, del, patch, loading } = useApi();
   const {
     plan,
     includedUsers,
@@ -36,6 +32,18 @@ export default function TeamPage() {
 
   const safePlan = normalizePlan(user?.plan || plan || "solo");
   const canUseOwnerCsv = !!isEmployer && hasPlanAccess(safePlan, "team");
+
+  const [workers, setWorkers] = useState([]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [workerModalOpen, setWorkerModalOpen] = useState(false);
+  const [selectedWorker, setSelectedWorker] = useState(null);
+  const [workerNotes, setWorkerNotes] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
+  const [workerJobs, setWorkerJobs] = useState([]);
+  const [form, setForm] = useState({ name: "", email: "", phone: "" });
+  const [importResults, setImportResults] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef(null);
 
   const isFeatureEnabled = (key) => {
     const normalized = String(key || "").trim().toLowerCase();
@@ -57,17 +65,13 @@ export default function TeamPage() {
     max_workers: Number(includedUsers || 1),
   };
 
-  const [workers, setWorkers] = useState([]);
-  const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", phone: "" });
-  const [deleteId, setDeleteId] = useState(null);
-  const [importResults, setImportResults] = useState(null);
-  const [importing, setImporting] = useState(false);
-  const fileInputRef = useRef(null);
-
   const fetchWorkers = useCallback(async () => {
     const res = await get("/team/workers");
-    if (res.success) setWorkers(res.data);
+    if (res?.success) {
+      setWorkers(Array.isArray(res.data) ? res.data : []);
+    } else {
+      setWorkers([]);
+    }
   }, [get]);
 
   useEffect(() => {
@@ -75,83 +79,68 @@ export default function TeamPage() {
     fetchWorkers();
   }, [authLoading, user?.token, fetchWorkers]);
 
-
-  const openWorkerDetail = async (worker) => {
-    setSelectedWorker({ ...worker, notes: worker.notes || "" });
-    setWorkerJobs([]);
+  const openWorkerModal = (worker) => {
+    const jobs = Array.isArray(worker?.assigned_jobs)
+      ? worker.assigned_jobs
+      : Array.isArray(worker?.jobs)
+      ? worker.jobs
+      : [];
+    setSelectedWorker(worker);
     setWorkerNotes(worker?.notes || "");
+    setWorkerJobs(jobs);
     setWorkerModalOpen(true);
+  };
 
-    try {
-      const res = await get("/jobs");
-      const allJobs = res?.success && Array.isArray(res.data) ? res.data : [];
-      const workerId = String(worker?.id || worker?._id || "");
-
-      const filtered = allJobs
-        .filter((job) => String(job.assigned_worker_id || "") === workerId)
-        .map((job) => ({
-          id: job.id || job._id,
-          title: job.title || "Untitled Job",
-          customer_name: job.customer_name || job.client_name || "No client",
-          address: job.address || "No address",
-          status: job.status || "assigned",
-          scheduled_date: job.scheduled_date || "",
-          scheduled_time: job.scheduled_time || "",
-        }));
-
-      setWorkerJobs(filtered);
-    } catch (err) {
-      console.error("WORKER_DETAIL_LOAD_ERROR", err);
-      setWorkerJobs([]);
-    }
+  const closeWorkerModal = () => {
+    setWorkerModalOpen(false);
+    setSelectedWorker(null);
+    setWorkerNotes("");
+    setWorkerJobs([]);
   };
 
   const handleAdd = async (e) => {
     e.preventDefault();
-    const res = await post("/team/workers", form);
-    if (res.success) {
+    const res = await post("/team/workers", {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+    });
+
+    if (res?.success) {
       toast.success(`Invite sent to ${form.email}`);
       setForm({ name: "", email: "", phone: "" });
       setShowAdd(false);
       fetchWorkers();
     } else {
-      toast.error(res.error || "Failed to invite worker");
+      toast.error(res?.error || "Failed to invite worker");
     }
   };
 
+  const handleDelete = async (worker) => {
+    const workerId = worker?.id || worker?._id;
+    if (!workerId) return;
 
-  const saveWorkerNotes = async () => {
-    if (!selectedWorker?.id && !selectedWorker?._id) return;
+    const confirmed = window.confirm(`Remove ${worker?.name || "this worker"}?`);
+    if (!confirmed) return;
 
-    const workerId = selectedWorker.id || selectedWorker._id;
-    const res = await patch(`/team/workers/${workerId}/notes`, { notes: workerNotes });
-
+    const res = await del(`/team/workers/${workerId}`);
     if (res?.success) {
-      toast.success("Worker notes saved");
-      setSelectedWorker((prev) => prev ? { ...prev, notes: workerNotes } : prev);
-    } else {
-      toast.error(res?.error || "Failed to save notes");
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteId) return;
-    const res = await del(`/team/workers/${deleteId}`);
-    if (res.success) {
       toast.success("Worker removed");
-      setDeleteId(null);
+      if (selectedWorker && (selectedWorker.id === workerId || selectedWorker._id === workerId)) {
+        closeWorkerModal();
+      }
       fetchWorkers();
     } else {
-      toast.error(res.error || "Failed to remove worker");
+      toast.error(res?.error || "Failed to remove worker");
     }
   };
 
   const handleResendInvite = async (workerId, email) => {
     const res = await post(`/team/resend-invite/${workerId}`);
-    if (res.success) {
+    if (res?.success) {
       toast.success(`Invite resent to ${email}`);
     } else {
-      toast.error(res.error || "Failed to resend invite");
+      toast.error(res?.error || "Failed to resend invite");
     }
   };
 
@@ -186,6 +175,42 @@ export default function TeamPage() {
     }
   };
 
+  const saveWorkerNotes = async () => {
+    const workerId = selectedWorker?.id || selectedWorker?._id;
+    if (!workerId) {
+      toast.error("Worker not found");
+      return;
+    }
+
+    setSavingNotes(true);
+    try {
+      const res = await patch(`/team/workers/${workerId}/notes`, {
+        notes: workerNotes,
+      });
+
+      if (res?.success) {
+        toast.success("Worker notes saved");
+
+        setWorkers((prev) =>
+          prev.map((worker) => {
+            const id = worker.id || worker._id;
+            return id === workerId ? { ...worker, notes: workerNotes } : worker;
+          })
+        );
+
+        setSelectedWorker((prev) =>
+          prev ? { ...prev, notes: workerNotes } : prev
+        );
+      } else {
+        toast.error(res?.error || "Failed to save notes");
+      }
+    } catch (err) {
+      toast.error("Failed to save notes");
+    } finally {
+      setSavingNotes(false);
+    }
+  };
+
   if (!isEmployer) {
     return (
       <Layout>
@@ -208,7 +233,7 @@ export default function TeamPage() {
           <UpgradePrompt feature="team" message="Team management requires a Team plan or higher." />
         ) : (
           <>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
                 <h1 className="text-2xl font-bold text-white" data-testid="team-heading">Team</h1>
                 <p className="text-sm text-churvox-muted mt-1">
@@ -218,7 +243,8 @@ export default function TeamPage() {
                   )}
                 </p>
               </div>
-              <div className="flex gap-2">
+
+              <div className="flex gap-2 flex-wrap">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -227,6 +253,7 @@ export default function TeamPage() {
                   className="hidden"
                   data-testid="csv-file-input"
                 />
+
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -243,6 +270,7 @@ export default function TeamPage() {
                   <Upload size={16} className="mr-2" />
                   {importing ? "Importing..." : "CSV Import"}
                 </Button>
+
                 <Button
                   onClick={() => {
                     if (!canAddWorker(workers.length)) {
@@ -254,7 +282,8 @@ export default function TeamPage() {
                   className="bg-churvox-accent hover:bg-churvox-accent/90"
                   data-testid="add-worker-button"
                 >
-                  <UserPlus size={16} className="mr-2" /> Invite Worker
+                  <UserPlus size={16} className="mr-2" />
+                  Invite Worker
                 </Button>
               </div>
             </div>
@@ -269,9 +298,9 @@ export default function TeamPage() {
                     </button>
                   </div>
                   <p className="text-sm text-churvox-muted mb-2">
-                    {importResults.invited} invited, {importResults.skipped} skipped of {importResults.total} rows
+                    {importResults.invited || 0} invited, {importResults.skipped || 0} skipped of {importResults.total || 0} rows
                   </p>
-                  {importResults.details?.filter((d) => d.status !== "invited").length > 0 && (
+                  {Array.isArray(importResults.details) && importResults.details.filter((d) => d.status !== "invited").length > 0 && (
                     <div className="space-y-1 max-h-32 overflow-y-auto">
                       {importResults.details.filter((d) => d.status !== "invited").map((d, i) => (
                         <p key={i} className="text-xs text-churvox-muted/70">
@@ -290,261 +319,226 @@ export default function TeamPage() {
                   <UserPlus className="mx-auto mb-3 text-churvox-muted/40" size={32} />
                   <p className="text-white font-medium mb-1">No team members yet</p>
                   <p className="text-xs text-churvox-muted mb-4 max-w-xs mx-auto">
-                    Invite workers to join your team. They'll receive an email to set up their account and can then view and update their assigned work.
+                    Invite workers to join your team.
                   </p>
-                  <div className="flex gap-2 justify-center">
-                    <Button onClick={() => setShowAdd(true)} size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="add-first-worker">
-                      <UserPlus size={14} className="mr-1" /> Invite Your First Worker
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        if (!isFeatureEnabled("csv_team_import")) {
-                          toast.error("CSV team import is for owners on Team, Pro, or Enterprise.");
-                          return;
-                        }
-                        fileInputRef.current?.click();
-                      }}
-                      className="border-churvox-border text-churvox-muted hover:text-white"
-                      data-testid="csv-import-first"
-                    >
-                      <Upload size={14} className="mr-1" /> Import CSV
-                    </Button>
-                  </div>
+                  <Button
+                    onClick={() => setShowAdd(true)}
+                    size="sm"
+                    className="bg-churvox-accent hover:bg-churvox-accent/90"
+                    data-testid="add-first-worker"
+                  >
+                    <UserPlus size={14} className="mr-1" />
+                    Invite Your First Worker
+                  </Button>
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-3">
-                {workers.map((w) => (
-                  <Card key={w.id} className="bg-churvox-card border-churvox-border" data-testid={`worker-card-${w.id}`}>
-                    <CardContent className="p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 rounded-full bg-churvox-accent/20 flex items-center justify-center text-churvox-accent font-bold text-sm">
-                          {w.name?.charAt(0)?.toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <button type="button" onClick={() => openWorkerDetail(w)} className="text-white font-medium underline text-left">{w.name}</button>
-                            {w.status === "invited" ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20" data-testid={`worker-status-invited-${w.id}`}>
-                                <Clock size={10} /> Pending
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-500/10 text-green-400 border border-green-500/20" data-testid={`worker-status-active-${w.id}`}>
-                                <CheckCircle size={10} /> Active
-                              </span>
+              <div className="space-y-3">
+                {workers.map((worker) => {
+                  const workerId = worker.id || worker._id;
+                  return (
+                    <Card
+                      key={workerId}
+                      className="bg-churvox-card border-churvox-border"
+                      data-testid={`worker-card-${workerId}`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div
+                            className="flex-1 cursor-pointer"
+                            onClick={() => openWorkerModal(worker)}
+                          >
+                            <div className="text-white font-semibold">
+                              {worker.name || "Unnamed Worker"}
+                            </div>
+                            <div className="text-sm text-churvox-muted">
+                              {worker.email || "-"}
+                            </div>
+                            <div className="text-sm text-churvox-muted">
+                              {worker.phone || "-"}
+                            </div>
+                            {worker.status && (
+                              <div className="text-xs text-churvox-muted mt-1">
+                                Status: {worker.status}
+                              </div>
                             )}
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-churvox-muted mt-0.5">
-                            <span className="flex items-center gap-1"><Mail size={12} /> {w.email}</span>
-                            {w.phone && <span className="flex items-center gap-1"><Phone size={12} /> {w.phone}</span>}
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            {worker.status === "pending" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleResendInvite(workerId, worker.email)}
+                                className="border-churvox-border text-churvox-muted hover:text-white"
+                              >
+                                <RefreshCw size={14} />
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDelete(worker)}
+                              className="border-red-500/30 text-red-400 hover:text-red-300"
+                            >
+                              <Trash2 size={14} />
+                            </Button>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {w.status === "invited" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleResendInvite(w.id, w.email)}
-                            className="text-churvox-muted hover:text-white hover:bg-white/5"
-                            data-testid={`resend-invite-${w.id}`}
-                            title="Resend invite email"
-                          >
-                            <RefreshCw size={14} />
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(w.id)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10" data-testid={`delete-worker-${w.id}`}>
-                          <Trash2 size={16} />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
-
-            <Dialog open={showAdd} onOpenChange={setShowAdd}>
-              <DialogContent className="bg-churvox-card border-churvox-border" data-testid="add-worker-dialog">
-                <DialogHeader>
-                  <DialogTitle className="text-white">Invite Worker</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleAdd} className="space-y-4">
-                  <div>
-                    <Label className="text-churvox-muted">Name</Label>
-                    <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="bg-churvox-bg border-churvox-border text-white" placeholder="Full name" data-testid="worker-name-input" />
-                  </div>
-                  <div>
-                    <Label className="text-churvox-muted">Email</Label>
-                    <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required className="bg-churvox-bg border-churvox-border text-white" placeholder="email@example.com" data-testid="worker-email-input" />
-                  </div>
-                  <div>
-                    <Label className="text-churvox-muted">Phone (optional)</Label>
-                    <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" placeholder="0400 000 000" data-testid="worker-phone-input" />
-                  </div>
-                  <p className="text-xs text-churvox-muted/70">
-                    An invite email will be sent. The worker will set their own password when they accept.
-                  </p>
-                  <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setShowAdd(false)} className="border-churvox-border text-churvox-muted">Cancel</Button>
-                    <Button type="submit" disabled={loading} className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="submit-worker-button">
-                      {loading ? "Sending..." : "Send Invite"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-
-                    {!!deleteId && (
-          <div
-            className="fixed inset-0 z-[1000] bg-black/60 flex items-center justify-center p-4"
-            onClick={() => setDeleteId(null)}
-            data-testid="delete-worker-modal-overlay"
-          >
-            <div
-              className="w-full max-w-md rounded-2xl border border-churvox-border bg-churvox-card shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-              data-testid="delete-worker-modal"
-            >
-              <div className="flex items-center justify-between p-4 border-b border-churvox-border">
-                <h2 className="text-white font-semibold text-lg">Remove Worker</h2>
-                <button
-                  type="button"
-                  onClick={() => setDeleteId(null)}
-                  className="text-churvox-muted hover:text-white text-xl leading-none"
-                  data-testid="close-delete-worker-modal"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="p-4">
-                <p className="text-churvox-muted">
-                  Are you sure you want to remove this worker? This cannot be undone.
-                </p>
-
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setDeleteId(null)}
-                    className="border-churvox-border text-churvox-muted"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={loading}
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                    data-testid="confirm-delete-worker"
-                  >
-                    {loading ? "Removing..." : "Remove"}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
           </>
         )}
       </div>
 
-      {workerModalOpen && selectedWorker && (
-        <div className="fixed inset-0 z-[1000] bg-black/60 flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl rounded-xl border border-churvox-border bg-churvox-card p-4 max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <div>
-                <h2 className="text-xl font-semibold text-white">{selectedWorker.name || "Worker"}</h2>
-                <p className="text-sm text-churvox-muted">{selectedWorker.email || ""}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setWorkerModalOpen(false)}
-                className="px-3 py-2 rounded-md border border-churvox-border text-churvox-muted"
-              >
-                Close
-              </button>
+      <Dialog open={showAdd} onOpenChange={setShowAdd}>
+        <DialogContent className="bg-churvox-card border-churvox-border text-white">
+          <DialogHeader>
+            <DialogTitle>Invite Worker</DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleAdd} className="space-y-4">
+            <div>
+              <Label htmlFor="worker-name">Name</Label>
+              <Input
+                id="worker-name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="bg-churvox-bg border-churvox-border text-white"
+                required
+              />
             </div>
 
-            <div className="grid gap-4">
-              <div className="rounded-lg border border-churvox-border p-3">
-                <div className="text-sm text-churvox-muted mb-1">Phone</div>
+            <div>
+              <Label htmlFor="worker-email">Email</Label>
+              <Input
+                id="worker-email"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="bg-churvox-bg border-churvox-border text-white"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="worker-phone">Phone</Label>
+              <Input
+                id="worker-phone"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                className="bg-churvox-bg border-churvox-border text-white"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setShowAdd(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-churvox-accent hover:bg-churvox-accent/90">
+                Send Invite
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={workerModalOpen} onOpenChange={(open) => !open && closeWorkerModal()}>
+        <DialogContent className="bg-churvox-card border-churvox-border text-white max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{selectedWorker?.name || "Worker"}</DialogTitle>
+          </DialogHeader>
+
+          {selectedWorker && (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-churvox-border p-4">
+                <div className="text-sm text-churvox-muted">Email</div>
+                <div className="text-white">{selectedWorker.email || "-"}</div>
+              </div>
+
+              <div className="rounded-lg border border-churvox-border p-4">
+                <div className="text-sm text-churvox-muted">Phone</div>
                 <div className="text-white">{selectedWorker.phone || "-"}</div>
               </div>
 
-              <div className="rounded-lg border border-churvox-border p-3">
-                <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="rounded-lg border border-churvox-border p-4 space-y-3">
+                <div className="flex items-center justify-between gap-3">
                   <div className="text-white font-medium">Worker Notes</div>
-                  <button
-                    type="button"
+                  <Button
                     onClick={saveWorkerNotes}
-                    className="px-3 py-2 rounded-md bg-churvox-accent text-white"
+                    disabled={savingNotes}
+                    className="bg-churvox-accent hover:bg-churvox-accent/90"
                   >
-                    Save Notes
-                  </button>
+                    {savingNotes ? "Saving..." : "Save Notes"}
+                  </Button>
                 </div>
+
                 <textarea
                   value={workerNotes}
                   onChange={(e) => setWorkerNotes(e.target.value)}
                   placeholder="Add notes for this worker..."
-                  className="w-full min-h-[120px] rounded-md border border-churvox-border bg-churvox-bg px-3 py-2 text-white"
+                  rows={5}
+                  className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3 outline-none"
                 />
               </div>
 
-              <div className="rounded-lg border border-churvox-border p-3">
-                <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="rounded-lg border border-churvox-border p-4 space-y-3">
+                <div className="flex items-center justify-between gap-3">
                   <div className="text-white font-medium">Assigned Jobs</div>
-                  <button
-                    type="button"
+                  <Button
                     onClick={() => navigate(`/jobs/new?workerId=${selectedWorker.id || selectedWorker._id}`)}
-                    className="px-3 py-2 rounded-md bg-churvox-accent text-white"
+                    className="bg-churvox-accent hover:bg-churvox-accent/90"
                   >
                     Add / Assign Job
-                  </button>
+                  </Button>
                 </div>
 
-                {workerJobs.length === 0 ? (
-                  <div className="text-sm text-churvox-muted">No jobs assigned yet.</div>
-                ) : (
+                {workerJobs.length > 0 ? (
                   <div className="space-y-3">
-                    {workerJobs.map((job) => (
-                      <div key={job.id} className="rounded-lg border border-churvox-border p-3">
-                        <div className="flex items-start justify-between gap-3">
+                    {workerJobs.map((job, index) => {
+                      const jobId = job.id || job._id;
+                      return (
+                        <div key={jobId || index} className="rounded-lg border border-churvox-border p-3 flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <div className="text-white font-medium">{job.title}</div>
-                            <div className="text-sm text-churvox-muted">{job.customer_name}</div>
-                            <div className="text-sm text-churvox-muted">{job.address}</div>
+                            <div className="text-white font-medium">{job.title || job.job_type || "Job"}</div>
+                            <div className="text-sm text-churvox-muted">{job.client_name || "-"}</div>
+                            <div className="text-sm text-churvox-muted">{job.address || "-"}</div>
+                            <div className="text-sm text-churvox-muted">Status: {job.status || "-"}</div>
                             <div className="text-sm text-churvox-muted">
-                              Status: {job.status}
+                              Date: {job.scheduled_date ? String(job.scheduled_date).slice(0, 10) : "-"}
                             </div>
-                            {!!(job.scheduled_date || job.scheduled_time) && (
-                              <div className="text-sm text-churvox-muted">
-                                {job.scheduled_date ? `Date: ${String(job.scheduled_date).slice(0, 10)}` : ""}
-                                {job.scheduled_date && job.scheduled_time ? " · " : ""}
-                                {job.scheduled_time ? `Time: ${job.scheduled_time}` : ""}
-                              </div>
-                            )}
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/jobs/${job.id}`)}
-                            className="px-3 py-2 rounded-md border border-churvox-border text-white whitespace-nowrap"
-                          >
-                            Open Job
-                          </button>
+
+                          {jobId && (
+                            <Button
+                              variant="outline"
+                              onClick={() => navigate(`/jobs/${jobId}`)}
+                            >
+                              Open Job
+                            </Button>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
+                ) : (
+                  <div className="text-sm text-churvox-muted">No assigned jobs yet.</div>
                 )}
               </div>
-            </div>
-          </div>
-        </div>
-      )}
 
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={closeWorkerModal}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
