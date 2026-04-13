@@ -4152,6 +4152,13 @@ async def stripe_billing_webhook(request: Request):
         raise HTTPException(status_code=500, detail="Webhook handler failed")
 
 
+
+
+@api_router.post("/billing/webhook")
+async def stripe_billing_webhook_api(request: Request):
+    return await stripe_billing_webhook(request)
+
+
 app.include_router(api_router)
 
 FRONTEND_DIST_DIR = Path(__file__).resolve().parent / "frontend_dist"
