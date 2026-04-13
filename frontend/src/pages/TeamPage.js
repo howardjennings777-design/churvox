@@ -83,7 +83,19 @@ export default function TeamPage() {
       const res = await get("/jobs");
       const allJobs = res?.success && Array.isArray(res.data) ? res.data : [];
       const workerId = String(worker?.id || worker?._id || "");
-      const filtered = allJobs.filter((job) => String(job.assigned_worker_id || "") === workerId);
+
+      const filtered = allJobs
+        .filter((job) => String(job.assigned_worker_id || "") === workerId)
+        .map((job) => ({
+          id: job.id || job._id,
+          title: job.title || "Untitled Job",
+          customer_name: job.customer_name || job.client_name || "No client",
+          address: job.address || "No address",
+          status: job.status || "assigned",
+          scheduled_date: job.scheduled_date || "",
+          scheduled_time: job.scheduled_time || "",
+        }));
+
       setWorkerJobs(filtered);
     } catch (err) {
       console.error("WORKER_DETAIL_LOAD_ERROR", err);
@@ -461,11 +473,31 @@ export default function TeamPage() {
                 ) : (
                   <div className="space-y-3">
                     {workerJobs.map((job) => (
-                      <div key={job.id || job._id} className="rounded-lg border border-churvox-border p-3">
-                        <div className="text-white font-medium">{job.title || "Untitled Job"}</div>
-                        <div className="text-sm text-churvox-muted">{job.customer_name || "No client"}</div>
-                        <div className="text-sm text-churvox-muted">{job.address || "No address"}</div>
-                        <div className="text-sm text-churvox-muted">Status: {job.status || "assigned"}</div>
+                      <div key={job.id} className="rounded-lg border border-churvox-border p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="text-white font-medium">{job.title}</div>
+                            <div className="text-sm text-churvox-muted">{job.customer_name}</div>
+                            <div className="text-sm text-churvox-muted">{job.address}</div>
+                            <div className="text-sm text-churvox-muted">
+                              Status: {job.status}
+                            </div>
+                            {!!(job.scheduled_date || job.scheduled_time) && (
+                              <div className="text-sm text-churvox-muted">
+                                {job.scheduled_date ? `Date: ${String(job.scheduled_date).slice(0, 10)}` : ""}
+                                {job.scheduled_date && job.scheduled_time ? " · " : ""}
+                                {job.scheduled_time ? `Time: ${job.scheduled_time}` : ""}
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/jobs/${job.id}`)}
+                            className="px-3 py-2 rounded-md border border-churvox-border text-white whitespace-nowrap"
+                          >
+                            Open Job
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
