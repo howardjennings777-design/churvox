@@ -258,7 +258,19 @@ export default function JobDetailPage() {
           <Card className="bg-churvox-card border-churvox-border">
             <CardContent className="p-5 space-y-4">
               <div className="text-white font-semibold">Progress Summary</div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Current Status</div>
+                  <div className="text-white">{niceStatus(job?.status)}</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Created</div>
+                  <div className="text-white">{safeDate(job?.created_at)}</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Last Updated</div>
+                  <div className="text-white">{safeDate(job?.updated_at)}</div>
+                </div>
                 <div>
                   <div className="text-xs uppercase tracking-wide text-churvox-muted">Accepted</div>
                   <div className="text-white">{safeDate(job?.accepted_at)}</div>
@@ -274,6 +286,26 @@ export default function JobDetailPage() {
                 <div>
                   <div className="text-xs uppercase tracking-wide text-churvox-muted">Time Spent</div>
                   <div className="text-white">{formatMinutes(job?.time_spent_minutes)}</div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Quote</div>
+                  <div className="text-white">
+                    {job?.quote_id ? (
+                      <Link to={`/quotes/${job.quote_id}`} className="text-churvox-accent hover:underline">
+                        Open Quote
+                      </Link>
+                    ) : "-"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Invoice</div>
+                  <div className="text-white">
+                    {job?.invoice_id ? (
+                      <Link to={`/invoices/${job.invoice_id}`} className="text-churvox-accent hover:underline">
+                        Open Invoice
+                      </Link>
+                    ) : "-"}
+                  </div>
                 </div>
               </div>
             </CardContent>
