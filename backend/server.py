@@ -2258,6 +2258,67 @@ async def get_clients(current_user: dict = Depends(get_current_user)):
         return []
 
 
+
+
+@api_router.patch("/team/workers/{worker_id}/notes")
+async def update_team_worker_notes(worker_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["owner", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    payload = await request.json()
+    notes = str(payload.get("notes") or "").strip()
+
+    worker = None
+    try:
+        if len(str(worker_id)) == 24:
+            worker = await db.business_users.find_one({
+                "_id": ObjectId(worker_id),
+                "role": "worker",
+                "$or": [
+                    {"business_id": business_id},
+                    {"business_id": str(business_id)},
+                    {"owner_id": owner_id},
+                ]
+            })
+    except Exception:
+        worker = None
+
+    if not worker:
+        worker = await db.business_users.find_one({
+            "id": worker_id,
+            "role": "worker",
+            "$or": [
+                {"business_id": business_id},
+                {"business_id": str(business_id)},
+                {"owner_id": owner_id},
+            ]
+        })
+
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+
+    await db.business_users.update_one(
+        {"_id": worker.get("_id")},
+        {"$set": {"notes": notes}}
+    )
+
+    return {"success": True, "notes": notes, "message": "Worker notes saved"}
+
 @api_router.get("/team/workers")
 async def get_team_workers(current_user: dict = Depends(get_current_user)):
     business_id = str(

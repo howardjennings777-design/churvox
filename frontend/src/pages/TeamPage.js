@@ -23,8 +23,9 @@ export default function TeamPage() {
   const [selectedWorker, setSelectedWorker] = useState(null);
   const [workerJobs, setWorkerJobs] = useState([]);
   const [workerModalOpen, setWorkerModalOpen] = useState(false);
+  const [workerNotes, setWorkerNotes] = useState("");
   const { user, isEmployer, loading: authLoading } = useAuth();
-  const { get, post, del, loading } = useApi();
+  const { get, post, patch, del, loading } = useApi();
   const {
     plan,
     includedUsers,
@@ -77,6 +78,7 @@ export default function TeamPage() {
   const openWorkerDetail = async (worker) => {
     setSelectedWorker(worker);
     setWorkerJobs([]);
+    setWorkerNotes(worker?.notes || "");
     setWorkerModalOpen(true);
 
     try {
@@ -113,6 +115,21 @@ export default function TeamPage() {
       fetchWorkers();
     } else {
       toast.error(res.error || "Failed to invite worker");
+    }
+  };
+
+
+  const saveWorkerNotes = async () => {
+    if (!selectedWorker?.id && !selectedWorker?._id) return;
+
+    const workerId = selectedWorker.id || selectedWorker._id;
+    const res = await patch(`/team/workers/${workerId}/notes`, { notes: workerNotes });
+
+    if (res?.success) {
+      toast.success("Worker notes saved");
+      setSelectedWorker((prev) => prev ? { ...prev, notes: workerNotes } : prev);
+    } else {
+      toast.error(res?.error || "Failed to save notes");
     }
   };
 
@@ -454,6 +471,25 @@ export default function TeamPage() {
               <div className="rounded-lg border border-churvox-border p-3">
                 <div className="text-sm text-churvox-muted mb-1">Phone</div>
                 <div className="text-white">{selectedWorker.phone || "-"}</div>
+              </div>
+
+              <div className="rounded-lg border border-churvox-border p-3">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="text-white font-medium">Worker Notes</div>
+                  <button
+                    type="button"
+                    onClick={saveWorkerNotes}
+                    className="px-3 py-2 rounded-md bg-churvox-accent text-white"
+                  >
+                    Save Notes
+                  </button>
+                </div>
+                <textarea
+                  value={workerNotes}
+                  onChange={(e) => setWorkerNotes(e.target.value)}
+                  placeholder="Add notes for this worker..."
+                  className="w-full min-h-[120px] rounded-md border border-churvox-border bg-churvox-bg px-3 py-2 text-white"
+                />
               </div>
 
               <div className="rounded-lg border border-churvox-border p-3">
