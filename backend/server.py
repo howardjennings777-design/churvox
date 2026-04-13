@@ -2457,6 +2457,81 @@ async def update_team_worker_notes(worker_id: str, request: Request, current_use
 
     return {"success": True, "notes": notes, "message": "Worker notes saved"}
 
+
+
+@api_router.patch("/team/workers/{worker_id}")
+async def update_team_worker(worker_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    user_role = str(current_user.get("role") or "").strip().lower()
+    if user_role not in ["owner", "admin", "employer"] and not current_user.get("is_admin") and not current_user.get("is_owner"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    business_id = current_user.get("business_id") or current_user.get("_id")
+    if not business_id:
+        raise HTTPException(status_code=400, detail="Missing business id")
+
+    update_data = {}
+
+    if "country" in payload:
+        update_data["country"] = str(payload.get("country") or "New Zealand").strip() or "New Zealand"
+
+    if "region" in payload:
+        update_data["region"] = str(payload.get("region") or "").strip()
+
+    if "name" in payload:
+        update_data["name"] = str(payload.get("name") or "").strip()
+
+    if "email" in payload:
+        update_data["email"] = str(payload.get("email") or "").strip().lower()
+
+    if "phone" in payload:
+        update_data["phone"] = str(payload.get("phone") or "").strip()
+
+    if "notes" in payload:
+        update_data["notes"] = str(payload.get("notes") or "").strip()
+
+    update_data["updated_at"] = datetime.utcnow()
+
+    result = await db.users.update_one(
+        {
+            "_id": ObjectId(worker_id),
+            "business_id": str(business_id),
+            "role": {"$in": ["worker", "employee", "staff"]}
+        },
+        {"$set": update_data}
+    )
+
+    if result.matched_count == 0:
+        result = await db.users.update_one(
+            {
+                "_id": ObjectId(worker_id),
+                "business_id": business_id,
+                "role": {"$in": ["worker", "employee", "staff"]}
+            },
+            {"$set": update_data}
+        )
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Worker not found")
+
+    worker = await db.users.find_one({"_id": ObjectId(worker_id)})
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+
+    return {
+        "success": True,
+        "data": {
+            "id": str(worker.get("_id")),
+            "name": worker.get("name", ""),
+            "email": worker.get("email", ""),
+            "phone": worker.get("phone", ""),
+            "country": worker.get("country", "New Zealand"),
+            "region": worker.get("region", ""),
+            "notes": worker.get("notes", ""),
+            "status": worker.get("status", "active"),
+        }
+    }
+
+
 @api_router.get("/team/workers")
 async def get_team_workers(current_user: dict = Depends(get_current_user)):
     business_id = str(
