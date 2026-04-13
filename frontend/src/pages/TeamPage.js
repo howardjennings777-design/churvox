@@ -441,17 +441,24 @@ export default function TeamPage() {
 
       {workerModalOpen && selectedWorker && (
         <div
-          className="fixed inset-0 z-[1000] bg-black/70 flex items-center justify-center p-4"
-          onClick={closeWorkerModal}
+          className="fixed inset-0 z-[1000] bg-black/70 flex items-center justify-center p-4 pointer-events-auto"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeWorkerModal();
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeWorkerModal();
+          }}
         >
           <div
-            className="bg-churvox-card border border-churvox-border text-white max-w-2xl w-full rounded-xl shadow-2xl p-6 space-y-4"
+            className="bg-churvox-card border border-churvox-border text-white max-w-2xl w-full rounded-xl shadow-2xl p-6 space-y-4 pointer-events-auto relative z-[1001]"
+            onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="text-xl font-semibold">{selectedWorker?.name || "Worker"}</div>
               <button
                 type="button"
+                onMouseDown={(e) => e.stopPropagation()}
                 onClick={closeWorkerModal}
                 className="text-white/70 hover:text-white text-2xl leading-none"
               >
@@ -474,6 +481,7 @@ export default function TeamPage() {
                 <div className="text-white font-medium">Worker Notes</div>
                 <Button
                   type="button"
+                  onMouseDown={(e) => e.stopPropagation()}
                   onClick={saveWorkerNotes}
                   disabled={savingNotes}
                   className="bg-churvox-accent hover:bg-churvox-accent/90"
@@ -483,6 +491,8 @@ export default function TeamPage() {
               </div>
 
               <textarea
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
                 value={workerNotes}
                 onChange={(e) => setWorkerNotes(e.target.value)}
                 placeholder="Add notes for this worker..."
@@ -496,6 +506,7 @@ export default function TeamPage() {
                 <div className="text-white font-medium">Assigned Jobs</div>
                 <Button
                   type="button"
+                  onMouseDown={(e) => e.stopPropagation()}
                   onClick={() => navigate(`/jobs/new?workerId=${selectedWorker.id || selectedWorker._id}`)}
                   className="bg-churvox-accent hover:bg-churvox-accent/90"
                 >
@@ -523,6 +534,7 @@ export default function TeamPage() {
                           <Button
                             type="button"
                             variant="outline"
+                            onMouseDown={(e) => e.stopPropagation()}
                             onClick={() => navigate(`/jobs/${jobId}`)}
                           >
                             Open Job
@@ -538,7 +550,7 @@ export default function TeamPage() {
             </div>
 
             <div className="flex justify-end">
-              <Button type="button" variant="outline" onClick={closeWorkerModal}>
+              <Button type="button" variant="outline" onMouseDown={(e) => e.stopPropagation()} onClick={closeWorkerModal}>
                 Close
               </Button>
             </div>
