@@ -12,7 +12,8 @@ import { toast } from "sonner";
 import { usePlanLimits } from "../hooks/usePlanLimits";
 import { hasPlanAccess, normalizePlan } from "../utils/planRules";
 import { UpgradePrompt } from "../components/UpgradePrompt";
-import axios from "axios";
+import axios from "axios"
+import API_BASE from "../lib/apiBase";
 
 axios.defaults.withCredentials = true;
 
@@ -196,7 +197,7 @@ export default function TeamPage() {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.post(`${API_URL}/api/team/import-csv`, formData, {
+      const res = await axios.post(`${API_BASE}/api/team/import-csv`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",

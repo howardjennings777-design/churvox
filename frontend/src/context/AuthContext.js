@@ -1,22 +1,10 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import axios from "axios"
-import { normalizePlan, getPlanFeatures } from "../utils/planRules";
+import axios from "axios";
+import API_BASE from "../lib/apiBase";
+
 axios.defaults.withCredentials = true;
 
 const AuthContext = createContext(null);
-import API_BASE from "../lib/apiBase";
-
-
-const mapUserPlanData = (rawUser, tokenOverride = null) => {
-  const normalizedPlan = normalizePlan(rawUser?.plan);
-  const nextUser = {
-    ...(rawUser || {}),
-    plan: normalizedPlan,
-    plan_features: rawUser?.plan_features || getPlanFeatures(normalizedPlan),
-  };
-  if (tokenOverride) nextUser.token = tokenOverride;
-  return nextUser;
-};
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -24,58 +12,109 @@ export function AuthProvider({ children }) {
 
   const checkAuth = useCallback(async () => {
     const token = localStorage.getItem("token");
-    if (!token) { setLoading(false); return; }
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await axios.get(`${API_BASE}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` }, withCredentials: true,
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       });
-      setUser(mapUserPlanData(response.data, token));
-    } catch (err) {
-      try { localStorage.removeItem("token"); } catch (_) {}
-      try { sessionStorage.removeItem("token"); } catch (_) {}
-      try { localStorage.removeItem("owner_portal_session"); } catch (_) {}
-      try { localStorage.removeItem("platform_owner_email"); } catch (_) {}
+      setUser({ ...response.data, token });
+    } catch {
+      localStorage.removeItem("token");
+      localStorage.removeItem("owner_portal_session");
+      localStorage.removeItem("platform_owner_email");
       setUser(null);
-      console.error("Auth check failed", err?.response?.data || err?.message || err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { checkAuth(); }, [checkAuth]);
-
   useEffect(() => {
-    window.addEventListener("churvox-auth-refresh", checkAuth);
-    return () => window.removeEventListener("churvox-auth-refresh", checkAuth);
+    checkAuth();
   }, [checkAuth]);
 
   const login = useCallback(async (email, password) => {
-    const response = await axios.post(`${API_BASE}/api/auth/login`, { email, password }, { withCredentials: true });
-    const { token, ...userData } = response.data || {};
-    if (token) localStorage.setItem("token", token);
-    const nextUser = mapUserPlanData(userData, token || null);
-    setUser(nextUser);
-    return { ...nextUser, token };
+    const response = await axios.post(
+      `${API_BASE}/api/auth/login`,
+      { email, password },
+      { withCredentials: true }
+    );
+
+    const token =
+      response?.data?.token ||
+      response?.data?.access_token ||
+      response?.data?.auth_token ||
+      null;
+
+    const userData = response?.data?.user ? response.data.user : response.data;
+
+    if (!token) {
+      throw new Error("No token returned from login.");
+    }
+
+    localStorage.setItem("token", token);
+    setUser({ ...userData, token });
+
+    if (
+      email === "hello@churvox.com" ||
+      userData?.role === "owner" ||
+      userData?.role === "admin" ||
+      userData?.is_owner === true ||
+      userData?.is_admin === true ||
+      userData?.is_platform_owner === true
+    ) {
+      localStorage.setItem("owner_portal_session", "true");
+      localStorage.setItem("platform_owner_email", email);
+    }
+
+    return { ...response.data, token };
   }, []);
 
   const register = useCallback(async (userData) => {
-    const response = await axios.post(`${API_BASE}/api/auth/register`, userData, { withCredentials: true });
-    const { token, ...restData } = response.data || {};
-    if (token) localStorage.setItem("token", token);
-    const nextUser = mapUserPlanData(restData, token || null);
-    setUser(nextUser);
-    return { ...nextUser, token };
+    const response = await axios.post(
+      `${API_BASE}/api/auth/register`,
+      userData,
+      { withCredentials: true }
+    );
+
+    const token =
+      response?.data?.token ||
+      response?.data?.access_token ||
+      response?.data?.auth_token ||
+      null;
+
+    const restData = response?.data?.user ? response.data.user : response.data;
+
+    if (!token) {
+      throw new Error("No token returned from register.");
+    }
+
+    localStorage.setItem("token", token);
+    setUser({ ...restData, token });
+
+    return { ...response.data, token };
   }, []);
 
   const logout = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.post(`${API_BASE}/api/auth/logout`, {}, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        withCredentials: true,
-      });
+      await axios.post(
+        `${API_BASE}/api/auth/logout`,
+        {},
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          withCredentials: true,
+        }
+      );
     } catch {}
+
     localStorage.removeItem("token");
+    localStorage.removeItem("owner_portal_session");
+    localStorage.removeItem("platform_owner_email");
     setUser(null);
   }, []);
 
@@ -93,7 +132,10 @@ export function AuthProvider({ children }) {
 
   const resetPassword = useCallback(async (token, newPassword) => {
     try {
-      await axios.post(`${API_BASE}/api/auth/reset-password`, { token, new_password: newPassword });
+      await axios.post(`${API_BASE}/api/auth/reset-password`, {
+        token,
+        new_password: newPassword,
+      });
       return { success: true };
     } catch (err) {
       return {
@@ -104,23 +146,32 @@ export function AuthProvider({ children }) {
   }, []);
 
   const updateUser = useCallback((updates) => {
-    setUser((prev) => prev ? { ...prev, ...updates } : prev);
+    setUser((prev) => (prev ? { ...prev, ...updates } : prev));
   }, []);
 
-  const normalizedRole = String(user?.role || "").trim().toLowerCase();
   const isEmployer =
-    normalizedRole === "employer" ||
-    normalizedRole === "admin" ||
-    normalizedRole === "owner" ||
-    normalizedRole === "superadmin" ||
-    normalizedRole === "super_admin" ||
-    normalizedRole === "business_owner" ||
-    user?.is_admin === true ||
-    user?.is_owner === true;
-  const isWorker = normalizedRole === "worker";
+    user?.role === "employer" ||
+    user?.role === "admin" ||
+    user?.role === "owner";
+
+  const isWorker = user?.role === "worker";
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, checkAuth, updateUser, forgotPassword, resetPassword, isEmployer, isWorker }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        logout,
+        checkAuth,
+        updateUser,
+        forgotPassword,
+        resetPassword,
+        isEmployer,
+        isWorker,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
