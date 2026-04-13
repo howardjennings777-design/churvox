@@ -18,6 +18,8 @@ export default function PlatformUnlock() {
 
     try {
       localStorage.setItem("platform_owner_access", "true");
+      localStorage.setItem("owner_portal_session", "true");
+      localStorage.setItem("platform_owner_email", "hello@churvox.com");
     } catch (e) {}
 
     navigate("/platform-dashboard", { replace: true });

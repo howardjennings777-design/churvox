@@ -15,11 +15,13 @@ export default function PlatformAdminRoute({ children }) {
   }
 
   const ownerSession = localStorage.getItem("owner_portal_session") === "true";
+  const ownerUnlock = localStorage.getItem("platform_owner_access") === "true";
   const ownerEmail = (localStorage.getItem("platform_owner_email") || "").toLowerCase();
   const userEmail = (user?.email || "").toLowerCase();
 
   const isAllowed =
     ownerSession ||
+    ownerUnlock ||
     ownerEmail === "hello@churvox.com" ||
     userEmail === "hello@churvox.com" ||
     user?.role === "admin" ||
