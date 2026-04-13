@@ -3,9 +3,51 @@ import os
 import urllib.request
 import urllib.error
 
-EMAIL_PROVIDER = os.getenv("EMAIL_PROVIDER", "").strip().lower()
+EMAIL_PROVIDER = os.getenv("EMAIL_PROVIDER", "").strip().lower() or "resend"
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
 EMAIL_FROM = os.getenv("EMAIL_FROM", "").strip() or "Churvox <noreply@mail.churvox.com>"
+
+
+def get_email_provider():
+    return EMAIL_PROVIDER
+
+
+def build_invite_email(name: str, invite_link: str):
+    safe_name = str(name or "").strip() or "there"
+    safe_link = str(invite_link or "").strip()
+    subject = "You're invited to join Churvox"
+    html = f"""
+        <p>Hi {safe_name},</p>
+        <p>You have been invited to join a team on Churvox.</p>
+        <p><a href="{safe_link}">Finish setup</a></p>
+    """
+    return subject, html
+
+
+def build_resend_invite_email(name: str, invite_link: str):
+    safe_name = str(name or "").strip() or "there"
+    safe_link = str(invite_link or "").strip()
+    subject = "Your Churvox invite link"
+    html = f"""
+        <p>Hi {safe_name},</p>
+        <p>Here is your invite link again:</p>
+        <p><a href="{safe_link}">Finish setup</a></p>
+    """
+    return subject, html
+
+
+def build_password_reset_email(name: str, reset_link: str):
+    safe_name = str(name or "").strip() or "there"
+    safe_link = str(reset_link or "").strip()
+    subject = "Reset your Churvox password"
+    html = f"""
+        <p>Hello {safe_name},</p>
+        <p>Click the link below to reset your password:</p>
+        <p><a href="{safe_link}">Reset password</a></p>
+        <p>If you did not request this, you can ignore this email.</p>
+    """
+    return subject, html
+
 
 async def send_email(to_email: str, subject: str, html_content: str):
     to_email = str(to_email or "").strip()
