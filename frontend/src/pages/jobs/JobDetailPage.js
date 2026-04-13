@@ -263,6 +263,14 @@ export default function JobDetailPage() {
                 <div className="text-white">{job.address || "-"}</div>
               </div>
               <div>
+                <div className="text-xs uppercase tracking-wide text-churvox-muted">Country</div>
+                <div className="text-white">{job.country || "-"}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide text-churvox-muted">Region / State</div>
+                <div className="text-white">{job.region || "-"}</div>
+              </div>
+              <div>
                 <div className="text-xs uppercase tracking-wide text-churvox-muted">Scheduled</div>
                 <div className="text-white">{safeDate(job.scheduled_date)}</div>
               </div>
