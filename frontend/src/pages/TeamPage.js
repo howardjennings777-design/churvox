@@ -1,4 +1,3 @@
-// deploy-trigger-team-modal-fix
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
@@ -36,7 +35,6 @@ export default function TeamPage() {
 
   const [workers, setWorkers] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
-  const [workerModalOpen, setWorkerModalOpen] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState(null);
   const [workerNotes, setWorkerNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
@@ -80,16 +78,7 @@ export default function TeamPage() {
     fetchWorkers();
   }, [authLoading, user?.token, fetchWorkers]);
 
-  useEffect(() => {
-    if (!workerModalOpen) return;
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, [workerModalOpen]);
-
-  const openWorkerModal = (worker) => {
+  const openWorkerPanel = (worker) => {
     const jobs = Array.isArray(worker?.assigned_jobs)
       ? worker.assigned_jobs
       : Array.isArray(worker?.jobs)
@@ -98,11 +87,10 @@ export default function TeamPage() {
     setSelectedWorker(worker);
     setWorkerNotes(worker?.notes || "");
     setWorkerJobs(jobs);
-    setWorkerModalOpen(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const closeWorkerModal = () => {
-    setWorkerModalOpen(false);
+  const closeWorkerPanel = () => {
     setSelectedWorker(null);
     setWorkerNotes("");
     setWorkerJobs([]);
@@ -136,8 +124,8 @@ export default function TeamPage() {
     const res = await del(`/team/workers/${workerId}`);
     if (res?.success) {
       toast.success("Worker removed");
-      if (selectedWorker && (selectedWorker.id === workerId || selectedWorker._id === workerId)) {
-        closeWorkerModal();
+      if (selectedWorker && ((selectedWorker.id || selectedWorker._id) === workerId)) {
+        closeWorkerPanel();
       }
       fetchWorkers();
     } else {
@@ -200,14 +188,12 @@ export default function TeamPage() {
 
       if (res?.success) {
         await fetchWorkers();
-        setSelectedWorker((prev) =>
-          prev ? { ...prev, notes: workerNotes, id: workerId, _id: workerId } : prev
-        );
+        setSelectedWorker((prev) => (prev ? { ...prev, notes: workerNotes } : prev));
         toast.success("Worker notes saved");
       } else {
         toast.error(res?.error || "Failed to save notes");
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to save notes");
     } finally {
       setSavingNotes(false);
@@ -291,6 +277,97 @@ export default function TeamPage() {
               </div>
             </div>
 
+            {selectedWorker && (
+              <Card className="bg-churvox-card border-churvox-border">
+                <CardContent className="p-6 space-y-4 text-white">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="text-xl font-semibold">{selectedWorker?.name || "Worker"}</div>
+                    <Button type="button" variant="outline" onClick={closeWorkerPanel}>
+                      Close
+                    </Button>
+                  </div>
+
+                  <div className="rounded-lg border border-churvox-border p-4">
+                    <div className="text-sm text-churvox-muted">Email</div>
+                    <div className="text-white">{selectedWorker.email || "-"}</div>
+                  </div>
+
+                  <div className="rounded-lg border border-churvox-border p-4">
+                    <div className="text-sm text-churvox-muted">Phone</div>
+                    <div className="text-white">{selectedWorker.phone || "-"}</div>
+                  </div>
+
+                  <div className="rounded-lg border border-churvox-border p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-white font-medium">Worker Notes</div>
+                      <Button
+                        type="button"
+                        onClick={saveWorkerNotes}
+                        disabled={savingNotes}
+                        className="bg-churvox-accent hover:bg-churvox-accent/90"
+                      >
+                        {savingNotes ? "Saving..." : "Save Notes"}
+                      </Button>
+                    </div>
+
+                    <textarea
+                      value={workerNotes}
+                      onChange={(e) => setWorkerNotes(e.target.value)}
+                      placeholder="Add notes for this worker..."
+                      rows={5}
+                      className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3 outline-none"
+                    />
+                  </div>
+
+                  <div className="rounded-lg border border-churvox-border p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-white font-medium">Assigned Jobs</div>
+                      <Button
+                        type="button"
+                        onClick={() => navigate(`/jobs/new?workerId=${selectedWorker.id || selectedWorker._id}`)}
+                        className="bg-churvox-accent hover:bg-churvox-accent/90"
+                      >
+                        Add / Assign Job
+                      </Button>
+                    </div>
+
+                    {workerJobs.length > 0 ? (
+                      <div className="space-y-3">
+                        {workerJobs.map((job, index) => {
+                          const jobId = job.id || job._id;
+                          return (
+                            <div key={jobId || index} className="rounded-lg border border-churvox-border p-3 flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="text-white font-medium">{job.title || job.job_type || "Job"}</div>
+                                <div className="text-sm text-churvox-muted">{job.client_name || "-"}</div>
+                                <div className="text-sm text-churvox-muted">{job.address || "-"}</div>
+                                <div className="text-sm text-churvox-muted">Status: {job.status || "-"}</div>
+                                <div className="text-sm text-churvox-muted">
+                                  Date: {job.scheduled_date ? String(job.scheduled_date).slice(0, 10) : "-"}
+                                </div>
+                              </div>
+
+                              {jobId && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => navigate(`/jobs/${jobId}`)}
+                                >
+                                  Open Job
+                                </Button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-churvox-muted">No assigned jobs yet.</div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {importResults && (
               <Card className="bg-churvox-card border-churvox-border" data-testid="csv-import-results">
                 <CardContent className="p-4">
@@ -347,9 +424,10 @@ export default function TeamPage() {
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between gap-3">
-                          <div
-                            className="flex-1 cursor-pointer"
-                            onClick={() => openWorkerModal(worker)}
+                          <button
+                            type="button"
+                            className="flex-1 text-left"
+                            onClick={() => openWorkerPanel(worker)}
                           >
                             <div className="text-white font-semibold">
                               {worker.name || "Unnamed Worker"}
@@ -365,7 +443,7 @@ export default function TeamPage() {
                                 Status: {worker.status}
                               </div>
                             )}
-                          </div>
+                          </button>
 
                           <div className="flex items-center gap-2 shrink-0">
                             {worker.status === "pending" && (
@@ -447,104 +525,6 @@ export default function TeamPage() {
               </Button>
             </div>
           </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={workerModalOpen} onOpenChange={(open) => !open && closeWorkerModal()}>
-        <DialogContent className="bg-churvox-card border-churvox-border text-white max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{selectedWorker?.name || "Worker"}</DialogTitle>
-          </DialogHeader>
-
-          {selectedWorker && (
-            <div className="space-y-4">
-              <div className="rounded-lg border border-churvox-border p-4">
-                <div className="text-sm text-churvox-muted">Email</div>
-                <div className="text-white">{selectedWorker.email || "-"}</div>
-              </div>
-
-              <div className="rounded-lg border border-churvox-border p-4">
-                <div className="text-sm text-churvox-muted">Phone</div>
-                <div className="text-white">{selectedWorker.phone || "-"}</div>
-              </div>
-
-              <div className="rounded-lg border border-churvox-border p-4 space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-white font-medium">Worker Notes</div>
-                  <Button
-                    onMouseDown={(e) => e.stopPropagation()}
-                  onClick={saveWorkerNotes}
-                    disabled={savingNotes}
-                    className="bg-churvox-accent hover:bg-churvox-accent/90"
-                  >
-                    {savingNotes ? "Saving..." : "Save Notes"}
-                  </Button>
-                </div>
-
-                <textarea
-                  value={workerNotes}
-                  onChange={(e) => setWorkerNotes(e.target.value)}
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={(e) => e.stopPropagation()}
-                onFocus={(e) => e.stopPropagation()}
-                  placeholder="Add notes for this worker..."
-                  rows={5}
-                  className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3 outline-none"
-                />
-              </div>
-
-              <div className="rounded-lg border border-churvox-border p-4 space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-white font-medium">Assigned Jobs</div>
-                  <Button
-                    onMouseDown={(e) => e.stopPropagation()}
-                  onClick={() => navigate(`/jobs/new?workerId=${selectedWorker.id || selectedWorker._id}`)}
-                    className="bg-churvox-accent hover:bg-churvox-accent/90"
-                  >
-                    Add / Assign Job
-                  </Button>
-                </div>
-
-                {workerJobs.length > 0 ? (
-                  <div className="space-y-3">
-                    {workerJobs.map((job, index) => {
-                      const jobId = job.id || job._id;
-                      return (
-                        <div key={jobId || index} className="rounded-lg border border-churvox-border p-3 flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="text-white font-medium">{job.title || job.job_type || "Job"}</div>
-                            <div className="text-sm text-churvox-muted">{job.client_name || "-"}</div>
-                            <div className="text-sm text-churvox-muted">{job.address || "-"}</div>
-                            <div className="text-sm text-churvox-muted">Status: {job.status || "-"}</div>
-                            <div className="text-sm text-churvox-muted">
-                              Date: {job.scheduled_date ? String(job.scheduled_date).slice(0, 10) : "-"}
-                            </div>
-                          </div>
-
-                          {jobId && (
-                            <Button
-                              variant="outline"
-                              onClick={() => navigate(`/jobs/${jobId}`)}
-                            >
-                              Open Job
-                            </Button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-sm text-churvox-muted">No assigned jobs yet.</div>
-                )}
-              </div>
-
-              <div className="flex justify-end">
-                <Button variant="outline" onMouseDown={(e) => { if (e.target === e.currentTarget) closeWorkerModal(); }}>
-                  Close
-                </Button>
-              </div>
-            </div>
-          )}
         </DialogContent>
       </Dialog>
     </Layout>
