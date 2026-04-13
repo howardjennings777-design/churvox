@@ -472,7 +472,8 @@ export default function TeamPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-white font-medium">Worker Notes</div>
                   <Button
-                    onClick={saveWorkerNotes}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  onClick={saveWorkerNotes}
                     disabled={savingNotes}
                     className="bg-churvox-accent hover:bg-churvox-accent/90"
                   >
@@ -483,6 +484,9 @@ export default function TeamPage() {
                 <textarea
                   value={workerNotes}
                   onChange={(e) => setWorkerNotes(e.target.value)}
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.stopPropagation()}
                   placeholder="Add notes for this worker..."
                   rows={5}
                   className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3 outline-none"
@@ -493,7 +497,8 @@ export default function TeamPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-white font-medium">Assigned Jobs</div>
                   <Button
-                    onClick={() => navigate(`/jobs/new?workerId=${selectedWorker.id || selectedWorker._id}`)}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  onClick={() => navigate(`/jobs/new?workerId=${selectedWorker.id || selectedWorker._id}`)}
                     className="bg-churvox-accent hover:bg-churvox-accent/90"
                   >
                     Add / Assign Job
@@ -534,7 +539,7 @@ export default function TeamPage() {
               </div>
 
               <div className="flex justify-end">
-                <Button variant="outline" onClick={closeWorkerModal}>
+                <Button variant="outline" onMouseDown={(e) => { if (e.target === e.currentTarget) closeWorkerModal(); }}>
                   Close
                 </Button>
               </div>
