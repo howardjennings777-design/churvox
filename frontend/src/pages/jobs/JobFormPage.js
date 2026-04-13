@@ -56,9 +56,10 @@ function workerMatchesJobCountryRegion(worker, form) {
   const workerCountry = norm(worker?.country);
   const workerRegion = norm(worker?.region);
 
+  // If job location is not fully chosen yet, do not hide workers.
   if (!jobCountry || !jobRegion) return true;
-  if (!workerCountry || !workerRegion) return true;
 
+  // Once job location is chosen, require exact worker match.
   return workerCountry === jobCountry && workerRegion === jobRegion;
 }
 
