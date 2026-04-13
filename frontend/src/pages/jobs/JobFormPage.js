@@ -22,8 +22,7 @@ export default function JobFormPage() {
   const [workers, setWorkers] = useState([]);
   const [form, setForm] = useState({
     title: "",
-    job_type: "",
-    client_id: "",
+        client_id: "",
     client_name: "",
     address: "",
     scheduled_date: "",
@@ -50,7 +49,6 @@ export default function JobFormPage() {
             const j = jobRes.data;
             setForm({
               title: j.title || "",
-              job_type: j.job_type || "",
               client_id: j.client_id || "",
               client_name: j.client_name || "",
               address: j.address || "",
@@ -91,8 +89,7 @@ export default function JobFormPage() {
 
     try {
       const payload = {
-        title: form.title || form.job_type || "Job",
-        job_type: form.job_type || form.title || "General",
+        title: form.title || "Job",
         client_id: form.client_id || null,
         client_name: form.client_name || "",
         address: form.address || "",
@@ -152,16 +149,6 @@ export default function JobFormPage() {
               </div>
 
               <div>
-                <Label htmlFor="job_type">Job Type</Label>
-                <Input
-                  id="job_type"
-                  value={form.job_type}
-                  onChange={(e) => setField("job_type", e.target.value)}
-                  className="bg-churvox-bg border-churvox-border text-white"
-                />
-              </div>
-
-              <div>
                 <Label htmlFor="client_id">Client</Label>
                 <select
                   id="client_id"
@@ -198,6 +185,7 @@ export default function JobFormPage() {
                   type="datetime-local"
                   value={form.scheduled_date}
                   onChange={(e) => setField("scheduled_date", e.target.value)}
+                  style={{ colorScheme: "dark" }}
                   className="bg-churvox-bg border-churvox-border text-white"
                 />
               </div>
