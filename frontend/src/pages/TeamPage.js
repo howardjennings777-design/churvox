@@ -7,7 +7,6 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { UserPlus, Trash2, Upload, RefreshCw, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { usePlanLimits } from "../hooks/usePlanLimits";
@@ -342,16 +341,113 @@ export default function TeamPage() {
                       toast.error(`Team limit reached for your plan (${includedUsers || 1} users). Upgrade your plan.`);
                       return;
                     }
-                    setShowAdd(true);
+                    setShowAdd((prev) => !prev);
                   }}
                   className="bg-churvox-accent hover:bg-churvox-accent/90"
                   data-testid="add-worker-button"
                 >
                   <UserPlus size={16} className="mr-2" />
-                  Invite Worker
+                  {showAdd ? "Close Invite" : "Invite Worker"}
                 </Button>
               </div>
             </div>
+
+            {showAdd && (
+              <Card className="bg-churvox-card border-churvox-border shadow-lg shadow-black/20">
+                <CardContent className="p-6 space-y-4 text-white">
+                  <div>
+                    <div className="text-lg font-semibold text-white">Invite Worker</div>
+                    <div className="text-sm text-churvox-muted mt-1">
+                      Add a worker with country and region/state for assignment matching.
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleAdd} className="space-y-4">
+                    <div>
+                      <Label htmlFor="worker-name-inline">Name</Label>
+                      <Input
+                        id="worker-name-inline"
+                        value={form.name}
+                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        required
+                        className="bg-churvox-bg border-churvox-border text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="worker-email-inline">Email</Label>
+                      <Input
+                        id="worker-email-inline"
+                        type="email"
+                        value={form.email}
+                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        required
+                        className="bg-churvox-bg border-churvox-border text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="worker-phone-inline">Phone</Label>
+                      <Input
+                        id="worker-phone-inline"
+                        value={form.phone}
+                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                        className="bg-churvox-bg border-churvox-border text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="worker-country-inline">Country</Label>
+                      <select
+                        id="worker-country-inline"
+                        value={form.country || "New Zealand"}
+                        onChange={(e) => setForm({ ...form, country: e.target.value, region: "" })}
+                        className="w-full h-10 min-h-[40px] rounded-md border border-white/10 bg-[#0f172a] px-3 text-white appearance-none"
+                      >
+                        {COUNTRY_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="worker-region-inline">Region / State</Label>
+                      <select
+                        id="worker-region-inline"
+                        value={form.region}
+                        onChange={(e) => setForm({ ...form, region: e.target.value })}
+                        className="w-full h-10 min-h-[40px] rounded-md border border-white/10 bg-[#0f172a] px-3 text-white appearance-none"
+                      >
+                        <option value="">Select region / state</option>
+                        {getRegionOptions(form.country || "New Zealand").map((region) => (
+                          <option key={region} value={region}>
+                            {region}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowAdd(false);
+                          setForm({ name: "", email: "", phone: "", country: "New Zealand", region: "" });
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit" className="bg-churvox-accent hover:bg-churvox-accent/90">
+                        Send Invite
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
 
             {selectedWorker && (
               <Card className="bg-churvox-card border-churvox-border shadow-lg shadow-black/20 overflow-hidden">
@@ -647,86 +743,7 @@ export default function TeamPage() {
         )}
       </div>
 
-      <Dialog open={showAdd} onOpenChange={setShowAdd}>
-        <DialogContent className="w-[95vw] max-w-[560px] max-h-[85vh] overflow-y-auto overflow-x-hidden bg-churvox-card border-churvox-border text-white">
-          <DialogHeader>
-            <DialogTitle>Invite Worker</DialogTitle>
-          </DialogHeader>
 
-          <form onSubmit={handleAdd} className="space-y-4 pb-2">
-            <div>
-              <Label htmlFor="worker-name">Name</Label>
-              <Input
-                id="worker-name"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="worker-email">Email</Label>
-              <Input
-                id="worker-email"
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="worker-phone">Phone</Label>
-              <Input
-                id="worker-phone"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                className="bg-churvox-bg border-churvox-border text-white"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="worker-country">Country</Label>
-              <select
-                id="worker-country"
-                value={form.country || "New Zealand"}
-                onChange={(e) => setForm({ ...form, country: e.target.value, region: "" })}
-                className="w-full h-10 min-h-[40px] rounded-md border border-white/10 bg-[#0f172a] px-3 text-white appearance-none"
-              >
-                {COUNTRY_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-
-              <Label htmlFor="worker-region">Region / State</Label>
-              <select
-                id="worker-region"
-                value={form.region}
-                onChange={(e) => setForm({ ...form, region: e.target.value })}
-                className="w-full h-10 min-h-[40px] rounded-md border border-white/10 bg-[#0f172a] px-3 text-white appearance-none"
-              >
-                <option value="">Select region / state</option>
-                {getRegionOptions(form.country || "New Zealand").map((region) => (
-                  <option key={region} value={region}>
-                    {region}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setShowAdd(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" className="bg-churvox-accent hover:bg-churvox-accent/90">
-                Send Invite
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
     </Layout>
   );
 }
