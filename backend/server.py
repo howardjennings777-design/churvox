@@ -2581,6 +2581,51 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         }
 
 
+
+@api_router.delete("/jobs/{job_id}")
+async def delete_job(job_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    query = {
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]
+    }
+
+    if len(str(job_id)) == 24:
+        try:
+            query["_id"] = ObjectId(job_id)
+            result = await db.jobs.delete_one(query)
+            if result.deleted_count == 1:
+                return {"success": True, "message": "Job deleted"}
+        except Exception:
+            pass
+
+    query.pop("_id", None)
+    query["id"] = job_id
+    result = await db.jobs.delete_one(query)
+
+    if result.deleted_count != 1:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    return {"success": True, "message": "Job deleted"}
+
+
 @api_router.get("/jobs/{job_id}")
 async def get_job(job_id: str, current_user: dict = Depends(get_current_user)):
     try:
