@@ -19,6 +19,46 @@ axios.defaults.withCredentials = true;
 
 const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
 
+const COUNTRY_OPTIONS = [
+  { value: "New Zealand", label: "New Zealand" },
+  { value: "Australia", label: "Australia" },
+];
+
+const REGION_OPTIONS = {
+  "New Zealand": [
+    "Northland",
+    "Auckland",
+    "Waikato",
+    "Bay of Plenty",
+    "Gisborne",
+    "Hawke's Bay",
+    "Taranaki",
+    "Manawatu-Whanganui",
+    "Wellington",
+    "Tasman",
+    "Nelson",
+    "Marlborough",
+    "West Coast",
+    "Canterbury",
+    "Otago",
+    "Southland",
+  ],
+  "Australia": [
+    "New South Wales",
+    "Victoria",
+    "Queensland",
+    "Western Australia",
+    "South Australia",
+    "Tasmania",
+    "Northern Territory",
+    "Australian Capital Territory",
+  ],
+};
+
+function getRegionOptions(country) {
+  return REGION_OPTIONS[country] || [];
+}
+
 export default function TeamPage() {
   const navigate = useNavigate();
   const { user, isEmployer, loading: authLoading } = useAuth();
@@ -39,7 +79,7 @@ export default function TeamPage() {
   const [workerNotes, setWorkerNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
   const [workerJobs, setWorkerJobs] = useState([]);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", region: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", country: "New Zealand", region: "" });
   const [importResults, setImportResults] = useState(null);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef(null);
@@ -102,12 +142,13 @@ export default function TeamPage() {
       name: form.name.trim(),
       email: form.email.trim(),
       phone: form.phone.trim(),
+      country: String(form.country || "New Zealand").trim(),
       region: String(form.region || "").trim(),
     });
 
     if (res?.success) {
       toast.success(`Invite sent to ${form.email}`);
-      setForm({ name: "", email: "", phone: "", region: "" });
+      setForm({ name: "", email: "", phone: "", country: "New Zealand", region: "" });
       setShowAdd(false);
       fetchWorkers();
     } else {
@@ -301,7 +342,7 @@ export default function TeamPage() {
                           {selectedWorker?.status ? `Status: ${selectedWorker.status}` : "Status: active"}
                         </span>
                         <span className="inline-flex items-center rounded-full border border-churvox-border bg-churvox-bg px-3 py-1 text-xs text-churvox-muted">
-                          Region: {selectedWorker?.region || "-"}
+                          Country: {selectedWorker?.country || "New Zealand"} • Region: {selectedWorker?.region || "-"}
                         </span>
                         <span className="inline-flex items-center rounded-full border border-churvox-border bg-churvox-bg px-3 py-1 text-xs text-churvox-muted">
                           {workerJobs.length} assigned job{workerJobs.length !== 1 ? "s" : ""}
@@ -499,7 +540,7 @@ export default function TeamPage() {
                                 </div>
                                 <div className="mt-2">
                                   <span className="inline-flex items-center rounded-full border border-churvox-border bg-churvox-bg px-2.5 py-1 text-xs text-churvox-muted">
-                                    Region: {worker.region || "-"}
+                                    Country: {worker.country || "New Zealand"} • Region: {worker.region || "-"}
                                   </span>
                                 </div>
                               </div>
@@ -578,11 +619,34 @@ export default function TeamPage() {
             </div>
 
             <div>
-              <Label htmlFor="worker-region">Region</Label>
-              <Input
+              <Label htmlFor="worker-country">Country</Label>
+              <select
+                id="worker-country"
+                value={form.country || "New Zealand"}
+                onChange={(e) => setForm({ ...form, country: e.target.value, region: "" })}
+                className="w-full h-10 rounded-md border border-white/10 bg-[#0f172a] px-3 text-white"
+              >
+                {COUNTRY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+
+              <Label htmlFor="worker-region">Region / State</Label>
+              <select
                 id="worker-region"
                 value={form.region}
                 onChange={(e) => setForm({ ...form, region: e.target.value })}
+                className="w-full h-10 rounded-md border border-white/10 bg-[#0f172a] px-3 text-white"
+              >
+                <option value="">Select region / state</option>
+                {getRegionOptions(form.country || "New Zealand").map((region) => (
+                  <option key={region} value={region}>
+                    {region}
+                  </option>
+                ))}
+              </select>
                 className="bg-churvox-bg border-churvox-border text-white"
               />
             </div>

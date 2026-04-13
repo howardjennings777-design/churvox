@@ -375,7 +375,7 @@ export default function JobDetailPage() {
                   const workerId = worker.id || worker._id;
                   const labelBits = [
                     worker.name || worker.email || "Worker",
-                    worker.city || worker.region || worker.country || ""
+                    worker.region || worker.country || ""
                   ].filter(Boolean);
                   return (
                     <option key={workerId} value={workerId}>
@@ -387,13 +387,13 @@ export default function JobDetailPage() {
 
               {job?.region || job?.city || job?.country ? (
                 <div className="text-xs text-churvox-muted">
-                  Showing workers matching {job.city || job.region || job.country}
+                  Showing workers matching {[job.country, job.region].filter(Boolean).join(" • ")}
                 </div>
               ) : null}
 
               {filteredWorkerList.length === 0 ? (
                 <div className="text-sm text-churvox-muted">
-                  No workers available in this region.
+                  No workers available for this country / region.
                 </div>
               ) : null}
 

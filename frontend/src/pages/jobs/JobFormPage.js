@@ -8,6 +8,46 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { toast } from "sonner";
 
+const COUNTRY_OPTIONS = [
+  { value: "New Zealand", label: "New Zealand" },
+  { value: "Australia", label: "Australia" },
+];
+
+const REGION_OPTIONS = {
+  "New Zealand": [
+    "Northland",
+    "Auckland",
+    "Waikato",
+    "Bay of Plenty",
+    "Gisborne",
+    "Hawke's Bay",
+    "Taranaki",
+    "Manawatu-Whanganui",
+    "Wellington",
+    "Tasman",
+    "Nelson",
+    "Marlborough",
+    "West Coast",
+    "Canterbury",
+    "Otago",
+    "Southland",
+  ],
+  "Australia": [
+    "New South Wales",
+    "Victoria",
+    "Queensland",
+    "Western Australia",
+    "South Australia",
+    "Tasmania",
+    "Northern Territory",
+    "Australian Capital Territory",
+  ],
+};
+
+function getRegionOptions(country) {
+  return REGION_OPTIONS[country] || [];
+}
+
 export default function JobFormPage() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -26,6 +66,8 @@ export default function JobFormPage() {
     client_name: "",
     address: "",
     scheduled_date: "",
+    country: "New Zealand",
+    region: "",
     notes: "",
     assigned_worker_id: workerIdFromQuery,
     status: "assigned",
@@ -53,6 +95,8 @@ export default function JobFormPage() {
               client_name: j.client_name || "",
               address: j.address || "",
               scheduled_date: j.scheduled_date ? String(j.scheduled_date).slice(0, 16) : "",
+              country: j.country || "New Zealand",
+              region: j.region || "",
               notes: j.notes || "",
               assigned_worker_id: j.assigned_worker_id || "",
               status: j.status || "assigned",
@@ -94,6 +138,8 @@ export default function JobFormPage() {
         client_name: form.client_name || "",
         address: form.address || "",
         scheduled_date: form.scheduled_date || null,
+        country: form.country || "New Zealand",
+        region: form.region || "",
         notes: form.notes || "",
         assigned_worker_id: form.assigned_worker_id || null,
         status: form.status || "assigned",
