@@ -48,6 +48,20 @@ function getRegionOptions(country) {
   return REGION_OPTIONS[country] || [];
 }
 
+function workerMatchesJobCountryRegion(worker, form) {
+  const norm = (v) => String(v || "").trim().toLowerCase();
+
+  const jobCountry = norm(form?.country);
+  const jobRegion = norm(form?.region);
+  const workerCountry = norm(worker?.country);
+  const workerRegion = norm(worker?.region);
+
+  if (!jobCountry || !jobRegion) return true;
+  if (!workerCountry || !workerRegion) return true;
+
+  return workerCountry === jobCountry && workerRegion === jobRegion;
+}
+
 export default function JobFormPage() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -116,6 +130,8 @@ export default function JobFormPage() {
   const setField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
+
+  const filteredWorkers = workers.filter((worker) => workerMatchesJobCountryRegion(worker, form));
 
   const handleClientChange = (clientId) => {
     const client = clients.find((c) => String(c.id || c._id) === String(clientId));
@@ -236,6 +252,41 @@ export default function JobFormPage() {
                 />
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="job-country">Country</Label>
+                  <select
+                    id="job-country"
+                    value={form.country || "New Zealand"}
+                    onChange={(e) => setForm((prev) => ({ ...prev, country: e.target.value, region: "", assigned_worker_id: "" }))}
+                    className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3"
+                  >
+                    {COUNTRY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <Label htmlFor="job-region">Region / State</Label>
+                  <select
+                    id="job-region"
+                    value={form.region || ""}
+                    onChange={(e) => setForm((prev) => ({ ...prev, region: e.target.value, assigned_worker_id: "" }))}
+                    className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3"
+                  >
+                    <option value="">Select region / state</option>
+                    {getRegionOptions(form.country || "New Zealand").map((region) => (
+                      <option key={region} value={region}>
+                        {region}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div>
                 <Label htmlFor="assigned_worker_id">Assigned Worker</Label>
                 <select
@@ -245,11 +296,13 @@ export default function JobFormPage() {
                   className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3"
                 >
                   <option value="">Select worker</option>
-                  {workers.map((worker) => {
+                  {filteredWorkers.map((worker) => {
                     const workerId = worker.id || worker._id;
+                    const regionText = worker.region ? ` • ${worker.region}` : "";
+                    const countryText = worker.country ? ` (${worker.country}${regionText})` : "";
                     return (
                       <option key={workerId} value={workerId}>
-                        {worker.name || worker.email || "Worker"}
+                        {(worker.name || worker.email || "Worker") + countryText}
                       </option>
                     );
                   })}

@@ -78,6 +78,7 @@ export default function TeamPage() {
   const [selectedWorker, setSelectedWorker] = useState(null);
   const [workerNotes, setWorkerNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [savingWorkerGeo, setSavingWorkerGeo] = useState(false);
   const [workerJobs, setWorkerJobs] = useState([]);
   const [form, setForm] = useState({ name: "", email: "", phone: "", country: "New Zealand", region: "" });
   const [importResults, setImportResults] = useState(null);
@@ -212,6 +213,39 @@ export default function TeamPage() {
     } finally {
       setImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+
+  const saveWorkerGeo = async () => {
+    const workerId = selectedWorker?.id || selectedWorker?._id;
+    if (!workerId) return;
+
+    setSavingWorkerGeo(true);
+    try {
+      const payload = {
+        country: String(selectedWorker?.country || "New Zealand").trim() || "New Zealand",
+        region: String(selectedWorker?.region || "").trim(),
+      };
+
+      const res = await patch(`/team/workers/${workerId}`, payload);
+
+      if (res?.success) {
+        toast.success("Worker location updated");
+        setWorkers((prev) => prev.map((worker) => {
+          const id = worker.id || worker._id;
+          return String(id) === String(workerId)
+            ? { ...worker, ...payload }
+            : worker;
+        }));
+        setSelectedWorker((prev) => prev ? { ...prev, ...payload } : prev);
+      } else {
+        toast.error(res?.error || "Failed to save worker location");
+      }
+    } catch {
+      toast.error("Failed to save worker location");
+    } finally {
+      setSavingWorkerGeo(false);
     }
   };
 
@@ -360,7 +394,7 @@ export default function TeamPage() {
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div className="rounded-xl border border-churvox-border bg-churvox-bg/40 p-4">
                       <div className="text-xs uppercase tracking-wide text-churvox-muted mb-1">Email</div>
                       <div className="text-white break-all font-medium">{selectedWorker.email || "-"}</div>
@@ -372,8 +406,43 @@ export default function TeamPage() {
                     </div>
 
                     <div className="rounded-xl border border-churvox-border bg-churvox-bg/40 p-4">
-                      <div className="text-xs uppercase tracking-wide text-churvox-muted mb-1">Region</div>
-                      <div className="text-white font-medium">{selectedWorker.region || "-"}</div>
+                      <div className="text-xs uppercase tracking-wide text-churvox-muted mb-2">Country</div>
+                      <select
+                        value={selectedWorker?.country || "New Zealand"}
+                        onChange={(e) => setSelectedWorker((prev) => prev ? { ...prev, country: e.target.value, region: "" } : prev)}
+                        className="w-full h-10 rounded-md border border-white/10 bg-[#0f172a] px-3 text-white"
+                      >
+                        {COUNTRY_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="rounded-xl border border-churvox-border bg-churvox-bg/40 p-4">
+                      <div className="text-xs uppercase tracking-wide text-churvox-muted mb-2">Region / State</div>
+                      <select
+                        value={selectedWorker?.region || ""}
+                        onChange={(e) => setSelectedWorker((prev) => prev ? { ...prev, region: e.target.value } : prev)}
+                        className="w-full h-10 rounded-md border border-white/10 bg-[#0f172a] px-3 text-white"
+                      >
+                        <option value="">Select region / state</option>
+                        {getRegionOptions(selectedWorker?.country || "New Zealand").map((region) => (
+                          <option key={region} value={region}>
+                            {region}
+                          </option>
+                        ))}
+                      </select>
+
+                      <Button
+                        type="button"
+                        onClick={saveWorkerGeo}
+                        disabled={savingWorkerGeo}
+                        className="mt-3 w-full bg-churvox-accent hover:bg-churvox-accent/90"
+                      >
+                        {savingWorkerGeo ? "Saving..." : "Save Location"}
+                      </Button>
                     </div>
                   </div>
 

@@ -51,32 +51,15 @@ function includesLocation(haystack, needle) {
 function workerMatchesJobRegion(worker, job) {
   const jobCountry = norm(job?.country);
   const jobRegion = norm(job?.region);
-  const jobCity = norm(job?.city);
-  const jobAddress = norm(job?.address);
-
   const workerCountry = norm(worker?.country);
   const workerRegion = norm(worker?.region);
-  const workerCity = norm(worker?.city);
 
-  const hasJobGeo = !!(jobCountry || jobRegion || jobCity);
-  const hasWorkerGeo = !!(workerCountry || workerRegion || workerCity);
+  // Safe fallback:
+  // if either side is missing country/region, do not hide the worker
+  if (!jobCountry || !jobRegion) return true;
+  if (!workerCountry || !workerRegion) return true;
 
-  if (!hasJobGeo || !hasWorkerGeo) return true;
-
-  if (jobCountry && workerCountry && jobCountry !== workerCountry) return false;
-  if (jobRegion && workerRegion && jobRegion !== workerRegion) return false;
-
-  if (jobCity && workerCity) {
-    return jobCity === workerCity;
-  }
-
-  if (jobCity && !workerCity) {
-    return includesLocation(jobAddress, workerRegion) || includesLocation(jobAddress, workerCountry);
-  }
-
-  if (jobRegion && !workerRegion) return false;
-
-  return true;
+  return jobCountry === workerCountry && jobRegion === workerRegion;
 }
 
 export default function JobDetailPage() {
@@ -227,12 +210,7 @@ export default function JobDetailPage() {
     );
   }
 
-  const workerList = Array.isArray(workers) ? workers : [];
   const filteredWorkerList = Array.isArray(workers) ? workers.filter((worker) => workerMatchesJobRegion(worker, job)) : [];
-
-  const selectedWorkerStillValid = !selectedWorker
-    ? true
-    : filteredWorkerList.some((worker) => String(worker.id || worker._id || "") === String(selectedWorker));
 
 
   const currentStatus = job?.status || "assigned";
