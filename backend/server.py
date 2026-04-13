@@ -1132,109 +1132,96 @@ async def refresh_token(request: Request, response: Response):
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
+
 @api_router.post("/auth/forgot-password")
 async def forgot_password(data: ForgotPassword):
-    email = data.email.lower()
+    email = data.email.lower().strip()
+    user = await db.users.find_one({"email": email})
+
+    if not user:
+        return {
+            "success": True,
+            "message": "If the email exists, a reset link has been sent",
+            "debug_token": None
+        }
+
+    token = secrets.token_urlsafe(32)
+
+    await db.password_reset_tokens.update_one(
+        {"email": email},
+        {"$set": {
+            "email": email,
+            "token": token,
+            "created_at": datetime.now(timezone.utc)
+        }},
+        upsert=True
+    )
+
+    reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
+
+    try:
+        await send_email(
+            to_email=email,
+            subject="Reset your Churvox password",
+            html_content=f"""
+                <p>Hello {user.get('name') or ''},</p>
+                <p>Click the link below to reset your password:</p>
+                <p><a href="{reset_link}">Reset password</a></p>
+                <p>If you did not request this, you can ignore this email.</p>
+            """
+        )
+    except Exception as e:
+        print("FORGOT_PASSWORD_EMAIL_ERROR", str(e))
+
+    return {
+        "success": True,
+        "message": "If the email exists, a reset link has been sent",
+        "debug_token": token
+    }
+
+
+@api_router.post("/auth/reset-password")
+async def reset_password(payload: dict):
+    token = str((payload or {}).get("token") or "").strip()
+    new_password = str((payload or {}).get("new_password") or (payload or {}).get("password") or "").strip()
+
+    if not token or not new_password:
+        raise HTTPException(status_code=400, detail="Token and password are required")
+
+    token_doc = await db.password_reset_tokens.find_one({"token": token})
+    if not token_doc:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    email = str(token_doc.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Invalid reset token")
+
     user = await db.users.find_one({"email": email})
     if not user:
-        return {"message": "If the email exists, a reset link has been sent"}
-    token = secrets.token_urlsafe(32)
-    await db.password_reset_tokens.update_one(
-    {"email": "howardjennings77@gmail.com"},
-    {"$set": {
-        "email": "howardjennings77@gmail.com",
-        "username": "howardjennings77@gmail.com",
-        "is_active": True,
-        "email_verified": True,
-        "is_verified": True,
-        "role": "owner",
-        "roles": ["owner", "admin", "super_admin", "app_owner"],
-        "is_owner": True,
-        "is_admin": True
-    }},
-    upsert=True
-)
-    if existing is None:
-        result = await db.users.insert_one({
-            "email": admin_email,
-            "password_hash": hash_password(admin_password),
-            "name": "Admin",
-            "business_name": "Churvox Admin",
-            "role": "employer",
-            "status": "active",
-            "plan": "pro",
-            "gst_rate": DEFAULT_GST_RATE,
-            "created_at": datetime.now(timezone.utc)
-        })
-        # Set business_id to own id
-        await db.users.update_one(
-            {"_id": result.inserted_id},
-            {"$set": {"business_id": result.inserted_id}}
-        )
-    try:
-        await db.jobs.create_index([("business_id", 1), ("scheduled_date", 1)])
-        await db.jobs.create_index([("recurring_parent_job_id", 1), ("scheduled_date", 1)])
-        await db.jobs.create_index([("is_recurring", 1), ("status", 1)])
-    except Exception:
-        pass
+        raise HTTPException(status_code=400, detail="User not found")
 
-        logger.info(f"Admin user created: {admin_email}")
-    else:
-        updates = {}
-        if not verify_password(admin_password, existing["password_hash"]):
-            updates["password_hash"] = hash_password(admin_password)
-        if "business_id" not in existing:
-            updates["business_id"] = existing["_id"]
-        if existing.get("role") not in ("employer", "admin"):
-            updates["role"] = "employer"
-        if updates:
-            await db.users.update_one({"_id": existing["_id"]}, {"$set": updates})
-            logger.info("Admin user updated")
-
-    # Migrate existing jobs with old statuses
-    await db.jobs.update_many(
-        {"status": {"$in": ["scheduled", "cancelled"]}},
-        {"$set": {"status": JobStatus.ASSIGNED}}
+    await db.users.update_one(
+        {"_id": user["_id"]},
+        {"$set": {
+            "password_hash": hash_password(new_password),
+            "updated_at": datetime.now(timezone.utc)
+        }}
     )
 
-    # Migrate existing invoices without MYOB fields
-    await db.invoices.update_many(
-        {"myob_sync_status": {"$exists": False}},
-        {"$set": {"myob_sync_status": MyobSyncStatus.NOT_SYNCED, "myob_id": None, "myob_last_sync": None, "myob_error": None}}
-    )
+    await db.password_reset_tokens.delete_many({"email": email})
 
-    # Migrate legacy solo_plus plan to solo
-    await db.users.update_many({"plan": "solo_plus"}, {"$set": {"plan": "solo"}})
+    return {"success": True, "message": "Password reset successful"}
 
-    # Write test credentials
-    os.makedirs("/tmp/memory", exist_ok=True)
-    with open("/tmp/memory/test_credentials.md", "w") as f:
-        f.write(f"""# Churvox Test Credentials
 
-## Admin Account (Employer)
-- Email: {admin_email}
-- Password: {admin_password}
-- Role: employer
+@api_router.post("/forgot-password")
+async def forgot_password_alias(data: ForgotPassword):
+    return await forgot_password(data)
 
-## Auth Endpoints
-- POST /api/auth/register
-- POST /api/auth/login
-- POST /api/auth/logout
-- GET /api/auth/me
 
-## Team Endpoints
-- POST /api/team/workers (create worker)
-- GET /api/team/workers (list workers)
-- DELETE /api/team/workers/{{id}} (remove worker)
+@api_router.post("/reset-password")
+async def reset_password_alias(payload: dict):
+    return await reset_password(payload)
 
-## Job Workflow
-- POST /api/jobs (create, assign worker)
-- POST /api/jobs/{{id}}/assign (assign worker)
-- POST /api/jobs/{{id}}/acknowledge (worker acknowledges)
-- POST /api/jobs/{{id}}/start (start job)
-- POST /api/jobs/{{id}}/complete (complete job)
-""")
-    logger.info("Test credentials written")
 
 @app.on_event("shutdown")
 
