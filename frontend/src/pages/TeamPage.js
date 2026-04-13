@@ -716,7 +716,6 @@ export default function TeamPage() {
                   </option>
                 ))}
               </select>
-                className="bg-churvox-bg border-churvox-border text-white"
               />
             </div>
 
