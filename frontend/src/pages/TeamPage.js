@@ -7,7 +7,6 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { UserPlus, Trash2, Upload, RefreshCw, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { usePlanLimits } from "../hooks/usePlanLimits";
@@ -440,111 +439,112 @@ export default function TeamPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={workerModalOpen} onOpenChange={(open) => !open && closeWorkerModal()}>
-        <DialogContent
-          className="bg-churvox-card border-churvox-border text-white max-w-2xl pointer-events-auto"
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          onCloseAutoFocus={(e) => e.preventDefault()}
-          onPointerDownOutside={(e) => e.preventDefault()}
-          onInteractOutside={(e) => e.preventDefault()}
+      {workerModalOpen && selectedWorker && (
+        <div
+          className="fixed inset-0 z-[1000] bg-black/70 flex items-center justify-center p-4"
+          onClick={closeWorkerModal}
         >
-          <DialogHeader>
-            <DialogTitle>{selectedWorker?.name || "Worker"}</DialogTitle>
-          </DialogHeader>
+          <div
+            className="bg-churvox-card border border-churvox-border text-white max-w-2xl w-full rounded-xl shadow-2xl p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="text-xl font-semibold">{selectedWorker?.name || "Worker"}</div>
+              <button
+                type="button"
+                onClick={closeWorkerModal}
+                className="text-white/70 hover:text-white text-2xl leading-none"
+              >
+                ×
+              </button>
+            </div>
 
-          {selectedWorker && (
-            <div className="space-y-4">
-              <div className="rounded-lg border border-churvox-border p-4">
-                <div className="text-sm text-churvox-muted">Email</div>
-                <div className="text-white">{selectedWorker.email || "-"}</div>
-              </div>
+            <div className="rounded-lg border border-churvox-border p-4">
+              <div className="text-sm text-churvox-muted">Email</div>
+              <div className="text-white">{selectedWorker.email || "-"}</div>
+            </div>
 
-              <div className="rounded-lg border border-churvox-border p-4">
-                <div className="text-sm text-churvox-muted">Phone</div>
-                <div className="text-white">{selectedWorker.phone || "-"}</div>
-              </div>
+            <div className="rounded-lg border border-churvox-border p-4">
+              <div className="text-sm text-churvox-muted">Phone</div>
+              <div className="text-white">{selectedWorker.phone || "-"}</div>
+            </div>
 
-              <div className="rounded-lg border border-churvox-border p-4 space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-white font-medium">Worker Notes</div>
-                  <Button
-                    type="button"
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={saveWorkerNotes}
-                    disabled={savingNotes}
-                    className="bg-churvox-accent hover:bg-churvox-accent/90"
-                  >
-                    {savingNotes ? "Saving..." : "Save Notes"}
-                  </Button>
-                </div>
-
-                <textarea
-                  value={workerNotes}
-                  onChange={(e) => setWorkerNotes(e.target.value)}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onClick={(e) => e.stopPropagation()}
-                  onFocus={(e) => e.stopPropagation()}
-                  placeholder="Add notes for this worker..."
-                  rows={5}
-                  className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3 outline-none pointer-events-auto"
-                />
-              </div>
-
-              <div className="rounded-lg border border-churvox-border p-4 space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-white font-medium">Assigned Jobs</div>
-                  <Button
-                    type="button"
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={() => navigate(`/jobs/new?workerId=${selectedWorker.id || selectedWorker._id}`)}
-                    className="bg-churvox-accent hover:bg-churvox-accent/90"
-                  >
-                    Add / Assign Job
-                  </Button>
-                </div>
-
-                {workerJobs.length > 0 ? (
-                  <div className="space-y-3">
-                    {workerJobs.map((job, index) => {
-                      const jobId = job.id || job._id;
-                      return (
-                        <div key={jobId || index} className="rounded-lg border border-churvox-border p-3 flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="text-white font-medium">{job.title || job.job_type || "Job"}</div>
-                            <div className="text-sm text-churvox-muted">{job.client_name || "-"}</div>
-                            <div className="text-sm text-churvox-muted">{job.address || "-"}</div>
-                            <div className="text-sm text-churvox-muted">Status: {job.status || "-"}</div>
-                            <div className="text-sm text-churvox-muted">
-                              Date: {job.scheduled_date ? String(job.scheduled_date).slice(0, 10) : "-"}
-                            </div>
-                          </div>
-
-                          {jobId && (
-                            <Button
-                              variant="outline"
-                              onClick={() => navigate(`/jobs/${jobId}`)}
-                            >
-                              Open Job
-                            </Button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-sm text-churvox-muted">No assigned jobs yet.</div>
-                )}
-              </div>
-
-              <div className="flex justify-end">
-                <Button type="button" variant="outline" onMouseDown={(e) => e.stopPropagation()} onClick={closeWorkerModal}>
-                  Close
+            <div className="rounded-lg border border-churvox-border p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-white font-medium">Worker Notes</div>
+                <Button
+                  type="button"
+                  onClick={saveWorkerNotes}
+                  disabled={savingNotes}
+                  className="bg-churvox-accent hover:bg-churvox-accent/90"
+                >
+                  {savingNotes ? "Saving..." : "Save Notes"}
                 </Button>
               </div>
+
+              <textarea
+                value={workerNotes}
+                onChange={(e) => setWorkerNotes(e.target.value)}
+                placeholder="Add notes for this worker..."
+                rows={5}
+                className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3 outline-none"
+              />
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+
+            <div className="rounded-lg border border-churvox-border p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-white font-medium">Assigned Jobs</div>
+                <Button
+                  type="button"
+                  onClick={() => navigate(`/jobs/new?workerId=${selectedWorker.id || selectedWorker._id}`)}
+                  className="bg-churvox-accent hover:bg-churvox-accent/90"
+                >
+                  Add / Assign Job
+                </Button>
+              </div>
+
+              {workerJobs.length > 0 ? (
+                <div className="space-y-3">
+                  {workerJobs.map((job, index) => {
+                    const jobId = job.id || job._id;
+                    return (
+                      <div key={jobId || index} className="rounded-lg border border-churvox-border p-3 flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-white font-medium">{job.title || job.job_type || "Job"}</div>
+                          <div className="text-sm text-churvox-muted">{job.client_name || "-"}</div>
+                          <div className="text-sm text-churvox-muted">{job.address || "-"}</div>
+                          <div className="text-sm text-churvox-muted">Status: {job.status || "-"}</div>
+                          <div className="text-sm text-churvox-muted">
+                            Date: {job.scheduled_date ? String(job.scheduled_date).slice(0, 10) : "-"}
+                          </div>
+                        </div>
+
+                        {jobId && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => navigate(`/jobs/${jobId}`)}
+                          >
+                            Open Job
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-sm text-churvox-muted">No assigned jobs yet.</div>
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <Button type="button" variant="outline" onClick={closeWorkerModal}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }
