@@ -228,7 +228,13 @@ export default function JobDetailPage() {
   }
 
   const workerList = Array.isArray(workers) ? workers : [];
-  const filteredWorkerList = workerList.filter((worker) => workerMatchesJobRegion(worker, job));
+  const filteredWorkerList = Array.isArray(workers) ? workers.filter((worker) => workerMatchesJobRegion(worker, job)) : [];
+
+  const selectedWorkerStillValid = !selectedWorker
+    ? true
+    : filteredWorkerList.some((worker) => String(worker.id || worker._id || "") === String(selectedWorker));
+
+
   const currentStatus = job?.status || "assigned";
   const userRole = String(user?.role || "").trim().toLowerCase();
   const isOwnerView =
