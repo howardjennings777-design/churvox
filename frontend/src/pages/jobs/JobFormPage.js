@@ -56,6 +56,8 @@ function workerMatchesJobCountryRegion(worker, form) {
   const workerCountry = norm(worker?.country);
   const workerRegion = norm(worker?.region);
 
+  // Safe fallback:
+  // if either side is missing country/region, do not hide the worker
   if (!jobCountry || !jobRegion) return true;
   if (!workerCountry || !workerRegion) return true;
 

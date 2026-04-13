@@ -43,10 +43,7 @@ function norm(v) {
   return String(v || "").trim().toLowerCase();
 }
 
-function includesLocation(haystack, needle) {
-  if (!needle) return false;
-  return norm(haystack).includes(norm(needle));
-}
+
 
 function workerMatchesJobRegion(worker, job) {
   const jobCountry = norm(job?.country);
@@ -115,6 +112,13 @@ export default function JobDetailPage() {
   useEffect(() => {
     loadPage();
   }, [loadPage]);
+
+  useEffect(() => {
+    if (!selectedWorkerStillValid) {
+      setSelectedWorker("");
+    }
+  }, [selectedWorkerStillValid]);
+
 
   const handleAssign = async () => {
     if (!selectedWorker) {
@@ -211,6 +215,11 @@ export default function JobDetailPage() {
   }
 
   const filteredWorkerList = Array.isArray(workers) ? workers.filter((worker) => workerMatchesJobRegion(worker, job)) : [];
+
+  const selectedWorkerStillValid = !selectedWorker
+    ? true
+    : filteredWorkerList.some((worker) => String(worker.id || worker._id || "") === String(selectedWorker));
+
 
 
   const currentStatus = job?.status || "assigned";
