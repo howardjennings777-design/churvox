@@ -149,7 +149,7 @@ export default function JobFormPage() {
   useEffect(() => {
     if (!user?.token) return;
     fetchData();
-  }, [fetchData, user?.token]);
+  }, [fetchData, user?.token, workerIdFromQuery]);
 
   const handleClientChange = (clientId) => {
     const client = clients.find((c) => String(c.id || c._id) === String(clientId));
