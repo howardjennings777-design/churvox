@@ -103,6 +103,23 @@ export default function JobDetailPage() {
     }
   };
 
+  const handleAcknowledge = async () => {
+    setSaving(true);
+    try {
+      const res = await post(`/jobs/${id}/acknowledge`);
+      if (res?.success) {
+        toast.success("Job accepted");
+        await loadPage();
+      } else {
+        toast.error(res?.error || "Failed to accept job");
+      }
+    } catch {
+      toast.error("Failed to accept job");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleStatusChange = async (nextStatus) => {
     if (!job) return;
 
@@ -214,6 +231,21 @@ export default function JobDetailPage() {
             </div>
           </CardContent>
         </Card>
+
+        {currentStatus === "assigned" && (
+          <Card className="bg-churvox-card border-churvox-border">
+            <CardContent className="p-5 space-y-4">
+              <div className="text-white font-semibold">Worker Acceptance</div>
+              <Button
+                onClick={handleAcknowledge}
+                disabled={saving}
+                className="bg-churvox-accent hover:bg-churvox-accent/90"
+              >
+                {saving ? "Saving..." : "Accept Job"}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="bg-churvox-card border-churvox-border">
           <CardContent className="p-5 space-y-4">

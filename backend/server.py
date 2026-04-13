@@ -3093,6 +3093,92 @@ async def assign_job_worker(job_id: str, payload: dict, current_user: dict = Dep
         "assigned_worker_name": worker_name,
     }
 
+
+@api_router.post("/jobs/{job_id}/acknowledge")
+async def acknowledge_job(job_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+    current_role = str(current_user.get("role") or "").lower()
+    current_email = str(current_user.get("email") or "").strip().lower()
+
+    job = None
+    if len(str(job_id)) == 24:
+        try:
+            job = await db.jobs.find_one({
+                "_id": ObjectId(job_id),
+                "$or": [
+                    {"business_id": business_id},
+                    {"business_id": str(business_id)},
+                    {"owner_id": owner_id},
+                ]
+            })
+        except Exception:
+            job = None
+
+    if not job:
+        job = await db.jobs.find_one({
+            "id": job_id,
+            "$or": [
+                {"business_id": business_id},
+                {"business_id": str(business_id)},
+                {"owner_id": owner_id},
+            ]
+        })
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if current_role not in ["owner", "admin", "worker"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    if current_role == "worker":
+        assigned_worker_id = str(job.get("assigned_worker_id") or "")
+        assigned_worker_email = str(job.get("assigned_worker_email") or "").strip().lower()
+
+        worker_match = False
+
+        if assigned_worker_id:
+            current_ids = {
+                str(current_user.get("_id") or ""),
+                str(current_user.get("id") or ""),
+                str(current_user.get("user_id") or ""),
+            }
+            if assigned_worker_id in current_ids:
+                worker_match = True
+
+        if assigned_worker_email and current_email and assigned_worker_email == current_email:
+            worker_match = True
+
+        if not worker_match:
+            raise HTTPException(status_code=403, detail="This job is not assigned to you")
+
+    await db.jobs.update_one(
+        {"_id": job["_id"]},
+        {"$set": {
+            "status": "acknowledged",
+            "updated_at": datetime.now(timezone.utc),
+        }}
+    )
+
+    return {
+        "success": True,
+        "message": "Job acknowledged",
+        "status": "acknowledged",
+        "id": str(job["_id"]),
+    }
+
 @api_router.post("/jobs/{job_id}/pause")
 async def pause_job(job_id: str, current_user: dict = Depends(get_current_user)):
     job = await db.jobs.find_one({"id": job_id})
