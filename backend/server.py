@@ -1041,6 +1041,74 @@ async def logout(response: Response):
     clear_auth_cookies(response)
     return {"message": "Logged out successfully"}
 
+@api_router.post("/auth/signup")
+async def signup(payload: dict):
+    email = str((payload or {}).get("email") or "").strip().lower()
+    password = str((payload or {}).get("password") or "").strip()
+    name = str((payload or {}).get("name") or "").strip()
+    business_name = str((payload or {}).get("business_name") or (payload or {}).get("businessName") or name or "My Business").strip()
+    industry = str((payload or {}).get("industry") or "Other").strip()
+
+    if not email or not password or not name:
+        raise HTTPException(status_code=400, detail="Name, email, and password are required")
+
+    existing_user = await db.users.find_one({"email": email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="An account with this email already exists")
+
+    now = datetime.utcnow()
+    password_hash = pwd_context.hash(password)
+
+    business_doc = {
+        "name": business_name,
+        "business_name": business_name,
+        "email": email,
+        "industry": industry,
+        "plan": "solo",
+        "status": "active",
+        "created_at": now,
+        "updated_at": now,
+    }
+    business_result = await db.businesses.insert_one(business_doc)
+    business_id = str(business_result.inserted_id)
+
+    user_doc = {
+        "name": name,
+        "email": email,
+        "password_hash": password_hash,
+        "role": "owner",
+        "business_id": business_id,
+        "industry": industry,
+        "plan": "solo",
+        "status": "active",
+        "created_at": now,
+        "updated_at": now,
+    }
+    user_result = await db.users.insert_one(user_doc)
+    user_id = str(user_result.inserted_id)
+
+    token = create_access_token({
+        "sub": email,
+        "email": email,
+        "role": "owner",
+        "business_id": business_id,
+        "user_id": user_id,
+    })
+
+    return {
+        "success": True,
+        "token": token,
+        "user": {
+            "id": user_id,
+            "name": name,
+            "email": email,
+            "role": "owner",
+            "business_id": business_id,
+            "plan": "solo",
+            "industry": industry,
+        }
+    }
+
 @api_router.get("/auth/me")
 async def get_me(request: Request):
     user = await get_current_user(request)
@@ -2260,6 +2328,86 @@ async def get_clients(current_user: dict = Depends(get_current_user)):
 
 
 
+@api_router.post("/team/workers")
+async def create_team_worker(payload: dict, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["owner", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    name = str((payload or {}).get("name") or "").strip()
+    email = str((payload or {}).get("email") or "").strip().lower()
+    phone = str((payload or {}).get("phone") or "").strip()
+
+    if not name or not email:
+        raise HTTPException(status_code=400, detail="Name and email are required")
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    existing = await db.business_users.find_one({
+        "email": email,
+        "role": "worker",
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="Worker already exists")
+
+    now = datetime.utcnow()
+    worker_doc = {
+        "id": str(ObjectId()),
+        "name": name,
+        "email": email,
+        "phone": phone,
+        "role": "worker",
+        "status": "pending",
+        "business_id": business_id,
+        "owner_id": owner_id,
+        "notes": "",
+        "created_at": now,
+        "updated_at": now,
+    }
+    result = await db.business_users.insert_one(worker_doc)
+
+    try:
+        invite_token = str(result.inserted_id)
+        invite_link = f"{FRONTEND_URL}/invite/setup/{invite_token}"
+        await send_email(
+            to_email=email,
+            subject="You're invited to join Churvox",
+            html_content=f"<p>Hi {name},</p><p>You have been invited to join a team on Churvox.</p><p><a href='{invite_link}'>Finish setup</a></p>"
+        )
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "message": "Worker invited",
+        "worker": {
+            "id": str(result.inserted_id),
+            "name": name,
+            "email": email,
+            "phone": phone,
+            "role": "worker",
+            "status": "pending",
+            "notes": "",
+        }
+    }
+
 @api_router.patch("/team/workers/{worker_id}/notes")
 async def update_team_worker_notes(worker_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     if current_user.get("role") not in ["owner", "admin"]:
@@ -2862,6 +3010,81 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
     await db.jobs.update_one({"_id": obj_id}, {"$set": update_doc})
 
     return {"success": True, "message": "Job updated"}
+
+@api_router.post("/jobs/{job_id}/assign")
+async def assign_job_worker(job_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["owner", "admin"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    worker_id = str((payload or {}).get("worker_id") or "").strip()
+    if not worker_id:
+        raise HTTPException(status_code=400, detail="worker_id is required")
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    worker = await db.business_users.find_one({
+        "$or": [{"_id": ObjectId(worker_id)}] if len(worker_id) == 24 else [{"id": worker_id}],
+        "role": "worker",
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]
+    })
+    if not worker:
+        if len(worker_id) == 24:
+            worker = await db.business_users.find_one({
+                "_id": ObjectId(worker_id),
+                "role": "worker",
+                "$or": [
+                    {"business_id": business_id},
+                    {"business_id": str(business_id)},
+                    {"owner_id": owner_id},
+                ]
+            })
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+
+    job = None
+    if len(job_id) == 24:
+        job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+    if not job:
+        job = await db.jobs.find_one({"id": job_id})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    worker_ref = str(worker.get("id") or worker.get("_id"))
+    worker_name = worker.get("name") or "Worker"
+
+    await db.jobs.update_one(
+        {"_id": job["_id"]},
+        {"$set": {
+            "assigned_worker_id": worker_ref,
+            "assigned_worker_name": worker_name,
+            "status": job.get("status") or "assigned",
+            "updated_at": datetime.utcnow(),
+        }}
+    )
+
+    return {
+        "success": True,
+        "message": "Worker assigned",
+        "assigned_worker_id": worker_ref,
+        "assigned_worker_name": worker_name,
+    }
 
 @api_router.post("/jobs/{job_id}/pause")
 async def pause_job(job_id: str, current_user: dict = Depends(get_current_user)):
