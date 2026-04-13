@@ -39,7 +39,7 @@ export default function TeamPage() {
   const [workerNotes, setWorkerNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
   const [workerJobs, setWorkerJobs] = useState([]);
-  const [form, setForm] = useState({ name: "", email: "", phone: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", region: "" });
   const [importResults, setImportResults] = useState(null);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef(null);
@@ -102,11 +102,12 @@ export default function TeamPage() {
       name: form.name.trim(),
       email: form.email.trim(),
       phone: form.phone.trim(),
+      region: String(form.region || "").trim(),
     });
 
     if (res?.success) {
       toast.success(`Invite sent to ${form.email}`);
-      setForm({ name: "", email: "", phone: "" });
+      setForm({ name: "", email: "", phone: "", region: "" });
       setShowAdd(false);
       fetchWorkers();
     } else {
@@ -297,6 +298,11 @@ export default function TeamPage() {
                     <div className="text-white">{selectedWorker.phone || "-"}</div>
                   </div>
 
+                  <div className="rounded-lg border border-churvox-border p-4">
+                    <div className="text-sm text-churvox-muted">Region</div>
+                    <div className="text-white">{selectedWorker.region || "-"}</div>
+                  </div>
+
                   <div className="rounded-lg border border-churvox-border p-4 space-y-3">
                     <div className="flex items-center justify-between gap-3">
                       <div className="text-white font-medium">Worker Notes</div>
@@ -438,6 +444,9 @@ export default function TeamPage() {
                             <div className="text-sm text-churvox-muted">
                               {worker.phone || "-"}
                             </div>
+                            <div className="text-sm text-churvox-muted">
+                              {worker.region || "-"}
+                            </div>
                             {worker.status && (
                               <div className="text-xs text-churvox-muted mt-1">
                                 Status: {worker.status}
@@ -512,6 +521,16 @@ export default function TeamPage() {
                 id="worker-phone"
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                className="bg-churvox-bg border-churvox-border text-white"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="worker-region">Region</Label>
+              <Input
+                id="worker-region"
+                value={form.region}
+                onChange={(e) => setForm({ ...form, region: e.target.value })}
                 className="bg-churvox-bg border-churvox-border text-white"
               />
             </div>
