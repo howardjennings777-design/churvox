@@ -39,6 +39,46 @@ function formatMinutes(totalMinutes) {
   return `${minutes}m`;
 }
 
+function norm(v) {
+  return String(v || "").trim().toLowerCase();
+}
+
+function includesLocation(haystack, needle) {
+  if (!needle) return false;
+  return norm(haystack).includes(norm(needle));
+}
+
+function workerMatchesJobRegion(worker, job) {
+  const jobCountry = norm(job?.country);
+  const jobRegion = norm(job?.region);
+  const jobCity = norm(job?.city);
+  const jobAddress = norm(job?.address);
+
+  const workerCountry = norm(worker?.country);
+  const workerRegion = norm(worker?.region);
+  const workerCity = norm(worker?.city);
+
+  const hasJobGeo = !!(jobCountry || jobRegion || jobCity);
+  const hasWorkerGeo = !!(workerCountry || workerRegion || workerCity);
+
+  if (!hasJobGeo || !hasWorkerGeo) return true;
+
+  if (jobCountry && workerCountry && jobCountry !== workerCountry) return false;
+  if (jobRegion && workerRegion && jobRegion !== workerRegion) return false;
+
+  if (jobCity && workerCity) {
+    return jobCity === workerCity;
+  }
+
+  if (jobCity && !workerCity) {
+    return includesLocation(jobAddress, workerRegion) || includesLocation(jobAddress, workerCountry);
+  }
+
+  if (jobRegion && !workerRegion) return false;
+
+  return true;
+}
+
 export default function JobDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -188,6 +228,7 @@ export default function JobDetailPage() {
   }
 
   const workerList = Array.isArray(workers) ? workers : [];
+  const filteredWorkerList = workerList.filter((worker) => workerMatchesJobRegion(worker, job));
   const currentStatus = job?.status || "assigned";
   const userRole = String(user?.role || "").trim().toLowerCase();
   const isOwnerView =
@@ -324,19 +365,35 @@ export default function JobDetailPage() {
                 data-testid="assign-worker-select"
               >
                 <option value="">Select worker</option>
-                {workerList.map((worker) => {
+                {filteredWorkerList.map((worker) => {
                   const workerId = worker.id || worker._id;
+                  const labelBits = [
+                    worker.name || worker.email || "Worker",
+                    worker.city || worker.region || worker.country || ""
+                  ].filter(Boolean);
                   return (
                     <option key={workerId} value={workerId}>
-                      {worker.name || worker.email || "Worker"}
+                      {labelBits.join(" - ")}
                     </option>
                   );
                 })}
               </select>
 
+              {job?.region || job?.city || job?.country ? (
+                <div className="text-xs text-churvox-muted">
+                  Showing workers matching {job.city || job.region || job.country}
+                </div>
+              ) : null}
+
+              {filteredWorkerList.length === 0 ? (
+                <div className="text-sm text-churvox-muted">
+                  No workers available in this region.
+                </div>
+              ) : null}
+
               <Button
                 onClick={handleAssign}
-                disabled={saving || !selectedWorker}
+                disabled={saving || !selectedWorker || filteredWorkerList.length === 0}
                 className="bg-churvox-accent hover:bg-churvox-accent/90"
                 data-testid="confirm-assign-worker"
               >
