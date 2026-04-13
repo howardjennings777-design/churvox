@@ -33,7 +33,7 @@ export default function JobDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { get, post, patch } = useApi();
-  const { isEmployer, isWorker } = useAuth();
+  const { user, isWorker } = useAuth();
 
   const [job, setJob] = useState(null);
   const [workers, setWorkers] = useState([]);
@@ -70,7 +70,7 @@ export default function JobDetailPage() {
       } else {
         setWorkers([]);
       }
-    } catch (err) {
+    } catch {
       setError("Failed to load job");
       setJob(null);
       setWorkers([]);
@@ -81,22 +81,6 @@ export default function JobDetailPage() {
 
   useEffect(() => {
     loadPage();
-  }, [loadPage]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      loadPage();
-    }, 10000);
-
-    const handleFocus = () => loadPage();
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleFocus);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleFocus);
-    };
   }, [loadPage]);
 
   const handleAssign = async () => {
@@ -195,6 +179,14 @@ export default function JobDetailPage() {
 
   const workerList = Array.isArray(workers) ? workers : [];
   const currentStatus = job?.status || "assigned";
+  const userRole = String(user?.role || "").trim().toLowerCase();
+  const isOwnerView =
+    userRole === "owner" ||
+    userRole === "admin" ||
+    userRole === "employer" ||
+    user?.is_admin === true ||
+    user?.is_owner === true;
+  const hasAssignedWorker = !!(job?.assigned_worker_id || job?.assigned_worker_name);
 
   return (
     <Layout>
@@ -202,7 +194,7 @@ export default function JobDetailPage() {
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold text-white">
-              {job.title || job.job_type || "Job"}
+              {job.title || "Job"}
             </h1>
             <p className="text-sm text-churvox-muted mt-1">
               Status: {niceStatus(currentStatus)}
@@ -213,12 +205,14 @@ export default function JobDetailPage() {
             <Button variant="outline" asChild>
               <Link to="/jobs">Back</Link>
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate(`/jobs/${id}/edit`)}
-            >
-              Edit Job
-            </Button>
+            {isOwnerView && (
+              <Button
+                variant="outline"
+                onClick={() => navigate(`/jobs/${id}/edit`)}
+              >
+                Edit Job
+              </Button>
+            )}
           </div>
         </div>
 
@@ -250,6 +244,40 @@ export default function JobDetailPage() {
           </CardContent>
         </Card>
 
+        {(!isOwnerView || !hasAssignedWorker) && (
+          <Card className="bg-churvox-card border-churvox-border">
+            <CardContent className="p-5 space-y-4">
+              <div className="text-white font-semibold">Assign Worker</div>
+
+              <select
+                value={selectedWorker}
+                onChange={(e) => setSelectedWorker(e.target.value)}
+                className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3"
+                data-testid="assign-worker-select"
+              >
+                <option value="">Select worker</option>
+                {workerList.map((worker) => {
+                  const workerId = worker.id || worker._id;
+                  return (
+                    <option key={workerId} value={workerId}>
+                      {worker.name || worker.email || "Worker"}
+                    </option>
+                  );
+                })}
+              </select>
+
+              <Button
+                onClick={handleAssign}
+                disabled={saving || !selectedWorker}
+                className="bg-churvox-accent hover:bg-churvox-accent/90"
+                data-testid="confirm-assign-worker"
+              >
+                {saving ? "Saving..." : "Assign Worker"}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {isWorker && currentStatus === "assigned" && (
           <Card className="bg-churvox-card border-churvox-border">
             <CardContent className="p-5 space-y-4">
@@ -265,58 +293,24 @@ export default function JobDetailPage() {
           </Card>
         )}
 
-        {isEmployer && (
-          <Card className="bg-churvox-card border-churvox-border">
-            <CardContent className="p-5 space-y-4">
-              <div className="text-white font-semibold">Assign Worker</div>
-
-            <select
-              value={selectedWorker}
-              onChange={(e) => setSelectedWorker(e.target.value)}
-              className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3"
-              data-testid="assign-worker-select"
-            >
-              <option value="">Select worker</option>
-              {workerList.map((worker) => {
-                const workerId = worker.id || worker._id;
-                return (
-                  <option key={workerId} value={workerId}>
-                    {worker.name || worker.email || "Worker"}
-                  </option>
-                );
-              })}
-            </select>
-
-            <Button
-              onClick={handleAssign}
-              disabled={saving || !selectedWorker}
-              className="bg-churvox-accent hover:bg-churvox-accent/90"
-              data-testid="confirm-assign-worker"
-            >
-              {saving ? "Saving..." : "Assign Worker"}
-            </Button>
-            </CardContent>
-          </Card>
-        )}
-
         {isWorker && (
           <Card className="bg-churvox-card border-churvox-border">
             <CardContent className="p-5 space-y-4">
               <div className="text-white font-semibold">Update Status</div>
 
-            <div className="flex gap-2 flex-wrap">
-              {STATUS_OPTIONS.map((status) => (
-                <Button
-                  key={status}
-                  variant={currentStatus === status ? "default" : "outline"}
-                  onClick={() => handleStatusChange(status)}
-                  disabled={saving}
-                  className={currentStatus === status ? "bg-churvox-accent hover:bg-churvox-accent/90" : ""}
-                >
-                  {niceStatus(status)}
-                </Button>
-              ))}
-            </div>
+              <div className="flex gap-2 flex-wrap">
+                {STATUS_OPTIONS.map((status) => (
+                  <Button
+                    key={status}
+                    variant={currentStatus === status ? "default" : "outline"}
+                    onClick={() => handleStatusChange(status)}
+                    disabled={saving}
+                    className={currentStatus === status ? "bg-churvox-accent hover:bg-churvox-accent/90" : ""}
+                  >
+                    {niceStatus(status)}
+                  </Button>
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}
