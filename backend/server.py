@@ -3331,6 +3331,35 @@ def build_billing_status(owner: dict):
 
 
 
+
+
+@api_router.put("/team/{worker_id}/notes")
+async def update_worker_notes(worker_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    notes = (payload or {}).get("notes", "")
+    worker = await db.users.find_one({
+        "_id": ObjectId(worker_id),
+        "business_id": current_user.get("business_id"),
+        "role": {"$in": ["worker", "employee", "staff"]}
+    })
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+
+    await db.users.update_one(
+        {"_id": ObjectId(worker_id)},
+        {"$set": {"notes": notes, "updated_at": datetime.utcnow()}}
+    )
+
+    updated = await db.users.find_one({"_id": ObjectId(worker_id)})
+    return {
+        "success": True,
+        "message": "Worker notes saved",
+        "worker": {
+            "id": str(updated["_id"]),
+            "notes": updated.get("notes", "")
+        }
+    }
+
+
 @api_router.post("/team/import-csv")
 async def import_csv_workers(request: Request, current_user: dict = Depends(get_current_user)):
     import csv

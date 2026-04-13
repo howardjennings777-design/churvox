@@ -20,6 +20,7 @@ const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && impor
 
 export default function TeamPage() {
   const navigate = useNavigate();
+  const [savingNotes, setSavingNotes] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState(null);
   const [workerJobs, setWorkerJobs] = useState([]);
   const [workerModalOpen, setWorkerModalOpen] = useState(false);
@@ -76,7 +77,7 @@ export default function TeamPage() {
 
 
   const openWorkerDetail = async (worker) => {
-    setSelectedWorker(worker);
+    setSelectedWorker({ ...worker, notes: worker.notes || "" });
     setWorkerJobs([]);
     setWorkerNotes(worker?.notes || "");
     setWorkerModalOpen(true);
