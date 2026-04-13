@@ -2644,6 +2644,7 @@ async def get_job(job_id: str, current_user: dict = Depends(get_current_user)):
             "extras": job.get("extras") or [],
             "notes": job.get("notes") or "",
             "assigned_worker_id": job.get("assigned_worker_id"),
+            "assigned_worker_name": job.get("assigned_worker_name") or "",
             "status": job.get("status") or "assigned",
             "is_recurring": bool(job.get("is_recurring") or False),
             "recurring_frequency": job.get("recurring_frequency"),
