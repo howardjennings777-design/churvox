@@ -39,6 +39,10 @@ function formatMinutes(totalMinutes) {
   return `${minutes}m`;
 }
 
+function hasValue(value) {
+  return String(value ?? "").trim() !== "";
+}
+
 function norm(v) {
   return String(v || "").trim().toLowerCase();
 }
@@ -262,28 +266,36 @@ export default function JobDetailPage() {
                 <div className="text-xs uppercase tracking-wide text-churvox-muted">Address</div>
                 <div className="text-white">{job.address || "-"}</div>
               </div>
-              <div>
-                <div className="text-xs uppercase tracking-wide text-churvox-muted">Country</div>
-                <div className="text-white">{job.country || "-"}</div>
-              </div>
-              <div>
-                <div className="text-xs uppercase tracking-wide text-churvox-muted">Region / State</div>
-                <div className="text-white">{job.region || "-"}</div>
-              </div>
+              {hasValue(job.country) && (
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Country</div>
+                  <div className="text-white">{job.country}</div>
+                </div>
+              )}
+              {hasValue(job.region) && (
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Region / State</div>
+                  <div className="text-white">{job.region}</div>
+                </div>
+              )}
               <div>
                 <div className="text-xs uppercase tracking-wide text-churvox-muted">Scheduled</div>
                 <div className="text-white">{safeDate(job.scheduled_date)}</div>
               </div>
-              <div>
-                <div className="text-xs uppercase tracking-wide text-churvox-muted">Assigned Worker</div>
-                <div className="text-white">{job.assigned_worker_name || "-"}</div>
-              </div>
+              {hasValue(job.assigned_worker_name) && (
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Assigned Worker</div>
+                  <div className="text-white">{job.assigned_worker_name}</div>
+                </div>
+              )}
             </div>
 
-            <div>
-              <div className="text-xs uppercase tracking-wide text-churvox-muted mb-1">Notes</div>
-              <div className="text-white whitespace-pre-wrap">{job.notes || "-"}</div>
-            </div>
+            {hasValue(job.notes) && (
+              <div>
+                <div className="text-xs uppercase tracking-wide text-churvox-muted mb-1">Notes</div>
+                <div className="text-white whitespace-pre-wrap">{job.notes}</div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
