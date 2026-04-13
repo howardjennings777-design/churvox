@@ -441,7 +441,13 @@ export default function TeamPage() {
       </Dialog>
 
       <Dialog open={workerModalOpen} onOpenChange={(open) => !open && closeWorkerModal()}>
-        <DialogContent className="bg-churvox-card border-churvox-border text-white max-w-2xl">
+        <DialogContent
+          className="bg-churvox-card border-churvox-border text-white max-w-2xl pointer-events-auto"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onCloseAutoFocus={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>{selectedWorker?.name || "Worker"}</DialogTitle>
           </DialogHeader>
@@ -462,6 +468,8 @@ export default function TeamPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-white font-medium">Worker Notes</div>
                   <Button
+                    type="button"
+                    onMouseDown={(e) => e.stopPropagation()}
                     onClick={saveWorkerNotes}
                     disabled={savingNotes}
                     className="bg-churvox-accent hover:bg-churvox-accent/90"
@@ -473,9 +481,12 @@ export default function TeamPage() {
                 <textarea
                   value={workerNotes}
                   onChange={(e) => setWorkerNotes(e.target.value)}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.stopPropagation()}
                   placeholder="Add notes for this worker..."
                   rows={5}
-                  className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3 outline-none"
+                  className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3 outline-none pointer-events-auto"
                 />
               </div>
 
@@ -483,6 +494,8 @@ export default function TeamPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-white font-medium">Assigned Jobs</div>
                   <Button
+                    type="button"
+                    onMouseDown={(e) => e.stopPropagation()}
                     onClick={() => navigate(`/jobs/new?workerId=${selectedWorker.id || selectedWorker._id}`)}
                     className="bg-churvox-accent hover:bg-churvox-accent/90"
                   >
@@ -524,7 +537,7 @@ export default function TeamPage() {
               </div>
 
               <div className="flex justify-end">
-                <Button variant="outline" onClick={closeWorkerModal}>
+                <Button type="button" variant="outline" onMouseDown={(e) => e.stopPropagation()} onClick={closeWorkerModal}>
                   Close
                 </Button>
               </div>
