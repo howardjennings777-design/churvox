@@ -410,7 +410,7 @@ export default function TeamPage() {
                       <select
                         value={selectedWorker?.country || "New Zealand"}
                         onChange={(e) => setSelectedWorker((prev) => prev ? { ...prev, country: e.target.value, region: "" } : prev)}
-                        className="w-full h-10 rounded-md border border-white/10 bg-[#0f172a] px-3 text-white"
+                        className="w-full h-10 min-h-[40px] rounded-md border border-white/10 bg-[#0f172a] px-3 text-white appearance-none"
                       >
                         {COUNTRY_OPTIONS.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -425,7 +425,7 @@ export default function TeamPage() {
                       <select
                         value={selectedWorker?.region || ""}
                         onChange={(e) => setSelectedWorker((prev) => prev ? { ...prev, region: e.target.value } : prev)}
-                        className="w-full h-10 rounded-md border border-white/10 bg-[#0f172a] px-3 text-white"
+                        className="w-full h-10 min-h-[40px] rounded-md border border-white/10 bg-[#0f172a] px-3 text-white appearance-none"
                       >
                         <option value="">Select region / state</option>
                         {getRegionOptions(selectedWorker?.country || "New Zealand").map((region) => (
@@ -648,20 +648,19 @@ export default function TeamPage() {
       </div>
 
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
-        <DialogContent className="bg-churvox-card border-churvox-border text-white">
+        <DialogContent className="w-[95vw] max-w-[560px] max-h-[85vh] overflow-y-auto overflow-x-hidden bg-churvox-card border-churvox-border text-white">
           <DialogHeader>
             <DialogTitle>Invite Worker</DialogTitle>
           </DialogHeader>
 
-          <form onSubmit={handleAdd} className="space-y-4">
+          <form onSubmit={handleAdd} className="space-y-4 pb-2">
             <div>
               <Label htmlFor="worker-name">Name</Label>
               <Input
                 id="worker-name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="bg-churvox-bg border-churvox-border text-white"
-                required
+                                required
               />
             </div>
 
@@ -672,8 +671,7 @@ export default function TeamPage() {
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="bg-churvox-bg border-churvox-border text-white"
-                required
+                                required
               />
             </div>
 
@@ -693,7 +691,7 @@ export default function TeamPage() {
                 id="worker-country"
                 value={form.country || "New Zealand"}
                 onChange={(e) => setForm({ ...form, country: e.target.value, region: "" })}
-                className="w-full h-10 rounded-md border border-white/10 bg-[#0f172a] px-3 text-white"
+                className="w-full h-10 min-h-[40px] rounded-md border border-white/10 bg-[#0f172a] px-3 text-white appearance-none"
               >
                 {COUNTRY_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -707,7 +705,7 @@ export default function TeamPage() {
                 id="worker-region"
                 value={form.region}
                 onChange={(e) => setForm({ ...form, region: e.target.value })}
-                className="w-full h-10 rounded-md border border-white/10 bg-[#0f172a] px-3 text-white"
+                className="w-full h-10 min-h-[40px] rounded-md border border-white/10 bg-[#0f172a] px-3 text-white appearance-none"
               >
                 <option value="">Select region / state</option>
                 {getRegionOptions(form.country || "New Zealand").map((region) => (
