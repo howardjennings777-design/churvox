@@ -295,7 +295,7 @@ export default function TeamPage() {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className="text-white font-medium">{w.name}</p>
+                            <button type="button" onClick={() => openWorkerDetail(w)} className="text-white font-medium underline text-left">{w.name}</button>
                             {w.status === "invited" ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20" data-testid={`worker-status-invited-${w.id}`}>
                                 <Clock size={10} /> Pending
