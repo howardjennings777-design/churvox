@@ -137,112 +137,27 @@ function countPlansFromUsers(users) {
 
 function normalizeStats(raw) {
   const src = raw || {};
-  const stats = src.stats && typeof src.stats === "object" ? src.stats : src;
-  const usage = src.usage && typeof src.usage === "object" ? src.usage : {};
-  const plans =
-    src.plans_in_use ||
-    src.plan_counts ||
-    stats.plans_in_use ||
-    stats.plan_counts ||
-    {};
 
-  const rawUsersList =
-    src.users_list || stats.users_list || src.users || stats.users || src.recent_users || [];
-  const pickBestArray = (...values) => {
-    const nonEmpty = values.find((value) => Array.isArray(value) && value.length > 0);
-    if (nonEmpty) return nonEmpty;
-    const anyArray = values.find((value) => Array.isArray(value));
-    return anyArray || [];
-  };
+  const users_list = filterFake(src.users_list || []);
+  const businesses_list = filterFake(src.businesses_list || []);
+  const invoices_list = filterFake(src.invoices_list || []);
+  const jobs_list = filterFake(src.jobs_list || []);
+  const paid_users_list = filterFake(src.paid_users_list || []);
+  const active_today_list = filterFake(src.active_today_list || []);
 
-  const rawBusinessesList =
-    pickBestArray(src.businesses_list, stats.businesses_list, src.businesses, stats.businesses);
-  const rawInvoicesList =
-    src.invoices_list || stats.invoices_list || src.overdue_invoices || stats.overdue_invoices || [];
-  const rawJobsList =
-    src.jobs_list || stats.jobs_list || src.jobs || stats.jobs || [];
-  const rawPaidUsersList =
-    src.paid_users_list || stats.paid_users_list || src.subscribers || stats.subscribers || [];
-  const rawActiveTodayList =
-    src.active_today_list || stats.active_today_list || src.active_users || stats.active_users || [];
-
-  const users_list = filterFake(rawUsersList);
-  const businesses_list = Array.isArray(rawBusinessesList) ? rawBusinessesList : [];
-  const invoices_list = filterFake(rawInvoicesList);
-  const jobs_list = filterFake(rawJobsList);
-  const paid_users_list = filterFake(rawPaidUsersList);
-  const active_today_list = filterFake(rawActiveTodayList);
-
-  const filteredPlanCounts = countPlansFromUsers(users_list);
+  const plans = src.plan_counts || {};
+  const filteredPlanCounts = users_list.length > 0 ? countPlansFromUsers(users_list) : plans;
 
   return {
-    total_users: users_list.length || num(
-      stats.total_users ??
-        stats.users ??
-        stats.user_count ??
-        src.total_users ??
-        src.users ??
-        src.user_count
-    ),
-    total_businesses: businesses_list.length || num(
-      stats.total_businesses ??
-        stats.businesses ??
-        stats.business_count ??
-        src.total_businesses ??
-        src.businesses ??
-        src.business_count
-    ),
-    active_today: active_today_list.length || num(
-      stats.active_today ??
-        stats.daily_active ??
-        stats.activeUsersToday ??
-        src.active_today ??
-        src.daily_active ??
-        src.activeUsersToday
-    ),
-    paid_users: paid_users_list.length || num(
-      stats.paid_users ??
-        stats.paidUsers ??
-        src.paid_users ??
-        src.paidUsers
-    ),
-    total_invoices: invoices_list.length || num(
-      stats.total_invoices ??
-        stats.invoices ??
-        stats.invoice_count ??
-        src.total_invoices ??
-        src.invoices ??
-        src.invoice_count
-    ),
-    total_jobs: jobs_list.length || num(
-      stats.total_jobs ??
-        stats.jobs ??
-        stats.job_count ??
-        src.total_jobs ??
-        src.jobs ??
-        src.job_count
-    ),
-    monthly_revenue: num(
-      stats.monthly_revenue ??
-        stats.monthlyRevenue ??
-        stats.revenue_monthly ??
-        src.monthly_revenue ??
-        src.monthlyRevenue ??
-        src.revenue_monthly
-    ),
-    outstanding_balance: num(
-      stats.outstanding_balance ??
-        stats.outstandingBalance ??
-        src.outstanding_balance ??
-        src.outstandingBalance ??
-        usage.unpaid_invoice_total
-    ),
-    plan_counts: {
-      solo: filteredPlanCounts.solo || num(plans.solo),
-      team: filteredPlanCounts.team || num(plans.team),
-      pro: filteredPlanCounts.pro || num(plans.pro),
-      enterprise: filteredPlanCounts.enterprise || num(plans.enterprise),
-    },
+    total_users: users_list.length || num(src.total_users),
+    total_businesses: businesses_list.length || num(src.total_businesses),
+    active_today: active_today_list.length || num(src.active_today),
+    paid_users: paid_users_list.length || num(src.paid_users),
+    total_invoices: invoices_list.length || num(src.total_invoices),
+    total_jobs: jobs_list.length || num(src.total_jobs),
+    monthly_revenue: num(src.monthly_revenue),
+    outstanding_balance: num(src.outstanding_balance),
+    plan_counts: filteredPlanCounts,
     users_list,
     businesses_list,
     active_today_list,
@@ -440,49 +355,14 @@ export default function AppOwnerPage() {
       setLoading(true);
       setError("");
 
-      const endpoints = [
-        "/api/admin/platform-stats",
-        "/api/admin/stats",
-        "/api/owner/stats",
-        "/api/admin/usage-summary",
-      ];
-
-      let collected = [];
-      let used = [];
-
-      for (const endpoint of endpoints) {
-        try {
-          const result = await tryEndpoint(endpoint);
-          if (result) {
-            collected.push(result);
-            used.push(endpoint);
-          }
-        } catch (err) {
-          console.warn("Owner dashboard endpoint failed:", endpoint, err);
-        }
-      }
-
-      if (!collected.length) {
-        setStats(EMPTY_STATS);
-        setSourceUsed("");
-        setError("Could not load live platform data.");
-        return;
-      }
-
-      const merged = collected.reduce((acc, item) => {
-        if (item && typeof item === "object") {
-          return { ...acc, ...item };
-        }
-        return acc;
-      }, {});
-
-      setStats(normalizeStats(merged));
-      setSourceUsed(used.join(", "));
+      const data = await tryEndpoint("/api/admin/platform-stats");
+      setStats(normalizeStats(data));
+      setSourceUsed("/api/admin/platform-stats");
     } catch (err) {
       console.error("Owner dashboard load failed:", err);
       setStats(EMPTY_STATS);
       setSourceUsed("");
-      setError("Could not load live platform data.");
+      setError("Could not load live platform data. " + (err?.message || ""));
     } finally {
       setLoading(false);
     }
@@ -506,7 +386,7 @@ export default function AppOwnerPage() {
     { key: "active_today_list", label: "Active Today", value: stats.active_today, icon: Activity },
     { key: "paid_users_list", label: "Paid Users", value: stats.paid_users, icon: CreditCard },
     { key: "invoices_list", label: "Total Invoices", value: stats.total_invoices, icon: FileText },
-    { key: "jobs_list", label: "Jobs Today", value: stats.total_jobs, icon: Briefcase },
+    { key: "jobs_list", label: "Total Jobs", value: stats.total_jobs, icon: Briefcase },
     { key: "invoices_list", label: "Monthly Revenue", value: money(stats.monthly_revenue), icon: DollarSign },
     { key: "invoices_list", label: "Outstanding Balance", value: money(stats.outstanding_balance), icon: AlertTriangle },
   ];

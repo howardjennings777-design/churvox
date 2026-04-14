@@ -265,7 +265,7 @@ from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 from sms_provider import get_sms_provider, format_phone_au_nz
-from email_provider import get_email_provider, build_invite_email, build_resend_invite_email, build_password_reset_email
+from email_provider import get_email_provider, build_invite_email, build_resend_invite_email, build_password_reset_email, send_email
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -1162,6 +1162,7 @@ async def forgot_password(data: ForgotPassword):
 
     reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
 
+    email_sent = False
     try:
         await send_email(
             to_email=email,
@@ -1178,15 +1179,17 @@ async def forgot_password(data: ForgotPassword):
                 </div>
             """
         )
-        print("FORGOT_PASSWORD_EMAIL_SENT", email)
+        email_sent = True
+        print(f"FORGOT_PASSWORD_EMAIL_SENT to={email}")
     except Exception as e:
-        print("FORGOT_PASSWORD_EMAIL_ERROR", str(e))
-        raise HTTPException(status_code=500, detail="Password reset email failed to send")
+        print(f"FORGOT_PASSWORD_EMAIL_ERROR to={email} error={repr(e)}")
 
     return {
         "success": True,
         "message": "If the email exists, a reset link has been sent",
-        "debug_token": token
+        "debug_token": token,
+        "email_sent": email_sent,
+        "reset_link": reset_link if not email_sent else None,
     }
 
 
@@ -4374,6 +4377,10 @@ def send_resend_email(to_email: str, subject: str, html: str, text_content: str 
 
 app.include_router(api_router)
 
+@app.get("/api/admin/platform-stats")
+async def platform_stats_proxy(current_user: dict = Depends(get_current_user)):
+    return await _platform_stats_impl(current_user)
+
 FRONTEND_DIST_DIR = Path(__file__).resolve().parent / "frontend_dist"
 
 if FRONTEND_DIST_DIR.exists():
@@ -4398,8 +4405,7 @@ if FRONTEND_DIST_DIR.exists():
 
 
 
-@app.get("/api/admin/platform-stats")
-async def app_platform_stats(current_user: dict = Depends(get_current_user)):
+async def _platform_stats_impl(current_user: dict):
     if not is_platform_owner(current_user):
         raise HTTPException(status_code=403, detail="Owner access required")
 
@@ -4757,7 +4763,6 @@ async def app_platform_stats(current_user: dict = Depends(get_current_user)):
         "debug_jobs_count": await db.jobs.count_documents({}) if "jobs" in await db.list_collection_names() else 0,
         "debug_invoices_count": await db.invoices.count_documents({}) if "invoices" in await db.list_collection_names() else 0,
     }
-
 
 
 # CORS_HARD_FIX_20260412

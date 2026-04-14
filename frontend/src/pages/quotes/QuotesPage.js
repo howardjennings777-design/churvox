@@ -28,16 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, QUOTE_STATUSES } from "@/lib/utils";
 import Layout from "@/components/Layout";
@@ -246,25 +236,25 @@ export default function QuotesPage() {
         )}
 
         {/* Delete Confirmation */}
-        <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-          <AlertDialogContent className="bg-card border-border">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Quote</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete this quote? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="border-border">Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-destructive hover:bg-destructive/90"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {!!deleteId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center" data-testid="delete-quote-dialog">
+            <div className="absolute inset-0 bg-black/80" onClick={() => setDeleteId(null)} />
+            <div className="relative z-10 w-full max-w-md mx-4 rounded-lg border bg-churvox-card border-churvox-border p-6 shadow-lg">
+              <h2 className="text-lg font-semibold text-white">Delete Quote</h2>
+              <p className="mt-2 text-sm text-churvox-muted">Are you sure you want to delete this quote? This action cannot be undone.</p>
+              <div className="mt-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                <button type="button" onClick={() => setDeleteId(null)}
+                  className="inline-flex items-center justify-center rounded-md border border-churvox-border px-4 py-2 text-sm font-medium text-churvox-muted hover:bg-white/5 transition-colors">
+                  Cancel
+                </button>
+                <button type="button" data-testid="confirm-delete-quote" disabled={loading} onClick={handleDelete}
+                  className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors">
+                  {loading ? "Deleting…" : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );

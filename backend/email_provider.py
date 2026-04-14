@@ -5,7 +5,10 @@ import urllib.error
 
 EMAIL_PROVIDER = os.getenv("EMAIL_PROVIDER", "").strip().lower() or "resend"
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
-EMAIL_FROM = os.getenv("EMAIL_FROM", "").strip() or "Churvox <noreply@mail.churvox.com>"
+EMAIL_FROM = os.getenv("EMAIL_FROM", "").strip() or "Churvox <noreply@churvox.com>"
+# Ensure "Name <email>" format for Resend
+if "<" not in EMAIL_FROM:
+    EMAIL_FROM = f"Churvox <{EMAIL_FROM}>"
 
 
 def get_email_provider():
@@ -72,6 +75,8 @@ async def send_email(to_email: str, subject: str, html_content: str):
         "html": html_content,
     }
 
+    print(f"RESEND_SEND from={EMAIL_FROM} to={to_email} key_present={bool(RESEND_API_KEY)}")
+
     req = urllib.request.Request(
         "https://api.resend.com/emails",
         data=json.dumps(payload).encode("utf-8"),
@@ -85,11 +90,14 @@ async def send_email(to_email: str, subject: str, html_content: str):
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             body = resp.read().decode("utf-8", errors="ignore")
+            print(f"RESEND_OK status={resp.status} body={body[:200]}")
             if resp.status < 200 or resp.status >= 300:
                 raise RuntimeError(f"Resend send failed: HTTP {resp.status} {body}")
             return json.loads(body) if body else {"ok": True}
     except urllib.error.HTTPError as e:
         detail = e.read().decode("utf-8", errors="ignore")
+        print(f"RESEND_ERR code={e.code} detail={detail[:300]}")
         raise RuntimeError(f"Resend HTTPError {e.code}: {detail}")
     except urllib.error.URLError as e:
+        print(f"RESEND_ERR url_error={e}")
         raise RuntimeError(f"Resend URLError: {e}")
