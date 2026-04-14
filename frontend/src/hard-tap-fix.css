@@ -68,15 +68,15 @@ main, nav, header, footer, section, article {
   z-index: 2;
 }
 
-/* When a Radix modal dialog is open, DismissableLayer sets
-   pointer-events:none on <body> to block background interaction.
+/* When a Radix modal dialog is open, react-remove-scroll adds
+   data-scroll-locked to <body> and DismissableLayer sets pointer-events:none.
    The rule above overrides that, breaking dialog click detection.
    This counter-rule restores correct behavior while a modal is open. */
-body[style*="pointer-events: none"] main,
-body[style*="pointer-events: none"] nav,
-body[style*="pointer-events: none"] header,
-body[style*="pointer-events: none"] footer,
-body[style*="pointer-events: none"] section,
-body[style*="pointer-events: none"] article {
+body[data-scroll-locked] main,
+body[data-scroll-locked] nav,
+body[data-scroll-locked] header,
+body[data-scroll-locked] footer,
+body[data-scroll-locked] section,
+body[data-scroll-locked] article {
   pointer-events: none !important;
 }
