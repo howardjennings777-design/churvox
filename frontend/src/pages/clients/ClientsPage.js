@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Link } from "react-router-dom";
 import Layout from "../../components/Layout";
 import { useAuth } from "../../context/AuthContext";
 import { useApi } from "../../hooks/useApi";
@@ -7,7 +8,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
-import { Users, UserPlus, Trash2, Upload, Mail, Phone, MapPin } from "lucide-react";
+import { Users, UserPlus, Trash2, Upload, Mail, Phone, MapPin, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 import API_BASE from "../../lib/apiBase";
@@ -190,7 +191,11 @@ export default function ClientsPage() {
           </Card>
         )}
 
-        {clients.length === 0 && !loading ? (
+        {loading && clients.length === 0 ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" />
+          </div>
+        ) : clients.length === 0 && !loading ? (
           <Card className="bg-churvox-card border-churvox-border">
             <CardContent className="p-8 text-center">
               <Users className="mx-auto mb-3 text-churvox-muted/40" size={32} />
@@ -223,8 +228,11 @@ export default function ClientsPage() {
           </Card>
         ) : (
           <div className="grid gap-3">
-            {clients.map((client) => (
-              <Card key={client.id || client._id} className="bg-churvox-card border-churvox-border">
+            {clients.map((client) => {
+              const cid = client.id || client._id;
+              return (
+              <Link key={cid} to={`/clients/${cid}`} className="block">
+              <Card className="bg-churvox-card border-churvox-border hover:border-churvox-accent/50 transition-all">
                 <CardContent className="p-4 flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-medium">{client.client_name || client.name || "Unnamed Client"}</p>
@@ -242,18 +250,32 @@ export default function ClientsPage() {
                   </div>
 
                   {isEmployer && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(client)}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                    >
-                      <Trash2 size={16} />
-                    </Button>
+                    <div className="flex items-center gap-1" onClick={(e) => e.preventDefault()}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        className="text-churvox-muted hover:text-white hover:bg-white/5"
+                      >
+                        <Link to={`/clients/${cid}/edit`} onClick={(e) => e.stopPropagation()}>
+                          <Pencil size={16} />
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleDelete(client); }}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
                   )}
                 </CardContent>
               </Card>
-            ))}
+              </Link>
+              );
+            })}
           </div>
         )}
 

@@ -45,7 +45,7 @@ export default function QuoteDetailPage() {
     if (res.success) { toast.success("Quote deleted"); navigate("/quotes"); }
   };
 
-  if (!quote) return <Layout><div className="p-6 text-churvox-muted">Loading...</div></Layout>;
+  if (!quote) return <Layout><div className="p-6 flex items-center justify-center min-h-[50vh]"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" /></div></Layout>;
 
   const statusInfo = QUOTE_STATUSES.find((s) => s.value === quote.status);
   const pricingLabel = { fixed: "Fixed Price", hourly: "Hourly", fixed_extras: "Fixed + Extras", hourly_extras: "Hourly + Extras" }[quote.pricing_type] || "Fixed";

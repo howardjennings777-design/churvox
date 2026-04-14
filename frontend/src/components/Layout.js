@@ -123,8 +123,8 @@ export default function Layout({ children }) {
       </main>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-churvox-card border-t border-churvox-border z-40 safe-area-bottom pointer-events-none" data-testid="mobile-bottom-nav">
-        <div className="flex items-center justify-around h-16 pointer-events-auto">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-churvox-card border-t border-churvox-border z-40 safe-area-bottom" data-testid="mobile-bottom-nav">
+        <div className="flex items-center justify-around h-16">
           {mainNavItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
@@ -149,7 +149,7 @@ export default function Layout({ children }) {
 
             {moreOpen && (
               <>
-                <div className="tap-pass-through fixed inset-0 tap-overlay-ignore z-40" onClick={() => setMoreOpen(false)} />
+                <div className="fixed inset-0 z-40" onClick={() => setMoreOpen(false)} />
                 <div className="absolute bottom-full right-0 mb-2 bg-churvox-card border border-churvox-border rounded-xl shadow-2xl py-2 min-w-[180px] z-50" data-testid="mobile-more-dropdown">
                   {moreItems.map((item) => {
                     const Icon = item.icon;
@@ -161,6 +161,10 @@ export default function Layout({ children }) {
                       </Link>
                     );
                   })}
+                  <div className="border-t border-churvox-border mt-1 pt-1 flex gap-4 px-4 py-2">
+                    <Link to="/privacy" onClick={() => setMoreOpen(false)} className="text-xs text-churvox-muted/60 hover:text-churvox-muted">Privacy</Link>
+                    <Link to="/terms" onClick={() => setMoreOpen(false)} className="text-xs text-churvox-muted/60 hover:text-churvox-muted">Terms</Link>
+                  </div>
                 </div>
               </>
             )}

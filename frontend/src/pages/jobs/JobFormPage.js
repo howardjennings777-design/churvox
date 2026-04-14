@@ -181,10 +181,8 @@ export default function JobFormPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="p-4 md:p-6 max-w-3xl mx-auto">
-          <Card className="bg-churvox-card border-churvox-border">
-            <CardContent className="p-6 text-white">Loading job form...</CardContent>
-          </Card>
+        <div className="p-4 md:p-6 max-w-3xl mx-auto flex items-center justify-center min-h-[50vh]">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" />
         </div>
       </Layout>
     );

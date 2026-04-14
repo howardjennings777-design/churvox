@@ -1344,7 +1344,7 @@ async def get_invoices(current_user: dict = Depends(get_current_user)):
 async def create_invoice(request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin"]:
+    if current_user.get("role") not in ["owner", "admin", "employer"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     payload = await request.json()
@@ -1480,7 +1480,7 @@ async def get_invoice(invoice_id: str, current_user: dict = Depends(get_current_
 async def update_invoice(invoice_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin"]:
+    if current_user.get("role") not in ["owner", "admin", "employer"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     business_id = str(
@@ -1640,7 +1640,7 @@ async def mark_invoice_paid(invoice_id: str, current_user: dict = Depends(get_cu
 
 @api_router.delete("/invoices/{invoice_id}")
 async def delete_invoice(invoice_id: str, current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in ["owner", "admin"]:
+    if current_user.get("role") not in ["owner", "admin", "employer"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     business_id = str(
@@ -1822,7 +1822,7 @@ async def get_quote(quote_id: str, current_user: dict = Depends(get_current_user
 async def update_quote(quote_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin"]:
+    if current_user.get("role") not in ["owner", "admin", "employer"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     business_id = str(
@@ -1919,7 +1919,7 @@ async def update_quote(quote_id: str, request: Request, current_user: dict = Dep
 async def send_quote(quote_id: str, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin"]:
+    if current_user.get("role") not in ["owner", "admin", "employer"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     business_id = str(
@@ -1972,7 +1972,7 @@ async def send_quote(quote_id: str, current_user: dict = Depends(get_current_use
 async def create_quote(request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin"]:
+    if current_user.get("role") not in ["owner", "admin", "employer"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     payload = await request.json()
@@ -2034,7 +2034,7 @@ async def create_quote(request: Request, current_user: dict = Depends(get_curren
 async def create_client(request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin"]:
+    if current_user.get("role") not in ["owner", "admin", "employer"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     payload = await request.json()
@@ -2145,7 +2145,7 @@ async def get_client(client_id: str, current_user: dict = Depends(get_current_us
 async def update_client(client_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin"]:
+    if current_user.get("role") not in ["owner", "admin", "employer"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     business_id = str(
@@ -2327,7 +2327,7 @@ async def get_clients(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/team/workers")
 async def create_team_worker(payload: dict, current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in ["owner", "admin"]:
+    if current_user.get("role") not in ["owner", "admin", "employer"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     name = str((payload or {}).get("name") or "").strip()
@@ -2410,7 +2410,7 @@ async def create_team_worker(payload: dict, current_user: dict = Depends(get_cur
 
 @api_router.patch("/team/workers/{worker_id}/notes")
 async def update_team_worker_notes(worker_id: str, request: Request, current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in ["owner", "admin"]:
+    if current_user.get("role") not in ["owner", "admin", "employer"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     business_id = str(
@@ -2896,7 +2896,7 @@ async def get_jobs(current_user: dict = Depends(get_current_user)):
 async def create_job(request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin"]:
+    if current_user.get("role") not in ["owner", "admin", "employer"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     payload = await request.json()
@@ -3098,7 +3098,7 @@ async def delete_team_worker(worker_id: str, current_user: dict = Depends(get_cu
 async def update_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin"]:
+    if current_user.get("role") not in ["owner", "admin", "employer"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     business_id = str(
@@ -3177,7 +3177,7 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
 
 @api_router.post("/jobs/{job_id}/assign")
 async def assign_job_worker(job_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in ["owner", "admin"]:
+    if current_user.get("role") not in ["owner", "admin", "employer"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     worker_id = str((payload or {}).get("worker_id") or "").strip()
@@ -3814,7 +3814,7 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
     import re
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin"]:
+    if current_user.get("role") not in ["owner", "admin", "employer"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     form = await request.form()
@@ -3976,7 +3976,7 @@ async def import_csv_clients(request: Request, current_user: dict = Depends(get_
     import io
     import re
 
-    if current_user.get("role") not in ["owner", "admin"]:
+    if current_user.get("role") not in ["owner", "admin", "employer"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     form = await request.form()
@@ -4234,7 +4234,7 @@ async def confirm_checkout(request: ConfirmCheckoutRequest, current_user: dict =
 # CLIENT_DELETE_ROUTE_FORCE_REDEPLOY
 @api_router.delete("/clients/{client_id}")
 async def delete_client(client_id: str, current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in ["owner", "admin"]:
+    if current_user.get("role") not in ["owner", "admin", "employer"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     user_business_id = current_user.get("business_id") or current_user.get("id")

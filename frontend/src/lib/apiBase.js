@@ -4,7 +4,7 @@ const API_BASE =
       import.meta.env &&
       import.meta.env.VITE_BACKEND_URL) ||
     process.env.REACT_APP_BACKEND_URL ||
-    "https://grassley-backend.onrender.com"
+    ""
   ).replace(/\/$/, "");
 
 export default API_BASE;

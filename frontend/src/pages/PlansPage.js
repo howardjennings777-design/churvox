@@ -90,7 +90,7 @@ export default function PlansPage() {
       if (checkout === "success") {
         try {
           if (plan && sessionId) {
-            await api.post("/stripe/confirm-checkout", { plan, session_id: sessionId });
+            await api.post("/billing/confirm-checkout", { session_id: sessionId });
             window.dispatchEvent(new Event("churvox-auth-refresh"));
             setCurrentPlan(plan);
           }

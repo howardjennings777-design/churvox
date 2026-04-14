@@ -17,8 +17,6 @@ import API_BASE from "../lib/apiBase";
 
 axios.defaults.withCredentials = true;
 
-const API_URL = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || "https://grassley-backend.onrender.com").replace(/\/$/, "");
-
 const COUNTRY_OPTIONS = [
   { value: "New Zealand", label: "New Zealand" },
   { value: "Australia", label: "Australia" },
@@ -645,7 +643,11 @@ export default function TeamPage() {
               </Card>
             )}
 
-            {workers.length === 0 && !loading ? (
+            {loading && workers.length === 0 ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" />
+              </div>
+            ) : workers.length === 0 && !loading ? (
               <Card className="bg-churvox-card border-churvox-border">
                 <CardContent className="p-8 text-center">
                   <UserPlus className="mx-auto mb-3 text-churvox-muted/40" size={32} />

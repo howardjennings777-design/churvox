@@ -24,7 +24,7 @@ const API_BASE = (
   (typeof process !== "undefined" &&
     process.env &&
     (process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL)) ||
-  "https://grassley-backend.onrender.com"
+  ""
 ).replace(/\/$/, "");
 
 const money = (n) =>

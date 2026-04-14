@@ -1,4 +1,3 @@
-const API_URL = "https://grassley-backend.onrender.com";
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import axios from "axios";
 import API_BASE from "../lib/apiBase";

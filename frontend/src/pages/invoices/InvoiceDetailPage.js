@@ -64,7 +64,7 @@ export default function InvoiceDetailPage() {
     else toast.error(res.error || "Failed to sync to MYOB");
   };
 
-  if (!invoice) return <Layout><div className="p-6 text-churvox-muted">Loading...</div></Layout>;
+  if (!invoice) return <Layout><div className="p-6 flex items-center justify-center min-h-[50vh]"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" /></div></Layout>;
 
   const statusInfo = INVOICE_STATUSES.find((s) => s.value === invoice.status);
   const pricingLabel = { fixed: "Fixed", hourly: "Hourly", fixed_extras: "Fixed + Extras", hourly_extras: "Hourly + Extras" }[invoice.pricing_type] || "";

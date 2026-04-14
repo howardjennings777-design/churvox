@@ -37,7 +37,7 @@ export default function ClientDetailPage() {
     }
   };
 
-  if (!client) return <Layout><div className="p-6 text-churvox-muted">Loading...</div></Layout>;
+  if (!client) return <Layout><div className="p-6 flex items-center justify-center min-h-[50vh]"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" /></div></Layout>;
 
   return (
     <Layout>
