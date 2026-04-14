@@ -3,33 +3,22 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
-async function killOldCaches() {
-  try {
-    if (typeof navigator !== "undefined" && navigator.serviceWorker) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      for (const reg of regs) {
-        await reg.unregister();
-      }
-    }
-
-    if (typeof window !== "undefined" && "caches" in window) {
-      const keys = await window.caches.keys();
-      for (const key of keys) {
-        await window.caches.delete(key);
-      }
-    }
-
-    console.log("Old service workers and caches cleared");
-  } catch (err) {
-    console.error("CACHE_CLEAR_ERROR", err);
-  }
+// Register service worker for PWA installability (iPhone Add to Home Screen + Chrome install)
+// Network-first SW — no aggressive caching, new deploys always picked up
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").then((reg) => {
+      // Check for SW updates on each page load
+      reg.update().catch(() => {});
+    }).catch((err) => {
+      console.warn("SW registration failed:", err);
+    });
+  });
 }
 
-killOldCaches().finally(() => {
-  const root = ReactDOM.createRoot(document.getElementById("root"));
-  root.render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>
-  );
-});
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
