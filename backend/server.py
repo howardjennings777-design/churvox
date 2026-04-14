@@ -1161,35 +1161,27 @@ async def forgot_password(data: ForgotPassword):
     )
 
     reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
-    send_resend_email(
-        to_email=email,
-        subject="Reset your Churvox password",
-        html=f"""
-        <div style=\"font-family:Arial,sans-serif;line-height:1.5\">
-          <h2>Reset your password</h2>
-          <p>We received a request to reset your Churvox password.</p>
-          <p><a href=\"{reset_link}\" style=\"display:inline-block;padding:10px 16px;background:#111;color:#fff;text-decoration:none;border-radius:6px\">Reset Password</a></p>
-          <p>If the button does not work, use this link:</p>
-          <p><a href=\"{reset_link}\">{reset_link}</a></p>
-          <p>If you did not request this, you can ignore this email.</p>
-        </div>
-        """,
-        text_content=f"Reset your Churvox password: {reset_link}"
-    )
 
     try:
         await send_email(
             to_email=email,
             subject="Reset your Churvox password",
             html_content=f"""
-                <p>Hello {user.get('name') or ''},</p>
-                <p>Click the link below to reset your password:</p>
-                <p><a href="{reset_link}">Reset password</a></p>
-                <p>If you did not request this, you can ignore this email.</p>
+                <div style=\"font-family:Arial,sans-serif;line-height:1.5\">
+                  <h2>Reset your password</h2>
+                  <p>Hello {user.get('name') or ''},</p>
+                  <p>We received a request to reset your Churvox password.</p>
+                  <p><a href=\"{reset_link}\" style=\"display:inline-block;padding:10px 16px;background:#111;color:#fff;text-decoration:none;border-radius:6px\">Reset Password</a></p>
+                  <p>If the button does not work, use this link:</p>
+                  <p><a href=\"{reset_link}\">{reset_link}</a></p>
+                  <p>If you did not request this, you can ignore this email.</p>
+                </div>
             """
         )
+        print("FORGOT_PASSWORD_EMAIL_SENT", email)
     except Exception as e:
         print("FORGOT_PASSWORD_EMAIL_ERROR", str(e))
+        raise HTTPException(status_code=500, detail="Password reset email failed to send")
 
     return {
         "success": True,
