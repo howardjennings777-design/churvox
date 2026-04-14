@@ -1,4 +1,7 @@
 import os
+import json
+import urllib.request
+import urllib.error
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
 import asyncio
 from passlib.context import CryptContext
@@ -1158,6 +1161,21 @@ async def forgot_password(data: ForgotPassword):
     )
 
     reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
+    send_resend_email(
+        to_email=email,
+        subject="Reset your Churvox password",
+        html=f"""
+        <div style=\"font-family:Arial,sans-serif;line-height:1.5\">
+          <h2>Reset your password</h2>
+          <p>We received a request to reset your Churvox password.</p>
+          <p><a href=\"{reset_link}\" style=\"display:inline-block;padding:10px 16px;background:#111;color:#fff;text-decoration:none;border-radius:6px\">Reset Password</a></p>
+          <p>If the button does not work, use this link:</p>
+          <p><a href=\"{reset_link}\">{reset_link}</a></p>
+          <p>If you did not request this, you can ignore this email.</p>
+        </div>
+        """,
+        text_content=f"Reset your Churvox password: {reset_link}"
+    )
 
     try:
         await send_email(
@@ -4318,6 +4336,49 @@ async def stripe_billing_webhook(request: Request):
 async def stripe_billing_webhook_api(request: Request):
     return await stripe_billing_webhook(request)
 
+
+
+
+APP_BASE_URL = os.getenv("APP_BASE_URL", "https://www.churvox.com").rstrip("/")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
+EMAIL_FROM = os.getenv("EMAIL_FROM", "noreply@send.churvox.com").strip()
+
+def send_resend_email(to_email: str, subject: str, html: str, text_content: str = ""):
+    if not RESEND_API_KEY:
+        print("RESEND_API_KEY missing - email not sent")
+        return False
+
+    payload = {
+        "from": EMAIL_FROM,
+        "to": [to_email],
+        "subject": subject,
+        "html": html,
+    }
+    if text_content:
+        payload["text"] = text_content
+
+    req = urllib.request.Request(
+        "https://api.resend.com/emails",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {RESEND_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=20) as response:
+            body = response.read().decode("utf-8", errors="ignore")
+            print("RESEND SEND OK:", response.status, body)
+            return True
+    except urllib.error.HTTPError as e:
+        err = e.read().decode("utf-8", errors="ignore")
+        print("RESEND SEND FAILED:", e.code, err)
+        return False
+    except Exception as e:
+        print("RESEND SEND ERROR:", str(e))
+        return False
 
 app.include_router(api_router)
 
