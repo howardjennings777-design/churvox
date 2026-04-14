@@ -7,7 +7,6 @@ import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
 import { Plus, Search, MapPin, Clock, UserCheck, Trash2, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, JOB_STATUSES, JOB_STATUS_MAP } from "../../lib/utils";
@@ -133,17 +132,36 @@ export default function JobsPage() {
           </div>
         )}
 
-        {/* Delete Dialog */}
-        <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-          <DialogContent className="bg-churvox-card border-churvox-border" data-testid="delete-job-dialog">
-            <DialogHeader><DialogTitle className="text-white">Delete Job</DialogTitle></DialogHeader>
-            <p className="text-churvox-muted">Are you sure? This cannot be undone.</p>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteId(null)} className="border-churvox-border text-churvox-muted">Cancel</Button>
-              <Button onClick={handleDelete} disabled={loading} className="bg-red-600 hover:bg-red-700" data-testid="confirm-delete-job">Delete</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Delete Confirmation – plain modal, no Radix DismissableLayer */}
+        {!!deleteId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center" data-testid="delete-job-dialog">
+            {/* backdrop */}
+            <div className="absolute inset-0 bg-black/80" onClick={() => setDeleteId(null)} />
+            {/* modal card */}
+            <div className="relative z-10 w-full max-w-md mx-4 rounded-lg border bg-churvox-card border-churvox-border p-6 shadow-lg">
+              <h2 className="text-lg font-semibold text-white">Delete Job</h2>
+              <p className="mt-2 text-sm text-churvox-muted">Are you sure? This cannot be undone.</p>
+              <div className="mt-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleteId(null)}
+                  className="inline-flex items-center justify-center rounded-md border border-churvox-border px-4 py-2 text-sm font-medium text-churvox-muted hover:bg-white/5 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  data-testid="confirm-delete-job"
+                  disabled={loading}
+                  onClick={handleDelete}
+                  className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors"
+                >
+                  {loading ? "Deleting…" : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );
