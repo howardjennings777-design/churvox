@@ -4,7 +4,6 @@ import Layout from "../../components/Layout";
 import { useApi } from "../../hooks/useApi";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
 import { ArrowLeft, Edit, Trash2, Phone, Mail, MapPin, FileText, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, JOB_STATUS_MAP } from "../../lib/utils";
@@ -15,7 +14,6 @@ export default function ClientDetailPage() {
   const { get, del, loading } = useApi();
   const [client, setClient] = useState(null);
   const [jobs, setJobs] = useState([]);
-  const [showDelete, setShowDelete] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [clientRes, jobsRes] = await Promise.all([
@@ -30,6 +28,8 @@ export default function ClientDetailPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleDelete = async () => {
+    const confirmed = window.confirm("Delete this client? This cannot be undone.");
+    if (!confirmed) return;
     const res = await del(`/clients/${id}`);
     if (res.success) {
       toast.success("Client deleted");
@@ -50,7 +50,7 @@ export default function ClientDetailPage() {
             <Button asChild variant="outline" size="sm" className="border-churvox-border text-churvox-muted hover:text-white" data-testid="edit-client-button">
               <Link to={`/clients/${id}/edit`}><Edit size={14} className="mr-1" /> Edit</Link>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowDelete(true)} className="border-red-500/30 text-red-400 hover:bg-red-500/10" data-testid="delete-client-trigger">
+            <Button variant="outline" size="sm" onClick={handleDelete} className="border-red-500/30 text-red-400 hover:bg-red-500/10" data-testid="delete-client-trigger">
               <Trash2 size={14} />
             </Button>
           </div>
@@ -115,17 +115,6 @@ export default function ClientDetailPage() {
           )}
         </div>
 
-        {/* Delete Dialog */}
-        <Dialog open={showDelete} onOpenChange={setShowDelete}>
-          <DialogContent className="bg-churvox-card border-churvox-border" data-testid="delete-client-dialog">
-            <DialogHeader><DialogTitle className="text-white">Delete Client</DialogTitle></DialogHeader>
-            <p className="text-churvox-muted">Are you sure? This cannot be undone.</p>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowDelete(false)} className="border-churvox-border text-churvox-muted">Cancel</Button>
-              <Button onClick={handleDelete} disabled={loading} className="bg-red-600 hover:bg-red-700" data-testid="confirm-delete-client">Delete</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </Layout>
   );

@@ -7,7 +7,6 @@ import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
 import { Users, UserPlus, Trash2, Upload, Mail, Phone, MapPin, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -160,16 +159,114 @@ export default function ClientsPage() {
                 </Button>
 
                 <Button
-                  onClick={() => setShowAdd(true)}
+                  onClick={() => setShowAdd((prev) => !prev)}
                   className="bg-churvox-accent hover:bg-churvox-accent/90"
+                  data-testid="add-client-button"
                 >
                   <UserPlus size={16} className="mr-2" />
-                  Add Client
+                  {showAdd ? "Close" : "Add Client"}
                 </Button>
               </>
             )}
           </div>
         </div>
+
+        {showAdd && (
+          <Card className="bg-churvox-card border-churvox-border shadow-lg shadow-black/20" data-testid="add-client-form">
+            <CardContent className="p-6 space-y-4 text-white">
+              <div>
+                <div className="text-lg font-semibold text-white">Add Client</div>
+                <div className="text-sm text-churvox-muted mt-1">Fill in client details below.</div>
+              </div>
+
+              <form onSubmit={handleAdd} className="space-y-4">
+                <div>
+                  <Label>Client Name</Label>
+                  <Input
+                    value={form.client_name}
+                    onChange={(e) => setForm({ ...form, client_name: e.target.value })}
+                    required
+                    className="bg-churvox-bg border-churvox-border text-white"
+                    data-testid="add-client-name-input"
+                  />
+                </div>
+
+                <div>
+                  <Label>Contact Name</Label>
+                  <Input
+                    value={form.contact_name}
+                    onChange={(e) => setForm({ ...form, contact_name: e.target.value })}
+                    className="bg-churvox-bg border-churvox-border text-white"
+                    data-testid="add-client-contact-input"
+                  />
+                </div>
+
+                <div>
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    className="bg-churvox-bg border-churvox-border text-white"
+                    data-testid="add-client-email-input"
+                  />
+                </div>
+
+                <div>
+                  <Label>Phone</Label>
+                  <Input
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    className="bg-churvox-bg border-churvox-border text-white"
+                    data-testid="add-client-phone-input"
+                  />
+                </div>
+
+                <div>
+                  <Label>Address</Label>
+                  <Input
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                    className="bg-churvox-bg border-churvox-border text-white"
+                    data-testid="add-client-address-input"
+                  />
+                </div>
+
+                <div>
+                  <Label>Notes</Label>
+                  <Input
+                    value={form.notes}
+                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                    className="bg-churvox-bg border-churvox-border text-white"
+                    data-testid="add-client-notes-input"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowAdd(false);
+                      setForm({ client_name: "", contact_name: "", email: "", phone: "", address: "", notes: "" });
+                    }}
+                    data-testid="add-client-cancel-button"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="bg-churvox-accent hover:bg-churvox-accent/90"
+                    data-testid="add-client-save-button"
+                  >
+                    {loading ? "Saving..." : "Save Client"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
 
         {importResults && (
           <Card className="bg-churvox-card border-churvox-border">
@@ -279,90 +376,6 @@ export default function ClientsPage() {
           </div>
         )}
 
-        <Dialog open={showAdd} onOpenChange={setShowAdd}>
-          <DialogContent className="bg-churvox-card border-churvox-border">
-            <DialogHeader>
-              <DialogTitle className="text-white">Add Client</DialogTitle>
-            </DialogHeader>
-
-            <form onSubmit={handleAdd} className="space-y-4">
-              <div>
-                <Label className="text-churvox-muted">Client Name</Label>
-                <Input
-                  value={form.client_name}
-                  onChange={(e) => setForm({ ...form, client_name: e.target.value })}
-                  required
-                  className="bg-churvox-bg border-churvox-border text-white"
-                />
-              </div>
-
-              <div>
-                <Label className="text-churvox-muted">Contact Name</Label>
-                <Input
-                  value={form.contact_name}
-                  onChange={(e) => setForm({ ...form, contact_name: e.target.value })}
-                  className="bg-churvox-bg border-churvox-border text-white"
-                />
-              </div>
-
-              <div>
-                <Label className="text-churvox-muted">Email</Label>
-                <Input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="bg-churvox-bg border-churvox-border text-white"
-                />
-              </div>
-
-              <div>
-                <Label className="text-churvox-muted">Phone</Label>
-                <Input
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="bg-churvox-bg border-churvox-border text-white"
-                />
-              </div>
-
-              <div>
-                <Label className="text-churvox-muted">Address</Label>
-                <Input
-                  value={form.address}
-                  onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  className="bg-churvox-bg border-churvox-border text-white"
-                />
-              </div>
-
-              <div>
-                <Label className="text-churvox-muted">Notes</Label>
-                <Input
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  className="bg-churvox-bg border-churvox-border text-white"
-                />
-              </div>
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowAdd(false)}
-                  className="border-churvox-border text-churvox-muted"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => handleAdd({ preventDefault: () => {} })}
-                  disabled={loading}
-                  className="bg-churvox-accent hover:bg-churvox-accent/90"
-                >
-                  {loading ? "Saving..." : "Save Client"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
       </div>
     </Layout>
   );

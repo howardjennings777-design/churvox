@@ -5,7 +5,6 @@ import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import { useApi } from "../../hooks/useApi";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
 import { ArrowLeft, Trash2, Send, CheckCircle, DollarSign, MapPin, Mail, Briefcase, Clock, MessageSquare, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, INVOICE_STATUSES, MYOB_SYNC_STATUSES } from "../../lib/utils";
@@ -15,7 +14,6 @@ export default function InvoiceDetailPage() {
   const navigate = useNavigate();
   const { get, post, del, loading } = useApi();
   const [invoice, setInvoice] = useState(null);
-  const [showDelete, setShowDelete] = useState(false);
 
   const fetchInvoice = useCallback(async () => {
     const res = await get(`/invoices/${id}`);
@@ -38,6 +36,8 @@ export default function InvoiceDetailPage() {
   };
 
   const handleDelete = async () => {
+    const confirmed = window.confirm("Delete this invoice? This cannot be undone.");
+    if (!confirmed) return;
     const res = await del(`/invoices/${id}`);
     if (res.success) { toast.success("Invoice deleted"); navigate("/invoices"); }
   };
@@ -77,7 +77,7 @@ export default function InvoiceDetailPage() {
             <ArrowLeft size={18} /> Invoices
           </button>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowDelete(true)} className="border-red-500/30 text-red-400 hover:bg-red-500/10" data-testid="delete-invoice-trigger">
+            <Button variant="outline" size="sm" onClick={handleDelete} className="border-red-500/30 text-red-400 hover:bg-red-500/10" data-testid="delete-invoice-trigger">
               <Trash2 size={14} />
             </Button>
           </div>
@@ -220,17 +220,6 @@ export default function InvoiceDetailPage() {
           )}
         </div>
 
-        {/* Delete Dialog */}
-        <Dialog open={showDelete} onOpenChange={setShowDelete}>
-          <DialogContent className="bg-churvox-card border-churvox-border" data-testid="delete-invoice-dialog">
-            <DialogHeader><DialogTitle className="text-white">Delete Invoice</DialogTitle></DialogHeader>
-            <p className="text-churvox-muted">Are you sure? This cannot be undone.</p>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowDelete(false)} className="border-churvox-border text-churvox-muted">Cancel</Button>
-              <Button onClick={handleDelete} disabled={loading} className="bg-red-600 hover:bg-red-700" data-testid="confirm-delete-invoice">Delete</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </Layout>
   );

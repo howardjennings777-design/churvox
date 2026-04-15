@@ -5,7 +5,6 @@ import { useAuth } from "../../context/AuthContext";
 import { useApi } from "../../hooks/useApi";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
 import { ArrowLeft, Edit, Trash2, MapPin, Mail, DollarSign, Send, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, QUOTE_STATUSES } from "../../lib/utils";
@@ -16,7 +15,6 @@ export default function QuoteDetailPage() {
   const { isEmployer } = useAuth();
   const { get, post, del, loading } = useApi();
   const [quote, setQuote] = useState(null);
-  const [showDelete, setShowDelete] = useState(false);
 
   const fetchQuote = useCallback(async () => {
     const res = await get(`/quotes/${id}`);
@@ -41,6 +39,8 @@ export default function QuoteDetailPage() {
   };
 
   const handleDelete = async () => {
+    const confirmed = window.confirm("Delete this quote? This cannot be undone.");
+    if (!confirmed) return;
     const res = await del(`/quotes/${id}`);
     if (res.success) { toast.success("Quote deleted"); navigate("/quotes"); }
   };
@@ -62,7 +62,7 @@ export default function QuoteDetailPage() {
               <Button asChild variant="outline" size="sm" className="border-churvox-border text-churvox-muted hover:text-white" data-testid="edit-quote-button">
                 <Link to={`/quotes/${id}/edit`}><Edit size={14} className="mr-1" /> Edit</Link>
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowDelete(true)} className="border-red-500/30 text-red-400 hover:bg-red-500/10" data-testid="delete-quote-trigger">
+              <Button variant="outline" size="sm" onClick={handleDelete} className="border-red-500/30 text-red-400 hover:bg-red-500/10" data-testid="delete-quote-trigger">
                 <Trash2 size={14} />
               </Button>
             </div>
@@ -139,17 +139,6 @@ export default function QuoteDetailPage() {
           )}
         </div>
 
-        {/* Delete Dialog */}
-        <Dialog open={showDelete} onOpenChange={setShowDelete}>
-          <DialogContent className="bg-churvox-card border-churvox-border" data-testid="delete-quote-dialog">
-            <DialogHeader><DialogTitle className="text-white">Delete Quote</DialogTitle></DialogHeader>
-            <p className="text-churvox-muted">Are you sure? This cannot be undone.</p>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowDelete(false)} className="border-churvox-border text-churvox-muted">Cancel</Button>
-              <Button onClick={handleDelete} disabled={loading} className="bg-red-600 hover:bg-red-700" data-testid="confirm-delete-quote">Delete</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </Layout>
   );
