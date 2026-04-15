@@ -123,8 +123,6 @@ export function AuthProvider({ children }) {
       const response = await axios.post(`${API_BASE}/api/auth/forgot-password`, { email });
       return {
         success: true,
-        token: response.data.debug_token || null,
-        reset_link: response.data.reset_link || null,
         email_sent: response.data.email_sent !== false,
       };
     } catch (err) {

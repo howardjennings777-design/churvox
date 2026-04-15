@@ -98,19 +98,21 @@ export default function ResetPasswordPage() {
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="token">Reset Token</Label>
-                  <Input
-                    id="token"
-                    type="text"
-                    placeholder="Paste your reset token"
-                    value={token}
-                    onChange={(e) => setToken(e.target.value)}
-                    className="bg-background border-border font-mono text-sm"
-                    required
-                    data-testid="reset-token-input"
-                  />
-                </div>
+                {!searchParams.get("token") && (
+                  <div className="space-y-2">
+                    <Label htmlFor="token">Reset Token</Label>
+                    <Input
+                      id="token"
+                      type="text"
+                      placeholder="Paste your reset token"
+                      value={token}
+                      onChange={(e) => setToken(e.target.value)}
+                      className="bg-background border-border font-mono text-sm"
+                      required
+                      data-testid="reset-token-input"
+                    />
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="password">New Password</Label>

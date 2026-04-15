@@ -1145,7 +1145,6 @@ async def forgot_password(data: ForgotPassword):
         return {
             "success": True,
             "message": "If the email exists, a reset link has been sent",
-            "debug_token": None
         }
 
     token = secrets.token_urlsafe(32)
@@ -1187,9 +1186,7 @@ async def forgot_password(data: ForgotPassword):
     return {
         "success": True,
         "message": "If the email exists, a reset link has been sent",
-        "debug_token": token,
         "email_sent": email_sent,
-        "reset_link": reset_link if not email_sent else None,
     }
 
 
@@ -1204,6 +1201,21 @@ async def reset_password(payload: dict):
     token_doc = await db.password_reset_tokens.find_one({"token": token})
     if not token_doc:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    created_at = token_doc.get("created_at")
+    if created_at:
+        if isinstance(created_at, str):
+            try:
+                created_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+            except Exception:
+                created_at = None
+        if created_at:
+            if not created_at.tzinfo:
+                created_at = created_at.replace(tzinfo=timezone.utc)
+            age = datetime.now(timezone.utc) - created_at
+            if age.total_seconds() > 3600:
+                await db.password_reset_tokens.delete_one({"token": token})
+                raise HTTPException(status_code=400, detail="Reset token has expired. Please request a new one.")
 
     email = str(token_doc.get("email") or "").strip().lower()
     if not email:
@@ -1234,6 +1246,138 @@ async def forgot_password_alias(data: ForgotPassword):
 @api_router.post("/reset-password")
 async def reset_password_alias(payload: dict):
     return await reset_password(payload)
+
+
+@api_router.get("/invite/verify/{token}")
+async def verify_invite(token: str):
+    from bson import ObjectId
+    try:
+        worker = await db.business_users.find_one({"_id": ObjectId(token)})
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid invite link")
+
+    if not worker:
+        raise HTTPException(status_code=404, detail="Invite not found or expired")
+
+    if worker.get("status") == "active":
+        raise HTTPException(status_code=400, detail="This invite has already been used. Please sign in instead.")
+
+    business_name = ""
+    business_id = worker.get("business_id")
+    if business_id:
+        try:
+            owner = await db.users.find_one({"business_id": business_id})
+            if owner:
+                business_name = owner.get("business_name") or owner.get("name") or ""
+        except Exception:
+            pass
+
+    return {
+        "email": worker.get("email"),
+        "name": worker.get("name", ""),
+        "business_name": business_name,
+        "status": worker.get("status"),
+    }
+
+
+@api_router.post("/invite/accept")
+async def accept_invite(payload: dict):
+    from bson import ObjectId
+    token = str((payload or {}).get("token") or "").strip()
+    password = str((payload or {}).get("password") or "").strip()
+    name = str((payload or {}).get("name") or "").strip()
+
+    if not token or not password:
+        raise HTTPException(status_code=400, detail="Token and password are required")
+
+    if len(password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
+    try:
+        worker = await db.business_users.find_one({"_id": ObjectId(token)})
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid invite token")
+
+    if not worker:
+        raise HTTPException(status_code=404, detail="Invite not found")
+
+    if worker.get("status") == "active":
+        raise HTTPException(status_code=400, detail="This invite has already been accepted")
+
+    email = (worker.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="No email on invite record")
+
+    business_id = worker.get("business_id") or ""
+    worker_name = name or worker.get("name") or ""
+
+    existing_user = await db.users.find_one({"email": email})
+    hashed = hash_password(password)
+    now = datetime.now(timezone.utc)
+
+    if existing_user:
+        await db.users.update_one(
+            {"_id": existing_user["_id"]},
+            {"$set": {
+                "password_hash": hashed,
+                "role": "worker",
+                "business_id": business_id,
+                "name": worker_name or existing_user.get("name", ""),
+                "status": "active",
+                "is_active": True,
+                "updated_at": now,
+            }}
+        )
+    else:
+        await db.users.insert_one({
+            "email": email,
+            "password_hash": hashed,
+            "role": "worker",
+            "name": worker_name,
+            "business_id": business_id,
+            "status": "active",
+            "is_active": True,
+            "created_at": now,
+            "updated_at": now,
+        })
+
+    await db.business_users.update_one(
+        {"_id": ObjectId(token)},
+        {"$set": {"status": "active", "updated_at": now}}
+    )
+
+    return {"success": True, "message": "Account setup complete"}
+
+
+@api_router.post("/team/resend-invite/{worker_id}")
+async def resend_invite(worker_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ["owner", "admin", "employer"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    from bson import ObjectId
+    try:
+        worker = await db.business_users.find_one({"_id": ObjectId(worker_id)})
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid worker ID")
+
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+
+    email = (worker.get("email") or "").strip()
+    name = worker.get("name") or ""
+
+    if not email:
+        raise HTTPException(status_code=400, detail="Worker has no email")
+
+    invite_link = f"{FRONTEND_URL}/invite/setup/{worker_id}"
+
+    try:
+        subject, html = build_resend_invite_email(name, invite_link)
+        await send_email(to_email=email, subject=subject, html_content=html)
+        return {"success": True, "message": f"Invite resent to {email}"}
+    except Exception as e:
+        print(f"RESEND_INVITE_ERROR worker={worker_id} email={email} error={repr(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to send invite email: {str(e)}")
 
 
 @app.on_event("shutdown")
