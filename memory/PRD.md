@@ -27,7 +27,7 @@ Prepare Churvox for launch as a mobile-friendly web app deployed on Render. Keep
 - Install Prompt layout fix
 - Hardcoded backend URLs removed globally
 
-### Session 16 (Current Fork - April 14, 2026)
+### Session 16 (Current Fork - April 14-15, 2026)
 - **P0: App Owner Platform Refactor** — COMPLETE
   - Removed redundant 4-endpoint waterfall fetch in AppOwnerPage.jsx
   - Now uses single `/api/admin/platform-stats` endpoint only
@@ -36,12 +36,12 @@ Prepare Churvox for launch as a mobile-friendly web app deployed on Render. Keep
   - Fixed plan_counts leak (0 values falling through to unfiltered backend counts)
   - Fixed "Jobs Today" label to "Total Jobs" (data accuracy)
   - filterFake correctly removes test/demo/seed data
-- **P1: Forgot Password Flow** — VERIFIED
+- **P1: Forgot Password Flow** — VERIFIED & CLEANED
   - Fixed missing `send_email` import in server.py
-  - Backend generates token, tries Resend email, returns fallback link on failure
-  - Frontend shows "Email delivery issue" warning with direct reset link
-  - Full reset flow tested: forgot → token → reset-password → success
-  - Resend fails in preview (unverified domain) — expected, fallback works
+  - Removed testing fallback UI: no more visible token, blue reset link, or "Email delivery issue" warning
+  - Success state now shows clean generic message: "If an account exists for that email, you'll receive a password reset link shortly."
+  - Backend still logs debug info (token, email errors) for developer troubleshooting
+  - Full reset flow works: forgot → token → email (or fail gracefully) → reset-password → success
 - **P2: Final Regression** — ALL TESTS PASS
   - Admin login (real mouse click): PASS
   - Employer login (real mouse click): PASS

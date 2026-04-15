@@ -13,9 +13,6 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [resetToken, setResetToken] = useState("");
-  const [resetLink, setResetLink] = useState("");
-  const [emailSent, setEmailSent] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -27,9 +24,6 @@ export default function ForgotPasswordPage() {
 
     if (result.success) {
       setSuccess(true);
-      setEmailSent(result.email_sent !== false);
-      if (result.token) setResetToken(result.token);
-      if (result.reset_link) setResetLink(result.reset_link);
     } else {
       setError(result.error);
     }
@@ -53,39 +47,15 @@ export default function ForgotPasswordPage() {
           <CardContent>
             {success ? (
               <div className="space-y-4">
-                {emailSent ? (
-                  <div className="flex items-center gap-2 p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400" data-testid="forgot-password-success">
-                    <CheckCircle className="h-5 w-5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium">Reset link sent!</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Check your email for the password reset link.
-                      </p>
-                    </div>
+                <div className="flex items-center gap-2 p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400" data-testid="forgot-password-success">
+                  <CheckCircle className="h-5 w-5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Reset link sent!</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      If an account exists for that email, you'll receive a password reset link shortly.
+                    </p>
                   </div>
-                ) : (
-                  <div className="flex items-center gap-2 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-400" data-testid="forgot-password-fallback">
-                    <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium">Email delivery issue</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        We couldn't send the email right now. Use the link below to reset your password directly.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {(resetToken || resetLink) && (
-                  <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
-                    <Link
-                      to={resetLink ? new URL(resetLink).pathname + new URL(resetLink).search : `/reset-password?token=${resetToken}`}
-                      className="inline-block text-sm font-medium text-primary hover:text-primary/80"
-                      data-testid="reset-password-link"
-                    >
-                      Click here to reset your password →
-                    </Link>
-                  </div>
-                )}
+                </div>
 
                 <Link to="/login">
                   <Button variant="outline" className="w-full border-border" data-testid="back-to-login-button">
