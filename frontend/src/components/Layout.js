@@ -7,7 +7,7 @@ import { InstallPrompt } from "./InstallPrompt";
 import { LayoutDashboard, Briefcase, Calendar, Users, MoreHorizontal, LogOut, Settings, FileText, Receipt, CreditCard, UserPlus, MessageSquare } from "lucide-react";
 
 export default function Layout({ children }) {
-  const { user, logout, isEmployer } = useAuth();
+  const { user, logout, isEmployer, isWorker } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -23,7 +23,7 @@ export default function Layout({ children }) {
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { path: "/jobs", label: "Jobs", icon: Briefcase },
     { path: "/calendar", label: "Calendar", icon: Calendar },
-    { path: "/clients", label: "Clients", icon: Users },
+    ...(isEmployer ? [{ path: "/clients", label: "Clients", icon: Users }] : []),
   ];
 
   const moreItems = [

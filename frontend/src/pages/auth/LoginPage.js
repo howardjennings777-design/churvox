@@ -13,16 +13,13 @@ const getPostLoginPath = (payload = {}) => {
   const user = payload?.user || payload || {};
   const email = String(user?.email || payload?.email || "").trim().toLowerCase();
   const role = String(user?.role || payload?.role || "").trim().toLowerCase();
-  const isAdmin = user?.is_admin === true || payload?.is_admin === true;
-  const isOwner =
+  const isPlatformOwner =
     email === "hello@churvox.com" ||
-    role === "owner" ||
-    role === "superadmin" ||
-    role === "super_admin" ||
-    role === "admin" ||
-    isAdmin;
+    user?.is_platform_owner === true ||
+    user?.is_admin === true;
 
-  return isOwner ? "/owner" : "/dashboard";
+  if (isPlatformOwner) return "/admin";
+  return "/dashboard";
 };
 
 
@@ -153,7 +150,6 @@ export default function LoginPage() {
               <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground/60">
                 <Link to="/privacy" className="hover:text-muted-foreground transition-colors" data-testid="login-privacy-link">Privacy</Link>
                 <Link to="/terms" className="hover:text-muted-foreground transition-colors" data-testid="login-terms-link">Terms</Link>
-                <Link to="/admin/login" className="hover:text-muted-foreground transition-colors" data-testid="admin-login-link">Admin</Link>
               </div>
             </CardContent>
           </Card>

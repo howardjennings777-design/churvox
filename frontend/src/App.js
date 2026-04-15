@@ -8,7 +8,6 @@ import { Toaster } from "./components/ui/sonner";
 
 import LoginPage from "./pages/auth/LoginPage";
 import SignupPage from "./pages/auth/SignupPage";
-import AdminLoginPage from "./pages/auth/AdminLoginPage";
 import InviteSetupPage from "./pages/auth/InviteSetupPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
@@ -59,7 +58,27 @@ function PublicRoute({ children }) {
       </div>
     );
   }
-  return user ? <Navigate to="/dashboard" replace /> : children;
+  if (!user) return children;
+  const email = (user?.email || "").toLowerCase();
+  const isPlatformOwner =
+    email === "hello@churvox.com" ||
+    user?.is_platform_owner === true ||
+    user?.is_admin === true;
+  return <Navigate to={isPlatformOwner ? "/admin" : "/dashboard"} replace />;
+}
+
+function EmployerRoute({ children }) {
+  const { user, loading, isWorker } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-churvox-bg flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" />
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/login" replace />;
+  if (isWorker) return <Navigate to="/dashboard" replace />;
+  return children;
 }
 
 function App() {
@@ -104,11 +123,11 @@ function App() {
         <Toaster position="top-right" richColors />
         <Routes>
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-          <Route path="/owner-login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+          <Route path="/owner-login" element={<Navigate to="/login" replace />} />
           <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
-          <Route path="/admin/login" element={<AdminLoginPage />} />
-          <Route path="/owner" element={<AdminLoginPage />} />
-          <Route path="/owner/login" element={<AdminLoginPage />} />
+          <Route path="/admin/login" element={<Navigate to="/login" replace />} />
+          <Route path="/owner" element={<Navigate to="/admin" replace />} />
+          <Route path="/owner/login" element={<Navigate to="/login" replace />} />
           <Route path="/invite/setup/:token" element={<InviteSetupPage />} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
           <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
@@ -168,21 +187,21 @@ function App() {
           <Route path="/jobs/:id" element={<PrivateRoute><JobDetailPage /></PrivateRoute>} />
           <Route path="/jobs/:id/edit" element={<PrivateRoute><JobFormPage /></PrivateRoute>} />
           <Route path="/calendar" element={<PrivateRoute><CalendarPage /></PrivateRoute>} />
-          <Route path="/clients" element={<PrivateRoute><ClientsPage /></PrivateRoute>} />
-          <Route path="/clients/new" element={<PrivateRoute><ClientFormPage /></PrivateRoute>} />
-          <Route path="/clients/:id" element={<PrivateRoute><ClientDetailPage /></PrivateRoute>} />
-          <Route path="/clients/:id/edit" element={<PrivateRoute><ClientFormPage /></PrivateRoute>} />
-          <Route path="/team" element={<PrivateRoute><TeamPage /></PrivateRoute>} />
-          <Route path="/quotes" element={<PrivateRoute><QuotesPage /></PrivateRoute>} />
-          <Route path="/quotes/new" element={<PrivateRoute><QuoteFormPage /></PrivateRoute>} />
-          <Route path="/quotes/:id" element={<PrivateRoute><QuoteDetailPage /></PrivateRoute>} />
-          <Route path="/quotes/:id/edit" element={<PrivateRoute><QuoteFormPage /></PrivateRoute>} />
-          <Route path="/invoices" element={<PrivateRoute><InvoicesPage /></PrivateRoute>} />
-          <Route path="/invoices/new" element={<PrivateRoute><InvoiceFormPage /></PrivateRoute>} />
-          <Route path="/invoices/:id" element={<PrivateRoute><InvoiceDetailPage /></PrivateRoute>} />
-          <Route path="/sms" element={<PrivateRoute><SMSPage /></PrivateRoute>} />
+          <Route path="/clients" element={<EmployerRoute><ClientsPage /></EmployerRoute>} />
+          <Route path="/clients/new" element={<EmployerRoute><ClientFormPage /></EmployerRoute>} />
+          <Route path="/clients/:id" element={<EmployerRoute><ClientDetailPage /></EmployerRoute>} />
+          <Route path="/clients/:id/edit" element={<EmployerRoute><ClientFormPage /></EmployerRoute>} />
+          <Route path="/team" element={<EmployerRoute><TeamPage /></EmployerRoute>} />
+          <Route path="/quotes" element={<EmployerRoute><QuotesPage /></EmployerRoute>} />
+          <Route path="/quotes/new" element={<EmployerRoute><QuoteFormPage /></EmployerRoute>} />
+          <Route path="/quotes/:id" element={<EmployerRoute><QuoteDetailPage /></EmployerRoute>} />
+          <Route path="/quotes/:id/edit" element={<EmployerRoute><QuoteFormPage /></EmployerRoute>} />
+          <Route path="/invoices" element={<EmployerRoute><InvoicesPage /></EmployerRoute>} />
+          <Route path="/invoices/new" element={<EmployerRoute><InvoiceFormPage /></EmployerRoute>} />
+          <Route path="/invoices/:id" element={<EmployerRoute><InvoiceDetailPage /></EmployerRoute>} />
+          <Route path="/sms" element={<EmployerRoute><SMSPage /></EmployerRoute>} />
           <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
-          <Route path="/plans" element={<PrivateRoute><PlansPage /></PrivateRoute>} />
+          <Route path="/plans" element={<EmployerRoute><PlansPage /></EmployerRoute>} />
 
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
