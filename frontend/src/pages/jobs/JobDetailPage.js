@@ -8,9 +8,9 @@ import { Button } from "../../components/ui/button";
 import { toast } from "sonner";
 
 const STATUS_OPTIONS = [
-  "assigned",
   "acknowledged",
   "in_progress",
+  "paused",
   "completed",
 ];
 
