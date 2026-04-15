@@ -79,6 +79,9 @@ export default function JobDetailPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const [workerNotes, setWorkerNotes] = useState("");
+  const [savingNotes, setSavingNotes] = useState(false);
+
   const loadPage = useCallback(async () => {
     setPageLoading(true);
     setError("");
@@ -95,6 +98,7 @@ export default function JobDetailPage() {
       } else {
         const loadedJob = jobRes.data;
         setJob(loadedJob);
+        setWorkerNotes(loadedJob?.worker_notes || "");
         setSelectedWorker(
           loadedJob?.assigned_worker_id ||
           loadedJob?.worker_id ||
@@ -175,6 +179,23 @@ export default function JobDetailPage() {
       toast.error("Failed to update job");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveWorkerNotes = async () => {
+    setSavingNotes(true);
+    try {
+      const res = await patch(`/jobs/${id}`, { worker_notes: workerNotes });
+      if (res?.success) {
+        toast.success("Notes saved");
+        await loadPage();
+      } else {
+        toast.error(res?.error || "Failed to save notes");
+      }
+    } catch {
+      toast.error("Failed to save notes");
+    } finally {
+      setSavingNotes(false);
     }
   };
 
@@ -357,7 +378,7 @@ export default function JobDetailPage() {
           </Card>
         )}
 
-        {(!isOwnerView || !hasAssignedWorker) && (
+        {isOwnerView && !hasAssignedWorker && (
           <Card className="bg-churvox-card border-churvox-border">
             <CardContent className="p-5 space-y-4">
               <div className="text-white font-semibold">Assign Worker</div>
@@ -435,11 +456,47 @@ export default function JobDetailPage() {
                     onClick={() => handleStatusChange(status)}
                     disabled={saving}
                     className={currentStatus === status ? "bg-churvox-accent hover:bg-churvox-accent/90" : ""}
+                    data-testid={`status-btn-${status}`}
                   >
                     {niceStatus(status)}
                   </Button>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {isWorker && (
+          <Card className="bg-churvox-card border-churvox-border">
+            <CardContent className="p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="text-white font-semibold">Worker Notes</div>
+                <Button
+                  onClick={handleSaveWorkerNotes}
+                  disabled={savingNotes}
+                  className="bg-churvox-accent hover:bg-churvox-accent/90"
+                  data-testid="save-worker-notes-button"
+                >
+                  {savingNotes ? "Saving..." : "Save Notes"}
+                </Button>
+              </div>
+              <textarea
+                value={workerNotes}
+                onChange={(e) => setWorkerNotes(e.target.value)}
+                placeholder="Add notes about this job..."
+                rows={4}
+                className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3 outline-none"
+                data-testid="worker-notes-textarea"
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {isOwnerView && hasValue(job.worker_notes) && (
+          <Card className="bg-churvox-card border-churvox-border">
+            <CardContent className="p-5 space-y-2">
+              <div className="text-white font-semibold">Worker Notes</div>
+              <div className="text-white whitespace-pre-wrap">{job.worker_notes}</div>
             </CardContent>
           </Card>
         )}

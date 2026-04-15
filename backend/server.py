@@ -2949,6 +2949,7 @@ async def get_job(job_id: str, current_user: dict = Depends(get_current_user)):
             "hourly_rate": job.get("hourly_rate") or 0,
             "extras": job.get("extras") or [],
             "notes": job.get("notes") or "",
+            "worker_notes": job.get("worker_notes") or "",
             "assigned_worker_id": job.get("assigned_worker_id"),
             "assigned_worker_name": job.get("assigned_worker_name") or "",
             "status": job.get("status") or "assigned",
@@ -2989,6 +2990,8 @@ async def get_jobs(current_user: dict = Depends(get_current_user)):
             or current_user.get("user_id")
             or ""
         )
+        current_role = str(current_user.get("role") or "").lower()
+        current_email = str(current_user.get("email") or "").strip().lower()
 
         def safe_iso(value):
             if value is None:
@@ -3007,6 +3010,18 @@ async def get_jobs(current_user: dict = Depends(get_current_user)):
                 {"owner_id": owner_id},
             ]
         }
+
+        if current_role == "worker":
+            worker_ids = set()
+            async for buser in db.business_users.find({"email": current_email, "role": "worker"}):
+                worker_ids.add(str(buser.get("_id")))
+                if buser.get("id"):
+                    worker_ids.add(str(buser.get("id")))
+            worker_ids.add(owner_id)
+            if worker_ids:
+                query["assigned_worker_id"] = {"$in": list(worker_ids)}
+            else:
+                return []
 
         jobs = []
         async for job in db.jobs.find(query).sort("created_at", -1):
@@ -3245,7 +3260,8 @@ async def delete_team_worker(worker_id: str, current_user: dict = Depends(get_cu
 async def update_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin", "employer"]:
+    current_role = str(current_user.get("role") or "").lower()
+    if current_role not in ["owner", "admin", "employer", "worker"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     business_id = str(
@@ -3280,6 +3296,31 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
         raise HTTPException(status_code=404, detail="Job not found")
 
     payload = await request.json()
+    now = datetime.now(timezone.utc)
+
+    if current_role == "worker":
+        new_status = str(payload.get("status") or "").strip().lower()
+        worker_notes = payload.get("worker_notes")
+        if not new_status and worker_notes is None:
+            raise HTTPException(status_code=403, detail="Workers can only update status or worker notes")
+
+        update_fields = {"updated_at": now}
+        if new_status:
+            allowed_statuses = ["acknowledged", "in_progress", "paused", "completed"]
+            if new_status not in allowed_statuses:
+                raise HTTPException(status_code=400, detail=f"Invalid status. Allowed: {', '.join(allowed_statuses)}")
+            update_fields["status"] = new_status
+            if new_status == "acknowledged":
+                update_fields["accepted_at"] = now
+            elif new_status == "in_progress":
+                update_fields["started_at"] = now
+            elif new_status == "completed":
+                update_fields["completed_at"] = now
+        if worker_notes is not None:
+            update_fields["worker_notes"] = str(worker_notes).strip()
+
+        await db.jobs.update_one({"_id": obj_id}, {"$set": update_fields})
+        return {"success": True, "message": "Job updated"}
 
     def to_int(value, default=0):
         try:
@@ -3292,6 +3333,8 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
             return float(value)
         except Exception:
             return default
+
+    new_status = payload.get("status") or existing.get("status") or "assigned"
 
     update_doc = {
         "title": payload.get("title") or existing.get("title") or "Untitled Job",
@@ -3314,9 +3357,14 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
         "is_recurring": bool(payload.get("is_recurring") or False),
         "recurring_frequency": payload.get("recurring_frequency"),
         "custom_repeat_days": payload.get("custom_repeat_days"),
-        "status": payload.get("status") or existing.get("status") or "assigned",
-        "updated_at": datetime.now(timezone.utc),
+        "status": new_status,
+        "updated_at": now,
     }
+
+    if new_status == "in_progress" and existing.get("status") != "in_progress":
+        update_doc["started_at"] = now
+    if new_status == "completed" and existing.get("status") != "completed":
+        update_doc["completed_at"] = now
 
     await db.jobs.update_one({"_id": obj_id}, {"$set": update_doc})
 
@@ -3462,6 +3510,13 @@ async def acknowledge_job(job_id: str, current_user: dict = Depends(get_current_
             if assigned_worker_id in current_ids:
                 worker_match = True
 
+            if not worker_match:
+                buser = await db.business_users.find_one({"email": current_email, "role": "worker"})
+                if buser:
+                    buser_ids = {str(buser.get("_id")), str(buser.get("id") or "")}
+                    if assigned_worker_id in buser_ids:
+                        worker_match = True
+
         if assigned_worker_email and current_email and assigned_worker_email == current_email:
             worker_match = True
 
@@ -3472,6 +3527,7 @@ async def acknowledge_job(job_id: str, current_user: dict = Depends(get_current_
         {"_id": job["_id"]},
         {"$set": {
             "status": "acknowledged",
+            "accepted_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
         }}
     )
@@ -3485,18 +3541,19 @@ async def acknowledge_job(job_id: str, current_user: dict = Depends(get_current_
 
 @api_router.post("/jobs/{job_id}/pause")
 async def pause_job(job_id: str, current_user: dict = Depends(get_current_user)):
-    job = await db.jobs.find_one({"id": job_id})
-
-    if not job:
+    job = None
+    if len(str(job_id)) == 24:
         try:
             job = await db.jobs.find_one({"_id": ObjectId(job_id)})
         except Exception:
-            job = None
-
+            pass
+    if not job:
+        job = await db.jobs.find_one({"id": job_id})
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+
     await db.jobs.update_one(
-        {"id": job_id},
+        {"_id": job["_id"]},
         {"$set": {"status": "paused", "updated_at": datetime.now(timezone.utc)}}
     )
     return {"success": True, "status": "paused"}
