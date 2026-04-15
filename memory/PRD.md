@@ -1,69 +1,76 @@
-# Churvox - Product Requirements Document
+# Churvox PRD
 
 ## Original Problem Statement
-Multi-trade job management platform. Mobile-first, production-ready. Single codebase and database, maintaining business isolation.
+Prepare Churvox for launch as a mobile-friendly web app deployed on Render. Keep Render compatibility, current frontend/backend structure, and preserve existing auth/cookie/CORS setups. Do not hardcode backend URLs. Focus on launch-critical items only: clean login/signup, clients, jobs, quotes, invoices, team features, Stripe plan persistence, mobile tap/click fixes, and adding loading/empty/error states.
 
 ## Architecture
-- Frontend: React + Tailwind CSS + shadcn/ui (PWA-enabled)
-- Backend: FastAPI + MongoDB
-- Auth: Custom JWT
-- SMS: ClickSend REST API v3 (abstracted provider)
-- Email: Resend API (abstracted provider)
+- **Frontend**: React (CRA) + Tailwind CSS + Radix UI + Shadcn, served as production build
+- **Backend**: FastAPI + MongoDB (motor async driver)
+- **Auth**: JWT tokens + HTTP-only cookies, passlib/bcrypt
+- **Email**: Resend API
+- **SMS**: ClickSend API
+- **Billing**: Stripe
+- **Deployment**: Render (auto-deploy from GitHub main branch)
 
-## Completed Features
-- **Core**: Branding, business isolation, role-based routing (Employer/Worker)
-- **Batches 1-6**: Jobs, quotes, invoices, time tracking, calendar, SMS credits, MYOB structure, plans/gating, onboarding, empty states
-- **Auth Flow**: Normal signup (creates employer), normal signin, admin signin link (/admin/login), no public admin signup
-- **Employee Invite Flow**: Owner invites workers by name+email, CSV bulk import, REAL invite email via Resend, employees set password at /invite/setup/:token, tied to business
-- **PWA**: manifest.json, service worker, install prompt with beforeinstallprompt handling, dismiss logic, iOS/Android fallback
-- **ClickSend SMS**: Real ClickSend API for AU/NZ SMS (note: AU country needs enabling in ClickSend dashboard)
-- **Resend Email**: Real transactional email via Resend for invites, reminders. Branded HTML templates with Churvox styling, setup buttons, fallback links, expiry notes. Domain fallback to onboarding@resend.dev until churvox.com is verified.
-- **Legal Pages**: Privacy, Terms, Account Deletion (placeholder content)
+## What's Been Implemented
 
-## Email Provider Architecture
-- Abstracted in `/app/backend/email_provider.py`
-- ResendProvider: Real Resend API with async sending (asyncio.to_thread)
-- MockEmailProvider: For development/testing (when no RESEND_API_KEY)
-- Templates: build_invite_email(), build_resend_invite_email(), build_password_reset_email()
-- Domain fallback: If churvox.com not verified, auto-retries with onboarding@resend.dev
-- Env vars: RESEND_API_KEY, EMAIL_FROM
+### Session 1-15 (Previous Forks)
+- Full CRUD for clients, jobs, quotes, invoices
+- Auth flows (login, signup, forgot/reset password)
+- Stripe billing integration with plan persistence
+- Team portal with worker management
+- CSV import for clients and team
+- PWA "website-first" configuration
+- Mobile tap/click fixes (hard-tap-fix.css)
+- Radix UI dialog/modal click bug fixes (replaced AlertDialogAction with native buttons)
+- Backend role-based access for "employer" users across 16 routes
+- Install Prompt layout fix
+- Hardcoded backend URLs removed globally
 
-## SMS Provider Architecture
-- Abstracted in `/app/backend/sms_provider.py`
-- ClickSendProvider: Real ClickSend REST API v3
-- MockSMSProvider: For dev (set SMS_TEST_MODE=true)
-- Env vars: CLICKSEND_USERNAME, CLICKSEND_API_KEY, CLICKSEND_DEFAULT_COUNTRY, SMS_TEST_MODE
+### Session 16 (Current Fork - April 14, 2026)
+- **P0: App Owner Platform Refactor** — COMPLETE
+  - Removed redundant 4-endpoint waterfall fetch in AppOwnerPage.jsx
+  - Now uses single `/api/admin/platform-stats` endpoint only
+  - Fixed backend routing: endpoint was registered after catch-all route, causing 404s
+  - Simplified normalizeStats to match known backend response shape
+  - Fixed plan_counts leak (0 values falling through to unfiltered backend counts)
+  - Fixed "Jobs Today" label to "Total Jobs" (data accuracy)
+  - filterFake correctly removes test/demo/seed data
+- **P1: Forgot Password Flow** — VERIFIED
+  - Fixed missing `send_email` import in server.py
+  - Backend generates token, tries Resend email, returns fallback link on failure
+  - Frontend shows "Email delivery issue" warning with direct reset link
+  - Full reset flow tested: forgot → token → reset-password → success
+  - Resend fails in preview (unverified domain) — expected, fallback works
+- **P2: Final Regression** — ALL TESTS PASS
+  - Admin login (real mouse click): PASS
+  - Employer login (real mouse click): PASS
+  - Owner dashboard real data: PASS
+  - Forgot password fallback: PASS
+  - Jobs delete modal (real mouse click): PASS
+  - Clients add modal (real mouse click): PASS
+  - Mobile viewport (375x812): PASS
+- **Build fix**: Rebuilt frontend with correct REACT_APP_BACKEND_URL
 
-## Key API Endpoints
-### Email
-- POST /api/email/test (test email delivery, employer-only)
+## Render Environment Variables Required
+```
+MONGO_URL=<MongoDB connection string>
+DB_NAME=<database name>
+JWT_SECRET=<64+ char secret>
+CORS_ORIGINS=<frontend URL>
+FRONTEND_URL=<frontend URL>
+RESEND_API_KEY=<Resend API key>
+EMAIL_FROM=hello@churvox.com
+CLICKSEND_USERNAME=hello@churvox.com
+CLICKSEND_API_KEY=<ClickSend key>
+PLATFORM_OWNER_EMAILS=hello@churvox.com
+```
 
-### SMS (ClickSend-powered)
-- POST /api/sms/send, /api/sms/test, GET /api/sms/provider-balance, /api/sms/balance, /api/sms/history, /api/sms/packs, POST /api/sms/buy-credits
-
-### Team & Invites (triggers real email)
-- POST /api/team/workers, GET /api/team/workers, DELETE /api/team/workers/{id}
-- POST /api/team/resend-invite/{worker_id}, POST /api/team/import-csv
-- GET /api/invite/verify/{token}, POST /api/invite/accept
-
-### Auth
-- POST /api/auth/register, /api/auth/login, /api/auth/logout, GET /api/auth/me
-
-## Mocked/Placeholder
-- SMS Credit Purchases: No real payment
-- MYOB Sync: Mock
-- Billing/Plans: Placeholder plan upgrades
-
-## Live Integrations
-- ClickSend SMS: LIVE (AU country needs enabling in dashboard)
-- Resend Email: LIVE (churvox.com domain needs verifying in Resend dashboard)
+## For Forgot Password to work on Render
+1. `RESEND_API_KEY` must be a valid Resend key
+2. `EMAIL_FROM` must be from a verified domain in Resend (e.g., hello@churvox.com requires churvox.com domain verified)
+3. `FRONTEND_URL` must match the Render frontend URL (used to build reset links)
 
 ## Backlog
-- P1: Job photos upload
-- P1: Replace legal page placeholder text
-- P1: Verify churvox.com domain in Resend for production email
-- P1: Enable Australia in ClickSend for production SMS
-- P2: Worker password change flow
-- P3: Wire real Stripe billing
-- P3: Wire real MYOB API
-- Refactoring: Split server.py into routes/models structure
+- No new features requested by user
+- User explicitly prohibited: advanced AI, marketplace, fleet, big redesigns
