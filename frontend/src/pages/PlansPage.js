@@ -28,7 +28,7 @@ const fallbackPlans = [
     period: "/month",
     blurb: "For busy businesses needing more room.",
     badge: "",
-    limits: ["Up to 35 clients", "Up to 10 users", "Advanced workflow tools", "Priority-ready setup"],
+    limits: ["Up to 40 clients", "Up to 10 users", "Advanced workflow tools", "Priority-ready setup"],
   },
   {
     key: "enterprise",
