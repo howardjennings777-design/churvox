@@ -4576,6 +4576,34 @@ def send_resend_email(to_email: str, subject: str, html: str, text_content: str 
         print("RESEND SEND ERROR:", str(e))
         return False
 
+@api_router.delete("/admin/users/{user_id}")
+async def admin_delete_user(user_id: str, current_user: dict = Depends(get_current_user)):
+    if not is_platform_owner(current_user):
+        raise HTTPException(status_code=403, detail="Owner access required")
+
+    try:
+        obj_id = ObjectId(user_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
+
+    user = await db.users.find_one({"_id": obj_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    owner_email = (current_user.get("email") or "").lower()
+    target_email = (user.get("email") or "").lower()
+    if target_email == owner_email:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+
+    await db.users.delete_one({"_id": obj_id})
+    if target_email:
+        await db.business_users.delete_many({"email": target_email})
+        await db.password_reset_tokens.delete_many({"email": target_email})
+
+    print(f"ADMIN_DELETE_USER user_id={user_id} email={target_email} by={owner_email}")
+    return {"success": True, "message": f"User {target_email} deleted"}
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")

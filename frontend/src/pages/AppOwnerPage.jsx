@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import {
   Users,
   Building2,
@@ -15,6 +15,7 @@ import {
   MapPin,
   CalendarDays,
   BadgeDollarSign,
+  Trash2,
 } from "lucide-react";
 
 const API_BASE = (
@@ -234,11 +235,27 @@ function getDetailType(selected) {
   return "raw";
 }
 
-function DetailCard({ item, type }) {
+function DetailCard({ item, type, onDelete, deleting }) {
+  const itemId = item?._id || item?.id;
+  const isDeleting = deleting === itemId;
+
   if (type === "user" || type === "paid_user" || type === "active_user") {
     return (
       <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
-        <div className="mb-3 text-sm font-semibold text-white">{recordTitle(item)}</div>
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <div className="text-sm font-semibold text-white">{recordTitle(item)}</div>
+          {onDelete && itemId && (
+            <button
+              type="button"
+              onClick={() => onDelete(itemId)}
+              disabled={isDeleting}
+              className="shrink-0 rounded-lg border border-red-500/30 p-1.5 text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+              data-testid={`delete-user-${itemId}`}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
         <div className="grid grid-cols-1 gap-2">
           <Field icon={Mail} label="Email" value={item?.email} />
           <Field icon={Phone} label="Phone" value={item?.phone || item?.mobile} />
@@ -255,7 +272,20 @@ function DetailCard({ item, type }) {
   if (type === "business") {
     return (
       <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-3">
-        <div className="mb-3 text-sm font-semibold text-white">{recordTitle(item)}</div>
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <div className="text-sm font-semibold text-white">{recordTitle(item)}</div>
+          {onDelete && itemId && (
+            <button
+              type="button"
+              onClick={() => onDelete(itemId)}
+              disabled={isDeleting}
+              className="shrink-0 rounded-lg border border-red-500/30 p-1.5 text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+              data-testid={`delete-business-${itemId}`}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
         <div className="grid grid-cols-1 gap-2">
           <Field icon={Users} label="Owner" value={item?.owner_name || item?.owner || item?.user_name} />
           <Field icon={Mail} label="Email" value={item?.email} />
@@ -319,9 +349,11 @@ export default function AppOwnerPage() {
   const [selected, setSelected] = useState("users_list");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [sourceUsed, setSourceUsed] = useState("");
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [deleting, setDeleting] = useState("");
+  const pollRef = useRef(null);
 
-  async function tryEndpoint(path) {
+  const tryEndpoint = useCallback(async (path) => {
     const token =
       (typeof window !== "undefined" && window.localStorage && window.localStorage.getItem("token")) || "";
 
@@ -348,28 +380,78 @@ export default function AppOwnerPage() {
     } finally {
       clearTimeout(timeout);
     }
-  }
+  }, []);
 
-  async function loadDashboard() {
+  const loadDashboard = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError("");
 
       const data = await tryEndpoint("/api/admin/platform-stats");
       setStats(normalizeStats(data));
-      setSourceUsed("/api/admin/platform-stats");
+      setLastUpdated(new Date());
     } catch (err) {
       console.error("Owner dashboard load failed:", err);
-      setStats(EMPTY_STATS);
-      setSourceUsed("");
-      setError("Could not load live platform data. " + (err?.message || ""));
+      if (!silent) {
+        setStats(EMPTY_STATS);
+        setError("Could not load live platform data. " + (err?.message || ""));
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  }
+  }, [tryEndpoint]);
 
   useEffect(() => {
     loadDashboard();
+  }, [loadDashboard]);
+
+  useEffect(() => {
+    pollRef.current = setInterval(() => loadDashboard(true), 30000);
+    return () => clearInterval(pollRef.current);
+  }, [loadDashboard]);
+
+  const handleDeleteUser = async (userId) => {
+    if (!userId) return;
+    const confirmed = window.confirm("Delete this user account? This cannot be undone. The user will no longer be able to log in.");
+    if (!confirmed) return;
+
+    setDeleting(userId);
+    try {
+      const token = window.localStorage?.getItem("token") || "";
+      const res = await fetch(`${API_BASE}/api/admin/users/${userId}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (res.ok) {
+        await loadDashboard(true);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data?.detail || "Failed to delete user");
+      }
+    } catch {
+      alert("Failed to delete user");
+    } finally {
+      setDeleting("");
+    }
+  };
+
+  const timeAgo = (date) => {
+    if (!date) return "";
+    const secs = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (secs < 10) return "just now";
+    if (secs < 60) return `${secs}s ago`;
+    const mins = Math.floor(secs / 60);
+    return `${mins}m ago`;
+  };
+
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick((p) => p + 1), 10000);
+    return () => clearInterval(t);
   }, []);
 
   const detailType = getDetailType(selected);
@@ -407,14 +489,19 @@ export default function AppOwnerPage() {
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold">Platform Dashboard</h1>
-            <p className="text-sm text-slate-400">Live owner/admin data</p>
-            {sourceUsed ? <p className="mt-2 text-xs text-cyan-400">Loaded from: {sourceUsed}</p> : null}
+            <p className="text-sm text-slate-400">
+              Live data
+              {lastUpdated ? (
+                <span className="ml-2 text-cyan-400">Updated {timeAgo(lastUpdated)}</span>
+              ) : null}
+            </p>
           </div>
 
           <button
             type="button"
-            onClick={loadDashboard}
+            onClick={() => loadDashboard(false)}
             className="inline-flex items-center gap-2 rounded-xl border border-blue-500/30 bg-slate-900/80 px-4 py-3 text-sm font-medium text-white hover:border-blue-400/60"
+            data-testid="refresh-stats-button"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             Refresh stats
@@ -481,6 +568,8 @@ export default function AppOwnerPage() {
                       key={item?._id || item?.id || item?.email || item?.invoice_number || index}
                       item={item}
                       type={detailType}
+                      onDelete={detailType === "user" || detailType === "paid_user" || detailType === "active_user" || detailType === "business" ? handleDeleteUser : undefined}
+                      deleting={deleting}
                     />
                   ))
                 ) : (
