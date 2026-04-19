@@ -35,6 +35,7 @@ import AccountDeletionPage from "./pages/legal/AccountDeletionPage";
 import AdminUsagePage from "./pages/AdminUsagePage";
 import PlatformAdminRoute from "./components/admin/PlatformAdminRoute";
 import PlatformUnlock from "./pages/admin/PlatformUnlock";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { normalizePlan } from "./utils/planRules";
 
 function PrivateRoute({ children }) {
@@ -81,6 +82,25 @@ function EmployerRoute({ children }) {
   return children;
 }
 
+function PlanRequiredRoute({ children }) {
+  const { user, loading, isWorker } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-churvox-bg flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" />
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/login" replace />;
+  if (isWorker) return children;
+
+  const plan = normalizePlan(user?.plan);
+  if (!plan || plan === "none") {
+    return <Navigate to="/plans" replace />;
+  }
+  return children;
+}
+
 function App() {
 
   React.useEffect(() => {
@@ -120,6 +140,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ErrorBoundary>
         <Toaster position="top-right" richColors />
         <Routes>
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
@@ -181,12 +202,12 @@ function App() {
             }
           />
 
-          <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
-          <Route path="/jobs" element={<PrivateRoute><JobsPage /></PrivateRoute>} />
-          <Route path="/jobs/new" element={<PrivateRoute><JobFormPage /></PrivateRoute>} />
-          <Route path="/jobs/:id" element={<PrivateRoute><JobDetailPage /></PrivateRoute>} />
-          <Route path="/jobs/:id/edit" element={<PrivateRoute><JobFormPage /></PrivateRoute>} />
-          <Route path="/calendar" element={<PrivateRoute><CalendarPage /></PrivateRoute>} />
+          <Route path="/dashboard" element={<PlanRequiredRoute><DashboardPage /></PlanRequiredRoute>} />
+          <Route path="/jobs" element={<PlanRequiredRoute><JobsPage /></PlanRequiredRoute>} />
+          <Route path="/jobs/new" element={<PlanRequiredRoute><JobFormPage /></PlanRequiredRoute>} />
+          <Route path="/jobs/:id" element={<PlanRequiredRoute><JobDetailPage /></PlanRequiredRoute>} />
+          <Route path="/jobs/:id/edit" element={<PlanRequiredRoute><JobFormPage /></PlanRequiredRoute>} />
+          <Route path="/calendar" element={<PlanRequiredRoute><CalendarPage /></PlanRequiredRoute>} />
           <Route path="/clients" element={<EmployerRoute><ClientsPage /></EmployerRoute>} />
           <Route path="/clients/new" element={<EmployerRoute><ClientFormPage /></EmployerRoute>} />
           <Route path="/clients/:id" element={<EmployerRoute><ClientDetailPage /></EmployerRoute>} />
@@ -201,7 +222,7 @@ function App() {
           <Route path="/invoices/:id" element={<EmployerRoute><InvoiceDetailPage /></EmployerRoute>} />
           <Route path="/sms" element={<EmployerRoute><SMSPage /></EmployerRoute>} />
           <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
-          <Route path="/plans" element={<EmployerRoute><PlansPage /></EmployerRoute>} />
+          <Route path="/plans" element={<PrivateRoute><PlansPage /></PrivateRoute>} />
 
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
@@ -213,6 +234,7 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        </ErrorBoundary>
       </AuthProvider>
     </BrowserRouter>
   );

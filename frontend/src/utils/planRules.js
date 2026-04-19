@@ -7,9 +7,11 @@ export const PLAN_ORDER = {
 
 export const normalizePlan = (plan) => {
   const value = String(plan || "").trim().toLowerCase();
+  if (value === "solo") return "solo";
   if (value === "team") return "team";
   if (value === "pro") return "pro";
   if (value === "enterprise") return "enterprise";
+  if (!value || value === "null" || value === "undefined" || value === "none") return "none";
   return "solo";
 };
 

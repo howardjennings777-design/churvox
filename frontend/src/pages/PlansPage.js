@@ -45,7 +45,7 @@ export default function PlansPage() {
   const api = useApi();
   const [plans, setPlans] = useState(fallbackPlans);
   const [billing, setBilling] = useState(null);
-  const [currentPlan, setCurrentPlan] = useState("solo");
+  const [currentPlan, setCurrentPlan] = useState("none");
   const [busyPlan, setBusyPlan] = useState("");
   const [loading, setLoading] = useState(true);
   const [checkoutNotice, setCheckoutNotice] = useState(null);
@@ -145,18 +145,20 @@ export default function PlansPage() {
 
         if (billingData && billingData.success === false) {
           setBilling(null);
-          setCurrentPlan("solo");
+          setCurrentPlan("none");
         } else {
           setBilling(billingData || null);
           if (billingData?.plan) {
             setCurrentPlan(String(billingData.plan).toLowerCase());
+          } else {
+            setCurrentPlan("none");
           }
         }
       } catch (err) {
         console.error("Failed to load plans:", err);
         setPlans(fallbackPlans);
         setBilling(null);
-        setCurrentPlan("solo");
+        setCurrentPlan("none");
       } finally {
         setLoading(false);
       }

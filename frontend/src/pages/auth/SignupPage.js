@@ -49,7 +49,7 @@ export default function SignupPage() {
       });
 
       if (result?.token) {
-        navigate("/dashboard");
+        navigate("/plans");
       } else {
         setError("Registration failed. Please try again.");
       }

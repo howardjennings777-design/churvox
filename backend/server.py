@@ -698,7 +698,7 @@ def build_user_response(user_doc: dict, user_id: str, token: str = None) -> dict
         "name": user_doc["name"],
         "business_name": user_doc.get("business_name"),
         "role": user_doc.get("role", "employer"),
-        "plan": normalize_plan(user_doc.get("plan", "solo")),
+        "plan": user_doc.get("plan") or None,
         "gst_rate": user_doc.get("gst_rate", DEFAULT_GST_RATE),
         "trade_type": user_doc.get("trade_type", "other"),
         "business_id": str(user_doc.get("business_id", user_id)),
@@ -967,14 +967,12 @@ async def register(user_data: UserCreate, response: Response):
         "role": "employer",
         "status": "active",
         "is_active": True,
-        "plan": "solo",
+        "plan": None,
         "email_verified": False,
         "email_verification_token": secrets.token_urlsafe(32),
         "email_verification_sent_at": now,
-        "plan_status": "trialing",
-        "trial_started_at": now,
-        "trial_ends_at": now + timedelta(days=14),
-        "subscription_status": "trialing",
+        "plan_status": "pending",
+        "subscription_status": "pending",
         "gst_rate": DEFAULT_GST_RATE,
         "created_at": now,
         "updated_at": now,
@@ -1067,7 +1065,7 @@ async def signup(payload: dict):
         "business_name": business_name,
         "email": email,
         "industry": industry,
-        "plan": "solo",
+        "plan": None,
         "status": "active",
         "created_at": now,
         "updated_at": now,
@@ -1079,10 +1077,10 @@ async def signup(payload: dict):
         "name": name,
         "email": email,
         "password_hash": password_hash,
-        "role": "owner",
+        "role": "employer",
         "business_id": business_id,
         "industry": industry,
-        "plan": "solo",
+        "plan": None,
         "status": "active",
         "created_at": now,
         "updated_at": now,
@@ -1105,9 +1103,9 @@ async def signup(payload: dict):
             "id": user_id,
             "name": name,
             "email": email,
-            "role": "owner",
+            "role": "employer",
             "business_id": business_id,
-            "plan": "solo",
+            "plan": None,
             "industry": industry,
         }
     }
@@ -3979,7 +3977,8 @@ def build_billing_status(owner: dict):
     trial_ends_at = to_utc_dt(owner.get("trial_ends_at"))
     subscription_status = str(owner.get("subscription_status") or owner.get("plan_status") or "").lower()
     stripe_subscription_id = owner.get("stripe_subscription_id")
-    plan = str(normalize_plan(owner.get("plan") or "solo")).lower()
+    raw_plan = owner.get("plan")
+    plan = str(normalize_plan(raw_plan)).lower() if raw_plan else None
 
     on_paid_plan = bool(stripe_subscription_id) and subscription_status in {"active", "trialing", "past_due"}
     trial_active = (trial_ends_at is not None) and (now < trial_ends_at) and not on_paid_plan

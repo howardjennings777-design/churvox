@@ -11,7 +11,7 @@ export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
-  const safePlan = normalizePlan(user?.plan || "solo");
+  const safePlan = normalizePlan(user?.plan);
   const canUseTeamNav = !!isEmployer && hasPlanAccess(safePlan, "team");
 
   const handleLogout = async () => {
