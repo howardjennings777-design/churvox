@@ -4123,6 +4123,13 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
     if has_header:
         data_rows = rows[1:]
     else:
+        first_cells = [str(c).strip() for c in rows[0]]
+        looks_like_email = any("@" in c for c in first_cells)
+        if not looks_like_email:
+            raise HTTPException(
+                status_code=400,
+                detail="CSV headers not recognized. Expected columns: name, email, phone (or first_name, last_name, email, phone)"
+            )
         data_rows = rows
         header_map = {"name": 0, "email": 1, "phone": 2}
 
@@ -4299,6 +4306,12 @@ async def import_csv_clients(request: Request, current_user: dict = Depends(get_
     if has_header:
         data_rows = rows[1:]
     else:
+        first_cells = [str(c).strip() for c in rows[0]]
+        if len(first_cells) < 1 or all(len(c) < 2 for c in first_cells):
+            raise HTTPException(
+                status_code=400,
+                detail="CSV headers not recognized. Expected columns: client_name, email, phone, address (or name, email, phone)"
+            )
         data_rows = rows
         header_map = {
             "client_name": 0,

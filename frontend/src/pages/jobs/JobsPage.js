@@ -16,6 +16,7 @@ export default function JobsPage() {
   const { isEmployer } = useAuth();
   const { get, del, loading } = useApi();
   const [jobs, setJobs] = useState([]);
+  const [pageLoading, setPageLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteId, setDeleteId] = useState(null);
@@ -24,6 +25,7 @@ export default function JobsPage() {
     const params = statusFilter !== "all" ? `?status=${statusFilter}` : "";
     const res = await get(`/jobs${params}`);
     if (res.success) setJobs(res.data);
+    setPageLoading(false);
   }, [get, statusFilter]);
 
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
