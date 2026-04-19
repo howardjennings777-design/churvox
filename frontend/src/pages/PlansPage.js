@@ -188,8 +188,40 @@ export default function PlansPage() {
     return null;
   }, [billing]);
 
-  const handleUpgrade = async (planKey) => {
+  const isNewUser = currentPlan === "none" || !currentPlan;
+  const hasPaidSubscription = billing?.has_paid_subscription === true;
+
+  const handleSelectPlan = async (planKey) => {
     if (!planKey || planKey === currentPlan || busyPlan) return;
+
+    if (isNewUser && !hasPaidSubscription) {
+      try {
+        setBusyPlan(planKey);
+        const res = await api.post("/billing/start-trial", { plan_type: planKey });
+        const data = getPayload(res) || {};
+
+        if (data.success) {
+          window.dispatchEvent(new Event("churvox-auth-refresh"));
+          setCurrentPlan(planKey);
+          setCheckoutNotice({
+            type: "success",
+            title: "Trial started!",
+            text: `Your 14-day free trial on the ${planKey.charAt(0).toUpperCase() + planKey.slice(1)} plan is now active. No card required.`,
+          });
+          setTimeout(() => {
+            window.location.href = "/dashboard";
+          }, 1500);
+        } else {
+          throw new Error(data.detail || data.error || "Failed to start trial");
+        }
+      } catch (err) {
+        console.error("Trial start failed:", err);
+        alert(err?.response?.data?.detail || err?.message || "Failed to start trial");
+      } finally {
+        setBusyPlan("");
+      }
+      return;
+    }
 
     try {
       setBusyPlan(planKey);
@@ -310,18 +342,21 @@ export default function PlansPage() {
 
                 <button
                   type="button"
-                  onClick={() => handleUpgrade(plan.key)}
+                  onClick={() => handleSelectPlan(plan.key)}
                   disabled={isCurrent || isBusy}
                   className={`mt-8 w-full rounded-2xl px-4 py-3 text-sm font-semibold transition ${
                     isCurrent
                       ? "cursor-not-allowed bg-slate-700 text-slate-300"
                       : "bg-blue-600 text-white hover:bg-blue-500"
                   }`}
+                  data-testid={`plan-btn-${plan.key}`}
                 >
                   {isCurrent
                     ? "Current plan"
                     : isBusy
-                    ? "Opening checkout..."
+                    ? (isNewUser ? "Starting trial..." : "Opening checkout...")
+                    : isNewUser
+                    ? `Start free trial — ${plan.name}`
                     : `Choose ${plan.name}`}
                 </button>
               </div>

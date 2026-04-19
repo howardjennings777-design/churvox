@@ -3971,6 +3971,58 @@ async def get_owner_doc_for_user(user: dict):
         owner = await db.users.find_one({"_id": ObjectId(str(user["id"]))})
     return owner
 
+@api_router.post("/billing/start-trial")
+async def start_trial(request: Request):
+    current_user = await get_current_user(request)
+    user_id = current_user.get("_id") or current_user.get("id")
+    existing_plan = current_user.get("plan")
+
+    if existing_plan and str(existing_plan).strip().lower() not in ("", "null", "none"):
+        raise HTTPException(status_code=400, detail="You already have an active plan")
+
+    payload = await request.json()
+    plan_type = str((payload or {}).get("plan_type") or "").strip().lower()
+
+    if plan_type not in ("solo", "team", "pro", "enterprise"):
+        raise HTTPException(status_code=400, detail="Invalid plan type")
+
+    now = datetime.now(timezone.utc)
+    trial_end = now + timedelta(days=14)
+
+    update_fields = {
+        "plan": plan_type,
+        "plan_status": "trialing",
+        "subscription_status": "trialing",
+        "trial_started_at": now,
+        "trial_ends_at": trial_end,
+        "updated_at": now,
+    }
+
+    try:
+        await db.users.update_one({"_id": ObjectId(str(user_id))}, {"$set": update_fields})
+    except Exception:
+        await db.users.update_one({"_id": user_id}, {"$set": update_fields})
+
+    business_id = current_user.get("business_id")
+    if business_id:
+        try:
+            await db.businesses.update_one(
+                {"_id": ObjectId(str(business_id))},
+                {"$set": {"plan": plan_type, "updated_at": now}}
+            )
+        except Exception:
+            pass
+
+    return {
+        "success": True,
+        "plan": plan_type,
+        "plan_status": "trialing",
+        "trial_started_at": now.isoformat(),
+        "trial_ends_at": trial_end.isoformat(),
+        "message": f"14-day free trial started on {plan_type.title()} plan",
+    }
+
+
 def build_billing_status(owner: dict):
     now = utc_now()
     trial_started_at = to_utc_dt(owner.get("trial_started_at"))
