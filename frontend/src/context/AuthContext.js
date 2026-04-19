@@ -159,6 +159,29 @@ export function AuthProvider({ children }) {
 
   const isWorker = user?.role === "worker";
 
+  const isTrialExpired = (() => {
+    if (!user) return false;
+    if (user.stripe_subscription_id) return false;
+    if (user.subscription_status === "active") return false;
+    if (!user.trial_ends_at) return false;
+    try {
+      return new Date(user.trial_ends_at) < new Date();
+    } catch {
+      return false;
+    }
+  })();
+
+  const hasAppAccess = (() => {
+    if (!user) return false;
+    if (isWorker) return true;
+    const plan = (user.plan || "").toLowerCase();
+    if (!plan || plan === "none") return false;
+    if (user.stripe_subscription_id) return true;
+    if (user.subscription_status === "active") return true;
+    if (isTrialExpired) return false;
+    return true;
+  })();
+
   return (
     <AuthContext.Provider
       value={{
@@ -173,6 +196,8 @@ export function AuthProvider({ children }) {
         resetPassword,
         isEmployer,
         isWorker,
+        isTrialExpired,
+        hasAppAccess,
       }}
     >
       {children}

@@ -69,7 +69,7 @@ function PublicRoute({ children }) {
 }
 
 function EmployerRoute({ children }) {
-  const { user, loading, isWorker } = useAuth();
+  const { user, loading, isWorker, hasAppAccess } = useAuth();
   if (loading) {
     return (
       <div className="min-h-screen bg-churvox-bg flex items-center justify-center">
@@ -79,16 +79,12 @@ function EmployerRoute({ children }) {
   }
   if (!user) return <Navigate to="/login" replace />;
   if (isWorker) return <Navigate to="/dashboard" replace />;
-
-  const plan = normalizePlan(user?.plan);
-  if (!plan || plan === "none") {
-    return <Navigate to="/plans" replace />;
-  }
+  if (!hasAppAccess) return <Navigate to="/plans" replace />;
   return children;
 }
 
 function PlanRequiredRoute({ children }) {
-  const { user, loading, isWorker } = useAuth();
+  const { user, loading, isWorker, hasAppAccess } = useAuth();
   if (loading) {
     return (
       <div className="min-h-screen bg-churvox-bg flex items-center justify-center">
@@ -98,11 +94,7 @@ function PlanRequiredRoute({ children }) {
   }
   if (!user) return <Navigate to="/login" replace />;
   if (isWorker) return children;
-
-  const plan = normalizePlan(user?.plan);
-  if (!plan || plan === "none") {
-    return <Navigate to="/plans" replace />;
-  }
+  if (!hasAppAccess) return <Navigate to="/plans" replace />;
   return children;
 }
 

@@ -188,13 +188,42 @@ export default function PlansPage() {
     return null;
   }, [billing]);
 
+  const isTrialExpired = billing?.trial_expired === true;
+  const isActiveTrial = billing?.trial_active === true;
+  const isPaid = billing?.has_paid_subscription === true;
   const isNewUser = currentPlan === "none" || !currentPlan;
-  const hasPaidSubscription = billing?.has_paid_subscription === true;
+
+  const getButtonState = (planKey) => {
+    const isCurrent = planKey === currentPlan;
+    const isBusy = busyPlan === planKey;
+
+    if (isBusy) {
+      return { disabled: true, label: isNewUser ? "Starting trial..." : "Opening checkout...", style: "busy" };
+    }
+
+    if (isNewUser) {
+      return { disabled: false, label: `Start free trial — ${planKey.charAt(0).toUpperCase() + planKey.slice(1)}`, style: "primary" };
+    }
+
+    if (isTrialExpired) {
+      return { disabled: false, label: isCurrent ? `Subscribe to ${planKey.charAt(0).toUpperCase() + planKey.slice(1)}` : `Choose ${planKey.charAt(0).toUpperCase() + planKey.slice(1)}`, style: "primary" };
+    }
+
+    if (isPaid && isCurrent) {
+      return { disabled: true, label: "Current plan", style: "disabled" };
+    }
+
+    if (isActiveTrial && isCurrent) {
+      return { disabled: true, label: "Current plan", style: "disabled" };
+    }
+
+    return { disabled: false, label: `Choose ${planKey.charAt(0).toUpperCase() + planKey.slice(1)}`, style: "primary" };
+  };
 
   const handleSelectPlan = async (planKey) => {
-    if (!planKey || planKey === currentPlan || busyPlan) return;
+    if (!planKey || busyPlan) return;
 
-    if (isNewUser && !hasPaidSubscription) {
+    if (isNewUser) {
       try {
         setBusyPlan(planKey);
         const res = await api.post("/billing/start-trial", { plan_type: planKey });
@@ -298,13 +327,13 @@ export default function PlansPage() {
         <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
           {plans.map((plan) => {
             const isCurrent = plan.key === currentPlan;
-            const isBusy = busyPlan === plan.key;
+            const btnState = getButtonState(plan.key);
 
             return (
               <div
                 key={plan.key}
                 className={`rounded-3xl border p-6 shadow-lg transition ${
-                  isCurrent
+                  isCurrent && !isTrialExpired
                     ? "border-blue-500/40 bg-slate-900 ring-1 ring-blue-500/30"
                     : "border-slate-800 bg-slate-900/80"
                 }`}
@@ -315,9 +344,13 @@ export default function PlansPage() {
                     <p className="mt-2 text-sm text-slate-300 min-h-[40px]">{plan.blurb}</p>
                   </div>
 
-                  {isCurrent ? (
+                  {isCurrent && !isTrialExpired ? (
                     <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-semibold text-blue-300">
                       Current Plan
+                    </span>
+                  ) : isCurrent && isTrialExpired ? (
+                    <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-300">
+                      Trial Ended
                     </span>
                   ) : plan.badge ? (
                     <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-200">
@@ -343,21 +376,15 @@ export default function PlansPage() {
                 <button
                   type="button"
                   onClick={() => handleSelectPlan(plan.key)}
-                  disabled={isCurrent || isBusy}
+                  disabled={btnState.disabled}
                   className={`mt-8 w-full rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                    isCurrent
+                    btnState.disabled
                       ? "cursor-not-allowed bg-slate-700 text-slate-300"
                       : "bg-blue-600 text-white hover:bg-blue-500"
                   }`}
                   data-testid={`plan-btn-${plan.key}`}
                 >
-                  {isCurrent
-                    ? "Current plan"
-                    : isBusy
-                    ? (isNewUser ? "Starting trial..." : "Opening checkout...")
-                    : isNewUser
-                    ? `Start free trial — ${plan.name}`
-                    : `Choose ${plan.name}`}
+                  {btnState.label}
                 </button>
               </div>
             );
