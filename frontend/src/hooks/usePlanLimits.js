@@ -10,7 +10,7 @@ export function usePlanLimits(planOverride = null) {
     authUser = null;
   }
 
-  const safePlan = normalizePlan(planOverride || authUser?.plan || "solo");
+  const safePlan = normalizePlan(planOverride || authUser?.plan);
   const features = getPlanFeatures(safePlan);
 
   const isFeatureEnabled = (feature) => {

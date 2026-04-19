@@ -79,6 +79,11 @@ function EmployerRoute({ children }) {
   }
   if (!user) return <Navigate to="/login" replace />;
   if (isWorker) return <Navigate to="/dashboard" replace />;
+
+  const plan = normalizePlan(user?.plan);
+  if (!plan || plan === "none") {
+    return <Navigate to="/plans" replace />;
+  }
   return children;
 }
 

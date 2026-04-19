@@ -68,7 +68,7 @@ export default function TeamPage() {
     features,
   } = usePlanLimits(user?.plan);
 
-  const safePlan = normalizePlan(user?.plan || plan || "solo");
+  const safePlan = normalizePlan(user?.plan || plan);
   const canUseOwnerCsv = !!isEmployer && hasPlanAccess(safePlan, "team");
 
   const [workers, setWorkers] = useState([]);

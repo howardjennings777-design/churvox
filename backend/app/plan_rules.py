@@ -56,6 +56,8 @@ PLAN_FEATURES = {
 
 def normalize_plan(plan):
     value = str(plan or "").strip().lower()
+    if not value or value in ("null", "undefined", "none"):
+        return None
     if value in PLAN_ORDER:
         return value
     return "solo"
@@ -66,7 +68,8 @@ def has_plan_access(current_plan, required_plan):
     return PLAN_ORDER.get(current, 0) >= PLAN_ORDER.get(required, 0)
 
 def get_plan_features(plan):
-    return PLAN_FEATURES.get(normalize_plan(plan), PLAN_FEATURES["solo"])
+    normalized = normalize_plan(plan)
+    return PLAN_FEATURES.get(normalized, PLAN_FEATURES["solo"])
 
 def can_use_feature(plan, feature_key):
     return bool(get_plan_features(plan).get(feature_key, False))

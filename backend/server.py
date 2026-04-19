@@ -4402,7 +4402,7 @@ async def confirm_checkout(request: ConfirmCheckoutRequest, current_user: dict =
 
     payment_status = getattr(session, "payment_status", None) or session.get("payment_status")
     metadata = getattr(session, "metadata", None) or session.get("metadata") or {}
-    selected_plan = normalize_plan(metadata.get("plan") or metadata.get("selected_plan") or current_user.get("plan", "solo"))
+    selected_plan = normalize_plan(metadata.get("plan") or metadata.get("selected_plan") or current_user.get("plan") or "solo")
 
     if payment_status not in ("paid", "no_payment_required", "unpaid"):
         raise HTTPException(status_code=400, detail="Checkout session not completed")
