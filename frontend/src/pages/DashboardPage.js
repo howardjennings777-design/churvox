@@ -35,12 +35,13 @@ export default function DashboardPage() {
 const { user, isEmployer, isWorker } = useAuth();
   const { get } = useApi();
   const [stats, setStats] = useState(null);
-  
+  const [pageLoading, setPageLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 const [todayJobs, setTodayJobs] = useState([]);
   const [weekJobs, setWeekJobs] = useState([]);
 
   const fetchData = useCallback(async () => {
+    setPageLoading(true);
     const [statsRes, todayRes, weekRes] = await Promise.all([
       get("/dashboard/stats"),
       get("/jobs/today"),
@@ -49,6 +50,7 @@ const [todayJobs, setTodayJobs] = useState([]);
     if (statsRes.success) setStats(statsRes.data);
     if (todayRes.success) setTodayJobs(todayRes.data);
     if (weekRes.success) setWeekJobs(weekRes.data);
+    setPageLoading(false);
   }, [get]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -87,6 +89,11 @@ const [todayJobs, setTodayJobs] = useState([]);
 
   return (
     <Layout>
+      {pageLoading ? (
+        <div className="flex items-center justify-center py-20" data-testid="dashboard-loading">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" />
+        </div>
+      ) : (
       <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-6" data-testid="dashboard-page">
         {/* Greeting */}
         <div className="flex items-center justify-between">
@@ -268,6 +275,7 @@ const [todayJobs, setTodayJobs] = useState([]);
           )}
         </div>
       </div>
+      )}
     </Layout>
   );
 }

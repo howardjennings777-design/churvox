@@ -4198,7 +4198,19 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
                 "updated_at": datetime.now(timezone.utc),
             }
 
-            await db.business_users.insert_one(worker_doc)
+            result = await db.business_users.insert_one(worker_doc)
+
+            try:
+                invite_token = str(result.inserted_id)
+                invite_link = f"{FRONTEND_URL}/invite/setup/{invite_token}"
+                await send_email(
+                    to_email=email,
+                    subject="You're invited to join Churvox",
+                    html_content=f"<p>Hi {name},</p><p>You have been invited to join a team on Churvox.</p><p><a href='{invite_link}'>Finish setup</a></p>"
+                )
+            except Exception:
+                pass
+
             invited += 1
             details.append({"row": row_num, "status": "invited", "reason": ""})
 

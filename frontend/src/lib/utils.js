@@ -97,6 +97,7 @@ export const TRADE_TYPES = [
   { value: "carpentry", label: "Carpentry" },
   { value: "handyman", label: "Handyman" },
   { value: "pest_control", label: "Pest Control" },
+  { value: "gardening", label: "Gardening" },
   { value: "hvac", label: "HVAC" },
   { value: "roofing", label: "Roofing" },
   { value: "other", label: "Other" },

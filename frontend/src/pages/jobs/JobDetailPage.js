@@ -81,6 +81,8 @@ export default function JobDetailPage() {
 
   const [workerNotes, setWorkerNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [employerNotes, setEmployerNotes] = useState("");
+  const [savingEmployerNotes, setSavingEmployerNotes] = useState(false);
 
   const loadPage = useCallback(async () => {
     setPageLoading(true);
@@ -99,6 +101,7 @@ export default function JobDetailPage() {
         const loadedJob = jobRes.data;
         setJob(loadedJob);
         setWorkerNotes(loadedJob?.worker_notes || "");
+        setEmployerNotes(loadedJob?.notes || "");
         setSelectedWorker(
           loadedJob?.assigned_worker_id ||
           loadedJob?.worker_id ||
@@ -179,6 +182,23 @@ export default function JobDetailPage() {
       toast.error("Failed to update job");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveEmployerNotes = async () => {
+    setSavingEmployerNotes(true);
+    try {
+      const res = await patch(`/jobs/${id}`, { notes: employerNotes });
+      if (res?.success) {
+        toast.success("Notes saved");
+        await loadPage();
+      } else {
+        toast.error(res?.error || "Failed to save notes");
+      }
+    } catch {
+      toast.error("Failed to save notes");
+    } finally {
+      setSavingEmployerNotes(false);
     }
   };
 
@@ -311,12 +331,30 @@ export default function JobDetailPage() {
               )}
             </div>
 
-            {hasValue(job.notes) && (
+            {isOwnerView ? (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Notes</div>
+                  <Button size="sm" variant="ghost" onClick={handleSaveEmployerNotes} disabled={savingEmployerNotes}
+                    className="text-xs text-churvox-accent" data-testid="save-employer-notes-btn">
+                    {savingEmployerNotes ? "Saving..." : "Save"}
+                  </Button>
+                </div>
+                <textarea
+                  value={employerNotes}
+                  onChange={(e) => setEmployerNotes(e.target.value)}
+                  placeholder="Add notes for this job..."
+                  rows={3}
+                  className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-2 outline-none text-sm"
+                  data-testid="employer-notes-textarea"
+                />
+              </div>
+            ) : hasValue(job.notes) ? (
               <div>
                 <div className="text-xs uppercase tracking-wide text-churvox-muted mb-1">Notes</div>
                 <div className="text-white whitespace-pre-wrap">{job.notes}</div>
               </div>
-            )}
+            ) : null}
           </CardContent>
         </Card>
 
