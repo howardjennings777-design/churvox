@@ -167,13 +167,16 @@ export default function PlansPage() {
     loadPlans();
   }, []);
 
+  const formatDate = (iso) => {
+    if (!iso) return "";
+    try {
+      return new Date(iso).toLocaleDateString("en-NZ", { day: "numeric", month: "long", year: "numeric" });
+    } catch { return ""; }
+  };
+
   const banner = useMemo(() => {
     if (billing?.trial_expired) {
-      return {
-        title: "Your free trial has ended",
-        text: "Choose a paid plan to keep using Churvox.",
-        classes: "border-amber-500/30 bg-amber-500/10 text-amber-200",
-      };
+      return null;
     }
 
     if (billing?.trial_active) {
@@ -193,31 +196,33 @@ export default function PlansPage() {
   const isPaid = billing?.has_paid_subscription === true;
   const isNewUser = currentPlan === "none" || !currentPlan;
 
+  const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+
   const getButtonState = (planKey) => {
     const isCurrent = planKey === currentPlan;
     const isBusy = busyPlan === planKey;
 
     if (isBusy) {
-      return { disabled: true, label: isNewUser ? "Starting trial..." : "Opening checkout...", style: "busy" };
+      return { disabled: true, label: isNewUser ? "Starting trial..." : "Opening checkout..." };
     }
 
     if (isNewUser) {
-      return { disabled: false, label: `Start free trial — ${planKey.charAt(0).toUpperCase() + planKey.slice(1)}`, style: "primary" };
+      return { disabled: false, label: `Start free trial — ${cap(planKey)}` };
     }
 
     if (isTrialExpired) {
-      return { disabled: false, label: isCurrent ? `Subscribe to ${planKey.charAt(0).toUpperCase() + planKey.slice(1)}` : `Choose ${planKey.charAt(0).toUpperCase() + planKey.slice(1)}`, style: "primary" };
+      return { disabled: false, label: isCurrent ? `Continue with ${cap(planKey)}` : `Choose ${cap(planKey)}` };
     }
 
     if (isPaid && isCurrent) {
-      return { disabled: true, label: "Current plan", style: "disabled" };
+      return { disabled: true, label: "Current plan" };
     }
 
     if (isActiveTrial && isCurrent) {
-      return { disabled: true, label: "Current plan", style: "disabled" };
+      return { disabled: true, label: "Current trial" };
     }
 
-    return { disabled: false, label: `Choose ${planKey.charAt(0).toUpperCase() + planKey.slice(1)}`, style: "primary" };
+    return { disabled: false, label: `Choose ${cap(planKey)}` };
   };
 
   const handleSelectPlan = async (planKey) => {
@@ -295,14 +300,43 @@ export default function PlansPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-white px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <div className="pt-6 md:pt-10 text-center">
-          <h1 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight">
-            Pick the plan that fits your business
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-sm md:text-base text-slate-300 leading-relaxed">
-            Start with a 14-day free trial. No card required. Upgrade when you&apos;re ready.
-          </p>
-        </div>
+
+        {isTrialExpired ? (
+          <div className="pt-6 md:pt-10 space-y-6">
+            <div className="mx-auto max-w-2xl text-center space-y-3">
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Your free trial has ended</h1>
+              <p className="text-sm md:text-base text-slate-300">
+                Your <span className="text-white font-semibold">{cap(currentPlan)}</span> trial ended on{" "}
+                <span className="text-white font-semibold">{formatDate(billing?.trial_ends_at)}</span>.
+                Subscribe to continue using Churvox. You don&apos;t need to sign up again.
+              </p>
+            </div>
+
+            <div className="mx-auto max-w-md">
+              <button
+                type="button"
+                onClick={() => handleSelectPlan(currentPlan)}
+                disabled={busyPlan === currentPlan}
+                className="w-full rounded-2xl bg-blue-600 px-6 py-4 text-base font-semibold text-white hover:bg-blue-500 transition"
+                data-testid="continue-plan-button"
+              >
+                {busyPlan === currentPlan ? "Opening checkout..." : `Continue with ${cap(currentPlan)}`}
+              </button>
+              <p className="mt-3 text-center text-xs text-slate-400">
+                Or choose a different plan below
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="pt-6 md:pt-10 text-center">
+            <h1 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight">
+              Pick the plan that fits your business
+            </h1>
+            <p className="mx-auto mt-4 max-w-2xl text-sm md:text-base text-slate-300 leading-relaxed">
+              Start with a 14-day free trial. No card required. Upgrade when you&apos;re ready.
+            </p>
+          </div>
+        )}
 
         {checkoutNotice && (
           <div

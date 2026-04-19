@@ -220,7 +220,21 @@ const handleDeleteAccount = async () => {
               </div>
               <div>
                 <Label className="text-muted-foreground text-xs uppercase tracking-wider">Plan</Label>
-                <p className="text-white capitalize mt-1">{user?.plan}</p>
+                <p className="text-white capitalize mt-1">{user?.plan || "No plan selected"}</p>
+                {user?.plan_status === "trialing" && user?.trial_ends_at && (() => {
+                  try {
+                    const ended = new Date(user.trial_ends_at) < new Date();
+                    if (ended) return (
+                      <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+                        <p className="text-xs text-amber-200 font-medium">Trial ended — <a href="/plans" className="underline text-amber-100">subscribe to continue</a></p>
+                      </div>
+                    );
+                    const days = Math.max(0, Math.ceil((new Date(user.trial_ends_at) - new Date()) / 86400000));
+                    return <p className="text-xs text-blue-400 mt-1">Trial active — {days} day{days !== 1 ? "s" : ""} left</p>;
+                  } catch { return null; }
+                })()}
+                {user?.plan_status === "paid" && <p className="text-xs text-emerald-400 mt-1">Paid subscription active</p>}
+                {!user?.plan && <a href="/plans" className="text-xs text-churvox-accent hover:underline mt-1 inline-block">Choose a plan</a>}
               </div>
             </div>
           </CardContent>
