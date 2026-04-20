@@ -6,25 +6,25 @@
 
 @layer base {
   :root {
-    /* Churvox Premium Dark Slate + Electric Blue Theme */
-    --background: 222 20% 6%;
-    --foreground: 210 40% 98%;
-    --card: 222 20% 9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 20% 12%;
-    --popover-foreground: 210 40% 98%;
+    /* Churvox Premium Modern Light Theme */
+    --background: 210 40% 98%;
+    --foreground: 222 20% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 20% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 20% 14%;
     --primary: 213 94% 58%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 222 20% 14%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 222 20% 14%;
-    --muted-foreground: 215 20% 55%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 20% 14%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
     --accent: 213 94% 58%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 222 20% 16%;
-    --input: 222 20% 16%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
     --ring: 213 94% 58%;
     --radius: 0.625rem;
     
