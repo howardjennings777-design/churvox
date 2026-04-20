@@ -78,7 +78,7 @@ export default function TeamPage() {
   const [savingNotes, setSavingNotes] = useState(false);
   const [savingWorkerGeo, setSavingWorkerGeo] = useState(false);
   const [workerJobs, setWorkerJobs] = useState([]);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", country: "New Zealand", region: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", country: "New Zealand", region: "", invite_role: "worker" });
   const [importResults, setImportResults] = useState(null);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef(null);
@@ -143,11 +143,12 @@ export default function TeamPage() {
       phone: form.phone.trim(),
       country: String(form.country || "New Zealand").trim(),
       region: String(form.region || "").trim(),
+      role: form.invite_role || "worker",
     });
 
     if (res?.success) {
       toast.success(`Invite sent to ${form.email}`);
-      setForm({ name: "", email: "", phone: "", country: "New Zealand", region: "" });
+      setForm({ name: "", email: "", phone: "", country: "New Zealand", region: "", invite_role: "worker" });
       setShowAdd(false);
       fetchWorkers();
     } else {
@@ -396,6 +397,22 @@ export default function TeamPage() {
                     </div>
 
                     <div>
+                      <Label htmlFor="worker-role-inline">Role</Label>
+                      <select
+                        id="worker-role-inline"
+                        value={form.invite_role || "worker"}
+                        onChange={(e) => setForm({ ...form, invite_role: e.target.value })}
+                        className="w-full h-10 min-h-[40px] rounded-md border border-slate-200 bg-white px-3 text-slate-900 appearance-none"
+                        data-testid="invite-role-select"
+                      >
+                        <option value="worker">Worker</option>
+                        <option value="manager">Manager</option>
+                        <option value="office_admin">Office Admin</option>
+                        <option value="payroll">Payroll</option>
+                      </select>
+                    </div>
+
+                    <div>
                       <Label htmlFor="worker-country-inline">Country</Label>
                       <select
                         id="worker-country-inline"
@@ -434,7 +451,7 @@ export default function TeamPage() {
                         variant="outline"
                         onClick={() => {
                           setShowAdd(false);
-                          setForm({ name: "", email: "", phone: "", country: "New Zealand", region: "" });
+                          setForm({ name: "", email: "", phone: "", country: "New Zealand", region: "", invite_role: "worker" });
                         }}
                       >
                         Cancel

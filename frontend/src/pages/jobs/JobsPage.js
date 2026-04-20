@@ -51,9 +51,9 @@ export default function JobsPage() {
     <Layout>
       <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4" data-testid="jobs-page">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-white" data-testid="jobs-heading">Jobs</h1>
+          <h1 className="text-2xl font-bold text-slate-900" data-testid="jobs-heading">Jobs</h1>
           {isEmployer && (
-            <Button asChild className="bg-churvox-accent hover:bg-churvox-accent/90" data-testid="new-job-button">
+            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white" data-testid="new-job-button">
               <Link to="/jobs/new"><Plus size={16} className="mr-2" /> New Job</Link>
             </Button>
           )}
@@ -62,38 +62,40 @@ export default function JobsPage() {
         {/* Filters */}
         <div className="flex gap-3">
           <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-churvox-muted" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search jobs..." className="pl-9 bg-churvox-card border-churvox-border text-white" data-testid="jobs-search" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search jobs..." className="pl-9 bg-white border-slate-200 text-slate-900" data-testid="jobs-search" />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40 bg-churvox-card border-churvox-border text-white" data-testid="jobs-status-filter">
+            <SelectTrigger className="w-40 bg-white border-slate-200 text-slate-900" data-testid="jobs-status-filter">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
-            <SelectContent className="bg-churvox-card border-churvox-border">
-              <SelectItem value="all" className="text-white">All</SelectItem>
+            <SelectContent className="bg-white border-slate-200">
+              <SelectItem value="all">All</SelectItem>
               {JOB_STATUSES.map((s) => (
-                <SelectItem key={s.value} value={s.value} className="text-white">{s.label}</SelectItem>
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Jobs List */}
-        {filtered.length === 0 ? (
-          <Card className="bg-churvox-card border-churvox-border">
-            <CardContent className="p-8 text-center">
-              <Briefcase size={32} className="mx-auto mb-3 text-churvox-muted/40" />
-              <p className="text-white font-medium mb-1">{search ? "No jobs match your search" : "No jobs yet"}</p>
-              <p className="text-xs text-churvox-muted mb-4">
-                {search ? "Try a different search term or clear filters" : "Create your first job to start tracking work, scheduling, and invoicing"}
-              </p>
-              {!search && isEmployer && (
-                <Button asChild size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90">
+        {/* Loading state */}
+        {pageLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
+            <Briefcase size={32} className="mx-auto mb-3 text-slate-300" />
+            <p className="text-slate-900 font-medium mb-1">{search ? "No jobs match your search" : "No jobs yet"}</p>
+            <p className="text-xs text-slate-500 mb-4">
+              {search ? "Try a different search term" : "Create your first job to start tracking work"}
+            </p>
+            {!search && isEmployer && (
+                <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
                   <Link to="/jobs/new" data-testid="create-first-job"><Plus size={14} className="mr-1" /> Create Your First Job</Link>
                 </Button>
               )}
-            </CardContent>
-          </Card>
+          </div>
         ) : (
           <div className="space-y-2">
             {filtered.map((job) => {

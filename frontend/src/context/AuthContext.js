@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import axios from "axios";
 import API_BASE from "../lib/apiBase";
+import { normalizeRole, isBusinessRole, isOwner, isWorkerRole, isPayrollRole } from "../lib/roles";
 
 axios.defaults.withCredentials = true;
 
@@ -152,12 +153,11 @@ export function AuthProvider({ children }) {
     setUser((prev) => (prev ? { ...prev, ...updates } : prev));
   }, []);
 
-  const isEmployer =
-    user?.role === "employer" ||
-    user?.role === "admin" ||
-    user?.role === "owner";
-
-  const isWorker = user?.role === "worker";
+  const normalizedRole = normalizeRole(user?.role);
+  const isEmployer = isBusinessRole(user?.role);
+  const isWorker = isWorkerRole(user?.role);
+  const isPayroll = isPayrollRole(user?.role);
+  const isOwnerUser = isOwner(user?.role);
 
   const isTrialExpired = (() => {
     if (!user) return false;
@@ -173,7 +173,7 @@ export function AuthProvider({ children }) {
 
   const hasAppAccess = (() => {
     if (!user) return false;
-    if (isWorker) return true;
+    if (isWorker || isPayroll) return true;
     const plan = (user.plan || "").toLowerCase();
     if (!plan || plan === "none") return false;
     if (user.stripe_subscription_id) return true;
@@ -194,8 +194,11 @@ export function AuthProvider({ children }) {
         updateUser,
         forgotPassword,
         resetPassword,
+        normalizedRole,
         isEmployer,
         isWorker,
+        isPayroll,
+        isOwnerUser,
         isTrialExpired,
         hasAppAccess,
       }}

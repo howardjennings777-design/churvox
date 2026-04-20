@@ -4,15 +4,19 @@ import { useAuth } from "../context/AuthContext";
 import { ChurvoxLogo } from "./ChurvoxLogo";
 import { hasPlanAccess, normalizePlan } from "../utils/planRules";
 import { InstallPrompt } from "./InstallPrompt";
-import { LayoutDashboard, Briefcase, Calendar, Users, MoreHorizontal, LogOut, Settings, FileText, Receipt, CreditCard, UserPlus, MessageSquare } from "lucide-react";
+import { isOwner as isOwnerRole, canAccess } from "../lib/roles";
+import {
+  LayoutDashboard, Briefcase, Calendar, Users, MoreHorizontal, LogOut,
+  Settings, FileText, Receipt, CreditCard, UserPlus, MessageSquare, DollarSign,
+} from "lucide-react";
 
 export default function Layout({ children }) {
-  const { user, logout, isEmployer, isWorker } = useAuth();
+  const { user, logout, normalizedRole, isOwnerUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
   const safePlan = normalizePlan(user?.plan);
-  const canUseTeamNav = !!isEmployer && hasPlanAccess(safePlan, "team");
+  const role = normalizedRole || "owner";
 
   const handleLogout = async () => {
     await logout();
@@ -20,157 +24,159 @@ export default function Layout({ children }) {
   };
 
   const mainNavItems = [
-    { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { path: "/jobs", label: "Jobs", icon: Briefcase },
-    { path: "/calendar", label: "Calendar", icon: Calendar },
-    ...(isEmployer ? [{ path: "/clients", label: "Clients", icon: Users }] : []),
-  ];
+    canAccess(role, "dashboard") && { path: "/dashboard", label: "Overview", icon: LayoutDashboard },
+    canAccess(role, "jobs") && { path: "/jobs", label: "Jobs", icon: Briefcase },
+    canAccess(role, "calendar") && { path: "/calendar", label: "Calendar", icon: Calendar },
+    canAccess(role, "clients") && { path: "/clients", label: "Clients", icon: Users },
+  ].filter(Boolean);
 
   const moreItems = [
-    ...(canUseTeamNav ? [{ path: "/team", label: "Team", icon: UserPlus }] : []),
-    ...(isEmployer ? [
-      { path: "/quotes", label: "Quotes", icon: FileText },
-      { path: "/invoices", label: "Invoices", icon: Receipt },
-      { path: "/sms", label: "SMS", icon: MessageSquare },
-      { path: "/plans", label: "Plans", icon: CreditCard },
-    ] : []),
-    { path: "/settings", label: "Settings", icon: Settings },
-  ];
+    canAccess(role, "team") && hasPlanAccess(safePlan, "team") && { path: "/team", label: "Team", icon: UserPlus },
+    canAccess(role, "quotes") && { path: "/quotes", label: "Quotes", icon: FileText },
+    canAccess(role, "invoices") && { path: "/invoices", label: "Invoices", icon: Receipt },
+    canAccess(role, "payroll") && { path: "/payroll", label: "Payroll", icon: DollarSign },
+    canAccess(role, "sms") && { path: "/sms", label: "SMS", icon: MessageSquare },
+    isOwnerUser && { path: "/plans", label: "Plans", icon: CreditCard },
+    canAccess(role, "settings") && { path: "/settings", label: "Settings", icon: Settings },
+  ].filter(Boolean);
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
 
   return (
-    <div className="tap-safe-root min-h-screen bg-churvox-bg" data-testid="layout-container">
+    <div className="tap-safe-root min-h-screen bg-slate-50" data-testid="layout-container">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-churvox-card border-r border-churvox-border z-40" data-testid="desktop-sidebar">
-        {/* Logo */}
-        <div className="flex items-center justify-center px-5 h-20 border-b border-churvox-border">
+      <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-white border-r border-slate-200 z-40" data-testid="desktop-sidebar">
+        <div className="flex items-center justify-center px-5 h-16 border-b border-slate-200">
           <ChurvoxLogo size="lg" dataTestId="sidebar-logo" />
         </div>
 
-        {/* User Info */}
-        <div className="px-5 py-3 border-b border-churvox-border">
-          <p className="text-sm font-medium text-white truncate" data-testid="user-name">{user?.name}</p>
-          <p className="text-xs text-churvox-muted truncate">{user?.business_name || user?.email}</p>
-          <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-churvox-accent/20 text-churvox-accent" data-testid="user-role-badge">
-            {user?.role}
+        <div className="px-5 py-3 border-b border-slate-200">
+          <p className="text-sm font-medium text-slate-900 truncate" data-testid="user-name">{user?.name}</p>
+          <p className="text-xs text-slate-500 truncate">{user?.business_name || user?.email}</p>
+          <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-blue-50 text-blue-600" data-testid="user-role-badge">
+            {(role || "").replace(/_/g, " ")}
           </span>
         </div>
 
-        {/* Nav Links */}
-        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto" data-testid="desktop-nav">
-          {mainNavItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.path);
-            return (
-              <Link key={item.path} to={item.path} data-testid={`nav-${item.label.toLowerCase()}`}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  active ? "bg-churvox-accent text-white" : "text-churvox-muted hover:bg-white/5 hover:text-white"
-                }`}>
-                <Icon size={18} /> {item.label}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
+          {mainNavItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                isActive(item.path)
+                  ? "bg-blue-50 text-blue-700"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              }`}
+              data-testid={`nav-${item.label.toLowerCase()}`}
+            >
+              <item.icon className="h-5 w-5 shrink-0" />
+              {item.label}
+            </Link>
+          ))}
 
-          <div className="pt-3 mt-3 border-t border-churvox-border">
-            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-churvox-muted">More</p>
-            {moreItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.path);
-              return (
-                <Link key={item.path} to={item.path} data-testid={`nav-${item.label.toLowerCase()}`}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                    active ? "bg-churvox-accent text-white" : "text-churvox-muted hover:bg-white/5 hover:text-white"
-                  }`}>
-                  <Icon size={18} /> {item.label}
+          {moreItems.length > 0 && (
+            <div className="pt-3 mt-3 border-t border-slate-200 space-y-1">
+              {moreItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isActive(item.path)
+                      ? "bg-blue-50 text-blue-700"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                  data-testid={`nav-${item.label.toLowerCase()}`}
+                >
+                  <item.icon className="h-5 w-5 shrink-0" />
+                  {item.label}
                 </Link>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </nav>
 
-        {/* Logout & Footer */}
-        <div className="p-3 border-t border-churvox-border">
-          <button onClick={handleLogout} data-testid="logout-button"
-            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all">
-            <LogOut size={18} /> Logout
+        <div className="p-3 border-t border-slate-200">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors"
+            data-testid="logout-button"
+          >
+            <LogOut className="h-5 w-5" />
+            Sign out
           </button>
-          <div className="flex gap-3 px-3 pt-2 text-[10px] text-churvox-muted/50">
-            <Link to="/privacy" className="hover:text-churvox-muted transition-colors">Privacy</Link>
-            <Link to="/terms" className="hover:text-churvox-muted transition-colors">Terms</Link>
-          </div>
         </div>
       </aside>
 
-      {/* Mobile Header */}
-      <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-churvox-card border-b border-churvox-border flex items-center justify-between px-4 z-40" data-testid="mobile-header">
-        <div className="flex items-center gap-2">
-          <ChurvoxLogo size="md" dataTestId="mobile-logo" />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-churvox-accent/20 text-churvox-accent">
-            {user?.role}
-          </span>
-          <button onClick={handleLogout} className="p-2 text-churvox-muted hover:text-red-400" data-testid="mobile-logout">
-            <LogOut size={18} />
-          </button>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="md:ml-64 pt-14 md:pt-0 pb-36 md:pb-0 min-h-screen relative z-0" data-testid="main-content">
-        {children}
-      </main>
-
-      {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-churvox-card border-t border-churvox-border z-40 safe-area-bottom" data-testid="mobile-bottom-nav">
-        <div className="flex items-center justify-around h-16">
-          {mainNavItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.path);
-            return (
-              <Link key={item.path} to={item.path} data-testid={`mobile-nav-${item.label.toLowerCase()}`}
-                className={`flex flex-col items-center gap-1 px-3 py-2 text-[10px] font-medium transition-all ${
-                  active ? "text-churvox-accent" : "text-churvox-muted"
-                }`}>
-                <Icon size={20} /> {item.label}
-              </Link>
-            );
-          })}
-
-          {/* More Button */}
-          <div className="relative">
-            <button onClick={() => setMoreOpen(!moreOpen)} data-testid="mobile-more-button"
-              className={`flex flex-col items-center gap-1 px-3 py-2 text-[10px] font-medium transition-all ${
-                moreOpen ? "text-churvox-accent" : "text-churvox-muted"
-              }`}>
-              <MoreHorizontal size={20} /> More
-            </button>
-
-            {moreOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setMoreOpen(false)} />
-                <div className="absolute bottom-full right-0 mb-2 bg-churvox-card border border-churvox-border rounded-xl shadow-2xl py-2 min-w-[180px] z-50" data-testid="mobile-more-dropdown">
-                  {moreItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <Link key={item.path} to={item.path} data-testid={`mobile-more-${item.label.toLowerCase()}`}
-                        onClick={() => setMoreOpen(false)}
-                        className="flex items-center gap-3 px-4 py-3 text-sm text-churvox-muted hover:bg-white/5 hover:text-white transition-all">
-                        <Icon size={16} /> {item.label}
-                      </Link>
-                    );
-                  })}
-                  <div className="border-t border-churvox-border mt-1 pt-1 flex gap-4 px-4 py-2">
-                    <Link to="/privacy" onClick={() => setMoreOpen(false)} className="text-xs text-churvox-muted/60 hover:text-churvox-muted">Privacy</Link>
-                    <Link to="/terms" onClick={() => setMoreOpen(false)} className="text-xs text-churvox-muted/60 hover:text-churvox-muted">Terms</Link>
-                  </div>
-                </div>
-              </>
-            )}
+      {/* Main content */}
+      <div className="md:ml-64 min-h-screen flex flex-col" data-testid="main-content-area">
+        {/* Mobile header */}
+        <header className="md:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30" data-testid="mobile-header">
+          <ChurvoxLogo size="sm" dataTestId="mobile-logo" />
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500">{user?.name?.split(" ")[0]}</span>
           </div>
-        </div>
-      </nav>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1">{children}</main>
+
+        {/* Mobile bottom nav */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 safe-area-bottom" data-testid="mobile-bottom-nav">
+          <div className="flex items-center justify-around py-1.5">
+            {mainNavItems.slice(0, 4).map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex flex-col items-center gap-0.5 px-2 py-1.5 min-w-[56px] ${
+                  isActive(item.path) ? "text-blue-600" : "text-slate-400"
+                }`}
+                data-testid={`mobile-nav-${item.label.toLowerCase()}`}
+              >
+                <item.icon className="h-5 w-5" />
+                <span className="text-[10px] font-medium">{item.label}</span>
+              </Link>
+            ))}
+            <button
+              type="button"
+              onClick={() => setMoreOpen(!moreOpen)}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 min-w-[56px] ${moreOpen ? "text-blue-600" : "text-slate-400"}`}
+              data-testid="mobile-more-button"
+            >
+              <MoreHorizontal className="h-5 w-5" />
+              <span className="text-[10px] font-medium">More</span>
+            </button>
+          </div>
+
+          {moreOpen && (
+            <div className="absolute bottom-full left-0 right-0 bg-white border-t border-slate-200 shadow-lg max-h-[60vh] overflow-y-auto" data-testid="mobile-more-menu">
+              <div className="p-3 space-y-1">
+                {moreItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMoreOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium ${
+                      isActive(item.path) ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    {item.label}
+                  </Link>
+                ))}
+                <button
+                  onClick={() => { setMoreOpen(false); handleLogout(); }}
+                  className="flex items-center gap-3 w-full px-3 py-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50"
+                >
+                  <LogOut className="h-5 w-5" />
+                  Sign out
+                </button>
+              </div>
+            </div>
+          )}
+        </nav>
+      </div>
+
       <InstallPrompt />
     </div>
   );

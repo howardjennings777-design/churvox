@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppOwnerPage from "./pages/AppOwnerPage";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Toaster } from "./components/ui/sonner";
+import { getDefaultRoute } from "./lib/roles";
 
 import LoginPage from "./pages/auth/LoginPage";
 import SignupPage from "./pages/auth/SignupPage";
@@ -29,6 +30,10 @@ import PlansPage from "./pages/PlansPage";
 import CalendarPage from "./pages/CalendarPage";
 import TeamPage from "./pages/TeamPage";
 import SMSPage from "./pages/SMSPage";
+import PayrollPage from "./pages/PayrollPage";
+import WorkerJobsPage from "./pages/worker/WorkerJobsPage";
+import WorkerJobDetailPage from "./pages/worker/WorkerJobDetailPage";
+import WorkerSettingsPage from "./pages/worker/WorkerSettingsPage";
 import PrivacyPage from "./pages/legal/PrivacyPage";
 import TermsPage from "./pages/legal/TermsPage";
 import AccountDeletionPage from "./pages/legal/AccountDeletionPage";
@@ -36,101 +41,116 @@ import AdminUsagePage from "./pages/AdminUsagePage";
 import PlatformAdminRoute from "./components/admin/PlatformAdminRoute";
 import PlatformUnlock from "./pages/admin/PlatformUnlock";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { normalizePlan } from "./utils/planRules";
+
+const Spinner = () => (
+  <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
+  </div>
+);
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-churvox-bg flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" />
-      </div>
-    );
-  }
+  if (loading) return <Spinner />;
   return user ? children : <Navigate to="/login" replace />;
 }
 
 function PublicRoute({ children }) {
-  const { user, loading } = useAuth();
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-churvox-bg flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" />
-      </div>
-    );
-  }
+  const { user, loading, normalizedRole } = useAuth();
+  if (loading) return <Spinner />;
   if (!user) return children;
   const email = (user?.email || "").toLowerCase();
-  const isPlatformOwner =
-    email === "hello@churvox.com" ||
-    user?.is_platform_owner === true ||
-    user?.is_admin === true;
-  return <Navigate to={isPlatformOwner ? "/admin" : "/dashboard"} replace />;
+  const isPlatformOwner = email === "hello@churvox.com" || user?.is_platform_owner === true || user?.is_admin === true;
+  if (isPlatformOwner) return <Navigate to="/admin" replace />;
+  return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
 }
 
-function EmployerRoute({ children }) {
-  const { user, loading, isWorker, hasAppAccess } = useAuth();
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-churvox-bg flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" />
-      </div>
-    );
-  }
+// Business routes: owner, manager, office_admin — with plan check
+function BusinessRoute({ children }) {
+  const { user, loading, isWorker, isPayroll, hasAppAccess } = useAuth();
+  if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
-  if (isWorker) return <Navigate to="/dashboard" replace />;
+  if (isWorker) return <Navigate to="/worker/jobs" replace />;
+  if (isPayroll) return <Navigate to="/payroll" replace />;
   if (!hasAppAccess) return <Navigate to="/plans" replace />;
   return children;
 }
 
-function PlanRequiredRoute({ children }) {
-  const { user, loading, isWorker, hasAppAccess } = useAuth();
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-churvox-bg flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" />
-      </div>
-    );
-  }
+// Owner-only routes (plans, billing)
+function OwnerRoute({ children }) {
+  const { user, loading, isOwnerUser, isWorker, isPayroll, normalizedRole } = useAuth();
+  if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
-  if (isWorker) return children;
-  if (!hasAppAccess) return <Navigate to="/plans" replace />;
+  if (isWorker) return <Navigate to="/worker/jobs" replace />;
+  if (isPayroll) return <Navigate to="/payroll" replace />;
+  if (!isOwnerUser) return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
   return children;
+}
+
+// Team routes: owner + manager only
+function TeamRoute({ children }) {
+  const { user, loading, isWorker, isPayroll, hasAppAccess, normalizedRole } = useAuth();
+  if (loading) return <Spinner />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (isWorker) return <Navigate to="/worker/jobs" replace />;
+  if (isPayroll) return <Navigate to="/payroll" replace />;
+  if (!hasAppAccess) return <Navigate to="/plans" replace />;
+  if (normalizedRole !== "owner" && normalizedRole !== "manager") return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
+// Worker-only routes
+function WorkerRoute({ children }) {
+  const { user, loading, isWorker } = useAuth();
+  if (loading) return <Spinner />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!isWorker) return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
+// Payroll-allowed routes
+function PayrollRoute({ children }) {
+  const { user, loading, normalizedRole } = useAuth();
+  if (loading) return <Spinner />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (normalizedRole !== "owner" && normalizedRole !== "manager" && normalizedRole !== "payroll") {
+    return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
+  }
+  return children;
+}
+
+// Catch-all redirect based on role
+function RoleRedirect() {
+  const { user, loading, normalizedRole } = useAuth();
+  if (loading) return <Spinner />;
+  if (!user) return <Navigate to="/login" replace />;
+  const email = (user?.email || "").toLowerCase();
+  const isPlatformOwner = email === "hello@churvox.com" || user?.is_platform_owner === true;
+  if (isPlatformOwner) return <Navigate to="/admin" replace />;
+  return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
 }
 
 function App() {
-
   React.useEffect(() => {
     const syncCheckoutPlan = async () => {
       try {
         const params = new URLSearchParams(window.location.search);
         const sessionId = params.get("session_id");
         if (!sessionId) return;
-
         const token = localStorage.getItem("token");
         const backendUrl = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
         if (!token || !backendUrl) return;
-
         await fetch(`${backendUrl}/api/billing/confirm-checkout`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
           credentials: "include",
           body: JSON.stringify({ session_id: sessionId }),
         });
-
         const cleaned = new URL(window.location.href);
         cleaned.searchParams.delete("session_id");
         window.history.replaceState({}, "", cleaned.toString());
-
         window.location.reload();
-      } catch (err) {
-        console.error("Checkout sync failed", err);
-      }
+      } catch (err) { console.error("Checkout sync failed", err); }
     };
-
     syncCheckoutPlan();
   }, []);
 
@@ -140,87 +160,64 @@ function App() {
         <ErrorBoundary>
         <Toaster position="top-right" richColors />
         <Routes>
+          {/* Public */}
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-          <Route path="/owner-login" element={<Navigate to="/login" replace />} />
           <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
+          <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+          <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
+          <Route path="/invite/setup/:token" element={<InviteSetupPage />} />
+
+          {/* Legacy redirects */}
+          <Route path="/owner-login" element={<Navigate to="/login" replace />} />
           <Route path="/admin/login" element={<Navigate to="/login" replace />} />
           <Route path="/owner" element={<Navigate to="/admin" replace />} />
           <Route path="/owner/login" element={<Navigate to="/login" replace />} />
-          <Route path="/invite/setup/:token" element={<InviteSetupPage />} />
-          <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
-          <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
 
-          <Route
-            path="/admin"
-            element={
-              <PlatformAdminRoute>
-                <AppOwnerPage />
-              </PlatformAdminRoute>
-            }
-          />
-          <Route
-            path="/owner/dashboard"
-            element={
-              <PlatformAdminRoute>
-                <AppOwnerPage />
-              </PlatformAdminRoute>
-            }
-          />
-          <Route
-            path="/platform-dashboard"
-            element={
-              <PlatformAdminRoute>
-                <AppOwnerPage />
-              </PlatformAdminRoute>
-            }
-          />
-          <Route
-            path="/app-owner"
-            element={
-              <PlatformAdminRoute>
-                <AppOwnerPage />
-              </PlatformAdminRoute>
-            }
-          />
-          <Route
-            path="/admin/usage"
-            element={
-              <PlatformAdminRoute>
-                <AdminUsagePage />
-              </PlatformAdminRoute>
-            }
-          />
-          <Route
-            path="/owner/usage"
-            element={
-              <PlatformAdminRoute>
-                <AdminUsagePage />
-              </PlatformAdminRoute>
-            }
-          />
+          {/* Platform admin */}
+          <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+          <Route path="/owner/dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+          <Route path="/platform-dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+          <Route path="/app-owner" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+          <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
+          <Route path="/owner/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
 
-          <Route path="/dashboard" element={<PlanRequiredRoute><DashboardPage /></PlanRequiredRoute>} />
-          <Route path="/jobs" element={<PlanRequiredRoute><JobsPage /></PlanRequiredRoute>} />
-          <Route path="/jobs/new" element={<PlanRequiredRoute><JobFormPage /></PlanRequiredRoute>} />
-          <Route path="/jobs/:id" element={<PlanRequiredRoute><JobDetailPage /></PlanRequiredRoute>} />
-          <Route path="/jobs/:id/edit" element={<PlanRequiredRoute><JobFormPage /></PlanRequiredRoute>} />
-          <Route path="/calendar" element={<PlanRequiredRoute><CalendarPage /></PlanRequiredRoute>} />
-          <Route path="/clients" element={<EmployerRoute><ClientsPage /></EmployerRoute>} />
-          <Route path="/clients/new" element={<EmployerRoute><ClientFormPage /></EmployerRoute>} />
-          <Route path="/clients/:id" element={<EmployerRoute><ClientDetailPage /></EmployerRoute>} />
-          <Route path="/clients/:id/edit" element={<EmployerRoute><ClientFormPage /></EmployerRoute>} />
-          <Route path="/team" element={<EmployerRoute><TeamPage /></EmployerRoute>} />
-          <Route path="/quotes" element={<EmployerRoute><QuotesPage /></EmployerRoute>} />
-          <Route path="/quotes/new" element={<EmployerRoute><QuoteFormPage /></EmployerRoute>} />
-          <Route path="/quotes/:id" element={<EmployerRoute><QuoteDetailPage /></EmployerRoute>} />
-          <Route path="/quotes/:id/edit" element={<EmployerRoute><QuoteFormPage /></EmployerRoute>} />
-          <Route path="/invoices" element={<EmployerRoute><InvoicesPage /></EmployerRoute>} />
-          <Route path="/invoices/new" element={<EmployerRoute><InvoiceFormPage /></EmployerRoute>} />
-          <Route path="/invoices/:id" element={<EmployerRoute><InvoiceDetailPage /></EmployerRoute>} />
-          <Route path="/sms" element={<EmployerRoute><SMSPage /></EmployerRoute>} />
-          <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
+          {/* Business routes (owner, manager, office_admin) */}
+          <Route path="/dashboard" element={<BusinessRoute><DashboardPage /></BusinessRoute>} />
+          <Route path="/overview" element={<BusinessRoute><DashboardPage /></BusinessRoute>} />
+          <Route path="/jobs" element={<BusinessRoute><JobsPage /></BusinessRoute>} />
+          <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
+          <Route path="/jobs/:id" element={<BusinessRoute><JobDetailPage /></BusinessRoute>} />
+          <Route path="/jobs/:id/edit" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
+          <Route path="/calendar" element={<BusinessRoute><CalendarPage /></BusinessRoute>} />
+          <Route path="/clients" element={<BusinessRoute><ClientsPage /></BusinessRoute>} />
+          <Route path="/clients/new" element={<BusinessRoute><ClientFormPage /></BusinessRoute>} />
+          <Route path="/clients/:id" element={<BusinessRoute><ClientDetailPage /></BusinessRoute>} />
+          <Route path="/clients/:id/edit" element={<BusinessRoute><ClientFormPage /></BusinessRoute>} />
+          <Route path="/quotes" element={<BusinessRoute><QuotesPage /></BusinessRoute>} />
+          <Route path="/quotes/new" element={<BusinessRoute><QuoteFormPage /></BusinessRoute>} />
+          <Route path="/quotes/:id" element={<BusinessRoute><QuoteDetailPage /></BusinessRoute>} />
+          <Route path="/quotes/:id/edit" element={<BusinessRoute><QuoteFormPage /></BusinessRoute>} />
+          <Route path="/invoices" element={<BusinessRoute><InvoicesPage /></BusinessRoute>} />
+          <Route path="/invoices/new" element={<BusinessRoute><InvoiceFormPage /></BusinessRoute>} />
+          <Route path="/invoices/:id" element={<BusinessRoute><InvoiceDetailPage /></BusinessRoute>} />
+          <Route path="/sms" element={<BusinessRoute><SMSPage /></BusinessRoute>} />
+          <Route path="/settings" element={<BusinessRoute><SettingsPage /></BusinessRoute>} />
+
+          {/* Owner-only */}
           <Route path="/plans" element={<PrivateRoute><PlansPage /></PrivateRoute>} />
 
+          {/* Team: owner + manager */}
+          <Route path="/team" element={<TeamRoute><TeamPage /></TeamRoute>} />
+
+          {/* Payroll */}
+          <Route path="/payroll" element={<PayrollRoute><PayrollPage /></PayrollRoute>} />
+
+          {/* Worker routes */}
+          <Route path="/worker/jobs" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
+          <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
+          <Route path="/worker/settings" element={<WorkerRoute><WorkerSettingsPage /></WorkerRoute>} />
+
+          {/* Legal (public) */}
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
@@ -228,8 +225,9 @@ function App() {
           <Route path="/account-deletion" element={<AccountDeletionPage />} />
           <Route path="/platform-unlock" element={<PlatformUnlock />} />
 
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          {/* Catch-all */}
+          <Route path="/" element={<RoleRedirect />} />
+          <Route path="*" element={<RoleRedirect />} />
         </Routes>
         </ErrorBoundary>
       </AuthProvider>

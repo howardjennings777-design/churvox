@@ -7,19 +7,19 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
+import { normalizeRole, getDefaultRoute } from "@/lib/roles";
 
 
 const getPostLoginPath = (payload = {}) => {
   const user = payload?.user || payload || {};
   const email = String(user?.email || payload?.email || "").trim().toLowerCase();
-  const role = String(user?.role || payload?.role || "").trim().toLowerCase();
   const isPlatformOwner =
     email === "hello@churvox.com" ||
     user?.is_platform_owner === true ||
     user?.is_admin === true;
 
   if (isPlatformOwner) return "/admin";
-  return "/dashboard";
+  return getDefaultRoute(normalizeRole(user?.role || payload?.role));
 };
 
 

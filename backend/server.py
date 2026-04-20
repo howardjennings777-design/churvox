@@ -276,6 +276,7 @@ db = client[os.environ['DB_NAME']]
 JWT_SECRET = os.environ.get('JWT_SECRET', 'default_secret_change_me')
 JWT_ALGORITHM = "HS256"
 DEFAULT_GST_RATE = float(os.environ.get('DEFAULT_GST_RATE', '15'))
+BUSINESS_ROLES = {"owner", "admin", "employer", "manager", "office_admin"}
 
 
 
@@ -1312,6 +1313,10 @@ async def accept_invite(payload: dict):
 
     business_id = worker.get("business_id") or ""
     worker_name = name or worker.get("name") or ""
+    invited_role = worker.get("role") or "worker"
+    valid_roles = {"worker", "manager", "office_admin", "payroll"}
+    if invited_role not in valid_roles:
+        invited_role = "worker"
 
     existing_user = await db.users.find_one({"email": email})
     hashed = hash_password(password)
@@ -1322,7 +1327,7 @@ async def accept_invite(payload: dict):
             {"_id": existing_user["_id"]},
             {"$set": {
                 "password_hash": hashed,
-                "role": "worker",
+                "role": invited_role,
                 "business_id": business_id,
                 "name": worker_name or existing_user.get("name", ""),
                 "status": "active",
@@ -1334,7 +1339,7 @@ async def accept_invite(payload: dict):
         await db.users.insert_one({
             "email": email,
             "password_hash": hashed,
-            "role": "worker",
+            "role": invited_role,
             "name": worker_name,
             "business_id": business_id,
             "status": "active",
@@ -1353,7 +1358,7 @@ async def accept_invite(payload: dict):
 
 @api_router.post("/team/resend-invite/{worker_id}")
 async def resend_invite(worker_id: str, current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in ["owner", "admin", "employer"]:
+    if current_user.get("role") not in BUSINESS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     from bson import ObjectId
@@ -1493,7 +1498,7 @@ async def get_invoices(current_user: dict = Depends(get_current_user)):
 async def create_invoice(request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin", "employer"]:
+    if current_user.get("role") not in BUSINESS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     payload = await request.json()
@@ -1629,7 +1634,7 @@ async def get_invoice(invoice_id: str, current_user: dict = Depends(get_current_
 async def update_invoice(invoice_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin", "employer"]:
+    if current_user.get("role") not in BUSINESS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     business_id = str(
@@ -1789,7 +1794,7 @@ async def mark_invoice_paid(invoice_id: str, current_user: dict = Depends(get_cu
 
 @api_router.delete("/invoices/{invoice_id}")
 async def delete_invoice(invoice_id: str, current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in ["owner", "admin", "employer"]:
+    if current_user.get("role") not in BUSINESS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     business_id = str(
@@ -1971,7 +1976,7 @@ async def get_quote(quote_id: str, current_user: dict = Depends(get_current_user
 async def update_quote(quote_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin", "employer"]:
+    if current_user.get("role") not in BUSINESS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     business_id = str(
@@ -2068,7 +2073,7 @@ async def update_quote(quote_id: str, request: Request, current_user: dict = Dep
 async def send_quote(quote_id: str, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin", "employer"]:
+    if current_user.get("role") not in BUSINESS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     business_id = str(
@@ -2121,7 +2126,7 @@ async def send_quote(quote_id: str, current_user: dict = Depends(get_current_use
 async def create_quote(request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin", "employer"]:
+    if current_user.get("role") not in BUSINESS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     payload = await request.json()
@@ -2183,7 +2188,7 @@ async def create_quote(request: Request, current_user: dict = Depends(get_curren
 async def create_client(request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin", "employer"]:
+    if current_user.get("role") not in BUSINESS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     payload = await request.json()
@@ -2294,7 +2299,7 @@ async def get_client(client_id: str, current_user: dict = Depends(get_current_us
 async def update_client(client_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin", "employer"]:
+    if current_user.get("role") not in BUSINESS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     business_id = str(
@@ -2476,12 +2481,17 @@ async def get_clients(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/team/workers")
 async def create_team_worker(payload: dict, current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in ["owner", "admin", "employer"]:
+    if current_user.get("role") not in BUSINESS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     name = str((payload or {}).get("name") or "").strip()
     email = str((payload or {}).get("email") or "").strip().lower()
     phone = str((payload or {}).get("phone") or "").strip()
+    invite_role = str((payload or {}).get("role") or "worker").strip().lower()
+
+    valid_roles = {"worker", "manager", "office_admin", "payroll"}
+    if invite_role not in valid_roles:
+        invite_role = "worker"
 
     if not name or not email:
         raise HTTPException(status_code=400, detail="Name and email are required")
@@ -2518,7 +2528,7 @@ async def create_team_worker(payload: dict, current_user: dict = Depends(get_cur
         "name": name,
         "email": email,
         "phone": phone,
-        "role": "worker",
+        "role": invite_role,
         "status": "pending",
         "business_id": business_id,
         "owner_id": owner_id,
@@ -2545,13 +2555,13 @@ async def create_team_worker(payload: dict, current_user: dict = Depends(get_cur
 
     return {
         "success": True,
-        "message": "Worker invited",
+        "message": f"{invite_role.replace('_', ' ').title()} invited",
         "worker": {
             "id": str(result.inserted_id),
             "name": name,
             "email": email,
             "phone": phone,
-            "role": "worker",
+            "role": invite_role,
             "status": "pending",
             "notes": "",
         }
@@ -2559,7 +2569,7 @@ async def create_team_worker(payload: dict, current_user: dict = Depends(get_cur
 
 @api_router.patch("/team/workers/{worker_id}/notes")
 async def update_team_worker_notes(worker_id: str, request: Request, current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in ["owner", "admin", "employer"]:
+    if current_user.get("role") not in BUSINESS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     business_id = str(
@@ -2621,7 +2631,7 @@ async def update_team_worker_notes(worker_id: str, request: Request, current_use
 @api_router.patch("/team/workers/{worker_id}")
 async def update_team_worker(worker_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
     user_role = str(current_user.get("role") or "").strip().lower()
-    if user_role not in ["owner", "admin", "employer"] and not current_user.get("is_admin") and not current_user.get("is_owner"):
+    if user_role not in BUSINESS_ROLES and not current_user.get("is_admin") and not current_user.get("is_owner"):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     business_id = str(
@@ -3060,7 +3070,7 @@ async def get_jobs(current_user: dict = Depends(get_current_user)):
 async def create_job(request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin", "employer"]:
+    if current_user.get("role") not in BUSINESS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     payload = await request.json()
@@ -3263,7 +3273,7 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
     from datetime import datetime, timezone
 
     current_role = str(current_user.get("role") or "").lower()
-    if current_role not in ["owner", "admin", "employer", "worker"]:
+    if current_role not in BUSINESS_ROLES | {"worker"}:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     business_id = str(
@@ -3374,7 +3384,7 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
 
 @api_router.post("/jobs/{job_id}/assign")
 async def assign_job_worker(job_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in ["owner", "admin", "employer"]:
+    if current_user.get("role") not in BUSINESS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     worker_id = str((payload or {}).get("worker_id") or "").strip()
@@ -3494,7 +3504,7 @@ async def acknowledge_job(job_id: str, current_user: dict = Depends(get_current_
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    if current_role not in ["owner", "admin", "worker"]:
+    if current_role not in BUSINESS_ROLES | {"worker"}:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     if current_role == "worker":
@@ -4073,7 +4083,7 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
     import re
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in ["owner", "admin", "employer"]:
+    if current_user.get("role") not in BUSINESS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     form = await request.form()
@@ -4254,7 +4264,7 @@ async def import_csv_clients(request: Request, current_user: dict = Depends(get_
     import io
     import re
 
-    if current_user.get("role") not in ["owner", "admin", "employer"]:
+    if current_user.get("role") not in BUSINESS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     form = await request.form()
@@ -4518,7 +4528,7 @@ async def confirm_checkout(request: ConfirmCheckoutRequest, current_user: dict =
 # CLIENT_DELETE_ROUTE_FORCE_REDEPLOY
 @api_router.delete("/clients/{client_id}")
 async def delete_client(client_id: str, current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in ["owner", "admin", "employer"]:
+    if current_user.get("role") not in BUSINESS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     user_business_id = current_user.get("business_id") or current_user.get("id")
