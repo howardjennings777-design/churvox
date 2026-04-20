@@ -137,7 +137,7 @@ export default function InvoiceFormPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-semibold text-white font-heading">
+            <h1 className="text-2xl font-semibold text-slate-900">
               {isEdit ? "Edit Invoice" : "New Invoice"}
             </h1>
             <p className="text-muted-foreground mt-1">
@@ -277,15 +277,15 @@ export default function InvoiceFormPage() {
               <div className="p-4 bg-secondary/50 rounded-lg space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="text-white">${subtotal.toFixed(2)}</span>
+                  <span className="text-slate-900">${subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">GST ({gstRate}%)</span>
-                  <span className="text-white">${gstAmount.toFixed(2)}</span>
+                  <span className="text-slate-900">${gstAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-semibold pt-2 border-t border-border">
-                  <span className="text-white">Total</span>
-                  <span className="text-white">${total.toFixed(2)}</span>
+                  <span className="text-slate-900">Total</span>
+                  <span className="text-slate-900">${total.toFixed(2)}</span>
                 </div>
               </div>
 

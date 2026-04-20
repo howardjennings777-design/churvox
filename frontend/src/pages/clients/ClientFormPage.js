@@ -111,7 +111,7 @@ export default function ClientFormPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-semibold text-white font-heading">
+            <h1 className="text-2xl font-semibold text-slate-900">
               {isEdit ? "Edit Client" : "New Client"}
             </h1>
             <p className="text-muted-foreground mt-1">
@@ -205,7 +205,7 @@ export default function ClientFormPage() {
                 </Button>
                 <button
                   type="submit"
-                  className="flex-1 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 cursor-pointer touch-manipulation select-none"
+                  className="flex-1 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-slate-900 hover:bg-primary/90 cursor-pointer touch-manipulation select-none"
                   disabled={loading}
                   data-testid="save-client-button"
                 >

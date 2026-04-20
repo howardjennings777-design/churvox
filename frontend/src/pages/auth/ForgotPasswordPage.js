@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md animate-in">
         <div className="text-center mb-8">
           <ChurvoxLogo size="lg" className="mx-auto mb-6" />
-          <h1 className="text-3xl font-semibold text-white font-heading">Forgot password?</h1>
+          <h1 className="text-3xl font-semibold text-white">Forgot password?</h1>
           <p className="text-muted-foreground mt-2">We'll send you a reset link</p>
         </div>
 

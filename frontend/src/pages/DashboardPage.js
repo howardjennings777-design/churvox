@@ -91,7 +91,7 @@ const [todayJobs, setTodayJobs] = useState([]);
     <Layout>
       {pageLoading ? (
         <div className="flex items-center justify-center py-20" data-testid="dashboard-loading">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" />
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
         </div>
       ) : (
       <div className="p-4 md:p-6 max-w-6xl mx-auto space-y-6" data-testid="dashboard-page">
@@ -101,13 +101,13 @@ const [todayJobs, setTodayJobs] = useState([]);
             <h1 className="text-2xl font-bold text-white" data-testid="dashboard-greeting">
               {isNewBusiness ? `Welcome to Churvox, ${user?.name?.split(" ")[0]}` : `Welcome back, ${user?.name?.split(" ")[0]}`}
             </h1>
-            <p className="text-sm text-churvox-muted mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               {isWorker ? "Here are your assigned jobs" : isNewBusiness ? "Let's get your business set up" : "Here's your business overview"}
             </p>
           </div>
           {isEmployer && !isNewBusiness && (
             <div className="hidden sm:flex gap-2">
-              <Button asChild size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90">
+              <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
                 <Link to="/jobs/new" data-testid="quick-new-job"><Plus size={14} className="mr-1" /> New Job</Link>
               </Button>
             </div>
@@ -116,20 +116,20 @@ const [todayJobs, setTodayJobs] = useState([]);
 
         {/* Getting Started for new businesses */}
         {setupSteps && (
-          <Card className="bg-gradient-to-br from-churvox-accent/10 to-churvox-card border-churvox-accent/20" data-testid="getting-started-card">
+          <Card className="bg-gradient-to-br from-churvox-accent/10 to-churvox-card border-blue-600/20" data-testid="getting-started-card">
             <CardContent className="p-5">
-              <h2 className="text-base font-semibold text-white mb-1">Getting started</h2>
-              <p className="text-xs text-churvox-muted mb-4">Complete these steps to make the most of Churvox</p>
+              <h2 className="text-base font-semibold text-slate-900 mb-1">Getting started</h2>
+              <p className="text-xs text-slate-500 mb-4">Complete these steps to make the most of Churvox</p>
               <div className="space-y-3">
                 {setupSteps.map((step, i) => (
                   <Link key={i} to={step.path} data-testid={`setup-step-${i}`}
-                    className={`flex items-center gap-3 p-3 rounded-lg transition-all ${step.done ? "bg-green-500/10" : "bg-white/5 hover:bg-white/10"}`}>
-                    <CircleDot size={18} className={step.done ? "text-green-400" : "text-churvox-accent"} />
+                    className={`flex items-center gap-3 p-3 rounded-lg transition-all ${step.done ? "bg-green-500/10" : "bg-blue-50 hover:bg-blue-100"}`}>
+                    <CircleDot size={18} className={step.done ? "text-green-400" : "text-blue-600"} />
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium ${step.done ? "text-green-400 line-through" : "text-white"}`}>{step.label}</p>
-                      <p className="text-[11px] text-churvox-muted">{step.hint}</p>
+                      <p className={`text-sm font-medium ${step.done ? "text-green-400 line-through" : "text-slate-900"}`}>{step.label}</p>
+                      <p className="text-[11px] text-slate-500">{step.hint}</p>
                     </div>
-                    {!step.done && <ArrowRight size={14} className="text-churvox-muted" />}
+                    {!step.done && <ArrowRight size={14} className="text-slate-500" />}
                   </Link>
                 ))}
               </div>
@@ -142,14 +142,14 @@ const [todayJobs, setTodayJobs] = useState([]);
           {statCards.map((stat) => {
             const Icon = stat.icon;
             return (
-              <Card key={stat.label} className="bg-churvox-card border-churvox-border" data-testid={`stat-${stat.label.toLowerCase().replace(/[^a-z]/g, "-")}`} onClick={stat.onClick} style={{ cursor: "pointer" }}>
+              <Card key={stat.label} className="bg-white border-slate-200" data-testid={`stat-${stat.label.toLowerCase().replace(/[^a-z]/g, "-")}`} onClick={stat.onClick} style={{ cursor: "pointer" }}>
                 <CardContent className="p-4 flex items-center gap-4">
-                  <div className={`p-2.5 rounded-lg bg-white/5 ${stat.color}`}>
+                  <div className={`p-2.5 rounded-lg bg-blue-50 ${stat.color}`}>
                     <Icon size={20} />
                   </div>
                   <div>
-                    <p className="text-[22px] font-bold text-white leading-tight">{stat.value}</p>
-                    <p className="text-xs text-churvox-muted">{stat.label}</p>
+                    <p className="text-[22px] font-bold text-slate-900 leading-tight">{stat.value}</p>
+                    <p className="text-xs text-slate-500">{stat.label}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -159,13 +159,13 @@ const [todayJobs, setTodayJobs] = useState([]);
 
         {/* Team Count (employer only) */}
         {isEmployer && stats?.team_count > 0 && (
-          <Card className="bg-churvox-card border-churvox-border">
+          <Card className="bg-white border-slate-200">
             <CardContent className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <UserCheck size={20} className="text-churvox-accent" />
-                <span className="text-white font-medium">{stats.team_count} team member{stats.team_count !== 1 ? "s" : ""}</span>
+                <UserCheck size={20} className="text-blue-600" />
+                <span className="text-slate-900 font-medium">{stats.team_count} team member{stats.team_count !== 1 ? "s" : ""}</span>
               </div>
-              <Button asChild variant="outline" size="sm" className="border-churvox-border text-churvox-muted hover:text-white">
+              <Button asChild variant="outline" size="sm" className="border-slate-200 text-slate-500 hover:text-slate-900">
                 <Link to="/team" data-testid="view-team-link">Manage Team</Link>
               </Button>
             </CardContent>
@@ -184,8 +184,8 @@ const [todayJobs, setTodayJobs] = useState([]);
               const Icon = action.icon;
               return (
                 <Link key={action.path} to={action.path} data-testid={`quick-${action.label.toLowerCase().replace(" ", "-")}`}
-                  className="flex items-center gap-3 p-4 bg-churvox-card border border-churvox-border rounded-xl hover:border-churvox-accent/50 transition-all">
-                  <Icon size={18} className="text-churvox-accent" />
+                  className="flex items-center gap-3 p-4 bg-white border border-slate-200 rounded-xl hover:border-blue-600/50 transition-all">
+                  <Icon size={18} className="text-blue-600" />
                   <span className="text-sm font-medium text-white">{action.label}</span>
                 </Link>
               );
@@ -195,13 +195,13 @@ const [todayJobs, setTodayJobs] = useState([]);
 
         {/* Today's Jobs */}
         <div data-testid="todays-jobs-section">
-          <h2 className="text-base font-semibold text-white mb-3">Today's Jobs</h2>
+          <h2 className="text-base font-semibold text-slate-900 mb-3">Today's Jobs</h2>
           {todayJobs.length === 0 ? (
-            <Card className="bg-churvox-card border-churvox-border">
+            <Card className="bg-white border-slate-200">
               <CardContent className="p-6 text-center">
-                <Briefcase size={24} className="mx-auto mb-2 text-churvox-muted/40" />
-                <p className="text-churvox-muted text-sm">No jobs scheduled for today</p>
-                {isEmployer && <p className="text-xs text-churvox-muted/60 mt-1">Jobs appear here on their scheduled date</p>}
+                <Briefcase size={24} className="mx-auto mb-2 text-slate-500/40" />
+                <p className="text-slate-500 text-sm">No jobs scheduled for today</p>
+                {isEmployer && <p className="text-xs text-slate-500/60 mt-1">Jobs appear here on their scheduled date</p>}
               </CardContent>
             </Card>
           ) : (
@@ -210,20 +210,20 @@ const [todayJobs, setTodayJobs] = useState([]);
                 const statusInfo = JOB_STATUS_MAP[job.status];
                 return (
                   <Link key={job.id} to={`/jobs/${job.id}`} data-testid={`today-job-${job.id}`}
-                    className="block bg-churvox-card border border-churvox-border rounded-xl p-4 hover:border-churvox-accent/50 transition-all">
+                    className="block bg-white border border-slate-200 rounded-xl p-4 hover:border-blue-600/50 transition-all">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-white font-medium">{job.title}</p>
-                        <p className="text-xs text-churvox-muted mt-0.5">
+                        <p className="text-slate-900 font-medium">{job.title}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">
                           {job.customer_name} {job.scheduled_time && `at ${job.scheduled_time}`}
                         </p>
                         {job.assigned_worker_name && (
-                          <p className="text-xs text-churvox-accent mt-0.5 flex items-center gap-1">
+                          <p className="text-xs text-blue-600 mt-0.5 flex items-center gap-1">
                             <UserCheck size={12} /> {job.assigned_worker_name}
                           </p>
                         )}
                       </div>
-                      <span className={`px-2 py-1 rounded text-[10px] font-semibold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`}>
+                      <span className={`px-2 py-1 rounded text-[10px] font-semibold uppercase text-slate-900 ${statusInfo?.color || "bg-slate-500"}`}>
                         {statusInfo?.label || job.status}
                       </span>
                     </div>
@@ -236,13 +236,13 @@ const [todayJobs, setTodayJobs] = useState([]);
 
         {/* This Week */}
         <div data-testid="week-jobs-section">
-          <h2 className="text-base font-semibold text-white mb-3">This Week</h2>
+          <h2 className="text-base font-semibold text-slate-900 mb-3">This Week</h2>
           {weekJobs.length === 0 ? (
-            <Card className="bg-churvox-card border-churvox-border">
+            <Card className="bg-white border-slate-200">
               <CardContent className="p-6 text-center">
-                <Calendar size={24} className="mx-auto mb-2 text-churvox-muted/40" />
-                <p className="text-churvox-muted text-sm">No jobs this week</p>
-                {isEmployer && <p className="text-xs text-churvox-muted/60 mt-1">Schedule jobs from the Jobs page to see them here</p>}
+                <Calendar size={24} className="mx-auto mb-2 text-slate-500/40" />
+                <p className="text-slate-500 text-sm">No jobs this week</p>
+                {isEmployer && <p className="text-xs text-slate-500/60 mt-1">Schedule jobs from the Jobs page to see them here</p>}
               </CardContent>
             </Card>
           ) : (
@@ -251,20 +251,20 @@ const [todayJobs, setTodayJobs] = useState([]);
                 const statusInfo = JOB_STATUS_MAP[job.status];
                 return (
                   <Link key={job.id} to={`/jobs/${job.id}`} data-testid={`week-job-${job.id}`}
-                    className="block bg-churvox-card border border-churvox-border rounded-xl p-4 hover:border-churvox-accent/50 transition-all">
+                    className="block bg-white border border-slate-200 rounded-xl p-4 hover:border-blue-600/50 transition-all">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-white font-medium">{job.title}</p>
-                        <p className="text-xs text-churvox-muted mt-0.5 flex items-center gap-1">
+                        <p className="text-slate-900 font-medium">{job.title}</p>
+                        <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
                           <Clock size={12} /> {formatDate(job.scheduled_date)} {job.scheduled_time && `at ${job.scheduled_time}`}
                         </p>
                         {job.assigned_worker_name && (
-                          <p className="text-xs text-churvox-accent mt-0.5 flex items-center gap-1">
+                          <p className="text-xs text-blue-600 mt-0.5 flex items-center gap-1">
                             <UserCheck size={12} /> {job.assigned_worker_name}
                           </p>
                         )}
                       </div>
-                      <span className={`px-2 py-1 rounded text-[10px] font-semibold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`}>
+                      <span className={`px-2 py-1 rounded text-[10px] font-semibold uppercase text-slate-900 ${statusInfo?.color || "bg-slate-500"}`}>
                         {statusInfo?.label || job.status}
                       </span>
                     </div>

@@ -187,7 +187,7 @@ const handleDeleteAccount = async () => {
       <div className="max-w-2xl mx-auto space-y-6 animate-in" data-testid="settings-page">
         {/* Header */}
         <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-white font-heading">Settings</h1>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900">Settings</h1>
           <p className="text-muted-foreground mt-1">Manage your account and business settings</p>
         </div>
 
@@ -208,19 +208,19 @@ const handleDeleteAccount = async () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-muted-foreground text-xs uppercase tracking-wider">Name</Label>
-                <p className="text-white mt-1">{user?.name}</p>
+                <p className="text-slate-900 mt-1">{user?.name}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground text-xs uppercase tracking-wider">Email</Label>
-                <p className="text-white mt-1">{user?.email}</p>
+                <p className="text-slate-900 mt-1">{user?.email}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground text-xs uppercase tracking-wider">Business Name</Label>
-                <p className="text-white mt-1">{user?.business_name || "Not set"}</p>
+                <p className="text-slate-900 mt-1">{user?.business_name || "Not set"}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground text-xs uppercase tracking-wider">Plan</Label>
-                <p className="text-white capitalize mt-1">{user?.plan || "No plan selected"}</p>
+                <p className="text-slate-900 capitalize mt-1">{user?.plan || "No plan selected"}</p>
                 {user?.plan_status === "trialing" && user?.trial_ends_at && (() => {
                   try {
                     const ended = new Date(user.trial_ends_at) < new Date();
@@ -234,7 +234,7 @@ const handleDeleteAccount = async () => {
                   } catch { return null; }
                 })()}
                 {user?.plan_status === "paid" && <p className="text-xs text-emerald-400 mt-1">Paid subscription active</p>}
-                {!user?.plan && <a href="/plans" className="text-xs text-churvox-accent hover:underline mt-1 inline-block">Choose a plan</a>}
+                {!user?.plan && <a href="/plans" className="text-xs text-blue-600 hover:underline mt-1 inline-block">Choose a plan</a>}
               </div>
             </div>
           </CardContent>
@@ -392,11 +392,11 @@ const handleDeleteAccount = async () => {
         ) : (
           <Card className="card-surface border-border" data-testid="myob-locked-card">
             <CardContent className="p-6 text-center space-y-3">
-              <div className="h-10 w-10 rounded-full bg-churvox-accent/15 flex items-center justify-center mx-auto">
-                <Lock size={18} className="text-churvox-accent" />
+              <div className="h-10 w-10 rounded-full bg-blue-600/15 flex items-center justify-center mx-auto">
+                <Lock size={18} className="text-blue-600" />
               </div>
-              <p className="text-sm text-white font-medium">MYOB integration requires an Enterprise plan</p>
-              <a href="/plans" className="text-xs text-churvox-accent hover:underline" data-testid="myob-upgrade-link">View Plans</a>
+              <p className="text-sm text-slate-900">MYOB integration requires an Enterprise plan</p>
+              <a href="/plans" className="text-xs text-blue-600 hover:underline" data-testid="myob-upgrade-link">View Plans</a>
             </CardContent>
           </Card>
         )}
@@ -415,13 +415,13 @@ const handleDeleteAccount = async () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Link to="/privacy" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all" data-testid="settings-privacy-link">
+            <Link to="/privacy" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-blue-50 hover:text-slate-900 transition-all" data-testid="settings-privacy-link">
               <FileText size={16} /> Privacy Policy
             </Link>
-            <Link to="/terms" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all" data-testid="settings-terms-link">
-<Link to="/terms-of-service" className="inline-flex w-full rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all" data-testid="settings-terms-of-service-link">              <FileText size={16} /> Terms of Service
+            <Link to="/terms" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-blue-50 hover:text-slate-900 transition-all" data-testid="settings-terms-link">
+<Link to="/terms-of-service" className="inline-flex w-full rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-blue-50 hover:text-slate-900 transition-all" data-testid="settings-terms-of-service-link">              <FileText size={16} /> Terms of Service
             </Link></Link>
-            <Link to="/account-deletion" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-white/5 hover:text-white transition-all" data-testid="settings-account-deletion-link">
+            <Link to="/account-deletion" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-blue-50 hover:text-slate-900 transition-all" data-testid="settings-account-deletion-link">
               <FileText size={16} /> Account Deletion
             </Link>
           </CardContent>

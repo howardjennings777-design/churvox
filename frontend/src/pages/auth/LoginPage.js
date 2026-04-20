@@ -58,7 +58,7 @@ export default function LoginPage() {
             <div className="inline-flex items-center justify-center mb-6">
               <ChurvoxLogo size="lg" />
             </div>
-            <h1 className="text-2xl font-semibold text-white font-heading">Welcome back</h1>
+            <h1 className="text-2xl font-semibold text-white">Welcome back</h1>
             <p className="text-muted-foreground mt-2">Sign in to manage your jobs</p>
           </div>
 
@@ -162,17 +162,17 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center mb-8">
             <ChurvoxLogo size="xl" />
           </div>
-          <h2 className="text-3xl font-semibold text-white font-heading mb-4">
+          <h2 className="text-3xl font-semibold text-white mb-4">
             Run your trade business smarter
           </h2>
           <p className="text-muted-foreground text-lg mb-6">
             Jobs, quotes, invoices, team management, and scheduling — all in one platform built for contractors.
           </p>
           <div className="flex flex-wrap justify-center gap-3 text-sm text-muted-foreground/70">
-            <span className="px-3 py-1 rounded-full bg-white/5">Multi-trade</span>
-            <span className="px-3 py-1 rounded-full bg-white/5">Mobile-first</span>
-            <span className="px-3 py-1 rounded-full bg-white/5">MYOB sync</span>
-            <span className="px-3 py-1 rounded-full bg-white/5">SMS reminders</span>
+            <span className="px-3 py-1 rounded-full bg-blue-50">Multi-trade</span>
+            <span className="px-3 py-1 rounded-full bg-blue-50">Mobile-first</span>
+            <span className="px-3 py-1 rounded-full bg-blue-50">MYOB sync</span>
+            <span className="px-3 py-1 rounded-full bg-blue-50">SMS reminders</span>
           </div>
         </div>
       </div>

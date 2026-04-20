@@ -137,7 +137,7 @@ const [inviteData, setInviteData] = useState(null);
           <div className="inline-flex items-center justify-center mb-6">
             <ChurvoxLogo size="lg" />
           </div>
-          <h1 className="text-2xl font-semibold text-white font-heading">Set Up Your Account</h1>
+          <h1 className="text-2xl font-semibold text-white">Set Up Your Account</h1>
           <p className="text-muted-foreground mt-2">
             <span className="text-primary font-medium">{inviteData?.business_name}</span> has invited you to join their team
           </p>
@@ -147,7 +147,7 @@ const [inviteData, setInviteData] = useState(null);
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-xl font-heading">Complete Setup</CardTitle>
             <CardDescription>
-              Signing in as <span className="text-white font-medium">{inviteData?.email}</span>
+              Signing in as <span className="text-white">{inviteData?.email}</span>
             </CardDescription>
           </CardHeader>
           <CardContent>

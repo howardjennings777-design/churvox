@@ -59,26 +59,26 @@ export default function CalendarPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white" data-testid="calendar-heading">Calendar</h1>
-            <p className="text-xs text-churvox-muted mt-0.5">{monthJobCount} job{monthJobCount !== 1 ? "s" : ""} this month</p>
+            <p className="text-xs text-slate-500 mt-0.5">{monthJobCount} job{monthJobCount !== 1 ? "s" : ""} this month</p>
           </div>
           {isEmployer && (
-            <Button asChild size="sm" className="bg-churvox-accent hover:bg-churvox-accent/90">
+            <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
               <Link to="/jobs/new" data-testid="calendar-new-job"><Plus size={14} className="mr-1" /> New Job</Link>
             </Button>
           )}
         </div>
 
         {/* Month Navigation */}
-        <Card className="bg-churvox-card border-churvox-border">
+        <Card className="bg-white border-slate-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
-              <button onClick={() => setCurrentDate(new Date(year, month - 1))} className="p-2 text-churvox-muted hover:text-white rounded-lg hover:bg-white/5" data-testid="calendar-prev">
+              <button onClick={() => setCurrentDate(new Date(year, month - 1))} className="p-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-blue-50" data-testid="calendar-prev">
                 <ChevronLeft size={20} />
               </button>
               <h2 className="text-lg font-semibold text-white" data-testid="calendar-month">
                 {MONTH_NAMES[month]} {year}
               </h2>
-              <button onClick={() => setCurrentDate(new Date(year, month + 1))} className="p-2 text-churvox-muted hover:text-white rounded-lg hover:bg-white/5" data-testid="calendar-next">
+              <button onClick={() => setCurrentDate(new Date(year, month + 1))} className="p-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-blue-50" data-testid="calendar-next">
                 <ChevronRight size={20} />
               </button>
             </div>
@@ -86,7 +86,7 @@ export default function CalendarPage() {
             {/* Days Header */}
             <div className="grid grid-cols-7 mb-2">
               {DAY_LABELS.map((d) => (
-                <div key={d} className="text-center text-xs font-medium text-churvox-muted py-2">{d}</div>
+                <div key={d} className="text-center text-xs font-medium text-slate-500 py-2">{d}</div>
               ))}
             </div>
 
@@ -103,7 +103,7 @@ export default function CalendarPage() {
                   <button key={day} onClick={() => setSelectedDate(day)} data-testid={`calendar-day-${day}`}
                     className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm transition-all relative
                       ${isToday(day) ? "ring-1 ring-churvox-accent" : ""}
-                      ${selected ? "bg-churvox-accent text-white" : "hover:bg-white/5 text-white"}
+                      ${selected ? "bg-blue-600 text-white" : "hover:bg-blue-50 text-white"}
                     `}>
                     {day}
                     {hasJobs && (
@@ -112,7 +112,7 @@ export default function CalendarPage() {
                           const s = JOB_STATUS_MAP[j.status];
                           return <div key={idx} className={`w-1.5 h-1.5 rounded-full ${s?.color || "bg-slate-500"}`} />;
                         })}
-                        {dayJobs.length > 3 && <span className="text-[8px] text-churvox-muted">+{dayJobs.length - 3}</span>}
+                        {dayJobs.length > 3 && <span className="text-[8px] text-slate-500">+{dayJobs.length - 3}</span>}
                       </div>
                     )}
                   </button>
@@ -124,16 +124,16 @@ export default function CalendarPage() {
 
         {/* Daily Overview */}
         <div data-testid="calendar-day-jobs">
-          <h3 className="text-base font-semibold text-white mb-2" data-testid="daily-overview-heading">
+          <h3 className="text-base font-semibold text-slate-900 mb-2" data-testid="daily-overview-heading">
             {MONTH_NAMES[month]} {selectedDate} — {selectedJobs.length} job{selectedJobs.length !== 1 ? "s" : ""}
           </h3>
           {selectedJobs.length === 0 ? (
-            <Card className="bg-churvox-card border-churvox-border">
+            <Card className="bg-white border-slate-200">
               <CardContent className="p-8 text-center">
-                <Briefcase size={24} className="mx-auto mb-2 text-churvox-muted/50" />
-                <p className="text-churvox-muted text-sm">No jobs scheduled</p>
+                <Briefcase size={24} className="mx-auto mb-2 text-slate-500/50" />
+                <p className="text-slate-500 text-sm">No jobs scheduled</p>
                 {isEmployer && (
-                  <Button asChild size="sm" variant="outline" className="mt-3 border-churvox-border text-churvox-muted hover:text-white">
+                  <Button asChild size="sm" variant="outline" className="mt-3 border-slate-200 text-slate-500 hover:text-slate-900">
                     <Link to="/jobs/new">Schedule a Job</Link>
                   </Button>
                 )}
@@ -145,11 +145,11 @@ export default function CalendarPage() {
                 const statusInfo = JOB_STATUS_MAP[job.status];
                 return (
                   <Link key={job.id} to={`/jobs/${job.id}`} data-testid={`calendar-job-${job.id}`}
-                    className="block bg-churvox-card border border-churvox-border rounded-xl p-4 hover:border-churvox-accent/50 transition-all group">
+                    className="block bg-white border border-slate-200 rounded-xl p-4 hover:border-blue-600/50 transition-all group">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-white font-medium truncate group-hover:text-churvox-accent transition-colors">{job.title}</p>
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-churvox-muted">
+                        <p className="text-slate-900 font-medium truncate group-hover:text-blue-600 transition-colors">{job.title}</p>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-slate-500">
                           {job.scheduled_time && (
                             <span className="flex items-center gap-1"><Clock size={11} /> {job.scheduled_time}</span>
                           )}
@@ -160,16 +160,16 @@ export default function CalendarPage() {
                             <span className="flex items-center gap-1 truncate max-w-[160px]"><MapPin size={11} /> {job.address}</span>
                           )}
                           {job.price > 0 && (
-                            <span className="text-churvox-accent font-medium">{formatCurrency(job.price)}</span>
+                            <span className="text-blue-600 font-medium">{formatCurrency(job.price)}</span>
                           )}
                         </div>
                         {job.assigned_worker_name && (
-                          <p className="text-xs text-churvox-accent/80 mt-1 flex items-center gap-1">
+                          <p className="text-xs text-blue-600/80 mt-1 flex items-center gap-1">
                             <UserCheck size={12} /> {job.assigned_worker_name}
                           </p>
                         )}
                       </div>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-white shrink-0 ${statusInfo?.color || "bg-slate-500"}`} data-testid={`calendar-job-status-${job.id}`}>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-slate-900 shrink-0 ${statusInfo?.color || "bg-slate-500"}`} data-testid={`calendar-job-status-${job.id}`}>
                         {statusInfo?.label || job.status}
                       </span>
                     </div>

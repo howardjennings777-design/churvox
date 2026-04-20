@@ -67,7 +67,7 @@ export default function SignupPage() {
           <div className="inline-flex items-center justify-center mb-8">
             <ChurvoxLogo size="xl" />
           </div>
-          <h2 className="text-3xl font-semibold text-white font-heading mb-6">
+          <h2 className="text-3xl font-semibold text-white mb-6">
             Start managing your business today
           </h2>
           <div className="space-y-4">
@@ -93,7 +93,7 @@ export default function SignupPage() {
             <div className="inline-flex items-center justify-center mb-6 lg:hidden">
               <ChurvoxLogo size="lg" />
             </div>
-            <h1 className="text-2xl font-semibold text-white font-heading">Create account</h1>
+            <h1 className="text-2xl font-semibold text-white">Create account</h1>
             <p className="text-muted-foreground mt-2">Get started with Churvox for free</p>
           </div>
 

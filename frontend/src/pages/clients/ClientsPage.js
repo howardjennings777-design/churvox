@@ -132,7 +132,7 @@ export default function ClientsPage() {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-white">Clients</h1>
-            <p className="text-sm text-churvox-muted mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               {clients.length} client{clients.length !== 1 ? "s" : ""}
             </p>
           </div>
@@ -152,7 +152,7 @@ export default function ClientsPage() {
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={importing}
-                  className="border-churvox-border text-churvox-muted hover:text-white"
+                  className="border-slate-200 text-slate-500 hover:text-slate-900"
                 >
                   <Upload size={16} className="mr-2" />
                   {importing ? "Importing..." : "CSV Import"}
@@ -160,7 +160,7 @@ export default function ClientsPage() {
 
                 <Button
                   onClick={() => setShowAdd((prev) => !prev)}
-                  className="bg-churvox-accent hover:bg-churvox-accent/90"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                   data-testid="add-client-button"
                 >
                   <UserPlus size={16} className="mr-2" />
@@ -172,11 +172,11 @@ export default function ClientsPage() {
         </div>
 
         {showAdd && (
-          <Card className="bg-churvox-card border-churvox-border shadow-lg shadow-black/20" data-testid="add-client-form">
+          <Card className="bg-white border-slate-200 shadow-lg shadow-black/20" data-testid="add-client-form">
             <CardContent className="p-6 space-y-4 text-white">
               <div>
                 <div className="text-lg font-semibold text-white">Add Client</div>
-                <div className="text-sm text-churvox-muted mt-1">Fill in client details below.</div>
+                <div className="text-sm text-slate-500 mt-1">Fill in client details below.</div>
               </div>
 
               <form onSubmit={handleAdd} className="space-y-4">
@@ -186,7 +186,7 @@ export default function ClientsPage() {
                     value={form.client_name}
                     onChange={(e) => setForm({ ...form, client_name: e.target.value })}
                     required
-                    className="bg-churvox-bg border-churvox-border text-white"
+                    className="bg-slate-50 border-slate-200 text-white"
                     data-testid="add-client-name-input"
                   />
                 </div>
@@ -196,7 +196,7 @@ export default function ClientsPage() {
                   <Input
                     value={form.contact_name}
                     onChange={(e) => setForm({ ...form, contact_name: e.target.value })}
-                    className="bg-churvox-bg border-churvox-border text-white"
+                    className="bg-slate-50 border-slate-200 text-white"
                     data-testid="add-client-contact-input"
                   />
                 </div>
@@ -207,7 +207,7 @@ export default function ClientsPage() {
                     type="email"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="bg-churvox-bg border-churvox-border text-white"
+                    className="bg-slate-50 border-slate-200 text-white"
                     data-testid="add-client-email-input"
                   />
                 </div>
@@ -217,7 +217,7 @@ export default function ClientsPage() {
                   <Input
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="bg-churvox-bg border-churvox-border text-white"
+                    className="bg-slate-50 border-slate-200 text-white"
                     data-testid="add-client-phone-input"
                   />
                 </div>
@@ -227,7 +227,7 @@ export default function ClientsPage() {
                   <Input
                     value={form.address}
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
-                    className="bg-churvox-bg border-churvox-border text-white"
+                    className="bg-slate-50 border-slate-200 text-white"
                     data-testid="add-client-address-input"
                   />
                 </div>
@@ -237,7 +237,7 @@ export default function ClientsPage() {
                   <Input
                     value={form.notes}
                     onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                    className="bg-churvox-bg border-churvox-border text-white"
+                    className="bg-slate-50 border-slate-200 text-white"
                     data-testid="add-client-notes-input"
                   />
                 </div>
@@ -257,7 +257,7 @@ export default function ClientsPage() {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="bg-churvox-accent hover:bg-churvox-accent/90"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
                     data-testid="add-client-save-button"
                   >
                     {loading ? "Saving..." : "Save Client"}
@@ -269,19 +269,19 @@ export default function ClientsPage() {
         )}
 
         {importResults && (
-          <Card className="bg-churvox-card border-churvox-border">
+          <Card className="bg-white border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-white font-medium">Import Results</p>
+                <p className="text-slate-900 font-medium">Import Results</p>
                 <button
                   onClick={() => setImportResults(null)}
-                  className="text-xs text-churvox-muted hover:text-white"
+                  className="text-xs text-slate-500 hover:text-slate-900"
                 >
                   Dismiss
                 </button>
               </div>
 
-              <p className="text-sm text-churvox-muted">
+              <p className="text-sm text-slate-500">
                 Imported: {importResults.imported ?? 0} | Skipped: {importResults.skipped ?? 0} | Total: {importResults.total ?? 0}
               </p>
             </CardContent>
@@ -290,14 +290,14 @@ export default function ClientsPage() {
 
         {loading && clients.length === 0 ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" />
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
           </div>
         ) : clients.length === 0 && !loading ? (
-          <Card className="bg-churvox-card border-churvox-border">
+          <Card className="bg-white border-slate-200">
             <CardContent className="p-8 text-center">
-              <Users className="mx-auto mb-3 text-churvox-muted/40" size={32} />
-              <p className="text-white font-medium mb-1">No clients yet</p>
-              <p className="text-xs text-churvox-muted mb-4">
+              <Users className="mx-auto mb-3 text-slate-500/40" size={32} />
+              <p className="text-slate-900 font-medium mb-1">No clients yet</p>
+              <p className="text-xs text-slate-500 mb-4">
                 Add your first client or import clients by CSV.
               </p>
               {isEmployer && (
@@ -305,7 +305,7 @@ export default function ClientsPage() {
                   <Button
                     onClick={() => setShowAdd(true)}
                     size="sm"
-                    className="bg-churvox-accent hover:bg-churvox-accent/90"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     <UserPlus size={14} className="mr-1" />
                     Add Client
@@ -314,7 +314,7 @@ export default function ClientsPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
-                    className="border-churvox-border text-churvox-muted hover:text-white"
+                    className="border-slate-200 text-slate-500 hover:text-slate-900"
                   >
                     <Upload size={14} className="mr-1" />
                     Import CSV
@@ -329,12 +329,12 @@ export default function ClientsPage() {
               const cid = client.id || client._id;
               return (
               <Link key={cid} to={`/clients/${cid}`} className="block">
-              <Card className="bg-churvox-card border-churvox-border hover:border-churvox-accent/50 transition-all">
+              <Card className="bg-white border-slate-200 hover:border-blue-600/50 transition-all">
                 <CardContent className="p-4 flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <p className="text-white font-medium">{client.client_name || client.name || "Unnamed Client"}</p>
+                    <p className="text-slate-900 font-medium">{client.client_name || client.name || "Unnamed Client"}</p>
 
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-churvox-muted mt-2">
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 mt-2">
                       {client.contact_name && <span>{client.contact_name}</span>}
                       {client.email && <span className="flex items-center gap-1"><Mail size={12} /> {client.email}</span>}
                       {client.phone && <span className="flex items-center gap-1"><Phone size={12} /> {client.phone}</span>}
@@ -342,7 +342,7 @@ export default function ClientsPage() {
                     </div>
 
                     {client.notes ? (
-                      <p className="text-xs text-churvox-muted mt-2">{client.notes}</p>
+                      <p className="text-xs text-slate-500 mt-2">{client.notes}</p>
                     ) : null}
                   </div>
 
@@ -352,7 +352,7 @@ export default function ClientsPage() {
                         variant="ghost"
                         size="sm"
                         asChild
-                        className="text-churvox-muted hover:text-white hover:bg-white/5"
+                        className="text-slate-500 hover:text-slate-900 hover:bg-blue-50"
                       >
                         <Link to={`/clients/${cid}/edit`} onClick={(e) => e.stopPropagation()}>
                           <Pencil size={16} />

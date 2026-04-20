@@ -61,7 +61,7 @@ export default function AdminLoginPage() {
             <ShieldCheck size={14} />
             Admin Access
           </div>
-          <h1 className="text-2xl font-semibold text-white font-heading">Admin Sign In</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">Admin Sign In</h1>
           <p className="text-muted-foreground mt-2">Platform administration access</p>
         </div>
 

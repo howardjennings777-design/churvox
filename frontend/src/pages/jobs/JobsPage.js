@@ -101,30 +101,30 @@ export default function JobsPage() {
             {filtered.map((job) => {
               const statusInfo = JOB_STATUS_MAP[job.status];
               return (
-                <Card key={job.id} className="bg-churvox-card border-churvox-border hover:border-churvox-accent/40 transition-all" data-testid={`job-card-${job.id}`}>
+                <Card key={job.id} className="bg-white border-slate-200 hover:border-blue-600/40 transition-all" data-testid={`job-card-${job.id}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <Link to={`/jobs/${job.id}`} className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h3 className="text-white font-medium truncate">{job.title}</h3>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`}>
+                          <h3 className="text-slate-900 font-medium truncate">{job.title}</h3>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-slate-900 ${statusInfo?.color || "bg-slate-500"}`}>
                             {statusInfo?.label || job.status}
                           </span>
                         </div>
-                        <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-churvox-muted">
+                        <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-500">
                           {job.customer_name && <span>{job.customer_name}</span>}
                           {job.address && <span className="flex items-center gap-1"><MapPin size={11} /> {job.address}</span>}
                           <span className="flex items-center gap-1"><Clock size={11} /> {formatDate(job.scheduled_date)}</span>
-                          {job.price > 0 && <span className="text-churvox-accent font-medium">{formatCurrency(job.price)}</span>}
+                          {job.price > 0 && <span className="text-blue-600 font-medium">{formatCurrency(job.price)}</span>}
                         </div>
                         {job.assigned_worker_name && (
-                          <p className="text-xs text-churvox-accent mt-1 flex items-center gap-1">
+                          <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
                             <UserCheck size={12} /> {job.assigned_worker_name}
                           </p>
                         )}
                       </Link>
                       {isEmployer && (
-                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(job.id)} className="text-churvox-muted hover:text-red-400 ml-2" data-testid={`delete-job-${job.id}`}>
+                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(job.id)} className="text-slate-500 hover:text-red-400 ml-2" data-testid={`delete-job-${job.id}`}>
                           <Trash2 size={14} />
                         </Button>
                       )}
@@ -142,14 +142,14 @@ export default function JobsPage() {
             {/* backdrop */}
             <div className="absolute inset-0 bg-black/80" onClick={() => setDeleteId(null)} />
             {/* modal card */}
-            <div className="relative z-10 w-full max-w-md mx-4 rounded-lg border bg-churvox-card border-churvox-border p-6 shadow-lg">
+            <div className="relative z-10 w-full max-w-md mx-4 rounded-lg border bg-white border-slate-200 p-6 shadow-lg">
               <h2 className="text-lg font-semibold text-white">Delete Job</h2>
-              <p className="mt-2 text-sm text-churvox-muted">Are you sure? This cannot be undone.</p>
+              <p className="mt-2 text-sm text-slate-500">Are you sure? This cannot be undone.</p>
               <div className="mt-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setDeleteId(null)}
-                  className="inline-flex items-center justify-center rounded-md border border-churvox-border px-4 py-2 text-sm font-medium text-churvox-muted hover:bg-white/5 transition-colors"
+                  className="inline-flex items-center justify-center rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-500 hover:bg-blue-50 transition-colors"
                 >
                   Cancel
                 </button>
@@ -158,7 +158,7 @@ export default function JobsPage() {
                   data-testid="confirm-delete-job"
                   disabled={loading}
                   onClick={handleDelete}
-                  className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors"
+                  className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-slate-900 bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors"
                 >
                   {loading ? "Deleting…" : "Delete"}
                 </button>

@@ -86,6 +86,8 @@ export default function JobFormPage() {
     notes: "",
     assigned_worker_id: workerIdFromQuery,
     status: "assigned",
+    is_recurring: false,
+    recurring_frequency: "weekly",
   });
 
   useEffect(() => {
@@ -115,6 +117,8 @@ export default function JobFormPage() {
               notes: j.notes || "",
               assigned_worker_id: j.assigned_worker_id || "",
               status: j.status || "assigned",
+              is_recurring: j.is_recurring || false,
+              recurring_frequency: j.recurring_frequency || "weekly",
             });
           }
         }
@@ -182,7 +186,7 @@ export default function JobFormPage() {
     return (
       <Layout>
         <div className="p-4 md:p-6 max-w-3xl mx-auto flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" />
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
         </div>
       </Layout>
     );
@@ -192,11 +196,11 @@ export default function JobFormPage() {
     <Layout>
       <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">{isEdit ? "Edit Job" : "New Job"}</h1>
-          <p className="text-sm text-churvox-muted mt-1">Create or update a job.</p>
+          <h1 className="text-2xl font-bold text-slate-900">{isEdit ? "Edit Job" : "New Job"}</h1>
+          <p className="text-sm text-slate-500 mt-1">Create or update a job.</p>
         </div>
 
-        <Card className="bg-churvox-card border-churvox-border">
+        <Card className="bg-white border-slate-200">
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -205,7 +209,7 @@ export default function JobFormPage() {
                   id="title"
                   value={form.title}
                   onChange={(e) => setField("title", e.target.value)}
-                  className="bg-churvox-bg border-churvox-border text-white"
+                  className="bg-slate-50 border-slate-200 text-slate-900"
                 />
               </div>
 
@@ -215,7 +219,7 @@ export default function JobFormPage() {
                   id="client_id"
                   value={form.client_id}
                   onChange={(e) => handleClientChange(e.target.value)}
-                  className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3"
+                  className="w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 p-3"
                 >
                   <option value="">Select client</option>
                   {clients.map((client) => {
@@ -235,7 +239,7 @@ export default function JobFormPage() {
                   id="address"
                   value={form.address}
                   onChange={(e) => setField("address", e.target.value)}
-                  className="bg-churvox-bg border-churvox-border text-white"
+                  className="bg-slate-50 border-slate-200 text-slate-900"
                 />
               </div>
 
@@ -246,8 +250,8 @@ export default function JobFormPage() {
                   type="datetime-local"
                   value={form.scheduled_date}
                   onChange={(e) => setField("scheduled_date", e.target.value)}
-                  style={{ colorScheme: "dark" }}
-                  className="bg-churvox-bg border-churvox-border text-white"
+                  style={{ colorScheme: "light" }}
+                  className="bg-slate-50 border-slate-200 text-slate-900"
                 />
               </div>
 
@@ -258,7 +262,7 @@ export default function JobFormPage() {
                     id="job-country"
                     value={form.country || "New Zealand"}
                     onChange={(e) => setForm((prev) => ({ ...prev, country: e.target.value, region: "", assigned_worker_id: "" }))}
-                    className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3"
+                    className="w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 p-3"
                   >
                     {COUNTRY_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -274,7 +278,7 @@ export default function JobFormPage() {
                     id="job-region"
                     value={form.region || ""}
                     onChange={(e) => setForm((prev) => ({ ...prev, region: e.target.value, assigned_worker_id: "" }))}
-                    className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3"
+                    className="w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 p-3"
                   >
                     <option value="">Select region / state</option>
                     {getRegionOptions(form.country || "New Zealand").map((region) => (
@@ -292,7 +296,7 @@ export default function JobFormPage() {
                   id="assigned_worker_id"
                   value={form.assigned_worker_id}
                   onChange={(e) => setField("assigned_worker_id", e.target.value)}
-                  className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3"
+                  className="w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 p-3"
                 >
                   <option value="">Select worker</option>
                   {filteredWorkers.map((worker) => {
@@ -314,7 +318,7 @@ export default function JobFormPage() {
                   id="status"
                   value={form.status}
                   onChange={(e) => setField("status", e.target.value)}
-                  className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3"
+                  className="w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 p-3"
                 >
                   <option value="assigned">Assigned</option>
                   <option value="acknowledged">Acknowledged</option>
@@ -330,15 +334,45 @@ export default function JobFormPage() {
                   value={form.notes}
                   onChange={(e) => setField("notes", e.target.value)}
                   rows={4}
-                  className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3 outline-none"
+                  className="w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 p-3 outline-none"
                 />
+              </div>
+
+              {/* Recurring Job */}
+              <div className="border border-slate-200 rounded-lg p-4 space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.is_recurring}
+                    onChange={(e) => setField("is_recurring", e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    data-testid="recurring-checkbox"
+                  />
+                  <span className="text-sm font-medium text-slate-700">Recurring job</span>
+                </label>
+                {form.is_recurring && (
+                  <div>
+                    <Label htmlFor="recurring_frequency">Frequency</Label>
+                    <select
+                      id="recurring_frequency"
+                      value={form.recurring_frequency}
+                      onChange={(e) => setField("recurring_frequency", e.target.value)}
+                      className="w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 p-3"
+                      data-testid="recurring-frequency"
+                    >
+                      <option value="weekly">Weekly</option>
+                      <option value="fortnightly">Fortnightly</option>
+                      <option value="monthly">Monthly</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => navigate("/jobs")}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saving} className="bg-churvox-accent hover:bg-churvox-accent/90">
+                <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-slate-900">
                   {saving ? "Saving..." : isEdit ? "Update Job" : "Create Job"}
                 </Button>
               </div>

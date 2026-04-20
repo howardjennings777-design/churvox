@@ -87,7 +87,7 @@ export default function QuotesPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-white font-heading">Quotes</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900">Quotes</h1>
             <p className="text-muted-foreground mt-1">Manage your quotes and proposals</p>
           </div>
           <Link to="/quotes/new">
@@ -134,7 +134,7 @@ export default function QuotesPage() {
           <Card className="bg-card border-border">
             <CardContent className="flex flex-col items-center justify-center py-12">
               <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-white mb-2">
+              <h3 className="text-lg font-medium text-slate-900 mb-2">
                 {searchTerm || statusFilter !== "all" ? "No quotes found" : "No quotes yet"}
               </h3>
               <p className="text-muted-foreground text-center mb-4 max-w-xs mx-auto">
@@ -166,16 +166,16 @@ export default function QuotesPage() {
                       <div className="flex items-center gap-3 mb-2">
                         <Link 
                           to={`/quotes/${quote.id}`}
-                          className="text-lg font-medium text-white hover:text-primary transition-colors"
+                          className="text-lg font-medium text-slate-900 hover:text-primary transition-colors"
                           data-testid={`quote-number-${quote.id}`}
                         >
                           {quote.quote_number}
                         </Link>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-white ${QUOTE_STATUSES.find(s => s.value === quote.status)?.color || "bg-slate-500"}`}>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-slate-900 ${QUOTE_STATUSES.find(s => s.value === quote.status)?.color || "bg-slate-500"}`}>
                           {QUOTE_STATUSES.find(s => s.value === quote.status)?.label || quote.status}
                         </span>
                       </div>
-                      <p className="text-sm text-white mb-1">{quote.customer_name}</p>
+                      <p className="text-sm text-slate-900 mb-1">{quote.customer_name}</p>
                       <p className="text-sm text-muted-foreground truncate">{quote.job_description}</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Created {formatDate(quote.created_at)}
@@ -190,7 +190,7 @@ export default function QuotesPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="border-primary text-primary hover:bg-primary hover:text-white"
+                          className="border-primary text-primary hover:bg-primary hover:text-slate-900"
                           onClick={() => handleSendQuote(quote.id)}
                           data-testid={`send-quote-${quote.id}`}
                         >
@@ -239,16 +239,16 @@ export default function QuotesPage() {
         {!!deleteId && (
           <div className="fixed inset-0 z-50 flex items-center justify-center" data-testid="delete-quote-dialog">
             <div className="absolute inset-0 bg-black/80" onClick={() => setDeleteId(null)} />
-            <div className="relative z-10 w-full max-w-md mx-4 rounded-lg border bg-churvox-card border-churvox-border p-6 shadow-lg">
+            <div className="relative z-10 w-full max-w-md mx-4 rounded-lg border bg-white border-slate-200 p-6 shadow-lg">
               <h2 className="text-lg font-semibold text-white">Delete Quote</h2>
-              <p className="mt-2 text-sm text-churvox-muted">Are you sure you want to delete this quote? This action cannot be undone.</p>
+              <p className="mt-2 text-sm text-slate-500">Are you sure you want to delete this quote? This action cannot be undone.</p>
               <div className="mt-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
                 <button type="button" onClick={() => setDeleteId(null)}
-                  className="inline-flex items-center justify-center rounded-md border border-churvox-border px-4 py-2 text-sm font-medium text-churvox-muted hover:bg-white/5 transition-colors">
+                  className="inline-flex items-center justify-center rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-500 hover:bg-blue-50 transition-colors">
                   Cancel
                 </button>
                 <button type="button" data-testid="confirm-delete-quote" disabled={loading} onClick={handleDelete}
-                  className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors">
+                  className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-slate-900 bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors">
                   {loading ? "Deleting…" : "Delete"}
                 </button>
               </div>

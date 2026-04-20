@@ -223,7 +223,7 @@ export default function JobDetailPage() {
     return (
       <Layout>
         <div className="p-4 md:p-6 max-w-4xl mx-auto">
-          <Card className="bg-churvox-card border-churvox-border">
+          <Card className="bg-white border-slate-200">
             <CardContent className="p-6 text-white">Loading job...</CardContent>
           </Card>
         </div>
@@ -235,10 +235,10 @@ export default function JobDetailPage() {
     return (
       <Layout>
         <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4">
-          <Card className="bg-churvox-card border-churvox-border">
+          <Card className="bg-white border-slate-200">
             <CardContent className="p-6">
               <div className="text-white text-lg font-semibold mb-2">Job page could not load</div>
-              <div className="text-churvox-muted text-sm">{error || "Job not found"}</div>
+              <div className="text-slate-500 text-sm">{error || "Job not found"}</div>
             </CardContent>
           </Card>
 
@@ -246,7 +246,7 @@ export default function JobDetailPage() {
             <Button variant="outline" onClick={() => navigate("/jobs")}>
               Back to Jobs
             </Button>
-            <Button onClick={loadPage} className="bg-churvox-accent hover:bg-churvox-accent/90">
+            <Button onClick={loadPage} className="bg-blue-600 hover:bg-blue-700 text-white">
               Retry
             </Button>
           </div>
@@ -276,7 +276,7 @@ export default function JobDetailPage() {
             <h1 className="text-2xl font-bold text-white">
               {job.title || "Job"}
             </h1>
-            <p className="text-sm text-churvox-muted mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               Status: {niceStatus(currentStatus)}
             </p>
           </div>
@@ -296,37 +296,37 @@ export default function JobDetailPage() {
           </div>
         </div>
 
-        <Card className="bg-churvox-card border-churvox-border">
+        <Card className="bg-white border-slate-200">
           <CardContent className="p-5 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <div className="text-xs uppercase tracking-wide text-churvox-muted">Client</div>
-                <div className="text-white">{job.client_name || "-"}</div>
+                <div className="text-xs uppercase tracking-wide text-slate-500">Client</div>
+                <div className="text-slate-900">{job.client_name || "-"}</div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wide text-churvox-muted">Address</div>
-                <div className="text-white">{job.address || "-"}</div>
+                <div className="text-xs uppercase tracking-wide text-slate-500">Address</div>
+                <div className="text-slate-900">{job.address || "-"}</div>
               </div>
               {hasValue(job.country) && (
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Country</div>
-                  <div className="text-white">{job.country}</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Country</div>
+                  <div className="text-slate-900">{job.country}</div>
                 </div>
               )}
               {hasValue(job.region) && (
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Region / State</div>
-                  <div className="text-white">{job.region}</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Region / State</div>
+                  <div className="text-slate-900">{job.region}</div>
                 </div>
               )}
               <div>
-                <div className="text-xs uppercase tracking-wide text-churvox-muted">Scheduled</div>
-                <div className="text-white">{safeDate(job.scheduled_date)}</div>
+                <div className="text-xs uppercase tracking-wide text-slate-500">Scheduled</div>
+                <div className="text-slate-900">{safeDate(job.scheduled_date)}</div>
               </div>
               {hasValue(job.assigned_worker_name) && (
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Assigned Worker</div>
-                  <div className="text-white">{job.assigned_worker_name}</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Assigned Worker</div>
+                  <div className="text-slate-900">{job.assigned_worker_name}</div>
                 </div>
               )}
             </div>
@@ -334,9 +334,9 @@ export default function JobDetailPage() {
             {isOwnerView ? (
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Notes</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Notes</div>
                   <Button size="sm" variant="ghost" onClick={handleSaveEmployerNotes} disabled={savingEmployerNotes}
-                    className="text-xs text-churvox-accent" data-testid="save-employer-notes-btn">
+                    className="text-xs text-blue-600" data-testid="save-employer-notes-btn">
                     {savingEmployerNotes ? "Saving..." : "Save"}
                   </Button>
                 </div>
@@ -345,13 +345,13 @@ export default function JobDetailPage() {
                   onChange={(e) => setEmployerNotes(e.target.value)}
                   placeholder="Add notes for this job..."
                   rows={3}
-                  className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-2 outline-none text-sm"
+                  className="w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 p-2 outline-none text-sm"
                   data-testid="employer-notes-textarea"
                 />
               </div>
             ) : hasValue(job.notes) ? (
               <div>
-                <div className="text-xs uppercase tracking-wide text-churvox-muted mb-1">Notes</div>
+                <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">Notes</div>
                 <div className="text-white whitespace-pre-wrap">{job.notes}</div>
               </div>
             ) : null}
@@ -359,53 +359,53 @@ export default function JobDetailPage() {
         </Card>
 
         {isOwnerView && (
-          <Card className="bg-churvox-card border-churvox-border">
+          <Card className="bg-white border-slate-200">
             <CardContent className="p-5 space-y-4">
-              <div className="text-white font-semibold">Progress Summary</div>
+              <div className="text-slate-900 font-semibold">Progress Summary</div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Current Status</div>
-                  <div className="text-white">{niceStatus(job?.status)}</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Current Status</div>
+                  <div className="text-slate-900">{niceStatus(job?.status)}</div>
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Created</div>
-                  <div className="text-white">{safeDate(job?.created_at)}</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Created</div>
+                  <div className="text-slate-900">{safeDate(job?.created_at)}</div>
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Last Updated</div>
-                  <div className="text-white">{safeDate(job?.updated_at)}</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Last Updated</div>
+                  <div className="text-slate-900">{safeDate(job?.updated_at)}</div>
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Accepted</div>
-                  <div className="text-white">{safeDate(job?.accepted_at)}</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Accepted</div>
+                  <div className="text-slate-900">{safeDate(job?.accepted_at)}</div>
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Started</div>
-                  <div className="text-white">{safeDate(job?.started_at)}</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Started</div>
+                  <div className="text-slate-900">{safeDate(job?.started_at)}</div>
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Completed</div>
-                  <div className="text-white">{safeDate(job?.completed_at)}</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Completed</div>
+                  <div className="text-slate-900">{safeDate(job?.completed_at)}</div>
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Time Spent</div>
-                  <div className="text-white">{formatMinutes(job?.time_spent_minutes)}</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Time Spent</div>
+                  <div className="text-slate-900">{formatMinutes(job?.time_spent_minutes)}</div>
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Quote</div>
-                  <div className="text-white">
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Quote</div>
+                  <div className="text-slate-900">
                     {job?.quote_id ? (
-                      <Link to={`/quotes/${job.quote_id}`} className="text-churvox-accent hover:underline">
+                      <Link to={`/quotes/${job.quote_id}`} className="text-blue-600 hover:underline">
                         Open Quote
                       </Link>
                     ) : "-"}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-churvox-muted">Invoice</div>
-                  <div className="text-white">
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Invoice</div>
+                  <div className="text-slate-900">
                     {job?.invoice_id ? (
-                      <Link to={`/invoices/${job.invoice_id}`} className="text-churvox-accent hover:underline">
+                      <Link to={`/invoices/${job.invoice_id}`} className="text-blue-600 hover:underline">
                         Open Invoice
                       </Link>
                     ) : "-"}
@@ -417,14 +417,14 @@ export default function JobDetailPage() {
         )}
 
         {isOwnerView && !hasAssignedWorker && (
-          <Card className="bg-churvox-card border-churvox-border">
+          <Card className="bg-white border-slate-200">
             <CardContent className="p-5 space-y-4">
-              <div className="text-white font-semibold">Assign Worker</div>
+              <div className="text-slate-900 font-semibold">Assign Worker</div>
 
               <select
                 value={selectedWorker}
                 onChange={(e) => setSelectedWorker(e.target.value)}
-                className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3"
+                className="w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 p-3"
                 data-testid="assign-worker-select"
               >
                 <option value="">Select worker</option>
@@ -443,13 +443,13 @@ export default function JobDetailPage() {
               </select>
 
               {job?.region || job?.city || job?.country ? (
-                <div className="text-xs text-churvox-muted">
+                <div className="text-xs text-slate-500">
                   Showing workers matching {[job.country, job.region].filter(Boolean).join(" • ")}
                 </div>
               ) : null}
 
               {filteredWorkerList.length === 0 ? (
-                <div className="text-sm text-churvox-muted">
+                <div className="text-sm text-slate-500">
                   No workers available for this country / region.
                 </div>
               ) : null}
@@ -457,7 +457,7 @@ export default function JobDetailPage() {
               <Button
                 onClick={handleAssign}
                 disabled={saving || !selectedWorker || filteredWorkerList.length === 0}
-                className="bg-churvox-accent hover:bg-churvox-accent/90"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
                 data-testid="confirm-assign-worker"
               >
                 {saving ? "Saving..." : "Assign Worker"}
@@ -467,13 +467,13 @@ export default function JobDetailPage() {
         )}
 
         {isWorker && currentStatus === "assigned" && (
-          <Card className="bg-churvox-card border-churvox-border">
+          <Card className="bg-white border-slate-200">
             <CardContent className="p-5 space-y-4">
-              <div className="text-white font-semibold">Worker Acceptance</div>
+              <div className="text-slate-900 font-semibold">Worker Acceptance</div>
               <Button
                 onClick={handleAcknowledge}
                 disabled={saving}
-                className="bg-churvox-accent hover:bg-churvox-accent/90"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 {saving ? "Saving..." : "Accept Job"}
               </Button>
@@ -482,9 +482,9 @@ export default function JobDetailPage() {
         )}
 
         {isWorker && (
-          <Card className="bg-churvox-card border-churvox-border">
+          <Card className="bg-white border-slate-200">
             <CardContent className="p-5 space-y-4">
-              <div className="text-white font-semibold">Update Status</div>
+              <div className="text-slate-900 font-semibold">Update Status</div>
 
               <div className="flex gap-2 flex-wrap">
                 {STATUS_OPTIONS.map((status) => (
@@ -493,7 +493,7 @@ export default function JobDetailPage() {
                     variant={currentStatus === status ? "default" : "outline"}
                     onClick={() => handleStatusChange(status)}
                     disabled={saving}
-                    className={currentStatus === status ? "bg-churvox-accent hover:bg-churvox-accent/90" : ""}
+                    className={currentStatus === status ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}
                     data-testid={`status-btn-${status}`}
                   >
                     {niceStatus(status)}
@@ -505,14 +505,14 @@ export default function JobDetailPage() {
         )}
 
         {isWorker && (
-          <Card className="bg-churvox-card border-churvox-border">
+          <Card className="bg-white border-slate-200">
             <CardContent className="p-5 space-y-4">
               <div className="flex items-center justify-between">
-                <div className="text-white font-semibold">Worker Notes</div>
+                <div className="text-slate-900 font-semibold">Worker Notes</div>
                 <Button
                   onClick={handleSaveWorkerNotes}
                   disabled={savingNotes}
-                  className="bg-churvox-accent hover:bg-churvox-accent/90"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                   data-testid="save-worker-notes-button"
                 >
                   {savingNotes ? "Saving..." : "Save Notes"}
@@ -523,7 +523,7 @@ export default function JobDetailPage() {
                 onChange={(e) => setWorkerNotes(e.target.value)}
                 placeholder="Add notes about this job..."
                 rows={4}
-                className="w-full rounded-md border border-churvox-border bg-churvox-bg text-white p-3 outline-none"
+                className="w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 p-3 outline-none"
                 data-testid="worker-notes-textarea"
               />
             </CardContent>
@@ -531,9 +531,9 @@ export default function JobDetailPage() {
         )}
 
         {isOwnerView && hasValue(job.worker_notes) && (
-          <Card className="bg-churvox-card border-churvox-border">
+          <Card className="bg-white border-slate-200">
             <CardContent className="p-5 space-y-2">
-              <div className="text-white font-semibold">Worker Notes</div>
+              <div className="text-slate-900 font-semibold">Worker Notes</div>
               <div className="text-white whitespace-pre-wrap">{job.worker_notes}</div>
             </CardContent>
           </Card>

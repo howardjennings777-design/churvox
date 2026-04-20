@@ -61,7 +61,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md animate-in">
         <div className="text-center mb-8">
           <ChurvoxLogo size="lg" className="mx-auto mb-6" />
-          <h1 className="text-3xl font-semibold text-white font-heading">Reset password</h1>
+          <h1 className="text-3xl font-semibold text-white">Reset password</h1>
           <p className="text-muted-foreground mt-2">Enter your new password</p>
         </div>
 

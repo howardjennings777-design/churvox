@@ -98,30 +98,30 @@ export default function QuoteFormPage() {
   return (
     <Layout>
       <div className="p-4 md:p-6 max-w-2xl mx-auto" data-testid="quote-form-page">
-        <button onClick={() => navigate("/quotes")} className="flex items-center gap-2 text-churvox-muted hover:text-white mb-4" data-testid="back-to-quotes">
+        <button onClick={() => navigate("/quotes")} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 mb-4" data-testid="back-to-quotes">
           <ArrowLeft size={18} /> Quotes
         </button>
 
-        <Card className="bg-churvox-card border-churvox-border">
-          <CardHeader><CardTitle className="text-white">{isEditing ? "Edit Quote" : "New Quote"}</CardTitle></CardHeader>
+        <Card className="bg-white border-slate-200">
+          <CardHeader><CardTitle className="text-slate-900">{isEditing ? "Edit Quote" : "New Quote"}</CardTitle></CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-churvox-muted">Client</Label>
+                  <Label className="text-slate-500">Client</Label>
                   <Select value={form.client_id} onValueChange={handleClientChange}>
-                    <SelectTrigger className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-client-select"><SelectValue placeholder="Select client" /></SelectTrigger>
-                    <SelectContent className="bg-churvox-card border-churvox-border">{clients.map((c) => <SelectItem key={c.id} value={c.id} className="text-white">{c.name}</SelectItem>)}</SelectContent>
+                    <SelectTrigger className="bg-slate-50 border-slate-200 text-white" data-testid="quote-client-select"><SelectValue placeholder="Select client" /></SelectTrigger>
+                    <SelectContent className="bg-white border-slate-200">{clients.map((c) => <SelectItem key={c.id} value={c.id} className="text-slate-900">{c.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-churvox-muted">Job Type</Label>
+                  <Label className="text-slate-500">Job Type</Label>
                   <Select value={form.job_type} onValueChange={(v) => setForm({ ...form, job_type: v })}>
-                    <SelectTrigger className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-job-type"><SelectValue /></SelectTrigger>
-                    <SelectContent className="bg-churvox-card border-churvox-border max-h-60">
+                    <SelectTrigger className="bg-slate-50 border-slate-200 text-white" data-testid="quote-job-type"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-white border-slate-200 max-h-60">
                       {Object.entries(JOB_TYPES_BY_CATEGORY).map(([cat, types]) => (
-                        <SelectGroup key={cat}><SelectLabel className="text-churvox-muted text-xs">{cat}</SelectLabel>
-                          {types.map((t) => <SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>)}
+                        <SelectGroup key={cat}><SelectLabel className="text-slate-500 text-xs">{cat}</SelectLabel>
+                          {types.map((t) => <SelectItem key={t.value} value={t.value} className="text-slate-900">{t.label}</SelectItem>)}
                         </SelectGroup>
                       ))}
                     </SelectContent>
@@ -130,29 +130,29 @@ export default function QuoteFormPage() {
               </div>
 
               <div>
-                <Label className="text-churvox-muted">Customer Name</Label>
-                <Input value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} required className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-customer-name" />
+                <Label className="text-slate-500">Customer Name</Label>
+                <Input value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} required className="bg-slate-50 border-slate-200 text-white" data-testid="quote-customer-name" />
               </div>
               <div>
-                <Label className="text-churvox-muted">Customer Email</Label>
-                <Input type="email" value={form.customer_email} onChange={(e) => setForm({ ...form, customer_email: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-customer-email" />
+                <Label className="text-slate-500">Customer Email</Label>
+                <Input type="email" value={form.customer_email} onChange={(e) => setForm({ ...form, customer_email: e.target.value })} className="bg-slate-50 border-slate-200 text-white" data-testid="quote-customer-email" />
               </div>
               <div>
-                <Label className="text-churvox-muted">Address</Label>
-                <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-address" />
+                <Label className="text-slate-500">Address</Label>
+                <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required className="bg-slate-50 border-slate-200 text-white" data-testid="quote-address" />
               </div>
               <div>
-                <Label className="text-churvox-muted">Job Description</Label>
-                <Textarea value={form.job_description} onChange={(e) => setForm({ ...form, job_description: e.target.value })} required className="bg-churvox-bg border-churvox-border text-white" rows={3} data-testid="quote-description" />
+                <Label className="text-slate-500">Job Description</Label>
+                <Textarea value={form.job_description} onChange={(e) => setForm({ ...form, job_description: e.target.value })} required className="bg-slate-50 border-slate-200 text-white" rows={3} data-testid="quote-description" />
               </div>
 
               {/* Pricing */}
-              <div className="pt-3 border-t border-churvox-border">
-                <Label className="text-churvox-muted">Pricing Type</Label>
+              <div className="pt-3 border-t border-slate-200">
+                <Label className="text-slate-500">Pricing Type</Label>
                 <Select value={form.pricing_type} onValueChange={(v) => setForm({ ...form, pricing_type: v })}>
-                  <SelectTrigger className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-pricing-type"><SelectValue /></SelectTrigger>
-                  <SelectContent className="bg-churvox-card border-churvox-border">
-                    {PRICING_TYPES.map((p) => <SelectItem key={p.value} value={p.value} className="text-white">{p.label}</SelectItem>)}
+                  <SelectTrigger className="bg-slate-50 border-slate-200 text-white" data-testid="quote-pricing-type"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-white border-slate-200">
+                    {PRICING_TYPES.map((p) => <SelectItem key={p.value} value={p.value} className="text-slate-900">{p.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -160,32 +160,32 @@ export default function QuoteFormPage() {
               <div className="grid grid-cols-2 gap-3">
                 {showFixed && (
                   <div>
-                    <Label className="text-churvox-muted">Price ($)</Label>
-                    <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-price" />
+                    <Label className="text-slate-500">Price ($)</Label>
+                    <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="bg-slate-50 border-slate-200 text-white" data-testid="quote-price" />
                   </div>
                 )}
                 {showHourly && (
                   <div>
-                    <Label className="text-churvox-muted">Hourly Rate ($)</Label>
-                    <Input type="number" step="0.01" value={form.hourly_rate} onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-hourly-rate" />
+                    <Label className="text-slate-500">Hourly Rate ($)</Label>
+                    <Input type="number" step="0.01" value={form.hourly_rate} onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })} className="bg-slate-50 border-slate-200 text-white" data-testid="quote-hourly-rate" />
                   </div>
                 )}
                 <div>
-                  <Label className="text-churvox-muted">Valid Until</Label>
-                  <Input type="date" value={form.valid_until} onChange={(e) => setForm({ ...form, valid_until: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" data-testid="quote-valid-until" />
+                  <Label className="text-slate-500">Valid Until</Label>
+                  <Input type="date" value={form.valid_until} onChange={(e) => setForm({ ...form, valid_until: e.target.value })} className="bg-slate-50 border-slate-200 text-white" data-testid="quote-valid-until" />
                 </div>
               </div>
 
               {showExtras && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-churvox-muted">Extras</Label>
-                    <Button type="button" variant="outline" size="sm" onClick={addExtra} className="border-churvox-border text-churvox-muted" data-testid="quote-add-extra"><Plus size={14} className="mr-1" /> Add Extra</Button>
+                    <Label className="text-slate-500">Extras</Label>
+                    <Button type="button" variant="outline" size="sm" onClick={addExtra} className="border-slate-200 text-slate-500" data-testid="quote-add-extra"><Plus size={14} className="mr-1" /> Add Extra</Button>
                   </div>
                   {form.extras.map((ex, i) => (
                     <div key={i} className="flex gap-2 items-center">
-                      <Input value={ex.description} onChange={(e) => updateExtra(i, "description", e.target.value)} placeholder="Description" className="flex-1 bg-churvox-bg border-churvox-border text-white" data-testid={`quote-extra-desc-${i}`} />
-                      <Input type="number" step="0.01" value={ex.amount} onChange={(e) => updateExtra(i, "amount", e.target.value)} placeholder="$" className="w-24 bg-churvox-bg border-churvox-border text-white" data-testid={`quote-extra-amount-${i}`} />
+                      <Input value={ex.description} onChange={(e) => updateExtra(i, "description", e.target.value)} placeholder="Description" className="flex-1 bg-slate-50 border-slate-200 text-white" data-testid={`quote-extra-desc-${i}`} />
+                      <Input type="number" step="0.01" value={ex.amount} onChange={(e) => updateExtra(i, "amount", e.target.value)} placeholder="$" className="w-24 bg-slate-50 border-slate-200 text-white" data-testid={`quote-extra-amount-${i}`} />
                       <button type="button" onClick={() => removeExtra(i)} className="text-red-400 hover:text-red-300"><Trash2 size={14} /></button>
                     </div>
                   ))}
@@ -193,13 +193,13 @@ export default function QuoteFormPage() {
               )}
 
               <div>
-                <Label className="text-churvox-muted">Notes</Label>
-                <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="bg-churvox-bg border-churvox-border text-white" rows={2} data-testid="quote-notes" />
+                <Label className="text-slate-500">Notes</Label>
+                <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="bg-slate-50 border-slate-200 text-white" rows={2} data-testid="quote-notes" />
               </div>
 
               <div className="flex gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={() => navigate("/quotes")} className="flex-1 border-churvox-border text-churvox-muted">Cancel</Button>
-                <Button type="submit" disabled={loading} className="flex-1 bg-churvox-accent hover:bg-churvox-accent/90" data-testid="submit-quote-button">
+                <Button type="button" variant="outline" onClick={() => navigate("/quotes")} className="flex-1 border-slate-200 text-slate-500">Cancel</Button>
+                <Button type="submit" disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" data-testid="submit-quote-button">
                   {loading ? "Saving..." : isEditing ? "Update Quote" : "Create Quote"}
                 </Button>
               </div>
