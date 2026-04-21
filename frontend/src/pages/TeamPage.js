@@ -736,7 +736,7 @@ export default function TeamPage() {
                           </button>
 
                           <div className="flex items-center gap-2 shrink-0">
-                            {worker.status === "pending" && (
+                            {(worker.status === "pending" || worker.status === "invited") && (
                               <Button
                                 variant="outline"
                                 size="sm"

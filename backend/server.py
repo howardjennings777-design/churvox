@@ -2429,6 +2429,8 @@ async def create_team_worker(payload: dict, current_user: dict = Depends(get_cur
     name = str((payload or {}).get("name") or "").strip()
     email = str((payload or {}).get("email") or "").strip().lower()
     phone = str((payload or {}).get("phone") or "").strip()
+    country = str((payload or {}).get("country") or "").strip()
+    region = str((payload or {}).get("region") or (payload or {}).get("state") or "").strip()
     invite_role = str((payload or {}).get("role") or "worker").strip().lower()
 
     valid_roles = {"worker", "manager", "office_admin", "payroll"}
@@ -2473,8 +2475,10 @@ async def create_team_worker(payload: dict, current_user: dict = Depends(get_cur
         "name": name,
         "email": email,
         "phone": phone,
+        "country": country,
+        "region": region,
         "role": invite_role,
-        "status": "pending",
+        "status": "invited",
         "business_id": business_id,
         "owner_id": owner_id,
         "notes": "",
@@ -2487,6 +2491,7 @@ async def create_team_worker(payload: dict, current_user: dict = Depends(get_cur
         {"$set": {"id": str(result.inserted_id)}}
     )
 
+    # Save succeeded. Email send is best-effort and MUST NOT block the response.
     try:
         invite_token = str(result.inserted_id)
         invite_link = f"{FRONTEND_URL}/invite/setup/{invite_token}"
@@ -2510,8 +2515,10 @@ async def create_team_worker(payload: dict, current_user: dict = Depends(get_cur
             "name": name,
             "email": email,
             "phone": phone,
+            "country": country,
+            "region": region,
             "role": invite_role,
-            "status": "pending",
+            "status": "invited",
             "notes": "",
         }
     }
@@ -2704,7 +2711,7 @@ async def get_team_workers(current_user: dict = Depends(get_current_user)):
             return None
 
     query = {
-        "role": "worker",
+        "role": {"$in": ["worker", "manager", "office_admin", "payroll"]},
         "$or": [
             {"business_id": business_id},
             {"business_id": str(business_id)},
