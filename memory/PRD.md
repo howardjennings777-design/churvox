@@ -74,3 +74,10 @@ PLATFORM_OWNER_EMAILS=hello@churvox.com
 ## Backlog
 - No new features requested by user
 - User explicitly prohibited: advanced AI, marketplace, fleet, big redesigns
+
+## Changelog
+- 2026-04-21: Fixed Team Invite form `<select>` dropdowns (TeamPage.js). Role, Country, Region/State now render with `bg-white`, `border-slate-300`, and native chevron (removed leftover dark-theme `bg-[#0f172a]`/`border-white/10`/`appearance-none`). Role dropdown now exposes all 4 options in order: Manager, Office Admin, Worker, Payroll. Also applied same fix to edit-worker modal selects. Verified end-to-end by testing agent (iteration_26.json, 7/7 passed) — worker created via UI persisted with role=manager.
+- 2026-04-21: Testing agent identified and fixed a stale `/app/frontend/build` bundle referencing an old `REACT_APP_BACKEND_URL`. Rebuilt via `yarn build` + `supervisorctl restart frontend`. Note: this app uses `serve -s build` in production mode — future frontend edits require rebuild.
+
+## Operational Note
+- Frontend serves from `/app/frontend/build` via `serve -s build`. Hot reload is NOT active. After any `.js`/`.jsx` edit run: `cd /app/frontend && yarn build && sudo supervisorctl restart frontend`.
