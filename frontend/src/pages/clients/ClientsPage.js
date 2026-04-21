@@ -186,7 +186,7 @@ export default function ClientsPage() {
                     value={form.client_name}
                     onChange={(e) => setForm({ ...form, client_name: e.target.value })}
                     required
-                    className="bg-slate-50 border-slate-200 text-white"
+                    className="bg-slate-50 border-slate-200 text-slate-900"
                     data-testid="add-client-name-input"
                   />
                 </div>
@@ -196,7 +196,7 @@ export default function ClientsPage() {
                   <Input
                     value={form.contact_name}
                     onChange={(e) => setForm({ ...form, contact_name: e.target.value })}
-                    className="bg-slate-50 border-slate-200 text-white"
+                    className="bg-slate-50 border-slate-200 text-slate-900"
                     data-testid="add-client-contact-input"
                   />
                 </div>
@@ -207,7 +207,7 @@ export default function ClientsPage() {
                     type="email"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="bg-slate-50 border-slate-200 text-white"
+                    className="bg-slate-50 border-slate-200 text-slate-900"
                     data-testid="add-client-email-input"
                   />
                 </div>
@@ -217,7 +217,7 @@ export default function ClientsPage() {
                   <Input
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="bg-slate-50 border-slate-200 text-white"
+                    className="bg-slate-50 border-slate-200 text-slate-900"
                     data-testid="add-client-phone-input"
                   />
                 </div>
@@ -227,7 +227,7 @@ export default function ClientsPage() {
                   <Input
                     value={form.address}
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
-                    className="bg-slate-50 border-slate-200 text-white"
+                    className="bg-slate-50 border-slate-200 text-slate-900"
                     data-testid="add-client-address-input"
                   />
                 </div>
@@ -237,7 +237,7 @@ export default function ClientsPage() {
                   <Input
                     value={form.notes}
                     onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                    className="bg-slate-50 border-slate-200 text-white"
+                    className="bg-slate-50 border-slate-200 text-slate-900"
                     data-testid="add-client-notes-input"
                   />
                 </div>
@@ -269,7 +269,7 @@ export default function ClientsPage() {
         )}
 
         {importResults && (
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-slate-900 font-medium">Import Results</p>
@@ -293,7 +293,7 @@ export default function ClientsPage() {
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
           </div>
         ) : clients.length === 0 && !loading ? (
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-sm">
             <CardContent className="p-8 text-center">
               <Users className="mx-auto mb-3 text-slate-500/40" size={32} />
               <p className="text-slate-900 font-medium mb-1">No clients yet</p>
@@ -329,7 +329,7 @@ export default function ClientsPage() {
               const cid = client.id || client._id;
               return (
               <Link key={cid} to={`/clients/${cid}`} className="block">
-              <Card className="bg-white border-slate-200 hover:border-blue-600/50 transition-all">
+              <Card className="bg-white border-slate-200 hover:border-blue-300 hover:shadow-md transition-all">
                 <CardContent className="p-4 flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <p className="text-slate-900 font-medium">{client.client_name || client.name || "Unnamed Client"}</p>

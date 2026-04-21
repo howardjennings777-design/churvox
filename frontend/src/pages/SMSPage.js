@@ -109,7 +109,7 @@ export default function SMSPage() {
         </div>
 
         {/* Balance Card */}
-        <Card className={`border ${lowCredit ? "bg-yellow-900/20 border-yellow-500/30" : "bg-white border-slate-200"}`} data-testid="sms-balance-card">
+        <Card className={`border ${lowCredit ? "bg-yellow-900/20 border-yellow-500/30" : "bg-white border-slate-200 shadow-sm"}`} data-testid="sms-balance-card">
           <CardContent className="p-5 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className={`p-3 rounded-lg ${lowCredit ? "bg-yellow-500/20 text-yellow-400" : "bg-blue-600/20 text-blue-600"}`}>
@@ -152,7 +152,7 @@ export default function SMSPage() {
         <div data-testid="sms-history">
           <h2 className="text-base font-semibold text-slate-900 mb-3">Recent Messages ({history.length})</h2>
           {history.length === 0 ? (
-            <Card className="bg-white border-slate-200">
+            <Card className="bg-white border-slate-200 shadow-sm">
               <CardContent className="p-6 text-center">
                 <Send size={24} className="mx-auto mb-2 text-slate-500/40" />
                 <p className="text-slate-500 text-sm mb-1">No messages sent yet</p>
@@ -162,7 +162,7 @@ export default function SMSPage() {
           ) : (
             <div className="space-y-2">
               {history.map((sms) => (
-                <Card key={sms.id} className="bg-white border-slate-200" data-testid={`sms-log-${sms.id}`}>
+                <Card key={sms.id} className="bg-white border-slate-200 shadow-sm" data-testid={`sms-log-${sms.id}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
@@ -196,18 +196,18 @@ export default function SMSPage() {
 
         {/* Send SMS Dialog */}
         <Dialog open={showSend} onOpenChange={setShowSend}>
-          <DialogContent className="bg-white border-slate-200" data-testid="send-sms-dialog">
+          <DialogContent className="bg-white border-slate-200 shadow-sm" data-testid="send-sms-dialog">
             <DialogHeader><DialogTitle className="text-slate-900">Send SMS</DialogTitle></DialogHeader>
             <form onSubmit={handleSend} className="space-y-4">
               <div>
                 <Label className="text-slate-500">Recipient Phone</Label>
-                <Input value={sendForm.recipient_phone} onChange={(e) => setSendForm({ ...sendForm, recipient_phone: e.target.value })} required placeholder="0400 000 000" className="bg-slate-50 border-slate-200 text-white" data-testid="sms-phone-input" />
+                <Input value={sendForm.recipient_phone} onChange={(e) => setSendForm({ ...sendForm, recipient_phone: e.target.value })} required placeholder="0400 000 000" className="bg-slate-50 border-slate-200 text-slate-900" data-testid="sms-phone-input" />
               </div>
               <div>
                 <Label className="text-slate-500">Message Type</Label>
                 <Select value={sendForm.message_type} onValueChange={(v) => setSendForm({ ...sendForm, message_type: v })}>
-                  <SelectTrigger className="bg-slate-50 border-slate-200 text-white" data-testid="sms-type-select"><SelectValue /></SelectTrigger>
-                  <SelectContent className="bg-white border-slate-200">
+                  <SelectTrigger className="bg-slate-50 border-slate-200 text-slate-900" data-testid="sms-type-select"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-white border-slate-200 shadow-sm">
                     {MSG_TYPES.map((t) => <SelectItem key={t.value} value={t.value} className="text-slate-900">{t.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -216,8 +216,8 @@ export default function SMSPage() {
                 <div>
                   <Label className="text-slate-500">Link to Job (optional)</Label>
                   <Select value={sendForm.job_id} onValueChange={(v) => setSendForm({ ...sendForm, job_id: v })}>
-                    <SelectTrigger className="bg-slate-50 border-slate-200 text-white" data-testid="sms-job-select"><SelectValue placeholder="Select job" /></SelectTrigger>
-                    <SelectContent className="bg-white border-slate-200">
+                    <SelectTrigger className="bg-slate-50 border-slate-200 text-slate-900" data-testid="sms-job-select"><SelectValue placeholder="Select job" /></SelectTrigger>
+                    <SelectContent className="bg-white border-slate-200 shadow-sm">
                       {jobs.slice(0, 20).map((j) => <SelectItem key={j.id} value={j.id} className="text-slate-900">{j.title} - {j.customer_name}</SelectItem>)}
                     </SelectContent>
                   </Select>
@@ -227,8 +227,8 @@ export default function SMSPage() {
                 <div>
                   <Label className="text-slate-500">Link to Invoice (optional)</Label>
                   <Select value={sendForm.invoice_id} onValueChange={(v) => setSendForm({ ...sendForm, invoice_id: v })}>
-                    <SelectTrigger className="bg-slate-50 border-slate-200 text-white" data-testid="sms-invoice-select"><SelectValue placeholder="Select invoice" /></SelectTrigger>
-                    <SelectContent className="bg-white border-slate-200">
+                    <SelectTrigger className="bg-slate-50 border-slate-200 text-slate-900" data-testid="sms-invoice-select"><SelectValue placeholder="Select invoice" /></SelectTrigger>
+                    <SelectContent className="bg-white border-slate-200 shadow-sm">
                       {invoices.slice(0, 20).map((i) => <SelectItem key={i.id} value={i.id} className="text-slate-900">{i.invoice_number} - {i.customer_name}</SelectItem>)}
                     </SelectContent>
                   </Select>
@@ -247,12 +247,12 @@ export default function SMSPage() {
 
         {/* Buy Credits Dialog */}
         <Dialog open={showBuy} onOpenChange={setShowBuy}>
-          <DialogContent className="bg-white border-slate-200" data-testid="buy-credits-dialog">
+          <DialogContent className="bg-white border-slate-200 shadow-sm" data-testid="buy-credits-dialog">
             <DialogHeader><DialogTitle className="text-slate-900">Buy SMS Credits</DialogTitle></DialogHeader>
             <div className="space-y-3">
               {PACKS.map((pack) => (
                 <button key={pack.id} onClick={() => handleBuy(pack.id)} disabled={loading} data-testid={`buy-pack-${pack.id}`}
-                  className="w-full flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl hover:border-blue-600/50 transition-all">
+                  className="w-full flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all">
                   <div>
                     <p className="text-slate-900 font-semibold">{pack.credits} credits</p>
                     <p className="text-xs text-slate-500">${(pack.price / pack.credits * 100).toFixed(0)}c per SMS</p>

@@ -57,7 +57,7 @@ export default function ClientDetailPage() {
         </div>
 
         {/* Client Info */}
-        <Card className="bg-white border-slate-200" data-testid="client-info-card">
+        <Card className="bg-white border-slate-200 shadow-sm" data-testid="client-info-card">
           <CardHeader className="pb-3">
             <CardTitle className="text-xl text-white">{client.name}</CardTitle>
           </CardHeader>
@@ -86,7 +86,7 @@ export default function ClientDetailPage() {
             <FileText size={16} /> Job History ({jobs.length})
           </h2>
           {jobs.length === 0 ? (
-            <Card className="bg-white border-slate-200">
+            <Card className="bg-white border-slate-200 shadow-sm">
               <CardContent className="p-6 text-center text-slate-500 text-sm">No jobs for this client yet</CardContent>
             </Card>
           ) : (
@@ -95,7 +95,7 @@ export default function ClientDetailPage() {
                 const statusInfo = JOB_STATUS_MAP[job.status];
                 return (
                   <Link key={job.id} to={`/jobs/${job.id}`} data-testid={`client-job-${job.id}`}
-                    className="block bg-white border border-slate-200 rounded-xl p-4 hover:border-blue-600/50 transition-all">
+                    className="block bg-white border border-slate-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-md transition-all">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-slate-900 font-medium">{job.title}</p>

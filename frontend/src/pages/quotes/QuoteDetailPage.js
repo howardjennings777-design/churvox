@@ -70,7 +70,7 @@ export default function QuoteDetailPage() {
         </div>
 
         {/* Quote Info */}
-        <Card className="bg-white border-slate-200" data-testid="quote-info-card">
+        <Card className="bg-white border-slate-200 shadow-sm" data-testid="quote-info-card">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl text-white">{quote.quote_number}</CardTitle>

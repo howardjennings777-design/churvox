@@ -182,7 +182,7 @@ export default function QuotesPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-xl font-semibold text-white">
+                      <span className="text-xl font-semibold text-slate-900">
                         {formatCurrency(quote.price)}
                       </span>
                       
@@ -240,7 +240,7 @@ export default function QuotesPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center" data-testid="delete-quote-dialog">
             <div className="absolute inset-0 bg-black/80" onClick={() => setDeleteId(null)} />
             <div className="relative z-10 w-full max-w-md mx-4 rounded-lg border bg-white border-slate-200 p-6 shadow-lg">
-              <h2 className="text-lg font-semibold text-white">Delete Quote</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Delete Quote</h2>
               <p className="mt-2 text-sm text-slate-500">Are you sure you want to delete this quote? This action cannot be undone.</p>
               <div className="mt-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
                 <button type="button" onClick={() => setDeleteId(null)}

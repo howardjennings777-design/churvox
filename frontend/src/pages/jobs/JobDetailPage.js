@@ -223,7 +223,7 @@ export default function JobDetailPage() {
     return (
       <Layout>
         <div className="p-4 md:p-6 max-w-4xl mx-auto">
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-sm">
             <CardContent className="p-6 text-white">Loading job...</CardContent>
           </Card>
         </div>
@@ -235,7 +235,7 @@ export default function JobDetailPage() {
     return (
       <Layout>
         <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4">
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-sm">
             <CardContent className="p-6">
               <div className="text-white text-lg font-semibold mb-2">Job page could not load</div>
               <div className="text-slate-500 text-sm">{error || "Job not found"}</div>
@@ -296,7 +296,7 @@ export default function JobDetailPage() {
           </div>
         </div>
 
-        <Card className="bg-white border-slate-200">
+        <Card className="bg-white border-slate-200 shadow-sm">
           <CardContent className="p-5 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -359,7 +359,7 @@ export default function JobDetailPage() {
         </Card>
 
         {isOwnerView && (
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-sm">
             <CardContent className="p-5 space-y-4">
               <div className="text-slate-900 font-semibold">Progress Summary</div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -417,7 +417,7 @@ export default function JobDetailPage() {
         )}
 
         {isOwnerView && !hasAssignedWorker && (
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-sm">
             <CardContent className="p-5 space-y-4">
               <div className="text-slate-900 font-semibold">Assign Worker</div>
 
@@ -467,7 +467,7 @@ export default function JobDetailPage() {
         )}
 
         {isWorker && currentStatus === "assigned" && (
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-sm">
             <CardContent className="p-5 space-y-4">
               <div className="text-slate-900 font-semibold">Worker Acceptance</div>
               <Button
@@ -482,7 +482,7 @@ export default function JobDetailPage() {
         )}
 
         {isWorker && (
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-sm">
             <CardContent className="p-5 space-y-4">
               <div className="text-slate-900 font-semibold">Update Status</div>
 
@@ -505,7 +505,7 @@ export default function JobDetailPage() {
         )}
 
         {isWorker && (
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-sm">
             <CardContent className="p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="text-slate-900 font-semibold">Worker Notes</div>
@@ -531,7 +531,7 @@ export default function JobDetailPage() {
         )}
 
         {isOwnerView && hasValue(job.worker_notes) && (
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-sm">
             <CardContent className="p-5 space-y-2">
               <div className="text-slate-900 font-semibold">Worker Notes</div>
               <div className="text-white whitespace-pre-wrap">{job.worker_notes}</div>

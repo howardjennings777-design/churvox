@@ -84,7 +84,7 @@ export default function InvoiceDetailPage() {
         </div>
 
         {/* Invoice Card */}
-        <Card className="bg-white border-slate-200" data-testid="invoice-card">
+        <Card className="bg-white border-slate-200 shadow-sm" data-testid="invoice-card">
           <CardContent className="p-6">
             {/* Header */}
             <div className="flex items-start justify-between mb-6">

@@ -280,7 +280,7 @@ export default function TeamPage() {
     return (
       <Layout>
         <div className="p-6">
-          <Card className="bg-white border-slate-200">
+          <Card className="bg-white border-slate-200 shadow-sm">
             <CardContent className="p-8 text-center">
               <Shield className="mx-auto mb-3 text-slate-500" size={40} />
               <p className="text-slate-500">Only employers can manage team members.</p>
@@ -300,7 +300,7 @@ export default function TeamPage() {
           <>
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
-                <h1 className="text-2xl font-bold text-white" data-testid="team-heading">Team</h1>
+                <h1 className="text-2xl font-bold text-slate-900" data-testid="team-heading">Team</h1>
                 <p className="text-sm text-slate-500 mt-1">
                   {workers.length} worker{workers.length !== 1 ? "s" : ""}
                   {planData && planData.max_workers >= 0 && (
@@ -355,9 +355,9 @@ export default function TeamPage() {
 
             {showAdd && (
               <Card className="bg-white border-slate-200 shadow-lg shadow-black/20">
-                <CardContent className="p-6 space-y-4 text-white">
+                <CardContent className="p-6 space-y-4 text-slate-900">
                   <div>
-                    <div className="text-lg font-semibold text-white">Invite Worker</div>
+                    <div className="text-lg font-semibold text-slate-900">Invite Worker</div>
                     <div className="text-sm text-slate-500 mt-1">
                       Add a worker with country and region/state for assignment matching.
                     </div>
@@ -371,7 +371,7 @@ export default function TeamPage() {
                         value={form.name}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
                         required
-                        className="bg-slate-50 border-slate-200 text-white"
+                        className="bg-slate-50 border-slate-200 text-slate-900"
                       />
                     </div>
 
@@ -383,7 +383,7 @@ export default function TeamPage() {
                         value={form.email}
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
                         required
-                        className="bg-slate-50 border-slate-200 text-white"
+                        className="bg-slate-50 border-slate-200 text-slate-900"
                       />
                     </div>
 
@@ -393,7 +393,7 @@ export default function TeamPage() {
                         id="worker-phone-inline"
                         value={form.phone}
                         onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                        className="bg-slate-50 border-slate-200 text-white"
+                        className="bg-slate-50 border-slate-200 text-slate-900"
                       />
                     </div>
 
@@ -469,7 +469,7 @@ export default function TeamPage() {
             {selectedWorker && (
               <Card className="bg-white border-slate-200 shadow-lg shadow-black/20 overflow-hidden">
                 <div className="h-1 w-full bg-blue-600/80" />
-                <CardContent className="p-6 space-y-5 text-white">
+                <CardContent className="p-6 space-y-5 text-slate-900">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -637,10 +637,10 @@ export default function TeamPage() {
             )}
 
             {importResults && (
-              <Card className="bg-white border-slate-200" data-testid="csv-import-results">
+              <Card className="bg-white border-slate-200 shadow-sm" data-testid="csv-import-results">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-white">Import Results</p>
+                    <p className="text-sm font-medium text-slate-900">Import Results</p>
                     <button onClick={() => setImportResults(null)} className="text-slate-500 hover:text-slate-900 text-xs">
                       Dismiss
                     </button>
@@ -666,7 +666,7 @@ export default function TeamPage() {
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
               </div>
             ) : workers.length === 0 && !loading ? (
-              <Card className="bg-white border-slate-200">
+              <Card className="bg-white border-slate-200 shadow-sm">
                 <CardContent className="p-8 text-center">
                   <UserPlus className="mx-auto mb-3 text-slate-500/40" size={32} />
                   <p className="text-slate-900 font-medium mb-1">No team members yet</p>

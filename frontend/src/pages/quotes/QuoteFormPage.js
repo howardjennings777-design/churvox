@@ -102,7 +102,7 @@ export default function QuoteFormPage() {
           <ArrowLeft size={18} /> Quotes
         </button>
 
-        <Card className="bg-white border-slate-200">
+        <Card className="bg-white border-slate-200 shadow-sm">
           <CardHeader><CardTitle className="text-slate-900">{isEditing ? "Edit Quote" : "New Quote"}</CardTitle></CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -110,14 +110,14 @@ export default function QuoteFormPage() {
                 <div>
                   <Label className="text-slate-500">Client</Label>
                   <Select value={form.client_id} onValueChange={handleClientChange}>
-                    <SelectTrigger className="bg-slate-50 border-slate-200 text-white" data-testid="quote-client-select"><SelectValue placeholder="Select client" /></SelectTrigger>
-                    <SelectContent className="bg-white border-slate-200">{clients.map((c) => <SelectItem key={c.id} value={c.id} className="text-slate-900">{c.name}</SelectItem>)}</SelectContent>
+                    <SelectTrigger className="bg-slate-50 border-slate-200 text-slate-900" data-testid="quote-client-select"><SelectValue placeholder="Select client" /></SelectTrigger>
+                    <SelectContent className="bg-white border-slate-200 shadow-sm">{clients.map((c) => <SelectItem key={c.id} value={c.id} className="text-slate-900">{c.name}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div>
                   <Label className="text-slate-500">Job Type</Label>
                   <Select value={form.job_type} onValueChange={(v) => setForm({ ...form, job_type: v })}>
-                    <SelectTrigger className="bg-slate-50 border-slate-200 text-white" data-testid="quote-job-type"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="bg-slate-50 border-slate-200 text-slate-900" data-testid="quote-job-type"><SelectValue /></SelectTrigger>
                     <SelectContent className="bg-white border-slate-200 max-h-60">
                       {Object.entries(JOB_TYPES_BY_CATEGORY).map(([cat, types]) => (
                         <SelectGroup key={cat}><SelectLabel className="text-slate-500 text-xs">{cat}</SelectLabel>
@@ -131,27 +131,27 @@ export default function QuoteFormPage() {
 
               <div>
                 <Label className="text-slate-500">Customer Name</Label>
-                <Input value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} required className="bg-slate-50 border-slate-200 text-white" data-testid="quote-customer-name" />
+                <Input value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} required className="bg-slate-50 border-slate-200 text-slate-900" data-testid="quote-customer-name" />
               </div>
               <div>
                 <Label className="text-slate-500">Customer Email</Label>
-                <Input type="email" value={form.customer_email} onChange={(e) => setForm({ ...form, customer_email: e.target.value })} className="bg-slate-50 border-slate-200 text-white" data-testid="quote-customer-email" />
+                <Input type="email" value={form.customer_email} onChange={(e) => setForm({ ...form, customer_email: e.target.value })} className="bg-slate-50 border-slate-200 text-slate-900" data-testid="quote-customer-email" />
               </div>
               <div>
                 <Label className="text-slate-500">Address</Label>
-                <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required className="bg-slate-50 border-slate-200 text-white" data-testid="quote-address" />
+                <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required className="bg-slate-50 border-slate-200 text-slate-900" data-testid="quote-address" />
               </div>
               <div>
                 <Label className="text-slate-500">Job Description</Label>
-                <Textarea value={form.job_description} onChange={(e) => setForm({ ...form, job_description: e.target.value })} required className="bg-slate-50 border-slate-200 text-white" rows={3} data-testid="quote-description" />
+                <Textarea value={form.job_description} onChange={(e) => setForm({ ...form, job_description: e.target.value })} required className="bg-slate-50 border-slate-200 text-slate-900" rows={3} data-testid="quote-description" />
               </div>
 
               {/* Pricing */}
               <div className="pt-3 border-t border-slate-200">
                 <Label className="text-slate-500">Pricing Type</Label>
                 <Select value={form.pricing_type} onValueChange={(v) => setForm({ ...form, pricing_type: v })}>
-                  <SelectTrigger className="bg-slate-50 border-slate-200 text-white" data-testid="quote-pricing-type"><SelectValue /></SelectTrigger>
-                  <SelectContent className="bg-white border-slate-200">
+                  <SelectTrigger className="bg-slate-50 border-slate-200 text-slate-900" data-testid="quote-pricing-type"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-white border-slate-200 shadow-sm">
                     {PRICING_TYPES.map((p) => <SelectItem key={p.value} value={p.value} className="text-slate-900">{p.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -161,18 +161,18 @@ export default function QuoteFormPage() {
                 {showFixed && (
                   <div>
                     <Label className="text-slate-500">Price ($)</Label>
-                    <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="bg-slate-50 border-slate-200 text-white" data-testid="quote-price" />
+                    <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="bg-slate-50 border-slate-200 text-slate-900" data-testid="quote-price" />
                   </div>
                 )}
                 {showHourly && (
                   <div>
                     <Label className="text-slate-500">Hourly Rate ($)</Label>
-                    <Input type="number" step="0.01" value={form.hourly_rate} onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })} className="bg-slate-50 border-slate-200 text-white" data-testid="quote-hourly-rate" />
+                    <Input type="number" step="0.01" value={form.hourly_rate} onChange={(e) => setForm({ ...form, hourly_rate: e.target.value })} className="bg-slate-50 border-slate-200 text-slate-900" data-testid="quote-hourly-rate" />
                   </div>
                 )}
                 <div>
                   <Label className="text-slate-500">Valid Until</Label>
-                  <Input type="date" value={form.valid_until} onChange={(e) => setForm({ ...form, valid_until: e.target.value })} className="bg-slate-50 border-slate-200 text-white" data-testid="quote-valid-until" />
+                  <Input type="date" value={form.valid_until} onChange={(e) => setForm({ ...form, valid_until: e.target.value })} className="bg-slate-50 border-slate-200 text-slate-900" data-testid="quote-valid-until" />
                 </div>
               </div>
 
@@ -184,8 +184,8 @@ export default function QuoteFormPage() {
                   </div>
                   {form.extras.map((ex, i) => (
                     <div key={i} className="flex gap-2 items-center">
-                      <Input value={ex.description} onChange={(e) => updateExtra(i, "description", e.target.value)} placeholder="Description" className="flex-1 bg-slate-50 border-slate-200 text-white" data-testid={`quote-extra-desc-${i}`} />
-                      <Input type="number" step="0.01" value={ex.amount} onChange={(e) => updateExtra(i, "amount", e.target.value)} placeholder="$" className="w-24 bg-slate-50 border-slate-200 text-white" data-testid={`quote-extra-amount-${i}`} />
+                      <Input value={ex.description} onChange={(e) => updateExtra(i, "description", e.target.value)} placeholder="Description" className="flex-1 bg-slate-50 border-slate-200 text-slate-900" data-testid={`quote-extra-desc-${i}`} />
+                      <Input type="number" step="0.01" value={ex.amount} onChange={(e) => updateExtra(i, "amount", e.target.value)} placeholder="$" className="w-24 bg-slate-50 border-slate-200 text-slate-900" data-testid={`quote-extra-amount-${i}`} />
                       <button type="button" onClick={() => removeExtra(i)} className="text-red-400 hover:text-red-300"><Trash2 size={14} /></button>
                     </div>
                   ))}
@@ -194,7 +194,7 @@ export default function QuoteFormPage() {
 
               <div>
                 <Label className="text-slate-500">Notes</Label>
-                <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="bg-slate-50 border-slate-200 text-white" rows={2} data-testid="quote-notes" />
+                <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="bg-slate-50 border-slate-200 text-slate-900" rows={2} data-testid="quote-notes" />
               </div>
 
               <div className="flex gap-3 pt-2">

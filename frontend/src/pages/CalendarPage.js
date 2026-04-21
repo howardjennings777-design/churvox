@@ -58,7 +58,7 @@ export default function CalendarPage() {
       <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4" data-testid="calendar-page">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white" data-testid="calendar-heading">Calendar</h1>
+            <h1 className="text-2xl font-bold text-slate-900" data-testid="calendar-heading">Calendar</h1>
             <p className="text-xs text-slate-500 mt-0.5">{monthJobCount} job{monthJobCount !== 1 ? "s" : ""} this month</p>
           </div>
           {isEmployer && (
@@ -69,13 +69,13 @@ export default function CalendarPage() {
         </div>
 
         {/* Month Navigation */}
-        <Card className="bg-white border-slate-200">
+        <Card className="bg-white border-slate-200 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
               <button onClick={() => setCurrentDate(new Date(year, month - 1))} className="p-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-blue-50" data-testid="calendar-prev">
                 <ChevronLeft size={20} />
               </button>
-              <h2 className="text-lg font-semibold text-white" data-testid="calendar-month">
+              <h2 className="text-lg font-semibold text-slate-900" data-testid="calendar-month">
                 {MONTH_NAMES[month]} {year}
               </h2>
               <button onClick={() => setCurrentDate(new Date(year, month + 1))} className="p-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-blue-50" data-testid="calendar-next">
@@ -102,9 +102,8 @@ export default function CalendarPage() {
                 return (
                   <button key={day} onClick={() => setSelectedDate(day)} data-testid={`calendar-day-${day}`}
                     className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm transition-all relative
-                      ${isToday(day) ? "ring-1 ring-churvox-accent" : ""}
-                      ${selected ? "bg-blue-600 text-white" : "hover:bg-blue-50 text-white"}
-                    `}>
+                      ${isToday(day) ? "ring-1 ring-blue-500" : ""}
+                      ${selected ? "bg-blue-600 text-white" : "hover:bg-blue-50 text-slate-700"}`}>
                     {day}
                     {hasJobs && (
                       <div className="flex gap-0.5 mt-0.5">
@@ -128,7 +127,7 @@ export default function CalendarPage() {
             {MONTH_NAMES[month]} {selectedDate} — {selectedJobs.length} job{selectedJobs.length !== 1 ? "s" : ""}
           </h3>
           {selectedJobs.length === 0 ? (
-            <Card className="bg-white border-slate-200">
+            <Card className="bg-white border-slate-200 shadow-sm">
               <CardContent className="p-8 text-center">
                 <Briefcase size={24} className="mx-auto mb-2 text-slate-500/50" />
                 <p className="text-slate-500 text-sm">No jobs scheduled</p>

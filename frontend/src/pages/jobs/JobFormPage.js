@@ -200,7 +200,7 @@ export default function JobFormPage() {
           <p className="text-sm text-slate-500 mt-1">Create or update a job.</p>
         </div>
 
-        <Card className="bg-white border-slate-200">
+        <Card className="bg-white border-slate-200 shadow-sm">
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>

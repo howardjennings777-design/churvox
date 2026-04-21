@@ -69,7 +69,7 @@ export default function JobsPage() {
             <SelectTrigger className="w-40 bg-white border-slate-200 text-slate-900" data-testid="jobs-status-filter">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
-            <SelectContent className="bg-white border-slate-200">
+            <SelectContent className="bg-white border-slate-200 shadow-sm">
               <SelectItem value="all">All</SelectItem>
               {JOB_STATUSES.map((s) => (
                 <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
