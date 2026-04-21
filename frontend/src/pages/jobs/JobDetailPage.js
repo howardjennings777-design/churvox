@@ -534,7 +534,43 @@ export default function JobDetailPage() {
           <Card className="bg-white border-slate-200 shadow-sm">
             <CardContent className="p-5 space-y-2">
               <div className="text-slate-900 font-semibold">Worker Notes</div>
-              <div className="text-white whitespace-pre-wrap">{job.worker_notes}</div>
+              <div className="text-slate-700 whitespace-pre-wrap">{job.worker_notes}</div>
+            </CardContent>
+          </Card>
+        )}
+
+        {isOwnerView && Array.isArray(job.photos) && job.photos.length > 0 && (
+          <Card className="bg-white border-slate-200 shadow-sm" data-testid="owner-photos-card">
+            <CardContent className="p-5 space-y-3">
+              <div className="text-slate-900 font-semibold">Worker Photos</div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {job.photos.map((src, idx) => (
+                  <a key={idx} href={src} target="_blank" rel="noreferrer">
+                    <img src={src} alt={`Job photo ${idx + 1}`} className="w-full h-28 object-cover rounded-lg border border-slate-200" />
+                  </a>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {isOwnerView && (job.location_status || job.start_lat != null) && (
+          <Card className="bg-white border-slate-200 shadow-sm" data-testid="owner-gps-card">
+            <CardContent className="p-5 space-y-2">
+              <div className="text-slate-900 font-semibold">Start Location</div>
+              <div className="text-sm text-slate-600">
+                Status: <span className="font-medium">{job.location_status || "unknown"}</span>
+              </div>
+              {job.start_lat != null && job.start_lng != null && (
+                <div className="text-sm text-slate-600">
+                  Coords: {Number(job.start_lat).toFixed(5)}, {Number(job.start_lng).toFixed(5)}
+                  {" · "}
+                  <a className="text-blue-600 hover:underline" href={`https://www.google.com/maps?q=${job.start_lat},${job.start_lng}`} target="_blank" rel="noreferrer">open in Google Maps</a>
+                </div>
+              )}
+              {job.location_captured_at && (
+                <div className="text-xs text-slate-400">Captured: {safeDate(job.location_captured_at)}</div>
+              )}
             </CardContent>
           </Card>
         )}

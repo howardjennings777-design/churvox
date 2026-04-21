@@ -2722,8 +2722,30 @@ async def get_team_workers(current_user: dict = Depends(get_current_user)):
     docs = []
     async for worker in db.business_users.find(query).sort("created_at", -1):
         try:
+            worker_id = str(worker.get("id") or worker.get("_id") or "")
+            assigned_jobs = []
+            if worker_id:
+                # Cheap per-worker lookup — keeps the existing Team UI populated
+                async for j in db.jobs.find({
+                    "assigned_worker_id": worker_id,
+                    "$or": [
+                        {"business_id": business_id},
+                        {"business_id": str(business_id)},
+                        {"owner_id": owner_id},
+                    ]
+                }).sort("scheduled_date", -1).limit(50):
+                    assigned_jobs.append({
+                        "id": str(j.get("_id")),
+                        "title": j.get("title") or j.get("job_type") or "Job",
+                        "job_type": j.get("job_type"),
+                        "client_name": j.get("client_name") or j.get("customer_name") or "",
+                        "address": j.get("address") or "",
+                        "status": j.get("status") or "assigned",
+                        "scheduled_date": safe_iso(j.get("scheduled_date")),
+                    })
+
             docs.append({
-                "id": str(worker.get("id") or worker.get("_id") or ""),
+                "id": worker_id,
                 "name": worker.get("name") or "Unnamed Worker",
                 "email": worker.get("email") or "",
                 "phone": worker.get("phone") or "",
@@ -2733,6 +2755,7 @@ async def get_team_workers(current_user: dict = Depends(get_current_user)):
                 "notes": worker.get("notes") or "",
                 "role": worker.get("role", "worker"),
                 "status": worker.get("status", "invited"),
+                "assigned_jobs": assigned_jobs,
                 "business_id": str(worker.get("business_id")) if worker.get("business_id") is not None else None,
                 "created_at": safe_iso(worker.get("created_at")),
                 "updated_at": safe_iso(worker.get("updated_at")),
@@ -2931,6 +2954,11 @@ async def get_job(job_id: str, current_user: dict = Depends(get_current_user)):
             "is_recurring": bool(job.get("is_recurring") or False),
             "recurring_frequency": job.get("recurring_frequency"),
             "custom_repeat_days": job.get("custom_repeat_days"),
+            "photos": job.get("photos") or [],
+            "start_lat": job.get("start_lat"),
+            "start_lng": job.get("start_lng"),
+            "location_status": job.get("location_status") or "",
+            "location_captured_at": safe_iso(job.get("location_captured_at")),
             "business_id": str(job.get("business_id")) if job.get("business_id") is not None else None,
             "created_at": safe_iso(job.get("created_at")),
             "updated_at": safe_iso(job.get("updated_at")),
@@ -3269,8 +3297,19 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
     if current_role == "worker":
         new_status = str(payload.get("status") or "").strip().lower()
         worker_notes = payload.get("worker_notes")
-        if not new_status and worker_notes is None:
-            raise HTTPException(status_code=403, detail="Workers can only update status or worker notes")
+        new_photos = payload.get("photos")
+        start_lat = payload.get("start_lat")
+        start_lng = payload.get("start_lng")
+        location_status = payload.get("location_status")
+
+        if (
+            not new_status
+            and worker_notes is None
+            and new_photos is None
+            and start_lat is None
+            and start_lng is None
+        ):
+            raise HTTPException(status_code=403, detail="Workers can only update status, notes, photos, or start location")
 
         update_fields = {"updated_at": now}
         if new_status:
@@ -3286,6 +3325,23 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
                 update_fields["completed_at"] = now
         if worker_notes is not None:
             update_fields["worker_notes"] = str(worker_notes).strip()
+        if new_photos is not None and isinstance(new_photos, list):
+            # Only accept reasonably-sized base64 data URLs; cap at 10 images per job
+            clean_photos = []
+            for p in new_photos[:10]:
+                if isinstance(p, str) and p.startswith("data:image/") and len(p) < 4_500_000:
+                    clean_photos.append(p)
+            update_fields["photos"] = clean_photos
+        if start_lat is not None and start_lng is not None:
+            try:
+                update_fields["start_lat"] = float(start_lat)
+                update_fields["start_lng"] = float(start_lng)
+                update_fields["location_status"] = str(location_status or "captured").strip().lower()[:32]
+                update_fields["location_captured_at"] = now
+            except Exception:
+                pass
+        elif location_status is not None:
+            update_fields["location_status"] = str(location_status).strip().lower()[:32]
 
         await db.jobs.update_one({"_id": obj_id}, {"$set": update_fields})
         return {"success": True, "message": "Job updated"}

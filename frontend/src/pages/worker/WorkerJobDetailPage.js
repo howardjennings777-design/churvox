@@ -2,10 +2,35 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/context/AuthContext";
-import { ArrowLeft, MapPin, Clock, User, FileText, CheckCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, User, FileText, CheckCircle, Camera, X } from "lucide-react";
 import { toast } from "sonner";
 
 const WORKER_STATUSES = ["acknowledged", "in_progress", "paused", "completed"];
+
+async function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function captureLocation(timeoutMs = 8000) {
+  if (!("geolocation" in navigator)) {
+    return { status: "unavailable" };
+  }
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (v) => { if (!done) { done = true; resolve(v); } };
+    const timer = setTimeout(() => finish({ status: "timeout" }), timeoutMs);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { clearTimeout(timer); finish({ status: "captured", lat: pos.coords.latitude, lng: pos.coords.longitude }); },
+      (err) => { clearTimeout(timer); finish({ status: err?.code === 1 ? "denied" : "error" }); },
+      { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 0 }
+    );
+  });
+}
 
 export default function WorkerJobDetailPage() {
   const { id } = useParams();
@@ -16,6 +41,7 @@ export default function WorkerJobDetailPage() {
   const [saving, setSaving] = useState(false);
   const [workerNotes, setWorkerNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const loadJob = useCallback(async () => {
     setLoading(true);
@@ -31,7 +57,18 @@ export default function WorkerJobDetailPage() {
 
   const handleStatus = async (status) => {
     setSaving(true);
-    const res = await patch(`/jobs/${id}`, { status });
+    const body = { status };
+    if (status === "in_progress") {
+      const loc = await captureLocation();
+      if (loc.status === "captured") {
+        body.start_lat = loc.lat;
+        body.start_lng = loc.lng;
+        body.location_status = "captured";
+      } else {
+        body.location_status = loc.status;
+      }
+    }
+    const res = await patch(`/jobs/${id}`, body);
     if (res?.success) {
       toast.success(`Job ${status.replace(/_/g, " ")}`);
       await loadJob();
@@ -61,6 +98,40 @@ export default function WorkerJobDetailPage() {
     if (res?.success) { toast.success("Notes saved"); await loadJob(); }
     else toast.error("Failed to save notes");
     setSavingNotes(false);
+  };
+
+  const handleAddPhoto = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image");
+      return;
+    }
+    if (file.size > 4_000_000) {
+      toast.error("Image too large (max 4MB)");
+      return;
+    }
+    setUploadingPhoto(true);
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const existing = Array.isArray(job?.photos) ? job.photos : [];
+      const next = [...existing, dataUrl].slice(-10);
+      const res = await patch(`/jobs/${id}`, { photos: next });
+      if (res?.success) { toast.success("Photo added"); await loadJob(); }
+      else toast.error(res?.error || "Failed to upload");
+    } catch (err) {
+      toast.error("Could not read image");
+    }
+    setUploadingPhoto(false);
+  };
+
+  const handleRemovePhoto = async (idx) => {
+    const existing = Array.isArray(job?.photos) ? job.photos : [];
+    const next = existing.filter((_, i) => i !== idx);
+    const res = await patch(`/jobs/${id}`, { photos: next });
+    if (res?.success) { toast.success("Photo removed"); await loadJob(); }
+    else toast.error("Failed to remove");
   };
 
   if (loading) return (
@@ -154,6 +225,32 @@ export default function WorkerJobDetailPage() {
             data-testid="worker-notes-textarea" />
         </div>
 
+        {/* Photos */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3" data-testid="worker-photos-section">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-slate-700">Job Photos</p>
+            <label className="text-sm font-medium text-blue-600 hover:text-blue-700 cursor-pointer inline-flex items-center gap-1" data-testid="add-photo-label">
+              <Camera className="h-4 w-4" />
+              {uploadingPhoto ? "Uploading..." : "Add photo"}
+              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleAddPhoto} disabled={uploadingPhoto} data-testid="worker-photo-input" />
+            </label>
+          </div>
+          {Array.isArray(job.photos) && job.photos.length > 0 ? (
+            <div className="grid grid-cols-3 gap-2">
+              {job.photos.map((src, idx) => (
+                <div key={idx} className="relative group">
+                  <img src={src} alt={`Job photo ${idx + 1}`} className="w-full h-24 object-cover rounded-lg border border-slate-200" />
+                  <button type="button" onClick={() => handleRemovePhoto(idx)} className="absolute top-1 right-1 bg-white/90 rounded-full p-1 border border-slate-200 opacity-0 group-hover:opacity-100 transition" aria-label="Remove photo" data-testid={`remove-photo-${idx}`}>
+                    <X className="h-3 w-3 text-slate-600" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400">No photos yet. Add one after starting the job.</p>
+          )}
+        </div>
+
         {/* Progress info */}
         {(job.accepted_at || job.started_at || job.completed_at) && (
           <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-2">
@@ -161,6 +258,14 @@ export default function WorkerJobDetailPage() {
             {job.accepted_at && <p className="text-xs text-slate-400">Accepted: {new Date(job.accepted_at).toLocaleString()}</p>}
             {job.started_at && <p className="text-xs text-slate-400">Started: {new Date(job.started_at).toLocaleString()}</p>}
             {job.completed_at && <p className="text-xs text-slate-400">Completed: {new Date(job.completed_at).toLocaleString()}</p>}
+            {job.location_status && (
+              <p className="text-xs text-slate-400">
+                Start location: {job.location_status}
+                {job.start_lat != null && job.start_lng != null && (
+                  <> · <a className="text-blue-600 hover:underline" href={`https://www.google.com/maps?q=${job.start_lat},${job.start_lng}`} target="_blank" rel="noreferrer">view on map</a></>
+                )}
+              </p>
+            )}
           </div>
         )}
       </main>
