@@ -59,7 +59,7 @@ function getRegionOptions(country) {
 
 export default function TeamPage() {
   const navigate = useNavigate();
-  const { user, isEmployer, loading: authLoading } = useAuth();
+  const { user, isEmployer, isOwnerUser, loading: authLoading } = useAuth();
   const { get, post, del, patch, loading } = useApi();
   const {
     plan,
@@ -69,7 +69,7 @@ export default function TeamPage() {
   } = usePlanLimits(user?.plan);
 
   const safePlan = normalizePlan(user?.plan || plan);
-  const canUseOwnerCsv = !!isEmployer && hasPlanAccess(safePlan, "team");
+  const canUseOwnerCsv = !!isEmployer && (isOwnerUser || hasPlanAccess(safePlan, "team"));
 
   const [workers, setWorkers] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
@@ -95,6 +95,7 @@ export default function TeamPage() {
   };
 
   const canAddWorker = (currentCount) => {
+    if (isOwnerUser) return true;
     const included = Number(includedUsers || 1);
     return currentCount < included;
   };
@@ -293,7 +294,7 @@ export default function TeamPage() {
   return (
     <Layout>
       <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6" data-testid="team-page">
-        {!isFeatureEnabled("team") ? (
+        {!isOwnerUser && !isFeatureEnabled("team") ? (
           <UpgradePrompt feature="team" message="Team management requires a Team plan or higher." />
         ) : (
           <>

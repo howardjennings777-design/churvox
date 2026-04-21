@@ -31,7 +31,7 @@ export default function Layout({ children }) {
   ].filter(Boolean);
 
   const moreItems = [
-    canAccess(role, "team") && hasPlanAccess(safePlan, "team") && { path: "/team", label: "Team", icon: UserPlus },
+    canAccess(role, "team") && (isOwnerUser || hasPlanAccess(safePlan, "team")) && { path: "/team", label: "Team", icon: UserPlus },
     canAccess(role, "quotes") && { path: "/quotes", label: "Quotes", icon: FileText },
     canAccess(role, "invoices") && { path: "/invoices", label: "Invoices", icon: Receipt },
     canAccess(role, "payroll") && { path: "/payroll", label: "Payroll", icon: DollarSign },
