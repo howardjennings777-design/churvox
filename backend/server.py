@@ -3325,13 +3325,25 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
                 update_fields["completed_at"] = now
         if worker_notes is not None:
             update_fields["worker_notes"] = str(worker_notes).strip()
-        if new_photos is not None and isinstance(new_photos, list):
-            # Only accept reasonably-sized base64 data URLs; cap at 10 images per job
-            clean_photos = []
-            for p in new_photos[:10]:
-                if isinstance(p, str) and p.startswith("data:image/") and len(p) < 4_500_000:
-                    clean_photos.append(p)
-            update_fields["photos"] = clean_photos
+        if new_photos is not None:
+            # Explicit validation — never silently drop. Fail the whole request with a
+            # clear error so the frontend can show it. An empty list is a valid "remove all".
+            if not isinstance(new_photos, list):
+                raise HTTPException(status_code=400, detail="photos must be an array")
+            if len(new_photos) > 10:
+                raise HTTPException(status_code=400, detail="Maximum 10 photos per job")
+            validated_photos = []
+            for idx, p in enumerate(new_photos):
+                if not isinstance(p, str) or not p.startswith("data:image/"):
+                    raise HTTPException(status_code=400, detail=f"Photo #{idx + 1} is not a valid image data URL")
+                # base64 chars — cap roughly matches a ~4MB image after encoding
+                if len(p) > 6_000_000:
+                    raise HTTPException(
+                        status_code=413,
+                        detail=f"Photo #{idx + 1} is too large. Please choose an image under ~4MB.",
+                    )
+                validated_photos.append(p)
+            update_fields["photos"] = validated_photos
         if start_lat is not None and start_lng is not None:
             try:
                 update_fields["start_lat"] = float(start_lat)
@@ -3344,7 +3356,11 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
             update_fields["location_status"] = str(location_status).strip().lower()[:32]
 
         await db.jobs.update_one({"_id": obj_id}, {"$set": update_fields})
-        return {"success": True, "message": "Job updated"}
+        # Echo persisted photos (if touched) so the client can trust the response
+        response_body = {"success": True, "message": "Job updated"}
+        if "photos" in update_fields:
+            response_body["photos"] = update_fields["photos"]
+        return response_body
 
     def to_int(value, default=0):
         try:

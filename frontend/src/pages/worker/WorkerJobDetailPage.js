@@ -108,18 +108,35 @@ export default function WorkerJobDetailPage() {
       toast.error("Please choose an image");
       return;
     }
+    // Raw bytes cap ≈ 4MB so the base64-encoded string stays within the backend limit
     if (file.size > 4_000_000) {
-      toast.error("Image too large (max 4MB)");
+      toast.error("Image too large (max 4MB). Please retake or resize.");
+      return;
+    }
+    const existing = Array.isArray(job?.photos) ? job.photos : [];
+    if (existing.length >= 10) {
+      toast.error("Maximum 10 photos per job");
       return;
     }
     setUploadingPhoto(true);
     try {
       const dataUrl = await fileToDataUrl(file);
-      const existing = Array.isArray(job?.photos) ? job.photos : [];
-      const next = [...existing, dataUrl].slice(-10);
+      // Double-check the encoded size before sending — matches backend 6MB cap
+      if (typeof dataUrl !== "string" || dataUrl.length > 6_000_000) {
+        toast.error("Image too large after encoding. Please resize and try again.");
+        setUploadingPhoto(false);
+        return;
+      }
+      const next = [...existing, dataUrl];
       const res = await patch(`/jobs/${id}`, { photos: next });
-      if (res?.success) { toast.success("Photo added"); await loadJob(); }
-      else toast.error(res?.error || "Failed to upload");
+      if (res?.success) {
+        // Trust the backend's echoed photos list so the UI is accurate without a refetch
+        const saved = Array.isArray(res.data?.photos) ? res.data.photos : next;
+        setJob((prev) => (prev ? { ...prev, photos: saved } : prev));
+        toast.success("Photo added");
+      } else {
+        toast.error(res?.error || "Failed to upload photo");
+      }
     } catch (err) {
       toast.error("Could not read image");
     }
@@ -130,8 +147,13 @@ export default function WorkerJobDetailPage() {
     const existing = Array.isArray(job?.photos) ? job.photos : [];
     const next = existing.filter((_, i) => i !== idx);
     const res = await patch(`/jobs/${id}`, { photos: next });
-    if (res?.success) { toast.success("Photo removed"); await loadJob(); }
-    else toast.error("Failed to remove");
+    if (res?.success) {
+      const saved = Array.isArray(res.data?.photos) ? res.data.photos : next;
+      setJob((prev) => (prev ? { ...prev, photos: saved } : prev));
+      toast.success("Photo removed");
+    } else {
+      toast.error(res?.error || "Failed to remove photo");
+    }
   };
 
   if (loading) return (
