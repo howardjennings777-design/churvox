@@ -286,3 +286,9 @@ credentials.json
 *.pem
 *.key
 .credentials
+
+# Backend backup snapshots — must never be committed
+backend/*.bak*
+backend/*.before_*
+*.bak
+*.bak_*

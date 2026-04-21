@@ -2,7 +2,6 @@ import os
 import json
 import urllib.request
 import urllib.error
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
 import asyncio
 from passlib.context import CryptContext
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
@@ -307,7 +306,6 @@ STRIPE_PRICE_SOLO = os.environ.get("STRIPE_PRICE_SOLO", "")
 STRIPE_PRICE_TEAM = os.environ.get("STRIPE_PRICE_TEAM", "")
 STRIPE_PRICE_PRO = os.environ.get("STRIPE_PRICE_PRO", "")
 STRIPE_PRICE_ENTERPRISE = os.environ.get("STRIPE_PRICE_ENTERPRISE", "")
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com")
 
 stripe.api_key = STRIPE_SECRET_KEY
 
@@ -1064,74 +1062,6 @@ async def logout(response: Response):
     clear_auth_cookies(response)
     return {"message": "Logged out successfully"}
 
-@api_router.post("/auth/signup")
-async def signup(payload: dict):
-    email = str((payload or {}).get("email") or "").strip().lower()
-    password = str((payload or {}).get("password") or "").strip()
-    name = str((payload or {}).get("name") or "").strip()
-    business_name = str((payload or {}).get("business_name") or (payload or {}).get("businessName") or name or "My Business").strip()
-    industry = str((payload or {}).get("industry") or "Other").strip()
-
-    if not email or not password or not name:
-        raise HTTPException(status_code=400, detail="Name, email, and password are required")
-
-    existing_user = await db.users.find_one({"email": email})
-    if existing_user:
-        raise HTTPException(status_code=400, detail="An account with this email already exists")
-
-    now = datetime.utcnow()
-    password_hash = pwd_context.hash(password)
-
-    business_doc = {
-        "name": business_name,
-        "business_name": business_name,
-        "email": email,
-        "industry": industry,
-        "plan": None,
-        "status": "active",
-        "created_at": now,
-        "updated_at": now,
-    }
-    business_result = await db.businesses.insert_one(business_doc)
-    business_id = str(business_result.inserted_id)
-
-    user_doc = {
-        "name": name,
-        "email": email,
-        "password_hash": password_hash,
-        "role": "employer",
-        "business_id": business_id,
-        "industry": industry,
-        "plan": None,
-        "status": "active",
-        "created_at": now,
-        "updated_at": now,
-    }
-    user_result = await db.users.insert_one(user_doc)
-    user_id = str(user_result.inserted_id)
-
-    token = create_access_token({
-        "sub": email,
-        "email": email,
-        "role": "owner",
-        "business_id": business_id,
-        "user_id": user_id,
-    })
-
-    return {
-        "success": True,
-        "token": token,
-        "user": {
-            "id": user_id,
-            "name": name,
-            "email": email,
-            "role": "employer",
-            "business_id": business_id,
-            "plan": None,
-            "industry": industry,
-        }
-    }
-
 @api_router.get("/auth/me")
 async def get_me(request: Request):
     user = await get_current_user(request)
@@ -1183,21 +1113,8 @@ async def forgot_password(data: ForgotPassword):
 
     email_sent = False
     try:
-        await send_email(
-            to_email=email,
-            subject="Reset your Churvox password",
-            html_content=f"""
-                <div style=\"font-family:Arial,sans-serif;line-height:1.5\">
-                  <h2>Reset your password</h2>
-                  <p>Hello {user.get('name') or ''},</p>
-                  <p>We received a request to reset your Churvox password.</p>
-                  <p><a href=\"{reset_link}\" style=\"display:inline-block;padding:10px 16px;background:#111;color:#fff;text-decoration:none;border-radius:6px\">Reset Password</a></p>
-                  <p>If the button does not work, use this link:</p>
-                  <p><a href=\"{reset_link}\">{reset_link}</a></p>
-                  <p>If you did not request this, you can ignore this email.</p>
-                </div>
-            """
-        )
+        subject, html = build_password_reset_email(user.get("name") or "", reset_link)
+        await send_email(to_email=email, subject=subject, html_content=html)
         email_sent = True
         print(f"FORGOT_PASSWORD_EMAIL_SENT to={email}")
     except Exception as e:
@@ -2538,7 +2455,6 @@ async def create_team_worker(payload: dict, current_user: dict = Depends(get_cur
 
     existing = await db.business_users.find_one({
         "email": email,
-        "role": "worker",
         "$or": [
             {"business_id": business_id},
             {"business_id": str(business_id)},
@@ -2546,7 +2462,11 @@ async def create_team_worker(payload: dict, current_user: dict = Depends(get_cur
         ]
     })
     if existing:
-        raise HTTPException(status_code=400, detail="Worker already exists")
+        existing_role = str(existing.get("role") or "worker").replace("_", " ").title()
+        raise HTTPException(
+            status_code=400,
+            detail=f"A team member with this email already exists ({existing_role})"
+        )
 
     now = datetime.utcnow()
     worker_doc = {
@@ -4699,49 +4619,6 @@ async def stripe_billing_webhook(request: Request):
 async def stripe_billing_webhook_api(request: Request):
     return await stripe_billing_webhook(request)
 
-
-
-
-APP_BASE_URL = os.getenv("APP_BASE_URL", "https://www.churvox.com").rstrip("/")
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
-EMAIL_FROM = os.getenv("EMAIL_FROM", "noreply@send.churvox.com").strip()
-
-def send_resend_email(to_email: str, subject: str, html: str, text_content: str = ""):
-    if not RESEND_API_KEY:
-        print("RESEND_API_KEY missing - email not sent")
-        return False
-
-    payload = {
-        "from": EMAIL_FROM,
-        "to": [to_email],
-        "subject": subject,
-        "html": html,
-    }
-    if text_content:
-        payload["text"] = text_content
-
-    req = urllib.request.Request(
-        "https://api.resend.com/emails",
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {RESEND_API_KEY}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-
-    try:
-        with urllib.request.urlopen(req, timeout=20) as response:
-            body = response.read().decode("utf-8", errors="ignore")
-            print("RESEND SEND OK:", response.status, body)
-            return True
-    except urllib.error.HTTPError as e:
-        err = e.read().decode("utf-8", errors="ignore")
-        print("RESEND SEND FAILED:", e.code, err)
-        return False
-    except Exception as e:
-        print("RESEND SEND ERROR:", str(e))
-        return False
 
 @api_router.delete("/admin/users/{user_id}")
 async def admin_delete_user(user_id: str, current_user: dict = Depends(get_current_user)):
