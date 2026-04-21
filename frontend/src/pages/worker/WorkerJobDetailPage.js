@@ -16,6 +16,31 @@ async function fileToDataUrl(file) {
   });
 }
 
+// Resize + compress a picked image in-browser so workers don't have to manually resize.
+// Keeps aspect ratio, scales down to maxWidth if larger, outputs JPEG at quality 0.78.
+// Returns a data URL string (always image/jpeg) or throws on failure.
+async function compressImage(file, { maxWidth = 1600, quality = 0.78 } = {}) {
+  const dataUrl = await fileToDataUrl(file);
+  const img = await new Promise((resolve, reject) => {
+    const el = new Image();
+    el.onload = () => resolve(el);
+    el.onerror = () => reject(new Error("image decode failed"));
+    el.src = dataUrl;
+  });
+  const ratio = img.width > maxWidth ? maxWidth / img.width : 1;
+  const targetW = Math.round(img.width * ratio);
+  const targetH = Math.round(img.height * ratio);
+  const canvas = document.createElement("canvas");
+  canvas.width = targetW;
+  canvas.height = targetH;
+  const ctx = canvas.getContext("2d");
+  // White background so JPEG output of PNGs with transparency stays clean
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, targetW, targetH);
+  ctx.drawImage(img, 0, 0, targetW, targetH);
+  return canvas.toDataURL("image/jpeg", quality);
+}
+
 async function captureLocation(timeoutMs = 8000) {
   if (!("geolocation" in navigator)) {
     return { status: "unavailable" };
@@ -108,11 +133,6 @@ export default function WorkerJobDetailPage() {
       toast.error("Please choose an image");
       return;
     }
-    // Raw bytes cap ≈ 4MB so the base64-encoded string stays within the backend limit
-    if (file.size > 4_000_000) {
-      toast.error("Image too large (max 4MB). Please retake or resize.");
-      return;
-    }
     const existing = Array.isArray(job?.photos) ? job.photos : [];
     if (existing.length >= 10) {
       toast.error("Maximum 10 photos per job");
@@ -120,17 +140,16 @@ export default function WorkerJobDetailPage() {
     }
     setUploadingPhoto(true);
     try {
-      const dataUrl = await fileToDataUrl(file);
-      // Double-check the encoded size before sending — matches backend 6MB cap
-      if (typeof dataUrl !== "string" || dataUrl.length > 6_000_000) {
-        toast.error("Image too large after encoding. Please resize and try again.");
+      // Auto-compress so workers don't need to resize normal phone photos first.
+      const dataUrl = await compressImage(file, { maxWidth: 1600, quality: 0.78 });
+      if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:image/") || dataUrl.length > 6_000_000) {
+        toast.error("Could not process this photo. Please try another one.");
         setUploadingPhoto(false);
         return;
       }
       const next = [...existing, dataUrl];
       const res = await patch(`/jobs/${id}`, { photos: next });
       if (res?.success) {
-        // Trust the backend's echoed photos list so the UI is accurate without a refetch
         const saved = Array.isArray(res.data?.photos) ? res.data.photos : next;
         setJob((prev) => (prev ? { ...prev, photos: saved } : prev));
         toast.success("Photo added");
@@ -138,7 +157,7 @@ export default function WorkerJobDetailPage() {
         toast.error(res?.error || "Failed to upload photo");
       }
     } catch (err) {
-      toast.error("Could not read image");
+      toast.error("Could not process this photo. Please try another one.");
     }
     setUploadingPhoto(false);
   };
