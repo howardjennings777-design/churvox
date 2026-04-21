@@ -1,13 +1,14 @@
 """
-Churvox shared email helper.
+Churvox shared email helper — Postmark-only.
 
-Primary provider: Postmark (POSTMARK_SERVER_TOKEN + POSTMARK_FROM_EMAIL)
-Fallback provider: Resend (RESEND_API_KEY + EMAIL_FROM) — preserved for backward
-compatibility so nothing breaks if Postmark env vars are not yet set on Render.
+Env vars required:
+  POSTMARK_SERVER_TOKEN
+  POSTMARK_FROM_EMAIL   (verified sender signature in Postmark, e.g. "Churvox <hello@churvox.com>")
+  FRONTEND_URL          (consumed by server.py when building links)
 
 All email sends are awaited and will RAISE RuntimeError on hard failure so existing
-try/except blocks at the call-site continue to work. Callers in server.py already
-swallow exceptions to keep the originating endpoint stable.
+try/except blocks at the call-site keep the parent endpoint stable (endpoints still
+return 200; the error is logged but does not crash the flow).
 """
 
 import json
@@ -22,26 +23,20 @@ import html as _html
 POSTMARK_SERVER_TOKEN = os.getenv("POSTMARK_SERVER_TOKEN", "").strip()
 POSTMARK_FROM_EMAIL = os.getenv("POSTMARK_FROM_EMAIL", "").strip()
 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
-EMAIL_FROM_RAW = os.getenv("EMAIL_FROM", "").strip() or "Churvox <noreply@churvox.com>"
-# Ensure "Name <email>" format for Resend fallback
-if "<" not in EMAIL_FROM_RAW:
-    EMAIL_FROM_RESEND = f"Churvox <{EMAIL_FROM_RAW}>"
-else:
-    EMAIL_FROM_RESEND = EMAIL_FROM_RAW
-
 
 def get_email_provider() -> str:
-    """Return 'postmark' if configured, else 'resend' if configured, else 'none'."""
+    """Return 'postmark' if configured, else 'none'."""
     if POSTMARK_SERVER_TOKEN and POSTMARK_FROM_EMAIL:
         return "postmark"
-    if RESEND_API_KEY:
-        return "resend"
     return "none"
 
 
 # ------------------------------------------------------------------
-# Template builders (simple, branded Churvox HTML)
+# Template builders (branded Churvox HTML)
+#
+# Note: `build_resend_invite_email` is the template used when an owner
+# RE-SENDS an invite to an existing pending team member — it is unrelated
+# to any email provider called "Resend".
 # ------------------------------------------------------------------
 _BRAND = "Churvox"
 
@@ -102,6 +97,7 @@ def build_invite_email(name: str, invite_link: str, business_name: str = "", rol
 
 
 def build_resend_invite_email(name: str, invite_link: str, business_name: str = "", role: str = "worker"):
+    """Template used by POST /team/resend-invite/{worker_id} to re-send a pending invite."""
     safe_name = _html.escape((name or "").strip() or "there")
     biz = _html.escape((business_name or "").strip()) or _BRAND
     role_label = _html.escape(_pretty_role(role))
@@ -142,20 +138,8 @@ def build_verification_email(name: str, verify_link: str):
 
 
 # ------------------------------------------------------------------
-# Low-level send paths
+# Postmark send path (only provider)
 # ------------------------------------------------------------------
-def _http_post_json(url: str, payload: dict, headers: dict, timeout: int = 20):
-    req = urllib.request.Request(
-        url,
-        data=json.dumps(payload).encode("utf-8"),
-        headers=headers,
-        method="POST",
-    )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        body = resp.read().decode("utf-8", errors="ignore")
-        return resp.status, body
-
-
 def _send_via_postmark(to_email: str, subject: str, html_content: str, text_content: str = ""):
     """Raise RuntimeError on failure, return parsed dict on success."""
     if not POSTMARK_SERVER_TOKEN:
@@ -175,17 +159,21 @@ def _send_via_postmark(to_email: str, subject: str, html_content: str, text_cont
 
     print(f"POSTMARK_SEND from={POSTMARK_FROM_EMAIL} to={to_email} subject={subject!r}")
 
+    req = urllib.request.Request(
+        "https://api.postmarkapp.com/email",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-Postmark-Server-Token": POSTMARK_SERVER_TOKEN,
+        },
+        method="POST",
+    )
+
     try:
-        status, body = _http_post_json(
-            "https://api.postmarkapp.com/email",
-            payload,
-            {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "X-Postmark-Server-Token": POSTMARK_SERVER_TOKEN,
-            },
-            timeout=20,
-        )
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            status = resp.status
+            body = resp.read().decode("utf-8", errors="ignore")
     except urllib.error.HTTPError as e:
         detail = e.read().decode("utf-8", errors="ignore") if hasattr(e, "read") else str(e)
         print(f"POSTMARK_ERR code={e.code} detail={detail[:300]}")
@@ -205,61 +193,12 @@ def _send_via_postmark(to_email: str, subject: str, html_content: str, text_cont
         return {"ok": True}
 
 
-def _send_via_resend(to_email: str, subject: str, html_content: str, text_content: str = ""):
-    """Raise RuntimeError on failure, return parsed dict on success."""
-    if not RESEND_API_KEY:
-        raise RuntimeError("RESEND_API_KEY is missing")
-
-    payload = {
-        "from": EMAIL_FROM_RESEND,
-        "to": [to_email],
-        "subject": subject,
-        "html": html_content,
-    }
-    if text_content:
-        payload["text"] = text_content
-
-    print(f"RESEND_SEND from={EMAIL_FROM_RESEND} to={to_email}")
-
-    try:
-        status, body = _http_post_json(
-            "https://api.resend.com/emails",
-            payload,
-            {
-                "Authorization": f"Bearer {RESEND_API_KEY}",
-                "Content-Type": "application/json",
-            },
-            timeout=20,
-        )
-    except urllib.error.HTTPError as e:
-        detail = e.read().decode("utf-8", errors="ignore") if hasattr(e, "read") else str(e)
-        print(f"RESEND_ERR code={e.code} detail={detail[:300]}")
-        raise RuntimeError(f"Resend HTTPError {e.code}: {detail}")
-    except urllib.error.URLError as e:
-        print(f"RESEND_ERR url_error={e}")
-        raise RuntimeError(f"Resend URLError: {e}")
-
-    if status < 200 or status >= 300:
-        print(f"RESEND_ERR status={status} body={body[:300]}")
-        raise RuntimeError(f"Resend send failed: HTTP {status} {body}")
-
-    print(f"RESEND_OK status={status} body={body[:200]}")
-    try:
-        return json.loads(body) if body else {"ok": True}
-    except Exception:
-        return {"ok": True}
-
-
 # ------------------------------------------------------------------
-# Public send API (same signature existing callers already use)
+# Public send API (single source of truth for all outbound email)
 # ------------------------------------------------------------------
 async def send_email(to_email: str, subject: str, html_content: str, text_content: str = ""):
     """
-    Send an email via Postmark (primary) or Resend (fallback).
-
-    Signature is backward-compatible with the previous Resend-only helper:
-    all existing callers using `await send_email(to_email=..., subject=..., html_content=...)`
-    continue to work unchanged. `text_content` is optional and new.
+    Send an email via Postmark. Postmark is the only supported provider.
 
     Raises RuntimeError on hard failure so existing try/except blocks in server.py
     keep the parent endpoint stable and simply log the error.
@@ -272,28 +211,13 @@ async def send_email(to_email: str, subject: str, html_content: str, text_conten
     if not subject:
         raise ValueError("Missing subject")
 
-    provider = get_email_provider()
+    if get_email_provider() != "postmark":
+        print(
+            "EMAIL_PROVIDER_MISSING: POSTMARK_SERVER_TOKEN and POSTMARK_FROM_EMAIL "
+            "are required. Email NOT sent."
+        )
+        raise RuntimeError(
+            "Postmark is not configured. Set POSTMARK_SERVER_TOKEN and POSTMARK_FROM_EMAIL."
+        )
 
-    if provider == "postmark":
-        try:
-            return _send_via_postmark(to_email, subject, html_content, text_content)
-        except Exception as postmark_err:
-            # If Postmark is configured but fails AND Resend is also configured,
-            # attempt Resend as a graceful fallback so launch flows don't silently fail.
-            if RESEND_API_KEY:
-                print(f"POSTMARK_FALLBACK_TO_RESEND reason={repr(postmark_err)}")
-                return _send_via_resend(to_email, subject, html_content, text_content)
-            raise
-
-    if provider == "resend":
-        return _send_via_resend(to_email, subject, html_content, text_content)
-
-    # No provider configured — do not crash the endpoint; log and raise a clear error
-    # that existing callers will catch and log.
-    print(
-        "EMAIL_PROVIDER_MISSING: neither POSTMARK_SERVER_TOKEN/POSTMARK_FROM_EMAIL "
-        "nor RESEND_API_KEY are set. Email NOT sent."
-    )
-    raise RuntimeError(
-        "No email provider configured. Set POSTMARK_SERVER_TOKEN and POSTMARK_FROM_EMAIL."
-    )
+    return _send_via_postmark(to_email, subject, html_content, text_content)
