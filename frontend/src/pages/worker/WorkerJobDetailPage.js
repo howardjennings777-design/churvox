@@ -41,20 +41,40 @@ async function compressImage(file, { maxWidth = 1600, quality = 0.78 } = {}) {
   return canvas.toDataURL("image/jpeg", quality);
 }
 
-async function captureLocation(timeoutMs = 8000) {
+async function captureLocation() {
   if (!("geolocation" in navigator)) {
     return { status: "unavailable" };
   }
-  return new Promise((resolve) => {
-    let done = false;
-    const finish = (v) => { if (!done) { done = true; resolve(v); } };
-    const timer = setTimeout(() => finish({ status: "timeout" }), timeoutMs);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => { clearTimeout(timer); finish({ status: "captured", lat: pos.coords.latitude, lng: pos.coords.longitude }); },
-      (err) => { clearTimeout(timer); finish({ status: err?.code === 1 ? "denied" : "error" }); },
-      { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 0 }
-    );
-  });
+  const tryOnce = (options) =>
+    new Promise((resolve) => {
+      let done = false;
+      const finish = (v) => { if (!done) { done = true; resolve(v); } };
+      const timer = setTimeout(() => finish({ status: "timeout" }), options.timeout + 1000);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          clearTimeout(timer);
+          finish({ status: "captured", lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        (err) => {
+          clearTimeout(timer);
+          if (err?.code === 1) finish({ status: "permission_denied" });
+          else if (err?.code === 2) finish({ status: "unavailable" });
+          else if (err?.code === 3) finish({ status: "timeout" });
+          else finish({ status: "unavailable" });
+        },
+        options,
+      );
+    });
+
+  // Attempt 1: high accuracy, generous timeout, allow recent cache
+  let result = await tryOnce({ enableHighAccuracy: true, timeout: 20000, maximumAge: 300000 });
+  if (result.status === "captured" || result.status === "permission_denied") return result;
+
+  // Attempt 2: drop high-accuracy, accept older cache — usually succeeds indoors/weak signal
+  const retry = await tryOnce({ enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 });
+  if (retry.status === "captured") return retry;
+  // Prefer the more specific of the two failures
+  return retry.status !== "timeout" ? retry : result;
 }
 
 export default function WorkerJobDetailPage() {
@@ -301,7 +321,11 @@ export default function WorkerJobDetailPage() {
             {job.completed_at && <p className="text-xs text-slate-400">Completed: {new Date(job.completed_at).toLocaleString()}</p>}
             {job.location_status && (
               <p className="text-xs text-slate-400">
-                Start location: {job.location_status}
+                {job.location_status === "captured" && "Start location captured"}
+                {job.location_status === "timeout" && "Location timed out. Check signal/location settings and try again."}
+                {job.location_status === "permission_denied" && "Location permission denied."}
+                {job.location_status === "unavailable" && "Location unavailable."}
+                {!["captured","timeout","permission_denied","unavailable"].includes(job.location_status) && `Start location: ${job.location_status}`}
                 {job.start_lat != null && job.start_lng != null && (
                   <> · <a className="text-blue-600 hover:underline" href={`https://www.google.com/maps?q=${job.start_lat},${job.start_lng}`} target="_blank" rel="noreferrer">view on map</a></>
                 )}

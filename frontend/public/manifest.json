@@ -30,8 +30,8 @@
   ],
   "start_url": "/dashboard",
   "display": "minimal-ui",
-  "theme_color": "#0A0B10",
-  "background_color": "#0A0B10",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
   "scope": "/",
   "categories": ["business", "productivity"]
 }
