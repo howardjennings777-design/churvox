@@ -292,3 +292,12 @@ backend/*.bak*
 backend/*.before_*
 *.bak
 *.bak_*
+-e 
+# Environment and credential files
+.env
+.env.*
+*.env
+credentials.json
+*.pem
+*.key
+.credentials
