@@ -265,7 +265,14 @@ from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 from sms_provider import get_sms_provider, format_phone_au_nz
-from email_provider import get_email_provider, build_invite_email, build_resend_invite_email, build_password_reset_email, send_email
+from email_provider import (
+    get_email_provider,
+    build_invite_email,
+    build_resend_invite_email,
+    build_password_reset_email,
+    build_verification_email,
+    send_email,
+)
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -995,6 +1002,16 @@ async def register(user_data: UserCreate, response: Response):
     refresh_token = create_refresh_token(user_id)
     set_auth_cookies(response, access_token, refresh_token)
 
+    # Send verification email (non-blocking failure)
+    try:
+        verify_token = user_doc["email_verification_token"]
+        verify_link = f"{FRONTEND_URL}/verify-email?token={verify_token}"
+        v_subject, v_html = build_verification_email(user_doc.get("name") or "", verify_link)
+        await send_email(to_email=email, subject=v_subject, html_content=v_html)
+        print(f"VERIFICATION_EMAIL_SENT to={email}")
+    except Exception as e:
+        print(f"VERIFICATION_EMAIL_ERROR to={email} error={repr(e)}")
+
     user_doc["business_id"] = user_id
     return build_user_response(user_doc, user_id, access_token)
 
@@ -1379,8 +1396,16 @@ async def resend_invite(worker_id: str, current_user: dict = Depends(get_current
     invite_link = f"{FRONTEND_URL}/invite/setup/{worker_id}"
 
     try:
-        subject, html = build_resend_invite_email(name, invite_link)
+        biz_name = str(current_user.get("business_name") or "").strip()
+        worker_role = str(worker.get("role") or "worker").strip().lower()
+        subject, html = build_resend_invite_email(
+            name=name,
+            invite_link=invite_link,
+            business_name=biz_name,
+            role=worker_role,
+        )
         await send_email(to_email=email, subject=subject, html_content=html)
+        print(f"RESEND_INVITE_SENT worker={worker_id} email={email}")
         return {"success": True, "message": f"Invite resent to {email}"}
     except Exception as e:
         print(f"RESEND_INVITE_ERROR worker={worker_id} email={email} error={repr(e)}")
@@ -2545,13 +2570,17 @@ async def create_team_worker(payload: dict, current_user: dict = Depends(get_cur
     try:
         invite_token = str(result.inserted_id)
         invite_link = f"{FRONTEND_URL}/invite/setup/{invite_token}"
-        await send_email(
-            to_email=email,
-            subject="You're invited to join Churvox",
-            html_content=f"<p>Hi {name},</p><p>You have been invited to join a team on Churvox.</p><p><a href='{invite_link}'>Finish setup</a></p>"
+        biz_name = str(current_user.get("business_name") or "").strip()
+        inv_subject, inv_html = build_invite_email(
+            name=name,
+            invite_link=invite_link,
+            business_name=biz_name,
+            role=invite_role,
         )
-    except Exception:
-        pass
+        await send_email(to_email=email, subject=inv_subject, html_content=inv_html)
+        print(f"TEAM_INVITE_EMAIL_SENT to={email} role={invite_role}")
+    except Exception as e:
+        print(f"TEAM_INVITE_EMAIL_ERROR to={email} role={invite_role} error={repr(e)}")
 
     return {
         "success": True,
@@ -4220,13 +4249,17 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
             try:
                 invite_token = str(result.inserted_id)
                 invite_link = f"{FRONTEND_URL}/invite/setup/{invite_token}"
-                await send_email(
-                    to_email=email,
-                    subject="You're invited to join Churvox",
-                    html_content=f"<p>Hi {name},</p><p>You have been invited to join a team on Churvox.</p><p><a href='{invite_link}'>Finish setup</a></p>"
+                biz_name = str(current_user.get("business_name") or "").strip()
+                inv_subject, inv_html = build_invite_email(
+                    name=name,
+                    invite_link=invite_link,
+                    business_name=biz_name,
+                    role="worker",
                 )
-            except Exception:
-                pass
+                await send_email(to_email=email, subject=inv_subject, html_content=inv_html)
+                print(f"TEAM_INVITE_CSV_EMAIL_SENT to={email}")
+            except Exception as e:
+                print(f"TEAM_INVITE_CSV_EMAIL_ERROR to={email} error={repr(e)}")
 
             invited += 1
             details.append({"row": row_num, "status": "invited", "reason": ""})
@@ -4474,6 +4507,50 @@ async def verify_email(token: str):
         "email": user.get("email"),
         "email_verified": True
     }
+
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
+
+@api_router.post("/auth/resend-verification")
+async def resend_verification_email(data: ResendVerificationRequest):
+    email = data.email.lower().strip()
+    user = await db.users.find_one({"email": email})
+
+    # Generic success to avoid user enumeration
+    generic_response = {
+        "success": True,
+        "message": "If the email exists and is unverified, a verification link has been sent",
+    }
+
+    if not user:
+        return generic_response
+    if user.get("email_verified"):
+        return {"success": True, "message": "Email already verified", "email_verified": True}
+
+    # Reuse existing token if present, else generate a fresh one
+    token = (user.get("email_verification_token") or "").strip() or secrets.token_urlsafe(32)
+    await db.users.update_one(
+        {"_id": user["_id"]},
+        {"$set": {
+            "email_verification_token": token,
+            "email_verification_sent_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+        }}
+    )
+
+    verify_link = f"{FRONTEND_URL}/verify-email?token={token}"
+    email_sent = False
+    try:
+        subject, html = build_verification_email(user.get("name") or "", verify_link)
+        await send_email(to_email=email, subject=subject, html_content=html)
+        email_sent = True
+        print(f"RESEND_VERIFICATION_EMAIL_SENT to={email}")
+    except Exception as e:
+        print(f"RESEND_VERIFICATION_EMAIL_ERROR to={email} error={repr(e)}")
+
+    return {**generic_response, "email_sent": email_sent}
 
 
 
