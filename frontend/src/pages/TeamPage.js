@@ -403,12 +403,12 @@ export default function TeamPage() {
                         id="worker-role-inline"
                         value={form.invite_role || "worker"}
                         onChange={(e) => setForm({ ...form, invite_role: e.target.value })}
-                        className="w-full h-10 min-h-[40px] rounded-md border border-slate-200 bg-white px-3 text-slate-900 appearance-none"
+                        className="w-full h-10 min-h-[40px] rounded-md border border-slate-300 bg-white px-3 pr-8 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         data-testid="invite-role-select"
                       >
-                        <option value="worker">Worker</option>
                         <option value="manager">Manager</option>
                         <option value="office_admin">Office Admin</option>
+                        <option value="worker">Worker</option>
                         <option value="payroll">Payroll</option>
                       </select>
                     </div>
@@ -419,7 +419,8 @@ export default function TeamPage() {
                         id="worker-country-inline"
                         value={form.country || "New Zealand"}
                         onChange={(e) => setForm({ ...form, country: e.target.value, region: "" })}
-                        className="w-full h-10 min-h-[40px] rounded-md border border-white/10 bg-[#0f172a] px-3 text-slate-900 appearance-none"
+                        className="w-full h-10 min-h-[40px] rounded-md border border-slate-300 bg-white px-3 pr-8 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        data-testid="invite-country-select"
                       >
                         {COUNTRY_OPTIONS.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -435,7 +436,8 @@ export default function TeamPage() {
                         id="worker-region-inline"
                         value={form.region}
                         onChange={(e) => setForm({ ...form, region: e.target.value })}
-                        className="w-full h-10 min-h-[40px] rounded-md border border-white/10 bg-[#0f172a] px-3 text-slate-900 appearance-none"
+                        className="w-full h-10 min-h-[40px] rounded-md border border-slate-300 bg-white px-3 pr-8 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        data-testid="invite-region-select"
                       >
                         <option value="">Select region / state</option>
                         {getRegionOptions(form.country || "New Zealand").map((region) => (
@@ -523,7 +525,7 @@ export default function TeamPage() {
                       <select
                         value={selectedWorker?.country || "New Zealand"}
                         onChange={(e) => setSelectedWorker((prev) => prev ? { ...prev, country: e.target.value, region: "" } : prev)}
-                        className="w-full h-10 min-h-[40px] rounded-md border border-white/10 bg-[#0f172a] px-3 text-slate-900 appearance-none"
+                        className="w-full h-10 min-h-[40px] rounded-md border border-slate-300 bg-white px-3 pr-8 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
                         {COUNTRY_OPTIONS.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -538,7 +540,7 @@ export default function TeamPage() {
                       <select
                         value={selectedWorker?.region || ""}
                         onChange={(e) => setSelectedWorker((prev) => prev ? { ...prev, region: e.target.value } : prev)}
-                        className="w-full h-10 min-h-[40px] rounded-md border border-white/10 bg-[#0f172a] px-3 text-slate-900 appearance-none"
+                        className="w-full h-10 min-h-[40px] rounded-md border border-slate-300 bg-white px-3 pr-8 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="">Select region / state</option>
                         {getRegionOptions(selectedWorker?.country || "New Zealand").map((region) => (
