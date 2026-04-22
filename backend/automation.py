@@ -345,6 +345,7 @@ async def emit_event(db, trigger: str, payload: Dict[str, Any]) -> Dict[str, Any
         if not trigger:
             return summary
         payload = dict(payload or {})
+        payload.setdefault("trigger", trigger)
         payload.setdefault("emitted_at", datetime.now(timezone.utc).isoformat())
         business_id = str(payload.get("business_id") or "")
         query = {"trigger": trigger, "enabled": True}

@@ -3614,7 +3614,8 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
             elif new_status == "completed":
                 await auto.emit_event(db, "job_completed", base)
             if worker_notes is not None and str(worker_notes).strip():
-                await auto.emit_event(db, "worker_note_added", {**base, "note": str(worker_notes)[:400]})
+                _note_text = str(worker_notes)[:400]
+                await auto.emit_event(db, "worker_note_added", {**base, "note": {"text": _note_text}})
             if new_photos is not None:
                 await auto.emit_event(db, "worker_photo_uploaded", {**base, "photo_uploaded": True})
         except Exception as e:
@@ -3714,7 +3715,7 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
         new_notes_a = str(update_doc.get("notes") or "").strip()
         old_notes_a = str(existing.get("notes") or "").strip()
         if new_notes_a and new_notes_a != old_notes_a:
-            await auto.emit_event(db, "employer_note_added", {**base, "note": new_notes_a[:400]})
+            await auto.emit_event(db, "employer_note_added", {**base, "note": {"text": new_notes_a[:400]}})
     except Exception as e:
         print("AUTO_EMIT_ERR owner_patch", e)
 
@@ -5384,8 +5385,8 @@ TRIGGER_SCHEMAS: dict = {
     "job_paused": ["job.id", "job.title", "job.worker_id", "actor.id"],
     "job_resumed": ["job.id", "job.title", "job.worker_id", "actor.id"],
     "job_completed": ["job.id", "job.title", "job.client_id", "job.worker_id", "actor.id"],
-    "employer_note_added": ["job.id", "job.title", "note", "actor.id"],
-    "worker_note_added": ["job.id", "job.title", "note", "actor.id"],
+    "employer_note_added": ["job.id", "job.title", "note.text", "actor.id"],
+    "worker_note_added": ["job.id", "job.title", "note.text", "actor.id"],
     "worker_photo_uploaded": ["job.id", "job.title", "photo_uploaded", "actor.id"],
     # quote-family
     "quote_created": ["quote.id", "quote.status", "quote.total", "quote.client_id", "actor.id"],
