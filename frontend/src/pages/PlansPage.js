@@ -197,7 +197,7 @@ export default function PlansPage() {
       return {
         title: `Free trial active${days || days === 0 ? ` · ${days} day${days === 1 ? "" : "s"} left` : ""}`,
         text: "No card required during trial. Upgrade any time before it ends.",
-        classes: "border-blue-500/30 bg-blue-500/10 text-blue-200",
+        classes: "border-blue-200 bg-blue-50 text-blue-900",
       };
     }
 
@@ -308,23 +308,23 @@ export default function PlansPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-6">
-        <div className="text-lg">Loading plans...</div>
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center px-6">
+        <div className="text-sm text-slate-500">Loading plans...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 text-slate-900 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
 
         {isTrialExpired ? (
           <div className="pt-6 md:pt-10 space-y-6">
             <div className="mx-auto max-w-2xl text-center space-y-3">
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Your free trial has ended</h1>
-              <p className="text-sm md:text-base text-slate-300">
-                Your <span className="text-white font-semibold">{cap(currentPlan)}</span> trial ended on{" "}
-                <span className="text-white font-semibold">{formatDate(billing?.trial_ends_at)}</span>.
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-slate-900">Your free trial has ended</h1>
+              <p className="text-sm md:text-base text-slate-600">
+                Your <span className="text-slate-900 font-semibold">{cap(currentPlan)}</span> trial ended on{" "}
+                <span className="text-slate-900 font-semibold">{formatDate(billing?.trial_ends_at)}</span>.
                 Subscribe to continue using Churvox. You don&apos;t need to sign up again.
               </p>
             </div>
@@ -334,34 +334,34 @@ export default function PlansPage() {
                 type="button"
                 onClick={() => handleSelectPlan(currentPlan)}
                 disabled={busyPlan === currentPlan}
-                className="w-full rounded-2xl bg-blue-600 px-6 py-4 text-base font-semibold text-white hover:bg-blue-500 transition"
+                className="w-full rounded-xl bg-blue-600 px-6 py-4 text-base font-semibold text-white hover:bg-blue-700 shadow-sm transition disabled:opacity-60 disabled:cursor-not-allowed"
                 data-testid="continue-plan-button"
               >
                 {busyPlan === currentPlan ? "Opening checkout..." : `Continue with ${cap(currentPlan)}`}
               </button>
-              <p className="mt-3 text-center text-xs text-slate-400">
+              <p className="mt-3 text-center text-xs text-slate-500">
                 Or choose a different plan below
               </p>
             </div>
           </div>
         ) : (
           <div className="pt-6 md:pt-10 text-center">
-            <h1 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight">
+            <h1 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight text-slate-900">
               Pick the plan that fits your business
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-sm md:text-base text-slate-300 leading-relaxed">
+            <p className="mx-auto mt-4 max-w-2xl text-sm md:text-base text-slate-600 leading-relaxed">
               Start with a 14-day free trial. No card required. Upgrade when you&apos;re ready.
             </p>
             {currencyInfo?.currency && (
               <div
-                className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300"
+                className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700 shadow-sm"
                 data-testid="currency-badge"
                 title={`Prices shown in ${currencyInfo.currency} (${currencyInfo.country}) — change by setting your business country in Settings.`}
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                Billed in <span className="font-semibold text-white">{currencyInfo.currency}</span>
-                <span className="text-slate-500">·</span>
-                <span className="text-slate-400">{currencyInfo.country}</span>
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Billed in <span className="font-semibold text-slate-900">{currencyInfo.currency}</span>
+                <span className="text-slate-300">·</span>
+                <span className="text-slate-500">{currencyInfo.country}</span>
               </div>
             )}
           </div>
@@ -369,10 +369,10 @@ export default function PlansPage() {
 
         {checkoutNotice && (
           <div
-            className={`mx-auto mt-6 mb-6 max-w-3xl rounded-2xl border px-5 py-4 ${
+            className={`mx-auto mt-6 mb-6 max-w-3xl rounded-xl border px-5 py-4 shadow-sm ${
               checkoutNotice.type === "success"
-                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
-                : "border-amber-500/30 bg-amber-500/10 text-amber-200"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                : "border-amber-200 bg-amber-50 text-amber-900"
             }`}
           >
             <div className="font-semibold">{checkoutNotice.title}</div>
@@ -381,7 +381,7 @@ export default function PlansPage() {
         )}
 
         {banner && (
-          <div className={`mx-auto mt-6 mb-8 max-w-3xl rounded-2xl border px-5 py-4 ${banner.classes}`}>
+          <div className={`mx-auto mt-6 mb-8 max-w-3xl rounded-xl border px-5 py-4 shadow-sm ${banner.classes}`}>
             <div className="font-semibold">{banner.title}</div>
             <div className="mt-1 text-sm opacity-90">{banner.text}</div>
           </div>
@@ -395,42 +395,42 @@ export default function PlansPage() {
             return (
               <div
                 key={plan.key}
-                className={`rounded-3xl border p-6 shadow-lg transition ${
+                className={`relative rounded-2xl border p-6 transition-all ${
                   isCurrent && !isTrialExpired
-                    ? "border-blue-500/40 bg-slate-900 ring-1 ring-blue-500/30"
-                    : "border-slate-800 bg-slate-900/80"
+                    ? "border-blue-300 bg-white shadow-md ring-2 ring-blue-500/20"
+                    : "border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-slate-300"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-2xl font-bold">{plan.name}</h2>
-                    <p className="mt-2 text-sm text-slate-300 min-h-[40px]">{plan.blurb}</p>
+                    <h2 className="text-2xl font-bold text-slate-900">{plan.name}</h2>
+                    <p className="mt-2 text-sm text-slate-500 min-h-[40px]">{plan.blurb}</p>
                   </div>
 
                   {isCurrent && !isTrialExpired ? (
-                    <span className="rounded-full bg-blue-500/15 px-3 py-1 text-xs font-semibold text-blue-300">
-                      Current Plan
+                    <span className="rounded-full bg-blue-100 px-3 py-1 text-[11px] font-semibold text-blue-700 border border-blue-200">
+                      Current plan
                     </span>
                   ) : isCurrent && isTrialExpired ? (
-                    <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-300">
-                      Trial Ended
+                    <span className="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-semibold text-amber-700 border border-amber-200">
+                      Trial ended
                     </span>
                   ) : plan.badge ? (
-                    <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-200">
+                    <span className="rounded-full bg-slate-900 px-3 py-1 text-[11px] font-semibold text-white">
                       {plan.badge}
                     </span>
                   ) : null}
                 </div>
 
                 <div className="mt-6 flex items-end gap-1">
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  <span className="pb-1 text-sm text-slate-400">{plan.period}</span>
+                  <span className="text-4xl font-bold text-slate-900 tracking-tight">{plan.price}</span>
+                  <span className="pb-1 text-sm text-slate-500">{plan.period}</span>
                 </div>
 
-                <ul className="mt-6 space-y-3 text-sm text-slate-200">
+                <ul className="mt-6 space-y-3 text-sm text-slate-700">
                   {plan.limits.map((item) => (
                     <li key={item} className="flex items-start gap-3">
-                      <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-blue-400" />
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" />
                       <span>{item}</span>
                     </li>
                   ))}
@@ -440,10 +440,10 @@ export default function PlansPage() {
                   type="button"
                   onClick={() => handleSelectPlan(plan.key)}
                   disabled={btnState.disabled}
-                  className={`mt-8 w-full rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                  className={`mt-8 w-full rounded-xl px-4 py-3 text-sm font-semibold transition ${
                     btnState.disabled
-                      ? "cursor-not-allowed bg-slate-700 text-slate-300"
-                      : "bg-blue-600 text-white hover:bg-blue-500"
+                      ? "cursor-not-allowed bg-slate-100 text-slate-500 border border-slate-200"
+                      : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
                   }`}
                   data-testid={`plan-btn-${plan.key}`}
                 >
