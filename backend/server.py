@@ -3392,6 +3392,10 @@ async def get_jobs_week(current_user: dict = Depends(get_current_user)):
 
 @api_router.delete("/team/workers/{worker_id}")
 async def delete_team_worker(worker_id: str, current_user: dict = Depends(get_current_user)):
+    # Role safety — only business owners/managers can delete team members
+    if current_user.get("role") not in BUSINESS_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
     business_id = str(
         current_user.get("business_id")
         or current_user.get("businessId")
@@ -3407,43 +3411,38 @@ async def delete_team_worker(worker_id: str, current_user: dict = Depends(get_cu
         or ""
     )
 
+    # Match the SAME team-member roles the GET /team/workers returns (worker, manager,
+    # office_admin, payroll) and handle both legacy string `id` and Mongo ObjectId `_id`.
+    id_or: list = [{"id": worker_id}]
+    try:
+        id_or.append({"_id": ObjectId(worker_id)})
+    except Exception:
+        # worker_id isn't a valid ObjectId (e.g. legacy invite UUID) — just skip _id branch
+        pass
+
     query = {
-        "role": "worker",
-        "$or": [
-            {"_id": ObjectId(worker_id)},
-            {"id": worker_id},
-        ],
-        "$and": [{
-            "$or": [
+        "role": {"$in": ["worker", "manager", "office_admin", "payroll"]},
+        "$and": [
+            {"$or": id_or},
+            {"$or": [
                 {"business_id": business_id},
                 {"business_id": str(business_id)},
                 {"owner_id": owner_id},
-            ]
-        }]
+            ]},
+        ],
     }
 
-    worker = None
-    try:
-        worker = await db.business_users.find_one(query)
-    except Exception:
-        query = {
-            "role": "worker",
-            "id": worker_id,
-            "$or": [
-                {"business_id": business_id},
-                {"business_id": str(business_id)},
-                {"owner_id": owner_id},
-            ]
-        }
-        worker = await db.business_users.find_one(query)
-
+    worker = await db.business_users.find_one(query)
     if not worker:
-        raise HTTPException(status_code=404, detail="Worker not found")
+        raise HTTPException(status_code=404, detail="Team member not found in this business")
 
-    delete_query = {"_id": worker.get("_id")}
-    await db.business_users.delete_one(delete_query)
-
-    return {"success": True, "message": "Worker removed"}
+    await db.business_users.delete_one({"_id": worker.get("_id")})
+    return {
+        "success": True,
+        "message": "Team member removed",
+        "id": str(worker.get("id") or worker.get("_id") or ""),
+        "role": worker.get("role"),
+    }
 
 
 
