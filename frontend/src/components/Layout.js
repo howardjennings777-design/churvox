@@ -7,8 +7,9 @@ import { InstallPrompt } from "./InstallPrompt";
 import { canAccess } from "../lib/roles";
 import {
   LayoutDashboard, Briefcase, Calendar, Users, MoreHorizontal, LogOut,
-  Settings, FileText, Receipt, CreditCard, UserPlus, MessageSquare, DollarSign,
+  Settings, FileText, Receipt, CreditCard, UserPlus, MessageSquare, DollarSign, Zap,
 } from "lucide-react";
+import NotificationsBell from "./NotificationsBell";
 
 export default function Layout({ children }) {
   const { user, logout, normalizedRole, isOwnerUser } = useAuth();
@@ -31,6 +32,7 @@ export default function Layout({ children }) {
     canAccess(role, "quotes") && { path: "/quotes", label: "Quotes", icon: FileText },
     canAccess(role, "invoices") && { path: "/invoices", label: "Invoices", icon: Receipt },
     canAccess(role, "team") && (isOwnerUser || hasPlanAccess(safePlan, "team")) && { path: "/team", label: "Team", icon: UserPlus },
+    (role === "owner" || role === "employer" || role === "manager") && { path: "/automation", label: "Automation", icon: Zap },
     canAccess(role, "payroll") && { path: "/payroll", label: "Payroll", icon: DollarSign },
     canAccess(role, "sms") && { path: "/sms", label: "SMS", icon: MessageSquare },
     isOwnerUser && { path: "/plans", label: "Plans", icon: CreditCard },
@@ -47,8 +49,9 @@ export default function Layout({ children }) {
       {/* Desktop Sidebar — Premium narrow style */}
       <aside className="hidden md:flex md:flex-col md:w-[220px] md:fixed md:inset-y-0 bg-white border-r border-slate-200/80 z-40" data-testid="desktop-sidebar">
         {/* Logo */}
-        <div className="flex items-center px-5 h-[60px] border-b border-slate-100">
+        <div className="flex items-center justify-between px-5 h-[60px] border-b border-slate-100">
           <ChurvoxLogo size="lg" dataTestId="sidebar-logo" />
+          <NotificationsBell />
         </div>
 
         {/* Nav */}
@@ -95,7 +98,10 @@ export default function Layout({ children }) {
         {/* Mobile header */}
         <header className="md:hidden bg-white border-b border-slate-200/80 px-4 py-3 flex items-center justify-between sticky top-0 z-30" data-testid="mobile-header">
           <ChurvoxLogo size="sm" dataTestId="mobile-logo" />
-          <span className="text-xs font-medium text-slate-500">{user?.name?.split(" ")[0]}</span>
+          <div className="flex items-center gap-2">
+            <NotificationsBell />
+            <span className="text-xs font-medium text-slate-500">{user?.name?.split(" ")[0]}</span>
+          </div>
         </header>
 
         {/* Content */}

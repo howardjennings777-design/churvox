@@ -40,6 +40,9 @@ import AccountDeletionPage from "./pages/legal/AccountDeletionPage";
 import AdminUsagePage from "./pages/AdminUsagePage";
 import PlatformAdminRoute from "./components/admin/PlatformAdminRoute";
 import PlatformUnlock from "./pages/admin/PlatformUnlock";
+import NotificationsPage from "./pages/NotificationsPage";
+import AutomationPage from "./pages/AutomationPage";
+import AutomationRunsPage from "./pages/AutomationRunsPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const Spinner = () => (
@@ -208,6 +211,13 @@ function App() {
 
           {/* Team: owner + manager */}
           <Route path="/team" element={<TeamRoute><TeamPage /></TeamRoute>} />
+
+          {/* Notifications: any authenticated user */}
+          <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
+
+          {/* Automation: owner + manager */}
+          <Route path="/automation" element={<TeamRoute><AutomationPage /></TeamRoute>} />
+          <Route path="/automation/runs" element={<TeamRoute><AutomationRunsPage /></TeamRoute>} />
 
           {/* Payroll */}
           <Route path="/payroll" element={<PayrollRoute><PayrollPage /></PayrollRoute>} />

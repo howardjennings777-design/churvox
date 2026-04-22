@@ -272,6 +272,7 @@ from email_provider import (
     build_verification_email,
     send_email,
 )
+import automation as auto
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -1494,10 +1495,26 @@ async def create_invoice(request: Request, current_user: dict = Depends(get_curr
     }
 
     result = await db.invoices.insert_one(invoice_doc)
+    iid = str(result.inserted_id)
+    await notify(user_id=owner_id, business_id=business_id, type="invoice_created",
+                 title="Invoice created",
+                 message=invoice_doc.get("customer_name") or f"Invoice #{invoice_doc.get('invoice_number','')}",
+                 route=f"/invoices/{iid}", target_type="invoice", target_id=iid)
+    try:
+        await auto.emit_event(db, "invoice_created", {
+            "business_id": str(business_id), "actor": {"id": str(owner_id)},
+            "invoice": {"id": iid, "status": invoice_doc.get("status") or "draft",
+                        "total": invoice_doc.get("total") or 0,
+                        "job_id": str(invoice_doc.get("job_id") or ""),
+                        "client_id": str(invoice_doc.get("client_id") or ""),
+                        "business_id": str(business_id)},
+        })
+    except Exception as e:
+        print("AUTO_EMIT_ERR invoice_created", e)
 
     return {
         "success": True,
-        "id": str(result.inserted_id),
+        "id": iid,
         "message": "Invoice created"
     }
 
@@ -1677,6 +1694,21 @@ async def send_invoice(invoice_id: str, current_user: dict = Depends(get_current
     )
 
     updated = await db.invoices.find_one({"_id": obj_id})
+    await notify(user_id=owner_id, business_id=business_id, type="invoice_sent",
+                 title="Invoice sent",
+                 message=invoice.get("customer_name") or f"Invoice #{invoice.get('invoice_number','')}",
+                 route=f"/invoices/{invoice_id}", target_type="invoice", target_id=invoice_id)
+    try:
+        await auto.emit_event(db, "invoice_sent", {
+            "business_id": str(business_id), "actor": {"id": str(owner_id)},
+            "invoice": {"id": invoice_id, "status": "sent",
+                        "total": invoice.get("total") or 0,
+                        "job_id": str(invoice.get("job_id") or ""),
+                        "client_id": str(invoice.get("client_id") or ""),
+                        "business_id": str(business_id)},
+        })
+    except Exception as e:
+        print("AUTO_EMIT_ERR invoice_sent", e)
     return {"success": True, "data": {
         "id": str(updated.get("_id")),
         "status": updated.get("status") or "sent",
@@ -1728,6 +1760,21 @@ async def mark_invoice_paid(invoice_id: str, current_user: dict = Depends(get_cu
     )
 
     updated = await db.invoices.find_one({"_id": obj_id})
+    await notify(user_id=owner_id, business_id=business_id, type="invoice_paid",
+                 title="Invoice paid",
+                 message=invoice.get("customer_name") or f"Invoice #{invoice.get('invoice_number','')}",
+                 route=f"/invoices/{invoice_id}", target_type="invoice", target_id=invoice_id)
+    try:
+        await auto.emit_event(db, "invoice_paid", {
+            "business_id": str(business_id), "actor": {"id": str(owner_id)},
+            "invoice": {"id": invoice_id, "status": "paid",
+                        "total": invoice.get("total") or 0,
+                        "job_id": str(invoice.get("job_id") or ""),
+                        "client_id": str(invoice.get("client_id") or ""),
+                        "business_id": str(business_id)},
+        })
+    except Exception as e:
+        print("AUTO_EMIT_ERR invoice_paid", e)
     return {"success": True, "data": {
         "id": str(updated.get("_id")),
         "status": updated.get("status") or "paid",
@@ -2059,6 +2106,20 @@ async def send_quote(quote_id: str, current_user: dict = Depends(get_current_use
         }}
     )
 
+    await notify(user_id=owner_id, business_id=business_id, type="quote_sent",
+                 title="Quote sent", message=quote.get("customer_name") or "Quote sent",
+                 route=f"/quotes/{quote_id}", target_type="quote", target_id=quote_id)
+    try:
+        await auto.emit_event(db, "quote_sent", {
+            "business_id": str(business_id), "actor": {"id": str(owner_id)},
+            "quote": {"id": quote_id, "status": "sent",
+                      "total": quote.get("total") or 0,
+                      "client_id": str(quote.get("client_id") or ""),
+                      "business_id": str(business_id)},
+        })
+    except Exception as e:
+        print("AUTO_EMIT_ERR quote_sent", e)
+
     return {
         "success": True,
         "message": "Quote marked as sent"
@@ -2117,10 +2178,25 @@ async def create_quote(request: Request, current_user: dict = Depends(get_curren
     }
 
     result = await db.quotes.insert_one(quote_doc)
+    qid = str(result.inserted_id)
+    await notify(user_id=owner_id, business_id=business_id, type="quote_created",
+                 title="Quote created", message=quote_doc.get("customer_name") or "New quote",
+                 route=f"/quotes/{qid}", target_type="quote", target_id=qid)
+    try:
+        await auto.emit_event(db, "quote_created", {
+            "business_id": str(business_id),
+            "actor": {"id": str(owner_id), "role": current_user.get("role")},
+            "quote": {"id": qid, "status": quote_doc.get("status"),
+                      "total": quote_doc.get("total") or 0,
+                      "client_id": str(quote_doc.get("client_id") or ""),
+                      "business_id": str(business_id)},
+        })
+    except Exception as e:
+        print("AUTO_EMIT_ERR quote_created", e)
 
     return {
         "success": True,
-        "id": str(result.inserted_id),
+        "id": qid,
         "message": "Quote created"
     }
 
@@ -2506,6 +2582,22 @@ async def create_team_worker(payload: dict, current_user: dict = Depends(get_cur
         print(f"TEAM_INVITE_EMAIL_SENT to={email} role={invite_role}")
     except Exception as e:
         print(f"TEAM_INVITE_EMAIL_ERROR to={email} role={invite_role} error={repr(e)}")
+
+    await notify(
+        user_id=owner_id, business_id=business_id, type="team_invite_sent",
+        title=f"{invite_role.replace('_',' ').title()} invited",
+        message=f"Invite sent to {email}",
+        route="/team", target_type="team_member", target_id=str(result.inserted_id),
+    )
+    try:
+        await auto.emit_event(db, "team_member_invited", {
+            "business_id": str(business_id),
+            "actor": {"id": str(owner_id), "role": current_user.get("role")},
+            "team_member": {"id": str(result.inserted_id), "email": email,
+                            "role": invite_role, "business_id": str(business_id)},
+        })
+    except Exception as e:
+        print("AUTO_EMIT_ERR team_member_invited", e)
 
     return {
         "success": True,
@@ -3118,10 +3210,41 @@ async def create_job(request: Request, current_user: dict = Depends(get_current_
     }
 
     result = await db.jobs.insert_one(job_doc)
+    job_id_str = str(result.inserted_id)
+
+    # Notifications: alert assigned worker (if any) that a job was assigned to them
+    assigned_wid = str(payload.get("assigned_worker_id") or "").strip()
+    if assigned_wid:
+        await notify(
+            user_id=assigned_wid,
+            business_id=business_id,
+            type="job_assigned",
+            title="New job assigned",
+            message=job_doc.get("title") or "You've been assigned a job",
+            route=f"/worker/jobs/{job_id_str}",
+            target_type="job",
+            target_id=job_id_str,
+        )
+
+    # Automation event emit
+    try:
+        await auto.emit_event(db, "job_assigned", {
+            "business_id": str(business_id),
+            "actor": {"id": str(owner_id), "role": current_user.get("role"), "email": current_user.get("email")},
+            "job": {
+                "id": job_id_str, "title": job_doc.get("title"),
+                "status": job_doc.get("status"), "client_id": str(job_doc.get("client_id") or ""),
+                "worker_id": assigned_wid, "business_id": str(business_id),
+                "job_type": job_doc.get("job_type"), "region": job_doc.get("region"),
+                "address": job_doc.get("address"),
+            },
+        })
+    except Exception as e:
+        print("AUTO_EMIT_ERR job_assigned", e)
 
     return {
         "success": True,
-        "id": str(result.inserted_id),
+        "id": job_id_str,
         "message": "Job created"
     }
 
@@ -3356,7 +3479,70 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
             update_fields["location_status"] = str(location_status).strip().lower()[:32]
 
         await db.jobs.update_one({"_id": obj_id}, {"$set": update_fields})
-        # Echo persisted photos (if touched) so the client can trust the response
+
+        # Best-effort notify owner of worker activity
+        try:
+            owner_uid = str(existing.get("owner_id") or existing.get("business_id") or "")
+            biz_id = str(existing.get("business_id") or "")
+            job_title = existing.get("title") or "Job"
+            job_route = f"/jobs/{job_id}"
+            if new_status == "acknowledged":
+                await notify(user_id=owner_uid, business_id=biz_id, type="job_acknowledged",
+                             title="Worker accepted job", message=job_title, route=job_route,
+                             target_type="job", target_id=job_id)
+            elif new_status == "in_progress":
+                await notify(user_id=owner_uid, business_id=biz_id, type="job_started",
+                             title="Worker started job", message=job_title, route=job_route,
+                             target_type="job", target_id=job_id)
+            elif new_status == "paused":
+                await notify(user_id=owner_uid, business_id=biz_id, type="job_paused",
+                             title="Worker paused job", message=job_title, route=job_route,
+                             target_type="job", target_id=job_id)
+            elif new_status == "completed":
+                await notify(user_id=owner_uid, business_id=biz_id, type="job_completed",
+                             title="Job completed", message=job_title, route=job_route,
+                             target_type="job", target_id=job_id)
+            if worker_notes is not None and str(worker_notes).strip():
+                await notify(user_id=owner_uid, business_id=biz_id, type="worker_note_added",
+                             title="Worker added a note", message=job_title, route=job_route,
+                             target_type="job", target_id=job_id)
+            if new_photos is not None:
+                await notify(user_id=owner_uid, business_id=biz_id, type="worker_photo_uploaded",
+                             title="Worker uploaded photo(s)", message=job_title, route=job_route,
+                             target_type="job", target_id=job_id)
+        except Exception as e:
+            print("NOTIFY_WORKER_PATCH_ERR", repr(e))
+
+        # Automation emit (best-effort)
+        try:
+            base = {
+                "business_id": str(existing.get("business_id") or ""),
+                "actor": {"id": _me_id(current_user), "role": current_user.get("role"), "email": current_user.get("email")},
+                "job": {
+                    "id": job_id, "title": existing.get("title"),
+                    "status": update_fields.get("status") or existing.get("status"),
+                    "client_id": str(existing.get("client_id") or ""),
+                    "worker_id": str(existing.get("assigned_worker_id") or ""),
+                    "business_id": str(existing.get("business_id") or ""),
+                    "job_type": existing.get("job_type"), "region": existing.get("region"),
+                    "address": existing.get("address"),
+                },
+            }
+            if new_status == "acknowledged":
+                await auto.emit_event(db, "job_acknowledged", base)
+            elif new_status == "in_progress":
+                await auto.emit_event(db, "job_started", base)
+            elif new_status == "paused":
+                await auto.emit_event(db, "job_paused", base)
+            elif new_status == "completed":
+                await auto.emit_event(db, "job_completed", base)
+            if worker_notes is not None and str(worker_notes).strip():
+                await auto.emit_event(db, "worker_note_added", {**base, "note": str(worker_notes)[:400]})
+            if new_photos is not None:
+                await auto.emit_event(db, "worker_photo_uploaded", {**base, "photo_uploaded": True})
+        except Exception as e:
+            print("AUTO_EMIT_ERR worker_patch", e)
+
         response_body = {"success": True, "message": "Job updated"}
         if "photos" in update_fields:
             response_body["photos"] = update_fields["photos"]
@@ -3407,6 +3593,53 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
         update_doc["completed_at"] = now
 
     await db.jobs.update_one({"_id": obj_id}, {"$set": update_doc})
+
+    # Owner-side notifications: notify worker on (re)assignment + employer note change
+    try:
+        new_worker = str(update_doc.get("assigned_worker_id") or "").strip()
+        old_worker = str(existing.get("assigned_worker_id") or "").strip()
+        biz_id = str(existing.get("business_id") or "")
+        job_title = update_doc.get("title") or existing.get("title") or "Job"
+        if new_worker and new_worker != old_worker:
+            await notify(user_id=new_worker, business_id=biz_id, type="job_assigned",
+                         title="New job assigned", message=job_title,
+                         route=f"/worker/jobs/{job_id}",
+                         target_type="job", target_id=job_id)
+        new_notes = str(update_doc.get("notes") or "").strip()
+        old_notes = str(existing.get("notes") or "").strip()
+        if new_worker and new_notes and new_notes != old_notes:
+            await notify(user_id=new_worker, business_id=biz_id, type="employer_note_added",
+                         title="Employer added a note", message=job_title,
+                         route=f"/worker/jobs/{job_id}",
+                         target_type="job", target_id=job_id)
+    except Exception as e:
+        print("NOTIFY_OWNER_PATCH_ERR", repr(e))
+
+    try:
+        base = {
+            "business_id": str(existing.get("business_id") or ""),
+            "actor": {"id": _me_id(current_user), "role": current_user.get("role"), "email": current_user.get("email")},
+            "job": {
+                "id": job_id, "title": update_doc.get("title") or existing.get("title"),
+                "status": update_doc.get("status") or existing.get("status"),
+                "client_id": str(update_doc.get("client_id") or existing.get("client_id") or ""),
+                "worker_id": str(update_doc.get("assigned_worker_id") or existing.get("assigned_worker_id") or ""),
+                "business_id": str(existing.get("business_id") or ""),
+                "job_type": update_doc.get("job_type") or existing.get("job_type"),
+                "region": update_doc.get("region") or existing.get("region"),
+                "address": update_doc.get("address") or existing.get("address"),
+            },
+        }
+        new_worker_a = str(update_doc.get("assigned_worker_id") or "").strip()
+        old_worker_a = str(existing.get("assigned_worker_id") or "").strip()
+        if new_worker_a and new_worker_a != old_worker_a:
+            await auto.emit_event(db, "job_assigned", base)
+        new_notes_a = str(update_doc.get("notes") or "").strip()
+        old_notes_a = str(existing.get("notes") or "").strip()
+        if new_notes_a and new_notes_a != old_notes_a:
+            await auto.emit_event(db, "employer_note_added", {**base, "note": new_notes_a[:400]})
+    except Exception as e:
+        print("AUTO_EMIT_ERR owner_patch", e)
 
     return {"success": True, "message": "Job updated"}
 
@@ -4725,6 +4958,316 @@ async def admin_delete_user(user_id: str, current_user: dict = Depends(get_curre
 
     print(f"ADMIN_DELETE_USER user_id={user_id} email={target_email} by={owner_email}")
     return {"success": True, "message": f"User {target_email} deleted"}
+
+
+# ==========================================================================
+# Notifications — lightweight in-app notification system
+# ==========================================================================
+async def notify(
+    *,
+    user_id: str,
+    business_id,
+    type: str,
+    title: str,
+    message: str = "",
+    route: str = "",
+    target_type: str = "",
+    target_id: str = "",
+):
+    """Best-effort notification create. Never raises to caller."""
+    try:
+        if not user_id or not type:
+            return
+        doc = {
+            "user_id": str(user_id),
+            "business_id": str(business_id) if business_id is not None else "",
+            "type": str(type)[:48],
+            "title": str(title)[:200],
+            "message": str(message)[:600],
+            "route": str(route)[:200],
+            "target_type": str(target_type)[:48],
+            "target_id": str(target_id)[:64],
+            "read": False,
+            "created_at": datetime.now(timezone.utc),
+        }
+        await db.notifications.insert_one(doc)
+    except Exception as e:
+        print(f"NOTIFY_ERR type={type} user={user_id} err={repr(e)}")
+
+
+def _me_id(u: dict) -> str:
+    return str(u.get("_id") or u.get("id") or u.get("user_id") or "")
+
+
+@api_router.get("/notifications")
+async def list_notifications(
+    limit: int = 20,
+    unread_only: bool = False,
+    current_user: dict = Depends(get_current_user),
+):
+    uid = _me_id(current_user)
+    q = {"user_id": uid}
+    if unread_only:
+        q["read"] = False
+    limit = max(1, min(int(limit or 20), 50))
+    items = []
+    def _iso(v):
+        try: return v.isoformat() if hasattr(v, "isoformat") else (str(v) if v else None)
+        except Exception: return None
+    async for n in db.notifications.find(q).sort("created_at", -1).limit(limit):
+        items.append({
+            "id": str(n.get("_id")),
+            "type": n.get("type", ""),
+            "title": n.get("title", ""),
+            "message": n.get("message", ""),
+            "route": n.get("route", ""),
+            "target_type": n.get("target_type", ""),
+            "target_id": n.get("target_id", ""),
+            "read": bool(n.get("read", False)),
+            "created_at": _iso(n.get("created_at")),
+        })
+    return items
+
+
+@api_router.get("/notifications/unread-count")
+async def notifications_unread_count(current_user: dict = Depends(get_current_user)):
+    uid = _me_id(current_user)
+    count = await db.notifications.count_documents({"user_id": uid, "read": False})
+    return {"unread": count}
+
+
+@api_router.patch("/notifications/{notif_id}/read")
+async def mark_notification_read(notif_id: str, current_user: dict = Depends(get_current_user)):
+    uid = _me_id(current_user)
+    try:
+        obj = ObjectId(notif_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid notification id")
+    await db.notifications.update_one(
+        {"_id": obj, "user_id": uid},
+        {"$set": {"read": True}}
+    )
+    return {"success": True}
+
+
+@api_router.post("/notifications/mark-all-read")
+async def mark_all_notifications_read(current_user: dict = Depends(get_current_user)):
+    uid = _me_id(current_user)
+    r = await db.notifications.update_many(
+        {"user_id": uid, "read": False},
+        {"$set": {"read": True}}
+    )
+    return {"success": True, "modified": r.modified_count}
+
+
+# ==========================================================================
+# Automation Engine V1 — routes
+# ==========================================================================
+AUTO_ADMIN_ROLES = {"owner", "employer", "admin", "manager"}
+
+
+def _business_scope(current_user: dict) -> str:
+    return str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+
+def _require_auto_admin(current_user: dict):
+    role = str(current_user.get("role") or "").lower()
+    if role not in AUTO_ADMIN_ROLES:
+        raise HTTPException(status_code=403, detail="Automation requires Owner or Manager role")
+
+
+def _serialize_rule(r: dict) -> dict:
+    return {
+        "id": str(r.get("_id") or r.get("id") or ""),
+        "business_id": str(r.get("business_id") or ""),
+        "name": r.get("name") or "",
+        "description": r.get("description") or "",
+        "trigger": r.get("trigger") or "",
+        "enabled": bool(r.get("enabled", True)),
+        "condition_mode": r.get("condition_mode") or "all",
+        "conditions": r.get("conditions") or [],
+        "actions": r.get("actions") or [],
+        "created_at": r.get("created_at").isoformat() if hasattr(r.get("created_at"), "isoformat") else r.get("created_at"),
+        "updated_at": r.get("updated_at").isoformat() if hasattr(r.get("updated_at"), "isoformat") else r.get("updated_at"),
+    }
+
+
+def _serialize_run(r: dict) -> dict:
+    def _iso(v):
+        return v.isoformat() if hasattr(v, "isoformat") else v
+    return {
+        "id": str(r.get("_id") or ""),
+        "business_id": str(r.get("business_id") or ""),
+        "rule_id": str(r.get("rule_id") or ""),
+        "rule_name": r.get("rule_name") or "",
+        "trigger": r.get("trigger") or "",
+        "status": r.get("status") or "",
+        "event_payload": r.get("event_payload") or {},
+        "results": r.get("results") or [],
+        "error": r.get("error"),
+        "started_at": _iso(r.get("started_at")),
+        "finished_at": _iso(r.get("finished_at")),
+        "test": bool(r.get("test", False)),
+    }
+
+
+@api_router.get("/automation/health")
+async def automation_health():
+    return {"ok": True, "engine": "v1", "triggers": len(auto.TRIGGERS), "actions": len(auto.ACTIONS)}
+
+
+@api_router.get("/automation/catalog")
+async def automation_catalog(current_user: dict = Depends(get_current_user)):
+    _require_auto_admin(current_user)
+    return auto.catalog()
+
+
+@api_router.get("/automation/rules")
+async def list_automation_rules(current_user: dict = Depends(get_current_user)):
+    _require_auto_admin(current_user)
+    bid = _business_scope(current_user)
+    out = []
+    async for r in db.automation_rules.find({"business_id": bid}).sort("created_at", -1):
+        out.append(_serialize_rule(r))
+    return out
+
+
+@api_router.post("/automation/rules")
+async def create_automation_rule(payload: dict, current_user: dict = Depends(get_current_user)):
+    _require_auto_admin(current_user)
+    bid = _business_scope(current_user)
+    now = datetime.now(timezone.utc)
+    trigger = str((payload or {}).get("trigger") or "").strip()
+    if trigger not in auto.TRIGGERS:
+        raise HTTPException(status_code=400, detail=f"Unknown trigger: {trigger}")
+    doc = {
+        "business_id": bid,
+        "name": str((payload or {}).get("name") or "Untitled rule")[:120],
+        "description": str((payload or {}).get("description") or "")[:400],
+        "trigger": trigger,
+        "enabled": bool((payload or {}).get("enabled", True)),
+        "condition_mode": (payload or {}).get("condition_mode") or "all",
+        "conditions": (payload or {}).get("conditions") or [],
+        "actions": (payload or {}).get("actions") or [],
+        "created_at": now,
+        "updated_at": now,
+        "created_by_user_id": _me_id(current_user),
+    }
+    r = await db.automation_rules.insert_one(doc)
+    doc["_id"] = r.inserted_id
+    return _serialize_rule(doc)
+
+
+@api_router.get("/automation/rules/{rule_id}")
+async def get_automation_rule(rule_id: str, current_user: dict = Depends(get_current_user)):
+    _require_auto_admin(current_user)
+    bid = _business_scope(current_user)
+    try: obj = ObjectId(rule_id)
+    except Exception: raise HTTPException(400, "Invalid rule id")
+    r = await db.automation_rules.find_one({"_id": obj, "business_id": bid})
+    if not r: raise HTTPException(404, "Rule not found")
+    return _serialize_rule(r)
+
+
+@api_router.put("/automation/rules/{rule_id}")
+async def update_automation_rule(rule_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    _require_auto_admin(current_user)
+    bid = _business_scope(current_user)
+    try: obj = ObjectId(rule_id)
+    except Exception: raise HTTPException(400, "Invalid rule id")
+    update = {"updated_at": datetime.now(timezone.utc), "updated_by_user_id": _me_id(current_user)}
+    for k in ("name", "description", "trigger", "enabled", "condition_mode", "conditions", "actions"):
+        if k in (payload or {}):
+            update[k] = payload[k]
+    if update.get("trigger") and update["trigger"] not in auto.TRIGGERS:
+        raise HTTPException(400, f"Unknown trigger: {update['trigger']}")
+    r = await db.automation_rules.find_one_and_update(
+        {"_id": obj, "business_id": bid},
+        {"$set": update},
+        return_document=True,
+    )
+    if not r: raise HTTPException(404, "Rule not found")
+    return _serialize_rule(r)
+
+
+@api_router.delete("/automation/rules/{rule_id}")
+async def delete_automation_rule(rule_id: str, current_user: dict = Depends(get_current_user)):
+    _require_auto_admin(current_user)
+    bid = _business_scope(current_user)
+    try: obj = ObjectId(rule_id)
+    except Exception: raise HTTPException(400, "Invalid rule id")
+    await db.automation_rules.delete_one({"_id": obj, "business_id": bid})
+    return {"success": True}
+
+
+@api_router.post("/automation/rules/{rule_id}/toggle")
+async def toggle_automation_rule(rule_id: str, current_user: dict = Depends(get_current_user)):
+    _require_auto_admin(current_user)
+    bid = _business_scope(current_user)
+    try: obj = ObjectId(rule_id)
+    except Exception: raise HTTPException(400, "Invalid rule id")
+    r = await db.automation_rules.find_one({"_id": obj, "business_id": bid})
+    if not r: raise HTTPException(404, "Rule not found")
+    new_enabled = not bool(r.get("enabled", True))
+    await db.automation_rules.update_one({"_id": obj}, {"$set": {"enabled": new_enabled, "updated_at": datetime.now(timezone.utc)}})
+    r["enabled"] = new_enabled
+    return _serialize_rule(r)
+
+
+@api_router.get("/automation/runs")
+async def list_automation_runs(limit: int = 50, current_user: dict = Depends(get_current_user)):
+    _require_auto_admin(current_user)
+    bid = _business_scope(current_user)
+    limit = max(1, min(int(limit or 50), 200))
+    out = []
+    async for r in db.automation_runs.find({"business_id": bid}).sort("started_at", -1).limit(limit):
+        out.append(_serialize_run(r))
+    return out
+
+
+@api_router.post("/automation/events/emit")
+async def automation_emit(payload: dict, current_user: dict = Depends(get_current_user)):
+    _require_auto_admin(current_user)
+    bid = _business_scope(current_user)
+    trigger = str((payload or {}).get("trigger") or "").strip()
+    evt = dict((payload or {}).get("payload") or {})
+    evt.setdefault("business_id", bid)
+    evt.setdefault("actor", {"id": _me_id(current_user), "role": current_user.get("role"), "email": current_user.get("email")})
+    summary = await auto.emit_event(db, trigger, evt)
+    return {"success": True, **summary}
+
+
+@api_router.post("/automation/rules/{rule_id}/run-test")
+async def run_test_automation(rule_id: str, payload: dict = None, current_user: dict = Depends(get_current_user)):
+    _require_auto_admin(current_user)
+    bid = _business_scope(current_user)
+    try: obj = ObjectId(rule_id)
+    except Exception: raise HTTPException(400, "Invalid rule id")
+    rule = await db.automation_rules.find_one({"_id": obj, "business_id": bid})
+    if not rule: raise HTTPException(404, "Rule not found")
+    evt = dict((payload or {}).get("payload") or {})
+    evt.setdefault("business_id", bid)
+    evt.setdefault("actor", {"id": _me_id(current_user), "role": current_user.get("role")})
+    evt.setdefault("trigger", rule.get("trigger"))
+    run = await auto._execute_rule(db, rule, evt, test=True)
+    return {"success": True, "run": _serialize_run(run)}
+
+
+@app.on_event("startup")
+async def _automation_startup():
+    try:
+        await auto.ensure_indexes(db)
+        print("AUTOMATION_READY triggers=%d actions=%d" % (len(auto.TRIGGERS), len(auto.ACTIONS)))
+    except Exception as e:
+        # Must never crash Render startup
+        print(f"AUTOMATION_STARTUP_ERR {e}")
 
 
 app.include_router(api_router)
