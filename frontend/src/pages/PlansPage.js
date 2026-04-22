@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useApi } from "../hooks/useApi";
 import { normalizePlan, getPlanFeatures, hasPlanAccess } from "../utils/planRules";
+import { detectCountryHint } from "../lib/country";
 
 const fallbackPlans = [
   {
@@ -49,6 +50,7 @@ export default function PlansPage() {
   const [busyPlan, setBusyPlan] = useState("");
   const [loading, setLoading] = useState(true);
   const [checkoutNotice, setCheckoutNotice] = useState(null);
+  const [currencyInfo, setCurrencyInfo] = useState(null); // { country, currency, prices, source }
 
   const getPayload = (res) => {
     if (!res) return null;
@@ -57,26 +59,33 @@ export default function PlansPage() {
     return res;
   };
 
-  const mergePlans = (apiPlans) => {
-    if (!Array.isArray(apiPlans) || apiPlans.length === 0) return fallbackPlans;
+  const mergePlans = (apiPlans, currencyData) => {
+    const base = (Array.isArray(apiPlans) && apiPlans.length > 0)
+      ? fallbackPlans.map((fallback) => {
+          const match = apiPlans.find((p) => {
+            const key = String(p?.key || p?.plan_type || p?.name || "").toLowerCase();
+            return key === fallback.key;
+          });
+          if (!match) return fallback;
+          return {
+            ...fallback,
+            name: match.name || fallback.name,
+            price: match.price || fallback.price,
+            period: match.period || fallback.period,
+            blurb: match.blurb || match.description || fallback.blurb,
+            limits: Array.isArray(match.limits) && match.limits.length > 0 ? match.limits : fallback.limits,
+            badge: match.badge || fallback.badge,
+          };
+        })
+      : fallbackPlans;
 
-    return fallbackPlans.map((fallback) => {
-      const match = apiPlans.find((p) => {
-        const key = String(p?.key || p?.plan_type || p?.name || "").toLowerCase();
-        return key === fallback.key;
-      });
-
-      if (!match) return fallback;
-
-      return {
-        ...fallback,
-        name: match.name || fallback.name,
-        price: match.price || fallback.price,
-        period: match.period || fallback.period,
-        blurb: match.blurb || match.description || fallback.blurb,
-        limits: Array.isArray(match.limits) && match.limits.length > 0 ? match.limits : fallback.limits,
-        badge: match.badge || fallback.badge,
-      };
+    // Overlay currency-aware prices from /billing/currency when available.
+    const priced = currencyData && currencyData.prices ? currencyData.prices : null;
+    if (!priced) return base;
+    return base.map((p) => {
+      const info = priced[p.key];
+      if (!info || info.amount === undefined) return p;
+      return { ...p, price: info.display, currency: info.currency, symbol: info.symbol };
     });
   };
 
@@ -129,18 +138,22 @@ export default function PlansPage() {
     const loadPlans = async () => {
       setLoading(true);
       try {
-        const [plansRes, billingRes] = await Promise.all([
+        const hintCountry = detectCountryHint();
+        const [plansRes, billingRes, currencyRes] = await Promise.all([
           api.get("/plan/all"),
           api.get("/billing/status"),
+          api.get(`/billing/currency?country=${encodeURIComponent(hintCountry || "")}`),
         ]);
 
         const plansData = getPayload(plansRes);
         const billingData = getPayload(billingRes);
+        const currencyData = getPayload(currencyRes);
+        if (currencyData && currencyData.currency) setCurrencyInfo(currencyData);
 
         if (plansData && Array.isArray(plansData)) {
-          setPlans(mergePlans(plansData));
+          setPlans(mergePlans(plansData, currencyData));
         } else {
-          setPlans(fallbackPlans);
+          setPlans(mergePlans(fallbackPlans, currencyData));
         }
 
         if (billingData && billingData.success === false) {
@@ -262,6 +275,10 @@ export default function PlansPage() {
 
       const res = await api.post("/stripe/create-checkout-session", {
         plan_type: planKey,
+        // Pass the resolved country as a hint — backend uses saved country first
+        // but falls back to this for first-checkout users. Keeps UI-shown
+        // currency in lockstep with Stripe checkout currency.
+        country: currencyInfo?.country || detectCountryHint() || "",
       });
 
       if (res?.success === false) {
@@ -335,6 +352,18 @@ export default function PlansPage() {
             <p className="mx-auto mt-4 max-w-2xl text-sm md:text-base text-slate-300 leading-relaxed">
               Start with a 14-day free trial. No card required. Upgrade when you&apos;re ready.
             </p>
+            {currencyInfo?.currency && (
+              <div
+                className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300"
+                data-testid="currency-badge"
+                title={`Prices shown in ${currencyInfo.currency} (${currencyInfo.country}) — change by setting your business country in Settings.`}
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                Billed in <span className="font-semibold text-white">{currencyInfo.currency}</span>
+                <span className="text-slate-500">·</span>
+                <span className="text-slate-400">{currencyInfo.country}</span>
+              </div>
+            )}
           </div>
         )}
 

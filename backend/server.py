@@ -732,7 +732,101 @@ def get_stripe_price_id(plan: str) -> str:
         raise HTTPException(status_code=400, detail=f"Missing Stripe price ID for plan: {plan}")
     return price_id
 
-async def set_business_plan_from_checkout(user_id: str, plan: str, stripe_customer_id: str = None, stripe_subscription_id: str = None):
+
+# ==========================================================================
+# NZ/AU pricing: currency resolution + per-currency Stripe price lookup
+# ==========================================================================
+
+# Display prices (what we SHOW to users). Stripe is the source of truth for what
+# we actually charge via its price IDs. Keep amounts in parity across NZD/AUD for
+# simplicity — users see their local currency code and a sensible number.
+PRICING_TABLE = {
+    "NZD": {"symbol": "NZ$", "solo": 30, "team": 70, "pro": 110, "enterprise": 240},
+    "AUD": {"symbol": "A$",  "solo": 30, "team": 70, "pro": 110, "enterprise": 240},
+    "USD": {"symbol": "US$", "solo": 19, "team": 45, "pro": 69,  "enterprise": 149},
+    "GBP": {"symbol": "£",   "solo": 15, "team": 35, "pro": 55,  "enterprise": 120},
+    "CAD": {"symbol": "CA$", "solo": 25, "team": 60, "pro": 89,  "enterprise": 199},
+}
+
+# Per-currency Stripe price IDs. Read from env so different environments map to
+# their own Stripe price objects. Any missing variant falls back to the default
+# (NZD) price IDs already defined above — so legacy single-currency setups keep working.
+def _env_price(var: str, plan: str) -> str:
+    """Resolve STRIPE_PRICE_{PLAN}_{CCY} with safe fallback to default."""
+    fallback_map = {
+        "solo": STRIPE_PRICE_SOLO, "team": STRIPE_PRICE_TEAM,
+        "pro": STRIPE_PRICE_PRO, "enterprise": STRIPE_PRICE_ENTERPRISE,
+    }
+    return os.environ.get(var, "") or fallback_map.get(plan, "")
+
+STRIPE_PRICES_BY_CCY = {
+    "NZD": {p: _env_price(f"STRIPE_PRICE_{p.upper()}_NZD", p) for p in ("solo", "team", "pro", "enterprise")},
+    "AUD": {p: _env_price(f"STRIPE_PRICE_{p.upper()}_AUD", p) for p in ("solo", "team", "pro", "enterprise")},
+    "USD": {p: _env_price(f"STRIPE_PRICE_{p.upper()}_USD", p) for p in ("solo", "team", "pro", "enterprise")},
+    "GBP": {p: _env_price(f"STRIPE_PRICE_{p.upper()}_GBP", p) for p in ("solo", "team", "pro", "enterprise")},
+    "CAD": {p: _env_price(f"STRIPE_PRICE_{p.upper()}_CAD", p) for p in ("solo", "team", "pro", "enterprise")},
+}
+
+
+def resolve_currency(country: str) -> str:
+    """Map a country string → supported currency. Unknown → NZD (primary market)."""
+    c = (country or "").strip().lower()
+    if not c:
+        return "NZD"
+    # Normalize common aliases / iso codes
+    AU = {"australia", "au", "aus"}
+    NZ = {"new zealand", "nz", "aotearoa", "new-zealand", "newzealand"}
+    US = {"united states", "usa", "us", "united states of america", "u.s.", "u.s.a."}
+    GB = {"united kingdom", "uk", "gb", "great britain", "england", "scotland", "wales", "northern ireland", "britain"}
+    CA = {"canada", "ca", "can"}
+    if c in AU or c.startswith("australia"): return "AUD"
+    if c in NZ or c.startswith("new zealand"): return "NZD"
+    if c in US or c.startswith("united states"): return "USD"
+    if c in GB or c.startswith("united kingdom") or c.startswith("great britain"): return "GBP"
+    if c in CA or c.startswith("canada"): return "CAD"
+    return "NZD"
+
+
+def get_stripe_price_id_for(plan: str, currency: str) -> str:
+    """Return the Stripe price ID for {plan, currency} with safe NZD-default fallback."""
+    plan = (plan or "solo").lower().strip()
+    ccy = (currency or "NZD").upper().strip()
+    price_id = (STRIPE_PRICES_BY_CCY.get(ccy) or {}).get(plan) or ""
+    if not price_id:
+        # Last-resort fallback to original default env vars.
+        default_map = {
+            "solo": STRIPE_PRICE_SOLO, "team": STRIPE_PRICE_TEAM,
+            "pro": STRIPE_PRICE_PRO, "enterprise": STRIPE_PRICE_ENTERPRISE,
+        }
+        price_id = default_map.get(plan, "") or ""
+    if not price_id:
+        raise HTTPException(status_code=400, detail=f"Missing Stripe price ID for {plan} ({ccy})")
+    return price_id
+
+
+def resolve_user_country_currency(user: dict, hint_country: str = None):
+    """
+    Pick the country & currency for a user:
+      1. Saved user/business country wins (authoritative once known).
+      2. Otherwise use the request hint (from frontend detection).
+      3. Otherwise fall back to New Zealand / NZD.
+    """
+    saved = ""
+    if user:
+        saved = str(
+            user.get("country")
+            or user.get("business_country")
+            or user.get("region_country")
+            or ""
+        ).strip()
+    if not saved and hint_country:
+        saved = str(hint_country).strip()
+    if not saved:
+        saved = "New Zealand"
+    return saved, resolve_currency(saved)
+
+
+async def set_business_plan_from_checkout(user_id: str, plan: str, stripe_customer_id: str = None, stripe_subscription_id: str = None, currency: str = None, country: str = None):
     plan = (plan or "solo").lower().strip()
     now = datetime.now(timezone.utc)
 
@@ -758,6 +852,10 @@ async def set_business_plan_from_checkout(user_id: str, plan: str, stripe_custom
         base_update["stripe_customer_id"] = stripe_customer_id
     if stripe_subscription_id:
         base_update["stripe_subscription_id"] = stripe_subscription_id
+    if currency:
+        base_update["currency"] = str(currency).upper().strip()
+    if country:
+        base_update["country"] = str(country).strip()
 
     # Find a source user record first so we can reuse email/business_id if available
     source_user = await db.users.find_one({"$or": user_filters})         or await db.app_users.find_one({"$or": user_filters})         or await db.business_users.find_one({"$or": user_filters})
@@ -831,6 +929,8 @@ async def stripe_checkout_success(session_id: str):
         metadata = getattr(session, "metadata", {}) or {}
         user_id = str(metadata.get("user_id") or "")
         plan = str(normalize_plan(metadata.get("plan") or "solo")).lower().strip()
+        currency_meta = str(metadata.get("currency") or "").upper().strip() or None
+        country_meta = str(metadata.get("country") or "").strip() or None
         stripe_customer_id = getattr(session, "customer", None)
         stripe_subscription_id = getattr(session, "subscription", None)
 
@@ -838,6 +938,8 @@ async def stripe_checkout_success(session_id: str):
             "session_id": session_id,
             "user_id": user_id,
             "plan": plan,
+            "currency": currency_meta,
+            "country": country_meta,
             "stripe_customer_id": str(stripe_customer_id) if stripe_customer_id else None,
             "stripe_subscription_id": str(stripe_subscription_id) if stripe_subscription_id else None,
         })
@@ -848,6 +950,8 @@ async def stripe_checkout_success(session_id: str):
                 plan,
                 str(stripe_customer_id) if stripe_customer_id else None,
                 str(stripe_subscription_id) if stripe_subscription_id else None,
+                currency=currency_meta,
+                country=country_meta,
             )
             # Send users INTO the app (dashboard) after a successful paid checkout,
             # not back onto the billing page. Include the session_id so the frontend
@@ -869,15 +973,13 @@ async def create_checkout_session(payload: dict, current_user: dict = Depends(ge
     if not STRIPE_SECRET_KEY:
         raise HTTPException(status_code=500, detail="Stripe secret key is missing on the server")
 
-    price_map = {
-        "solo": STRIPE_PRICE_SOLO,
-        "team": STRIPE_PRICE_TEAM,
-        "pro": STRIPE_PRICE_PRO,
-        "enterprise": STRIPE_PRICE_ENTERPRISE,
-    }
-    price_id = (price_map.get(plan) or "").strip()
+    # Resolve country & currency with the correct source-of-truth order:
+    # saved user/business > request hint > safe NZ default.
+    hint_country = str((payload or {}).get("country") or "").strip()
+    country, currency = resolve_user_country_currency(current_user, hint_country=hint_country)
+    price_id = (get_stripe_price_id_for(plan, currency) or "").strip()
     if not price_id:
-        raise HTTPException(status_code=400, detail=f"Missing Stripe price ID for plan: {plan}")
+        raise HTTPException(status_code=400, detail=f"Missing Stripe price ID for {plan} ({currency})")
 
     stripe.api_key = STRIPE_SECRET_KEY
 
@@ -897,6 +999,8 @@ async def create_checkout_session(payload: dict, current_user: dict = Depends(ge
         print("CHECKOUT DEBUG START", {
             "plan": plan,
             "price_id": price_id,
+            "currency": currency,
+            "country": country,
             "user_id": user_id,
             "email": email,
             "success_url": success_url,
@@ -913,6 +1017,8 @@ async def create_checkout_session(payload: dict, current_user: dict = Depends(ge
             "metadata": {
                 "user_id": user_id,
                 "plan": plan,
+                "currency": currency,
+                "country": country,
             },
         }
 
@@ -4781,6 +4887,57 @@ async def billing_status(request: Request):
     if not owner:
         raise HTTPException(status_code=404, detail="Business owner record not found")
     return build_billing_status(owner)
+
+
+@api_router.get("/billing/currency")
+async def billing_currency(request: Request, country: str = None):
+    """
+    Return the resolved country/currency + display prices for all plans.
+    Source of truth priority:
+      1. Saved user/business country (once known) — authoritative.
+      2. `country` query hint (from frontend first-visit geo/locale detection).
+      3. Safe default (New Zealand / NZD).
+    """
+    saved_country = ""
+    saved_currency = ""
+    try:
+        user = await get_current_user(request)
+        if user:
+            saved_country = str(user.get("country") or "").strip()
+            saved_currency = str(user.get("currency") or "").strip().upper()
+    except Exception:
+        user = None  # public caller OK
+
+    # Priority: saved > hint > default
+    if saved_country:
+        final_country = saved_country
+    elif country and str(country).strip():
+        final_country = str(country).strip()
+    else:
+        final_country = "New Zealand"
+
+    final_currency = saved_currency or resolve_currency(final_country)
+    # If the saved currency is somehow unsupported, recompute from country
+    if final_currency not in PRICING_TABLE:
+        final_currency = resolve_currency(final_country)
+
+    table = PRICING_TABLE.get(final_currency) or PRICING_TABLE["NZD"]
+    prices = {
+        plan: {
+            "amount": table.get(plan, 0),
+            "currency": final_currency,
+            "symbol": table.get("symbol", "$"),
+            "display": f"{table.get('symbol', '$')}{table.get(plan, 0)}",
+        }
+        for plan in ("solo", "team", "pro", "enterprise")
+    }
+    return {
+        "country": final_country,
+        "currency": final_currency,
+        "source": "user_saved" if saved_country else ("hint" if country else "default"),
+        "supported_currencies": list(PRICING_TABLE.keys()),
+        "prices": prices,
+    }
 
 @api_router.get("/billing/guard")
 async def billing_guard(request: Request):
