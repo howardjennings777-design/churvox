@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppOwnerPage from "./pages/AppOwnerPage";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Toaster } from "./components/ui/sonner";
+import { toast } from "sonner";
 import { getDefaultRoute } from "./lib/roles";
 
 import LoginPage from "./pages/auth/LoginPage";
@@ -134,27 +135,57 @@ function RoleRedirect() {
 
 function App() {
   React.useEffect(() => {
-    const syncCheckoutPlan = async () => {
+    // Global post-Stripe-checkout handler — runs once on mount.
+    // Works regardless of which page Stripe returned the user to.
+    const handleCheckoutReturn = async () => {
       try {
         const params = new URLSearchParams(window.location.search);
-        const sessionId = params.get("session_id");
-        if (!sessionId) return;
+        const checkout = params.get("checkout");
+        const sessionId = params.get("session_id") || "";
+        const plan = (params.get("plan") || "").toLowerCase();
+        if (!checkout && !sessionId) return;
+
         const token = localStorage.getItem("token");
         const backendUrl = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
-        if (!token || !backendUrl) return;
-        await fetch(`${backendUrl}/api/billing/confirm-checkout`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-          credentials: "include",
-          body: JSON.stringify({ session_id: sessionId }),
-        });
+
+        // 1) Idempotent confirm — the backend already saved the plan on its
+        //    /api/stripe/checkout-success handler, but calling this again is safe
+        //    and guarantees the frontend sees the latest plan even if the user
+        //    refreshed mid-flight or landed via direct link.
+        if (sessionId && token && backendUrl) {
+          try {
+            await fetch(`${backendUrl}/api/billing/confirm-checkout`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+              credentials: "include",
+              body: JSON.stringify({ session_id: sessionId }),
+            });
+          } catch (err) {
+            console.warn("confirm-checkout failed (non-fatal):", err);
+          }
+        }
+
+        // 2) User feedback
+        if (checkout === "success") {
+          toast.success(
+            plan
+              ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is now active`
+              : "Plan updated"
+          );
+        } else if (checkout === "cancelled") {
+          toast.info("Checkout cancelled — no changes to your plan");
+        }
+
+        // 3) Refresh auth so the UI shows the new plan immediately
+        window.dispatchEvent(new Event("churvox-auth-refresh"));
+
+        // 4) Clean query params from the URL without leaving the current page
         const cleaned = new URL(window.location.href);
-        cleaned.searchParams.delete("session_id");
-        window.history.replaceState({}, "", cleaned.toString());
-        window.location.reload();
-      } catch (err) { console.error("Checkout sync failed", err); }
+        ["checkout", "session_id", "plan"].forEach((k) => cleaned.searchParams.delete(k));
+        window.history.replaceState({}, document.title, cleaned.toString());
+      } catch (err) { console.error("Checkout return handler failed:", err); }
     };
-    syncCheckoutPlan();
+    handleCheckoutReturn();
   }, []);
 
   return (

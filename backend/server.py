@@ -849,7 +849,12 @@ async def stripe_checkout_success(session_id: str):
                 str(stripe_customer_id) if stripe_customer_id else None,
                 str(stripe_subscription_id) if stripe_subscription_id else None,
             )
-            return RedirectResponse(url=f"{FRONTEND_URL}/plans?checkout=success&plan={plan}")
+            # Send users INTO the app (dashboard) after a successful paid checkout,
+            # not back onto the billing page. Include the session_id so the frontend
+            # can idempotently confirm/refresh plan state.
+            return RedirectResponse(
+                url=f"{FRONTEND_URL}/dashboard?checkout=success&plan={plan}&session_id={session_id}"
+            )
 
         return RedirectResponse(url=f"{FRONTEND_URL}/plans?checkout=cancelled")
     except Exception as e:
