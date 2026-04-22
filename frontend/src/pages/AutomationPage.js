@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Zap, Plus, Trash2, Play, History, Sparkles, Search, Copy, Power } from "lucide-react";
+import { Zap, Plus, Trash2, Play, History, Sparkles, Search, Copy, Power, ArrowUp, ArrowDown, Download, Upload, BarChart3 } from "lucide-react";
 import ActionForm from "@/components/automation/ActionForm";
 
 const EMPTY_RULE = () => ({
@@ -73,12 +73,20 @@ export default function AutomationPage() {
   const [templates, setTemplates] = useState([]);
   const [triggerPaths, setTriggerPaths] = useState([]);
   const [advancedIdx, setAdvancedIdx] = useState({}); // per-action advanced toggle
+  const [stats, setStats] = useState(null);
+  const [showImport, setShowImport] = useState(false);
+  const [importText, setImportText] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [cat, rulesRes] = await Promise.all([get("/automation/catalog"), get("/automation/rules")]);
+    const [cat, rulesRes, statsRes] = await Promise.all([
+      get("/automation/catalog"),
+      get("/automation/rules"),
+      get("/automation/stats"),
+    ]);
     if (cat?.success) setCatalog(cat.data || {});
     if (rulesRes?.success) setRules(Array.isArray(rulesRes.data) ? rulesRes.data : []);
+    if (statsRes?.success) setStats(statsRes.data || null);
     setLoading(false);
   }, [get]);
 
@@ -171,6 +179,62 @@ export default function AutomationPage() {
     setDraft((d) => ({ ...d, actions: d.actions.filter((_, idx) => idx !== i) }));
     setAdvancedIdx((m) => { const n = { ...m }; delete n[i]; return n; });
   };
+  const moveAction = (i, dir) => setDraft((d) => {
+    const arr = [...d.actions];
+    const j = i + dir;
+    if (j < 0 || j >= arr.length) return d;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+    return { ...d, actions: arr };
+  });
+
+  const exportRule = async (r) => {
+    const res = await get(`/automation/rules/${r.id}/export`);
+    if (!res?.success) { toast.error(res?.error || "Export failed"); return; }
+    const json = JSON.stringify(res.data, null, 2);
+    try {
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${(r.name || "rule").replace(/[^\w-]+/g, "_")}.churvox-rule.json`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Rule exported");
+    } catch {
+      toast.error("Could not download file");
+    }
+  };
+
+  const doImport = async () => {
+    let body;
+    try { body = JSON.parse(importText); }
+    catch { toast.error("Not valid JSON"); return; }
+    const res = await post("/automation/rules/import", body);
+    if (res?.success) {
+      toast.success("Rule imported — review & enable it");
+      setShowImport(false);
+      setImportText("");
+      load();
+    } else {
+      toast.error(res?.error || "Import failed");
+    }
+  };
+
+  // Plain-English preview of the current draft — helps users read the rule like a sentence.
+  const draftSummary = useMemo(() => {
+    if (!draft) return "";
+    const trig = draft.trigger ? `${draft.trigger}`.replace(/_/g, " ") : "<trigger>";
+    const mode = (draft.condition_mode || "all").toLowerCase() === "all" ? "and" : "or";
+    const condPart = (draft.conditions || []).length === 0
+      ? ""
+      : " if " + draft.conditions
+          .map((c) => `${c.path || "<path>"} ${c.op || "equals"}${["exists","not_exists","blank","not_blank","is_true","is_false"].includes(c.op) ? "" : ` "${c.value ?? ""}"`}`)
+          .join(` ${mode} `);
+    const actPart = (draft.actions || []).length === 0
+      ? " do nothing yet"
+      : ", then " + draft.actions.map((a) => (a.type || "action").replace(/_/g, " ")).join(" → ");
+    return `When ${trig}${condPart}${actPart}.`;
+  }, [draft]);
 
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
@@ -202,6 +266,9 @@ export default function AutomationPage() {
             <Button variant="outline" onClick={openTemplates} data-testid="open-templates-btn">
               <Sparkles className="h-4 w-4 mr-1" /> Templates
             </Button>
+            <Button variant="outline" onClick={() => setShowImport(true)} data-testid="open-import-btn">
+              <Upload className="h-4 w-4 mr-1" /> Import
+            </Button>
             <Button variant="outline" asChild>
               <Link to="/automation/runs"><History className="h-4 w-4 mr-1" /> Run history</Link>
             </Button>
@@ -210,6 +277,64 @@ export default function AutomationPage() {
             </Button>
           </div>
         </div>
+
+        {/* Stats dashboard card */}
+        {stats && (stats.rules?.total > 0 || stats.runs?.total > 0) && !draft && (
+          <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5" data-testid="automation-stats-card">
+            <div className="flex items-center gap-2 mb-3">
+              <BarChart3 className="h-4 w-4 text-blue-600" />
+              <h3 className="text-sm font-semibold text-slate-900">Automation health</h3>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <StatBlock label="Rules enabled" value={`${stats.rules?.enabled || 0}/${stats.rules?.total || 0}`} />
+              <StatBlock label="Runs · 24h" value={stats.runs?.last_24h || 0} />
+              <StatBlock label="Runs · 7d" value={stats.runs?.last_7d || 0} />
+              <StatBlock label="Completed" value={stats.runs?.by_status?.completed || 0} tone="green" />
+              <StatBlock label="Failed" value={stats.runs?.by_status?.failed || 0} tone={(stats.runs?.by_status?.failed || 0) > 0 ? "red" : "slate"} />
+            </div>
+            {Array.isArray(stats.recent_failures) && stats.recent_failures.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-slate-100">
+                <div className="text-[11px] uppercase tracking-wide text-slate-500 font-semibold mb-2">Recent failures</div>
+                <div className="space-y-1">
+                  {stats.recent_failures.slice(0, 3).map((f) => (
+                    <Link
+                      key={f.id}
+                      to="/automation/runs"
+                      className="block text-[11px] text-red-700 bg-red-50 border border-red-100 rounded px-2 py-1 hover:bg-red-100"
+                    >
+                      <span className="font-medium">{f.rule_name || f.trigger}</span>
+                      {f.error && <span className="text-red-600 ml-1">· {String(f.error).slice(0, 80)}</span>}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Import modal */}
+        {showImport && (
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm" data-testid="import-panel">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                <Upload className="h-4 w-4 text-blue-600" /> Import rule from JSON
+              </h3>
+              <button onClick={() => { setShowImport(false); setImportText(""); }} className="text-sm text-slate-500 hover:underline">Close</button>
+            </div>
+            <p className="text-xs text-slate-500 mb-2">Paste a <code className="font-mono">.churvox-rule.json</code> payload below. Imported rules are always disabled — enable after you review.</p>
+            <textarea
+              className="w-full h-40 font-mono text-xs border border-slate-200 rounded-md p-2"
+              value={importText}
+              onChange={(e) => setImportText(e.target.value)}
+              placeholder='{"name":"...", "trigger":"...", "actions":[...]}'
+              data-testid="import-textarea"
+            />
+            <div className="flex justify-end gap-2 mt-3">
+              <Button variant="outline" onClick={() => { setShowImport(false); setImportText(""); }}>Cancel</Button>
+              <Button onClick={doImport} disabled={!importText.trim()} data-testid="do-import-btn">Import rule</Button>
+            </div>
+          </div>
+        )}
 
         {/* Filters bar */}
         {!draft && rules.length > 0 && (
@@ -293,6 +418,13 @@ export default function AutomationPage() {
             </div>
 
             <div className="p-5 space-y-6">
+              {/* Plain-English preview */}
+              {(draft.trigger || draft.actions.length > 0) && (
+                <div className="rounded-lg border border-blue-100 bg-gradient-to-r from-blue-50 to-transparent p-3">
+                  <div className="text-[10px] uppercase tracking-wider text-blue-700 font-semibold mb-0.5">Rule preview</div>
+                  <div className="text-sm text-slate-800 leading-relaxed">{draftSummary}</div>
+                </div>
+              )}
               {/* Step 1 — basics */}
               <section className="space-y-3">
                 <SectionHeader step="1" title="Basics" />
@@ -449,13 +581,33 @@ export default function AutomationPage() {
                           {catalog.actions.map((t) => <option key={t} value={t}>{t}</option>)}
                         </select>
                       </div>
-                      <button
-                        onClick={() => rmAction(i)}
-                        className="h-8 w-8 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-md"
-                        aria-label="Remove action"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => moveAction(i, -1)}
+                          disabled={i === 0}
+                          className="h-8 w-8 flex items-center justify-center text-slate-500 hover:bg-slate-100 rounded-md disabled:opacity-30 disabled:cursor-not-allowed"
+                          aria-label="Move up"
+                          data-testid={`action-up-${i}`}
+                        >
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => moveAction(i, 1)}
+                          disabled={i === draft.actions.length - 1}
+                          className="h-8 w-8 flex items-center justify-center text-slate-500 hover:bg-slate-100 rounded-md disabled:opacity-30 disabled:cursor-not-allowed"
+                          aria-label="Move down"
+                          data-testid={`action-down-${i}`}
+                        >
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => rmAction(i)}
+                          className="h-8 w-8 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-md"
+                          aria-label="Remove action"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                     <div className="p-4">
                       <ActionForm
@@ -549,6 +701,9 @@ export default function AutomationPage() {
                   <Button variant="outline" size="sm" onClick={() => duplicate(r)} data-testid={`duplicate-rule-${r.id}`}>
                     <Copy className="h-3 w-3 mr-1" /> Duplicate
                   </Button>
+                  <Button variant="outline" size="sm" onClick={() => exportRule(r)} data-testid={`export-rule-${r.id}`}>
+                    <Download className="h-3 w-3 mr-1" /> Export
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => remove(r)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
                     <Trash2 className="h-3 w-3" />
                   </Button>
@@ -573,6 +728,21 @@ function SectionHeader({ step, title, subtitle, right }) {
         </div>
       </div>
       {right}
+    </div>
+  );
+}
+
+function StatBlock({ label, value, tone = "slate" }) {
+  const tones = {
+    slate: "bg-slate-50 text-slate-900 border-slate-200",
+    green: "bg-green-50 text-green-700 border-green-200",
+    red: "bg-red-50 text-red-700 border-red-200",
+    blue: "bg-blue-50 text-blue-700 border-blue-200",
+  };
+  return (
+    <div className={`rounded-lg border px-3 py-2.5 ${tones[tone]}`}>
+      <div className="text-[10px] uppercase tracking-wide opacity-70 font-semibold">{label}</div>
+      <div className="text-xl font-bold mt-0.5">{value}</div>
     </div>
   );
 }

@@ -24,7 +24,7 @@ export function ActionForm({ type, config, onChange, advanced, setAdvanced }) {
   const InvoiceStatusOptions = ["draft", "sent", "paid", "cancelled"];
 
   const KNOWN = new Set([
-    "create_notification", "create_job_note", "update_job_status", "create_invoice_stub",
+    "create_notification", "create_job_note", "update_job_status", "create_invoice_stub", "send_sms",
   ]);
 
   const renderJSON = () => (
@@ -231,6 +231,40 @@ export function ActionForm({ type, config, onChange, advanced, setAdvanced }) {
             value={cfg.notes || ""}
             onChange={(e) => set({ notes: e.target.value })}
             placeholder="Auto-generated draft"
+          />
+        </Field>
+        <div className="flex justify-end"><AdvancedToggle /></div>
+      </div>
+    );
+  }
+
+  // --- send_sms ---
+  if (type === "send_sms") {
+    return (
+      <div className="space-y-3">
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-800">
+          SMS actions send a real text via your ClickSend account. Make sure <code className="font-mono">CLICKSEND_*</code> env vars are configured.
+        </div>
+        <Field label="To (phone, AU/NZ)" hint="E.164 or local format. Use {{job.worker_id}} only if you store phone on the worker.">
+          <Input
+            value={cfg.to || ""}
+            onChange={(e) => set({ to: e.target.value })}
+            placeholder="+64 21 123 4567 or {{actor.phone}}"
+          />
+        </Field>
+        <Field label="Message">
+          <textarea
+            className="w-full h-20 border border-slate-200 rounded-md p-2 text-sm"
+            value={cfg.message || ""}
+            onChange={(e) => set({ message: e.target.value })}
+            placeholder="Hi! {{job.title}} is scheduled for {{job.scheduled_date}}."
+          />
+        </Field>
+        <Field label="Sender label (optional)">
+          <Input
+            value={cfg.source || ""}
+            onChange={(e) => set({ source: e.target.value })}
+            placeholder="Churvox"
           />
         </Field>
         <div className="flex justify-end"><AdvancedToggle /></div>

@@ -24,7 +24,7 @@ TRIGGERS: List[str] = [
     "job_resumed", "job_completed",
     "employer_note_added", "worker_note_added", "worker_photo_uploaded",
     "quote_created", "quote_sent", "quote_accepted",
-    "invoice_created", "invoice_sent", "invoice_paid",
+    "invoice_created", "invoice_sent", "invoice_paid", "invoice_overdue",
     "team_member_invited",
     "timesheet_updated", "payroll_status_updated",
     "recurring_job_generated",
@@ -34,7 +34,7 @@ ACTIONS: List[str] = [
     "log", "create_notification", "create_job_note",
     "update_job_status", "create_invoice_stub", "webhook_stub",
     "create_follow_up_task_stub", "set_field_on_record",
-    "create_internal_activity_log",
+    "create_internal_activity_log", "send_sms",
 ]
 
 # Safe whitelist for `set_field_on_record` — collection + allowed updatable fields.
@@ -326,6 +326,37 @@ async def _run_action(db, action: Dict[str, Any], payload: Dict[str, Any]) -> Di
             }
             r = await db.activity_logs.insert_one(doc)
             result["activity_id"] = str(r.inserted_id)
+
+        elif atype == "send_sms":
+            # Real SMS via the configured sms_provider (ClickSend in production).
+            # Phone normalization + validation is handled by format_phone_au_nz.
+            # Failures are captured in the run result — they never raise to caller.
+            to_raw = str(render_tokens(cfg.get("to") or "", payload)).strip()
+            body = str(render_tokens(cfg.get("message") or cfg.get("body") or "", payload))[:1000]
+            source = str(cfg.get("source") or "Churvox")[:32]
+            if not to_raw or not body:
+                result["ok"] = False
+                result["error"] = "send_sms requires 'to' and 'message'"
+            else:
+                try:
+                    # Lazy-import to avoid hard coupling + keep engine test-runnable
+                    from sms_provider import get_sms_provider, format_phone_au_nz
+                    provider = get_sms_provider()
+                    formatted = format_phone_au_nz(to_raw)
+                    if not formatted:
+                        result["ok"] = False
+                        result["error"] = f"Invalid phone number: {to_raw}"
+                    else:
+                        sms_res = await provider.send(to=formatted, body=body, source=source)
+                        result["ok"] = bool(getattr(sms_res, "ok", False))
+                        result["sms_provider"] = provider.__class__.__name__
+                        result["sms_to"] = formatted
+                        result["sms_id"] = getattr(sms_res, "message_id", None)
+                        if not result["ok"]:
+                            result["error"] = getattr(sms_res, "error", "SMS send failed")
+                except Exception as e:
+                    result["ok"] = False
+                    result["error"] = f"send_sms failed: {e}"
 
         else:
             result["ok"] = False
