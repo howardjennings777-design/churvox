@@ -1,56 +1,54 @@
 # Churvox PRD
 
 ## Original Problem Statement
-Prepare Churvox for launch as a mobile-friendly web app deployed on Render. Keep Render compatibility, current frontend/backend structure, and preserve existing auth/cookie/CORS setups. Do not hardcode backend URLs. Focus on launch-critical items only: clean login/signup, clients, jobs, quotes, invoices, team features, Stripe plan persistence, mobile tap/click fixes, and adding loading/empty/error states.
+Prepare Churvox for launch as a mobile-friendly web app deployed on Render. Keep Render compatibility, current frontend/backend structure, and preserve existing auth/cookie/CORS setups. Do not hardcode backend URLs. Focus on launch-critical items only.
+
+Latest scope additions (2026-04-22): Strongest practical V1 Automation Engine — wire remaining triggers (quote_accepted, recurring_job_generated, timesheet_updated, payroll_status_updated, job_resumed), add templates, trigger schemas, run retry, and per-rule stats. Keep existing working features intact.
 
 ## Architecture
-- **Frontend**: React (CRA) + Tailwind CSS + Radix UI + Shadcn, served as production build
-- **Backend**: FastAPI + MongoDB (motor async driver)
-- **Auth**: JWT tokens + HTTP-only cookies, passlib/bcrypt
-- **Email**: Resend API
-- **SMS**: ClickSend API
+- **Frontend**: React (CRA via craco) + Tailwind + Radix/Shadcn — served as a production build via `serve -s build` (PORT=3000). Hot reload NOT active in production mode; run `yarn build && sudo supervisorctl restart frontend` after any .js edit.
+- **Backend**: FastAPI + MongoDB (motor) on port 8001 (uvicorn `--reload`)
+- **Auth**: JWT + bcrypt (passlib)
+- **Email**: Postmark (migrated from Resend)
+- **SMS**: ClickSend
 - **Billing**: Stripe
-- **Deployment**: Render (auto-deploy from GitHub main branch)
+- **Automation core**: `/app/backend/automation.py`
 
-## What's Been Implemented
+## What's Been Implemented (Major Waves)
 
-### Session 1-15 (Previous Forks)
-- Full CRUD for clients, jobs, quotes, invoices
-- Auth flows (login, signup, forgot/reset password)
-- Stripe billing integration with plan persistence
-- Team portal with worker management
-- CSV import for clients and team
-- PWA "website-first" configuration
-- Mobile tap/click fixes (hard-tap-fix.css)
-- Radix UI dialog/modal click bug fixes (replaced AlertDialogAction with native buttons)
-- Backend role-based access for "employer" users across 16 routes
-- Install Prompt layout fix
-- Hardcoded backend URLs removed globally
+### Pre-session (Prior forks)
+- Full CRUD for clients, jobs, quotes, invoices; auth/login/signup/reset flows; Stripe plans; team portal; CSV imports; PWA; mobile fixes.
 
-### Session 16 (Current Fork - April 14-15, 2026)
-- **P0: App Owner Platform Refactor** — COMPLETE
-  - Removed redundant 4-endpoint waterfall fetch in AppOwnerPage.jsx
-  - Now uses single `/api/admin/platform-stats` endpoint only
-  - Fixed backend routing: endpoint was registered after catch-all route, causing 404s
-  - Simplified normalizeStats to match known backend response shape
-  - Fixed plan_counts leak (0 values falling through to unfiltered backend counts)
-  - Fixed "Jobs Today" label to "Total Jobs" (data accuracy)
-  - filterFake correctly removes test/demo/seed data
-- **P1: Forgot Password Flow** — VERIFIED & CLEANED
-  - Fixed missing `send_email` import in server.py
-  - Removed testing fallback UI: no more visible token, blue reset link, or "Email delivery issue" warning
-  - Success state now shows clean generic message: "If an account exists for that email, you'll receive a password reset link shortly."
-  - Backend still logs debug info (token, email errors) for developer troubleshooting
-  - Full reset flow works: forgot → token → email (or fail gracefully) → reset-password → success
-- **P2: Final Regression** — ALL TESTS PASS
-  - Admin login (real mouse click): PASS
-  - Employer login (real mouse click): PASS
-  - Owner dashboard real data: PASS
-  - Forgot password fallback: PASS
-  - Jobs delete modal (real mouse click): PASS
-  - Clients add modal (real mouse click): PASS
-  - Mobile viewport (375x812): PASS
-- **Build fix**: Rebuilt frontend with correct REACT_APP_BACKEND_URL
+### Session 2026-04-21 (V1 Automation + Notifications launch)
+- Built V1 Automation Engine with 19 triggers, 9 actions, 18 operators
+- In-app notifications system (bell, unread count, per-user scope)
+- Postmark migration + branded email templates
+- Team invite select styling, PWA icons, geolocation retry
+- Worker photo auto-compression via client-side Canvas
+
+### Session 2026-04-22 (Automation Strongest-Practical Release) — THIS SESSION
+Backend:
+- Wired missing triggers: `quote_accepted` (new `POST /api/quotes/{id}/accept`), `recurring_job_generated` (new `POST /api/jobs/generate-recurring`), `timesheet_updated` (new `POST /api/payroll/timesheets`), `payroll_status_updated` (new `POST /api/payroll/status`)
+- Fixed `job_resumed` emit — previously conflated with `job_started` on paused→in_progress transition
+- Added engine helpers: `GET /api/automation/templates` (6 starter rules), `GET /api/automation/triggers/{name}/schema` (payload paths), `POST /api/automation/runs/{id}/retry` (re-run a past run)
+- `GET /api/automation/rules` now returns `last_run_at`, `last_run_status`, `runs_count` per rule
+
+Frontend:
+- Rule builder: trigger path hints (click-to-copy chips), template picker panel, rule list with search + trigger + enabled filters, per-rule last-run badge and stats
+- Run history: search by rule/trigger, retry button on failed runs, extra result IDs surfaced (task/activity)
+
+Tests:
+- New pytest-style smoke suite: `/app/backend/tests/test_automation_new_triggers.py` — covers templates, trigger schemas, recurring generator, timesheet/payroll stubs, rule creation + trigger fire + run retry + stats regression.
+
+## Backlog (Prioritised)
+
+### P2 — Polish
+- Inline action-config form builder (replace raw JSON textarea) for top-3 actions
+- Scheduler cron (call `/api/jobs/generate-recurring` once daily; currently on-demand)
+
+### Future
+- Migrate job photos from base64-in-Mongo to Emergent Object Storage with signed URLs + thumbnails
+- Refactor `server.py` (~5.7k lines) into `/app/backend/routes` and `/app/backend/models`
 
 ## Render Environment Variables Required
 ```
@@ -59,26 +57,17 @@ DB_NAME=<database name>
 JWT_SECRET=<64+ char secret>
 CORS_ORIGINS=<frontend URL>
 FRONTEND_URL=<frontend URL>
-RESEND_API_KEY=<Resend API key>
-EMAIL_FROM=hello@churvox.com
+POSTMARK_SERVER_TOKEN=<Postmark server token>
+POSTMARK_FROM_EMAIL=hello@churvox.com
 CLICKSEND_USERNAME=hello@churvox.com
 CLICKSEND_API_KEY=<ClickSend key>
 PLATFORM_OWNER_EMAILS=hello@churvox.com
 ```
 
-## For Forgot Password to work on Render
-1. `RESEND_API_KEY` must be a valid Resend key
-2. `EMAIL_FROM` must be from a verified domain in Resend (e.g., hello@churvox.com requires churvox.com domain verified)
-3. `FRONTEND_URL` must match the Render frontend URL (used to build reset links)
-
-## Backlog
-- No new features requested by user
-- User explicitly prohibited: advanced AI, marketplace, fleet, big redesigns
-
 ## Changelog
-- 2026-04-21: Postmark wired as primary email provider (Resend kept as fallback). New shared helper `/app/backend/email_provider.py` with branded Churvox HTML templates. Uses env vars `POSTMARK_SERVER_TOKEN`, `POSTMARK_FROM_EMAIL`, `FRONTEND_URL`. Endpoints wired: `/auth/register` now sends verification email; new `POST /auth/resend-verification`; `POST /auth/forgot-password` (existing, now goes through new helper); team invites (`POST /team/workers`, `POST /team/import-csv`, `POST /team/workers/{id}/resend-invite`) now use branded template with business name + role label. Graceful failure preserved — endpoints stay 200 even if email provider misconfigured.
-- 2026-04-21: Fixed Team Invite form `<select>` dropdowns (TeamPage.js). Role, Country, Region/State now render with `bg-white`, `border-slate-300`, and native chevron (removed leftover dark-theme `bg-[#0f172a]`/`border-white/10`/`appearance-none`). Role dropdown now exposes all 4 options in order: Manager, Office Admin, Worker, Payroll. Also applied same fix to edit-worker modal selects. Verified end-to-end by testing agent (iteration_26.json, 7/7 passed) — worker created via UI persisted with role=manager.
-- 2026-04-21: Testing agent identified and fixed a stale `/app/frontend/build` bundle referencing an old `REACT_APP_BACKEND_URL`. Rebuilt via `yarn build` + `supervisorctl restart frontend`. Note: this app uses `serve -s build` in production mode — future frontend edits require rebuild.
+- 2026-04-22: Strongest-practical V1 Automation release — wired quote_accepted, recurring_job_generated, timesheet_updated, payroll_status_updated, job_resumed triggers; added templates/trigger-schema/retry/stats; frontend rule builder + run history UX lift. E2E smoke suite green.
+- 2026-04-21: Automation Engine V1 + Notifications shipped; Postmark migration; team select styling; worker photo compression; PWA icons & splash.
 
 ## Operational Note
-- Frontend serves from `/app/frontend/build` via `serve -s build`. Hot reload is NOT active. After any `.js`/`.jsx` edit run: `cd /app/frontend && yarn build && sudo supervisorctl restart frontend`.
+- Frontend serves from `/app/frontend/build`. After any .js/.jsx edit: `cd /app/frontend && yarn build && sudo supervisorctl restart frontend`.
+- Backend hot-reloads via uvicorn `--reload` — no restart needed for .py edits (only for .env/deps).

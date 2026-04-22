@@ -2125,6 +2125,78 @@ async def send_quote(quote_id: str, current_user: dict = Depends(get_current_use
         "message": "Quote marked as sent"
     }
 
+
+@api_router.post("/quotes/{quote_id}/accept")
+async def accept_quote(quote_id: str, current_user: dict = Depends(get_current_user)):
+    """Mark a quote as accepted and fire the quote_accepted automation trigger."""
+    from datetime import datetime, timezone
+
+    if current_user.get("role") not in BUSINESS_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    try:
+        obj_id = ObjectId(quote_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid quote ID")
+
+    quote = await db.quotes.find_one({
+        "_id": obj_id,
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]
+    })
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    now = datetime.now(timezone.utc)
+    await db.quotes.update_one(
+        {"_id": obj_id},
+        {"$set": {
+            "status": "accepted",
+            "accepted_at": now,
+            "updated_at": now,
+        }}
+    )
+
+    await notify(user_id=owner_id, business_id=business_id, type="quote_accepted",
+                 title="Quote accepted", message=quote.get("customer_name") or "Quote accepted",
+                 route=f"/quotes/{quote_id}", target_type="quote", target_id=quote_id)
+    try:
+        await auto.emit_event(db, "quote_accepted", {
+            "business_id": str(business_id),
+            "actor": {"id": str(owner_id), "role": current_user.get("role")},
+            "quote": {
+                "id": quote_id, "status": "accepted",
+                "total": float(quote.get("price") or quote.get("total") or 0),
+                "client_id": str(quote.get("client_id") or ""),
+                "customer_name": quote.get("customer_name") or "",
+                "job_type": quote.get("job_type") or "",
+                "business_id": str(business_id),
+            },
+        })
+    except Exception as e:
+        print("AUTO_EMIT_ERR quote_accepted", e)
+
+    return {"success": True, "message": "Quote accepted"}
+
+
 @api_router.post("/quotes")
 async def create_quote(request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
@@ -3528,10 +3600,15 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
                     "address": existing.get("address"),
                 },
             }
+            prev_status = str(existing.get("status") or "").lower()
             if new_status == "acknowledged":
                 await auto.emit_event(db, "job_acknowledged", base)
             elif new_status == "in_progress":
-                await auto.emit_event(db, "job_started", base)
+                # Differentiate resume from cold-start
+                if prev_status == "paused":
+                    await auto.emit_event(db, "job_resumed", base)
+                else:
+                    await auto.emit_event(db, "job_started", base)
             elif new_status == "paused":
                 await auto.emit_event(db, "job_paused", base)
             elif new_status == "completed":
@@ -5134,8 +5211,16 @@ async def list_automation_rules(current_user: dict = Depends(get_current_user)):
     _require_auto_admin(current_user)
     bid = _business_scope(current_user)
     out = []
+    rule_ids: list = []
     async for r in db.automation_rules.find({"business_id": bid}).sort("created_at", -1):
         out.append(_serialize_rule(r))
+        rule_ids.append(str(r.get("_id")))
+    stats = await _rule_stats_map(bid, rule_ids)
+    for row in out:
+        s = stats.get(row["id"]) or {}
+        row["last_run_at"] = s.get("last_run_at")
+        row["last_run_status"] = s.get("last_run_status")
+        row["runs_count"] = s.get("runs_count") or 0
     return out
 
 
@@ -5221,13 +5306,40 @@ async def toggle_automation_rule(rule_id: str, current_user: dict = Depends(get_
     return _serialize_rule(r)
 
 
+@api_router.post("/automation/rules/{rule_id}/duplicate")
+async def duplicate_automation_rule(rule_id: str, current_user: dict = Depends(get_current_user)):
+    _require_auto_admin(current_user)
+    bid = _business_scope(current_user)
+    try: obj = ObjectId(rule_id)
+    except Exception: raise HTTPException(400, "Invalid rule id")
+    src = await db.automation_rules.find_one({"_id": obj, "business_id": bid})
+    if not src: raise HTTPException(404, "Rule not found")
+    now = datetime.now(timezone.utc)
+    clone = {k: v for k, v in src.items() if k != "_id"}
+    clone["name"] = f"{src.get('name', 'Rule')} (copy)"[:120]
+    clone["enabled"] = False
+    clone["created_at"] = now
+    clone["updated_at"] = now
+    clone["created_by_user_id"] = _me_id(current_user)
+    r = await db.automation_rules.insert_one(clone)
+    clone["_id"] = r.inserted_id
+    return _serialize_rule(clone)
+
+
 @api_router.get("/automation/runs")
-async def list_automation_runs(limit: int = 50, current_user: dict = Depends(get_current_user)):
+async def list_automation_runs(
+    limit: int = 50,
+    status: str = "",
+    current_user: dict = Depends(get_current_user),
+):
     _require_auto_admin(current_user)
     bid = _business_scope(current_user)
     limit = max(1, min(int(limit or 50), 200))
+    q = {"business_id": bid}
+    if status and status.lower() in ("running", "completed", "failed", "skipped"):
+        q["status"] = status.lower()
     out = []
-    async for r in db.automation_runs.find({"business_id": bid}).sort("started_at", -1).limit(limit):
+    async for r in db.automation_runs.find(q).sort("started_at", -1).limit(limit):
         out.append(_serialize_run(r))
     return out
 
@@ -5258,6 +5370,402 @@ async def run_test_automation(rule_id: str, payload: dict = None, current_user: 
     evt.setdefault("trigger", rule.get("trigger"))
     run = await auto._execute_rule(db, rule, evt, test=True)
     return {"success": True, "run": _serialize_run(run)}
+
+
+# -------- Engine enhancements: templates, trigger schema, retry, rule stats --------
+
+# Suggested dotted paths per trigger — used by the UI to show "click to insert" chips
+TRIGGER_SCHEMAS: dict = {
+    # job-family
+    "job_assigned": ["job.id", "job.title", "job.status", "job.client_id", "job.worker_id",
+                     "job.job_type", "job.region", "job.address", "actor.id", "actor.role"],
+    "job_acknowledged": ["job.id", "job.title", "job.status", "job.worker_id", "actor.id"],
+    "job_started": ["job.id", "job.title", "job.status", "job.worker_id", "actor.id"],
+    "job_paused": ["job.id", "job.title", "job.worker_id", "actor.id"],
+    "job_resumed": ["job.id", "job.title", "job.worker_id", "actor.id"],
+    "job_completed": ["job.id", "job.title", "job.client_id", "job.worker_id", "actor.id"],
+    "employer_note_added": ["job.id", "job.title", "note", "actor.id"],
+    "worker_note_added": ["job.id", "job.title", "note", "actor.id"],
+    "worker_photo_uploaded": ["job.id", "job.title", "photo_uploaded", "actor.id"],
+    # quote-family
+    "quote_created": ["quote.id", "quote.status", "quote.total", "quote.client_id", "actor.id"],
+    "quote_sent": ["quote.id", "quote.status", "quote.total", "quote.client_id", "actor.id"],
+    "quote_accepted": ["quote.id", "quote.status", "quote.total", "quote.client_id",
+                       "quote.customer_name", "quote.job_type", "actor.id"],
+    # invoice-family
+    "invoice_created": ["invoice.id", "invoice.status", "invoice.total", "invoice.client_id", "actor.id"],
+    "invoice_sent": ["invoice.id", "invoice.status", "invoice.total", "invoice.client_id", "actor.id"],
+    "invoice_paid": ["invoice.id", "invoice.status", "invoice.total", "invoice.client_id", "actor.id"],
+    # team
+    "team_member_invited": ["member.id", "member.email", "member.role", "actor.id"],
+    # payroll
+    "timesheet_updated": ["timesheet.id", "timesheet.worker_id", "timesheet.hours",
+                          "timesheet.week_of", "actor.id"],
+    "payroll_status_updated": ["payroll.id", "payroll.status", "payroll.period", "actor.id"],
+    # recurring
+    "recurring_job_generated": ["job.id", "job.title", "job.client_id", "job.recurring_frequency",
+                                "source_job_id", "actor.id"],
+}
+
+
+# Ready-to-use rule templates shown to users. These are NOT persisted; the UI uses them
+# as a starting point for new rules.
+AUTOMATION_TEMPLATES: list = [
+    {
+        "key": "notify_on_complete",
+        "name": "Notify me when any job completes",
+        "description": "Send me an in-app notification the moment a worker marks a job complete.",
+        "trigger": "job_completed",
+        "condition_mode": "all",
+        "conditions": [],
+        "actions": [{
+            "type": "create_notification",
+            "config": {
+                "title": "Job completed",
+                "message": "{{job.title}} was completed.",
+                "route": "/jobs/{{job.id}}",
+                "target_type": "job",
+                "target_id": "{{job.id}}",
+            },
+        }],
+    },
+    {
+        "key": "log_quote_accepted",
+        "name": "Log every accepted quote",
+        "description": "Keep an internal audit trail every time a quote is accepted.",
+        "trigger": "quote_accepted",
+        "condition_mode": "all",
+        "conditions": [],
+        "actions": [{
+            "type": "create_internal_activity_log",
+            "config": {
+                "log_type": "quote_accepted",
+                "message": "Quote {{quote.id}} accepted for {{quote.customer_name}} (${{quote.total}}).",
+            },
+        }],
+    },
+    {
+        "key": "followup_after_complete",
+        "name": "Create a follow-up task 3 days after job completion",
+        "description": "After any completed job, remind yourself to check in with the client.",
+        "trigger": "job_completed",
+        "condition_mode": "all",
+        "conditions": [],
+        "actions": [{
+            "type": "create_follow_up_task_stub",
+            "config": {
+                "title": "Follow up on {{job.title}}",
+                "description": "Check in with the client about recent work.",
+                "related_type": "job",
+                "related_id": "{{job.id}}",
+            },
+        }],
+    },
+    {
+        "key": "draft_invoice_on_complete",
+        "name": "Draft an invoice when a job is completed",
+        "description": "Creates a draft invoice automatically after completion (you still review & send).",
+        "trigger": "job_completed",
+        "condition_mode": "all",
+        "conditions": [],
+        "actions": [{
+            "type": "create_invoice_stub",
+            "config": {"line_items": [], "total": 0},
+        }],
+    },
+    {
+        "key": "big_paid_invoice_alert",
+        "name": "Alert me on large invoice paid",
+        "description": "Ping me when an invoice over $500 is marked paid.",
+        "trigger": "invoice_paid",
+        "condition_mode": "all",
+        "conditions": [{"path": "invoice.total", "op": "gte", "value": 500}],
+        "actions": [{
+            "type": "create_notification",
+            "config": {
+                "title": "Large invoice paid",
+                "message": "Invoice {{invoice.id}} paid: ${{invoice.total}}.",
+                "route": "/invoices/{{invoice.id}}",
+            },
+        }],
+    },
+    {
+        "key": "tag_urgent_jobs",
+        "name": "Auto-tag urgent jobs",
+        "description": "Stamp any job with 'urgent' in the title as high priority.",
+        "trigger": "job_assigned",
+        "condition_mode": "all",
+        "conditions": [{"path": "job.title", "op": "contains", "value": "urgent"}],
+        "actions": [{
+            "type": "set_field_on_record",
+            "config": {
+                "collection": "jobs",
+                "id": "{{job.id}}",
+                "field": "priority",
+                "value": "high",
+            },
+        }],
+    },
+]
+
+
+@api_router.get("/automation/templates")
+async def list_automation_templates(current_user: dict = Depends(get_current_user)):
+    _require_auto_admin(current_user)
+    return AUTOMATION_TEMPLATES
+
+
+@api_router.get("/automation/triggers/{trigger}/schema")
+async def get_trigger_schema(trigger: str, current_user: dict = Depends(get_current_user)):
+    _require_auto_admin(current_user)
+    if trigger not in auto.TRIGGERS:
+        raise HTTPException(status_code=404, detail="Unknown trigger")
+    return {"trigger": trigger, "paths": TRIGGER_SCHEMAS.get(trigger, []) + ["business_id", "emitted_at"]}
+
+
+@api_router.post("/automation/runs/{run_id}/retry")
+async def retry_automation_run(run_id: str, current_user: dict = Depends(get_current_user)):
+    """Re-execute the actions of a previous run using its original event payload."""
+    _require_auto_admin(current_user)
+    bid = _business_scope(current_user)
+    try: obj = ObjectId(run_id)
+    except Exception: raise HTTPException(400, "Invalid run id")
+    run = await db.automation_runs.find_one({"_id": obj, "business_id": bid})
+    if not run: raise HTTPException(404, "Run not found")
+    try:
+        rule_obj = ObjectId(run.get("rule_id")) if run.get("rule_id") else None
+    except Exception:
+        rule_obj = None
+    rule = None
+    if rule_obj:
+        rule = await db.automation_rules.find_one({"_id": rule_obj, "business_id": bid})
+    if not rule:
+        # Rule deleted; reconstruct a minimal ephemeral rule from the run history
+        rule = {
+            "_id": None, "name": run.get("rule_name") or "Orphan retry",
+            "trigger": run.get("trigger"),
+            "actions": [],
+        }
+        # We cannot safely replay without stored actions — reject.
+        raise HTTPException(400, "Original rule no longer exists; cannot retry")
+    evt = dict(run.get("event_payload") or {})
+    evt.setdefault("business_id", bid)
+    evt.setdefault("actor", {"id": _me_id(current_user), "role": current_user.get("role")})
+    evt["retry_of_run_id"] = str(run.get("_id"))
+    new_run = await auto._execute_rule(db, rule, evt, test=False)
+    return {"success": True, "run": _serialize_run(new_run)}
+
+
+async def _rule_stats_map(business_id: str, rule_ids: list) -> dict:
+    """Return map of rule_id -> {last_run_at, last_run_status, runs_count}."""
+    if not rule_ids:
+        return {}
+    stats: dict = {}
+    try:
+        pipeline = [
+            {"$match": {"business_id": business_id, "rule_id": {"$in": rule_ids}}},
+            {"$sort": {"started_at": -1}},
+            {"$group": {
+                "_id": "$rule_id",
+                "last_run_at": {"$first": "$started_at"},
+                "last_run_status": {"$first": "$status"},
+                "runs_count": {"$sum": 1},
+            }},
+        ]
+        async for row in db.automation_runs.aggregate(pipeline):
+            stats[str(row.get("_id") or "")] = {
+                "last_run_at": row["last_run_at"].isoformat() if hasattr(row.get("last_run_at"), "isoformat") else row.get("last_run_at"),
+                "last_run_status": row.get("last_run_status"),
+                "runs_count": row.get("runs_count") or 0,
+            }
+    except Exception as e:
+        print(f"RULE_STATS_ERR {e}")
+    return stats
+
+
+# ==========================================================================
+# Recurring jobs generator — wires `recurring_job_generated` trigger
+# ==========================================================================
+def _next_occurrence_iso(freq: str, from_date: str) -> str:
+    """Compute next scheduled_date from a base date + frequency. Never raises."""
+    from datetime import date, timedelta
+    try:
+        base = date.fromisoformat(str(from_date)[:10]) if from_date else date.today()
+    except Exception:
+        base = date.today()
+    freq = str(freq or "").lower()
+    delta_days = {"daily": 1, "weekly": 7, "fortnightly": 14, "monthly": 30}.get(freq, 7)
+    return (base + timedelta(days=delta_days)).isoformat()
+
+
+@api_router.post("/jobs/generate-recurring")
+async def generate_recurring_jobs(current_user: dict = Depends(get_current_user)):
+    """
+    Scans recurring job templates for the current business, creates the next
+    occurrence if one is due, and emits `recurring_job_generated` per new job.
+    Safe to call on demand and from scheduler hooks — guarded by `last_generated_at`.
+    """
+    from datetime import datetime, timezone, date
+    if current_user.get("role") not in BUSINESS_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    bid = _business_scope(current_user)
+    now = datetime.now(timezone.utc)
+    today = date.today().isoformat()
+
+    query = {
+        "$or": [{"business_id": bid}, {"business_id": str(bid)}],
+        "is_recurring": True,
+    }
+    created: list = []
+    skipped = 0
+    async for src in db.jobs.find(query):
+        try:
+            last_gen = src.get("last_generated_at")
+            last_gen_date = None
+            if hasattr(last_gen, "isoformat"):
+                last_gen_date = last_gen.date().isoformat()
+            elif isinstance(last_gen, str):
+                last_gen_date = last_gen[:10]
+            if last_gen_date == today:
+                skipped += 1
+                continue
+
+            freq = src.get("recurring_frequency") or "weekly"
+            base_date = src.get("scheduled_date") or today
+            new_sched = _next_occurrence_iso(freq, base_date)
+
+            new_doc = {
+                "title": src.get("title") or "Recurring job",
+                "job_type": src.get("job_type") or "other",
+                "client_id": src.get("client_id"),
+                "client_name": src.get("client_name") or "",
+                "customer_name": src.get("customer_name") or "",
+                "address": src.get("address") or "",
+                "country": src.get("country") or "New Zealand",
+                "region": src.get("region") or "",
+                "scheduled_date": new_sched,
+                "scheduled_time": src.get("scheduled_time") or "",
+                "estimated_duration": src.get("estimated_duration") or 60,
+                "price": src.get("price") or 0,
+                "pricing_type": src.get("pricing_type") or "fixed",
+                "hourly_rate": src.get("hourly_rate") or 0,
+                "extras": src.get("extras") or [],
+                "notes": src.get("notes") or "",
+                "assigned_worker_id": src.get("assigned_worker_id"),
+                "is_recurring": False,  # the generated occurrence is NOT itself recurring
+                "recurring_source_id": str(src.get("_id")),
+                "status": "assigned",
+                "business_id": src.get("business_id") or bid,
+                "owner_id": src.get("owner_id") or bid,
+                "created_at": now,
+                "updated_at": now,
+                "auto_generated": True,
+            }
+            ins = await db.jobs.insert_one(new_doc)
+            new_id = str(ins.inserted_id)
+            await db.jobs.update_one(
+                {"_id": src["_id"]},
+                {"$set": {"last_generated_at": now, "scheduled_date": new_sched}},
+            )
+            created.append(new_id)
+
+            try:
+                await auto.emit_event(db, "recurring_job_generated", {
+                    "business_id": str(src.get("business_id") or bid),
+                    "actor": {"id": _me_id(current_user), "role": current_user.get("role")},
+                    "source_job_id": str(src.get("_id")),
+                    "job": {
+                        "id": new_id,
+                        "title": new_doc.get("title"),
+                        "client_id": str(new_doc.get("client_id") or ""),
+                        "recurring_frequency": freq,
+                        "business_id": str(new_doc.get("business_id") or ""),
+                        "scheduled_date": new_sched,
+                    },
+                })
+            except Exception as e:
+                print("AUTO_EMIT_ERR recurring_job_generated", e)
+        except Exception as e:
+            print(f"RECUR_GEN_ERR job={src.get('_id')} err={e}")
+    return {"success": True, "created_count": len(created), "skipped": skipped, "created_ids": created}
+
+
+# ==========================================================================
+# Payroll timesheet / status stubs — wire `timesheet_updated` & `payroll_status_updated`
+# ==========================================================================
+@api_router.post("/payroll/timesheets")
+async def upsert_timesheet(payload: dict, current_user: dict = Depends(get_current_user)):
+    from datetime import datetime, timezone
+    if current_user.get("role") not in BUSINESS_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    bid = _business_scope(current_user)
+    worker_id = str((payload or {}).get("worker_id") or "").strip()
+    if not worker_id:
+        raise HTTPException(status_code=400, detail="worker_id is required")
+    hours = float((payload or {}).get("hours") or 0)
+    week_of = str((payload or {}).get("week_of") or "").strip()
+    notes = str((payload or {}).get("notes") or "")[:600]
+    now = datetime.now(timezone.utc)
+
+    q = {"business_id": bid, "worker_id": worker_id, "week_of": week_of}
+    existing = await db.payroll_timesheets.find_one(q)
+    if existing:
+        await db.payroll_timesheets.update_one(
+            {"_id": existing["_id"]},
+            {"$set": {"hours": hours, "notes": notes, "updated_at": now}},
+        )
+        tid = str(existing["_id"])
+    else:
+        doc = {
+            "business_id": bid, "worker_id": worker_id, "week_of": week_of,
+            "hours": hours, "notes": notes, "status": "draft",
+            "created_at": now, "updated_at": now,
+        }
+        r = await db.payroll_timesheets.insert_one(doc)
+        tid = str(r.inserted_id)
+
+    try:
+        await auto.emit_event(db, "timesheet_updated", {
+            "business_id": bid,
+            "actor": {"id": _me_id(current_user), "role": current_user.get("role")},
+            "timesheet": {"id": tid, "worker_id": worker_id, "hours": hours, "week_of": week_of},
+        })
+    except Exception as e:
+        print("AUTO_EMIT_ERR timesheet_updated", e)
+    return {"success": True, "id": tid, "hours": hours, "week_of": week_of}
+
+
+@api_router.post("/payroll/status")
+async def update_payroll_status(payload: dict, current_user: dict = Depends(get_current_user)):
+    from datetime import datetime, timezone
+    if current_user.get("role") not in BUSINESS_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    bid = _business_scope(current_user)
+    period = str((payload or {}).get("period") or "").strip()
+    status = str((payload or {}).get("status") or "").strip().lower()
+    allowed = {"draft", "approved", "paid", "cancelled"}
+    if status not in allowed:
+        raise HTTPException(status_code=400, detail=f"Invalid status (allowed: {sorted(allowed)})")
+    now = datetime.now(timezone.utc)
+    set_doc = {
+        "business_id": bid, "period": period, "status": status,
+        "updated_by_user_id": _me_id(current_user), "updated_at": now,
+    }
+    q = {"business_id": bid, "period": period}
+    await db.payroll_runs.update_one(q, {"$set": set_doc, "$setOnInsert": {"created_at": now}}, upsert=True)
+    run = await db.payroll_runs.find_one(q)
+    pid = str(run.get("_id")) if run else ""
+
+    try:
+        await auto.emit_event(db, "payroll_status_updated", {
+            "business_id": bid,
+            "actor": {"id": _me_id(current_user), "role": current_user.get("role")},
+            "payroll": {"id": pid, "period": period, "status": status},
+        })
+    except Exception as e:
+        print("AUTO_EMIT_ERR payroll_status_updated", e)
+    return {"success": True, "id": pid, "period": period, "status": status}
 
 
 @app.on_event("startup")

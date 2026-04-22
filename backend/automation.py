@@ -33,12 +33,25 @@ TRIGGERS: List[str] = [
 ACTIONS: List[str] = [
     "log", "create_notification", "create_job_note",
     "update_job_status", "create_invoice_stub", "webhook_stub",
+    "create_follow_up_task_stub", "set_field_on_record",
+    "create_internal_activity_log",
 ]
+
+# Safe whitelist for `set_field_on_record` — collection + allowed updatable fields.
+# Prevents automation from touching auth/billing/system fields.
+SAFE_FIELDS_BY_COLLECTION: Dict[str, List[str]] = {
+    "jobs": ["status", "notes", "priority", "scheduled_date", "tags"],
+    "clients": ["notes", "tags", "priority"],
+    "invoices": ["notes", "tags"],
+    "quotes": ["notes", "tags"],
+}
 
 OPERATORS: List[str] = [
     "equals", "not_equals", "in", "not_in",
     "contains", "not_contains", "exists", "not_exists",
     "gt", "gte", "lt", "lte",
+    "blank", "not_blank", "starts_with", "ends_with",
+    "is_true", "is_false",
 ]
 
 
@@ -105,6 +118,26 @@ def evaluate_condition(cond: Dict[str, Any], payload: Dict[str, Any]) -> bool:
         if op == "gte": return a >= b
         if op == "lt": return a < b
         if op == "lte": return a <= b
+    if op == "blank":
+        if actual is None: return True
+        if isinstance(actual, str): return actual.strip() == ""
+        if isinstance(actual, (list, dict, tuple, set)): return len(actual) == 0
+        return False
+    if op == "not_blank":
+        if actual is None: return False
+        if isinstance(actual, str): return actual.strip() != ""
+        if isinstance(actual, (list, dict, tuple, set)): return len(actual) > 0
+        return True
+    if op == "starts_with":
+        try: return str(actual or "").startswith(str(expected or ""))
+        except Exception: return False
+    if op == "ends_with":
+        try: return str(actual or "").endswith(str(expected or ""))
+        except Exception: return False
+    if op == "is_true":
+        return bool(actual) is True
+    if op == "is_false":
+        return actual is False or actual == 0 or actual is None or actual == "" or actual == "false"
     return False
 
 
@@ -222,6 +255,77 @@ async def _run_action(db, action: Dict[str, Any], payload: Dict[str, Any]) -> Di
         elif atype == "webhook_stub":
             # V1: stub only — just log the intended call (no external network).
             result["message"] = f"webhook stub: {render_tokens(cfg.get('url') or '', payload)}"
+
+        elif atype == "create_follow_up_task_stub":
+            business_id = str(payload.get("business_id") or "")
+            due_iso = render_tokens(cfg.get("due_at") or "", payload)
+            try:
+                due_dt = datetime.fromisoformat(str(due_iso).replace("Z", "+00:00")) if due_iso else None
+            except Exception:
+                due_dt = None
+            doc = {
+                "business_id": business_id,
+                "title": str(render_tokens(cfg.get("title") or "Follow-up", payload))[:200],
+                "description": str(render_tokens(cfg.get("description") or "", payload))[:600],
+                "related_type": str(cfg.get("related_type") or "")[:48],
+                "related_id": str(render_tokens(cfg.get("related_id") or "", payload))[:64],
+                "assigned_user_id": str(render_tokens(cfg.get("assigned_user_id") or "", payload)),
+                "due_at": due_dt,
+                "status": "pending",
+                "source": "automation",
+                "created_at": datetime.now(timezone.utc),
+            }
+            r = await db.follow_up_tasks.insert_one(doc)
+            result["task_id"] = str(r.inserted_id)
+
+        elif atype == "set_field_on_record":
+            coll = str(cfg.get("collection") or "").lower().strip()
+            rec_id = str(render_tokens(cfg.get("id") or "", payload)).strip()
+            field = str(cfg.get("field") or "").strip()
+            value = render_tokens(cfg.get("value"), payload)
+            business_id = str(payload.get("business_id") or "")
+            if coll not in SAFE_FIELDS_BY_COLLECTION:
+                result["ok"] = False
+                result["error"] = f"collection '{coll}' not allowed (allowed: {list(SAFE_FIELDS_BY_COLLECTION.keys())})"
+            elif field not in SAFE_FIELDS_BY_COLLECTION[coll]:
+                result["ok"] = False
+                result["error"] = f"field '{field}' not allowed on {coll} (allowed: {SAFE_FIELDS_BY_COLLECTION[coll]})"
+            elif not rec_id:
+                result["ok"] = False
+                result["error"] = "missing record id"
+            else:
+                try:
+                    obj = ObjectId(rec_id)
+                    q = {"_id": obj}
+                    if business_id:
+                        q["$or"] = [{"business_id": business_id}, {"business_id": str(business_id)}]
+                    r = await db[coll].update_one(q, {"$set": {
+                        field: value,
+                        "updated_at": datetime.now(timezone.utc),
+                        "automation_touched": True,
+                    }})
+                    result["matched"] = r.matched_count
+                    result["modified"] = r.modified_count
+                    result["collection"] = coll
+                    result["id"] = rec_id
+                    if r.matched_count == 0:
+                        result["ok"] = False
+                        result["error"] = "record not found in business scope"
+                except Exception as e:
+                    result["ok"] = False
+                    result["error"] = f"set_field failed: {e}"
+
+        elif atype == "create_internal_activity_log":
+            doc = {
+                "business_id": str(payload.get("business_id") or ""),
+                "type": str(cfg.get("log_type") or "automation")[:48],
+                "message": str(render_tokens(cfg.get("message") or "", payload))[:600],
+                "payload": payload,
+                "source": "automation",
+                "created_at": datetime.now(timezone.utc),
+            }
+            r = await db.activity_logs.insert_one(doc)
+            result["activity_id"] = str(r.inserted_id)
 
         else:
             result["ok"] = False
