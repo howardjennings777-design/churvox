@@ -4223,114 +4223,146 @@ async def update_user_gst(request: Request, current_user: dict = Depends(get_cur
         print("PATCH_USER_GST_ERROR", str(e), current_user)
         raise HTTPException(status_code=500, detail="Failed to update GST")
 
-@api_router.post("/sms/send-fixed")
-async def send_sms_hard_fix_v1(payload: dict, current_user: dict = Depends(get_current_user)):
+async def _send_sms_real(payload: dict, current_user: dict):
+    """
+    Real SMS send pipeline used by both /api/sms/send and the legacy
+    /api/sms/send-fixed alias. Resolves the recipient phone, checks credits,
+    calls the configured SMS provider, refunds credits on provider failure,
+    and persists a real audit log entry.
+    """
     user = current_user
     business_id = str(user.get("business_id") or user.get("id"))
     sms_type = str(payload.get("type") or payload.get("message_type") or "").strip().lower()
     custom_message = str(payload.get("message") or "").strip()
 
+    # --- Lookup job & client context (same logic as previous fixed endpoint) ---
     job = None
     client = None
-
     job_id = payload.get("job_id")
     client_id = payload.get("client_id")
 
     if job_id:
         job = await db.jobs.find_one({"id": str(job_id)})
         if not job:
-            try:
-                job = await db.jobs.find_one({"_id": ObjectId(str(job_id))})
-            except Exception:
-                job = None
+            try: job = await db.jobs.find_one({"_id": ObjectId(str(job_id))})
+            except Exception: job = None
 
     if client_id:
         client = await db.clients.find_one({"id": str(client_id)})
         if not client:
-            try:
-                client = await db.clients.find_one({"_id": ObjectId(str(client_id))})
-            except Exception:
-                client = None
+            try: client = await db.clients.find_one({"_id": ObjectId(str(client_id))})
+            except Exception: client = None
 
     if not client and isinstance(job, dict):
         linked_client_id = job.get("client_id") or job.get("customer_id")
         if linked_client_id:
             client = await db.clients.find_one({"id": str(linked_client_id)})
             if not client:
-                try:
-                    client = await db.clients.find_one({"_id": ObjectId(str(linked_client_id))})
-                except Exception:
-                    client = None
+                try: client = await db.clients.find_one({"_id": ObjectId(str(linked_client_id))})
+                except Exception: client = None
 
+    # --- Resolve phone (explicit > helper fallback chain) ---
     phone = None
-
-    # 1) explicit phone from payload wins
-    for key in ["phone", "phone_number", "mobile", "mobile_number", "client_phone"]:
+    for key in ["phone", "phone_number", "mobile", "mobile_number", "recipient_phone", "client_phone"]:
         value = payload.get(key)
         if value is not None and str(value).strip():
             phone = str(value).strip()
             break
-
-    # 2) fallback to existing helper
+    if not phone and isinstance(job, dict):
+        phone = await resolve_job_sms_phone(job)
+    if not phone and isinstance(client, dict):
+        phone = get_phone_from_dict(client)
     if not phone:
-        phone = pick_client_phone(job=job, client=client)
+        raise HTTPException(status_code=400, detail="No phone number found for this recipient")
 
-    if not phone:
-        raise HTTPException(status_code=400, detail="SMS_FIXED_ROUTE_NO_PHONE")
-
-    # SMS cost locked to 2 credits
+    # --- Credits: charge 2 per SMS, refunded if provider fails ---
     sms_cost = 2
-
     sms_credits = await db.sms_credits.find_one({"business_id": business_id})
     if not sms_credits:
-        raise HTTPException(status_code=400, detail="Not enough SMS credits")
-
-    current_balance = int(
-        sms_credits.get("balance", sms_credits.get("credits", 0)) or 0
-    )
-
+        raise HTTPException(status_code=402, detail="Not enough SMS credits")
+    balance_field = "balance" if "balance" in sms_credits else "credits"
+    current_balance = int(sms_credits.get(balance_field, 0) or 0)
     if current_balance < sms_cost:
-        raise HTTPException(status_code=400, detail="Not enough SMS credits")
+        raise HTTPException(status_code=402, detail="Not enough SMS credits")
 
-    if "balance" in sms_credits:
-        await db.sms_credits.update_one(
-            {"business_id": business_id},
-            {
-                "$inc": {"balance": -sms_cost},
-                "$set": {"updated_at": datetime.now(timezone.utc)}
-            }
-        )
-        new_balance = current_balance - sms_cost
-    else:
-        await db.sms_credits.update_one(
-            {"business_id": business_id},
-            {
-                "$inc": {"credits": -sms_cost},
-                "$set": {"updated_at": datetime.now(timezone.utc)}
-            }
-        )
-        new_balance = current_balance - sms_cost
+    await db.sms_credits.update_one(
+        {"business_id": business_id},
+        {"$inc": {balance_field: -sms_cost},
+         "$set": {"updated_at": datetime.now(timezone.utc)}},
+    )
+    new_balance = current_balance - sms_cost
 
+    # --- Build message body ---
     if custom_message:
         sms_message = custom_message
-    elif sms_type in ["on_the_way", "on the way", "ontheway"]:
-        sms_message = "On the way"
-    elif sms_type == "reminder":
-        sms_message = "Reminder"
+    elif sms_type in ("on_the_way", "on the way", "ontheway"):
+        sms_message = "On the way — heads up, we'll be with you shortly."
+    elif sms_type in ("customer_reminder", "reminder"):
+        sms_message = "Friendly reminder about your upcoming job from Churvox."
+    elif sms_type == "invoice_reminder":
+        sms_message = "Friendly reminder: your Churvox invoice is due for payment."
     else:
-        sms_message = "Quick SMS"
+        sms_message = "Quick message from Churvox."
 
-    await db.sms_log.insert_one({
+    # --- Call the real provider ---
+    source_label = str(payload.get("source") or user.get("business_name") or "Churvox")[:32]
+    result = None
+    error_msg = None
+    try:
+        result = await sms_provider.send(to=phone, body=sms_message, source=source_label)
+    except Exception as e:
+        error_msg = f"SMS provider crashed: {e}"
+
+    success = bool(getattr(result, "success", False)) if result else False
+    provider_name = getattr(result, "provider", "unknown") if result else "unknown"
+    provider_status = getattr(result, "status", "UNKNOWN") if result else "ERROR"
+    provider_error = error_msg or (getattr(result, "error", None) if result else "Unknown error")
+    provider_message_id = getattr(result, "message_id", None) if result else None
+    provider_cost = getattr(result, "cost", None) if result else None
+
+    # --- Refund credits on provider failure ---
+    refunded = False
+    if not success:
+        await db.sms_credits.update_one(
+            {"business_id": business_id},
+            {"$inc": {balance_field: sms_cost},
+             "$set": {"updated_at": datetime.now(timezone.utc)}},
+        )
+        new_balance = current_balance
+        refunded = True
+
+    # --- Audit log ---
+    log_doc = {
         "business_id": business_id,
         "job_id": str(job_id) if job_id else None,
-        "client_id": str(client_id) if client_id else (str(client.get("id")) if isinstance(client, dict) and client.get("id") else None),
+        "client_id": str(client_id) if client_id else (
+            str(client.get("id")) if isinstance(client, dict) and client.get("id") else None
+        ),
+        "recipient_phone": phone,
         "phone": phone,
         "message": sms_message,
+        "message_type": sms_type or "quick_sms",
         "type": sms_type or "quick_sms",
-        "cost": sms_cost,
+        "cost": 0 if refunded else sms_cost,
+        "provider": provider_name,
+        "provider_message_id": provider_message_id,
+        "provider_cost": provider_cost,
+        "status": provider_status if success else "FAILED",
+        "error": None if success else provider_error,
+        "sent_by_user_id": str(user.get("_id") or user.get("id") or ""),
+        "sent_by_name": user.get("name") or user.get("email") or "",
         "created_at": datetime.now(timezone.utc),
-        "status": "mock_sent"
-    })
+    }
+    try:
+        await db.sms_log.insert_one(log_doc)
+    except Exception as e:
+        print(f"SMS_LOG_ERR {e}")
+
+    if not success:
+        raise HTTPException(
+            status_code=502,
+            detail=f"SMS delivery failed: {provider_error or provider_status}",
+        )
 
     return {
         "success": True,
@@ -4338,9 +4370,25 @@ async def send_sms_hard_fix_v1(payload: dict, current_user: dict = Depends(get_c
             "phone": phone,
             "message": sms_message,
             "cost": sms_cost,
-            "balance": new_balance
-        }
+            "balance": new_balance,
+            "provider": provider_name,
+            "provider_message_id": provider_message_id,
+            "status": provider_status,
+        },
     }
+
+
+@api_router.post("/sms/send")
+async def send_sms(payload: dict, current_user: dict = Depends(get_current_user)):
+    """Primary SMS send endpoint — real provider, real credits, real audit log."""
+    return await _send_sms_real(payload, current_user)
+
+
+@api_router.post("/sms/send-fixed")
+async def send_sms_hard_fix_v1(payload: dict, current_user: dict = Depends(get_current_user)):
+    """Legacy alias kept for backward compatibility — forwards to the real pipeline."""
+    return await _send_sms_real(payload, current_user)
+
 @api_router.get("/dev/owner-login")
 async def dev_owner_login(response: Response):
     email = (os.environ.get("PLATFORM_OWNER_EMAILS", "hello@churvox.com").split(",")[0].strip())

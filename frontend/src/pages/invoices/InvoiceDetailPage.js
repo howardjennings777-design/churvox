@@ -48,13 +48,13 @@ export default function InvoiceDetailPage() {
       const cRes = await get(`/clients/${invoice.client_id}`);
       if (cRes.success) phone = cRes.data.phone || "";
     }
-    if (!phone) { console.log("SMS precheck disabled"); }
-    const res = await post("/sms/send-fixed", {
+    const res = await post("/sms/send", {
       recipient_phone: phone,
       message_type: "invoice_reminder",
       invoice_id: id,
+      client_id: invoice?.client_id,
     });
-    if (res.success) toast.success(`Invoice reminder sent (mock) — ${res.data.balance} credits left`);
+    if (res.success) toast.success(`Invoice reminder sent — ${res.data.balance} credits left`);
     else toast.error(res.error || "Failed to send SMS reminder");
   };
 

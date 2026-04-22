@@ -96,6 +96,23 @@ class ClickSendProvider(SMSProvider):
                 msg_status = msg.get("status", "SUCCESS")
                 msg_cost = msg.get("message_price")
 
+                # ClickSend returns HTTP 200 even when the individual message
+                # couldn't be queued (e.g. INSUFFICIENT_CREDIT, INVALID_RECIPIENT).
+                # Treat anything that isn't an accepted/queued/delivered status
+                # as a real failure so the caller can refund credits.
+                SUCCESS_STATUSES = {
+                    "SUCCESS", "QUEUED", "SENT", "DELIVERED", "SCHEDULED",
+                }
+                if str(msg_status).upper() not in SUCCESS_STATUSES:
+                    logger.error(f"[ClickSend] Message not accepted: status={msg_status} body={data}")
+                    return SMSResult(
+                        success=False,
+                        message_id=str(msg_id) if msg_id else None,
+                        status=str(msg_status).upper(),
+                        error=f"Provider rejected send: {msg_status}",
+                        provider="clicksend",
+                    )
+
                 logger.info(f"[ClickSend] SMS sent to {formatted} | id={msg_id} status={msg_status}")
                 return SMSResult(
                     success=True,

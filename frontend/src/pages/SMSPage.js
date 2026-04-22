@@ -59,7 +59,7 @@ export default function SMSPage() {
     const payload = { ...sendForm, phone: sendForm.phone || sendForm.phone_number || sendForm.client_phone || job?.client_phone || client?.phone || client?.phone_number || "" };
     if (!payload.job_id) delete payload.job_id;
     if (!payload.invoice_id) delete payload.invoice_id;
-    const res = await post("/sms/send-fixed", payload);
+    const res = await post("/sms/send", payload);
     if (res.success) {
       toast.success("SMS sent");
       setShowSend(false);
@@ -234,7 +234,7 @@ export default function SMSPage() {
                   </Select>
                 </div>
               )}
-              <p className="text-[10px] text-slate-500">SMS delivery is currently mocked. 2 credits per message.</p>
+              <p className="text-[10px] text-slate-500">SMS is sent using your configured SMS provider. 2 credits per message (automatically refunded if delivery fails).</p>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setShowSend(false)} className="border-slate-200 text-slate-500">Cancel</Button>
                 <Button type="submit" disabled={loading || balance < 1} className="bg-blue-600 hover:bg-blue-700 text-white" data-testid="confirm-send-sms">
