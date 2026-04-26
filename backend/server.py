@@ -3,6 +3,8 @@ import json
 import urllib.request
 import urllib.error
 import asyncio
+import csv
+import io
 from passlib.context import CryptContext
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
@@ -6239,6 +6241,590 @@ async def update_payroll_status(payload: dict, current_user: dict = Depends(get_
     except Exception as e:
         print("AUTO_EMIT_ERR payroll_status_updated", e)
     return {"success": True, "id": pid, "period": period, "status": status}
+
+def _payroll_business_id(current_user: dict) -> str:
+    return str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+
+def _require_payroll_access(current_user: dict) -> str:
+    role = str(current_user.get("role") or "").strip().lower()
+    if role not in BUSINESS_ROLES | {"payroll"}:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    if role == "worker":
+        raise HTTPException(status_code=403, detail="Workers cannot access payroll")
+    business_id = _payroll_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=400, detail="Business context missing")
+    return business_id
+
+
+def _to_float(value, default=0.0):
+    try:
+        return float(value)
+    except Exception:
+        return float(default)
+
+
+def _to_iso(value):
+    if value is None:
+        return None
+    if hasattr(value, "isoformat"):
+        try:
+            return value.isoformat()
+        except Exception:
+            pass
+    return str(value)
+
+
+def _period_day(value):
+    txt = str(value or "")[:10]
+    try:
+        return datetime.fromisoformat(txt).date()
+    except Exception:
+        return None
+
+
+def _period_is_readonly(period: dict) -> bool:
+    return str(period.get("status") or "open") in {"locked", "exported"}
+
+
+async def _find_period_or_404(period_id: str, business_id: str):
+    q = {"business_id": business_id, "$or": [{"id": period_id}]}
+    try:
+        q["$or"].append({"_id": ObjectId(period_id)})
+    except Exception:
+        pass
+    doc = await db.payroll_pay_periods.find_one(q)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Pay period not found")
+    return doc
+
+
+async def _get_payroll_settings(business_id: str):
+    settings = await db.payroll_settings.find_one({"business_id": business_id})
+    if settings:
+        settings["id"] = str(settings.get("_id"))
+        settings.pop("_id", None)
+        return settings
+    return {
+        "business_id": business_id,
+        "country": "generic",
+        "tax_enabled": False,
+        "tax_mode": "manual_rate",
+        "default_tax_rate": 0.0,
+        "tax_code_table": {},
+        "kiwi_saver_enabled": False,
+        "default_kiwi_saver_rate": 0.03,
+        "employer_contribution_enabled": False,
+        "default_employer_contribution_rate": 0.03,
+        "student_loan_enabled": False,
+        "acc_or_levy_placeholder": "",
+        "notes": "Payroll calculations are prepared for review. Government filing and bank payments are handled outside Churvox.",
+    }
+
+
+async def _get_payroll_workers(business_id: str):
+    query = {
+        "business_id": business_id,
+        "role": {"$in": ["worker", "manager", "office_admin", "payroll"]},
+    }
+    workers = []
+    async for worker in db.business_users.find(query):
+        wid = str(worker.get("id") or worker.get("_id") or "")
+        workers.append({
+            "id": wid,
+            "name": worker.get("name") or "Unnamed Worker",
+            "email": worker.get("email") or "",
+            "role": worker.get("role") or "worker",
+            "payroll_active": bool(worker.get("payroll_active", True)),
+            "pay_type": worker.get("pay_type") or "hourly",
+            "hourly_rate": _to_float(worker.get("hourly_rate"), 0),
+            "salary_amount": _to_float(worker.get("salary_amount"), 0),
+            "salary_frequency": worker.get("salary_frequency") or "fortnightly",
+            "default_hours_per_week": _to_float(worker.get("default_hours_per_week"), 40),
+            "tax_code": worker.get("tax_code") or "",
+            "tax_rate_override": worker.get("tax_rate_override"),
+            "kiwi_saver_rate": worker.get("kiwi_saver_rate"),
+            "employer_contribution_rate": worker.get("employer_contribution_rate"),
+            "student_loan_deduction": _to_float(worker.get("student_loan_deduction"), 0),
+            "child_support_deduction": _to_float(worker.get("child_support_deduction"), 0),
+            "other_regular_deduction": _to_float(worker.get("other_regular_deduction"), 0),
+            "pay_category": worker.get("pay_category") or "",
+            "export_code": worker.get("export_code") or "",
+            "payroll_notes": worker.get("payroll_notes") or "",
+            "bank_reference": worker.get("bank_reference") or "",
+            "annual_leave_hours_balance": worker.get("annual_leave_hours_balance"),
+            "sick_leave_hours_balance": worker.get("sick_leave_hours_balance"),
+            "leave_accrual_rate": worker.get("leave_accrual_rate"),
+            "holiday_pay_percent": worker.get("holiday_pay_percent"),
+            "leave_notes": worker.get("leave_notes") or "",
+        })
+    return workers
+
+
+async def _get_period_timesheets(period: dict, business_id: str):
+    start = _period_day(period.get("start_date"))
+    end = _period_day(period.get("end_date"))
+    jobs_query = {"business_id": business_id, "assigned_worker_id": {"$exists": True, "$ne": None}}
+    rows = []
+    async for job in db.jobs.find(jobs_query):
+        d = _period_day(job.get("scheduled_date") or job.get("completed_at") or job.get("updated_at"))
+        if start and d and d < start:
+            continue
+        if end and d and d > end:
+            continue
+        gross_hours = max(_to_float(job.get("time_spent_minutes") or job.get("total_minutes"), 0) / 60.0, 0.0)
+        paused_minutes = max(_to_float(job.get("paused_minutes"), 0.0), 0.0)
+        net_hours = max(gross_hours - (paused_minutes / 60.0), 0.0)
+        entry_id = str(job.get("_id"))
+        status = str(job.get("payroll_status") or "pending").lower()
+        if status not in {"pending", "approved", "rejected"}:
+            status = "pending"
+        rows.append({
+            "entry_id": entry_id,
+            "worker_id": str(job.get("assigned_worker_id") or ""),
+            "worker_name": job.get("assigned_worker_name") or "",
+            "worker_email": "",
+            "job_id": entry_id,
+            "job_title": job.get("title") or job.get("job_type") or "Job",
+            "client_name": job.get("client_name") or job.get("customer_name") or "",
+            "date": d.isoformat() if d else None,
+            "started_at": _to_iso(job.get("started_at") or job.get("in_progress_at")),
+            "ended_at": _to_iso(job.get("completed_at")),
+            "gross_hours": round(gross_hours, 2),
+            "paused_minutes": round(paused_minutes, 2),
+            "net_hours": round(net_hours, 2),
+            "status": status,
+            "notes": job.get("payroll_notes") or "",
+        })
+    workers = {w["id"]: w for w in await _get_payroll_workers(business_id)}
+    for row in rows:
+        w = workers.get(row["worker_id"], {})
+        if w:
+            row["worker_name"] = row["worker_name"] or w.get("name")
+            row["worker_email"] = w.get("email") or ""
+    return rows
+
+
+async def _build_period_summary(period: dict, business_id: str):
+    workers = {w["id"]: w for w in await _get_payroll_workers(business_id)}
+    timesheets = await _get_period_timesheets(period, business_id)
+    adjustments = await db.payroll_adjustments.find({"business_id": business_id, "period_id": str(period.get("id") or period.get("_id"))}).to_list(length=5000)
+    settings = await _get_payroll_settings(business_id)
+    by_worker = {}
+    for wid, worker in workers.items():
+        by_worker[wid] = {
+            "worker_id": wid, "worker_name": worker.get("name"), "worker_email": worker.get("email"),
+            "pay_type": worker.get("pay_type"), "hourly_rate": worker.get("hourly_rate"), "salary_amount": worker.get("salary_amount"),
+            "approved_hours": 0.0, "pending_hours": 0.0, "rejected_hours": 0.0,
+            "base_gross_pay": 0.0, "taxable_allowances": 0.0, "non_taxable_reimbursements": 0.0, "bonuses": 0.0,
+            "gross_pay": 0.0, "employee_tax": 0.0, "kiwi_saver_employee": 0.0, "other_deductions": 0.0, "employer_contribution": 0.0,
+            "adjustments_total": 0.0, "net_pay_estimate": 0.0, "total_cost_estimate": 0.0, "jobs_worked": 0,
+            "leave_hours_paid": 0.0, "holiday_pay_amount": 0.0, "leave_notes": worker.get("leave_notes") or "", "notes": worker.get("payroll_notes") or "",
+            "status": "ready",
+        }
+    for row in timesheets:
+        wid = row.get("worker_id")
+        if wid not in by_worker:
+            continue
+        t = by_worker[wid]
+        hrs = _to_float(row.get("net_hours"), 0)
+        t["jobs_worked"] += 1
+        st = row.get("status")
+        if st == "approved":
+            t["approved_hours"] += hrs
+        elif st == "rejected":
+            t["rejected_hours"] += hrs
+        else:
+            t["pending_hours"] += hrs
+    for wid, s in by_worker.items():
+        worker = workers.get(wid, {})
+        if s["pay_type"] == "salary":
+            base = _to_float(worker.get("salary_amount"), 0)
+        else:
+            base = s["approved_hours"] * _to_float(worker.get("hourly_rate"), 0)
+        s["base_gross_pay"] = round(base, 2)
+
+    for adj in adjustments:
+        wid = str(adj.get("worker_id") or "")
+        if wid not in by_worker:
+            continue
+        amt = _to_float(adj.get("amount"), 0)
+        typ = str(adj.get("type") or "other")
+        taxable = bool(adj.get("taxable", False))
+        w = by_worker[wid]
+        w["adjustments_total"] += amt
+        if typ == "bonus":
+            w["bonuses"] += amt
+            if taxable:
+                w["taxable_allowances"] += amt
+        elif typ == "allowance":
+            if taxable:
+                w["taxable_allowances"] += amt
+            else:
+                w["non_taxable_reimbursements"] += amt
+        elif typ == "reimbursement":
+            w["non_taxable_reimbursements"] += amt
+        elif typ == "deduction":
+            w["other_deductions"] += abs(amt)
+        elif typ == "correction":
+            w["base_gross_pay"] += amt
+
+    tax_mode = str(settings.get("tax_mode") or "manual_rate")
+    default_tax_rate = _to_float(settings.get("default_tax_rate"), 0)
+    for wid, s in by_worker.items():
+        worker = workers.get(wid, {})
+        s["gross_pay"] = round(s["base_gross_pay"] + s["taxable_allowances"] + s["bonuses"], 2)
+        if settings.get("tax_enabled") and tax_mode != "no_tax":
+            rate = worker.get("tax_rate_override")
+            if rate is None and tax_mode == "tax_code_table":
+                table = settings.get("tax_code_table") or {}
+                rate = table.get(worker.get("tax_code") or "")
+            if rate is None:
+                rate = default_tax_rate
+            rate = max(_to_float(rate, 0), 0)
+            s["employee_tax"] = round(s["gross_pay"] * rate, 2)
+        if settings.get("kiwi_saver_enabled"):
+            ks_rate = worker.get("kiwi_saver_rate")
+            if ks_rate is None:
+                ks_rate = settings.get("default_kiwi_saver_rate")
+            s["kiwi_saver_employee"] = round(s["gross_pay"] * max(_to_float(ks_rate, 0), 0), 2)
+        s["other_deductions"] = round(s["other_deductions"] + _to_float(worker.get("student_loan_deduction"), 0) + _to_float(worker.get("child_support_deduction"), 0) + _to_float(worker.get("other_regular_deduction"), 0), 2)
+        if settings.get("employer_contribution_enabled"):
+            ec_rate = worker.get("employer_contribution_rate")
+            if ec_rate is None:
+                ec_rate = settings.get("default_employer_contribution_rate")
+            s["employer_contribution"] = round(s["gross_pay"] * max(_to_float(ec_rate, 0), 0), 2)
+        holiday = max(_to_float(worker.get("holiday_pay_percent"), 0), 0)
+        s["holiday_pay_amount"] = round(s["approved_hours"] * _to_float(worker.get("hourly_rate"), 0) * holiday, 2) if holiday and s["pay_type"] != "salary" else 0.0
+        s["net_pay_estimate"] = round(s["gross_pay"] + s["non_taxable_reimbursements"] - s["employee_tax"] - s["other_deductions"] - s["kiwi_saver_employee"], 2)
+        s["total_cost_estimate"] = round(s["gross_pay"] + s["non_taxable_reimbursements"] + s["employer_contribution"], 2)
+        if _period_is_readonly(period):
+            s["status"] = str(period.get("status"))
+        elif s["pending_hours"] > 0:
+            s["status"] = "pending_review"
+        elif s["pay_type"] == "hourly" and _to_float(s["hourly_rate"], 0) <= 0:
+            s["status"] = "needs_rate"
+        elif settings.get("tax_enabled") and tax_mode == "tax_code_table" and not (worker.get("tax_code") or worker.get("tax_rate_override")):
+            s["status"] = "missing_tax_config"
+        else:
+            s["status"] = "ready"
+
+    workers_list = list(by_worker.values())
+    summary = {
+        "period": {
+            "id": str(period.get("id") or period.get("_id")), "name": period.get("name"), "start_date": period.get("start_date"),
+            "end_date": period.get("end_date"), "pay_date": period.get("pay_date"), "status": period.get("status"),
+        },
+        "total_workers": len(workers_list),
+        "total_approved_hours": round(sum(w["approved_hours"] for w in workers_list), 2),
+        "total_pending_hours": round(sum(w["pending_hours"] for w in workers_list), 2),
+        "total_rejected_hours": round(sum(w["rejected_hours"] for w in workers_list), 2),
+        "total_gross_pay": round(sum(w["gross_pay"] for w in workers_list), 2),
+        "total_employee_tax": round(sum(w["employee_tax"] for w in workers_list), 2),
+        "total_employee_deductions": round(sum(w["other_deductions"] for w in workers_list), 2),
+        "total_kiwi_saver_employee": round(sum(w["kiwi_saver_employee"] for w in workers_list), 2),
+        "total_employer_contribution": round(sum(w["employer_contribution"] for w in workers_list), 2),
+        "total_reimbursements": round(sum(w["non_taxable_reimbursements"] for w in workers_list), 2),
+        "total_net_pay_estimate": round(sum(w["net_pay_estimate"] for w in workers_list), 2),
+        "total_cost_estimate": round(sum(w["total_cost_estimate"] for w in workers_list), 2),
+        "export_ready": all(w["status"] in {"ready", "locked", "exported"} for w in workers_list),
+        "worker_summaries": workers_list,
+    }
+    return summary
+
+
+@api_router.get("/payroll/workers")
+async def payroll_workers(current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    return {"workers": await _get_payroll_workers(business_id)}
+
+
+@api_router.patch("/payroll/workers/{worker_id}/pay-settings")
+async def payroll_update_worker_settings(worker_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    allowed = {"payroll_active", "pay_type", "hourly_rate", "salary_amount", "salary_frequency", "default_hours_per_week", "tax_code", "tax_rate_override", "kiwi_saver_rate", "employer_contribution_rate", "student_loan_deduction", "child_support_deduction", "other_regular_deduction", "pay_category", "export_code", "payroll_notes", "bank_reference", "annual_leave_hours_balance", "sick_leave_hours_balance", "leave_accrual_rate", "holiday_pay_percent", "leave_notes"}
+    update = {"updated_at": datetime.now(timezone.utc)}
+    for k, v in (payload or {}).items():
+        if k in allowed:
+            update[k] = v
+    q = {"business_id": business_id, "$or": [{"id": worker_id}]}
+    try:
+        q["$or"].append({"_id": ObjectId(worker_id)})
+    except Exception:
+        pass
+    worker = await db.business_users.find_one(q)
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+    await db.business_users.update_one({"_id": worker["_id"]}, {"$set": update})
+    return {"success": True}
+
+
+@api_router.get("/payroll/pay-periods")
+async def payroll_list_periods(current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    docs = []
+    async for p in db.payroll_pay_periods.find({"business_id": business_id}).sort("start_date", -1):
+        p["id"] = str(p.get("_id"))
+        p.pop("_id", None)
+        docs.append(p)
+    return {"pay_periods": docs}
+
+
+@api_router.post("/payroll/pay-periods")
+async def payroll_create_period(payload: dict, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    now = datetime.now(timezone.utc)
+    doc = {
+        "business_id": business_id,
+        "name": str((payload or {}).get("name") or "Pay Period").strip(),
+        "start_date": str((payload or {}).get("start_date") or "")[:10],
+        "end_date": str((payload or {}).get("end_date") or "")[:10],
+        "pay_date": str((payload or {}).get("pay_date") or "")[:10] or None,
+        "status": "open",
+        "created_by": str(current_user.get("id") or current_user.get("_id") or ""),
+        "created_at": now, "updated_at": now, "locked_at": None, "exported_at": None,
+        "notes": str((payload or {}).get("notes") or ""),
+    }
+    r = await db.payroll_pay_periods.insert_one(doc)
+    doc["id"] = str(r.inserted_id)
+    return doc
+
+@api_router.get("/payroll/pay-periods/{period_id}")
+async def payroll_get_period(period_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _find_period_or_404(period_id, business_id)
+    period["id"] = str(period.get("_id"))
+    period.pop("_id", None)
+    return period
+
+
+@api_router.post("/payroll/pay-periods/{period_id}/recalculate")
+async def payroll_recalculate_period(period_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _find_period_or_404(period_id, business_id)
+    summary = await _build_period_summary(period, business_id)
+    await db.payroll_pay_periods.update_one({"_id": period["_id"]}, {"$set": {"status": "review", "updated_at": datetime.now(timezone.utc)}})
+    return {"success": True, "summary": summary}
+
+
+@api_router.post("/payroll/pay-periods/{period_id}/lock")
+async def payroll_lock_period(period_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _find_period_or_404(period_id, business_id)
+    if period.get("status") == "exported":
+        raise HTTPException(status_code=400, detail="Exported period cannot be relocked")
+    now = datetime.now(timezone.utc)
+    await db.payroll_pay_periods.update_one({"_id": period["_id"]}, {"$set": {"status": "locked", "locked_at": now, "updated_at": now}})
+    return {"success": True, "status": "locked"}
+
+
+@api_router.post("/payroll/pay-periods/{period_id}/mark-exported")
+async def payroll_mark_exported(period_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _find_period_or_404(period_id, business_id)
+    now = datetime.now(timezone.utc)
+    await db.payroll_pay_periods.update_one({"_id": period["_id"]}, {"$set": {"status": "exported", "exported_at": now, "updated_at": now}})
+    return {"success": True, "status": "exported"}
+
+
+@api_router.delete("/payroll/pay-periods/{period_id}")
+async def payroll_delete_period(period_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _find_period_or_404(period_id, business_id)
+    if _period_is_readonly(period):
+        raise HTTPException(status_code=400, detail="Locked/exported periods cannot be deleted")
+    await db.payroll_pay_periods.delete_one({"_id": period["_id"]})
+    await db.payroll_adjustments.delete_many({"business_id": business_id, "period_id": str(period.get("_id"))})
+    return {"success": True}
+
+
+@api_router.get("/payroll/timesheets")
+async def payroll_get_timesheets(period_id: str = Query(...), current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _find_period_or_404(period_id, business_id)
+    return {"timesheets": await _get_period_timesheets(period, business_id)}
+
+
+@api_router.post("/payroll/timesheets/{entry_id}/approve")
+async def payroll_approve_timesheet(entry_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    res = await db.jobs.update_one({"_id": ObjectId(entry_id), "business_id": business_id}, {"$set": {"payroll_status": "approved", "updated_at": datetime.now(timezone.utc)}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Timesheet entry not found")
+    return {"success": True, "status": "approved"}
+
+
+@api_router.post("/payroll/timesheets/{entry_id}/reject")
+async def payroll_reject_timesheet(entry_id: str, payload: dict = None, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    notes = str((payload or {}).get("notes") or "")
+    res = await db.jobs.update_one({"_id": ObjectId(entry_id), "business_id": business_id}, {"$set": {"payroll_status": "rejected", "payroll_notes": notes, "updated_at": datetime.now(timezone.utc)}})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Timesheet entry not found")
+    return {"success": True, "status": "rejected"}
+
+
+@api_router.post("/payroll/timesheets/bulk-approve")
+async def payroll_bulk_approve(payload: dict, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    ids = [ObjectId(x) for x in (payload or {}).get("entry_ids", []) if ObjectId.is_valid(str(x))]
+    if not ids:
+        return {"success": True, "updated": 0}
+    res = await db.jobs.update_many({"_id": {"$in": ids}, "business_id": business_id}, {"$set": {"payroll_status": "approved", "updated_at": datetime.now(timezone.utc)}})
+    return {"success": True, "updated": res.modified_count}
+
+
+@api_router.get("/payroll/pay-periods/{period_id}/adjustments")
+async def payroll_get_adjustments(period_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    await _find_period_or_404(period_id, business_id)
+    rows = []
+    async for a in db.payroll_adjustments.find({"business_id": business_id, "period_id": period_id}).sort("created_at", -1):
+        a["id"] = str(a.get("_id"))
+        a.pop("_id", None)
+        rows.append(a)
+    return {"adjustments": rows}
+
+
+@api_router.post("/payroll/pay-periods/{period_id}/adjustments")
+async def payroll_create_adjustment(period_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _find_period_or_404(period_id, business_id)
+    if _period_is_readonly(period):
+        raise HTTPException(status_code=400, detail="Locked/exported periods are read-only")
+    doc = {
+        "business_id": business_id, "period_id": period_id, "worker_id": str((payload or {}).get("worker_id") or ""),
+        "type": str((payload or {}).get("type") or "other"), "label": str((payload or {}).get("label") or "Adjustment"),
+        "amount": _to_float((payload or {}).get("amount"), 0), "taxable": bool((payload or {}).get("taxable", False)),
+        "recurring": bool((payload or {}).get("recurring", False)), "notes": str((payload or {}).get("notes") or ""),
+        "created_by": str(current_user.get("id") or current_user.get("_id") or ""), "created_at": datetime.now(timezone.utc),
+    }
+    r = await db.payroll_adjustments.insert_one(doc)
+    return {"id": str(r.inserted_id), "success": True}
+
+
+@api_router.delete("/payroll/adjustments/{adjustment_id}")
+async def payroll_delete_adjustment(adjustment_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    adj = await db.payroll_adjustments.find_one({"_id": ObjectId(adjustment_id), "business_id": business_id})
+    if not adj:
+        raise HTTPException(status_code=404, detail="Adjustment not found")
+    period = await _find_period_or_404(str(adj.get("period_id")), business_id)
+    if _period_is_readonly(period):
+        raise HTTPException(status_code=400, detail="Locked/exported periods are read-only")
+    await db.payroll_adjustments.delete_one({"_id": adj["_id"]})
+    return {"success": True}
+
+
+@api_router.get("/payroll/settings")
+async def payroll_get_settings(current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    return await _get_payroll_settings(business_id)
+
+
+@api_router.patch("/payroll/settings")
+async def payroll_patch_settings(payload: dict, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    now = datetime.now(timezone.utc)
+    current = await _get_payroll_settings(business_id)
+    allowed = {"country", "tax_enabled", "tax_mode", "default_tax_rate", "tax_code_table", "kiwi_saver_enabled", "default_kiwi_saver_rate", "employer_contribution_enabled", "default_employer_contribution_rate", "student_loan_enabled", "acc_or_levy_placeholder", "notes"}
+    for k, v in (payload or {}).items():
+        if k in allowed:
+            current[k] = v
+    current["updated_at"] = now
+    await db.payroll_settings.update_one({"business_id": business_id}, {"$set": current, "$setOnInsert": {"created_at": now}}, upsert=True)
+    return {"success": True, "settings": current}
+
+
+@api_router.get("/payroll/pay-periods/{period_id}/summary")
+async def payroll_summary(period_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _find_period_or_404(period_id, business_id)
+    return await _build_period_summary(period, business_id)
+
+
+@api_router.get("/payroll/pay-periods/{period_id}/workers/{worker_id}/payslip")
+async def payroll_payslip(period_id: str, worker_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _find_period_or_404(period_id, business_id)
+    summary = await _build_period_summary(period, business_id)
+    worker = next((w for w in summary.get("worker_summaries", []) if str(w.get("worker_id")) == str(worker_id)), None)
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker summary not found")
+    business = await db.users.find_one({"$or": [{"_id": ObjectId(business_id)}]}) if ObjectId.is_valid(business_id) else None
+    return {
+        "business_name": (business or {}).get("business_name") or (business or {}).get("name") or "Churvox Business",
+        "worker_name": worker.get("worker_name"),
+        "worker_email": worker.get("worker_email"),
+        "pay_period": summary.get("period"),
+        "approved_hours": worker.get("approved_hours"),
+        "hourly_rate": worker.get("hourly_rate"),
+        "salary_amount": worker.get("salary_amount"),
+        "gross_pay": worker.get("gross_pay"),
+        "allowances": worker.get("taxable_allowances"),
+        "reimbursements": worker.get("non_taxable_reimbursements"),
+        "deductions": worker.get("other_deductions"),
+        "employee_tax": worker.get("employee_tax"),
+        "kiwi_saver_employee": worker.get("kiwi_saver_employee"),
+        "employer_contribution": worker.get("employer_contribution"),
+        "net_pay_estimate": worker.get("net_pay_estimate"),
+        "notes": worker.get("notes") or worker.get("leave_notes") or "",
+        "disclaimer": "Payroll calculations are prepared for review. Government filing and bank payments are handled outside Churvox.",
+    }
+
+
+def _csv_response(filename: str, header: list[str], rows: list[list]):
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(header)
+    writer.writerows(rows)
+    return Response(content=output.getvalue(), media_type="text/csv", headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+
+
+@api_router.get("/payroll/pay-periods/{period_id}/export.csv")
+async def payroll_export_csv(period_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _find_period_or_404(period_id, business_id)
+    summary = await _build_period_summary(period, business_id)
+    filename = f"churvox-payroll-{period.get('start_date')}-to-{period.get('end_date')}.csv"
+    header = ["Pay Period Name","Pay Period Start Date","Pay Period End Date","Pay Date","Worker Name","Worker Email","Worker Role","Pay Type","Hourly Rate","Salary Amount","Approved Hours","Pending Hours","Rejected Hours","Jobs Worked","Base Gross Pay","Taxable Allowances","Reimbursements","Bonuses","Gross Pay","Employee Tax","KiwiSaver Employee","Other Deductions","Employer Contribution","Net Pay Estimate","Total Cost Estimate","Payroll Status","Notes"]
+    workers = {w["id"]: w for w in await _get_payroll_workers(business_id)}
+    rows = []
+    for w in summary.get("worker_summaries", []):
+        full = workers.get(w.get("worker_id"), {})
+        rows.append([period.get("name"), period.get("start_date"), period.get("end_date"), period.get("pay_date") or "", w.get("worker_name"), w.get("worker_email"), full.get("role", "worker"), w.get("pay_type"), w.get("hourly_rate"), w.get("salary_amount"), w.get("approved_hours"), w.get("pending_hours"), w.get("rejected_hours"), w.get("jobs_worked"), w.get("base_gross_pay"), w.get("taxable_allowances"), w.get("non_taxable_reimbursements"), w.get("bonuses"), w.get("gross_pay"), w.get("employee_tax"), w.get("kiwi_saver_employee"), w.get("other_deductions"), w.get("employer_contribution"), w.get("net_pay_estimate"), w.get("total_cost_estimate"), w.get("status"), w.get("notes") or ""])
+    return _csv_response(filename, header, rows)
+
+
+@api_router.get("/payroll/pay-periods/{period_id}/timesheets.csv")
+async def payroll_timesheets_csv(period_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _find_period_or_404(period_id, business_id)
+    rows_data = await _get_period_timesheets(period, business_id)
+    filename = f"churvox-timesheets-{period.get('start_date')}-to-{period.get('end_date')}.csv"
+    header = ["Pay Period Name","Pay Period Start Date","Pay Period End Date","Worker Name","Worker Email","Job Title","Client Name","Date","Started At","Ended At","Gross Hours","Paused Minutes","Net Hours","Status","Notes"]
+    rows = [[period.get("name"), period.get("start_date"), period.get("end_date"), r.get("worker_name"), r.get("worker_email"), r.get("job_title"), r.get("client_name"), r.get("date"), r.get("started_at"), r.get("ended_at"), r.get("gross_hours"), r.get("paused_minutes"), r.get("net_hours"), r.get("status"), r.get("notes") or ""] for r in rows_data]
+    return _csv_response(filename, header, rows)
+
+
+@api_router.get("/payroll/pay-periods/{period_id}/payslips.csv")
+async def payroll_payslips_csv(period_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _find_period_or_404(period_id, business_id)
+    summary = await _build_period_summary(period, business_id)
+    filename = f"churvox-payslips-{period.get('start_date')}-to-{period.get('end_date')}.csv"
+    header = ["Pay Period","Worker Name","Worker Email","Gross Pay","Employee Tax","Deductions","Reimbursements","Net Pay Estimate","Employer Contribution","Notes"]
+    rows = [[period.get("name"), w.get("worker_name"), w.get("worker_email"), w.get("gross_pay"), w.get("employee_tax"), w.get("other_deductions"), w.get("non_taxable_reimbursements"), w.get("net_pay_estimate"), w.get("employer_contribution"), w.get("notes") or ""] for w in summary.get("worker_summaries", [])]
+    return _csv_response(filename, header, rows)
+
 
 
 # ==========================================================================
