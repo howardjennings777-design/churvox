@@ -49,25 +49,25 @@ export default function Layout({ children }) {
   return (
     <div className="cx-app-shell tap-safe-root min-h-screen bg-[#f7f4ef]" data-testid="layout-container">
       {/* Desktop Sidebar — Premium narrow style */}
-      <aside className="hidden md:flex md:flex-col md:w-[248px] md:fixed md:inset-y-0 bg-[#fcfaf6] border-r border-[#e4e0d8] z-40 shadow-[8px_0_24px_rgba(23,32,51,0.04)]" data-testid="desktop-sidebar">
+      <aside className="hidden md:flex md:flex-col md:w-[256px] md:fixed md:inset-y-0 bg-[#fcfaf6] border-r border-[#e4e0d8] z-40 shadow-[10px_0_28px_rgba(23,32,51,0.05)]" data-testid="desktop-sidebar">
         {/* Logo */}
-        <div className="flex items-center justify-between px-6 h-[78px] border-b border-[#ebe7de]">
+        <div className="flex items-center justify-between px-6 h-[86px] border-b border-[#ebe7de] bg-white/70">
           <ChurvoxLogo size="lg" dataTestId="sidebar-logo" />
           <NotificationsBell />
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-1">
+        <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-1.5">
           {navItems.map((item) => {
             const active = isActive(item.path);
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
+                className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-[13px] font-semibold transition-all ${
                   active
-                    ? "bg-[#155EEF] text-white shadow-[0_10px_22px_rgba(21,94,239,0.24)]"
-                    : "text-slate-600 hover:bg-[#eef3ff] hover:text-[#155EEF]"
+                    ? "bg-[#155EEF] text-white shadow-[0_10px_22px_rgba(21,94,239,0.3)] border border-[#0f48be]"
+                    : "text-slate-600 hover:bg-[#eef3ff] hover:text-[#155EEF] border border-transparent"
                 }`}
                 data-testid={`nav-${item.label.toLowerCase()}`}
               >
@@ -80,13 +80,13 @@ export default function Layout({ children }) {
 
         {/* User + Logout */}
         <div className="p-3 border-t border-[#ebe7de] space-y-2 bg-[#f8f5ef]">
-          <div className="px-3 py-2 rounded-xl bg-white border border-[#e5e0d7]">
+          <div className="px-3 py-2.5 rounded-xl bg-white border border-[#e5e0d7] shadow-[0_2px_8px_rgba(23,32,51,0.05)]">
             <p className="text-xs font-semibold text-slate-900 truncate">{user?.name}</p>
             <p className="text-[11px] text-slate-400 truncate">{user?.business_name || user?.email}</p>
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-[13px] font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all"
+            className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-[13px] font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100"
             data-testid="logout-button"
           >
             <LogOut className="h-[18px] w-[18px]" />
@@ -96,7 +96,7 @@ export default function Layout({ children }) {
       </aside>
 
       {/* Main content */}
-      <div className="md:ml-[248px] min-h-screen flex flex-col" data-testid="main-content-area">
+      <div className="md:ml-[256px] min-h-screen flex flex-col" data-testid="main-content-area">
         {/* Mobile header */}
         <header className="md:hidden bg-[#fcfaf6] border-b border-[#e4e0d8] px-4 py-3 flex items-center justify-between sticky top-0 z-30" data-testid="mobile-header">
           <ChurvoxLogo size="sm" dataTestId="mobile-logo" />
