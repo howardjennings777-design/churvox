@@ -1,19 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useApi } from "@/hooks/useApi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { 
-  Plus, 
-  Search, 
+import {
+  Plus,
+  Search,
   MoreHorizontal,
   Pencil,
   Trash2,
   Loader2,
   FileText,
   Send,
-  Filter
+  Filter,
+  CheckCircle2,
+  Clock3,
+  CircleDashed,
+  XCircle,
+  Wallet,
+  ArrowRight,
+  Briefcase,
+  ClipboardCheck,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -32,11 +41,32 @@ import { toast } from "sonner";
 import { formatDate, formatCurrency, QUOTE_STATUSES } from "@/lib/utils";
 import Layout from "@/components/Layout";
 
+const safeArray = (value) => (Array.isArray(value) ? value : []);
+const safeText = (value, fallback = "—") => {
+  if (value === null || value === undefined) return fallback;
+  const text = String(value).trim();
+  return text || fallback;
+};
+const safeNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const statusMeta = {
+  draft: { label: "Draft", className: "cx-status-badge--slate" },
+  sent: { label: "Sent", className: "cx-status-badge--blue" },
+  pending: { label: "Pending", className: "cx-status-badge--amber" },
+  accepted: { label: "Accepted", className: "cx-status-badge--green" },
+  declined: { label: "Declined", className: "cx-status-badge--red" },
+  expired: { label: "Expired", className: "cx-status-badge--red" },
+};
+
 export default function QuotesPage() {
   const { get, del, post, loading } = useApi();
   const [quotes, setQuotes] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
   const [deleteId, setDeleteId] = useState(null);
 
   useEffect(() => {
@@ -46,7 +76,7 @@ export default function QuotesPage() {
   const loadQuotes = async () => {
     const result = await get("/quotes");
     if (result.success) {
-      setQuotes(result.data);
+      setQuotes(safeArray(result.data));
     }
   };
 
@@ -55,7 +85,7 @@ export default function QuotesPage() {
     const result = await del(`/quotes/${deleteId}`);
     if (result.success) {
       toast.success("Quote deleted successfully");
-      setQuotes(quotes.filter((q) => q.id !== deleteId));
+      setQuotes((prev) => prev.filter((q) => q.id !== deleteId));
     } else {
       toast.error(result.error);
     }
@@ -72,170 +102,279 @@ export default function QuotesPage() {
     }
   };
 
-  const filteredQuotes = quotes.filter((quote) => {
-    const matchesSearch = 
-      quote.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quote.job_description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quote.quote_number?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || quote.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const handleConvertToJob = async (quoteId) => {
+    const result = await post(`/quotes/${quoteId}/convert`);
+    if (result.success) {
+      toast.success("Quote converted to job");
+      loadQuotes();
+    } else {
+      toast.error(result.error || "Unable to convert quote right now");
+    }
+  };
+
+  const quoteMetrics = useMemo(() => {
+    const safeQuotes = safeArray(quotes);
+    const totalValue = safeQuotes.reduce((sum, quote) => sum + safeNumber(quote.price ?? quote.total), 0);
+
+    return {
+      total: safeQuotes.length,
+      drafts: safeQuotes.filter((q) => String(q.status || "").toLowerCase() === "draft").length,
+      sentPending: safeQuotes.filter((q) => ["sent", "pending"].includes(String(q.status || "").toLowerCase())).length,
+      accepted: safeQuotes.filter((q) => String(q.status || "").toLowerCase() === "accepted").length,
+      declinedExpired: safeQuotes.filter((q) => ["declined", "expired"].includes(String(q.status || "").toLowerCase())).length,
+      totalValue,
+    };
+  }, [quotes]);
+
+  const filteredQuotes = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+
+    return safeArray(quotes)
+      .filter((quote) => {
+        const status = String(quote.status || "").toLowerCase();
+        const pool = [
+          quote.customer_name,
+          quote.job_description,
+          quote.quote_number,
+          quote.status,
+          quote.title,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        const matchesSearch = !query || pool.includes(query);
+        const matchesStatus = statusFilter === "all" || status === statusFilter;
+        return matchesSearch && matchesStatus;
+      })
+      .sort((a, b) => {
+        if (sortBy === "oldest") {
+          return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+        }
+        if (sortBy === "highest") {
+          return safeNumber(b.price ?? b.total) - safeNumber(a.price ?? a.total);
+        }
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      });
+  }, [quotes, searchTerm, statusFilter, sortBy]);
 
   return (
     <Layout>
-      <div className="cx-page space-y-6 animate-in" data-testid="quotes-page">
-        {/* Header */}
-        <div className="cx-page-hero flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="cx-page space-y-6 animate-in bg-[#f8f6f1] min-h-full" data-testid="quotes-page">
+        <div className="cx-page-hero flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div>
             <h1 className="cx-page-title">Quotes</h1>
-            <p className="cx-page-subtitle">Manage your quotes and proposals</p>
+            <p className="cx-page-subtitle">Create professional proposals, track approvals, and turn accepted quotes into jobs.</p>
           </div>
-          <Link to="/quotes/new">
-            <Button className="bg-primary hover:bg-primary/90" data-testid="add-quote-button">
+          <div className="cx-toolbar w-full xl:w-auto">
+            <Link to="/quotes/new" className="cx-button-primary" data-testid="add-quote-button">
               <Plus className="mr-2 h-4 w-4" />
               New Quote
-            </Button>
-          </Link>
-        </div>
-
-        {/* Filters */}
-        <div className="cx-toolbar cx-panel p-3 md:p-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search quotes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-card border-border"
-              data-testid="quote-search-input"
-            />
+            </Link>
+            <button type="button" onClick={() => setStatusFilter("accepted")} className="cx-button-secondary">
+              <ClipboardCheck className="mr-2 h-4 w-4" />
+              View Accepted
+            </button>
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-[180px] bg-card border-border" data-testid="quote-status-filter">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent className="bg-card border-border">
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="sent">Sent</SelectItem>
-              <SelectItem value="accepted">Accepted</SelectItem>
-              <SelectItem value="declined">Declined</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
-        {/* Quotes List */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
+          <Card className="cx-stat-card"><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs text-slate-500">Total quotes</p><p className="text-2xl font-semibold text-slate-900">{quoteMetrics.total}</p></div><div className="h-10 w-10 rounded-xl bg-slate-100 text-slate-700 grid place-items-center"><FileText className="h-5 w-5" /></div></div></CardContent></Card>
+          <Card className="cx-stat-card"><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs text-slate-500">Draft quotes</p><p className="text-2xl font-semibold text-slate-900">{quoteMetrics.drafts}</p></div><div className="h-10 w-10 rounded-xl bg-slate-100 text-slate-700 grid place-items-center"><CircleDashed className="h-5 w-5" /></div></div></CardContent></Card>
+          <Card className="cx-stat-card"><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs text-slate-500">Sent / pending</p><p className="text-2xl font-semibold text-slate-900">{quoteMetrics.sentPending}</p></div><div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-700 grid place-items-center"><Clock3 className="h-5 w-5" /></div></div></CardContent></Card>
+          <Card className="cx-stat-card"><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs text-slate-500">Accepted quotes</p><p className="text-2xl font-semibold text-slate-900">{quoteMetrics.accepted}</p></div><div className="h-10 w-10 rounded-xl bg-green-50 text-green-700 grid place-items-center"><CheckCircle2 className="h-5 w-5" /></div></div></CardContent></Card>
+          <Card className="cx-stat-card"><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-xs text-slate-500">Quote value</p><p className="text-2xl font-semibold text-slate-900">{formatCurrency(quoteMetrics.totalValue)}</p></div><div className="h-10 w-10 rounded-xl bg-amber-50 text-amber-700 grid place-items-center"><Wallet className="h-5 w-5" /></div></div></CardContent></Card>
+        </div>
+
+        <Card className="cx-panel">
+          <CardContent className="p-3 md:p-4">
+            <div className="cx-toolbar gap-3">
+              <div className="relative flex-1 min-w-[220px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by client, title, quote number, or status"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 rounded-xl bg-card border-border"
+                  data-testid="quote-search-input"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[180px] rounded-xl bg-card border-border" data-testid="quote-status-filter">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  <SelectItem value="all">All status</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="accepted">Accepted</SelectItem>
+                  <SelectItem value="declined">Declined</SelectItem>
+                  <SelectItem value="expired">Expired</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-full sm:w-[180px] rounded-xl bg-card border-border">
+                  <SlidersHorizontal className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  <SelectItem value="newest">Newest first</SelectItem>
+                  <SelectItem value="oldest">Oldest first</SelectItem>
+                  <SelectItem value="highest">Highest value</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="cx-card">
+          <CardContent className="p-4 md:p-5">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h2 className="text-base font-semibold text-slate-900">Quote workflow</h2>
+              <span className="text-xs text-slate-500">From first draft to booked work</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 mt-3">
+              {["Draft", "Send", "Accepted", "Convert to job"].map((step, idx) => (
+                <div key={step} className="rounded-xl border border-[#e8e2d8] bg-[#fffdfa] px-3 py-2 text-sm text-slate-700 flex items-center justify-between">
+                  <span className="font-medium">{idx + 1}. {step}</span>
+                  {idx < 3 ? <ArrowRight className="h-4 w-4 text-slate-400" /> : <Briefcase className="h-4 w-4 text-green-700" />}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : filteredQuotes.length === 0 ? (
-          <Card className="bg-card border-border">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-slate-900 mb-2">
-                {searchTerm || statusFilter !== "all" ? "No quotes found" : "No quotes yet"}
-              </h3>
-              <p className="text-muted-foreground text-center mb-4 max-w-xs mx-auto">
-                {searchTerm || statusFilter !== "all"
-                  ? "Try a different search or filter"
-                  : "Send professional quotes to clients. Accepted quotes can be converted directly into jobs."}
+          <Card className="cx-empty-state">
+            <CardContent className="flex flex-col items-center justify-center py-10 md:py-14 bg-gradient-to-b from-blue-50/70 to-white rounded-2xl">
+              <div className="h-16 w-16 rounded-2xl bg-blue-100 text-blue-700 grid place-items-center mb-5 shadow-sm">
+                <FileText className="h-8 w-8" />
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900 mb-2">No quotes yet</h3>
+              <p className="text-slate-600 text-center mb-5 max-w-md">
+                Create your first quote, send it to a client, and convert accepted work into jobs.
               </p>
-              {!searchTerm && statusFilter === "all" && (
-                <Link to="/quotes/new">
-                  <Button className="bg-primary hover:bg-primary/90" data-testid="add-first-quote-button">
-                    <Plus className="mr-2 h-4 w-4" />
-                    New Quote
-                  </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Link to="/quotes/new" className="cx-button-primary" data-testid="add-first-quote-button">
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Quote
                 </Link>
-              )}
+                <Link to="/clients/new" className="cx-button-secondary">
+                  Add Client
+                </Link>
+              </div>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-3">
-            {filteredQuotes.map((quote) => (
-              <Card 
-                key={quote.id} 
-                className="cx-list-card hover:border-blue-300 transition-colors"
-                data-testid={`quote-card-${quote.id}`}
-              >
-                <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Link 
-                          to={`/quotes/${quote.id}`}
-                          className="text-lg font-medium text-slate-900 hover:text-primary transition-colors"
-                          data-testid={`quote-number-${quote.id}`}
-                        >
-                          {quote.quote_number}
-                        </Link>
-                        <span className={`cx-status-badge ${QUOTE_STATUSES.find(s => s.value === quote.status)?.color || "bg-slate-100 text-slate-700 border border-slate-200"}`}>
-                          {QUOTE_STATUSES.find(s => s.value === quote.status)?.label || quote.status}
-                        </span>
-                      </div>
-                      <p className="text-sm text-slate-900 mb-1">{quote.customer_name}</p>
-                      <p className="text-sm text-muted-foreground truncate">{quote.job_description}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Created {formatDate(quote.created_at)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xl font-semibold text-slate-900">
-                        {formatCurrency(quote.price)}
-                      </span>
-                      
-                      {quote.status === "draft" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-primary text-primary hover:bg-primary hover:text-slate-900"
-                          onClick={() => handleSendQuote(quote.id)}
-                          data-testid={`send-quote-${quote.id}`}
-                        >
-                          <Send className="h-4 w-4 mr-1" />
-                          Send
-                        </Button>
-                      )}
-                      
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" data-testid={`quote-menu-${quote.id}`}>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-card border-border">
-                          <DropdownMenuItem asChild>
-                            <Link to={`/quotes/${quote.id}`} className="cursor-pointer">
-                              View Details
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link to={`/quotes/${quote.id}/edit`} className="flex items-center cursor-pointer" data-testid={`edit-quote-${quote.id}`}>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              Edit
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setDeleteId(quote.id)}
-                            className="text-destructive focus:text-destructive cursor-pointer"
-                            data-testid={`delete-quote-${quote.id}`}
+            {filteredQuotes.map((quote) => {
+              const status = String(quote.status || "draft").toLowerCase();
+              const meta = statusMeta[status] || {
+                label: QUOTE_STATUSES.find((s) => s.value === status)?.label || safeText(status, "Draft"),
+                className: "cx-status-badge--slate",
+              };
+
+              return (
+                <Card
+                  key={quote.id}
+                  className="cx-list-card hover:border-blue-300 transition-colors"
+                  data-testid={`quote-card-${quote.id}`}
+                >
+                  <CardContent className="p-4 md:p-5">
+                    <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <Link
+                            to={`/quotes/${quote.id}`}
+                            className="text-lg font-semibold text-slate-900 hover:text-primary transition-colors"
+                            data-testid={`quote-number-${quote.id}`}
                           >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            {safeText(quote.title || quote.quote_number, "Untitled quote")}
+                          </Link>
+                          <span className={`cx-status-badge ${meta.className}`}>{meta.label}</span>
+                          {(status === "declined" || status === "expired") && <XCircle className="h-4 w-4 text-red-500" />}
+                        </div>
+                        <p className="text-sm text-slate-900 font-medium">{safeText(quote.customer_name, "Unknown client")}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{safeText(quote.job_description, "No quote notes added yet.")}</p>
+                        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                          <span>Created {formatDate(quote.created_at) || "—"}</span>
+                          {(quote.sent_at || quote.updated_at) && <span>Sent {formatDate(quote.sent_at || quote.updated_at)}</span>}
+                          {quote.expires_at && <span>Expires {formatDate(quote.expires_at)}</span>}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:items-end gap-2">
+                        <span className="text-2xl font-semibold text-slate-900">{formatCurrency(quote.price ?? quote.total)}</span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Link to={`/quotes/${quote.id}`} className="cx-button-secondary">Open</Link>
+
+                          {status === "draft" && (
+                            <Button
+                              size="sm"
+                              className="cx-button-secondary"
+                              onClick={() => handleSendQuote(quote.id)}
+                              data-testid={`send-quote-${quote.id}`}
+                            >
+                              <Send className="h-4 w-4 mr-1" />
+                              Send
+                            </Button>
+                          )}
+
+                          {status === "accepted" && (
+                            <Button
+                              size="sm"
+                              className="cx-button-primary"
+                              onClick={() => handleConvertToJob(quote.id)}
+                            >
+                              <Briefcase className="h-4 w-4 mr-1" />
+                              Convert to Job
+                            </Button>
+                          )}
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-9 w-9" data-testid={`quote-menu-${quote.id}`}>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-card border-border">
+                              <DropdownMenuItem asChild>
+                                <Link to={`/quotes/${quote.id}`} className="cursor-pointer">
+                                  View Details
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link to={`/quotes/${quote.id}/edit`} className="flex items-center cursor-pointer" data-testid={`edit-quote-${quote.id}`}>
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  Edit
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setDeleteId(quote.id)}
+                                className="text-destructive focus:text-destructive cursor-pointer"
+                                data-testid={`delete-quote-${quote.id}`}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
 
-        {/* Delete Confirmation */}
         {!!deleteId && (
           <div className="fixed inset-0 z-50 flex items-center justify-center" data-testid="delete-quote-dialog">
             <div className="absolute inset-0 bg-black/80" onClick={() => setDeleteId(null)} />
