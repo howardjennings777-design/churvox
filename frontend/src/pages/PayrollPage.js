@@ -1,354 +1,214 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { Clock3, Download, FileSpreadsheet, FileText, FolderClock, RefreshCcw } from "lucide-react";
+import { Download, Lock, CheckCircle2, Plus, Printer, Settings } from "lucide-react";
 import { useApi } from "../hooks/useApi";
-import { formatCurrency, formatDate } from "../lib/utils";
-import { safeArray, safeNumber, safeText } from "../utils/safeRender";
+import { formatCurrency } from "../lib/utils";
 
-function buildCurrentPayPeriod() {
-  const now = new Date();
-  const day = now.getDay();
-  const mondayOffset = day === 0 ? -6 : 1 - day;
-  const start = new Date(now);
-  start.setDate(now.getDate() + mondayOffset);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 13);
-  return { start, end };
-}
+const DISCLAIMER = "Payroll calculations are prepared for review. Government filing and bank payments are handled outside Churvox.";
 
-function parseHours(value) {
-  const hours = safeNumber(value, 0);
-  return Number.isFinite(hours) ? Math.max(0, hours) : 0;
-}
-
-function statusChipClass(status) {
-  if (status === "ready") return "cx-status-badge cx-status-badge--green";
-  if (status === "review") return "cx-status-badge cx-status-badge--amber";
+function badge(status) {
+  const s = String(status || "open").toLowerCase();
+  if (s === "exported") return "cx-status-badge cx-status-badge--green";
+  if (s === "locked") return "cx-status-badge cx-status-badge--amber";
+  if (s === "review") return "cx-status-badge cx-status-badge--blue";
   return "cx-status-badge cx-status-badge--blue";
 }
 
 export default function PayrollPage() {
-  const { get, loading, error } = useApi();
+  const { get, post, patch, del, loading, error } = useApi();
+  const [periods, setPeriods] = useState([]);
+  const [activePeriodId, setActivePeriodId] = useState("");
+  const [summary, setSummary] = useState(null);
+  const [timesheets, setTimesheets] = useState([]);
   const [workers, setWorkers] = useState([]);
-  const [jobs, setJobs] = useState([]);
-  const [reportsSummary, setReportsSummary] = useState({});
+  const [adjustments, setAdjustments] = useState([]);
+  const [settings, setSettings] = useState(null);
+  const [payslip, setPayslip] = useState(null);
+  const [newPeriod, setNewPeriod] = useState({ name: "", start_date: "", end_date: "", pay_date: "" });
+  const [adjustmentForm, setAdjustmentForm] = useState({ worker_id: "", type: "allowance", label: "", amount: "", taxable: false, notes: "" });
 
-  const fetchPayrollWorkspace = useCallback(async () => {
-    const [workersRes, jobsRes, reportsRes] = await Promise.all([
-      get("/team/workers"),
-      get("/jobs"),
-      get("/reports/summary"),
+  const fetchWorkspace = useCallback(async () => {
+    const [periodRes, workerRes, settingsRes] = await Promise.all([
+      get("/payroll/pay-periods"),
+      get("/payroll/workers"),
+      get("/payroll/settings"),
     ]);
+    const loadedPeriods = periodRes?.success ? (periodRes.data?.pay_periods || []) : [];
+    setPeriods(loadedPeriods);
+    setWorkers(workerRes?.success ? (workerRes.data?.workers || []) : []);
+    setSettings(settingsRes?.success ? settingsRes.data : null);
+    if (!activePeriodId && loadedPeriods.length) {
+      setActivePeriodId(loadedPeriods[0].id);
+    }
+  }, [get, activePeriodId]);
 
-    setWorkers(workersRes?.success ? safeArray(workersRes.data) : []);
-    setJobs(jobsRes?.success ? safeArray(jobsRes.data) : []);
-    setReportsSummary(reportsRes?.success ? reportsRes.data || {} : {});
+  const fetchPeriodData = useCallback(async (periodId) => {
+    if (!periodId) return;
+    const [summaryRes, timesheetsRes, adjustmentsRes] = await Promise.all([
+      get(`/payroll/pay-periods/${periodId}/summary`),
+      get(`/payroll/timesheets?period_id=${periodId}`),
+      get(`/payroll/pay-periods/${periodId}/adjustments`),
+    ]);
+    setSummary(summaryRes?.success ? summaryRes.data : null);
+    setTimesheets(timesheetsRes?.success ? (timesheetsRes.data?.timesheets || []) : []);
+    setAdjustments(adjustmentsRes?.success ? (adjustmentsRes.data?.adjustments || []) : []);
   }, [get]);
 
-  useEffect(() => {
-    fetchPayrollWorkspace();
-  }, [fetchPayrollWorkspace]);
+  useEffect(() => { fetchWorkspace(); }, [fetchWorkspace]);
+  useEffect(() => { fetchPeriodData(activePeriodId); }, [activePeriodId, fetchPeriodData]);
 
-  const payPeriod = useMemo(() => buildCurrentPayPeriod(), []);
+  const activePeriod = useMemo(() => periods.find((p) => p.id === activePeriodId) || null, [periods, activePeriodId]);
+  const readOnly = ["locked", "exported"].includes(String(activePeriod?.status || ""));
 
-  const workerRows = useMemo(() => {
-    const businessWorkers = safeArray(workers).filter((w) => {
-      const role = safeText(w?.role, "").toLowerCase();
-      return role !== "owner";
-    });
+  const downloadCsv = async (path, filename) => {
+    const res = await get(path, { responseType: "blob" });
+    if (!res?.success) return;
+    const blob = new Blob([res.data], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
-    return businessWorkers.map((worker) => {
-      const assignedJobs = safeArray(worker?.assigned_jobs);
-      const jobsWorked = assignedJobs.length;
-      const completedJobs = assignedJobs.filter((j) => String(j?.status || "").toLowerCase() === "completed").length;
-      const approvedHours = jobsWorked * 1.75;
-      const pendingHours = Math.max(0, (jobsWorked - completedJobs) * 0.5);
-      const payStatus = pendingHours > 0 ? "review" : approvedHours > 0 ? "ready" : "open";
+  const createPeriod = async () => {
+    const res = await post("/payroll/pay-periods", newPeriod);
+    if (res?.success) {
+      await fetchWorkspace();
+      setNewPeriod({ name: "", start_date: "", end_date: "", pay_date: "" });
+    }
+  };
 
-      return {
-        id: worker?.id || worker?._id || worker?.email,
-        name: worker?.name || "Team member",
-        role: safeText(worker?.role, "worker").replaceAll("_", " "),
-        approvedHours,
-        pendingHours,
-        jobsWorked,
-        payStatus,
-      };
-    });
-  }, [workers]);
+  const approveEntry = async (entryId) => { await post(`/payroll/timesheets/${entryId}/approve`, {}); fetchPeriodData(activePeriodId); };
+  const rejectEntry = async (entryId) => { await post(`/payroll/timesheets/${entryId}/reject`, { notes: "Rejected in payroll review" }); fetchPeriodData(activePeriodId); };
+  const bulkApprove = async () => {
+    const pendingIds = timesheets.filter((x) => x.status === "pending").map((x) => x.entry_id);
+    await post("/payroll/timesheets/bulk-approve", { entry_ids: pendingIds });
+    fetchPeriodData(activePeriodId);
+  };
 
-  const totals = useMemo(() => {
-    const approvedHours = workerRows.reduce((sum, worker) => sum + parseHours(worker.approvedHours), 0);
-    const pendingHours = workerRows.reduce((sum, worker) => sum + parseHours(worker.pendingHours), 0);
-    const pendingTimesheets = workerRows.filter((worker) => worker.pendingHours > 0).length;
-    const approvedEntries = jobs.filter((job) => String(job?.status || "").toLowerCase() === "completed").length;
-    const pendingEntries = jobs.filter((job) => !["completed", "cancelled"].includes(String(job?.status || "").toLowerCase())).length;
-    const rejectedEntries = 0;
-    const workersIncluded = workerRows.length;
-    const estimatedGrossPay = approvedHours * 45;
-    const exportReady = pendingTimesheets === 0 && approvedHours > 0;
-    const lastUpdated = jobs.reduce((latest, job) => {
-      const value = job?.updated_at ? new Date(job.updated_at).getTime() : 0;
-      return value > latest ? value : latest;
-    }, 0);
-    const periodStatus = exportReady ? "ready" : pendingTimesheets > 0 ? "review" : "open";
+  const createAdjustment = async () => {
+    await post(`/payroll/pay-periods/${activePeriodId}/adjustments`, { ...adjustmentForm, amount: Number(adjustmentForm.amount || 0) });
+    setAdjustmentForm({ worker_id: "", type: "allowance", label: "", amount: "", taxable: false, notes: "" });
+    fetchPeriodData(activePeriodId);
+  };
 
-    return {
-      approvedHours,
-      pendingHours,
-      pendingTimesheets,
-      approvedEntries,
-      pendingEntries,
-      rejectedEntries,
-      workersIncluded,
-      estimatedGrossPay,
-      exportReady,
-      periodStatus,
-      lastUpdated,
-    };
-  }, [jobs, workerRows]);
-
-  const hasWorkspaceData = workerRows.length > 0 || jobs.length > 0 || safeNumber(reportsSummary?.payroll_hours_summary, 0) > 0;
-
-  const periodRangeLabel = `${formatDate(payPeriod.start)} — ${formatDate(payPeriod.end)}`;
-  const payrollStatusLabel = totals.periodStatus === "ready" ? "Ready to export" : totals.periodStatus === "review" ? "Review" : "Open";
+  const openPayslip = async (workerId) => {
+    const res = await get(`/payroll/pay-periods/${activePeriodId}/workers/${workerId}/payslip`);
+    if (res?.success) setPayslip(res.data);
+  };
 
   return (
     <Layout>
       <div className="cx-page" style={{ background: "#f6f3ee" }}>
-        <div className="cx-page-hero space-y-4" style={{ background: "#ffffff", borderColor: "#e4e0d8" }}>
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="cx-page-title" style={{ color: "#172033" }}>Payroll</h1>
-              <p className="cx-page-subtitle" style={{ color: "#667085" }}>
-                Review approved hours, prepare pay periods, and export clean payroll summaries.
-              </p>
-            </div>
-            <div className="cx-toolbar">
-              <button type="button" className="cx-button-secondary">
-                <Download size={16} className="mr-2" />
-                Export Payroll
-              </button>
-              <Link to="/jobs" className="cx-button-primary">
-                <FolderClock size={16} className="mr-2" />
-                Review Timesheets
-              </Link>
-            </div>
+        <div className="cx-page-hero" style={{ background: "#fff" }}>
+          <h1 className="cx-page-title">Payroll</h1>
+          <p className="cx-page-subtitle">Review timesheets, calculate payroll, prepare payslips, and export clean summaries.</p>
+          <p className="text-sm text-[#155EEF] mt-2">{DISCLAIMER}</p>
+          <div className="cx-toolbar mt-3">
+            <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/export.csv`, "payroll.csv")}><Download size={14} className="mr-2" />Export Payroll CSV</button>
+            <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/timesheets.csv`, "timesheets.csv")}><Download size={14} className="mr-2" />Export Timesheets CSV</button>
+            <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/payslips.csv`, "payslips.csv")}><Download size={14} className="mr-2" />Export Payslips CSV</button>
+            <button className="cx-button-primary" onClick={createPeriod}><Plus size={14} className="mr-2" />Create Pay Period</button>
+            <button className="cx-button-secondary" disabled={!activePeriodId || readOnly} onClick={() => post(`/payroll/pay-periods/${activePeriodId}/lock`, {}).then(() => fetchWorkspace())}><Lock size={14} className="mr-2" />Lock Period</button>
+            <button className="cx-button-secondary" disabled={!activePeriodId || activePeriod?.status === "exported"} onClick={() => post(`/payroll/pay-periods/${activePeriodId}/mark-exported`, {}).then(() => fetchWorkspace())}><CheckCircle2 size={14} className="mr-2" />Mark Exported</button>
           </div>
         </div>
 
-        {error ? (
-          <div className="cx-error-state">
-            <p className="text-sm font-medium text-[#172033]">Payroll workspace unavailable</p>
-            <p className="text-sm text-[#667085] mt-1">We could not load payroll data right now. Please retry.</p>
-            <button type="button" className="cx-button-secondary mt-4" onClick={fetchPayrollWorkspace}>
-              <RefreshCcw size={14} className="mr-2" />
-              Retry
-            </button>
+        <section className="cx-panel p-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <select value={activePeriodId} onChange={(e) => setActivePeriodId(e.target.value)} className="cx-input md:col-span-2">
+              <option value="">Select pay period</option>
+              {periods.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.start_date} to {p.end_date})</option>)}
+            </select>
+            <input className="cx-input" placeholder="Name" value={newPeriod.name} onChange={(e) => setNewPeriod((v) => ({ ...v, name: e.target.value }))} />
+            <input className="cx-input" type="date" value={newPeriod.start_date} onChange={(e) => setNewPeriod((v) => ({ ...v, start_date: e.target.value }))} />
+            <input className="cx-input" type="date" value={newPeriod.end_date} onChange={(e) => setNewPeriod((v) => ({ ...v, end_date: e.target.value }))} />
           </div>
-        ) : null}
+          {activePeriod && <span className={badge(activePeriod.status)}>{activePeriod.status}</span>}
+        </section>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          <div className="cx-stat-card">
-            <p className="text-xs uppercase tracking-wide text-[#667085]">Current pay period</p>
-            <p className="text-lg font-semibold text-[#172033] mt-1">{periodRangeLabel}</p>
-            <p className="text-xs text-[#667085] mt-1">Bi-weekly cycle</p>
-          </div>
-          <div className="cx-stat-card">
-            <p className="text-xs uppercase tracking-wide text-[#667085]">Approved hours</p>
-            <p className="text-2xl font-semibold text-[#172033] mt-1">{totals.approvedHours.toFixed(1)}h</p>
-          </div>
-          <div className="cx-stat-card">
-            <p className="text-xs uppercase tracking-wide text-[#667085]">Pending timesheets</p>
-            <p className="text-2xl font-semibold text-[#172033] mt-1">{totals.pendingTimesheets}</p>
-          </div>
-          <div className="cx-stat-card">
-            <p className="text-xs uppercase tracking-wide text-[#667085]">Workers included</p>
-            <p className="text-2xl font-semibold text-[#172033] mt-1">{totals.workersIncluded}</p>
-          </div>
-          <div className="cx-stat-card">
-            <p className="text-xs uppercase tracking-wide text-[#667085]">Estimated gross pay</p>
-            <p className="text-2xl font-semibold text-[#172033] mt-1">{formatCurrency(totals.estimatedGrossPay)}</p>
-            <p className="text-xs text-[#667085] mt-1">Estimated from current approved hours</p>
-          </div>
-          <div className="cx-stat-card">
-            <p className="text-xs uppercase tracking-wide text-[#667085]">Export-ready status</p>
-            <p className="mt-2">
-              <span className={statusChipClass(totals.periodStatus)}>{payrollStatusLabel}</span>
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <section className="cx-panel p-5 xl:col-span-2">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div>
-                <h2 className="text-lg font-semibold text-[#172033]">Current pay period</h2>
-                <p className="text-sm text-[#667085]">{periodRangeLabel}</p>
-              </div>
-              <span className={statusChipClass(totals.periodStatus)}>{payrollStatusLabel}</span>
-            </div>
-
-            {!hasWorkspaceData ? (
-              <div className="cx-empty-state-inline mt-4">
-                <p className="text-sm font-medium text-[#172033]">No pay period data yet</p>
-                <p className="text-sm text-[#667085] mt-1">
-                  Payroll will populate as workers track time on jobs.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                <div className="rounded-xl border p-3 bg-[#fbfaf7]" style={{ borderColor: "#e4e0d8" }}>
-                  <p className="text-xs uppercase text-[#667085]">Approved hours</p>
-                  <p className="text-xl font-semibold text-[#172033] mt-1">{totals.approvedHours.toFixed(1)}h</p>
-                </div>
-                <div className="rounded-xl border p-3 bg-[#fbfaf7]" style={{ borderColor: "#e4e0d8" }}>
-                  <p className="text-xs uppercase text-[#667085]">Pending review</p>
-                  <p className="text-xl font-semibold text-[#172033] mt-1">{totals.pendingTimesheets}</p>
-                </div>
-                <div className="rounded-xl border p-3 bg-[#fbfaf7]" style={{ borderColor: "#e4e0d8" }}>
-                  <p className="text-xs uppercase text-[#667085]">Pending hours</p>
-                  <p className="text-xl font-semibold text-[#172033] mt-1">{totals.pendingHours.toFixed(1)}h</p>
-                </div>
-                <div className="rounded-xl border p-3 bg-[#fbfaf7]" style={{ borderColor: "#e4e0d8" }}>
-                  <p className="text-xs uppercase text-[#667085]">Last updated</p>
-                  <p className="text-xl font-semibold text-[#172033] mt-1">
-                    {totals.lastUpdated ? formatDate(new Date(totals.lastUpdated).toISOString()) : "Not available"}
-                  </p>
-                </div>
-              </div>
-            )}
-            <div className="mt-4">
-              <Link to="/jobs" className="cx-button-secondary">Review pay period</Link>
-            </div>
+        {summary && (
+          <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="cx-stat-card"><p>Approved hours</p><p>{summary.total_approved_hours}</p></div>
+            <div className="cx-stat-card"><p>Pending hours</p><p>{summary.total_pending_hours}</p></div>
+            <div className="cx-stat-card"><p>Workers included</p><p>{summary.total_workers}</p></div>
+            <div className="cx-stat-card"><p>Gross payroll</p><p>{formatCurrency(summary.total_gross_pay)}</p></div>
+            <div className="cx-stat-card"><p>Net pay estimate</p><p>{formatCurrency(summary.total_net_pay_estimate)}</p></div>
           </section>
+        )}
 
-          <section className="cx-panel p-5">
-            <h2 className="text-lg font-semibold text-[#172033]">Timesheets</h2>
-            <p className="text-sm text-[#667085]">Track approval progress and entries that still need review.</p>
-            <div className="mt-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-[#667085]">Approved entries</span>
-                <span className="font-semibold text-[#172033]">{totals.approvedEntries}</span>
+        <section className="cx-panel p-4">
+          <div className="flex items-center justify-between"><h2>Timesheet review</h2><button className="cx-button-primary" disabled={readOnly} onClick={bulkApprove}>Bulk approve</button></div>
+          <div className="space-y-2 mt-3">
+            {timesheets.map((t) => (
+              <div key={t.entry_id} className="rounded-xl border p-3 bg-white flex flex-wrap gap-3 items-center justify-between">
+                <div>
+                  <p className="font-semibold">{t.worker_name || "Worker"} — {t.job_title}</p>
+                  <p className="text-sm text-[#667085]">{t.date} • {t.net_hours}h • {t.client_name || "No client"}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={badge(t.status)}>{t.status}</span>
+                  <button className="cx-button-secondary" disabled={readOnly} onClick={() => approveEntry(t.entry_id)}>Approve</button>
+                  <button className="cx-button-secondary" disabled={readOnly} onClick={() => rejectEntry(t.entry_id)}>Reject</button>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-[#667085]">Pending entries</span>
-                <span className="font-semibold text-[#172033]">{totals.pendingEntries}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-[#667085]">Rejected / needs review</span>
-                <span className="font-semibold text-[#172033]">{totals.rejectedEntries}</span>
-              </div>
-            </div>
-            <Link to="/jobs" className="cx-button-primary mt-4">Open timesheets</Link>
-          </section>
-        </div>
-
-        <section className="cx-panel p-5">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div>
-              <h2 className="text-lg font-semibold text-[#172033]">Worker summaries</h2>
-              <p className="text-sm text-[#667085]">Approved and pending hours by worker for this period.</p>
-            </div>
-            <Link to="/team" className="cx-button-secondary">View details</Link>
+            ))}
           </div>
+        </section>
 
-          {workerRows.length === 0 ? (
-            <div className="cx-empty-state-inline mt-4">
-              <p className="text-sm font-medium text-[#172033]">No worker payroll summaries yet</p>
-              <p className="text-sm text-[#667085] mt-1">Assign jobs and track hours to generate worker payroll breakdowns.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mt-4">
-              {workerRows.map((worker) => (
-                <article key={worker.id} className="rounded-2xl border p-4 bg-[#fbfaf7]" style={{ borderColor: "#e4e0d8" }}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-[#172033]">{worker.name}</p>
-                      <p className="text-xs capitalize text-[#667085]">{worker.role}</p>
-                    </div>
-                    <span className={statusChipClass(worker.payStatus)}>
-                      {worker.payStatus === "ready" ? "Ready" : worker.payStatus === "review" ? "Needs review" : "Open"}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
-                    <div>
-                      <p className="text-[#667085]">Approved</p>
-                      <p className="font-semibold text-[#172033]">{worker.approvedHours.toFixed(1)}h</p>
-                    </div>
-                    <div>
-                      <p className="text-[#667085]">Pending</p>
-                      <p className="font-semibold text-[#172033]">{worker.pendingHours.toFixed(1)}h</p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-[#667085]">Jobs worked</p>
-                      <p className="font-semibold text-[#172033]">{worker.jobsWorked}</p>
-                    </div>
-                  </div>
-                  <Link to="/team" className="cx-button-secondary mt-3 w-full">View details</Link>
-                </article>
-              ))}
+        <section className="cx-panel p-4">
+          <h2>Worker pay summaries</h2>
+          <div className="space-y-3 mt-3">
+            {(summary?.worker_summaries || []).map((w) => (
+              <div key={w.worker_id} className="rounded-xl border p-3 bg-white">
+                <div className="flex items-center justify-between"><p className="font-semibold">{w.worker_name}</p><span className={badge(w.status)}>{w.status}</span></div>
+                <p className="text-sm text-[#667085]">{w.pay_type} • {w.approved_hours}h • Gross {formatCurrency(w.gross_pay)} • Net {formatCurrency(w.net_pay_estimate)}</p>
+                <div className="mt-2 flex gap-2">
+                  <button className="cx-button-secondary" onClick={() => openPayslip(w.worker_id)}>View payslip</button>
+                  <button className="cx-button-secondary" disabled={readOnly} onClick={() => patch(`/payroll/workers/${w.worker_id}/pay-settings`, { hourly_rate: Number(prompt("Hourly rate", w.hourly_rate) || w.hourly_rate) }).then(() => fetchWorkspace())}>Edit pay settings</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="cx-panel p-4">
+          <div className="flex items-center gap-2"><Settings size={16} /><h2>Payroll settings</h2></div>
+          {settings && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-2">
+              <input className="cx-input" value={settings.country || ""} onChange={(e) => setSettings((s) => ({ ...s, country: e.target.value }))} placeholder="country" />
+              <select className="cx-input" value={settings.tax_mode || "manual_rate"} onChange={(e) => setSettings((s) => ({ ...s, tax_mode: e.target.value }))}><option value="manual_rate">manual_rate</option><option value="tax_code_table">tax_code_table</option><option value="no_tax">no_tax</option></select>
+              <input className="cx-input" type="number" step="0.001" value={settings.default_tax_rate || 0} onChange={(e) => setSettings((s) => ({ ...s, default_tax_rate: Number(e.target.value || 0) }))} />
+              <button className="cx-button-primary" onClick={() => patch("/payroll/settings", settings)}>Save settings</button>
             </div>
           )}
         </section>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <section className="cx-panel p-5">
-            <div className="flex items-center gap-2">
-              <FileSpreadsheet size={18} className="text-[#155EEF]" />
-              <h2 className="text-lg font-semibold text-[#172033]">Export & handoff</h2>
-            </div>
-            <p className="text-sm text-[#667085] mt-1">Export clean payroll summaries and hand off to bookkeeping.</p>
-            <div className="cx-toolbar mt-4">
-              <button type="button" className="cx-button-primary">
-                <Download size={15} className="mr-2" />
-                Export CSV
-              </button>
-              <button type="button" className="cx-button-secondary" disabled aria-disabled="true" title="Coming Soon">
-                <FileText size={15} className="mr-2" />
-                Payroll summary PDF (Coming Soon)
-              </button>
-            </div>
-            <div className="rounded-xl border p-3 mt-4 bg-[#EAF2FF]" style={{ borderColor: "#ccddff" }}>
-              <p className="text-sm text-[#155EEF]">
-                Handoff note: include this pay period CSV with your accountant's monthly reconciliation pack.
-              </p>
-            </div>
-          </section>
-
-          <section className="cx-panel p-5">
-            <div className="flex items-center gap-2">
-              <Clock3 size={18} className="text-[#155EEF]" />
-              <h2 className="text-lg font-semibold text-[#172033]">Payroll reports</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-              <div className="rounded-xl border p-3 bg-[#fbfaf7]" style={{ borderColor: "#e4e0d8" }}>
-                <p className="text-xs text-[#667085] uppercase">Hours by worker</p>
-                <p className="text-xl font-semibold text-[#172033] mt-1">{totals.approvedHours.toFixed(1)}h</p>
-              </div>
-              <div className="rounded-xl border p-3 bg-[#fbfaf7]" style={{ borderColor: "#e4e0d8" }}>
-                <p className="text-xs text-[#667085] uppercase">Hours by job</p>
-                <p className="text-xl font-semibold text-[#172033] mt-1">{jobs.length}</p>
-              </div>
-              <div className="rounded-xl border p-3 bg-[#fbfaf7]" style={{ borderColor: "#e4e0d8" }}>
-                <p className="text-xs text-[#667085] uppercase">Pay period summary</p>
-                <p className="mt-2"><span className={statusChipClass(totals.periodStatus)}>{payrollStatusLabel}</span></p>
-              </div>
-              <div className="rounded-xl border p-3 bg-[#fbfaf7]" style={{ borderColor: "#e4e0d8" }}>
-                <p className="text-xs text-[#667085] uppercase">Payroll notes</p>
-                <p className="text-sm text-[#172033] mt-1">Use Team notes for payroll admin context.</p>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        {loading && (
-          <div className="cx-loading-state">
-            <p className="text-sm text-[#667085]">Loading payroll workspace…</p>
+        <section className="cx-panel p-4">
+          <h2>Adjustments</h2>
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-2 mt-2">
+            <select className="cx-input" value={adjustmentForm.worker_id} onChange={(e) => setAdjustmentForm((v) => ({ ...v, worker_id: e.target.value }))}><option value="">Worker</option>{workers.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select>
+            <select className="cx-input" value={adjustmentForm.type} onChange={(e) => setAdjustmentForm((v) => ({ ...v, type: e.target.value }))}><option>allowance</option><option>reimbursement</option><option>bonus</option><option>deduction</option><option>correction</option><option>other</option></select>
+            <input className="cx-input" placeholder="Label" value={adjustmentForm.label} onChange={(e) => setAdjustmentForm((v) => ({ ...v, label: e.target.value }))} />
+            <input className="cx-input" placeholder="Amount" type="number" value={adjustmentForm.amount} onChange={(e) => setAdjustmentForm((v) => ({ ...v, amount: e.target.value }))} />
+            <label className="text-sm"><input type="checkbox" checked={adjustmentForm.taxable} onChange={(e) => setAdjustmentForm((v) => ({ ...v, taxable: e.target.checked }))} /> Taxable</label>
+            <button className="cx-button-primary" disabled={readOnly || !activePeriodId} onClick={createAdjustment}>Add adjustment</button>
           </div>
+          <div className="mt-2 space-y-2">{adjustments.map((a) => <div key={a.id} className="rounded border p-2 bg-white flex justify-between"><span>{a.label} ({a.type}) {formatCurrency(a.amount)}</span><button className="cx-button-secondary" disabled={readOnly} onClick={() => del(`/payroll/adjustments/${a.id}`).then(() => fetchPeriodData(activePeriodId))}>Delete</button></div>)}</div>
+        </section>
+
+        {payslip && (
+          <section className="cx-panel p-4">
+            <div className="flex items-center justify-between"><h2>Payslip preview</h2><button className="cx-button-primary" onClick={() => window.print()}><Printer size={14} className="mr-2" />Print</button></div>
+            <p>{payslip.business_name}</p><p>{payslip.worker_name} ({payslip.worker_email})</p><p>Gross: {formatCurrency(payslip.gross_pay)} | Tax: {formatCurrency(payslip.employee_tax)} | Net: {formatCurrency(payslip.net_pay_estimate)}</p>
+            <p className="text-sm text-[#155EEF] mt-2">{payslip.disclaimer || DISCLAIMER}</p>
+          </section>
         )}
+
+        {error && <div className="cx-error-state">{error}</div>}
+        {loading && <div className="cx-loading-state">Loading payroll…</div>}
       </div>
     </Layout>
   );
