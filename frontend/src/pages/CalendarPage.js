@@ -1,183 +1,137 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { ChevronLeft, ChevronRight, Plus, Clock, UserCheck, MapPin, Briefcase } from "lucide-react";
-import { formatCurrency, JOB_STATUS_MAP } from "../lib/utils";
+import { Plus, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 import Layout from "../components/Layout";
-
-const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+import { safeArray, safeText } from "../utils/safeRender";
 
 export default function CalendarPage() {
-  const { get } = useApi();
+  const { get, post } = useApi();
   const { isEmployer } = useAuth();
-  const [currentDate, setCurrentDate] = useState(new Date());
   const [jobs, setJobs] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().getDate());
+  const [workers, setWorkers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [dragJobId, setDragJobId] = useState("");
 
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  const fetchJobs = useCallback(async () => {
-    const res = await get("/jobs");
-    if (res.success) setJobs(res.data);
+  const fetchBoard = useCallback(async () => {
+    setLoading(true);
+    const [jobsRes, workersRes] = await Promise.all([get("/jobs"), get("/team/workers")]);
+    setJobs(safeArray(jobsRes?.success ? jobsRes.data : []));
+    setWorkers(safeArray(workersRes?.success ? workersRes.data : []).filter((w) => String(w.role || "worker") === "worker"));
+    setLoading(false);
   }, [get]);
 
-  useEffect(() => { fetchJobs(); }, [fetchJobs]);
+  useEffect(() => { fetchBoard(); }, [fetchBoard]);
 
-  // Reset selectedDate when month changes
-  useEffect(() => {
-    const today = new Date();
-    if (today.getFullYear() === year && today.getMonth() === month) {
-      setSelectedDate(today.getDate());
-    } else {
-      setSelectedDate(1);
-    }
-  }, [year, month]);
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const weekJobs = useMemo(() => jobs.filter((j) => String(j.scheduled_date || "").slice(0, 10) >= todayKey), [jobs, todayKey]);
 
-  const getJobsForDay = (day) => {
-    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    return jobs.filter((j) => j.scheduled_date?.startsWith(dateStr));
+  const columnData = useMemo(() => {
+    const byWorker = {};
+    workers.forEach((w) => { byWorker[String(w.id)] = []; });
+    const unassigned = [];
+    weekJobs.forEach((job) => {
+      const wid = String(job.assigned_worker_id || "");
+      if (wid && byWorker[wid]) byWorker[wid].push(job);
+      else unassigned.push(job);
+    });
+    return { byWorker, unassigned };
+  }, [weekJobs, workers]);
+
+  const hasConflict = (job, targetWorkerId) => {
+    const sameWorkerJobs = weekJobs.filter((j) => String(j.assigned_worker_id || "") === String(targetWorkerId));
+    const slot = `${String(job.scheduled_date || "").slice(0, 10)} ${job.scheduled_time || ""}`;
+    return sameWorkerJobs.some((j) => String(j.id) !== String(job.id) && `${String(j.scheduled_date || "").slice(0, 10)} ${j.scheduled_time || ""}` === slot && slot.trim());
   };
 
-  const selectedJobs = selectedDate ? getJobsForDay(selectedDate) : [];
+  const assignJob = async (jobId, workerId) => {
+    const current = jobs;
+    const targetJob = current.find((j) => String(j.id) === String(jobId));
+    if (!targetJob) return;
 
-  const today = new Date();
-  const isToday = (day) => today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+    if (workerId && hasConflict(targetJob, workerId)) {
+      toast.warning("Schedule conflict: worker already has a job at this time");
+    }
 
-  // Count total jobs this month
-  const monthJobCount = Array.from({ length: daysInMonth }, (_, i) => getJobsForDay(i + 1).length).reduce((a, b) => a + b, 0);
+    setJobs((prev) => prev.map((j) => (String(j.id) === String(jobId) ? { ...j, assigned_worker_id: workerId || null } : j)));
+    const res = await post(`/jobs/${jobId}/assign`, { worker_id: workerId });
+    if (res?.success) {
+      toast.success("Assignment updated");
+      fetchBoard();
+    } else {
+      setJobs(current);
+      toast.error(safeText(res?.error, "Failed to save assignment"));
+    }
+  };
+
+  const JobCard = ({ job }) => (
+    <div draggable={isEmployer} onDragStart={() => setDragJobId(String(job.id))} className="rounded-lg border border-slate-200 bg-white p-3 mb-2" data-testid={`dispatch-job-${job.id}`}>
+      <p className="text-sm font-semibold text-slate-900">{safeText(job.title, "Untitled job")}</p>
+      <p className="text-xs text-slate-500">{safeText(job.customer_name || job.client_name, "No client")}</p>
+      <p className="text-xs text-slate-500">{safeText(job.address, "No address")}</p>
+      <p className="text-xs text-slate-500">{String(job.scheduled_date || "").slice(0, 10)} {job.scheduled_time || ""}</p>
+      <p className="text-[11px] uppercase text-blue-700 mt-1">{safeText(job.status, "assigned")}</p>
+      <div className="md:hidden mt-2">
+        <select
+          className="w-full border border-slate-200 rounded-md p-2 text-xs"
+          value={job.assigned_worker_id || ""}
+          onChange={(e) => assignJob(job.id, e.target.value)}
+        >
+          <option value="">Unassigned</option>
+          {workers.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+        </select>
+      </div>
+    </div>
+  );
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4" data-testid="calendar-page">
+      <div className="p-4 md:p-6 max-w-[1200px] mx-auto space-y-4" data-testid="calendar-page">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900" data-testid="calendar-heading">Calendar</h1>
-            <p className="text-xs text-slate-500 mt-0.5">{monthJobCount} job{monthJobCount !== 1 ? "s" : ""} this month</p>
+            <h1 className="text-2xl font-bold text-slate-900">Dispatch Board</h1>
+            <p className="text-xs text-slate-500">Week view with worker columns and unassigned jobs</p>
           </div>
-          {isEmployer && (
-            <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-              <Link to="/jobs/new" data-testid="calendar-new-job"><Plus size={14} className="mr-1" /> New Job</Link>
-            </Button>
-          )}
+          {isEmployer && <Button asChild className="bg-blue-600 hover:bg-blue-700"><Link to="/jobs/new"><Plus className="h-4 w-4 mr-1" />New Job</Link></Button>}
         </div>
 
-        {/* Month Navigation */}
-        <Card className="bg-white border-slate-200 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <button onClick={() => setCurrentDate(new Date(year, month - 1))} className="p-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-blue-50" data-testid="calendar-prev">
-                <ChevronLeft size={20} />
-              </button>
-              <h2 className="text-lg font-semibold text-slate-900" data-testid="calendar-month">
-                {MONTH_NAMES[month]} {year}
-              </h2>
-              <button onClick={() => setCurrentDate(new Date(year, month + 1))} className="p-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-blue-50" data-testid="calendar-next">
-                <ChevronRight size={20} />
-              </button>
-            </div>
-
-            {/* Days Header */}
-            <div className="grid grid-cols-7 mb-2">
-              {DAY_LABELS.map((d) => (
-                <div key={d} className="text-center text-xs font-medium text-slate-500 py-2">{d}</div>
-              ))}
-            </div>
-
-            {/* Days Grid */}
-            <div className="grid grid-cols-7 gap-1" data-testid="calendar-grid">
-              {Array.from({ length: firstDay }).map((_, i) => (
-                <div key={`empty-${i}`} className="aspect-square" />
-              ))}
-              {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
-                const dayJobs = getJobsForDay(day);
-                const hasJobs = dayJobs.length > 0;
-                const selected = selectedDate === day;
-                return (
-                  <button key={day} onClick={() => setSelectedDate(day)} data-testid={`calendar-day-${day}`}
-                    className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm transition-all relative
-                      ${isToday(day) ? "ring-1 ring-blue-500" : ""}
-                      ${selected ? "bg-blue-600 text-white" : "hover:bg-blue-50 text-slate-700"}`}>
-                    {day}
-                    {hasJobs && (
-                      <div className="flex gap-0.5 mt-0.5">
-                        {dayJobs.slice(0, 3).map((j, idx) => {
-                          const s = JOB_STATUS_MAP[j.status];
-                          return <div key={idx} className={`w-1.5 h-1.5 rounded-full ${s?.color || "bg-slate-500"}`} />;
-                        })}
-                        {dayJobs.length > 3 && <span className="text-[8px] text-slate-500">+{dayJobs.length - 3}</span>}
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Daily Overview */}
-        <div data-testid="calendar-day-jobs">
-          <h3 className="text-base font-semibold text-slate-900 mb-2" data-testid="daily-overview-heading">
-            {MONTH_NAMES[month]} {selectedDate} — {selectedJobs.length} job{selectedJobs.length !== 1 ? "s" : ""}
-          </h3>
-          {selectedJobs.length === 0 ? (
-            <Card className="bg-white border-slate-200 shadow-sm">
-              <CardContent className="p-8 text-center">
-                <Briefcase size={24} className="mx-auto mb-2 text-slate-500/50" />
-                <p className="text-slate-500 text-sm">No jobs scheduled</p>
-                {isEmployer && (
-                  <Button asChild size="sm" variant="outline" className="mt-3 border-slate-200 text-slate-500 hover:text-slate-900">
-                    <Link to="/jobs/new">Schedule a Job</Link>
-                  </Button>
-                )}
+        {loading ? <Card><CardContent className="p-6 text-slate-500">Loading dispatch board...</CardContent></Card> : (
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <Card className="bg-slate-50 border-slate-200" onDragOver={(e) => e.preventDefault()} onDrop={() => dragJobId && assignJob(dragJobId, "")}>
+              <CardContent className="p-3">
+                <h3 className="font-semibold text-slate-800 mb-2">Unassigned</h3>
+                {columnData.unassigned.map((job) => <JobCard key={job.id} job={job} />)}
+                {columnData.unassigned.length === 0 && <p className="text-xs text-slate-400">No unassigned jobs</p>}
               </CardContent>
             </Card>
-          ) : (
-            <div className="space-y-2">
-              {selectedJobs.map((job) => {
-                const statusInfo = JOB_STATUS_MAP[job.status];
-                return (
-                  <Link key={job.id} to={`/jobs/${job.id}`} data-testid={`calendar-job-${job.id}`}
-                    className="block bg-white border border-slate-200 rounded-xl p-4 hover:border-blue-600/50 transition-all group">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-slate-900 font-medium truncate group-hover:text-blue-600 transition-colors">{job.title}</p>
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-slate-500">
-                          {job.scheduled_time && (
-                            <span className="flex items-center gap-1"><Clock size={11} /> {job.scheduled_time}</span>
-                          )}
-                          {job.customer_name && (
-                            <span className="truncate max-w-[140px]">{job.customer_name}</span>
-                          )}
-                          {job.address && (
-                            <span className="flex items-center gap-1 truncate max-w-[160px]"><MapPin size={11} /> {job.address}</span>
-                          )}
-                          {job.price > 0 && (
-                            <span className="text-blue-600 font-medium">{formatCurrency(job.price)}</span>
-                          )}
-                        </div>
-                        {job.assigned_worker_name && (
-                          <p className="text-xs text-blue-600/80 mt-1 flex items-center gap-1">
-                            <UserCheck size={12} /> {job.assigned_worker_name}
-                          </p>
+
+            {workers.map((worker) => (
+              <Card key={worker.id} className="bg-slate-50 border-slate-200" onDragOver={(e) => e.preventDefault()} onDrop={() => dragJobId && assignJob(dragJobId, worker.id)}>
+                <CardContent className="p-3">
+                  <h3 className="font-semibold text-slate-800 mb-2">{safeText(worker.name, "Worker")}</h3>
+                  {safeArray(columnData.byWorker[String(worker.id)]).map((job) => {
+                    const conflict = hasConflict(job, worker.id);
+                    return (
+                      <div key={job.id}>
+                        <JobCard job={job} />
+                        {conflict && (
+                          <div className="mb-2 rounded-md border border-amber-200 bg-amber-50 text-amber-700 text-[11px] p-2 flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3" /> Conflict warning for this time slot
+                          </div>
                         )}
                       </div>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-slate-900 shrink-0 ${statusInfo?.color || "bg-slate-500"}`} data-testid={`calendar-job-status-${job.id}`}>
-                        {statusInfo?.label || job.status}
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                    );
+                  })}
+                  {safeArray(columnData.byWorker[String(worker.id)]).length === 0 && <p className="text-xs text-slate-400">No assigned jobs</p>}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </Layout>
   );

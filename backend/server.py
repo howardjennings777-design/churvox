@@ -2308,6 +2308,90 @@ async def accept_quote(quote_id: str, current_user: dict = Depends(get_current_u
     return {"success": True, "message": "Quote accepted"}
 
 
+
+
+@api_router.post("/quotes/{quote_id}/convert")
+async def convert_quote_to_job(quote_id: str, current_user: dict = Depends(get_current_user)):
+    from datetime import datetime, timezone
+
+    if current_user.get("role") not in BUSINESS_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    try:
+        obj_id = ObjectId(quote_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid quote ID")
+
+    quote = await db.quotes.find_one({
+        "_id": obj_id,
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ],
+    })
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    existing_job_id = str(quote.get("converted_job_id") or "").strip()
+    if existing_job_id:
+        return {"success": True, "job_id": existing_job_id, "message": "Quote already linked"}
+
+    now = datetime.now(timezone.utc)
+    job_doc = {
+        "title": quote.get("title") or quote.get("job_description") or "Converted Quote Job",
+        "job_type": quote.get("job_type") or "other",
+        "client_id": quote.get("client_id"),
+        "client_name": quote.get("customer_name") or "",
+        "customer_name": quote.get("customer_name") or "",
+        "address": quote.get("address") or "",
+        "country": quote.get("country") or "New Zealand",
+        "region": quote.get("region") or "",
+        "scheduled_date": quote.get("scheduled_date"),
+        "scheduled_time": quote.get("scheduled_time") or "",
+        "estimated_duration": int(quote.get("estimated_duration") or 60),
+        "price": float(quote.get("price") or 0),
+        "pricing_type": quote.get("pricing_type") or "fixed",
+        "hourly_rate": float(quote.get("hourly_rate") or 0),
+        "extras": quote.get("extras") or [],
+        "notes": quote.get("notes") or quote.get("job_description") or "",
+        "status": "assigned",
+        "quote_id": str(quote.get("_id")),
+        "business_id": business_id,
+        "owner_id": owner_id,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    result = await db.jobs.insert_one(job_doc)
+    job_id = str(result.inserted_id)
+
+    await db.quotes.update_one(
+        {"_id": obj_id},
+        {"$set": {
+            "status": "accepted" if (quote.get("status") or "draft") != "declined" else quote.get("status"),
+            "converted_job_id": job_id,
+            "updated_at": now,
+        }}
+    )
+
+    return {"success": True, "job_id": job_id, "message": "Quote converted to job"}
+
 @api_router.post("/quotes")
 async def create_quote(request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
@@ -3041,6 +3125,67 @@ async def get_team_workers(current_user: dict = Depends(get_current_user)):
 
     return docs
 
+
+
+
+@api_router.get("/reports/summary")
+async def reports_summary(current_user: dict = Depends(get_current_user)):
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+    query = {"$or": [
+        {"business_id": business_id},
+        {"business_id": str(business_id)},
+        {"owner_id": owner_id},
+    ]}
+
+    revenue = 0.0
+    outstanding = 0.0
+    completed_jobs = 0
+    overdue_jobs = 0
+    quotes_total = 0
+    quotes_won = 0
+
+    async for inv in db.invoices.find(query):
+        total = float(inv.get("total") or 0)
+        status = str(inv.get("status") or "").lower()
+        if status == "paid":
+            revenue += total
+        if status in {"draft", "sent", "overdue"}:
+            outstanding += total
+
+    async for q in db.quotes.find(query):
+        quotes_total += 1
+        if str(q.get("status") or "").lower() == "accepted":
+            quotes_won += 1
+
+    async for j in db.jobs.find(query):
+        st = str(j.get("status") or "").lower()
+        if st == "completed":
+            completed_jobs += 1
+        if st not in {"completed", "cancelled"} and str(j.get("scheduled_date") or "")[:10] < datetime.utcnow().date().isoformat():
+            overdue_jobs += 1
+
+    return {
+        "revenue_this_month": revenue,
+        "outstanding_invoices": outstanding,
+        "completed_jobs": completed_jobs,
+        "quote_win_rate": (quotes_won / quotes_total) if quotes_total else 0,
+        "overdue_jobs": overdue_jobs,
+        "worker_hours": 0,
+        "payroll_hours_summary": 0,
+    }
 
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
@@ -3830,6 +3975,86 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
         print("AUTO_EMIT_ERR owner_patch", e)
 
     return {"success": True, "message": "Job updated"}
+
+
+
+@api_router.post("/jobs/{job_id}/create-draft-invoice")
+async def create_draft_invoice_from_job(job_id: str, current_user: dict = Depends(get_current_user)):
+    from datetime import datetime, timezone
+
+    if current_user.get("role") not in BUSINESS_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    try:
+        obj_id = ObjectId(job_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid job ID")
+
+    job = await db.jobs.find_one({
+        "_id": obj_id,
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ],
+    })
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    existing_invoice_id = str(job.get("invoice_id") or "").strip()
+    if existing_invoice_id:
+        return {"success": True, "invoice_id": existing_invoice_id, "message": "Invoice already linked"}
+
+    subtotal = float(job.get("price") or 0)
+    gst_rate = float(current_user.get("gst_rate") or 15)
+    gst_amount = subtotal * (gst_rate / 100)
+    total = subtotal + gst_amount
+    now = datetime.now(timezone.utc)
+
+    doc = {
+        "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{str(obj_id)[-5:]}",
+        "client_id": job.get("client_id"),
+        "customer_name": job.get("client_name") or job.get("customer_name") or "",
+        "customer_email": job.get("customer_email") or "",
+        "address": job.get("address") or "",
+        "description": job.get("title") or "Job invoice",
+        "subtotal": subtotal,
+        "gst_rate": gst_rate,
+        "gst_amount": gst_amount,
+        "total": total,
+        "status": "draft",
+        "job_id": str(obj_id),
+        "pricing_type": job.get("pricing_type") or "fixed",
+        "hourly_rate": float(job.get("hourly_rate") or 0),
+        "hours_worked": float(job.get("time_spent_minutes") or 0) / 60,
+        "extras": job.get("extras") or [],
+        "myob_sync_status": "not_synced",
+        "business_id": business_id,
+        "owner_id": owner_id,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    result = await db.invoices.insert_one(doc)
+    invoice_id = str(result.inserted_id)
+    await db.jobs.update_one({"_id": obj_id}, {"$set": {"invoice_id": invoice_id, "updated_at": now}})
+
+    return {"success": True, "invoice_id": invoice_id, "message": "Draft invoice created"}
 
 @api_router.post("/jobs/{job_id}/assign")
 async def assign_job_worker(job_id: str, payload: dict, current_user: dict = Depends(get_current_user)):

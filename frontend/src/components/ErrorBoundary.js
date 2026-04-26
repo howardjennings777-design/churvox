@@ -18,10 +18,10 @@ export class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-churvox-bg flex items-center justify-center p-6">
-          <div className="max-w-md text-center space-y-4">
-            <h1 className="text-xl font-semibold text-white">Something went wrong</h1>
-            <p className="text-sm text-slate-400">
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-white border border-slate-200 rounded-2xl shadow-sm p-6 text-center space-y-4">
+            <h1 className="text-xl font-semibold text-slate-900">Something went wrong</h1>
+            <p className="text-sm text-slate-500">
               {safeReactChild(this.state.error, "An unexpected error occurred.")}
             </p>
             <button
@@ -29,7 +29,7 @@ export class ErrorBoundary extends React.Component {
                 this.setState({ hasError: false, error: null });
                 window.location.href = "/dashboard";
               }}
-              className="inline-flex items-center px-4 py-2 rounded-lg bg-churvox-accent text-white text-sm font-medium hover:bg-churvox-accent/90"
+              className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
             >
               Go to Dashboard
             </button>

@@ -38,6 +38,8 @@ const ROUTE_ACCESS = {
   invoices:   ["owner", "manager", "office_admin"],
   team:       ["owner", "manager"],
   sms:        ["owner", "manager"],
+  reports:    ["owner", "manager", "office_admin", "payroll"],
+  integrations:["owner", "manager", "office_admin"],
   // Owner-only
   plans:      ["owner"],
   settings:   ["owner", "manager", "office_admin"],

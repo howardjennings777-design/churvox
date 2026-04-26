@@ -22,8 +22,15 @@ export function formatTime(dateString) {
 export function formatApiErrorDetail(detail) {
   if (!detail) return null;
   if (typeof detail === "string") return detail;
-  if (Array.isArray(detail)) return detail.map((d) => d.msg || JSON.stringify(d)).join(", ");
-  return JSON.stringify(detail);
+  if (Array.isArray(detail)) {
+    return detail
+      .map((d) => (typeof d === "string" ? d : d?.msg || d?.message || "Validation error"))
+      .join(", ");
+  }
+  if (typeof detail === "object") {
+    return detail.message || detail.error || detail.detail || "Request failed";
+  }
+  return String(detail);
 }
 
 export const JOB_STATUSES = [
