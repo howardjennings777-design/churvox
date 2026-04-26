@@ -165,7 +165,7 @@ export default function CalendarPage() {
               </>
             )}
             <Link to="/jobs" className="cx-button-secondary"><ClipboardList className="h-4 w-4 mr-1.5" />View jobs</Link>
-            <Link to="/calendar" className="cx-button-secondary"><CalendarClock className="h-4 w-4 mr-1.5" />Today</Link>
+            <Link to="/dispatch" className="cx-button-secondary"><CalendarClock className="h-4 w-4 mr-1.5" />Today</Link>
           </div>
         </div>
 
