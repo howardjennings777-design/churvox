@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Layout from "@/components/Layout";
 import {
   Download,
@@ -48,7 +48,10 @@ export default function PayrollPage() {
   const [initializing, setInitializing] = useState(true);
   const [actionLoading, setActionLoading] = useState({});
   const [newPeriod, setNewPeriod] = useState({ name: "", start_date: "", end_date: "", pay_date: "" });
+  const [createPeriodError, setCreatePeriodError] = useState("");
   const [adjustmentForm, setAdjustmentForm] = useState({ worker_id: "", type: "allowance", label: "", amount: "", taxable: false, notes: "" });
+  const createPeriodPanelRef = useRef(null);
+  const periodNameInputRef = useRef(null);
 
   const withAction = async (key, fn) => {
     setActionLoading((s) => ({ ...s, [key]: true }));
@@ -179,7 +182,10 @@ export default function PayrollPage() {
   ];
 
   const downloadCsv = async (path, typeLabel) => {
-    if (!activePeriodId) return;
+    if (!activePeriodId) {
+      toast.error("Select a pay period before exporting.");
+      return;
+    }
     await withAction(`export-${typeLabel}`, async () => {
       const res = await get(path, { responseType: "blob" });
       if (!res?.success) {
@@ -200,9 +206,10 @@ export default function PayrollPage() {
 
   const createPeriod = async () => {
     if (!newPeriod.name || !newPeriod.start_date || !newPeriod.end_date || !newPeriod.pay_date) {
-      toast.error("Name, start date, end date, and pay date are required");
+      setCreatePeriodError("Please enter a period name, start date, end date, and pay date.");
       return;
     }
+    setCreatePeriodError("");
     if (newPeriod.start_date > newPeriod.end_date) {
       toast.error("Start date must be on or before end date");
       return;
@@ -220,8 +227,13 @@ export default function PayrollPage() {
         setActivePeriodId(createdId);
         await loadPeriodData(createdId);
       }
-      toast.success("Pay period created");
+      toast.success("Pay period created.");
     });
+  };
+
+  const focusCreatePeriodForm = () => {
+    createPeriodPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    periodNameInputRef.current?.focus();
   };
 
   const approveEntry = async (entryId) => {
@@ -343,8 +355,6 @@ export default function PayrollPage() {
     ? workerSummaries.map((w) => ({ id: w.worker_id, name: w.name || w.worker_name || "Worker" }))
     : workers.map((w) => ({ id: w.id, name: w.name || "Worker" }));
 
-  const canCreatePeriod = Boolean(newPeriod.name && newPeriod.start_date && newPeriod.end_date && newPeriod.pay_date);
-
   return (
     <Layout>
       <div className="cx-page space-y-6" style={{ background: "#f8f4ed" }}>
@@ -358,8 +368,8 @@ export default function PayrollPage() {
             </p>
           </div>
           <div className="w-full lg:w-auto lg:pt-1">
-            <button className="cx-button-primary w-full lg:w-auto" onClick={createPeriod} disabled={!canCreatePeriod || actionLoading["create-period"]}>
-              <Plus size={14} className="mr-2" />{actionLoading["create-period"] ? "Creating..." : "Create Pay Period"}
+            <button className="cx-button-primary w-full lg:w-auto" onClick={focusCreatePeriodForm}>
+              <Plus size={14} className="mr-2" />Create Pay Period
             </button>
           </div>
         </div>
@@ -385,6 +395,12 @@ export default function PayrollPage() {
           <div className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-5 shadow-[0_8px_22px_rgba(16,24,40,0.06)] xl:col-span-2">
             <h2 className="text-lg font-semibold text-[#0F172A]">Select pay period</h2>
             <p className="mt-1 text-sm text-[#667085]">Choose an existing period, then set up dates for a new period when needed.</p>
+            {!activePeriodId && (
+              <div className="mt-4 rounded-xl border border-dashed border-[#D0D5DD] bg-[#F8FAFC] p-4">
+                <p className="text-base font-semibold text-[#0F172A]">No active pay period</p>
+                <p className="mt-1 text-sm text-[#667085]">Create a pay period to start reviewing timesheets, worker hours, adjustments, and exports.</p>
+              </div>
+            )}
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
               <div className="space-y-3 rounded-xl border border-[#E4E7EC] bg-[#FCFCFD] p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-[#475467]">Find and select</p>
@@ -392,20 +408,46 @@ export default function PayrollPage() {
                 <input className="cx-input" placeholder="Filter by period name or date range" value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value)} />
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Pay period</label>
                 <select value={activePeriodId} onChange={(e) => setActivePeriodId(e.target.value)} className="cx-input">
-                  <option value="">Select pay period</option>
+                  {!periods.length ? (
+                    <option value="">No pay periods yet</option>
+                  ) : (
+                    <option value="">Select pay period</option>
+                  )}
                   {filteredPeriods.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.start_date} to {p.end_date})</option>)}
                 </select>
               </div>
-              <div className="space-y-3 rounded-xl border border-[#E4E7EC] bg-[#FCFCFD] p-4">
+              <div ref={createPeriodPanelRef} className="space-y-3 rounded-xl border border-[#E4E7EC] bg-[#FCFCFD] p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-[#475467]">Create period dates</p>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Period name</label>
-                <input className="cx-input" placeholder="Fortnightly payroll" value={newPeriod.name} onChange={(e) => setNewPeriod((v) => ({ ...v, name: e.target.value }))} />
+                <input
+                  ref={periodNameInputRef}
+                  className="cx-input"
+                  placeholder="Fortnightly payroll"
+                  value={newPeriod.name}
+                  onChange={(e) => {
+                    setNewPeriod((v) => ({ ...v, name: e.target.value }));
+                    if (createPeriodError) setCreatePeriodError("");
+                  }}
+                />
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Pay date</label>
-                <input className="cx-input" type="date" value={newPeriod.pay_date} onChange={(e) => setNewPeriod((v) => ({ ...v, pay_date: e.target.value }))} />
+                <input className="cx-input" type="date" value={newPeriod.pay_date} onChange={(e) => {
+                  setNewPeriod((v) => ({ ...v, pay_date: e.target.value }));
+                  if (createPeriodError) setCreatePeriodError("");
+                }} />
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Start date</label>
-                <input className="cx-input" type="date" value={newPeriod.start_date} onChange={(e) => setNewPeriod((v) => ({ ...v, start_date: e.target.value }))} />
+                <input className="cx-input" type="date" value={newPeriod.start_date} onChange={(e) => {
+                  setNewPeriod((v) => ({ ...v, start_date: e.target.value }));
+                  if (createPeriodError) setCreatePeriodError("");
+                }} />
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">End date</label>
-                <input className="cx-input" type="date" value={newPeriod.end_date} onChange={(e) => setNewPeriod((v) => ({ ...v, end_date: e.target.value }))} />
+                <input className="cx-input" type="date" value={newPeriod.end_date} onChange={(e) => {
+                  setNewPeriod((v) => ({ ...v, end_date: e.target.value }));
+                  if (createPeriodError) setCreatePeriodError("");
+                }} />
+                {createPeriodError && <p className="text-sm font-medium text-[#B42318]">{createPeriodError}</p>}
+                <button className="cx-button-primary w-full justify-center" onClick={createPeriod} disabled={actionLoading["create-period"]}>
+                  <Plus size={14} className="mr-2" />{actionLoading["create-period"] ? "Creating..." : "Create Pay Period"}
+                </button>
               </div>
             </div>
             {activePeriod && <span className={`mt-4 inline-flex ${badge(activePeriod.status)}`}>{activePeriod.status}</span>}
@@ -415,6 +457,7 @@ export default function PayrollPage() {
             <div className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-[0_8px_22px_rgba(16,24,40,0.06)]">
               <h3 className="text-base font-semibold text-[#0F172A]">Review actions</h3>
               <p className="mt-1 text-sm text-[#667085]">Approve pending entries, then secure the period when complete.</p>
+              {!activePeriodId && <p className="mt-2 text-sm text-[#667085]">Create or select a pay period first.</p>}
               <div className="mt-4 space-y-2">
                 <button className="cx-button-primary w-full justify-center" disabled={!activePeriodId || readOnly || actionLoading["bulk-approve"]} onClick={bulkApprove}>Bulk approve</button>
                 <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId || readOnly || actionLoading["lock-period"]} onClick={lockPeriod}><Lock size={14} className="mr-2" />Lock Period</button>
@@ -424,6 +467,7 @@ export default function PayrollPage() {
             <div className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-[0_8px_22px_rgba(16,24,40,0.06)]">
               <h3 className="text-base font-semibold text-[#0F172A]">Export actions</h3>
               <p className="mt-1 text-sm text-[#667085]">Download final files for payroll handoff once review is complete.</p>
+              {!activePeriodId && <p className="mt-2 text-sm text-[#667085]">Create or select a pay period first.</p>}
               <div className="mt-4 space-y-2">
                 <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/periods/${activePeriodId}/export/payroll.csv`, "payroll")}><Download size={14} className="mr-2" />Export Payroll CSV</button>
                 <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/periods/${activePeriodId}/export/timesheets.csv`, "timesheets")}><Download size={14} className="mr-2" />Export Timesheets CSV</button>
@@ -464,7 +508,9 @@ export default function PayrollPage() {
 
         <section className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-[0_8px_22px_rgba(16,24,40,0.06)]">
           <h2>Worker pay summaries</h2>
-          {!workerSummaries.length ? (
+          {!activePeriodId ? (
+            <div className="mt-3 rounded-2xl border border-dashed border-[#D0D5DD] bg-[#FCFCFD] p-6 text-center text-sm text-[#667085]">Create or select a pay period to view worker payroll summaries.</div>
+          ) : !workerSummaries.length ? (
             <div className="mt-3 rounded-2xl border border-dashed border-[#D0D5DD] bg-[#FCFCFD] p-6 text-center text-sm text-[#667085]">No workers or timesheets found for this period yet.</div>
           ) : (
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -498,7 +544,7 @@ export default function PayrollPage() {
 
         <section className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-[0_8px_22px_rgba(16,24,40,0.06)]">
           <h2>Adjustments</h2>
-          {!activePeriodId && <p className="mt-2 text-sm text-[#667085]">Select a pay period to add adjustments.</p>}
+          {!activePeriodId && <p className="mt-2 text-sm text-[#667085]">Create or select a pay period first.</p>}
           <div className="mt-3 rounded-xl border bg-[#FCFCFD] p-4">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
               <div>
