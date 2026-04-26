@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Layout from "@/components/Layout";
-import { Download, Lock, CheckCircle2, Plus, Printer, Settings } from "lucide-react";
+import { Download, Lock, CheckCircle2, Plus, Printer, Settings, X } from "lucide-react";
 import { useApi } from "../hooks/useApi";
 import { formatCurrency } from "../lib/utils";
 
@@ -24,6 +24,8 @@ export default function PayrollPage() {
   const [adjustments, setAdjustments] = useState([]);
   const [settings, setSettings] = useState(null);
   const [payslip, setPayslip] = useState(null);
+  const [selectedWorker, setSelectedWorker] = useState(null);
+  const [periodFilter, setPeriodFilter] = useState("");
   const [newPeriod, setNewPeriod] = useState({ name: "", start_date: "", end_date: "", pay_date: "" });
   const [adjustmentForm, setAdjustmentForm] = useState({ worker_id: "", type: "allowance", label: "", amount: "", taxable: false, notes: "" });
 
@@ -58,7 +60,15 @@ export default function PayrollPage() {
   useEffect(() => { fetchPeriodData(activePeriodId); }, [activePeriodId, fetchPeriodData]);
 
   const activePeriod = useMemo(() => periods.find((p) => p.id === activePeriodId) || null, [periods, activePeriodId]);
+  const filteredPeriods = useMemo(() => {
+    const q = String(periodFilter || "").toLowerCase().trim();
+    if (!q) return periods;
+    return periods.filter((p) => `${p.name || ""} ${p.start_date || ""} ${p.end_date || ""}`.toLowerCase().includes(q));
+  }, [periods, periodFilter]);
+  const workerSummaries = summary?.worker_summaries || [];
+  const pendingTimesheets = timesheets.filter((t) => String(t.status || "").toLowerCase() === "pending");
   const readOnly = ["locked", "exported"].includes(String(activePeriod?.status || ""));
+  const adjustmentsTotal = adjustments.reduce((sum, item) => sum + Number(item?.amount || 0), 0);
 
   const downloadCsv = async (path, filename) => {
     const res = await get(path, { responseType: "blob" });
@@ -96,115 +106,253 @@ export default function PayrollPage() {
 
   const openPayslip = async (workerId) => {
     const res = await get(`/payroll/pay-periods/${activePeriodId}/workers/${workerId}/payslip`);
-    if (res?.success) setPayslip(res.data);
+    if (res?.success) {
+      setSelectedWorker(workerSummaries.find((w) => w.worker_id === workerId) || null);
+      setPayslip(res.data);
+    }
   };
 
   return (
     <Layout>
       <div className="cx-page" style={{ background: "#f6f3ee" }}>
-        <div className="cx-page-hero" style={{ background: "#fff" }}>
-          <h1 className="cx-page-title">Payroll</h1>
-          <p className="cx-page-subtitle">Review timesheets, calculate payroll, prepare payslips, and export clean summaries.</p>
-          <p className="text-sm text-[#155EEF] mt-2">{DISCLAIMER}</p>
-          <div className="cx-toolbar mt-3">
-            <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/export.csv`, "payroll.csv")}><Download size={14} className="mr-2" />Export Payroll CSV</button>
-            <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/timesheets.csv`, "timesheets.csv")}><Download size={14} className="mr-2" />Export Timesheets CSV</button>
-            <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/payslips.csv`, "payslips.csv")}><Download size={14} className="mr-2" />Export Payslips CSV</button>
-            <button className="cx-button-primary" onClick={createPeriod}><Plus size={14} className="mr-2" />Create Pay Period</button>
-            <button className="cx-button-secondary" disabled={!activePeriodId || readOnly} onClick={() => post(`/payroll/pay-periods/${activePeriodId}/lock`, {}).then(() => fetchWorkspace())}><Lock size={14} className="mr-2" />Lock Period</button>
-            <button className="cx-button-secondary" disabled={!activePeriodId || activePeriod?.status === "exported"} onClick={() => post(`/payroll/pay-periods/${activePeriodId}/mark-exported`, {}).then(() => fetchWorkspace())}><CheckCircle2 size={14} className="mr-2" />Mark Exported</button>
+        <div className="cx-page-hero flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between" style={{ background: "#fff" }}>
+          <div>
+            <h1 className="cx-page-title">Payroll</h1>
+            <p className="cx-page-subtitle">Review timesheets, calculate payroll, prepare payslips, and export clean summaries.</p>
+            <p className="mt-2 rounded-lg border border-[#B2CCFF] bg-[#EFF4FF] px-3 py-2 text-sm text-[#155EEF]">{DISCLAIMER}</p>
+          </div>
+          <div className="w-full lg:w-auto">
+            <button className="cx-button-primary w-full lg:w-auto" onClick={createPeriod}><Plus size={14} className="mr-2" />Create Pay Period</button>
           </div>
         </div>
 
-        <section className="cx-panel p-4">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-            <select value={activePeriodId} onChange={(e) => setActivePeriodId(e.target.value)} className="cx-input md:col-span-2">
-              <option value="">Select pay period</option>
-              {periods.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.start_date} to {p.end_date})</option>)}
-            </select>
-            <input className="cx-input" placeholder="Name" value={newPeriod.name} onChange={(e) => setNewPeriod((v) => ({ ...v, name: e.target.value }))} />
-            <input className="cx-input" type="date" value={newPeriod.start_date} onChange={(e) => setNewPeriod((v) => ({ ...v, start_date: e.target.value }))} />
-            <input className="cx-input" type="date" value={newPeriod.end_date} onChange={(e) => setNewPeriod((v) => ({ ...v, end_date: e.target.value }))} />
-          </div>
-          {activePeriod && <span className={badge(activePeriod.status)}>{activePeriod.status}</span>}
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
+          <div className="cx-stat-card"><p>Current pay period</p><p>{activePeriod?.name || "No active period"}</p></div>
+          <div className="cx-stat-card"><p>Approved hours</p><p>{Number(summary?.total_approved_hours || 0)}</p></div>
+          <div className="cx-stat-card"><p>Pending review</p><p>{pendingTimesheets.length}</p></div>
+          <div className="cx-stat-card"><p>Workers included</p><p>{Number(summary?.total_workers || workerSummaries.length || 0)}</p></div>
+          <div className="cx-stat-card"><p>Export status</p><p className="capitalize">{activePeriod?.status || "open"}</p></div>
+          <div className="cx-stat-card"><p>Adjustments total</p><p>{formatCurrency(adjustmentsTotal)}</p></div>
         </section>
 
-        {summary && (
-          <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="cx-stat-card"><p>Approved hours</p><p>{summary.total_approved_hours}</p></div>
-            <div className="cx-stat-card"><p>Pending hours</p><p>{summary.total_pending_hours}</p></div>
-            <div className="cx-stat-card"><p>Workers included</p><p>{summary.total_workers}</p></div>
-            <div className="cx-stat-card"><p>Gross payroll</p><p>{formatCurrency(summary.total_gross_pay)}</p></div>
-            <div className="cx-stat-card"><p>Net pay estimate</p><p>{formatCurrency(summary.total_net_pay_estimate)}</p></div>
-          </section>
-        )}
-
-        <section className="cx-panel p-4">
-          <div className="flex items-center justify-between"><h2>Timesheet review</h2><button className="cx-button-primary" disabled={readOnly} onClick={bulkApprove}>Bulk approve</button></div>
-          <div className="space-y-2 mt-3">
-            {timesheets.map((t) => (
-              <div key={t.entry_id} className="rounded-xl border p-3 bg-white flex flex-wrap gap-3 items-center justify-between">
-                <div>
-                  <p className="font-semibold">{t.worker_name || "Worker"} — {t.job_title}</p>
-                  <p className="text-sm text-[#667085]">{t.date} • {t.net_hours}h • {t.client_name || "No client"}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={badge(t.status)}>{t.status}</span>
-                  <button className="cx-button-secondary" disabled={readOnly} onClick={() => approveEntry(t.entry_id)}>Approve</button>
-                  <button className="cx-button-secondary" disabled={readOnly} onClick={() => rejectEntry(t.entry_id)}>Reject</button>
-                </div>
+        <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          <div className="cx-panel p-4 xl:col-span-2">
+            <h2 className="text-lg font-semibold text-[#0F172A]">Select pay period</h2>
+            <p className="mt-1 text-sm text-[#667085]">Choose an existing period or prepare a new one to keep payroll review accurate.</p>
+            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Search pay periods</label>
+                <input className="cx-input" placeholder="Filter by period name or date range" value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value)} />
               </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="cx-panel p-4">
-          <h2>Worker pay summaries</h2>
-          <div className="space-y-3 mt-3">
-            {(summary?.worker_summaries || []).map((w) => (
-              <div key={w.worker_id} className="rounded-xl border p-3 bg-white">
-                <div className="flex items-center justify-between"><p className="font-semibold">{w.worker_name}</p><span className={badge(w.status)}>{w.status}</span></div>
-                <p className="text-sm text-[#667085]">{w.pay_type} • {w.approved_hours}h • Gross {formatCurrency(w.gross_pay)} • Net {formatCurrency(w.net_pay_estimate)}</p>
-                <div className="mt-2 flex gap-2">
-                  <button className="cx-button-secondary" onClick={() => openPayslip(w.worker_id)}>View payslip</button>
-                  <button className="cx-button-secondary" disabled={readOnly} onClick={() => patch(`/payroll/workers/${w.worker_id}/pay-settings`, { hourly_rate: Number(prompt("Hourly rate", w.hourly_rate) || w.hourly_rate) }).then(() => fetchWorkspace())}>Edit pay settings</button>
-                </div>
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Pay period</label>
+                <select value={activePeriodId} onChange={(e) => setActivePeriodId(e.target.value)} className="cx-input">
+                  <option value="">Select pay period</option>
+                  {filteredPeriods.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.start_date} to {p.end_date})</option>)}
+                </select>
               </div>
-            ))}
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Period name</label>
+                <input className="cx-input" placeholder="Fortnightly payroll" value={newPeriod.name} onChange={(e) => setNewPeriod((v) => ({ ...v, name: e.target.value }))} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Pay date</label>
+                <input className="cx-input" type="date" value={newPeriod.pay_date} onChange={(e) => setNewPeriod((v) => ({ ...v, pay_date: e.target.value }))} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Start date</label>
+                <input className="cx-input" type="date" value={newPeriod.start_date} onChange={(e) => setNewPeriod((v) => ({ ...v, start_date: e.target.value }))} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">End date</label>
+                <input className="cx-input" type="date" value={newPeriod.end_date} onChange={(e) => setNewPeriod((v) => ({ ...v, end_date: e.target.value }))} />
+              </div>
+            </div>
+            {activePeriod && <span className={`mt-4 inline-flex ${badge(activePeriod.status)}`}>{activePeriod.status}</span>}
+          </div>
+
+          <div className="space-y-4">
+            <div className="cx-panel p-4">
+              <h3 className="text-sm font-semibold text-[#0F172A]">Review actions</h3>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button className="cx-button-primary" disabled={readOnly} onClick={bulkApprove}>Bulk approve</button>
+                <button className="cx-button-secondary" disabled={!activePeriodId || readOnly} onClick={() => post(`/payroll/pay-periods/${activePeriodId}/lock`, {}).then(() => fetchWorkspace())}><Lock size={14} className="mr-2" />Lock Period</button>
+                <button className="cx-button-secondary" disabled={!activePeriodId || activePeriod?.status === "exported"} onClick={() => post(`/payroll/pay-periods/${activePeriodId}/mark-exported`, {}).then(() => fetchWorkspace())}><CheckCircle2 size={14} className="mr-2" />Mark Exported</button>
+              </div>
+            </div>
+            <div className="cx-panel p-4">
+              <h3 className="text-sm font-semibold text-[#0F172A]">Export actions</h3>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/export.csv`, "payroll.csv")}><Download size={14} className="mr-2" />Export Payroll CSV</button>
+                <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/timesheets.csv`, "timesheets.csv")}><Download size={14} className="mr-2" />Export Timesheets CSV</button>
+                <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/payslips.csv`, "payslips.csv")}><Download size={14} className="mr-2" />Export Payslips CSV</button>
+              </div>
+            </div>
           </div>
         </section>
 
         <section className="cx-panel p-4">
-          <div className="flex items-center gap-2"><Settings size={16} /><h2>Payroll settings</h2></div>
-          {settings && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-2">
-              <input className="cx-input" value={settings.country || ""} onChange={(e) => setSettings((s) => ({ ...s, country: e.target.value }))} placeholder="country" />
-              <select className="cx-input" value={settings.tax_mode || "manual_rate"} onChange={(e) => setSettings((s) => ({ ...s, tax_mode: e.target.value }))}><option value="manual_rate">manual_rate</option><option value="tax_code_table">tax_code_table</option><option value="no_tax">no_tax</option></select>
-              <input className="cx-input" type="number" step="0.001" value={settings.default_tax_rate || 0} onChange={(e) => setSettings((s) => ({ ...s, default_tax_rate: Number(e.target.value || 0) }))} />
-              <button className="cx-button-primary" onClick={() => patch("/payroll/settings", settings)}>Save settings</button>
+          <div className="flex items-center justify-between"><h2>Timesheet review</h2></div>
+          {!timesheets.length ? (
+            <div className="mt-3 rounded-xl border border-dashed border-[#D0D5DD] bg-[#FCFCFD] p-5 text-center">
+              <p className="font-semibold text-[#0F172A]">No timesheets awaiting review</p>
+              <p className="mt-1 text-sm text-[#667085]">Tracked worker time will appear here for approval.</p>
+            </div>
+          ) : (
+            <div className="mt-3 space-y-2">
+              {timesheets.map((t) => (
+                <div key={t.entry_id} className="rounded-xl border p-3 bg-white flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="grid grid-cols-1 gap-1 text-sm sm:grid-cols-2 lg:grid-cols-5 lg:gap-3">
+                    <p><span className="font-semibold text-[#0F172A]">Worker:</span> {t.worker_name || "Worker"}</p>
+                    <p><span className="font-semibold text-[#0F172A]">Job:</span> {t.job_title || "Unassigned"}</p>
+                    <p><span className="font-semibold text-[#0F172A]">Date:</span> {t.date || "—"}</p>
+                    <p><span className="font-semibold text-[#0F172A]">Hours:</span> {Number(t.net_hours || 0)}</p>
+                    <p><span className="font-semibold text-[#0F172A]">Status:</span> <span className={`${badge(t.status)} ml-1`}>{t.status || "pending"}</span></p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button className="cx-button-secondary" disabled={readOnly} onClick={() => approveEntry(t.entry_id)}>Approve</button>
+                    <button className="cx-button-secondary" disabled={readOnly} onClick={() => rejectEntry(t.entry_id)}>Reject</button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </section>
 
         <section className="cx-panel p-4">
-          <h2>Adjustments</h2>
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-2 mt-2">
-            <select className="cx-input" value={adjustmentForm.worker_id} onChange={(e) => setAdjustmentForm((v) => ({ ...v, worker_id: e.target.value }))}><option value="">Worker</option>{workers.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select>
-            <select className="cx-input" value={adjustmentForm.type} onChange={(e) => setAdjustmentForm((v) => ({ ...v, type: e.target.value }))}><option>allowance</option><option>reimbursement</option><option>bonus</option><option>deduction</option><option>correction</option><option>other</option></select>
-            <input className="cx-input" placeholder="Label" value={adjustmentForm.label} onChange={(e) => setAdjustmentForm((v) => ({ ...v, label: e.target.value }))} />
-            <input className="cx-input" placeholder="Amount" type="number" value={adjustmentForm.amount} onChange={(e) => setAdjustmentForm((v) => ({ ...v, amount: e.target.value }))} />
-            <label className="text-sm"><input type="checkbox" checked={adjustmentForm.taxable} onChange={(e) => setAdjustmentForm((v) => ({ ...v, taxable: e.target.checked }))} /> Taxable</label>
-            <button className="cx-button-primary" disabled={readOnly || !activePeriodId} onClick={createAdjustment}>Add adjustment</button>
+          <h2>Worker pay summaries</h2>
+          {!workerSummaries.length ? (
+            <div className="mt-3 rounded-xl border border-dashed border-[#D0D5DD] bg-[#FCFCFD] p-5 text-center text-sm text-[#667085]">
+              Worker payroll summaries will appear once timesheets are included in this period.
+            </div>
+          ) : (
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+              {workerSummaries.map((w) => (
+                <div key={w.worker_id} className="rounded-xl border p-4 bg-white shadow-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="font-semibold text-[#0F172A]">{w.worker_name || "Worker"}</p>
+                      <p className="text-sm text-[#667085]">{w.role || w.pay_type || "Team member"}</p>
+                    </div>
+                    <span className={badge(w.status)}>{w.status || "review"}</span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                    <p><span className="font-medium text-[#0F172A]">Approved:</span> {Number(w.approved_hours || 0)}h</p>
+                    <p><span className="font-medium text-[#0F172A]">Pending:</span> {Number(w.pending_hours || 0)}h</p>
+                    <p><span className="font-medium text-[#0F172A]">Jobs worked:</span> {Number(w.jobs_worked || 0)}</p>
+                    <p><span className="font-medium text-[#0F172A]">Gross:</span> {formatCurrency(w.gross_pay || 0)}</p>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button className="cx-button-secondary" onClick={() => openPayslip(w.worker_id)}>View details</button>
+                    <button className="cx-button-secondary" disabled={readOnly} onClick={() => patch(`/payroll/workers/${w.worker_id}/pay-settings`, { hourly_rate: Number(prompt("Hourly rate", w.hourly_rate) || w.hourly_rate) }).then(() => fetchWorkspace())}>Edit pay settings</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="cx-panel p-4">
+          <h2>Export &amp; handoff</h2>
+          <p className="mt-1 text-sm text-[#667085]">Download reviewed payroll summaries for your accountant or payroll system.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/export.csv`, "payroll.csv")}><Download size={14} className="mr-2" />Export Payroll CSV</button>
+            <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/timesheets.csv`, "timesheets.csv")}><Download size={14} className="mr-2" />Export Timesheets CSV</button>
+            <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/payslips.csv`, "payslips.csv")}><Download size={14} className="mr-2" />Export Payslips CSV</button>
           </div>
-          <div className="mt-2 space-y-2">{adjustments.map((a) => <div key={a.id} className="rounded border p-2 bg-white flex justify-between"><span>{a.label} ({a.type}) {formatCurrency(a.amount)}</span><button className="cx-button-secondary" disabled={readOnly} onClick={() => del(`/payroll/adjustments/${a.id}`).then(() => fetchPeriodData(activePeriodId))}>Delete</button></div>)}</div>
+          <div className="mt-4 rounded-lg border border-[#B2DDFF] bg-[#F0F9FF] px-3 py-2 text-sm text-[#155EEF]">
+            Handoff note: Share exported files with your accountant or payroll provider after final approval and period lock.
+          </div>
+        </section>
+
+        <section className="cx-panel p-4">
+          <h2>Adjustments</h2>
+          <div className="mt-3 rounded-xl border bg-[#FCFCFD] p-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Worker</label>
+                <select className="cx-input" value={adjustmentForm.worker_id} onChange={(e) => setAdjustmentForm((v) => ({ ...v, worker_id: e.target.value }))}><option value="">Select worker</option>{workers.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Type</label>
+                <select className="cx-input" value={adjustmentForm.type} onChange={(e) => setAdjustmentForm((v) => ({ ...v, type: e.target.value }))}><option>allowance</option><option>reimbursement</option><option>bonus</option><option>deduction</option><option>correction</option><option>other</option></select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Label</label>
+                <input className="cx-input" placeholder="Travel allowance" value={adjustmentForm.label} onChange={(e) => setAdjustmentForm((v) => ({ ...v, label: e.target.value }))} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Amount</label>
+                <input className="cx-input" placeholder="0.00" type="number" value={adjustmentForm.amount} onChange={(e) => setAdjustmentForm((v) => ({ ...v, amount: e.target.value }))} />
+              </div>
+              <div className="flex items-center pt-5">
+                <label className="text-sm text-[#344054]"><input className="mr-2" type="checkbox" checked={adjustmentForm.taxable} onChange={(e) => setAdjustmentForm((v) => ({ ...v, taxable: e.target.checked }))} />Taxable</label>
+              </div>
+              <div className="flex items-end">
+                <button className="cx-button-primary w-full" disabled={readOnly || !activePeriodId} onClick={createAdjustment}>Add adjustment</button>
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 space-y-2">
+            {adjustments.map((a) => (
+              <div key={a.id} className="rounded-xl border p-3 bg-white flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-[#344054]">{a.label || "Adjustment"} ({a.type || "other"}) · {formatCurrency(a.amount || 0)}</p>
+                <button className="cx-button-secondary" disabled={readOnly} onClick={() => del(`/payroll/adjustments/${a.id}`).then(() => fetchPeriodData(activePeriodId))}>Delete</button>
+              </div>
+            ))}
+            {!adjustments.length && <p className="text-sm text-[#667085]">No adjustments added for this pay period yet.</p>}
+          </div>
+        </section>
+
+        <section className="cx-panel p-4">
+          <details>
+            <summary className="flex cursor-pointer items-center gap-2 font-semibold text-[#0F172A]"><Settings size={16} />Advanced payroll settings</summary>
+            {settings && (
+              <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-4">
+                <div>
+                  <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Payroll method</label>
+                  <input className="cx-input" value={settings.country || ""} onChange={(e) => setSettings((s) => ({ ...s, country: e.target.value }))} placeholder="Country / payroll method" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Rate mode</label>
+                  <select className="cx-input" value={settings.tax_mode || "manual_rate"} onChange={(e) => setSettings((s) => ({ ...s, tax_mode: e.target.value }))}><option value="manual_rate">manual_rate</option><option value="tax_code_table">tax_code_table</option><option value="no_tax">no_tax</option></select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Default rate</label>
+                  <input className="cx-input" type="number" step="0.001" value={settings.default_tax_rate || 0} onChange={(e) => setSettings((s) => ({ ...s, default_tax_rate: Number(e.target.value || 0) }))} />
+                </div>
+                <div className="flex items-end">
+                  <button className="cx-button-primary w-full" onClick={() => patch("/payroll/settings", settings)}>Save settings</button>
+                </div>
+              </div>
+            )}
+          </details>
         </section>
 
         {payslip && (
-          <section className="cx-panel p-4">
-            <div className="flex items-center justify-between"><h2>Payslip preview</h2><button className="cx-button-primary" onClick={() => window.print()}><Printer size={14} className="mr-2" />Print</button></div>
-            <p>{payslip.business_name}</p><p>{payslip.worker_name} ({payslip.worker_email})</p><p>Gross: {formatCurrency(payslip.gross_pay)} | Tax: {formatCurrency(payslip.employee_tax)} | Net: {formatCurrency(payslip.net_pay_estimate)}</p>
-            <p className="text-sm text-[#155EEF] mt-2">{payslip.disclaimer || DISCLAIMER}</p>
-          </section>
+          <div className="fixed inset-0 z-50 bg-black/30 p-3 md:p-6">
+            <div className="mx-auto h-full max-w-2xl overflow-y-auto rounded-2xl border bg-white p-5 shadow-xl">
+              <div className="flex items-center justify-between">
+                <h2>Payslip details</h2>
+                <button className="cx-button-secondary" onClick={() => { setPayslip(null); setSelectedWorker(null); }}><X size={14} className="mr-2" />Close</button>
+              </div>
+              {selectedWorker && (
+                <div className="mt-3 rounded-xl border bg-[#FCFCFD] p-3 text-sm text-[#344054]">
+                  <p className="font-semibold text-[#0F172A]">{selectedWorker.worker_name || "Worker"} · {selectedWorker.role || selectedWorker.pay_type || "Team member"}</p>
+                  <p className="mt-1">Approved: {Number(selectedWorker.approved_hours || 0)}h · Pending: {Number(selectedWorker.pending_hours || 0)}h · Jobs: {Number(selectedWorker.jobs_worked || 0)}</p>
+                </div>
+              )}
+              <div className="mt-4 space-y-1 text-sm text-[#344054]">
+                <p className="font-semibold text-[#0F172A]">{payslip.business_name || "Business"}</p>
+                <p>{payslip.worker_name || "Worker"} ({payslip.worker_email || "No email"})</p>
+                <p>Gross: {formatCurrency(payslip.gross_pay || 0)} | Tax: {formatCurrency(payslip.employee_tax || 0)} | Net: {formatCurrency(payslip.net_pay_estimate || 0)}</p>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button className="cx-button-primary" onClick={() => window.print()}><Printer size={14} className="mr-2" />Print</button>
+              </div>
+              <p className="text-sm text-[#155EEF] mt-3">{payslip.disclaimer || DISCLAIMER}</p>
+            </div>
+          </div>
         )}
 
         {error && <div className="cx-error-state">{error}</div>}
