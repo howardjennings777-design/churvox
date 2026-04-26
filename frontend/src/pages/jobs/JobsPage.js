@@ -50,7 +50,7 @@ export default function JobsPage() {
   return (
     <Layout>
       <div className="cx-page max-w-5xl" data-testid="jobs-page">
-        <div className="cx-page-hero flex items-center justify-between">
+        <div className="cx-page-hero flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="cx-page-title" data-testid="jobs-heading">Jobs</h1>
             <p className="cx-page-subtitle">Track field jobs, schedules, and assigned workers.</p>
@@ -63,7 +63,7 @@ export default function JobsPage() {
         </div>
 
         {/* Filters */}
-        <div className="cx-panel p-3 md:p-4 flex gap-3">
+        <div className="cx-toolbar cx-panel p-3 md:p-4 flex gap-3">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search jobs..." className="pl-9 bg-white border-slate-200 text-slate-900" data-testid="jobs-search" />

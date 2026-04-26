@@ -77,7 +77,7 @@
   }
   .cx-page-title { @apply text-3xl md:text-4xl font-bold tracking-tight text-slate-900; }
   .cx-page-subtitle { @apply text-sm md:text-base font-medium text-slate-600 mt-1; }
-  .cx-toolbar { @apply flex flex-wrap items-center gap-2.5 pt-4; }
+  .cx-toolbar { @apply flex flex-wrap items-center gap-2.5; }
   .cx-card, .cx-panel { @apply rounded-2xl border bg-white shadow-[0_2px_6px_rgba(23,32,51,0.05),0_14px_32px_rgba(23,32,51,0.08)]; border-color: #e4e0d8; }
   .cx-metric-card { @apply cx-card p-4 md:p-5 hover:-translate-y-0.5 transition-all; }
   .cx-list-card { @apply cx-card p-4; }
@@ -90,6 +90,7 @@
   .cx-input { @apply rounded-xl border border-[#ddd8ce] bg-[#fffdfa] text-slate-900; }
   .cx-mobile-stack { @apply flex flex-col gap-3 sm:flex-row sm:items-center; }
   .cx-stat-card { @apply cx-card p-4 md:p-5; background: #ffffff; }
+  .cx-client-card { @apply rounded-2xl border bg-white transition-all hover:-translate-y-0.5; border-color: #e4e0d8; box-shadow: 0 2px 8px rgba(23,32,51,0.06), 0 16px 34px rgba(23,32,51,0.07); }
   .cx-dispatch-board { @apply flex gap-4 overflow-x-auto pb-2; }
   .cx-dispatch-column { @apply cx-card min-h-[560px] w-full min-w-[320px] md:min-w-[360px] flex flex-col overflow-hidden; background: #fbfaf7; }
   .cx-job-card { @apply rounded-xl border bg-white p-3.5 shadow-[0_1px_3px_rgba(23,32,51,0.07)] border-[#e4e0d8] mb-3; }

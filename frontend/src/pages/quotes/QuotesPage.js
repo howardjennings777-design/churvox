@@ -87,8 +87,8 @@ export default function QuotesPage() {
         {/* Header */}
         <div className="cx-page-hero flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900">Quotes</h1>
-            <p className="text-muted-foreground mt-1">Manage your quotes and proposals</p>
+            <h1 className="cx-page-title">Quotes</h1>
+            <p className="cx-page-subtitle">Manage your quotes and proposals</p>
           </div>
           <Link to="/quotes/new">
             <Button className="bg-primary hover:bg-primary/90" data-testid="add-quote-button">
@@ -99,7 +99,7 @@ export default function QuotesPage() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="cx-toolbar cx-panel p-3 md:p-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -157,7 +157,7 @@ export default function QuotesPage() {
             {filteredQuotes.map((quote) => (
               <Card 
                 key={quote.id} 
-                className="bg-card border-border hover:bg-card/80 transition-colors"
+                className="cx-list-card hover:border-blue-300 transition-colors"
                 data-testid={`quote-card-${quote.id}`}
               >
                 <CardContent className="p-4">
