@@ -44,6 +44,8 @@ import PlatformUnlock from "./pages/admin/PlatformUnlock";
 import NotificationsPage from "./pages/NotificationsPage";
 import AutomationPage from "./pages/AutomationPage";
 import AutomationRunsPage from "./pages/AutomationRunsPage";
+import ReportsPage from "./pages/ReportsPage";
+import IntegrationsPage from "./pages/IntegrationsPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const Spinner = () => (
@@ -235,6 +237,8 @@ function App() {
           <Route path="/invoices/new" element={<BusinessRoute><InvoiceFormPage /></BusinessRoute>} />
           <Route path="/invoices/:id" element={<BusinessRoute><InvoiceDetailPage /></BusinessRoute>} />
           <Route path="/sms" element={<BusinessRoute><SMSPage /></BusinessRoute>} />
+          <Route path="/reports" element={<PrivateRoute><ReportsPage /></PrivateRoute>} />
+          <Route path="/integrations" element={<BusinessRoute><IntegrationsPage /></BusinessRoute>} />
           <Route path="/settings" element={<BusinessRoute><SettingsPage /></BusinessRoute>} />
 
           {/* Owner-only */}

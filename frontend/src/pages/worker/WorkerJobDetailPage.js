@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/context/AuthContext";
-import { ArrowLeft, MapPin, Clock, User, FileText, CheckCircle, Camera, X } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, User, CheckCircle, Camera, X, Phone, Navigation } from "lucide-react";
 import { toast } from "sonner";
+import { safeText } from "../../utils/safeRender";
 
 const WORKER_STATUSES = ["acknowledged", "in_progress", "paused", "completed"];
 
@@ -118,7 +119,7 @@ export default function WorkerJobDetailPage() {
       toast.success(`Job ${status.replace(/_/g, " ")}`);
       await loadJob();
     } else {
-      toast.error(res?.error || "Failed to update");
+      toast.error(safeText(res?.error, "Failed to update"));
     }
     setSaving(false);
   };
@@ -174,7 +175,7 @@ export default function WorkerJobDetailPage() {
         setJob((prev) => (prev ? { ...prev, photos: saved } : prev));
         toast.success("Photo added");
       } else {
-        toast.error(res?.error || "Failed to upload photo");
+        toast.error(safeText(res?.error, "Failed to upload photo"));
       }
     } catch (err) {
       toast.error("Could not process this photo. Please try another one.");
@@ -191,7 +192,7 @@ export default function WorkerJobDetailPage() {
       setJob((prev) => (prev ? { ...prev, photos: saved } : prev));
       toast.success("Photo removed");
     } else {
-      toast.error(res?.error || "Failed to remove photo");
+      toast.error(safeText(res?.error, "Failed to remove photo"));
     }
   };
 
@@ -231,6 +232,18 @@ export default function WorkerJobDetailPage() {
           {job.client_name && <p className="text-sm text-slate-500 flex items-center gap-1.5"><User className="h-4 w-4" />{job.client_name}</p>}
           {job.address && <p className="text-sm text-slate-500 flex items-center gap-1.5"><MapPin className="h-4 w-4" />{job.address}</p>}
           {job.scheduled_date && <p className="text-sm text-slate-500 flex items-center gap-1.5"><Clock className="h-4 w-4" />{String(job.scheduled_date).slice(0, 10)}{job.scheduled_time ? ` at ${job.scheduled_time}` : ""}</p>}
+          <div className="flex gap-2">
+            {job.customer_phone && (
+              <a href={`tel:${job.customer_phone}`} className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-md">
+                <Phone className="h-3 w-3" /> Call customer
+              </a>
+            )}
+            {job.address && (
+              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded-md">
+                <Navigation className="h-3 w-3" /> Directions
+              </a>
+            )}
+          </div>
           {job.notes && (
             <div className="pt-2 border-t border-slate-100">
               <p className="text-xs font-medium text-slate-400 uppercase mb-1">Employer Notes</p>
@@ -321,14 +334,7 @@ export default function WorkerJobDetailPage() {
             {job.completed_at && <p className="text-xs text-slate-400">Completed: {new Date(job.completed_at).toLocaleString()}</p>}
             {job.location_status && (
               <p className="text-xs text-slate-400">
-                {job.location_status === "captured" && "Start location captured"}
-                {job.location_status === "timeout" && "Location timed out. Check signal/location settings and try again."}
-                {job.location_status === "permission_denied" && "Location permission denied."}
-                {job.location_status === "unavailable" && "Location unavailable."}
-                {!["captured","timeout","permission_denied","unavailable"].includes(job.location_status) && `Start location: ${job.location_status}`}
-                {job.start_lat != null && job.start_lng != null && (
-                  <> · <a className="text-blue-600 hover:underline" href={`https://www.google.com/maps?q=${job.start_lat},${job.start_lng}`} target="_blank" rel="noreferrer">view on map</a></>
-                )}
+                {job.location_status === "captured" ? "Arrival check-in captured" : "Location check status recorded"}
               </p>
             )}
           </div>

@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { toast } from "sonner";
+import { safeText } from "../../utils/safeRender";
 
 const STATUS_OPTIONS = [
   "acknowledged",
@@ -140,7 +141,7 @@ export default function JobDetailPage() {
         toast.success("Worker assigned");
         await loadPage();
       } else {
-        toast.error(res?.error || "Failed to assign worker");
+        toast.error(safeText(res?.error, "Failed to assign worker"));
       }
     } catch {
       toast.error("Failed to assign worker");
@@ -176,10 +177,30 @@ export default function JobDetailPage() {
         toast.success("Job updated");
         await loadPage();
       } else {
-        toast.error(res?.error || "Failed to update job");
+        toast.error(safeText(res?.error, "Failed to update job"));
       }
     } catch {
       toast.error("Failed to update job");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCreateDraftInvoice = async () => {
+    setSaving(true);
+    try {
+      const res = await post(`/jobs/${id}/create-draft-invoice`);
+      if (res?.success && res?.data?.invoice_id) {
+        toast.success("Draft invoice created");
+        navigate(`/invoices/${res.data.invoice_id}`);
+      } else if (res?.success && res?.invoice_id) {
+        toast.success("Draft invoice ready");
+        navigate(`/invoices/${res.invoice_id}`);
+      } else {
+        toast.error(safeText(res?.error, "Failed to create draft invoice"));
+      }
+    } catch {
+      toast.error("Failed to create draft invoice");
     } finally {
       setSaving(false);
     }
@@ -193,7 +214,7 @@ export default function JobDetailPage() {
         toast.success("Notes saved");
         await loadPage();
       } else {
-        toast.error(res?.error || "Failed to save notes");
+        toast.error(safeText(res?.error, "Failed to save notes"));
       }
     } catch {
       toast.error("Failed to save notes");
@@ -210,7 +231,7 @@ export default function JobDetailPage() {
         toast.success("Notes saved");
         await loadPage();
       } else {
-        toast.error(res?.error || "Failed to save notes");
+        toast.error(safeText(res?.error, "Failed to save notes"));
       }
     } catch {
       toast.error("Failed to save notes");
@@ -224,7 +245,7 @@ export default function JobDetailPage() {
       <Layout>
         <div className="p-4 md:p-6 max-w-4xl mx-auto">
           <Card className="bg-white border-slate-200 shadow-sm">
-            <CardContent className="p-6 text-white">Loading job...</CardContent>
+            <CardContent className="p-6 text-slate-500">Loading job...</CardContent>
           </Card>
         </div>
       </Layout>
@@ -237,7 +258,7 @@ export default function JobDetailPage() {
         <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4">
           <Card className="bg-white border-slate-200 shadow-sm">
             <CardContent className="p-6">
-              <div className="text-white text-lg font-semibold mb-2">Job page could not load</div>
+              <div className="text-slate-900 text-lg font-semibold mb-2">Job page could not load</div>
               <div className="text-slate-500 text-sm">{error || "Job not found"}</div>
             </CardContent>
           </Card>
@@ -273,7 +294,7 @@ export default function JobDetailPage() {
       <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6" data-testid="job-detail-page">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold text-white">
+            <h1 className="text-2xl font-bold text-slate-900">
               {job.title || "Job"}
             </h1>
             <p className="text-sm text-slate-500 mt-1">
@@ -286,12 +307,24 @@ export default function JobDetailPage() {
               <Link to="/jobs">Back</Link>
             </Button>
             {isOwnerView && (
-              <Button
-                variant="outline"
-                onClick={() => navigate(`/jobs/${id}/edit`)}
-              >
-                Edit Job
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(`/jobs/${id}/edit`)}
+                >
+                  Edit Job
+                </Button>
+                {currentStatus === "completed" && !job?.invoice_id && (
+                  <Button onClick={handleCreateDraftInvoice} className="bg-blue-600 hover:bg-blue-700 text-white">
+                    Create Draft Invoice
+                  </Button>
+                )}
+                {job?.invoice_id && (
+                  <Button variant="outline" onClick={() => navigate(`/invoices/${job.invoice_id}`)}>
+                    View Invoice
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </div>

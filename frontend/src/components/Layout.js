@@ -35,6 +35,8 @@ export default function Layout({ children }) {
     (role === "owner" || role === "employer" || role === "manager") && { path: "/automation", label: "Automation", icon: Zap },
     canAccess(role, "payroll") && { path: "/payroll", label: "Payroll", icon: DollarSign },
     canAccess(role, "sms") && { path: "/sms", label: "SMS", icon: MessageSquare },
+    canAccess(role, "reports") && { path: "/reports", label: "Reports", icon: FileText },
+    canAccess(role, "integrations") && { path: "/integrations", label: "Integrations", icon: Zap },
     isOwnerUser && { path: "/plans", label: "Plans", icon: CreditCard },
     canAccess(role, "settings") && { path: "/settings", label: "Settings", icon: Settings },
   ].filter(Boolean);

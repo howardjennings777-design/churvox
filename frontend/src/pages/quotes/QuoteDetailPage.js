@@ -8,6 +8,7 @@ import { Button } from "../../components/ui/button";
 import { ArrowLeft, Edit, Trash2, MapPin, Mail, DollarSign, Send, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, QUOTE_STATUSES } from "../../lib/utils";
+import { safeText } from "../../utils/safeRender";
 
 export default function QuoteDetailPage() {
   const { id } = useParams();
@@ -27,7 +28,7 @@ export default function QuoteDetailPage() {
   const handleSend = async () => {
     const res = await post(`/quotes/${id}/send`);
     if (res.success) { toast.success("Quote sent"); setQuote(res.data); }
-    else toast.error(res.error || "Failed to send quote");
+    else toast.error(safeText(res.error, "Failed to send quote"));
   };
 
   const handleConvert = async () => {
@@ -35,7 +36,7 @@ export default function QuoteDetailPage() {
     if (res.success) {
       toast.success("Quote converted to job");
       navigate(`/jobs/${res.data.job_id}`);
-    } else toast.error(res.error || "Failed to convert quote");
+    } else toast.error(safeText(res.error, "Failed to convert quote"));
   };
 
   const handleDelete = async () => {
@@ -73,7 +74,7 @@ export default function QuoteDetailPage() {
         <Card className="bg-white border-slate-200 shadow-sm" data-testid="quote-info-card">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-xl text-white">{quote.quote_number}</CardTitle>
+              <CardTitle className="text-xl text-slate-900">{safeText(quote.quote_number, "Quote")}</CardTitle>
               <span className={`px-3 py-1 rounded text-xs font-semibold uppercase text-slate-900 ${statusInfo?.color || "bg-slate-500"}`} data-testid="quote-status-badge">
                 {statusInfo?.label || quote.status}
               </span>
@@ -90,7 +91,7 @@ export default function QuoteDetailPage() {
 
             <div className="pt-3 border-t border-slate-200">
               <p className="text-xs text-slate-500 mb-1">Description</p>
-              <p className="text-sm text-white">{quote.job_description}</p>
+              <p className="text-sm text-slate-700">{safeText(quote.job_description, "No description")}</p>
             </div>
 
             {quote.pricing_type && quote.pricing_type !== "fixed" && (
@@ -112,7 +113,7 @@ export default function QuoteDetailPage() {
             {quote.notes && (
               <div className="pt-3 border-t border-slate-200">
                 <p className="text-xs text-slate-500 mb-1">Notes</p>
-                <p className="text-sm text-white">{quote.notes}</p>
+                <p className="text-sm text-slate-700">{safeText(quote.notes)}</p>
               </div>
             )}
 

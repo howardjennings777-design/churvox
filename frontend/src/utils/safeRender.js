@@ -4,7 +4,8 @@ export const safeText = (value, fallback = "") => {
   if (typeof value === "number" || typeof value === "boolean") return String(value);
 
   if (Array.isArray(value)) {
-    return value.map((item) => safeText(item)).filter(Boolean).join(", ");
+    const text = value.map((item) => safeText(item)).filter(Boolean).join(", ");
+    return text || fallback;
   }
 
   if (typeof value === "object") {
@@ -24,3 +25,8 @@ export const safeText = (value, fallback = "") => {
 };
 
 export const safeReactChild = (value, fallback = "") => safeText(value, fallback);
+export const safeArray = (value) => (Array.isArray(value) ? value : []);
+export const safeNumber = (value, fallback = 0) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+};
