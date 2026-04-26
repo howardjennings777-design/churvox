@@ -123,6 +123,7 @@
   .status-cancelled, .status-failed, .status-overdue, .status-declined { @apply border-red-200 bg-red-50 text-red-700; }
 }
 
+.cx-status-badge--slate { color: #334155; background: #F1F5F9; border-color: #cbd5e1; }
 .cx-status-badge--green { color: #166534; background: #EAF8EF; border-color: #bbefca; }
 .cx-status-badge--blue { color: #155EEF; background: #EAF2FF; border-color: #ccddff; }
 .cx-status-badge--amber { color: #b45309; background: #FFF6E5; border-color: #ffe4b5; }
