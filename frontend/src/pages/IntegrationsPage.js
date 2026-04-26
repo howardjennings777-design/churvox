@@ -16,13 +16,16 @@ export default function IntegrationsPage() {
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">MYOB / Integrations</h1>
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-3">
-          <p className="text-sm text-slate-600">Connection status: <span className="font-semibold text-slate-900">{myob?.connected ? "Connected" : "Not connected"}</span></p>
-          <p className="text-sm text-slate-600">Customers sync: <span className="text-slate-900">{myob?.customers_sync_enabled ? "Enabled" : "Setup Required"}</span></p>
-          <p className="text-sm text-slate-600">Invoice sync: <span className="text-slate-900">{myob?.invoice_sync_enabled ? "Enabled" : "Coming Soon"}</span></p>
-          <p className="text-sm text-slate-600">Payment sync: <span className="text-slate-900">{myob?.payment_sync_enabled ? "Enabled" : "Coming Soon"}</span></p>
+      <div className="cx-page">
+        <div className="cx-page-hero">
+          <h1 className="cx-page-title">MYOB / Integrations</h1>
+          <p className="cx-page-subtitle">Accounting sync setup, sync health, and plan-based access at a glance.</p>
+        </div>
+        <div className="cx-panel p-5 space-y-3">
+          <p className="text-sm text-slate-700">Connection status: <span className={`cx-status-badge ${myob?.connected ? "status-completed" : "status-overdue"}`}>{myob?.connected ? "Connected" : "Not connected"}</span></p>
+          <p className="text-sm text-slate-700">Customers sync: <span className={`cx-status-badge ${myob?.customers_sync_enabled ? "status-completed" : "status-pending"}`}>{myob?.customers_sync_enabled ? "Enabled" : "Setup Required"}</span></p>
+          <p className="text-sm text-slate-700">Invoice sync: <span className={`cx-status-badge ${myob?.invoice_sync_enabled ? "status-completed" : "status-assigned"}`}>{myob?.invoice_sync_enabled ? "Enabled" : "Coming Soon"}</span></p>
+          <p className="text-sm text-slate-700">Payment sync: <span className={`cx-status-badge ${myob?.payment_sync_enabled ? "status-completed" : "status-assigned"}`}>{myob?.payment_sync_enabled ? "Enabled" : "Coming Soon"}</span></p>
           <p className="text-xs text-slate-500">Plan gating: Solo/Team no MYOB. Pro optional add-on. Enterprise included.</p>
         </div>
       </div>

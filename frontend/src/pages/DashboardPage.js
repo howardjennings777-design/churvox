@@ -102,12 +102,12 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-      <div className="p-4 md:p-8 max-w-[1200px] mx-auto space-y-6" data-testid="dashboard-page">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Smart Hub</h1>
-          <p className="text-slate-500 mt-1 text-sm">Welcome back, {safeText(user?.name?.split(" ")?.[0], "there")}. Monitor jobs, cashflow, and team activity in one place.</p>
+      <div className="cx-page" data-testid="dashboard-page">
+        <div className="cx-page-hero">
+          <h1 className="cx-page-title">Smart Hub</h1>
+          <p className="cx-page-subtitle">Welcome back, {safeText(user?.name?.split(" ")?.[0], "there")}. Monitor jobs, cashflow, and team activity in one place.</p>
           {isAdmin && (
-            <div className="flex flex-wrap gap-2 mt-4">
+            <div className="cx-toolbar">
               <Button onClick={() => navigate("/jobs/new")} className="bg-blue-600 hover:bg-blue-700"><Plus className="h-4 w-4 mr-1" />New job</Button>
               <Button onClick={() => navigate("/quotes/new")} variant="outline">New quote</Button>
               <Button onClick={() => navigate("/invoices/new")} variant="outline">New invoice</Button>
@@ -120,17 +120,17 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {cards.map((card) => (
-            <button key={card.label} onClick={() => navigate(card.path)} className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm hover:border-blue-200 hover:shadow" data-testid={`smart-card-${card.label.toLowerCase().replace(/\s+/g, "-")}`}>
-              <div className="flex items-center justify-between mb-2">
+            <button key={card.label} onClick={() => navigate(card.path)} className="cx-metric-card text-left border-[#dde6fb] hover:border-[#bdd0ff]" data-testid={`smart-card-${card.label.toLowerCase().replace(/\s+/g, "-")}`}>
+              <div className="flex items-center justify-between mb-3">
                 <span className="text-xs text-slate-500 font-semibold uppercase">{card.label}</span>
-                <card.icon className="h-4 w-4 text-slate-400" />
+                <span className="h-8 w-8 rounded-lg bg-[#eaf2ff] inline-flex items-center justify-center"><card.icon className="h-4 w-4 text-[#155EEF]" /></span>
               </div>
               <p className="text-3xl font-bold text-slate-900">{safeNumber(card.value, 0)}</p>
             </button>
           ))}
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <div className="cx-panel p-5">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-slate-900">Today's jobs</h3>
             <Link to="/calendar" className="text-sm text-blue-600 inline-flex items-center gap-1">Open dispatch <ArrowRight className="h-3 w-3" /></Link>

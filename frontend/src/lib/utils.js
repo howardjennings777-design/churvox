@@ -34,27 +34,30 @@ export function formatApiErrorDetail(detail) {
 }
 
 export const JOB_STATUSES = [
-  { value: "assigned", label: "Assigned", color: "bg-blue-500" },
-  { value: "acknowledged", label: "Acknowledged", color: "bg-yellow-500" },
-  { value: "in_progress", label: "In Progress", color: "bg-emerald-500" },
-  { value: "completed", label: "Completed", color: "bg-green-600" },
+  { value: "assigned", label: "Assigned", color: "bg-slate-100 text-slate-700 border border-slate-200" },
+  { value: "acknowledged", label: "Acknowledged", color: "bg-amber-50 text-amber-700 border border-amber-200" },
+  { value: "in_progress", label: "In Progress", color: "bg-blue-50 text-blue-700 border border-blue-200" },
+  { value: "paused", label: "Paused", color: "bg-amber-50 text-amber-700 border border-amber-200" },
+  { value: "completed", label: "Completed", color: "bg-green-50 text-green-700 border border-green-200" },
+  { value: "cancelled", label: "Cancelled", color: "bg-red-50 text-red-700 border border-red-200" },
 ];
 
 export const JOB_STATUS_MAP = Object.fromEntries(JOB_STATUSES.map((s) => [s.value, s]));
 
 export const QUOTE_STATUSES = [
-  { value: "draft", label: "Draft", color: "bg-slate-500" },
-  { value: "sent", label: "Sent", color: "bg-blue-500" },
-  { value: "accepted", label: "Accepted", color: "bg-green-500" },
-  { value: "declined", label: "Declined", color: "bg-red-500" },
+  { value: "draft", label: "Draft", color: "bg-slate-100 text-slate-700 border border-slate-200" },
+  { value: "sent", label: "Sent", color: "bg-blue-50 text-blue-700 border border-blue-200" },
+  { value: "accepted", label: "Accepted", color: "bg-green-50 text-green-700 border border-green-200" },
+  { value: "declined", label: "Declined", color: "bg-red-50 text-red-700 border border-red-200" },
 ];
 
 export const INVOICE_STATUSES = [
-  { value: "draft", label: "Draft", color: "bg-slate-500" },
-  { value: "sent", label: "Sent", color: "bg-blue-500" },
-  { value: "paid", label: "Paid", color: "bg-green-500" },
-  { value: "overdue", label: "Overdue", color: "bg-red-500" },
-  { value: "cancelled", label: "Cancelled", color: "bg-gray-500" },
+  { value: "draft", label: "Draft", color: "bg-slate-100 text-slate-700 border border-slate-200" },
+  { value: "sent", label: "Sent", color: "bg-blue-50 text-blue-700 border border-blue-200" },
+  { value: "paid", label: "Paid", color: "bg-green-50 text-green-700 border border-green-200" },
+  { value: "unpaid", label: "Unpaid", color: "bg-amber-50 text-amber-700 border border-amber-200" },
+  { value: "overdue", label: "Overdue", color: "bg-red-50 text-red-700 border border-red-200" },
+  { value: "cancelled", label: "Cancelled", color: "bg-red-50 text-red-700 border border-red-200" },
 ];
 
 export const MYOB_SYNC_STATUSES = {

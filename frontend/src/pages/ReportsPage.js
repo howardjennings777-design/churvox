@@ -27,11 +27,14 @@ export default function ReportsPage() {
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Reports</h1>
+      <div className="cx-page">
+        <div className="cx-page-hero">
+          <h1 className="cx-page-title">Reports</h1>
+          <p className="cx-page-subtitle">Track revenue, job performance, invoice risk, and team productivity.</p>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {cards.map(([label, value]) => (
-            <div key={label} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+            <div key={label} className="cx-metric-card">
               <p className="text-xs uppercase text-slate-500">{label}</p>
               <p className="text-2xl font-semibold text-slate-900 mt-1">{value}</p>
             </div>

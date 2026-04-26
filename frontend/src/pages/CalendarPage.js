@@ -69,12 +69,12 @@ export default function CalendarPage() {
   };
 
   const JobCard = ({ job }) => (
-    <div draggable={isEmployer} onDragStart={() => setDragJobId(String(job.id))} className="rounded-lg border border-slate-200 bg-white p-3 mb-2" data-testid={`dispatch-job-${job.id}`}>
+    <div draggable={isEmployer} onDragStart={() => setDragJobId(String(job.id))} className="rounded-xl border border-[#dfdacf] bg-white p-3 mb-2 border-l-4 border-l-[#155EEF]" data-testid={`dispatch-job-${job.id}`}>
       <p className="text-sm font-semibold text-slate-900">{safeText(job.title, "Untitled job")}</p>
       <p className="text-xs text-slate-500">{safeText(job.customer_name || job.client_name, "No client")}</p>
       <p className="text-xs text-slate-500">{safeText(job.address, "No address")}</p>
       <p className="text-xs text-slate-500">{String(job.scheduled_date || "").slice(0, 10)} {job.scheduled_time || ""}</p>
-      <p className="text-[11px] uppercase text-blue-700 mt-1">{safeText(job.status, "assigned")}</p>
+      <p className="cx-status-badge status-assigned mt-1">{safeText(job.status, "assigned")}</p>
       <div className="md:hidden mt-2">
         <select
           className="w-full border border-slate-200 rounded-md p-2 text-xs"
@@ -90,18 +90,18 @@ export default function CalendarPage() {
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 max-w-[1200px] mx-auto space-y-4" data-testid="calendar-page">
-        <div className="flex items-center justify-between">
+      <div className="cx-page" data-testid="calendar-page">
+        <div className="cx-page-hero flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Dispatch Board</h1>
-            <p className="text-xs text-slate-500">Week view with worker columns and unassigned jobs</p>
+            <h1 className="cx-page-title">Dispatch Board</h1>
+            <p className="cx-page-subtitle">Week view with worker columns and unassigned jobs</p>
           </div>
           {isEmployer && <Button asChild className="bg-blue-600 hover:bg-blue-700"><Link to="/jobs/new"><Plus className="h-4 w-4 mr-1" />New Job</Link></Button>}
         </div>
 
         {loading ? <Card><CardContent className="p-6 text-slate-500">Loading dispatch board...</CardContent></Card> : (
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            <Card className="bg-slate-50 border-slate-200" onDragOver={(e) => e.preventDefault()} onDrop={() => dragJobId && assignJob(dragJobId, "")}>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <Card className="bg-[#fbfaf7] border-[#e4e0d8]" onDragOver={(e) => e.preventDefault()} onDrop={() => dragJobId && assignJob(dragJobId, "")}>
               <CardContent className="p-3">
                 <h3 className="font-semibold text-slate-800 mb-2">Unassigned</h3>
                 {columnData.unassigned.map((job) => <JobCard key={job.id} job={job} />)}
@@ -110,7 +110,7 @@ export default function CalendarPage() {
             </Card>
 
             {workers.map((worker) => (
-              <Card key={worker.id} className="bg-slate-50 border-slate-200" onDragOver={(e) => e.preventDefault()} onDrop={() => dragJobId && assignJob(dragJobId, worker.id)}>
+              <Card key={worker.id} className="bg-[#fbfaf7] border-[#e4e0d8]" onDragOver={(e) => e.preventDefault()} onDrop={() => dragJobId && assignJob(dragJobId, worker.id)}>
                 <CardContent className="p-3">
                   <h3 className="font-semibold text-slate-800 mb-2">{safeText(worker.name, "Worker")}</h3>
                   {safeArray(columnData.byWorker[String(worker.id)]).map((job) => {
