@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useApi } from "../../hooks/useApi";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { ArrowLeft, Edit, Trash2, MapPin, Mail, DollarSign, Send, Briefcase } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, MapPin, Mail, DollarSign, Send, Briefcase, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, QUOTE_STATUSES } from "../../lib/utils";
 import { safeText } from "../../utils/safeRender";
@@ -27,7 +27,13 @@ export default function QuoteDetailPage() {
 
   const handleSend = async () => {
     const res = await post(`/quotes/${id}/send`);
-    if (res.success) { toast.success("Quote sent"); setQuote(res.data); }
+    if (res.success) {
+      toast.success("Quote sent");
+      await fetchQuote();
+      if (res?.data?.public_quote_url) {
+        try { await navigator.clipboard.writeText(res.data.public_quote_url); toast.success("Public quote link copied"); } catch (_) {}
+      }
+    }
     else toast.error(safeText(res.error, "Failed to send quote"));
   };
 
@@ -128,9 +134,14 @@ export default function QuoteDetailPage() {
               <Send size={16} className="mr-2" /> Send Quote
             </Button>
           )}
-          {(quote.status === "sent" || quote.status === "accepted") && !quote.converted_job_id && (
+          {quote.status === "accepted" && !quote.converted_job_id && (
             <Button onClick={handleConvert} disabled={loading} className="flex-1 bg-emerald-500 hover:bg-emerald-600" data-testid="convert-to-job-button">
               <Briefcase size={16} className="mr-2" /> Convert to Job
+            </Button>
+          )}
+          {quote.public_quote_url && (
+            <Button variant="outline" className="flex-1" onClick={() => navigator.clipboard.writeText(quote.public_quote_url).then(() => toast.success("Public quote link copied"))}>
+              <Link2 size={16} className="mr-2" /> Copy Public Link
             </Button>
           )}
           {quote.converted_job_id && (

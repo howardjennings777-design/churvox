@@ -46,6 +46,8 @@ import AutomationPage from "./pages/AutomationPage";
 import AutomationRunsPage from "./pages/AutomationRunsPage";
 import ReportsPage from "./pages/ReportsPage";
 import IntegrationsPage from "./pages/IntegrationsPage";
+import PublicQuotePage from "./pages/public/PublicQuotePage";
+import PublicInvoicePage from "./pages/public/PublicInvoicePage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const Spinner = () => (
@@ -202,6 +204,8 @@ function App() {
           <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
           <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
           <Route path="/invite/setup/:token" element={<InviteSetupPage />} />
+          <Route path="/public/quote/:token" element={<PublicQuotePage />} />
+          <Route path="/public/invoice/:token" element={<PublicInvoicePage />} />
 
           {/* Legacy redirects */}
           <Route path="/owner-login" element={<Navigate to="/login" replace />} />

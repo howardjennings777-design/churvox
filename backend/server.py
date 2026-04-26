@@ -1826,6 +1826,9 @@ async def get_invoice(invoice_id: str, current_user: dict = Depends(get_current_
         "gst_rate": gst_rate,
         "total": total,
         "status": invoice.get("status") or "draft",
+        "public_token": invoice.get("public_token") or "",
+        "public_invoice_url": f"{FRONTEND_URL}/public/invoice/{invoice.get('public_token')}" if invoice.get("public_token") else "",
+        "payment_link": invoice.get("payment_link") or "",
         "pricing_type": invoice.get("pricing_type") or "fixed",
         "hourly_rate": float(invoice.get("hourly_rate") or 0),
         "hours_worked": float(invoice.get("hours_worked") or 0),
@@ -1932,10 +1935,14 @@ async def send_invoice(invoice_id: str, current_user: dict = Depends(get_current
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
 
+    public_token = str(invoice.get("public_token") or "").strip() or secrets.token_urlsafe(20)
+    public_invoice_url = f"{FRONTEND_URL}/public/invoice/{public_token}"
     await db.invoices.update_one(
         {"_id": obj_id},
         {"$set": {
             "status": "sent",
+            "public_token": public_token,
+            "public_invoice_url": public_invoice_url,
             "sent_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
         }}
@@ -1960,6 +1967,7 @@ async def send_invoice(invoice_id: str, current_user: dict = Depends(get_current
     return {"success": True, "data": {
         "id": str(updated.get("_id")),
         "status": updated.get("status") or "sent",
+        "public_invoice_url": public_invoice_url,
     }}
 
 
@@ -2070,6 +2078,37 @@ async def delete_invoice(invoice_id: str, current_user: dict = Depends(get_curre
         raise HTTPException(status_code=500, detail="Failed to delete invoice")
 
     return {"success": True, "message": "Invoice deleted"}
+
+
+@api_router.get("/public/invoice/{public_token}")
+async def public_invoice_view(public_token: str):
+    invoice = await db.invoices.find_one({"public_token": public_token})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    subtotal = float(invoice.get("subtotal") or 0)
+    gst_rate = float(invoice.get("gst_rate") or 15)
+    total = subtotal + (subtotal * gst_rate / 100.0)
+    status = str(invoice.get("status") or "draft").lower()
+    due_date = invoice.get("due_date")
+    if due_date and status in {"sent", "unpaid"}:
+        try:
+            parsed = datetime.fromisoformat(str(due_date).replace("Z", "+00:00"))
+            if parsed < datetime.now(timezone.utc):
+                status = "overdue"
+        except Exception:
+            pass
+    return {
+        "id": str(invoice.get("_id") or ""),
+        "invoice_number": invoice.get("invoice_number") or f"INV-{str(invoice.get('_id') or '')[-6:]}",
+        "customer_name": invoice.get("customer_name") or "",
+        "description": invoice.get("description") or "",
+        "status": status,
+        "subtotal": subtotal,
+        "gst_rate": gst_rate,
+        "total": total,
+        "due_date": due_date,
+        "payment_link": invoice.get("payment_link") or "",
+    }
 
 @api_router.get("/quotes")
 async def get_quotes(current_user: dict = Depends(get_current_user)):
@@ -2203,6 +2242,8 @@ async def get_quote(quote_id: str, current_user: dict = Depends(get_current_user
         "extras": quote.get("extras") or [],
         "valid_until": safe_iso(quote.get("valid_until")),
         "status": quote.get("status") or "draft",
+        "public_token": quote.get("public_token") or "",
+        "public_quote_url": f"{FRONTEND_URL}/public/quote/{quote.get('public_token')}" if quote.get("public_token") else "",
         "created_at": safe_iso(quote.get("created_at")),
         "updated_at": safe_iso(quote.get("updated_at")),
     }
@@ -2345,10 +2386,14 @@ async def send_quote(quote_id: str, current_user: dict = Depends(get_current_use
     if not quote:
         raise HTTPException(status_code=404, detail="Quote not found")
 
+    public_token = str(quote.get("public_token") or "").strip() or secrets.token_urlsafe(20)
+    public_quote_url = f"{FRONTEND_URL}/public/quote/{public_token}"
     await db.quotes.update_one(
         {"_id": obj_id},
         {"$set": {
             "status": "sent",
+            "public_token": public_token,
+            "public_quote_url": public_quote_url,
             "sent_at": datetime.now(timezone.utc),
             "updated_at": datetime.now(timezone.utc),
         }}
@@ -2370,7 +2415,8 @@ async def send_quote(quote_id: str, current_user: dict = Depends(get_current_use
 
     return {
         "success": True,
-        "message": "Quote marked as sent"
+        "message": "Quote marked as sent",
+        "data": {"public_quote_url": public_quote_url},
     }
 
 
@@ -2488,6 +2534,9 @@ async def convert_quote_to_job(quote_id: str, current_user: dict = Depends(get_c
     existing_job_id = str(quote.get("converted_job_id") or "").strip()
     if existing_job_id:
         return {"success": True, "job_id": existing_job_id, "message": "Quote already linked"}
+    quote_status = str(quote.get("status") or "draft").lower()
+    if quote_status != "accepted":
+        raise HTTPException(status_code=400, detail="Only accepted quotes can be converted to jobs")
 
     now = datetime.now(timezone.utc)
     job_doc = {
@@ -2528,6 +2577,62 @@ async def convert_quote_to_job(quote_id: str, current_user: dict = Depends(get_c
     )
 
     return {"success": True, "job_id": job_id, "message": "Quote converted to job"}
+
+
+@api_router.post("/quotes/{quote_id}/decline")
+async def decline_quote(quote_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in BUSINESS_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    business_id = str(current_user.get("business_id") or current_user.get("businessId") or current_user.get("id") or current_user.get("_id") or "")
+    owner_id = str(current_user.get("_id") or current_user.get("id") or current_user.get("user_id") or "")
+    try:
+        obj_id = ObjectId(quote_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid quote ID")
+    quote = await db.quotes.find_one({"_id": obj_id, "$or": [{"business_id": business_id}, {"business_id": str(business_id)}, {"owner_id": owner_id}]})
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    now = datetime.now(timezone.utc)
+    await db.quotes.update_one({"_id": obj_id}, {"$set": {"status": "declined", "declined_at": now, "updated_at": now}})
+    return {"success": True, "message": "Quote declined"}
+
+
+@api_router.get("/public/quote/{public_token}")
+async def public_quote_view(public_token: str):
+    quote = await db.quotes.find_one({"public_token": public_token})
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    return {
+        "id": str(quote.get("_id") or ""),
+        "quote_number": quote.get("quote_number") or f"Q-{str(quote.get('_id') or '')[-6:]}",
+        "customer_name": quote.get("customer_name") or "",
+        "customer_email": quote.get("customer_email") or "",
+        "address": quote.get("address") or "",
+        "job_description": quote.get("job_description") or "",
+        "price": float(quote.get("price") or 0),
+        "status": quote.get("status") or "draft",
+        "valid_until": quote.get("valid_until"),
+    }
+
+
+@api_router.post("/public/quote/{public_token}/accept")
+async def public_quote_accept(public_token: str):
+    quote = await db.quotes.find_one({"public_token": public_token})
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    now = datetime.now(timezone.utc)
+    await db.quotes.update_one({"_id": quote["_id"]}, {"$set": {"status": "accepted", "accepted_at": now, "updated_at": now}})
+    return {"success": True, "status": "accepted"}
+
+
+@api_router.post("/public/quote/{public_token}/decline")
+async def public_quote_decline(public_token: str):
+    quote = await db.quotes.find_one({"public_token": public_token})
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+    now = datetime.now(timezone.utc)
+    await db.quotes.update_one({"_id": quote["_id"]}, {"$set": {"status": "declined", "declined_at": now, "updated_at": now}})
+    return {"success": True, "status": "declined"}
 
 @api_router.post("/quotes")
 async def create_quote(request: Request, current_user: dict = Depends(get_current_user)):
