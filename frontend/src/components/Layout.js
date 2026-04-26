@@ -27,7 +27,7 @@ export default function Layout({ children }) {
   const navItems = [
     canAccess(role, "dashboard") && { path: "/dashboard", label: "Overview", icon: LayoutDashboard },
     canAccess(role, "jobs") && { path: "/jobs", label: "Jobs", icon: Briefcase },
-    canAccess(role, "calendar") && { path: "/calendar", label: "Calendar", icon: Calendar },
+    canAccess(role, "calendar") && { path: "/dispatch", label: "Dispatch", icon: Calendar },
     canAccess(role, "clients") && { path: "/clients", label: "Clients", icon: Users },
     canAccess(role, "quotes") && { path: "/quotes", label: "Quotes", icon: FileText },
     canAccess(role, "invoices") && { path: "/invoices", label: "Invoices", icon: Receipt },

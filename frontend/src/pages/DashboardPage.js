@@ -85,13 +85,13 @@ export default function DashboardPage() {
     { label: "Active jobs", value: smart.activeJobs, icon: Briefcase, path: "/jobs" },
     { label: "Completed jobs", value: smart.completedJobs, icon: CheckCircle, path: "/jobs?status=completed" },
     { label: "Team count", value: smart.teamCount, icon: Users, path: "/team" },
-    { label: "Today's jobs", value: smart.todayJobs, icon: Calendar, path: "/calendar" },
-    { label: "Unassigned jobs", value: smart.unassignedJobs, icon: AlertTriangle, path: "/calendar" },
-    { label: "Jobs starting today", value: smart.jobsStartingToday, icon: Clock3, path: "/calendar" },
+    { label: "Today's jobs", value: smart.todayJobs, icon: Calendar, path: "/dispatch" },
+    { label: "Unassigned jobs", value: smart.unassignedJobs, icon: AlertTriangle, path: "/dispatch" },
+    { label: "Jobs starting today", value: smart.jobsStartingToday, icon: Clock3, path: "/dispatch" },
     { label: "Overdue invoices", value: smart.overdueInvoices, icon: Receipt, path: "/invoices" },
     { label: "Pending invoices", value: smart.pendingInvoices, icon: Receipt, path: "/invoices" },
     { label: "Quotes waiting approval", value: smart.quotesWaiting, icon: FileText, path: "/quotes" },
-    { label: "Schedule conflicts", value: smart.scheduleConflicts, icon: AlertTriangle, path: "/calendar" },
+    { label: "Schedule conflicts", value: smart.scheduleConflicts, icon: AlertTriangle, path: "/dispatch" },
     { label: "Low SMS credits", value: smart.lowSmsCredits, icon: MessageSquareWarning, path: "/sms" },
     { label: "MYOB sync issues", value: smart.myobIssues, icon: RefreshCw, path: "/settings" },
     { label: "Workers currently active", value: smart.workersActive, icon: Users, path: "/jobs" },
@@ -112,7 +112,7 @@ export default function DashboardPage() {
               <Button onClick={() => navigate("/quotes/new")} variant="outline">New quote</Button>
               <Button onClick={() => navigate("/invoices/new")} variant="outline">New invoice</Button>
               <Button onClick={() => navigate("/clients/new")} variant="outline">Add client</Button>
-              <Button onClick={() => navigate("/calendar")} variant="outline">Open calendar</Button>
+              <Button onClick={() => navigate("/dispatch")} variant="outline">Open dispatch board</Button>
               <Button onClick={() => navigate("/team")} variant="outline"><UserPlus className="h-4 w-4 mr-1" />Invite worker</Button>
             </div>
           )}
@@ -133,7 +133,7 @@ export default function DashboardPage() {
         <div className="cx-panel p-5">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-slate-900">Today's jobs</h3>
-            <Link to="/calendar" className="text-sm text-blue-600 inline-flex items-center gap-1">Open dispatch <ArrowRight className="h-3 w-3" /></Link>
+            <Link to="/dispatch" className="text-sm text-blue-600 inline-flex items-center gap-1">Open dispatch board <ArrowRight className="h-3 w-3" /></Link>
           </div>
           <div className="mt-3 space-y-2">
             {jobs.filter((j) => String(j.scheduled_date || "").slice(0, 10) === new Date().toISOString().slice(0, 10)).slice(0, 5).map((job) => (

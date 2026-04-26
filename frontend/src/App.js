@@ -224,7 +224,8 @@ function App() {
           <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
           <Route path="/jobs/:id" element={<BusinessRoute><JobDetailPage /></BusinessRoute>} />
           <Route path="/jobs/:id/edit" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
-          <Route path="/calendar" element={<BusinessRoute><CalendarPage /></BusinessRoute>} />
+          <Route path="/dispatch" element={<BusinessRoute><CalendarPage /></BusinessRoute>} />
+          <Route path="/calendar" element={<Navigate to="/dispatch" replace />} />
           <Route path="/clients" element={<BusinessRoute><ClientsPage /></BusinessRoute>} />
           <Route path="/clients/new" element={<BusinessRoute><ClientFormPage /></BusinessRoute>} />
           <Route path="/clients/:id" element={<BusinessRoute><ClientDetailPage /></BusinessRoute>} />
