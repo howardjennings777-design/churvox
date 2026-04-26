@@ -283,7 +283,7 @@ export default function QuotesPage() {
               return (
                 <Card
                   key={quote.id}
-                  className="cx-list-card hover:border-blue-300 transition-colors"
+                  className="cx-document-card hover:border-blue-300 transition-colors"
                   data-testid={`quote-card-${quote.id}`}
                 >
                   <CardContent className="p-4 md:p-5">
