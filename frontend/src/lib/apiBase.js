@@ -1,4 +1,4 @@
-const API_BASE =
+export const API_BASE =
   (
     (typeof import.meta !== "undefined" &&
       import.meta.env &&
