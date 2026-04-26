@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,390 +6,121 @@
 
 @layer base {
   :root {
-    /* Churvox Premium Modern Light Theme */
-    --background: 220 20% 97%;
-    --foreground: 222 20% 14%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 20% 14%;
+    --background: 214 33% 98%;      /* #f7f9fc */
+    --foreground: 222 47% 11%;      /* #0f172a */
+    --card: 0 0% 100%;              /* #ffffff */
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 20% 14%;
-    --primary: 213 94% 58%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;         /* #2563eb */
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 20% 14%;
+    --secondary: 210 40% 96%;       /* #f1f5f9 */
+    --secondary-foreground: 217 33% 17%;
     --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 213 94% 58%;
+    --muted-foreground: 215 16% 40%;
+    --accent: 24 95% 53%;           /* #f97316 */
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 72% 51%;
+    --destructive: 0 74% 52%;       /* #dc2626 */
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
+    --border: 214 32% 91%;          /* #e2e8f0 */
     --input: 214 32% 91%;
-    --ring: 213 94% 58%;
-    --radius: 0.625rem;
-    
-    --success: 142 76% 36%;
-    --warning: 38 92% 50%;
-    --info: 213 94% 58%;
-    
-    --chart-1: 213 94% 58%;
-    --chart-2: 142 76% 36%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-  }
-}
+    --ring: 221 83% 53%;
+    --radius: 0.9rem;
 
-@layer base {
+    --success: 134 76% 37%;
+    --warning: 38 92% 50%;
+    --info: 221 83% 53%;
+  }
+
   * {
     @apply border-border;
   }
-  
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    text-rendering: optimizeLegibility;
   }
-  
+
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Outfit', sans-serif;
     font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  select {
+    color-scheme: light;
   }
 }
 
 @layer components {
-  /* Churvox Logo Container */
-  .churvox-logo {
-    @apply h-9 w-auto object-contain;
+  .app-shell {
+    @apply min-h-screen bg-background;
   }
-  
-  .churvox-logo-lg {
-    @apply h-12 w-auto object-contain;
+
+  .page-wrap {
+    @apply mx-auto w-full max-w-[1240px] px-4 py-4 md:px-6 md:py-6;
   }
-  
-  .churvox-logo-container {
-    @apply flex items-center gap-3;
+
+  .page-title {
+    @apply text-2xl md:text-3xl font-bold text-slate-900 tracking-tight;
   }
-  
-  .churvox-brand-text {
-    @apply text-xl font-semibold text-white tracking-tight;
-    font-family: 'Outfit', sans-serif;
+
+  .page-subtitle {
+    @apply mt-1 text-sm text-slate-600;
   }
-  
-  /* Premium Glass Header */
-  .glass-header {
-    @apply backdrop-blur-xl bg-[#0C0F14]/90 border-b border-border/50;
+
+  .surface-card {
+    @apply rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_10px_24px_rgba(15,23,42,0.04)];
   }
-  
-  /* Card Surfaces */
-  .card-surface {
-    @apply bg-card border border-border rounded-xl;
-  }
-  
-  .card-elevated {
-    @apply bg-[#13161D] border border-border rounded-xl shadow-lg shadow-black/20;
-  }
-  
-  .card-interactive {
-    @apply bg-card border border-border rounded-xl transition-all duration-200;
-    @apply hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5;
-  }
-  
-  /* Text Gradient */
-  .text-gradient {
-    @apply bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent;
-  }
-  
-  /* Status Badges */
+
   .status-badge {
-    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium;
+    @apply inline-flex items-center rounded-md border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide;
   }
-  
-  .status-scheduled {
-    @apply bg-blue-500/15 text-blue-400 border border-blue-500/25;
-  }
-  
-  .status-in-progress {
-    @apply bg-amber-500/15 text-amber-400 border border-amber-500/25;
-  }
-  
-  .status-completed {
-    @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/25;
-  }
-  
-  .status-cancelled {
-    @apply bg-red-500/15 text-red-400 border border-red-500/25;
-  }
-  
-  .status-draft {
-    @apply bg-slate-500/15 text-slate-400 border border-slate-500/25;
-  }
-  
-  .status-sent {
-    @apply bg-violet-500/15 text-violet-400 border border-violet-500/25;
-  }
-  
-  .status-paid {
-    @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/25;
-  }
-  
-  .status-overdue {
-    @apply bg-red-500/15 text-red-400 border border-red-500/25;
-  }
-  
-  /* Navigation Active State */
-  .nav-active {
-    @apply bg-primary/15 text-primary border-l-2 border-l-primary;
-  }
-  
-  .nav-inactive {
-    @apply text-muted-foreground hover:text-white hover:bg-secondary/50;
-  }
-  
-  /* Bottom Nav Active */
-  .bottom-nav-active {
-    @apply text-primary relative;
-  }
-  
-  .bottom-nav-active::before {
-    content: '';
-    @apply absolute -top-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary;
-  }
-  
-  /* Premium Button Glow */
-  .btn-glow {
-    @apply relative overflow-hidden;
-  }
-  
-  .btn-glow::before {
-    content: '';
-    @apply absolute inset-0 bg-gradient-to-r from-primary/20 to-blue-400/20 opacity-0 transition-opacity;
-  }
-  
-  .btn-glow:hover::before {
-    @apply opacity-100;
-  }
+
+  .status-completed { @apply border-green-200 bg-green-100 text-green-700; }
+  .status-in-progress { @apply border-blue-200 bg-blue-100 text-blue-700; }
+  .status-paused { @apply border-amber-200 bg-amber-100 text-amber-700; }
+  .status-assigned { @apply border-slate-200 bg-slate-100 text-slate-700; }
+  .status-cancelled { @apply border-red-200 bg-red-100 text-red-700; }
 }
 
 @layer utilities {
   .animate-in {
-    animation: animateIn 0.35s ease-out;
+    animation: animateIn 0.25s ease-out;
   }
-  
+
   @keyframes animateIn {
     from {
       opacity: 0;
-      transform: translateY(8px);
+      transform: translateY(6px);
     }
     to {
       opacity: 1;
       transform: translateY(0);
     }
   }
-  
-  /* Subtle glow effect for cards */
-  .glow-subtle {
-    box-shadow: 0 0 40px -12px hsl(213 94% 58% / 0.15);
-  }
-  
-  /* Scrollbar */
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: hsl(222 20% 16%) transparent;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: hsl(222 20% 20%);
-    border-radius: 3px;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background-color: hsl(213 94% 58%);
-  }
 }
 
-/* Focus states */
 *:focus-visible {
-  outline: 2px solid hsl(213 94% 58%);
+  outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
 }
 
-/* Selection */
 ::selection {
-  background: hsl(213 94% 58% / 0.3);
+  background: hsl(var(--primary) / 0.2);
 }
 
-/* Mobile bottom nav safe area */
 @media (max-width: 768px) {
   .mobile-nav {
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
-
-
-/* MOBILE TAP FIX */
-@media (max-width: 768px) {
-  .tap-safe,
-  .tap-safe * {
-    pointer-events: auto !important;
-  }
-
-  .tap-pass-through {
-    pointer-events: none !important;
-  }
-
-  nav,
-  header,
-  button,
-  a,
-  [role="button"] {
-    pointer-events: auto !important;
-    position: relative;
-    z-index: 60 !important;
-  }
-
-  main,
-  .main-content,
-  .page-content,
-  .dashboard-content,
-  .mobile-bottom-nav {
-    position: relative;
-    z-index: 40 !important;
-    pointer-events: auto !important;
-  }
-}
-
-
-/* ===== SAFE SMOOTH UI PATCH ===== */
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
-a,
-button,
-[role="button"],
-input,
-select,
-textarea,
-.card,
-[class*="card"],
-[class*="btn"],
-[class*="button"] {
-  transition:
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease,
-    box-shadow 0.18s ease,
-    transform 0.12s ease,
-    opacity 0.18s ease;
-}
-
-button:active,
-[role="button"]:active,
-a:active,
-.card:active,
-[class*="card"]:active,
-[class*="btn"]:active,
-[class*="button"]:active {
-  transform: scale(0.985);
-}
-
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: none;
-}
-
-main,
-.page,
-[class*="page"],
-[data-page],
-[data-screen] {
-  animation: safeFadeIn 0.2s ease;
-}
-
-@keyframes safeFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-/* ===== END SAFE SMOOTH UI PATCH ===== */
-
-
-/* === performance / smoothness patch === */
-html {
-  scroll-behavior: smooth;
-  -webkit-text-size-adjust: 100%;
-}
-
-body {
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overscroll-behavior-y: none;
-}
-
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
-img {
-  max-width: 100%;
-  height: auto;
-}
-
-.card,
-.page-card,
-.panel,
-.section-card,
-[data-card],
-[data-panel] {
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 500px;
-}
-
-button,
-a,
-input,
-select,
-textarea {
-  touch-action: manipulation;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-

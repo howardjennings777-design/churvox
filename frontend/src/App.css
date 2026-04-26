@@ -1,147 +1,40 @@
 /* Churvox App Styles */
 
-.font-heading {
-  font-family: 'Outfit', sans-serif;
-}
+.font-heading { font-family: 'Outfit', sans-serif; }
+.font-body { font-family: 'Inter', sans-serif; }
+.font-mono { font-family: 'JetBrains Mono', monospace; }
 
-.font-body {
-  font-family: 'IBM Plex Sans', sans-serif;
-}
-
-.font-mono {
-  font-family: 'JetBrains Mono', monospace;
-}
-
-/* Custom scrollbar for the whole app */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(228 15% 4%);
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(220 13% 18%);
-  border-radius: 4px;
+  background: #cbd5e1;
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(217 91% 60%);
+  background: #94a3b8;
 }
 
-/* Focus states */
-*:focus-visible {
-  outline: 2px solid hsl(217 91% 60%);
-  outline-offset: 2px;
-}
-
-/* Selection */
-::selection {
-  background: hsl(217 91% 60% / 0.3);
-}
-
-/* Job card hover effect */
 .job-card {
   transition: all 0.2s ease-in-out;
 }
 
 .job-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 40px -10px hsl(217 91% 60% / 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 30px -16px rgba(37, 99, 235, 0.35);
 }
 
-/* Button press effect */
 button:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: scale(0.985);
 }
 
-/* Mobile bottom nav */
-@media (max-width: 768px) {
-  .mobile-nav {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-}
-
-/* Dark mode date/time picker icons */
-input[type="date"],
-input[type="time"],
-input[type="datetime-local"] {
-  color-scheme: dark;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator,
-input[type="time"]::-webkit-calendar-picker-indicator,
-input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.8);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  opacity: 0.8;
-  transition: opacity 0.15s;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator:hover,
-input[type="time"]::-webkit-calendar-picker-indicator:hover,
-input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
-  opacity: 1;
-  background: hsl(217 91% 60% / 0.15);
-}
-
-/* Select dropdown chevron visibility */
-select {
-  color-scheme: dark;
-}
-
-/* Transitions */
 .transition-smooth {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
-
-/* tap fix */
-.tap-safe-root,
-.tap-safe-root * {
-  -webkit-tap-highlight-color: transparent;
-}
-
-.tap-overlay-ignore {
-  pointer-events: none !important;
-}
-
-.tap-target,
-.tap-target * {
-  pointer-events: auto !important;
-}
-
-@media (max-width: 768px) {
-  header,
-  nav,
-  button,
-  a,
-  input,
-  select,
-  textarea,
-  [role="button"] {
-    position: relative;
-    z-index: 60;
-    pointer-events: auto !important;
-  }
-
-  main,
-  .main-content,
-  .page-content,
-  .dashboard-content,
-  .mobile-bottom-nav {
-    position: relative;
-    z-index: 40;
-    pointer-events: auto !important;
-  }
-
-  .fixed,
-  .absolute {
-    z-index: auto;
-  }
-}
-

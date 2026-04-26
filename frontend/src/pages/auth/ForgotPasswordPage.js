@@ -31,15 +31,15 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0B10] flex items-center justify-center p-6">
+    <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="w-full max-w-md animate-in">
         <div className="text-center mb-8">
           <ChurvoxLogo size="lg" className="mx-auto mb-6" />
-          <h1 className="text-3xl font-semibold text-white">Forgot password?</h1>
+          <h1 className="text-3xl font-semibold text-slate-900">Forgot password?</h1>
           <p className="text-muted-foreground mt-2">We'll send you a reset link</p>
         </div>
 
-        <Card className="bg-[#12141D] border-border">
+        <Card className="bg-card border-border">
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-xl font-heading">Reset password</CardTitle>
             <CardDescription>Enter your email to receive a reset link</CardDescription>
