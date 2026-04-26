@@ -5,7 +5,6 @@ import {
   Lock,
   CheckCircle2,
   Plus,
-  Printer,
   Settings,
   X,
   CalendarRange,
@@ -17,6 +16,7 @@ import {
   FileClock,
   UserCircle2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
 import { formatCurrency } from "../lib/utils";
 
@@ -30,6 +30,10 @@ function badge(status) {
   return "cx-status-badge cx-status-badge--blue";
 }
 
+function safeFilePart(value) {
+  return String(value || "period").trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-_]/g, "");
+}
+
 export default function PayrollPage() {
   const { get, post, patch, del, loading, error } = useApi();
   const [periods, setPeriods] = useState([]);
@@ -38,42 +42,81 @@ export default function PayrollPage() {
   const [timesheets, setTimesheets] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [adjustments, setAdjustments] = useState([]);
-  const [settings, setSettings] = useState(null);
-  const [payslip, setPayslip] = useState(null);
-  const [selectedWorker, setSelectedWorker] = useState(null);
+  const [settingsForm, setSettingsForm] = useState({ payroll_method: "", rate_mode: "manual_rate", default_rate: 0 });
+  const [workerDetails, setWorkerDetails] = useState(null);
   const [periodFilter, setPeriodFilter] = useState("");
+  const [initializing, setInitializing] = useState(true);
+  const [actionLoading, setActionLoading] = useState({});
   const [newPeriod, setNewPeriod] = useState({ name: "", start_date: "", end_date: "", pay_date: "" });
   const [adjustmentForm, setAdjustmentForm] = useState({ worker_id: "", type: "allowance", label: "", amount: "", taxable: false, notes: "" });
 
-  const fetchWorkspace = useCallback(async () => {
+  const withAction = async (key, fn) => {
+    setActionLoading((s) => ({ ...s, [key]: true }));
+    try {
+      return await fn();
+    } finally {
+      setActionLoading((s) => ({ ...s, [key]: false }));
+    }
+  };
+
+  const loadPeriodData = useCallback(async (periodId) => {
+    if (!periodId) {
+      setSummary(null);
+      setTimesheets([]);
+      setAdjustments([]);
+      return;
+    }
+    const [summaryRes, timesheetsRes, adjustmentRes] = await Promise.all([
+      get(`/payroll/summary?period_id=${periodId}`),
+      get(`/payroll/timesheets?period_id=${periodId}`),
+      get(`/payroll/adjustments?period_id=${periodId}`),
+    ]);
+
+    setSummary(summaryRes?.success ? summaryRes.data : null);
+    setTimesheets(timesheetsRes?.success ? (timesheetsRes.data?.timesheets || []) : []);
+    setAdjustments(adjustmentRes?.success ? (adjustmentRes.data?.adjustments || []) : []);
+  }, [get]);
+
+  const loadInitial = useCallback(async () => {
+    setInitializing(true);
     const [periodRes, workerRes, settingsRes] = await Promise.all([
-      get("/payroll/pay-periods"),
+      get("/payroll/periods"),
       get("/payroll/workers"),
       get("/payroll/settings"),
     ]);
+
     const loadedPeriods = periodRes?.success ? (periodRes.data?.pay_periods || []) : [];
     setPeriods(loadedPeriods);
     setWorkers(workerRes?.success ? (workerRes.data?.workers || []) : []);
-    setSettings(settingsRes?.success ? settingsRes.data : null);
-    if (!activePeriodId && loadedPeriods.length) {
-      setActivePeriodId(loadedPeriods[0].id);
+
+    const loadedSettings = settingsRes?.success ? settingsRes.data : {};
+    setSettingsForm({
+      payroll_method: loadedSettings?.country || "",
+      rate_mode: loadedSettings?.tax_mode || "manual_rate",
+      default_rate: Number(loadedSettings?.default_tax_rate || 0),
+    });
+
+    const nextPeriodId = loadedPeriods[0]?.id || "";
+    setActivePeriodId((current) => current || nextPeriodId);
+    if (nextPeriodId) {
+      await loadPeriodData(nextPeriodId);
+    } else {
+      setSummary(null);
+      setTimesheets([]);
+      setAdjustments([]);
     }
-  }, [get, activePeriodId]);
+    setInitializing(false);
+  }, [get, loadPeriodData]);
 
-  const fetchPeriodData = useCallback(async (periodId) => {
-    if (!periodId) return;
-    const [summaryRes, timesheetsRes, adjustmentsRes] = await Promise.all([
-      get(`/payroll/pay-periods/${periodId}/summary`),
-      get(`/payroll/timesheets?period_id=${periodId}`),
-      get(`/payroll/pay-periods/${periodId}/adjustments`),
-    ]);
-    setSummary(summaryRes?.success ? summaryRes.data : null);
-    setTimesheets(timesheetsRes?.success ? (timesheetsRes.data?.timesheets || []) : []);
-    setAdjustments(adjustmentsRes?.success ? (adjustmentsRes.data?.adjustments || []) : []);
-  }, [get]);
+  useEffect(() => {
+    loadInitial();
+  }, [loadInitial]);
 
-  useEffect(() => { fetchWorkspace(); }, [fetchWorkspace]);
-  useEffect(() => { fetchPeriodData(activePeriodId); }, [activePeriodId, fetchPeriodData]);
+  useEffect(() => {
+    if (activePeriodId) {
+      loadPeriodData(activePeriodId);
+    }
+  }, [activePeriodId, loadPeriodData]);
 
   const activePeriod = useMemo(() => periods.find((p) => p.id === activePeriodId) || null, [periods, activePeriodId]);
   const filteredPeriods = useMemo(() => {
@@ -81,13 +124,15 @@ export default function PayrollPage() {
     if (!q) return periods;
     return periods.filter((p) => `${p.name || ""} ${p.start_date || ""} ${p.end_date || ""}`.toLowerCase().includes(q));
   }, [periods, periodFilter]);
+
   const workerSummaries = summary?.worker_summaries || [];
   const pendingTimesheets = timesheets.filter((t) => String(t.status || "").toLowerCase() === "pending");
-  const readOnly = ["locked", "exported"].includes(String(activePeriod?.status || ""));
-  const adjustmentsTotal = adjustments.reduce((sum, item) => sum + Number(item?.amount || 0), 0);
+  const readOnly = ["locked", "exported"].includes(String(activePeriod?.status || "").toLowerCase());
+  const adjustmentsTotal = Number(summary?.adjustments_total || adjustments.reduce((sum, item) => sum + Number(item?.amount || 0), 0));
   const statusClass = String(activePeriod?.status || "open").toLowerCase() === "exported"
     ? "text-[#067647] bg-[#ECFDF3] border-[#ABEFC6]"
     : "text-[#B54708] bg-[#FFFAEB] border-[#FEC84B]";
+
   const statCards = [
     {
       label: "Current pay period",
@@ -98,28 +143,28 @@ export default function PayrollPage() {
     },
     {
       label: "Approved hours",
-      value: Number(summary?.total_approved_hours || 0),
+      value: Number(summary?.approved_hours || 0),
       icon: Clock3,
       tint: "bg-[#ECFDF3] border-[#ABEFC6]",
       chip: "bg-[#D1FADF] text-[#067647]",
     },
     {
       label: "Pending review",
-      value: pendingTimesheets.length,
+      value: Number(summary?.pending_review_count || pendingTimesheets.length),
       icon: FileClock,
       tint: "bg-[#FFFAEB] border-[#FEC84B]",
       chip: "bg-[#FEF0C7] text-[#B54708]",
     },
     {
       label: "Workers included",
-      value: Number(summary?.total_workers || workerSummaries.length || 0),
+      value: Number(summary?.workers_included || workerSummaries.length || 0),
       icon: UsersRound,
       tint: "bg-[#F5F8FF] border-[#D0DDF7]",
       chip: "bg-[#E4EAF7] text-[#364152]",
     },
     {
       label: "Export status",
-      value: activePeriod?.status || "open",
+      value: summary?.export_status || activePeriod?.export_status || "not_exported",
       icon: ClipboardCheck,
       tint: "bg-white border-[#D0D5DD]",
       chip: `border ${statusClass}`,
@@ -133,54 +178,177 @@ export default function PayrollPage() {
     },
   ];
 
-  const downloadCsv = async (path, filename) => {
-    const res = await get(path, { responseType: "blob" });
-    if (!res?.success) return;
-    const blob = new Blob([res.data], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
+  const downloadCsv = async (path, typeLabel) => {
+    if (!activePeriodId) return;
+    await withAction(`export-${typeLabel}`, async () => {
+      const res = await get(path, { responseType: "blob" });
+      if (!res?.success) {
+        toast.error(`Failed to export ${typeLabel} CSV`);
+        return;
+      }
+      const blob = new Blob([res.data], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const filePart = safeFilePart(activePeriod?.name || activePeriodId);
+      a.href = url;
+      a.download = `churvox-${typeLabel}-${filePart}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`${typeLabel} CSV downloaded`);
+    });
   };
 
   const createPeriod = async () => {
-    const res = await post("/payroll/pay-periods", newPeriod);
-    if (res?.success) {
-      await fetchWorkspace();
-      setNewPeriod({ name: "", start_date: "", end_date: "", pay_date: "" });
+    if (!newPeriod.name || !newPeriod.start_date || !newPeriod.end_date || !newPeriod.pay_date) {
+      toast.error("Name, start date, end date, and pay date are required");
+      return;
     }
+    if (newPeriod.start_date > newPeriod.end_date) {
+      toast.error("Start date must be on or before end date");
+      return;
+    }
+    await withAction("create-period", async () => {
+      const res = await post("/payroll/periods", newPeriod);
+      if (!res?.success) {
+        toast.error(res?.error || "Failed to create pay period");
+        return;
+      }
+      const createdId = res.data?.id;
+      setNewPeriod({ name: "", start_date: "", end_date: "", pay_date: "" });
+      await loadInitial();
+      if (createdId) {
+        setActivePeriodId(createdId);
+        await loadPeriodData(createdId);
+      }
+      toast.success("Pay period created");
+    });
   };
 
-  const approveEntry = async (entryId) => { await post(`/payroll/timesheets/${entryId}/approve`, {}); fetchPeriodData(activePeriodId); };
-  const rejectEntry = async (entryId) => { await post(`/payroll/timesheets/${entryId}/reject`, { notes: "Rejected in payroll review" }); fetchPeriodData(activePeriodId); };
+  const approveEntry = async (entryId) => {
+    await withAction(`approve-${entryId}`, async () => {
+      const res = await post(`/payroll/timesheets/${entryId}/approve`, {});
+      if (res?.success) {
+        toast.success("Timesheet approved");
+        await loadPeriodData(activePeriodId);
+      } else {
+        toast.error(res?.error || "Failed to approve timesheet");
+      }
+    });
+  };
+
+  const rejectEntry = async (entryId) => {
+    await withAction(`reject-${entryId}`, async () => {
+      const res = await post(`/payroll/timesheets/${entryId}/reject`, { notes: "Rejected in payroll review" });
+      if (res?.success) {
+        toast.success("Timesheet rejected");
+        await loadPeriodData(activePeriodId);
+      } else {
+        toast.error(res?.error || "Failed to reject timesheet");
+      }
+    });
+  };
+
   const bulkApprove = async () => {
-    const pendingIds = timesheets.filter((x) => x.status === "pending").map((x) => x.entry_id);
-    await post("/payroll/timesheets/bulk-approve", { entry_ids: pendingIds });
-    fetchPeriodData(activePeriodId);
+    if (!activePeriodId) return;
+    await withAction("bulk-approve", async () => {
+      const res = await post(`/payroll/periods/${activePeriodId}/bulk-approve`, {});
+      if (res?.success) {
+        toast.success(res?.data?.message || "Pending timesheets approved");
+        await loadPeriodData(activePeriodId);
+      } else {
+        toast.error(res?.error || "Bulk approve failed");
+      }
+    });
+  };
+
+  const lockPeriod = async () => {
+    if (!activePeriodId) return;
+    await withAction("lock-period", async () => {
+      const res = await post(`/payroll/periods/${activePeriodId}/lock`, {});
+      if (res?.success) {
+        toast.success("Pay period locked");
+        await loadInitial();
+      } else {
+        toast.error(res?.error || "Failed to lock period");
+      }
+    });
+  };
+
+  const markExported = async () => {
+    if (!activePeriodId) return;
+    await withAction("mark-exported", async () => {
+      const res = await post(`/payroll/periods/${activePeriodId}/mark-exported`, {});
+      if (res?.success) {
+        toast.success("Period marked as exported");
+        await loadInitial();
+      } else {
+        toast.error(res?.error || "Failed to mark period exported");
+      }
+    });
   };
 
   const createAdjustment = async () => {
-    await post(`/payroll/pay-periods/${activePeriodId}/adjustments`, { ...adjustmentForm, amount: Number(adjustmentForm.amount || 0) });
-    setAdjustmentForm({ worker_id: "", type: "allowance", label: "", amount: "", taxable: false, notes: "" });
-    fetchPeriodData(activePeriodId);
+    if (!activePeriodId) {
+      toast.error("Select a pay period first");
+      return;
+    }
+    if (!adjustmentForm.worker_id || !adjustmentForm.label || adjustmentForm.amount === "") {
+      toast.error("Worker, label, and amount are required");
+      return;
+    }
+    await withAction("create-adjustment", async () => {
+      const res = await post("/payroll/adjustments", {
+        ...adjustmentForm,
+        period_id: activePeriodId,
+        amount: Number(adjustmentForm.amount || 0),
+      });
+      if (res?.success) {
+        setAdjustmentForm({ worker_id: "", type: "allowance", label: "", amount: "", taxable: false, notes: "" });
+        toast.success("Adjustment added");
+        await loadPeriodData(activePeriodId);
+      } else {
+        toast.error(res?.error || "Failed to add adjustment");
+      }
+    });
   };
 
-  const openPayslip = async (workerId) => {
-    const res = await get(`/payroll/pay-periods/${activePeriodId}/workers/${workerId}/payslip`);
-    if (res?.success) {
-      setSelectedWorker(workerSummaries.find((w) => w.worker_id === workerId) || null);
-      setPayslip(res.data);
-    }
+  const openWorkerDetails = async (workerId) => {
+    if (!activePeriodId) return;
+    await withAction(`worker-${workerId}`, async () => {
+      const res = await get(`/payroll/workers/${workerId}?period_id=${activePeriodId}`);
+      if (res?.success) {
+        setWorkerDetails(res.data);
+      } else {
+        toast.error(res?.error || "Failed to load worker details");
+      }
+    });
   };
+
+  const saveSettings = async () => {
+    await withAction("save-settings", async () => {
+      const res = await post("/payroll/settings", {
+        payroll_method: settingsForm.payroll_method,
+        rate_mode: settingsForm.rate_mode,
+        default_rate: Number(settingsForm.default_rate || 0),
+      });
+      if (res?.success) {
+        toast.success("Payroll settings saved");
+      } else {
+        toast.error(res?.error || "Failed to save settings");
+      }
+    });
+  };
+
+  const workerOptions = workerSummaries.length
+    ? workerSummaries.map((w) => ({ id: w.worker_id, name: w.name || w.worker_name || "Worker" }))
+    : workers.map((w) => ({ id: w.id, name: w.name || "Worker" }));
+
+  const canCreatePeriod = Boolean(newPeriod.name && newPeriod.start_date && newPeriod.end_date && newPeriod.pay_date);
 
   return (
     <Layout>
       <div className="cx-page space-y-6" style={{ background: "#f8f4ed" }}>
-        <div
-          className="cx-page-hero flex flex-col gap-5 rounded-3xl border border-[#E7DDCF] bg-gradient-to-br from-[#FFFDF8] via-[#FFF8EE] to-[#F7EFE3] p-6 shadow-[0_10px_30px_rgba(16,24,40,0.08)] lg:flex-row lg:items-start lg:justify-between lg:p-7"
-        >
+        <div className="cx-page-hero flex flex-col gap-5 rounded-3xl border border-[#E7DDCF] bg-gradient-to-br from-[#FFFDF8] via-[#FFF8EE] to-[#F7EFE3] p-6 shadow-[0_10px_30px_rgba(16,24,40,0.08)] lg:flex-row lg:items-start lg:justify-between lg:p-7">
           <div>
             <h1 className="cx-page-title">Payroll</h1>
             <p className="cx-page-subtitle">Review timesheets, calculate payroll, prepare payslips, and export clean summaries.</p>
@@ -190,7 +358,9 @@ export default function PayrollPage() {
             </p>
           </div>
           <div className="w-full lg:w-auto lg:pt-1">
-            <button className="cx-button-primary w-full lg:w-auto" onClick={createPeriod}><Plus size={14} className="mr-2" />Create Pay Period</button>
+            <button className="cx-button-primary w-full lg:w-auto" onClick={createPeriod} disabled={!canCreatePeriod || actionLoading["create-period"]}>
+              <Plus size={14} className="mr-2" />{actionLoading["create-period"] ? "Creating..." : "Create Pay Period"}
+            </button>
           </div>
         </div>
 
@@ -246,18 +416,18 @@ export default function PayrollPage() {
               <h3 className="text-base font-semibold text-[#0F172A]">Review actions</h3>
               <p className="mt-1 text-sm text-[#667085]">Approve pending entries, then secure the period when complete.</p>
               <div className="mt-4 space-y-2">
-                <button className="cx-button-primary w-full justify-center" disabled={readOnly} onClick={bulkApprove}>Bulk approve</button>
-                <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId || readOnly} onClick={() => post(`/payroll/pay-periods/${activePeriodId}/lock`, {}).then(() => fetchWorkspace())}><Lock size={14} className="mr-2" />Lock Period</button>
-                <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId || activePeriod?.status === "exported"} onClick={() => post(`/payroll/pay-periods/${activePeriodId}/mark-exported`, {}).then(() => fetchWorkspace())}><CheckCircle2 size={14} className="mr-2" />Mark Exported</button>
+                <button className="cx-button-primary w-full justify-center" disabled={!activePeriodId || readOnly || actionLoading["bulk-approve"]} onClick={bulkApprove}>Bulk approve</button>
+                <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId || readOnly || actionLoading["lock-period"]} onClick={lockPeriod}><Lock size={14} className="mr-2" />Lock Period</button>
+                <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId || activePeriod?.status === "exported" || actionLoading["mark-exported"]} onClick={markExported}><CheckCircle2 size={14} className="mr-2" />Mark Exported</button>
               </div>
             </div>
             <div className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-[0_8px_22px_rgba(16,24,40,0.06)]">
               <h3 className="text-base font-semibold text-[#0F172A]">Export actions</h3>
               <p className="mt-1 text-sm text-[#667085]">Download final files for payroll handoff once review is complete.</p>
               <div className="mt-4 space-y-2">
-                <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/export.csv`, "payroll.csv")}><Download size={14} className="mr-2" />Export Payroll CSV</button>
-                <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/timesheets.csv`, "timesheets.csv")}><Download size={14} className="mr-2" />Export Timesheets CSV</button>
-                <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/payslips.csv`, "payslips.csv")}><Download size={14} className="mr-2" />Export Payslips CSV</button>
+                <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/periods/${activePeriodId}/export/payroll.csv`, "payroll")}><Download size={14} className="mr-2" />Export Payroll CSV</button>
+                <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/periods/${activePeriodId}/export/timesheets.csv`, "timesheets")}><Download size={14} className="mr-2" />Export Timesheets CSV</button>
+                <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/periods/${activePeriodId}/export/payslips.csv`, "payslips")}><Download size={14} className="mr-2" />Export Payslips CSV</button>
               </div>
             </div>
           </div>
@@ -267,9 +437,7 @@ export default function PayrollPage() {
           <div className="flex items-center justify-between"><h2>Timesheet review</h2></div>
           {!timesheets.length ? (
             <div className="mt-3 rounded-2xl border border-dashed border-[#D0D5DD] bg-[#F8FAFC] p-6 text-center">
-              <span className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#EAF0FF] text-[#155EEF]">
-                <ClipboardCheck size={18} />
-              </span>
+              <span className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#EAF0FF] text-[#155EEF]"><ClipboardCheck size={18} /></span>
               <p className="mt-3 text-lg font-semibold text-[#0F172A]">No timesheets awaiting review</p>
               <p className="mt-1 text-sm text-[#667085]">Tracked worker time will appear here for approval.</p>
             </div>
@@ -285,8 +453,8 @@ export default function PayrollPage() {
                     <p><span className="font-semibold text-[#0F172A]">Status:</span> <span className={`${badge(t.status)} ml-1`}>{t.status || "pending"}</span></p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className="cx-button-secondary" disabled={readOnly} onClick={() => approveEntry(t.entry_id)}>Approve</button>
-                    <button className="cx-button-secondary" disabled={readOnly} onClick={() => rejectEntry(t.entry_id)}>Reject</button>
+                    <button className="cx-button-secondary" disabled={readOnly || actionLoading[`approve-${t.entry_id}`]} onClick={() => approveEntry(t.entry_id)}>Approve</button>
+                    <button className="cx-button-secondary" disabled={readOnly || actionLoading[`reject-${t.entry_id}`]} onClick={() => rejectEntry(t.entry_id)}>Reject</button>
                   </div>
                 </div>
               ))}
@@ -297,21 +465,17 @@ export default function PayrollPage() {
         <section className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-[0_8px_22px_rgba(16,24,40,0.06)]">
           <h2>Worker pay summaries</h2>
           {!workerSummaries.length ? (
-            <div className="mt-3 rounded-2xl border border-dashed border-[#D0D5DD] bg-[#FCFCFD] p-6 text-center text-sm text-[#667085]">
-              Worker payroll summaries will appear once timesheets are included in this period.
-            </div>
+            <div className="mt-3 rounded-2xl border border-dashed border-[#D0D5DD] bg-[#FCFCFD] p-6 text-center text-sm text-[#667085]">No workers or timesheets found for this period yet.</div>
           ) : (
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
               {workerSummaries.map((w) => (
                 <div key={w.worker_id} className="rounded-2xl border border-[#D8DEE9] bg-gradient-to-br from-white to-[#F8FAFF] p-4 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#EEF4FF] text-[#155EEF]">
-                        <UserCircle2 size={16} />
-                      </span>
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#EEF4FF] text-[#155EEF]"><UserCircle2 size={16} /></span>
                       <div>
-                      <p className="font-semibold text-[#0F172A]">{w.worker_name || "Worker"}</p>
-                      <p className="text-sm text-[#667085]">{w.role || w.pay_type || "Team member"}</p>
+                        <p className="font-semibold text-[#0F172A]">{w.name || w.worker_name || "Worker"}</p>
+                        <p className="text-sm text-[#667085]">{w.role || w.pay_type || "Team member"}</p>
                       </div>
                     </div>
                     <span className={badge(w.status)}>{w.status || "review"}</span>
@@ -323,8 +487,8 @@ export default function PayrollPage() {
                     <p><span className="font-medium text-[#0F172A]">Gross:</span> {formatCurrency(w.gross_pay || 0)}</p>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <button className="cx-button-secondary" onClick={() => openPayslip(w.worker_id)}>View details</button>
-                    <button className="cx-button-secondary" disabled={readOnly} onClick={() => patch(`/payroll/workers/${w.worker_id}/pay-settings`, { hourly_rate: Number(prompt("Hourly rate", w.hourly_rate) || w.hourly_rate) }).then(() => fetchWorkspace())}>Edit pay settings</button>
+                    <button className="cx-button-secondary" onClick={() => openWorkerDetails(w.worker_id)}>View details</button>
+                    <button className="cx-button-secondary" disabled={readOnly} onClick={() => patch(`/payroll/workers/${w.worker_id}/pay-settings`, { hourly_rate: Number(prompt("Hourly rate", w.hourly_rate) || w.hourly_rate) }).then(loadInitial)}>Edit pay settings</button>
                   </div>
                 </div>
               ))}
@@ -333,25 +497,16 @@ export default function PayrollPage() {
         </section>
 
         <section className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-[0_8px_22px_rgba(16,24,40,0.06)]">
-          <h2>Export &amp; handoff</h2>
-          <p className="mt-1 text-sm text-[#667085]">Download reviewed payroll summaries for your accountant or payroll system.</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/export.csv`, "payroll.csv")}><Download size={14} className="mr-2" />Export Payroll CSV</button>
-            <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/timesheets.csv`, "timesheets.csv")}><Download size={14} className="mr-2" />Export Timesheets CSV</button>
-            <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/payslips.csv`, "payslips.csv")}><Download size={14} className="mr-2" />Export Payslips CSV</button>
-          </div>
-          <div className="mt-4 rounded-lg border border-[#B2DDFF] bg-[#F0F9FF] px-3 py-2 text-sm text-[#155EEF]">
-            Handoff note: Share exported files with your accountant or payroll provider after final approval and period lock.
-          </div>
-        </section>
-
-        <section className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-[0_8px_22px_rgba(16,24,40,0.06)]">
           <h2>Adjustments</h2>
+          {!activePeriodId && <p className="mt-2 text-sm text-[#667085]">Select a pay period to add adjustments.</p>}
           <div className="mt-3 rounded-xl border bg-[#FCFCFD] p-4">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
               <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Worker</label>
-                <select className="cx-input" value={adjustmentForm.worker_id} onChange={(e) => setAdjustmentForm((v) => ({ ...v, worker_id: e.target.value }))}><option value="">Select worker</option>{workers.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select>
+                <select className="cx-input" value={adjustmentForm.worker_id} onChange={(e) => setAdjustmentForm((v) => ({ ...v, worker_id: e.target.value }))}>
+                  <option value="">Select worker</option>
+                  {workerOptions.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                </select>
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Type</label>
@@ -369,7 +524,7 @@ export default function PayrollPage() {
                 <label className="text-sm text-[#344054]"><input className="mr-2" type="checkbox" checked={adjustmentForm.taxable} onChange={(e) => setAdjustmentForm((v) => ({ ...v, taxable: e.target.checked }))} />Taxable</label>
               </div>
               <div className="flex items-end">
-                <button className="cx-button-primary w-full" disabled={readOnly || !activePeriodId} onClick={createAdjustment}>Add adjustment</button>
+                <button className="cx-button-primary w-full" disabled={readOnly || !activePeriodId || actionLoading["create-adjustment"]} onClick={createAdjustment}>Add adjustment</button>
               </div>
             </div>
           </div>
@@ -377,7 +532,7 @@ export default function PayrollPage() {
             {adjustments.map((a) => (
               <div key={a.id} className="rounded-xl border p-3 bg-white flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-[#344054]">{a.label || "Adjustment"} ({a.type || "other"}) · {formatCurrency(a.amount || 0)}</p>
-                <button className="cx-button-secondary" disabled={readOnly} onClick={() => del(`/payroll/adjustments/${a.id}`).then(() => fetchPeriodData(activePeriodId))}>Delete</button>
+                <button className="cx-button-secondary" disabled={readOnly} onClick={() => del(`/payroll/adjustments/${a.id}`).then(() => loadPeriodData(activePeriodId))}>Delete</button>
               </div>
             ))}
             {!adjustments.length && <p className="text-sm text-[#667085]">No adjustments added for this pay period yet.</p>}
@@ -387,56 +542,52 @@ export default function PayrollPage() {
         <section className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-[0_8px_22px_rgba(16,24,40,0.06)]">
           <details>
             <summary className="flex cursor-pointer items-center gap-2 font-semibold text-[#0F172A]"><Settings size={16} />Advanced payroll settings</summary>
-            {settings && (
-              <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-4">
-                <div>
-                  <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Payroll method</label>
-                  <input className="cx-input" value={settings.country || ""} onChange={(e) => setSettings((s) => ({ ...s, country: e.target.value }))} placeholder="Country / payroll method" />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Rate mode</label>
-                  <select className="cx-input" value={settings.tax_mode || "manual_rate"} onChange={(e) => setSettings((s) => ({ ...s, tax_mode: e.target.value }))}><option value="manual_rate">manual_rate</option><option value="tax_code_table">tax_code_table</option><option value="no_tax">no_tax</option></select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Default rate</label>
-                  <input className="cx-input" type="number" step="0.001" value={settings.default_tax_rate || 0} onChange={(e) => setSettings((s) => ({ ...s, default_tax_rate: Number(e.target.value || 0) }))} />
-                </div>
-                <div className="flex items-end">
-                  <button className="cx-button-primary w-full" onClick={() => patch("/payroll/settings", settings)}>Save settings</button>
-                </div>
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-4">
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Payroll method</label>
+                <input className="cx-input" value={settingsForm.payroll_method || ""} onChange={(e) => setSettingsForm((s) => ({ ...s, payroll_method: e.target.value }))} placeholder="Country / payroll method" />
               </div>
-            )}
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Rate mode</label>
+                <select className="cx-input" value={settingsForm.rate_mode || "manual_rate"} onChange={(e) => setSettingsForm((s) => ({ ...s, rate_mode: e.target.value }))}><option value="manual_rate">manual_rate</option><option value="tax_code_table">tax_code_table</option><option value="no_tax">no_tax</option></select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Default rate</label>
+                <input className="cx-input" type="number" step="0.001" value={settingsForm.default_rate || 0} onChange={(e) => setSettingsForm((s) => ({ ...s, default_rate: Number(e.target.value || 0) }))} />
+              </div>
+              <div className="flex items-end">
+                <button className="cx-button-primary w-full" onClick={saveSettings} disabled={actionLoading["save-settings"]}>{actionLoading["save-settings"] ? "Saving..." : "Save settings"}</button>
+              </div>
+            </div>
           </details>
         </section>
 
-        {payslip && (
+        {workerDetails && (
           <div className="fixed inset-0 z-50 bg-black/30 p-3 md:p-6">
-            <div className="mx-auto h-full max-w-2xl overflow-y-auto rounded-2xl border bg-white p-5 shadow-xl">
+            <div className="mx-auto h-full max-w-3xl overflow-y-auto rounded-2xl border bg-white p-5 shadow-xl">
               <div className="flex items-center justify-between">
-                <h2>Payslip details</h2>
-                <button className="cx-button-secondary" onClick={() => { setPayslip(null); setSelectedWorker(null); }}><X size={14} className="mr-2" />Close</button>
+                <h2>Worker payroll details</h2>
+                <button className="cx-button-secondary" onClick={() => setWorkerDetails(null)}><X size={14} className="mr-2" />Close</button>
               </div>
-              {selectedWorker && (
-                <div className="mt-3 rounded-xl border bg-[#FCFCFD] p-3 text-sm text-[#344054]">
-                  <p className="font-semibold text-[#0F172A]">{selectedWorker.worker_name || "Worker"} · {selectedWorker.role || selectedWorker.pay_type || "Team member"}</p>
-                  <p className="mt-1">Approved: {Number(selectedWorker.approved_hours || 0)}h · Pending: {Number(selectedWorker.pending_hours || 0)}h · Jobs: {Number(selectedWorker.jobs_worked || 0)}</p>
-                </div>
-              )}
-              <div className="mt-4 space-y-1 text-sm text-[#344054]">
-                <p className="font-semibold text-[#0F172A]">{payslip.business_name || "Business"}</p>
-                <p>{payslip.worker_name || "Worker"} ({payslip.worker_email || "No email"})</p>
-                <p>Gross: {formatCurrency(payslip.gross_pay || 0)} | Tax: {formatCurrency(payslip.employee_tax || 0)} | Net: {formatCurrency(payslip.net_pay_estimate || 0)}</p>
+              <div className="mt-3 rounded-xl border bg-[#FCFCFD] p-3 text-sm text-[#344054]">
+                <p className="font-semibold text-[#0F172A]">{workerDetails.worker?.name || "Worker"} · {workerDetails.worker?.role || "worker"}</p>
+                <p className="mt-1">Approved: {Number(workerDetails.approved_hours || 0)}h · Pending: {Number(workerDetails.pending_hours || 0)}h · Jobs: {Number(workerDetails.jobs_worked || 0)}</p>
               </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button className="cx-button-primary" onClick={() => window.print()}><Printer size={14} className="mr-2" />Print</button>
+              <div className="mt-4 space-y-2">
+                {(workerDetails.timesheet_entries || []).map((t) => (
+                  <div key={t.entry_id} className="rounded-lg border p-3 text-sm">
+                    <p className="font-medium">{t.job_title || "Job"} · {t.date || "—"}</p>
+                    <p className="text-[#667085]">{Number(t.net_hours || 0)}h · {t.status || "pending"}</p>
+                  </div>
+                ))}
+                {!(workerDetails.timesheet_entries || []).length && <p className="text-sm text-[#667085]">No timesheet entries for this worker in this period.</p>}
               </div>
-              <p className="text-sm text-[#155EEF] mt-3">{payslip.disclaimer || DISCLAIMER}</p>
             </div>
           </div>
         )}
 
         {error && <div className="cx-error-state">{error}</div>}
-        {loading && <div className="cx-loading-state">Loading payroll…</div>}
+        {(loading || initializing) && <div className="cx-loading-state">Loading payroll…</div>}
       </div>
     </Layout>
   );

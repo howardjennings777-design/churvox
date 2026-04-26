@@ -735,6 +735,141 @@ def get_stripe_price_id(plan: str) -> str:
     return price_id
 
 
+@api_router.get("/payroll/periods")
+async def payroll_periods_alias(current_user: dict = Depends(get_current_user)):
+    return await payroll_list_periods(current_user)
+
+
+@api_router.post("/payroll/periods")
+async def payroll_create_period_alias(payload: dict, current_user: dict = Depends(get_current_user)):
+    return await payroll_create_period(payload, current_user)
+
+
+@api_router.get("/payroll/summary")
+async def payroll_summary_alias(period_id: str = Query(...), current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _find_period_or_404(period_id, business_id)
+    summary = await _build_period_summary(period, business_id)
+    timesheets = await _get_period_timesheets(period, business_id)
+    workers_by_id = {w.get("id"): w for w in await _get_payroll_workers(business_id)}
+    worker_summaries = []
+    for w in summary.get("worker_summaries", []):
+        worker_summaries.append({
+            **w,
+            "worker_id": w.get("worker_id"),
+            "name": w.get("worker_name"),
+            "email": w.get("worker_email"),
+            "role": (workers_by_id.get(w.get("worker_id")) or {}).get("role", "worker"),
+            "approved_hours": w.get("approved_hours", 0),
+            "pending_hours": w.get("pending_hours", 0),
+            "jobs_worked": w.get("jobs_worked", 0),
+            "status": w.get("status") or "ready",
+        })
+    return {
+        "period": summary.get("period"),
+        "approved_hours": summary.get("total_approved_hours", 0),
+        "pending_hours": summary.get("total_pending_hours", 0),
+        "pending_review_count": sum(1 for t in timesheets if str(t.get("status") or "").lower() == "pending"),
+        "workers_included": summary.get("total_workers", 0),
+        "export_status": (summary.get("period") or {}).get("export_status") or "not_exported",
+        "adjustments_total": round(sum(_to_float(w.get("adjustments_total"), 0) for w in summary.get("worker_summaries", [])), 2),
+        "worker_summaries": worker_summaries,
+    }
+
+
+@api_router.get("/payroll/workers/{worker_id}")
+async def payroll_worker_details(worker_id: str, period_id: str = Query(...), current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _find_period_or_404(period_id, business_id)
+    summary = await _build_period_summary(period, business_id)
+    workers = {w["id"]: w for w in await _get_payroll_workers(business_id)}
+    worker = workers.get(str(worker_id))
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+    detail = next((w for w in summary.get("worker_summaries", []) if str(w.get("worker_id")) == str(worker_id)), None)
+    if not detail:
+        detail = {"worker_id": worker_id, "approved_hours": 0, "pending_hours": 0, "jobs_worked": 0, "status": "ready"}
+    timesheet_entries = [t for t in await _get_period_timesheets(period, business_id) if str(t.get("worker_id")) == str(worker_id)]
+    adjustments = []
+    async for a in db.payroll_adjustments.find({"business_id": business_id, "period_id": str(period.get("id") or period.get("_id")), "worker_id": str(worker_id)}).sort("created_at", -1):
+        a["id"] = str(a.get("_id"))
+        a.pop("_id", None)
+        adjustments.append(a)
+    return {
+        "worker": {"id": worker.get("id"), "name": worker.get("name"), "email": worker.get("email"), "role": worker.get("role")},
+        "approved_hours": detail.get("approved_hours", 0),
+        "pending_hours": detail.get("pending_hours", 0),
+        "jobs_worked": detail.get("jobs_worked", 0),
+        "timesheet_entries": timesheet_entries,
+        "adjustments": adjustments,
+        "status": detail.get("status") or "ready",
+    }
+
+
+@api_router.post("/payroll/periods/{period_id}/bulk-approve")
+async def payroll_period_bulk_approve(period_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _find_period_or_404(period_id, business_id)
+    if _period_is_readonly(period):
+        raise HTTPException(status_code=400, detail="Locked/exported periods are read-only")
+    timesheets = await _get_period_timesheets(period, business_id)
+    pending_ids = [ObjectId(t.get("entry_id")) for t in timesheets if ObjectId.is_valid(str(t.get("entry_id"))) and str(t.get("status") or "").lower() == "pending"]
+    if not pending_ids:
+        return {"success": True, "updated": 0, "message": "No pending timesheets found for this period."}
+    res = await db.jobs.update_many({"_id": {"$in": pending_ids}, "business_id": business_id}, {"$set": {"payroll_status": "approved", "updated_at": datetime.now(timezone.utc)}})
+    return {"success": True, "updated": res.modified_count, "message": f"Approved {res.modified_count} timesheet entries."}
+
+
+@api_router.post("/payroll/periods/{period_id}/lock")
+async def payroll_lock_alias(period_id: str, current_user: dict = Depends(get_current_user)):
+    return await payroll_lock_period(period_id, current_user)
+
+
+@api_router.post("/payroll/periods/{period_id}/mark-exported")
+async def payroll_mark_exported_alias(period_id: str, current_user: dict = Depends(get_current_user)):
+    return await payroll_mark_exported(period_id, current_user)
+
+
+@api_router.get("/payroll/periods/{period_id}/export/payroll.csv")
+async def payroll_export_csv_alias(period_id: str, current_user: dict = Depends(get_current_user)):
+    return await payroll_export_csv(period_id, current_user)
+
+
+@api_router.get("/payroll/periods/{period_id}/export/timesheets.csv")
+async def payroll_timesheets_csv_alias(period_id: str, current_user: dict = Depends(get_current_user)):
+    return await payroll_timesheets_csv(period_id, current_user)
+
+
+@api_router.get("/payroll/periods/{period_id}/export/payslips.csv")
+async def payroll_payslips_csv_alias(period_id: str, current_user: dict = Depends(get_current_user)):
+    return await payroll_payslips_csv(period_id, current_user)
+
+
+@api_router.post("/payroll/adjustments")
+async def payroll_create_adjustment_alias(payload: dict, current_user: dict = Depends(get_current_user)):
+    period_id = str((payload or {}).get("period_id") or "")
+    if not period_id:
+        raise HTTPException(status_code=400, detail="period_id is required")
+    return await payroll_create_adjustment(period_id, payload, current_user)
+
+
+@api_router.get("/payroll/adjustments")
+async def payroll_get_adjustments_alias(period_id: str = Query(...), current_user: dict = Depends(get_current_user)):
+    return await payroll_get_adjustments(period_id, current_user)
+
+
+@api_router.post("/payroll/settings")
+async def payroll_settings_post(payload: dict, current_user: dict = Depends(get_current_user)):
+    normalized = {
+        "country": (payload or {}).get("payroll_method"),
+        "tax_mode": (payload or {}).get("rate_mode"),
+        "default_tax_rate": _to_float((payload or {}).get("default_rate"), 0),
+    }
+    normalized.update({k: v for k, v in (payload or {}).items() if k not in {"payroll_method", "rate_mode", "default_rate"}})
+    return await payroll_patch_settings(normalized, current_user)
+
+
+
 # ==========================================================================
 # NZ/AU pricing: currency resolution + per-currency Stripe price lookup
 # ==========================================================================
@@ -6522,6 +6657,7 @@ async def _build_period_summary(period: dict, business_id: str):
         "period": {
             "id": str(period.get("id") or period.get("_id")), "name": period.get("name"), "start_date": period.get("start_date"),
             "end_date": period.get("end_date"), "pay_date": period.get("pay_date"), "status": period.get("status"),
+            "export_status": period.get("export_status") or ("exported" if period.get("status") == "exported" else "not_exported"),
         },
         "total_workers": len(workers_list),
         "total_approved_hours": round(sum(w["approved_hours"] for w in workers_list), 2),
@@ -6573,6 +6709,7 @@ async def payroll_list_periods(current_user: dict = Depends(get_current_user)):
     docs = []
     async for p in db.payroll_pay_periods.find({"business_id": business_id}).sort("start_date", -1):
         p["id"] = str(p.get("_id"))
+        p["export_status"] = p.get("export_status") or ("exported" if p.get("status") == "exported" else "not_exported")
         p.pop("_id", None)
         docs.append(p)
     return {"pay_periods": docs}
@@ -6582,13 +6719,26 @@ async def payroll_list_periods(current_user: dict = Depends(get_current_user)):
 async def payroll_create_period(payload: dict, current_user: dict = Depends(get_current_user)):
     business_id = _require_payroll_access(current_user)
     now = datetime.now(timezone.utc)
+    name = str((payload or {}).get("name") or "").strip()
+    start_date = str((payload or {}).get("start_date") or "")[:10]
+    end_date = str((payload or {}).get("end_date") or "")[:10]
+    pay_date = str((payload or {}).get("pay_date") or "")[:10]
+    if not name or not start_date or not end_date or not pay_date:
+        raise HTTPException(status_code=400, detail="name, start_date, end_date, and pay_date are required")
+    start_day = _period_day(start_date)
+    end_day = _period_day(end_date)
+    if not start_day or not end_day:
+        raise HTTPException(status_code=400, detail="Invalid start_date or end_date")
+    if start_day > end_day:
+        raise HTTPException(status_code=400, detail="start_date must be on or before end_date")
     doc = {
         "business_id": business_id,
-        "name": str((payload or {}).get("name") or "Pay Period").strip(),
-        "start_date": str((payload or {}).get("start_date") or "")[:10],
-        "end_date": str((payload or {}).get("end_date") or "")[:10],
-        "pay_date": str((payload or {}).get("pay_date") or "")[:10] or None,
+        "name": name,
+        "start_date": start_date,
+        "end_date": end_date,
+        "pay_date": pay_date,
         "status": "open",
+        "export_status": "not_exported",
         "created_by": str(current_user.get("id") or current_user.get("_id") or ""),
         "created_at": now, "updated_at": now, "locked_at": None, "exported_at": None,
         "notes": str((payload or {}).get("notes") or ""),
@@ -6622,7 +6772,7 @@ async def payroll_lock_period(period_id: str, current_user: dict = Depends(get_c
     if period.get("status") == "exported":
         raise HTTPException(status_code=400, detail="Exported period cannot be relocked")
     now = datetime.now(timezone.utc)
-    await db.payroll_pay_periods.update_one({"_id": period["_id"]}, {"$set": {"status": "locked", "locked_at": now, "updated_at": now}})
+    await db.payroll_pay_periods.update_one({"_id": period["_id"]}, {"$set": {"status": "locked", "export_status": period.get("export_status") or "not_exported", "locked_at": now, "updated_at": now}})
     return {"success": True, "status": "locked"}
 
 
@@ -6631,7 +6781,7 @@ async def payroll_mark_exported(period_id: str, current_user: dict = Depends(get
     business_id = _require_payroll_access(current_user)
     period = await _find_period_or_404(period_id, business_id)
     now = datetime.now(timezone.utc)
-    await db.payroll_pay_periods.update_one({"_id": period["_id"]}, {"$set": {"status": "exported", "exported_at": now, "updated_at": now}})
+    await db.payroll_pay_periods.update_one({"_id": period["_id"]}, {"$set": {"status": "exported", "export_status": "exported", "exported_at": now, "updated_at": now}})
     return {"success": True, "status": "exported"}
 
 
