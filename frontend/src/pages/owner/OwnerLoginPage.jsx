@@ -99,16 +99,16 @@ export default function OwnerLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+    <div className="min-h-screen bg-background text-slate-900 flex items-center justify-center px-4">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
         <h1 className="text-3xl font-bold mb-2">Owner Login</h1>
-        <p className="text-slate-300 mb-6">Use your owner account to open the platform dashboard.</p>
+        <p className="text-slate-600 mb-6">Use your owner account to open the platform dashboard.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm mb-2 text-slate-300">Email</label>
+            <label className="block text-sm mb-2 text-slate-600">Email</label>
             <input
-              className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 outline-none"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -118,9 +118,9 @@ export default function OwnerLoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm mb-2 text-slate-300">Password</label>
+            <label className="block text-sm mb-2 text-slate-600">Password</label>
             <input
-              className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 outline-none"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -130,7 +130,7 @@ export default function OwnerLoginPage() {
           </div>
 
           {error ? (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-700">
               {error}
             </div>
           ) : null}

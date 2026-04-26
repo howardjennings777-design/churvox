@@ -62,12 +62,12 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Left side - Decorative */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-card to-secondary items-center justify-center p-12">
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-50 via-white to-slate-100 items-center justify-center p-12">
         <div className="max-w-lg">
           <div className="inline-flex items-center justify-center mb-8">
             <ChurvoxLogo size="xl" />
           </div>
-          <h2 className="text-3xl font-semibold text-white mb-6">
+          <h2 className="text-3xl font-semibold text-slate-900 mb-6">
             Start managing your business today
           </h2>
           <div className="space-y-4">
@@ -93,7 +93,7 @@ export default function SignupPage() {
             <div className="inline-flex items-center justify-center mb-6 lg:hidden">
               <ChurvoxLogo size="lg" />
             </div>
-            <h1 className="text-2xl font-semibold text-white">Create account</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">Create account</h1>
             <p className="text-muted-foreground mt-2">Get started with Churvox for free</p>
           </div>
 

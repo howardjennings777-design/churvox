@@ -58,7 +58,7 @@ export default function LoginPage() {
             <div className="inline-flex items-center justify-center mb-6">
               <ChurvoxLogo size="lg" />
             </div>
-            <h1 className="text-2xl font-semibold text-white">Welcome back</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">Welcome back</h1>
             <p className="text-muted-foreground mt-2">Sign in to manage your jobs</p>
           </div>
 
@@ -157,12 +157,12 @@ export default function LoginPage() {
       </div>
 
       {/* Right side - Decorative */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-card to-secondary items-center justify-center p-12">
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-50 via-white to-slate-100 items-center justify-center p-12">
         <div className="max-w-lg text-center">
           <div className="inline-flex items-center justify-center mb-8">
             <ChurvoxLogo size="xl" />
           </div>
-          <h2 className="text-3xl font-semibold text-white mb-4">
+          <h2 className="text-3xl font-semibold text-slate-900 mb-4">
             Run your trade business smarter
           </h2>
           <p className="text-muted-foreground text-lg mb-6">

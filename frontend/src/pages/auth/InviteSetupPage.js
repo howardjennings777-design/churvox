@@ -87,7 +87,7 @@ const [inviteData, setInviteData] = useState(null);
           <Card className="bg-card border-border">
             <CardContent className="p-8">
               <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-              <h2 className="text-lg font-semibold text-white mb-2">Invite Link Invalid</h2>
+              <h2 className="text-lg font-semibold text-slate-900 mb-2">Invite Link Invalid</h2>
               <p className="text-muted-foreground text-sm mb-6">{verifyError}</p>
               <p className="text-muted-foreground text-xs mb-4">
                 Contact your employer to resend the invite, or sign in if you've already set up your account.
@@ -112,7 +112,7 @@ const [inviteData, setInviteData] = useState(null);
           <Card className="bg-card border-border">
             <CardContent className="p-8">
               <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-              <h2 className="text-lg font-semibold text-white mb-2">Account Set Up</h2>
+              <h2 className="text-lg font-semibold text-slate-900 mb-2">Account Set Up</h2>
               <p className="text-muted-foreground text-sm mb-6">
                 Your account is ready. You can now sign in with your email and the password you just created.
               </p>
@@ -137,7 +137,7 @@ const [inviteData, setInviteData] = useState(null);
           <div className="inline-flex items-center justify-center mb-6">
             <ChurvoxLogo size="lg" />
           </div>
-          <h1 className="text-2xl font-semibold text-white">Set Up Your Account</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">Set Up Your Account</h1>
           <p className="text-muted-foreground mt-2">
             <span className="text-primary font-medium">{inviteData?.business_name}</span> has invited you to join their team
           </p>
@@ -147,7 +147,7 @@ const [inviteData, setInviteData] = useState(null);
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-xl font-heading">Complete Setup</CardTitle>
             <CardDescription>
-              Signing in as <span className="text-white">{inviteData?.email}</span>
+              Signing in as <span className="text-slate-900">{inviteData?.email}</span>
             </CardDescription>
           </CardHeader>
           <CardContent>
