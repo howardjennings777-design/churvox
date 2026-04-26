@@ -28,18 +28,18 @@ export default function WorkerJobsPage() {
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 px-4 py-4 sticky top-0 z-10">
+    <div className="min-h-screen bg-[#f7f4ef]">
+      <header className="bg-[#fcfaf6] border-b border-[#e4e0d8] px-4 py-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-slate-900">My Jobs</h1>
-            <p className="text-sm text-slate-500">{user?.name || "Worker"}</p>
+            <h1 className="text-2xl font-bold text-slate-900">My Jobs</h1>
+            <p className="text-sm text-slate-600">{user?.name || "Worker"}</p>
           </div>
           <Link to="/worker/settings" className="text-sm text-blue-600 hover:text-blue-700 font-medium">Settings</Link>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-3">
+      <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
@@ -58,7 +58,7 @@ export default function WorkerJobsPage() {
               <Link
                 key={id}
                 to={`/worker/jobs/${id}`}
-                className="block bg-white rounded-xl border border-slate-200 p-4 hover:border-blue-300 transition-colors"
+                className="block bg-white rounded-2xl border border-[#e4e0d8] p-4 hover:border-blue-300 transition-colors shadow-sm"
                 data-testid={`worker-job-${id}`}
               >
                 <div className="flex items-start justify-between gap-3">

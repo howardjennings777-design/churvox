@@ -96,9 +96,9 @@ const [searchTerm, setSearchTerm] = useState("");
 
   return (
     <Layout>
-      <div className="space-y-6 animate-in" data-testid="invoices-page">
+      <div className="cx-page space-y-6 animate-in" data-testid="invoices-page">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="cx-page-hero flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900">Invoices</h1>
             <p className="text-muted-foreground mt-1">Manage your invoices and payments</p>
@@ -184,7 +184,7 @@ const [searchTerm, setSearchTerm] = useState("");
                           >
                             {invoice.invoice_number}
                           </span>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-slate-900 ${INVOICE_STATUSES.find(s => s.value === invoice.status)?.color || "bg-slate-500"}`}>
+                          <span className={`cx-status-badge ${INVOICE_STATUSES.find(s => s.value === invoice.status)?.color || "bg-slate-100 text-slate-700 border border-slate-200"}`}>
                             {INVOICE_STATUSES.find(s => s.value === invoice.status)?.label || invoice.status}
                           </span>
                           {invoice.myob_sync_status && invoice.myob_sync_status !== "not_synced" && (() => {

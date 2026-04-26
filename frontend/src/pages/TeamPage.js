@@ -293,15 +293,15 @@ export default function TeamPage() {
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6" data-testid="team-page">
+      <div className="cx-page max-w-5xl" data-testid="team-page">
         {!isOwnerUser && !isFeatureEnabled("team") ? (
           <UpgradePrompt feature="team" message="Team management requires a Team plan or higher." />
         ) : (
           <>
-            <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="cx-page-hero flex items-center justify-between gap-3 flex-wrap">
               <div>
-                <h1 className="text-2xl font-bold text-slate-900" data-testid="team-heading">Team</h1>
-                <p className="text-sm text-slate-500 mt-1">
+                <h1 className="cx-page-title" data-testid="team-heading">Team</h1>
+                <p className="cx-page-subtitle">
                   {workers.length} worker{workers.length !== 1 ? "s" : ""}
                   {planData && planData.max_workers >= 0 && (
                     <span className="text-slate-500/60"> / {planData.max_workers} max</span>

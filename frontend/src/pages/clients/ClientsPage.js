@@ -128,11 +128,11 @@ export default function ClientsPage() {
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6" data-testid="clients-page">
-        <div className="flex items-center justify-between gap-3">
+      <div className="cx-page" data-testid="clients-page">
+        <div className="cx-page-hero flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-white">Clients</h1>
-            <p className="text-sm text-slate-500 mt-1">
+            <h1 className="cx-page-title">Clients</h1>
+            <p className="cx-page-subtitle">
               {clients.length} client{clients.length !== 1 ? "s" : ""}
             </p>
           </div>
@@ -172,10 +172,10 @@ export default function ClientsPage() {
         </div>
 
         {showAdd && (
-          <Card className="bg-white border-slate-200 shadow-lg shadow-black/20" data-testid="add-client-form">
-            <CardContent className="p-6 space-y-4 text-white">
+          <Card className="bg-white border-[#e4e0d8]" data-testid="add-client-form">
+            <CardContent className="p-6 space-y-4 text-slate-900">
               <div>
-                <div className="text-lg font-semibold text-white">Add Client</div>
+                <div className="text-lg font-semibold text-slate-900">Add Client</div>
                 <div className="text-sm text-slate-500 mt-1">Fill in client details below.</div>
               </div>
 
@@ -269,7 +269,7 @@ export default function ClientsPage() {
         )}
 
         {importResults && (
-          <Card className="bg-white border-slate-200 shadow-sm">
+          <Card className="bg-white border-[#e4e0d8]">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-slate-900 font-medium">Import Results</p>
@@ -293,7 +293,7 @@ export default function ClientsPage() {
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
           </div>
         ) : clients.length === 0 && !loading ? (
-          <Card className="bg-white border-slate-200 shadow-sm">
+          <Card className="bg-white border-[#e4e0d8]">
             <CardContent className="p-8 text-center">
               <Users className="mx-auto mb-3 text-slate-500/40" size={32} />
               <p className="text-slate-900 font-medium mb-1">No clients yet</p>
@@ -329,7 +329,7 @@ export default function ClientsPage() {
               const cid = client.id || client._id;
               return (
               <Link key={cid} to={`/clients/${cid}`} className="block">
-              <Card className="bg-white border-slate-200 hover:border-blue-300 hover:shadow-md transition-all">
+              <Card className="bg-white border-[#e4e0d8] hover:border-blue-300 hover:shadow-md transition-all">
                 <CardContent className="p-4 flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <p className="text-slate-900 font-medium">{client.client_name || client.name || "Unnamed Client"}</p>

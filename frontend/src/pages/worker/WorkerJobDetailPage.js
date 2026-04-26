@@ -197,13 +197,13 @@ export default function WorkerJobDetailPage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+    <div className="min-h-screen bg-[#f7f4ef] flex items-center justify-center">
       <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
     </div>
   );
 
   if (!job) return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+    <div className="min-h-screen bg-[#f7f4ef] flex items-center justify-center">
       <div className="text-center">
         <p className="text-slate-500">Job not found</p>
         <Link to="/worker/jobs" className="text-blue-600 text-sm mt-2 inline-block">Back to jobs</Link>
@@ -214,8 +214,8 @@ export default function WorkerJobDetailPage() {
   const status = (job.status || "assigned").toLowerCase();
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 px-4 py-4 sticky top-0 z-10">
+    <div className="min-h-screen bg-[#f7f4ef]">
+      <header className="bg-[#fcfaf6] border-b border-[#e4e0d8] px-4 py-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <Link to="/worker/jobs" className="text-slate-400 hover:text-slate-600"><ArrowLeft className="h-5 w-5" /></Link>
           <h1 className="text-lg font-bold text-slate-900 truncate">{job.title || "Job Detail"}</h1>
@@ -224,22 +224,22 @@ export default function WorkerJobDetailPage() {
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         {/* Job info */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
+        <div className="bg-white rounded-2xl border border-[#e4e0d8] p-5 space-y-3 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900">{job.title}</h2>
-            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">{status.replace(/_/g, " ")}</span>
+            <span className="cx-status-badge status-in-progress">{status.replace(/_/g, " ")}</span>
           </div>
           {job.client_name && <p className="text-sm text-slate-500 flex items-center gap-1.5"><User className="h-4 w-4" />{job.client_name}</p>}
           {job.address && <p className="text-sm text-slate-500 flex items-center gap-1.5"><MapPin className="h-4 w-4" />{job.address}</p>}
           {job.scheduled_date && <p className="text-sm text-slate-500 flex items-center gap-1.5"><Clock className="h-4 w-4" />{String(job.scheduled_date).slice(0, 10)}{job.scheduled_time ? ` at ${job.scheduled_time}` : ""}</p>}
           <div className="flex gap-2">
             {job.customer_phone && (
-              <a href={`tel:${job.customer_phone}`} className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-md">
+              <a href={`tel:${job.customer_phone}`} className="cx-button-primary text-xs px-3 py-2 rounded-lg">
                 <Phone className="h-3 w-3" /> Call customer
               </a>
             )}
             {job.address && (
-              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs bg-slate-100 text-slate-700 px-2 py-1 rounded-md">
+              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`} target="_blank" rel="noreferrer" className="cx-button-secondary text-xs px-3 py-2 rounded-lg">
                 <Navigation className="h-3 w-3" /> Directions
               </a>
             )}
@@ -255,14 +255,14 @@ export default function WorkerJobDetailPage() {
         {/* Status actions */}
         {status === "assigned" && (
           <button onClick={handleAcknowledge} disabled={saving}
-            className="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            className="w-full bg-[#155EEF] text-white rounded-2xl py-3 font-semibold hover:bg-[#1247b8] disabled:opacity-50 transition-colors shadow-[0_10px_20px_rgba(21,94,239,0.2)]"
             data-testid="accept-job-btn">
             {saving ? "Accepting..." : "Accept Job"}
           </button>
         )}
 
         {status !== "assigned" && status !== "completed" && (
-          <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+          <div className="bg-white rounded-2xl border border-[#e4e0d8] p-4 space-y-3 shadow-sm">
             <p className="text-sm font-medium text-slate-700">Update Status</p>
             <div className="flex gap-2 flex-wrap">
               {WORKER_STATUSES.filter(s => s !== "acknowledged").map((s) => (
@@ -277,14 +277,14 @@ export default function WorkerJobDetailPage() {
         )}
 
         {status === "completed" && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center gap-3">
             <CheckCircle className="h-5 w-5 text-emerald-600" />
             <p className="text-sm font-medium text-emerald-700">Job completed</p>
           </div>
         )}
 
         {/* Worker notes */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+        <div className="bg-white rounded-2xl border border-[#e4e0d8] p-4 space-y-3 shadow-sm">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-slate-700">My Notes</p>
             <button onClick={handleSaveNotes} disabled={savingNotes}
@@ -300,7 +300,7 @@ export default function WorkerJobDetailPage() {
         </div>
 
         {/* Photos */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3" data-testid="worker-photos-section">
+        <div className="bg-white rounded-2xl border border-[#e4e0d8] p-4 space-y-3 shadow-sm" data-testid="worker-photos-section">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-slate-700">Job Photos</p>
             <label className="text-sm font-medium text-blue-600 hover:text-blue-700 cursor-pointer inline-flex items-center gap-1" data-testid="add-photo-label">
@@ -327,7 +327,7 @@ export default function WorkerJobDetailPage() {
 
         {/* Progress info */}
         {(job.accepted_at || job.started_at || job.completed_at) && (
-          <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-2">
+          <div className="bg-white rounded-2xl border border-[#e4e0d8] p-4 space-y-2 shadow-sm">
             <p className="text-sm font-medium text-slate-700">Progress</p>
             {job.accepted_at && <p className="text-xs text-slate-400">Accepted: {new Date(job.accepted_at).toLocaleString()}</p>}
             {job.started_at && <p className="text-xs text-slate-400">Started: {new Date(job.started_at).toLocaleString()}</p>}

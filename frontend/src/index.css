@@ -6,24 +6,24 @@
 
 @layer base {
   :root {
-    --background: 214 33% 98%;      /* #f7f9fc */
-    --foreground: 222 47% 11%;      /* #0f172a */
+    --background: 36 33% 95%;       /* #f7f4ef */
+    --foreground: 220 37% 15%;      /* #172033 */
     --card: 0 0% 100%;              /* #ffffff */
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 221 83% 53%;         /* #2563eb */
+    --primary: 220 83% 49%;         /* #155EEF */
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96%;       /* #f1f5f9 */
+    --secondary: 44 36% 97%;        /* #fbfaf7 */
     --secondary-foreground: 217 33% 17%;
     --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 40%;
-    --accent: 24 95% 53%;           /* #f97316 */
+    --muted-foreground: 220 14% 43%;
+    --accent: 38 92% 50%;           /* #F59E0B */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 74% 52%;       /* #dc2626 */
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;          /* #e2e8f0 */
-    --input: 214 32% 91%;
+    --border: 35 21% 87%;           /* #e4e0d8 */
+    --input: 35 21% 87%;
     --ring: 221 83% 53%;
     --radius: 0.9rem;
 
@@ -45,6 +45,7 @@
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     text-rendering: optimizeLegibility;
+    background-image: radial-gradient(circle at 0% 0%, #fdfaf4 0%, #f7f4ef 45%, #f4f0e8 100%);
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -66,6 +67,29 @@
     @apply min-h-screen bg-background;
   }
 
+  .cx-app-shell { @apply min-h-screen text-slate-900; }
+  .cx-page { @apply mx-auto w-full max-w-[1240px] px-4 py-5 md:px-7 md:py-7 space-y-5; }
+  .cx-page-hero {
+    @apply rounded-3xl border p-5 md:p-7;
+    border-color: #dfe6f6;
+    background: linear-gradient(135deg, #ffffff, #f5f8ff 60%, #eff5ff);
+    box-shadow: 0 2px 4px rgba(23, 32, 51, 0.05), 0 20px 50px rgba(21, 94, 239, 0.08);
+  }
+  .cx-page-title { @apply text-3xl md:text-4xl font-bold tracking-tight text-slate-900; }
+  .cx-page-subtitle { @apply text-sm md:text-base font-medium text-slate-600 mt-1; }
+  .cx-toolbar { @apply flex flex-wrap items-center gap-2.5 pt-4; }
+  .cx-card, .cx-panel { @apply rounded-2xl border bg-white shadow-[0_2px_5px_rgba(23,32,51,0.05),0_12px_26px_rgba(23,32,51,0.07)]; border-color: #e4e0d8; }
+  .cx-metric-card { @apply cx-card p-4 md:p-5 hover:-translate-y-0.5 transition-all; }
+  .cx-list-card { @apply cx-card p-4; }
+  .cx-status-badge { @apply inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide border; }
+  .cx-button-primary { @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white bg-[#155EEF] hover:bg-[#1247b8] transition-colors; }
+  .cx-button-secondary { @apply inline-flex items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-semibold bg-white text-slate-700 border-[#d8d4cc] hover:bg-[#fbfaf7]; }
+  .cx-button-ghost { @apply inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-[#eef3ff] hover:text-[#155EEF]; }
+  .cx-empty-state { @apply cx-panel p-8 text-center; }
+  .cx-loading-state, .cx-error-state { @apply cx-panel p-8 text-center; }
+  .cx-input { @apply rounded-xl border border-[#ddd8ce] bg-[#fffdfa] text-slate-900; }
+  .cx-mobile-stack { @apply flex flex-col gap-3 sm:flex-row sm:items-center; }
+
   .page-wrap {
     @apply mx-auto w-full max-w-[1240px] px-4 py-4 md:px-6 md:py-6;
   }
@@ -86,11 +110,11 @@
     @apply inline-flex items-center rounded-md border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide;
   }
 
-  .status-completed { @apply border-green-200 bg-green-100 text-green-700; }
-  .status-in-progress { @apply border-blue-200 bg-blue-100 text-blue-700; }
-  .status-paused { @apply border-amber-200 bg-amber-100 text-amber-700; }
-  .status-assigned { @apply border-slate-200 bg-slate-100 text-slate-700; }
-  .status-cancelled { @apply border-red-200 bg-red-100 text-red-700; }
+  .status-completed, .status-paid, .status-accepted { @apply border-green-200 bg-green-50 text-green-700; }
+  .status-in-progress, .status-sent { @apply border-blue-200 bg-blue-50 text-blue-700; }
+  .status-paused, .status-pending, .status-unpaid { @apply border-amber-200 bg-amber-50 text-amber-700; }
+  .status-assigned, .status-scheduled, .status-draft { @apply border-slate-200 bg-slate-100 text-slate-700; }
+  .status-cancelled, .status-failed, .status-overdue, .status-declined { @apply border-red-200 bg-red-50 text-red-700; }
 }
 
 @layer utilities {

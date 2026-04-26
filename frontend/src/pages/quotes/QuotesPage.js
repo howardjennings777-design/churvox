@@ -83,9 +83,9 @@ export default function QuotesPage() {
 
   return (
     <Layout>
-      <div className="space-y-6 animate-in" data-testid="quotes-page">
+      <div className="cx-page space-y-6 animate-in" data-testid="quotes-page">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="cx-page-hero flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900">Quotes</h1>
             <p className="text-muted-foreground mt-1">Manage your quotes and proposals</p>
@@ -171,7 +171,7 @@ export default function QuotesPage() {
                         >
                           {quote.quote_number}
                         </Link>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-slate-900 ${QUOTE_STATUSES.find(s => s.value === quote.status)?.color || "bg-slate-500"}`}>
+                        <span className={`cx-status-badge ${QUOTE_STATUSES.find(s => s.value === quote.status)?.color || "bg-slate-100 text-slate-700 border border-slate-200"}`}>
                           {QUOTE_STATUSES.find(s => s.value === quote.status)?.label || quote.status}
                         </span>
                       </div>

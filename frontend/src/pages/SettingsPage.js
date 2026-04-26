@@ -184,11 +184,11 @@ const handleDeleteAccount = async () => {
 
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto space-y-6 animate-in" data-testid="settings-page">
+      <div className="cx-page max-w-3xl animate-in" data-testid="settings-page">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900">Settings</h1>
-          <p className="text-muted-foreground mt-1">Manage your account and business settings</p>
+        <div className="cx-page-hero">
+          <h1 className="cx-page-title">Settings</h1>
+          <p className="cx-page-subtitle">Manage your account and business settings</p>
         </div>
 
         {/* Account Info */}

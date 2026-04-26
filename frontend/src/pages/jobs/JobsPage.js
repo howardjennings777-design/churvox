@@ -49,9 +49,12 @@ export default function JobsPage() {
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4" data-testid="jobs-page">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-slate-900" data-testid="jobs-heading">Jobs</h1>
+      <div className="cx-page max-w-5xl" data-testid="jobs-page">
+        <div className="cx-page-hero flex items-center justify-between">
+          <div>
+            <h1 className="cx-page-title" data-testid="jobs-heading">Jobs</h1>
+            <p className="cx-page-subtitle">Track field jobs, schedules, and assigned workers.</p>
+          </div>
           {isEmployer && (
             <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white" data-testid="new-job-button">
               <Link to="/jobs/new"><Plus size={16} className="mr-2" /> New Job</Link>
@@ -60,7 +63,7 @@ export default function JobsPage() {
         </div>
 
         {/* Filters */}
-        <div className="flex gap-3">
+        <div className="cx-panel p-3 md:p-4 flex gap-3">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search jobs..." className="pl-9 bg-white border-slate-200 text-slate-900" data-testid="jobs-search" />
@@ -84,7 +87,7 @@ export default function JobsPage() {
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
+          <div className="cx-empty-state">
             <Briefcase size={32} className="mx-auto mb-3 text-slate-300" />
             <p className="text-slate-900 font-medium mb-1">{search ? "No jobs match your search" : "No jobs yet"}</p>
             <p className="text-xs text-slate-500 mb-4">
@@ -97,17 +100,17 @@ export default function JobsPage() {
               )}
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {filtered.map((job) => {
               const statusInfo = JOB_STATUS_MAP[job.status];
               return (
-                <Card key={job.id} className="bg-white border-slate-200 hover:border-blue-600/40 transition-all" data-testid={`job-card-${job.id}`}>
+                <Card key={job.id} className="bg-white border-[#e4e0d8] hover:border-blue-400 transition-all" data-testid={`job-card-${job.id}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <Link to={`/jobs/${job.id}`} className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <h3 className="text-slate-900 font-medium truncate">{job.title}</h3>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase text-slate-900 ${statusInfo?.color || "bg-slate-500"}`}>
+                          <span className={`cx-status-badge ${statusInfo?.color || "bg-slate-100 text-slate-700 border border-slate-200"}`}>
                             {statusInfo?.label || job.status}
                           </span>
                         </div>
