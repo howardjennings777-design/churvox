@@ -1,4 +1,5 @@
 import React from "react";
+import { safeReactChild } from "../utils/safeRender";
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -21,7 +22,7 @@ export class ErrorBoundary extends React.Component {
           <div className="max-w-md text-center space-y-4">
             <h1 className="text-xl font-semibold text-white">Something went wrong</h1>
             <p className="text-sm text-slate-400">
-              {this.state.error?.message || "An unexpected error occurred."}
+              {safeReactChild(this.state.error, "An unexpected error occurred.")}
             </p>
             <button
               onClick={() => {
