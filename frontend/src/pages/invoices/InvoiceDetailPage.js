@@ -5,7 +5,7 @@ import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import { useApi } from "../../hooks/useApi";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { ArrowLeft, Trash2, Send, CheckCircle, DollarSign, MapPin, Mail, Briefcase, Clock, MessageSquare, RefreshCw } from "lucide-react";
+import { ArrowLeft, Trash2, Send, CheckCircle, DollarSign, MapPin, Mail, Briefcase, Clock, MessageSquare, RefreshCw, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, INVOICE_STATUSES, MYOB_SYNC_STATUSES } from "../../lib/utils";
 
@@ -25,7 +25,13 @@ export default function InvoiceDetailPage() {
 
   const handleSend = async () => {
     const res = await post(`/invoices/${id}/send`);
-    if (res.success) { toast.success("Invoice sent"); setInvoice(res.data); }
+    if (res.success) {
+      toast.success("Invoice sent");
+      await fetchInvoice();
+      if (res?.data?.public_invoice_url) {
+        try { await navigator.clipboard.writeText(res.data.public_invoice_url); toast.success("Public invoice link copied"); } catch (_) {}
+      }
+    }
     else toast.error(res.error || "Failed to send invoice");
   };
 
@@ -210,6 +216,11 @@ export default function InvoiceDetailPage() {
                 <MessageSquare size={16} className="mr-2" /> SMS Reminder
               </Button>
             </>
+          )}
+          {invoice.public_invoice_url && (
+            <Button variant="outline" onClick={() => navigator.clipboard.writeText(invoice.public_invoice_url).then(() => toast.success("Public invoice link copied"))}>
+              <Link2 size={16} className="mr-2" /> Copy Public Link
+            </Button>
           )}
           {invoice.status === "paid" && (
             <Card className="bg-green-900/20 border-green-500/30 w-full">
