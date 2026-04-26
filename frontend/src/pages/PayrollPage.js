@@ -1,6 +1,22 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Layout from "@/components/Layout";
-import { Download, Lock, CheckCircle2, Plus, Printer, Settings, X } from "lucide-react";
+import {
+  Download,
+  Lock,
+  CheckCircle2,
+  Plus,
+  Printer,
+  Settings,
+  X,
+  CalendarRange,
+  Clock3,
+  ClipboardCheck,
+  UsersRound,
+  CircleDollarSign,
+  Sparkles,
+  FileClock,
+  UserCircle2,
+} from "lucide-react";
 import { useApi } from "../hooks/useApi";
 import { formatCurrency } from "../lib/utils";
 
@@ -69,6 +85,53 @@ export default function PayrollPage() {
   const pendingTimesheets = timesheets.filter((t) => String(t.status || "").toLowerCase() === "pending");
   const readOnly = ["locked", "exported"].includes(String(activePeriod?.status || ""));
   const adjustmentsTotal = adjustments.reduce((sum, item) => sum + Number(item?.amount || 0), 0);
+  const statusClass = String(activePeriod?.status || "open").toLowerCase() === "exported"
+    ? "text-[#067647] bg-[#ECFDF3] border-[#ABEFC6]"
+    : "text-[#B54708] bg-[#FFFAEB] border-[#FEC84B]";
+  const statCards = [
+    {
+      label: "Current pay period",
+      value: activePeriod?.name || "No active period",
+      icon: CalendarRange,
+      tint: "bg-[#EEF4FF] border-[#C7D7FE]",
+      chip: "bg-[#DCE8FF] text-[#1849A9]",
+    },
+    {
+      label: "Approved hours",
+      value: Number(summary?.total_approved_hours || 0),
+      icon: Clock3,
+      tint: "bg-[#ECFDF3] border-[#ABEFC6]",
+      chip: "bg-[#D1FADF] text-[#067647]",
+    },
+    {
+      label: "Pending review",
+      value: pendingTimesheets.length,
+      icon: FileClock,
+      tint: "bg-[#FFFAEB] border-[#FEC84B]",
+      chip: "bg-[#FEF0C7] text-[#B54708]",
+    },
+    {
+      label: "Workers included",
+      value: Number(summary?.total_workers || workerSummaries.length || 0),
+      icon: UsersRound,
+      tint: "bg-[#F5F8FF] border-[#D0DDF7]",
+      chip: "bg-[#E4EAF7] text-[#364152]",
+    },
+    {
+      label: "Export status",
+      value: activePeriod?.status || "open",
+      icon: ClipboardCheck,
+      tint: "bg-white border-[#D0D5DD]",
+      chip: `border ${statusClass}`,
+    },
+    {
+      label: "Adjustments total",
+      value: formatCurrency(adjustmentsTotal),
+      icon: CircleDollarSign,
+      tint: "bg-[#F8FAFC] border-[#D5DFF2]",
+      chip: "bg-[#EAF0FF] text-[#344054]",
+    },
+  ];
 
   const downloadCsv = async (path, filename) => {
     const res = await get(path, { responseType: "blob" });
@@ -114,56 +177,63 @@ export default function PayrollPage() {
 
   return (
     <Layout>
-      <div className="cx-page" style={{ background: "#f6f3ee" }}>
-        <div className="cx-page-hero flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between" style={{ background: "#fff" }}>
+      <div className="cx-page space-y-6" style={{ background: "#f8f4ed" }}>
+        <div
+          className="cx-page-hero flex flex-col gap-5 rounded-3xl border border-[#E7DDCF] bg-gradient-to-br from-[#FFFDF8] via-[#FFF8EE] to-[#F7EFE3] p-6 shadow-[0_10px_30px_rgba(16,24,40,0.08)] lg:flex-row lg:items-start lg:justify-between lg:p-7"
+        >
           <div>
             <h1 className="cx-page-title">Payroll</h1>
             <p className="cx-page-subtitle">Review timesheets, calculate payroll, prepare payslips, and export clean summaries.</p>
-            <p className="mt-2 rounded-lg border border-[#B2CCFF] bg-[#EFF4FF] px-3 py-2 text-sm text-[#155EEF]">{DISCLAIMER}</p>
+            <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#B2CCFF] bg-[#EFF4FF] px-4 py-2 text-sm text-[#155EEF]">
+              <Sparkles size={14} />
+              {DISCLAIMER}
+            </p>
           </div>
-          <div className="w-full lg:w-auto">
+          <div className="w-full lg:w-auto lg:pt-1">
             <button className="cx-button-primary w-full lg:w-auto" onClick={createPeriod}><Plus size={14} className="mr-2" />Create Pay Period</button>
           </div>
         </div>
 
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
-          <div className="cx-stat-card"><p>Current pay period</p><p>{activePeriod?.name || "No active period"}</p></div>
-          <div className="cx-stat-card"><p>Approved hours</p><p>{Number(summary?.total_approved_hours || 0)}</p></div>
-          <div className="cx-stat-card"><p>Pending review</p><p>{pendingTimesheets.length}</p></div>
-          <div className="cx-stat-card"><p>Workers included</p><p>{Number(summary?.total_workers || workerSummaries.length || 0)}</p></div>
-          <div className="cx-stat-card"><p>Export status</p><p className="capitalize">{activePeriod?.status || "open"}</p></div>
-          <div className="cx-stat-card"><p>Adjustments total</p><p>{formatCurrency(adjustmentsTotal)}</p></div>
+          {statCards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <div key={card.label} className={`rounded-2xl border p-4 shadow-[0_8px_18px_rgba(16,24,40,0.06)] ${card.tint}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#475467]">{card.label}</p>
+                  <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${card.chip}`}>
+                    <Icon size={15} />
+                  </span>
+                </div>
+                <p className="mt-3 text-2xl font-bold capitalize tracking-tight text-[#0F172A]">{card.value}</p>
+              </div>
+            );
+          })}
         </section>
 
         <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-          <div className="cx-panel p-4 xl:col-span-2">
+          <div className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-5 shadow-[0_8px_22px_rgba(16,24,40,0.06)] xl:col-span-2">
             <h2 className="text-lg font-semibold text-[#0F172A]">Select pay period</h2>
-            <p className="mt-1 text-sm text-[#667085]">Choose an existing period or prepare a new one to keep payroll review accurate.</p>
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-              <div className="md:col-span-2">
+            <p className="mt-1 text-sm text-[#667085]">Choose an existing period, then set up dates for a new period when needed.</p>
+            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="space-y-3 rounded-xl border border-[#E4E7EC] bg-[#FCFCFD] p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#475467]">Find and select</p>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Search pay periods</label>
                 <input className="cx-input" placeholder="Filter by period name or date range" value={periodFilter} onChange={(e) => setPeriodFilter(e.target.value)} />
-              </div>
-              <div className="md:col-span-2">
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Pay period</label>
                 <select value={activePeriodId} onChange={(e) => setActivePeriodId(e.target.value)} className="cx-input">
                   <option value="">Select pay period</option>
                   {filteredPeriods.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.start_date} to {p.end_date})</option>)}
                 </select>
               </div>
-              <div>
+              <div className="space-y-3 rounded-xl border border-[#E4E7EC] bg-[#FCFCFD] p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#475467]">Create period dates</p>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Period name</label>
                 <input className="cx-input" placeholder="Fortnightly payroll" value={newPeriod.name} onChange={(e) => setNewPeriod((v) => ({ ...v, name: e.target.value }))} />
-              </div>
-              <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Pay date</label>
                 <input className="cx-input" type="date" value={newPeriod.pay_date} onChange={(e) => setNewPeriod((v) => ({ ...v, pay_date: e.target.value }))} />
-              </div>
-              <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">Start date</label>
                 <input className="cx-input" type="date" value={newPeriod.start_date} onChange={(e) => setNewPeriod((v) => ({ ...v, start_date: e.target.value }))} />
-              </div>
-              <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[#475467]">End date</label>
                 <input className="cx-input" type="date" value={newPeriod.end_date} onChange={(e) => setNewPeriod((v) => ({ ...v, end_date: e.target.value }))} />
               </div>
@@ -172,30 +242,35 @@ export default function PayrollPage() {
           </div>
 
           <div className="space-y-4">
-            <div className="cx-panel p-4">
-              <h3 className="text-sm font-semibold text-[#0F172A]">Review actions</h3>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button className="cx-button-primary" disabled={readOnly} onClick={bulkApprove}>Bulk approve</button>
-                <button className="cx-button-secondary" disabled={!activePeriodId || readOnly} onClick={() => post(`/payroll/pay-periods/${activePeriodId}/lock`, {}).then(() => fetchWorkspace())}><Lock size={14} className="mr-2" />Lock Period</button>
-                <button className="cx-button-secondary" disabled={!activePeriodId || activePeriod?.status === "exported"} onClick={() => post(`/payroll/pay-periods/${activePeriodId}/mark-exported`, {}).then(() => fetchWorkspace())}><CheckCircle2 size={14} className="mr-2" />Mark Exported</button>
+            <div className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-[0_8px_22px_rgba(16,24,40,0.06)]">
+              <h3 className="text-base font-semibold text-[#0F172A]">Review actions</h3>
+              <p className="mt-1 text-sm text-[#667085]">Approve pending entries, then secure the period when complete.</p>
+              <div className="mt-4 space-y-2">
+                <button className="cx-button-primary w-full justify-center" disabled={readOnly} onClick={bulkApprove}>Bulk approve</button>
+                <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId || readOnly} onClick={() => post(`/payroll/pay-periods/${activePeriodId}/lock`, {}).then(() => fetchWorkspace())}><Lock size={14} className="mr-2" />Lock Period</button>
+                <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId || activePeriod?.status === "exported"} onClick={() => post(`/payroll/pay-periods/${activePeriodId}/mark-exported`, {}).then(() => fetchWorkspace())}><CheckCircle2 size={14} className="mr-2" />Mark Exported</button>
               </div>
             </div>
-            <div className="cx-panel p-4">
-              <h3 className="text-sm font-semibold text-[#0F172A]">Export actions</h3>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/export.csv`, "payroll.csv")}><Download size={14} className="mr-2" />Export Payroll CSV</button>
-                <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/timesheets.csv`, "timesheets.csv")}><Download size={14} className="mr-2" />Export Timesheets CSV</button>
-                <button className="cx-button-secondary" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/payslips.csv`, "payslips.csv")}><Download size={14} className="mr-2" />Export Payslips CSV</button>
+            <div className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-[0_8px_22px_rgba(16,24,40,0.06)]">
+              <h3 className="text-base font-semibold text-[#0F172A]">Export actions</h3>
+              <p className="mt-1 text-sm text-[#667085]">Download final files for payroll handoff once review is complete.</p>
+              <div className="mt-4 space-y-2">
+                <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/export.csv`, "payroll.csv")}><Download size={14} className="mr-2" />Export Payroll CSV</button>
+                <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/timesheets.csv`, "timesheets.csv")}><Download size={14} className="mr-2" />Export Timesheets CSV</button>
+                <button className="cx-button-secondary w-full justify-center" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/pay-periods/${activePeriodId}/payslips.csv`, "payslips.csv")}><Download size={14} className="mr-2" />Export Payslips CSV</button>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="cx-panel p-4">
+        <section className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-[0_8px_22px_rgba(16,24,40,0.06)]">
           <div className="flex items-center justify-between"><h2>Timesheet review</h2></div>
           {!timesheets.length ? (
-            <div className="mt-3 rounded-xl border border-dashed border-[#D0D5DD] bg-[#FCFCFD] p-5 text-center">
-              <p className="font-semibold text-[#0F172A]">No timesheets awaiting review</p>
+            <div className="mt-3 rounded-2xl border border-dashed border-[#D0D5DD] bg-[#F8FAFC] p-6 text-center">
+              <span className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#EAF0FF] text-[#155EEF]">
+                <ClipboardCheck size={18} />
+              </span>
+              <p className="mt-3 text-lg font-semibold text-[#0F172A]">No timesheets awaiting review</p>
               <p className="mt-1 text-sm text-[#667085]">Tracked worker time will appear here for approval.</p>
             </div>
           ) : (
@@ -219,20 +294,25 @@ export default function PayrollPage() {
           )}
         </section>
 
-        <section className="cx-panel p-4">
+        <section className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-[0_8px_22px_rgba(16,24,40,0.06)]">
           <h2>Worker pay summaries</h2>
           {!workerSummaries.length ? (
-            <div className="mt-3 rounded-xl border border-dashed border-[#D0D5DD] bg-[#FCFCFD] p-5 text-center text-sm text-[#667085]">
+            <div className="mt-3 rounded-2xl border border-dashed border-[#D0D5DD] bg-[#FCFCFD] p-6 text-center text-sm text-[#667085]">
               Worker payroll summaries will appear once timesheets are included in this period.
             </div>
           ) : (
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
               {workerSummaries.map((w) => (
-                <div key={w.worker_id} className="rounded-xl border p-4 bg-white shadow-sm">
+                <div key={w.worker_id} className="rounded-2xl border border-[#D8DEE9] bg-gradient-to-br from-white to-[#F8FAFF] p-4 shadow-[0_8px_24px_rgba(16,24,40,0.06)]">
                   <div className="flex items-center justify-between gap-2">
-                    <div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#EEF4FF] text-[#155EEF]">
+                        <UserCircle2 size={16} />
+                      </span>
+                      <div>
                       <p className="font-semibold text-[#0F172A]">{w.worker_name || "Worker"}</p>
                       <p className="text-sm text-[#667085]">{w.role || w.pay_type || "Team member"}</p>
+                      </div>
                     </div>
                     <span className={badge(w.status)}>{w.status || "review"}</span>
                   </div>
@@ -252,7 +332,7 @@ export default function PayrollPage() {
           )}
         </section>
 
-        <section className="cx-panel p-4">
+        <section className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-[0_8px_22px_rgba(16,24,40,0.06)]">
           <h2>Export &amp; handoff</h2>
           <p className="mt-1 text-sm text-[#667085]">Download reviewed payroll summaries for your accountant or payroll system.</p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -265,7 +345,7 @@ export default function PayrollPage() {
           </div>
         </section>
 
-        <section className="cx-panel p-4">
+        <section className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-[0_8px_22px_rgba(16,24,40,0.06)]">
           <h2>Adjustments</h2>
           <div className="mt-3 rounded-xl border bg-[#FCFCFD] p-4">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -304,7 +384,7 @@ export default function PayrollPage() {
           </div>
         </section>
 
-        <section className="cx-panel p-4">
+        <section className="cx-panel rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-[0_8px_22px_rgba(16,24,40,0.06)]">
           <details>
             <summary className="flex cursor-pointer items-center gap-2 font-semibold text-[#0F172A]"><Settings size={16} />Advanced payroll settings</summary>
             {settings && (
