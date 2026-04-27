@@ -80,6 +80,7 @@ export default function JobDetailPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [photoLightboxIndex, setPhotoLightboxIndex] = useState(null);
 
   const [workerNotes, setWorkerNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
@@ -289,6 +290,8 @@ export default function JobDetailPage() {
     userRole === "owner" ||
     userRole === "admin" ||
     userRole === "employer" ||
+    userRole === "manager" ||
+    userRole === "office_admin" ||
     user?.is_admin === true ||
     user?.is_owner === true;
   const hasAssignedWorker = !!(job?.assigned_worker_id || job?.assigned_worker_name);
@@ -389,7 +392,7 @@ export default function JobDetailPage() {
             ) : hasValue(job.notes) ? (
               <div>
                 <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">Notes</div>
-                <div className="text-white whitespace-pre-wrap">{job.notes}</div>
+                <div className="text-slate-700 whitespace-pre-wrap">{job.notes}</div>
               </div>
             ) : null}
           </CardContent>
@@ -582,9 +585,15 @@ export default function JobDetailPage() {
               <div className="text-slate-900 font-semibold">Worker Photos</div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {job.photos.map((src, idx) => (
-                  <a key={idx} href={src} target="_blank" rel="noreferrer">
-                    <img src={src} alt={`Job photo ${idx + 1}`} className="w-full h-28 object-cover rounded-lg border border-slate-200" />
-                  </a>
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setPhotoLightboxIndex(idx)}
+                    className="block overflow-hidden rounded-lg border border-slate-200 bg-white text-left hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    data-testid={`open-job-photo-${idx}`}
+                  >
+                    <img src={src} alt={`Job photo ${idx + 1}`} className="w-full h-28 object-cover" />
+                  </button>
                 ))}
               </div>
             </CardContent>
@@ -611,6 +620,56 @@ export default function JobDetailPage() {
             </CardContent>
           </Card>
         )}
+        {photoLightboxIndex !== null && Array.isArray(job.photos) && job.photos[photoLightboxIndex] && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4"
+            onClick={() => setPhotoLightboxIndex(null)}
+            data-testid="job-photo-lightbox"
+          >
+            <div
+              className="relative w-full max-w-4xl rounded-2xl bg-white p-3 shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setPhotoLightboxIndex(null)}
+                className="absolute right-3 top-3 z-10 rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-slate-900 shadow"
+                data-testid="close-job-photo-lightbox"
+              >
+                Close
+              </button>
+
+              <img
+                src={job.photos[photoLightboxIndex]}
+                alt={`Job photo ${photoLightboxIndex + 1}`}
+                className="max-h-[78vh] w-full rounded-xl object-contain bg-slate-100"
+              />
+
+              {job.photos.length > 1 && (
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setPhotoLightboxIndex((photoLightboxIndex - 1 + job.photos.length) % job.photos.length)}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-slate-500">
+                    {photoLightboxIndex + 1} / {job.photos.length}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setPhotoLightboxIndex((photoLightboxIndex + 1) % job.photos.length)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
       </div>
     </Layout>
   );

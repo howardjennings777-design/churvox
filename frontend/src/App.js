@@ -117,12 +117,13 @@ function WorkerRoute({ children }) {
 
 // Payroll-allowed routes
 function PayrollRoute({ children }) {
-  const { user, loading, normalizedRole } = useAuth();
+  const { user, loading, normalizedRole, hasAppAccess } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   if (normalizedRole !== "owner" && normalizedRole !== "manager" && normalizedRole !== "payroll") {
     return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
   }
+  if (normalizedRole !== "payroll" && !hasAppAccess) return <Navigate to="/plans" replace />;
   return children;
 }
 

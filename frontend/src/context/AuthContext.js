@@ -38,6 +38,15 @@ export function AuthProvider({ children }) {
     checkAuth();
   }, [checkAuth]);
 
+  useEffect(() => {
+    const handleAuthRefresh = () => {
+      checkAuth();
+    };
+
+    window.addEventListener("churvox-auth-refresh", handleAuthRefresh);
+    return () => window.removeEventListener("churvox-auth-refresh", handleAuthRefresh);
+  }, [checkAuth]);
+
   const login = useCallback(async (email, password) => {
     const response = await axios.post(
       `${API_BASE}/api/auth/login`,

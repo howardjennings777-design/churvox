@@ -30,7 +30,7 @@ export function useApi() {
           withCredentials: true,
           ...options,
         };
-        if (data) {
+        if (data !== null && data !== undefined) {
           config.data = data;
         }
         const response = await axios(config);

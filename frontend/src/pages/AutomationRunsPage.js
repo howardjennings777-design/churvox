@@ -7,7 +7,9 @@ import { ArrowLeft, History, RotateCw, Search, CheckCircle2, XCircle, Clock, Cir
 import { toast } from "sonner";
 
 const STATUS_STYLE = {
+  success: { cls: "bg-green-50 text-green-700 border-green-200", Icon: CheckCircle2 },
   completed: { cls: "bg-green-50 text-green-700 border-green-200", Icon: CheckCircle2 },
+  error: { cls: "bg-red-50 text-red-700 border-red-200", Icon: XCircle },
   failed: { cls: "bg-red-50 text-red-700 border-red-200", Icon: XCircle },
   running: { cls: "bg-blue-50 text-blue-700 border-blue-200", Icon: Clock },
   skipped: { cls: "bg-slate-50 text-slate-600 border-slate-200", Icon: CircleDashed },
@@ -30,6 +32,15 @@ const durationMs = (startIso, endIso) => {
   return d >= 0 ? d : null;
 };
 
+function asList(payload, key) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.[key])) return payload[key];
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.data?.[key])) return payload.data[key];
+  return [];
+}
+
+
 export default function AutomationRunsPage() {
   const { get, post } = useApi();
   const [runs, setRuns] = useState([]);
@@ -43,7 +54,7 @@ export default function AutomationRunsPage() {
     setLoading(true);
     const qs = statusFilter ? `?limit=100&status=${statusFilter}` : "?limit=100";
     const r = await get(`/automation/runs${qs}`);
-    if (r?.success) setRuns(Array.isArray(r.data) ? r.data : []);
+    if (r?.success) setRuns(asList(r.data, "runs"));
     setLoading(false);
   }, [get, statusFilter]);
 

@@ -124,9 +124,8 @@ export default function PayrollPage() {
     if (activePeriod?.status === "exported") return 5;
     if (activePeriod?.status === "locked") return 4;
     if ((summary?.pending_review_count || pendingTimesheets.length) > 0) return 2;
-    if (adjustments.length >= 0) return 3;
-    return 4;
-  }, [activePeriod, summary, pendingTimesheets.length, adjustments.length]);
+    return 3;
+  }, [activePeriod, summary, pendingTimesheets.length]);
 
   const statCards = [
     { label: "Current pay run", value: activePeriod?.name || "None", help: activePeriod ? `${activePeriod.start_date} → ${activePeriod.end_date}` : "Create your first pay run", icon: CalendarRange, tint: "bg-blue-50" },

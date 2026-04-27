@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Layout from "../components/Layout";
+import API_BASE from "../lib/apiBase";
 
-const API_BASE = (process.env.REACT_APP_BACKEND_URL || "https://grassley-backend.onrender.com").replace(/\/$/, "");
 
 const triggerOptions = [
   { value: "job.created", label: "Job created" },
@@ -79,6 +80,14 @@ async function apiRequest(path, options = {}) {
   return data || { success: true };
 }
 
+function asList(payload, key) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.[key])) return payload[key];
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.data?.[key])) return payload.data[key];
+  return [];
+}
+
 function Badge({ enabled }) {
   return (
     <span
@@ -122,19 +131,19 @@ function AutomationPage() {
       ]);
 
       if (rulesRes.status === "fulfilled") {
-        setRules(Array.isArray(rulesRes.value.rules) ? rulesRes.value.rules : []);
+        setRules(asList(rulesRes.value, "rules"));
       } else {
         throw rulesRes.reason;
       }
 
       if (runsRes.status === "fulfilled") {
-        setRuns(Array.isArray(runsRes.value.runs) ? runsRes.value.runs : []);
+        setRuns(asList(runsRes.value, "runs"));
       } else {
         setRuns([]);
       }
 
       if (templatesRes.status === "fulfilled") {
-        setTemplates(Array.isArray(templatesRes.value.templates) ? templatesRes.value.templates : []);
+        setTemplates(asList(templatesRes.value, "templates"));
       } else {
         setTemplates([]);
       }
@@ -560,7 +569,8 @@ function AutomationPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </Layout>
   );
 }
 

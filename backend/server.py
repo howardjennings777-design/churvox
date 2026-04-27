@@ -437,8 +437,8 @@ PLAN_LIMITS = {
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
     },
     "pro": {
-        "price": 110, "max_workers": 20, "max_clients": 35,
-        "sms": True, "myob": True, "team": True,
+        "price": 110, "max_workers": 20, "max_clients": 40,
+        "sms": True, "myob": False, "team": True,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
     },
     "enterprise": {
@@ -776,8 +776,9 @@ async def get_current_user(request: Request) -> dict:
 
 async def require_employer(request: Request) -> dict:
     user = await get_current_user(request)
-    if user.get("role") not in ("employer", "admin"):
-        raise HTTPException(status_code=403, detail="Only employers can perform this action")
+    role = str(user.get("role") or "").strip().lower()
+    if role not in BUSINESS_ROLES:
+        raise HTTPException(status_code=403, detail="Only business admins can perform this action")
     return user
 
 def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
