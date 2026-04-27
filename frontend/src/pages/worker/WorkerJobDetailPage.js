@@ -7,6 +7,12 @@ import { toast } from "sonner";
 import { safeText } from "../../utils/safeRender";
 
 const WORKER_STATUSES = ["acknowledged", "in_progress", "paused", "completed"];
+const WORKER_ACTION_LABELS = {
+  acknowledged: "Start job",
+  in_progress: "Start",
+  paused: "Pause",
+  completed: "Complete",
+};
 
 async function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -263,13 +269,13 @@ export default function WorkerJobDetailPage() {
 
         {status !== "assigned" && status !== "completed" && (
           <div className="bg-white rounded-2xl border border-border p-4 space-y-3 shadow-sm">
-            <p className="text-sm font-medium text-slate-700">Update Status</p>
+            <p className="text-sm font-medium text-slate-700">Update job progress</p>
             <div className="flex gap-2 flex-wrap">
               {WORKER_STATUSES.filter(s => s !== "acknowledged").map((s) => (
                 <button key={s} onClick={() => handleStatus(s)} disabled={saving || status === s}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${status === s ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"} disabled:opacity-50`}
                   data-testid={`status-btn-${s}`}>
-                  {s.replace(/_/g, " ")}
+                  {WORKER_ACTION_LABELS[s] || s.replace(/_/g, " ")}
                 </button>
               ))}
             </div>
@@ -286,7 +292,7 @@ export default function WorkerJobDetailPage() {
         {/* Worker notes */}
         <div className="bg-white rounded-2xl border border-border p-4 space-y-3 shadow-sm">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-700">My Notes</p>
+            <p className="text-sm font-medium text-slate-700">Add note</p>
             <button onClick={handleSaveNotes} disabled={savingNotes}
               className="text-sm font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50"
               data-testid="save-worker-notes-btn">
@@ -305,7 +311,7 @@ export default function WorkerJobDetailPage() {
             <p className="text-sm font-medium text-slate-700">Job Photos</p>
             <label className="text-sm font-medium text-blue-600 hover:text-blue-700 cursor-pointer inline-flex items-center gap-1" data-testid="add-photo-label">
               <Camera className="h-4 w-4" />
-              {uploadingPhoto ? "Uploading..." : "Add photo"}
+              {uploadingPhoto ? "Uploading..." : "Upload photo"}
               <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleAddPhoto} disabled={uploadingPhoto} data-testid="worker-photo-input" />
             </label>
           </div>

@@ -300,9 +300,9 @@ export default function TeamPage() {
           <>
             <div className="cx-page-hero flex items-center justify-between gap-3 flex-wrap">
               <div>
-                <h1 className="cx-page-title" data-testid="team-heading">Team</h1>
+                <h1 className="cx-page-title" data-testid="team-heading">Crew Board</h1>
                 <p className="cx-page-subtitle">
-                  {workers.length} worker{workers.length !== 1 ? "s" : ""}
+                  Crew activity and assigned work visibility · {workers.length} worker{workers.length !== 1 ? "s" : ""}
                   {planData && planData.max_workers >= 0 && (
                     <span className="text-slate-500/60"> / {planData.max_workers} max</span>
                   )}

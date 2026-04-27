@@ -164,7 +164,7 @@ export default function QuotesPage() {
         <div className="cx-page-hero flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div>
             <h1 className="cx-page-title">Quotes</h1>
-            <p className="cx-page-subtitle">Create professional proposals, track approvals, and turn accepted quotes into jobs.</p>
+            <p className="cx-page-subtitle">Professional quote documents for field-service jobs with fast convert-to-work-order flow.</p>
           </div>
           <div className="cx-toolbar w-full xl:w-auto">
             <Link to="/quotes/new" className="cx-button-primary" data-testid="add-quote-button">

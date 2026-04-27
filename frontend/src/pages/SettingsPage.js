@@ -117,7 +117,7 @@ export default function SettingsPage() {
         {/* Header */}
         <div className="cx-page-hero">
           <h1 className="cx-page-title">Settings</h1>
-          <p className="cx-page-subtitle">Manage your account and business settings</p>
+          <p className="cx-page-subtitle">Business controls for your field-service command centre.</p>
         </div>
 
         {/* Account Info */}

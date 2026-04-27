@@ -305,7 +305,7 @@ export default function JobDetailPage() {
               {job.title || "Job"}
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              Status: {niceStatus(currentStatus)}
+              Digital job sheet · Status: {niceStatus(currentStatus)}
             </p>
           </div>
 
@@ -338,13 +338,14 @@ export default function JobDetailPage() {
 
         <Card className="bg-white border-slate-200 shadow-sm">
           <CardContent className="p-5 space-y-4">
+            <div className="text-sm font-semibold text-slate-900">Job details</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <div className="text-xs uppercase tracking-wide text-slate-500">Client</div>
                 <div className="text-slate-900">{job.client_name || "-"}</div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wide text-slate-500">Address</div>
+                <div className="text-xs uppercase tracking-wide text-slate-500">Site Address</div>
                 <div className="text-slate-900">{job.address || "-"}</div>
               </div>
               {hasValue(job.country) && (
@@ -374,7 +375,7 @@ export default function JobDetailPage() {
             {isOwnerView ? (
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">Notes</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Site Notes</div>
                   <Button size="sm" variant="ghost" onClick={handleSaveEmployerNotes} disabled={savingEmployerNotes}
                     className="text-xs text-blue-600" data-testid="save-employer-notes-btn">
                     {savingEmployerNotes ? "Saving..." : "Save"}
@@ -391,7 +392,7 @@ export default function JobDetailPage() {
               </div>
             ) : hasValue(job.notes) ? (
               <div>
-                <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">Notes</div>
+                <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">Site Notes</div>
                 <div className="text-slate-700 whitespace-pre-wrap">{job.notes}</div>
               </div>
             ) : null}
@@ -401,7 +402,7 @@ export default function JobDetailPage() {
         {isOwnerView && (
           <Card className="bg-white border-slate-200 shadow-sm">
             <CardContent className="p-5 space-y-4">
-              <div className="text-slate-900 font-semibold">Progress Summary</div>
+              <div className="text-slate-900 font-semibold">Time Tracking & Progress</div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <div className="text-xs uppercase tracking-wide text-slate-500">Current Status</div>
@@ -432,7 +433,7 @@ export default function JobDetailPage() {
                   <div className="text-slate-900">{formatMinutes(job?.time_spent_minutes)}</div>
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-slate-500">Quote</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Quote Action</div>
                   <div className="text-slate-900">
                     {job?.quote_id ? (
                       <Link to={`/quotes/${job.quote_id}`} className="text-blue-600 hover:underline">
@@ -442,7 +443,7 @@ export default function JobDetailPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-slate-500">Invoice</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Invoice Action</div>
                   <div className="text-slate-900">
                     {job?.invoice_id ? (
                       <Link to={`/invoices/${job.invoice_id}`} className="text-blue-600 hover:underline">

@@ -49,11 +49,12 @@ export default function PublicQuotePage() {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
-        <Card>
+        <Card className="cx-document-card border-slate-200 shadow-[0_10px_28px_rgba(15,23,42,0.08)]">
           <CardHeader>
             <CardTitle>{quote.quote_number || "Quote"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Service quote document</p>
             <p><strong>Customer:</strong> {quote.customer_name || "—"}</p>
             <p><strong>Address:</strong> {quote.address || "—"}</p>
             <p><strong>Description:</strong> {quote.job_description || "—"}</p>
