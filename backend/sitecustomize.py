@@ -52,6 +52,11 @@ class _ServerBootLoader(importlib.abc.Loader):
             install_checklist_automation_boot(module)
         except Exception as exc:
             print(f"CHECKLIST_AUTOMATION_BOOT_INSTALL_ERR {exc}")
+        try:
+            from notifications_boot import install_notifications_boot
+            install_notifications_boot(module)
+        except Exception as exc:
+            print(f"NOTIFICATIONS_BOOT_INSTALL_ERR {exc}")
 
 
 class _ServerBootFinder(importlib.abc.MetaPathFinder):
