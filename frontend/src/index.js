@@ -8,6 +8,7 @@ import "./styles/churvox-unified-headers.css";
 import "./styles/churvox-team-area-groups.css";
 import "./styles/churvox-client-area-groups.css";
 import "./styles/churvox-jobs-compact.css";
+import "./styles/churvox-dispatch-compact.css";
 import { startTeamTownGroupingEnhancer } from "./utils/teamTownGroupingEnhancer";
 import { startClientAreaGroupingEnhancer } from "./utils/clientAreaGroupingEnhancer";
 import { startAutomationActionFixer } from "./utils/automationActionFixer";
