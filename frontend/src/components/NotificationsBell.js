@@ -1,16 +1,62 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Bell, CheckCheck, Inbox } from "lucide-react";
+import { Bell, CheckCheck, Inbox, Trash2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "@/hooks/useApi";
 
-function timeAgo(iso) {
-  if (!iso) return "";
-  const s = Math.max(1, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return `${Math.floor(s)}s ago`;
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
+const HIDDEN_NOTIFICATIONS_KEY = "churvox_hidden_notifications";
+
+function readHiddenIds() {
+  try {
+    const raw = localStorage.getItem(HIDDEN_NOTIFICATIONS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeHiddenIds(ids) {
+  try {
+    localStorage.setItem(HIDDEN_NOTIFICATIONS_KEY, JSON.stringify(Array.from(new Set(ids)).slice(-500)));
+  } catch {
+    // ignore storage issues
+  }
+}
+
+function parseDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  const text = String(value);
+  let date = new Date(text);
+  if (!Number.isNaN(date.getTime())) return date;
+  // Some backend timestamps arrive without timezone. Treat them as UTC to avoid stale-looking labels.
+  date = new Date(`${text.replace(/Z$/, "")}Z`);
+  if (!Number.isNaN(date.getTime())) return date;
+  return null;
+}
+
+function timeAgo(iso, now = Date.now()) {
+  const date = parseDate(iso);
+  if (!date) return "just now";
+  const seconds = Math.max(0, Math.floor((now - date.getTime()) / 1000));
+  if (seconds < 10) return "just now";
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function sortNewestFirst(list) {
+  return [...list].sort((a, b) => {
+    const ad = parseDate(a.created_at)?.getTime() || 0;
+    const bd = parseDate(b.created_at)?.getTime() || 0;
+    return bd - ad;
+  });
 }
 
 export default function NotificationsBell() {
@@ -18,10 +64,17 @@ export default function NotificationsBell() {
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [items, setItems] = useState([]);
+  const [hiddenIds, setHiddenIds] = useState(readHiddenIds);
+  const [now, setNow] = useState(Date.now());
   const navigate = useNavigate();
   const btnRef = useRef(null);
   const panelRef = useRef(null);
   const [anchor, setAnchor] = useState({ top: 64, left: null, right: 16, width: 360 });
+
+  const visibleItems = useMemo(() => {
+    const hidden = new Set(hiddenIds.map(String));
+    return sortNewestFirst(items.filter((n) => !hidden.has(String(n.id))));
+  }, [items, hiddenIds]);
 
   const refreshUnread = useCallback(async () => {
     const r = await get("/notifications/unread-count");
@@ -29,7 +82,7 @@ export default function NotificationsBell() {
   }, [get]);
 
   const loadList = useCallback(async () => {
-    const r = await get("/notifications?limit=10");
+    const r = await get("/notifications?limit=20");
     if (r?.success) setItems(Array.isArray(r.data) ? r.data : []);
   }, [get]);
 
@@ -38,6 +91,11 @@ export default function NotificationsBell() {
     const t = setInterval(refreshUnread, 30000);
     return () => clearInterval(t);
   }, [refreshUnread]);
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
 
   // Recompute anchor whenever the panel opens or the viewport changes.
   const computeAnchor = useCallback(() => {
@@ -55,10 +113,7 @@ export default function NotificationsBell() {
       });
       return;
     }
-    const PANEL_W = 380;
-    // Prefer opening to the RIGHT of the bell (so it extends into the main
-    // content area, not off the screen to the left). If the bell is far right
-    // (mobile header-like), clamp to the viewport right edge.
+    const PANEL_W = 420;
     let left = Math.round(rect.left);
     if (left + PANEL_W + GUTTER > vw) {
       left = Math.round(vw - PANEL_W - GUTTER);
@@ -76,6 +131,7 @@ export default function NotificationsBell() {
     if (!open) return;
     computeAnchor();
     loadList();
+    setNow(Date.now());
     const onResize = () => computeAnchor();
     const onDoc = (e) => {
       const t = e.target;
@@ -84,11 +140,16 @@ export default function NotificationsBell() {
       setOpen(false);
     };
     const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    const liveRefresh = setInterval(() => {
+      loadList();
+      setNow(Date.now());
+    }, 30000);
     window.addEventListener("resize", onResize);
     window.addEventListener("scroll", onResize, true);
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onKey);
     return () => {
+      clearInterval(liveRefresh);
       window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onResize, true);
       document.removeEventListener("mousedown", onDoc);
@@ -112,16 +173,25 @@ export default function NotificationsBell() {
     setUnread(0);
   };
 
-  const unreadItems = items.filter((n) => !n.read);
-  const readItems = items.filter((n) => n.read);
+  const clearAll = async () => {
+    const idsToHide = visibleItems.map((n) => String(n.id)).filter(Boolean);
+    const nextHidden = Array.from(new Set([...hiddenIds.map(String), ...idsToHide]));
+    setHiddenIds(nextHidden);
+    writeHiddenIds(nextHidden);
+    setItems((prev) => prev.map((n) => idsToHide.includes(String(n.id)) ? { ...n, read: true } : n));
+    setUnread(0);
+    await post("/notifications/mark-all-read").catch(() => {});
+  };
 
-  // Panel rendered via portal to <body> so it escapes the narrow sidebar container
+  const unreadItems = visibleItems.filter((n) => !n.read);
+  const readItems = visibleItems.filter((n) => n.read);
+
   const panelStyle = {
     top: anchor.top,
     ...(anchor.left !== null ? { left: anchor.left } : {}),
     ...(anchor.right !== null ? { right: anchor.right } : {}),
     ...(anchor.width ? { width: anchor.width } : {}),
-    maxHeight: "min(70vh, 560px)",
+    maxHeight: "min(76vh, 620px)",
   };
 
   return (
@@ -149,7 +219,6 @@ export default function NotificationsBell() {
 
       {open && typeof document !== "undefined" && createPortal(
         <>
-          {/* Mobile-only dimmed backdrop for tap-to-dismiss; invisible on desktop */}
           <div
             className="fixed inset-0 bg-black/20 sm:bg-transparent z-[90]"
             onClick={() => setOpen(false)}
@@ -159,30 +228,39 @@ export default function NotificationsBell() {
             ref={panelRef}
             role="menu"
             style={panelStyle}
-            className="fixed z-[100] bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden flex flex-col"
+            className="fixed z-[100] bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
             data-testid="notifications-dropdown"
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/60 flex-shrink-0">
+            <div className="flex items-start justify-between gap-3 px-4 py-3 border-b border-slate-100 bg-slate-50/80 flex-shrink-0">
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-slate-900">Notifications</div>
-                <div className="text-[11px] text-slate-500">
+                <div className="text-sm font-black text-slate-900">Notifications</div>
+                <div className="text-[11px] font-semibold text-slate-500">
                   {unread > 0 ? `${unread} unread` : "You're all caught up"}
                 </div>
               </div>
-              <div className="flex items-center gap-3 text-xs flex-shrink-0 ml-3">
+              <div className="flex flex-wrap items-center justify-end gap-2 text-xs flex-shrink-0 ml-2">
                 {unread > 0 && (
                   <button
                     onClick={markAllRead}
-                    className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                    className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1.5 font-bold text-blue-700 hover:bg-blue-100"
                     data-testid="mark-all-read-btn"
                   >
-                    <CheckCheck className="h-3.5 w-3.5" /> Mark all read
+                    <CheckCheck className="h-3.5 w-3.5" /> Read
+                  </button>
+                )}
+                {visibleItems.length > 0 && (
+                  <button
+                    onClick={clearAll}
+                    className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1.5 font-bold text-red-700 hover:bg-red-100"
+                    data-testid="notifications-clear-all-btn"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Clear all
                   </button>
                 )}
                 <Link
                   to="/notifications"
                   onClick={() => setOpen(false)}
-                  className="text-slate-600 hover:text-blue-600 hover:underline font-medium"
+                  className="rounded-full bg-slate-100 px-2.5 py-1.5 font-bold text-slate-700 hover:bg-slate-200"
                   data-testid="notifications-view-all"
                 >
                   View all
@@ -190,11 +268,11 @@ export default function NotificationsBell() {
               </div>
             </div>
             <div className="overflow-y-auto flex-1">
-              {items.length === 0 ? (
+              {visibleItems.length === 0 ? (
                 <div className="px-4 py-10 text-center">
                   <Inbox className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                  <p className="text-sm text-slate-600">No notifications yet</p>
-                  <p className="text-xs text-slate-400 mt-1">We'll ping you here when things happen.</p>
+                  <p className="text-sm font-bold text-slate-700">No notifications yet</p>
+                  <p className="text-xs text-slate-400 mt-1">New job, quote, invoice, and worker updates will show here.</p>
                 </div>
               ) : (
                 <>
@@ -204,7 +282,7 @@ export default function NotificationsBell() {
                     </div>
                   )}
                   {unreadItems.map((n) => (
-                    <NotifRow key={n.id} n={n} onClick={() => handleClickItem(n)} />
+                    <NotifRow key={n.id} n={n} now={now} onClick={() => handleClickItem(n)} />
                   ))}
                   {readItems.length > 0 && (
                     <div className="px-4 py-1.5 text-[10px] uppercase tracking-wider text-slate-400 bg-slate-50 sticky top-0">
@@ -212,7 +290,7 @@ export default function NotificationsBell() {
                     </div>
                   )}
                   {readItems.map((n) => (
-                    <NotifRow key={n.id} n={n} onClick={() => handleClickItem(n)} />
+                    <NotifRow key={n.id} n={n} now={now} onClick={() => handleClickItem(n)} />
                   ))}
                 </>
               )}
@@ -225,7 +303,7 @@ export default function NotificationsBell() {
   );
 }
 
-function NotifRow({ n, onClick }) {
+function NotifRow({ n, now, onClick }) {
   return (
     <button
       onClick={onClick}
@@ -233,13 +311,13 @@ function NotifRow({ n, onClick }) {
       data-testid={`notification-item-${n.id}`}
     >
       <div className="flex items-start gap-2.5">
-        <span className={`mt-1.5 h-2 w-2 rounded-full flex-shrink-0 ${n.read ? "bg-slate-300" : "bg-blue-600"}`} />
+        <span className={`mt-1.5 h-2.5 w-2.5 rounded-full flex-shrink-0 ${n.read ? "bg-slate-300" : "bg-blue-600"}`} />
         <div className="min-w-0 flex-1">
-          <div className={`text-sm truncate ${n.read ? "text-slate-700" : "font-semibold text-slate-900"}`}>
+          <div className={`text-sm truncate ${n.read ? "text-slate-700" : "font-black text-slate-900"}`}>
             {n.title || n.type}
           </div>
-          {n.message && <div className="text-xs text-slate-500 line-clamp-2 mt-0.5">{n.message}</div>}
-          <div className="text-[11px] text-slate-400 mt-1">{timeAgo(n.created_at)}</div>
+          {n.message && <div className="text-xs font-semibold text-slate-500 line-clamp-2 mt-0.5">{n.message}</div>}
+          <div className="text-[11px] font-bold text-slate-400 mt-1">{timeAgo(n.created_at, now)}</div>
         </div>
       </div>
     </button>
