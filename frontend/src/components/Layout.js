@@ -58,16 +58,16 @@ export default function Layout({ children }) {
   return (
     <div className="cx-app-shell tap-safe-root min-h-screen overflow-x-clip" data-testid="layout-container">
       <aside className="hidden md:flex md:flex-col md:w-[272px] md:fixed md:inset-y-0 z-40" data-testid="desktop-sidebar">
-        <div className="h-[92px] px-5 border-b border-slate-700/70 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="h-[92px] px-5 border-b border-slate-700/70 flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-3">
             <ChurvoxLogo size="sm" dataTestId="sidebar-logo" />
-            <div>
+            <div className="min-w-0">
               <p className="text-[10px] uppercase tracking-[0.16em] text-slate-300/70">Churvox</p>
               <p className="text-sm font-semibold text-white">Smart Hub</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {showHelp && <HelpDropdown />}
+          <div className="flex shrink-0 items-center gap-1.5">
+            {showHelp && <HelpDropdown compact />}
             <NotificationsBell />
           </div>
         </div>
