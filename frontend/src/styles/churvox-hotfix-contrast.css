@@ -1,6 +1,5 @@
 /* CHURVOX HOTFIX: restore contrast after global redesign */
 
-/* Dark automation/top hero sections were being washed out by the global card rule. */
 .bg-gradient-to-br.from-slate-950,
 section.bg-gradient-to-br.from-slate-950 {
   background:
@@ -52,22 +51,59 @@ section.bg-gradient-to-br.from-slate-950 .bg-white\/10 {
   box-shadow: none !important;
 }
 
-/* Keep normal page section text readable without forcing every section into a white card. */
 section.bg-white,
 section.bg-slate-50,
 section.bg-slate-100 {
   color: #0f172a !important;
 }
 
-/* Sidebar brand polish: centred logo only, no duplicate Churvox / Smart Hub text. */
+/* Sidebar header: original Layout.js markup */
+[data-testid="desktop-sidebar"] > div:first-child {
+  height: 118px !important;
+  padding: 16px 18px !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+[data-testid="desktop-sidebar"] > div:first-child > div:first-child {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+[data-testid="desktop-sidebar"] > div:first-child > div:first-child > div:last-child {
+  display: none !important;
+}
+
+[data-testid="sidebar-logo"] {
+  width: 190px !important;
+  max-width: 190px !important;
+  max-height: 70px !important;
+  height: auto !important;
+  object-fit: contain !important;
+  margin: 0 auto !important;
+  display: block !important;
+}
+
+[data-testid="desktop-sidebar"] > div:first-child > button,
+[data-testid="desktop-sidebar"] > div:first-child [data-testid="notifications-bell"] {
+  position: absolute !important;
+  top: 18px !important;
+  right: 14px !important;
+  z-index: 2 !important;
+}
+
+/* Sidebar header: newer branded markup, kept for safety */
 [data-testid="sidebar-brand-bar"] {
   height: 118px !important;
-  padding: 18px 18px 16px !important;
+  padding: 16px 18px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   position: relative !important;
-  gap: 0 !important;
 }
 
 [data-testid="sidebar-brand-bar"] > .flex.items-center.gap-3,
@@ -86,20 +122,9 @@ section.bg-slate-100 {
   display: none !important;
 }
 
-[data-testid="sidebar-logo"] {
-  width: 178px !important;
-  max-width: 178px !important;
-  height: auto !important;
-  max-height: 62px !important;
-  object-fit: contain !important;
-  margin: 0 auto !important;
-  display: block !important;
-}
-
 [data-testid="sidebar-brand-bar"] [data-testid="notifications-bell"],
 [data-testid="sidebar-brand-bar"] button {
   position: absolute !important;
   right: 14px !important;
   top: 18px !important;
-  flex: 0 0 auto !important;
 }
