@@ -81,22 +81,15 @@ function computeFallbackSummary({ jobs, invoices, quotes, clients, workers, rang
 }
 
 function FilterButton({ active, children, onClick }) {
-  const textColor = active ? "#ffffff" : "#1d4ed8";
+  const label = String(children || "");
   return (
     <button
       type="button"
-      className="reports-filter-btn rounded-full px-4 py-2 text-sm font-black transition"
-      style={{
-        background: active ? "#2563eb" : "#ffffff",
-        color: textColor,
-        border: active ? "1px solid #2563eb" : "1px solid #bfdbfe",
-        boxShadow: active ? "0 14px 30px rgba(37,99,235,0.24)" : "0 8px 18px rgba(15,23,42,0.06)",
-        opacity: 1,
-        minWidth: 118,
-      }}
+      className={`reports-filter-btn ${active ? "reports-filter-btn-active" : "reports-filter-btn-inactive"}`}
+      data-report-label={label}
       onClick={onClick}
     >
-      <span style={{ color: textColor, opacity: 1, display: "inline-block", fontWeight: 900 }}>{children}</span>
+      <span className="reports-filter-label">{label}</span>
     </button>
   );
 }
@@ -189,6 +182,55 @@ export default function ReportsPage() {
 
   return (
     <Layout>
+      <style>{`
+        .reports-premium-page .reports-filter-btn {
+          align-items: center !important;
+          background: #ffffff !important;
+          border: 1px solid #bfdbfe !important;
+          border-radius: 999px !important;
+          box-shadow: 0 8px 18px rgba(15,23,42,0.06) !important;
+          color: #1d4ed8 !important;
+          display: inline-flex !important;
+          font-size: 14px !important;
+          font-weight: 900 !important;
+          justify-content: center !important;
+          line-height: 1.2 !important;
+          min-height: 42px !important;
+          min-width: 124px !important;
+          opacity: 1 !important;
+          padding: 10px 16px !important;
+          text-indent: 0 !important;
+          visibility: visible !important;
+          -webkit-text-fill-color: #1d4ed8 !important;
+          white-space: nowrap !important;
+        }
+        .reports-premium-page .reports-filter-btn-active {
+          background: #2563eb !important;
+          border-color: #2563eb !important;
+          box-shadow: 0 14px 30px rgba(37,99,235,0.24) !important;
+          color: #ffffff !important;
+          -webkit-text-fill-color: #ffffff !important;
+        }
+        .reports-premium-page .reports-filter-label,
+        .reports-premium-page .reports-filter-btn span,
+        .reports-premium-page .reports-filter-btn svg {
+          display: inline-flex !important;
+          opacity: 1 !important;
+          text-indent: 0 !important;
+          visibility: visible !important;
+        }
+        .reports-premium-page .reports-filter-label,
+        .reports-premium-page .reports-filter-btn-inactive .reports-filter-label {
+          color: #1d4ed8 !important;
+          -webkit-text-fill-color: #1d4ed8 !important;
+          font-size: 14px !important;
+          font-weight: 900 !important;
+        }
+        .reports-premium-page .reports-filter-btn-active .reports-filter-label {
+          color: #ffffff !important;
+          -webkit-text-fill-color: #ffffff !important;
+        }
+      `}</style>
       <div className="cx-page reports-premium-page" data-testid="reports-page">
         <div className="cx-page-hero reports-hero">
           <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
@@ -200,8 +242,8 @@ export default function ReportsPage() {
             <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
               <FilterButton active={range === "this_month"} onClick={() => setRange("this_month")}>This month</FilterButton>
               <FilterButton active={range === "last_month"} onClick={() => setRange("last_month")}>Last month</FilterButton>
-              <button className="reports-filter-btn rounded-full px-4 py-2 text-sm font-black transition" style={{ background: "#ffffff", color: "#1d4ed8", border: "1px solid #bfdbfe", boxShadow: "0 8px 18px rgba(15,23,42,0.06)", opacity: 1, minWidth: 118 }} onClick={load}>
-                <span style={{ color: "#1d4ed8", opacity: 1, display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 900 }}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Refresh</span>
+              <button className="reports-filter-btn reports-filter-btn-inactive" onClick={load}>
+                <span className="reports-filter-label" style={{ alignItems: "center", gap: 4 }}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Refresh</span>
               </button>
             </div>
           </div>
