@@ -6,18 +6,19 @@
 
 @layer base {
   :root {
-    --ch-bg: #0b1220;
-    --ch-surface: #ffffff;
-    --ch-surface-soft: #f3f7ff;
-    --ch-border: #d2dded;
-    --ch-border-strong: #9fb4cf;
+    --ch-bg: #071120;
+    --ch-bg-soft: #101c32;
+    --ch-surface: #f7f9fc;
+    --ch-surface-soft: #ecf2fb;
+    --ch-border: #ced9e8;
+    --ch-border-strong: #9db1cb;
     --ch-text: #102033;
-    --ch-text-muted: #63758b;
-    --ch-primary: #1d66ff;
-    --ch-primary-dark: #1550d4;
-    --ch-primary-soft: #d7e6ff;
-    --ch-accent: #0ea5c9;
-    --ch-accent-soft: #d0f4ff;
+    --ch-text-muted: #5f738d;
+    --ch-primary: #2563eb;
+    --ch-primary-dark: #1d4ed8;
+    --ch-primary-soft: #dbeafe;
+    --ch-accent: #1fb6ff;
+    --ch-accent-soft: #d6efff;
     --ch-success: #16a34a;
     --ch-success-soft: #dcfce7;
     --ch-warning: #f59e0b;
@@ -27,7 +28,7 @@
     --ch-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
     --ch-radius: 20px;
 
-    --background: 222 39% 97%;
+    --background: 218 40% 96%;
     --foreground: 213 52% 13%;
     --card: 0 0% 100%;
     --card-foreground: 213 52% 13%;
@@ -66,7 +67,7 @@
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     text-rendering: optimizeLegibility;
-    background-image: radial-gradient(circle at 0% 0%, #f8fbff 0%, #eef4ff 48%, #e8effc 100%);
+    background-image: radial-gradient(circle at 0% 0%, #eef5ff 0%, #e8f0fe 42%, #e2ebfb 100%);
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -86,12 +87,12 @@
 @layer components {
   .app-shell { @apply min-h-screen bg-background; }
   .cx-app-shell { @apply min-h-screen text-slate-900 bg-background; }
-  .cx-page { @apply mx-auto w-full max-w-[1500px] px-4 py-5 md:px-7 md:py-7 space-y-5; }
+  .cx-page { @apply mx-auto w-full max-w-[1500px] px-4 py-5 pb-24 md:px-7 md:py-7 md:pb-8 space-y-5; }
   .cx-page-hero {
     @apply rounded-3xl border p-5 md:p-7;
     border-color: var(--ch-border);
-    background: linear-gradient(145deg, #ffffff, #f6faff 58%, #edf5ff);
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06), 0 22px 50px rgba(29, 102, 255, 0.12);
+    background: linear-gradient(140deg, #fdfefe, #f2f7ff 58%, #e7f0ff);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06), 0 20px 45px rgba(37, 99, 235, 0.14);
     position: relative;
     overflow: hidden;
   }
@@ -117,7 +118,7 @@
   .cx-page-subtitle { @apply text-sm md:text-base font-medium text-slate-600 mt-1; }
   .cx-toolbar { @apply flex flex-wrap items-center gap-2.5; }
   .cx-card, .cx-panel {
-    @apply rounded-2xl border bg-white shadow-[0_2px_8px_rgba(15,23,42,0.06),0_14px_34px_rgba(15,23,42,0.08)];
+    @apply rounded-2xl border bg-white/95 backdrop-blur-[1px] shadow-[0_2px_8px_rgba(15,23,42,0.06),0_14px_34px_rgba(15,23,42,0.08)];
     border-color: var(--ch-border);
   }
   .cx-metric-card { @apply cx-card p-4 md:p-5 hover:-translate-y-0.5 transition-all cursor-pointer; }
@@ -153,6 +154,21 @@
   .status-paused, .status-pending, .status-unpaid { @apply border-amber-200 bg-amber-50 text-amber-700; }
   .status-assigned, .status-scheduled, .status-draft { @apply border-slate-200 bg-slate-100 text-slate-700; }
   .status-cancelled, .status-failed, .status-overdue, .status-declined { @apply border-red-200 bg-red-50 text-red-700; }
+
+  .cx-auth-shell {
+    @apply min-h-screen grid lg:grid-cols-2 bg-[#071120];
+    background-image: radial-gradient(circle at top left, rgba(37,99,235,0.3), transparent 44%);
+  }
+  .cx-auth-panel {
+    @apply relative overflow-hidden flex items-center justify-center p-6 md:p-10 bg-[#071120] border-b lg:border-b-0 lg:border-r border-blue-200/10;
+  }
+  .cx-auth-card {
+    @apply w-full max-w-md rounded-3xl border border-blue-100/15 bg-white/95 p-6 md:p-8 shadow-[0_24px_70px_rgba(2,8,23,0.45)];
+  }
+  .cx-auth-aside {
+    @apply hidden lg:flex items-center justify-center p-12 text-blue-50;
+    background: linear-gradient(145deg, #0f1b33, #102847);
+  }
 }
 
 .cx-status-badge--slate { color: #334155; background: #f1f5f9; border-color: #cbd5e1; }

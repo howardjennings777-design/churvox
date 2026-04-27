@@ -312,7 +312,7 @@ export default function SettingsPage() {
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : myobConnected ? "Update Connection" : "Connect MYOB"}
                 </Button>
                 <p className="text-xs text-muted-foreground">
-                  MYOB sync is currently a placeholder. Once connected, invoices can be synced from the invoice detail page.
+                  Connect your MYOB credentials here to enable invoice sync from the invoice detail page.
                 </p>
               </form>
             )}
