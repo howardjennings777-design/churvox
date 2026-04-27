@@ -1,8 +1,8 @@
-/* Churvox Team area / town grouping */
+/* Churvox Team area / town dropdown */
 
 .chx-team-area-panel {
   display: grid;
-  grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.6fr);
+  grid-template-columns: minmax(260px, 1fr) minmax(280px, 420px);
   gap: 18px;
   align-items: center;
   border: 1px solid rgba(15, 23, 42, 0.10);
@@ -42,57 +42,60 @@
   line-height: 1.45;
 }
 
-.chx-team-area-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: flex-end;
+.chx-team-area-control {
+  display: grid;
+  gap: 8px;
+  justify-self: end;
+  width: min(100%, 420px);
 }
 
-.chx-area-filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  min-height: 42px;
-  border-radius: 999px !important;
-  border: 1px solid rgba(15, 23, 42, 0.10) !important;
-  background: #ffffff !important;
-  color: #334155 !important;
-  padding: 9px 12px 9px 15px !important;
-  font-size: 13px !important;
-  font-weight: 850 !important;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06) !important;
-  transform: none !important;
-}
-
-.chx-area-filter-chip strong {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 26px;
-  height: 26px;
-  border-radius: 999px;
-  background: #eff6ff;
-  color: #1d4ed8;
+.chx-team-area-control label {
+  color: #334155;
   font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.chx-worker-area-select {
+  width: 100% !important;
+  min-height: 48px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(15, 23, 42, 0.14) !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  padding: 0 14px !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07) !important;
+}
+
+.chx-worker-area-select:focus {
+  outline: none !important;
+  border-color: rgba(37, 99, 235, 0.70) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12) !important;
+}
+
+.chx-team-area-meta {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.chx-team-area-meta strong {
+  color: #2563eb;
   font-weight: 950;
 }
 
-.chx-area-filter-chip:hover {
-  border-color: rgba(37, 99, 235, 0.28) !important;
-  color: #1d4ed8 !important;
-}
-
-.chx-area-filter-chip.active {
-  background: linear-gradient(135deg, #2563eb, #38bdf8) !important;
-  border-color: rgba(37, 99, 235, 0.28) !important;
-  color: #ffffff !important;
-  box-shadow: 0 14px 32px rgba(37, 99, 235, 0.25) !important;
-}
-
-.chx-area-filter-chip.active strong {
-  background: rgba(255,255,255,0.22);
-  color: #ffffff;
+.chx-team-area-empty {
+  grid-column: 1 / -1;
+  border: 1px dashed rgba(100, 116, 139, 0.35);
+  border-radius: 18px;
+  background: rgba(248, 250, 252, 0.86);
+  color: #64748b;
+  padding: 14px;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 @media (max-width: 900px) {
@@ -100,14 +103,8 @@
     grid-template-columns: 1fr;
   }
 
-  .chx-team-area-actions {
-    justify-content: flex-start;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 4px;
-  }
-
-  .chx-area-filter-chip {
-    white-space: nowrap;
+  .chx-team-area-control {
+    justify-self: stretch;
+    width: 100%;
   }
 }
