@@ -49,7 +49,8 @@ export function useApi() {
   const get = useCallback((endpoint, options) => request("GET", endpoint, null, options), [request]);
   const post = useCallback((endpoint, data, options) => request("POST", endpoint, data, options), [request]);
   const patch = useCallback((endpoint, data, options) => request("PATCH", endpoint, data, options), [request]);
+  const put = useCallback((endpoint, data, options) => request("PUT", endpoint, data, options), [request]);
   const del = useCallback((endpoint, options) => request("DELETE", endpoint, null, options), [request]);
 
-  return { get, post, patch, del, loading, error, setError };
+  return { get, post, patch, put, del, loading, error, setError };
 }

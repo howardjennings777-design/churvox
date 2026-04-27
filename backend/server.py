@@ -3397,6 +3397,9 @@ async def get_team_workers(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/reports/summary")
 async def reports_summary(range: str = "this_month", current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower()
+    if role not in {"owner", "manager", "office_admin"}:
+        raise HTTPException(status_code=403, detail="Not authorized")
     business_id = str(
         current_user.get("business_id")
         or current_user.get("businessId")
@@ -3576,6 +3579,49 @@ async def reports_summary(range: str = "this_month", current_user: dict = Depend
         "myob_sync_issues": myob_sync_issues,
     }
 
+
+@api_router.delete("/quotes/{quote_id}")
+async def delete_quote(quote_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in BUSINESS_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
+
+    try:
+        obj_id = ObjectId(quote_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid quote ID")
+
+    quote = await db.quotes.find_one({
+        "_id": obj_id,
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ]
+    })
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    result = await db.quotes.delete_one({"_id": obj_id})
+    if result.deleted_count != 1:
+        raise HTTPException(status_code=500, detail="Failed to delete quote")
+
+    return {"success": True, "message": "Quote deleted"}
+
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     try:
@@ -3707,6 +3753,7 @@ async def get_job(job_id: str, current_user: dict = Depends(get_current_user)):
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid job ID")
 
+        role = str(current_user.get("role") or "").lower()
         query = {
             "_id": obj_id,
             "$or": [
@@ -3720,6 +3767,30 @@ async def get_job(job_id: str, current_user: dict = Depends(get_current_user)):
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
 
+        if role == "worker":
+            current_email = str(current_user.get("email") or "").strip().lower()
+            assigned_worker_id = str(job.get("assigned_worker_id") or "")
+            assigned_worker_email = str(job.get("assigned_worker_email") or "").strip().lower()
+            worker_match = False
+            if assigned_worker_id:
+                current_ids = {
+                    str(current_user.get("_id") or ""),
+                    str(current_user.get("id") or ""),
+                    str(current_user.get("user_id") or ""),
+                }
+                if assigned_worker_id in current_ids:
+                    worker_match = True
+                if not worker_match:
+                    buser = await db.business_users.find_one({"email": current_email, "role": "worker"})
+                    if buser:
+                        buser_ids = {str(buser.get("_id")), str(buser.get("id") or "")}
+                        if assigned_worker_id in buser_ids:
+                            worker_match = True
+            if assigned_worker_email and current_email and assigned_worker_email == current_email:
+                worker_match = True
+            if not worker_match:
+                raise HTTPException(status_code=403, detail="This job is not assigned to you")
+
         def safe_iso(value):
             if value is None:
                 return None
@@ -3730,7 +3801,7 @@ async def get_job(job_id: str, current_user: dict = Depends(get_current_user)):
                     pass
             return str(value)
 
-        return {
+        response = {
             "id": str(job.get("_id") or job.get("id") or ""),
             "title": job.get("title") or "Untitled Job",
             "job_type": job.get("job_type") or "other",
@@ -3764,14 +3835,18 @@ async def get_job(job_id: str, current_user: dict = Depends(get_current_user)):
             "recurring_frequency": job.get("recurring_frequency"),
             "custom_repeat_days": job.get("custom_repeat_days"),
             "photos": job.get("photos") or [],
-            "start_lat": job.get("start_lat"),
-            "start_lng": job.get("start_lng"),
-            "location_status": job.get("location_status") or "",
-            "location_captured_at": safe_iso(job.get("location_captured_at")),
             "business_id": str(job.get("business_id")) if job.get("business_id") is not None else None,
             "created_at": safe_iso(job.get("created_at")),
             "updated_at": safe_iso(job.get("updated_at")),
         }
+        if role != "worker":
+            response.update({
+                "start_lat": job.get("start_lat"),
+                "start_lng": job.get("start_lng"),
+                "location_status": job.get("location_status") or "",
+                "location_captured_at": safe_iso(job.get("location_captured_at")),
+            })
+        return response
     except HTTPException:
         raise
     except Exception as e:
@@ -4613,14 +4688,30 @@ async def acknowledge_job(job_id: str, current_user: dict = Depends(get_current_
 
 @api_router.post("/jobs/{job_id}/pause")
 async def pause_job(job_id: str, current_user: dict = Depends(get_current_user)):
+    if str(current_user.get("role") or "").lower() not in BUSINESS_ROLES | {"worker"}:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    business_id = str(
+        current_user.get("business_id")
+        or current_user.get("businessId")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or current_user.get("user_id")
+        or ""
+    )
+    owner_id = str(
+        current_user.get("_id")
+        or current_user.get("id")
+        or current_user.get("user_id")
+        or ""
+    )
     job = None
     if len(str(job_id)) == 24:
         try:
-            job = await db.jobs.find_one({"_id": ObjectId(job_id)})
+            job = await db.jobs.find_one({"_id": ObjectId(job_id), "$or": [{"business_id": business_id}, {"business_id": str(business_id)}, {"owner_id": owner_id}]})
         except Exception:
             pass
     if not job:
-        job = await db.jobs.find_one({"id": job_id})
+        job = await db.jobs.find_one({"id": job_id, "$or": [{"business_id": business_id}, {"business_id": str(business_id)}, {"owner_id": owner_id}]})
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
