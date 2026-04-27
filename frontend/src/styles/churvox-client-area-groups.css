@@ -96,7 +96,7 @@
   font-weight: 700;
 }
 
-/* Premium client command cards: max 3 columns, readable, actions pinned neatly. */
+/* Clean client cards: show only core record info on the card. Notes and quick actions live inside the client profile. */
 [data-testid="clients-page"] > .grid:has(> [data-testid^="client-card-"]) {
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   align-items: stretch !important;
@@ -104,7 +104,7 @@
 }
 
 [data-testid^="client-card-"] {
-  min-height: 315px !important;
+  min-height: 230px !important;
   height: 100% !important;
   border-radius: 24px !important;
   overflow: hidden !important;
@@ -124,7 +124,7 @@
 }
 
 [data-testid^="client-card-"] [class*="CardContent"] > div:first-child {
-  min-height: 279px !important;
+  min-height: 194px !important;
   height: 100% !important;
   display: flex !important;
   flex-direction: column !important;
@@ -162,31 +162,15 @@
   min-height: 20px !important;
 }
 
+/* Hide notes from compact cards. They remain available inside the client/profile page. */
 [data-testid^="client-card-"] .mt-3.rounded-xl,
 [data-testid^="client-card-"] p.mt-3.rounded-xl {
-  max-height: 72px !important;
-  overflow: hidden !important;
-  font-size: 13px !important;
-  line-height: 1.35 !important;
+  display: none !important;
 }
 
+/* Hide quick action buttons from cards. Card stays clean; client profile/detail holds deeper actions. */
 [data-testid^="client-card-"] .mt-3.flex.flex-wrap {
-  margin-top: 14px !important;
-  gap: 8px !important;
-  display: grid !important;
-  grid-template-columns: 1fr 1fr !important;
-}
-
-[data-testid^="client-card-"] .mt-3.flex.flex-wrap a,
-[data-testid^="client-card-"] .mt-3.flex.flex-wrap button {
-  width: 100% !important;
-  justify-content: center !important;
-  min-width: 0 !important;
-  height: 34px !important;
-}
-
-[data-testid^="client-card-"] .mt-3.flex.flex-wrap > *:first-child {
-  grid-column: 1 / -1 !important;
+  display: none !important;
 }
 
 @media (max-width: 1180px) {
