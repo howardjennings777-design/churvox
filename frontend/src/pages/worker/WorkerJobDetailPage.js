@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useApi } from "@/hooks/useApi";
-import { useAuth } from "@/context/AuthContext";
 import { ArrowLeft, MapPin, Clock, User, CheckCircle, Camera, X, Phone, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { safeText } from "../../utils/safeRender";
@@ -86,8 +85,7 @@ async function captureLocation() {
 
 export default function WorkerJobDetailPage() {
   const { id } = useParams();
-  const { user } = useAuth();
-  const { get, patch } = useApi();
+  const { get, post, patch } = useApi();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -132,7 +130,7 @@ export default function WorkerJobDetailPage() {
 
   const handleAcknowledge = async () => {
     setSaving(true);
-    const res = await get(`/jobs/${id}/acknowledge`, { method: "POST" });
+    const res = await post(`/jobs/${id}/acknowledge`, {});
     if (res?.success) {
       toast.success("Job acknowledged");
       await loadJob();
