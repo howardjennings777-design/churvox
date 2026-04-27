@@ -97,7 +97,15 @@ function FilterButton({ active, children, onClick }) {
   return (
     <button
       type="button"
-      className={`rounded-full px-4 py-2 text-sm font-black transition ${active ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "border border-blue-100 bg-white text-blue-700 hover:bg-blue-50"}`}
+      className="reports-filter-btn rounded-full px-4 py-2 text-sm font-black transition"
+      style={{
+        background: active ? "#2563eb" : "#ffffff",
+        color: active ? "#ffffff" : "#1d4ed8",
+        border: active ? "1px solid #2563eb" : "1px solid #bfdbfe",
+        boxShadow: active ? "0 14px 30px rgba(37,99,235,0.24)" : "0 8px 18px rgba(15,23,42,0.06)",
+        opacity: 1,
+        minWidth: 118,
+      }}
       onClick={onClick}
     >
       {children}
@@ -220,7 +228,11 @@ export default function ReportsPage() {
             <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
               <FilterButton active={range === "this_month"} onClick={() => setRange("this_month")}>This month</FilterButton>
               <FilterButton active={range === "last_month"} onClick={() => setRange("last_month")}>Last month</FilterButton>
-              <button className="rounded-full border border-blue-100 bg-white px-4 py-2 text-sm font-black text-blue-700 shadow-sm hover:bg-blue-50" onClick={load}>
+              <button
+                className="reports-filter-btn rounded-full px-4 py-2 text-sm font-black transition"
+                style={{ background: "#ffffff", color: "#1d4ed8", border: "1px solid #bfdbfe", boxShadow: "0 8px 18px rgba(15,23,42,0.06)", opacity: 1, minWidth: 118 }}
+                onClick={load}
+              >
                 <RefreshCw className={`mr-1 inline h-4 w-4 ${loading ? "animate-spin" : ""}`} />Refresh
               </button>
             </div>
