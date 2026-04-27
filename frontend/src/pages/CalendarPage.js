@@ -194,7 +194,7 @@ export default function CalendarPage() {
       </div>
       <div className="md:hidden mt-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
         <select
-          className="w-full border border-[#e4e0d8] rounded-md p-2 text-xs bg-white min-h-[40px]"
+          className="w-full border border-border rounded-md p-2 text-xs bg-white min-h-[40px]"
           value={job.assigned_worker_id || ""}
           onChange={(e) => assignJob(job.id, e.target.value)}
         >
@@ -307,7 +307,7 @@ export default function CalendarPage() {
               {safeArray(workers).map((worker, index) => (
                 <div key={worker.id} className="cx-dispatch-column snap-start" onDragOver={(e) => e.preventDefault()} onDrop={() => dragJobId && assignJob(dragJobId, worker.id)}>
                   <div className="h-1.5" style={{ background: index % 2 === 0 ? "#155EEF" : "#16A34A" }} />
-                  <div className="p-4 border-b border-[#e4e0d8] bg-white">
+                  <div className="p-4 border-b border-border bg-white">
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <h3 className="text-sm font-bold text-[#172033]">{safeText(worker.name, "Worker")}</h3>
@@ -372,7 +372,7 @@ export default function CalendarPage() {
 
         {selectedConflict && (
           <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-label="Conflict details">
-            <div className="bg-white w-full max-w-lg rounded-xl shadow-xl border border-[#e4e0d8] p-4 max-h-[85vh] overflow-auto">
+            <div className="bg-white w-full max-w-lg rounded-xl shadow-xl border border-border p-4 max-h-[85vh] overflow-auto">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-base font-bold text-[#172033]">Schedule conflict details</h2>
@@ -393,7 +393,7 @@ export default function CalendarPage() {
               <div className="mt-4 space-y-2">
                 <p className="text-sm font-semibold text-[#172033]">Conflicting jobs</p>
                 {safeArray(selectedConflict?.jobs).map((conflictJob) => (
-                  <div key={conflictJob.id || conflictJob.title} className="rounded-md border border-[#e4e0d8] p-3 flex items-center justify-between gap-3">
+                  <div key={conflictJob.id || conflictJob.title} className="rounded-md border border-border p-3 flex items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-[#172033]">{safeText(conflictJob.title, "Untitled job")}</p>
                       <p className="text-xs text-[#667085]">{safeText(conflictJob.customer_name || conflictJob.client_name, "No client")}</p>

@@ -6,26 +6,47 @@
 
 @layer base {
   :root {
-    --background: 36 33% 95%;       /* #f7f4ef */
-    --foreground: 220 37% 15%;      /* #172033 */
-    --card: 0 0% 100%;              /* #ffffff */
-    --card-foreground: 222 47% 11%;
+    --ch-bg: #f6f8fb;
+    --ch-surface: #ffffff;
+    --ch-surface-soft: #f9fbff;
+    --ch-border: #dbe4ef;
+    --ch-border-strong: #b8c7da;
+    --ch-text: #102033;
+    --ch-text-muted: #63758b;
+    --ch-primary: #2563eb;
+    --ch-primary-dark: #1d4ed8;
+    --ch-primary-soft: #dbeafe;
+    --ch-accent: #06b6d4;
+    --ch-accent-soft: #cffafe;
+    --ch-success: #16a34a;
+    --ch-success-soft: #dcfce7;
+    --ch-warning: #f59e0b;
+    --ch-warning-soft: #fef3c7;
+    --ch-danger: #dc2626;
+    --ch-danger-soft: #fee2e2;
+    --ch-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+    --ch-radius: 20px;
+
+    --background: 214 43% 98%;
+    --foreground: 213 52% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 213 52% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 220 83% 49%;         /* #155EEF */
+    --popover-foreground: 213 52% 13%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 44 36% 97%;        /* #fbfaf7 */
-    --secondary-foreground: 217 33% 17%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 220 14% 43%;
-    --accent: 38 92% 50%;           /* #F59E0B */
+    --secondary: 210 40% 98%;
+    --secondary-foreground: 213 44% 18%;
+    --muted: 215 34% 95%;
+    --muted-foreground: 213 18% 46%;
+    --accent: 188 94% 43%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 74% 52%;       /* #dc2626 */
+    --destructive: 0 74% 52%;
     --destructive-foreground: 0 0% 100%;
-    --border: 35 21% 87%;           /* #e4e0d8 */
-    --input: 35 21% 87%;
+    --border: 214 32% 89%;
+    --input: 214 32% 89%;
     --ring: 221 83% 53%;
-    --radius: 0.9rem;
+    --radius: 1rem;
 
     --success: 134 76% 37%;
     --warning: 38 92% 50%;
@@ -45,7 +66,7 @@
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     text-rendering: optimizeLegibility;
-    background-image: radial-gradient(circle at 0% 0%, #fdfaf4 0%, #f7f4ef 45%, #f4f0e8 100%);
+    background-image: radial-gradient(circle at 0% 0%, #ffffff 0%, var(--ch-bg) 55%, #eef3fb 100%);
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -63,61 +84,50 @@
 }
 
 @layer components {
-  .app-shell {
-    @apply min-h-screen bg-background;
-  }
-
-  .cx-app-shell { @apply min-h-screen text-slate-900; }
+  .app-shell { @apply min-h-screen bg-background; }
+  .cx-app-shell { @apply min-h-screen text-slate-900 bg-background; }
   .cx-page { @apply mx-auto w-full max-w-[1500px] px-4 py-5 md:px-7 md:py-7 space-y-5; }
   .cx-page-hero {
     @apply rounded-3xl border p-5 md:p-7;
-    border-color: #dce5fb;
-    background: linear-gradient(120deg, #ffffff, #f4f8ff 55%, #eef4ff);
-    box-shadow: 0 2px 6px rgba(23, 32, 51, 0.05), 0 24px 60px rgba(21, 94, 239, 0.1);
+    border-color: var(--ch-border);
+    background: linear-gradient(135deg, #ffffff, #f7faff 58%, #eef6ff);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06), 0 22px 50px rgba(37, 99, 235, 0.12);
   }
   .cx-page-title { @apply text-3xl md:text-4xl font-bold tracking-tight text-slate-900; }
   .cx-page-subtitle { @apply text-sm md:text-base font-medium text-slate-600 mt-1; }
   .cx-toolbar { @apply flex flex-wrap items-center gap-2.5; }
-  .cx-card, .cx-panel { @apply rounded-2xl border bg-white shadow-[0_2px_6px_rgba(23,32,51,0.05),0_14px_32px_rgba(23,32,51,0.08)]; border-color: #e4e0d8; }
-  .cx-metric-card { @apply cx-card p-4 md:p-5 hover:-translate-y-0.5 transition-all; }
+  .cx-card, .cx-panel {
+    @apply rounded-2xl border bg-white shadow-[0_2px_8px_rgba(15,23,42,0.06),0_14px_34px_rgba(15,23,42,0.08)];
+    border-color: var(--ch-border);
+  }
+  .cx-metric-card { @apply cx-card p-4 md:p-5 hover:-translate-y-0.5 transition-all cursor-pointer; }
   .cx-list-card { @apply cx-card p-4; }
-  .cx-document-card { @apply cx-card p-4 md:p-5; background: linear-gradient(180deg, #ffffff 0%, #fffdfa 100%); border-color: #e7dfd1; }
-  .cx-invoice-card { @apply cx-document-card; box-shadow: 0 2px 8px rgba(23,32,51,0.06), 0 18px 40px rgba(37, 99, 235, 0.08); }
+  .cx-document-card { @apply cx-card p-4 md:p-5; background: linear-gradient(180deg, #ffffff 0%, #fafdff 100%); }
+  .cx-invoice-card { @apply cx-document-card; box-shadow: 0 2px 8px rgba(15,23,42,0.06), 0 18px 40px rgba(37, 99, 235, 0.08); }
   .cx-status-badge { @apply inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide border; }
-  .cx-button-primary { @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white bg-[#155EEF] hover:bg-[#1247b8] transition-colors shadow-[0_8px_20px_rgba(21,94,239,0.24)]; }
-  .cx-button-secondary { @apply inline-flex items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-semibold bg-white text-slate-700 border-[#d8d4cc] hover:bg-[#fbfaf7] shadow-[0_1px_2px_rgba(23,32,51,0.05)]; }
-  .cx-button-ghost { @apply inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-[#eef3ff] hover:text-[#155EEF]; }
+  .cx-button-primary { @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-colors cursor-pointer; background: var(--ch-primary); box-shadow: 0 8px 20px rgba(37,99,235,.24); }
+  .cx-button-primary:hover { background: var(--ch-primary-dark); }
+  .cx-button-secondary { @apply inline-flex items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-semibold bg-white text-slate-700 cursor-pointer shadow-[0_1px_2px_rgba(23,32,51,0.05)]; border-color: var(--ch-border-strong); }
+  .cx-button-secondary:hover { background: var(--ch-surface-soft); }
+  .cx-button-ghost { @apply inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 cursor-pointer; }
+  .cx-button-ghost:hover { background: var(--ch-primary-soft); color: var(--ch-primary-dark); }
   .cx-empty-state { @apply cx-panel p-8 text-center; }
   .cx-loading-state, .cx-error-state { @apply cx-panel p-8 text-center; }
-  .cx-input { @apply rounded-xl border border-[#ddd8ce] bg-[#fffdfa] text-slate-900; }
+  .cx-input { @apply rounded-xl border bg-white text-slate-900; border-color: var(--ch-border-strong); }
   .cx-mobile-stack { @apply flex flex-col gap-3 sm:flex-row sm:items-center; }
-  .cx-stat-card { @apply cx-card p-4 md:p-5; background: #ffffff; }
-  .cx-client-card { @apply rounded-2xl border bg-white transition-all hover:-translate-y-0.5; border-color: #e4e0d8; box-shadow: 0 2px 8px rgba(23,32,51,0.06), 0 16px 34px rgba(23,32,51,0.07); }
+  .cx-stat-card { @apply cx-card p-4 md:p-5 bg-white; }
+  .cx-client-card { @apply rounded-2xl border bg-white transition-all hover:-translate-y-0.5; border-color: var(--ch-border); box-shadow: 0 2px 8px rgba(15,23,42,0.06), 0 16px 34px rgba(15,23,42,0.07); }
   .cx-dispatch-board { @apply flex gap-4 overflow-x-auto pb-2; }
-  .cx-dispatch-column { @apply cx-card min-h-[560px] w-full min-w-[320px] md:min-w-[360px] flex flex-col overflow-hidden; background: #fbfaf7; }
-  .cx-job-card { @apply rounded-xl border bg-white p-3.5 shadow-[0_1px_3px_rgba(23,32,51,0.07)] border-[#e4e0d8] mb-3; }
-  .cx-empty-state-inline { @apply rounded-xl border border-dashed p-5 text-center; border-color: #d8d2c8; background: #fffdfa; }
+  .cx-dispatch-column { @apply cx-card min-h-[560px] w-full min-w-[320px] md:min-w-[360px] flex flex-col overflow-hidden; background: #f9fbff; }
+  .cx-job-card { @apply rounded-xl border bg-white p-3.5 shadow-[0_1px_3px_rgba(23,32,51,0.07)] mb-3; border-color: var(--ch-border); }
+  .cx-empty-state-inline { @apply rounded-xl border border-dashed p-5 text-center; border-color: var(--ch-border-strong); background: #fbfdff; }
 
-  .page-wrap {
-    @apply mx-auto w-full max-w-[1240px] px-4 py-4 md:px-6 md:py-6;
-  }
+  .page-wrap { @apply mx-auto w-full max-w-[1240px] px-4 py-4 md:px-6 md:py-6; }
+  .page-title { @apply text-2xl md:text-3xl font-bold text-slate-900 tracking-tight; }
+  .page-subtitle { @apply mt-1 text-sm text-slate-600; }
+  .surface-card { @apply rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_10px_24px_rgba(15,23,42,0.04)]; }
 
-  .page-title {
-    @apply text-2xl md:text-3xl font-bold text-slate-900 tracking-tight;
-  }
-
-  .page-subtitle {
-    @apply mt-1 text-sm text-slate-600;
-  }
-
-  .surface-card {
-    @apply rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_10px_24px_rgba(15,23,42,0.04)];
-  }
-
-  .status-badge {
-    @apply inline-flex items-center rounded-md border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide;
-  }
-
+  .status-badge { @apply inline-flex items-center rounded-md border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide; }
   .status-completed, .status-paid, .status-accepted { @apply border-green-200 bg-green-50 text-green-700; }
   .status-in-progress, .status-sent { @apply border-blue-200 bg-blue-50 text-blue-700; }
   .status-paused, .status-pending, .status-unpaid { @apply border-amber-200 bg-amber-50 text-amber-700; }
@@ -125,26 +135,17 @@
   .status-cancelled, .status-failed, .status-overdue, .status-declined { @apply border-red-200 bg-red-50 text-red-700; }
 }
 
-.cx-status-badge--slate { color: #334155; background: #F1F5F9; border-color: #cbd5e1; }
-.cx-status-badge--green { color: #166534; background: #EAF8EF; border-color: #bbefca; }
-.cx-status-badge--blue { color: #155EEF; background: #EAF2FF; border-color: #ccddff; }
-.cx-status-badge--amber { color: #b45309; background: #FFF6E5; border-color: #ffe4b5; }
-.cx-status-badge--red { color: #b42318; background: #FEECEC; border-color: #fecaca; }
+.cx-status-badge--slate { color: #334155; background: #f1f5f9; border-color: #cbd5e1; }
+.cx-status-badge--green { color: #166534; background: #dcfce7; border-color: #bbf7d0; }
+.cx-status-badge--blue { color: #1e40af; background: #dbeafe; border-color: #bfdbfe; }
+.cx-status-badge--amber { color: #b45309; background: #fef3c7; border-color: #fde68a; }
+.cx-status-badge--red { color: #b91c1c; background: #fee2e2; border-color: #fecaca; }
 
 @layer utilities {
-  .animate-in {
-    animation: animateIn 0.25s ease-out;
-  }
-
+  .animate-in { animation: animateIn 0.25s ease-out; }
   @keyframes animateIn {
-    from {
-      opacity: 0;
-      transform: translateY(6px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 }
 
@@ -158,7 +159,5 @@
 }
 
 @media (max-width: 768px) {
-  .mobile-nav {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
+  .mobile-nav { padding-bottom: env(safe-area-inset-bottom); }
 }

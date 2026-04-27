@@ -28,8 +28,8 @@ export default function WorkerJobsPage() {
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
 
   return (
-    <div className="min-h-screen bg-[#f7f4ef]">
-      <header className="bg-[#fcfaf6] border-b border-[#e4e0d8] px-4 py-4 sticky top-0 z-10">
+    <div className="min-h-screen bg-background">
+      <header className="bg-[#fcfaf6] border-b border-border px-4 py-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">My Jobs</h1>
@@ -58,7 +58,7 @@ export default function WorkerJobsPage() {
               <Link
                 key={id}
                 to={`/worker/jobs/${id}`}
-                className="block bg-white rounded-2xl border border-[#e4e0d8] p-4 hover:border-blue-300 transition-colors shadow-sm"
+                className="block bg-white rounded-2xl border border-border p-4 hover:border-blue-300 transition-colors shadow-sm"
                 data-testid={`worker-job-${id}`}
               >
                 <div className="flex items-start justify-between gap-3">

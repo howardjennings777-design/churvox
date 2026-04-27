@@ -47,11 +47,11 @@ export default function Layout({ children }) {
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
 
   return (
-    <div className="cx-app-shell tap-safe-root min-h-screen bg-[#f7f4ef]" data-testid="layout-container">
+    <div className="cx-app-shell tap-safe-root min-h-screen bg-background" data-testid="layout-container">
       {/* Desktop Sidebar — Premium narrow style */}
-      <aside className="hidden md:flex md:flex-col md:w-[256px] md:fixed md:inset-y-0 bg-[#fcfaf6] border-r border-[#e4e0d8] z-40 shadow-[10px_0_28px_rgba(23,32,51,0.05)]" data-testid="desktop-sidebar">
+      <aside className="hidden md:flex md:flex-col md:w-[256px] md:fixed md:inset-y-0 bg-[#f8fbff] border-r border-border z-40 shadow-[10px_0_28px_rgba(23,32,51,0.05)]" data-testid="desktop-sidebar">
         {/* Logo */}
-        <div className="flex items-center justify-between px-6 h-[86px] border-b border-[#ebe7de] bg-white/70">
+        <div className="flex items-center justify-between px-6 h-[86px] border-b border-border bg-white/80">
           <ChurvoxLogo size="lg" dataTestId="sidebar-logo" />
           <NotificationsBell />
         </div>
@@ -66,8 +66,8 @@ export default function Layout({ children }) {
                 to={item.path}
                 className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-[13px] font-semibold transition-all ${
                   active
-                    ? "bg-[#155EEF] text-white shadow-[0_10px_22px_rgba(21,94,239,0.3)] border border-[#0f48be]"
-                    : "text-slate-600 hover:bg-[#eef3ff] hover:text-[#155EEF] border border-transparent"
+                    ? "bg-primary text-primary-foreground shadow-[0_12px_24px_rgba(37,99,235,0.28)] border border-blue-700"
+                    : "text-slate-600 hover:bg-blue-50 hover:text-blue-700 border border-transparent"
                 }`}
                 data-testid={`nav-${item.label.toLowerCase()}`}
               >
@@ -79,8 +79,8 @@ export default function Layout({ children }) {
         </nav>
 
         {/* User + Logout */}
-        <div className="p-3 border-t border-[#ebe7de] space-y-2 bg-[#f8f5ef]">
-          <div className="px-3 py-2.5 rounded-xl bg-white border border-[#e5e0d7] shadow-[0_2px_8px_rgba(23,32,51,0.05)]">
+        <div className="p-3 border-t border-border space-y-2 bg-[#f7faff]">
+          <div className="px-3 py-2.5 rounded-xl bg-white border border-border shadow-[0_2px_8px_rgba(23,32,51,0.05)]">
             <p className="text-xs font-semibold text-slate-900 truncate">{user?.name}</p>
             <p className="text-[11px] text-slate-400 truncate">{user?.business_name || user?.email}</p>
           </div>
@@ -98,7 +98,7 @@ export default function Layout({ children }) {
       {/* Main content */}
       <div className="md:ml-[256px] min-h-screen flex flex-col" data-testid="main-content-area">
         {/* Mobile header */}
-        <header className="md:hidden bg-[#fcfaf6] border-b border-[#e4e0d8] px-4 py-3 flex items-center justify-between sticky top-0 z-30" data-testid="mobile-header">
+        <header className="md:hidden bg-[#f8fbff] border-b border-border px-4 py-3 flex items-center justify-between sticky top-0 z-30" data-testid="mobile-header">
           <ChurvoxLogo size="sm" dataTestId="mobile-logo" />
           <div className="flex items-center gap-2">
             <NotificationsBell />
@@ -110,7 +110,7 @@ export default function Layout({ children }) {
         <main className="flex-1">{children}</main>
 
         {/* Mobile bottom nav */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#fcfaf6] border-t border-[#e4e0d8] z-40 safe-area-bottom" data-testid="mobile-bottom-nav">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#f8fbff] border-t border-border z-40 safe-area-bottom" data-testid="mobile-bottom-nav">
           <div className="flex items-center justify-around py-1">
             {mainNav.map((item) => {
               const active = isActive(item.path);
@@ -137,7 +137,7 @@ export default function Layout({ children }) {
                 {moreNav.map((item) => (
                   <Link key={item.path} to={item.path} onClick={() => setMoreOpen(false)}
                     className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium ${
-                      isActive(item.path) ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-50"
+                      isActive(item.path) ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-blue-50"
                     }`}>
                     <item.icon className="h-5 w-5" />{item.label}
                   </Link>

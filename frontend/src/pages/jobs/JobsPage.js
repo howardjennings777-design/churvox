@@ -104,7 +104,7 @@ export default function JobsPage() {
             {filtered.map((job) => {
               const statusInfo = JOB_STATUS_MAP[job.status];
               return (
-                <Card key={job.id} className="bg-white border-[#e4e0d8] hover:border-blue-400 transition-all" data-testid={`job-card-${job.id}`}>
+                <Card key={job.id} className="bg-white border-border hover:border-blue-400 transition-all" data-testid={`job-card-${job.id}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <Link to={`/jobs/${job.id}`} className="flex-1 min-w-0">

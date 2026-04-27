@@ -10,16 +10,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #f2eee6;
+  background: #eef3fb;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d2c9ba;
+  background: #b8c7da;
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #b8ab96;
+  background: #94a8bf;
 }
 
 .job-card {
@@ -28,7 +28,7 @@
 
 .job-card:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 30px -16px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 10px 30px -16px rgba(37, 99, 235, 0.28);
 }
 
 button:active:not(:disabled) {

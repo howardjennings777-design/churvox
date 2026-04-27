@@ -160,7 +160,7 @@ export default function QuotesPage() {
 
   return (
     <Layout>
-      <div className="cx-page space-y-6 animate-in bg-[#f8f6f1] min-h-full" data-testid="quotes-page">
+      <div className="cx-page space-y-6 animate-in bg-background min-h-full" data-testid="quotes-page">
         <div className="cx-page-hero flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div>
             <h1 className="cx-page-title">Quotes</h1>
@@ -237,7 +237,7 @@ export default function QuotesPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 mt-3">
               {["Draft", "Send", "Accepted", "Convert to job"].map((step, idx) => (
-                <div key={step} className="rounded-xl border border-[#e8e2d8] bg-[#fffdfa] px-3 py-2 text-sm text-slate-700 flex items-center justify-between">
+                <div key={step} className="rounded-xl border border-border bg-white px-3 py-2 text-sm text-slate-700 flex items-center justify-between">
                   <span className="font-medium">{idx + 1}. {step}</span>
                   {idx < 3 ? <ArrowRight className="h-4 w-4 text-slate-400" /> : <Briefcase className="h-4 w-4 text-green-700" />}
                 </div>
