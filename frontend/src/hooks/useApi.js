@@ -6,6 +6,14 @@ import { formatApiErrorDetail } from "../lib/utils";
 
 import API_BASE from "../lib/apiBase";
 
+function optionalEmptyEndpoint(method, endpoint) {
+  if (String(method).toUpperCase() !== "GET") return null;
+  const clean = String(endpoint || "");
+  if (clean === "/follow-up-tasks" || clean.startsWith("/follow-up-tasks?")) return [];
+  if (clean === "/tasks" || clean.startsWith("/tasks?")) return [];
+  return null;
+}
+
 export function useApi() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -17,6 +25,11 @@ export function useApi() {
 
   const request = useCallback(
     async (method, endpoint, data = null, options = {}) => {
+      const optionalEmpty = optionalEmptyEndpoint(method, endpoint);
+      if (optionalEmpty !== null) {
+        return { success: true, data: optionalEmpty };
+      }
+
       setLoading(true);
       setError(null);
       try {
