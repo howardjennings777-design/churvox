@@ -70,6 +70,10 @@ function jobId(job) {
   return String(job?.id || job?._id || "");
 }
 
+function recordId(item) {
+  return String(item?.id || item?._id || "");
+}
+
 function sameDay(a, b) {
   if (!a || !b) return false;
   return String(a).slice(0, 10) === String(b).slice(0, 10);
@@ -85,12 +89,21 @@ function moneyNumber(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function clientCountry(client) {
+  return client?.country || client?.client_country || client?.billing_country || "New Zealand";
+}
+
+function clientRegion(client) {
+  return client?.region || client?.state || client?.area || client?.city || "";
+}
+
 export default function JobFormPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = !!id;
   const [searchParams] = useSearchParams();
   const workerIdFromQuery = searchParams.get("workerId") || "";
+  const clientIdFromQuery = searchParams.get("clientId") || searchParams.get("client_id") || "";
   const { get, post, patch } = useApi();
 
   const [loading, setLoading] = useState(true);
@@ -100,7 +113,7 @@ export default function JobFormPage() {
   const [jobs, setJobs] = useState([]);
   const [form, setForm] = useState({
     title: "",
-    client_id: "",
+    client_id: clientIdFromQuery,
     client_name: "",
     address: "",
     scheduled_date: "",
@@ -128,7 +141,8 @@ export default function JobFormPage() {
           get("/jobs"),
         ]);
 
-        setClients(clientsRes?.success && Array.isArray(clientsRes.data) ? clientsRes.data : []);
+        const clientsData = clientsRes?.success && Array.isArray(clientsRes.data) ? clientsRes.data : [];
+        setClients(clientsData);
         setWorkers(workersRes?.success && Array.isArray(workersRes.data) ? workersRes.data : []);
         setJobs(jobsRes?.success && Array.isArray(jobsRes.data) ? jobsRes.data : []);
 
@@ -156,6 +170,19 @@ export default function JobFormPage() {
               recurring_frequency: j.recurring_frequency || "weekly",
             });
           }
+        } else if (clientIdFromQuery) {
+          const selectedClient = clientsData.find((client) => recordId(client) === String(clientIdFromQuery));
+          if (selectedClient) {
+            setForm((prev) => ({
+              ...prev,
+              client_id: recordId(selectedClient),
+              client_name: selectedClient.name || selectedClient.client_name || "",
+              address: selectedClient.address || selectedClient.site_address || prev.address || "",
+              country: clientCountry(selectedClient) || prev.country,
+              region: clientRegion(selectedClient) || prev.region,
+              title: prev.title || `Job for ${selectedClient.name || selectedClient.client_name || "client"}`,
+            }));
+          }
         }
       } catch {
         toast.error("Failed to load job form");
@@ -165,7 +192,7 @@ export default function JobFormPage() {
     };
 
     load();
-  }, [get, id, isEdit]);
+  }, [get, id, isEdit, clientIdFromQuery]);
 
   const setField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -206,7 +233,10 @@ export default function JobFormPage() {
       ...prev,
       client_id: clientId,
       client_name: client?.name || client?.client_name || "",
-      address: client?.address || prev.address || "",
+      address: client?.address || client?.site_address || prev.address || "",
+      country: client ? clientCountry(client) : prev.country,
+      region: client ? clientRegion(client) : prev.region,
+      assigned_worker_id: client ? "" : prev.assigned_worker_id,
     }));
   };
 
