@@ -52,6 +52,9 @@ import PublicQuotePage from "./pages/public/PublicQuotePage";
 import PublicInvoicePage from "./pages/public/PublicInvoicePage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
+const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
+const isPlatformOwnerEmail = (user) => String(user?.email || "").trim().toLowerCase() === PLATFORM_OWNER_EMAIL;
+
 const Spinner = () => (
   <div className="min-h-screen chx-worker-shell flex items-center justify-center">
     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
@@ -68,9 +71,7 @@ function PublicRoute({ children }) {
   const { user, loading, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return children;
-  const email = (user?.email || "").toLowerCase();
-  const isPlatformOwner = email === "hello@churvox.com" || user?.is_platform_owner === true || user?.is_admin === true;
-  if (isPlatformOwner) return <Navigate to="/admin" replace />;
+  if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
 }
 
@@ -78,6 +79,7 @@ function BusinessRoute({ children }) {
   const { user, loading, isWorker, isPayroll, hasAppAccess } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
+  if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
   if (isPayroll) return <Navigate to="/payroll" replace />;
   if (!hasAppAccess) return <Navigate to="/plans" replace />;
@@ -88,6 +90,7 @@ function OwnerRoute({ children }) {
   const { user, loading, isOwnerUser, isWorker, isPayroll, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
+  if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
   if (isPayroll) return <Navigate to="/payroll" replace />;
   if (!isOwnerUser) return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
@@ -98,6 +101,7 @@ function TeamRoute({ children }) {
   const { user, loading, isWorker, isPayroll, hasAppAccess, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
+  if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
   if (isPayroll) return <Navigate to="/payroll" replace />;
   if (!hasAppAccess) return <Navigate to="/plans" replace />;
@@ -109,6 +113,7 @@ function WorkerRoute({ children }) {
   const { user, loading, isWorker } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
+  if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (!isWorker) return <Navigate to="/dashboard" replace />;
   return children;
 }
@@ -117,6 +122,7 @@ function PayrollRoute({ children }) {
   const { user, loading, normalizedRole, hasAppAccess } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
+  if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (normalizedRole !== "owner" && normalizedRole !== "manager" && normalizedRole !== "payroll") {
     return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
   }
@@ -128,6 +134,7 @@ function ReportsRoute({ children }) {
   const { user, loading, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
+  if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (!["owner", "manager", "office_admin"].includes(normalizedRole)) {
     return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
   }
@@ -138,9 +145,7 @@ function RoleRedirect() {
   const { user, loading, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
-  const email = (user?.email || "").toLowerCase();
-  const isPlatformOwner = email === "hello@churvox.com" || user?.is_platform_owner === true;
-  if (isPlatformOwner) return <Navigate to="/admin" replace />;
+  if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
 }
 
