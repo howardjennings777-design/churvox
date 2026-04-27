@@ -1,0 +1,121 @@
+/* CHURVOX UNIFIED PAGE HEADERS
+   Makes the top hero/header area feel consistent across every main app page. */
+
+:root {
+  --chx-hero-bg:
+    radial-gradient(circle at 88% 0%, rgba(56, 189, 248, 0.20), transparent 24rem),
+    radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.30), transparent 28rem),
+    linear-gradient(135deg, #07111f 0%, #0f172a 52%, #172554 100%);
+}
+
+/* Standard page hero classes used across the app */
+.cx-page-hero,
+.chx-page-header,
+.chx-hero,
+.page-header,
+.hero-card {
+  position: relative !important;
+  overflow: hidden !important;
+  border-radius: 28px !important;
+  border: 1px solid rgba(186, 230, 253, 0.20) !important;
+  background: var(--chx-hero-bg) !important;
+  box-shadow: 0 24px 70px rgba(2, 6, 23, 0.22) !important;
+  color: #ffffff !important;
+  padding: 28px !important;
+}
+
+.cx-page-hero::before,
+.chx-page-header::before,
+.chx-hero::before,
+.page-header::before,
+.hero-card::before {
+  display: none !important;
+}
+
+.cx-page-hero h1,
+.chx-page-header h1,
+.chx-hero h1,
+.page-header h1,
+.hero-card h1,
+.cx-page-hero h2,
+.chx-page-header h2,
+.chx-hero h2,
+.page-header h2,
+.hero-card h2,
+.cx-page-title {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.045em !important;
+}
+
+.cx-page-hero p,
+.chx-page-header p,
+.chx-hero p,
+.page-header p,
+.hero-card p,
+.cx-page-subtitle {
+  color: #dbeafe !important;
+}
+
+.cx-page-hero .text-slate-500,
+.cx-page-hero .text-slate-600,
+.chx-page-header .text-slate-500,
+.chx-page-header .text-slate-600,
+.chx-hero .text-slate-500,
+.chx-hero .text-slate-600,
+.page-header .text-slate-500,
+.page-header .text-slate-600,
+.hero-card .text-slate-500,
+.hero-card .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+.cx-page-hero button,
+.chx-page-header button,
+.chx-hero button,
+.page-header button,
+.hero-card button,
+.cx-page-hero a[role="button"],
+.chx-page-header a[role="button"],
+.chx-hero a[role="button"],
+.page-header a[role="button"],
+.hero-card a[role="button"] {
+  border-color: rgba(186, 230, 253, 0.26) !important;
+}
+
+.cx-page-hero button:not(.bg-blue-600):not(.bg-blue-700):not(.bg-primary),
+.chx-page-header button:not(.bg-blue-600):not(.bg-blue-700):not(.bg-primary),
+.chx-hero button:not(.bg-blue-600):not(.bg-blue-700):not(.bg-primary),
+.page-header button:not(.bg-blue-600):not(.bg-blue-700):not(.bg-primary),
+.hero-card button:not(.bg-blue-600):not(.bg-blue-700):not(.bg-primary) {
+  background: rgba(255, 255, 255, 0.10) !important;
+  color: #ffffff !important;
+}
+
+/* Automation page already has its own top section class. Match it exactly. */
+.bg-gradient-to-br.from-slate-950,
+section.bg-gradient-to-br.from-slate-950 {
+  border-radius: 28px !important;
+  background: var(--chx-hero-bg) !important;
+  color: #ffffff !important;
+  border-color: rgba(186, 230, 253, 0.20) !important;
+}
+
+/* Pages that use a first section/card as a header should still look like the same system. */
+.cx-page > section:first-child,
+.chx-page > section:first-child,
+.cx-page > div.cx-page-hero:first-child,
+.chx-page > div.chx-page-header:first-child {
+  margin-bottom: 4px !important;
+}
+
+@media (max-width: 768px) {
+  .cx-page-hero,
+  .chx-page-header,
+  .chx-hero,
+  .page-header,
+  .hero-card {
+    border-radius: 22px !important;
+    padding: 20px !important;
+  }
+}
