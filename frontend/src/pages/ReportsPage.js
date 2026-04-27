@@ -41,37 +41,24 @@ function computeFallbackSummary({ jobs, invoices, quotes, clients, workers, rang
   const overdue = rangeInvoices.filter((invoice) => String(invoice.status || "").toLowerCase() === "overdue");
   const acceptedQuotes = rangeQuotes.filter((quote) => String(quote.status || "").toLowerCase() === "accepted");
   const sentQuotes = rangeQuotes.filter((quote) => ["sent", "accepted", "declined"].includes(String(quote.status || "").toLowerCase()));
-
   const clientMap = new Map();
   rangeInvoices.forEach((invoice) => {
     const key = idOf(invoice);
-    const existing = clientMap.get(key) || {
-      client_id: key,
-      client_name: invoice.customer_name || invoice.client_name || "Unknown client",
-      revenue: 0,
-      jobs: 0,
-    };
+    const existing = clientMap.get(key) || { client_id: key, client_name: invoice.customer_name || invoice.client_name || "Unknown client", revenue: 0, jobs: 0 };
     existing.revenue += safeNumber(invoice.total || invoice.amount || invoice.subtotal, 0);
     clientMap.set(key, existing);
   });
   rangeJobs.forEach((job) => {
     const key = idOf(job);
-    const existing = clientMap.get(key) || {
-      client_id: key,
-      client_name: job.customer_name || job.client_name || "Unknown client",
-      revenue: 0,
-      jobs: 0,
-    };
+    const existing = clientMap.get(key) || { client_id: key, client_name: job.customer_name || job.client_name || "Unknown client", revenue: 0, jobs: 0 };
     existing.jobs += 1;
     clientMap.set(key, existing);
   });
-
   const workerHours = rangeJobs.reduce((total, job) => {
     const seconds = safeNumber(job.total_time_seconds || job.worked_seconds || job.net_worked_seconds, 0);
     const hours = safeNumber(job.hours_worked, 0);
     return total + (seconds ? seconds / 3600 : hours);
   }, 0);
-
   return {
     revenue_this_month: paidInvoices.reduce((sum, invoice) => sum + safeNumber(invoice.total || invoice.amount || invoice.subtotal, 0), 0),
     outstanding_invoices: outstanding.reduce((sum, invoice) => sum + safeNumber(invoice.total || invoice.amount || invoice.subtotal, 0), 0),
@@ -94,13 +81,14 @@ function computeFallbackSummary({ jobs, invoices, quotes, clients, workers, rang
 }
 
 function FilterButton({ active, children, onClick }) {
+  const textColor = active ? "#ffffff" : "#1d4ed8";
   return (
     <button
       type="button"
       className="reports-filter-btn rounded-full px-4 py-2 text-sm font-black transition"
       style={{
         background: active ? "#2563eb" : "#ffffff",
-        color: active ? "#ffffff" : "#1d4ed8",
+        color: textColor,
         border: active ? "1px solid #2563eb" : "1px solid #bfdbfe",
         boxShadow: active ? "0 14px 30px rgba(37,99,235,0.24)" : "0 8px 18px rgba(15,23,42,0.06)",
         opacity: 1,
@@ -108,19 +96,13 @@ function FilterButton({ active, children, onClick }) {
       }}
       onClick={onClick}
     >
-      {children}
+      <span style={{ color: textColor, opacity: 1, display: "inline-block", fontWeight: 900 }}>{children}</span>
     </button>
   );
 }
 
 function StatTile({ label, value, icon: Icon, tone = "blue" }) {
-  const tones = {
-    blue: "bg-blue-50 text-blue-700 border-blue-100",
-    green: "bg-emerald-50 text-emerald-700 border-emerald-100",
-    amber: "bg-amber-50 text-amber-700 border-amber-100",
-    red: "bg-red-50 text-red-700 border-red-100",
-    slate: "bg-slate-50 text-slate-700 border-slate-100",
-  };
+  const tones = { blue: "bg-blue-50 text-blue-700 border-blue-100", green: "bg-emerald-50 text-emerald-700 border-emerald-100", amber: "bg-amber-50 text-amber-700 border-amber-100", red: "bg-red-50 text-red-700 border-red-100", slate: "bg-slate-50 text-slate-700 border-slate-100" };
   return (
     <div className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.07)]">
       <div className="flex items-start justify-between gap-3">
@@ -128,9 +110,7 @@ function StatTile({ label, value, icon: Icon, tone = "blue" }) {
           <p className="text-[11px] font-black uppercase tracking-[0.13em] text-slate-500">{label}</p>
           <p className="mt-2 text-2xl font-black tracking-tight text-slate-950">{value}</p>
         </div>
-        <span className={`rounded-xl border p-2 ${tones[tone] || tones.blue}`}>
-          <Icon className="h-4 w-4" />
-        </span>
+        <span className={`rounded-xl border p-2 ${tones[tone] || tones.blue}`}><Icon className="h-4 w-4" /></span>
       </div>
     </div>
   );
@@ -167,15 +147,8 @@ export default function ReportsPage() {
     setLoading(true);
     setSummary({});
     const [summaryRes, accountingRes, jobsRes, invoicesRes, quotesRes, clientsRes, workersRes] = await Promise.allSettled([
-      get(`/reports/summary?range=${range}`),
-      get("/accounting/settings"),
-      get("/jobs"),
-      get("/invoices"),
-      get("/quotes"),
-      get("/clients"),
-      get("/team/workers"),
+      get(`/reports/summary?range=${range}`), get("/accounting/settings"), get("/jobs"), get("/invoices"), get("/quotes"), get("/clients"), get("/team/workers"),
     ]);
-
     const liveSummary = summaryRes.status === "fulfilled" && summaryRes.value?.success ? summaryRes.value.data : null;
     const fallback = computeFallbackSummary({
       jobs: jobsRes.status === "fulfilled" && jobsRes.value?.success ? jobsRes.value.data : [],
@@ -185,7 +158,6 @@ export default function ReportsPage() {
       workers: workersRes.status === "fulfilled" && workersRes.value?.success ? workersRes.value.data : [],
       range,
     });
-
     setSummary({ ...fallback, ...(liveSummary || {}) });
     setDataSource(liveSummary ? "backend report" : "computed from live records");
     if (accountingRes.status === "fulfilled" && accountingRes.value?.success) setAccounting(accountingRes.value.data || null);
@@ -228,30 +200,21 @@ export default function ReportsPage() {
             <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
               <FilterButton active={range === "this_month"} onClick={() => setRange("this_month")}>This month</FilterButton>
               <FilterButton active={range === "last_month"} onClick={() => setRange("last_month")}>Last month</FilterButton>
-              <button
-                className="reports-filter-btn rounded-full px-4 py-2 text-sm font-black transition"
-                style={{ background: "#ffffff", color: "#1d4ed8", border: "1px solid #bfdbfe", boxShadow: "0 8px 18px rgba(15,23,42,0.06)", opacity: 1, minWidth: 118 }}
-                onClick={load}
-              >
-                <RefreshCw className={`mr-1 inline h-4 w-4 ${loading ? "animate-spin" : ""}`} />Refresh
+              <button className="reports-filter-btn rounded-full px-4 py-2 text-sm font-black transition" style={{ background: "#ffffff", color: "#1d4ed8", border: "1px solid #bfdbfe", boxShadow: "0 8px 18px rgba(15,23,42,0.06)", opacity: 1, minWidth: 118 }} onClick={load}>
+                <span style={{ color: "#1d4ed8", opacity: 1, display: "inline-flex", alignItems: "center", gap: 4, fontWeight: 900 }}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Refresh</span>
               </button>
             </div>
           </div>
-          {(accounting?.invoice_mode === "myob_sync" || accounting?.invoice_mode === "myob_external") && (
-            <p className="mt-3 text-xs font-semibold text-slate-500">Accounting status is synced from MYOB when connected.</p>
-          )}
+          {(accounting?.invoice_mode === "myob_sync" || accounting?.invoice_mode === "myob_external") && <p className="mt-3 text-xs font-semibold text-slate-500">Accounting status is synced from MYOB when connected.</p>}
         </div>
-
         <div key={`cards-${range}-${lastUpdated?.getTime() || 0}`} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {cards.map(([label, value, Icon, tone]) => <StatTile key={label} label={label} value={value} icon={Icon} tone={tone} />)}
         </div>
-
         <div key={`breakdowns-${range}-${lastUpdated?.getTime() || 0}`} className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
           <BreakdownCard title="Jobs by status" items={summary?.jobs_by_status} empty="No jobs in this period." />
           <BreakdownCard title="Invoices by status" items={summary?.invoice_status_breakdown} empty="No invoices yet." />
           <BreakdownCard title="Quotes by status" items={summary?.quote_status_breakdown} empty="No quotes yet." />
         </div>
-
         <div key={`bottom-${range}-${lastUpdated?.getTime() || 0}`} className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
           <div className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.07)]">
             <p className="text-sm font-black text-slate-950">Top clients</p>
@@ -265,14 +228,12 @@ export default function ReportsPage() {
               {safeArray(summary?.top_clients).length === 0 && <p className="text-sm text-slate-500">Top clients will appear after invoices and completed jobs.</p>}
             </div>
           </div>
-
           <div className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.07)] reports-health-card">
             <p className="text-sm font-black text-slate-950">Launch health</p>
             <div className="mt-3 grid gap-2">
               {launchHealth.map(([label, value]) => (
                 <div key={`${range}-${label}-${value}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                  <span>{label}</span>
-                  <strong className="text-slate-950">{value}</strong>
+                  <span>{label}</span><strong className="text-slate-950">{value}</strong>
                 </div>
               ))}
             </div>
