@@ -6,6 +6,7 @@ import { normalizeRole, isBusinessRole, isOwner, isWorkerRole, isPayrollRole } f
 axios.defaults.withCredentials = true;
 
 const AuthContext = createContext(null);
+const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -69,16 +70,13 @@ export function AuthProvider({ children }) {
     localStorage.setItem("token", token);
     setUser({ ...userData, token });
 
-    if (
-      email === "hello@churvox.com" ||
-      userData?.role === "owner" ||
-      userData?.role === "admin" ||
-      userData?.is_owner === true ||
-      userData?.is_admin === true ||
-      userData?.is_platform_owner === true
-    ) {
+    const loginEmail = String(userData?.email || email || "").trim().toLowerCase();
+    if (loginEmail === PLATFORM_OWNER_EMAIL) {
       localStorage.setItem("owner_portal_session", "true");
-      localStorage.setItem("platform_owner_email", email);
+      localStorage.setItem("platform_owner_email", PLATFORM_OWNER_EMAIL);
+    } else {
+      localStorage.removeItem("owner_portal_session");
+      localStorage.removeItem("platform_owner_email");
     }
 
     return { ...response.data, token };
