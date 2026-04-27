@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import NotificationsBell from "./NotificationsBell";
 import HelpDropdown from "./HelpDropdown";
+import FirstRunGuide from "./FirstRunGuide";
 
 export default function Layout({ children }) {
   const { user, logout, normalizedRole, isOwnerUser } = useAuth();
@@ -168,6 +169,7 @@ export default function Layout({ children }) {
       </div>
 
       <InstallPrompt />
+      <FirstRunGuide user={user} enabled={showHelp && location.pathname !== "/plans"} />
     </div>
   );
 }
