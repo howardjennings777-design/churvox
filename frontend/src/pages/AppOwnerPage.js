@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, AlertTriangle, Briefcase, Building2, CreditCard, FileText, RefreshCw, ShieldCheck, Users, Zap } from "lucide-react";
+import { Activity, AlertTriangle, Briefcase, Building2, CreditCard, FileText, LogOut, RefreshCw, ShieldCheck, Users, Zap } from "lucide-react";
 import API_BASE from "../lib/apiBase";
 
 const ADMIN_ENDPOINTS = [
@@ -140,6 +140,23 @@ export default function AppOwnerPage() {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
+  const handleLogout = async () => {
+    const token = localStorage.getItem("token") || localStorage.getItem("authToken") || "";
+    try {
+      await fetch(`${API_BASE}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+    } catch (_) {}
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("owner_portal_session");
+    localStorage.removeItem("platform_owner_email");
+    window.location.assign("/login");
+  };
+
   const fetchJson = useCallback(async (path) => {
     const res = await fetch(`${API_BASE}${path}`, { credentials: "include", headers: { Accept: "application/json", ...headers() } });
     const json = await res.json().catch(() => null);
@@ -202,9 +219,14 @@ export default function AppOwnerPage() {
               <h1 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Owner Command Centre</h1>
               <p className="mt-3 max-w-3xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Separate app-owner dashboard for platform health, users, businesses, jobs, invoices, automation and alerts.</p>
             </div>
-            <button onClick={load} className="inline-flex items-center gap-2 rounded-full border border-cyan-200/25 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/15">
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={load} className="inline-flex items-center gap-2 rounded-full border border-cyan-200/25 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/15">
+                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+              </button>
+              <button onClick={handleLogout} className="inline-flex items-center gap-2 rounded-full border border-red-200/25 bg-red-500/15 px-4 py-2 text-sm font-black text-red-100 hover:bg-red-500/25" data-testid="app-owner-logout">
+                <LogOut className="h-4 w-4" /> Log out
+              </button>
+            </div>
           </div>
           <div className="mt-6 grid gap-3 md:grid-cols-4">
             <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-xs font-black uppercase tracking-wide text-slate-400">MRR estimate</p><p className="mt-2 text-xl font-black">{money(data.revenue)}</p></div>
