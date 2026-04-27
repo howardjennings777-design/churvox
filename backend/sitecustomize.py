@@ -67,6 +67,11 @@ class _ServerBootLoader(importlib.abc.Loader):
             install_quote_job_boot(module)
         except Exception as exc:
             print(f"QUOTE_JOB_BOOT_INSTALL_ERR {exc}")
+        try:
+            from client_360_boot import install_client_360_boot
+            install_client_360_boot(module)
+        except Exception as exc:
+            print(f"CLIENT_360_BOOT_INSTALL_ERR {exc}")
 
 
 class _ServerBootFinder(importlib.abc.MetaPathFinder):
