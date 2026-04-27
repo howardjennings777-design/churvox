@@ -18,8 +18,10 @@ export default function PlatformAdminRoute({ children }) {
   const ownerUnlock = localStorage.getItem("platform_owner_access") === "true";
   const ownerEmail = (localStorage.getItem("platform_owner_email") || "").toLowerCase();
   const userEmail = (user?.email || "").toLowerCase();
+  const role = String(user?.role || "").toLowerCase();
+  const isLaunchAudit = location.pathname === "/launch-audit" || location.pathname === "/admin/launch-audit" || location.pathname === "/owner/launch-audit";
 
-  const isAllowed =
+  const isPlatformAllowed =
     ownerSession ||
     ownerUnlock ||
     ownerEmail === "hello@churvox.com" ||
@@ -27,6 +29,11 @@ export default function PlatformAdminRoute({ children }) {
     user?.role === "admin" ||
     user?.is_admin === true ||
     user?.is_platform_owner === true;
+
+  const isBusinessOwnerAllowedForLaunchAudit =
+    isLaunchAudit && ["owner", "employer", "admin", "manager"].includes(role);
+
+  const isAllowed = isPlatformAllowed || isBusinessOwnerAllowedForLaunchAudit;
 
   if (!isAllowed) {
     return <Navigate to="/login" replace state={{ from: location }} />;
