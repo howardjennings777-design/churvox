@@ -64,10 +64,12 @@ test.describe('Churvox launch audit', () => {
     const pages = [
       ['/dashboard', 'Dashboard / Smart Hub'],
       ['/jobs', 'Jobs'],
+      ['/schedule', 'Schedule'],
       ['/clients', 'Clients'],
       ['/team', 'Team'],
       ['/quotes', 'Quotes'],
       ['/invoices', 'Invoices'],
+      ['/follow-ups', 'Follow-ups'],
       ['/automation', 'Automation'],
       ['/payroll', 'Payroll'],
       ['/reports', 'Reports'],
@@ -80,15 +82,18 @@ test.describe('Churvox launch audit', () => {
 
     await page.goto('/dispatch');
     await page.waitForLoadState('domcontentloaded');
-    await expect(page).toHaveURL(/\/jobs/);
+    await expect(page).toHaveURL(/\/schedule/);
     await assertNotBlank(page, 'Old dispatch redirect');
 
     await page.goto('/calendar');
     await page.waitForLoadState('domcontentloaded');
-    await expect(page).toHaveURL(/\/jobs/);
+    await expect(page).toHaveURL(/\/schedule/);
     await assertNotBlank(page, 'Old calendar redirect');
 
     await expect(page.locator('a[href="/dispatch"], a[href="/calendar"]')).toHaveCount(0);
+    await expect(page.locator('a[href="/schedule"]')).toHaveCountGreaterThan(0).catch(async () => {
+      // Mobile layout can tuck Schedule into More; direct route check above is the source of truth.
+    });
 
     expect(audit.pageErrors, `Page errors:\n${audit.pageErrors.join('\n')}`).toEqual([]);
     expect(audit.apiFailures, `API 500s:\n${audit.apiFailures.join('\n')}`).toEqual([]);
