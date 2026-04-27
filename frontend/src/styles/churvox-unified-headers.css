@@ -92,6 +92,53 @@
   color: #ffffff !important;
 }
 
+/* Dashboard hero quick actions must not become one huge pale bar. */
+.dashboard-compact .cx-page-hero .dashboard-quickbar,
+.dashboard-compact .cx-page-hero .cx-toolbar.dashboard-quickbar {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  width: auto !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+  margin-top: 16px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.dashboard-compact .cx-page-hero .dashboard-quickbar button {
+  width: auto !important;
+  min-width: 118px !important;
+  height: 40px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(186, 230, 253, 0.22) !important;
+  background: rgba(255, 255, 255, 0.10) !important;
+  color: #ffffff !important;
+  padding: 0 15px !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+.dashboard-compact .cx-page-hero .dashboard-quickbar button:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+}
+
+.dashboard-compact .cx-page-hero .cx-page-subtitle {
+  max-width: 760px !important;
+  line-height: 1.45 !important;
+}
+
+.dashboard-compact .dashboard-stat-strip .cx-stat-card {
+  min-height: 132px !important;
+  border-radius: 22px !important;
+  padding: 18px !important;
+}
+
 /* Automation page already has its own top section class. Match it exactly. */
 .bg-gradient-to-br.from-slate-950,
 section.bg-gradient-to-br.from-slate-950 {
@@ -157,6 +204,15 @@ section.bg-gradient-to-br.from-slate-950 {
   .hero-card {
     border-radius: 22px !important;
     padding: 20px !important;
+  }
+
+  .dashboard-compact .cx-page-hero .dashboard-quickbar {
+    gap: 8px !important;
+  }
+
+  .dashboard-compact .cx-page-hero .dashboard-quickbar button {
+    flex: 1 1 45% !important;
+    min-width: 0 !important;
   }
 
   [data-testid^="worker-card-"] button.flex-1 {
