@@ -25,19 +25,19 @@ export default function Layout({ children }) {
   };
 
   const navItems = [
-    canAccess(role, "dashboard") && { path: "/dashboard", label: "Overview", icon: LayoutDashboard },
+    canAccess(role, "dashboard") && { path: "/dashboard", label: "Smart Hub", icon: LayoutDashboard },
     canAccess(role, "jobs") && { path: "/jobs", label: "Jobs", icon: Briefcase },
-    canAccess(role, "calendar") && { path: "/dispatch", label: "Dispatch", icon: Calendar },
+    canAccess(role, "calendar") && { path: "/dispatch", label: "Schedule", icon: Calendar },
     canAccess(role, "clients") && { path: "/clients", label: "Clients", icon: Users },
     canAccess(role, "quotes") && { path: "/quotes", label: "Quotes", icon: FileText },
     canAccess(role, "invoices") && { path: "/invoices", label: "Invoices", icon: Receipt },
     canAccess(role, "team") && (isOwnerUser || hasPlanAccess(safePlan, "team")) && { path: "/team", label: "Team", icon: UserPlus },
     (role === "owner" || role === "employer" || role === "manager") && { path: "/automation", label: "Automation", icon: Zap },
     canAccess(role, "payroll") && { path: "/payroll", label: "Payroll", icon: DollarSign },
-    canAccess(role, "sms") && { path: "/sms", label: "SMS", icon: MessageSquare },
-    canAccess(role, "reports") && { path: "/reports", label: "Reports", icon: FileText },
-    canAccess(role, "integrations") && { path: "/integrations", label: "Integrations", icon: Zap },
-    isOwnerUser && { path: "/plans", label: "Plans", icon: CreditCard },
+    canAccess(role, "sms") && { path: "/sms", label: "Communications", icon: MessageSquare },
+    canAccess(role, "reports") && role !== "payroll" && { path: "/reports", label: "Reports", icon: FileText },
+    canAccess(role, "integrations") && { path: "/integrations", label: "Document Studio", icon: Zap },
+    isOwnerUser && { path: "/plans", label: "Plans & Billing", icon: CreditCard },
     canAccess(role, "settings") && { path: "/settings", label: "Settings", icon: Settings },
   ].filter(Boolean);
 
@@ -57,8 +57,10 @@ export default function Layout({ children }) {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-1.5 scrollbar-thin scrollbar-thumb-slate-700">
-          {navItems.map((item) => {
+        <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-4 scrollbar-thin scrollbar-thumb-slate-700">
+          <div>
+            <p className="px-3 pb-2 text-[10px] uppercase tracking-[0.14em] text-slate-500">Operations</p>
+            {navItems.filter((x) => !["/settings","/plans","/reports"].includes(x.path)).map((item) => {
             const active = isActive(item.path);
             return (
               <Link
@@ -75,7 +77,28 @@ export default function Layout({ children }) {
                 <span>{item.label}</span>
               </Link>
             );
-          })}
+            })}
+          </div>
+          <div>
+            <p className="px-3 pb-2 text-[10px] uppercase tracking-[0.14em] text-slate-500">Admin</p>
+            {navItems.filter((x) => ["/reports","/plans","/settings"].includes(x.path)).map((item) => {
+              const active = isActive(item.path);
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-[13px] font-semibold transition-all ${
+                    active
+                      ? "bg-[#2563eb] text-primary-foreground shadow-[0_12px_24px_rgba(37,99,235,0.35)] border border-blue-300/50"
+                      : "text-slate-300 hover:bg-[#112441] hover:text-blue-200 border border-transparent"
+                  }`}
+                >
+                  <item.icon className={`h-[18px] w-[18px] shrink-0 ${active ? "text-white" : "text-slate-400"}`} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
         </nav>
 
         {/* User + Logout */}

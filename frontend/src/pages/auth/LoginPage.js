@@ -164,7 +164,7 @@ export default function LoginPage() {
             Premium operating system for service businesses
           </h2>
           <p className="text-blue-100/90 text-lg mb-6">
-            Churvox unifies dispatch, jobs, payroll and customer comms so your team stays aligned from office to field.
+            Run jobs, teams, quotes, invoices, time, payroll and automation from one powerful field-service hub.
           </p>
           <div className="flex flex-wrap justify-center gap-3 text-sm text-blue-50/90">
             <span className="px-3 py-1 rounded-full border border-blue-200/20 bg-blue-400/10">Dispatch board</span>
