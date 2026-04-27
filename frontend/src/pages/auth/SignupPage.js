@@ -60,14 +60,13 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left side - Decorative */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-50 via-white to-slate-100 items-center justify-center p-12">
+    <div className="cx-auth-shell">
+      <div className="cx-auth-aside">
         <div className="max-w-lg">
           <div className="inline-flex items-center justify-center mb-8">
             <ChurvoxLogo size="xl" />
           </div>
-          <h2 className="text-3xl font-semibold text-slate-900 mb-6">
+          <h2 className="text-3xl font-semibold text-white mb-6">
             Start managing your business today
           </h2>
           <div className="space-y-4">
@@ -77,8 +76,8 @@ export default function SignupPage() {
               "Send professional quotes and invoices",
               "Time tracking with GST-ready billing",
             ].map((feature, i) => (
-              <div key={i} className="flex items-center gap-3 text-muted-foreground">
-                <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+              <div key={i} className="flex items-center gap-3 text-blue-100/90">
+                <CheckCircle className="h-5 w-5 text-emerald-300 flex-shrink-0" />
                 <span>{feature}</span>
               </div>
             ))}
@@ -86,18 +85,17 @@ export default function SignupPage() {
         </div>
       </div>
 
-      {/* Right side - Signup form */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md animate-in">
+      <div className="cx-auth-panel">
+        <div className="cx-auth-card animate-in">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center mb-6 lg:hidden">
+            <div className="inline-flex items-center justify-center mb-6">
               <ChurvoxLogo size="lg" />
             </div>
             <h1 className="text-2xl font-semibold text-slate-900">Create account</h1>
             <p className="text-muted-foreground mt-2">Get started with Churvox for free</p>
           </div>
 
-          <Card className="bg-card border-border">
+          <Card className="bg-card border-border shadow-none border-0">
             <CardHeader className="space-y-1 pb-4">
               <CardTitle className="text-xl font-heading">Sign up</CardTitle>
               <CardDescription>Fill in your details to create your account</CardDescription>

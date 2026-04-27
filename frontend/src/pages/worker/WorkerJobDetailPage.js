@@ -13,6 +13,14 @@ const WORKER_ACTION_LABELS = {
   paused: "Pause",
   completed: "Complete",
 };
+const statusBadgeClass = {
+  completed: "status-completed",
+  in_progress: "status-in-progress",
+  paused: "status-paused",
+  assigned: "status-assigned",
+  acknowledged: "status-assigned",
+  cancelled: "status-cancelled",
+};
 
 async function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -233,7 +241,7 @@ export default function WorkerJobDetailPage() {
         <div className="bg-white rounded-2xl border border-border p-5 space-y-3 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900">{job.title}</h2>
-            <span className="cx-status-badge status-in-progress">{status.replace(/_/g, " ")}</span>
+            <span className={`cx-status-badge ${statusBadgeClass[status] || "status-assigned"}`}>{status.replace(/_/g, " ")}</span>
           </div>
           {job.client_name && <p className="text-sm text-slate-500 flex items-center gap-1.5"><User className="h-4 w-4" />{job.client_name}</p>}
           {job.address && <p className="text-sm text-slate-500 flex items-center gap-1.5"><MapPin className="h-4 w-4" />{job.address}</p>}
@@ -338,11 +346,6 @@ export default function WorkerJobDetailPage() {
             {job.accepted_at && <p className="text-xs text-slate-400">Accepted: {new Date(job.accepted_at).toLocaleString()}</p>}
             {job.started_at && <p className="text-xs text-slate-400">Started: {new Date(job.started_at).toLocaleString()}</p>}
             {job.completed_at && <p className="text-xs text-slate-400">Completed: {new Date(job.completed_at).toLocaleString()}</p>}
-            {job.location_status && (
-              <p className="text-xs text-slate-400">
-                {job.location_status === "captured" ? "Arrival check-in captured" : "Location check status recorded"}
-              </p>
-            )}
           </div>
         )}
       </main>

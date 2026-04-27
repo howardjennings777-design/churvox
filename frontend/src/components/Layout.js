@@ -47,17 +47,17 @@ export default function Layout({ children }) {
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
 
   return (
-    <div className="cx-app-shell tap-safe-root min-h-screen bg-background" data-testid="layout-container">
+    <div className="cx-app-shell tap-safe-root min-h-screen bg-background overflow-x-clip" data-testid="layout-container">
       {/* Desktop Sidebar — Premium narrow style */}
-      <aside className="hidden md:flex md:flex-col md:w-[256px] md:fixed md:inset-y-0 bg-[#0c1629] border-r border-slate-800 z-40 shadow-[10px_0_28px_rgba(2,6,23,0.45)]" data-testid="desktop-sidebar">
+      <aside className="hidden md:flex md:flex-col md:w-[256px] md:fixed md:inset-y-0 bg-[#091427] border-r border-slate-800/90 z-40 shadow-[10px_0_28px_rgba(2,6,23,0.45)]" data-testid="desktop-sidebar">
         {/* Logo */}
-        <div className="flex items-center justify-between px-6 h-[86px] border-b border-slate-800 bg-[#0f1d35]">
+        <div className="flex items-center justify-between px-6 h-[86px] border-b border-slate-800/90 bg-[#0e1d36]">
           <ChurvoxLogo size="lg" dataTestId="sidebar-logo" />
           <NotificationsBell />
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-1.5">
+        <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-1.5 scrollbar-thin scrollbar-thumb-slate-700">
           {navItems.map((item) => {
             const active = isActive(item.path);
             return (
@@ -66,8 +66,8 @@ export default function Layout({ children }) {
                 to={item.path}
                 className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-[13px] font-semibold transition-all ${
                   active
-                    ? "bg-[#1d66ff] text-primary-foreground shadow-[0_12px_24px_rgba(29,102,255,0.35)] border border-blue-400/40"
-                    : "text-slate-300 hover:bg-[#122744] hover:text-blue-200 border border-transparent"
+                    ? "bg-[#2563eb] text-primary-foreground shadow-[0_12px_24px_rgba(37,99,235,0.35)] border border-blue-300/50"
+                    : "text-slate-300 hover:bg-[#112441] hover:text-blue-200 border border-transparent"
                 }`}
                 data-testid={`nav-${item.label.toLowerCase()}`}
               >
@@ -79,8 +79,8 @@ export default function Layout({ children }) {
         </nav>
 
         {/* User + Logout */}
-        <div className="p-3 border-t border-slate-800 space-y-2 bg-[#0a1424]">
-          <div className="px-3 py-2.5 rounded-xl bg-[#111f36] border border-slate-700 shadow-[0_2px_8px_rgba(2,6,23,0.35)]">
+        <div className="p-3 border-t border-slate-800/90 space-y-2 bg-[#0a1324]">
+          <div className="px-3 py-2.5 rounded-xl bg-[#102039] border border-slate-700 shadow-[0_2px_8px_rgba(2,6,23,0.35)]">
             <p className="text-xs font-semibold text-slate-100 truncate">{user?.name}</p>
             <p className="text-[11px] text-slate-400 truncate">{user?.business_name || user?.email}</p>
           </div>
@@ -98,7 +98,7 @@ export default function Layout({ children }) {
       {/* Main content */}
       <div className="md:ml-[256px] min-h-screen flex flex-col" data-testid="main-content-area">
         {/* Mobile header */}
-        <header className="md:hidden bg-[#0f1d35] border-b border-slate-800 px-4 py-3 flex items-center justify-between sticky top-0 z-30" data-testid="mobile-header">
+        <header className="md:hidden bg-[#0d1a31] border-b border-slate-800 px-4 py-3 flex items-center justify-between sticky top-0 z-30" data-testid="mobile-header">
           <ChurvoxLogo size="sm" dataTestId="mobile-logo" />
           <div className="flex items-center gap-2">
             <NotificationsBell />
@@ -107,10 +107,10 @@ export default function Layout({ children }) {
         </header>
 
         {/* Content */}
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 pt-1">{children}</main>
 
         {/* Mobile bottom nav */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0f1d35] border-t border-slate-800 z-40 safe-area-bottom" data-testid="mobile-bottom-nav">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0d1a31] border-t border-slate-800 z-40 safe-area-bottom" data-testid="mobile-bottom-nav">
           <div className="flex items-center justify-around py-1">
             {mainNav.map((item) => {
               const active = isActive(item.path);

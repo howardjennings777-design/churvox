@@ -50,19 +50,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left side - Login form */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md animate-in">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center mb-6">
+    <div className="cx-auth-shell">
+      <div className="cx-auth-panel">
+        <div className="cx-auth-card animate-in">
+          <div className="text-center mb-7">
+            <div className="inline-flex items-center justify-center mb-5">
               <ChurvoxLogo size="lg" />
             </div>
             <h1 className="text-2xl font-semibold text-slate-900">Welcome back</h1>
-            <p className="text-muted-foreground mt-2">Sign in to manage your jobs</p>
+            <p className="text-slate-500 mt-2">Sign in to run jobs, crew, dispatch and billing from one command centre.</p>
           </div>
 
-          <Card className="bg-card border-border">
+          <Card className="bg-card border-border shadow-none border-0">
             <CardHeader className="space-y-1 pb-4">
               <CardTitle className="text-xl font-heading">Sign in</CardTitle>
               <CardDescription>Enter your credentials to access your dashboard</CardDescription>
@@ -156,23 +155,22 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right side - Decorative */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-50 via-white to-slate-100 items-center justify-center p-12">
+      <div className="cx-auth-aside">
         <div className="max-w-lg text-center">
           <div className="inline-flex items-center justify-center mb-8">
             <ChurvoxLogo size="xl" />
           </div>
-          <h2 className="text-3xl font-semibold text-slate-900 mb-4">
-            Run your trade business smarter
+          <h2 className="text-3xl font-semibold text-white mb-4">
+            Premium operating system for service businesses
           </h2>
-          <p className="text-muted-foreground text-lg mb-6">
-            Jobs, quotes, invoices, team management, and scheduling — all in one platform built for contractors.
+          <p className="text-blue-100/90 text-lg mb-6">
+            Churvox unifies dispatch, jobs, payroll and customer comms so your team stays aligned from office to field.
           </p>
-          <div className="flex flex-wrap justify-center gap-3 text-sm text-muted-foreground/70">
-            <span className="px-3 py-1 rounded-full bg-blue-50">Multi-trade</span>
-            <span className="px-3 py-1 rounded-full bg-blue-50">Mobile-first</span>
-            <span className="px-3 py-1 rounded-full bg-blue-50">MYOB sync</span>
-            <span className="px-3 py-1 rounded-full bg-blue-50">SMS reminders</span>
+          <div className="flex flex-wrap justify-center gap-3 text-sm text-blue-50/90">
+            <span className="px-3 py-1 rounded-full border border-blue-200/20 bg-blue-400/10">Dispatch board</span>
+            <span className="px-3 py-1 rounded-full border border-blue-200/20 bg-blue-400/10">Crew tracking</span>
+            <span className="px-3 py-1 rounded-full border border-blue-200/20 bg-blue-400/10">MYOB ready</span>
+            <span className="px-3 py-1 rounded-full border border-amber-200/20 bg-amber-400/10">Invoice flow</span>
           </div>
         </div>
       </div>
