@@ -146,6 +146,14 @@ export default function WorkerJobDetailPage() {
   useEffect(() => { loadJob(); }, [loadJob]);
 
   const handleStatus = async (status) => {
+    if (status === "completed") {
+      const remaining = checklistItems.filter((item) => !item.done);
+      if (remaining.length > 0) {
+        toast.error(`Finish checklist first: ${remaining.length} item${remaining.length === 1 ? "" : "s"} left`);
+        return;
+      }
+    }
+
     setSaving(true);
     const body = { status };
     if (status === "in_progress") {
@@ -338,16 +346,18 @@ export default function WorkerJobDetailPage() {
             <div className="grid gap-2 worker-action-grid">
               {actions.map((action) => {
                 const Icon = action.icon;
+                const completeBlocked = action.status === "completed" && checklist.total > 0 && checklist.done < checklist.total;
                 return (
                   <button
                     key={`${action.status}-${action.label}`}
                     onClick={() => runWorkerAction(action)}
-                    disabled={saving}
+                    disabled={saving || completeBlocked}
                     className={action.primary ? "worker-primary-action" : "worker-secondary-action"}
                     data-testid={action.acknowledge ? "accept-job-btn" : `status-btn-${action.status}`}
+                    title={completeBlocked ? "Finish the checklist before completing this job" : action.label}
                   >
                     <Icon className="h-5 w-5" />
-                    {saving ? "Saving..." : action.label}
+                    {saving ? "Saving..." : completeBlocked ? `Finish checklist (${checklist.done}/${checklist.total})` : action.label}
                   </button>
                 );
               })}
