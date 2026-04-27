@@ -1,0 +1,111 @@
+name: Churvox Worker Role Audit
+
+on:
+  workflow_dispatch:
+
+jobs:
+  worker-role-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install --legacy-peer-deps
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          CI: false
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Create role audit test
+        working-directory: frontend
+        run: |
+          mkdir -p tests/role-audit
+          cat > tests/role-audit/roles.spec.js <<'EOF'
+          const { test, expect } = require('@playwright/test');
+          const OWNER_EMAIL = process.env.CHURVOX_AUDIT_EMAIL || 'howardjennings77@gmail.com';
+          const OWNER_PASSWORD = process.env.CHURVOX_AUDIT_PASSWORD || '';
+          const WORKER_EMAIL = process.env.CHURVOX_WORKER_AUDIT_EMAIL || '';
+          const WORKER_PASSWORD = process.env.CHURVOX_WORKER_AUDIT_PASSWORD || '';
+          async function login(page, email, password) {
+            if (!email || !password) test.skip(true, 'Missing audit credentials');
+            await page.goto('/login?audit=1');
+            await page.locator('input[type="email"], input[name="email"]').first().fill(email);
+            await page.locator('input[type="password"], input[name="password"]').first().fill(password);
+            await page.locator('button[type="submit"], [data-testid="login-button"]').first().click();
+            await page.waitForURL(/\/(dashboard|jobs|worker\/jobs|plans|settings)(\/|$|\?)/, { timeout: 25000 });
+          }
+          async function bodyText(page) { return (await page.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').trim(); }
+          async function openAlive(page, path) {
+            await page.goto(path + (path.includes('?') ? '&' : '?') + 'audit=1');
+            await expect(page.locator('body')).toBeVisible();
+            await page.waitForTimeout(800);
+            expect((await bodyText(page)).length).toBeGreaterThan(30);
+          }
+          test('owner role pages and assignment controls load', async ({ page }) => {
+            await login(page, OWNER_EMAIL, OWNER_PASSWORD);
+            await openAlive(page, '/team');
+            await expect(page.locator('body')).toContainText(/worker|manager|payroll|office/i);
+            await openAlive(page, '/jobs/new');
+            await expect(page.locator('#assigned_worker_id')).toBeVisible();
+            await expect(page.locator('#pricing_type')).toBeVisible();
+            await openAlive(page, '/payroll');
+            await openAlive(page, '/reports');
+          });
+          test('worker app pages and job controls load', async ({ page }) => {
+            await login(page, WORKER_EMAIL, WORKER_PASSWORD);
+            await openAlive(page, '/worker/jobs');
+            const firstJob = page.locator('[data-testid^="worker-job-"]').first();
+            if (await firstJob.isVisible().catch(() => false)) {
+              await firstJob.click();
+              await expect(page.locator('[data-testid="worker-job-detail-page"]')).toBeVisible();
+              await expect(page.locator('[data-testid="worker-notes-textarea"]')).toBeVisible();
+              await expect(page.locator('[data-testid="save-worker-notes-btn"]')).toBeVisible();
+              await expect(page.locator('[data-testid="worker-photos-section"]')).toBeVisible();
+            } else {
+              await expect(page.locator('body')).toContainText(/No assigned work yet|Assigned Work/i);
+            }
+          });
+          EOF
+
+      - name: Run worker role Playwright audit
+        working-directory: frontend
+        env:
+          CHURVOX_AUDIT_URL: https://www.churvox.com
+          CHURVOX_AUDIT_EMAIL: howardjennings77@gmail.com
+          CHURVOX_AUDIT_PASSWORD: ${{ secrets.CHURVOX_AUDIT_PASSWORD }}
+          CHURVOX_WORKER_AUDIT_EMAIL: ${{ secrets.CHURVOX_WORKER_AUDIT_EMAIL }}
+          CHURVOX_WORKER_AUDIT_PASSWORD: ${{ secrets.CHURVOX_WORKER_AUDIT_PASSWORD }}
+        run: npx playwright test --config=playwright.roles.config.js
+
+      - name: Upload worker role Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-worker-role-playwright-report
+          path: frontend/playwright-role-report
+          if-no-files-found: ignore
+
+      - name: Upload worker role Playwright traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-worker-role-playwright-test-results
+          path: frontend/test-results
+          if-no-files-found: ignore
