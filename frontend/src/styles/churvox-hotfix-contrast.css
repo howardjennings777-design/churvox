@@ -59,49 +59,47 @@ section.bg-slate-100 {
   color: #0f172a !important;
 }
 
-/* Sidebar brand polish: keeps logo, title, and bell balanced instead of huge/blurred. */
+/* Sidebar brand polish: centred logo only, no duplicate Churvox / Smart Hub text. */
 [data-testid="sidebar-brand-bar"] {
-  height: 92px !important;
-  padding-left: 16px !important;
-  padding-right: 14px !important;
+  height: 118px !important;
+  padding: 18px 18px 16px !important;
   display: flex !important;
   align-items: center !important;
-  gap: 12px !important;
+  justify-content: center !important;
+  position: relative !important;
+  gap: 0 !important;
 }
 
 [data-testid="sidebar-brand-bar"] > .flex.items-center.gap-3,
 [data-testid="sidebar-brand-bar"] > a {
   min-width: 0 !important;
-  flex: 1 1 auto !important;
+  flex: 0 1 auto !important;
+  width: 100% !important;
+  display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
+  justify-content: center !important;
+  gap: 0 !important;
+}
+
+[data-testid="sidebar-brand-bar"] > .flex.items-center.gap-3 > div:last-child,
+[data-testid="sidebar-brand-bar"] > a > div:last-child {
+  display: none !important;
 }
 
 [data-testid="sidebar-logo"] {
-  width: 96px !important;
-  max-width: 96px !important;
+  width: 178px !important;
+  max-width: 178px !important;
   height: auto !important;
-  max-height: 34px !important;
+  max-height: 62px !important;
   object-fit: contain !important;
-}
-
-[data-testid="sidebar-brand-bar"] p:first-of-type {
-  font-size: 10px !important;
-  line-height: 1.05 !important;
-  letter-spacing: 0.18em !important;
-  color: rgba(191, 219, 254, 0.78) !important;
-}
-
-[data-testid="sidebar-brand-bar"] p:last-of-type {
-  margin-top: 3px !important;
-  font-size: 16px !important;
-  line-height: 1.1 !important;
-  font-weight: 900 !important;
-  color: #ffffff !important;
-  letter-spacing: -0.02em !important;
+  margin: 0 auto !important;
+  display: block !important;
 }
 
 [data-testid="sidebar-brand-bar"] [data-testid="notifications-bell"],
 [data-testid="sidebar-brand-bar"] button {
+  position: absolute !important;
+  right: 14px !important;
+  top: 18px !important;
   flex: 0 0 auto !important;
 }
