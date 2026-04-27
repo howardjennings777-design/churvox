@@ -1,5 +1,14 @@
-// Churvox Team area grouping enhancer.
-// Adds an area/town filter to the Team page without changing backend data or worker permissions.
+// Churvox Team area dropdown enhancer.
+// Adds a real NZ/AU region selector to Team without changing backend data or permissions.
+
+const NZ_REGIONS = [
+  "Northland", "Auckland", "Waikato", "Bay of Plenty", "Gisborne", "Hawke's Bay", "Taranaki",
+  "Manawatu-Whanganui", "Wellington", "Tasman", "Nelson", "Marlborough", "West Coast", "Canterbury", "Otago", "Southland",
+];
+
+const AU_REGIONS = [
+  "New South Wales", "Victoria", "Queensland", "Western Australia", "South Australia", "Tasmania", "Northern Territory", "Australian Capital Territory",
+];
 
 let activeArea = "all";
 let observerStarted = false;
@@ -13,49 +22,77 @@ function getWorkerCards() {
   return Array.from(document.querySelectorAll('[data-testid^="worker-card-"]'));
 }
 
+function clean(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function extractCountry(card) {
+  const text = clean(card?.textContent || "");
+  const match = text.match(/Country:\s*([^·•|\n]+)/i);
+  return clean(match?.[1]) || "Unknown country";
+}
+
 function extractArea(card) {
-  const text = (card?.textContent || "").replace(/\s+/g, " ").trim();
+  const text = clean(card?.textContent || "");
   const match = text.match(/Region:\s*([^·•|\n]+)/i);
-  const area = match?.[1]?.trim();
+  const area = clean(match?.[1]);
   if (!area || area === "-" || area.toLowerCase() === "none") return "Unassigned area";
   return area;
 }
 
-function buildAreaCounts(cards) {
+function getCounts(cards) {
   const counts = new Map();
   cards.forEach((card) => {
     const area = extractArea(card);
-    counts.set(area, (counts.get(area) || 0) + 1);
+    const country = extractCountry(card);
     card.dataset.workerArea = area;
+    card.dataset.workerCountry = country;
+    counts.set(area, (counts.get(area) || 0) + 1);
   });
-  return Array.from(counts.entries())
-    .map(([area, count]) => ({ area, count }))
-    .sort((a, b) => {
-      if (a.area === "Unassigned area") return 1;
-      if (b.area === "Unassigned area") return -1;
-      return a.area.localeCompare(b.area);
-    });
+  return counts;
+}
+
+function selectedLabel(value) {
+  if (value === "all") return "All workers";
+  if (value === "unassigned") return "Unassigned area";
+  return value;
+}
+
+function countFor(counts, value, total) {
+  if (value === "all") return total;
+  if (value === "unassigned") return counts.get("Unassigned area") || 0;
+  return counts.get(value) || 0;
+}
+
+function option(label, value, counts, total) {
+  const count = countFor(counts, value, total);
+  return `<option value="${value}">${label} (${count})</option>`;
+}
+
+function buildOptions(counts, total) {
+  return `
+    ${option("All workers", "all", counts, total)}
+    ${option("Unassigned area", "unassigned", counts, total)}
+    <optgroup label="New Zealand">
+      ${NZ_REGIONS.map((region) => option(region, region, counts, total)).join("")}
+    </optgroup>
+    <optgroup label="Australia">
+      ${AU_REGIONS.map((region) => option(region, region, counts, total)).join("")}
+    </optgroup>
+  `;
 }
 
 function applyFilter(cards) {
+  let visible = 0;
   cards.forEach((card) => {
     const area = card.dataset.workerArea || extractArea(card);
-    const show = activeArea === "all" || area === activeArea;
+    const show = activeArea === "all" || (activeArea === "unassigned" ? area === "Unassigned area" : area === activeArea);
     card.style.display = show ? "" : "none";
+    if (show) visible += 1;
   });
-}
 
-function makeButton({ label, count, value }) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = `chx-area-filter-chip${activeArea === value ? " active" : ""}`;
-  button.dataset.areaValue = value;
-  button.innerHTML = `<span>${label}</span><strong>${count}</strong>`;
-  button.addEventListener("click", () => {
-    activeArea = value;
-    renderTeamAreaPanel();
-  });
-  return button;
+  const empty = document.querySelector('[data-chx-area-empty="true"]');
+  if (empty) empty.hidden = visible > 0;
 }
 
 function renderTeamAreaPanel() {
@@ -70,39 +107,43 @@ function renderTeamAreaPanel() {
     return;
   }
 
-  const areas = buildAreaCounts(cards);
+  const counts = getCounts(cards);
   const total = cards.length;
-
-  if (activeArea !== "all" && !areas.some((item) => item.area === activeArea)) {
-    activeArea = "all";
-  }
+  const validAreas = new Set(["all", "unassigned", ...NZ_REGIONS, ...AU_REGIONS]);
+  if (!validAreas.has(activeArea)) activeArea = "all";
 
   const panel = document.createElement("section");
   panel.dataset.chxTeamAreaPanel = "true";
   panel.className = "chx-team-area-panel";
-
-  const activeLabel = activeArea === "all" ? "All areas" : activeArea;
   panel.innerHTML = `
     <div class="chx-team-area-copy">
       <p class="chx-team-area-eyebrow">Worker areas</p>
-      <h2>${activeLabel}</h2>
-      <p>Group your crew by town or region so you can quickly find the right workers for a local job.</p>
+      <h2>${selectedLabel(activeArea)}</h2>
+      <p>Choose a New Zealand or Australia region to show the workers based in that area.</p>
     </div>
-    <div class="chx-team-area-actions" data-chx-area-actions="true"></div>
+    <div class="chx-team-area-control">
+      <label for="chx-worker-area-select">Show workers in</label>
+      <select id="chx-worker-area-select" class="chx-worker-area-select">
+        ${buildOptions(counts, total)}
+      </select>
+      <div class="chx-team-area-meta"><strong>${countFor(counts, activeArea, total)}</strong> worker${countFor(counts, activeArea, total) === 1 ? "" : "s"} shown</div>
+    </div>
+    <div class="chx-team-area-empty" data-chx-area-empty="true" hidden>
+      No workers saved in ${selectedLabel(activeArea)} yet. Update a worker profile region or invite a worker into this area.
+    </div>
   `;
 
-  const actions = panel.querySelector('[data-chx-area-actions="true"]');
-  actions.appendChild(makeButton({ label: "All workers", count: total, value: "all" }));
-  areas.forEach((item) => actions.appendChild(makeButton({ label: item.area, count: item.count, value: item.area })));
+  const select = panel.querySelector("#chx-worker-area-select");
+  select.value = activeArea;
+  select.addEventListener("change", (event) => {
+    activeArea = event.target.value;
+    renderTeamAreaPanel();
+  });
 
   const hero = page.querySelector('.cx-page-hero, .chx-page-header, .chx-hero, .page-header, .hero-card');
-  if (oldPanel) {
-    oldPanel.replaceWith(panel);
-  } else if (hero?.parentNode) {
-    hero.insertAdjacentElement("afterend", panel);
-  } else {
-    page.prepend(panel);
-  }
+  if (oldPanel) oldPanel.replaceWith(panel);
+  else if (hero?.parentNode) hero.insertAdjacentElement("afterend", panel);
+  else page.prepend(panel);
 
   applyFilter(cards);
 }
@@ -116,18 +157,11 @@ export function startTeamTownGroupingEnhancer() {
   if (observerStarted || typeof window === "undefined" || typeof document === "undefined") return;
   observerStarted = true;
 
-  window.addEventListener("click", (event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    if (target.closest('[data-chx-team-area-panel="true"]')) return;
-  });
-
   const observer = new MutationObserver(() => {
     if (window.location.pathname.startsWith("/team")) scheduleRender();
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
-
   window.addEventListener("popstate", scheduleRender);
   window.addEventListener("load", scheduleRender);
   scheduleRender();
