@@ -1,8 +1,8 @@
-"""Auto-install Churvox launch/top-player boot layer when backend server loads.
+"""Auto-install Churvox launch/top-player boot layers when backend server loads.
 
 Python imports sitecustomize automatically on startup when this directory is on
 sys.path. Render/uvicorn commonly starts from backend with `server:app`, so this
-small import hook safely installs the sweep without editing the huge server.py.
+small import hook safely installs focused boot modules without editing server.py.
 """
 from __future__ import annotations
 
@@ -27,6 +27,11 @@ class _ServerBootLoader(importlib.abc.Loader):
             install_top_player_boot(module)
         except Exception as exc:
             print(f"TOP_PLAYER_BOOT_INSTALL_ERR {exc}")
+        try:
+            from platform_admin_boot import install_platform_admin_boot
+            install_platform_admin_boot(module)
+        except Exception as exc:
+            print(f"PLATFORM_ADMIN_BOOT_INSTALL_ERR {exc}")
 
 
 class _ServerBootFinder(importlib.abc.MetaPathFinder):
