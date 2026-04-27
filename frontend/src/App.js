@@ -126,6 +126,17 @@ function PayrollRoute({ children }) {
   return children;
 }
 
+
+function ReportsRoute({ children }) {
+  const { user, loading, normalizedRole } = useAuth();
+  if (loading) return <Spinner />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!["owner", "manager", "office_admin"].includes(normalizedRole)) {
+    return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
+  }
+  return children;
+}
+
 // Catch-all redirect based on role
 function RoleRedirect() {
   const { user, loading, normalizedRole } = useAuth();
@@ -242,12 +253,12 @@ function App() {
           <Route path="/invoices/new" element={<BusinessRoute><InvoiceFormPage /></BusinessRoute>} />
           <Route path="/invoices/:id" element={<BusinessRoute><InvoiceDetailPage /></BusinessRoute>} />
           <Route path="/sms" element={<BusinessRoute><SMSPage /></BusinessRoute>} />
-          <Route path="/reports" element={<PrivateRoute><ReportsPage /></PrivateRoute>} />
+          <Route path="/reports" element={<ReportsRoute><ReportsPage /></ReportsRoute>} />
           <Route path="/integrations" element={<BusinessRoute><IntegrationsPage /></BusinessRoute>} />
           <Route path="/settings" element={<BusinessRoute><SettingsPage /></BusinessRoute>} />
 
           {/* Owner-only */}
-          <Route path="/plans" element={<PrivateRoute><PlansPage /></PrivateRoute>} />
+          <Route path="/plans" element={<OwnerRoute><PlansPage /></OwnerRoute>} />
 
           {/* Team: owner + manager */}
           <Route path="/team" element={<TeamRoute><TeamPage /></TeamRoute>} />
