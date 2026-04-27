@@ -31,6 +31,7 @@ import PlansPage from "./pages/PlansPage";
 import TeamPage from "./pages/TeamPage";
 import SMSPage from "./pages/SMSPage";
 import PayrollPage from "./pages/PayrollPage";
+import FollowUpsPage from "./pages/FollowUpsPage";
 import WorkerJobsPage from "./pages/worker/WorkerJobsPage";
 import WorkerJobDetailPage from "./pages/worker/WorkerJobDetailPage";
 import WorkerSettingsPage from "./pages/worker/WorkerSettingsPage";
@@ -246,6 +247,7 @@ function App() {
           <Route path="/invoices/new" element={<BusinessRoute><InvoiceFormPage /></BusinessRoute>} />
           <Route path="/invoices/:id" element={<BusinessRoute><InvoiceDetailPage /></BusinessRoute>} />
           <Route path="/sms" element={<BusinessRoute><SMSPage /></BusinessRoute>} />
+          <Route path="/follow-ups" element={<BusinessRoute><FollowUpsPage /></BusinessRoute>} />
           <Route path="/reports" element={<ReportsRoute><ReportsPage /></ReportsRoute>} />
           <Route path="/integrations" element={<BusinessRoute><IntegrationsPage /></BusinessRoute>} />
           <Route path="/settings" element={<BusinessRoute><SettingsPage /></BusinessRoute>} />
