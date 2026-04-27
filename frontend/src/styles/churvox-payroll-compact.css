@@ -1,6 +1,5 @@
 /* Churvox Payroll compact workspace */
 
-/* Scope through the active payroll nav item so we do not disturb other pages. */
 body:has(a[href="/payroll"].active) {
   overflow-x: hidden !important;
 }
@@ -19,29 +18,24 @@ body:has(a[href="/payroll"].active) .cx-page > section:first-child {
   position: relative !important;
   overflow: hidden !important;
   border-radius: 28px !important;
-  border: 1px solid rgba(186, 230, 253, 0.20) !important;
-  background:
-    radial-gradient(circle at 88% 0%, rgba(56, 189, 248, 0.20), transparent 24rem),
-    radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.30), transparent 28rem),
-    linear-gradient(135deg, #07111f 0%, #0f172a 52%, #172554 100%) !important;
-  box-shadow: 0 24px 70px rgba(2, 6, 23, 0.22) !important;
-  color: #ffffff !important;
+  border: 1px solid rgba(191, 219, 254, 0.92) !important;
+  background: linear-gradient(140deg, #ffffff 0%, #f4f8ff 58%, #eaf3ff 100%) !important;
+  box-shadow: 0 24px 65px rgba(15, 23, 42, 0.11) !important;
+  color: #0f172a !important;
   padding: 24px !important;
 }
 
-body:has(a[href="/payroll"].active) .cx-page > section:first-child .cx-page-title {
-  color: #ffffff !important;
-  font-size: clamp(28px, 4vw, 42px) !important;
-  line-height: 1.05 !important;
+body:has(a[href="/payroll"].active) .cx-page > section:first-child .cx-page-title,
+body:has(a[href="/payroll"].active) .cx-page > section:first-child h1,
+body:has(a[href="/payroll"].active) .cx-page > section:first-child h2 {
+  color: #0f172a !important;
 }
 
-body:has(a[href="/payroll"].active) .cx-page > section:first-child .cx-page-subtitle {
-  max-width: 760px !important;
-  color: #dbeafe !important;
-  line-height: 1.45 !important;
+body:has(a[href="/payroll"].active) .cx-page > section:first-child .cx-page-subtitle,
+body:has(a[href="/payroll"].active) .cx-page > section:first-child p {
+  color: #64748b !important;
 }
 
-/* Hide the long payroll disclaimer pill from the hero. The detailed rule belongs inside settings/help, not the top card. */
 body:has(a[href="/payroll"].active) .cx-page > section:first-child p.mt-3.inline-flex {
   display: none !important;
 }
@@ -58,24 +52,27 @@ body:has(a[href="/payroll"].active) .cx-page > section:first-child button {
   min-width: 126px !important;
   min-height: 40px !important;
   border-radius: 999px !important;
-  border: 1px solid rgba(186, 230, 253, 0.24) !important;
+  border: 1px solid rgba(191, 219, 254, 0.95) !important;
   padding: 0 15px !important;
   font-size: 13px !important;
   font-weight: 850 !important;
-  box-shadow: none !important;
 }
 
-body:has(a[href="/payroll"].active) .cx-page > section:first-child .cx-button-primary {
-  background: #2563eb !important;
+body:has(a[href="/payroll"].active) .cx-page > section:first-child .cx-button-primary,
+body:has(a[href="/payroll"].active) .cx-page > section:first-child button:first-of-type {
+  background: linear-gradient(135deg, #2563eb, #0ea5e9) !important;
   color: #ffffff !important;
+  border: 0 !important;
+  box-shadow: 0 14px 32px rgba(37, 99, 235, 0.24) !important;
 }
 
-body:has(a[href="/payroll"].active) .cx-page > section:first-child .cx-button-secondary {
-  background: rgba(255, 255, 255, 0.10) !important;
-  color: #ffffff !important;
+body:has(a[href="/payroll"].active) .cx-page > section:first-child .cx-button-secondary,
+body:has(a[href="/payroll"].active) .cx-page > section:first-child button:not(:first-of-type) {
+  background: #ffffff !important;
+  color: #1d4ed8 !important;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06) !important;
 }
 
-/* Compact payroll stat tiles and prevent right-side clipping. */
 body:has(a[href="/payroll"].active) .cx-page > section.grid:has(> div.rounded-2xl) {
   display: grid !important;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 245px), 1fr)) !important;
@@ -94,14 +91,6 @@ body:has(a[href="/payroll"].active) .cx-page > section.grid:has(> div.rounded-2x
   padding: 14px 16px !important;
 }
 
-body:has(a[href="/payroll"].active) .cx-page > section.grid:has(> div.rounded-2xl) p.text-xs.font-semibold.uppercase {
-  font-size: 10px !important;
-  line-height: 1 !important;
-  font-weight: 900 !important;
-  letter-spacing: 0.11em !important;
-  color: #475569 !important;
-}
-
 body:has(a[href="/payroll"].active) .cx-page > section.grid:has(> div.rounded-2xl) p.text-xl {
   margin-top: 8px !important;
   font-size: 23px !important;
@@ -109,17 +98,6 @@ body:has(a[href="/payroll"].active) .cx-page > section.grid:has(> div.rounded-2x
   font-weight: 900 !important;
 }
 
-body:has(a[href="/payroll"].active) .cx-page > section.grid:has(> div.rounded-2xl) p.text-xs.text-slate-500 {
-  display: none !important;
-}
-
-body:has(a[href="/payroll"].active) .cx-page > section.grid:has(> div.rounded-2xl) span.inline-flex.h-8.w-8 {
-  width: 30px !important;
-  height: 30px !important;
-  border-radius: 11px !important;
-}
-
-/* Payroll workflow should wrap instead of running off-screen. */
 body:has(a[href="/payroll"].active) .cx-page > section:has(h2):has(.grid) .grid,
 body:has(a[href="/payroll"].active) .cx-page section:has(h2):has(button) .grid {
   max-width: 100% !important;
@@ -131,12 +109,6 @@ body:has(a[href="/payroll"].active) .cx-page section:has(h2):has(.grid) .grid[cl
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)) !important;
 }
 
-body:has(a[href="/payroll"].active) .cx-page section:has(h2) button,
-body:has(a[href="/payroll"].active) .cx-page section:has(h2) a {
-  min-width: 0 !important;
-}
-
-/* Make following payroll sections lighter and contained. */
 body:has(a[href="/payroll"].active) .cx-page > section.rounded-2xl,
 body:has(a[href="/payroll"].active) .cx-page > section.rounded-3xl,
 body:has(a[href="/payroll"].active) .cx-page > div.rounded-2xl,
@@ -145,16 +117,6 @@ body:has(a[href="/payroll"].active) .cx-page > div.rounded-3xl {
   overflow: hidden !important;
   border-radius: 22px !important;
   box-shadow: 0 10px 26px rgba(15, 23, 42, 0.055) !important;
-}
-
-body:has(a[href="/payroll"].active) .cx-page > section.rounded-2xl > h2,
-body:has(a[href="/payroll"].active) .cx-page > section.rounded-2xl p.text-sm.font-semibold {
-  font-size: 15px !important;
-}
-
-body:has(a[href="/payroll"].active) .cx-page > section.rounded-2xl .grid > div,
-body:has(a[href="/payroll"].active) .cx-page > section.rounded-2xl button.rounded-xl {
-  border-radius: 14px !important;
 }
 
 body:has(a[href="/payroll"].active) .cx-page table,
