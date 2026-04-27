@@ -16,10 +16,12 @@ import "./styles/churvox-worker-premium.css";
 import { startTeamTownGroupingEnhancer } from "./utils/teamTownGroupingEnhancer";
 import { startClientAreaGroupingEnhancer } from "./utils/clientAreaGroupingEnhancer";
 import { startAutomationActionFixer } from "./utils/automationActionFixer";
+import { startWorkerFlowEnhancer } from "./utils/workerFlowEnhancer";
 
 startTeamTownGroupingEnhancer();
 startClientAreaGroupingEnhancer();
 startAutomationActionFixer();
+startWorkerFlowEnhancer();
 
 // Register service worker for PWA installability (iPhone Add to Home Screen + Chrome install)
 // Network-first SW — no aggressive caching, new deploys always picked up
