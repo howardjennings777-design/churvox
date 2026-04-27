@@ -87,6 +87,45 @@
   font-weight: 700;
 }
 
+/* Clean compact stats strip. */
+[data-testid="clients-page"] > .grid:has(> .cx-stat-card) {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+[data-testid="clients-page"] .cx-stat-card {
+  border-radius: 20px !important;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06) !important;
+}
+
+[data-testid="clients-page"] .cx-stat-card [class*="CardContent"] {
+  padding: 14px 16px !important;
+}
+
+[data-testid="clients-page"] .cx-stat-card p:first-child {
+  font-size: 10px !important;
+  line-height: 1 !important;
+  letter-spacing: 0.12em !important;
+}
+
+[data-testid="clients-page"] .cx-stat-card p.mt-1.text-2xl {
+  margin-top: 7px !important;
+  font-size: 24px !important;
+  line-height: 1 !important;
+  font-weight: 900 !important;
+}
+
+[data-testid="clients-page"] .cx-stat-card p.text-xs.text-\[\#667085\].mt-1 {
+  display: none !important;
+}
+
+[data-testid="clients-page"] .cx-stat-card span.rounded-xl {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 11px !important;
+  padding: 7px !important;
+}
+
 /* Remove the clients search bar. Areas dropdown is the primary filtering control now. */
 [data-testid="clients-page"] > .cx-toolbar {
   display: none !important;
@@ -188,6 +227,7 @@
 }
 
 @media (max-width: 1180px) {
+  [data-testid="clients-page"] > .grid:has(> .cx-stat-card),
   [data-testid="clients-page"] > .grid:has(> [data-testid^="client-card-"]) {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
@@ -199,6 +239,7 @@
 }
 
 @media (max-width: 680px) {
+  [data-testid="clients-page"] > .grid:has(> .cx-stat-card),
   [data-testid="clients-page"] > .grid:has(> [data-testid^="client-card-"]) {
     grid-template-columns: 1fr !important;
   }
