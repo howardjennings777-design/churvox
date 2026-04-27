@@ -26,29 +26,29 @@ export function normalizeRole(raw) {
   return ROLE_ALIASES[key] || ROLE_ALIASES[key.replace(/_/g, "")] || ROLES.WORKER;
 }
 
-// Access matrices
+// Keep this matrix aligned with frontend/src/App.js route guards and Layout.js nav.
 const ROUTE_ACCESS = {
-  // Business management routes
-  overview:   ["owner", "manager", "office_admin"],
-  dashboard:  ["owner", "manager", "office_admin"],
-  jobs:       ["owner", "manager", "office_admin"],
-  calendar:   ["owner", "manager", "office_admin"],
-  clients:    ["owner", "manager", "office_admin"],
-  quotes:     ["owner", "manager", "office_admin"],
-  invoices:   ["owner", "manager", "office_admin"],
-  team:       ["owner", "manager"],
-  sms:        ["owner", "manager"],
-  reports:    ["owner", "manager", "office_admin", "payroll"],
-  integrations:["owner", "manager", "office_admin"],
-  // Owner-only
-  plans:      ["owner"],
-  settings:   ["owner", "manager", "office_admin"],
-  billing:    ["owner"],
-  // Worker
-  worker_jobs:     ["worker"],
+  overview: ["owner", "manager", "office_admin"],
+  dashboard: ["owner", "manager", "office_admin"],
+  jobs: ["owner", "manager", "office_admin"],
+  schedule: ["owner", "manager", "office_admin"],
+  calendar: ["owner", "manager", "office_admin"],
+  clients: ["owner", "manager", "office_admin"],
+  quotes: ["owner", "manager", "office_admin"],
+  invoices: ["owner", "manager", "office_admin"],
+  follow_ups: ["owner", "manager", "office_admin"],
+  team: ["owner", "manager"],
+  sms: ["owner", "manager", "office_admin"],
+  reports: ["owner", "manager", "office_admin"],
+  integrations: ["owner", "manager", "office_admin"],
+  automation: ["owner", "manager"],
+  automation_runs: ["owner", "manager"],
+  plans: ["owner"],
+  settings: ["owner", "manager", "office_admin"],
+  billing: ["owner"],
+  worker_jobs: ["worker"],
   worker_settings: ["worker"],
-  // Payroll
-  payroll:    ["owner", "manager", "payroll"],
+  payroll: ["owner", "manager", "payroll"],
 };
 
 export function canAccess(role, route) {
