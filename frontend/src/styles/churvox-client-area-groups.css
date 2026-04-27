@@ -101,17 +101,17 @@
   display: none !important;
 }
 
-/* Clean client cards: show only core record info on the card. Notes and quick actions live inside the client profile. */
+/* Compact client tiles: core info only, less empty space. */
 [data-testid="clients-page"] > .grid:has(> [data-testid^="client-card-"]) {
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   align-items: stretch !important;
-  gap: 18px !important;
+  gap: 16px !important;
 }
 
 [data-testid^="client-card-"] {
-  min-height: 230px !important;
+  min-height: 172px !important;
   height: 100% !important;
-  border-radius: 24px !important;
+  border-radius: 22px !important;
   overflow: hidden !important;
   background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease !important;
@@ -125,15 +125,15 @@
 
 [data-testid^="client-card-"] [class*="CardContent"] {
   height: 100% !important;
-  padding: 18px !important;
+  padding: 14px !important;
 }
 
 [data-testid^="client-card-"] [class*="CardContent"] > div:first-child {
-  min-height: 194px !important;
+  min-height: 144px !important;
   height: 100% !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 12px !important;
+  gap: 8px !important;
 }
 
 [data-testid^="client-card-"] [class*="CardContent"] > div:first-child > div:first-child {
@@ -143,11 +143,23 @@
 }
 
 [data-testid^="client-card-"] [class*="CardContent"] > div:first-child > div:last-child {
-  width: 100% !important;
+  width: auto !important;
   justify-content: flex-end !important;
-  border-top: 1px solid rgba(15, 23, 42, 0.08) !important;
-  padding-top: 10px !important;
-  margin-top: auto !important;
+  border-top: 0 !important;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+[data-testid^="client-card-"] .inline-flex.h-10.w-10 {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 12px !important;
+}
+
+[data-testid^="client-card-"] p.text-base,
+[data-testid^="client-card-"] p.md\:text-lg {
+  font-size: 16px !important;
+  line-height: 1.15 !important;
 }
 
 [data-testid^="client-card-"] p.truncate,
@@ -158,13 +170,14 @@
 }
 
 [data-testid^="client-card-"] .mt-3.grid {
+  margin-top: 10px !important;
   grid-template-columns: 1fr !important;
-  gap: 7px !important;
-  font-size: 13px !important;
+  gap: 5px !important;
+  font-size: 12px !important;
 }
 
 [data-testid^="client-card-"] .mt-3.grid p {
-  min-height: 20px !important;
+  min-height: 16px !important;
 }
 
 /* Hide notes from compact cards. They remain available inside the client/profile page. */
