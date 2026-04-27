@@ -1,0 +1,58 @@
+name: Churvox Deep Launch Audit
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deep-launch-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install --legacy-peer-deps
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          CI: false
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run deep Playwright audit
+        working-directory: frontend
+        env:
+          CHURVOX_AUDIT_URL: https://www.churvox.com
+          CHURVOX_AUDIT_EMAIL: howardjennings77@gmail.com
+          CHURVOX_AUDIT_PASSWORD: ${{ secrets.CHURVOX_AUDIT_PASSWORD }}
+        run: npm run audit:deep
+
+      - name: Upload deep Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-deep-playwright-report
+          path: frontend/playwright-deep-report
+          if-no-files-found: ignore
+
+      - name: Upload deep Playwright traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-deep-playwright-test-results
+          path: frontend/test-results
+          if-no-files-found: ignore
