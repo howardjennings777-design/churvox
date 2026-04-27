@@ -8,6 +8,7 @@ import "./styles/churvox-unified-headers.css";
 import "./styles/churvox-team-area-groups.css";
 import "./styles/churvox-client-area-groups.css";
 import "./styles/churvox-jobs-compact.css";
+import "./styles/churvox-job-detail-command.css";
 import "./styles/churvox-invoices-compact.css";
 import "./styles/churvox-invoices-card-fix.css";
 import "./styles/churvox-payroll-compact.css";
