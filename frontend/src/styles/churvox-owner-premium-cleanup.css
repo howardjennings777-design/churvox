@@ -1,0 +1,257 @@
+/* Churvox owner-side premium cleanup pass. Visual-only polish. */
+
+.cx-app-shell:not(.worker-premium-shell) {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.12), transparent 34%),
+    radial-gradient(circle at 100% 0%, rgba(14, 165, 233, 0.10), transparent 28%),
+    linear-gradient(180deg, #eef5ff 0%, #f8fbff 44%, #edf3fb 100%) !important;
+}
+
+.cx-app-shell aside[data-testid="desktop-sidebar"] {
+  background:
+    radial-gradient(circle at 20% -5%, rgba(56, 189, 248, 0.22), transparent 34%),
+    linear-gradient(180deg, #071120 0%, #0b1f38 54%, #0f2744 100%) !important;
+  border-right: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: 18px 0 55px rgba(15, 23, 42, 0.18);
+}
+
+.cx-app-shell aside[data-testid="desktop-sidebar"] [data-nav="group-label"] {
+  color: rgba(203, 213, 225, 0.58) !important;
+  font-weight: 950;
+}
+
+.cx-app-shell aside[data-testid="desktop-sidebar"] [data-nav="item"] {
+  color: #cbd5e1;
+  border-radius: 1rem !important;
+  min-height: 44px;
+}
+
+.cx-app-shell aside[data-testid="desktop-sidebar"] [data-nav="item"].active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(14, 165, 233, 0.82)) !important;
+  box-shadow: 0 14px 32px rgba(37, 99, 235, 0.28);
+}
+
+.cx-app-shell aside[data-testid="desktop-sidebar"] [data-nav="item"]:not(.active):hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.cx-app-shell [data-testid="main-content-area"] > main {
+  background: transparent !important;
+}
+
+.cx-app-shell h1,
+.cx-app-shell .cx-page-title,
+.cx-app-shell .page-title {
+  color: #0f172a !important;
+  letter-spacing: -0.035em !important;
+}
+
+.cx-app-shell h1 + p,
+.cx-app-shell .cx-page-subtitle,
+.cx-app-shell .page-subtitle {
+  color: #64748b !important;
+  font-weight: 650;
+  line-height: 1.55;
+  max-width: 820px;
+}
+
+.cx-app-shell .cx-page-hero,
+.cx-app-shell section.overflow-hidden.rounded-3xl,
+.cx-app-shell .rounded-3xl.border.bg-gradient-to-br,
+.cx-app-shell .rounded-3xl.border.bg-gradient-to-r {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2rem !important;
+  border: 1px solid rgba(191, 219, 254, 0.9) !important;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(37, 99, 235, 0.13), transparent 30%),
+    linear-gradient(140deg, #ffffff 0%, #f4f8ff 58%, #eaf3ff 100%) !important;
+  color: #0f172a !important;
+  box-shadow: 0 24px 65px rgba(15, 23, 42, 0.11) !important;
+}
+
+.cx-app-shell .cx-page-hero::before,
+.cx-app-shell section.overflow-hidden.rounded-3xl::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.035) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.42;
+}
+
+.cx-app-shell .cx-page-hero > *,
+.cx-app-shell section.overflow-hidden.rounded-3xl > * {
+  position: relative;
+  z-index: 1;
+}
+
+.cx-app-shell section.overflow-hidden.rounded-3xl h1,
+.cx-app-shell section.overflow-hidden.rounded-3xl h2,
+.cx-app-shell section.overflow-hidden.rounded-3xl p {
+  color: #0f172a !important;
+}
+
+.cx-app-shell section.overflow-hidden.rounded-3xl p,
+.cx-app-shell .text-slate-300,
+.cx-app-shell .text-slate-400,
+.cx-app-shell .text-slate-500,
+.cx-app-shell .text-slate-600 {
+  color: #64748b !important;
+}
+
+.cx-app-shell .cx-card,
+.cx-app-shell .cx-panel,
+.cx-app-shell .surface-card,
+.cx-app-shell .rounded-2xl.border.bg-white,
+.cx-app-shell .rounded-3xl.bg-white,
+.cx-app-shell .bg-white.border-slate-200,
+.cx-app-shell .bg-white\/95 {
+  border-radius: 1.6rem !important;
+  border: 1px solid rgba(203, 213, 225, 0.92) !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.08) !important;
+}
+
+.cx-app-shell .cx-card:hover,
+.cx-app-shell .surface-card:hover,
+.cx-app-shell .cx-client-card:hover,
+.cx-app-shell .cx-job-card:hover {
+  border-color: rgba(147, 197, 253, 0.95) !important;
+  box-shadow: 0 20px 50px rgba(37, 99, 235, 0.12) !important;
+}
+
+.cx-app-shell input,
+.cx-app-shell textarea,
+.cx-app-shell select {
+  border-radius: 1rem !important;
+  border-color: #cbd5e1 !important;
+  background-color: #f8fbff !important;
+  color: #0f172a !important;
+  min-height: 44px;
+  font-weight: 650;
+}
+
+.cx-app-shell textarea {
+  min-height: 116px;
+}
+
+.cx-app-shell input:focus,
+.cx-app-shell textarea:focus,
+.cx-app-shell select:focus {
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12) !important;
+  outline: none !important;
+}
+
+.cx-app-shell label,
+.cx-app-shell .text-sm.font-medium,
+.cx-app-shell .text-sm.font-semibold {
+  color: #334155;
+}
+
+.cx-app-shell button,
+.cx-app-shell a[class*="button"],
+.cx-app-shell .cx-button-primary,
+.cx-app-shell .cx-button-secondary,
+.cx-app-shell button[type="submit"] {
+  border-radius: 1rem !important;
+  font-weight: 850 !important;
+}
+
+.cx-app-shell .cx-button-primary,
+.cx-app-shell button.bg-blue-600,
+.cx-app-shell button.bg-blue-700,
+.cx-app-shell button[type="submit"]:not(.text-red-700) {
+  background: linear-gradient(135deg, #2563eb, #0ea5e9) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  box-shadow: 0 14px 32px rgba(37, 99, 235, 0.24) !important;
+}
+
+.cx-app-shell .cx-button-secondary,
+.cx-app-shell button.border,
+.cx-app-shell a.border {
+  border-color: #bfdbfe !important;
+}
+
+.cx-app-shell table {
+  border-collapse: separate;
+  border-spacing: 0 0.45rem;
+}
+
+.cx-app-shell thead th {
+  color: #64748b !important;
+  font-size: 0.72rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 950 !important;
+}
+
+.cx-app-shell tbody tr {
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.cx-app-shell .cx-status-badge,
+.cx-app-shell .status-badge,
+.cx-app-shell [class*="status-"] {
+  border-radius: 999px !important;
+  font-weight: 900 !important;
+}
+
+.cx-app-shell .text-xs.uppercase,
+.cx-app-shell .tracking-\[0\.22em\],
+.cx-app-shell .tracking-\[0\.16em\] {
+  letter-spacing: 0.11em !important;
+}
+
+.cx-app-shell .grid.gap-4,
+.cx-app-shell .space-y-6,
+.cx-app-shell .space-y-5 {
+  gap: 1rem !important;
+}
+
+.cx-app-shell .p-6 {
+  padding: 1.25rem !important;
+}
+
+.cx-app-shell .p-8 {
+  padding: 1.5rem !important;
+}
+
+.cx-app-shell [data-testid="mobile-header"],
+.cx-app-shell [data-testid="mobile-bottom-nav"] {
+  background:
+    radial-gradient(circle at 15% 0%, rgba(56, 189, 248, 0.22), transparent 30%),
+    linear-gradient(135deg, #071120, #0f2744) !important;
+  border-color: rgba(148, 163, 184, 0.22) !important;
+  box-shadow: 0 -12px 38px rgba(15, 23, 42, 0.24);
+}
+
+@media (max-width: 768px) {
+  .cx-app-shell .cx-page,
+  .cx-app-shell .page-wrap,
+  .cx-app-shell .p-4.md\:p-6 {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .cx-app-shell h1,
+  .cx-app-shell .cx-page-title,
+  .cx-app-shell .page-title {
+    font-size: 1.85rem !important;
+    line-height: 1.08 !important;
+  }
+
+  .cx-app-shell .cx-page-hero,
+  .cx-app-shell section.overflow-hidden.rounded-3xl {
+    padding: 1.2rem !important;
+  }
+}
