@@ -3396,7 +3396,7 @@ async def get_team_workers(current_user: dict = Depends(get_current_user)):
 
 
 @api_router.get("/reports/summary")
-async def reports_summary(current_user: dict = Depends(get_current_user)):
+async def reports_summary(range: str = "this_month", current_user: dict = Depends(get_current_user)):
     business_id = str(
         current_user.get("business_id")
         or current_user.get("businessId")
@@ -3416,42 +3416,164 @@ async def reports_summary(current_user: dict = Depends(get_current_user)):
         {"business_id": str(business_id)},
         {"owner_id": owner_id},
     ]}
+    now = datetime.now(timezone.utc)
+    first_day_this_month = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+    if now.month == 1:
+        first_day_last_month = datetime(now.year - 1, 12, 1, tzinfo=timezone.utc)
+    else:
+        first_day_last_month = datetime(now.year, now.month - 1, 1, tzinfo=timezone.utc)
+
+    first_day_next_month = datetime(now.year + (1 if now.month == 12 else 0), 1 if now.month == 12 else now.month + 1, 1, tzinfo=timezone.utc)
+    range_key = str(range or "this_month").strip().lower()
+    if range_key == "last_month":
+        period_start = first_day_last_month
+        period_end = first_day_this_month
+    else:
+        range_key = "this_month"
+        period_start = first_day_this_month
+        period_end = first_day_next_month
+
+    def _to_dt(v):
+        if not v:
+            return None
+        if isinstance(v, datetime):
+            return v if v.tzinfo else v.replace(tzinfo=timezone.utc)
+        try:
+            return datetime.fromisoformat(str(v).replace("Z", "+00:00"))
+        except Exception:
+            return None
+
+    def _num(v, default=0.0):
+        try:
+            return float(v)
+        except Exception:
+            return default
 
     revenue = 0.0
     outstanding = 0.0
-    completed_jobs = 0
+    overdue_invoices = 0
+    paid_invoices = 0
+    invoice_status_breakdown = {}
+    myob_sync_issues = 0
+    top_clients_map = {}
     overdue_jobs = 0
+    completed_jobs = 0
+    active_jobs = 0
+    jobs_by_status = {}
+    worker_hours = 0.0
+    recurring_jobs_due = 0
+    quote_status_breakdown = {}
     quotes_total = 0
     quotes_won = 0
+    quotes_closed = 0
+
+    today_iso = now.date().isoformat()
 
     async for inv in db.invoices.find(query):
-        total = float(inv.get("total") or 0)
-        status = str(inv.get("status") or "").lower()
+        total = _num(inv.get("total"), _num(inv.get("subtotal"), 0.0))
+        status = str(inv.get("status") or "draft").strip().lower()
+        invoice_status_breakdown[status] = int(invoice_status_breakdown.get(status, 0)) + 1
+
+        paid_at = _to_dt(inv.get("paid_at")) or _to_dt(inv.get("updated_at")) or _to_dt(inv.get("created_at"))
         if status == "paid":
-            revenue += total
-        if status in {"draft", "sent", "overdue"}:
+            paid_invoices += 1
+            if paid_at and period_start <= paid_at < period_end:
+                revenue += total
+        elif status in {"draft", "sent", "overdue", "unpaid"}:
             outstanding += total
 
+        due_date = _to_dt(inv.get("due_date"))
+        if status in {"sent", "unpaid", "overdue"} and due_date and due_date < now:
+            overdue_invoices += 1
+        elif status == "overdue":
+            overdue_invoices += 1
+
+        if str(inv.get("myob_sync_status") or "").lower() in {"failed", "setup_required"}:
+            myob_sync_issues += 1
+
+        client_key = str(inv.get("client_id") or inv.get("customer_name") or "unknown")
+        if client_key not in top_clients_map:
+            top_clients_map[client_key] = {
+                "client_id": str(inv.get("client_id") or ""),
+                "client_name": str(inv.get("customer_name") or "Unknown client"),
+                "revenue": 0.0,
+                "jobs": 0,
+            }
+        if status == "paid":
+            top_clients_map[client_key]["revenue"] += total
+
     async for q in db.quotes.find(query):
+        status = str(q.get("status") or "draft").strip().lower()
+        quote_status_breakdown[status] = int(quote_status_breakdown.get(status, 0)) + 1
         quotes_total += 1
-        if str(q.get("status") or "").lower() == "accepted":
+        if status == "accepted":
             quotes_won += 1
+            quotes_closed += 1
+        elif status == "declined":
+            quotes_closed += 1
 
     async for j in db.jobs.find(query):
-        st = str(j.get("status") or "").lower()
+        st = str(j.get("status") or "draft").strip().lower()
+        jobs_by_status[st] = int(jobs_by_status.get(st, 0)) + 1
         if st == "completed":
             completed_jobs += 1
-        if st not in {"completed", "cancelled"} and str(j.get("scheduled_date") or "")[:10] < datetime.utcnow().date().isoformat():
+        if st in {"assigned", "acknowledged", "in_progress", "paused", "scheduled"}:
+            active_jobs += 1
+
+        scheduled_date = str(j.get("scheduled_date") or "")[:10]
+        if st not in {"completed", "cancelled"} and scheduled_date and scheduled_date < today_iso:
             overdue_jobs += 1
 
+        worker_hours += (_num(j.get("total_time_seconds"), 0.0) / 3600.0)
+
+        next_recur = _to_dt(j.get("recurrence_next_date"))
+        if bool(j.get("is_recurring")) and next_recur and next_recur < period_end:
+            recurring_jobs_due += 1
+
+        client_key = str(j.get("client_id") or j.get("customer_name") or j.get("client_name") or "unknown")
+        if client_key not in top_clients_map:
+            top_clients_map[client_key] = {
+                "client_id": str(j.get("client_id") or ""),
+                "client_name": str(j.get("customer_name") or j.get("client_name") or "Unknown client"),
+                "revenue": 0.0,
+                "jobs": 0,
+            }
+        top_clients_map[client_key]["jobs"] += 1
+
+    payroll_hours = 0.0
+    if hasattr(db, "payroll_timesheets"):
+        try:
+            async for ts in db.payroll_timesheets.find(query):
+                payroll_hours += _num(ts.get("hours"), 0.0)
+        except Exception:
+            payroll_hours = 0.0
+
+    top_clients = sorted(
+        [v for v in top_clients_map.values() if v.get("client_name")],
+        key=lambda x: (float(x.get("revenue") or 0), int(x.get("jobs") or 0)),
+        reverse=True,
+    )[:5]
+
     return {
-        "revenue_this_month": revenue,
-        "outstanding_invoices": outstanding,
+        "range": range_key,
+        "period_start": period_start.isoformat(),
+        "period_end": period_end.isoformat(),
+        "revenue_this_month": round(revenue, 2),
+        "outstanding_invoices": round(outstanding, 2),
+        "overdue_invoices": overdue_invoices,
+        "paid_invoices": paid_invoices,
         "completed_jobs": completed_jobs,
-        "quote_win_rate": (quotes_won / quotes_total) if quotes_total else 0,
+        "active_jobs": active_jobs,
+        "quote_win_rate": (quotes_won / quotes_closed) if quotes_closed else 0,
         "overdue_jobs": overdue_jobs,
-        "worker_hours": 0,
-        "payroll_hours_summary": 0,
+        "worker_hours": round(worker_hours, 2),
+        "payroll_hours_summary": round(payroll_hours if payroll_hours > 0 else worker_hours, 2),
+        "invoice_status_breakdown": invoice_status_breakdown,
+        "quote_status_breakdown": quote_status_breakdown,
+        "jobs_by_status": jobs_by_status,
+        "top_clients": top_clients,
+        "recurring_jobs_due": recurring_jobs_due,
+        "myob_sync_issues": myob_sync_issues,
     }
 
 @api_router.get("/dashboard/stats")

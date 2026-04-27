@@ -96,6 +96,19 @@ export default function DashboardPage() {
     { label: "MYOB sync issues", value: smart.myobIssues, icon: RefreshCw, path: "/settings" },
     { label: "Workers currently active", value: smart.workersActive, icon: Users, path: "/jobs" },
   ];
+  const onboardingItems = [
+    { key: "business", label: "Set business details", done: Boolean(user?.business_name || user?.phone), path: "/settings" },
+    { key: "client", label: "Add first client", done: safeNumber(stats.clients, 0) > 0, path: "/clients/new" },
+    { key: "worker", label: "Invite first worker", done: workers.length > 0, path: "/team" },
+    { key: "job", label: "Create first job", done: jobs.length > 0, path: "/jobs/new" },
+    { key: "quote", label: "Create first quote", done: quotes.length > 0, path: "/quotes/new" },
+    { key: "invoice", label: "Create first invoice", done: invoices.length > 0, path: "/invoices/new" },
+    { key: "mode", label: "Choose invoice/MYOB mode", done: Boolean(myobSettings?.invoice_mode), path: "/integrations" },
+    { key: "pwa", label: "Install Churvox PWA", done: false, path: "" },
+  ];
+  const onboardingDone = onboardingItems.filter((item) => item.done).length;
+  const onboardingProgress = Math.round((onboardingDone / onboardingItems.length) * 100);
+  const nextAction = onboardingItems.find((item) => !item.done);
 
   if (pageLoading) return <Layout><PageState type="loading" title="Loading Smart Hub" /></Layout>;
   if (pageError) return <Layout><PageState type="error" title="Smart Hub unavailable" message={pageError} action={<Button onClick={fetchData}>Retry</Button>} /></Layout>;
@@ -128,6 +141,33 @@ export default function DashboardPage() {
               <p className="text-3xl font-bold text-slate-900">{safeNumber(card.value, 0)}</p>
             </button>
           ))}
+        </div>
+
+        <div className="cx-panel p-5">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold text-slate-900">Setup checklist</h3>
+            <span className="text-xs font-semibold text-slate-600">{onboardingProgress}% complete</span>
+          </div>
+          <div className="w-full bg-slate-100 rounded-full h-2 mb-3">
+            <div className="h-2 rounded-full bg-blue-600" style={{ width: `${onboardingProgress}%` }} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+            {onboardingItems.map((item) => (
+              <div key={item.key} className={`rounded-lg border p-2 text-sm ${item.done ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-slate-700">{item.label}</span>
+                  {item.done ? <span className="text-emerald-700 font-semibold">Done</span> : item.path ? (
+                    <Link to={item.path} className="text-blue-600 font-semibold">Open</Link>
+                  ) : (
+                    <span className="text-amber-700 font-semibold">Coming Soon</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          {nextAction && (
+            <p className="text-xs text-slate-600 mb-4">Next best action: <span className="font-semibold">{nextAction.label}</span>.</p>
+          )}
         </div>
 
         <div className="cx-panel p-5">
