@@ -11,6 +11,7 @@ import "./styles/churvox-jobs-compact.css";
 import "./styles/churvox-dispatch-compact.css";
 import "./styles/churvox-invoices-compact.css";
 import "./styles/churvox-invoices-card-fix.css";
+import "./styles/churvox-payroll-compact.css";
 import { startTeamTownGroupingEnhancer } from "./utils/teamTownGroupingEnhancer";
 import { startClientAreaGroupingEnhancer } from "./utils/clientAreaGroupingEnhancer";
 import { startAutomationActionFixer } from "./utils/automationActionFixer";
