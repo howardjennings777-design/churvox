@@ -3,6 +3,7 @@ import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppOwnerPage from "./pages/AppOwnerPage";
+import LaunchAuditPage from "./pages/LaunchAuditPage";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
@@ -215,6 +216,8 @@ function App() {
           <Route path="/owner/dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
           <Route path="/platform-dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
           <Route path="/app-owner" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+          <Route path="/admin/launch-audit" element={<PlatformAdminRoute><LaunchAuditPage /></PlatformAdminRoute>} />
+          <Route path="/launch-audit" element={<PlatformAdminRoute><LaunchAuditPage /></PlatformAdminRoute>} />
           <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
           <Route path="/owner/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
 
