@@ -72,6 +72,11 @@ class _ServerBootLoader(importlib.abc.Loader):
             install_client_360_boot(module)
         except Exception as exc:
             print(f"CLIENT_360_BOOT_INSTALL_ERR {exc}")
+        try:
+            from launch_audit_boot import install_launch_audit_boot
+            install_launch_audit_boot(module)
+        except Exception as exc:
+            print(f"LAUNCH_AUDIT_BOOT_INSTALL_ERR {exc}")
 
 
 class _ServerBootFinder(importlib.abc.MetaPathFinder):
