@@ -928,6 +928,10 @@ async def payroll_lock_alias(period_id: str, current_user: dict = Depends(get_cu
 async def payroll_mark_exported_alias(period_id: str, current_user: dict = Depends(get_current_user)):
     return await payroll_mark_exported(period_id, current_user)
 
+@api_router.post("/payroll/periods/{period_id}/unlock")
+async def payroll_unlock_alias(period_id: str, current_user: dict = Depends(get_current_user)):
+    return await payroll_unlock_period(period_id, current_user)
+
 
 @api_router.get("/payroll/periods/{period_id}/export/payroll.csv")
 async def payroll_export_csv_alias(period_id: str, current_user: dict = Depends(get_current_user)):
@@ -941,6 +945,26 @@ async def payroll_timesheets_csv_alias(period_id: str, current_user: dict = Depe
 
 @api_router.get("/payroll/periods/{period_id}/export/payslips.csv")
 async def payroll_payslips_csv_alias(period_id: str, current_user: dict = Depends(get_current_user)):
+    return await payroll_payslips_csv(period_id, current_user)
+
+
+@api_router.get("/payroll/periods/{period_id}/export/payroll-summary.csv")
+async def payroll_export_summary_csv_alias(period_id: str, current_user: dict = Depends(get_current_user)):
+    return await payroll_export_csv(period_id, current_user)
+
+
+@api_router.get("/payroll/periods/{period_id}/export/worker-pay.csv")
+async def payroll_export_worker_pay_csv_alias(period_id: str, current_user: dict = Depends(get_current_user)):
+    return await payroll_worker_pay_csv(period_id, current_user)
+
+
+@api_router.get("/payroll/periods/{period_id}/export/adjustments.csv")
+async def payroll_export_adjustments_csv_alias(period_id: str, current_user: dict = Depends(get_current_user)):
+    return await payroll_adjustments_csv(period_id, current_user)
+
+
+@api_router.get("/payroll/periods/{period_id}/export/payslip-draft.csv")
+async def payroll_export_payslip_draft_csv_alias(period_id: str, current_user: dict = Depends(get_current_user)):
     return await payroll_payslips_csv(period_id, current_user)
 
 
@@ -963,6 +987,10 @@ async def payroll_settings_post(payload: dict, current_user: dict = Depends(get_
         "country": (payload or {}).get("payroll_method"),
         "tax_mode": (payload or {}).get("rate_mode"),
         "default_tax_rate": _to_float((payload or {}).get("default_rate"), 0),
+        "payroll_method": (payload or {}).get("payroll_method"),
+        "rate_mode": (payload or {}).get("rate_mode"),
+        "default_hourly_rate": _to_float((payload or {}).get("default_rate"), 0),
+        "default_pay_frequency": (payload or {}).get("default_pay_frequency") or "fortnightly",
     }
     normalized.update({k: v for k, v in (payload or {}).items() if k not in {"payroll_method", "rate_mode", "default_rate"}})
     return await payroll_patch_settings(normalized, current_user)
@@ -6657,6 +6685,10 @@ async def _get_payroll_settings(business_id: str):
         return settings
     return {
         "business_id": business_id,
+        "payroll_method": "manual",
+        "rate_mode": "manual_rate",
+        "default_hourly_rate": 0.0,
+        "default_pay_frequency": "fortnightly",
         "country": "generic",
         "tax_enabled": False,
         "tax_mode": "manual_rate",
@@ -6944,6 +6976,7 @@ async def payroll_create_period(payload: dict, current_user: dict = Depends(get_
         "start_date": start_date,
         "end_date": end_date,
         "pay_date": pay_date,
+        "pay_frequency": str((payload or {}).get("pay_frequency") or "fortnightly"),
         "status": "open",
         "export_status": "not_exported",
         "created_by": str(current_user.get("id") or current_user.get("_id") or ""),
@@ -6981,6 +7014,19 @@ async def payroll_lock_period(period_id: str, current_user: dict = Depends(get_c
     now = datetime.now(timezone.utc)
     await db.payroll_pay_periods.update_one({"_id": period["_id"]}, {"$set": {"status": "locked", "export_status": period.get("export_status") or "not_exported", "locked_at": now, "updated_at": now}})
     return {"success": True, "status": "locked"}
+
+@api_router.post("/payroll/pay-periods/{period_id}/unlock")
+async def payroll_unlock_period(period_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    role = str(current_user.get("role") or "").lower()
+    if role not in {"owner", "office_admin"}:
+        raise HTTPException(status_code=403, detail="Only owner or office admin can unlock pay runs")
+    period = await _find_period_or_404(period_id, business_id)
+    if str(period.get("status") or "") == "exported":
+        raise HTTPException(status_code=400, detail="Exported pay runs cannot be unlocked")
+    now = datetime.now(timezone.utc)
+    await db.payroll_pay_periods.update_one({"_id": period["_id"]}, {"$set": {"status": "open", "updated_at": now}})
+    return {"success": True, "status": "open"}
 
 
 @api_router.post("/payroll/pay-periods/{period_id}/mark-exported")
@@ -7092,7 +7138,7 @@ async def payroll_patch_settings(payload: dict, current_user: dict = Depends(get
     business_id = _require_payroll_access(current_user)
     now = datetime.now(timezone.utc)
     current = await _get_payroll_settings(business_id)
-    allowed = {"country", "tax_enabled", "tax_mode", "default_tax_rate", "tax_code_table", "kiwi_saver_enabled", "default_kiwi_saver_rate", "employer_contribution_enabled", "default_employer_contribution_rate", "student_loan_enabled", "acc_or_levy_placeholder", "notes"}
+    allowed = {"country", "tax_enabled", "tax_mode", "default_tax_rate", "tax_code_table", "kiwi_saver_enabled", "default_kiwi_saver_rate", "employer_contribution_enabled", "default_employer_contribution_rate", "student_loan_enabled", "acc_or_levy_placeholder", "notes", "payroll_method", "rate_mode", "default_hourly_rate", "default_pay_frequency"}
     for k, v in (payload or {}).items():
         if k in allowed:
             current[k] = v
@@ -7180,6 +7226,30 @@ async def payroll_payslips_csv(period_id: str, current_user: dict = Depends(get_
     filename = f"churvox-payslips-{period.get('start_date')}-to-{period.get('end_date')}.csv"
     header = ["Pay Period","Worker Name","Worker Email","Gross Pay","Employee Tax","Deductions","Reimbursements","Net Pay Estimate","Employer Contribution","Notes"]
     rows = [[period.get("name"), w.get("worker_name"), w.get("worker_email"), w.get("gross_pay"), w.get("employee_tax"), w.get("other_deductions"), w.get("non_taxable_reimbursements"), w.get("net_pay_estimate"), w.get("employer_contribution"), w.get("notes") or ""] for w in summary.get("worker_summaries", [])]
+    return _csv_response(filename, header, rows)
+
+@api_router.get("/payroll/pay-periods/{period_id}/worker-pay.csv")
+async def payroll_worker_pay_csv(period_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _find_period_or_404(period_id, business_id)
+    summary = await _build_period_summary(period, business_id)
+    filename = f"churvox-worker-pay-{period.get('start_date')}-to-{period.get('end_date')}.csv"
+    header = ["Pay Period", "Worker Name", "Worker Email", "Approved Hours", "Pending Hours", "Jobs Worked", "Adjustments Total", "Estimated Gross Pay", "Net Pay Estimate", "Status"]
+    rows = [[period.get("name"), w.get("worker_name"), w.get("worker_email"), w.get("approved_hours"), w.get("pending_hours"), w.get("jobs_worked"), w.get("adjustments_total"), w.get("gross_pay"), w.get("net_pay_estimate"), w.get("status")] for w in summary.get("worker_summaries", [])]
+    return _csv_response(filename, header, rows)
+
+@api_router.get("/payroll/pay-periods/{period_id}/adjustments.csv")
+async def payroll_adjustments_csv(period_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _find_period_or_404(period_id, business_id)
+    workers = {w["id"]: w for w in await _get_payroll_workers(business_id)}
+    adjustments = await db.payroll_adjustments.find({"business_id": business_id, "period_id": str(period.get("id") or period.get("_id"))}).to_list(length=5000)
+    filename = f"churvox-adjustments-{period.get('start_date')}-to-{period.get('end_date')}.csv"
+    header = ["Pay Period", "Worker Name", "Worker Email", "Type", "Label", "Amount", "Taxable", "Notes", "Created At"]
+    rows = []
+    for a in adjustments:
+        worker = workers.get(str(a.get("worker_id") or ""), {})
+        rows.append([period.get("name"), worker.get("name") or "", worker.get("email") or "", a.get("type"), a.get("label"), a.get("amount"), bool(a.get("taxable")), a.get("notes") or "", _to_iso(a.get("created_at"))])
     return _csv_response(filename, header, rows)
 
 
