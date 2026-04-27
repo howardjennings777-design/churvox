@@ -6,18 +6,18 @@
 
 @layer base {
   :root {
-    --ch-bg: #f6f8fb;
+    --ch-bg: #0b1220;
     --ch-surface: #ffffff;
-    --ch-surface-soft: #f9fbff;
-    --ch-border: #dbe4ef;
-    --ch-border-strong: #b8c7da;
+    --ch-surface-soft: #f3f7ff;
+    --ch-border: #d2dded;
+    --ch-border-strong: #9fb4cf;
     --ch-text: #102033;
     --ch-text-muted: #63758b;
-    --ch-primary: #2563eb;
-    --ch-primary-dark: #1d4ed8;
-    --ch-primary-soft: #dbeafe;
-    --ch-accent: #06b6d4;
-    --ch-accent-soft: #cffafe;
+    --ch-primary: #1d66ff;
+    --ch-primary-dark: #1550d4;
+    --ch-primary-soft: #d7e6ff;
+    --ch-accent: #0ea5c9;
+    --ch-accent-soft: #d0f4ff;
     --ch-success: #16a34a;
     --ch-success-soft: #dcfce7;
     --ch-warning: #f59e0b;
@@ -27,7 +27,7 @@
     --ch-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
     --ch-radius: 20px;
 
-    --background: 214 43% 98%;
+    --background: 222 39% 97%;
     --foreground: 213 52% 13%;
     --card: 0 0% 100%;
     --card-foreground: 213 52% 13%;
@@ -66,7 +66,7 @@
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     text-rendering: optimizeLegibility;
-    background-image: radial-gradient(circle at 0% 0%, #ffffff 0%, var(--ch-bg) 55%, #eef3fb 100%);
+    background-image: radial-gradient(circle at 0% 0%, #f8fbff 0%, #eef4ff 48%, #e8effc 100%);
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -90,8 +90,28 @@
   .cx-page-hero {
     @apply rounded-3xl border p-5 md:p-7;
     border-color: var(--ch-border);
-    background: linear-gradient(135deg, #ffffff, #f7faff 58%, #eef6ff);
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06), 0 22px 50px rgba(37, 99, 235, 0.12);
+    background: linear-gradient(145deg, #ffffff, #f6faff 58%, #edf5ff);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06), 0 22px 50px rgba(29, 102, 255, 0.12);
+    position: relative;
+    overflow: hidden;
+  }
+  .cx-page-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: .28;
+    background-image:
+      linear-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .cx-page-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(120deg, transparent 20%, rgba(14, 165, 201, 0.04) 45%, transparent 70%);
   }
   .cx-page-title { @apply text-3xl md:text-4xl font-bold tracking-tight text-slate-900; }
   .cx-page-subtitle { @apply text-sm md:text-base font-medium text-slate-600 mt-1; }

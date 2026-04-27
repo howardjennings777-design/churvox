@@ -29,13 +29,13 @@ export default function WorkerJobsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-[#fcfaf6] border-b border-border px-4 py-4 sticky top-0 z-10">
+      <header className="bg-[#0f1d35] border-b border-slate-800 px-4 py-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">My Jobs</h1>
-            <p className="text-sm text-slate-600">{user?.name || "Worker"}</p>
+            <h1 className="text-2xl font-bold text-white">Assigned Work</h1>
+            <p className="text-sm text-slate-300">{user?.name || "Worker"} · Today’s work</p>
           </div>
-          <Link to="/worker/settings" className="text-sm text-blue-600 hover:text-blue-700 font-medium">Settings</Link>
+          <Link to="/worker/settings" className="text-sm text-blue-300 hover:text-blue-200 font-medium">Settings</Link>
         </div>
       </header>
 
@@ -47,8 +47,8 @@ export default function WorkerJobsPage() {
         ) : jobs.length === 0 ? (
           <div className="text-center py-16">
             <Briefcase className="mx-auto h-12 w-12 text-slate-300" />
-            <p className="mt-3 text-slate-500 font-medium">No jobs assigned yet</p>
-            <p className="text-sm text-slate-400">Jobs assigned to you will appear here.</p>
+            <p className="mt-3 text-slate-500 font-medium">No assigned work yet</p>
+            <p className="text-sm text-slate-400">Jobs on site will appear here.</p>
           </div>
         ) : (
           jobs.map((job) => {

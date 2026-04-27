@@ -322,15 +322,14 @@ function AutomationPage() {
         <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-600">
-                Churvox Automation
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-600">
+                Smart Operations
               </p>
               <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
-                Automation Center
+                Automation Rules
               </h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                Create safe business rules for job, quote, invoice, client, team, payroll, and timeline workflows.
-                SMS automation stays off until SMS is fully live.
+                Build field-service automations like: when a job is completed, create invoice draft, notify office admin, send customer follow-up, and flag payroll review.
               </p>
             </div>
 

@@ -52,8 +52,8 @@ export default function JobsPage() {
       <div className="cx-page max-w-5xl" data-testid="jobs-page">
         <div className="cx-page-hero flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="cx-page-title" data-testid="jobs-heading">Jobs</h1>
-            <p className="cx-page-subtitle">Track field jobs, schedules, and assigned workers.</p>
+            <h1 className="cx-page-title" data-testid="jobs-heading">Work Orders</h1>
+            <p className="cx-page-subtitle">Assigned work, site timing, worker updates, and status in one practical board.</p>
           </div>
           {isEmployer && (
             <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white" data-testid="new-job-button">
@@ -115,14 +115,14 @@ export default function JobsPage() {
                           </span>
                         </div>
                         <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-500">
-                          {job.customer_name && <span>{job.customer_name}</span>}
-                          {job.address && <span className="flex items-center gap-1"><MapPin size={11} /> {job.address}</span>}
-                          <span className="flex items-center gap-1"><Clock size={11} /> {formatDate(job.scheduled_date)}</span>
+                          {job.customer_name && <span><span className="font-semibold text-slate-600">Customer:</span> {job.customer_name}</span>}
+                          {job.address && <span className="flex items-center gap-1"><MapPin size={11} /> <span className="font-semibold text-slate-600">Site:</span> {job.address}</span>}
+                          <span className="flex items-center gap-1"><Clock size={11} /> <span className="font-semibold text-slate-600">Date:</span> {formatDate(job.scheduled_date)}</span>
                           {job.price > 0 && <span className="text-blue-600 font-medium">{formatCurrency(job.price)}</span>}
                         </div>
                         {job.assigned_worker_name && (
                           <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
-                            <UserCheck size={12} /> {job.assigned_worker_name}
+                            <UserCheck size={12} /> <span className="font-semibold">Assigned:</span> {job.assigned_worker_name}
                           </p>
                         )}
                       </Link>
