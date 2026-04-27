@@ -7661,6 +7661,231 @@ async def _automation_startup():
         print(f"AUTOMATION_SCHEDULER_START_ERR {e}")
 
 
+
+# ============================================================
+# CHURVOX LAUNCH AUTOMATION ROUTES
+# Added as a safe launch-ready automation API surface.
+# Business-scoped, role-restricted, and frontend-compatible.
+# ============================================================
+
+import uuid as _automation_uuid
+from datetime import datetime as _automation_datetime, timezone as _automation_timezone
+
+_AUTOMATION_ALLOWED_ROLES = {"owner", "employer", "admin", "manager", "office_admin", "platform_owner"}
+
+def _automation_now():
+    return _automation_datetime.now(_automation_timezone.utc).isoformat()
+
+def _automation_role(current_user: dict):
+    return str((current_user or {}).get("role") or "").strip().lower()
+
+def _automation_business_id(current_user: dict):
+    user = current_user or {}
+    return str(
+        user.get("business_id")
+        or user.get("businessId")
+        or user.get("business")
+        or user.get("company_id")
+        or user.get("companyId")
+        or user.get("id")
+        or user.get("_id")
+        or user.get("email")
+        or "default"
+    )
+
+def _automation_user_id(current_user: dict):
+    user = current_user or {}
+    return str(user.get("id") or user.get("_id") or user.get("email") or "")
+
+def _automation_require_manager(current_user: dict):
+    role = _automation_role(current_user)
+    if role not in _AUTOMATION_ALLOWED_ROLES:
+        raise HTTPException(status_code=403, detail="You do not have permission to manage automation rules.")
+    return True
+
+def _automation_clean_doc(doc):
+    if not doc:
+        return None
+    out = {}
+    for key, value in dict(doc).items():
+        if key == "_id":
+            out["_id"] = str(value)
+        else:
+            out[key] = value
+    if not out.get("id"):
+        out["id"] = out.get("_id")
+    return out
+
+def _automation_clean_docs(docs):
+    return [_automation_clean_doc(d) for d in docs or []]
+
+_AUTOMATION_TEMPLATES = [
+    {"id": "job_completed_notify", "name": "Job completed → notify owner/admin", "trigger": "job.completed", "action": "notification.create", "description": "Creates a notification when a worker completes a job."},
+    {"id": "job_completed_draft_invoice", "name": "Job completed → create draft invoice", "trigger": "job.completed", "action": "invoice.create_draft", "description": "Creates a draft invoice when a completed job has pricing."},
+    {"id": "quote_accepted_notify", "name": "Quote accepted → notify owner/admin", "trigger": "quote.accepted", "action": "notification.create", "description": "Creates a notification when a customer accepts a public quote."},
+    {"id": "invoice_paid_timeline", "name": "Invoice paid → timeline entry", "trigger": "invoice.paid", "action": "timeline.create", "description": "Records invoice payment activity in the business timeline."},
+    {"id": "client_created_timeline", "name": "New client → timeline entry", "trigger": "client.created", "action": "timeline.create", "description": "Records new client activity in the business timeline."},
+]
+
+@api_router.get("/automation/templates")
+async def automation_templates(current_user: dict = Depends(get_current_user)):
+    _automation_require_manager(current_user)
+    return {"success": True, "templates": _AUTOMATION_TEMPLATES}
+
+@api_router.get("/automation/rules")
+async def automation_list_rules(current_user: dict = Depends(get_current_user)):
+    _automation_require_manager(current_user)
+    business_id = _automation_business_id(current_user)
+    cursor = db.automation_rules.find({"business_id": business_id}).sort("created_at", -1)
+    rules = await cursor.to_list(length=300)
+    return {"success": True, "rules": _automation_clean_docs(rules)}
+
+@api_router.post("/automation/rules")
+async def automation_create_rule(payload: dict, current_user: dict = Depends(get_current_user)):
+    _automation_require_manager(current_user)
+    payload = payload or {}
+    business_id = _automation_business_id(current_user)
+
+    name = str(payload.get("name") or "").strip()
+    trigger = str(payload.get("trigger") or "").strip()
+    action = str(payload.get("action") or "").strip()
+
+    if not name:
+        raise HTTPException(status_code=400, detail="Automation name is required.")
+    if not trigger:
+        raise HTTPException(status_code=400, detail="Automation trigger is required.")
+    if not action:
+        raise HTTPException(status_code=400, detail="Automation action is required.")
+
+    now = _automation_now()
+    rule = {
+        "id": str(_automation_uuid.uuid4()),
+        "business_id": business_id,
+        "name": name,
+        "description": str(payload.get("description") or "").strip(),
+        "trigger": trigger,
+        "action": action,
+        "enabled": bool(payload.get("enabled", True)),
+        "conditions": payload.get("conditions") if isinstance(payload.get("conditions"), dict) else {},
+        "config": payload.get("config") if isinstance(payload.get("config"), dict) else {},
+        "action_config": payload.get("action_config") if isinstance(payload.get("action_config"), dict) else {},
+        "created_by": _automation_user_id(current_user),
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    await db.automation_rules.insert_one(rule)
+    return {"success": True, "rule": _automation_clean_doc(rule)}
+
+@api_router.put("/automation/rules/{rule_id}")
+async def automation_update_rule(rule_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    _automation_require_manager(current_user)
+    payload = payload or {}
+    business_id = _automation_business_id(current_user)
+
+    allowed = {"name", "description", "trigger", "action", "enabled", "conditions", "config", "action_config"}
+
+    update = {}
+    for key in allowed:
+        if key in payload:
+            update[key] = payload[key]
+
+    if "name" in update:
+        update["name"] = str(update["name"] or "").strip()
+        if not update["name"]:
+            raise HTTPException(status_code=400, detail="Automation name is required.")
+
+    if "trigger" in update:
+        update["trigger"] = str(update["trigger"] or "").strip()
+        if not update["trigger"]:
+            raise HTTPException(status_code=400, detail="Automation trigger is required.")
+
+    if "action" in update:
+        update["action"] = str(update["action"] or "").strip()
+        if not update["action"]:
+            raise HTTPException(status_code=400, detail="Automation action is required.")
+
+    if "enabled" in update:
+        update["enabled"] = bool(update["enabled"])
+
+    if "conditions" in update and not isinstance(update["conditions"], dict):
+        update["conditions"] = {}
+    if "config" in update and not isinstance(update["config"], dict):
+        update["config"] = {}
+    if "action_config" in update and not isinstance(update["action_config"], dict):
+        update["action_config"] = {}
+
+    update["updated_at"] = _automation_now()
+
+    result = await db.automation_rules.update_one({"id": rule_id, "business_id": business_id}, {"$set": update})
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Automation rule not found.")
+
+    doc = await db.automation_rules.find_one({"id": rule_id, "business_id": business_id})
+    return {"success": True, "rule": _automation_clean_doc(doc)}
+
+@api_router.patch("/automation/rules/{rule_id}")
+async def automation_patch_rule(rule_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    return await automation_update_rule(rule_id, payload, current_user)
+
+@api_router.delete("/automation/rules/{rule_id}")
+async def automation_delete_rule(rule_id: str, current_user: dict = Depends(get_current_user)):
+    _automation_require_manager(current_user)
+    business_id = _automation_business_id(current_user)
+
+    result = await db.automation_rules.delete_one({"id": rule_id, "business_id": business_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Automation rule not found.")
+
+    await db.automation_runs.insert_one({
+        "id": str(_automation_uuid.uuid4()),
+        "business_id": business_id,
+        "rule_id": rule_id,
+        "trigger": "rule.deleted",
+        "action": "automation.delete",
+        "status": "success",
+        "message": "Automation rule deleted.",
+        "created_at": _automation_now(),
+        "created_by": _automation_user_id(current_user),
+    })
+
+    return {"success": True}
+
+@api_router.get("/automation/runs")
+async def automation_list_runs(current_user: dict = Depends(get_current_user)):
+    _automation_require_manager(current_user)
+    business_id = _automation_business_id(current_user)
+    cursor = db.automation_runs.find({"business_id": business_id}).sort("created_at", -1)
+    runs = await cursor.to_list(length=100)
+    return {"success": True, "runs": _automation_clean_docs(runs)}
+
+@api_router.post("/automation/rules/{rule_id}/test")
+async def automation_test_rule(rule_id: str, current_user: dict = Depends(get_current_user)):
+    _automation_require_manager(current_user)
+    business_id = _automation_business_id(current_user)
+
+    rule = await db.automation_rules.find_one({"id": rule_id, "business_id": business_id})
+    if not rule:
+        raise HTTPException(status_code=404, detail="Automation rule not found.")
+
+    run = {
+        "id": str(_automation_uuid.uuid4()),
+        "business_id": business_id,
+        "rule_id": rule_id,
+        "rule_name": rule.get("name"),
+        "trigger": rule.get("trigger"),
+        "action": rule.get("action"),
+        "status": "success",
+        "message": "Automation test completed. No customer-facing action was sent.",
+        "created_at": _automation_now(),
+        "created_by": _automation_user_id(current_user),
+    }
+
+    await db.automation_runs.insert_one(run)
+    return {"success": True, "run": _automation_clean_doc(run)}
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
