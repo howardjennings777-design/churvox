@@ -10,6 +10,7 @@ import {
   Settings, FileText, Receipt, CreditCard, UserPlus, MessageSquare, DollarSign, Zap, ListChecks, CalendarDays,
 } from "lucide-react";
 import NotificationsBell from "./NotificationsBell";
+import HelpDropdown from "./HelpDropdown";
 
 export default function Layout({ children }) {
   const { user, logout, normalizedRole, isOwnerUser } = useAuth();
@@ -18,6 +19,7 @@ export default function Layout({ children }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const safePlan = normalizePlan(user?.plan);
   const role = normalizedRole || "owner";
+  const showHelp = role !== "worker";
 
   const handleLogout = async () => {
     await logout();
@@ -63,7 +65,10 @@ export default function Layout({ children }) {
               <p className="text-sm font-semibold text-white">Smart Hub</p>
             </div>
           </div>
-          <NotificationsBell />
+          <div className="flex items-center gap-2">
+            {showHelp && <HelpDropdown />}
+            <NotificationsBell />
+          </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
@@ -114,6 +119,7 @@ export default function Layout({ children }) {
             <span className="text-xs text-slate-300 font-medium">Smart Hub</span>
           </div>
           <div className="flex items-center gap-2">
+            {showHelp && <HelpDropdown />}
             <NotificationsBell />
             <span className="text-xs font-medium text-slate-300">{user?.name?.split(" ")[0]}</span>
           </div>
