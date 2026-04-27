@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import Layout from "../components/Layout";
 import API_BASE from "../lib/apiBase";
 
 
@@ -569,8 +568,7 @@ function AutomationPage() {
           </div>
         </div>
       </div>
-      </div>
-    </Layout>
+    </div>
   );
 }
 
