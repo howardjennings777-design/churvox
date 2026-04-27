@@ -286,6 +286,8 @@ JWT_SECRET = os.environ.get('JWT_SECRET', 'default_secret_change_me')
 JWT_ALGORITHM = "HS256"
 DEFAULT_GST_RATE = float(os.environ.get('DEFAULT_GST_RATE', '15'))
 BUSINESS_ROLES = {"owner", "admin", "employer", "manager", "office_admin"}
+ACCOUNTING_CONFIG_ROLES = {"owner", "admin", "employer", "manager"}
+INVOICE_MODES = {"churvox_only", "myob_sync", "myob_external"}
 
 
 
@@ -446,6 +448,103 @@ PLAN_LIMITS = {
         "extra_blocks": True,
     },
 }
+
+
+def _resolve_business_id(user: dict) -> str:
+    return str(
+        user.get("business_id")
+        or user.get("businessId")
+        or user.get("id")
+        or user.get("_id")
+        or user.get("user_id")
+        or ""
+    )
+
+
+def _resolve_owner_id(user: dict) -> str:
+    return str(
+        user.get("_id")
+        or user.get("id")
+        or user.get("user_id")
+        or ""
+    )
+
+
+def _safe_iso(value):
+    if value is None:
+        return None
+    if hasattr(value, "isoformat"):
+        try:
+            return value.isoformat()
+        except Exception:
+            pass
+    try:
+        return str(value)
+    except Exception:
+        return None
+
+
+async def _myob_plan_allowed_for_business(current_user: dict, business_id: str) -> bool:
+    plan = normalize_plan(current_user.get("plan")) or "solo"
+    if plan == "enterprise":
+        return True
+    if plan in {"solo", "team"}:
+        return False
+    if plan == "pro":
+        settings = await db.myob_settings.find_one({"business_id": business_id}) if hasattr(db, "myob_settings") else None
+        return bool((settings or {}).get("pro_addon_enabled") is True)
+    return False
+
+
+def _invoice_access_query(invoice_id: ObjectId, business_id: str, owner_id: str) -> dict:
+    return {
+        "_id": invoice_id,
+        "$or": [
+            {"business_id": business_id},
+            {"business_id": str(business_id)},
+            {"owner_id": owner_id},
+        ],
+    }
+
+
+def _serialize_invoice(invoice: dict) -> dict:
+    subtotal = float(invoice.get("subtotal") or 0)
+    gst_rate = float(invoice.get("gst_rate") or 15)
+    gst_amount = subtotal * gst_rate / 100.0
+    total = float(invoice.get("total") or (subtotal + gst_amount))
+    return {
+        "id": str(invoice.get("_id") or invoice.get("id") or ""),
+        "invoice_number": invoice.get("invoice_number") or f"INV-{str(invoice.get('_id') or '')[-6:]}",
+        "client_id": invoice.get("client_id"),
+        "customer_name": invoice.get("customer_name") or "",
+        "customer_email": invoice.get("customer_email") or "",
+        "address": invoice.get("address") or "",
+        "description": invoice.get("description") or "",
+        "subtotal": subtotal,
+        "gst_rate": gst_rate,
+        "gst_amount": gst_amount,
+        "total": total,
+        "status": invoice.get("status") or "draft",
+        "public_token": invoice.get("public_token") or "",
+        "public_invoice_url": f"{FRONTEND_URL}/public/invoice/{invoice.get('public_token')}" if invoice.get("public_token") else "",
+        "payment_link": invoice.get("payment_link") or "",
+        "pricing_type": invoice.get("pricing_type") or "fixed",
+        "hourly_rate": float(invoice.get("hourly_rate") or 0),
+        "hours_worked": float(invoice.get("hours_worked") or 0),
+        "extras": invoice.get("extras") or [],
+        "notes": invoice.get("notes") or "",
+        "myob_sync_status": invoice.get("myob_sync_status") or "not_synced",
+        "myob_invoice_id": invoice.get("myob_invoice_id") or "",
+        "myob_invoice_number": invoice.get("myob_invoice_number") or "",
+        "myob_last_synced_at": _safe_iso(invoice.get("myob_last_synced_at")),
+        "myob_error": invoice.get("myob_error") or "",
+        "myob_payment_status": invoice.get("myob_payment_status") or "",
+        "myob_invoice_url": invoice.get("myob_invoice_url") or "",
+        "official_invoice_source": invoice.get("official_invoice_source") or "churvox",
+        "source": invoice.get("source") or "invoice",
+        "created_at": _safe_iso(invoice.get("created_at")),
+        "updated_at": _safe_iso(invoice.get("updated_at")),
+    }
 
 # ===================== MODELS =====================
 class UserCreate(BaseModel):
@@ -1612,33 +1711,8 @@ def health_login():
 @api_router.get("/invoices")
 async def get_invoices(current_user: dict = Depends(get_current_user)):
     try:
-        business_id = str(
-            current_user.get("business_id")
-            or current_user.get("businessId")
-            or current_user.get("id")
-            or current_user.get("_id")
-            or current_user.get("user_id")
-            or ""
-        )
-        owner_id = str(
-            current_user.get("_id")
-            or current_user.get("id")
-            or current_user.get("user_id")
-            or ""
-        )
-
-        def safe_iso(value):
-            if value is None:
-                return None
-            if hasattr(value, "isoformat"):
-                try:
-                    return value.isoformat()
-                except Exception:
-                    pass
-            try:
-                return str(value)
-            except Exception:
-                return None
+        business_id = _resolve_business_id(current_user)
+        owner_id = _resolve_owner_id(current_user)
 
         query = {
             "$or": [
@@ -1651,30 +1725,7 @@ async def get_invoices(current_user: dict = Depends(get_current_user)):
         docs = []
         async for invoice in db.invoices.find(query).sort("created_at", -1):
             try:
-                subtotal = float(invoice.get("subtotal") or 0)
-                gst_rate = float(invoice.get("gst_rate") or 15)
-                total = subtotal + (subtotal * gst_rate / 100.0)
-                docs.append({
-                    "id": str(invoice.get("_id") or invoice.get("id") or ""),
-                    "invoice_number": invoice.get("invoice_number") or f"INV-{str(invoice.get('_id') or '')[-6:]}",
-                    "client_id": invoice.get("client_id"),
-                    "customer_name": invoice.get("customer_name") or "",
-                    "customer_email": invoice.get("customer_email") or "",
-                    "address": invoice.get("address") or "",
-                    "description": invoice.get("description") or "",
-                    "subtotal": subtotal,
-                    "gst_rate": gst_rate,
-                    "total": total,
-                    "status": invoice.get("status") or "draft",
-                    "pricing_type": invoice.get("pricing_type") or "fixed",
-                    "hourly_rate": float(invoice.get("hourly_rate") or 0),
-                    "hours_worked": float(invoice.get("hours_worked") or 0),
-                    "extras": invoice.get("extras") or [],
-                    "notes": invoice.get("notes") or "",
-                    "myob_sync_status": invoice.get("myob_sync_status") or "not_synced",
-                    "created_at": safe_iso(invoice.get("created_at")),
-                    "updated_at": safe_iso(invoice.get("updated_at")),
-                })
+                docs.append(_serialize_invoice(invoice))
             except Exception as e:
                 print("INVOICE_ROW_SKIP", str(invoice.get("_id")), str(e))
                 continue
@@ -1694,20 +1745,8 @@ async def create_invoice(request: Request, current_user: dict = Depends(get_curr
 
     payload = await request.json()
 
-    business_id = str(
-        current_user.get("business_id")
-        or current_user.get("businessId")
-        or current_user.get("id")
-        or current_user.get("_id")
-        or current_user.get("user_id")
-        or ""
-    )
-    owner_id = str(
-        current_user.get("_id")
-        or current_user.get("id")
-        or current_user.get("user_id")
-        or ""
-    )
+    business_id = _resolve_business_id(current_user)
+    owner_id = _resolve_owner_id(current_user)
 
     if not business_id:
         raise HTTPException(status_code=400, detail="Business ID missing")
@@ -1719,6 +1758,12 @@ async def create_invoice(request: Request, current_user: dict = Depends(get_curr
             return default
 
     now = datetime.now(timezone.utc)
+    accounting = await db.accounting_settings.find_one({"business_id": business_id}) if hasattr(db, "accounting_settings") else None
+    invoice_mode = str((accounting or {}).get("invoice_mode") or "churvox_only").strip().lower()
+    if invoice_mode not in INVOICE_MODES:
+        invoice_mode = "churvox_only"
+    if invoice_mode == "myob_external":
+        raise HTTPException(status_code=409, detail="Create invoices in MYOB, then sync them back to Churvox.")
 
     invoice_doc = {
         "invoice_number": payload.get("invoice_number") or f"INV-{int(now.timestamp())}",
@@ -1735,7 +1780,8 @@ async def create_invoice(request: Request, current_user: dict = Depends(get_curr
         "hours_worked": to_float(payload.get("hours_worked"), 0),
         "extras": payload.get("extras") or [],
         "notes": payload.get("notes") or "",
-        "myob_sync_status": payload.get("myob_sync_status") or "not_synced",
+        "myob_sync_status": payload.get("myob_sync_status") or ("not_synced" if invoice_mode == "myob_sync" else "not_synced"),
+        "official_invoice_source": "myob" if invoice_mode == "myob_external" else "churvox",
         "business_id": business_id,
         "owner_id": owner_id,
         "created_at": now,
@@ -1769,20 +1815,8 @@ async def create_invoice(request: Request, current_user: dict = Depends(get_curr
 
 @api_router.get("/invoices/{invoice_id}")
 async def get_invoice(invoice_id: str, current_user: dict = Depends(get_current_user)):
-    business_id = str(
-        current_user.get("business_id")
-        or current_user.get("businessId")
-        or current_user.get("id")
-        or current_user.get("_id")
-        or current_user.get("user_id")
-        or ""
-    )
-    owner_id = str(
-        current_user.get("_id")
-        or current_user.get("id")
-        or current_user.get("user_id")
-        or ""
-    )
+    business_id = _resolve_business_id(current_user)
+    owner_id = _resolve_owner_id(current_user)
 
     try:
         obj_id = ObjectId(invoice_id)
@@ -1800,44 +1834,7 @@ async def get_invoice(invoice_id: str, current_user: dict = Depends(get_current_
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
 
-    subtotal = float(invoice.get("subtotal") or 0)
-    gst_rate = float(invoice.get("gst_rate") or 15)
-    total = subtotal + (subtotal * gst_rate / 100.0)
-
-    def safe_iso(value):
-        if value is None:
-            return None
-        if hasattr(value, "isoformat"):
-            try:
-                return value.isoformat()
-            except Exception:
-                pass
-        return str(value)
-
-    return {
-        "id": str(invoice.get("_id") or invoice.get("id") or ""),
-        "invoice_number": invoice.get("invoice_number") or f"INV-{str(invoice.get('_id') or '')[-6:]}",
-        "client_id": invoice.get("client_id"),
-        "customer_name": invoice.get("customer_name") or "",
-        "customer_email": invoice.get("customer_email") or "",
-        "address": invoice.get("address") or "",
-        "description": invoice.get("description") or "",
-        "subtotal": subtotal,
-        "gst_rate": gst_rate,
-        "total": total,
-        "status": invoice.get("status") or "draft",
-        "public_token": invoice.get("public_token") or "",
-        "public_invoice_url": f"{FRONTEND_URL}/public/invoice/{invoice.get('public_token')}" if invoice.get("public_token") else "",
-        "payment_link": invoice.get("payment_link") or "",
-        "pricing_type": invoice.get("pricing_type") or "fixed",
-        "hourly_rate": float(invoice.get("hourly_rate") or 0),
-        "hours_worked": float(invoice.get("hours_worked") or 0),
-        "extras": invoice.get("extras") or [],
-        "notes": invoice.get("notes") or "",
-        "myob_sync_status": invoice.get("myob_sync_status") or "not_synced",
-        "created_at": safe_iso(invoice.get("created_at")),
-        "updated_at": safe_iso(invoice.get("updated_at")),
-    }
+    return _serialize_invoice(invoice)
 
 
 @api_router.patch("/invoices/{invoice_id}")
@@ -4227,20 +4224,8 @@ async def create_draft_invoice_from_job(job_id: str, current_user: dict = Depend
     if current_user.get("role") not in BUSINESS_ROLES:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    business_id = str(
-        current_user.get("business_id")
-        or current_user.get("businessId")
-        or current_user.get("id")
-        or current_user.get("_id")
-        or current_user.get("user_id")
-        or ""
-    )
-    owner_id = str(
-        current_user.get("_id")
-        or current_user.get("id")
-        or current_user.get("user_id")
-        or ""
-    )
+    business_id = _resolve_business_id(current_user)
+    owner_id = _resolve_owner_id(current_user)
 
     try:
         obj_id = ObjectId(job_id)
@@ -4267,6 +4252,10 @@ async def create_draft_invoice_from_job(job_id: str, current_user: dict = Depend
     gst_amount = subtotal * (gst_rate / 100)
     total = subtotal + gst_amount
     now = datetime.now(timezone.utc)
+    accounting = await db.accounting_settings.find_one({"business_id": business_id}) if hasattr(db, "accounting_settings") else None
+    invoice_mode = str((accounting or {}).get("invoice_mode") or "churvox_only").strip().lower()
+    if invoice_mode not in INVOICE_MODES:
+        invoice_mode = "churvox_only"
 
     doc = {
         "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{str(obj_id)[-5:]}",
@@ -4285,7 +4274,9 @@ async def create_draft_invoice_from_job(job_id: str, current_user: dict = Depend
         "hourly_rate": float(job.get("hourly_rate") or 0),
         "hours_worked": float(job.get("time_spent_minutes") or 0) / 60,
         "extras": job.get("extras") or [],
-        "myob_sync_status": "not_synced",
+        "myob_sync_status": "not_synced" if invoice_mode == "myob_sync" else "not_synced",
+        "source": "churvox_internal_draft" if invoice_mode == "myob_external" else "invoice",
+        "official_invoice_source": "myob" if invoice_mode == "myob_external" else "churvox",
         "business_id": business_id,
         "owner_id": owner_id,
         "created_at": now,
@@ -4296,7 +4287,10 @@ async def create_draft_invoice_from_job(job_id: str, current_user: dict = Depend
     invoice_id = str(result.inserted_id)
     await db.jobs.update_one({"_id": obj_id}, {"$set": {"invoice_id": invoice_id, "updated_at": now}})
 
-    return {"success": True, "invoice_id": invoice_id, "message": "Draft invoice created"}
+    message = "Draft invoice created"
+    if invoice_mode == "myob_external":
+        message = "Billing draft prepared. Create the official invoice in MYOB."
+    return {"success": True, "invoice_id": invoice_id, "message": message, "invoice_mode": invoice_mode}
 
 @api_router.post("/jobs/{job_id}/assign")
 async def assign_job_worker(job_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
@@ -4539,38 +4533,146 @@ def pick_client_phone(job=None, client=None):
 
 
 
+async def _compose_accounting_settings(current_user: dict) -> dict:
+    business_id = _resolve_business_id(current_user)
+    accounting = await db.accounting_settings.find_one({"business_id": business_id}) if hasattr(db, "accounting_settings") else None
+    myob = await db.myob_settings.find_one({"business_id": business_id}) if hasattr(db, "myob_settings") else None
+    invoice_mode = str((accounting or {}).get("invoice_mode") or "churvox_only").strip().lower()
+    if invoice_mode not in INVOICE_MODES:
+        invoice_mode = "churvox_only"
+    myob_connected = bool((myob or {}).get("connected") is True)
+    myob_plan_allowed = await _myob_plan_allowed_for_business(current_user, business_id)
+    myob_status = "not_connected"
+    if not myob_plan_allowed:
+        myob_status = "upgrade_required"
+    elif myob_connected:
+        myob_status = "connected"
+    return {
+        "invoice_mode": invoice_mode,
+        "myob_connected": myob_connected,
+        "myob_plan_allowed": myob_plan_allowed,
+        "myob_status": myob_status,
+        "last_sync_at": _safe_iso((myob or {}).get("last_sync_at")),
+    }
+
+
+@api_router.get("/accounting/settings")
+async def get_accounting_settings(current_user: dict = Depends(get_current_user)):
+    try:
+        data = await _compose_accounting_settings(current_user)
+        return {"success": True, "data": data}
+    except Exception as e:
+        print("ACCOUNTING_SETTINGS_ERROR", str(e), current_user)
+        raise HTTPException(status_code=500, detail="Failed to load accounting settings")
+
+
+@api_router.post("/accounting/settings")
+async def post_accounting_settings(request: Request, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in ACCOUNTING_CONFIG_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized to configure accounting settings")
+    business_id = _resolve_business_id(current_user)
+    payload = await request.json()
+    invoice_mode = str((payload or {}).get("invoice_mode") or "").strip().lower()
+    if invoice_mode not in INVOICE_MODES:
+        raise HTTPException(status_code=400, detail="Invalid invoice mode")
+    myob_plan_allowed = await _myob_plan_allowed_for_business(current_user, business_id)
+    if invoice_mode in {"myob_sync", "myob_external"} and not myob_plan_allowed:
+        raise HTTPException(status_code=400, detail="Your plan does not include MYOB. Upgrade or add the MYOB add-on first.")
+    now = datetime.now(timezone.utc)
+    await db.accounting_settings.update_one(
+        {"business_id": business_id},
+        {"$set": {"business_id": business_id, "invoice_mode": invoice_mode, "updated_at": now}, "$setOnInsert": {"created_at": now}},
+        upsert=True,
+    )
+    data = await _compose_accounting_settings(current_user)
+    return {"success": True, "data": data}
+
+
+async def _run_myob_sync(invoice_id: str, current_user: dict, *, is_retry: bool = False):
+    business_id = _resolve_business_id(current_user)
+    owner_id = _resolve_owner_id(current_user)
+    settings = await _compose_accounting_settings(current_user)
+    if settings.get("invoice_mode") not in {"myob_sync", "myob_external"}:
+        raise HTTPException(status_code=400, detail="MYOB sync is only available in MYOB invoice modes")
+    if not settings.get("myob_plan_allowed"):
+        raise HTTPException(status_code=400, detail="Your plan does not include MYOB")
+    try:
+        obj_id = ObjectId(invoice_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid invoice ID")
+    invoice = await db.invoices.find_one(_invoice_access_query(obj_id, business_id, owner_id))
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    if not settings.get("myob_connected"):
+        message = "Connect MYOB before syncing invoices."
+        await db.invoices.update_one(
+            {"_id": obj_id},
+            {"$set": {"myob_sync_status": "setup_required", "myob_error": message, "updated_at": datetime.now(timezone.utc)}},
+        )
+        updated = await db.invoices.find_one({"_id": obj_id})
+        return {"success": False, "message": message, "data": _serialize_invoice(updated)}
+    message = "MYOB invoice sync is not configured yet. Connect and enable invoice API sync first."
+    await db.invoices.update_one(
+        {"_id": obj_id},
+        {"$set": {"myob_sync_status": "failed", "myob_error": message, "updated_at": datetime.now(timezone.utc)}},
+    )
+    updated = await db.invoices.find_one({"_id": obj_id})
+    return {"success": False, "message": message, "data": _serialize_invoice(updated), "retry": is_retry}
+
+
+@api_router.post("/invoices/{invoice_id}/myob-sync")
+async def invoice_myob_sync(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in BUSINESS_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    return await _run_myob_sync(invoice_id, current_user, is_retry=False)
+
+
+@api_router.post("/invoices/{invoice_id}/myob-retry")
+async def invoice_myob_retry(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in BUSINESS_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    return await _run_myob_sync(invoice_id, current_user, is_retry=True)
+
+
+@api_router.get("/invoices/{invoice_id}/myob-status")
+async def invoice_myob_status(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = _resolve_business_id(current_user)
+    owner_id = _resolve_owner_id(current_user)
+    try:
+        obj_id = ObjectId(invoice_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid invoice ID")
+    invoice = await db.invoices.find_one(_invoice_access_query(obj_id, business_id, owner_id))
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    return {
+        "success": True,
+        "data": {
+            "myob_sync_status": invoice.get("myob_sync_status") or "not_synced",
+            "myob_invoice_id": invoice.get("myob_invoice_id") or "",
+            "myob_invoice_number": invoice.get("myob_invoice_number") or "",
+            "myob_last_synced_at": _safe_iso(invoice.get("myob_last_synced_at")),
+            "myob_error": invoice.get("myob_error") or "",
+            "myob_payment_status": invoice.get("myob_payment_status") or "",
+            "myob_invoice_url": invoice.get("myob_invoice_url") or "",
+        },
+    }
+
+
 @api_router.get("/myob/settings")
 async def get_myob_settings(current_user: dict = Depends(get_current_user)):
-    try:
-        business_id = str(
-            current_user.get("business_id")
-            or current_user.get("businessId")
-            or current_user.get("id")
-            or current_user.get("_id")
-            or current_user.get("user_id")
-            or ""
-        )
-        settings = await db.myob_settings.find_one({"business_id": business_id}) if hasattr(db, "myob_settings") else None
-        return {
-            "success": True,
-            "data": settings or {
-                "enabled": False,
-                "connected": False,
-                "company_name": "",
-                "last_sync_at": None,
-            }
-        }
-    except Exception as e:
-        print("MYOB_SETTINGS_ERROR", str(e), current_user)
-        return {
-            "success": True,
-            "data": {
-                "enabled": False,
-                "connected": False,
-                "company_name": "",
-                "last_sync_at": None,
-            }
-        }
+    data = await _compose_accounting_settings(current_user)
+    return {
+        "success": True,
+        "data": {
+            "enabled": data.get("myob_plan_allowed"),
+            "connected": data.get("myob_connected"),
+            "invoice_mode": data.get("invoice_mode"),
+            "myob_status": data.get("myob_status"),
+            "last_sync_at": data.get("last_sync_at"),
+            "pro_addon_enabled": bool(data.get("myob_plan_allowed") and normalize_plan(current_user.get("plan")) == "pro"),
+        },
+    }
 
 
 

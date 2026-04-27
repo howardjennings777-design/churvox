@@ -7,10 +7,12 @@ import { safeNumber } from "../utils/safeRender";
 export default function ReportsPage() {
   const { get } = useApi();
   const [summary, setSummary] = useState(null);
+  const [accounting, setAccounting] = useState(null);
 
   const load = useCallback(async () => {
-    const res = await get("/reports/summary");
+    const [res, accountingRes] = await Promise.all([get("/reports/summary"), get("/accounting/settings")]);
     setSummary(res?.success ? res.data : {});
+    if (accountingRes?.success) setAccounting(accountingRes.data || null);
   }, [get]);
 
   useEffect(() => { load(); }, [load]);
@@ -31,6 +33,9 @@ export default function ReportsPage() {
         <div className="cx-page-hero">
           <h1 className="cx-page-title">Reports</h1>
           <p className="cx-page-subtitle">Track revenue, job performance, invoice risk, and team productivity.</p>
+          {(accounting?.invoice_mode === "myob_sync" || accounting?.invoice_mode === "myob_external") && (
+            <p className="text-xs text-slate-500 mt-2">Accounting status is synced from MYOB when connected.</p>
+          )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {cards.map(([label, value]) => (
