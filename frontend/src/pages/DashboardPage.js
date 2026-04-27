@@ -12,6 +12,12 @@ function itemId(item, fallback) {
   return item?.id || item?._id || fallback;
 }
 
+function settledData(result, fallback) {
+  if (result?.status !== "fulfilled") return fallback;
+  const value = result.value;
+  return value?.success ? (value.data ?? fallback) : fallback;
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, normalizedRole } = useAuth();
@@ -31,7 +37,7 @@ export default function DashboardPage() {
     setPageLoading(true);
     setPageError("");
     try {
-      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, myobRes] = await Promise.all([
+      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, myobRes] = await Promise.allSettled([
         get("/dashboard/stats"),
         get("/jobs"),
         get("/quotes"),
@@ -39,12 +45,13 @@ export default function DashboardPage() {
         get("/team/workers"),
         get("/myob/settings"),
       ]);
-      setStats(statsRes?.success ? (statsRes.data || {}) : {});
-      setJobs(safeArray(jobsRes?.success ? jobsRes.data : []));
-      setQuotes(safeArray(quotesRes?.success ? quotesRes.data : []));
-      setInvoices(safeArray(invoicesRes?.success ? invoicesRes.data : []));
-      setWorkers(safeArray(workersRes?.success ? workersRes.data : []));
-      setMyobSettings(myobRes?.success ? (myobRes.data || null) : null);
+
+      setStats(settledData(statsRes, {}));
+      setJobs(safeArray(settledData(jobsRes, [])));
+      setQuotes(safeArray(settledData(quotesRes, [])));
+      setInvoices(safeArray(settledData(invoicesRes, [])));
+      setWorkers(safeArray(settledData(workersRes, [])));
+      setMyobSettings(settledData(myobRes, null));
     } catch (err) {
       setPageError(safeText(err, "Failed to load dashboard"));
     } finally {
@@ -81,7 +88,7 @@ export default function DashboardPage() {
   }, [jobs, invoices, quotes, stats, workers, myobSettings]);
 
   const cockpitCards = [
-    { label: "Today", value: smart.todayJobs.length, icon: Calendar, path: "/dispatch" },
+    { label: "Today", value: smart.todayJobs.length, icon: Calendar, path: "/jobs" },
     { label: "Urgent", value: smart.urgentJobs.length, icon: AlertTriangle, path: "/jobs" },
     { label: "Quotes", value: smart.quotesWaiting.length, icon: FileText, path: "/quotes" },
     { label: "Invoices", value: smart.pendingInvoices.length, icon: Receipt, path: "/invoices" },
@@ -115,7 +122,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 dashboard-main-grid">
-          <SectionCard title="Today’s jobs" action={<Link to="/dispatch" className="text-sm text-blue-600 inline-flex items-center gap-1">Schedule <ArrowRight className="h-3 w-3" /></Link>}>
+          <SectionCard title="Today’s jobs" action={<Link to="/jobs" className="text-sm text-blue-600 inline-flex items-center gap-1">Jobs <ArrowRight className="h-3 w-3" /></Link>}>
             <div className="space-y-2">
               {smart.todayJobs.slice(0, 4).map((job, index) => (
                 <Link key={itemId(job, index)} to={`/jobs/${itemId(job, index)}`} className="block rounded-xl border border-slate-200 bg-white p-3 hover:bg-slate-50">
