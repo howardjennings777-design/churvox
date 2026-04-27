@@ -89,7 +89,7 @@ function getPanelPosition(button) {
   return { top, left, width };
 }
 
-export default function HelpDropdown() {
+export default function HelpDropdown({ compact = false }) {
   const location = useLocation();
   const buttonRef = useRef(null);
   const [open, setOpen] = useState(false);
@@ -111,17 +111,19 @@ export default function HelpDropdown() {
   }, [open]);
 
   return (
-    <div className="relative">
+    <div className="relative shrink-0">
       <button
         ref={buttonRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="inline-flex items-center gap-2 rounded-xl border border-slate-600/70 bg-slate-900/55 px-3 py-2 text-xs font-black text-slate-100 shadow-sm transition hover:bg-slate-800"
+        className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-600/70 bg-slate-900/55 text-xs font-black text-slate-100 shadow-sm transition hover:bg-slate-800 ${compact ? "h-10 w-10 px-0" : "px-3 py-2"}`}
         data-testid="help-dropdown-button"
+        aria-label="Help"
+        title="Help"
       >
         <HelpCircle className="h-4 w-4 text-cyan-300" />
-        Help
-        <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+        {!compact && <span>Help</span>}
+        {!compact && <ChevronDown className="h-3.5 w-3.5 text-slate-400" />}
       </button>
 
       {open && (
