@@ -1,0 +1,102 @@
+/* Churvox Clients area dropdown */
+
+.chx-client-area-panel {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(280px, 420px);
+  gap: 18px;
+  align-items: center;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 26px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.94), rgba(248,250,252,0.94));
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+  padding: 18px;
+}
+
+.chx-client-area-copy { min-width: 0; }
+
+.chx-client-area-eyebrow {
+  margin: 0 0 6px;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #2563eb;
+}
+
+.chx-client-area-copy h2 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+  font-weight: 950;
+  color: #0f172a;
+}
+
+.chx-client-area-copy p:last-child {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.chx-client-area-control {
+  display: grid;
+  gap: 8px;
+  justify-self: end;
+  width: min(100%, 420px);
+}
+
+.chx-client-area-control label {
+  color: #334155;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.chx-client-area-select {
+  width: 100% !important;
+  min-height: 48px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(15, 23, 42, 0.14) !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  padding: 0 14px !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07) !important;
+}
+
+.chx-client-area-select:focus {
+  outline: none !important;
+  border-color: rgba(37, 99, 235, 0.70) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12) !important;
+}
+
+.chx-client-area-meta {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.chx-client-area-meta strong {
+  color: #2563eb;
+  font-weight: 950;
+}
+
+.chx-client-area-empty {
+  grid-column: 1 / -1;
+  border: 1px dashed rgba(100, 116, 139, 0.35);
+  border-radius: 18px;
+  background: rgba(248, 250, 252, 0.86);
+  color: #64748b;
+  padding: 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .chx-client-area-panel { grid-template-columns: 1fr; }
+  .chx-client-area-control { justify-self: stretch; width: 100%; }
+}
