@@ -219,7 +219,7 @@ export default function ClientsPage() {
         <div className="cx-page-hero flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h1 className="cx-page-title">Clients</h1>
-            <p className="cx-page-subtitle">Manage customers, contact details, job history, and billing relationships.</p>
+            <p className="cx-page-subtitle">Manage service clients, site details, job history, and billing relationships.</p>
           </div>
 
           {isEmployer && (

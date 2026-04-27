@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Layout from "../components/Layout";
 
 const API_BASE = (process.env.REACT_APP_BACKEND_URL || "https://grassley-backend.onrender.com").replace(/\/$/, "");
 
@@ -8,7 +9,7 @@ const triggerOptions = [
   { value: "job.started", label: "Job started" },
   { value: "job.paused", label: "Job paused" },
   { value: "job.resumed", label: "Job resumed" },
-  { value: "job.completed", label: "Job completed" },
+  { value: "job.completed", label: "When a job is completed" },
   { value: "quote.created", label: "Quote created" },
   { value: "quote.accepted", label: "Quote accepted" },
   { value: "quote.declined", label: "Quote declined" },
@@ -20,10 +21,10 @@ const triggerOptions = [
 ];
 
 const actionOptions = [
-  { value: "notification.create", label: "Create notification" },
-  { value: "timeline.create", label: "Create activity timeline entry" },
-  { value: "invoice.create_draft", label: "Create draft invoice" },
-  { value: "email.send", label: "Send email if configured" },
+  { value: "notification.create", label: "Notify office admin" },
+  { value: "timeline.create", label: "Flag payroll review" },
+  { value: "invoice.create_draft", label: "Create invoice draft" },
+  { value: "email.send", label: "Send customer follow-up" },
 ];
 
 const emptyForm = {
@@ -273,20 +274,20 @@ function AutomationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background px-4 py-6 sm:px-6 lg:px-8">
+    <Layout>
+    <div className="cx-page min-h-screen px-0 py-0 sm:px-0 lg:px-0">
       <div className="mx-auto max-w-7xl space-y-6">
-        <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-cyan-200/70 bg-gradient-to-br from-white via-cyan-50/40 to-blue-50 p-6 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-600">
                 Churvox Automation
               </p>
               <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
-                Automation Center
+                Smart Operations Automation
               </h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                Create safe business rules for job, quote, invoice, client, team, payroll, and timeline workflows.
-                SMS automation stays off until SMS is fully live.
+                Build reliable automation rules for tradie and service-business workflows. Trigger actions for office admin, invoicing, payroll review, and customer follow-up. SMS automation stays off until SMS is fully live.
               </p>
             </div>
 
@@ -314,7 +315,7 @@ function AutomationPage() {
 
         <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
           <div className="space-y-6">
-            <form onSubmit={saveRule} className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+            <form onSubmit={saveRule} className="rounded-3xl border border-cyan-200/70 bg-gradient-to-br from-white via-cyan-50/40 to-blue-50 p-6 shadow-sm">
               <div className="mb-5">
                 <h2 className="text-xl font-bold text-slate-950">
                   {editingRule ? "Edit automation" : "Create automation"}
@@ -406,7 +407,7 @@ function AutomationPage() {
               </div>
             </form>
 
-            <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+            <div className="rounded-3xl border border-cyan-200/70 bg-gradient-to-br from-white via-cyan-50/40 to-blue-50 p-6 shadow-sm">
               <h2 className="text-xl font-bold text-slate-950">Quick templates</h2>
               <p className="mt-1 text-sm text-slate-500">Start from a safe launch-ready automation.</p>
 
@@ -433,7 +434,7 @@ function AutomationPage() {
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+            <div className="rounded-3xl border border-cyan-200/70 bg-gradient-to-br from-white via-cyan-50/40 to-blue-50 p-6 shadow-sm">
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-bold text-slate-950">Automation rules</h2>
@@ -520,7 +521,7 @@ function AutomationPage() {
               )}
             </div>
 
-            <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
+            <div className="rounded-3xl border border-cyan-200/70 bg-gradient-to-br from-white via-cyan-50/40 to-blue-50 p-6 shadow-sm">
               <h2 className="text-xl font-bold text-slate-950">Recent automation runs</h2>
               <p className="mt-1 text-sm text-slate-500">Latest automation tests and rule activity.</p>
 
@@ -561,6 +562,7 @@ function AutomationPage() {
         </div>
       </div>
     </div>
+    </Layout>
   );
 }
 

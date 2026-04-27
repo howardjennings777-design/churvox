@@ -7,7 +7,7 @@ import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { Plus, Search, MapPin, Clock, UserCheck, Trash2, Briefcase } from "lucide-react";
+import { Plus, Search, MapPin, Clock, UserCheck, Trash2, Briefcase, ClipboardList, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, JOB_STATUSES, JOB_STATUS_MAP } from "../../lib/utils";
 import PageState from "../../components/ui/PageState";
@@ -52,8 +52,8 @@ export default function JobsPage() {
       <div className="cx-page max-w-5xl" data-testid="jobs-page">
         <div className="cx-page-hero flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="cx-page-title" data-testid="jobs-heading">Jobs</h1>
-            <p className="cx-page-subtitle">Track field jobs, schedules, and assigned workers.</p>
+            <h1 className="cx-page-title" data-testid="jobs-heading">Jobs & Work Orders</h1>
+            <p className="cx-page-subtitle">Jobs on site, assigned work, worker updates, and ready-to-invoice progress.</p>
           </div>
           {isEmployer && (
             <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white" data-testid="new-job-button">
@@ -104,25 +104,28 @@ export default function JobsPage() {
             {filtered.map((job) => {
               const statusInfo = JOB_STATUS_MAP[job.status];
               return (
-                <Card key={job.id} className="bg-white border-border hover:border-blue-400 transition-all" data-testid={`job-card-${job.id}`}>
+                <Card key={job.id} className="cx-command-card hover:border-blue-300 transition-all" data-testid={`job-card-${job.id}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <Link to={`/jobs/${job.id}`} className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-600">
+                            <ClipboardList size={11} /> Work order
+                          </span>
                           <h3 className="text-slate-900 font-medium truncate">{job.title}</h3>
                           <span className={`cx-status-badge ${statusInfo?.color || "bg-slate-100 text-slate-700 border border-slate-200"}`}>
                             {statusInfo?.label || job.status}
                           </span>
                         </div>
                         <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-500">
-                          {job.customer_name && <span>{job.customer_name}</span>}
-                          {job.address && <span className="flex items-center gap-1"><MapPin size={11} /> {job.address}</span>}
-                          <span className="flex items-center gap-1"><Clock size={11} /> {formatDate(job.scheduled_date)}</span>
+                          {job.customer_name && <span><strong className="text-slate-700">Customer:</strong> {job.customer_name}</span>}
+                          {job.address && <span className="flex items-center gap-1"><MapPin size={11} /> <strong className="text-slate-700">Address:</strong> {job.address}</span>}
+                          <span className="flex items-center gap-1"><CalendarDays size={11} /> <strong className="text-slate-700">Date/time:</strong> {formatDate(job.scheduled_date)}</span>
                           {job.price > 0 && <span className="text-blue-600 font-medium">{formatCurrency(job.price)}</span>}
                         </div>
                         {job.assigned_worker_name && (
                           <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
-                            <UserCheck size={12} /> {job.assigned_worker_name}
+                            <UserCheck size={12} /> <span className="text-slate-700">Assigned worker:</span> {job.assigned_worker_name}
                           </p>
                         )}
                       </Link>
