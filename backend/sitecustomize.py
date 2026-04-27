@@ -77,6 +77,11 @@ class _ServerBootLoader(importlib.abc.Loader):
             install_launch_audit_boot(module)
         except Exception as exc:
             print(f"LAUNCH_AUDIT_BOOT_INSTALL_ERR {exc}")
+        try:
+            from launch_ops_boot import install_launch_ops_boot
+            install_launch_ops_boot(module)
+        except Exception as exc:
+            print(f"LAUNCH_OPS_BOOT_INSTALL_ERR {exc}")
 
 
 class _ServerBootFinder(importlib.abc.MetaPathFinder):
