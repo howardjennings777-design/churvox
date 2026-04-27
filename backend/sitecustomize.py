@@ -62,6 +62,11 @@ class _ServerBootLoader(importlib.abc.Loader):
             install_job_invoice_boot(module)
         except Exception as exc:
             print(f"JOB_INVOICE_BOOT_INSTALL_ERR {exc}")
+        try:
+            from quote_job_boot import install_quote_job_boot
+            install_quote_job_boot(module)
+        except Exception as exc:
+            print(f"QUOTE_JOB_BOOT_INSTALL_ERR {exc}")
 
 
 class _ServerBootFinder(importlib.abc.MetaPathFinder):
