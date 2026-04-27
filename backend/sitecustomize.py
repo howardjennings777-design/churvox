@@ -32,6 +32,11 @@ class _ServerBootLoader(importlib.abc.Loader):
             install_platform_admin_boot(module)
         except Exception as exc:
             print(f"PLATFORM_ADMIN_BOOT_INSTALL_ERR {exc}")
+        try:
+            from business_reports_boot import install_business_reports_boot
+            install_business_reports_boot(module)
+        except Exception as exc:
+            print(f"BUSINESS_REPORTS_BOOT_INSTALL_ERR {exc}")
 
 
 class _ServerBootFinder(importlib.abc.MetaPathFinder):
