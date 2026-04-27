@@ -47,6 +47,11 @@ class _ServerBootLoader(importlib.abc.Loader):
             install_recurring_jobs_boot(module)
         except Exception as exc:
             print(f"RECURRING_JOBS_BOOT_INSTALL_ERR {exc}")
+        try:
+            from checklist_automation_boot import install_checklist_automation_boot
+            install_checklist_automation_boot(module)
+        except Exception as exc:
+            print(f"CHECKLIST_AUTOMATION_BOOT_INSTALL_ERR {exc}")
 
 
 class _ServerBootFinder(importlib.abc.MetaPathFinder):
