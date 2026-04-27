@@ -3,6 +3,8 @@
 
 let started = false;
 let busy = false;
+let fetchPatched = false;
+let nativeFetch = null;
 
 function token() {
   return localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("access_token") || "";
@@ -31,12 +33,21 @@ function asList(payload) {
   return [];
 }
 
+function isAutomationPage() {
+  return window.location.pathname.includes("automation");
+}
+
+function isSweepUrl(input) {
+  const url = typeof input === "string" ? input : input?.url || "";
+  return /\/api\/automations?\/(run-sweep|run_sweep|sweep)\/?(\?|$)/i.test(String(url));
+}
+
 async function request(path, options = {}) {
   const auth = token();
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   if (auth) headers.Authorization = `Bearer ${auth}`;
 
-  const response = await fetch(`${apiBase()}/api${path}`, {
+  const response = await (nativeFetch || window.fetch)(`${apiBase()}/api${path}`, {
     credentials: "include",
     ...options,
     headers,
@@ -72,21 +83,19 @@ function hideStaleNotFoundBanner() {
 }
 
 function ensureRunSweepButton() {
-  if (!window.location.pathname.startsWith("/automation")) return;
+  if (!isAutomationPage()) return;
 
   const existing = Array.from(document.querySelectorAll("button")).find((button) =>
-    clean(button.textContent).toLowerCase() === "run sweep"
+    clean(button.textContent).toLowerCase().includes("sweep")
   );
   if (existing) {
     existing.dataset.chxRunSweepButton = "true";
     return;
   }
 
-  const page = document.querySelector('[data-testid="automation-page"]');
-  if (!page) return;
-
+  const page = document.querySelector('[data-testid="automation-page"]') || document.querySelector("main") || document.body;
   const firstSection = page.querySelector("section");
-  const buttonArea = firstSection?.querySelector(".flex.flex-wrap.gap-2") || firstSection;
+  const buttonArea = firstSection?.querySelector(".flex.flex-wrap.gap-2") || firstSection || page;
   if (!buttonArea || buttonArea.querySelector('[data-chx-run-sweep-button="true"]')) return;
 
   const button = document.createElement("button");
@@ -106,14 +115,15 @@ async function findRuleFromCard(card) {
   return rules.find((rule) => clean(rule?.name || "Untitled workflow") === title) || null;
 }
 
-async function runSweep() {
+async function runSweep({ reload = true } = {}) {
   const payload = await request("/automation/rules");
   const rules = asList(payload);
   const activeRules = rules.filter((rule) => rule?.enabled !== false && idOf(rule));
 
   if (activeRules.length === 0) {
-    showMessage("No enabled workflows to run", "bad");
-    return;
+    const result = { success: false, message: "No enabled workflows to run", scanned: 0, passed: 0, failed: 0 };
+    showMessage(result.message, "bad");
+    return result;
   }
 
   let passed = 0;
@@ -129,23 +139,52 @@ async function runSweep() {
     }
   }
 
-  if (failed > 0) {
-    showMessage(`Run sweep finished: ${passed} passed, ${failed} failed`, "bad");
-  } else {
-    showMessage(`Run sweep completed: ${passed} workflow${passed === 1 ? "" : "s"} ran`);
-  }
+  const result = {
+    success: failed === 0,
+    message: failed > 0 ? `Run sweep finished: ${passed} passed, ${failed} failed` : `Run sweep completed: ${passed} workflow${passed === 1 ? "" : "s"} ran`,
+    scanned: activeRules.length,
+    passed,
+    failed,
+  };
 
-  setTimeout(() => window.location.reload(), 850);
+  showMessage(result.message, failed > 0 ? "bad" : "ok");
+  if (reload) setTimeout(() => window.location.reload(), 850);
+  return result;
+}
+
+function patchSweepFetchFallback() {
+  if (fetchPatched || typeof window === "undefined" || typeof window.fetch !== "function") return;
+  fetchPatched = true;
+  nativeFetch = window.fetch.bind(window);
+
+  window.fetch = async function churvoxAutomationFetch(input, init) {
+    if (isSweepUrl(input)) {
+      try {
+        const result = await runSweep({ reload: false });
+        return new Response(JSON.stringify(result), {
+          status: result.success ? 200 : 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ success: false, error: err.message || "Run sweep failed" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+    return nativeFetch(input, init);
+  };
 }
 
 async function handleAutomationClick(event) {
-  if (!window.location.pathname.startsWith("/automation")) return;
+  if (!isAutomationPage()) return;
   if (busy) return;
 
   const button = event.target?.closest?.("button");
   if (!button) return;
   const label = clean(button.textContent).toLowerCase();
-  if (!["test", "pause", "on", "del", "run sweep"].includes(label)) return;
+  const isSweep = label.includes("sweep");
+  if (!["test", "pause", "on", "del"].includes(label) && !isSweep) return;
 
   event.preventDefault();
   event.stopPropagation();
@@ -154,9 +193,9 @@ async function handleAutomationClick(event) {
   busy = true;
   const originalText = button.textContent;
   try {
-    if (label === "run sweep") {
+    if (isSweep) {
       button.textContent = "Running...";
-      await runSweep();
+      await runSweep({ reload: true });
       return;
     }
 
@@ -195,6 +234,7 @@ async function handleAutomationClick(event) {
 export function startAutomationActionFixer() {
   if (started || typeof window === "undefined" || typeof document === "undefined") return;
   started = true;
+  patchSweepFetchFallback();
   document.addEventListener("click", handleAutomationClick, true);
   const observer = new MutationObserver(() => {
     hideStaleNotFoundBanner();
@@ -203,4 +243,5 @@ export function startAutomationActionFixer() {
   observer.observe(document.body, { childList: true, subtree: true });
   hideStaleNotFoundBanner();
   ensureRunSweepButton();
+  setInterval(ensureRunSweepButton, 1200);
 }
