@@ -14,43 +14,67 @@ import {
   Settings,
   Sparkles,
   RefreshCw,
+  CalendarDays,
+  Bell,
 } from "lucide-react";
 
 const STATUS_META = {
   assigned: {
     label: "Assigned",
+    next: "Accept job",
     icon: CircleDot,
     badge: "bg-slate-100 text-slate-700 border-slate-200",
     dot: "bg-slate-400",
   },
   acknowledged: {
     label: "Accepted",
+    next: "Start job",
     icon: CheckCircle2,
     badge: "bg-indigo-50 text-indigo-700 border-indigo-200",
     dot: "bg-indigo-500",
   },
   in_progress: {
     label: "In progress",
+    next: "Pause or complete",
     icon: PlayCircle,
     badge: "bg-blue-50 text-blue-700 border-blue-200",
     dot: "bg-blue-500",
   },
   paused: {
     label: "Paused",
+    next: "Resume job",
     icon: PauseCircle,
     badge: "bg-amber-50 text-amber-700 border-amber-200",
     dot: "bg-amber-500",
   },
   completed: {
     label: "Completed",
+    next: "Review job",
     icon: CheckCircle2,
     badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
     dot: "bg-emerald-500",
   },
 };
 
+const TABS = [
+  { key: "today", label: "Today" },
+  { key: "upcoming", label: "Upcoming" },
+  { key: "completed", label: "Completed" },
+];
+
 function normalStatus(value) {
   return String(value || "assigned").toLowerCase().replace(/\s+/g, "_");
+}
+
+function dateKey(value) {
+  if (!value) return "";
+  try {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return String(value).slice(0, 10);
+    return d.toISOString().slice(0, 10);
+  } catch {
+    return String(value).slice(0, 10);
+  }
 }
 
 function jobDate(job) {
@@ -74,12 +98,25 @@ function jobTime(job) {
   }
 }
 
+function isTodayJob(job) {
+  const today = new Date().toISOString().slice(0, 10);
+  const raw = job?.scheduled_date || job?.date || job?.start_date;
+  return dateKey(raw) === today;
+}
+
+function jobSort(a, b) {
+  const av = a?.scheduled_date || a?.date || a?.start_date || "9999-12-31";
+  const bv = b?.scheduled_date || b?.date || b?.start_date || "9999-12-31";
+  return String(av).localeCompare(String(bv));
+}
+
 export default function WorkerJobsPage() {
   const { user } = useAuth();
   const { get } = useApi();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState("today");
 
   const fetchJobs = useCallback(async () => {
     setRefreshing(true);
@@ -98,6 +135,19 @@ export default function WorkerJobsPage() {
     const complete = jobs.filter((job) => normalStatus(job.status) === "completed").length;
     return { total, active, complete };
   }, [jobs]);
+
+  const filteredJobs = useMemo(() => {
+    const sorted = [...jobs].sort(jobSort);
+    if (activeTab === "completed") return sorted.filter((job) => normalStatus(job.status) === "completed");
+    if (activeTab === "today") return sorted.filter((job) => normalStatus(job.status) !== "completed" && isTodayJob(job));
+    return sorted.filter((job) => normalStatus(job.status) !== "completed" && !isTodayJob(job));
+  }, [jobs, activeTab]);
+
+  const tabCounts = useMemo(() => ({
+    today: jobs.filter((job) => normalStatus(job.status) !== "completed" && isTodayJob(job)).length,
+    upcoming: jobs.filter((job) => normalStatus(job.status) !== "completed" && !isTodayJob(job)).length,
+    completed: jobs.filter((job) => normalStatus(job.status) === "completed").length,
+  }), [jobs]);
 
   return (
     <div className="chx-worker-shell worker-premium-shell">
@@ -128,7 +178,7 @@ export default function WorkerJobsPage() {
         </div>
       </header>
 
-      <main className="worker-premium-page mx-auto max-w-3xl px-4 pb-10 pt-5">
+      <main className="worker-premium-page mx-auto max-w-3xl px-4 pb-28 pt-5">
         <section className="worker-premium-hero mb-5 overflow-hidden rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-[0_20px_55px_rgba(15,23,42,0.12)] backdrop-blur">
           <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -157,6 +207,24 @@ export default function WorkerJobsPage() {
           </div>
         </section>
 
+        <div className="mb-4 grid grid-cols-3 gap-2 rounded-[1.35rem] border border-slate-200 bg-white/90 p-1.5 shadow-sm">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={`rounded-2xl px-2.5 py-2.5 text-xs font-black transition ${activeTab === tab.key ? "bg-slate-950 text-white shadow-lg shadow-slate-950/15" : "text-slate-500 hover:bg-slate-50"}`}
+            >
+              {tab.label} <span className="ml-1 opacity-70">{tabCounts[tab.key]}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="mb-4 flex items-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-800">
+          <Bell className="h-4 w-4 shrink-0" />
+          New assignment and schedule-change alerts are supported when notifications are enabled on this device.
+        </div>
+
         {loading ? (
           <div className="rounded-[2rem] border border-slate-200 bg-white p-10 text-center shadow-xl">
             <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
@@ -170,9 +238,17 @@ export default function WorkerJobsPage() {
             <p className="mt-4 text-lg font-black text-slate-900">No assigned work yet</p>
             <p className="mx-auto mt-2 max-w-sm text-sm font-medium text-slate-500">When your employer assigns jobs, they will appear here with the next action ready.</p>
           </div>
+        ) : filteredJobs.length === 0 ? (
+          <div className="rounded-[2rem] border border-slate-200 bg-white/90 p-8 text-center shadow-xl">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-3xl bg-blue-50 text-blue-600">
+              <CalendarDays className="h-7 w-7" />
+            </div>
+            <p className="mt-4 text-lg font-black text-slate-900">Nothing in {TABS.find((tab) => tab.key === activeTab)?.label}</p>
+            <p className="mx-auto mt-2 max-w-sm text-sm font-medium text-slate-500">Switch tabs to see other assigned, upcoming, or completed jobs.</p>
+          </div>
         ) : (
           <div className="space-y-3">
-            {jobs.map((job) => {
+            {filteredJobs.map((job) => {
               const id = job.id || job._id;
               const status = normalStatus(job.status);
               const meta = STATUS_META[status] || STATUS_META.assigned;
@@ -192,7 +268,7 @@ export default function WorkerJobsPage() {
                           {meta.label}
                         </span>
                         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">
-                          {job.job_type ? String(job.job_type).replace(/_/g, " ") : "Job"}
+                          {meta.next}
                         </span>
                       </div>
                       <h3 className="truncate text-lg font-black tracking-tight text-slate-950 group-hover:text-blue-700">{job.title || "Untitled Job"}</h3>
