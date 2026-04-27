@@ -23,6 +23,7 @@ const FALLBACK_ENDPOINTS = {
 };
 
 const PLAN_PRICE = { solo: 30, team: 70, pro: 110, enterprise: 240 };
+const OWNER_ROLES = new Set(["owner", "employer", "admin", "business_owner", "platform_owner"]);
 
 function asArray(value) {
   if (Array.isArray(value)) return value;
@@ -63,9 +64,33 @@ function planOf(userOrBilling) {
   return String(userOrBilling?.plan || userOrBilling?.plan_type || userOrBilling?.subscription_plan || "none").toLowerCase();
 }
 
+function roleOf(item) {
+  return String(item?.role || item?.user_role || item?.account_role || "").trim().toLowerCase();
+}
+
+function isOwnerAccount(item) {
+  const role = roleOf(item);
+  if (OWNER_ROLES.has(role)) return true;
+  if (item?.is_platform_owner === true) return true;
+  return false;
+}
+
+function splitOwnersAndUsers(rawUsers) {
+  const owners = [];
+  const users = [];
+
+  rawUsers.forEach((user) => {
+    if (isOwnerAccount(user)) owners.push(user);
+    else users.push(user);
+  });
+
+  return { owners, users };
+}
+
 function normalizeAdmin(payload, endpoint) {
   const src = payload?.data && !Array.isArray(payload.data) ? payload.data : payload || {};
-  const users = asArray(src.users_list || src.users || src.all_users);
+  const allUsers = asArray(src.users_list || src.users || src.all_users);
+  const { owners, users } = splitOwnersAndUsers(allUsers);
   const businesses = asArray(src.businesses_list || src.businesses || src.companies);
   const jobs = asArray(src.jobs_list || src.jobs);
   const clients = asArray(src.clients_list || src.clients);
@@ -74,9 +99,26 @@ function normalizeAdmin(payload, endpoint) {
   const automation = asArray(src.automation_list || src.automation_rules || src.rules);
   const notifications = asArray(src.notifications);
   const plans = { solo: 0, team: 0, pro: 0, enterprise: 0 };
-  users.forEach((u) => { const p = planOf(u); if (plans[p] !== undefined) plans[p] += 1; });
-  const revenue = Number(src.monthly_revenue || src.mrr || src.revenue_this_month || 0) || users.reduce((sum, u) => sum + (PLAN_PRICE[planOf(u)] || 0), 0);
-  return { mode: "Full platform", source: endpoint, users, businesses, jobs, clients, quotes, invoices, workers: asArray(src.workers), automation, notifications, plans: src.plan_counts || plans, revenue };
+  const planSource = owners.length ? owners : allUsers;
+  planSource.forEach((u) => { const p = planOf(u); if (plans[p] !== undefined) plans[p] += 1; });
+  const revenue = Number(src.monthly_revenue || src.mrr || src.revenue_this_month || 0) || planSource.reduce((sum, u) => sum + (PLAN_PRICE[planOf(u)] || 0), 0);
+  return {
+    mode: "Full platform",
+    source: endpoint,
+    owners,
+    users,
+    allUsers,
+    businesses,
+    jobs,
+    clients,
+    quotes,
+    invoices,
+    workers: users,
+    automation,
+    notifications,
+    plans: src.plan_counts || plans,
+    revenue,
+  };
 }
 
 function normalizeFallback(results) {
@@ -93,8 +135,16 @@ function normalizeFallback(results) {
   const plans = { solo: 0, team: 0, pro: 0, enterprise: 0 };
   if (plans[plan] !== undefined) plans[plan] = 1;
   const businesses = [{ business_name: billing.business_name || "Current business", plan, status: billing.plan_status || billing.subscription_status || "active" }];
+  const owners = [{
+    name: billing.name || billing.owner_name || billing.business_name || "Current owner",
+    email: billing.email || billing.owner_email || "",
+    role: "owner",
+    business_name: billing.business_name || "Current business",
+    plan,
+    plan_status: billing.plan_status || billing.subscription_status || "active",
+  }];
   const revenue = Number(reports.revenue_this_month || 0) || PLAN_PRICE[plan] || 0;
-  return { mode: "Live fallback", source: "current live app endpoints", users: workers, businesses, jobs, clients, quotes, invoices, workers, automation, notifications, plans, revenue };
+  return { mode: "Live fallback", source: "current live app endpoints", owners, users: workers, allUsers: [...owners, ...workers], businesses, jobs, clients, quotes, invoices, workers, automation, notifications, plans, revenue };
 }
 
 function Metric({ id, label, value, detail, icon: Icon, selected, onClick }) {
@@ -128,9 +178,24 @@ function RecordCard({ item }) {
   );
 }
 
+function selectedLabel(id) {
+  const labels = {
+    owners: "Owners",
+    users: "Users",
+    businesses: "Businesses",
+    jobs: "Jobs",
+    clients: "Clients",
+    quotes: "Quotes",
+    invoices: "Invoices",
+    automation: "Automation",
+    notifications: "Notifications",
+  };
+  return labels[id] || id;
+}
+
 export default function AppOwnerPage() {
   const [data, setData] = useState(() => normalizeFallback({}));
-  const [selected, setSelected] = useState("users");
+  const [selected, setSelected] = useState("owners");
   const [loading, setLoading] = useState(true);
   const [warning, setWarning] = useState("");
   const [updated, setUpdated] = useState(null);
@@ -196,7 +261,8 @@ export default function AppOwnerPage() {
   useEffect(() => { const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
   const metrics = useMemo(() => [
-    { id: "users", label: "Users", value: data.users.length, detail: "workers/users visible", icon: Users },
+    { id: "owners", label: "Owners", value: data.owners.length, detail: "business owner accounts", icon: ShieldCheck },
+    { id: "users", label: "Users", value: data.users.length, detail: "workers/team users", icon: Users },
     { id: "businesses", label: "Businesses", value: data.businesses.length, detail: data.mode, icon: Building2 },
     { id: "jobs", label: "Jobs", value: data.jobs.length, detail: "live job records", icon: Briefcase },
     { id: "clients", label: "Clients", value: data.clients.length, detail: "customer records", icon: Users },
@@ -217,7 +283,7 @@ export default function AppOwnerPage() {
             <div>
               <p className="text-xs font-black uppercase tracking-[0.26em] text-cyan-300">Churvox platform owner</p>
               <h1 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Owner Command Centre</h1>
-              <p className="mt-3 max-w-3xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Separate app-owner dashboard for platform health, users, businesses, jobs, invoices, automation and alerts.</p>
+              <p className="mt-3 max-w-3xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Separate app-owner dashboard for platform health, owners, users, businesses, jobs, invoices, automation and alerts.</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <button onClick={load} className="inline-flex items-center gap-2 rounded-full border border-cyan-200/25 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/15">
@@ -240,7 +306,7 @@ export default function AppOwnerPage() {
 
         <div className="mt-5 grid gap-5 xl:grid-cols-[1fr_420px]">
           <main className="space-y-5">
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {metrics.map((m) => <Metric key={m.id} {...m} selected={selected === m.id} onClick={setSelected} />)}
             </div>
             <section className="rounded-3xl border border-white/10 bg-white/[0.055] p-5 shadow-xl shadow-black/20">
@@ -256,7 +322,7 @@ export default function AppOwnerPage() {
             </section>
           </main>
           <aside className="rounded-3xl border border-white/10 bg-white/[0.055] p-5 shadow-xl shadow-black/20">
-            <h2 className="text-xl font-black capitalize">{selected}</h2>
+            <h2 className="text-xl font-black">{selectedLabel(selected)}</h2>
             <p className="mt-1 text-sm font-semibold text-slate-400">{records.length} records shown · {data.source}</p>
             <div className="mt-4 max-h-[72vh] space-y-3 overflow-auto pr-1">
               {records.length ? records.map((item, index) => <RecordCard key={idOf(item) || index} item={item} />) : <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-5 text-sm font-semibold text-slate-400">No records yet.</div>}
