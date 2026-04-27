@@ -1,0 +1,65 @@
+name: Churvox Launch Ready Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  launch-ready:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Backend syntax check
+        run: |
+          python3 -m py_compile backend/*.py
+          python3 -m compileall -q backend
+
+      - name: Verify required launch boot files
+        run: |
+          test -f backend/sitecustomize.py
+          test -f backend/top_player_boot.py
+          test -f backend/notifications_boot.py
+          test -f backend/recurring_jobs_boot.py
+          test -f backend/job_invoice_boot.py
+          test -f backend/quote_job_boot.py
+          test -f backend/client_360_boot.py
+          test -f backend/checklist_automation_boot.py
+          test -f backend/launch_audit_boot.py
+          test -f backend/launch_ops_boot.py
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install --legacy-peer-deps
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          CI: false
+        run: npm run build
+
+      - name: Upload frontend build artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-frontend-build
+          path: frontend/build
+          if-no-files-found: ignore
