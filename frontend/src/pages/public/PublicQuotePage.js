@@ -47,7 +47,7 @@ export default function PublicQuotePage() {
   if (!quote) return <div className="min-h-screen grid place-items-center">Quote not found.</div>;
 
   return (
-    <div className="min-h-screen bg-[#f8f6f1] p-4 md:p-8">
+    <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
         <Card>
           <CardHeader>

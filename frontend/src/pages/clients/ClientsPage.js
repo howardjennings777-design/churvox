@@ -526,23 +526,23 @@ export default function ClientsPage() {
                         </div>
 
                         {client.notes && (
-                          <p className="mt-3 rounded-xl bg-[#fbfaf7] border border-[#e4e0d8] p-2.5 text-sm text-[#667085] line-clamp-2">
+                          <p className="mt-3 rounded-xl bg-[#fbfaf7] border border-border p-2.5 text-sm text-[#667085] line-clamp-2">
                             {client.notes}
                           </p>
                         )}
 
                         <div className="mt-3 flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Button asChild size="sm" variant="outline" className="h-8 rounded-lg border-[#e4e0d8]">
+                          <Button asChild size="sm" variant="outline" className="h-8 rounded-lg border-border">
                             <Link to="/jobs">
                               <Briefcase size={13} className="mr-1" /> View jobs
                             </Link>
                           </Button>
-                          <Button asChild size="sm" variant="outline" className="h-8 rounded-lg border-[#e4e0d8]">
+                          <Button asChild size="sm" variant="outline" className="h-8 rounded-lg border-border">
                             <Link to="/jobs/new">
                               <Briefcase size={13} className="mr-1" /> New job
                             </Link>
                           </Button>
-                          <Button asChild size="sm" variant="outline" className="h-8 rounded-lg border-[#e4e0d8]">
+                          <Button asChild size="sm" variant="outline" className="h-8 rounded-lg border-border">
                             <Link to="/quotes/new">
                               <FileText size={13} className="mr-1" /> New quote
                             </Link>

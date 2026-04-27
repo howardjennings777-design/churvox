@@ -308,14 +308,14 @@ export default function PlansPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f7f4ef] text-slate-900 flex items-center justify-center px-6">
+      <div className="min-h-screen bg-background text-slate-900 flex items-center justify-center px-6">
         <div className="text-sm text-slate-500">Loading plans...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f4ef] text-slate-900 px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background text-slate-900 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
 
         {isTrialExpired ? (
@@ -398,7 +398,7 @@ export default function PlansPage() {
                 className={`relative rounded-2xl border p-6 transition-all ${
                   isCurrent && !isTrialExpired
                     ? "border-blue-300 bg-white shadow-[0_18px_40px_rgba(21,94,239,0.14)] ring-2 ring-blue-500/20"
-                    : "border-[#e4e0d8] bg-white shadow-[0_6px_20px_rgba(23,32,51,0.09)] hover:shadow-md hover:border-slate-300"
+                    : "border-border bg-white shadow-[0_6px_20px_rgba(23,32,51,0.09)] hover:shadow-md hover:border-slate-300"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">

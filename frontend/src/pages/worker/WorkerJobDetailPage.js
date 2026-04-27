@@ -197,13 +197,13 @@ export default function WorkerJobDetailPage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#f7f4ef] flex items-center justify-center">
+    <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
     </div>
   );
 
   if (!job) return (
-    <div className="min-h-screen bg-[#f7f4ef] flex items-center justify-center">
+    <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center">
         <p className="text-slate-500">Job not found</p>
         <Link to="/worker/jobs" className="text-blue-600 text-sm mt-2 inline-block">Back to jobs</Link>
@@ -214,8 +214,8 @@ export default function WorkerJobDetailPage() {
   const status = (job.status || "assigned").toLowerCase();
 
   return (
-    <div className="min-h-screen bg-[#f7f4ef]">
-      <header className="bg-[#fcfaf6] border-b border-[#e4e0d8] px-4 py-4 sticky top-0 z-10">
+    <div className="min-h-screen bg-background">
+      <header className="bg-[#fcfaf6] border-b border-border px-4 py-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <Link to="/worker/jobs" className="text-slate-400 hover:text-slate-600"><ArrowLeft className="h-5 w-5" /></Link>
           <h1 className="text-lg font-bold text-slate-900 truncate">{job.title || "Job Detail"}</h1>
@@ -224,7 +224,7 @@ export default function WorkerJobDetailPage() {
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         {/* Job info */}
-        <div className="bg-white rounded-2xl border border-[#e4e0d8] p-5 space-y-3 shadow-sm">
+        <div className="bg-white rounded-2xl border border-border p-5 space-y-3 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900">{job.title}</h2>
             <span className="cx-status-badge status-in-progress">{status.replace(/_/g, " ")}</span>
@@ -262,7 +262,7 @@ export default function WorkerJobDetailPage() {
         )}
 
         {status !== "assigned" && status !== "completed" && (
-          <div className="bg-white rounded-2xl border border-[#e4e0d8] p-4 space-y-3 shadow-sm">
+          <div className="bg-white rounded-2xl border border-border p-4 space-y-3 shadow-sm">
             <p className="text-sm font-medium text-slate-700">Update Status</p>
             <div className="flex gap-2 flex-wrap">
               {WORKER_STATUSES.filter(s => s !== "acknowledged").map((s) => (
@@ -284,7 +284,7 @@ export default function WorkerJobDetailPage() {
         )}
 
         {/* Worker notes */}
-        <div className="bg-white rounded-2xl border border-[#e4e0d8] p-4 space-y-3 shadow-sm">
+        <div className="bg-white rounded-2xl border border-border p-4 space-y-3 shadow-sm">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-slate-700">My Notes</p>
             <button onClick={handleSaveNotes} disabled={savingNotes}
@@ -300,7 +300,7 @@ export default function WorkerJobDetailPage() {
         </div>
 
         {/* Photos */}
-        <div className="bg-white rounded-2xl border border-[#e4e0d8] p-4 space-y-3 shadow-sm" data-testid="worker-photos-section">
+        <div className="bg-white rounded-2xl border border-border p-4 space-y-3 shadow-sm" data-testid="worker-photos-section">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-slate-700">Job Photos</p>
             <label className="text-sm font-medium text-blue-600 hover:text-blue-700 cursor-pointer inline-flex items-center gap-1" data-testid="add-photo-label">
@@ -327,7 +327,7 @@ export default function WorkerJobDetailPage() {
 
         {/* Progress info */}
         {(job.accepted_at || job.started_at || job.completed_at) && (
-          <div className="bg-white rounded-2xl border border-[#e4e0d8] p-4 space-y-2 shadow-sm">
+          <div className="bg-white rounded-2xl border border-border p-4 space-y-2 shadow-sm">
             <p className="text-sm font-medium text-slate-700">Progress</p>
             {job.accepted_at && <p className="text-xs text-slate-400">Accepted: {new Date(job.accepted_at).toLocaleString()}</p>}
             {job.started_at && <p className="text-xs text-slate-400">Started: {new Date(job.started_at).toLocaleString()}</p>}

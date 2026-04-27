@@ -273,9 +273,9 @@ function AutomationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-600">
@@ -293,7 +293,7 @@ function AutomationPage() {
             <button
               type="button"
               onClick={load}
-              className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+              className="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
             >
               Refresh
             </button>
@@ -314,7 +314,7 @@ function AutomationPage() {
 
         <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
           <div className="space-y-6">
-            <form onSubmit={saveRule} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <form onSubmit={saveRule} className="rounded-3xl border border-border bg-white p-6 shadow-sm">
               <div className="mb-5">
                 <h2 className="text-xl font-bold text-slate-950">
                   {editingRule ? "Edit automation" : "Create automation"}
@@ -330,7 +330,7 @@ function AutomationPage() {
                   value={form.name}
                   onChange={(event) => setForm((old) => ({ ...old, name: event.target.value }))}
                   placeholder="Example: Job completed notification"
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none ring-blue-500 focus:ring-2"
+                  className="mt-2 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-slate-950 outline-none ring-blue-500 focus:ring-2"
                 />
               </label>
 
@@ -341,7 +341,7 @@ function AutomationPage() {
                   onChange={(event) => setForm((old) => ({ ...old, description: event.target.value }))}
                   placeholder="What this automation should do"
                   rows={3}
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none ring-blue-500 focus:ring-2"
+                  className="mt-2 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-slate-950 outline-none ring-blue-500 focus:ring-2"
                 />
               </label>
 
@@ -350,7 +350,7 @@ function AutomationPage() {
                 <select
                   value={form.trigger}
                   onChange={(event) => setForm((old) => ({ ...old, trigger: event.target.value }))}
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none ring-blue-500 focus:ring-2"
+                  className="mt-2 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-slate-950 outline-none ring-blue-500 focus:ring-2"
                 >
                   {triggerOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -365,7 +365,7 @@ function AutomationPage() {
                 <select
                   value={form.action}
                   onChange={(event) => setForm((old) => ({ ...old, action: event.target.value }))}
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-950 outline-none ring-blue-500 focus:ring-2"
+                  className="mt-2 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-slate-950 outline-none ring-blue-500 focus:ring-2"
                 >
                   {actionOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -375,7 +375,7 @@ function AutomationPage() {
                 </select>
               </label>
 
-              <label className="mt-4 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-700">
+              <label className="mt-4 flex items-center gap-3 rounded-2xl border border-border bg-slate-50 p-4 text-sm font-semibold text-slate-700">
                 <input
                   type="checkbox"
                   checked={form.enabled}
@@ -398,7 +398,7 @@ function AutomationPage() {
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    className="rounded-2xl border border-border bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                   >
                     Cancel
                   </button>
@@ -406,7 +406,7 @@ function AutomationPage() {
               </div>
             </form>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
               <h2 className="text-xl font-bold text-slate-950">Quick templates</h2>
               <p className="mt-1 text-sm text-slate-500">Start from a safe launch-ready automation.</p>
 
@@ -421,7 +421,7 @@ function AutomationPage() {
                       key={template.id}
                       type="button"
                       onClick={() => applyTemplate(template)}
-                      className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left hover:border-blue-200 hover:bg-blue-50"
+                      className="w-full rounded-2xl border border-border bg-white p-4 text-left hover:border-cyan-200 hover:bg-cyan-50"
                     >
                       <div className="text-sm font-bold text-slate-950">{template.name}</div>
                       <div className="mt-1 text-xs leading-5 text-slate-500">{template.description}</div>
@@ -433,7 +433,7 @@ function AutomationPage() {
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-bold text-slate-950">Automation rules</h2>
@@ -444,11 +444,11 @@ function AutomationPage() {
               </div>
 
               {loading ? (
-                <div className="rounded-2xl bg-slate-50 p-6 text-sm font-medium text-slate-500">
+                <div className="rounded-2xl bg-blue-50/60 p-6 text-sm font-medium text-slate-600">
                   Loading automation rules...
                 </div>
               ) : rules.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+                <div className="rounded-2xl border border-dashed border-border bg-slate-50 p-8 text-center">
                   <h3 className="text-lg font-bold text-slate-950">No automation rules yet</h3>
                   <p className="mt-2 text-sm text-slate-500">
                     Create your first automation rule or use a quick template.
@@ -457,7 +457,7 @@ function AutomationPage() {
               ) : (
                 <div className="space-y-4">
                   {rules.map((rule) => (
-                    <div key={rule.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div key={rule.id} className="rounded-2xl border border-border bg-white p-5 shadow-sm">
                       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-3">
@@ -470,12 +470,12 @@ function AutomationPage() {
                           ) : null}
 
                           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                            <div className="rounded-2xl bg-slate-50 p-3">
-                              <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Trigger</div>
+                            <div className="rounded-2xl bg-blue-50/60 p-3">
+                              <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Trigger</div>
                               <div className="mt-1 text-sm font-semibold text-slate-800">{rule.trigger}</div>
                             </div>
-                            <div className="rounded-2xl bg-slate-50 p-3">
-                              <div className="text-xs font-bold uppercase tracking-wide text-slate-400">Action</div>
+                            <div className="rounded-2xl bg-blue-50/60 p-3">
+                              <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Action</div>
                               <div className="mt-1 text-sm font-semibold text-slate-800">{rule.action}</div>
                             </div>
                           </div>
@@ -485,14 +485,14 @@ function AutomationPage() {
                           <button
                             type="button"
                             onClick={() => startEdit(rule)}
-                            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                            className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                           >
                             Edit
                           </button>
                           <button
                             type="button"
                             onClick={() => toggleRule(rule)}
-                            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                            className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                           >
                             {rule.enabled === false ? "Enable" : "Disable"}
                           </button>
@@ -500,7 +500,7 @@ function AutomationPage() {
                             type="button"
                             onClick={() => testRule(rule)}
                             disabled={testingId === rule.id}
-                            className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+                            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
                           >
                             {testingId === rule.id ? "Testing..." : "Test"}
                           </button>
@@ -520,18 +520,18 @@ function AutomationPage() {
               )}
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
               <h2 className="text-xl font-bold text-slate-950">Recent automation runs</h2>
               <p className="mt-1 text-sm text-slate-500">Latest automation tests and rule activity.</p>
 
               <div className="mt-4 space-y-3">
                 {runs.length === 0 ? (
-                  <div className="rounded-2xl bg-slate-50 p-5 text-sm text-slate-500">
+                  <div className="rounded-2xl bg-blue-50/60 p-5 text-sm text-slate-600">
                     No automation runs logged yet.
                   </div>
                 ) : (
                   runs.slice(0, 10).map((run) => (
-                    <div key={run.id || run._id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div key={run.id || run._id} className="rounded-2xl border border-border bg-slate-50 p-4">
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <div className="text-sm font-bold text-slate-950">

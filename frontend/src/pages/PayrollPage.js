@@ -129,13 +129,13 @@ export default function PayrollPage() {
   }, [activePeriod, summary, pendingTimesheets.length, adjustments.length]);
 
   const statCards = [
-    { label: "Current pay run", value: activePeriod?.name || "None", help: activePeriod ? `${activePeriod.start_date} → ${activePeriod.end_date}` : "Create your first pay run", icon: CalendarRange, tint: "bg-[#EEF4FF]" },
-    { label: "Approved hours", value: Number(summary?.approved_hours || 0), help: "Hours approved for payment", icon: Clock3, tint: "bg-[#ECFDF3]" },
-    { label: "Pending review", value: Number(summary?.pending_review_count || pendingTimesheets.length), help: "Timesheets waiting approval", icon: FileClock, tint: "bg-[#FFFAEB]" },
-    { label: "Workers included", value: Number(summary?.workers_included || workerSummaries.length), help: "Workers in this pay run", icon: UsersRound, tint: "bg-[#EEF4FF]" },
-    { label: "Adjustments total", value: formatCurrency(adjustmentsTotal), help: "Allowances, deductions, and bonuses", icon: CircleDollarSign, tint: "bg-[#EEF4FF]" },
-    { label: "Export status", value: String(activePeriod?.export_status || "not_exported").replaceAll("_", " "), help: activePeriod?.exported_at ? `Last export ${String(activePeriod.exported_at).slice(0, 19)}` : "Ready for handoff", icon: ClipboardCheck, tint: "bg-[#EFF8FF]" },
-    { label: "Locked status", value: readOnly ? "Locked" : "Open", help: readOnly ? "Edits disabled" : "Edits allowed", icon: ShieldCheck, tint: readOnly ? "bg-[#EEF4FF]" : "bg-[#ECFDF3]" },
+    { label: "Current pay run", value: activePeriod?.name || "None", help: activePeriod ? `${activePeriod.start_date} → ${activePeriod.end_date}` : "Create your first pay run", icon: CalendarRange, tint: "bg-blue-50" },
+    { label: "Approved hours", value: Number(summary?.approved_hours || 0), help: "Hours approved for payment", icon: Clock3, tint: "bg-emerald-50" },
+    { label: "Pending review", value: Number(summary?.pending_review_count || pendingTimesheets.length), help: "Timesheets waiting approval", icon: FileClock, tint: "bg-amber-50" },
+    { label: "Workers included", value: Number(summary?.workers_included || workerSummaries.length), help: "Workers in this pay run", icon: UsersRound, tint: "bg-blue-50" },
+    { label: "Adjustments total", value: formatCurrency(adjustmentsTotal), help: "Allowances, deductions, and bonuses", icon: CircleDollarSign, tint: "bg-blue-50" },
+    { label: "Export status", value: String(activePeriod?.export_status || "not_exported").replaceAll("_", " "), help: activePeriod?.exported_at ? `Last export ${String(activePeriod.exported_at).slice(0, 19)}` : "Ready for handoff", icon: ClipboardCheck, tint: "bg-cyan-50" },
+    { label: "Locked status", value: readOnly ? "Locked" : "Open", help: readOnly ? "Edits disabled" : "Edits allowed", icon: ShieldCheck, tint: readOnly ? "bg-blue-50" : "bg-emerald-50" },
   ];
 
   const downloadCsv = async (path, filename, label) => {
@@ -267,11 +267,11 @@ export default function PayrollPage() {
 
   return (
     <Layout>
-      <div className="cx-page space-y-6" style={{ background: "#f8f4ed" }}>
-        <section className="rounded-3xl border border-[#E7DDCF] bg-gradient-to-br from-[#FFFDF8] via-[#FFF8EE] to-[#F7EFE3] p-6 shadow-[0_10px_30px_rgba(16,24,40,0.08)]">
+      <div className="cx-page space-y-6" >
+        <section className="rounded-3xl border border-border bg-gradient-to-br from-white via-[#f6f9ff] to-[#eef6ff] p-6 shadow-[0_10px_30px_rgba(16,24,40,0.08)]">
           <h1 className="cx-page-title">Payroll Command Centre</h1>
           <p className="cx-page-subtitle">Review timesheets, approve hours, prepare pay runs, and export clean payroll summaries.</p>
-          <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#B2CCFF] bg-[#EFF4FF] px-4 py-2 text-sm text-[#155EEF]"><Sparkles size={14} />{DISCLAIMER}</p>
+          <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-700"><Sparkles size={14} />{DISCLAIMER}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button className="cx-button-primary" onClick={() => setShowCreateRun(true)}>Create pay run</button>
             <button className="cx-button-secondary" onClick={() => document.getElementById("export-centre")?.scrollIntoView({ behavior: "smooth" })}>Export centre</button>
@@ -283,23 +283,23 @@ export default function PayrollPage() {
           {statCards.map((card) => {
             const Icon = card.icon;
             return (
-              <div key={card.label} className={`rounded-2xl border border-[#D6DDEB] p-4 shadow-sm ${card.tint}`}>
+              <div key={card.label} className={`rounded-2xl border border-border p-4 shadow-sm ${card.tint}`}>
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#475467]">{card.label}</p>
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#155EEF]"><Icon size={15} /></span>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">{card.label}</p>
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-blue-700"><Icon size={15} /></span>
                 </div>
-                <p className="mt-2 text-xl font-bold capitalize text-[#0F172A]">{card.value}</p>
-                <p className="text-xs text-[#667085]">{card.help}</p>
+                <p className="mt-2 text-xl font-bold capitalize text-slate-900">{card.value}</p>
+                <p className="text-xs text-slate-500">{card.help}</p>
               </div>
             );
           })}
         </section>
 
-        <section className="rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-sm">
-          <p className="text-sm font-semibold text-[#0F172A]">Payroll workflow</p>
+        <section className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+          <p className="text-sm font-semibold text-slate-900">Payroll workflow</p>
           <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-5">
             {["Create pay run", "Review timesheets", "Add adjustments", "Lock pay run", "Export payroll"].map((step, idx) => (
-              <div key={step} className={`rounded-xl border p-3 text-sm ${workflowStep >= idx + 1 ? "border-[#155EEF] bg-[#EFF4FF] text-[#1849A9]" : "border-[#D0D5DD] bg-[#FCFCFD] text-[#667085]"}`}>
+              <div key={step} className={`rounded-xl border p-3 text-sm ${workflowStep >= idx + 1 ? "border-blue-500 bg-blue-50 text-blue-800" : "border-border bg-slate-50 text-slate-500"}`}>
                 <p className="text-xs">Step {idx + 1}</p>
                 <p className="font-semibold">{step}</p>
               </div>
@@ -307,23 +307,23 @@ export default function PayrollPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold text-[#0F172A]">Active pay run</h2>
+        <section className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Active pay run</h2>
           {!periods.length ? (
-            <div className="mt-3 rounded-xl border border-dashed border-[#D0D5DD] bg-[#F8FAFC] p-5 text-center">
-              <p className="font-semibold text-[#0F172A]">No pay run created yet.</p>
-              <p className="text-sm text-[#667085]">Create a pay run to begin reviewing tracked worker hours.</p>
+            <div className="mt-3 rounded-xl border border-dashed border-border bg-slate-50 p-5 text-center">
+              <p className="font-semibold text-slate-900">No pay run created yet.</p>
+              <p className="text-sm text-slate-500">Create a pay run to begin reviewing tracked worker hours.</p>
             </div>
           ) : (
             <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
               {periods.map((p) => (
-                <button key={p.id} className={`rounded-xl border p-4 text-left ${activePeriodId === p.id ? "border-[#155EEF] bg-[#EFF4FF]" : "border-[#D0D5DD] bg-[#FCFCFD]"}`} onClick={() => setActivePeriodId(p.id)}>
-                  <p className="font-semibold text-[#0F172A]">{p.name}</p>
-                  <p className="text-xs text-[#667085]">{p.start_date} → {p.end_date} · Pay date {p.pay_date}</p>
+                <button key={p.id} className={`rounded-xl border p-4 text-left ${activePeriodId === p.id ? "border-blue-500 bg-blue-50" : "border-border bg-slate-50"}`} onClick={() => setActivePeriodId(p.id)}>
+                  <p className="font-semibold text-slate-900">{p.name}</p>
+                  <p className="text-xs text-slate-500">{p.start_date} → {p.end_date} · Pay date {p.pay_date}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <span className={statusBadge(p.status)}>{p.status || "open"}</span>
-                    <span className="text-xs text-[#667085]">Workers {Number(summary?.workers_included || 0)}</span>
-                    <span className="text-xs text-[#667085]">Pending {Number(summary?.pending_review_count || 0)}</span>
+                    <span className="text-xs text-slate-500">Workers {Number(summary?.workers_included || 0)}</span>
+                    <span className="text-xs text-slate-500">Pending {Number(summary?.pending_review_count || 0)}</span>
                   </div>
                 </button>
               ))}
@@ -331,23 +331,23 @@ export default function PayrollPage() {
           )}
         </section>
 
-        <section className="rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-sm">
+        <section className="rounded-2xl border border-border bg-white p-4 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold text-[#0F172A]">Timesheet review queue</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Timesheet review queue</h2>
             <div className="flex flex-wrap gap-2">
               <button className="cx-button-secondary" disabled={!activePeriodId || readOnly || !selectedPending.length || actionLoading["approve-selected"]} onClick={approveSelected}>Approve selected</button>
               <button className="cx-button-secondary" disabled={!activePeriodId || readOnly || !pendingTimesheets.length || actionLoading["bulk-approve-all"]} onClick={bulkApproveAll}>Bulk approve</button>
             </div>
           </div>
           {!timesheets.length ? (
-            <div className="mt-3 rounded-xl border border-dashed border-[#D0D5DD] bg-[#F8FAFC] p-5 text-center">
-              <p className="font-semibold text-[#0F172A]">No timesheets awaiting review.</p>
-              <p className="text-sm text-[#667085]">Tracked worker time will appear here once jobs are started and completed.</p>
+            <div className="mt-3 rounded-xl border border-dashed border-border bg-slate-50 p-5 text-center">
+              <p className="font-semibold text-slate-900">No timesheets awaiting review.</p>
+              <p className="text-sm text-slate-500">Tracked worker time will appear here once jobs are started and completed.</p>
             </div>
           ) : (
             <div className="mt-3 space-y-2">
               {timesheets.map((t) => (
-                <div key={t.entry_id} className="rounded-xl border border-[#E4E7EC] bg-[#FCFCFD] p-3">
+                <div key={t.entry_id} className="rounded-xl border border-border bg-slate-50 p-3">
                   <div className="grid grid-cols-1 gap-2 lg:grid-cols-10 text-sm">
                     <label className="lg:col-span-1"><input type="checkbox" disabled={readOnly || t.status !== "pending"} checked={selectedTimesheetIds.includes(t.entry_id)} onChange={(e) => setSelectedTimesheetIds((prev) => e.target.checked ? [...prev, t.entry_id] : prev.filter((id) => id !== t.entry_id))} /></label>
                     <p className="lg:col-span-2"><b>Worker:</b> {t.worker_name || "Worker"}</p>
@@ -371,17 +371,17 @@ export default function PayrollPage() {
           )}
         </section>
 
-        <section className="rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold text-[#0F172A]">Worker pay summaries</h2>
-          {!activePeriodId ? <p className="mt-2 text-sm text-[#667085]">Create/select a pay run to load worker summaries.</p> : null}
+        <section className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Worker pay summaries</h2>
+          {!activePeriodId ? <p className="mt-2 text-sm text-slate-500">Create/select a pay run to load worker summaries.</p> : null}
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
             {workerSummaries.map((w) => (
-              <div key={w.worker_id} className="rounded-xl border border-[#E4E7EC] bg-[#FCFCFD] p-4">
+              <div key={w.worker_id} className="rounded-xl border border-border bg-slate-50 p-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2"><UserCircle2 size={18} className="text-[#155EEF]" /><p className="font-semibold text-[#0F172A]">{w.name || w.worker_name || "Worker"}</p></div>
+                  <div className="flex items-center gap-2"><UserCircle2 size={18} className="text-blue-700" /><p className="font-semibold text-slate-900">{w.name || w.worker_name || "Worker"}</p></div>
                   <span className={statusBadge(w.status)}>{w.status || "ready"}</span>
                 </div>
-                <p className="text-sm text-[#667085]">{w.role || "worker"}</p>
+                <p className="text-sm text-slate-500">{w.role || "worker"}</p>
                 <div className="mt-2 grid grid-cols-2 gap-1 text-sm">
                   <p>Approved: {Number(w.approved_hours || 0)}h</p>
                   <p>Pending: {Number(w.pending_hours || 0)}h</p>
@@ -393,35 +393,35 @@ export default function PayrollPage() {
               </div>
             ))}
           </div>
-          {!!activePeriodId && !workerSummaries.length ? <p className="mt-3 text-sm text-[#667085]">No workers or timesheets found for this pay run yet.</p> : null}
+          {!!activePeriodId && !workerSummaries.length ? <p className="mt-3 text-sm text-slate-500">No workers or timesheets found for this pay run yet.</p> : null}
         </section>
 
-        <section className="rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold text-[#0F172A]">Adjustments & allowances</h2>
-          {readOnly ? <p className="mt-2 text-sm text-[#B54708]">This pay run is locked. Unlock or create a new pay run to edit adjustments.</p> : null}
+        <section className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Adjustments & allowances</h2>
+          {readOnly ? <p className="mt-2 text-sm text-amber-700">This pay run is locked. Unlock or create a new pay run to edit adjustments.</p> : null}
           <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
             <select className="cx-input" value={adjustmentForm.worker_id} onChange={(e) => setAdjustmentForm((v) => ({ ...v, worker_id: e.target.value }))} disabled={!activePeriodId || readOnly}><option value="">Worker</option>{workerOptions.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select>
             <select className="cx-input" value={adjustmentForm.type} onChange={(e) => setAdjustmentForm((v) => ({ ...v, type: e.target.value }))} disabled={!activePeriodId || readOnly}><option value="allowance">allowance</option><option value="deduction">deduction</option><option value="bonus">bonus</option><option value="reimbursement">reimbursement</option><option value="correction">correction</option></select>
             <input className="cx-input" placeholder="Label" value={adjustmentForm.label} onChange={(e) => setAdjustmentForm((v) => ({ ...v, label: e.target.value }))} disabled={!activePeriodId || readOnly} />
             <input className="cx-input" type="number" placeholder="Amount" value={adjustmentForm.amount} onChange={(e) => setAdjustmentForm((v) => ({ ...v, amount: e.target.value }))} disabled={!activePeriodId || readOnly} />
             <input className="cx-input" placeholder="Notes (optional)" value={adjustmentForm.notes} onChange={(e) => setAdjustmentForm((v) => ({ ...v, notes: e.target.value }))} disabled={!activePeriodId || readOnly} />
-            <label className="text-sm text-[#344054] flex items-center gap-2"><input type="checkbox" checked={adjustmentForm.taxable} onChange={(e) => setAdjustmentForm((v) => ({ ...v, taxable: e.target.checked }))} disabled={!activePeriodId || readOnly} />Taxable</label>
+            <label className="text-sm text-slate-700 flex items-center gap-2"><input type="checkbox" checked={adjustmentForm.taxable} onChange={(e) => setAdjustmentForm((v) => ({ ...v, taxable: e.target.checked }))} disabled={!activePeriodId || readOnly} />Taxable</label>
           </div>
           <button className="cx-button-primary mt-3" onClick={addAdjustment} disabled={!activePeriodId || readOnly || actionLoading["add-adjustment"]}>{actionLoading["add-adjustment"] ? "Saving..." : "Add adjustment"}</button>
           <div className="mt-3 space-y-2">
             {adjustments.map((a) => (
-              <div key={a.id} className="rounded-xl border border-[#E4E7EC] bg-[#FCFCFD] p-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+              <div key={a.id} className="rounded-xl border border-border bg-slate-50 p-3 flex flex-wrap items-center justify-between gap-2 text-sm">
                 <p>{a.worker_name || a.worker_id} · {a.type} · {a.label} · {formatCurrency(a.amount || 0)} · {a.taxable ? "Taxable" : "Non-taxable"} · {String(a.created_at || "").slice(0, 10)}</p>
                 <button className="cx-button-secondary" disabled={readOnly || actionLoading[`delete-adjustment-${a.id}`]} onClick={() => deleteAdjustment(a.id)}>Remove adjustment</button>
               </div>
             ))}
-            {!adjustments.length ? <p className="text-sm text-[#667085]">No adjustments added for this pay run.</p> : null}
+            {!adjustments.length ? <p className="text-sm text-slate-500">No adjustments added for this pay run.</p> : null}
           </div>
         </section>
 
-        <section id="export-centre" className="rounded-2xl border border-[#D6DDEB] bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold text-[#0F172A]">Export centre</h2>
-          <p className="text-sm text-[#667085]">Use these exports for your accountant, bookkeeper, or payroll system.</p>
+        <section id="export-centre" className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Export centre</h2>
+          <p className="text-sm text-slate-500">Use these exports for your accountant, bookkeeper, or payroll system.</p>
           <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
             <button className="cx-button-secondary justify-center" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/periods/${activePeriodId}/export/payroll-summary.csv`, `churvox-payroll-summary-${payRunPart}.csv`, "Payroll summary CSV")}><Download size={14} className="mr-2" />Payroll summary CSV</button>
             <button className="cx-button-secondary justify-center" disabled={!activePeriodId} onClick={() => downloadCsv(`/payroll/periods/${activePeriodId}/export/timesheets.csv`, `churvox-timesheets-${payRunPart}.csv`, "Timesheet detail CSV")}><Download size={14} className="mr-2" />Timesheet detail CSV</button>
@@ -465,7 +465,7 @@ export default function PayrollPage() {
                 <input className="cx-input" type="number" value={settings.default_rate} onChange={(e) => setSettings((s) => ({ ...s, default_rate: Number(e.target.value || 0) }))} placeholder="Default hourly rate" />
                 <select className="cx-input" value={settings.default_pay_frequency || "fortnightly"} onChange={(e) => setSettings((s) => ({ ...s, default_pay_frequency: e.target.value }))}>{FREQUENCY_OPTIONS.map((x) => <option key={x} value={x}>{x}</option>)}</select>
                 <input className="cx-input" disabled value="Overtime rule placeholder (disabled in V1)" />
-                <p className="text-xs text-[#667085]">Tax filing is handled outside Churvox in V1.</p>
+                <p className="text-xs text-slate-500">Tax filing is handled outside Churvox in V1.</p>
               </div>
               <button className="cx-button-primary mt-4" onClick={saveSettings} disabled={actionLoading["save-settings"]}>{actionLoading["save-settings"] ? "Saving..." : "Save settings"}</button>
             </div>
@@ -476,21 +476,21 @@ export default function PayrollPage() {
           <div className="fixed inset-0 z-50 bg-black/30 p-3">
             <div className="mx-auto h-full max-w-3xl overflow-y-auto rounded-2xl border bg-white p-5 shadow-xl">
               <div className="flex items-center justify-between"><h3 className="text-lg font-semibold">Worker payroll details</h3><button className="cx-button-secondary" onClick={() => setWorkerDetails(null)}><X size={14} className="mr-1" />Close</button></div>
-              <div className="mt-3 rounded-xl border border-[#D0D5DD] bg-[#FCFCFD] p-3 text-sm">
+              <div className="mt-3 rounded-xl border border-border bg-slate-50 p-3 text-sm">
                 <p className="font-semibold">{workerDetails.worker?.name} · {workerDetails.worker?.role}</p>
                 <p>Approved: {Number(workerDetails.approved_hours || 0)}h · Pending: {Number(workerDetails.pending_hours || 0)}h · Jobs worked: {Number(workerDetails.jobs_worked || 0)}</p>
               </div>
-              <div className="mt-3 rounded-xl border border-[#D0D5DD] bg-[#FCFCFD] p-3 text-sm">
+              <div className="mt-3 rounded-xl border border-border bg-slate-50 p-3 text-sm">
                 <p className="font-semibold">Adjustments</p>
                 {(workerDetails.adjustments || []).map((a) => <p key={a.id}>{a.label} · {a.type} · {formatCurrency(a.amount || 0)}</p>)}
-                {!(workerDetails.adjustments || []).length ? <p className="text-[#667085]">No adjustments.</p> : null}
+                {!(workerDetails.adjustments || []).length ? <p className="text-slate-500">No adjustments.</p> : null}
               </div>
-              <div className="mt-3 rounded-xl border border-[#D0D5DD] bg-[#FCFCFD] p-3 text-sm">
+              <div className="mt-3 rounded-xl border border-border bg-slate-50 p-3 text-sm">
                 <p className="font-semibold">Timesheet entries</p>
                 {(workerDetails.timesheet_entries || []).map((t) => <p key={t.entry_id}>{t.date || "—"} · {t.job_title || "Job"} · {Number(t.net_hours || 0)}h · {t.status}</p>)}
-                {!(workerDetails.timesheet_entries || []).length ? <p className="text-[#667085]">No entries.</p> : null}
+                {!(workerDetails.timesheet_entries || []).length ? <p className="text-slate-500">No entries.</p> : null}
               </div>
-              <div className="mt-3 rounded-xl border border-[#D0D5DD] bg-[#FCFCFD] p-3 text-sm">
+              <div className="mt-3 rounded-xl border border-border bg-slate-50 p-3 text-sm">
                 <p className="font-semibold">Export row preview</p>
                 <p>{workerDetails.worker?.name || "Worker"},{Number(workerDetails.approved_hours || 0)},{Number(workerDetails.pending_hours || 0)},{Number(workerDetails.jobs_worked || 0)}</p>
               </div>

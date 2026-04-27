@@ -214,7 +214,7 @@ export default function InvoicesPage() {
   const myobConnected = Boolean(accounting?.myob_connected);
   return (
     <Layout>
-      <div className="cx-page space-y-6 animate-in bg-[#f8f6f1] min-h-full" data-testid="invoices-page">
+      <div className="cx-page space-y-6 animate-in bg-background min-h-full" data-testid="invoices-page">
         <div className="cx-page-hero flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div>
             <h1 className="cx-page-title">Invoices</h1>
@@ -300,19 +300,19 @@ export default function InvoicesPage() {
               <span className="text-xs text-slate-500">Stay ahead of overdue and unpaid cashflow</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 mt-3">
-              <div className="rounded-xl border border-[#e8e2d8] bg-[#fffdfa] px-3 py-2 text-sm text-slate-700">
+              <div className="rounded-xl border border-border bg-white px-3 py-2 text-sm text-slate-700">
                 <p className="text-xs text-slate-500">Overdue invoices</p>
                 <p className="font-semibold text-red-700">{invoiceMetrics.overdue}</p>
               </div>
-              <div className="rounded-xl border border-[#e8e2d8] bg-[#fffdfa] px-3 py-2 text-sm text-slate-700">
+              <div className="rounded-xl border border-border bg-white px-3 py-2 text-sm text-slate-700">
                 <p className="text-xs text-slate-500">Unpaid / pending</p>
                 <p className="font-semibold text-amber-700">{invoiceMetrics.sentUnpaid}</p>
               </div>
-              <div className="rounded-xl border border-[#e8e2d8] bg-[#fffdfa] px-3 py-2 text-sm text-slate-700">
+              <div className="rounded-xl border border-border bg-white px-3 py-2 text-sm text-slate-700">
                 <p className="text-xs text-slate-500">Draft invoices</p>
                 <p className="font-semibold text-slate-700">{invoiceMetrics.draft}</p>
               </div>
-              <div className="rounded-xl border border-[#e8e2d8] bg-[#fffdfa] px-3 py-2 text-sm text-slate-700">
+              <div className="rounded-xl border border-border bg-white px-3 py-2 text-sm text-slate-700">
                 <p className="text-xs text-slate-500">MYOB sync issues</p>
                 <p className="font-semibold text-red-700">{invoiceMetrics.myobIssues}</p>
               </div>
@@ -369,7 +369,7 @@ export default function InvoicesPage() {
                             {safeText(invoice.invoice_number, "Draft invoice")}
                           </Link>
                           <span className={`cx-status-badge ${statusMeta.className}`}>{statusMeta.label}</span>
-                          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#e7e0d3] bg-[#fffdfa] text-slate-600">
+                          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#e7e0d3] bg-white text-slate-600">
                             {getPaymentLabel(invoice)}
                           </span>
                           {(mode === "myob_sync" || mode === "myob_external") && (() => {
