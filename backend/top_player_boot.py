@@ -3,6 +3,8 @@
 This is intentionally small and defensive. It does not replace the main API.
 It quietly adds the missing launch wiring that turns real actions into automation:
 - quote accepted -> automation quote_accepted
+- job assigned -> automation job_assigned
+- worker note/photos -> automation worker_note_added / worker_photo_uploaded
 - job completed -> automation job_completed
 - invoice overdue -> automation invoice_overdue
 - default system automation rules per business
@@ -13,7 +15,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timezone
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, List
 
 from bson import ObjectId
 from fastapi import APIRouter
@@ -90,10 +92,10 @@ def _system_rules_for_business(business_id: str) -> List[Dict[str, Any]]:
         {
             "system_rule_key": "worker_update_notify_owner",
             "name": "Worker update → owner/admin alert",
-            "description": "Notifies owners/admins when workers add notes or photos.",
+            "description": "Notifies owners/admins when workers add notes.",
             "trigger": "worker_note_added",
             "actions": [
-                {"type": "notify_owner", "config": {"title": "Worker update", "message": "A worker added an update to a job."}},
+                {"type": "notify_owner", "config": {"title": "Worker job note", "message": "A worker added or updated a note on a job."}},
             ],
         },
         {
@@ -153,16 +155,9 @@ async def _ensure_default_rules(db) -> int:
                 "source": "system_top_player_default",
                 "updated_at": _now(),
             }
-            existing = await db.automation_rules.find_one({
-                "business_id": business_id,
-                "system_rule_key": base["system_rule_key"],
-            })
+            existing = await db.automation_rules.find_one({"business_id": business_id, "system_rule_key": base["system_rule_key"]})
             if existing:
-                # Keep user pause choice, but repair trigger/actions/name if a previous default was weak.
-                await db.automation_rules.update_one(
-                    {"_id": existing["_id"]},
-                    {"$set": {k: v for k, v in rule.items() if k != "enabled"}},
-                )
+                await db.automation_rules.update_one({"_id": existing["_id"]}, {"$set": {k: v for k, v in rule.items() if k != "enabled"}})
             else:
                 rule["created_at"] = _now()
                 await db.automation_rules.insert_one(rule)
@@ -172,31 +167,80 @@ async def _ensure_default_rules(db) -> int:
 
 async def _emit_quote_accepts(db, auto) -> int:
     emitted = 0
-    query = {
-        "status": "accepted",
-        "$or": [
-            {"automation_quote_accepted_emitted": {"$ne": True}},
-            {"automation_quote_accepted_emitted": {"$exists": False}},
-        ],
-    }
+    query = {"status": "accepted", "$or": [{"automation_quote_accepted_emitted": {"$ne": True}}, {"automation_quote_accepted_emitted": {"$exists": False}}]}
     cursor = db.quotes.find(query).sort("updated_at", -1).limit(50)
     async for quote in cursor:
         business_id = _business_id_from_record(quote)
         if not business_id:
             await db.quotes.update_one({"_id": quote["_id"]}, {"$set": {"automation_quote_accepted_emitted": True, "automation_emit_skipped": "missing_business_id"}})
             continue
-        payload = {
-            "business_id": business_id,
-            "quote_id": _safe_id(quote.get("_id")),
-            "quote": _json_safe({**quote, "id": _safe_id(quote.get("_id"))}),
-            "actor": {"role": "customer", "source": "public_quote"},
-        }
+        payload = {"business_id": business_id, "quote_id": _safe_id(quote.get("_id")), "quote": _json_safe({**quote, "id": _safe_id(quote.get("_id"))}), "actor": {"role": "customer", "source": "public_quote"}}
         summary = await auto.emit_event(db, "quote_accepted", payload)
-        await db.quotes.update_one({"_id": quote["_id"]}, {"$set": {
-            "automation_quote_accepted_emitted": True,
-            "automation_quote_accepted_summary": _json_safe(summary),
-            "automation_quote_accepted_at": _now(),
-        }})
+        await db.quotes.update_one({"_id": quote["_id"]}, {"$set": {"automation_quote_accepted_emitted": True, "automation_quote_accepted_summary": _json_safe(summary), "automation_quote_accepted_at": _now()}})
+        emitted += 1
+    return emitted
+
+
+async def _emit_job_assignments(db, auto) -> int:
+    emitted = 0
+    query = {
+        "assigned_worker_id": {"$exists": True, "$nin": [None, ""]},
+        "$or": [{"automation_job_assigned_worker_id": {"$exists": False}}, {"automation_job_assigned_emitted": {"$ne": True}}],
+        "status": {"$nin": ["completed", "cancelled"]},
+    }
+    cursor = db.jobs.find(query).sort("updated_at", -1).limit(75)
+    async for job in cursor:
+        business_id = _business_id_from_record(job)
+        worker_id = _safe_id(job.get("assigned_worker_id") or job.get("worker_id"))
+        if not business_id or not worker_id:
+            await db.jobs.update_one({"_id": job["_id"]}, {"$set": {"automation_job_assigned_emitted": True, "automation_emit_skipped": "missing_business_or_worker_id"}})
+            continue
+        previous_worker_id = _safe_id(job.get("automation_job_assigned_worker_id"))
+        if previous_worker_id and previous_worker_id == worker_id and job.get("automation_job_assigned_emitted") is True:
+            continue
+        payload = {"business_id": business_id, "job_id": _safe_id(job.get("_id")), "worker_id": worker_id, "job": _json_safe({**job, "id": _safe_id(job.get("_id"))}), "actor": {"role": "system", "source": "job_assignment_sweep"}}
+        summary = await auto.emit_event(db, "job_assigned", payload)
+        await db.jobs.update_one({"_id": job["_id"]}, {"$set": {"automation_job_assigned_emitted": True, "automation_job_assigned_worker_id": worker_id, "automation_job_assigned_summary": _json_safe(summary), "automation_job_assigned_at": _now()}})
+        emitted += 1
+    return emitted
+
+
+async def _emit_worker_note_updates(db, auto) -> int:
+    emitted = 0
+    query = {"worker_notes": {"$exists": True, "$nin": [None, ""]}}
+    cursor = db.jobs.find(query).sort("updated_at", -1).limit(75)
+    async for job in cursor:
+        notes = str(job.get("worker_notes") or "").strip()
+        fingerprint = f"{len(notes)}:{notes[-80:]}"
+        if not notes or job.get("automation_worker_notes_fingerprint") == fingerprint:
+            continue
+        business_id = _business_id_from_record(job)
+        if not business_id:
+            await db.jobs.update_one({"_id": job["_id"]}, {"$set": {"automation_worker_notes_fingerprint": fingerprint, "automation_emit_skipped": "missing_business_id"}})
+            continue
+        payload = {"business_id": business_id, "job_id": _safe_id(job.get("_id")), "job": _json_safe({**job, "id": _safe_id(job.get("_id"))}), "worker_notes": notes, "actor": {"role": "worker", "source": "worker_note_sweep"}}
+        summary = await auto.emit_event(db, "worker_note_added", payload)
+        await db.jobs.update_one({"_id": job["_id"]}, {"$set": {"automation_worker_notes_fingerprint": fingerprint, "automation_worker_note_summary": _json_safe(summary), "automation_worker_note_at": _now()}})
+        emitted += 1
+    return emitted
+
+
+async def _emit_worker_photo_uploads(db, auto) -> int:
+    emitted = 0
+    query = {"photos.0": {"$exists": True}}
+    cursor = db.jobs.find(query).sort("updated_at", -1).limit(75)
+    async for job in cursor:
+        photos = job.get("photos") if isinstance(job.get("photos"), list) else []
+        count = len(photos)
+        if count <= 0 or int(job.get("automation_worker_photos_count") or 0) >= count:
+            continue
+        business_id = _business_id_from_record(job)
+        if not business_id:
+            await db.jobs.update_one({"_id": job["_id"]}, {"$set": {"automation_worker_photos_count": count, "automation_emit_skipped": "missing_business_id"}})
+            continue
+        payload = {"business_id": business_id, "job_id": _safe_id(job.get("_id")), "photo_count": count, "job": _json_safe({**job, "id": _safe_id(job.get("_id"))}), "actor": {"role": "worker", "source": "worker_photo_sweep"}}
+        summary = await auto.emit_event(db, "worker_photo_uploaded", payload)
+        await db.jobs.update_one({"_id": job["_id"]}, {"$set": {"automation_worker_photos_count": count, "automation_worker_photo_summary": _json_safe(summary), "automation_worker_photo_at": _now()}})
         emitted += 1
     return emitted
 
@@ -204,19 +248,8 @@ async def _emit_quote_accepts(db, auto) -> int:
 async def _emit_job_completions(db, auto) -> int:
     emitted = 0
     query = {
-        "$or": [
-            {"status": "completed"},
-            {"job_status": "completed"},
-            {"workflow_status": "completed"},
-            {"completed": True},
-            {"completed_at": {"$exists": True, "$ne": None}},
-        ],
-        "$and": [
-            {"$or": [
-                {"automation_job_completed_emitted": {"$ne": True}},
-                {"automation_job_completed_emitted": {"$exists": False}},
-            ]}
-        ],
+        "$or": [{"status": "completed"}, {"job_status": "completed"}, {"workflow_status": "completed"}, {"completed": True}, {"completed_at": {"$exists": True, "$ne": None}}],
+        "$and": [{"$or": [{"automation_job_completed_emitted": {"$ne": True}}, {"automation_job_completed_emitted": {"$exists": False}}]}],
     }
     cursor = db.jobs.find(query).sort("updated_at", -1).limit(50)
     async for job in cursor:
@@ -224,18 +257,9 @@ async def _emit_job_completions(db, auto) -> int:
         if not business_id:
             await db.jobs.update_one({"_id": job["_id"]}, {"$set": {"automation_job_completed_emitted": True, "automation_emit_skipped": "missing_business_id"}})
             continue
-        payload = {
-            "business_id": business_id,
-            "job_id": _safe_id(job.get("_id")),
-            "job": _json_safe({**job, "id": _safe_id(job.get("_id"))}),
-            "actor": {"role": "system", "source": "job_completion_sweep"},
-        }
+        payload = {"business_id": business_id, "job_id": _safe_id(job.get("_id")), "job": _json_safe({**job, "id": _safe_id(job.get("_id"))}), "actor": {"role": "system", "source": "job_completion_sweep"}}
         summary = await auto.emit_event(db, "job_completed", payload)
-        await db.jobs.update_one({"_id": job["_id"]}, {"$set": {
-            "automation_job_completed_emitted": True,
-            "automation_job_completed_summary": _json_safe(summary),
-            "automation_job_completed_at": _now(),
-        }})
+        await db.jobs.update_one({"_id": job["_id"]}, {"$set": {"automation_job_completed_emitted": True, "automation_job_completed_summary": _json_safe(summary), "automation_job_completed_at": _now()}})
         emitted += 1
     return emitted
 
@@ -243,14 +267,7 @@ async def _emit_job_completions(db, auto) -> int:
 async def _emit_invoice_overdues(db, auto) -> int:
     emitted = 0
     now = _now()
-    query = {
-        "status": {"$in": ["sent", "overdue"]},
-        "due_date": {"$lt": now},
-        "$or": [
-            {"automation_invoice_overdue_emitted": {"$ne": True}},
-            {"automation_invoice_overdue_emitted": {"$exists": False}},
-        ],
-    }
+    query = {"status": {"$in": ["sent", "overdue"]}, "due_date": {"$lt": now}, "$or": [{"automation_invoice_overdue_emitted": {"$ne": True}}, {"automation_invoice_overdue_emitted": {"$exists": False}}]}
     cursor = db.invoices.find(query).sort("due_date", 1).limit(50)
     async for invoice in cursor:
         business_id = _business_id_from_record(invoice)
@@ -258,18 +275,9 @@ async def _emit_invoice_overdues(db, auto) -> int:
             await db.invoices.update_one({"_id": invoice["_id"]}, {"$set": {"automation_invoice_overdue_emitted": True, "automation_emit_skipped": "missing_business_id"}})
             continue
         await db.invoices.update_one({"_id": invoice["_id"]}, {"$set": {"status": "overdue", "updated_at": now}})
-        payload = {
-            "business_id": business_id,
-            "invoice_id": _safe_id(invoice.get("_id")),
-            "invoice": _json_safe({**invoice, "id": _safe_id(invoice.get("_id")), "status": "overdue"}),
-            "actor": {"role": "system", "source": "invoice_overdue_sweep"},
-        }
+        payload = {"business_id": business_id, "invoice_id": _safe_id(invoice.get("_id")), "invoice": _json_safe({**invoice, "id": _safe_id(invoice.get("_id")), "status": "overdue"}), "actor": {"role": "system", "source": "invoice_overdue_sweep"}}
         summary = await auto.emit_event(db, "invoice_overdue", payload)
-        await db.invoices.update_one({"_id": invoice["_id"]}, {"$set": {
-            "automation_invoice_overdue_emitted": True,
-            "automation_invoice_overdue_summary": _json_safe(summary),
-            "automation_invoice_overdue_at": now,
-        }})
+        await db.invoices.update_one({"_id": invoice["_id"]}, {"$set": {"automation_invoice_overdue_emitted": True, "automation_invoice_overdue_summary": _json_safe(summary), "automation_invoice_overdue_at": now}})
         emitted += 1
     return emitted
 
@@ -277,11 +285,17 @@ async def _emit_invoice_overdues(db, auto) -> int:
 async def _sweep_once(db, auto) -> Dict[str, Any]:
     created_rules = await _ensure_default_rules(db)
     quote_events = await _emit_quote_accepts(db, auto)
+    assignment_events = await _emit_job_assignments(db, auto)
+    worker_note_events = await _emit_worker_note_updates(db, auto)
+    worker_photo_events = await _emit_worker_photo_uploads(db, auto)
     job_events = await _emit_job_completions(db, auto)
     overdue_events = await _emit_invoice_overdues(db, auto)
     return {
         "created_rules": created_rules,
         "quote_events": quote_events,
+        "assignment_events": assignment_events,
+        "worker_note_events": worker_note_events,
+        "worker_photo_events": worker_photo_events,
         "job_events": job_events,
         "overdue_events": overdue_events,
         "checked_at": _now().isoformat(),
@@ -290,10 +304,11 @@ async def _sweep_once(db, auto) -> Dict[str, Any]:
 
 async def _loop(db, auto):
     await asyncio.sleep(4)
+    event_keys = ["created_rules", "quote_events", "assignment_events", "worker_note_events", "worker_photo_events", "job_events", "overdue_events"]
     while True:
         try:
             summary = await _sweep_once(db, auto)
-            if any(summary.get(k, 0) for k in ["created_rules", "quote_events", "job_events", "overdue_events"]):
+            if any(summary.get(k, 0) for k in event_keys):
                 print(f"TOP_PLAYER_SWEEP {summary}")
         except asyncio.CancelledError:
             raise
