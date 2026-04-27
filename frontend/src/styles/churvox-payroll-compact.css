@@ -1,0 +1,139 @@
+/* Churvox Payroll compact workspace */
+
+/* Scope through the active payroll nav item so we do not disturb other pages. */
+body:has(a[href="/payroll"].active) .cx-page > section:first-child {
+  position: relative !important;
+  overflow: hidden !important;
+  border-radius: 28px !important;
+  border: 1px solid rgba(186, 230, 253, 0.20) !important;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(56, 189, 248, 0.20), transparent 24rem),
+    radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.30), transparent 28rem),
+    linear-gradient(135deg, #07111f 0%, #0f172a 52%, #172554 100%) !important;
+  box-shadow: 0 24px 70px rgba(2, 6, 23, 0.22) !important;
+  color: #ffffff !important;
+  padding: 24px !important;
+}
+
+body:has(a[href="/payroll"].active) .cx-page > section:first-child .cx-page-title {
+  color: #ffffff !important;
+  font-size: clamp(28px, 4vw, 42px) !important;
+  line-height: 1.05 !important;
+}
+
+body:has(a[href="/payroll"].active) .cx-page > section:first-child .cx-page-subtitle {
+  max-width: 760px !important;
+  color: #dbeafe !important;
+  line-height: 1.45 !important;
+}
+
+/* Hide the long payroll disclaimer pill from the hero. The detailed rule belongs inside settings/help, not the top card. */
+body:has(a[href="/payroll"].active) .cx-page > section:first-child p.mt-3.inline-flex {
+  display: none !important;
+}
+
+body:has(a[href="/payroll"].active) .cx-page > section:first-child .mt-4.flex {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  margin-top: 16px !important;
+}
+
+body:has(a[href="/payroll"].active) .cx-page > section:first-child button {
+  width: auto !important;
+  min-width: 126px !important;
+  min-height: 40px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(186, 230, 253, 0.24) !important;
+  padding: 0 15px !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  box-shadow: none !important;
+}
+
+body:has(a[href="/payroll"].active) .cx-page > section:first-child .cx-button-primary {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+body:has(a[href="/payroll"].active) .cx-page > section:first-child .cx-button-secondary {
+  background: rgba(255, 255, 255, 0.10) !important;
+  color: #ffffff !important;
+}
+
+/* Compact payroll stat tiles to match Clients/Jobs/Invoices. */
+body:has(a[href="/payroll"].active) .cx-page > section.grid:has(> div.rounded-2xl) {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+body:has(a[href="/payroll"].active) .cx-page > section.grid:has(> div.rounded-2xl) > div {
+  min-height: 96px !important;
+  border-radius: 20px !important;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06) !important;
+  padding: 14px 16px !important;
+}
+
+body:has(a[href="/payroll"].active) .cx-page > section.grid:has(> div.rounded-2xl) p.text-xs.font-semibold.uppercase {
+  font-size: 10px !important;
+  line-height: 1 !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.11em !important;
+  color: #475569 !important;
+}
+
+body:has(a[href="/payroll"].active) .cx-page > section.grid:has(> div.rounded-2xl) p.text-xl {
+  margin-top: 8px !important;
+  font-size: 23px !important;
+  line-height: 1.05 !important;
+  font-weight: 900 !important;
+}
+
+body:has(a[href="/payroll"].active) .cx-page > section.grid:has(> div.rounded-2xl) p.text-xs.text-slate-500 {
+  display: none !important;
+}
+
+body:has(a[href="/payroll"].active) .cx-page > section.grid:has(> div.rounded-2xl) span.inline-flex.h-8.w-8 {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 11px !important;
+}
+
+/* Make the following payroll sections feel lighter and cleaner. */
+body:has(a[href="/payroll"].active) .cx-page > section.rounded-2xl {
+  border-radius: 22px !important;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.055) !important;
+}
+
+body:has(a[href="/payroll"].active) .cx-page > section.rounded-2xl > h2,
+body:has(a[href="/payroll"].active) .cx-page > section.rounded-2xl p.text-sm.font-semibold {
+  font-size: 15px !important;
+}
+
+body:has(a[href="/payroll"].active) .cx-page > section.rounded-2xl .grid > div,
+body:has(a[href="/payroll"].active) .cx-page > section.rounded-2xl button.rounded-xl {
+  border-radius: 14px !important;
+}
+
+@media (max-width: 1180px) {
+  body:has(a[href="/payroll"].active) .cx-page > section.grid:has(> div.rounded-2xl) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 680px) {
+  body:has(a[href="/payroll"].active) .cx-page > section:first-child {
+    border-radius: 22px !important;
+    padding: 20px !important;
+  }
+
+  body:has(a[href="/payroll"].active) .cx-page > section:first-child button {
+    flex: 1 1 45% !important;
+    min-width: 0 !important;
+  }
+
+  body:has(a[href="/payroll"].active) .cx-page > section.grid:has(> div.rounded-2xl) {
+    grid-template-columns: 1fr !important;
+  }
+}
