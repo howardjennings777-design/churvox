@@ -51,7 +51,7 @@ import PublicInvoicePage from "./pages/public/PublicInvoicePage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const Spinner = () => (
-  <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+  <div className="min-h-screen chx-worker-shell flex items-center justify-center">
     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
   </div>
 );
@@ -150,6 +150,11 @@ function RoleRedirect() {
 }
 
 function App() {
+  React.useEffect(() => {
+    document.body.classList.add("churvox-theme");
+    return () => document.body.classList.remove("churvox-theme");
+  }, []);
+
   React.useEffect(() => {
     // Global post-Stripe-checkout handler — runs once on mount.
     // Works regardless of which page Stripe returned the user to.
