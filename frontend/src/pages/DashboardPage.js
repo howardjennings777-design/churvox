@@ -4,7 +4,7 @@ import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
 import { Button } from "../components/ui/button";
-import { Briefcase, Calendar, FileText, Users, Plus, ArrowRight, AlertTriangle, Receipt, UserPlus, MessageSquareWarning, RefreshCw } from "lucide-react";
+import { Calendar, FileText, Users, Plus, ArrowRight, AlertTriangle, Receipt, UserPlus, MessageSquareWarning, RefreshCw } from "lucide-react";
 import { safeArray, safeNumber, safeText } from "../utils/safeRender";
 import { AppShell, PageHeader, StatCard, SectionCard, EmptyState, LoadingState, ErrorState, StatusBadge } from "../components/premium/PremiumUI";
 
@@ -79,6 +79,7 @@ export default function DashboardPage() {
     { label: "Pending quotes", value: smart.quotesWaiting.length, helper: "Awaiting client response", icon: FileText, path: "/quotes" },
     { label: "Unpaid invoices", value: smart.pendingInvoices.length, helper: "Draft, sent, and overdue", icon: Receipt, path: "/invoices" },
     { label: "Team status", value: smart.workersActive, helper: `${smart.teamCount} workers in roster`, icon: Users, path: "/team" },
+    { label: "Payroll alerts", value: smart.payrollAlerts, helper: "Timesheets and pay-run checks", icon: Users, path: "/payroll" },
     { label: "Automation alerts", value: smart.automationAlerts, helper: "Rules and integration attention", icon: RefreshCw, path: "/automation" },
   ];
 
@@ -126,15 +127,40 @@ export default function DashboardPage() {
             </div>
           </SectionCard>
 
-          <SectionCard title="Finance & payroll alerts">
+          <SectionCard title="Quick actions">
             <div className="space-y-2 text-sm">
-              <Link to="/invoices" className="block rounded-xl border border-red-100 bg-red-50 p-3 text-slate-800">Overdue invoices: <span className="font-semibold">{smart.overdueInvoices.length}</span></Link>
-              <Link to="/payroll" className="block rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-800">Payroll alerts: <span className="font-semibold">{smart.payrollAlerts}</span></Link>
-              <Link to="/automation" className="block rounded-xl border border-blue-100 bg-blue-50 p-3 text-slate-800">Automation alerts: <span className="font-semibold">{smart.automationAlerts}</span></Link>
-              <Link to="/sms" className="block rounded-xl border border-slate-200 bg-white p-3 text-slate-700 inline-flex items-center gap-2"><MessageSquareWarning className="h-4 w-4" /> Communications centre</Link>
-              <Link to="/jobs" className="block rounded-xl border border-slate-200 bg-white p-3 text-slate-700 inline-flex items-center gap-2"><Briefcase className="h-4 w-4" /> Open all jobs</Link>
+              <Link to="/jobs/new" className="block rounded-xl border border-slate-200 bg-white p-3 text-slate-800">Create a new job</Link>
+              <Link to="/quotes/new" className="block rounded-xl border border-slate-200 bg-white p-3 text-slate-800">Build a quote</Link>
+              <Link to="/invoices/new" className="block rounded-xl border border-slate-200 bg-white p-3 text-slate-800">Create an invoice</Link>
+              <Link to="/team" className="block rounded-xl border border-slate-200 bg-white p-3 text-slate-800">Invite team member</Link>
+              <Link to="/automation" className="block rounded-xl border border-slate-200 bg-white p-3 text-slate-800">Review automation rules</Link>
             </div>
           </SectionCard>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <SectionCard title="Pending quotes">
+            <p className="text-3xl font-semibold text-slate-900">{smart.quotesWaiting.length}</p>
+            <p className="text-sm text-slate-500 mt-1">Awaiting client approval.</p>
+          </SectionCard>
+          <SectionCard title="Unpaid invoices">
+            <p className="text-3xl font-semibold text-slate-900">{smart.pendingInvoices.length}</p>
+            <p className="text-sm text-slate-500 mt-1">Draft, sent, and overdue invoices.</p>
+          </SectionCard>
+          <SectionCard title="Team status">
+            <p className="text-3xl font-semibold text-slate-900">{smart.workersActive}/{smart.teamCount}</p>
+            <p className="text-sm text-slate-500 mt-1">Workers currently active in jobs.</p>
+          </SectionCard>
+          <SectionCard title="Payroll & automation alerts">
+            <p className="text-3xl font-semibold text-slate-900">{smart.payrollAlerts + smart.automationAlerts}</p>
+            <p className="text-sm text-slate-500 mt-1">Payroll alerts: {smart.payrollAlerts} · Automation alerts: {smart.automationAlerts}</p>
+          </SectionCard>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Link to="/payroll" className="cx-panel p-4">Payroll alerts <span className="font-semibold">{smart.payrollAlerts}</span></Link>
+          <Link to="/automation" className="cx-panel p-4">Automation alerts <span className="font-semibold">{smart.automationAlerts}</span></Link>
+          <Link to="/sms" className="cx-panel p-4 inline-flex items-center gap-2"><MessageSquareWarning className="h-4 w-4" />Communications centre</Link>
         </div>
       </AppShell>
     </Layout>
