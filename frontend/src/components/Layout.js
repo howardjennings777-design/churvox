@@ -67,7 +67,6 @@ export default function Layout({ children }) {
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
-            {showHelp && <HelpDropdown compact />}
             <NotificationsBell />
           </div>
         </div>
@@ -96,6 +95,12 @@ export default function Layout({ children }) {
               </div>
             ) : null
           ))}
+          {showHelp && (
+            <div>
+              <p className="px-3 pb-2 text-[10px] uppercase tracking-[0.16em]" data-nav="group-label">Support</p>
+              <HelpDropdown sidebar />
+            </div>
+          )}
         </nav>
 
         <div className="p-3 border-t border-slate-700/70 bg-[#0c1729]">
@@ -158,6 +163,7 @@ export default function Layout({ children }) {
                     <item.icon className="h-5 w-5" />{item.label}
                   </Link>
                 ))}
+                {showHelp && <HelpDropdown sidebar />}
                 <button onClick={() => { setMoreOpen(false); handleLogout(); }}
                   className="flex items-center gap-3 w-full px-3 py-3 rounded-xl text-sm font-medium text-red-300 hover:bg-red-500/10">
                   <LogOut className="h-5 w-5" />Log out
