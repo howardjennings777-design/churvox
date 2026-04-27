@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import Layout from "../components/Layout";
 import { useApi } from "../hooks/useApi";
 import { Button } from "../components/ui/button";
-import { CalendarDays, ChevronLeft, ChevronRight, Clock, MapPin, Plus, RefreshCw, User } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock, MapPin, Plus, RefreshCw, Repeat, User } from "lucide-react";
+import { toast } from "sonner";
 import { safeArray, safeText } from "../utils/safeRender";
 
 function startOfWeek(date) {
@@ -46,6 +47,22 @@ function jobTime(job) {
   return safeText(job?.scheduled_time || job?.start_time || job?.time, "Any time");
 }
 
+function isRecurring(job) {
+  return Boolean(job?.is_recurring || job?.recurring || job?.recurrence || job?.recurring_series_id || job?.created_from_recurring);
+}
+
+function nextRecurringDate(job) {
+  const base = new Date(job?.scheduled_date || job?.date || job?.start_date || Date.now());
+  if (Number.isNaN(base.getTime())) return null;
+  const freq = String(job?.recurring_frequency || job?.frequency || "weekly").toLowerCase();
+  const next = new Date(base);
+  if (freq === "daily") next.setDate(next.getDate() + 1);
+  else if (["fortnightly", "biweekly"].includes(freq)) next.setDate(next.getDate() + 14);
+  else if (freq === "monthly") next.setMonth(next.getMonth() + 1);
+  else next.setDate(next.getDate() + 7);
+  return next;
+}
+
 function JobScheduleCard({ job }) {
   const id = job?.id || job?._id;
   return (
@@ -60,15 +77,18 @@ function JobScheduleCard({ job }) {
       <div className="mt-3 grid gap-1 border-t border-slate-100 pt-3 text-xs font-bold text-slate-500">
         <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{jobTime(job)}</span>
         {job?.address ? <span className="flex items-start gap-1"><MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" /> <span className="truncate">{job.address}</span></span> : null}
+        {isRecurring(job) ? <span className="flex items-center gap-1 text-blue-700"><Repeat className="h-3.5 w-3.5" />Recurring</span> : null}
       </div>
     </Link>
   );
 }
 
 export default function SchedulePage() {
-  const { get } = useApi();
+  const { get, post } = useApi();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sweepingRecurring, setSweepingRecurring] = useState(false);
+  const [lastRecurringSweep, setLastRecurringSweep] = useState(null);
   const [weekOffset, setWeekOffset] = useState(0);
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -80,6 +100,20 @@ export default function SchedulePage() {
   }, [get]);
 
   useEffect(() => { load(); }, [load]);
+
+  const runRecurringSweep = async () => {
+    setSweepingRecurring(true);
+    const res = await post("/recurring-jobs/sweep-now");
+    if (res?.success) {
+      const created = res?.data?.created ?? res?.created ?? 0;
+      setLastRecurringSweep(res?.data || res);
+      toast.success(created ? `${created} recurring job${created === 1 ? "" : "s"} generated` : "Recurring jobs checked");
+      await load();
+    } else {
+      toast.error(safeText(res?.error, "Could not run recurring jobs"));
+    }
+    setSweepingRecurring(false);
+  };
 
   const weekStart = useMemo(() => addDays(startOfWeek(new Date()), weekOffset * 7), [weekOffset]);
   const days = useMemo(() => Array.from({ length: 7 }, (_, index) => addDays(weekStart, index)), [weekStart]);
@@ -102,6 +136,15 @@ export default function SchedulePage() {
     return map;
   }, [visibleJobs, days]);
 
+  const recurringJobs = useMemo(() => safeArray(jobs).filter(isRecurring), [jobs]);
+  const recurringTemplates = useMemo(() => recurringJobs.filter((job) => !job.created_from_recurring).slice(0, 6), [recurringJobs]);
+  const nextRecurringWithin35 = useMemo(() => {
+    const limit = addDays(new Date(), 35);
+    return recurringTemplates.filter((job) => {
+      const next = nextRecurringDate(job);
+      return next && next <= limit;
+    }).length;
+  }, [recurringTemplates]);
   const unscheduledJobs = useMemo(() => visibleJobs.filter((job) => !jobDate(job) || !days.some((day) => isoDay(day) === jobDate(job))).slice(0, 8), [visibleJobs, days]);
   const weekTotal = Object.values(jobsByDay).reduce((sum, list) => sum + list.length, 0);
 
@@ -113,21 +156,51 @@ export default function SchedulePage() {
             <div>
               <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">Schedule centre</p>
               <h1 className="mt-3 text-3xl font-black tracking-tight md:text-4xl">Weekly Schedule</h1>
-              <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-300">See jobs by day, open the real job card, and keep the week clean without bringing back the old Dispatch board.</p>
+              <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-300">See jobs by day, open the real job card, generate recurring work, and keep the week clean without bringing back the old Dispatch board.</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button asChild className="rounded-full bg-blue-600 font-black text-white hover:bg-blue-700"><Link to="/jobs/new"><Plus className="mr-2 h-4 w-4" />New job</Link></Button>
+              <Button onClick={runRecurringSweep} disabled={sweepingRecurring} variant="outline" className="rounded-full border-white/20 bg-white/10 font-black text-white hover:bg-white/15"><Repeat className={`mr-2 h-4 w-4 ${sweepingRecurring ? "animate-spin" : ""}`} />Generate recurring</Button>
               <Button onClick={load} variant="outline" className="rounded-full border-white/20 bg-white/10 font-black text-white hover:bg-white/15"><RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />Refresh</Button>
             </div>
           </div>
         </section>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-[10px] font-black uppercase tracking-wide text-slate-500">This week</p><p className="mt-2 text-2xl font-black text-slate-950">{weekTotal}</p></div>
           <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 shadow-sm"><p className="text-[10px] font-black uppercase tracking-wide text-blue-700">In progress</p><p className="mt-2 text-2xl font-black text-blue-900">{jobs.filter((j) => String(j.status || "") === "in_progress").length}</p></div>
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 shadow-sm"><p className="text-[10px] font-black uppercase tracking-wide text-emerald-700">Completed</p><p className="mt-2 text-2xl font-black text-emerald-900">{jobs.filter((j) => String(j.status || "") === "completed").length}</p></div>
+          <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-4 shadow-sm"><p className="text-[10px] font-black uppercase tracking-wide text-indigo-700">Recurring</p><p className="mt-2 text-2xl font-black text-indigo-900">{recurringTemplates.length}</p></div>
           <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4 shadow-sm"><p className="text-[10px] font-black uppercase tracking-wide text-amber-700">Unscheduled shown</p><p className="mt-2 text-2xl font-black text-amber-900">{unscheduledJobs.length}</p></div>
         </div>
+
+        {recurringTemplates.length ? (
+          <section className="rounded-3xl border border-indigo-200 bg-indigo-50 p-4 shadow-sm" data-testid="recurring-schedule-panel">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 className="flex items-center gap-2 text-lg font-black text-indigo-950"><Repeat className="h-5 w-5" />Recurring work</h2>
+                <p className="text-sm font-semibold text-indigo-800">{nextRecurringWithin35} recurring job{nextRecurringWithin35 === 1 ? "" : "s"} are due inside the 35-day generation window.</p>
+                {lastRecurringSweep ? <p className="mt-1 text-xs font-bold text-indigo-700">Last check: {lastRecurringSweep.created || 0} created · {lastRecurringSweep.checked || 0} checked</p> : null}
+              </div>
+              <Button onClick={runRecurringSweep} disabled={sweepingRecurring} className="rounded-full bg-indigo-600 font-black text-white hover:bg-indigo-700">
+                <Repeat className={`mr-2 h-4 w-4 ${sweepingRecurring ? "animate-spin" : ""}`} />Run recurring generator
+              </Button>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {recurringTemplates.map((job) => {
+                const next = nextRecurringDate(job);
+                return (
+                  <Link key={job?.id || job?._id} to={`/jobs/${job?.id || job?._id}`} className="rounded-2xl border border-indigo-100 bg-white p-3 shadow-sm hover:border-indigo-300">
+                    <p className="truncate text-sm font-black text-slate-950">{safeText(job?.title, "Recurring job")}</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-500">{safeText(job?.client_name || job?.customer_name, "No client")}</p>
+                    <p className="mt-2 text-xs font-black uppercase tracking-wide text-indigo-700">{safeText(job?.recurring_frequency || job?.frequency, "weekly")}</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-500">Next: {next ? readableDay(next) : "Not scheduled"}</p>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
 
         <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
