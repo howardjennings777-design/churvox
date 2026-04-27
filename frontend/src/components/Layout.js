@@ -7,7 +7,7 @@ import { InstallPrompt } from "./InstallPrompt";
 import { canAccess } from "../lib/roles";
 import {
   LayoutDashboard, Briefcase, Users, MoreHorizontal, LogOut,
-  Settings, FileText, Receipt, CreditCard, UserPlus, MessageSquare, DollarSign, Zap, ListChecks,
+  Settings, FileText, Receipt, CreditCard, UserPlus, MessageSquare, DollarSign, Zap, ListChecks, CalendarDays,
 } from "lucide-react";
 import NotificationsBell from "./NotificationsBell";
 
@@ -27,6 +27,7 @@ export default function Layout({ children }) {
   const navItems = [
     canAccess(role, "dashboard") && { path: "/dashboard", label: "Smart Hub", icon: LayoutDashboard, group: "Core" },
     canAccess(role, "jobs") && { path: "/jobs", label: "Jobs", icon: Briefcase, group: "Core" },
+    canAccess(role, "jobs") && { path: "/schedule", label: "Schedule", icon: CalendarDays, group: "Core" },
     canAccess(role, "clients") && { path: "/clients", label: "Clients", icon: Users, group: "Core" },
     canAccess(role, "quotes") && { path: "/quotes", label: "Quotes", icon: FileText, group: "Operations" },
     canAccess(role, "invoices") && { path: "/invoices", label: "Invoices", icon: Receipt, group: "Operations" },
