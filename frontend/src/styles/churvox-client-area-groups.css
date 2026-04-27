@@ -96,6 +96,11 @@
   font-weight: 700;
 }
 
+/* Remove the clients search bar. Areas dropdown is the primary filtering control now. */
+[data-testid="clients-page"] > .cx-toolbar {
+  display: none !important;
+}
+
 /* Clean client cards: show only core record info on the card. Notes and quick actions live inside the client profile. */
 [data-testid="clients-page"] > .grid:has(> [data-testid^="client-card-"]) {
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
