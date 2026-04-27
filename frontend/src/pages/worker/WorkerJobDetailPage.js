@@ -23,6 +23,27 @@ function nextWorkerActions(status) {
   return [];
 }
 
+function normalizeChecklist(items) {
+  if (!Array.isArray(items)) return [];
+  return items
+    .map((item, index) => {
+      if (typeof item === "string") return { id: `item-${index}-${item}`, label: item, done: false };
+      return {
+        id: String(item?.id || item?._id || `item-${index}-${item?.label || item?.title || "check"}`),
+        label: String(item?.label || item?.title || item?.text || "Checklist item"),
+        done: Boolean(item?.done || item?.completed || item?.checked),
+        completed_at: item?.completed_at || null,
+      };
+    })
+    .filter((item) => item.label.trim());
+}
+
+function checklistProgress(items) {
+  const total = Array.isArray(items) ? items.length : 0;
+  const done = (items || []).filter((item) => item.done).length;
+  return { total, done, percent: total ? Math.round((done / total) * 100) : 0 };
+}
+
 async function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -108,6 +129,8 @@ export default function WorkerJobDetailPage() {
   const [workerNotes, setWorkerNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [checklistItems, setChecklistItems] = useState([]);
+  const [savingChecklist, setSavingChecklist] = useState(false);
 
   const loadJob = useCallback(async () => {
     setLoading(true);
@@ -115,6 +138,7 @@ export default function WorkerJobDetailPage() {
     if (res.success) {
       setJob(res.data);
       setWorkerNotes(res.data?.worker_notes || "");
+      setChecklistItems(normalizeChecklist(res.data?.checklist_items || res.data?.checklist || []));
     }
     setLoading(false);
   }, [get, id]);
@@ -166,6 +190,30 @@ export default function WorkerJobDetailPage() {
   const runWorkerAction = (action) => {
     if (action.acknowledge) return handleAcknowledge();
     return handleStatus(action.status);
+  };
+
+  const saveChecklist = async (items) => {
+    setSavingChecklist(true);
+    const res = await patch(`/jobs/${id}`, { checklist_items: items });
+    if (res?.success) {
+      const saved = normalizeChecklist(res.data?.checklist_items || items);
+      setChecklistItems(saved);
+      setJob((prev) => (prev ? { ...prev, checklist_items: saved } : prev));
+      toast.success("Checklist updated");
+    } else {
+      toast.error(safeText(res?.error, "Failed to save checklist"));
+    }
+    setSavingChecklist(false);
+  };
+
+  const toggleChecklistItem = async (itemId) => {
+    const next = checklistItems.map((item) => (
+      item.id === itemId
+        ? { ...item, done: !item.done, completed_at: !item.done ? new Date().toISOString() : null }
+        : item
+    ));
+    setChecklistItems(next);
+    await saveChecklist(next);
   };
 
   const handleSaveNotes = async () => {
@@ -242,6 +290,7 @@ export default function WorkerJobDetailPage() {
 
   const status = (job.status || "assigned").toLowerCase();
   const actions = nextWorkerActions(status);
+  const checklist = checklistProgress(checklistItems);
 
   return (
     <div className="chx-worker-shell" data-testid="worker-job-detail-page">
@@ -317,6 +366,28 @@ export default function WorkerJobDetailPage() {
           <div className="chx-worker-card p-4 space-y-3">
             <p className="text-xs font-black text-slate-400 uppercase tracking-wide">Employer Notes</p>
             <p className="text-sm text-slate-600 whitespace-pre-wrap">{job.notes}</p>
+          </div>
+        )}
+
+        {checklistItems.length > 0 && (
+          <div className="chx-worker-card p-4 space-y-3" data-testid="worker-checklist-section">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-black text-slate-800">Job checklist</p>
+                <p className="text-xs font-semibold text-slate-400">{checklist.done}/{checklist.total} complete · {checklist.percent}%</p>
+              </div>
+              <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-full rounded-full bg-blue-600" style={{ width: `${checklist.percent}%` }} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              {checklistItems.map((item) => (
+                <label key={item.id} className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700">
+                  <input type="checkbox" checked={item.done} disabled={savingChecklist} onChange={() => toggleChecklistItem(item.id)} className="h-4 w-4 rounded border-slate-300 text-blue-600" />
+                  <span className={item.done ? "line-through text-slate-400" : ""}>{item.label}</span>
+                </label>
+              ))}
+            </div>
           </div>
         )}
 
