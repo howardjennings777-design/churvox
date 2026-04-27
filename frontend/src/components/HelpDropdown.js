@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { HelpCircle, ChevronDown, X } from "lucide-react";
 
@@ -75,16 +75,45 @@ function findTopic(pathname) {
   return HELP_TOPICS.find((topic) => pathname === topic.path || pathname.startsWith(topic.path + "/")) || HELP_TOPICS[0];
 }
 
+function getPanelPosition(button) {
+  if (!button || typeof window === "undefined") {
+    return { top: 76, left: 12, width: 360 };
+  }
+
+  const rect = button.getBoundingClientRect();
+  const margin = 12;
+  const width = Math.min(390, window.innerWidth - margin * 2);
+  const left = Math.min(Math.max(margin, rect.right - width), window.innerWidth - width - margin);
+  const top = Math.min(rect.bottom + 8, window.innerHeight - 80);
+
+  return { top, left, width };
+}
+
 export default function HelpDropdown() {
   const location = useLocation();
+  const buttonRef = useRef(null);
   const [open, setOpen] = useState(false);
+  const [panelStyle, setPanelStyle] = useState({ top: 76, left: 12, width: 360 });
   const [selectedPath, setSelectedPath] = useState("");
   const currentTopic = useMemo(() => findTopic(location.pathname), [location.pathname]);
   const selectedTopic = HELP_TOPICS.find((topic) => topic.path === selectedPath) || currentTopic;
 
+  useEffect(() => {
+    if (!open) return undefined;
+    const update = () => setPanelStyle(getPanelPosition(buttonRef.current));
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [open]);
+
   return (
     <div className="relative">
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
         className="inline-flex items-center gap-2 rounded-xl border border-slate-600/70 bg-slate-900/55 px-3 py-2 text-xs font-black text-slate-100 shadow-sm transition hover:bg-slate-800"
@@ -96,7 +125,11 @@ export default function HelpDropdown() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-[min(92vw,390px)] overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-[0_22px_70px_rgba(15,23,42,0.22)]" data-testid="help-dropdown-panel">
+        <div
+          className="fixed z-[90] overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-[0_22px_70px_rgba(15,23,42,0.22)]"
+          style={{ top: panelStyle.top, left: panelStyle.left, width: panelStyle.width, maxHeight: "calc(100vh - 24px)" }}
+          data-testid="help-dropdown-panel"
+        >
           <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.16em] text-blue-600">Need help?</p>
