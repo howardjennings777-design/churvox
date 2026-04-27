@@ -61,6 +61,7 @@
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
+    pointer-events: auto;
   }
 
   body {
@@ -68,6 +69,12 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     text-rendering: optimizeLegibility;
     background-image: radial-gradient(circle at 0% 0%, #eef5ff 0%, #e8f0fe 42%, #e2ebfb 100%);
+    pointer-events: auto;
+  }
+
+  #root {
+    min-height: 100vh;
+    pointer-events: auto;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -176,6 +183,65 @@
 .cx-status-badge--blue { color: #1e40af; background: #dbeafe; border-color: #bfdbfe; }
 .cx-status-badge--amber { color: #b45309; background: #fef3c7; border-color: #fde68a; }
 .cx-status-badge--red { color: #b91c1c; background: #fee2e2; border-color: #fecaca; }
+
+/* CHURVOX TAP SAFETY PATCH
+   Keeps fixed shell/sidebar/mobile chrome from covering real page controls. */
+.tap-safe-root,
+.tap-safe-root [data-testid="main-content-area"],
+.tap-safe-root main,
+.tap-safe-root form,
+.tap-safe-root button,
+.tap-safe-root a,
+.tap-safe-root input,
+.tap-safe-root textarea,
+.tap-safe-root select,
+.tap-safe-root [role="button"] {
+  pointer-events: auto;
+}
+
+.tap-safe-root main {
+  position: relative;
+  z-index: 10;
+  padding-bottom: 108px;
+}
+
+@media (min-width: 768px) {
+  .tap-safe-root main {
+    padding-bottom: 32px;
+  }
+
+  .tap-safe-root [data-testid="desktop-sidebar"] {
+    width: 272px;
+    max-width: 272px;
+    overflow: hidden;
+  }
+
+  .tap-safe-root [data-testid="main-content-area"] {
+    position: relative;
+    z-index: 20;
+  }
+}
+
+.tap-safe-root [data-testid="desktop-sidebar"] img,
+.tap-safe-root [data-testid="mobile-header"] img {
+  pointer-events: none;
+}
+
+.tap-safe-root [data-testid="mobile-bottom-nav"] {
+  pointer-events: none;
+}
+
+.tap-safe-root [data-testid="mobile-bottom-nav"] a,
+.tap-safe-root [data-testid="mobile-bottom-nav"] button,
+.tap-safe-root [data-testid="mobile-more-menu"] {
+  pointer-events: auto;
+}
+
+[data-chx-run-sweep-button="true"] {
+  position: relative;
+  z-index: 2147483000 !important;
+  pointer-events: auto !important;
+}
 
 @layer utilities {
   .animate-in { animation: animateIn 0.25s ease-out; }
