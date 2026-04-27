@@ -82,6 +82,13 @@ export default function TeamPage() {
   const [importResults, setImportResults] = useState(null);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef(null);
+  const roleLabelMap = {
+    owner: "Owner",
+    manager: "Manager",
+    office_admin: "Office Admin",
+    payroll: "Payroll",
+    worker: "Worker",
+  };
 
   const isFeatureEnabled = (key) => {
     const normalized = String(key || "").trim().toLowerCase();
@@ -713,6 +720,9 @@ export default function TeamPage() {
                                   <div className="text-slate-900 font-semibold">
                                     {worker.name || "Unnamed Worker"}
                                   </div>
+                                  <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700">
+                                    {roleLabelMap[String(worker.role || "worker").toLowerCase()] || "Worker"}
+                                  </span>
                                   {worker.status && (
                                     <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] text-slate-500">
                                       {worker.status}

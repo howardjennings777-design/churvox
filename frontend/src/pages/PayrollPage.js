@@ -270,7 +270,7 @@ export default function PayrollPage() {
       <div className="cx-page space-y-6" >
         <section className="rounded-3xl border border-border bg-gradient-to-br from-white via-[#f6f9ff] to-[#eef6ff] p-6 shadow-[0_10px_30px_rgba(16,24,40,0.08)]">
           <h1 className="cx-page-title">Payroll Command Centre</h1>
-          <p className="cx-page-subtitle">Review timesheets, approve hours, prepare pay runs, and export clean payroll summaries.</p>
+          <p className="cx-page-subtitle">Serious pay run workspace for approved hours, worker summaries, export payroll, and payroll notes.</p>
           <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-700"><Sparkles size={14} />{DISCLAIMER}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button className="cx-button-primary" onClick={() => setShowCreateRun(true)}>Create pay run</button>

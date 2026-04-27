@@ -7,6 +7,7 @@ import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { toast } from "sonner";
 import { safeText } from "../../utils/safeRender";
+import { ClipboardList, MapPin, UserCircle2, Timer, Image, StickyNote } from "lucide-react";
 
 const STATUS_OPTIONS = [
   "acknowledged",
@@ -247,7 +248,7 @@ export default function JobDetailPage() {
     return (
       <Layout>
         <div className="p-4 md:p-6 max-w-4xl mx-auto">
-          <Card className="bg-white border-slate-200 shadow-sm">
+          <Card className="cx-command-card">
             <CardContent className="p-6 text-slate-500">Loading job...</CardContent>
           </Card>
         </div>
@@ -259,7 +260,7 @@ export default function JobDetailPage() {
     return (
       <Layout>
         <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-4">
-          <Card className="bg-white border-slate-200 shadow-sm">
+          <Card className="cx-command-card">
             <CardContent className="p-6">
               <div className="text-slate-900 text-lg font-semibold mb-2">Job page could not load</div>
               <div className="text-slate-500 text-sm">{error || "Job not found"}</div>
@@ -302,7 +303,7 @@ export default function JobDetailPage() {
               {job.title || "Job"}
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              Status: {niceStatus(currentStatus)}
+              Digital job sheet • Status: {niceStatus(currentStatus)}
             </p>
           </div>
 
@@ -335,13 +336,14 @@ export default function JobDetailPage() {
 
         <Card className="bg-white border-slate-200 shadow-sm">
           <CardContent className="p-5 space-y-4">
+            <div className="flex items-center gap-2 text-slate-900 font-semibold"><ClipboardList size={16} /> Job details</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <div className="text-xs uppercase tracking-wide text-slate-500">Client</div>
                 <div className="text-slate-900">{job.client_name || "-"}</div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wide text-slate-500">Address</div>
+                <div className="text-xs uppercase tracking-wide text-slate-500 inline-flex items-center gap-1"><MapPin size={12} /> Site address</div>
                 <div className="text-slate-900">{job.address || "-"}</div>
               </div>
               {hasValue(job.country) && (
@@ -362,7 +364,7 @@ export default function JobDetailPage() {
               </div>
               {hasValue(job.assigned_worker_name) && (
                 <div>
-                  <div className="text-xs uppercase tracking-wide text-slate-500">Assigned Worker</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500 inline-flex items-center gap-1"><UserCircle2 size={12} /> Assigned worker</div>
                   <div className="text-slate-900">{job.assigned_worker_name}</div>
                 </div>
               )}
@@ -371,7 +373,7 @@ export default function JobDetailPage() {
             {isOwnerView ? (
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <div className="text-xs uppercase tracking-wide text-slate-500">Notes</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500 inline-flex items-center gap-1"><StickyNote size={12} /> Site notes</div>
                   <Button size="sm" variant="ghost" onClick={handleSaveEmployerNotes} disabled={savingEmployerNotes}
                     className="text-xs text-blue-600" data-testid="save-employer-notes-btn">
                     {savingEmployerNotes ? "Saving..." : "Save"}
@@ -396,9 +398,9 @@ export default function JobDetailPage() {
         </Card>
 
         {isOwnerView && (
-          <Card className="bg-white border-slate-200 shadow-sm">
+          <Card className="cx-command-card">
             <CardContent className="p-5 space-y-4">
-              <div className="text-slate-900 font-semibold">Progress Summary</div>
+              <div className="text-slate-900 font-semibold inline-flex items-center gap-2"><Timer size={16} /> Time tracking</div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <div className="text-xs uppercase tracking-wide text-slate-500">Current Status</div>
@@ -579,7 +581,7 @@ export default function JobDetailPage() {
         {isOwnerView && Array.isArray(job.photos) && job.photos.length > 0 && (
           <Card className="bg-white border-slate-200 shadow-sm" data-testid="owner-photos-card">
             <CardContent className="p-5 space-y-3">
-              <div className="text-slate-900 font-semibold">Worker Photos</div>
+              <div className="text-slate-900 font-semibold inline-flex items-center gap-2"><Image size={16} /> Job photos</div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {job.photos.map((src, idx) => (
                   <a key={idx} href={src} target="_blank" rel="noreferrer">

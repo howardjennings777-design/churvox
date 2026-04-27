@@ -4,7 +4,7 @@ import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
 import { Button } from "../components/ui/button";
-import { Briefcase, Calendar, CheckCircle, FileText, Users, Plus, ArrowRight, AlertTriangle, Receipt, UserPlus, Clock3, MessageSquareWarning, RefreshCw } from "lucide-react";
+import { Briefcase, Calendar, CheckCircle, FileText, Users, Plus, ArrowRight, AlertTriangle, Receipt, UserPlus, Clock3, MessageSquareWarning, RefreshCw, ClipboardList, MapPin, Truck } from "lucide-react";
 import { safeArray, safeNumber, safeText } from "../utils/safeRender";
 import PageState from "../components/ui/PageState";
 
@@ -82,19 +82,19 @@ export default function DashboardPage() {
   }, [jobs, invoices, quotes, stats, workers, myobSettings]);
 
   const cards = [
+    { label: "Jobs today", value: smart.todayJobs, icon: ClipboardList, path: "/dispatch" },
     { label: "Active jobs", value: smart.activeJobs, icon: Briefcase, path: "/jobs" },
-    { label: "Completed jobs", value: smart.completedJobs, icon: CheckCircle, path: "/jobs?status=completed" },
-    { label: "Team count", value: smart.teamCount, icon: Users, path: "/team" },
-    { label: "Today's jobs", value: smart.todayJobs, icon: Calendar, path: "/dispatch" },
-    { label: "Unassigned jobs", value: smart.unassignedJobs, icon: AlertTriangle, path: "/dispatch" },
-    { label: "Jobs starting today", value: smart.jobsStartingToday, icon: Clock3, path: "/dispatch" },
-    { label: "Overdue invoices", value: smart.overdueInvoices, icon: Receipt, path: "/invoices" },
-    { label: "Pending invoices", value: smart.pendingInvoices, icon: Receipt, path: "/invoices" },
+    { label: "Ready to invoice", value: smart.completedJobs, icon: Receipt, path: "/jobs?status=completed" },
+    { label: "Crew on site", value: smart.workersActive, icon: Users, path: "/jobs" },
+    { label: "Overdue work", value: smart.scheduleConflicts + smart.unassignedJobs, icon: AlertTriangle, path: "/dispatch" },
+    { label: "Assigned work", value: smart.jobsStartingToday, icon: Calendar, path: "/dispatch" },
+    { label: "Jobs on site", value: smart.activeJobs + smart.jobsStartingToday, icon: MapPin, path: "/jobs" },
+    { label: "Ready for follow-up", value: smart.pendingInvoices, icon: Truck, path: "/invoices" },
     { label: "Quotes waiting approval", value: smart.quotesWaiting, icon: FileText, path: "/quotes" },
-    { label: "Schedule conflicts", value: smart.scheduleConflicts, icon: AlertTriangle, path: "/dispatch" },
+    { label: "Unassigned jobs", value: smart.unassignedJobs, icon: Clock3, path: "/dispatch" },
     { label: "Low SMS credits", value: smart.lowSmsCredits, icon: MessageSquareWarning, path: "/sms" },
     { label: "MYOB sync issues", value: smart.myobIssues, icon: RefreshCw, path: "/settings" },
-    { label: "Workers currently active", value: smart.workersActive, icon: Users, path: "/jobs" },
+    { label: "Team capacity", value: smart.teamCount, icon: CheckCircle, path: "/team" },
   ];
   const onboardingItems = [
     { key: "business", label: "Set business details", done: Boolean(user?.business_name || user?.phone), path: "/settings" },
@@ -117,8 +117,8 @@ export default function DashboardPage() {
     <Layout>
       <div className="cx-page" data-testid="dashboard-page">
         <div className="cx-page-hero">
-          <h1 className="cx-page-title">Smart Hub</h1>
-          <p className="cx-page-subtitle">Welcome back, {safeText(user?.name?.split(" ")?.[0], "there")}. Monitor jobs, cashflow, and team activity in one place.</p>
+          <h1 className="cx-page-title">Daily Operations Board</h1>
+          <p className="cx-page-subtitle">Welcome back, {safeText(user?.name?.split(" ")?.[0], "there")}. Today’s work, crew activity, assigned work, and ready-to-invoice jobs in one command centre.</p>
           {isAdmin && (
             <div className="cx-toolbar">
               <Button onClick={() => navigate("/jobs/new")} className="bg-blue-600 hover:bg-blue-700"><Plus className="h-4 w-4 mr-1" />New job</Button>
@@ -172,7 +172,7 @@ export default function DashboardPage() {
 
         <div className="cx-panel p-5">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-slate-900">Today's jobs</h3>
+            <h3 className="font-semibold text-slate-900">Today’s work</h3>
             <Link to="/dispatch" className="text-sm text-blue-600 inline-flex items-center gap-1">Open dispatch board <ArrowRight className="h-3 w-3" /></Link>
           </div>
           <div className="mt-3 space-y-2">

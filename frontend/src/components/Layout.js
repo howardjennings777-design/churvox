@@ -49,9 +49,9 @@ export default function Layout({ children }) {
   return (
     <div className="cx-app-shell tap-safe-root min-h-screen bg-background" data-testid="layout-container">
       {/* Desktop Sidebar — Premium narrow style */}
-      <aside className="hidden md:flex md:flex-col md:w-[256px] md:fixed md:inset-y-0 bg-[#f8fbff] border-r border-border z-40 shadow-[10px_0_28px_rgba(23,32,51,0.05)]" data-testid="desktop-sidebar">
+      <aside className="hidden md:flex md:flex-col md:w-[256px] md:fixed md:inset-y-0 bg-[#0b1426] border-r border-[#1f314f] z-40 shadow-[12px_0_30px_rgba(2,6,23,0.55)]" data-testid="desktop-sidebar">
         {/* Logo */}
-        <div className="flex items-center justify-between px-6 h-[86px] border-b border-border bg-white/80">
+        <div className="flex items-center justify-between px-6 h-[86px] border-b border-[#1f314f] bg-[#0f1c34]">
           <ChurvoxLogo size="lg" dataTestId="sidebar-logo" />
           <NotificationsBell />
         </div>
@@ -67,7 +67,7 @@ export default function Layout({ children }) {
                 className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-[13px] font-semibold transition-all ${
                   active
                     ? "bg-primary text-primary-foreground shadow-[0_12px_24px_rgba(37,99,235,0.28)] border border-blue-700"
-                    : "text-slate-600 hover:bg-blue-50 hover:text-blue-700 border border-transparent"
+                    : "text-slate-200 hover:bg-[#142b52] hover:text-white border border-transparent"
                 }`}
                 data-testid={`nav-${item.label.toLowerCase()}`}
               >
@@ -79,14 +79,14 @@ export default function Layout({ children }) {
         </nav>
 
         {/* User + Logout */}
-        <div className="p-3 border-t border-border space-y-2 bg-[#f7faff]">
-          <div className="px-3 py-2.5 rounded-xl bg-white border border-border shadow-[0_2px_8px_rgba(23,32,51,0.05)]">
-            <p className="text-xs font-semibold text-slate-900 truncate">{user?.name}</p>
-            <p className="text-[11px] text-slate-400 truncate">{user?.business_name || user?.email}</p>
+        <div className="p-3 border-t border-[#1f314f] space-y-2 bg-[#0f1c34]">
+          <div className="px-3 py-2.5 rounded-xl bg-[#14233f] border border-[#263b60] shadow-[0_2px_10px_rgba(2,6,23,0.45)]">
+            <p className="text-xs font-semibold text-white truncate">{user?.name}</p>
+            <p className="text-[11px] text-slate-300 truncate">{user?.business_name || user?.email}</p>
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-[13px] font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all border border-transparent hover:border-red-100"
+            className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-[13px] font-medium text-slate-300 hover:bg-[#2b1f30] hover:text-red-300 transition-all border border-transparent hover:border-[#5a3650]"
             data-testid="logout-button"
           >
             <LogOut className="h-[18px] w-[18px]" />
@@ -98,11 +98,11 @@ export default function Layout({ children }) {
       {/* Main content */}
       <div className="md:ml-[256px] min-h-screen flex flex-col" data-testid="main-content-area">
         {/* Mobile header */}
-        <header className="md:hidden bg-[#f8fbff] border-b border-border px-4 py-3 flex items-center justify-between sticky top-0 z-30" data-testid="mobile-header">
+        <header className="md:hidden bg-[#0f1c34] border-b border-[#1f314f] px-4 py-3 flex items-center justify-between sticky top-0 z-30" data-testid="mobile-header">
           <ChurvoxLogo size="sm" dataTestId="mobile-logo" />
           <div className="flex items-center gap-2">
             <NotificationsBell />
-            <span className="text-xs font-medium text-slate-500">{user?.name?.split(" ")[0]}</span>
+            <span className="text-xs font-medium text-slate-200">{user?.name?.split(" ")[0]}</span>
           </div>
         </header>
 
@@ -110,13 +110,13 @@ export default function Layout({ children }) {
         <main className="flex-1">{children}</main>
 
         {/* Mobile bottom nav */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#f8fbff] border-t border-border z-40 safe-area-bottom" data-testid="mobile-bottom-nav">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0f1c34] border-t border-[#1f314f] z-40 safe-area-bottom" data-testid="mobile-bottom-nav">
           <div className="flex items-center justify-around py-1">
             {mainNav.map((item) => {
               const active = isActive(item.path);
               return (
                 <Link key={item.path} to={item.path}
-                  className={`flex flex-col items-center gap-0.5 px-2 py-1.5 min-w-[56px] ${active ? "text-blue-600" : "text-slate-400"}`}
+                  className={`flex flex-col items-center gap-0.5 px-2 py-1.5 min-w-[56px] ${active ? "text-blue-300" : "text-slate-400"}`}
                   data-testid={`mobile-nav-${item.label.toLowerCase()}`}>
                   <item.icon className="h-5 w-5" />
                   <span className="text-[10px] font-medium">{item.label}</span>
@@ -124,7 +124,7 @@ export default function Layout({ children }) {
               );
             })}
             <button type="button" onClick={() => setMoreOpen(!moreOpen)}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 min-w-[56px] ${moreOpen ? "text-blue-600" : "text-slate-400"}`}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 min-w-[56px] ${moreOpen ? "text-blue-300" : "text-slate-400"}`}
               data-testid="mobile-more-button">
               <MoreHorizontal className="h-5 w-5" />
               <span className="text-[10px] font-medium">More</span>

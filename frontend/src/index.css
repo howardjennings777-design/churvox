@@ -6,18 +6,18 @@
 
 @layer base {
   :root {
-    --ch-bg: #f6f8fb;
+    --ch-bg: #0c1628;
     --ch-surface: #ffffff;
-    --ch-surface-soft: #f9fbff;
-    --ch-border: #dbe4ef;
-    --ch-border-strong: #b8c7da;
+    --ch-surface-soft: #f3f7ff;
+    --ch-border: #d5dfed;
+    --ch-border-strong: #b1c1d8;
     --ch-text: #102033;
-    --ch-text-muted: #63758b;
-    --ch-primary: #2563eb;
-    --ch-primary-dark: #1d4ed8;
-    --ch-primary-soft: #dbeafe;
-    --ch-accent: #06b6d4;
-    --ch-accent-soft: #cffafe;
+    --ch-text-muted: #5f728b;
+    --ch-primary: #1d63ff;
+    --ch-primary-dark: #124bcf;
+    --ch-primary-soft: #dbe8ff;
+    --ch-accent: #0aa8c5;
+    --ch-accent-soft: #d0f7ff;
     --ch-success: #16a34a;
     --ch-success-soft: #dcfce7;
     --ch-warning: #f59e0b;
@@ -27,7 +27,7 @@
     --ch-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
     --ch-radius: 20px;
 
-    --background: 214 43% 98%;
+    --background: 216 44% 97%;
     --foreground: 213 52% 13%;
     --card: 0 0% 100%;
     --card-foreground: 213 52% 13%;
@@ -66,7 +66,12 @@
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     text-rendering: optimizeLegibility;
-    background-image: radial-gradient(circle at 0% 0%, #ffffff 0%, var(--ch-bg) 55%, #eef3fb 100%);
+    background-image:
+      linear-gradient(90deg, rgba(18, 44, 79, 0.035) 1px, transparent 1px),
+      linear-gradient(rgba(18, 44, 79, 0.035) 1px, transparent 1px),
+      linear-gradient(140deg, rgba(21, 94, 239, 0.06) 0%, rgba(9, 16, 32, 0) 44%),
+      radial-gradient(circle at 0% 0%, #ffffff 0%, #f3f8ff 52%, #eaf1fb 100%);
+    background-size: 34px 34px, 34px 34px, 100% 100%, 100% 100%;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -85,7 +90,11 @@
 
 @layer components {
   .app-shell { @apply min-h-screen bg-background; }
-  .cx-app-shell { @apply min-h-screen text-slate-900 bg-background; }
+  .cx-app-shell {
+    @apply min-h-screen text-slate-900 bg-background;
+    background-image:
+      repeating-linear-gradient(135deg, rgba(148, 163, 184, 0.07) 0, rgba(148, 163, 184, 0.07) 1px, transparent 1px, transparent 13px);
+  }
   .cx-page { @apply mx-auto w-full max-w-[1500px] px-4 py-5 md:px-7 md:py-7 space-y-5; }
   .cx-page-hero {
     @apply rounded-3xl border p-5 md:p-7;
@@ -99,6 +108,12 @@
   .cx-card, .cx-panel {
     @apply rounded-2xl border bg-white shadow-[0_2px_8px_rgba(15,23,42,0.06),0_14px_34px_rgba(15,23,42,0.08)];
     border-color: var(--ch-border);
+  }
+  .cx-command-card {
+    @apply rounded-2xl border bg-white;
+    border-color: var(--ch-border);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06), 0 16px 36px rgba(15, 23, 42, 0.1);
+    background-image: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   }
   .cx-metric-card { @apply cx-card p-4 md:p-5 hover:-translate-y-0.5 transition-all cursor-pointer; }
   .cx-list-card { @apply cx-card p-4; }

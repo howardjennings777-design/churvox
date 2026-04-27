@@ -218,7 +218,7 @@ export default function InvoicesPage() {
         <div className="cx-page-hero flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div>
             <h1 className="cx-page-title">Invoices</h1>
-            <p className="cx-page-subtitle">Track payments, manage draft invoices, and keep cashflow moving.</p>
+            <p className="cx-page-subtitle">Polished business documents with clear totals, status badges, and ready-to-send invoice actions.</p>
           </div>
           <div className="cx-toolbar w-full xl:w-auto">
             {mode === "myob_external" ? (
