@@ -1,47 +1,61 @@
 /* Churvox invoice card readability fix */
 
-/* The compact cards were too squeezed: keep them compact, but stop amount/actions overlapping details. */
+/* Final compact invoice tile layout: no overlaps, no squeezed text. */
 [data-testid^="invoice-card-"] {
-  min-height: 232px !important;
+  min-height: 210px !important;
 }
 
-[data-testid^="invoice-card-"] [class*="CardContent"] > div:first-child {
-  min-height: 204px !important;
-  gap: 12px !important;
+[data-testid^="invoice-card-"] [class*="CardContent"] {
+  height: 100% !important;
+  padding: 16px !important;
 }
 
-/* Top invoice info stays clean and does not collide with the amount. */
+/* Force the original wide row layout into a simple stacked card. */
+[data-testid^="invoice-card-"] [class*="CardContent"] > div:first-child,
+[data-testid^="invoice-card-"] .xl\:flex-row {
+  min-height: 178px !important;
+  height: 100% !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-rows: auto 1fr auto !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+}
+
 [data-testid^="invoice-card-"] [class*="CardContent"] > div:first-child > div:first-child {
   min-width: 0 !important;
-  flex: 1 1 auto !important;
+  width: 100% !important;
+  flex: none !important;
 }
 
 [data-testid^="invoice-card-"] [data-testid^="invoice-number-"] {
   display: block !important;
   max-width: 100% !important;
   word-break: break-word !important;
+  font-size: 15px !important;
+  line-height: 1.14 !important;
+  font-weight: 900 !important;
 }
 
-[data-testid^="invoice-card-"] .mt-3.flex.flex-wrap {
-  display: grid !important;
-  grid-template-columns: 1fr !important;
-  gap: 4px !important;
+[data-testid^="invoice-card-"] p.text-sm.text-slate-900 {
   margin-top: 10px !important;
-}
-
-[data-testid^="invoice-card-"] .mt-3.flex.flex-wrap span {
-  display: block !important;
-  min-width: 0 !important;
-  font-size: 11px !important;
+  font-size: 13px !important;
   line-height: 1.25 !important;
-  color: #64748b !important;
+  color: #334155 !important;
 }
 
-[data-testid^="invoice-card-"] .mt-3.flex.flex-wrap span:nth-child(n+3) {
+/* Hide noisy metadata dates on the compact tile. Dates stay available inside invoice detail. */
+[data-testid^="invoice-card-"] .mt-3.flex.flex-wrap {
   display: none !important;
 }
 
-/* Bottom billing/action area is a proper footer. */
+[data-testid^="invoice-card-"] p.text-sm.text-muted-foreground,
+[data-testid^="invoice-card-"] .text-\[11px\].font-semibold.px-2\.5,
+[data-testid^="invoice-card-"] span[data-testid^="myob-badge-"] {
+  display: none !important;
+}
+
+/* Bottom amount/actions are locked into a footer and cannot overlap the body. */
 [data-testid^="invoice-card-"] [class*="sm:items-end"] {
   display: grid !important;
   grid-template-columns: 1fr !important;
@@ -50,7 +64,8 @@
   gap: 10px !important;
   border-top: 1px solid rgba(15, 23, 42, 0.08) !important;
   padding-top: 11px !important;
-  margin-top: auto !important;
+  margin-top: 0 !important;
+  flex: none !important;
 }
 
 [data-testid^="invoice-card-"] [class*="text-2xl"] {
@@ -60,6 +75,8 @@
   font-size: 22px !important;
   line-height: 1.05 !important;
   margin: 0 !important;
+  position: static !important;
+  transform: none !important;
 }
 
 [data-testid^="invoice-card-"] [class*="sm:items-end"] > .flex {
@@ -90,11 +107,6 @@
   width: 32px !important;
   height: 32px !important;
   padding: 0 !important;
-}
-
-/* On wide cards, do not use the old row layout inside compact card grid. */
-[data-testid^="invoice-card-"] .xl\:flex-row {
-  flex-direction: column !important;
 }
 
 @media (max-width: 680px) {
