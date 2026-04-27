@@ -172,11 +172,11 @@ function firstTrigger(rule) {
 function Badge({ enabled }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide ring-1 ${
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ring-1 ${
         enabled ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-amber-50 text-amber-700 ring-amber-200"
       }`}
     >
-      {enabled ? "Enabled" : "Paused"}
+      {enabled ? "On" : "Paused"}
     </span>
   );
 }
@@ -192,6 +192,9 @@ function AutomationPage() {
   const [testingId, setTestingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [showBuilder, setShowBuilder] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showRuns, setShowRuns] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -267,6 +270,8 @@ function AutomationPage() {
       enabled: true,
     });
     setEditingId(null);
+    setShowBuilder(true);
+    setShowTemplates(false);
     setError("");
     setNotice("Template loaded. Review details and save to create this workflow.");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -274,6 +279,7 @@ function AutomationPage() {
 
   const startEdit = (rule) => {
     setEditingId(rule.id);
+    setShowBuilder(true);
     setForm({
       name: rule.name || "",
       description: rule.description || "",
@@ -322,6 +328,7 @@ function AutomationPage() {
       }
 
       resetForm();
+      setShowBuilder(false);
       await load();
     } catch (err) {
       setError(err.message || "Workflow could not be saved.");
@@ -381,30 +388,38 @@ function AutomationPage() {
 
   return (
     <Layout>
-      <div className="bg-slate-100 px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl space-y-6 pb-10">
+      <div className="bg-slate-100 px-4 py-6 sm:px-6 lg:px-8" data-testid="automation-page">
+        <div className="mx-auto max-w-7xl space-y-5 pb-10">
           <section className="overflow-hidden rounded-3xl border border-slate-900/20 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-6 text-white shadow-2xl lg:p-8">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
               <div className="max-w-3xl">
                 <p className="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-300">Churvox automation</p>
                 <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Automation Command Centre</h1>
                 <p className="mt-3 text-sm leading-6 text-slate-200 sm:text-base">
-                  Automate jobs, quotes, invoices, payroll, and worker alerts with production-ready workflows designed for
-                  busy trade and service operations.
+                  Simple workflow rules for jobs, quotes, invoices, payroll, and worker alerts.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={load}
-                className="rounded-2xl border border-cyan-200/40 bg-cyan-400/15 px-5 py-3 text-sm font-semibold text-cyan-100 backdrop-blur transition hover:bg-cyan-300/20"
-              >
-                Refresh workflows
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowBuilder((old) => !old)}
+                  className="rounded-2xl border border-cyan-200/40 bg-cyan-400/15 px-5 py-3 text-sm font-semibold text-cyan-100 backdrop-blur transition hover:bg-cyan-300/20"
+                >
+                  {showBuilder ? "Close builder" : "+ New workflow"}
+                </button>
+                <button
+                  type="button"
+                  onClick={load}
+                  className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15"
+                >
+                  Refresh
+                </button>
+              </div>
             </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
               {[
-                { label: "Total rules", value: totalRules },
+                { label: "Total", value: totalRules },
                 { label: "Enabled", value: enabledRules },
                 { label: "Paused", value: pausedRules },
               ].map((stat) => (
@@ -424,17 +439,17 @@ function AutomationPage() {
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700">{notice}</div>
           ) : null}
 
-          <div className="grid gap-6 xl:grid-cols-[390px_1fr]">
-            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60">
-              <div className="mb-5 flex items-center justify-between gap-3">
+          {showBuilder ? (
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
+              <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-950">Build workflow</h2>
-                  <p className="mt-1 text-sm text-slate-500">Create and ship automation logic with clean controls.</p>
+                  <h2 className="text-lg font-bold text-slate-950">{editingRule ? "Edit workflow" : "Build workflow"}</h2>
+                  <p className="mt-1 text-sm text-slate-500">Choose a trigger, choose an action, then save.</p>
                 </div>
                 {saving ? <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Saving…</span> : null}
               </div>
 
-              <form onSubmit={saveRule} className="space-y-4">
+              <form onSubmit={saveRule} className="grid gap-4 lg:grid-cols-[1fr_1fr_220px] lg:items-end">
                 <label className="block text-sm font-semibold text-slate-700">
                   Name
                   <input
@@ -447,55 +462,16 @@ function AutomationPage() {
 
                 <label className="block text-sm font-semibold text-slate-700">
                   Description
-                  <textarea
+                  <input
                     value={form.description}
                     onChange={(event) => setForm((old) => ({ ...old, description: event.target.value }))}
-                    placeholder="What should happen and why this helps your team."
-                    rows={3}
+                    placeholder="Small note for this workflow"
                     className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-950 outline-none ring-blue-500 focus:bg-white focus:ring-2"
                   />
                 </label>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block text-sm font-semibold text-slate-700">
-                    Trigger
-                    <select
-                      value={form.trigger}
-                      onChange={(event) => setForm((old) => ({ ...old, trigger: event.target.value }))}
-                      className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-950 outline-none ring-blue-500 focus:bg-white focus:ring-2"
-                    >
-                      {!triggerOptions.some((option) => option.value === form.trigger) ? (
-                        <option value={form.trigger}>{prettifyToken(form.trigger)}</option>
-                      ) : null}
-                      {triggerOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="block text-sm font-semibold text-slate-700">
-                    Action
-                    <select
-                      value={form.action}
-                      onChange={(event) => setForm((old) => ({ ...old, action: event.target.value }))}
-                      className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-950 outline-none ring-blue-500 focus:bg-white focus:ring-2"
-                    >
-                      {!actionOptions.some((option) => option.value === form.action) ? (
-                        <option value={form.action}>{prettifyToken(form.action)}</option>
-                      ) : null}
-                      {actionOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-
                 <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
-                  Enable workflow
+                  Enabled
                   <input
                     type="checkbox"
                     checked={form.enabled}
@@ -504,187 +480,179 @@ function AutomationPage() {
                   />
                 </label>
 
-                <div className="grid grid-cols-2 gap-3 pt-2">
+                <label className="block text-sm font-semibold text-slate-700">
+                  Trigger
+                  <select
+                    value={form.trigger}
+                    onChange={(event) => setForm((old) => ({ ...old, trigger: event.target.value }))}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-950 outline-none ring-blue-500 focus:bg-white focus:ring-2"
+                  >
+                    {!triggerOptions.some((option) => option.value === form.trigger) ? (
+                      <option value={form.trigger}>{prettifyToken(form.trigger)}</option>
+                    ) : null}
+                    {triggerOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block text-sm font-semibold text-slate-700">
+                  Action
+                  <select
+                    value={form.action}
+                    onChange={(event) => setForm((old) => ({ ...old, action: event.target.value }))}
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-950 outline-none ring-blue-500 focus:bg-white focus:ring-2"
+                  >
+                    {!actionOptions.some((option) => option.value === form.action) ? (
+                      <option value={form.action}>{prettifyToken(form.action)}</option>
+                    ) : null}
+                    {actionOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="submit"
                     disabled={saving}
                     className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {saving ? "Saving..." : editingRule ? "Save changes" : "Create workflow"}
+                    {saving ? "Saving..." : editingRule ? "Save" : "Create"}
                   </button>
-                  {editingRule ? (
-                    <button
-                      type="button"
-                      onClick={resetForm}
-                      className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                    >
-                      Cancel edit
-                    </button>
-                  ) : (
-                    <div />
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetForm();
+                      setShowBuilder(false);
+                    }}
+                    className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </form>
             </section>
+          ) : null}
 
-            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60">
-              <div className="mb-5 flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-950">Live workflows</h2>
-                  <p className="mt-1 text-sm text-slate-500">All active and paused workflow rules in your workspace.</p>
-                </div>
-              </div>
-
-              {loading ? (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">Loading automation rules...</div>
-              ) : rules.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-gradient-to-b from-slate-50 to-white p-8 text-center">
-                  <h3 className="text-lg font-bold text-slate-950">No workflows yet</h3>
-                  <p className="mt-2 text-sm text-slate-500">Use the automation kit below to load a polished starter template.</p>
-                </div>
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-                  {rules.map((rule) => (
-                    <article key={rule.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-slate-100">
-                      <div className="flex items-start justify-between gap-3">
-                        <h3 className="text-base font-bold text-slate-950">{rule.name || "Untitled workflow"}</h3>
-                        <Badge enabled={rule.enabled !== false} />
-                      </div>
-
-                      {rule.description ? <p className="mt-2 text-sm leading-6 text-slate-600">{rule.description}</p> : null}
-
-                      <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-500">
-                        <div className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
-                          {prettifyToken(firstTrigger(rule))}
-                        </div>
-                        <span className="text-slate-400">→</span>
-                        <div className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
-                          {prettifyToken(firstAction(rule))}
-                        </div>
-                      </div>
-
-                      <div className="mt-4 grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => startEdit(rule)}
-                          className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => toggleRule(rule)}
-                          className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                        >
-                          {rule.enabled === false ? "Enable" : "Pause"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => testRule(rule)}
-                          disabled={testingId === rule.id}
-                          className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
-                        >
-                          {testingId === rule.id ? "Testing..." : "Test"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDeleteId(rule.id)}
-                          disabled={deletingId === rule.id}
-                          className="rounded-xl bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
-                        >
-                          {deletingId === rule.id ? "Deleting..." : "Delete"}
-                        </button>
-                      </div>
-
-                      {confirmDeleteId === rule.id ? (
-                        <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3">
-                          <p className="text-xs font-medium text-red-700">Delete this workflow? This action cannot be undone.</p>
-                          <div className="mt-2 flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => deleteRule(rule)}
-                              className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white"
-                            >
-                              Confirm delete
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmDeleteId(null)}
-                              className="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : null}
-                    </article>
-                  ))}
-                </div>
-              )}
-            </section>
-          </div>
-
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60">
-            <div className="flex flex-wrap items-end justify-between gap-3">
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-bold text-slate-950">Automation kit</h2>
-                <p className="mt-1 text-sm text-slate-500">Choose a ready-made workflow and load it into the builder instantly.</p>
+                <h2 className="text-lg font-bold text-slate-950">Live workflows</h2>
+                <p className="mt-1 text-sm text-slate-500">Active and paused rules in this workspace.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowTemplates((old) => !old)}
+                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-white"
+                >
+                  {showTemplates ? "Hide templates" : "Templates"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRuns((old) => !old)}
+                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-white"
+                >
+                  {showRuns ? "Hide runs" : "Recent runs"}
+                </button>
               </div>
             </div>
 
-            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {templateChoices.map((template) => (
-                <button
-                  key={template.id || template.name}
-                  type="button"
-                  onClick={() => applyTemplate(template)}
-                  className="group rounded-2xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
-                >
-                  <p className="text-sm font-bold text-slate-950">{displayText(template.name)}</p>
-                  <p className="mt-1 text-xs leading-5 text-slate-500">{displayText(template.description)}</p>
-                  <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400 group-hover:text-slate-600">
-                    {prettifyToken(template.trigger || template.event || template.type)} → {prettifyToken(template.action || template.actions)}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </section>
+            {loading ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">Loading automation rules...</div>
+            ) : rules.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-gradient-to-b from-slate-50 to-white p-8 text-center">
+                <h3 className="text-lg font-bold text-slate-950">No workflows yet</h3>
+                <p className="mt-2 text-sm text-slate-500">Open templates or create your first workflow.</p>
+              </div>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+                {rules.map((rule) => (
+                  <article key={rule.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-100">
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="text-sm font-black leading-5 text-slate-950">{rule.name || "Untitled workflow"}</h3>
+                      <Badge enabled={rule.enabled !== false} />
+                    </div>
 
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/60">
-            <h2 className="text-xl font-bold text-slate-950">Recent automation runs</h2>
-            <p className="mt-1 text-sm text-slate-500">Latest test and execution activity from your current workspace.</p>
+                    <div className="mt-3 flex items-center gap-2 text-[11px] font-bold text-slate-500">
+                      <div className="min-w-0 flex-1 truncate rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+                        {prettifyToken(firstTrigger(rule))}
+                      </div>
+                      <span className="text-slate-400">→</span>
+                      <div className="min-w-0 flex-1 truncate rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+                        {prettifyToken(firstAction(rule))}
+                      </div>
+                    </div>
 
-            <div className="mt-4 space-y-3">
-              {runs.length === 0 ? (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">No automation runs logged yet.</div>
-              ) : (
-                runs.slice(0, 10).map((run) => (
-                  <div key={run.id || run._id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <div className="text-sm font-bold text-slate-950">
-                          {displayText(run.rule_name || run.trigger || run.rule_id || "Automation run")}
-                        </div>
-                        <div className="mt-1 text-xs text-slate-500">
-                          {run.action || "action"} • {run.created_at || "unknown time"}
+                    <div className="mt-3 grid grid-cols-4 gap-2">
+                      <button type="button" onClick={() => startEdit(rule)} className="rounded-xl border border-slate-300 bg-white px-2 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">Edit</button>
+                      <button type="button" onClick={() => toggleRule(rule)} className="rounded-xl border border-slate-300 bg-white px-2 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">{rule.enabled === false ? "On" : "Pause"}</button>
+                      <button type="button" onClick={() => testRule(rule)} disabled={testingId === rule.id} className="rounded-xl bg-slate-900 px-2 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60">{testingId === rule.id ? "..." : "Test"}</button>
+                      <button type="button" onClick={() => setConfirmDeleteId(rule.id)} disabled={deletingId === rule.id} className="rounded-xl bg-red-600 px-2 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-60">Del</button>
+                    </div>
+
+                    {confirmDeleteId === rule.id ? (
+                      <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3">
+                        <p className="text-xs font-medium text-red-700">Delete this workflow?</p>
+                        <div className="mt-2 flex gap-2">
+                          <button type="button" onClick={() => deleteRule(rule)} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white">Confirm</button>
+                          <button type="button" onClick={() => setConfirmDeleteId(null)} className="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700">Cancel</button>
                         </div>
                       </div>
-                      <span
-                        className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-bold ${
-                          run.status === "success"
-                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-                            : "bg-red-50 text-red-700 ring-1 ring-red-200"
-                        }`}
-                      >
-                        {run.status || "logged"}
-                      </span>
-                    </div>
-                    {run.message ? <p className="mt-2 text-sm text-slate-600">{run.message}</p> : null}
-                  </div>
-                ))
-              )}
-            </div>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            )}
           </section>
+
+          {showTemplates ? (
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
+              <div>
+                <h2 className="text-lg font-bold text-slate-950">Templates</h2>
+                <p className="mt-1 text-sm text-slate-500">Pick one to load it into the builder.</p>
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {templateChoices.map((template) => (
+                  <button
+                    key={template.id || template.name}
+                    type="button"
+                    onClick={() => applyTemplate(template)}
+                    className="group rounded-2xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                  >
+                    <p className="text-sm font-bold text-slate-950">{displayText(template.name)}</p>
+                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{displayText(template.description)}</p>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {showRuns ? (
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
+              <h2 className="text-lg font-bold text-slate-950">Recent runs</h2>
+              <div className="mt-4 space-y-3">
+                {runs.length === 0 ? (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">No automation runs logged yet.</div>
+                ) : (
+                  runs.slice(0, 10).map((run) => (
+                    <div key={run.id || run._id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <div className="text-sm font-bold text-slate-950">{displayText(run.rule_name || run.trigger || run.rule_id || "Automation run")}</div>
+                          <div className="mt-1 text-xs text-slate-500">{run.action || "action"} • {run.created_at || "unknown time"}</div>
+                        </div>
+                        <span className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-bold ${run.status === "success" ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "bg-red-50 text-red-700 ring-1 ring-red-200"}`}>{run.status || "logged"}</span>
+                      </div>
+                      {run.message ? <p className="mt-2 text-sm text-slate-600">{run.message}</p> : null}
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          ) : null}
         </div>
       </div>
     </Layout>
