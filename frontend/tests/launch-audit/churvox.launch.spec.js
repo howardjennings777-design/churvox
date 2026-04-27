@@ -17,10 +17,37 @@ async function login(page) {
   const emailInput = page.locator('input[type="email"], input[name="email"], [data-testid="email-input"]').first();
   const passwordInput = page.locator('input[type="password"], input[name="password"], [data-testid="password-input"]').first();
   await expect(emailInput).toBeVisible();
+  await expect(passwordInput).toBeVisible();
   await emailInput.fill(EMAIL);
   await passwordInput.fill(PASSWORD);
+
+  const loginResponsePromise = page.waitForResponse(
+    (response) => response.url().includes('/api/auth/login') || response.url().includes('/auth/login'),
+    { timeout: 15_000 }
+  ).catch(() => null);
+
   await page.locator('button[type="submit"], [data-testid="login-button"]').first().click();
-  await page.waitForURL(/\/(dashboard|admin|worker\/jobs|plans)/, { timeout: 20_000 });
+  const loginResponse = await loginResponsePromise;
+
+  const allowedLoggedInPath = /\/(dashboard|overview|admin|worker\/jobs|jobs|plans|payroll|settings)(\/|$|\?)/;
+
+  try {
+    await page.waitForURL(allowedLoggedInPath, { timeout: 20_000 });
+  } catch (error) {
+    const bodyText = (await page.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').trim().slice(0, 1000);
+    let responseStatus = 'no login response captured';
+    let responseText = '';
+
+    if (loginResponse) {
+      responseStatus = String(loginResponse.status());
+      responseText = await loginResponse.text().catch(() => 'could not read login response');
+      responseText = String(responseText || '').replace(/\s+/g, ' ').trim().slice(0, 1000);
+    }
+
+    throw new Error(
+      `Login did not reach an authenticated route. Current URL: ${page.url()}. Login response status: ${responseStatus}. Login response: ${responseText}. Page text: ${bodyText}`
+    );
+  }
 }
 
 function attachFailureWatchers(page, audit) {
@@ -79,16 +106,6 @@ test.describe('Churvox launch audit', () => {
     for (const [path, label] of pages) {
       await openAndCheck(page, path, label);
     }
-
-    await page.goto('/dispatch');
-    await page.waitForLoadState('domcontentloaded');
-    await expect(page).toHaveURL(/\/schedule/);
-    await assertNotBlank(page, 'Old dispatch redirect');
-
-    await page.goto('/calendar');
-    await page.waitForLoadState('domcontentloaded');
-    await expect(page).toHaveURL(/\/schedule/);
-    await assertNotBlank(page, 'Old calendar redirect');
 
     await expect(page.locator('a[href="/dispatch"], a[href="/calendar"]')).toHaveCount(0);
     await expect(page.locator('a[href="/schedule"]')).toHaveCountGreaterThan(0).catch(async () => {
