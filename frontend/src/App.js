@@ -212,13 +212,13 @@ function App() {
 
           <Route path="/owner-login" element={<Navigate to="/login" replace />} />
           <Route path="/admin/login" element={<Navigate to="/login" replace />} />
-          <Route path="/owner" element={<Navigate to="/admin" replace />} />
+          <Route path="/owner" element={<Navigate to="/dashboard" replace />} />
           <Route path="/owner/login" element={<Navigate to="/login" replace />} />
           <Route path="/dispatch" element={<Navigate to="/schedule" replace />} />
           <Route path="/calendar" element={<Navigate to="/schedule" replace />} />
 
           <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-          <Route path="/owner/dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
+          <Route path="/owner/dashboard" element={<Navigate to="/dashboard" replace />} />
           <Route path="/platform-dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
           <Route path="/app-owner" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
           <Route path="/admin/launch-audit" element={<PlatformAdminRoute><LaunchAuditPage /></PlatformAdminRoute>} />
