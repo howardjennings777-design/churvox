@@ -75,6 +75,7 @@ export default function JobDetailPage() {
 
   const [job, setJob] = useState(null);
   const [workers, setWorkers] = useState([]);
+  const [accounting, setAccounting] = useState(null);
   const [selectedWorker, setSelectedWorker] = useState("");
   const [pageLoading, setPageLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -90,9 +91,10 @@ export default function JobDetailPage() {
     setError("");
 
     try {
-      const [jobRes, workersRes] = await Promise.all([
+      const [jobRes, workersRes, accountingRes] = await Promise.all([
         get(`/jobs/${id}`),
         get("/team/workers"),
+        get("/accounting/settings"),
       ]);
 
       if (!jobRes?.success || !jobRes?.data) {
@@ -115,6 +117,7 @@ export default function JobDetailPage() {
       } else {
         setWorkers([]);
       }
+      if (accountingRes?.success) setAccounting(accountingRes.data || null);
     } catch {
       setError("Failed to load job");
       setJob(null);
@@ -191,10 +194,10 @@ export default function JobDetailPage() {
     try {
       const res = await post(`/jobs/${id}/create-draft-invoice`);
       if (res?.success && res?.data?.invoice_id) {
-        toast.success("Draft invoice created");
+        toast.success(res?.data?.message || "Draft invoice created");
         navigate(`/invoices/${res.data.invoice_id}`);
       } else if (res?.success && res?.invoice_id) {
-        toast.success("Draft invoice ready");
+        toast.success(res?.message || "Draft invoice ready");
         navigate(`/invoices/${res.invoice_id}`);
       } else {
         toast.error(safeText(res?.error, "Failed to create draft invoice"));
@@ -280,6 +283,7 @@ export default function JobDetailPage() {
 
 
   const currentStatus = job?.status || "assigned";
+  const invoiceMode = accounting?.invoice_mode || "churvox_only";
   const userRole = String(user?.role || "").trim().toLowerCase();
   const isOwnerView =
     userRole === "owner" ||
@@ -316,7 +320,7 @@ export default function JobDetailPage() {
                 </Button>
                 {currentStatus === "completed" && !job?.invoice_id && (
                   <Button onClick={handleCreateDraftInvoice} className="bg-blue-600 hover:bg-blue-700 text-white">
-                    Create Draft Invoice
+                    {invoiceMode === "myob_external" ? "Prepare billing draft for MYOB" : "Create Draft Invoice"}
                   </Button>
                 )}
                 {job?.invoice_id && (

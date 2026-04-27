@@ -14,11 +14,13 @@ export default function InvoiceDetailPage() {
   const navigate = useNavigate();
   const { get, post, del, loading } = useApi();
   const [invoice, setInvoice] = useState(null);
+  const [accounting, setAccounting] = useState(null);
 
   const fetchInvoice = useCallback(async () => {
-    const res = await get(`/invoices/${id}`);
+    const [res, accountingRes] = await Promise.all([get(`/invoices/${id}`), get("/accounting/settings")]);
     if (res.success) setInvoice(res.data);
     else navigate("/invoices");
+    if (accountingRes?.success) setAccounting(accountingRes.data || null);
   }, [get, id, navigate]);
 
   useEffect(() => { fetchInvoice(); }, [fetchInvoice]);
@@ -65,15 +67,19 @@ export default function InvoiceDetailPage() {
   };
 
   const handleMyobSync = async () => {
-    const res = await post(`/myob/sync/${id}`);
-    if (res.success) { toast.success("Invoice synced to MYOB (mock)"); setInvoice(res.data); }
-    else toast.error(res.error || "Failed to sync to MYOB");
+    const endpoint = String(invoice?.myob_sync_status || "") === "failed" ? `/invoices/${id}/myob-retry` : `/invoices/${id}/myob-sync`;
+    const res = await post(endpoint);
+    if (res.success) toast.success("MYOB sync updated");
+    else toast.error(res?.message || res?.error || "MYOB setup required");
+    await fetchInvoice();
   };
 
   if (!invoice) return <Layout><div className="p-6 flex items-center justify-center min-h-[50vh]"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" /></div></Layout>;
 
   const statusInfo = INVOICE_STATUSES.find((s) => s.value === invoice.status);
   const pricingLabel = { fixed: "Fixed", hourly: "Hourly", fixed_extras: "Fixed + Extras", hourly_extras: "Hourly + Extras" }[invoice.pricing_type] || "";
+  const mode = accounting?.invoice_mode || "churvox_only";
+  const myobConnected = Boolean(accounting?.myob_connected);
 
   return (
     <Layout>
@@ -167,34 +173,41 @@ export default function InvoiceDetailPage() {
               </div>
             )}
 
-            {/* MYOB Sync Status */}
+            {/* MYOB Accounting */}
             <div className="mt-4 pt-4 border-t border-slate-200" data-testid="myob-sync-section">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500">Invoice mode:</span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-slate-100 text-slate-700">{mode.replace("_", " ")}</span>
                   <span className="text-xs text-slate-500">MYOB:</span>
                   {(() => {
-                    const syncInfo = MYOB_SYNC_STATUSES[invoice.myob_sync_status] || MYOB_SYNC_STATUSES.not_synced;
+                    const syncKey = mode === "myob_external" ? "external" : (invoice.myob_sync_status || "not_synced");
+                    const syncInfo = MYOB_SYNC_STATUSES[syncKey] || MYOB_SYNC_STATUSES.not_synced;
                     return (
                       <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${syncInfo.bg} ${syncInfo.color}`} data-testid="myob-sync-badge">
                         {syncInfo.label}
                       </span>
                     );
                   })()}
-                  {invoice.myob_id && <span className="text-[10px] text-slate-500">{invoice.myob_id}</span>}
+                  {invoice.myob_invoice_number && <span className="text-[10px] text-slate-500">#{invoice.myob_invoice_number}</span>}
                 </div>
-                {invoice.myob_sync_status !== "synced" && (
-                  <Button variant="outline" size="sm" onClick={handleMyobSync} disabled={loading}
+                {(mode === "myob_sync" || mode === "myob_external") && (
+                  <Button variant="outline" size="sm" onClick={handleMyobSync} disabled={loading || !myobConnected}
                     className="border-slate-200 text-slate-500 hover:text-slate-900 hover:border-blue-600/50 text-xs" data-testid="sync-to-myob-button">
-                    <RefreshCw size={12} className="mr-1" /> Sync to MYOB
+                    <RefreshCw size={12} className="mr-1" /> {myobConnected ? (String(invoice.myob_sync_status) === "failed" ? "Retry sync" : "Sync to MYOB") : "Setup MYOB"}
                   </Button>
                 )}
               </div>
-              {invoice.myob_last_sync && (
-                <p className="text-[10px] text-slate-500 mt-1">Last synced: {formatDate(invoice.myob_last_sync)}</p>
+              {invoice.myob_payment_status && (
+                <p className="text-[11px] text-slate-500 mt-1">MYOB payment status: {invoice.myob_payment_status}</p>
+              )}
+              {invoice.myob_last_synced_at && (
+                <p className="text-[10px] text-slate-500 mt-1">Last synced: {formatDate(invoice.myob_last_synced_at)}</p>
               )}
               {invoice.myob_error && (
                 <p className="text-[10px] text-red-400 mt-1">{invoice.myob_error}</p>
               )}
+              {invoice.myob_invoice_url && <a href={invoice.myob_invoice_url} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline mt-1 inline-block">Open in MYOB</a>}
             </div>
           </CardContent>
         </Card>

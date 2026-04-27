@@ -61,10 +61,11 @@ export const INVOICE_STATUSES = [
 ];
 
 export const MYOB_SYNC_STATUSES = {
-  not_synced: { label: "Not Synced", color: "text-churvox-muted", bg: "bg-slate-500/20" },
-  syncing: { label: "Syncing", color: "text-yellow-400", bg: "bg-yellow-500/20" },
-  synced: { label: "Synced", color: "text-green-400", bg: "bg-green-500/20" },
-  sync_failed: { label: "Sync Failed", color: "text-red-400", bg: "bg-red-500/20" },
+  not_synced: { label: "Not synced", color: "text-slate-700", bg: "bg-slate-100" },
+  setup_required: { label: "Setup required", color: "text-amber-800", bg: "bg-amber-100" },
+  synced: { label: "Synced", color: "text-green-800", bg: "bg-green-100" },
+  failed: { label: "Failed", color: "text-red-800", bg: "bg-red-100" },
+  external: { label: "External", color: "text-blue-800", bg: "bg-blue-100" },
 };
 
 export const JOB_TYPES_BY_CATEGORY = {

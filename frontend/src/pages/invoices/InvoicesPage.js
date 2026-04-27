@@ -94,6 +94,7 @@ const getSortValue = (sortBy, invoice) => {
 export default function InvoicesPage() {
   const { get, del, post, loading } = useApi();
   const [invoices, setInvoices] = useState([]);
+  const [accounting, setAccounting] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
@@ -104,10 +105,9 @@ export default function InvoicesPage() {
   }, []);
 
   const loadInvoices = async () => {
-    const result = await get("/invoices");
-    if (result.success) {
-      setInvoices(safeArray(result.data));
-    }
+    const [result, accountingRes] = await Promise.all([get("/invoices"), get("/accounting/settings")]);
+    if (result.success) setInvoices(safeArray(result.data));
+    if (accountingRes?.success) setAccounting(accountingRes.data || null);
   };
 
   const handleDelete = async () => {
@@ -140,6 +140,14 @@ export default function InvoicesPage() {
     } else {
       toast.error(result.error);
     }
+  };
+
+  const handleSyncMyob = async (invoiceId, retry = false) => {
+    const endpoint = retry ? `/invoices/${invoiceId}/myob-retry` : `/invoices/${invoiceId}/myob-sync`;
+    const result = await post(endpoint);
+    if (result?.success) toast.success("MYOB sync updated");
+    else toast.error(result?.message || result?.error || "MYOB sync needs setup");
+    loadInvoices();
   };
 
   const invoiceMetrics = useMemo(() => {
@@ -202,6 +210,8 @@ export default function InvoicesPage() {
       });
   }, [invoices, searchTerm, statusFilter, sortBy]);
 
+  const mode = accounting?.invoice_mode || "churvox_only";
+  const myobConnected = Boolean(accounting?.myob_connected);
   return (
     <Layout>
       <div className="cx-page space-y-6 animate-in bg-[#f8f6f1] min-h-full" data-testid="invoices-page">
@@ -211,10 +221,17 @@ export default function InvoicesPage() {
             <p className="cx-page-subtitle">Track payments, manage draft invoices, and keep cashflow moving.</p>
           </div>
           <div className="cx-toolbar w-full xl:w-auto">
-            <Link to="/invoices/new" className="cx-button-primary" data-testid="add-invoice-button">
-              <Plus className="mr-2 h-4 w-4" />
-              New Invoice
-            </Link>
+            {mode === "myob_external" ? (
+              <button type="button" className="cx-button-secondary" disabled title="Create invoices in MYOB, then sync them back to Churvox.">
+                <Plus className="mr-2 h-4 w-4" />
+                Create in MYOB
+              </button>
+            ) : (
+              <Link to="/invoices/new" className="cx-button-primary" data-testid="add-invoice-button">
+                <Plus className="mr-2 h-4 w-4" />
+                New Invoice
+              </Link>
+            )}
             <button type="button" onClick={() => setStatusFilter("overdue")} className="cx-button-secondary">
               <AlertTriangle className="mr-2 h-4 w-4" />
               View Overdue
@@ -355,21 +372,21 @@ export default function InvoicesPage() {
                           <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#e7e0d3] bg-[#fffdfa] text-slate-600">
                             {getPaymentLabel(invoice)}
                           </span>
-                          {invoice.myob_sync_status && invoice.myob_sync_status !== "not_synced" && (() => {
-                            const syncInfo = MYOB_SYNC_STATUSES[invoice.myob_sync_status];
-                            return syncInfo ? (
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${syncInfo.bg} ${syncInfo.color}`} data-testid={`myob-badge-${invoice.id}`}>
-                                MYOB {syncInfo.label}
-                              </span>
-                            ) : null;
+                          {(mode === "myob_sync" || mode === "myob_external") && (() => {
+                            const syncKey = mode === "myob_external" ? "external" : String(invoice.myob_sync_status || "not_synced");
+                            const syncInfo = MYOB_SYNC_STATUSES[syncKey] || MYOB_SYNC_STATUSES.not_synced;
+                            return <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${syncInfo.bg} ${syncInfo.color}`} data-testid={`myob-badge-${invoice.id}`}>MYOB {syncInfo.label}</span>;
                           })()}
+                          {invoice.myob_invoice_number && <span className="text-[11px] text-slate-500">#{invoice.myob_invoice_number}</span>}
                         </div>
                         <p className="text-sm text-slate-900 font-medium">{safeText(invoice.customer_name, "Unknown client")}</p>
                         {jobTitle && <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{safeText(jobTitle)}</p>}
                         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                           <span>Created {formatDate(invoice.created_at) || "—"}</span>
                           <span>Due {formatDate(invoice.due_date) || "—"}</span>
+                          {invoice.myob_last_synced_at && <span>MYOB sync {formatDate(invoice.myob_last_synced_at)}</span>}
                         </div>
+                        {invoice.myob_error && (mode === "myob_sync" || mode === "myob_external") && <p className="text-xs text-red-700 mt-2">{safeText(invoice.myob_error)}</p>}
                       </div>
 
                       <div className="flex flex-col sm:items-end gap-2">
@@ -406,6 +423,16 @@ export default function InvoicesPage() {
                               <Link2 className="h-4 w-4 mr-1" />
                               Pay link
                             </a>
+                          )}
+                          {(mode === "myob_sync" || mode === "myob_external") && (
+                            <Button
+                              size="sm"
+                              className="cx-button-secondary"
+                              disabled={!myobConnected}
+                              onClick={() => handleSyncMyob(invoice.id, String(invoice.myob_sync_status) === "failed")}
+                            >
+                              {myobConnected ? (String(invoice.myob_sync_status) === "failed" ? "Retry sync" : "Sync to MYOB") : "Setup MYOB"}
+                            </Button>
                           )}
 
                           <DropdownMenu>
