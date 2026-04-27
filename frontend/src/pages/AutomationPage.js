@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import Layout from "../components/Layout";
 import API_BASE from "../lib/apiBase";
 
 
@@ -281,6 +282,7 @@ function AutomationPage() {
   };
 
   return (
+    <Layout>
     <div className="min-h-screen bg-background px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
         <div className="rounded-3xl border border-border bg-white p-6 shadow-sm">
@@ -569,6 +571,7 @@ function AutomationPage() {
         </div>
       </div>
     </div>
+    </Layout>
   );
 }
 
