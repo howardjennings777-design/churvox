@@ -57,6 +57,11 @@ class _ServerBootLoader(importlib.abc.Loader):
             install_notifications_boot(module)
         except Exception as exc:
             print(f"NOTIFICATIONS_BOOT_INSTALL_ERR {exc}")
+        try:
+            from job_invoice_boot import install_job_invoice_boot
+            install_job_invoice_boot(module)
+        except Exception as exc:
+            print(f"JOB_INVOICE_BOOT_INSTALL_ERR {exc}")
 
 
 class _ServerBootFinder(importlib.abc.MetaPathFinder):
