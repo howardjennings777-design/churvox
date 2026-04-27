@@ -93,6 +93,18 @@ function computeFallbackSummary({ jobs, invoices, quotes, clients, workers, rang
   };
 }
 
+function FilterButton({ active, children, onClick }) {
+  return (
+    <button
+      type="button"
+      className={`rounded-full px-4 py-2 text-sm font-black transition ${active ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "border border-blue-100 bg-white text-blue-700 hover:bg-blue-50"}`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
 function StatTile({ label, value, icon: Icon, tone = "blue" }) {
   const tones = {
     blue: "bg-blue-50 text-blue-700 border-blue-100",
@@ -102,7 +114,7 @@ function StatTile({ label, value, icon: Icon, tone = "blue" }) {
     slate: "bg-slate-50 text-slate-700 border-slate-100",
   };
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.07)]">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.13em] text-slate-500">{label}</p>
@@ -119,7 +131,7 @@ function StatTile({ label, value, icon: Icon, tone = "blue" }) {
 function BreakdownCard({ title, items, empty }) {
   const entries = Object.entries(items || {});
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.07)]">
       <p className="text-sm font-black text-slate-950">{title}</p>
       <div className="mt-3 space-y-2">
         {entries.map(([status, count]) => (
@@ -145,6 +157,7 @@ export default function ReportsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setSummary({});
     const [summaryRes, accountingRes, jobsRes, invoicesRes, quotesRes, clientsRes, workersRes] = await Promise.allSettled([
       get(`/reports/summary?range=${range}`),
       get("/accounting/settings"),
@@ -187,44 +200,53 @@ export default function ReportsPage() {
     ["MYOB issues", safeNumber(summary?.myob_sync_issues, 0), AlertTriangle, safeNumber(summary?.myob_sync_issues, 0) ? "red" : "slate"],
   ], [summary]);
 
+  const launchHealth = useMemo(() => [
+    ["Invoices unpaid", formatCurrency(summary?.outstanding_invoices)],
+    ["Quote win rate", `${Math.round(safeNumber(summary?.quote_win_rate, 0) * 100)}%`],
+    ["Payroll hours source", `${safeNumber(summary?.payroll_hours_summary || summary?.worker_hours, 0)}h`],
+    ["Data mode", dataSource],
+  ], [summary, dataSource]);
+
   return (
     <Layout>
-      <div className="cx-page">
-        <div className="cx-page-hero">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
+      <div className="cx-page reports-premium-page" data-testid="reports-page">
+        <div className="cx-page-hero reports-hero">
+          <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div className="min-w-0">
               <h1 className="cx-page-title">Reports</h1>
-              <p className="cx-page-subtitle">Live business analytics for revenue, job performance, invoice risk, quote conversion, clients, payroll and MYOB health.</p>
-              <p className="mt-2 text-xs font-semibold text-blue-100">Source: {dataSource}{lastUpdated ? ` • updated ${lastUpdated.toLocaleTimeString()}` : ""}</p>
+              <p className="cx-page-subtitle">Live analytics for revenue, jobs, invoices, quotes, clients, payroll and MYOB health.</p>
+              <p className="mt-2 text-xs font-bold text-slate-500">Source: {dataSource}{lastUpdated ? ` • updated ${lastUpdated.toLocaleTimeString()}` : ""}</p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button className={`rounded-full px-4 py-2 text-sm font-black ${range === "this_month" ? "bg-blue-600 text-white" : "bg-white/10 text-white"}`} onClick={() => setRange("this_month")}>This month</button>
-              <button className={`rounded-full px-4 py-2 text-sm font-black ${range === "last_month" ? "bg-blue-600 text-white" : "bg-white/10 text-white"}`} onClick={() => setRange("last_month")}>Last month</button>
-              <button className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-black text-white" onClick={load}><RefreshCw className={`mr-1 inline h-4 w-4 ${loading ? "animate-spin" : ""}`} />Refresh</button>
+            <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
+              <FilterButton active={range === "this_month"} onClick={() => setRange("this_month")}>This month</FilterButton>
+              <FilterButton active={range === "last_month"} onClick={() => setRange("last_month")}>Last month</FilterButton>
+              <button className="rounded-full border border-blue-100 bg-white px-4 py-2 text-sm font-black text-blue-700 shadow-sm hover:bg-blue-50" onClick={load}>
+                <RefreshCw className={`mr-1 inline h-4 w-4 ${loading ? "animate-spin" : ""}`} />Refresh
+              </button>
             </div>
           </div>
           {(accounting?.invoice_mode === "myob_sync" || accounting?.invoice_mode === "myob_external") && (
-            <p className="mt-3 text-xs font-semibold text-blue-100">Accounting status is synced from MYOB when connected.</p>
+            <p className="mt-3 text-xs font-semibold text-slate-500">Accounting status is synced from MYOB when connected.</p>
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div key={`cards-${range}-${lastUpdated?.getTime() || 0}`} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {cards.map(([label, value, Icon, tone]) => <StatTile key={label} label={label} value={value} icon={Icon} tone={tone} />)}
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
+        <div key={`breakdowns-${range}-${lastUpdated?.getTime() || 0}`} className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
           <BreakdownCard title="Jobs by status" items={summary?.jobs_by_status} empty="No jobs in this period." />
           <BreakdownCard title="Invoices by status" items={summary?.invoice_status_breakdown} empty="No invoices yet." />
           <BreakdownCard title="Quotes by status" items={summary?.quote_status_breakdown} empty="No quotes yet." />
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div key={`bottom-${range}-${lastUpdated?.getTime() || 0}`} className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.07)]">
             <p className="text-sm font-black text-slate-950">Top clients</p>
             <div className="mt-3 space-y-2">
-              {safeArray(summary?.top_clients).map((client) => (
-                <div key={`${client.client_id}-${client.client_name}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                  <span className="min-w-0 truncate text-sm font-semibold text-slate-700">{safeText(client.client_name, "Unknown client")}</span>
+              {safeArray(summary?.top_clients).map((client, index) => (
+                <div key={`${range}-${client.client_id}-${client.client_name}-${index}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                  <span className="min-w-0 truncate text-sm font-semibold text-slate-700">{index + 1}. {safeText(client.client_name, "Unknown client")}</span>
                   <span className="shrink-0 text-sm font-black text-slate-950">{formatCurrency(safeNumber(client.revenue, 0))} • {safeNumber(client.jobs, 0)} jobs</span>
                 </div>
               ))}
@@ -232,13 +254,15 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.07)] reports-health-card">
             <p className="text-sm font-black text-slate-950">Launch health</p>
             <div className="mt-3 grid gap-2">
-              <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700">Invoices unpaid: <strong>{formatCurrency(summary?.outstanding_invoices)}</strong></div>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700">Quote win rate: <strong>{Math.round(safeNumber(summary?.quote_win_rate, 0) * 100)}%</strong></div>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700">Payroll hours source: <strong>{safeNumber(summary?.payroll_hours_summary || summary?.worker_hours, 0)}h</strong></div>
-              <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700">Data mode: <strong>{dataSource}</strong></div>
+              {launchHealth.map(([label, value]) => (
+                <div key={`${range}-${label}-${value}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                  <span>{label}</span>
+                  <strong className="text-slate-950">{value}</strong>
+                </div>
+              ))}
             </div>
           </div>
         </div>
