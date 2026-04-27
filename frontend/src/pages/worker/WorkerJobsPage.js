@@ -28,8 +28,8 @@ export default function WorkerJobsPage() {
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-[#0f1d35] border-b border-slate-800 px-4 py-4 sticky top-0 z-10">
+    <div className="chx-worker-shell">
+      <header className="chx-worker-header px-4 py-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Assigned Work</h1>
@@ -58,7 +58,7 @@ export default function WorkerJobsPage() {
               <Link
                 key={id}
                 to={`/worker/jobs/${id}`}
-                className="block bg-white rounded-2xl border border-border p-4 hover:border-blue-300 transition-colors shadow-sm"
+                className="block chx-worker-card p-4 hover:border-blue-300 transition-colors"
                 data-testid={`worker-job-${id}`}
               >
                 <div className="flex items-start justify-between gap-3">
