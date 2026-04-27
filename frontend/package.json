@@ -61,6 +61,7 @@
     "test": "craco test",
     "audit:install": "playwright install chromium",
     "audit:launch": "playwright test --config=playwright.config.js",
+    "audit:deep": "playwright test --config=playwright.deep.config.js",
     "audit:headed": "playwright test --config=playwright.config.js --headed",
     "render-build": "npm install --legacy-peer-deps && npm run build"
   },
