@@ -575,3 +575,38 @@ img[src*="Logo"],
     max-height: 82px !important;
   }
 }
+
+/* CHURVOX SIDEBAR TEXT VISIBILITY HOTFIX */
+[data-testid="desktop-sidebar"] nav a[data-nav="item"],
+[data-testid="desktop-sidebar"] nav a[data-nav="item"].border,
+[data-testid="desktop-sidebar"] nav a[data-nav="item"]:not(.active) {
+  background: rgba(255, 255, 255, 0.045) !important;
+  color: #dbeafe !important;
+  border-color: rgba(148, 163, 184, 0.12) !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+[data-testid="desktop-sidebar"] nav a[data-nav="item"] span,
+[data-testid="desktop-sidebar"] nav a[data-nav="item"] svg {
+  color: currentColor !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+[data-testid="desktop-sidebar"] nav a[data-nav="item"]:hover {
+  background: rgba(37, 99, 235, 0.18) !important;
+  color: #ffffff !important;
+}
+
+[data-testid="desktop-sidebar"] nav a[data-nav="item"].active {
+  background: linear-gradient(135deg, #2563eb, #38bdf8) !important;
+  color: #ffffff !important;
+  border-color: rgba(186, 230, 253, 0.48) !important;
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.36) !important;
+}
+
+[data-testid="desktop-sidebar"] nav a[data-nav="item"].active span,
+[data-testid="desktop-sidebar"] nav a[data-nav="item"].active svg {
+  color: #ffffff !important;
+}
