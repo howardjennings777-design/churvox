@@ -1,0 +1,220 @@
+/* Churvox Job Command Centre polish
+   Keeps the existing job logic intact while making the job detail page feel like a top-player workflow screen. */
+
+[data-testid="job-detail-page"] {
+  max-width: 1280px !important;
+  padding: 24px !important;
+}
+
+/* Hero / action header */
+[data-testid="job-detail-page"] > div:first-child {
+  position: relative !important;
+  overflow: hidden !important;
+  border-radius: 28px !important;
+  border: 1px solid rgba(186, 230, 253, 0.20) !important;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(56, 189, 248, 0.20), transparent 24rem),
+    radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.30), transparent 28rem),
+    linear-gradient(135deg, #07111f 0%, #0f172a 52%, #172554 100%) !important;
+  box-shadow: 0 24px 70px rgba(2, 6, 23, 0.22) !important;
+  color: #fff !important;
+  padding: 24px !important;
+  align-items: flex-end !important;
+}
+
+[data-testid="job-detail-page"] > div:first-child h1 {
+  color: #fff !important;
+  font-size: clamp(30px, 4vw, 44px) !important;
+  line-height: 1.05 !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.045em !important;
+}
+
+[data-testid="job-detail-page"] > div:first-child p {
+  color: #dbeafe !important;
+  font-weight: 750 !important;
+}
+
+[data-testid="job-detail-page"] > div:first-child p::before {
+  content: "Job command centre · ";
+  color: #67e8f9;
+  font-weight: 950;
+}
+
+[data-testid="job-detail-page"] > div:first-child .flex.gap-2 {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+}
+
+[data-testid="job-detail-page"] > div:first-child a,
+[data-testid="job-detail-page"] > div:first-child button {
+  height: 40px !important;
+  border-radius: 999px !important;
+  border-color: rgba(186, 230, 253, 0.26) !important;
+  background: rgba(255, 255, 255, 0.10) !important;
+  color: #fff !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  box-shadow: none !important;
+}
+
+[data-testid="job-detail-page"] > div:first-child button.bg-blue-600,
+[data-testid="job-detail-page"] > div:first-child button[class*="bg-blue"] {
+  background: #2563eb !important;
+  color: #fff !important;
+}
+
+/* Main cards */
+[data-testid="job-detail-page"] > .bg-white,
+[data-testid="job-detail-page"] .bg-white.border-slate-200.shadow-sm {
+  border-radius: 24px !important;
+  border: 1px solid rgba(15, 23, 42, 0.10) !important;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.065) !important;
+}
+
+[data-testid="job-detail-page"] [class*="CardContent"] {
+  padding: 20px !important;
+}
+
+[data-testid="job-detail-page"] .text-sm.font-semibold.text-slate-900,
+[data-testid="job-detail-page"] .text-slate-900.font-semibold {
+  font-size: 16px !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Job details grid turns into compact information tiles */
+[data-testid="job-detail-page"] .grid.grid-cols-1.md\:grid-cols-2.gap-4 > div,
+[data-testid="job-detail-page"] .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3.gap-4 > div {
+  border-radius: 16px !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  background: #f8fafc !important;
+  padding: 13px !important;
+}
+
+[data-testid="job-detail-page"] .text-xs.uppercase.tracking-wide.text-slate-500 {
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em !important;
+  color: #64748b !important;
+}
+
+[data-testid="job-detail-page"] .text-slate-900,
+[data-testid="job-detail-page"] .text-slate-700 {
+  font-weight: 750 !important;
+}
+
+/* Workflow / progress card should feel like an operations timeline. */
+[data-testid="job-detail-page"] > div:nth-child(3) .grid > div {
+  min-height: 78px !important;
+}
+
+[data-testid="job-detail-page"] > div:nth-child(3) .grid > div .text-slate-900 {
+  margin-top: 4px !important;
+}
+
+/* Text areas */
+[data-testid="job-detail-page"] textarea {
+  min-height: 110px !important;
+  border-radius: 18px !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  background: #f8fafc !important;
+  padding: 14px !important;
+  font-size: 14px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8) !important;
+}
+
+[data-testid="job-detail-page"] textarea:focus {
+  background: #fff !important;
+  border-color: #2563eb !important;
+  outline: 2px solid rgba(37, 99, 235, 0.18) !important;
+}
+
+/* Assign worker */
+[data-testid="job-detail-page"] [data-testid="assign-worker-select"] {
+  min-height: 46px !important;
+  border-radius: 16px !important;
+  background: #f8fafc !important;
+}
+
+[data-testid="job-detail-page"] [data-testid="confirm-assign-worker"],
+[data-testid="job-detail-page"] [data-testid="save-worker-notes-button"],
+[data-testid="job-detail-page"] [data-testid="save-employer-notes-btn"] {
+  border-radius: 999px !important;
+  font-weight: 900 !important;
+}
+
+/* Owner photo grid */
+[data-testid="owner-photos-card"] .grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+[data-testid^="open-job-photo-"] {
+  border-radius: 18px !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06) !important;
+}
+
+[data-testid^="open-job-photo-"] img {
+  height: 128px !important;
+}
+
+/* Status buttons */
+[data-testid="job-detail-page"] [data-testid^="status-btn-"] {
+  border-radius: 999px !important;
+  min-height: 40px !important;
+  font-weight: 900 !important;
+}
+
+/* Linked action links */
+[data-testid="job-detail-page"] a.text-blue-600,
+[data-testid="job-detail-page"] a.text-blue-700 {
+  font-weight: 900 !important;
+}
+
+/* Lightbox polish */
+[data-testid="job-photo-lightbox"] > div {
+  border-radius: 28px !important;
+  padding: 14px !important;
+}
+
+[data-testid="job-photo-lightbox"] img {
+  border-radius: 20px !important;
+}
+
+@media (min-width: 1024px) {
+  [data-testid="job-detail-page"] {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 20px !important;
+  }
+
+  [data-testid="job-detail-page"] > div:first-child,
+  [data-testid="job-detail-page"] > div:nth-child(2),
+  [data-testid="job-detail-page"] > div:nth-child(3),
+  [data-testid="job-detail-page"] > div:nth-child(4),
+  [data-testid="job-detail-page"] > div:nth-child(5) {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  [data-testid="job-detail-page"] {
+    padding: 16px !important;
+  }
+
+  [data-testid="job-detail-page"] > div:first-child {
+    border-radius: 22px !important;
+    padding: 20px !important;
+  }
+
+  [data-testid="job-detail-page"] > div:first-child .flex.gap-2 > * {
+    flex: 1 1 45% !important;
+  }
+
+  [data-testid="owner-photos-card"] .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
