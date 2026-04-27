@@ -88,6 +88,40 @@ function asList(payload, key) {
   return [];
 }
 
+function displayText(value) {
+  if (value === null || value === undefined || value === "") return "-";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map(displayText).filter(Boolean).join(", ") || "-";
+  }
+  if (typeof value === "object") {
+    return (
+      value.label ||
+      value.name ||
+      value.title ||
+      value.type ||
+      value.action ||
+      value.trigger ||
+      JSON.stringify(value)
+    );
+  }
+  return String(value);
+}
+
+function firstAction(rule) {
+  if (!rule) return "-";
+  if (rule.action) return displayText(rule.action);
+  if (Array.isArray(rule.actions) && rule.actions.length > 0) return displayText(rule.actions[0]);
+  return "-";
+}
+
+function firstTrigger(rule) {
+  if (!rule) return "-";
+  return displayText(rule.trigger || rule.event || rule.type);
+}
+
 function Badge({ enabled }) {
   return (
     <span
@@ -170,8 +204,8 @@ function AutomationPage() {
     setForm({
       name: template.name || "",
       description: template.description || "",
-      trigger: template.trigger || "job.completed",
-      action: template.action || "notification.create",
+      trigger: displayText(template.trigger || template.event || template.type || "job.completed"),
+      action: displayText(template.action || template.actions || "notification.create"),
       enabled: true,
     });
     setEditingId(null);
@@ -183,8 +217,8 @@ function AutomationPage() {
     setForm({
       name: rule.name || "",
       description: rule.description || "",
-      trigger: rule.trigger || "job.completed",
-      action: rule.action || "notification.create",
+      trigger: displayText(rule.trigger || rule.event || rule.type || "job.completed"),
+      action: firstAction(rule) === "-" ? "notification.create" : firstAction(rule),
       enabled: rule.enabled !== false,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -433,8 +467,8 @@ function AutomationPage() {
                       onClick={() => applyTemplate(template)}
                       className="w-full rounded-2xl border border-border bg-white p-4 text-left hover:border-cyan-200 hover:bg-cyan-50"
                     >
-                      <div className="text-sm font-bold text-slate-950">{template.name}</div>
-                      <div className="mt-1 text-xs leading-5 text-slate-500">{template.description}</div>
+                      <div className="text-sm font-bold text-slate-950">{displayText(template.name)}</div>
+                      <div className="mt-1 text-xs leading-5 text-slate-500">{displayText(template.description)}</div>
                     </button>
                   ))
                 )}
@@ -482,11 +516,11 @@ function AutomationPage() {
                           <div className="mt-4 grid gap-3 sm:grid-cols-2">
                             <div className="rounded-2xl bg-blue-50/60 p-3">
                               <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Trigger</div>
-                              <div className="mt-1 text-sm font-semibold text-slate-800">{rule.trigger}</div>
+                              <div className="mt-1 text-sm font-semibold text-slate-800">{firstTrigger(rule)}</div>
                             </div>
                             <div className="rounded-2xl bg-blue-50/60 p-3">
                               <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Action</div>
-                              <div className="mt-1 text-sm font-semibold text-slate-800">{rule.action}</div>
+                              <div className="mt-1 text-sm font-semibold text-slate-800">{firstAction(rule)}</div>
                             </div>
                           </div>
                         </div>
@@ -545,7 +579,7 @@ function AutomationPage() {
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <div className="text-sm font-bold text-slate-950">
-                            {run.rule_name || run.trigger || "Automation run"}
+                            {displayText(run.rule_name || run.trigger || run.rule_id || "Automation run")}
                           </div>
                           <div className="mt-1 text-xs text-slate-500">
                             {run.action || "action"} · {run.created_at || "unknown time"}
