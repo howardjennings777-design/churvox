@@ -5,6 +5,10 @@ import "./index.css";
 import "./styles/churvox-theme.css";
 import "./styles/churvox-hotfix-contrast.css";
 import "./styles/churvox-unified-headers.css";
+import "./styles/churvox-team-area-groups.css";
+import { startTeamTownGroupingEnhancer } from "./utils/teamTownGroupingEnhancer";
+
+startTeamTownGroupingEnhancer();
 
 // Register service worker for PWA installability (iPhone Add to Home Screen + Chrome install)
 // Network-first SW — no aggressive caching, new deploys always picked up
