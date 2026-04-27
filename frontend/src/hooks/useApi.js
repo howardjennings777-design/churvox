@@ -3,6 +3,7 @@ import { useState, useCallback } from "react";
 import axios from "axios"
 axios.defaults.withCredentials = true;
 import { formatApiErrorDetail } from "../lib/utils";
+import { handlePayrollLocalFallback } from "../lib/payrollLocalFallback";
 
 import API_BASE from "../lib/apiBase";
 
@@ -49,6 +50,13 @@ export function useApi() {
         const response = await axios(config);
         return { success: true, data: response.data };
       } catch (err) {
+        if (String(endpoint || "").startsWith("/payroll")) {
+          const fallback = await handlePayrollLocalFallback(method, endpoint, data, options);
+          if (fallback) {
+            setError(null);
+            return fallback;
+          }
+        }
         const errorMessage = formatApiErrorDetail(err.response?.data?.detail) || err.message;
         setError(errorMessage);
         return { success: false, error: errorMessage };
