@@ -89,7 +89,7 @@ function getPanelPosition(button) {
   return { top, left, width };
 }
 
-export default function HelpDropdown({ compact = false }) {
+export default function HelpDropdown({ compact = false, sidebar = false }) {
   const location = useLocation();
   const buttonRef = useRef(null);
   const [open, setOpen] = useState(false);
@@ -110,20 +110,24 @@ export default function HelpDropdown({ compact = false }) {
     };
   }, [open]);
 
+  const buttonClass = sidebar
+    ? "flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold border border-transparent text-slate-200 hover:bg-[#1a3150] transition-all"
+    : `inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-600/70 bg-slate-900/55 text-xs font-black text-slate-100 shadow-sm transition hover:bg-slate-800 ${compact ? "h-10 w-10 px-0" : "px-3 py-2"}`;
+
   return (
-    <div className="relative shrink-0">
+    <div className={sidebar ? "relative w-full" : "relative shrink-0"}>
       <button
         ref={buttonRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-600/70 bg-slate-900/55 text-xs font-black text-slate-100 shadow-sm transition hover:bg-slate-800 ${compact ? "h-10 w-10 px-0" : "px-3 py-2"}`}
+        className={buttonClass}
         data-testid="help-dropdown-button"
         aria-label="Help"
         title="Help"
       >
-        <HelpCircle className="h-4 w-4 text-cyan-300" />
-        {!compact && <span>Help</span>}
-        {!compact && <ChevronDown className="h-3.5 w-3.5 text-slate-400" />}
+        <HelpCircle className={sidebar ? "h-[17px] w-[17px] shrink-0 text-cyan-300" : "h-4 w-4 text-cyan-300"} />
+        {(!compact || sidebar) && <span>Help</span>}
+        {(!compact || sidebar) && <ChevronDown className="ml-auto h-3.5 w-3.5 text-slate-400" />}
       </button>
 
       {open && (
