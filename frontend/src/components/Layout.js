@@ -6,7 +6,7 @@ import { hasPlanAccess, normalizePlan } from "../utils/planRules";
 import { InstallPrompt } from "./InstallPrompt";
 import { canAccess } from "../lib/roles";
 import {
-  LayoutDashboard, Briefcase, Calendar, Users, MoreHorizontal, LogOut,
+  LayoutDashboard, Briefcase, Users, MoreHorizontal, LogOut,
   Settings, FileText, Receipt, CreditCard, UserPlus, MessageSquare, DollarSign, Zap,
 } from "lucide-react";
 import NotificationsBell from "./NotificationsBell";
@@ -27,7 +27,6 @@ export default function Layout({ children }) {
   const navItems = [
     canAccess(role, "dashboard") && { path: "/dashboard", label: "Smart Hub", icon: LayoutDashboard, group: "Core" },
     canAccess(role, "jobs") && { path: "/jobs", label: "Jobs", icon: Briefcase, group: "Core" },
-    canAccess(role, "calendar") && { path: "/dispatch", label: "Schedule", icon: Calendar, group: "Core" },
     canAccess(role, "clients") && { path: "/clients", label: "Clients", icon: Users, group: "Core" },
     canAccess(role, "quotes") && { path: "/quotes", label: "Quotes", icon: FileText, group: "Operations" },
     canAccess(role, "invoices") && { path: "/invoices", label: "Invoices", icon: Receipt, group: "Operations" },
