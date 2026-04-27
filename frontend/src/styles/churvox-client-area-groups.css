@@ -96,17 +96,19 @@
   font-weight: 700;
 }
 
-/* Compact client command cards: small boxes next to each other instead of huge full-width rows. */
+/* Premium client command cards: max 3 columns, readable, actions pinned neatly. */
 [data-testid="clients-page"] > .grid:has(> [data-testid^="client-card-"]) {
-  grid-template-columns: repeat(auto-fit, minmax(285px, 1fr)) !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   align-items: stretch !important;
-  gap: 16px !important;
+  gap: 18px !important;
 }
 
 [data-testid^="client-card-"] {
+  min-height: 315px !important;
   height: 100% !important;
   border-radius: 24px !important;
   overflow: hidden !important;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease !important;
 }
 
@@ -122,14 +124,17 @@
 }
 
 [data-testid^="client-card-"] [class*="CardContent"] > div:first-child {
+  min-height: 279px !important;
   height: 100% !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 14px !important;
+  gap: 12px !important;
 }
 
 [data-testid^="client-card-"] [class*="CardContent"] > div:first-child > div:first-child {
   width: 100% !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
 }
 
 [data-testid^="client-card-"] [class*="CardContent"] > div:first-child > div:last-child {
@@ -137,6 +142,7 @@
   justify-content: flex-end !important;
   border-top: 1px solid rgba(15, 23, 42, 0.08) !important;
   padding-top: 10px !important;
+  margin-top: auto !important;
 }
 
 [data-testid^="client-card-"] p.truncate,
@@ -149,18 +155,44 @@
 [data-testid^="client-card-"] .mt-3.grid {
   grid-template-columns: 1fr !important;
   gap: 7px !important;
+  font-size: 13px !important;
+}
+
+[data-testid^="client-card-"] .mt-3.grid p {
+  min-height: 20px !important;
+}
+
+[data-testid^="client-card-"] .mt-3.rounded-xl,
+[data-testid^="client-card-"] p.mt-3.rounded-xl {
+  max-height: 72px !important;
+  overflow: hidden !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
 }
 
 [data-testid^="client-card-"] .mt-3.flex.flex-wrap {
   margin-top: 14px !important;
   gap: 8px !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
 }
 
 [data-testid^="client-card-"] .mt-3.flex.flex-wrap a,
 [data-testid^="client-card-"] .mt-3.flex.flex-wrap button {
-  flex: 1 1 auto !important;
+  width: 100% !important;
   justify-content: center !important;
-  min-width: 96px !important;
+  min-width: 0 !important;
+  height: 34px !important;
+}
+
+[data-testid^="client-card-"] .mt-3.flex.flex-wrap > *:first-child {
+  grid-column: 1 / -1 !important;
+}
+
+@media (max-width: 1180px) {
+  [data-testid="clients-page"] > .grid:has(> [data-testid^="client-card-"]) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
 }
 
 @media (max-width: 900px) {
@@ -171,5 +203,9 @@
 @media (max-width: 680px) {
   [data-testid="clients-page"] > .grid:has(> [data-testid^="client-card-"]) {
     grid-template-columns: 1fr !important;
+  }
+
+  [data-testid^="client-card-"] {
+    min-height: auto !important;
   }
 }
