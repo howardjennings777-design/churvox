@@ -28,7 +28,6 @@ import InvoiceFormPage from "./pages/invoices/InvoiceFormPage";
 import InvoiceDetailPage from "./pages/invoices/InvoiceDetailPage";
 import SettingsPage from "./pages/SettingsPage";
 import PlansPage from "./pages/PlansPage";
-import CalendarPage from "./pages/CalendarPage";
 import TeamPage from "./pages/TeamPage";
 import SMSPage from "./pages/SMSPage";
 import PayrollPage from "./pages/PayrollPage";
@@ -127,7 +126,6 @@ function PayrollRoute({ children }) {
   return children;
 }
 
-
 function ReportsRoute({ children }) {
   const { user, loading, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
@@ -169,10 +167,6 @@ function App() {
         const token = localStorage.getItem("token");
         const backendUrl = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
 
-        // 1) Idempotent confirm — the backend already saved the plan on its
-        //    /api/stripe/checkout-success handler, but calling this again is safe
-        //    and guarantees the frontend sees the latest plan even if the user
-        //    refreshed mid-flight or landed via direct link.
         if (sessionId && token && backendUrl) {
           try {
             await fetch(`${backendUrl}/api/billing/confirm-checkout`, {
@@ -186,21 +180,14 @@ function App() {
           }
         }
 
-        // 2) User feedback
         if (checkout === "success") {
-          toast.success(
-            plan
-              ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is now active`
-              : "Plan updated"
-          );
+          toast.success(plan ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is now active` : "Plan updated");
         } else if (checkout === "cancelled") {
           toast.info("Checkout cancelled — no changes to your plan");
         }
 
-        // 3) Refresh auth so the UI shows the new plan immediately
         window.dispatchEvent(new Event("churvox-auth-refresh"));
 
-        // 4) Clean query params from the URL without leaving the current page
         const cleaned = new URL(window.location.href);
         ["checkout", "session_id", "plan"].forEach((k) => cleaned.searchParams.delete(k));
         window.history.replaceState({}, document.title, cleaned.toString());
@@ -229,6 +216,8 @@ function App() {
           <Route path="/admin/login" element={<Navigate to="/login" replace />} />
           <Route path="/owner" element={<Navigate to="/admin" replace />} />
           <Route path="/owner/login" element={<Navigate to="/login" replace />} />
+          <Route path="/dispatch" element={<Navigate to="/jobs" replace />} />
+          <Route path="/calendar" element={<Navigate to="/jobs" replace />} />
 
           {/* Platform admin */}
           <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
@@ -245,8 +234,6 @@ function App() {
           <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
           <Route path="/jobs/:id" element={<BusinessRoute><JobDetailPage /></BusinessRoute>} />
           <Route path="/jobs/:id/edit" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
-          <Route path="/dispatch" element={<BusinessRoute><CalendarPage /></BusinessRoute>} />
-          <Route path="/calendar" element={<Navigate to="/dispatch" replace />} />
           <Route path="/clients" element={<BusinessRoute><ClientsPage /></BusinessRoute>} />
           <Route path="/clients/new" element={<BusinessRoute><ClientFormPage /></BusinessRoute>} />
           <Route path="/clients/:id" element={<BusinessRoute><ClientDetailPage /></BusinessRoute>} />
