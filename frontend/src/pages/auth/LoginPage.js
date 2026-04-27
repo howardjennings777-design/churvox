@@ -8,15 +8,12 @@ import { Mail, Lock, AlertCircle, Loader2, ShieldCheck, Zap, BriefcaseBusiness }
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 import { normalizeRole, getDefaultRoute } from "@/lib/roles";
 
+const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
+
 const getPostLoginPath = (payload = {}) => {
   const user = payload?.user || payload || {};
   const email = String(user?.email || payload?.email || "").trim().toLowerCase();
-  const isPlatformOwner =
-    email === "hello@churvox.com" ||
-    user?.is_platform_owner === true ||
-    user?.is_admin === true;
-
-  if (isPlatformOwner) return "/admin";
+  if (email === PLATFORM_OWNER_EMAIL) return "/admin";
   return getDefaultRoute(normalizeRole(user?.role || payload?.role));
 };
 
