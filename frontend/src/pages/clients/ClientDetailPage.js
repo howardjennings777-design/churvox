@@ -4,7 +4,7 @@ import Layout from "../../components/Layout";
 import { useApi } from "../../hooks/useApi";
 import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { ArrowLeft, Edit, Trash2, Phone, Mail, MapPin, FileText, Clock, Briefcase, Receipt, TrendingUp } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Phone, Mail, MapPin, FileText, Clock, Briefcase, Receipt, TrendingUp, Plus, ListChecks, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, JOB_STATUS_MAP } from "../../lib/utils";
 
@@ -19,7 +19,7 @@ function recordId(item) {
 function sameClient(record, client) {
   if (!record || !client) return false;
   const clientId = String(client.id || client._id || "");
-  const recordClientId = String(record.client_id || record.customer_id || "");
+  const recordClientId = String(record.client_id || record.customer_id || record.related_id || "");
   const clientName = String(client.name || "").trim().toLowerCase();
   const clientEmail = String(client.email || "").trim().toLowerCase();
   const recordName = String(record.customer_name || record.client_name || record.name || "").trim().toLowerCase();
@@ -75,23 +75,43 @@ function HistoryCard({ item, type, to, title, subtitle, amount, status, date }) 
   );
 }
 
+function TimelineItem({ item }) {
+  const Icon = item.icon;
+  return (
+    <Link to={item.to || "#"} className="flex gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm hover:border-blue-200 hover:shadow-md">
+      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-700"><Icon className="h-4 w-4" /></span>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <p className="truncate text-sm font-black text-slate-950">{item.title}</p>
+          <StatusPill status={item.status} />
+        </div>
+        <p className="mt-1 truncate text-xs font-semibold text-slate-500">{item.subtitle}</p>
+        <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">{item.date ? formatDate(item.date) : "No date"}</p>
+      </div>
+    </Link>
+  );
+}
+
 export default function ClientDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { get, del } = useApi();
+  const { get, post, del } = useApi();
   const [client, setClient] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [quotes, setQuotes] = useState([]);
   const [invoices, setInvoices] = useState([]);
+  const [followUps, setFollowUps] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [creatingFollowUp, setCreatingFollowUp] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [clientRes, jobsRes, quotesRes, invoicesRes] = await Promise.allSettled([
+    const [clientRes, jobsRes, quotesRes, invoicesRes, followUpsRes] = await Promise.allSettled([
       get(`/clients/${id}`),
       get(`/clients/${id}/jobs`),
       get("/quotes"),
       get("/invoices"),
+      get("/follow-up-tasks?status=all"),
     ]);
 
     const clientData = clientRes.status === "fulfilled" && clientRes.value?.success ? clientRes.value.data : null;
@@ -101,6 +121,8 @@ export default function ClientDetailPage() {
     setJobs(safeArray(jobsRes.status === "fulfilled" && jobsRes.value?.success ? jobsRes.value.data : []));
     setQuotes(safeArray(quotesRes.status === "fulfilled" && quotesRes.value?.success ? quotesRes.value.data : []));
     setInvoices(safeArray(invoicesRes.status === "fulfilled" && invoicesRes.value?.success ? invoicesRes.value.data : []));
+    const followUpPayload = followUpsRes.status === "fulfilled" && followUpsRes.value?.success ? followUpsRes.value.data : [];
+    setFollowUps(safeArray(followUpPayload?.data || followUpPayload));
     setLoading(false);
   }, [get, id, navigate]);
 
@@ -108,8 +130,56 @@ export default function ClientDetailPage() {
 
   const clientQuotes = useMemo(() => safeArray(quotes).filter((quote) => sameClient(quote, client)), [quotes, client]);
   const clientInvoices = useMemo(() => safeArray(invoices).filter((invoice) => sameClient(invoice, client)), [invoices, client]);
+  const clientFollowUps = useMemo(() => safeArray(followUps).filter((task) => sameClient(task, client) || String(task.related_type || "").toLowerCase() === "client" && String(task.related_id || "") === String(client?.id || client?._id || "")), [followUps, client]);
+  const openFollowUps = useMemo(() => clientFollowUps.filter((task) => !["completed", "done", "closed"].includes(String(task.status || "").toLowerCase())), [clientFollowUps]);
   const paidRevenue = useMemo(() => clientInvoices.filter((invoice) => String(invoice.status || "").toLowerCase() === "paid").reduce((sum, invoice) => sum + Number(invoice.total || invoice.amount || invoice.subtotal || 0), 0), [clientInvoices]);
   const outstanding = useMemo(() => clientInvoices.filter((invoice) => !["paid", "cancelled"].includes(String(invoice.status || "").toLowerCase())).reduce((sum, invoice) => sum + Number(invoice.total || invoice.amount || invoice.subtotal || 0), 0), [clientInvoices]);
+
+  const timeline = useMemo(() => {
+    const rows = [
+      ...jobs.map((job) => ({
+        id: `job-${recordId(job)}`,
+        type: "Job",
+        icon: Briefcase,
+        title: job.title || "Job",
+        subtitle: job.address || job.client_name || "Job activity",
+        status: job.status,
+        date: job.scheduled_date || job.completed_at || job.updated_at || job.created_at,
+        to: `/jobs/${recordId(job)}`,
+      })),
+      ...clientQuotes.map((quote) => ({
+        id: `quote-${recordId(quote)}`,
+        type: "Quote",
+        icon: FileText,
+        title: quote.quote_number || quote.job_description || "Quote",
+        subtitle: quote.address || quote.customer_name || "Quote activity",
+        status: quote.status,
+        date: quote.updated_at || quote.created_at || quote.valid_until,
+        to: `/quotes/${recordId(quote)}`,
+      })),
+      ...clientInvoices.map((invoice) => ({
+        id: `invoice-${recordId(invoice)}`,
+        type: "Invoice",
+        icon: Receipt,
+        title: invoice.invoice_number || "Invoice",
+        subtitle: invoice.description || invoice.address || "Invoice activity",
+        status: invoice.status,
+        date: invoice.paid_at || invoice.updated_at || invoice.created_at || invoice.due_date,
+        to: `/invoices/${recordId(invoice)}`,
+      })),
+      ...clientFollowUps.map((task) => ({
+        id: `followup-${recordId(task)}`,
+        type: "Follow-up",
+        icon: ListChecks,
+        title: task.title || "Follow-up",
+        subtitle: task.description || "Customer follow-up",
+        status: task.status || "open",
+        date: task.due_at || task.updated_at || task.created_at,
+        to: "/follow-ups",
+      })),
+    ];
+    return rows.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0)).slice(0, 12);
+  }, [jobs, clientQuotes, clientInvoices, clientFollowUps]);
 
   const handleDelete = async () => {
     const confirmed = window.confirm("Delete this client? This cannot be undone.");
@@ -119,6 +189,30 @@ export default function ClientDetailPage() {
       toast.success("Client deleted");
       navigate("/clients");
     }
+  };
+
+  const handleCreateFollowUp = async () => {
+    if (!client) return;
+    setCreatingFollowUp(true);
+    const clientId = String(client.id || client._id || id);
+    const due = new Date();
+    due.setDate(due.getDate() + 2);
+    const res = await post("/follow-up-tasks", {
+      title: `Follow up ${client.name || "client"}`,
+      description: "Client follow-up created from the client command centre.",
+      related_type: "client",
+      related_id: clientId,
+      priority: "normal",
+      source: "client_command_centre",
+      due_at: due.toISOString(),
+    });
+    if (res?.success) {
+      toast.success("Follow-up created");
+      await fetchData();
+    } else {
+      toast.error(res?.error || "Could not create follow-up");
+    }
+    setCreatingFollowUp(false);
   };
 
   if (!client) return <Layout><div className="p-6 flex items-center justify-center min-h-[50vh]"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" /></div></Layout>;
@@ -134,9 +228,15 @@ export default function ClientDetailPage() {
               </button>
               <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">Client command centre</p>
               <h1 className="mt-3 text-3xl font-black tracking-tight md:text-4xl">{client.name}</h1>
-              <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-300">Jobs, quotes, invoices, contact details and money history for this customer in one place.</p>
+              <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-300">Jobs, quotes, invoices, contact details, follow-ups and money history for this customer in one place.</p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm" className="rounded-full bg-blue-600 text-white hover:bg-blue-700">
+                <Link to={`/jobs/new?clientId=${id}`}><Plus size={14} className="mr-1" /> New Job</Link>
+              </Button>
+              <Button size="sm" onClick={handleCreateFollowUp} disabled={creatingFollowUp} className="rounded-full bg-cyan-500 text-white hover:bg-cyan-600">
+                <ListChecks size={14} className="mr-1" /> {creatingFollowUp ? "Adding..." : "Follow-up"}
+              </Button>
               <Button asChild variant="outline" size="sm" className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/15" data-testid="edit-client-button">
                 <Link to={`/clients/${id}/edit`}><Edit size={14} className="mr-1" /> Edit</Link>
               </Button>
@@ -147,60 +247,90 @@ export default function ClientDetailPage() {
           </div>
         </section>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <MiniStat label="Jobs" value={jobs.length} icon={Briefcase} />
           <MiniStat label="Quotes" value={clientQuotes.length} icon={FileText} />
           <MiniStat label="Invoices" value={clientInvoices.length} icon={Receipt} />
+          <MiniStat label="Follow-ups" value={openFollowUps.length} icon={ListChecks} />
           <MiniStat label="Paid revenue" value={formatCurrency(paidRevenue)} icon={TrendingUp} />
         </div>
 
         <div className="grid gap-5 lg:grid-cols-[360px_1fr]">
-          <Card className="h-fit border-slate-200 bg-white shadow-sm" data-testid="client-info-card">
-            <CardContent className="p-5">
-              <h2 className="text-lg font-black text-slate-950">Contact</h2>
-              <div className="mt-4 space-y-3">
-                {client.email && <div className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-sm font-semibold text-slate-700"><Mail size={15} /> {client.email}</div>}
-                {client.phone && <div className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-sm font-semibold text-slate-700"><Phone size={15} /> {client.phone}</div>}
-                {client.address && <div className="flex items-start gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-sm font-semibold text-slate-700"><MapPin size={15} className="mt-0.5 shrink-0" /> {client.address}</div>}
-                {client.notes && <div className="rounded-xl border border-slate-100 bg-slate-50 p-3"><p className="text-xs font-black uppercase tracking-wide text-slate-500">Notes</p><p className="mt-1 text-sm font-semibold text-slate-700">{client.notes}</p></div>}
-                {!client.email && !client.phone && !client.address && !client.notes && <p className="text-sm text-slate-500">No contact details saved yet.</p>}
-              </div>
-              <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 p-3 text-sm font-semibold text-amber-800">
-                Outstanding balance: <span className="font-black">{formatCurrency(outstanding)}</span>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-5">
+            <Card className="h-fit border-slate-200 bg-white shadow-sm" data-testid="client-info-card">
+              <CardContent className="p-5">
+                <h2 className="text-lg font-black text-slate-950">Contact</h2>
+                <div className="mt-4 space-y-3">
+                  {client.email && <div className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-sm font-semibold text-slate-700"><Mail size={15} /> {client.email}</div>}
+                  {client.phone && <div className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-sm font-semibold text-slate-700"><Phone size={15} /> {client.phone}</div>}
+                  {client.address && <div className="flex items-start gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-sm font-semibold text-slate-700"><MapPin size={15} className="mt-0.5 shrink-0" /> {client.address}</div>}
+                  {client.notes && <div className="rounded-xl border border-slate-100 bg-slate-50 p-3"><p className="text-xs font-black uppercase tracking-wide text-slate-500">Notes</p><p className="mt-1 text-sm font-semibold text-slate-700">{client.notes}</p></div>}
+                  {!client.email && !client.phone && !client.address && !client.notes && <p className="text-sm text-slate-500">No contact details saved yet.</p>}
+                </div>
+                <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 p-3 text-sm font-semibold text-amber-800">
+                  Outstanding balance: <span className="font-black">{formatCurrency(outstanding)}</span>
+                </div>
+              </CardContent>
+            </Card>
 
-          <div className="grid gap-5 xl:grid-cols-3">
-            <section data-testid="client-job-history">
-              <h2 className="mb-3 flex items-center gap-2 text-base font-black text-slate-950"><Briefcase size={16} /> Jobs ({jobs.length})</h2>
-              <div className="space-y-3">
-                {jobs.length ? jobs.map((job) => {
-                  const statusInfo = JOB_STATUS_MAP[job.status];
-                  return (
-                    <HistoryCard key={recordId(job)} item={job} type="Job" to={`/jobs/${recordId(job)}`} title={job.title || "Untitled job"} subtitle={job.customer_name || job.client_name || job.address} amount={job.price} status={statusInfo?.label || job.status} date={job.scheduled_date || job.created_at} />
-                  );
-                }) : <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500">No jobs for this client yet.</div>}
+            <Card className="border-slate-200 bg-white shadow-sm" data-testid="client-action-queue-card">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-black text-slate-950">Action queue</h2>
+                  <Button size="sm" variant="outline" onClick={handleCreateFollowUp} disabled={creatingFollowUp} className="rounded-full font-black">Add</Button>
+                </div>
+                <div className="mt-4 space-y-2">
+                  {openFollowUps.slice(0, 4).map((task) => (
+                    <Link key={recordId(task)} to="/follow-ups" className="block rounded-xl border border-slate-200 bg-slate-50 p-3 hover:bg-white">
+                      <p className="truncate text-sm font-black text-slate-900">{task.title || "Follow-up"}</p>
+                      <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-slate-500"><CalendarDays className="h-3.5 w-3.5" />{task.due_at ? formatDate(task.due_at) : "No due date"}</p>
+                    </Link>
+                  ))}
+                  {!openFollowUps.length && <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-sm font-semibold text-slate-500">No open follow-ups.</p>}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="space-y-5">
+            <section data-testid="client-timeline">
+              <h2 className="mb-3 flex items-center gap-2 text-base font-black text-slate-950"><Clock size={16} /> Client timeline</h2>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {timeline.length ? timeline.map((item) => <TimelineItem key={item.id} item={item} />) : <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500">No activity yet.</div>}
               </div>
             </section>
 
-            <section data-testid="client-quote-history">
-              <h2 className="mb-3 flex items-center gap-2 text-base font-black text-slate-950"><FileText size={16} /> Quotes ({clientQuotes.length})</h2>
-              <div className="space-y-3">
-                {clientQuotes.length ? clientQuotes.map((quote) => (
-                  <HistoryCard key={recordId(quote)} item={quote} type="Quote" to={`/quotes/${recordId(quote)}`} title={quote.quote_number || quote.job_description || "Quote"} subtitle={quote.customer_name || quote.address} amount={quote.price || quote.total} status={quote.status} date={quote.created_at || quote.valid_until} />
-                )) : <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500">No quotes for this client yet.</div>}
-              </div>
-            </section>
+            <div className="grid gap-5 xl:grid-cols-3">
+              <section data-testid="client-job-history">
+                <h2 className="mb-3 flex items-center gap-2 text-base font-black text-slate-950"><Briefcase size={16} /> Jobs ({jobs.length})</h2>
+                <div className="space-y-3">
+                  {jobs.length ? jobs.map((job) => {
+                    const statusInfo = JOB_STATUS_MAP[job.status];
+                    return (
+                      <HistoryCard key={recordId(job)} item={job} type="Job" to={`/jobs/${recordId(job)}`} title={job.title || "Untitled job"} subtitle={job.customer_name || job.client_name || job.address} amount={job.price} status={statusInfo?.label || job.status} date={job.scheduled_date || job.created_at} />
+                    );
+                  }) : <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500">No jobs for this client yet.</div>}
+                </div>
+              </section>
 
-            <section data-testid="client-invoice-history">
-              <h2 className="mb-3 flex items-center gap-2 text-base font-black text-slate-950"><Receipt size={16} /> Invoices ({clientInvoices.length})</h2>
-              <div className="space-y-3">
-                {clientInvoices.length ? clientInvoices.map((invoice) => (
-                  <HistoryCard key={recordId(invoice)} item={invoice} type="Invoice" to={`/invoices/${recordId(invoice)}`} title={invoice.invoice_number || invoice.description || "Invoice"} subtitle={invoice.customer_name || invoice.address} amount={invoice.total || invoice.amount || invoice.subtotal} status={invoice.status} date={invoice.created_at || invoice.due_date} />
-                )) : <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500">No invoices for this client yet.</div>}
-              </div>
-            </section>
+              <section data-testid="client-quote-history">
+                <h2 className="mb-3 flex items-center gap-2 text-base font-black text-slate-950"><FileText size={16} /> Quotes ({clientQuotes.length})</h2>
+                <div className="space-y-3">
+                  {clientQuotes.length ? clientQuotes.map((quote) => (
+                    <HistoryCard key={recordId(quote)} item={quote} type="Quote" to={`/quotes/${recordId(quote)}`} title={quote.quote_number || quote.job_description || "Quote"} subtitle={quote.customer_name || quote.address} amount={quote.price || quote.total} status={quote.status} date={quote.created_at || quote.valid_until} />
+                  )) : <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500">No quotes for this client yet.</div>}
+                </div>
+              </section>
+
+              <section data-testid="client-invoice-history">
+                <h2 className="mb-3 flex items-center gap-2 text-base font-black text-slate-950"><Receipt size={16} /> Invoices ({clientInvoices.length})</h2>
+                <div className="space-y-3">
+                  {clientInvoices.length ? clientInvoices.map((invoice) => (
+                    <HistoryCard key={recordId(invoice)} item={invoice} type="Invoice" to={`/invoices/${recordId(invoice)}`} title={invoice.invoice_number || invoice.description || "Invoice"} subtitle={invoice.customer_name || invoice.address} amount={invoice.total || invoice.amount || invoice.subtotal} status={invoice.status} date={invoice.created_at || invoice.due_date} />
+                  )) : <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500">No invoices for this client yet.</div>}
+                </div>
+              </section>
+            </div>
           </div>
         </div>
 
