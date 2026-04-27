@@ -10,7 +10,7 @@ on:
 jobs:
   launch-ready:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
 
     steps:
       - name: Checkout
@@ -55,6 +55,34 @@ jobs:
         env:
           CI: false
         run: npm run build
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright live launch audit
+        working-directory: frontend
+        env:
+          CHURVOX_AUDIT_URL: https://www.churvox.com
+          CHURVOX_AUDIT_EMAIL: ${{ secrets.CHURVOX_AUDIT_EMAIL }}
+          CHURVOX_AUDIT_PASSWORD: ${{ secrets.CHURVOX_AUDIT_PASSWORD }}
+        run: npm run audit:launch
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-playwright-report
+          path: frontend/playwright-report
+          if-no-files-found: ignore
+
+      - name: Upload Playwright traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: churvox-playwright-test-results
+          path: frontend/test-results
+          if-no-files-found: ignore
 
       - name: Upload frontend build artifact
         if: always()
