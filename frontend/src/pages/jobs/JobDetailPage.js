@@ -48,23 +48,35 @@ function norm(v) {
   return String(v || "").trim().toLowerCase();
 }
 
-function includesLocation(haystack, needle) {
-  if (!needle) return false;
-  return norm(haystack).includes(norm(needle));
-}
-
 function workerMatchesJobRegion(worker, job) {
   const jobCountry = norm(job?.country);
   const jobRegion = norm(job?.region);
   const workerCountry = norm(worker?.country);
   const workerRegion = norm(worker?.region);
-
-  // Safe fallback:
-  // if either side is missing country/region, do not hide the worker
   if (!jobCountry || !jobRegion) return true;
   if (!workerCountry || !workerRegion) return true;
-
   return jobCountry === workerCountry && jobRegion === workerRegion;
+}
+
+function normalizeChecklist(items) {
+  if (!Array.isArray(items)) return [];
+  return items
+    .map((item, index) => {
+      if (typeof item === "string") return { id: `item-${index}-${item}`, label: item, done: false };
+      return {
+        id: String(item?.id || item?._id || `item-${index}-${item?.label || item?.title || "check"}`),
+        label: String(item?.label || item?.title || item?.text || "Checklist item"),
+        done: Boolean(item?.done || item?.completed || item?.checked),
+        completed_at: item?.completed_at || null,
+      };
+    })
+    .filter((item) => item.label.trim());
+}
+
+function checklistProgress(items) {
+  const total = Array.isArray(items) ? items.length : 0;
+  const done = (items || []).filter((item) => item.done).length;
+  return { total, done, percent: total ? Math.round((done / total) * 100) : 0 };
 }
 
 export default function JobDetailPage() {
@@ -86,6 +98,9 @@ export default function JobDetailPage() {
   const [savingNotes, setSavingNotes] = useState(false);
   const [employerNotes, setEmployerNotes] = useState("");
   const [savingEmployerNotes, setSavingEmployerNotes] = useState(false);
+  const [checklistItems, setChecklistItems] = useState([]);
+  const [newChecklistItem, setNewChecklistItem] = useState("");
+  const [savingChecklist, setSavingChecklist] = useState(false);
 
   const loadPage = useCallback(async () => {
     setPageLoading(true);
@@ -106,6 +121,7 @@ export default function JobDetailPage() {
         setJob(loadedJob);
         setWorkerNotes(loadedJob?.worker_notes || "");
         setEmployerNotes(loadedJob?.notes || "");
+        setChecklistItems(normalizeChecklist(loadedJob?.checklist_items || loadedJob?.checklist || []));
         setSelectedWorker(
           loadedJob?.assigned_worker_id ||
           loadedJob?.worker_id ||
@@ -131,6 +147,50 @@ export default function JobDetailPage() {
   useEffect(() => {
     loadPage();
   }, [loadPage]);
+
+  const saveChecklist = async (items) => {
+    setSavingChecklist(true);
+    try {
+      const res = await patch(`/jobs/${id}`, { checklist_items: items });
+      if (res?.success) {
+        setChecklistItems(normalizeChecklist(res?.data?.checklist_items || items));
+        setJob((prev) => (prev ? { ...prev, checklist_items: items } : prev));
+      } else {
+        toast.error(safeText(res?.error, "Failed to save checklist"));
+      }
+    } catch {
+      toast.error("Failed to save checklist");
+    } finally {
+      setSavingChecklist(false);
+    }
+  };
+
+  const addChecklistItem = async () => {
+    const label = newChecklistItem.trim();
+    if (!label) return;
+    const next = [
+      ...checklistItems,
+      { id: `check-${Date.now()}`, label, done: false, created_at: new Date().toISOString() },
+    ];
+    setNewChecklistItem("");
+    await saveChecklist(next);
+  };
+
+  const toggleChecklistItem = async (itemId) => {
+    const next = checklistItems.map((item) => (
+      item.id === itemId
+        ? { ...item, done: !item.done, completed_at: !item.done ? new Date().toISOString() : null }
+        : item
+    ));
+    setChecklistItems(next);
+    await saveChecklist(next);
+  };
+
+  const removeChecklistItem = async (itemId) => {
+    const next = checklistItems.filter((item) => item.id !== itemId);
+    setChecklistItems(next);
+    await saveChecklist(next);
+  };
 
   const handleAssign = async () => {
     if (!selectedWorker) {
@@ -281,8 +341,6 @@ export default function JobDetailPage() {
   }
 
   const filteredWorkerList = Array.isArray(workers) ? workers.filter((worker) => workerMatchesJobRegion(worker, job)) : [];
-
-
   const currentStatus = job?.status || "assigned";
   const invoiceMode = accounting?.invoice_mode || "churvox_only";
   const userRole = String(user?.role || "").trim().toLowerCase();
@@ -295,6 +353,7 @@ export default function JobDetailPage() {
     user?.is_admin === true ||
     user?.is_owner === true;
   const hasAssignedWorker = !!(job?.assigned_worker_id || job?.assigned_worker_name);
+  const checklist = checklistProgress(checklistItems);
 
   return (
     <Layout>
@@ -396,6 +455,51 @@ export default function JobDetailPage() {
                 <div className="text-slate-700 whitespace-pre-wrap">{job.notes}</div>
               </div>
             ) : null}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white border-slate-200 shadow-sm" data-testid="job-checklist-card">
+          <CardContent className="p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-slate-900 font-semibold">Job Checklist</div>
+                <div className="text-xs text-slate-500">{checklist.done}/{checklist.total} complete · {checklist.percent}%</div>
+              </div>
+              <div className="h-2 w-36 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-full rounded-full bg-blue-600" style={{ width: `${checklist.percent}%` }} />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {checklistItems.map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-sm font-semibold text-slate-700">
+                    <input type="checkbox" checked={item.done} onChange={() => toggleChecklistItem(item.id)} disabled={savingChecklist} />
+                    <span className={item.done ? "truncate text-slate-400 line-through" : "truncate"}>{item.label}</span>
+                  </label>
+                  {isOwnerView && (
+                    <button type="button" onClick={() => removeChecklistItem(item.id)} disabled={savingChecklist} className="text-xs font-bold text-red-500 hover:text-red-700">Remove</button>
+                  )}
+                </div>
+              ))}
+              {!checklistItems.length && <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-center text-sm text-slate-500">No checklist items yet.</p>}
+            </div>
+
+            {isOwnerView && (
+              <div className="flex gap-2">
+                <input
+                  value={newChecklistItem}
+                  onChange={(event) => setNewChecklistItem(event.target.value)}
+                  onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addChecklistItem(); } }}
+                  placeholder="Add checklist item..."
+                  className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-300"
+                  data-testid="new-checklist-item-input"
+                />
+                <Button type="button" onClick={addChecklistItem} disabled={savingChecklist || !newChecklistItem.trim()} className="bg-blue-600 text-white hover:bg-blue-700" data-testid="add-checklist-item-btn">
+                  Add
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
