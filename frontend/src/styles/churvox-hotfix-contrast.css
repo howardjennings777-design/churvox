@@ -58,3 +58,50 @@ section.bg-slate-50,
 section.bg-slate-100 {
   color: #0f172a !important;
 }
+
+/* Sidebar brand polish: keeps logo, title, and bell balanced instead of huge/blurred. */
+[data-testid="sidebar-brand-bar"] {
+  height: 92px !important;
+  padding-left: 16px !important;
+  padding-right: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+[data-testid="sidebar-brand-bar"] > .flex.items-center.gap-3,
+[data-testid="sidebar-brand-bar"] > a {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+[data-testid="sidebar-logo"] {
+  width: 96px !important;
+  max-width: 96px !important;
+  height: auto !important;
+  max-height: 34px !important;
+  object-fit: contain !important;
+}
+
+[data-testid="sidebar-brand-bar"] p:first-of-type {
+  font-size: 10px !important;
+  line-height: 1.05 !important;
+  letter-spacing: 0.18em !important;
+  color: rgba(191, 219, 254, 0.78) !important;
+}
+
+[data-testid="sidebar-brand-bar"] p:last-of-type {
+  margin-top: 3px !important;
+  font-size: 16px !important;
+  line-height: 1.1 !important;
+  font-weight: 900 !important;
+  color: #ffffff !important;
+  letter-spacing: -0.02em !important;
+}
+
+[data-testid="sidebar-brand-bar"] [data-testid="notifications-bell"],
+[data-testid="sidebar-brand-bar"] button {
+  flex: 0 0 auto !important;
+}
