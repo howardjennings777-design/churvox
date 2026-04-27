@@ -2,20 +2,11 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-const PLATFORM_OWNER_EMAILS = new Set([
-  "hello@churvox.com",
-  "howardjennings77@gmail.com",
-  "howardjennings77@outlook.com",
-]);
+const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
 
 function isPlatformOwner(user) {
   const email = String(user?.email || "").trim().toLowerCase();
-  return Boolean(
-    PLATFORM_OWNER_EMAILS.has(email) ||
-    user?.is_platform_owner === true ||
-    user?.is_admin === true ||
-    user?.role === "platform_owner"
-  );
+  return email === PLATFORM_OWNER_EMAIL;
 }
 
 export default function PlatformAdminRoute({ children }) {
