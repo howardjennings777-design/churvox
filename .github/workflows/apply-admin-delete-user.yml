@@ -1,0 +1,43 @@
+name: Apply Admin User Delete Endpoint
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/patch_admin_delete_user.py'
+      - '.github/workflows/apply-admin-delete-user.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-admin-delete-user:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Apply backend admin delete user patch
+        run: python scripts/patch_admin_delete_user.py
+
+      - name: Backend syntax check
+        run: python -m py_compile backend/server.py
+
+      - name: Commit backend delete endpoint patch
+        run: |
+          if git diff --quiet; then
+            echo "No backend changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/server.py
+          git commit -m "Add protected app owner user delete endpoint"
+          git push origin main
