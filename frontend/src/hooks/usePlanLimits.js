@@ -11,7 +11,7 @@ export function usePlanLimits(planOverride = null) {
   }
 
   const safePlan = normalizePlan(planOverride || authUser?.plan);
-  const features = getPlanFeatures(safePlan);
+  const features = getPlanFeatures(safePlan, authUser || {});
 
   const isFeatureEnabled = (feature) => {
     const key = String(feature || "").trim().toLowerCase();
@@ -31,7 +31,7 @@ export function usePlanLimits(planOverride = null) {
     if (key === "myob" || key === "myobsync" || key === "myob_sync") {
       return !!features.myobSync;
     }
-    if (key === "enterpriseuserblocks" || key === "enterprise_user_blocks") {
+    if (key === "enterpriseuserblocks" || key === "enterprise_user_blocks" || key === "extra_user_blocks") {
       return !!features.enterpriseUserBlocks;
     }
     if (key === "sms") {
@@ -52,6 +52,11 @@ export function usePlanLimits(planOverride = null) {
     features,
     maxClients: features.maxClients,
     includedUsers: features.includedUsers,
+    includedUsersBase: features.includedUsersBase,
+    extraUserBlocks: features.extraUserBlocks,
+    extraUsers: features.extraUsers,
+    extraUserBlockSize: features.extraUserBlockSize,
+    extraUserBlockPrice: features.extraUserBlockPrice,
     canUseTeamManagement: !!features.teamManagement,
     canUseCsvTeamImport: !!features.csvTeamImport,
     canUseCsvClientImport: !!features.csvClientImport,
