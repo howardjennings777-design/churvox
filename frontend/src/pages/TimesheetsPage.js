@@ -1,6 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Layout from "@/components/Layout";
-import { CheckCircle2, Clock3, Download, Lock, Save, ShieldCheck, Unlock, UsersRound } from "lucide-react";
+import {
+  AlertTriangle,
+  Bot,
+  CheckCircle2,
+  Download,
+  Info,
+  Lock,
+  Save,
+  ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  Unlock,
+  UsersRound,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
 import { formatCurrency } from "../lib/utils";
@@ -27,6 +40,21 @@ function workerName(worker) {
 
 function rateKey(worker, index) {
   return `${workerId(worker) || workerName(worker) || "worker"}-${index}`;
+}
+
+function entryHours(entry) {
+  return Number(entry?.net_hours || entry?.hours || entry?.duration_hours || 0) || 0;
+}
+
+function AiPill({ tone = "blue", children }) {
+  const tones = {
+    blue: "border-blue-200 bg-blue-50 text-blue-700",
+    green: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    amber: "border-amber-200 bg-amber-50 text-amber-700",
+    red: "border-red-200 bg-red-50 text-red-700",
+    slate: "border-slate-200 bg-slate-50 text-slate-700",
+  };
+  return <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-black ${tones[tone] || tones.blue}`}>{children}</span>;
 }
 
 export default function TimesheetsPage() {
@@ -71,7 +99,7 @@ export default function TimesheetsPage() {
       get("/payroll/workers"),
     ]);
     const loadedPeriods = periodRes?.success ? periodRes.data?.pay_periods || [] : [];
-    const loadedWorkers = workerRes?.success ? workerRes.data?.workers || [] : [];
+    const loadedWorkers = workerRes?.success ? periodRes && workerRes.data?.workers || [] : [];
     setPeriods(loadedPeriods);
     setWorkers(loadedWorkers);
     const next = periodId || loadedPeriods[0]?.id || "";
@@ -179,6 +207,52 @@ export default function TimesheetsPage() {
     });
   };
 
+  const aiReview = useMemo(() => {
+    const missingRateWorkers = rateWorkers.filter((worker, index) => {
+      const key = rateKey(worker, index);
+      const draftRate = drafts[key]?.hourly_rate;
+      const currentRate = draftRate !== undefined ? draftRate : worker.hourly_rate ?? worker.pay_rate ?? worker.payroll_rate ?? worker.rate ?? "";
+      return Number(currentRate || 0) <= 0;
+    });
+    const longEntries = timesheets.filter((entry) => entryHours(entry) >= 10);
+    const tinyEntries = timesheets.filter((entry) => entryHours(entry) > 0 && entryHours(entry) < 0.25);
+    const rejectedEntries = timesheets.filter((entry) => String(entry.status || "").toLowerCase() === "rejected");
+    const totalHours = timesheets.reduce((sum, entry) => sum + entryHours(entry), 0);
+    const approvedHours = Number(summary?.approved_hours || 0);
+
+    const issues = [];
+    if (!periodId) issues.push({ tone: "amber", title: "No pay period selected", detail: "Choose a period before approving or exporting." });
+    if (!timesheets.length) issues.push({ tone: "blue", title: "No time recorded yet", detail: "Nothing is wrong. Worker time will appear here after jobs are started and completed." });
+    if (missingRateWorkers.length) issues.push({ tone: "amber", title: `${missingRateWorkers.length} worker rate${missingRateWorkers.length === 1 ? "" : "s"} need checking`, detail: "Set rates before relying on labour cost estimates or exports." });
+    if (pending.length) issues.push({ tone: "amber", title: `${pending.length} timesheet${pending.length === 1 ? "" : "s"} need approval`, detail: "Review pending entries before exporting payroll files." });
+    if (longEntries.length) issues.push({ tone: "red", title: `${longEntries.length} long shift${longEntries.length === 1 ? "" : "s"} flagged`, detail: "AI recommends checking any time entry over 10 hours before export." });
+    if (tinyEntries.length) issues.push({ tone: "amber", title: `${tinyEntries.length} very short time entr${tinyEntries.length === 1 ? "y" : "ies"}`, detail: "Very short entries may be accidental starts/stops." });
+    if (rejectedEntries.length) issues.push({ tone: "red", title: `${rejectedEntries.length} rejected entr${rejectedEntries.length === 1 ? "y" : "ies"}`, detail: "Rejected time should be resolved before the period is locked." });
+
+    const clean = timesheets.length > 0 && !pending.length && !missingRateWorkers.length && !longEntries.length && !tinyEntries.length && !rejectedEntries.length;
+    const confidence = !timesheets.length ? "Blocked" : clean ? "High confidence" : "Needs review";
+    const confidenceTone = confidence === "High confidence" ? "green" : confidence === "Blocked" ? "slate" : "amber";
+
+    const brief = !timesheets.length
+      ? "No worker time has been recorded for this period yet. Once workers start and complete jobs, entries will appear here for approval and export."
+      : clean
+        ? `Payroll handoff looks clean. ${timesheets.length} time entr${timesheets.length === 1 ? "y is" : "ies are"} ready, ${approvedHours.toFixed(2)} hours are approved, and rates look set.`
+        : `AI found ${issues.length} item${issues.length === 1 ? "" : "s"} to review before export. Start with rates, pending approvals, and unusual hours.`;
+
+    const actions = [];
+    if (missingRateWorkers.length) actions.push({ tone: "amber", title: "Set missing worker rates", detail: "Rates make labour estimates and exports useful.", target: "worker-rates" });
+    if (pending.length) actions.push({ tone: "blue", title: "Approve pending time", detail: "Review and approve worker time before export.", target: "approval-queue" });
+    if (longEntries.length || tinyEntries.length || rejectedEntries.length) actions.push({ tone: "red", title: "Review flagged entries", detail: "Check unusual, rejected, or suspicious time before locking the period.", target: "approval-queue" });
+    if (timesheets.length && !pending.length && !rejectedEntries.length) actions.push({ tone: "green", title: "Export payroll files", detail: "Download CSVs for your accountant, bookkeeper, or payroll provider.", target: "export-centre" });
+    if (!timesheets.length) actions.push({ tone: "blue", title: "Record time from jobs", detail: "Workers need to start/complete jobs before timesheets can be approved.", target: "approval-queue" });
+
+    return { issues, actions, brief, confidence, confidenceTone, totalHours, approvedHours, missingRateWorkers, longEntries, tinyEntries, rejectedEntries, clean };
+  }, [drafts, pending.length, periodId, rateWorkers, summary?.approved_hours, timesheets]);
+
+  const scrollToSection = (id) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <Layout>
       <div className="cx-page space-y-6">
@@ -196,6 +270,66 @@ export default function TimesheetsPage() {
           <div className="rounded-2xl border border-border bg-white p-4 shadow-sm"><p className="text-xs font-semibold uppercase text-slate-500">Workers</p><p className="mt-2 text-2xl font-black text-slate-950">{Number(summary?.workers_included || rateWorkers.length)}</p></div>
         </section>
 
+        <section className="rounded-3xl border border-blue-100 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-5 text-white shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="max-w-3xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black text-blue-100"><Bot size={14} /> AI Timesheet Review</div>
+              <h2 className="mt-3 text-2xl font-black text-white">{aiReview.confidence === "High confidence" ? "Ready to export" : aiReview.confidence === "Blocked" ? "Waiting for worker time" : "Review before export"}</h2>
+              <p className="mt-2 text-sm leading-6 text-blue-100">{aiReview.brief}</p>
+            </div>
+            <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-center">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-100">Confidence</p>
+              <p className="mt-1 text-lg font-black text-white">{aiReview.confidence}</p>
+              <p className="text-xs text-blue-100">Approval-first</p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+              <p className="flex items-center gap-2 text-sm font-black text-white"><Info size={16} /> What this means</p>
+              <p className="mt-2 text-sm leading-6 text-blue-100">AI reviews the handoff only. It does not approve payroll, change rates, lodge tax, pay workers, or export files without you.</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+              <p className="flex items-center gap-2 text-sm font-black text-white"><TrendingUp size={16} /> Hours summary</p>
+              <p className="mt-2 text-sm leading-6 text-blue-100">Total recorded: {aiReview.totalHours.toFixed(2)}h · Approved: {aiReview.approvedHours.toFixed(2)}h · Pending: {pending.length}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+              <p className="flex items-center gap-2 text-sm font-black text-white"><ShieldCheck size={16} /> Export rule</p>
+              <p className="mt-2 text-sm leading-6 text-blue-100">Export only after rates are set, time is approved, and flagged entries are reviewed.</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-bold text-slate-950">AI flags</h2><AiPill tone={aiReview.confidenceTone}>{aiReview.confidence}</AiPill></div>
+            <div className="mt-3 space-y-2">
+              {aiReview.issues.map((issue, index) => (
+                <div key={`${issue.title}-${index}`} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex items-start gap-3">
+                    {issue.tone === "red" ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" /> : issue.tone === "amber" ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" /> : <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />}
+                    <div><p className="text-sm font-black text-slate-950">{issue.title}</p><p className="mt-1 text-xs leading-5 text-slate-600">{issue.detail}</p></div>
+                  </div>
+                </div>
+              ))}
+              {!aiReview.issues.length && <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-sm font-semibold text-emerald-800"><CheckCircle2 className="mr-1 inline h-4 w-4" />No AI flags for this period.</div>}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-950">Recommended actions</h2>
+            <div className="mt-3 space-y-2">
+              {aiReview.actions.map((action, index) => (
+                <div key={`${action.title}-${index}`} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div><p className="text-sm font-black text-slate-950">{index + 1}. {action.title}</p><p className="mt-1 text-xs leading-5 text-slate-600">{action.detail}</p></div>
+                    <AiPill tone={action.tone}>{action.tone === "green" ? "Ready" : action.tone === "red" ? "Check" : "Review"}</AiPill>
+                  </div>
+                  {action.target && <button type="button" onClick={() => scrollToSection(action.target)} className="mt-3 text-xs font-black text-blue-700 hover:text-blue-900">Go to section</button>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-[0.9fr_1.4fr]">
           <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-bold text-slate-950">Timesheet periods</h2><span className={badge(activePeriod?.status)}>{activePeriod?.status || "open"}</span></div>
@@ -207,13 +341,13 @@ export default function TimesheetsPage() {
             <div className="mt-4 flex flex-wrap gap-2"><button className="cx-button-secondary" disabled={!periodId || busy.lock} onClick={lockOrUnlock}>{readOnly ? <Unlock size={14} className="mr-2" /> : <Lock size={14} className="mr-2" />}{readOnly ? "Unlock" : "Lock period"}</button><button className="cx-button-secondary" disabled={!periodId || busy.exported} onClick={markExported}><ShieldCheck size={14} className="mr-2" />Mark exported</button></div>
           </div>
 
-          <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+          <div id="approval-queue" className="scroll-mt-24 rounded-2xl border border-border bg-white p-4 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-lg font-bold text-slate-950">Approval queue</h2><p className="text-sm text-slate-500">Review worker time before export.</p></div><button className="cx-button-secondary" disabled={!periodId || readOnly || !pending.length || busy["approve-all"]} onClick={approveAll}>Approve all pending</button></div>
-            <div className="mt-3 space-y-2">{!timesheets.length && <div className="rounded-xl border border-dashed border-border bg-slate-50 p-4 text-sm text-slate-500">No timesheets found for this period.</div>}{timesheets.map((entry) => <div key={entry.entry_id} className="rounded-xl border border-border bg-slate-50 p-3"><div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-5"><p><b>Worker:</b> {entry.worker_name || "Worker"}</p><p><b>Job:</b> {entry.job_title || "Job"}</p><p><b>Date:</b> {entry.date || "—"}</p><p><b>Net:</b> {Number(entry.net_hours || 0).toFixed(2)}h</p><p><span className={badge(entry.status)}>{entry.status || "pending"}</span></p></div><button className="cx-button-secondary mt-2" disabled={readOnly || entry.status !== "pending" || busy[`approve-${entry.entry_id}`]} onClick={() => approveEntry(entry.entry_id)}><CheckCircle2 size={14} className="mr-2" />Approve</button></div>)}</div>
+            <div className="mt-3 space-y-2">{!timesheets.length && <div className="rounded-xl border border-dashed border-border bg-slate-50 p-4 text-sm text-slate-500">No timesheets found for this period. Worker time will appear here after jobs are started and completed.</div>}{timesheets.map((entry) => <div key={entry.entry_id} className="rounded-xl border border-border bg-slate-50 p-3"><div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-5"><p><b>Worker:</b> {entry.worker_name || "Worker"}</p><p><b>Job:</b> {entry.job_title || "Job"}</p><p><b>Date:</b> {entry.date || "—"}</p><p><b>Net:</b> {Number(entry.net_hours || 0).toFixed(2)}h</p><p><span className={badge(entry.status)}>{entry.status || "pending"}</span></p></div><button className="cx-button-secondary mt-2" disabled={readOnly || entry.status !== "pending" || busy[`approve-${entry.entry_id}`]} onClick={() => approveEntry(entry.entry_id)}><CheckCircle2 size={14} className="mr-2" />Approve</button></div>)}</div>
           </div>
         </section>
 
-        <section className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+        <section id="worker-rates" className="scroll-mt-24 rounded-2xl border border-border bg-white p-4 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold text-slate-950">Worker rates</h2><p className="text-sm text-slate-500">Set internal worker cost rates for labour estimates and exports. Workers do not see this page.</p></div><span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-black text-blue-700"><UsersRound size={14} /> Internal only</span></div>
           <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2">
             {!rateWorkers.length && <p className="text-sm text-slate-500">No workers found yet. Invite workers from Team first.</p>}
@@ -230,7 +364,16 @@ export default function TimesheetsPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-border bg-white p-4 shadow-sm"><h2 className="text-lg font-bold text-slate-950">Export centre</h2><p className="text-sm text-slate-500">Download clean files for your payroll provider, accountant, or bookkeeper.</p><div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3"><button className="cx-button-secondary justify-center" disabled={!periodId} onClick={() => downloadCsv(`/payroll/periods/${periodId}/export/payroll-summary.csv`, `churvox-timesheet-summary-${exportPart}.csv`, "Timesheet summary")}><Download size={14} className="mr-2" />Summary CSV</button><button className="cx-button-secondary justify-center" disabled={!periodId} onClick={() => downloadCsv(`/payroll/periods/${periodId}/export/timesheets.csv`, `churvox-timesheets-${exportPart}.csv`, "Timesheet detail")}><Download size={14} className="mr-2" />Detailed timesheets CSV</button><button className="cx-button-secondary justify-center" disabled={!periodId} onClick={() => downloadCsv(`/payroll/periods/${periodId}/export/worker-pay.csv`, `churvox-worker-hours-${exportPart}.csv`, "Worker hours summary")}><Download size={14} className="mr-2" />Worker hours CSV</button></div></section>
+        <section id="export-centre" className="scroll-mt-24 rounded-2xl border border-border bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-950">Export centre</h2>
+          <p className="text-sm text-slate-500">Download clean files for your payroll provider, accountant, or bookkeeper.</p>
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600"><b>Summary CSV:</b> high-level payroll handoff totals.</div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600"><b>Detailed timesheets CSV:</b> every time entry for checking.</div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600"><b>Worker hours CSV:</b> total hours by worker.</div>
+          </div>
+          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3"><button className="cx-button-secondary justify-center" disabled={!periodId} onClick={() => downloadCsv(`/payroll/periods/${periodId}/export/payroll-summary.csv`, `churvox-timesheet-summary-${exportPart}.csv`, "Timesheet summary")}><Download size={14} className="mr-2" />Summary CSV</button><button className="cx-button-secondary justify-center" disabled={!periodId} onClick={() => downloadCsv(`/payroll/periods/${periodId}/export/timesheets.csv`, `churvox-timesheets-${exportPart}.csv`, "Timesheet detail")}><Download size={14} className="mr-2" />Detailed timesheets CSV</button><button className="cx-button-secondary justify-center" disabled={!periodId} onClick={() => downloadCsv(`/payroll/periods/${periodId}/export/worker-pay.csv`, `churvox-worker-hours-${exportPart}.csv`, "Worker hours summary")}><Download size={14} className="mr-2" />Worker hours CSV</button></div>
+        </section>
       </div>
     </Layout>
   );
