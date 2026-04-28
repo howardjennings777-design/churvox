@@ -1,0 +1,46 @@
+name: Apply App Owner Delete Button
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/patch_app_owner_delete_button.py'
+      - '.github/workflows/apply-app-owner-delete-button.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-app-owner-delete-button:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Apply frontend app owner delete button patch
+        run: python scripts/patch_app_owner_delete_button.py
+
+      - name: Frontend install
+        run: npm --prefix frontend install --legacy-peer-deps
+
+      - name: Frontend build check
+        run: npm --prefix frontend run build
+
+      - name: Commit frontend delete button patch
+        run: |
+          if git diff --quiet; then
+            echo "No frontend changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/src/pages/AppOwnerPage.js
+          git commit -m "Add app owner user delete button"
+          git push origin main
