@@ -202,14 +202,38 @@ function GuardrailCard({ children }) {
   );
 }
 
+function AIQueueActionCard({ action, onApprove, onSnooze, onDismiss, onComplete }) {
+  const priorityTone = action.priority === "high" ? "red" : action.priority === "medium" ? "amber" : "green";
+  const confidenceTone = action.confidence === "high" ? "green" : action.confidence === "medium" ? "blue" : "amber";
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="font-black text-slate-950">{safeText(action.title, "AI action")}</p>
+        <Pill tone={priorityTone}>Priority: {safeText(action.priority, "medium")}</Pill>
+        <Pill tone={confidenceTone}>Confidence: {safeText(action.confidence, "medium")}</Pill>
+      </div>
+      <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">{safeText(action.description, "No details yet.")}</p>
+      <p className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600"><strong className="text-slate-950">Why:</strong> {safeText(action.reason, "AI suggests. You approve.")}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {action.route ? <Link to={action.route} className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-3 py-2 text-xs font-black text-white shadow-sm hover:bg-blue-700">{safeText(action.cta_label, "Open")}</Link> : <span className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-black text-slate-500">No route</span>}
+        <button type="button" onClick={onApprove} className="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700 hover:bg-emerald-100">Approve</button>
+        <button type="button" onClick={onSnooze} className="inline-flex items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-black text-amber-700 hover:bg-amber-100">Snooze</button>
+        <button type="button" onClick={onDismiss} className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50">Dismiss</button>
+        <button type="button" onClick={onComplete} className="inline-flex items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 hover:bg-blue-100">Mark done</button>
+      </div>
+    </div>
+  );
+}
+
 export default function AIAssistantPage() {
-  const { get } = useApi();
+  const { get, post } = useApi();
   const { user, normalizedRole } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
+  const [queueNotice, setQueueNotice] = useState("");
   const [reviewed, setReviewed] = useState({});
-  const [data, setData] = useState({ stats: {}, jobs: [], quotes: [], invoices: [], workers: [], followUps: [] });
+  const [data, setData] = useState({ stats: {}, jobs: [], quotes: [], invoices: [], workers: [], followUps: [], aiActions: [] });
 
   const allowed = ["owner", "manager", "office_admin", "employer", "admin"].includes(normalizedRole || "owner");
 
@@ -217,8 +241,8 @@ export default function AIAssistantPage() {
     setLoading(true);
     setError("");
     try {
-      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, followUpsRes] = await Promise.allSettled([
-        get("/dashboard/stats"), get("/jobs"), get("/quotes"), get("/invoices"), get("/team/workers"), get("/follow-up-tasks"),
+      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, followUpsRes, aiActionsRes] = await Promise.allSettled([
+        get("/dashboard/stats"), get("/jobs"), get("/quotes"), get("/invoices"), get("/team/workers"), get("/follow-up-tasks"), get("/ai/actions"),
       ]);
       setData({
         stats: apiData(statsRes, {}) || {},
@@ -227,6 +251,7 @@ export default function AIAssistantPage() {
         invoices: pickList(apiData(invoicesRes, []), ["invoices", "items", "data"]),
         workers: pickList(apiData(workersRes, []), ["workers", "team", "items", "data"]),
         followUps: pickList(apiData(followUpsRes, []), ["follow_ups", "tasks", "items", "data"]),
+        aiActions: pickList(apiData(aiActionsRes, []), ["actions", "items", "data"]),
       });
     } catch (err) {
       setError(safeText(err?.message || err, "Smart Hub could not load."));
@@ -234,6 +259,27 @@ export default function AIAssistantPage() {
       setLoading(false);
     }
   }, [get]);
+
+  const refreshAiActions = useCallback(async () => {
+    const result = await post("/ai/actions/generate", {});
+    if (!result?.success) {
+      setQueueNotice(safeText(result?.error, "Could not refresh AI actions."));
+      return;
+    }
+    const payload = result?.data || {};
+    setQueueNotice(`AI suggests. You approve. Draft only. ${safeNumber(payload.created, 0)} created, ${safeNumber(payload.updated, 0)} updated.`);
+    await load();
+  }, [load, post]);
+
+  const updateAiAction = useCallback(async (actionId, verb, successMessage) => {
+    const result = await post(`/ai/actions/${actionId}/${verb}`, {});
+    if (!result?.success) {
+      setQueueNotice(safeText(result?.error, "AI action update failed."));
+      return;
+    }
+    setQueueNotice(successMessage);
+    await load();
+  }, [load, post]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -243,6 +289,7 @@ export default function AIAssistantPage() {
     const invoices = safeArray(data.invoices);
     const workers = safeArray(data.workers);
     const followUps = safeArray(data.followUps);
+    const aiActions = safeArray(data.aiActions);
     const today = todayKey();
 
     const openJobs = jobs.filter((job) => !["completed", "cancelled"].includes(status(job.status)));
@@ -305,7 +352,7 @@ export default function AIAssistantPage() {
       { title: "Unassigned job warning", detail: "Warn the owner if a job stays unassigned for too long.", trigger: "Job created and no worker assigned", outcome: "Notify owner or manager" },
     ];
 
-    return { jobs, quotes, invoices, workers, todayJobs, assignedJobs, inProgressJobs, completedJobs, unassignedJobs, stuckJobs, quoteFollowups, unpaidInvoices, overdueInvoices, draftInvoices, completedNoInvoice, riskItems, risk, afterRisk, actions: actions.slice(0, 5), businessBrief, quoteValue, unpaidValue, overdueValue, draftValue, uninvoicedValue, automationIdeas };
+    return { jobs, quotes, invoices, workers, todayJobs, assignedJobs, inProgressJobs, completedJobs, unassignedJobs, stuckJobs, quoteFollowups, unpaidInvoices, overdueInvoices, draftInvoices, completedNoInvoice, riskItems, risk, afterRisk, actions: actions.slice(0, 5), aiActions, businessBrief, quoteValue, unpaidValue, overdueValue, draftValue, uninvoicedValue, automationIdeas };
   }, [data]);
 
   const riskTone = smart.risk >= 50 ? "Needs attention" : smart.risk >= 20 ? "Watch closely" : "Under control";
@@ -325,6 +372,7 @@ export default function AIAssistantPage() {
         </section>
 
         {copied && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-800">{copied}</div>}
+        {queueNotice && <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-black text-blue-800">{queueNotice}</div>}
 
         <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="rounded-3xl p-5" style={darkPanelStyle}>
@@ -360,6 +408,28 @@ export default function AIAssistantPage() {
             <Section title="Money waiting" icon={DollarSign}><div className="grid gap-2"><div className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-black uppercase text-slate-500">Quote value</p><p className="text-xl font-black text-slate-950">{money(smart.quoteValue)}</p></div><div className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-black uppercase text-slate-500">Unpaid invoices</p><p className="text-xl font-black text-slate-950">{money(smart.unpaidValue)}</p></div><div className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-black uppercase text-slate-500">Draft / uninvoiced</p><p className="text-xl font-black text-slate-950">{money(smart.draftValue + smart.uninvoicedValue)}</p></div></div></Section>
           </div>
         </section>
+
+        <Section title="AI Action Queue" subtitle="AI suggests. You approve. Draft only. No payroll, MYOB, pricing, invoice status, or customer messages are changed without approval." icon={Bot}>
+          <div className="mb-3 flex flex-wrap gap-2">
+            <button onClick={refreshAiActions} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50"><RefreshCw className="mr-2 h-4 w-4" />Generate actions</button>
+          </div>
+          {!smart.aiActions.length ? (
+            <p className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-600">No urgent AI actions. Churvox will flag work, invoices, quotes, team and automation risks here.</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              {smart.aiActions.map((action) => (
+                <AIQueueActionCard
+                  key={idOf(action, action.title)}
+                  action={action}
+                  onApprove={() => updateAiAction(idOf(action), "approve", "Approved for review/action.")}
+                  onSnooze={() => updateAiAction(idOf(action), "snooze", "Action snoozed for later review.")}
+                  onDismiss={() => updateAiAction(idOf(action), "dismiss", "Action dismissed.")}
+                  onComplete={() => updateAiAction(idOf(action), "complete", "Action marked done.")}
+                />
+              ))}
+            </div>
+          )}
+        </Section>
 
         <Section title="AI automation suggestions" subtitle="Practical rules that save admin without auto-sending or changing records without approval." icon={Lightbulb} dark><div className="grid grid-cols-1 gap-4 lg:grid-cols-3">{smart.automationIdeas.map((idea) => <AutomationCard key={idea.title} {...idea} />)}</div></Section>
         <Section title="AI safety guardrails" icon={ShieldCheck}><div className="grid grid-cols-1 gap-3 md:grid-cols-3"><GuardrailCard>AI suggests, drafts, summarises and warns.</GuardrailCard><GuardrailCard>You approve customer messages, invoices, pricing, payroll and MYOB changes.</GuardrailCard><GuardrailCard>Worker and payroll roles stay locked down.</GuardrailCard></div></Section>
