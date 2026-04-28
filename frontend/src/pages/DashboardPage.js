@@ -4,7 +4,8 @@ import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
 import { Button } from "../components/ui/button";
-import { Calendar, FileText, Users, Plus, ArrowRight, AlertTriangle, Receipt, UserPlus, RefreshCw, CheckCircle2, ListChecks } from "lucide-react";
+import { Calendar, FileText, Users, Plus, ArrowRight, AlertTriangle, Receipt, UserPlus, RefreshCw, CheckCircle2, ListChecks, Sparkles, Copy, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { safeArray, safeNumber, safeText } from "../utils/safeRender";
 import { AppShell, PageHeader, StatCard, SectionCard, EmptyState, LoadingState, ErrorState, StatusBadge } from "../components/premium/PremiumUI";
 
@@ -41,7 +42,7 @@ function isOverdue(value) {
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, normalizedRole } = useAuth();
-  const { get, post } = useApi();
+  const { get, post, del } = useApi();
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState("");
   const [stats, setStats] = useState({});
@@ -52,6 +53,8 @@ export default function DashboardPage() {
   const [followUps, setFollowUps] = useState([]);
   const [myobSettings, setMyobSettings] = useState(null);
   const [completingFollowUp, setCompletingFollowUp] = useState("");
+  const [aiDrafts, setAiDrafts] = useState([]);
+  const [creatingDraftType, setCreatingDraftType] = useState("");
 
   const isAdmin = normalizedRole === "owner" || normalizedRole === "manager" || normalizedRole === "office_admin";
 
@@ -59,7 +62,7 @@ export default function DashboardPage() {
     setPageLoading(true);
     setPageError("");
     try {
-      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, followUpsRes, myobRes] = await Promise.allSettled([
+      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, followUpsRes, myobRes, draftsRes] = await Promise.allSettled([
         get("/dashboard/stats"),
         get("/jobs"),
         get("/quotes"),
@@ -67,6 +70,7 @@ export default function DashboardPage() {
         get("/team/workers"),
         get("/follow-up-tasks"),
         get("/myob/settings"),
+        get("/ai/drafts"),
       ]);
 
       setStats(settledData(statsRes, {}));
@@ -76,6 +80,7 @@ export default function DashboardPage() {
       setWorkers(safeArray(settledData(workersRes, [])));
       setFollowUps(safeArray(settledData(followUpsRes, [])));
       setMyobSettings(settledData(myobRes, null));
+      setAiDrafts(safeArray(settledData(draftsRes, {})?.drafts).slice(0, 8));
     } catch (err) {
       setPageError(safeText(err, "Failed to load dashboard"));
     } finally {
@@ -95,6 +100,41 @@ export default function DashboardPage() {
       await fetchData();
     } finally {
       setCompletingFollowUp("");
+    }
+  };
+
+  const createDraft = async (type) => {
+    if (!type) return;
+    setCreatingDraftType(type);
+    const res = await post("/ai/drafts/create", { type });
+    if (res?.success) {
+      toast.success("Draft created for review");
+      await fetchData();
+    } else {
+      toast.error(res?.error || "Could not create draft");
+    }
+    setCreatingDraftType("");
+  };
+
+  const draftAction = async (draftId, verb) => {
+    if (!draftId) return;
+    const endpoint = verb === "delete" ? `/ai/drafts/${draftId}` : `/ai/drafts/${draftId}/${verb}`;
+    const res = verb === "delete" ? await del(endpoint) : await post(endpoint, {});
+    if (res?.success) {
+      toast.success(verb === "mark-used" ? "Draft marked used" : verb === "dismiss" ? "Draft dismissed" : "Draft deleted");
+      await fetchData();
+    } else {
+      toast.error(res?.error || "Draft update failed");
+    }
+  };
+
+  const copyDraftText = async (text) => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Draft copied");
+    } catch {
+      toast.error("Copy failed. Please copy manually.");
     }
   };
 
@@ -223,6 +263,54 @@ export default function DashboardPage() {
               <Link to="/quotes/new" className="rounded-xl border border-slate-200 bg-white p-3 font-semibold text-slate-800 hover:bg-slate-50">Build quote</Link>
               <Link to="/invoices/new" className="rounded-xl border border-slate-200 bg-white p-3 font-semibold text-slate-800 hover:bg-slate-50">Create invoice</Link>
               <Link to="/automation" className="rounded-xl border border-slate-200 bg-white p-3 font-semibold text-slate-800 hover:bg-slate-50">Review automation</Link>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="AI Draft Centre" action={<span className="text-xs text-slate-500">Approval-first only</span>}>
+            <p className="mb-3 rounded-xl border border-blue-100 bg-blue-50 p-2 text-xs font-semibold text-blue-800">AI drafts only. Nothing is sent without your approval.</p>
+            <div className="mb-3 flex flex-wrap gap-2">
+              {[
+                ["quote_follow_up", "Quote follow-up"],
+                ["invoice_reminder", "Invoice reminder"],
+                ["job_reminder", "Job reminder"],
+                ["customer_update", "Customer update"],
+                ["worker_instruction", "Worker instruction"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => createDraft(value)}
+                  disabled={creatingDraftType === value}
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                >
+                  <Sparkles className="mr-1 inline h-3.5 w-3.5" />
+                  {creatingDraftType === value ? "Creating..." : label}
+                </button>
+              ))}
+            </div>
+            <div className="space-y-2">
+              {aiDrafts.slice(0, 4).map((draft, idx) => {
+                const draftId = itemId(draft, idx);
+                return (
+                  <div key={draftId} className="rounded-xl border border-slate-200 bg-white p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-slate-900">{safeText(draft.title, "AI draft")}</p>
+                        <p className="text-[11px] font-semibold uppercase text-slate-500">{safeText(draft.type, "draft")} · {safeText(draft.status, "draft")}</p>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-600">{safeText(draft.context_summary, "")}</p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{safeText(draft.draft_text, "")}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button type="button" onClick={() => copyDraftText(draft.draft_text || "")} className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700"><Copy className="mr-1 inline h-3 w-3" />Copy</button>
+                      <button type="button" onClick={() => draftAction(draftId, "mark-used")} className="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">Mark used</button>
+                      <button type="button" onClick={() => draftAction(draftId, "dismiss")} className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">Dismiss</button>
+                      <button type="button" onClick={() => draftAction(draftId, "delete")} className="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700"><Trash2 className="mr-1 inline h-3 w-3" />Delete</button>
+                    </div>
+                  </div>
+                );
+              })}
+              {!aiDrafts.length && <p className="text-sm text-slate-500">No AI drafts yet. Use a quick button to create your first draft.</p>}
             </div>
           </SectionCard>
         </div>

@@ -138,7 +138,7 @@ function StatCard({ icon: Icon, label, value, tone = "blue" }) {
 export default function JobsPage() {
   const navigate = useNavigate();
   const { isEmployer, normalizedRole } = useAuth();
-  const { get, del, loading } = useApi();
+  const { get, del, post, loading } = useApi();
   const [jobs, setJobs] = useState([]);
   const [clients, setClients] = useState([]);
   const [pageLoading, setPageLoading] = useState(true);
@@ -179,6 +179,16 @@ export default function JobsPage() {
       setDeleteId(null);
       fetchJobs();
     } else toast.error(res.error || "Failed to delete");
+  };
+
+  const handleCreateJobUpdateDraft = async (jobId) => {
+    const res = await post("/ai/drafts/create", {
+      type: "customer_update",
+      source_record_id: jobId,
+      source_record_type: "job",
+    });
+    if (res?.success) toast.success("AI job update draft created");
+    else toast.error(res?.error || "Could not create AI draft");
   };
 
   const stats = useMemo(() => {
@@ -341,6 +351,17 @@ export default function JobsPage() {
                         className="border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:text-blue-700"
                       >
                         Open Job
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleCreateJobUpdateDraft(jobId);
+                        }}
+                      >
+                        AI job update draft
                       </Button>
 
                       {isEmployer ? (

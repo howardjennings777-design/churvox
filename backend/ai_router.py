@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from ai_service import ai_configured, generate_ai_text
+from bson import ObjectId
 
 
 class AIAskRequest(BaseModel):
@@ -14,8 +15,26 @@ class AIMessageDraftRequest(BaseModel):
     context: dict = {}
 
 
+class AIDraftCreateRequest(BaseModel):
+    type: str
+    source_record_id: str | None = None
+    source_record_type: str | None = None
+    custom_prompt: str | None = None
+
+
 AI_ROLES = {"owner", "admin", "employer", "manager", "office_admin"}
 AI_FULL_ROLES = {"owner", "admin", "employer", "manager"}
+AI_DRAFT_TYPES = {
+    "quote_follow_up",
+    "invoice_reminder",
+    "job_reminder",
+    "job_completion_summary",
+    "customer_update",
+    "worker_instruction",
+    "quote_wording",
+    "invoice_wording",
+}
+AI_DRAFT_BLOCKED_ROLES = {"worker", "payroll"}
 
 
 def _role(user):
@@ -42,6 +61,17 @@ def _dt(value):
         except Exception:
             return None
     return None
+
+
+def _oid(value):
+    try:
+        return ObjectId(str(value))
+    except Exception:
+        return None
+
+
+def _now():
+    return datetime.now(timezone.utc)
 
 
 async def _list(db, collection, business_id, limit=300):
@@ -93,6 +123,68 @@ async def _snapshot(server, business_id):
     return {"counts": counts, "overdue_invoices": overdue_inv, "pending_quotes": pending_quotes, "overdue_jobs": overdue_jobs, "unassigned_jobs": unassigned, "completed_no_invoice": completed_no_invoice}
 
 
+async def _draft_source_context(server, business_id: str, source_record_id: str | None, source_record_type: str | None) -> tuple[str, dict | None]:
+    if not source_record_id:
+        return ("No related record selected.", None)
+
+    source_type = str(source_record_type or "").strip().lower()
+    if not source_type:
+        return ("Related record provided without a source type.", None)
+
+    collection_name_map = {
+        "quote": "quotes",
+        "quotes": "quotes",
+        "invoice": "invoices",
+        "invoices": "invoices",
+        "job": "jobs",
+        "jobs": "jobs",
+        "client": "clients",
+        "clients": "clients",
+    }
+    collection_name = collection_name_map.get(source_type)
+    if not collection_name:
+        return (f"Unsupported source record type: {source_type}.", None)
+
+    collection = server.db[collection_name]
+    query = {"business_id": str(business_id)}
+    oid = _oid(source_record_id)
+    if oid:
+        query["_id"] = oid
+    else:
+        query["id"] = str(source_record_id)
+    record = await collection.find_one(query)
+
+    if not record and oid:
+        record = await collection.find_one({"business_id": str(business_id), "id": str(source_record_id)})
+    if not record:
+        return ("Related record not found for this business.", None)
+
+    summary_fields = {
+        "title": record.get("title") or record.get("quote_number") or record.get("invoice_number") or record.get("name") or "",
+        "status": record.get("status") or record.get("job_status") or "",
+        "client": record.get("customer_name") or record.get("client_name") or record.get("name") or "",
+        "amount": record.get("total") or record.get("price") or record.get("amount_due") or record.get("balance_due") or "",
+        "due": record.get("due_date") or record.get("scheduled_date") or "",
+    }
+    context_summary = f"{source_type.capitalize()} context: title={summary_fields['title'] or 'n/a'}, status={summary_fields['status'] or 'n/a'}, customer={summary_fields['client'] or 'n/a'}, amount={summary_fields['amount'] or 'n/a'}, due={summary_fields['due'] or 'n/a'}."
+    return (context_summary, record)
+
+
+def _draft_fallback(draft_type: str, context_summary: str) -> tuple[str, str]:
+    fallback_map = {
+        "quote_follow_up": ("Quote follow-up draft", "Hi there, just checking in on your quote. Let me know if you'd like any updates or if you'd like to proceed."),
+        "invoice_reminder": ("Invoice reminder draft", "Hi there, a quick reminder that your invoice is currently outstanding. Please let us know if you need a copy or payment details."),
+        "job_reminder": ("Job reminder draft", "Hi there, this is a reminder for your upcoming job. Please confirm site access details and preferred arrival window."),
+        "job_completion_summary": ("Job completion summary draft", "Job complete summary: work has been finished, site left tidy, and key outcomes documented for your records."),
+        "customer_update": ("Customer update draft", "Hi there, here is a quick update on your work request. We are on track and will keep you informed of the next step."),
+        "worker_instruction": ("Worker instruction draft", "Team update: please review job notes, confirm materials, and follow site safety requirements before starting."),
+        "quote_wording": ("Quote wording draft", "This quote includes the agreed scope of work, exclusions, and pricing breakdown. Please review and let us know any adjustments."),
+        "invoice_wording": ("Invoice wording draft", "Invoice wording draft: thank you for your business. Please refer to this invoice for completed work and payment details."),
+    }
+    title, text = fallback_map.get(draft_type, ("Business draft", "Draft ready for review."))
+    return title, f"{text}\n\nContext:\n{context_summary}"
+
+
 def _brief(snapshot):
     c = snapshot["counts"]
     if c["alerts_total"] == 0:
@@ -115,6 +207,14 @@ def install_ai_router(app, server=None):
     async def require_ai_user(current_user: dict = Depends(server.get_current_user)):
         if _role(current_user) not in AI_ROLES:
             raise HTTPException(status_code=403, detail="AI Assistant is not available for this role")
+        return current_user
+
+    async def require_ai_draft_user(current_user: dict = Depends(server.get_current_user)):
+        user_role = _role(current_user)
+        if user_role in AI_DRAFT_BLOCKED_ROLES:
+            raise HTTPException(status_code=403, detail="AI drafts are not available for this role")
+        if user_role not in AI_ROLES:
+            raise HTTPException(status_code=403, detail="AI drafts are only available to owners/admins")
         return current_user
 
     async def require_full_user(current_user: dict = Depends(server.get_current_user)):
@@ -189,6 +289,134 @@ def install_ai_router(app, server=None):
             fallback = f"You have {snap['counts']['jobs_today']} job(s) today, {snap['counts']['unassigned_jobs']} unassigned job(s), and {snap['counts']['jobs_overdue']} overdue job(s)."
         ai = generate_ai_text("Answer using only this Churvox business snapshot. Be concise and do not make legal, tax, payroll or pricing decisions.", str({"question": payload.question, "counts": snap["counts"]}), fallback, 350)
         return {"configured": bool(ai.get("configured")), "used_ai": bool(ai.get("used_ai")), "answer": ai.get("text") or fallback, "message": ai.get("message"), "error_type": ai.get("error_type"), "model": ai.get("model")}
+
+    @router.get("/ai/drafts")
+    async def list_ai_drafts(current_user: dict = Depends(require_ai_draft_user)):
+        business_id = await bid(current_user)
+        drafts = await server.db.ai_drafts.find({"business_id": str(business_id)}).sort("updated_at", -1).limit(100).to_list(length=100)
+        for draft in drafts:
+            draft["id"] = str(draft.get("_id"))
+            draft.pop("_id", None)
+        return {"drafts": drafts}
+
+    @router.post("/ai/drafts/create")
+    async def create_ai_draft(payload: AIDraftCreateRequest, current_user: dict = Depends(require_ai_draft_user)):
+        business_id = await bid(current_user)
+        draft_type = str(payload.type or "").strip().lower()
+        if draft_type not in AI_DRAFT_TYPES:
+            raise HTTPException(status_code=400, detail="Unsupported draft type")
+
+        context_summary, source_data = await _draft_source_context(
+            server, str(business_id), payload.source_record_id, payload.source_record_type
+        )
+        fallback_title, fallback_text = _draft_fallback(draft_type, context_summary)
+        prompt_context = {
+            "type": draft_type,
+            "context_summary": context_summary,
+            "source_record_type": payload.source_record_type,
+            "custom_prompt": payload.custom_prompt or "",
+            "source_data": source_data or {},
+            "rules": [
+                "Draft and summarize only.",
+                "Never send messages or emails automatically.",
+                "Never change quotes, invoices, payroll, MYOB, pricing, or job status.",
+            ],
+        }
+        ai = generate_ai_text(
+            "You are Churvox AI Draft Centre. Generate a concise business draft only. Approval-first. No actions.",
+            str(prompt_context),
+            fallback_text,
+            320,
+        )
+        now = _now()
+        doc = {
+            "business_id": str(business_id),
+            "type": draft_type,
+            "title": fallback_title,
+            "context_summary": context_summary,
+            "draft_text": ai.get("text") or fallback_text,
+            "source_record_id": payload.source_record_id,
+            "source_record_type": payload.source_record_type,
+            "status": "draft",
+            "created_at": now,
+            "updated_at": now,
+            "created_by": str(current_user.get("id") or current_user.get("_id") or ""),
+            "used_at": None,
+            "dismissed_at": None,
+        }
+        result = await server.db.ai_drafts.insert_one(doc)
+        await server.db.ai_draft_events.insert_one({
+            "business_id": str(business_id),
+            "draft_id": str(result.inserted_id),
+            "event": "created",
+            "created_at": now,
+            "created_by": doc["created_by"],
+        })
+        doc["id"] = str(result.inserted_id)
+        return {"draft": doc, "used_ai": bool(ai.get("used_ai")), "configured": bool(ai.get("configured")), "model": ai.get("model", "gpt-4o-mini")}
+
+    @router.post("/ai/drafts/{draft_id}/mark-used")
+    async def mark_ai_draft_used(draft_id: str, current_user: dict = Depends(require_ai_draft_user)):
+        business_id = await bid(current_user)
+        oid = _oid(draft_id)
+        if not oid:
+            raise HTTPException(status_code=400, detail="Invalid draft id")
+        now = _now()
+        result = await server.db.ai_drafts.update_one(
+            {"_id": oid, "business_id": str(business_id)},
+            {"$set": {"status": "used", "used_at": now, "updated_at": now}},
+        )
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Draft not found")
+        await server.db.ai_draft_events.insert_one({
+            "business_id": str(business_id),
+            "draft_id": str(draft_id),
+            "event": "used",
+            "created_at": now,
+            "created_by": str(current_user.get("id") or current_user.get("_id") or ""),
+        })
+        return {"ok": True}
+
+    @router.post("/ai/drafts/{draft_id}/dismiss")
+    async def dismiss_ai_draft(draft_id: str, current_user: dict = Depends(require_ai_draft_user)):
+        business_id = await bid(current_user)
+        oid = _oid(draft_id)
+        if not oid:
+            raise HTTPException(status_code=400, detail="Invalid draft id")
+        now = _now()
+        result = await server.db.ai_drafts.update_one(
+            {"_id": oid, "business_id": str(business_id)},
+            {"$set": {"status": "dismissed", "dismissed_at": now, "updated_at": now}},
+        )
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Draft not found")
+        await server.db.ai_draft_events.insert_one({
+            "business_id": str(business_id),
+            "draft_id": str(draft_id),
+            "event": "dismissed",
+            "created_at": now,
+            "created_by": str(current_user.get("id") or current_user.get("_id") or ""),
+        })
+        return {"ok": True}
+
+    @router.delete("/ai/drafts/{draft_id}")
+    async def delete_ai_draft(draft_id: str, current_user: dict = Depends(require_ai_draft_user)):
+        business_id = await bid(current_user)
+        oid = _oid(draft_id)
+        if not oid:
+            raise HTTPException(status_code=400, detail="Invalid draft id")
+        result = await server.db.ai_drafts.delete_one({"_id": oid, "business_id": str(business_id)})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Draft not found")
+        now = _now()
+        await server.db.ai_draft_events.insert_one({
+            "business_id": str(business_id),
+            "draft_id": str(draft_id),
+            "event": "deleted",
+            "created_at": now,
+            "created_by": str(current_user.get("id") or current_user.get("_id") or ""),
+        })
+        return {"ok": True}
 
     app.include_router(router)
     app.state.churvox_ai_router_installed = True

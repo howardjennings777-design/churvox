@@ -150,6 +150,16 @@ export default function InvoicesPage() {
     loadInvoices();
   };
 
+  const handleCreateReminderDraft = async (invoiceId) => {
+    const result = await post("/ai/drafts/create", {
+      type: "invoice_reminder",
+      source_record_id: invoiceId,
+      source_record_type: "invoice",
+    });
+    if (result?.success) toast.success("AI reminder draft created");
+    else toast.error(result?.error || "Could not create AI draft");
+  };
+
   const invoiceMetrics = useMemo(() => {
     const safeInvoices = safeArray(invoices);
     const now = new Date();
@@ -417,6 +427,9 @@ export default function InvoicesPage() {
                               Mark paid
                             </Button>
                           )}
+                          <Button size="sm" variant="outline" onClick={() => handleCreateReminderDraft(invoice.id)}>
+                            AI reminder draft
+                          </Button>
 
                           {paymentLink && (
                             <a href={paymentLink} target="_blank" rel="noopener noreferrer" className="cx-button-secondary">

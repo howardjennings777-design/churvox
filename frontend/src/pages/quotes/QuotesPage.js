@@ -112,6 +112,16 @@ export default function QuotesPage() {
     }
   };
 
+  const handleCreateFollowUpDraft = async (quoteId) => {
+    const result = await post("/ai/drafts/create", {
+      type: "quote_follow_up",
+      source_record_id: quoteId,
+      source_record_type: "quote",
+    });
+    if (result?.success) toast.success("AI follow-up draft created");
+    else toast.error(result?.error || "Could not create AI draft");
+  };
+
   const quoteMetrics = useMemo(() => {
     const safeQuotes = safeArray(quotes);
     const totalValue = safeQuotes.reduce((sum, quote) => sum + safeNumber(quote.price ?? quote.total), 0);
@@ -336,6 +346,9 @@ export default function QuotesPage() {
                               Convert to Job
                             </Button>
                           )}
+                          <Button size="sm" variant="outline" onClick={() => handleCreateFollowUpDraft(quote.id)}>
+                            AI follow-up draft
+                          </Button>
 
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>

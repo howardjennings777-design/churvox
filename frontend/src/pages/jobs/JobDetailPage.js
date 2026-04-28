@@ -270,6 +270,16 @@ export default function JobDetailPage() {
     }
   };
 
+  const handleAiJobUpdateDraft = async () => {
+    const res = await post("/ai/drafts/create", {
+      type: "customer_update",
+      source_record_id: id,
+      source_record_type: "job",
+    });
+    if (res?.success) toast.success("AI job update draft created");
+    else toast.error(safeText(res?.error, "Could not create AI draft"));
+  };
+
   const handleSaveEmployerNotes = async () => {
     setSavingEmployerNotes(true);
     try {
@@ -379,6 +389,9 @@ export default function JobDetailPage() {
                   onClick={() => navigate(`/jobs/${id}/edit`)}
                 >
                   Edit Job
+                </Button>
+                <Button variant="outline" onClick={handleAiJobUpdateDraft}>
+                  AI job update draft
                 </Button>
                 {currentStatus === "completed" && !job?.invoice_id && (
                   <Button onClick={handleCreateDraftInvoice} className="bg-blue-600 hover:bg-blue-700 text-white">
