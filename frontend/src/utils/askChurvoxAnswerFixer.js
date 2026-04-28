@@ -51,15 +51,16 @@ async function askRealAi(question) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) return `AI backend error ${res.status}. Check Render backend deploy and login session.\n\n— Smart fallback`;
     const payload = await res.json();
     const answer = text(payload?.answer || payload?.data?.answer || payload?.text);
     if (!answer) return null;
     const isReal = payload?.used_ai === true || payload?.mode === "openai" || (payload?.configured === true && payload?.used_ai !== false);
-    const mode = isReal ? "Real AI" : "Smart fallback";
-    return `${answer}\n\n— ${mode}`;
-  } catch {
-    return null;
+    if (isReal) return `${answer}\n\n— Real AI`;
+    const reason = text(payload?.error_type || payload?.message || "OpenAI did not run. Check OPENAI_API_KEY, OPENAI_MODEL, credits, then redeploy backend.");
+    return `${answer}\n\n— Smart fallback\nReason: ${reason}`;
+  } catch (err) {
+    return `Could not reach backend AI endpoint. Reason: ${text(err?.message || err || "network/CORS error")}\n\n— Smart fallback`;
   }
 }
 
