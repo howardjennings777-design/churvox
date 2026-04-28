@@ -166,10 +166,16 @@ export function AuthProvider({ children }) {
   const isPayroll = isPayrollRole(user?.role);
   const isOwnerUser = isOwner(user?.role);
 
+  const isPaidActive = (() => {
+    if (!user) return false;
+    const subscriptionStatus = String(user.subscription_status || "").toLowerCase();
+    const planStatus = String(user.plan_status || "").toLowerCase();
+    return Boolean(user.stripe_subscription_id) || subscriptionStatus === "active" || planStatus === "active" || planStatus === "paid";
+  })();
+
   const isTrialExpired = (() => {
     if (!user) return false;
-    if (user.stripe_subscription_id) return false;
-    if (user.subscription_status === "active") return false;
+    if (isPaidActive) return false;
     if (!user.trial_ends_at) return false;
     try {
       return new Date(user.trial_ends_at) < new Date();
@@ -178,13 +184,20 @@ export function AuthProvider({ children }) {
     }
   })();
 
+  const mustChoosePlan = (() => {
+    if (!user) return false;
+    if (isWorker || isPayroll) return false;
+    const plan = String(user.plan || "").toLowerCase();
+    if (!plan || plan === "none") return true;
+    return isTrialExpired && !isPaidActive;
+  })();
+
   const hasAppAccess = (() => {
     if (!user) return false;
     if (isWorker || isPayroll) return true;
-    const plan = (user.plan || "").toLowerCase();
+    const plan = String(user.plan || "").toLowerCase();
     if (!plan || plan === "none") return false;
-    if (user.stripe_subscription_id) return true;
-    if (user.subscription_status === "active") return true;
+    if (isPaidActive) return true;
     if (isTrialExpired) return false;
     return true;
   })();
@@ -206,7 +219,9 @@ export function AuthProvider({ children }) {
         isWorker,
         isPayroll,
         isOwnerUser,
+        isPaidActive,
         isTrialExpired,
+        mustChoosePlan,
         hasAppAccess,
       }}
     >
