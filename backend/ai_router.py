@@ -31,10 +31,6 @@ def _status(doc):
     return str((doc or {}).get("status") or (doc or {}).get("job_status") or "").strip().lower().replace(" ", "_")
 
 
-def _title(doc, fallback="Record"):
-    return str((doc or {}).get("title") or (doc or {}).get("name") or (doc or {}).get("customer_name") or (doc or {}).get("client_name") or (doc or {}).get("invoice_number") or fallback)
-
-
 def _dt(value):
     if not value:
         return None
@@ -127,7 +123,7 @@ def install_ai_router(app, server):
         snap = await _snapshot(server, await bid(current_user))
         fallback = _brief(snap)
         ai = generate_ai_text("You are Churvox AI Assistant. Be concise, practical, and approval-first.", str(snap["counts"]), fallback, 220)
-        return {"configured": bool(ai.get("configured")), "used_ai": bool(ai.get("used_ai")), "brief": ai.get("text") or fallback, "counts": snap["counts"]}
+        return {"configured": bool(ai.get("configured")), "used_ai": bool(ai.get("used_ai")), "brief": ai.get("text") or fallback, "counts": snap["counts"], "message": ai.get("message"), "error_type": ai.get("error_type"), "model": ai.get("model")}
 
     @router.get("/ai/urgent-actions")
     async def urgent(current_user: dict = Depends(require_ai_user)):
@@ -171,7 +167,7 @@ def install_ai_router(app, server):
         }
         fallback = fallbacks.get(kind, f"Hi {customer}, just following up with you from Churvox. Thanks.")
         ai = generate_ai_text("Write a short, friendly customer message. Return only the draft. Do not change pricing or payment terms.", str(payload.context or {}), fallback, 220)
-        return {"configured": bool(ai.get("configured")), "used_ai": bool(ai.get("used_ai")), "draft": ai.get("text") or fallback}
+        return {"configured": bool(ai.get("configured")), "used_ai": bool(ai.get("used_ai")), "draft": ai.get("text") or fallback, "message": ai.get("message"), "error_type": ai.get("error_type"), "model": ai.get("model")}
 
     @router.post("/ai/ask")
     async def ask(payload: AIAskRequest, current_user: dict = Depends(require_ai_user)):
@@ -185,7 +181,7 @@ def install_ai_router(app, server):
         elif "job" in q:
             fallback = f"You have {snap['counts']['jobs_today']} job(s) today, {snap['counts']['unassigned_jobs']} unassigned job(s), and {snap['counts']['jobs_overdue']} overdue job(s)."
         ai = generate_ai_text("Answer using only this Churvox business snapshot. Be concise and do not make legal, tax, payroll or pricing decisions.", str({"question": payload.question, "counts": snap["counts"]}), fallback, 350)
-        return {"configured": bool(ai.get("configured")), "used_ai": bool(ai.get("used_ai")), "answer": ai.get("text") or fallback}
+        return {"configured": bool(ai.get("configured")), "used_ai": bool(ai.get("used_ai")), "answer": ai.get("text") or fallback, "message": ai.get("message"), "error_type": ai.get("error_type"), "model": ai.get("model")}
 
     app.include_router(router)
     app.state.churvox_ai_router_installed = True
