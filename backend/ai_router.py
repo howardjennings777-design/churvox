@@ -100,7 +100,14 @@ def _brief(snapshot):
     return f"Today you have {c['jobs_today']} job(s), {c['unassigned_jobs']} unassigned job(s), {c['pending_quotes']} quote(s) waiting, {c['unpaid_invoices']} unpaid invoice(s), and {c['overdue_invoices']} overdue invoice(s)."
 
 
-def install_ai_router(app, server):
+def install_ai_router(app, server=None):
+    # Existing backend boot loader calls install_ai_router(server_module).
+    # Direct callers can still pass install_ai_router(app, server_module).
+    if server is None:
+        server = app
+        app = getattr(server, "app", None)
+        if app is None:
+            raise RuntimeError("server.app missing")
     if getattr(app.state, "churvox_ai_router_installed", False):
         return
     router = APIRouter(prefix="/api")
