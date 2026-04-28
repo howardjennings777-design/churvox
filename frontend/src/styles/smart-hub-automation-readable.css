@@ -1,0 +1,68 @@
+/* Smart Hub automation suggestions readability fix
+   CSS only. No runtime scripts, no layout replacement, no service worker changes. */
+
+[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white,
+[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #0f172a !important;
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+  border-color: #cbd5e1 !important;
+}
+
+[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white *,
+[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white * {
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white p,
+[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white div,
+[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white span,
+[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white p,
+[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white div,
+[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white span {
+  color: #334155 !important;
+}
+
+[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white .text-slate-950,
+[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white .font-black,
+[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white strong,
+[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white .text-slate-950,
+[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white .font-black,
+[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white strong {
+  color: #0f172a !important;
+}
+
+[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white .text-slate-600,
+[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white .text-slate-500,
+[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white .text-slate-600,
+[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white .text-slate-500 {
+  color: #475569 !important;
+}
+
+[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white .bg-slate-50,
+[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white .bg-slate-50 {
+  background: #f8fafc !important;
+  background-color: #f8fafc !important;
+  color: #334155 !important;
+  border-color: #e2e8f0 !important;
+}
+
+[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white svg,
+[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white svg {
+  color: #2563eb !important;
+  opacity: 1 !important;
+}
+
+[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white a,
+[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white button,
+[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white a,
+[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white button {
+  opacity: 1 !important;
+  filter: none !important;
+}
