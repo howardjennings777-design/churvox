@@ -40,3 +40,4 @@ text = text.replace('setWarning(err.message || "Could not delete user.");', 'set
 
 path.write_text(text, encoding='utf-8')
 print('Updated app owner UI to allow removing owner and user accounts except protected platform owner')
+print('retrigger=2026-04-28-owners-users-remove')
