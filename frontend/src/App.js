@@ -14,7 +14,6 @@ import SignupPage from "./pages/auth/SignupPage";
 import InviteSetupPage from "./pages/auth/InviteSetupPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
-import DashboardPage from "./pages/DashboardPage";
 import AIAssistantPage from "./pages/AIAssistantPage";
 import JobsPage from "./pages/jobs/JobsPage";
 import JobFormPage from "./pages/jobs/JobFormPage";
@@ -31,7 +30,6 @@ import InvoiceDetailPage from "./pages/invoices/InvoiceDetailPage";
 import SettingsPage from "./pages/SettingsPage";
 import PlansPage from "./pages/PlansPage";
 import TeamPage from "./pages/TeamPage";
-import SMSPage from "./pages/SMSPage";
 import TimesheetsPage from "./pages/TimesheetsPage";
 import FollowUpsPage from "./pages/FollowUpsPage";
 import SchedulePage from "./pages/SchedulePage";
@@ -47,7 +45,6 @@ import PlatformUnlock from "./pages/admin/PlatformUnlock";
 import NotificationsPage from "./pages/NotificationsPage";
 import AutomationPage from "./pages/AutomationPage";
 import AutomationRunsPage from "./pages/AutomationRunsPage";
-import ReportsPage from "./pages/ReportsPage";
 import IntegrationsPage from "./pages/IntegrationsPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import PublicQuotePage from "./pages/public/PublicQuotePage";
@@ -63,12 +60,6 @@ const Spinner = () => (
     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
   </div>
 );
-
-function PrivateRoute({ children }) {
-  const { user, loading } = useAuth();
-  if (loading) return <Spinner />;
-  return user ? children : <Navigate to="/login" replace />;
-}
 
 function roleDefaultRoute(role) {
   return role === "payroll" ? TIMESHEETS_PATH : getDefaultRoute(role);
@@ -289,7 +280,7 @@ function App() {
           <Route path="/team" element={<TeamRoute><TeamPage /></TeamRoute>} />
           <Route path="/notifications" element={<NotificationsRoute><NotificationsPage /></NotificationsRoute>} />
           <Route path="/automation" element={<TeamRoute><AutomationPage /></TeamRoute>} />
-          <Route path="/automation/runs" element={<TeamRoute><AutomationRunsPage /></AutomationRunsPage></TeamRoute>} />
+          <Route path="/automation/runs" element={<TeamRoute><AutomationRunsPage /></TeamRoute>} />
           <Route path={TIMESHEETS_PATH} element={<TimesheetsRoute><TimesheetsPage /></TimesheetsRoute>} />
 
           <Route path="/worker/jobs" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
