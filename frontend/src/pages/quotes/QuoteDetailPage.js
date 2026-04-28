@@ -180,9 +180,9 @@ export default function QuoteDetailPage() {
             </CardContent>
           </Card>
 
-          <aside className="space-y-4">
-            <Card className="border-slate-200 bg-white shadow-sm">
-              <CardContent className="p-5 space-y-3">
+          <aside className="space-y-4 rounded-[2rem] bg-slate-100/80 p-3 shadow-inner shadow-slate-200/70" style={{ backgroundColor: "rgba(241,245,249,0.82)" }}>
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-[0_12px_34px_rgba(15,23,42,0.08)]">
+              <CardContent className="space-y-3 p-5">
                 <p className="text-sm font-black text-slate-950">Quote actions</p>
                 <ActionState status={quote.status} converted={converted} />
                 {quote.status === "draft" && <Button onClick={handleSend} disabled={loading} className="h-11 w-full rounded-2xl bg-blue-600 font-black text-white hover:bg-blue-700" data-testid="send-quote-button"><Send size={16} className="mr-2" /> Send Quote</Button>}
@@ -191,15 +191,15 @@ export default function QuoteDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 bg-white shadow-sm">
-              <CardContent className="p-5 space-y-3">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-[0_12px_34px_rgba(15,23,42,0.08)]">
+              <CardContent className="space-y-3 p-5">
                 <p className="text-sm font-black text-slate-950">Customer link</p>
-                {publicUrl ? <Button variant="outline" onClick={() => copyText(publicUrl, "Public quote link copied")} className="h-11 w-full rounded-2xl font-black"><Link2 size={16} className="mr-2" /> Copy quote link</Button> : <p className="text-sm font-semibold text-amber-700">Send the quote to create a public customer link.</p>}
-                {publicUrl ? <Button asChild variant="outline" className="h-11 w-full rounded-2xl font-black"><a href={publicUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} className="mr-2" /> Open customer quote</a></Button> : null}
+                {publicUrl ? <Button variant="outline" onClick={() => copyText(publicUrl, "Public quote link copied")} className="h-11 w-full rounded-2xl bg-white font-black"><Link2 size={16} className="mr-2" /> Copy quote link</Button> : <p className="text-sm font-semibold text-amber-700">Send the quote to create a public customer link.</p>}
+                {publicUrl ? <Button asChild variant="outline" className="h-11 w-full rounded-2xl bg-white font-black"><a href={publicUrl} target="_blank" rel="noreferrer"><ExternalLink size={16} className="mr-2" /> Open customer quote</a></Button> : null}
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 bg-white shadow-sm">
+            <Card className="overflow-hidden border-slate-200 bg-white shadow-[0_12px_34px_rgba(15,23,42,0.08)]">
               <CardContent className="p-5">
                 <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-500">Quote total</p>
                 <p className="mt-3 text-4xl font-black tracking-tight text-slate-950">{formatCurrency(quoteTotal)}</p>
