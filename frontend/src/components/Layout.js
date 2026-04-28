@@ -6,6 +6,7 @@ import { hasPlanAccess, normalizePlan } from "../utils/planRules";
 import { InstallPrompt } from "./InstallPrompt";
 import { canAccess } from "../lib/roles";
 import PageAIReviewPanel from "./ai/PageAIReviewPanel";
+import AIOperationsEnginePanel from "./ai/AIOperationsEnginePanel";
 import {
   LayoutDashboard, Briefcase, Users, MoreHorizontal, LogOut,
   Settings, FileText, Receipt, CreditCard, UserPlus, DollarSign, Zap, ListChecks, CalendarDays,
@@ -35,6 +36,7 @@ export default function Layout({ children }) {
   const role = normalizedRole || "owner";
   const showHelp = role !== "worker";
   const routeAIArea = role !== "worker" && role !== "payroll" ? aiAreaForPath(location.pathname) : null;
+  const showAIOperationsEngine = role !== "worker" && role !== "payroll" && location.pathname === "/dashboard";
 
   const handleLogout = async () => {
     await logout();
@@ -144,6 +146,11 @@ export default function Layout({ children }) {
         </header>
 
         <main className="flex-1">
+          {showAIOperationsEngine && (
+            <div className="cx-page pb-0" data-testid="ai-operations-engine-container">
+              <AIOperationsEnginePanel />
+            </div>
+          )}
           {routeAIArea && (
             <div className="cx-page pb-0" data-testid="route-ai-review-container">
               <PageAIReviewPanel area={routeAIArea} />
