@@ -16,6 +16,7 @@ import "./styles/churvox-worker-premium.css";
 import "./styles/churvox-owner-premium-cleanup.css";
 import "./styles/churvox-automation-cleanup.css";
 import "./styles/smart-hub-automation-readable.css";
+import "./styles/churvox-timesheet-ai-color.css";
 import { startTeamTownGroupingEnhancer } from "./utils/teamTownGroupingEnhancer";
 import { startClientAreaGroupingEnhancer } from "./utils/clientAreaGroupingEnhancer";
 import { startAutomationActionFixer } from "./utils/automationActionFixer";
