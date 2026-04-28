@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useApi } from "../hooks/useApi";
 import { detectCountryHint } from "../lib/country";
+import ExtraUserBlockCard from "../components/ExtraUserBlockCard";
 
 const fallbackPlans = [
   {
@@ -28,7 +29,7 @@ const fallbackPlans = [
     period: "/month",
     blurb: "For busy crews needing more room.",
     badge: "Best value",
-    limits: ["Up to 40 clients", "Up to 10 users", "Advanced workflow tools", "Priority-ready setup"],
+    limits: ["Up to 40 clients", "Up to 20 users", "Advanced workflow tools", "Priority-ready setup"],
   },
   {
     key: "enterprise",
@@ -37,7 +38,7 @@ const fallbackPlans = [
     period: "/month",
     blurb: "For larger operations and heavier usage.",
     badge: "",
-    limits: ["Includes 50 users", "Extra 50 users = $100", "MYOB-ready billing flow", "Best for larger operations"],
+    limits: ["Up to 50 clients", "Includes 50 users", "Extra 50 users = $100/month", "MYOB included"],
   },
 ];
 
@@ -63,12 +64,9 @@ export default function PlansPage() {
   };
 
   const mergePlans = (apiPlans, currencyData) => {
-    const base = (Array.isArray(apiPlans) && apiPlans.length > 0)
+    const base = Array.isArray(apiPlans) && apiPlans.length > 0
       ? fallbackPlans.map((fallback) => {
-          const match = apiPlans.find((p) => {
-            const key = String(p?.key || p?.plan_type || p?.name || "").toLowerCase();
-            return key === fallback.key;
-          });
+          const match = apiPlans.find((p) => String(p?.key || p?.plan_type || p?.name || "").toLowerCase() === fallback.key);
           if (!match) return fallback;
           return {
             ...fallback,
@@ -82,7 +80,7 @@ export default function PlansPage() {
         })
       : fallbackPlans;
 
-    const priced = currencyData && currencyData.prices ? currencyData.prices : null;
+    const priced = currencyData?.prices || null;
     if (!priced) return base;
     return base.map((p) => {
       const info = priced[p.key];
@@ -105,11 +103,10 @@ export default function PlansPage() {
             window.dispatchEvent(new Event("churvox-auth-refresh"));
             setCurrentPlan(plan);
           }
-
           setCheckoutNotice({
             type: "success",
-            title: "Plan updated",
-            text: `Your ${plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : ""} plan is now active.`,
+            title: "Billing updated",
+            text: plan ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is now active.` : "Your billing update is complete.",
           });
         } catch (err) {
           console.error("Failed to confirm checkout:", err);
@@ -123,7 +120,7 @@ export default function PlansPage() {
         setCheckoutNotice({ type: "warning", title: "Checkout cancelled", text: "No changes were made to your plan." });
       }
 
-      if (checkout) window.history.replaceState({}, document.title, `${window.location.pathname}`);
+      if (checkout) window.history.replaceState({}, document.title, window.location.pathname);
     };
 
     handleCheckoutReturn();
@@ -143,7 +140,7 @@ export default function PlansPage() {
         const plansData = getPayload(plansRes);
         const billingData = getPayload(billingRes);
         const currencyData = getPayload(currencyRes);
-        if (currencyData && currencyData.currency) setCurrencyInfo(currencyData);
+        if (currencyData?.currency) setCurrencyInfo(currencyData);
 
         setPlans(Array.isArray(plansData) ? mergePlans(plansData, currencyData) : mergePlans(fallbackPlans, currencyData));
 
@@ -268,13 +265,7 @@ export default function PlansPage() {
             <p className="mx-auto mt-3 max-w-2xl text-sm font-semibold leading-6 text-slate-600">
               Your <span className="font-black text-slate-900">{cap(currentPlan)}</span> trial ended on <span className="font-black text-slate-900">{formatDate(billing?.trial_ends_at)}</span>.
             </p>
-            <button
-              type="button"
-              onClick={() => handleSelectPlan(currentPlan)}
-              disabled={busyPlan === currentPlan}
-              className="mt-6 rounded-2xl bg-blue-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-              data-testid="continue-plan-button"
-            >
+            <button type="button" onClick={() => handleSelectPlan(currentPlan)} disabled={busyPlan === currentPlan} className="mt-6 rounded-2xl bg-blue-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60" data-testid="continue-plan-button">
               {busyPlan === currentPlan ? "Opening checkout..." : `Continue with ${cap(currentPlan)}`}
             </button>
           </div>
@@ -314,63 +305,26 @@ export default function PlansPage() {
             const btnState = getButtonState(plan.key);
             const isFeatured = plan.badge && !isCurrent;
             return (
-              <article
-                key={plan.key}
-                className={`relative flex min-h-[430px] flex-col rounded-[1.75rem] border p-5 transition-all ${
-                  isCurrent && !isTrialExpired
-                    ? "border-blue-300 bg-white shadow-[0_24px_60px_rgba(37,99,235,0.18)] ring-2 ring-blue-500/20"
-                    : isFeatured
-                      ? "border-blue-200 bg-white shadow-[0_20px_50px_rgba(37,99,235,0.12)]"
-                      : "border-slate-200 bg-white/95 shadow-[0_14px_36px_rgba(15,23,42,0.08)] hover:border-blue-200 hover:shadow-[0_20px_50px_rgba(37,99,235,0.12)]"
-                }`}
-              >
+              <article key={plan.key} className={`relative flex min-h-[430px] flex-col rounded-[1.75rem] border p-5 transition-all ${isCurrent && !isTrialExpired ? "border-blue-300 bg-white shadow-[0_24px_60px_rgba(37,99,235,0.18)] ring-2 ring-blue-500/20" : isFeatured ? "border-blue-200 bg-white shadow-[0_20px_50px_rgba(37,99,235,0.12)]" : "border-slate-200 bg-white/95 shadow-[0_14px_36px_rgba(15,23,42,0.08)] hover:border-blue-200 hover:shadow-[0_20px_50px_rgba(37,99,235,0.12)]"}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h2 className="text-2xl font-black tracking-tight text-slate-950">{plan.name}</h2>
                     <p className="mt-2 min-h-[42px] text-sm font-semibold leading-5 text-slate-500">{plan.blurb}</p>
                   </div>
-                  {isCurrent && !isTrialExpired ? (
-                    <span className="shrink-0 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-black text-blue-700">Current</span>
-                  ) : isCurrent && isTrialExpired ? (
-                    <span className="shrink-0 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-black text-amber-700">Ended</span>
-                  ) : plan.badge ? (
-                    <span className="shrink-0 rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1 text-[11px] font-black text-cyan-700">{plan.badge}</span>
-                  ) : null}
+                  {isCurrent && !isTrialExpired ? <span className="shrink-0 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[11px] font-black text-blue-700">Current</span> : isCurrent && isTrialExpired ? <span className="shrink-0 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-black text-amber-700">Ended</span> : plan.badge ? <span className="shrink-0 rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1 text-[11px] font-black text-cyan-700">{plan.badge}</span> : null}
                 </div>
-
-                <div className="mt-5 flex items-end gap-1">
-                  <span className="text-4xl font-black tracking-tight text-slate-950">{plan.price}</span>
-                  <span className="pb-1 text-sm font-bold text-slate-500">{plan.period}</span>
-                </div>
-
+                <div className="mt-5 flex items-end gap-1"><span className="text-4xl font-black tracking-tight text-slate-950">{plan.price}</span><span className="pb-1 text-sm font-bold text-slate-500">{plan.period}</span></div>
                 <div className="mt-5 h-px bg-slate-100" />
-
                 <ul className="mt-5 flex-1 space-y-3 text-sm font-semibold text-slate-700">
-                  {plan.limits.map((item) => (
-                    <li key={item} className="flex items-start gap-3">
-                      <PlanCheck />
-                      <span>{item}</span>
-                    </li>
-                  ))}
+                  {plan.limits.map((item) => <li key={item} className="flex items-start gap-3"><PlanCheck /><span>{item}</span></li>)}
                 </ul>
-
-                <button
-                  type="button"
-                  onClick={() => handleSelectPlan(plan.key)}
-                  disabled={btnState.disabled}
-                  className={`mt-6 w-full rounded-2xl px-4 py-3 text-sm font-black transition ${
-                    btnState.disabled
-                      ? "cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-500"
-                      : "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-600/25 hover:from-blue-700 hover:to-cyan-600"
-                  }`}
-                  data-testid={`plan-btn-${plan.key}`}
-                >
-                  {btnState.label}
-                </button>
+                <button type="button" onClick={() => handleSelectPlan(plan.key)} disabled={btnState.disabled} className={`mt-6 w-full rounded-2xl px-4 py-3 text-sm font-black transition ${btnState.disabled ? "cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-500" : "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-600/25 hover:from-blue-700 hover:to-cyan-600"}`} data-testid={`plan-btn-${plan.key}`}>{btnState.label}</button>
               </article>
             );
           })}
         </div>
+
+        <ExtraUserBlockCard currentPlan={currentPlan} billing={billing} currencyInfo={currencyInfo} />
       </div>
     </div>
   );
