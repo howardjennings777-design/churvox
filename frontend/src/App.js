@@ -31,7 +31,7 @@ import SettingsPage from "./pages/SettingsPage";
 import PlansPage from "./pages/PlansPage";
 import TeamPage from "./pages/TeamPage";
 import SMSPage from "./pages/SMSPage";
-import PayrollPage from "./pages/PayrollPage";
+import TimesheetsPage from "./pages/TimesheetsPage";
 import FollowUpsPage from "./pages/FollowUpsPage";
 import SchedulePage from "./pages/SchedulePage";
 import WorkerJobsPage from "./pages/worker/WorkerJobsPage";
@@ -53,6 +53,7 @@ import PublicInvoicePage from "./pages/public/PublicInvoicePage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
+const TIMESHEETS_PATH = "/timesheets";
 const isPlatformOwnerEmail = (user) => String(user?.email || "").trim().toLowerCase() === PLATFORM_OWNER_EMAIL;
 
 const Spinner = () => (
@@ -67,13 +68,17 @@ function PrivateRoute({ children }) {
   return user ? children : <Navigate to="/login" replace />;
 }
 
+function roleDefaultRoute(role) {
+  return role === "payroll" ? TIMESHEETS_PATH : getDefaultRoute(role);
+}
+
 function PublicRoute({ children }) {
   const { user, loading, normalizedRole, mustChoosePlan } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return children;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (mustChoosePlan) return <Navigate to="/plans" replace />;
-  return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
+  return <Navigate to={roleDefaultRoute(normalizedRole)} replace />;
 }
 
 function BusinessRoute({ children }) {
@@ -82,7 +87,7 @@ function BusinessRoute({ children }) {
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
-  if (isPayroll) return <Navigate to="/payroll" replace />;
+  if (isPayroll) return <Navigate to={TIMESHEETS_PATH} replace />;
   if (mustChoosePlan || !hasAppAccess) return <Navigate to="/plans" replace />;
   return children;
 }
@@ -93,8 +98,8 @@ function OwnerRoute({ children }) {
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
-  if (isPayroll) return <Navigate to="/payroll" replace />;
-  if (!isOwnerUser) return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
+  if (isPayroll) return <Navigate to={TIMESHEETS_PATH} replace />;
+  if (!isOwnerUser) return <Navigate to={roleDefaultRoute(normalizedRole)} replace />;
   return children;
 }
 
@@ -104,7 +109,7 @@ function TeamRoute({ children }) {
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
-  if (isPayroll) return <Navigate to="/payroll" replace />;
+  if (isPayroll) return <Navigate to={TIMESHEETS_PATH} replace />;
   if (mustChoosePlan || !hasAppAccess) return <Navigate to="/plans" replace />;
   if (normalizedRole !== "owner" && normalizedRole !== "manager") return <Navigate to="/dashboard" replace />;
   return children;
@@ -128,13 +133,13 @@ function WorkerRoute({ children }) {
   return children;
 }
 
-function PayrollRoute({ children }) {
+function TimesheetsRoute({ children }) {
   const { user, loading, normalizedRole, hasAppAccess, mustChoosePlan } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (normalizedRole !== "owner" && normalizedRole !== "manager" && normalizedRole !== "payroll") {
-    return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
+    return <Navigate to={roleDefaultRoute(normalizedRole)} replace />;
   }
   if (normalizedRole !== "payroll" && (mustChoosePlan || !hasAppAccess)) return <Navigate to="/plans" replace />;
   return children;
@@ -146,7 +151,7 @@ function ReportsRoute({ children }) {
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (!["owner", "manager", "office_admin"].includes(normalizedRole)) {
-    return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
+    return <Navigate to={roleDefaultRoute(normalizedRole)} replace />;
   }
   if (mustChoosePlan || !hasAppAccess) return <Navigate to="/plans" replace />;
   return children;
@@ -158,7 +163,7 @@ function RoleRedirect() {
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (mustChoosePlan) return <Navigate to="/plans" replace />;
-  return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
+  return <Navigate to={roleDefaultRoute(normalizedRole)} replace />;
 }
 
 function App() {
@@ -230,6 +235,7 @@ function App() {
           <Route path="/owner/login" element={<Navigate to="/login" replace />} />
           <Route path="/dispatch" element={<Navigate to="/schedule" replace />} />
           <Route path="/calendar" element={<Navigate to="/schedule" replace />} />
+          <Route path="/payroll" element={<Navigate to={TIMESHEETS_PATH} replace />} />
 
           <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
           <Route path="/owner/dashboard" element={<Navigate to="/dashboard" replace />} />
@@ -269,7 +275,7 @@ function App() {
           <Route path="/notifications" element={<NotificationsRoute><NotificationsPage /></NotificationsRoute>} />
           <Route path="/automation" element={<TeamRoute><AutomationPage /></TeamRoute>} />
           <Route path="/automation/runs" element={<TeamRoute><AutomationRunsPage /></TeamRoute>} />
-          <Route path="/payroll" element={<PayrollRoute><PayrollPage /></PayrollRoute>} />
+          <Route path={TIMESHEETS_PATH} element={<TimesheetsRoute><TimesheetsPage /></TimesheetsRoute>} />
 
           <Route path="/worker/jobs" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
           <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
