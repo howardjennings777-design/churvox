@@ -5,6 +5,7 @@ import { ChurvoxLogo } from "./ChurvoxLogo";
 import { hasPlanAccess, normalizePlan } from "../utils/planRules";
 import { InstallPrompt } from "./InstallPrompt";
 import { canAccess } from "../lib/roles";
+import PageAIReviewPanel from "./ai/PageAIReviewPanel";
 import {
   LayoutDashboard, Briefcase, Users, MoreHorizontal, LogOut,
   Settings, FileText, Receipt, CreditCard, UserPlus, DollarSign, Zap, ListChecks, CalendarDays,
@@ -12,6 +13,18 @@ import {
 import NotificationsBell from "./NotificationsBell";
 import HelpDropdown from "./HelpDropdown";
 import FirstRunGuide from "./FirstRunGuide";
+
+function aiAreaForPath(pathname) {
+  if (pathname === "/jobs" || pathname.startsWith("/jobs/")) return "jobs";
+  if (pathname === "/schedule" || pathname === "/calendar" || pathname === "/dispatch") return "schedule";
+  if (pathname === "/quotes" || pathname.startsWith("/quotes/")) return "quotes";
+  if (pathname === "/invoices" || pathname.startsWith("/invoices/")) return "invoices";
+  if (pathname === "/clients" || pathname.startsWith("/clients/")) return "clients";
+  if (pathname === "/team" || pathname.startsWith("/team/")) return "team";
+  if (pathname === "/automation" || pathname.startsWith("/automation/")) return "automation";
+  if (pathname === "/settings" || pathname.startsWith("/settings/")) return "setup";
+  return null;
+}
 
 export default function Layout({ children }) {
   const { user, logout, normalizedRole, isOwnerUser } = useAuth();
@@ -21,6 +34,7 @@ export default function Layout({ children }) {
   const safePlan = normalizePlan(user?.plan);
   const role = normalizedRole || "owner";
   const showHelp = role !== "worker";
+  const routeAIArea = role !== "worker" && role !== "payroll" ? aiAreaForPath(location.pathname) : null;
 
   const handleLogout = async () => {
     await logout();
@@ -129,7 +143,14 @@ export default function Layout({ children }) {
           </div>
         </header>
 
-        <main className="flex-1">{children}</main>
+        <main className="flex-1">
+          {routeAIArea && (
+            <div className="cx-page pb-0" data-testid="route-ai-review-container">
+              <PageAIReviewPanel area={routeAIArea} />
+            </div>
+          )}
+          {children}
+        </main>
 
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 safe-area-bottom" data-testid="mobile-bottom-nav">
           <div className="flex items-center justify-around py-1">
