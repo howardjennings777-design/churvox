@@ -77,6 +77,11 @@ export function isPayrollRole(role) {
 
 export function getDefaultRoute(role) {
   const r = normalizeRole(role);
+  if (typeof window !== "undefined" && window.location?.pathname === "/ai-assistant") {
+    if (r === "worker") return "/worker/jobs";
+    if (r === "payroll") return "/timesheets";
+    return "/integrations";
+  }
   if (r === "worker") return "/worker/jobs";
   if (r === "payroll") return "/timesheets";
   return "/dashboard";
