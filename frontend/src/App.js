@@ -15,6 +15,7 @@ import InviteSetupPage from "./pages/auth/InviteSetupPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
+import AIAssistantPage from "./pages/AIAssistantPage";
 import JobsPage from "./pages/jobs/JobsPage";
 import JobFormPage from "./pages/jobs/JobFormPage";
 import JobDetailPage from "./pages/jobs/JobDetailPage";
@@ -112,6 +113,18 @@ function TeamRoute({ children }) {
   if (isPayroll) return <Navigate to={TIMESHEETS_PATH} replace />;
   if (mustChoosePlan || !hasAppAccess) return <Navigate to="/plans" replace />;
   if (normalizedRole !== "owner" && normalizedRole !== "manager") return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
+function AIRoute({ children }) {
+  const { user, loading, isWorker, isPayroll, hasAppAccess, mustChoosePlan, normalizedRole } = useAuth();
+  if (loading) return <Spinner />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
+  if (isWorker) return <Navigate to="/worker/jobs" replace />;
+  if (isPayroll) return <Navigate to={TIMESHEETS_PATH} replace />;
+  if (mustChoosePlan || !hasAppAccess) return <Navigate to="/plans" replace />;
+  if (!["owner", "employer", "manager", "office_admin"].includes(normalizedRole)) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
@@ -247,6 +260,7 @@ function App() {
           <Route path="/owner/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
 
           <Route path="/dashboard" element={<BusinessRoute><DashboardPage /></BusinessRoute>} />
+          <Route path="/ai-assistant" element={<AIRoute><AIAssistantPage /></AIRoute>} />
           <Route path="/overview" element={<BusinessRoute><DashboardPage /></BusinessRoute>} />
           <Route path="/jobs" element={<BusinessRoute><JobsPage /></BusinessRoute>} />
           <Route path="/schedule" element={<BusinessRoute><SchedulePage /></BusinessRoute>} />
