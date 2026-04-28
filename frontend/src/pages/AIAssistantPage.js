@@ -15,6 +15,19 @@ const isOverdue = (value) => { const d = toDate(value); if (!d) return false; co
 const money = (value) => new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD", maximumFractionDigits: 0 }).format(Number(value || 0));
 const settledData = (result, fallback) => result?.status === "fulfilled" && result.value?.success ? (result.value.data ?? fallback) : fallback;
 
+const heroStyle = {
+  background: "linear-gradient(135deg, #061426 0%, #0f2746 48%, #123b7a 100%)",
+  color: "#ffffff",
+  border: "1px solid rgba(96, 165, 250, 0.35)",
+  boxShadow: "0 24px 70px rgba(15, 23, 42, 0.22)",
+};
+
+const glassStyle = {
+  background: "rgba(255, 255, 255, 0.12)",
+  border: "1px solid rgba(255, 255, 255, 0.18)",
+  color: "#ffffff",
+};
+
 function copyText(text, setCopied) {
   navigator.clipboard?.writeText(text).then(
     () => setCopied("Draft copied. Review it before sending."),
@@ -137,23 +150,23 @@ export default function AIAssistantPage() {
         {copied && <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{copied}</div>}
 
         <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-4">
-          <div className="rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-5 text-white shadow-sm">
+          <div className="rounded-3xl p-5" style={heroStyle}>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold text-blue-100"><Bot className="h-4 w-4" /> Smart control tower</div>
-                <h2 className="mt-4 text-3xl font-black">{riskTone}</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-200">Today: {smart.todayJobs.length} jobs, {smart.overdueInvoices.length} overdue invoices, {smart.unassigned.length} unassigned jobs, {smart.quoteFollowups.length} quote follow-ups.</p>
+                <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold" style={glassStyle}><Bot className="h-4 w-4" /> Smart control tower</div>
+                <h2 className="mt-4 text-3xl font-black" style={{ color: "#ffffff" }}>{riskTone}</h2>
+                <p className="mt-2 text-sm leading-6" style={{ color: "#dbeafe" }}>Today: {smart.todayJobs.length} jobs, {smart.overdueInvoices.length} overdue invoices, {smart.unassigned.length} unassigned jobs, {smart.quoteFollowups.length} quote follow-ups.</p>
               </div>
-              <div className="rounded-3xl border border-white/10 bg-white/10 px-5 py-4 text-center">
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-100">Risk</p>
-                <p className="text-4xl font-black">{smart.risk}</p>
+              <div className="rounded-3xl px-5 py-4 text-center" style={glassStyle}>
+                <p className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "#bfdbfe" }}>Risk</p>
+                <p className="text-4xl font-black" style={{ color: "#ffffff" }}>{smart.risk}</p>
               </div>
             </div>
             <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Link to="/jobs" className="rounded-2xl border border-white/10 bg-white/10 p-3 hover:bg-white/15"><Briefcase className="h-5 w-5 text-blue-200" /><p className="mt-2 text-2xl font-black">{smart.todayJobs.length}</p><p className="text-xs text-slate-300">Today jobs</p></Link>
-              <Link to="/invoices" className="rounded-2xl border border-white/10 bg-white/10 p-3 hover:bg-white/15"><Receipt className="h-5 w-5 text-blue-200" /><p className="mt-2 text-2xl font-black">{smart.overdueInvoices.length}</p><p className="text-xs text-slate-300">Overdue</p></Link>
-              <Link to="/quotes" className="rounded-2xl border border-white/10 bg-white/10 p-3 hover:bg-white/15"><FileText className="h-5 w-5 text-blue-200" /><p className="mt-2 text-2xl font-black">{smart.quoteFollowups.length}</p><p className="text-xs text-slate-300">Quotes</p></Link>
-              <Link to="/team" className="rounded-2xl border border-white/10 bg-white/10 p-3 hover:bg-white/15"><Users className="h-5 w-5 text-blue-200" /><p className="mt-2 text-2xl font-black">{safeArray(data.workers).length}</p><p className="text-xs text-slate-300">Team</p></Link>
+              <Link to="/jobs" className="rounded-2xl p-3 hover:opacity-90" style={glassStyle}><Briefcase className="h-5 w-5" style={{ color: "#bfdbfe" }} /><p className="mt-2 text-2xl font-black" style={{ color: "#ffffff" }}>{smart.todayJobs.length}</p><p className="text-xs" style={{ color: "#dbeafe" }}>Today jobs</p></Link>
+              <Link to="/invoices" className="rounded-2xl p-3 hover:opacity-90" style={glassStyle}><Receipt className="h-5 w-5" style={{ color: "#bfdbfe" }} /><p className="mt-2 text-2xl font-black" style={{ color: "#ffffff" }}>{smart.overdueInvoices.length}</p><p className="text-xs" style={{ color: "#dbeafe" }}>Overdue</p></Link>
+              <Link to="/quotes" className="rounded-2xl p-3 hover:opacity-90" style={glassStyle}><FileText className="h-5 w-5" style={{ color: "#bfdbfe" }} /><p className="mt-2 text-2xl font-black" style={{ color: "#ffffff" }}>{smart.quoteFollowups.length}</p><p className="text-xs" style={{ color: "#dbeafe" }}>Quotes</p></Link>
+              <Link to="/team" className="rounded-2xl p-3 hover:opacity-90" style={glassStyle}><Users className="h-5 w-5" style={{ color: "#bfdbfe" }} /><p className="mt-2 text-2xl font-black" style={{ color: "#ffffff" }}>{safeArray(data.workers).length}</p><p className="text-xs" style={{ color: "#dbeafe" }}>Team</p></Link>
             </div>
           </div>
 
