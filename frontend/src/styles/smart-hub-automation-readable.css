@@ -1,8 +1,93 @@
-/* Smart Hub automation suggestions readability fix
+/* Smart Hub readability and layout polish
    CSS only. No runtime scripts, no layout replacement, no service worker changes. */
 
+[data-testid="ai-assistant-page"] {
+  --smart-hub-card-border: #cbd5e1;
+  --smart-hub-card-text: #0f172a;
+  --smart-hub-muted-text: #475569;
+}
+
+/* Tighten the top control tower so it does not dominate the page. */
+[data-testid="ai-assistant-page"] > section:nth-of-type(2) > div:first-child {
+  padding: 18px !important;
+  min-height: 0 !important;
+}
+
+[data-testid="ai-assistant-page"] > section:nth-of-type(2) > div:first-child > div:last-child {
+  padding: 14px 18px !important;
+}
+
+[data-testid="ai-assistant-page"] > section:nth-of-type(2) > div:first-child > div:last-child p:nth-child(2) {
+  font-size: 2.45rem !important;
+  line-height: 1 !important;
+}
+
+[data-testid="ai-assistant-page"] > section:nth-of-type(2) > div:first-child .mt-5 {
+  margin-top: 12px !important;
+}
+
+/* Make the metric strip readable and premium instead of pale. */
+[data-testid="ai-assistant-page"] > section:nth-of-type(3) > a > div,
+[data-testid="ai-assistant-page"] > section:nth-of-type(3) > div {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border: 1px solid var(--smart-hub-card-border) !important;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  color: var(--smart-hub-card-text) !important;
+}
+
+[data-testid="ai-assistant-page"] > section:nth-of-type(3) > a > div *,
+[data-testid="ai-assistant-page"] > section:nth-of-type(3) > div * {
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+[data-testid="ai-assistant-page"] > section:nth-of-type(3) p,
+[data-testid="ai-assistant-page"] > section:nth-of-type(3) span,
+[data-testid="ai-assistant-page"] > section:nth-of-type(3) div {
+  color: var(--smart-hub-muted-text) !important;
+}
+
+[data-testid="ai-assistant-page"] > section:nth-of-type(3) p:nth-child(2),
+[data-testid="ai-assistant-page"] > section:nth-of-type(3) .text-3xl,
+[data-testid="ai-assistant-page"] > section:nth-of-type(3) .font-black {
+  color: var(--smart-hub-card-text) !important;
+}
+
+[data-testid="ai-assistant-page"] > section:nth-of-type(3) svg {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Give the priority queue more working space on desktop. */
+@media (min-width: 1280px) {
+  [data-testid="ai-assistant-page"] > section:nth-of-type(4) {
+    grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.45fr) !important;
+  }
+}
+
+/* Strengthen the priority action cards. */
+[data-testid="ai-assistant-page"] > section:nth-of-type(4) .rounded-2xl.border.border-slate-200.bg-white {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08) !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+[data-testid="ai-assistant-page"] > section:nth-of-type(4) .rounded-2xl.border.border-slate-200.bg-white * {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Automation cards inside dark panels must stay readable. */
 [data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white,
-[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white {
+[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white,
+[data-testid="ai-assistant-page"] [style*="linear-gradient"] .rounded-2xl[style*="#ffffff"] {
   background: #ffffff !important;
   background-color: #ffffff !important;
   background-image: none !important;
@@ -14,7 +99,8 @@
 }
 
 [data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white *,
-[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white * {
+[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white *,
+[data-testid="ai-assistant-page"] [style*="linear-gradient"] .rounded-2xl[style*="#ffffff"] * {
   opacity: 1 !important;
   filter: none !important;
   text-shadow: none !important;
@@ -34,7 +120,8 @@
 [data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white strong,
 [data-testid="ai-assistant-page"] [style*="#061426"] .bg-white .text-slate-950,
 [data-testid="ai-assistant-page"] [style*="#061426"] .bg-white .font-black,
-[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white strong {
+[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white strong,
+[data-testid="ai-assistant-page"] [style*="linear-gradient"] .rounded-2xl[style*="#ffffff"] strong {
   color: #0f172a !important;
 }
 
