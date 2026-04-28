@@ -78,7 +78,7 @@ export function isPayrollRole(role) {
 export function getDefaultRoute(role) {
   const r = normalizeRole(role);
   if (r === "worker") return "/worker/jobs";
-  if (r === "payroll") return "/payroll";
+  if (r === "payroll") return "/timesheets";
   return "/dashboard";
 }
 
@@ -86,5 +86,5 @@ export const INVITE_ROLES = [
   { value: "manager", label: "Manager" },
   { value: "office_admin", label: "Office Admin" },
   { value: "worker", label: "Worker" },
-  { value: "payroll", label: "Payroll" },
+  { value: "payroll", label: "Timesheets" },
 ];
