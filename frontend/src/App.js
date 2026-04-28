@@ -49,6 +49,7 @@ import AutomationPage from "./pages/AutomationPage";
 import AutomationRunsPage from "./pages/AutomationRunsPage";
 import ReportsPage from "./pages/ReportsPage";
 import IntegrationsPage from "./pages/IntegrationsPage";
+import ComingSoonPage from "./pages/ComingSoonPage";
 import PublicQuotePage from "./pages/public/PublicQuotePage";
 import PublicInvoicePage from "./pages/public/PublicInvoicePage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -278,9 +279,9 @@ function App() {
           <Route path="/invoices" element={<BusinessRoute><InvoicesPage /></BusinessRoute>} />
           <Route path="/invoices/new" element={<BusinessRoute><InvoiceFormPage /></BusinessRoute>} />
           <Route path="/invoices/:id" element={<BusinessRoute><InvoiceDetailPage /></BusinessRoute>} />
-          <Route path="/sms" element={<BusinessRoute><SMSPage /></BusinessRoute>} />
+          <Route path="/sms" element={<BusinessRoute><ComingSoonPage title="Communications coming soon" description="SMS and customer communications are being kept out of the core launch path until sending, credits and reminders are fully reliable." /></BusinessRoute>} />
           <Route path="/follow-ups" element={<BusinessRoute><FollowUpsPage /></BusinessRoute>} />
-          <Route path="/reports" element={<ReportsRoute><ReportsPage /></ReportsRoute>} />
+          <Route path="/reports" element={<ReportsRoute><ComingSoonPage title="Reports coming soon" description="Reports will return when they provide strong business insight instead of basic or half-finished numbers." /></ReportsRoute>} />
           <Route path="/integrations" element={<BusinessRoute><IntegrationsPage /></BusinessRoute>} />
           <Route path="/settings" element={<BusinessRoute><SettingsPage /></BusinessRoute>} />
 
@@ -288,7 +289,7 @@ function App() {
           <Route path="/team" element={<TeamRoute><TeamPage /></TeamRoute>} />
           <Route path="/notifications" element={<NotificationsRoute><NotificationsPage /></NotificationsRoute>} />
           <Route path="/automation" element={<TeamRoute><AutomationPage /></TeamRoute>} />
-          <Route path="/automation/runs" element={<TeamRoute><AutomationRunsPage /></TeamRoute>} />
+          <Route path="/automation/runs" element={<TeamRoute><AutomationRunsPage /></AutomationRunsPage></TeamRoute>} />
           <Route path={TIMESHEETS_PATH} element={<TimesheetsRoute><TimesheetsPage /></TimesheetsRoute>} />
 
           <Route path="/worker/jobs" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
