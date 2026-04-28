@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Download, X, Share } from "lucide-react";
 import { Button } from "./ui/button";
+import TeamWorkerEditPanel from "./TeamWorkerEditPanel";
 
 const DISMISS_KEY = "churvox_install_dismissed";
 const DISMISS_DAYS = 7;
@@ -43,7 +44,7 @@ function isFormLikeRoute() {
   return /\/(new|edit)(\/|$)/i.test(path) || /\/jobs\/[^/]+|\/quotes\/[^/]+|\/invoices\/[^/]+|\/clients\/[^/]+/i.test(path);
 }
 
-export function InstallPrompt() {
+function InstallPromptBanner() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
@@ -52,7 +53,6 @@ export function InstallPrompt() {
   const device = getDeviceType();
 
   useEffect(() => {
-    // Do not cover audit browsers, installed apps, dismissed banners, or create/edit forms.
     if (isAutomationBrowser() || isStandalone() || isDismissed() || isFormLikeRoute()) return;
 
     const handleBeforeInstall = (e) => {
@@ -70,7 +70,6 @@ export function InstallPrompt() {
     window.addEventListener("beforeinstallprompt", handleBeforeInstall);
     window.addEventListener("appinstalled", handleAppInstalled);
 
-    // Fallback: show banner on mobile after 4s if no native prompt fires.
     const timer = setTimeout(() => {
       if (device !== "desktop" && !isStandalone() && !isDismissed() && !isFormLikeRoute()) {
         setShowBanner(true);
@@ -85,7 +84,6 @@ export function InstallPrompt() {
   }, [device]);
 
   useEffect(() => {
-    // If user navigates into a form while banner is visible, get it out of the way.
     if (isFormLikeRoute()) {
       setShowBanner(false);
       setShowInstructions(false);
@@ -124,10 +122,8 @@ export function InstallPrompt() {
     setShowInstructions(false);
   }, []);
 
-  // Don't render if installed, standalone, automated, on a form page, or banner not triggered.
   if (installed || !showBanner || isStandalone() || isAutomationBrowser() || isFormLikeRoute()) return null;
 
-  // Manual instruction overlay
   if (showInstructions) {
     return (
       <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60" data-testid="install-instructions-overlay">
@@ -183,7 +179,6 @@ export function InstallPrompt() {
     );
   }
 
-  // Install banner
   return (
     <div
       className="fixed left-4 right-4 sm:left-auto sm:right-4 sm:w-80 sm:bottom-4 z-[35] pointer-events-none"
@@ -211,5 +206,14 @@ export function InstallPrompt() {
         </button>
       </div>
     </div>
+  );
+}
+
+export function InstallPrompt() {
+  return (
+    <>
+      <TeamWorkerEditPanel />
+      <InstallPromptBanner />
+    </>
   );
 }
