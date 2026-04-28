@@ -92,6 +92,16 @@ export default function QuoteDetailPage() {
     if (res.success) { toast.success("Quote deleted"); navigate("/quotes"); }
   };
 
+  const handleAIFollowUpDraft = async () => {
+    const res = await post("/ai/drafts/create", {
+      type: "quote_follow_up",
+      source_record_id: id,
+      source_record_type: "quote",
+    });
+    if (res?.success) toast.success("AI follow-up draft created");
+    else toast.error(safeText(res?.error, "Could not create AI draft"));
+  };
+
   const quoteTotal = useMemo(() => Number(quote?.price || quote?.total || quote?.subtotal || 0), [quote]);
   const extrasTotal = useMemo(() => (Array.isArray(quote?.extras) ? quote.extras : []).reduce((sum, ex) => sum + Number(ex.amount || ex.price || ex.total || 0), 0), [quote]);
 
@@ -122,6 +132,7 @@ export default function QuoteDetailPage() {
                 {statusInfo?.label || quote.status}
               </span>
               <Button variant="outline" size="sm" onClick={() => window.print()} className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/15"><Printer size={14} className="mr-1" /> Print</Button>
+              <Button variant="outline" size="sm" onClick={handleAIFollowUpDraft} className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/15">AI follow-up draft</Button>
               {isEmployer && <Button asChild variant="outline" size="sm" className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/15" data-testid="edit-quote-button"><Link to={`/quotes/${id}/edit`}><Edit size={14} className="mr-1" /> Edit</Link></Button>}
               {isEmployer && <Button variant="outline" size="sm" onClick={handleDelete} className="rounded-full border-red-300/30 bg-red-500/10 text-red-100 hover:bg-red-500/20" data-testid="delete-quote-trigger"><Trash2 size={14} className="mr-1" /> Delete</Button>}
             </div>

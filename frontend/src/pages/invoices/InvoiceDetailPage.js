@@ -102,6 +102,16 @@ export default function InvoiceDetailPage() {
     await fetchInvoice();
   };
 
+  const handleAiReminderDraft = async () => {
+    const res = await post("/ai/drafts/create", {
+      type: "invoice_reminder",
+      source_record_id: id,
+      source_record_type: "invoice",
+    });
+    if (res?.success) toast.success("AI reminder draft created");
+    else toast.error(res?.error || "Could not create AI draft");
+  };
+
   const totals = useMemo(() => {
     const subtotal = Number(invoice?.subtotal || 0);
     const gst = Number(invoice?.gst_amount || 0);
@@ -138,6 +148,7 @@ export default function InvoiceDetailPage() {
                 {statusInfo?.label || invoice.status}
               </span>
               <Button variant="outline" size="sm" onClick={() => window.print()} className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/15"><Printer size={14} className="mr-1" /> Print</Button>
+              <Button variant="outline" size="sm" onClick={handleAiReminderDraft} className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/15">AI reminder draft</Button>
               <Button variant="outline" size="sm" onClick={handleDelete} className="rounded-full border-red-300/30 bg-red-500/10 text-red-100 hover:bg-red-500/20" data-testid="delete-invoice-trigger"><Trash2 size={14} className="mr-1" /> Delete</Button>
             </div>
           </div>
@@ -202,6 +213,7 @@ export default function InvoiceDetailPage() {
               <CardContent className="p-5 space-y-3">
                 <p className="text-sm font-black text-slate-950">Invoice actions</p>
                 {invoice.status === "draft" && <Button onClick={handleSend} disabled={loading} className="h-11 w-full rounded-2xl bg-blue-600 font-black text-white hover:bg-blue-700" data-testid="send-invoice-button"><Send size={16} className="mr-2" /> Send Invoice</Button>}
+                <Button variant="outline" onClick={handleAiReminderDraft} className="h-11 w-full rounded-2xl font-black">AI reminder draft</Button>
                 {invoice.status === "sent" && <Button onClick={handleMarkPaid} disabled={loading} className="h-11 w-full rounded-2xl bg-green-600 font-black text-white hover:bg-green-700" data-testid="mark-paid-button"><CheckCircle size={16} className="mr-2" /> Mark as Paid</Button>}
                 {invoice.status === "sent" && <Button variant="outline" onClick={handleSendSMSReminder} disabled={loading} className="h-11 w-full rounded-2xl font-black" data-testid="sms-invoice-reminder"><MessageSquare size={16} className="mr-2" /> SMS Reminder</Button>}
                 {invoice.status === "paid" && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-center text-sm font-black text-emerald-700"><CheckCircle size={18} className="inline mr-2" /> Paid {invoice.paid_at && `on ${formatDate(invoice.paid_at)}`}</div>}
