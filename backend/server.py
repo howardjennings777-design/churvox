@@ -8393,6 +8393,345 @@ def _ai_user_role(current_user: dict) -> str:
     return str((current_user or {}).get("role") or "").strip().lower().replace("-", "_").replace(" ", "_")
 
 
+_AI_OWNER_ACTION_ALLOWED_ROLES = {"owner", "admin", "employer", "manager", "office_admin"}
+_AI_OWNER_ACTION_BLOCKED_ROLES = {"worker", "payroll"}
+_AI_ACTION_ACTIVE_STATUSES = {"open", "snoozed", "approved"}
+
+
+def _ai_action_now():
+    return datetime.now(timezone.utc)
+
+
+def _ai_action_priority_rank(value: str) -> int:
+    value = str(value or "").strip().lower()
+    return {"high": 0, "medium": 1, "low": 2}.get(value, 3)
+
+
+def _ai_action_to_response(doc: dict) -> dict:
+    clean = safe_doc(doc) or {}
+    clean["priority"] = str(clean.get("priority") or "medium").lower()
+    clean["confidence"] = str(clean.get("confidence") or "medium").lower()
+    clean["status"] = str(clean.get("status") or "open").lower()
+    return make_json_safe(clean)
+
+
+def _ai_action_role_guard(current_user: dict):
+    role = _ai_user_role(current_user)
+    if role in _AI_OWNER_ACTION_BLOCKED_ROLES or role not in _AI_OWNER_ACTION_ALLOWED_ROLES:
+        raise HTTPException(status_code=403, detail="AI Action Queue is not available for this role")
+
+
+async def _ai_action_audit_event(business_id: str, action: dict, event_type: str, current_user: dict, payload: dict | None = None):
+    now = _ai_action_now()
+    event = {
+        "id": str(_automation_uuid.uuid4()),
+        "business_id": str(business_id),
+        "action_id": str(action.get("id") or action.get("_id") or ""),
+        "event_type": str(event_type),
+        "payload": payload or {},
+        "actor": {
+            "id": str(current_user.get("id") or current_user.get("_id") or ""),
+            "email": str(current_user.get("email") or ""),
+            "role": _ai_user_role(current_user),
+        },
+        "created_at": now,
+    }
+    await db.ai_action_events.insert_one(event)
+
+
+def _ai_action_missing_contact(client: dict) -> bool:
+    if not client:
+        return True
+    email = str(client.get("email") or "").strip()
+    phone = clean_phone(client.get("phone") or client.get("mobile") or client.get("phone_number"))
+    return not email or not phone
+
+
+async def _generate_ai_action_candidates(business_id: str) -> list[dict]:
+    now = _ai_action_now()
+    query = {"business_id": str(business_id)}
+    jobs = await db.jobs.find(query).to_list(length=500)
+    invoices = await db.invoices.find(query).to_list(length=500)
+    quotes = await db.quotes.find(query).to_list(length=500)
+    clients = await db.clients.find(query).to_list(length=500)
+    timesheets = await db.timesheets.find(query).to_list(length=500)
+    automation_runs = await db.automation_runs.find(query).sort("created_at", -1).to_list(length=500)
+
+    candidates: list[dict] = []
+    invoice_by_job_id = {}
+    for invoice in invoices:
+        linked_job_id = str(invoice.get("job_id") or "").strip()
+        if linked_job_id:
+            invoice_by_job_id[linked_job_id] = invoice
+
+    for job in jobs:
+        job_status = str(job.get("status") or job.get("job_status") or "").strip().lower().replace(" ", "_")
+        if job_status not in {"completed", "done"}:
+            has_worker = bool(job.get("assigned_worker_id") or job.get("worker_id") or job.get("assigned_to"))
+            if not has_worker:
+                jid = str(job.get("id") or job.get("_id") or "")
+                job_title = _safe_text(job.get("title") or job.get("job_title") or job.get("name"), "Job")
+                candidates.append({
+                    "type": "unassigned_job",
+                    "title": "Assign unallocated job",
+                    "description": f"{job_title} has no worker assigned yet.",
+                    "reason": "Unassigned work risks delays and customer frustration.",
+                    "priority": "high",
+                    "confidence": "high",
+                    "route": f"/jobs/{jid}" if jid else "/jobs",
+                    "cta_label": "Assign worker",
+                    "status": "open",
+                    "source_record_id": jid,
+                    "source_record_type": "job",
+                    "due_at": job.get("scheduled_date") or job.get("date") or job.get("start_date"),
+                })
+            continue
+
+        jid = str(job.get("id") or job.get("_id") or "")
+        has_invoice = bool(job.get("invoice_id") or job.get("invoice_number") or invoice_by_job_id.get(jid))
+        if not has_invoice:
+            price = float(job.get("price") or job.get("job_price") or job.get("total") or 0)
+            candidates.append({
+                "type": "completed_job_not_invoiced",
+                "title": "Draft invoice for completed job",
+                "description": f"Completed job {_safe_text(job.get('title') or job.get('job_title'), 'job')} is not invoiced yet.",
+                "reason": "Completed work should move to draft invoice fast to protect cash flow.",
+                "priority": "high" if price > 0 else "medium",
+                "confidence": "high" if price > 0 else "medium",
+                "route": f"/jobs/{jid}" if jid else "/jobs",
+                "cta_label": "Open job",
+                "status": "open",
+                "source_record_id": jid,
+                "source_record_type": "job",
+            })
+
+    for invoice in invoices:
+        inv_status = str(invoice.get("status") or "").strip().lower()
+        if inv_status in {"paid", "void", "cancelled", "canceled"}:
+            continue
+        iid = str(invoice.get("id") or invoice.get("_id") or "")
+        due_at = invoice.get("due_date") or invoice.get("due_at")
+        overdue = inv_status == "overdue" or (to_dt := _parse_date_like(due_at)) and to_dt < now
+        if overdue or inv_status in {"unpaid", "sent", "partial"}:
+            candidates.append({
+                "type": "invoice_collection",
+                "title": "Review unpaid invoice",
+                "description": f"Invoice {_safe_text(invoice.get('invoice_number') or invoice.get('number'), 'draft')} is still unpaid.",
+                "reason": "Cash collection needs owner visibility and follow-up planning.",
+                "priority": "high" if overdue else "medium",
+                "confidence": "high",
+                "route": f"/invoices/{iid}" if iid else "/invoices",
+                "cta_label": "Open invoice",
+                "status": "open",
+                "source_record_id": iid,
+                "source_record_type": "invoice",
+                "due_at": due_at,
+            })
+
+    for quote in quotes:
+        q_status = str(quote.get("status") or "").strip().lower()
+        if q_status not in {"pending", "sent", "draft"}:
+            continue
+        qid = str(quote.get("id") or quote.get("_id") or "")
+        candidates.append({
+            "type": "pending_quote_followup",
+            "title": "Follow up pending quote",
+            "description": f"Quote {_safe_text(quote.get('quote_number') or quote.get('number'), 'quote')} is waiting for customer response.",
+            "reason": "Pending quotes are warm revenue opportunities.",
+            "priority": "medium",
+            "confidence": "medium",
+            "route": f"/quotes/{qid}" if qid else "/quotes",
+            "cta_label": "Open quote",
+            "status": "open",
+            "source_record_id": qid,
+            "source_record_type": "quote",
+        })
+
+    for client in clients:
+        if not _ai_action_missing_contact(client):
+            continue
+        cid = str(client.get("id") or client.get("_id") or "")
+        candidates.append({
+            "type": "client_missing_contact",
+            "title": "Complete client contact details",
+            "description": f"{_safe_text(client.get('name'), 'Client')} is missing email and/or phone details.",
+            "reason": "Missing contact details can block quoting, invoicing, and reminders.",
+            "priority": "medium",
+            "confidence": "high",
+            "route": f"/clients/{cid}" if cid else "/clients",
+            "cta_label": "Open client",
+            "status": "open",
+            "source_record_id": cid,
+            "source_record_type": "client",
+        })
+
+    for ts in timesheets:
+        ts_status = str(ts.get("status") or "").strip().lower().replace(" ", "_")
+        if ts_status in {"rejected", "warning", "flagged"}:
+            tid = str(ts.get("id") or ts.get("_id") or "")
+            candidates.append({
+                "type": "timesheet_warning",
+                "title": "Review timesheet warning",
+                "description": f"Timesheet for {_safe_text(ts.get('worker_name') or ts.get('user_name'), 'worker')} needs review.",
+                "reason": "Timesheet warnings can affect payroll accuracy.",
+                "priority": "high",
+                "confidence": "medium",
+                "route": "/timesheets",
+                "cta_label": "Open timesheets",
+                "status": "open",
+                "source_record_id": tid,
+                "source_record_type": "timesheet",
+            })
+
+    for run in automation_runs:
+        run_status = str(run.get("status") or "").strip().lower()
+        if run_status not in {"failed", "error"}:
+            continue
+        rid = str(run.get("id") or run.get("_id") or "")
+        candidates.append({
+            "type": "automation_failed_run",
+            "title": "Investigate failed automation",
+            "description": _safe_text(run.get("message"), "An automation run failed and needs review."),
+            "reason": "Failed automation can silently interrupt operations.",
+            "priority": "medium",
+            "confidence": "medium",
+            "route": "/automation",
+            "cta_label": "Open automation",
+            "status": "open",
+            "source_record_id": rid,
+            "source_record_type": "automation_run",
+        })
+
+    return candidates
+
+
+def _parse_date_like(value):
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    if isinstance(value, str):
+        raw = value.strip()
+        if not raw:
+            return None
+        try:
+            if raw.endswith("Z"):
+                raw = raw[:-1] + "+00:00"
+            parsed = datetime.fromisoformat(raw)
+            return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+        except Exception:
+            return None
+    return None
+
+
+@api_router.get("/ai/actions")
+async def list_ai_actions(current_user: dict = Depends(get_current_user)):
+    _ai_action_role_guard(current_user)
+    business_id = await get_user_business_id(current_user)
+    docs = await db.ai_actions.find({"business_id": str(business_id)}).sort([("created_at", -1)]).limit(200).to_list(length=200)
+    docs_sorted = sorted(
+        docs,
+        key=lambda x: (
+            0 if str(x.get("status") or "open").lower() in _AI_ACTION_ACTIVE_STATUSES else 1,
+            _ai_action_priority_rank(x.get("priority")),
+            -(x.get("updated_at") or x.get("created_at") or _ai_action_now()).timestamp() if isinstance((x.get("updated_at") or x.get("created_at")), datetime) else 0,
+        ),
+    )
+    return {"success": True, "actions": [_ai_action_to_response(x) for x in docs_sorted]}
+
+
+@api_router.post("/ai/actions/generate")
+async def generate_ai_actions(current_user: dict = Depends(get_current_user)):
+    _ai_action_role_guard(current_user)
+    business_id = await get_user_business_id(current_user)
+    now = _ai_action_now()
+    candidates = await _generate_ai_action_candidates(str(business_id))
+    created = 0
+    updated = 0
+    for candidate in candidates:
+        source_id = str(candidate.get("source_record_id") or "")
+        source_type = str(candidate.get("source_record_type") or "")
+        action_type = str(candidate.get("type") or "")
+        existing = await db.ai_actions.find_one({
+            "business_id": str(business_id),
+            "type": action_type,
+            "source_record_id": source_id,
+            "source_record_type": source_type,
+            "status": {"$in": list(_AI_ACTION_ACTIVE_STATUSES)},
+        })
+        base_update = {
+            "business_id": str(business_id),
+            "type": action_type,
+            "title": _safe_text(candidate.get("title"), "Action"),
+            "description": _safe_text(candidate.get("description"), ""),
+            "reason": _safe_text(candidate.get("reason"), ""),
+            "priority": str(candidate.get("priority") or "medium").lower(),
+            "confidence": str(candidate.get("confidence") or "medium").lower(),
+            "route": _safe_text(candidate.get("route"), ""),
+            "cta_label": _safe_text(candidate.get("cta_label"), "Open"),
+            "status": str(candidate.get("status") or "open").lower(),
+            "updated_at": now,
+            "due_at": candidate.get("due_at"),
+            "source_record_id": source_id or None,
+            "source_record_type": source_type or None,
+            "draft_text": candidate.get("draft_text"),
+        }
+        if existing:
+            await db.ai_actions.update_one({"_id": existing["_id"]}, {"$set": base_update})
+            updated += 1
+            continue
+        doc = {
+            "id": str(_automation_uuid.uuid4()),
+            **base_update,
+            "created_at": now,
+            "approved_by": None,
+            "approved_at": None,
+        }
+        await db.ai_actions.insert_one(doc)
+        created += 1
+    return {"success": True, "created": created, "updated": updated, "message": "AI suggests. You approve. Draft only."}
+
+
+async def _mutate_ai_action(action_id: str, next_status: str, current_user: dict, payload: dict | None = None):
+    _ai_action_role_guard(current_user)
+    business_id = await get_user_business_id(current_user)
+    now = _ai_action_now()
+    action = await db.ai_actions.find_one({"id": action_id, "business_id": str(business_id)})
+    if not action:
+        raise HTTPException(status_code=404, detail="AI action not found")
+    updates = {"status": next_status, "updated_at": now}
+    if next_status == "approved":
+        updates["approved_by"] = str(current_user.get("id") or current_user.get("_id") or "")
+        updates["approved_at"] = now
+    if next_status == "snoozed":
+        snooze_until = _parse_date_like((payload or {}).get("due_at"))
+        snooze_days = int((payload or {}).get("days") or 2)
+        updates["due_at"] = snooze_until or (now + timedelta(days=max(1, min(30, snooze_days))))
+    await db.ai_actions.update_one({"_id": action["_id"]}, {"$set": updates})
+    action.update(updates)
+    if next_status in {"approved", "dismissed", "snoozed", "completed"}:
+        await _ai_action_audit_event(str(business_id), action, next_status, current_user, payload)
+    return {"success": True, "action": _ai_action_to_response(action)}
+
+
+@api_router.post("/ai/actions/{action_id}/dismiss")
+async def dismiss_ai_action(action_id: str, payload: dict | None = None, current_user: dict = Depends(get_current_user)):
+    return await _mutate_ai_action(action_id, "dismissed", current_user, payload)
+
+
+@api_router.post("/ai/actions/{action_id}/snooze")
+async def snooze_ai_action(action_id: str, payload: dict | None = None, current_user: dict = Depends(get_current_user)):
+    return await _mutate_ai_action(action_id, "snoozed", current_user, payload)
+
+
+@api_router.post("/ai/actions/{action_id}/complete")
+async def complete_ai_action(action_id: str, payload: dict | None = None, current_user: dict = Depends(get_current_user)):
+    return await _mutate_ai_action(action_id, "completed", current_user, payload)
+
+
+@api_router.post("/ai/actions/{action_id}/approve")
+async def approve_ai_action(action_id: str, payload: dict | None = None, current_user: dict = Depends(get_current_user)):
+    return await _mutate_ai_action(action_id, "approved", current_user, payload)
+
+
 def _safe_text(value, fallback="") -> str:
     return str(value or fallback).strip()
 
