@@ -3,8 +3,8 @@
   --churvox-bg-2: #eef3f8;
   --churvox-surface: #ffffff;
   --churvox-surface-soft: #f8fafc;
-  --churvox-sidebar: #07111f;
-  --churvox-sidebar-2: #0b1729;
+  --churvox-sidebar: #073b91;
+  --churvox-sidebar-2: #0b5bd3;
   --churvox-primary: #2563eb;
   --churvox-primary-2: #38bdf8;
   --churvox-primary-dark: #1d4ed8;
@@ -380,16 +380,16 @@ aside,
 [class*="sidebar"],
 [class*="Sidebar"] {
   background:
-    radial-gradient(circle at 16% 0%, rgba(37, 99, 235, 0.42), transparent 18rem),
-    linear-gradient(180deg, var(--churvox-sidebar), var(--churvox-sidebar-2) 62%, #050b14) !important;
-  color: #e5edf8 !important;
-  border-right: 1px solid rgba(148, 163, 184, 0.14) !important;
-  box-shadow: 18px 0 48px rgba(2, 6, 23, 0.22) !important;
+    radial-gradient(circle at 16% 0%, rgba(14, 165, 233, 0.56), transparent 18rem),
+    linear-gradient(180deg, #073b91 0%, #0b5bd3 52%, #0845a0 100%) !important;
+  color: #eaf4ff !important;
+  border-right: 1px solid rgba(191, 219, 254, 0.22) !important;
+  box-shadow: 18px 0 48px rgba(37, 99, 235, 0.20) !important;
 }
 
 [data-testid="desktop-sidebar"] [data-nav="group-label"],
 .sidebar [data-nav="group-label"] {
-  color: #8fa6c4 !important;
+  color: rgba(219, 234, 254, 0.82) !important;
   font-weight: 850 !important;
   letter-spacing: .08em !important;
   text-transform: uppercase;
@@ -401,7 +401,7 @@ aside a,
 .sidebar a,
 [class*="sidebar"] a,
 [class*="Sidebar"] a {
-  color: rgba(226, 232, 240, 0.88) !important;
+  color: rgba(239, 246, 255, 0.92) !important;
   border-radius: 16px !important;
 }
 
@@ -411,7 +411,7 @@ aside a:hover,
 .sidebar a:hover,
 [class*="sidebar"] a:hover,
 [class*="Sidebar"] a:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
   color: #ffffff !important;
 }
 
@@ -422,10 +422,10 @@ aside a.active,
 [class*="sidebar"] a.active,
 [class*="Sidebar"] a.active,
 [aria-current="page"] {
-  background: linear-gradient(135deg, var(--churvox-primary), var(--churvox-primary-2)) !important;
+  background: rgba(255, 255, 255, 0.18) !important;
   color: #ffffff !important;
-  border: 1px solid rgba(186, 230, 253, 0.45) !important;
-  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.36) !important;
+  border: 1px solid rgba(219, 234, 254, 0.48) !important;
+  box-shadow: 0 16px 34px rgba(14, 165, 233, 0.28) !important;
 }
 
 /* Headers and mobile navigation */
@@ -442,15 +442,15 @@ header,
 
 [data-testid="mobile-header"],
 [data-testid="mobile-bottom-nav"] {
-  background: rgba(7, 17, 31, 0.96) !important;
-  border-color: rgba(148, 163, 184, 0.22) !important;
-  color: #e5edf8 !important;
+  background: linear-gradient(135deg, #073b91, #0b5bd3) !important;
+  border-color: rgba(191, 219, 254, 0.28) !important;
+  color: #eaf4ff !important;
 }
 
 [data-testid="mobile-bottom-nav"] a,
 [data-testid="mobile-header"] a,
 [data-testid="mobile-header"] button {
-  color: #e5edf8 !important;
+  color: #eaf4ff !important;
 }
 
 /* Notification dropdown alignment + tap */
@@ -476,8 +476,8 @@ header,
 }
 
 .chx-worker-header {
-  background: linear-gradient(135deg, #07111f, #0b1729) !important;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.25) !important;
+  background: linear-gradient(135deg, #073b91, #0b5bd3) !important;
+  border-bottom: 1px solid rgba(191, 219, 254, 0.28) !important;
 }
 
 .chx-worker-card {
@@ -580,9 +580,9 @@ img[src*="Logo"],
 [data-testid="desktop-sidebar"] nav a[data-nav="item"],
 [data-testid="desktop-sidebar"] nav a[data-nav="item"].border,
 [data-testid="desktop-sidebar"] nav a[data-nav="item"]:not(.active) {
-  background: rgba(255, 255, 255, 0.045) !important;
-  color: #dbeafe !important;
-  border-color: rgba(148, 163, 184, 0.12) !important;
+  background: rgba(255, 255, 255, 0.09) !important;
+  color: #eaf4ff !important;
+  border-color: rgba(219, 234, 254, 0.16) !important;
   box-shadow: none !important;
   opacity: 1 !important;
 }
@@ -595,18 +595,105 @@ img[src*="Logo"],
 }
 
 [data-testid="desktop-sidebar"] nav a[data-nav="item"]:hover {
-  background: rgba(37, 99, 235, 0.18) !important;
+  background: rgba(255, 255, 255, 0.16) !important;
   color: #ffffff !important;
 }
 
 [data-testid="desktop-sidebar"] nav a[data-nav="item"].active {
-  background: linear-gradient(135deg, #2563eb, #38bdf8) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
   color: #ffffff !important;
-  border-color: rgba(186, 230, 253, 0.48) !important;
-  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.36) !important;
+  border-color: rgba(219, 234, 254, 0.55) !important;
+  box-shadow: 0 16px 34px rgba(14, 165, 233, 0.30) !important;
 }
 
 [data-testid="desktop-sidebar"] nav a[data-nav="item"].active span,
 [data-testid="desktop-sidebar"] nav a[data-nav="item"].active svg {
   color: #ffffff !important;
+}
+
+/* CHURVOX BLUE THEME OVERRIDE — remove black/slate panels app-wide */
+.bg-slate-950,
+.bg-slate-900,
+.from-slate-950,
+.from-slate-900,
+.via-slate-950,
+.via-slate-900,
+.to-slate-950,
+.to-slate-900,
+.to-indigo-950,
+.to-blue-950,
+[class*="from-slate-950"],
+[class*="via-slate-900"],
+[class*="to-indigo-950"],
+[class*="to-blue-950"] {
+  background-color: #073b91 !important;
+}
+
+.bg-gradient-to-br.from-slate-950,
+.bg-gradient-to-br.from-slate-900,
+.bg-gradient-to-r.from-slate-950,
+.bg-gradient-to-r.from-slate-900,
+[class*="bg-gradient"].from-slate-950,
+[class*="bg-gradient"].from-slate-900,
+section[class*="from-slate-950"],
+section[class*="from-slate-900"],
+article[class*="from-slate-950"],
+div[class*="from-slate-950"] {
+  background:
+    radial-gradient(circle at 88% 10%, rgba(56, 189, 248, 0.38), transparent 18rem),
+    linear-gradient(135deg, #073b91 0%, #0b5bd3 52%, #0744a3 100%) !important;
+  background-image:
+    radial-gradient(circle at 88% 10%, rgba(56, 189, 248, 0.38), transparent 18rem),
+    linear-gradient(135deg, #073b91 0%, #0b5bd3 52%, #0744a3 100%) !important;
+  color: #ffffff !important;
+  border-color: rgba(191, 219, 254, 0.28) !important;
+  box-shadow: 0 24px 70px rgba(37, 99, 235, 0.20) !important;
+}
+
+/* Keep dark-gradient panel text readable after changing to blue. */
+.bg-gradient-to-br.from-slate-950 h1,
+.bg-gradient-to-br.from-slate-950 h2,
+.bg-gradient-to-br.from-slate-950 h3,
+.bg-gradient-to-br.from-slate-950 p,
+.bg-gradient-to-br.from-slate-950 span,
+[class*="from-slate-950"] h1,
+[class*="from-slate-950"] h2,
+[class*="from-slate-950"] h3,
+[class*="from-slate-950"] p,
+[class*="from-slate-950"] span {
+  color: #ffffff !important;
+}
+
+/* Any old black utility blocks should become blue cards, not black holes. */
+.bg-black,
+.bg-slate-950,
+.bg-slate-900,
+.bg-gray-950,
+.bg-gray-900 {
+  background:
+    radial-gradient(circle at 90% 8%, rgba(56, 189, 248, 0.28), transparent 16rem),
+    linear-gradient(135deg, #073b91, #0b5bd3) !important;
+  color: #ffffff !important;
+}
+
+/* Jobs board and compact grids should use the blue brand backdrop instead of black gaps. */
+.cx-page.max-w-7xl > section.space-y-3:has(> [data-testid^="job-card-"]) {
+  background:
+    radial-gradient(circle at 88% 10%, rgba(56, 189, 248, 0.18), transparent 16rem),
+    linear-gradient(135deg, #073b91 0%, #0b5bd3 100%) !important;
+  border-radius: 28px !important;
+  padding: 14px !important;
+  border: 1px solid rgba(191, 219, 254, 0.24) !important;
+}
+
+/* Preserve actual white cards inside blue sections. */
+[data-testid^="job-card-"],
+.bg-white,
+.card,
+.cx-card,
+.cx-panel,
+.surface-card,
+article.bg-white,
+section.bg-white {
+  color: #0f172a !important;
 }
