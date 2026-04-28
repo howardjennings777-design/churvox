@@ -37,7 +37,7 @@ export default function Layout({ children }) {
     (role === "owner" || role === "employer" || role === "manager" || role === "office_admin") && { path: "/follow-ups", label: "Follow-ups", icon: ListChecks, group: "Operations" },
     canAccess(role, "team") && (isOwnerUser || hasPlanAccess(safePlan, "team")) && { path: "/team", label: "Team", icon: UserPlus, group: "Operations" },
     (role === "owner" || role === "employer" || role === "manager") && { path: "/automation", label: "Automation", icon: Zap, group: "Operations" },
-    canAccess(role, "payroll") && { path: "/payroll", label: "Payroll", icon: DollarSign, group: "Operations" },
+    canAccess(role, "payroll") && { path: "/timesheets", label: "Timesheets", icon: DollarSign, group: "Operations" },
     canAccess(role, "sms") && { path: "/sms", label: "Communications", icon: MessageSquare, group: "Operations" },
     canAccess(role, "reports") && role !== "payroll" && { path: "/reports", label: "Reports", icon: FileText, group: "Admin" },
     canAccess(role, "integrations") && { path: "/integrations", label: "Document Studio", icon: Zap, group: "Admin" },
