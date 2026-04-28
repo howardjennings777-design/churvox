@@ -22,12 +22,69 @@ function normalise(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function extractList(data, keys = []) {
+  if (Array.isArray(data)) return data;
+  for (const key of keys) {
+    if (Array.isArray(data?.[key])) return data[key];
+  }
+  return [];
+}
+
 function getJobTitle(job) {
   return job?.title || job?.job_type || job?.type || "Untitled job";
 }
 
-function getClientName(job) {
-  return job?.customer_name || job?.client_name || job?.client?.name || "No client set";
+function getClientIdFromJob(job) {
+  return String(
+    job?.client_id ||
+    job?.clientId ||
+    job?.customer_id ||
+    job?.customerId ||
+    job?.client?.id ||
+    job?.client?._id ||
+    job?.customer?.id ||
+    job?.customer?._id ||
+    ""
+  ).trim();
+}
+
+function getClientId(client) {
+  return String(client?.id || client?._id || client?.client_id || client?.customer_id || "").trim();
+}
+
+function getClientDisplayName(client) {
+  return (
+    client?.name ||
+    client?.client_name ||
+    client?.customer_name ||
+    client?.business_name ||
+    client?.company_name ||
+    client?.contact_name ||
+    client?.full_name ||
+    client?.email ||
+    ""
+  );
+}
+
+function getClientName(job, clientLookup = {}) {
+  const directName =
+    job?.customer_name ||
+    job?.client_name ||
+    job?.customer?.name ||
+    job?.customer?.customer_name ||
+    job?.customer?.client_name ||
+    job?.client?.name ||
+    job?.client?.client_name ||
+    job?.client?.customer_name ||
+    job?.client?.business_name ||
+    job?.client?.company_name;
+
+  if (directName) return directName;
+
+  const id = getClientIdFromJob(job);
+  if (id && clientLookup[id]) return clientLookup[id];
+
+  return "No client set";
 }
 
 function getWorkerName(job) {
@@ -83,15 +140,32 @@ export default function JobsPage() {
   const { isEmployer, normalizedRole } = useAuth();
   const { get, del, loading } = useApi();
   const [jobs, setJobs] = useState([]);
+  const [clients, setClients] = useState([]);
   const [pageLoading, setPageLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteId, setDeleteId] = useState(null);
 
+  const clientLookup = useMemo(() => {
+    const lookup = {};
+    clients.forEach((client) => {
+      const id = getClientId(client);
+      const name = getClientDisplayName(client);
+      if (id && name) lookup[id] = name;
+    });
+    return lookup;
+  }, [clients]);
+
   const fetchJobs = useCallback(async () => {
     setPageLoading(true);
-    const res = await get("/jobs");
-    if (res.success) setJobs(Array.isArray(res.data) ? res.data : []);
+    const [jobsRes, clientsRes] = await Promise.all([
+      get("/jobs"),
+      get("/clients"),
+    ]);
+
+    if (jobsRes.success) setJobs(extractList(jobsRes.data, ["jobs", "items", "data"]));
+    if (clientsRes.success) setClients(extractList(clientsRes.data, ["clients", "items", "data"]));
+
     setPageLoading(false);
   }, [get]);
 
@@ -126,7 +200,7 @@ export default function JobsPage() {
     return jobs.filter((job) => {
       const haystack = [
         getJobTitle(job),
-        getClientName(job),
+        getClientName(job, clientLookup),
         job?.address,
         getWorkerName(job),
         job?.status,
@@ -140,7 +214,7 @@ export default function JobsPage() {
       if (statusFilter === "overdue") return isOverdue(job);
       return normalise(job.status) === statusFilter;
     });
-  }, [jobs, search, statusFilter]);
+  }, [jobs, clientLookup, search, statusFilter]);
 
   const activeDeleteJob = jobs.find((job) => String(job.id || job._id) === String(deleteId));
 
@@ -211,7 +285,7 @@ export default function JobsPage() {
             {filtered.map((job) => {
               const jobId = job.id || job._id;
               const title = getJobTitle(job);
-              const clientName = getClientName(job);
+              const clientName = getClientName(job, clientLookup);
               const workerName = getWorkerName(job);
               const date = getJobDate(job);
               const overdue = isOverdue(job);
