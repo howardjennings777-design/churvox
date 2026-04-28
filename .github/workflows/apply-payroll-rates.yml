@@ -1,0 +1,35 @@
+name: Apply Payroll Rates
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/patch_payroll_worker_rates.py
+      - .github/workflows/apply-payroll-rates.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Apply patch
+        run: python scripts/patch_payroll_worker_rates.py
+      - name: Check backend syntax
+        run: python -m py_compile backend/server.py
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo no changes
+            exit 0
+          fi
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add backend/server.py frontend/src/pages/PayrollPage.js
+          git commit -m "Add payroll worker pay rates"
+          git push origin main
