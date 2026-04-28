@@ -44,32 +44,44 @@ async function apiGet(path) {
 }
 
 async function askAiEndpoint(path, question) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question }),
-  });
-  if (!res.ok) return { error: `AI backend error ${res.status}` };
-  return await res.json();
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    });
+    let payload = {};
+    try {
+      payload = await res.json();
+    } catch {
+      payload = {};
+    }
+    return { ok: res.ok, status: res.status, payload };
+  } catch (error) {
+    return { ok: false, status: 0, payload: {}, error: text(error?.message || error || "network/CORS error") };
+  }
 }
 
 async function askRealAi(question) {
-  try {
-    let payload = await askAiEndpoint("/api/launch/ai-ask", question);
-    if (payload?.error) {
-      payload = await askAiEndpoint("/api/ai/ask", question);
-    }
-    if (payload?.error) return `${payload.error}. Check Render backend deploy and login session.\n\n— Smart fallback`;
-    const answer = text(payload?.answer || payload?.data?.answer || payload?.text);
-    if (!answer) return null;
-    const isReal = payload?.used_ai === true || payload?.mode === "openai" || (payload?.configured === true && payload?.used_ai !== false);
-    if (isReal) return `${answer}\n\n— Real AI`;
-    const reason = text(payload?.error_type || payload?.message || "OpenAI did not run. Check OPENAI_API_KEY, OPENAI_MODEL, credits, then redeploy backend.");
-    return `${answer}\n\n— Smart fallback\nReason: ${reason}`;
-  } catch (err) {
-    return `Could not reach backend AI endpoint. Reason: ${text(err?.message || err || "network/CORS error")}\n\n— Smart fallback`;
+  const primary = await askAiEndpoint("/api/ai/ask", question);
+  let result = primary;
+
+  if (!primary.ok && primary.status === 405) {
+    result = await askAiEndpoint("/api/launch/ai-ask", question);
   }
+
+  if (!result.ok) {
+    return null;
+  }
+
+  const payload = result.payload || {};
+  const answer = text(payload?.answer || payload?.data?.answer || payload?.text);
+  if (!answer) return null;
+  const isReal = payload?.used_ai === true || payload?.mode === "openai" || (payload?.configured === true && payload?.used_ai !== false);
+  if (isReal) return `${answer}\n\n— Real AI`;
+  const reason = text(payload?.error_type || payload?.message || "OpenAI did not run. Check OPENAI_API_KEY, OPENAI_MODEL, credits, then redeploy backend.");
+  return `${answer}\n\n— Smart fallback\nReason: ${reason}`;
 }
 
 async function buildSnapshot() {
