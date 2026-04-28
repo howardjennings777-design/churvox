@@ -84,8 +84,8 @@
   filter: none !important;
 }
 
-/* Make the automation suggestions section clean and readable. */
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) {
+/* Target the real automation suggestions section by its /automation rule buttons. */
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) {
   background: #ffffff !important;
   background-color: #ffffff !important;
   background-image: none !important;
@@ -96,7 +96,7 @@
   filter: none !important;
 }
 
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) > div:first-child > div:first-child {
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) > div:first-child > div:first-child {
   background: #eff6ff !important;
   background-color: #eff6ff !important;
   border: 1px solid #bfdbfe !important;
@@ -105,123 +105,64 @@
   filter: none !important;
 }
 
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) > div:first-child > div:first-child *,
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) > div:first-child > div:first-child {
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) > div:first-child > div:first-child,
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) > div:first-child > div:first-child * {
   color: #1d4ed8 !important;
 }
 
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) > div:first-child > p,
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) p {
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) > div:first-child > p,
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) p,
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) span,
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) div {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) p,
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) span,
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) div {
   color: #475569 !important;
-  opacity: 1 !important;
-  filter: none !important;
 }
 
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) .rounded-2xl {
-  opacity: 1 !important;
-  filter: none !important;
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) .text-slate-950,
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) .font-black,
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) strong {
+  color: #0f172a !important;
 }
 
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) .rounded-2xl[style*="#ffffff"],
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) .rounded-2xl.p-4 {
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) .rounded-2xl[style*="#ffffff"],
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) .rounded-2xl.p-4 {
   background: #ffffff !important;
   background-color: #ffffff !important;
   background-image: none !important;
   border: 1px solid #cbd5e1 !important;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08) !important;
   color: #0f172a !important;
+  opacity: 1 !important;
+  filter: none !important;
 }
 
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) .rounded-2xl[style*="#ffffff"] *,
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) .rounded-2xl.p-4 * {
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) .rounded-2xl[style*="#ffffff"] *,
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) .rounded-2xl.p-4 * {
   opacity: 1 !important;
   filter: none !important;
   text-shadow: none !important;
 }
 
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) .text-slate-950,
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) .font-black,
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) strong {
-  color: #0f172a !important;
-}
-
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) .text-slate-600,
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) .text-slate-500 {
-  color: #475569 !important;
-}
-
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) a,
-[data-testid="ai-assistant-page"] > section:nth-of-type(5) button {
-  opacity: 1 !important;
-  filter: none !important;
-}
-
-/* Automation cards inside dark panels must stay readable. */
-[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white,
-[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white,
-[data-testid="ai-assistant-page"] [style*="linear-gradient"] .rounded-2xl[style*="#ffffff"] {
-  background: #ffffff !important;
-  background-color: #ffffff !important;
-  background-image: none !important;
-  color: #0f172a !important;
-  opacity: 1 !important;
-  filter: none !important;
-  text-shadow: none !important;
-  border-color: #cbd5e1 !important;
-}
-
-[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white *,
-[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white *,
-[data-testid="ai-assistant-page"] [style*="linear-gradient"] .rounded-2xl[style*="#ffffff"] * {
-  opacity: 1 !important;
-  filter: none !important;
-  text-shadow: none !important;
-}
-
-[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white p,
-[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white div,
-[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white span,
-[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white p,
-[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white div,
-[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white span {
-  color: #334155 !important;
-}
-
-[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white .text-slate-950,
-[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white .font-black,
-[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white strong,
-[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white .text-slate-950,
-[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white .font-black,
-[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white strong,
-[data-testid="ai-assistant-page"] [style*="linear-gradient"] .rounded-2xl[style*="#ffffff"] strong {
-  color: #0f172a !important;
-}
-
-[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white .text-slate-600,
-[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white .text-slate-500,
-[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white .text-slate-600,
-[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white .text-slate-500 {
-  color: #475569 !important;
-}
-
-[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white .bg-slate-50,
-[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white .bg-slate-50 {
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) .bg-slate-50 {
   background: #f8fafc !important;
   background-color: #f8fafc !important;
   color: #334155 !important;
   border-color: #e2e8f0 !important;
 }
 
-[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white svg,
-[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white svg {
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) svg {
   color: #2563eb !important;
   opacity: 1 !important;
 }
 
-[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white a,
-[data-testid="ai-assistant-page"] [style*="rgb(6, 20, 38)"] .bg-white button,
-[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white a,
-[data-testid="ai-assistant-page"] [style*="#061426"] .bg-white button {
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) a,
+[data-testid="ai-assistant-page"] > section:has(a[href="/automation"]) button {
   opacity: 1 !important;
   filter: none !important;
 }
