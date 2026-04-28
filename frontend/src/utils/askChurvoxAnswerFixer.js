@@ -1,7 +1,7 @@
 // Targeted Ask Churvox answer fixer.
 // Uses the real backend AI endpoint first, then falls back to safe local business rules.
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL || "";
+import API_BASE from "../lib/apiBase";
 
 const safeArray = (value) => {
   if (Array.isArray(value)) return value;
@@ -55,7 +55,8 @@ async function askRealAi(question) {
     const payload = await res.json();
     const answer = text(payload?.answer || payload?.data?.answer || payload?.text);
     if (!answer) return null;
-    const mode = payload?.used_ai || payload?.mode === "openai" || payload?.configured ? "Real AI" : "Smart fallback";
+    const isReal = payload?.used_ai === true || payload?.mode === "openai" || (payload?.configured === true && payload?.used_ai !== false);
+    const mode = isReal ? "Real AI" : "Smart fallback";
     return `${answer}\n\n— ${mode}`;
   } catch {
     return null;
