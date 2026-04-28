@@ -1,16 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Layout from "@/components/Layout";
+import AITimesheetReviewCard from "../components/payroll/AITimesheetReviewCard";
 import {
   AlertTriangle,
-  Bot,
   CheckCircle2,
   Download,
   Info,
   Lock,
   Save,
   ShieldCheck,
-  Sparkles,
-  TrendingUp,
   Unlock,
   UsersRound,
 } from "lucide-react";
@@ -79,7 +77,11 @@ export default function TimesheetsPage() {
 
   const run = async (key, fn) => {
     setBusy((s) => ({ ...s, [key]: true }));
-    try { return await fn(); } finally { setBusy((s) => ({ ...s, [key]: false })); }
+    try {
+      return await fn();
+    } finally {
+      setBusy((s) => ({ ...s, [key]: false }));
+    }
   };
 
   const loadPeriod = useCallback(async (id) => {
@@ -99,7 +101,7 @@ export default function TimesheetsPage() {
       get("/payroll/workers"),
     ]);
     const loadedPeriods = periodRes?.success ? periodRes.data?.pay_periods || [] : [];
-    const loadedWorkers = workerRes?.success ? periodRes && workerRes.data?.workers || [] : [];
+    const loadedWorkers = workerRes?.success ? workerRes.data?.workers || [] : [];
     setPeriods(loadedPeriods);
     setWorkers(loadedWorkers);
     const next = periodId || loadedPeriods[0]?.id || "";
@@ -246,7 +248,7 @@ export default function TimesheetsPage() {
     if (timesheets.length && !pending.length && !rejectedEntries.length) actions.push({ tone: "green", title: "Export payroll files", detail: "Download CSVs for your accountant, bookkeeper, or payroll provider.", target: "export-centre" });
     if (!timesheets.length) actions.push({ tone: "blue", title: "Record time from jobs", detail: "Workers need to start/complete jobs before timesheets can be approved.", target: "approval-queue" });
 
-    return { issues, actions, brief, confidence, confidenceTone, totalHours, approvedHours, missingRateWorkers, longEntries, tinyEntries, rejectedEntries, clean };
+    return { issues, actions, brief, confidence, confidenceTone, totalHours, approvedHours, clean };
   }, [drafts, pending.length, periodId, rateWorkers, summary?.approved_hours, timesheets]);
 
   const scrollToSection = (id) => {
@@ -270,34 +272,7 @@ export default function TimesheetsPage() {
           <div className="rounded-2xl border border-border bg-white p-4 shadow-sm"><p className="text-xs font-semibold uppercase text-slate-500">Workers</p><p className="mt-2 text-2xl font-black text-slate-950">{Number(summary?.workers_included || rateWorkers.length)}</p></div>
         </section>
 
-        <section className="rounded-3xl border border-blue-100 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-5 text-white shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-black text-blue-100"><Bot size={14} /> AI Timesheet Review</div>
-              <h2 className="mt-3 text-2xl font-black text-white">{aiReview.confidence === "High confidence" ? "Ready to export" : aiReview.confidence === "Blocked" ? "Waiting for worker time" : "Review before export"}</h2>
-              <p className="mt-2 text-sm leading-6 text-blue-100">{aiReview.brief}</p>
-            </div>
-            <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-center">
-              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-100">Confidence</p>
-              <p className="mt-1 text-lg font-black text-white">{aiReview.confidence}</p>
-              <p className="text-xs text-blue-100">Approval-first</p>
-            </div>
-          </div>
-          <div className="mt-4 grid gap-3 lg:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-              <p className="flex items-center gap-2 text-sm font-black text-white"><Info size={16} /> What this means</p>
-              <p className="mt-2 text-sm leading-6 text-blue-100">AI reviews the handoff only. It does not approve payroll, change rates, lodge tax, pay workers, or export files without you.</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-              <p className="flex items-center gap-2 text-sm font-black text-white"><TrendingUp size={16} /> Hours summary</p>
-              <p className="mt-2 text-sm leading-6 text-blue-100">Total recorded: {aiReview.totalHours.toFixed(2)}h · Approved: {aiReview.approvedHours.toFixed(2)}h · Pending: {pending.length}</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-              <p className="flex items-center gap-2 text-sm font-black text-white"><ShieldCheck size={16} /> Export rule</p>
-              <p className="mt-2 text-sm leading-6 text-blue-100">Export only after rates are set, time is approved, and flagged entries are reviewed.</p>
-            </div>
-          </div>
-        </section>
+        <AITimesheetReviewCard aiReview={aiReview} pendingCount={pending.length} />
 
         <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
