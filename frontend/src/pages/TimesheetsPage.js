@@ -25,6 +25,10 @@ function workerName(worker) {
   return worker?.name || worker?.worker_name || worker?.email || "Worker";
 }
 
+function rateKey(worker, index) {
+  return `${workerId(worker) || workerName(worker) || "worker"}-${index}`;
+}
+
 export default function TimesheetsPage() {
   const { get, post } = useApi();
   const [periods, setPeriods] = useState([]);
@@ -33,6 +37,8 @@ export default function TimesheetsPage() {
   const [summary, setSummary] = useState(null);
   const [timesheets, setTimesheets] = useState([]);
   const [drafts, setDrafts] = useState({});
+  const [savedRates, setSavedRates] = useState({});
+  const [dirtyRates, setDirtyRates] = useState({});
   const [busy, setBusy] = useState({});
   const [loading, setLoading] = useState(true);
 
@@ -83,10 +89,10 @@ export default function TimesheetsPage() {
     if (!rateWorkers.length) return;
     setDrafts((current) => {
       const next = { ...current };
-      rateWorkers.forEach((worker) => {
-        const id = workerId(worker);
-        if (!id || next[id]) return;
-        next[id] = {
+      rateWorkers.forEach((worker, index) => {
+        const key = rateKey(worker, index);
+        if (!key || next[key]) return;
+        next[key] = {
           hourly_rate: String(worker.hourly_rate ?? worker.pay_rate ?? worker.payroll_rate ?? worker.rate ?? ""),
           pay_type: worker.pay_type || "hourly",
           notes: worker.payroll_notes || worker.rate_notes || "",
@@ -96,29 +102,34 @@ export default function TimesheetsPage() {
     });
   }, [rateWorkers]);
 
-  const updateDraft = (worker, field, value) => {
-    const id = workerId(worker);
-    if (!id) return;
+  const updateDraft = (worker, index, field, value) => {
+    const key = rateKey(worker, index);
+    if (!key) return;
     setDrafts((current) => ({
       ...current,
-      [id]: { hourly_rate: "", pay_type: "hourly", notes: "", ...(current[id] || {}), [field]: value },
+      [key]: { hourly_rate: "", pay_type: "hourly", notes: "", ...(current[key] || {}), [field]: value },
     }));
+    setDirtyRates((current) => ({ ...current, [key]: true }));
+    setSavedRates((current) => ({ ...current, [key]: false }));
   };
 
-  const saveRate = async (worker) => {
+  const saveRate = async (worker, index) => {
     const id = workerId(worker);
+    const key = rateKey(worker, index);
     if (!id) return toast.error("Worker not found");
-    const draft = drafts[id] || {};
+    const draft = drafts[key] || {};
     const rate = Number(draft.hourly_rate || 0);
     if (Number.isNaN(rate) || rate < 0) return toast.error("Enter a valid worker rate");
-    await run(`rate-${id}`, async () => {
+    await run(`rate-${key}`, async () => {
       const res = await post(`/payroll/workers/${id}/rate`, {
         hourly_rate: rate,
         pay_type: draft.pay_type || "hourly",
         payroll_notes: draft.notes || "",
       });
       if (!res?.success) return toast.error(res?.error || "Could not save worker rate");
-      toast.success("Worker rate saved");
+      setSavedRates((current) => ({ ...current, [key]: true }));
+      setDirtyRates((current) => ({ ...current, [key]: false }));
+      toast.success(`${workerName(worker)} rate saved`);
       await loadAll();
     });
   };
@@ -206,12 +217,15 @@ export default function TimesheetsPage() {
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold text-slate-950">Worker rates</h2><p className="text-sm text-slate-500">Set internal worker cost rates for labour estimates and exports. Workers do not see this page.</p></div><span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-black text-blue-700"><UsersRound size={14} /> Internal only</span></div>
           <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2">
             {!rateWorkers.length && <p className="text-sm text-slate-500">No workers found yet. Invite workers from Team first.</p>}
-            {rateWorkers.map((worker) => {
+            {rateWorkers.map((worker, index) => {
               const id = workerId(worker);
-              const draft = drafts[id] || { hourly_rate: "", pay_type: "hourly", notes: "" };
+              const key = rateKey(worker, index);
+              const draft = drafts[key] || { hourly_rate: "", pay_type: "hourly", notes: "" };
               const rate = Number(draft.hourly_rate || 0);
               const approved = Number(worker.approved_hours || 0);
-              return <div key={id || workerName(worker)} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="font-black text-slate-950">{workerName(worker)}</p><p className="text-xs text-slate-500">Approved: {approved.toFixed(2)}h · Estimate: {formatCurrency(approved * (Number.isNaN(rate) ? 0 : rate))}</p></div><span className={rate > 0 ? "cx-status-badge cx-status-badge--green" : "cx-status-badge cx-status-badge--amber"}>{rate > 0 ? "Rate set" : "Needs rate"}</span></div><div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3"><label className="text-sm font-bold text-slate-700">Hourly rate<input type="number" min="0" step="0.01" value={draft.hourly_rate} onChange={(e) => updateDraft(worker, "hourly_rate", e.target.value)} placeholder="0.00" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" /></label><label className="text-sm font-bold text-slate-700">Type<select value={draft.pay_type || "hourly"} onChange={(e) => updateDraft(worker, "pay_type", e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"><option value="hourly">Hourly</option><option value="salary">Salary</option><option value="contractor">Contractor</option></select></label><div className="flex items-end"><button type="button" className="cx-button-primary w-full justify-center" disabled={!id || busy[`rate-${id}`]} onClick={() => saveRate(worker)}><Save size={14} className="mr-2" />{busy[`rate-${id}`] ? "Saving..." : "Save rate"}</button></div></div><label className="mt-3 block text-sm font-bold text-slate-700">Rate notes<input type="text" value={draft.notes} onChange={(e) => updateDraft(worker, "notes", e.target.value)} placeholder="Optional note for accountant/bookkeeper" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" /></label></div>;
+              const saving = busy[`rate-${key}`];
+              const saved = savedRates[key] && !dirtyRates[key];
+              return <div key={key} className={`rounded-2xl border bg-slate-50/70 p-4 transition-all ${saved ? "border-emerald-200 ring-2 ring-emerald-100" : "border-slate-200"}`}><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="font-black text-slate-950">{workerName(worker)}</p><p className="text-xs text-slate-500">Approved: {approved.toFixed(2)}h · Estimate: {formatCurrency(approved * (Number.isNaN(rate) ? 0 : rate))}</p></div><div className="flex flex-col items-end gap-1"><span className={rate > 0 ? "cx-status-badge cx-status-badge--green" : "cx-status-badge cx-status-badge--amber"}>{rate > 0 ? "Rate set" : "Needs rate"}</span>{saved && <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-black text-emerald-700"><CheckCircle2 size={12} /> Saved</span>}</div></div><div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3"><label className="text-sm font-bold text-slate-700">Hourly rate<input type="number" min="0" step="0.01" value={draft.hourly_rate} onChange={(e) => updateDraft(worker, index, "hourly_rate", e.target.value)} placeholder="0.00" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" /></label><label className="text-sm font-bold text-slate-700">Type<select value={draft.pay_type || "hourly"} onChange={(e) => updateDraft(worker, index, "pay_type", e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"><option value="hourly">Hourly</option><option value="salary">Salary</option><option value="contractor">Contractor</option></select></label><div className="flex items-end"><button type="button" className={`w-full justify-center ${saved ? "cx-button-secondary" : "cx-button-primary"}`} disabled={!id || saving} onClick={() => saveRate(worker, index)}><Save size={14} className="mr-2" />{saving ? "Saving..." : saved ? "Saved" : "Save rate"}</button></div></div><label className="mt-3 block text-sm font-bold text-slate-700">Rate notes<input type="text" value={draft.notes} onChange={(e) => updateDraft(worker, index, "notes", e.target.value)} placeholder="Optional note for accountant/bookkeeper" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" /></label></div>;
             })}
           </div>
         </section>
