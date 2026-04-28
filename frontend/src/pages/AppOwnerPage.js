@@ -5,6 +5,39 @@ import API_BASE from "../lib/apiBase";
 const ADMIN_ENDPOINTS = ["/api/admin/platform-stats", "/api/admin/dashboard", "/api/platform/stats", "/api/app-owner/stats"];
 const PLAN_PRICE = { solo: 30, team: 70, pro: 110, enterprise: 240 };
 const OWNER_ROLES = new Set(["owner", "employer", "admin", "business_owner", "platform_owner"]);
+const SENSITIVE_FIELD_RE = /(password|passcode|secret|token|api[_-]?key|authorization|cookie|session|salt|hash|hashed|otp|reset|refresh)/i;
+const HIDDEN_FIELDS = new Set([
+  "password",
+  "password_hash",
+  "hashed_password",
+  "hash_password",
+  "reset_token",
+  "password_reset_token",
+  "refresh_token",
+  "access_token",
+  "auth_token",
+  "session_token",
+]);
+
+function isSafeAdminField(key) {
+  const normalized = String(key || "").trim().toLowerCase();
+  if (!normalized) return false;
+  if (HIDDEN_FIELDS.has(normalized)) return false;
+  return !SENSITIVE_FIELD_RE.test(normalized);
+}
+
+function safeRecordEntries(item, max = 8) {
+  return Object.entries(item || {}).filter(([key]) => isSafeAdminField(key)).slice(0, max);
+}
+
+function stripSensitiveFields(item) {
+  if (!item || typeof item !== "object" || Array.isArray(item)) return item;
+  return Object.fromEntries(Object.entries(item).filter(([key]) => isSafeAdminField(key)));
+}
+
+function stripSensitiveList(items) {
+  return asArray(items).map(stripSensitiveFields);
+}
 
 function asArray(value) {
   if (Array.isArray(value)) return value;
@@ -68,15 +101,15 @@ function splitOwnersAndUsers(rawUsers) {
 
 function normalizePayload(payload, endpoint) {
   const src = payload?.data && !Array.isArray(payload.data) ? payload.data : payload || {};
-  const allUsers = asArray(src.users_list || src.users || src.all_users);
+  const allUsers = stripSensitiveList(src.users_list || src.users || src.all_users);
   const { owners, users } = splitOwnersAndUsers(allUsers);
-  const businesses = asArray(src.businesses_list || src.businesses || src.companies);
-  const jobs = asArray(src.jobs_list || src.jobs);
-  const clients = asArray(src.clients_list || src.clients);
-  const quotes = asArray(src.quotes_list || src.quotes);
-  const invoices = asArray(src.invoices_list || src.invoices);
-  const automation = asArray(src.automation_list || src.automation_rules || src.rules);
-  const notifications = asArray(src.notifications);
+  const businesses = stripSensitiveList(src.businesses_list || src.businesses || src.companies);
+  const jobs = stripSensitiveList(src.jobs_list || src.jobs);
+  const clients = stripSensitiveList(src.clients_list || src.clients);
+  const quotes = stripSensitiveList(src.quotes_list || src.quotes);
+  const invoices = stripSensitiveList(src.invoices_list || src.invoices);
+  const automation = stripSensitiveList(src.automation_list || src.automation_rules || src.rules);
+  const notifications = stripSensitiveList(src.notifications);
   const plans = { solo: 0, team: 0, pro: 0, enterprise: 0, ...(src.plan_counts || {}) };
   if (!src.plan_counts) (owners.length ? owners : allUsers).forEach((u) => { const p = planOf(u); if (plans[p] !== undefined) plans[p] += 1; });
   const revenue = Number(src.monthly_revenue || src.mrr || src.revenue_this_month || 0) || Object.entries(plans).reduce((sum, [p, c]) => sum + (PLAN_PRICE[p] || 0) * Number(c || 0), 0);
@@ -104,6 +137,7 @@ function Metric({ id, label, value, detail, icon: Icon, selected, onClick }) {
 
 function RecordCard({ item, selected, onRemove }) {
   const removable = (selected === "owners" || selected === "users") && !isProtectedPlatformAccount(item);
+  const entries = safeRecordEntries(item);
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-950/55 p-4">
       <div className="flex items-start justify-between gap-3">
@@ -115,7 +149,7 @@ function RecordCard({ item, selected, onRemove }) {
         )}
       </div>
       <div className="mt-3 grid gap-2 text-xs font-semibold text-slate-300">
-        {Object.entries(item || {}).slice(0, 8).map(([key, value]) => (
+        {entries.map(([key, value]) => (
           <div key={key} className="flex justify-between gap-3 rounded-xl bg-white/[0.04] px-3 py-2">
             <span className="shrink-0 uppercase tracking-wide text-slate-500">{key.replace(/_/g, " ")}</span>
             <span className="min-w-0 truncate text-right text-slate-200">{safeText(value)}</span>
