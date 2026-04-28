@@ -1,5 +1,5 @@
 // Targeted Ask Churvox answer fixer.
-// Keeps the existing Smart Hub UI, but stops money/invoice questions falling back to job assignment.
+// Uses the real backend AI endpoint first, then falls back to safe local business rules.
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL || "";
 
@@ -40,6 +40,25 @@ async function apiGet(path) {
     return safeArray(await res.json());
   } catch {
     return [];
+  }
+}
+
+async function askRealAi(question) {
+  try {
+    const res = await fetch(`${API_BASE}/api/ai/ask`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    });
+    if (!res.ok) return null;
+    const payload = await res.json();
+    const answer = text(payload?.answer || payload?.data?.answer || payload?.text);
+    if (!answer) return null;
+    const mode = payload?.used_ai || payload?.mode === "openai" || payload?.configured ? "Real AI" : "Smart fallback";
+    return `${answer}\n\n— ${mode}`;
+  } catch {
+    return null;
   }
 }
 
@@ -88,7 +107,7 @@ function findAnswerBox(card, input) {
     });
   return boxes.reverse().find((el) => {
     const value = low(el.textContent);
-    return value.includes("assign") || value.includes("invoice") || value.includes("quote") || value.includes("job") || value.includes("money") || value.includes("try asking") || value.includes("next");
+    return value.includes("assign") || value.includes("invoice") || value.includes("quote") || value.includes("job") || value.includes("money") || value.includes("try asking") || value.includes("next") || value.includes("checking churvox");
   });
 }
 
@@ -130,9 +149,15 @@ async function fixAskAnswer(input) {
   const card = findAskCard(input);
   const answerBox = card ? findAnswerBox(card, input) : null;
   if (!answerBox) return;
+  answerBox.textContent = "Checking Churvox AI...";
+  const realAiAnswer = await askRealAi(question);
+  if (realAiAnswer) {
+    answerBox.textContent = realAiAnswer;
+    return;
+  }
   answerBox.textContent = "Checking Churvox data...";
   const snapshot = await buildSnapshot();
-  answerBox.textContent = answerFor(question, snapshot);
+  answerBox.textContent = `${answerFor(question, snapshot)}\n\n— Smart fallback`;
 }
 
 export function startAskChurvoxAnswerFixer() {
