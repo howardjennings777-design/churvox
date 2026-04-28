@@ -178,9 +178,9 @@ export default function PayrollPage() {
     const details = res.data || {};
     setWorkerDetails(details);
     const worker = details.worker || details.summary || details;
-    const workerId = details.worker_id || worker.worker_id || worker.id || worker.user_id || workerId;
+    const targetWorkerId = details.worker_id || worker.worker_id || worker.id || worker.user_id || workerId;
     setPayRateForm({
-      worker_id: workerId,
+      worker_id: targetWorkerId,
       hourly_rate: String(worker.hourly_rate ?? worker.pay_rate ?? worker.payroll_rate ?? details.hourly_rate ?? 0),
       pay_type: worker.pay_type || details.pay_type || "hourly",
       payroll_notes: worker.payroll_notes || details.payroll_notes || "",
