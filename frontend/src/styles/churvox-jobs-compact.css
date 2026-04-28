@@ -46,6 +46,9 @@
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: 16px !important;
+  isolation: isolate !important;
+  position: relative !important;
+  z-index: 1 !important;
 }
 
 .cx-page.max-w-7xl > section.space-y-3:has(> [data-testid^="job-card-"]) > * + * {
@@ -57,9 +60,31 @@
   height: 100% !important;
   border-radius: 22px !important;
   padding: 14px !important;
-  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.055) !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.075) !important;
   overflow: hidden !important;
+  opacity: 1 !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  position: relative !important;
+  z-index: 2 !important;
+  isolation: isolate !important;
+}
+
+[data-testid^="job-card-"]::before,
+[data-testid^="job-card-"]::after {
+  content: none !important;
+  display: none !important;
+}
+
+[data-testid^="job-card-"] * {
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+  position: relative !important;
+  z-index: 3 !important;
 }
 
 [data-testid^="job-card-"]:hover {
@@ -75,6 +100,8 @@
   align-items: stretch !important;
   justify-content: space-between !important;
   gap: 12px !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
 }
 
 [data-testid^="job-card-"] h3 {
@@ -88,6 +115,8 @@
   grid-template-columns: 1fr !important;
   gap: 6px !important;
   font-size: 12px !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
 }
 
 [data-testid^="job-card-"] .mt-3.grid span {
@@ -104,6 +133,8 @@
   border-top: 1px solid rgba(15, 23, 42, 0.08) !important;
   padding-top: 10px !important;
   margin-top: auto !important;
+  background: #ffffff !important;
+  background-color: #ffffff !important;
 }
 
 [data-testid^="job-card-"] button {
