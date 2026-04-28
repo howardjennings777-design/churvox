@@ -232,8 +232,9 @@ export default function AIAssistantPage() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
   const [queueNotice, setQueueNotice] = useState("");
+  const [automationNotice, setAutomationNotice] = useState("");
   const [reviewed, setReviewed] = useState({});
-  const [data, setData] = useState({ stats: {}, jobs: [], quotes: [], invoices: [], workers: [], followUps: [], aiActions: [] });
+  const [data, setData] = useState({ stats: {}, jobs: [], quotes: [], invoices: [], workers: [], followUps: [], aiActions: [], automationSuggestions: [] });
 
   const allowed = ["owner", "manager", "office_admin", "employer", "admin"].includes(normalizedRole || "owner");
 
@@ -241,8 +242,8 @@ export default function AIAssistantPage() {
     setLoading(true);
     setError("");
     try {
-      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, followUpsRes, aiActionsRes] = await Promise.allSettled([
-        get("/dashboard/stats"), get("/jobs"), get("/quotes"), get("/invoices"), get("/team/workers"), get("/follow-up-tasks"), get("/ai/actions"),
+      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, followUpsRes, aiActionsRes, automationSuggestionsRes] = await Promise.allSettled([
+        get("/dashboard/stats"), get("/jobs"), get("/quotes"), get("/invoices"), get("/team/workers"), get("/follow-up-tasks"), get("/ai/actions"), get("/ai/automation-suggestions"),
       ]);
       setData({
         stats: apiData(statsRes, {}) || {},
@@ -252,6 +253,7 @@ export default function AIAssistantPage() {
         workers: pickList(apiData(workersRes, []), ["workers", "team", "items", "data"]),
         followUps: pickList(apiData(followUpsRes, []), ["follow_ups", "tasks", "items", "data"]),
         aiActions: pickList(apiData(aiActionsRes, []), ["actions", "items", "data"]),
+        automationSuggestions: pickList(apiData(automationSuggestionsRes, []), ["suggestions", "items", "data"]),
       });
     } catch (err) {
       setError(safeText(err?.message || err, "Smart Hub could not load."));
@@ -278,6 +280,27 @@ export default function AIAssistantPage() {
       return;
     }
     setQueueNotice(successMessage);
+    await load();
+  }, [load, post]);
+
+  const generateAutomationSuggestions = useCallback(async () => {
+    const result = await post("/ai/automation-suggestions/generate", {});
+    if (!result?.success) {
+      setAutomationNotice(safeText(result?.error, "Could not generate AI automation suggestions."));
+      return;
+    }
+    const payload = result?.data || {};
+    setAutomationNotice(`AI suggests automation. You approve before anything runs. ${safeNumber(payload.created, 0)} created, ${safeNumber(payload.updated, 0)} refreshed.`);
+    await load();
+  }, [load, post]);
+
+  const updateAutomationSuggestion = useCallback(async (suggestionId, verb, successMessage) => {
+    const result = await post(`/ai/automation-suggestions/${suggestionId}/${verb}`, {});
+    if (!result?.success) {
+      setAutomationNotice(safeText(result?.error, "Could not update AI automation suggestion."));
+      return;
+    }
+    setAutomationNotice(successMessage);
     await load();
   }, [load, post]);
 
@@ -352,7 +375,7 @@ export default function AIAssistantPage() {
       { title: "Unassigned job warning", detail: "Warn the owner if a job stays unassigned for too long.", trigger: "Job created and no worker assigned", outcome: "Notify owner or manager" },
     ];
 
-    return { jobs, quotes, invoices, workers, todayJobs, assignedJobs, inProgressJobs, completedJobs, unassignedJobs, stuckJobs, quoteFollowups, unpaidInvoices, overdueInvoices, draftInvoices, completedNoInvoice, riskItems, risk, afterRisk, actions: actions.slice(0, 5), aiActions, businessBrief, quoteValue, unpaidValue, overdueValue, draftValue, uninvoicedValue, automationIdeas };
+    return { jobs, quotes, invoices, workers, todayJobs, assignedJobs, inProgressJobs, completedJobs, unassignedJobs, stuckJobs, quoteFollowups, unpaidInvoices, overdueInvoices, draftInvoices, completedNoInvoice, riskItems, risk, afterRisk, actions: actions.slice(0, 5), aiActions, automationSuggestions: safeArray(data.automationSuggestions), businessBrief, quoteValue, unpaidValue, overdueValue, draftValue, uninvoicedValue, automationIdeas };
   }, [data]);
 
   const riskTone = smart.risk >= 50 ? "Needs attention" : smart.risk >= 20 ? "Watch closely" : "Under control";
@@ -432,6 +455,36 @@ export default function AIAssistantPage() {
         </Section>
 
         <Section title="AI automation suggestions" subtitle="Practical rules that save admin without auto-sending or changing records without approval." icon={Lightbulb} dark><div className="grid grid-cols-1 gap-4 lg:grid-cols-3">{smart.automationIdeas.map((idea) => <AutomationCard key={idea.title} {...idea} />)}</div></Section>
+        <Section title="AI Automation Builder" subtitle="AI suggests automation. You approve before anything runs." icon={Zap}>
+          <div className="mb-3 flex flex-wrap gap-2">
+            <button onClick={generateAutomationSuggestions} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50"><RefreshCw className="mr-2 h-4 w-4" />Generate automation ideas</button>
+            <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">Draft rule only. Nothing sends automatically.</p>
+            <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">No payroll, MYOB, pricing or invoice payment changes happen without approval.</p>
+          </div>
+          {automationNotice ? <p className="mb-3 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">{automationNotice}</p> : null}
+          {!smart.automationSuggestions.length ? (
+            <p className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-600">No automation suggestions yet. Churvox will look for repeat admin work, follow-ups, invoice reminders and job workflow risks.</p>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {smart.automationSuggestions.map((item) => (
+                <div key={idOf(item, item.title)} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex flex-wrap items-center gap-2"><p className="font-black text-slate-950">{safeText(item.title, "Automation suggestion")}</p><Pill tone={item.priority === "high" ? "red" : item.priority === "low" ? "green" : "amber"}>{safeText(item.priority, "medium")}</Pill><Pill tone={item.confidence === "high" ? "green" : item.confidence === "low" ? "amber" : "blue"}>{safeText(item.confidence, "medium")}</Pill></div>
+                  <p className="mt-2 text-sm font-semibold text-slate-600">{safeText(item.description, "")}</p>
+                  <p className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"><strong>Trigger:</strong> {safeText(item.trigger_type, "n/a")}</p>
+                  <p className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"><strong>Action:</strong> {safeText(item.action_type, "n/a")}</p>
+                  <p className="mt-2 text-xs font-semibold text-slate-600"><strong>Reason:</strong> {safeText(item.reason, "AI suggests automation. You approve before anything runs.")}</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-600"><strong>Impact:</strong> {safeText(item.impact, "")}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => updateAutomationSuggestion(item.id, "approve", "Suggestion approved. Draft rule only. Nothing sends automatically.")} className="inline-flex items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700 hover:bg-emerald-100">Approve draft rule</button>
+                    <button type="button" onClick={() => updateAutomationSuggestion(item.id, "snooze", "Suggestion snoozed.")} className="inline-flex items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-black text-amber-700 hover:bg-amber-100">Snooze</button>
+                    <button type="button" onClick={() => updateAutomationSuggestion(item.id, "dismiss", "Suggestion dismissed.")} className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50">Dismiss</button>
+                    <Link to="/automation" className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-3 py-2 text-xs font-black text-white hover:bg-blue-700">Open Automation</Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Section>
         <Section title="AI safety guardrails" icon={ShieldCheck}><div className="grid grid-cols-1 gap-3 md:grid-cols-3"><GuardrailCard>AI suggests, drafts, summarises and warns.</GuardrailCard><GuardrailCard>You approve customer messages, invoices, pricing, payroll and MYOB changes.</GuardrailCard><GuardrailCard>Worker and payroll roles stay locked down.</GuardrailCard></div></Section>
       </div>
     </Layout>

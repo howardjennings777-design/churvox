@@ -197,6 +197,7 @@ function AutomationPage() {
   const [showRuns, setShowRuns] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
 
   const editingRule = useMemo(() => rules.find((rule) => rule.id === editingId), [rules, editingId]);
 
@@ -219,10 +220,11 @@ function AutomationPage() {
     setLoading(true);
     setError("");
     try {
-      const [rulesRes, runsRes, templatesRes] = await Promise.allSettled([
+      const [rulesRes, runsRes, templatesRes, suggestionsRes] = await Promise.allSettled([
         apiRequest("/automation/rules"),
         apiRequest("/automation/runs"),
         apiRequest("/automation/templates"),
+        apiRequest("/ai/automation-suggestions"),
       ]);
 
       if (rulesRes.status === "fulfilled") {
@@ -242,11 +244,17 @@ function AutomationPage() {
       } else {
         setTemplates([]);
       }
+      if (suggestionsRes.status === "fulfilled") {
+        setSuggestions(asList(suggestionsRes.value, "suggestions"));
+      } else {
+        setSuggestions([]);
+      }
     } catch (err) {
       setError(err.message || "Automation could not be loaded.");
       setRules([]);
       setRuns([]);
       setTemplates([]);
+      setSuggestions([]);
     } finally {
       setLoading(false);
     }
@@ -386,6 +394,28 @@ function AutomationPage() {
     }
   };
 
+  const generateIdeas = async () => {
+    setError("");
+    try {
+      const res = await apiRequest("/ai/automation-suggestions/generate", { method: "POST", body: JSON.stringify({}) });
+      setNotice(res?.message || "AI suggests automation. You approve before anything runs.");
+      await load();
+    } catch (err) {
+      setError(err.message || "Could not generate automation ideas.");
+    }
+  };
+
+  const actOnSuggestion = async (id, action) => {
+    setError("");
+    try {
+      await apiRequest(`/ai/automation-suggestions/${id}/${action}`, { method: "POST", body: JSON.stringify({}) });
+      setNotice(action === "approve" ? "Suggestion approved. Draft rule only. Nothing sends automatically." : `Suggestion ${action}d.`);
+      await load();
+    } catch (err) {
+      setError(err.message || "Could not update suggestion.");
+    }
+  };
+
   return (
     <Layout>
       <div className="bg-slate-100 px-4 py-6 sm:px-6 lg:px-8" data-testid="automation-page">
@@ -438,6 +468,46 @@ function AutomationPage() {
           {notice ? (
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700">{notice}</div>
           ) : null}
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-slate-950">AI Automation Builder</h2>
+                <p className="mt-1 text-sm text-slate-500">AI suggests automation. You approve before anything runs.</p>
+              </div>
+              <button type="button" onClick={generateIdeas} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-white">Generate automation ideas</button>
+            </div>
+            <div className="mb-3 grid gap-2 md:grid-cols-3">
+              <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700">Draft rule only</p>
+              <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700">Nothing sends automatically</p>
+              <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700">No payroll, MYOB, pricing or invoice payment changes happen without approval</p>
+            </div>
+            {suggestions.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-gradient-to-b from-slate-50 to-white p-6 text-sm text-slate-600">No automation suggestions yet. Churvox will look for repeat admin work, follow-ups, invoice reminders and job workflow risks.</div>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2">
+                {suggestions.map((item) => (
+                  <article key={item.id || item._id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <h3 className="text-sm font-black text-slate-950">{displayText(item.title)}</h3>
+                    <p className="mt-1 text-xs text-slate-600">{displayText(item.description)}</p>
+                    <div className="mt-2 grid gap-2 text-xs sm:grid-cols-2">
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1"><strong>Priority:</strong> {displayText(item.priority)}</div>
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1"><strong>Confidence:</strong> {displayText(item.confidence)}</div>
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1"><strong>Trigger:</strong> {displayText(item.trigger_type)}</div>
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1"><strong>Action:</strong> {displayText(item.action_type)}</div>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-600"><strong>Reason:</strong> {displayText(item.reason)}</p>
+                    <p className="mt-1 text-xs text-slate-600"><strong>Impact:</strong> {displayText(item.impact)}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button type="button" onClick={() => actOnSuggestion(item.id, "approve")} className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">Approve draft rule</button>
+                      <button type="button" onClick={() => actOnSuggestion(item.id, "snooze")} className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">Snooze</button>
+                      <button type="button" onClick={() => actOnSuggestion(item.id, "dismiss")} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700">Dismiss</button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
 
           {showBuilder ? (
             <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/60">
