@@ -128,7 +128,7 @@ if 'payRateForm' not in payroll:
 
     payroll = payroll.replace(
         '    setWorkerDetails(res.data);\n  });',
-        '    const details = res.data || {};\n    setWorkerDetails(details);\n    const worker = details.worker || details.summary || details;\n    const workerId = details.worker_id || worker.worker_id || worker.id || worker.user_id || workerId;\n    setPayRateForm({\n      worker_id: workerId,\n      hourly_rate: String(worker.hourly_rate ?? worker.pay_rate ?? worker.payroll_rate ?? details.hourly_rate ?? 0),\n      pay_type: worker.pay_type || details.pay_type || "hourly",\n      payroll_notes: worker.payroll_notes || details.payroll_notes || "",\n    });\n  });'
+        '    const details = res.data || {};\n    setWorkerDetails(details);\n    const worker = details.worker || details.summary || details;\n    const targetWorkerId = details.worker_id || worker.worker_id || worker.id || worker.user_id || workerId;\n    setPayRateForm({\n      worker_id: targetWorkerId,\n      hourly_rate: String(worker.hourly_rate ?? worker.pay_rate ?? worker.payroll_rate ?? details.hourly_rate ?? 0),\n      pay_type: worker.pay_type || details.pay_type || "hourly",\n      payroll_notes: worker.payroll_notes || details.payroll_notes || "",\n    });\n  });'
     )
 
     insert_after = '''  const saveSettings = async () => withAction("save-settings", async () => {
@@ -178,11 +178,6 @@ if 'payRateForm' not in payroll:
         '<p>{a.worker_name || a.worker_id} · {a.type} · {a.label} · {formatCurrency(a.amount || 0)} · {a.taxable ? "Taxable" : "Non-taxable"} · {String(a.created_at || "").slice(0, 10)}</p>'
     )
 
-    modal_anchor = '''<h3 className="text-lg font-semibold">Worker payroll details</h3>'''
-    rate_panel = '''<h3 className="text-lg font-semibold">Worker payroll details</h3>'''
-    if modal_anchor in payroll:
-        payroll = payroll.replace(modal_anchor, rate_panel, 1)
-
     # Insert a pay-rate editor inside the worker details modal before Adjustments section.
     payroll = payroll.replace(
         '<p className="mt-2 text-sm font-semibold text-slate-900">Adjustments</p>',
@@ -211,11 +206,12 @@ if 'payRateForm' not in payroll:
         1
     )
 
-    payroll = payroll.replace(
-        'Export row preview',
-        'Export row preview'
-    )
+# Repair any earlier bad workerId self-reference so View details opens.
+payroll = payroll.replace(
+    '    const workerId = details.worker_id || worker.worker_id || worker.id || worker.user_id || workerId;\n    setPayRateForm({\n      worker_id: workerId,',
+    '    const targetWorkerId = details.worker_id || worker.worker_id || worker.id || worker.user_id || workerId;\n    setPayRateForm({\n      worker_id: targetWorkerId,'
+)
 
 server_path.write_text(server, encoding='utf-8')
 payroll_path.write_text(payroll, encoding='utf-8')
-print('Patched payroll worker pay rates')
+print('Patched payroll worker pay rates and fixed worker details modal open bug')
