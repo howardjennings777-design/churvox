@@ -1,0 +1,120 @@
+/* Final colour rollback override.
+   Restores original Churvox colours after blue-theme experiments.
+   CSS only. No runtime scripts. No service-worker changes. */
+
+:root {
+  --churvox-sidebar: #07111f !important;
+  --churvox-sidebar-2: #0b1729 !important;
+  --churvox-primary: #2563eb !important;
+  --churvox-primary-2: #38bdf8 !important;
+}
+
+body,
+body.churvox-theme {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(37, 99, 235, 0.13), transparent 32rem),
+    radial-gradient(circle at 92% 8%, rgba(56, 189, 248, 0.12), transparent 34rem),
+    linear-gradient(135deg, #f8fafc 0%, #eef3f8 54%, #f7fafc 100%) !important;
+  color: #0f172a !important;
+}
+
+[data-testid="desktop-sidebar"],
+aside,
+.sidebar,
+[class*="sidebar"],
+[class*="Sidebar"] {
+  background:
+    radial-gradient(circle at 16% 0%, rgba(37, 99, 235, 0.42), transparent 18rem),
+    linear-gradient(180deg, #07111f, #0b1729 62%, #050b14) !important;
+  color: #e5edf8 !important;
+  border-right: 1px solid rgba(148, 163, 184, 0.14) !important;
+  box-shadow: 18px 0 48px rgba(2, 6, 23, 0.22) !important;
+}
+
+[data-testid="desktop-sidebar"] [data-nav="group-label"],
+.sidebar [data-nav="group-label"] {
+  color: #8fa6c4 !important;
+}
+
+[data-testid="desktop-sidebar"] nav a[data-nav="item"],
+[data-testid="desktop-sidebar"] nav a[data-nav="item"].border,
+[data-testid="desktop-sidebar"] nav a[data-nav="item"]:not(.active) {
+  background: rgba(255, 255, 255, 0.045) !important;
+  color: #dbeafe !important;
+  border-color: rgba(148, 163, 184, 0.12) !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+[data-testid="desktop-sidebar"] nav a[data-nav="item"]:hover {
+  background: rgba(37, 99, 235, 0.18) !important;
+  color: #ffffff !important;
+}
+
+[data-testid="desktop-sidebar"] nav a[data-nav="item"].active,
+[data-testid="desktop-sidebar"] a.active,
+aside a.active,
+.sidebar a.active,
+[aria-current="page"] {
+  background: linear-gradient(135deg, #2563eb, #38bdf8) !important;
+  color: #ffffff !important;
+  border-color: rgba(186, 230, 253, 0.48) !important;
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.36) !important;
+}
+
+[data-testid="mobile-header"],
+[data-testid="mobile-bottom-nav"] {
+  background: rgba(7, 17, 31, 0.96) !important;
+  background-image: none !important;
+  border-color: rgba(148, 163, 184, 0.22) !important;
+  color: #e5edf8 !important;
+}
+
+.chx-worker-header {
+  background: linear-gradient(135deg, #07111f, #0b1729) !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25) !important;
+}
+
+/* Remove the accidental blue background behind job cards. */
+.cx-page.max-w-7xl > section.space-y-3:has(> [data-testid^="job-card-"]) {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Keep job cards solid and readable. */
+[data-testid^="job-card-"] {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #0f172a !important;
+}
+
+/* Restore original Timesheet AI card colour. */
+[data-testid="ai-timesheet-review-card"] {
+  background: linear-gradient(135deg, #061426 0%, #0f2746 48%, #123b7a 100%) !important;
+  background-color: #061426 !important;
+  background-image: linear-gradient(135deg, #061426 0%, #0f2746 48%, #123b7a 100%) !important;
+  border: 1px solid rgba(96, 165, 250, 0.45) !important;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.26) !important;
+  color: #ffffff !important;
+}
+
+[data-testid="ai-timesheet-review-card"] > div,
+[data-testid="ai-timesheet-review-card"] .rounded-2xl {
+  background: rgba(255, 255, 255, 0.13) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-testid="ai-timesheet-review-card"] h1,
+[data-testid="ai-timesheet-review-card"] h2,
+[data-testid="ai-timesheet-review-card"] h3,
+[data-testid="ai-timesheet-review-card"] p,
+[data-testid="ai-timesheet-review-card"] span,
+[data-testid="ai-timesheet-review-card"] div,
+[data-testid="ai-timesheet-review-card"] svg {
+  color: #ffffff !important;
+}
