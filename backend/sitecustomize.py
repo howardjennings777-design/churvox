@@ -22,66 +22,27 @@ class _ServerBootLoader(importlib.abc.Loader):
 
     def exec_module(self, module):
         self.wrapped.exec_module(module)
-        try:
-            from top_player_boot import install_top_player_boot
-            install_top_player_boot(module)
-        except Exception as exc:
-            print(f"TOP_PLAYER_BOOT_INSTALL_ERR {exc}")
-        try:
-            from platform_admin_boot import install_platform_admin_boot
-            install_platform_admin_boot(module)
-        except Exception as exc:
-            print(f"PLATFORM_ADMIN_BOOT_INSTALL_ERR {exc}")
-        try:
-            from business_reports_boot import install_business_reports_boot
-            install_business_reports_boot(module)
-        except Exception as exc:
-            print(f"BUSINESS_REPORTS_BOOT_INSTALL_ERR {exc}")
-        try:
-            from followups_boot import install_followups_boot
-            install_followups_boot(module)
-        except Exception as exc:
-            print(f"FOLLOWUPS_BOOT_INSTALL_ERR {exc}")
-        try:
-            from recurring_jobs_boot import install_recurring_jobs_boot
-            install_recurring_jobs_boot(module)
-        except Exception as exc:
-            print(f"RECURRING_JOBS_BOOT_INSTALL_ERR {exc}")
-        try:
-            from checklist_automation_boot import install_checklist_automation_boot
-            install_checklist_automation_boot(module)
-        except Exception as exc:
-            print(f"CHECKLIST_AUTOMATION_BOOT_INSTALL_ERR {exc}")
-        try:
-            from notifications_boot import install_notifications_boot
-            install_notifications_boot(module)
-        except Exception as exc:
-            print(f"NOTIFICATIONS_BOOT_INSTALL_ERR {exc}")
-        try:
-            from job_invoice_boot import install_job_invoice_boot
-            install_job_invoice_boot(module)
-        except Exception as exc:
-            print(f"JOB_INVOICE_BOOT_INSTALL_ERR {exc}")
-        try:
-            from quote_job_boot import install_quote_job_boot
-            install_quote_job_boot(module)
-        except Exception as exc:
-            print(f"QUOTE_JOB_BOOT_INSTALL_ERR {exc}")
-        try:
-            from client_360_boot import install_client_360_boot
-            install_client_360_boot(module)
-        except Exception as exc:
-            print(f"CLIENT_360_BOOT_INSTALL_ERR {exc}")
-        try:
-            from launch_audit_boot import install_launch_audit_boot
-            install_launch_audit_boot(module)
-        except Exception as exc:
-            print(f"LAUNCH_AUDIT_BOOT_INSTALL_ERR {exc}")
-        try:
-            from launch_ops_boot import install_launch_ops_boot
-            install_launch_ops_boot(module)
-        except Exception as exc:
-            print(f"LAUNCH_OPS_BOOT_INSTALL_ERR {exc}")
+        boot_steps = [
+            ("top_player_boot", "install_top_player_boot", "TOP_PLAYER_BOOT_INSTALL_ERR"),
+            ("platform_admin_boot", "install_platform_admin_boot", "PLATFORM_ADMIN_BOOT_INSTALL_ERR"),
+            ("business_reports_boot", "install_business_reports_boot", "BUSINESS_REPORTS_BOOT_INSTALL_ERR"),
+            ("followups_boot", "install_followups_boot", "FOLLOWUPS_BOOT_INSTALL_ERR"),
+            ("recurring_jobs_boot", "install_recurring_jobs_boot", "RECURRING_JOBS_BOOT_INSTALL_ERR"),
+            ("checklist_automation_boot", "install_checklist_automation_boot", "CHECKLIST_AUTOMATION_BOOT_INSTALL_ERR"),
+            ("notifications_boot", "install_notifications_boot", "NOTIFICATIONS_BOOT_INSTALL_ERR"),
+            ("job_invoice_boot", "install_job_invoice_boot", "JOB_INVOICE_BOOT_INSTALL_ERR"),
+            ("quote_job_boot", "install_quote_job_boot", "QUOTE_JOB_BOOT_INSTALL_ERR"),
+            ("client_360_boot", "install_client_360_boot", "CLIENT_360_BOOT_INSTALL_ERR"),
+            ("launch_audit_boot", "install_launch_audit_boot", "LAUNCH_AUDIT_BOOT_INSTALL_ERR"),
+            ("launch_ops_boot", "install_launch_ops_boot", "LAUNCH_OPS_BOOT_INSTALL_ERR"),
+            ("ai_router", "install_ai_router", "AI_ASSISTANT_BOOT_INSTALL_ERR"),
+        ]
+        for module_name, function_name, error_label in boot_steps:
+            try:
+                boot_module = __import__(module_name, fromlist=[function_name])
+                getattr(boot_module, function_name)(module)
+            except Exception as exc:
+                print(f"{error_label} {exc}")
 
 
 class _ServerBootFinder(importlib.abc.MetaPathFinder):
