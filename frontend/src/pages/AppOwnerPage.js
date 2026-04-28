@@ -2,39 +2,21 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, AlertTriangle, Briefcase, Building2, CreditCard, FileText, LogOut, RefreshCw, ShieldCheck, Trash2, Users, Zap } from "lucide-react";
 import API_BASE from "../lib/apiBase";
 
-const ADMIN_ENDPOINTS = [
-  "/api/admin/platform-stats",
-  "/api/admin/usage",
-  "/api/admin/dashboard",
-  "/api/platform/stats",
-  "/api/app-owner/stats",
-];
-
-const FALLBACK_ENDPOINTS = {
-  jobs: "/api/jobs",
-  clients: "/api/clients",
-  quotes: "/api/quotes",
-  invoices: "/api/invoices",
-  workers: "/api/team/workers",
-  automation: "/api/automation/rules",
-  notifications: "/api/notifications?limit=20",
-  billing: "/api/billing/status",
-  reports: "/api/reports/summary?range=this_month",
-};
-
+const ADMIN_ENDPOINTS = ["/api/admin/platform-stats", "/api/admin/dashboard", "/api/platform/stats", "/api/app-owner/stats"];
 const PLAN_PRICE = { solo: 30, team: 70, pro: 110, enterprise: 240 };
 const OWNER_ROLES = new Set(["owner", "employer", "admin", "business_owner", "platform_owner"]);
 
 function asArray(value) {
   if (Array.isArray(value)) return value;
   if (Array.isArray(value?.data)) return value.data;
-  if (Array.isArray(value?.items)) return value.items;
+  if (Array.isArray(value?.users)) return value.users;
+  if (Array.isArray(value?.businesses)) return value.businesses;
   if (Array.isArray(value?.jobs)) return value.jobs;
   if (Array.isArray(value?.clients)) return value.clients;
   if (Array.isArray(value?.quotes)) return value.quotes;
   if (Array.isArray(value?.invoices)) return value.invoices;
-  if (Array.isArray(value?.workers)) return value.workers;
   if (Array.isArray(value?.rules)) return value.rules;
+  if (Array.isArray(value?.automation_rules)) return value.automation_rules;
   if (Array.isArray(value?.notifications)) return value.notifications;
   return [];
 }
@@ -49,19 +31,19 @@ function safeText(value, fallback = "-") {
   return String(value);
 }
 
-function titleOf(item) {
-  return safeText(item?.name || item?.full_name || item?.business_name || item?.company || item?.title || item?.email || item?.customer_name || item?.client_name || item?.invoice_number || item?.quote_number || item?.id || item?._id, "Record");
-}
-
 function idOf(item) {
-  const raw = item?.id || item?._id || item?.user_id || item?.business_id || item?.email || item?.title;
+  const raw = item?.id || item?._id || item?.user_id || item?.business_id || item?.email;
   if (!raw) return "";
   if (typeof raw === "object") return raw.$oid || raw.id || "";
   return String(raw);
 }
 
-function planOf(userOrBilling) {
-  return String(userOrBilling?.plan || userOrBilling?.plan_type || userOrBilling?.subscription_plan || "none").toLowerCase();
+function titleOf(item) {
+  return safeText(item?.name || item?.full_name || item?.business_name || item?.company || item?.title || item?.email || item?.customer_name || item?.client_name || item?.invoice_number || item?.quote_number || idOf(item), "Record");
+}
+
+function planOf(item) {
+  return String(item?.plan || item?.plan_type || item?.subscription_plan || "none").toLowerCase();
 }
 
 function roleOf(item) {
@@ -69,25 +51,22 @@ function roleOf(item) {
 }
 
 function isOwnerAccount(item) {
-  const role = roleOf(item);
-  if (OWNER_ROLES.has(role)) return true;
-  if (item?.is_platform_owner === true) return true;
-  return false;
+  return OWNER_ROLES.has(roleOf(item)) || item?.is_platform_owner === true;
+}
+
+function isProtectedPlatformAccount(item) {
+  const email = String(item?.email || "").trim().toLowerCase();
+  return email === "hello@churvox.com" || roleOf(item) === "platform_owner" || item?.is_platform_owner === true;
 }
 
 function splitOwnersAndUsers(rawUsers) {
   const owners = [];
   const users = [];
-
-  rawUsers.forEach((user) => {
-    if (isOwnerAccount(user)) owners.push(user);
-    else users.push(user);
-  });
-
+  rawUsers.forEach((user) => (isOwnerAccount(user) ? owners : users).push(user));
   return { owners, users };
 }
 
-function normalizeAdmin(payload, endpoint) {
+function normalizePayload(payload, endpoint) {
   const src = payload?.data && !Array.isArray(payload.data) ? payload.data : payload || {};
   const allUsers = asArray(src.users_list || src.users || src.all_users);
   const { owners, users } = splitOwnersAndUsers(allUsers);
@@ -98,53 +77,14 @@ function normalizeAdmin(payload, endpoint) {
   const invoices = asArray(src.invoices_list || src.invoices);
   const automation = asArray(src.automation_list || src.automation_rules || src.rules);
   const notifications = asArray(src.notifications);
-  const plans = { solo: 0, team: 0, pro: 0, enterprise: 0 };
-  const planSource = owners.length ? owners : allUsers;
-  planSource.forEach((u) => { const p = planOf(u); if (plans[p] !== undefined) plans[p] += 1; });
-  const revenue = Number(src.monthly_revenue || src.mrr || src.revenue_this_month || 0) || planSource.reduce((sum, u) => sum + (PLAN_PRICE[planOf(u)] || 0), 0);
-  return {
-    mode: "Full platform",
-    source: endpoint,
-    owners,
-    users,
-    allUsers,
-    businesses,
-    jobs,
-    clients,
-    quotes,
-    invoices,
-    workers: users,
-    automation,
-    notifications,
-    plans: src.plan_counts || plans,
-    revenue,
-  };
+  const plans = { solo: 0, team: 0, pro: 0, enterprise: 0, ...(src.plan_counts || {}) };
+  if (!src.plan_counts) (owners.length ? owners : allUsers).forEach((u) => { const p = planOf(u); if (plans[p] !== undefined) plans[p] += 1; });
+  const revenue = Number(src.monthly_revenue || src.mrr || src.revenue_this_month || 0) || Object.entries(plans).reduce((sum, [p, c]) => sum + (PLAN_PRICE[p] || 0) * Number(c || 0), 0);
+  return { mode: "Full platform", source: endpoint, owners, users, allUsers, businesses, jobs, clients, quotes, invoices, automation, notifications, plans, revenue };
 }
 
-function normalizeFallback(results) {
-  const jobs = asArray(results.jobs);
-  const clients = asArray(results.clients);
-  const quotes = asArray(results.quotes);
-  const invoices = asArray(results.invoices);
-  const workers = asArray(results.workers);
-  const automation = asArray(results.automation);
-  const notifications = asArray(results.notifications);
-  const billing = results.billing || {};
-  const reports = results.reports || {};
-  const plan = planOf(billing);
-  const plans = { solo: 0, team: 0, pro: 0, enterprise: 0 };
-  if (plans[plan] !== undefined) plans[plan] = 1;
-  const businesses = [{ business_name: billing.business_name || "Current business", plan, status: billing.plan_status || billing.subscription_status || "active" }];
-  const owners = [{
-    name: billing.name || billing.owner_name || billing.business_name || "Current owner",
-    email: billing.email || billing.owner_email || "",
-    role: "owner",
-    business_name: billing.business_name || "Current business",
-    plan,
-    plan_status: billing.plan_status || billing.subscription_status || "active",
-  }];
-  const revenue = Number(reports.revenue_this_month || 0) || PLAN_PRICE[plan] || 0;
-  return { mode: "Live fallback", source: "current live app endpoints", owners, users: workers, allUsers: [...owners, ...workers], businesses, jobs, clients, quotes, invoices, workers, automation, notifications, plans, revenue };
+function emptyData() {
+  return { mode: "Loading", source: "admin", owners: [], users: [], allUsers: [], businesses: [], jobs: [], clients: [], quotes: [], invoices: [], automation: [], notifications: [], plans: { solo: 0, team: 0, pro: 0, enterprise: 0 }, revenue: 0 };
 }
 
 function Metric({ id, label, value, detail, icon: Icon, selected, onClick }) {
@@ -162,22 +102,15 @@ function Metric({ id, label, value, detail, icon: Icon, selected, onClick }) {
   );
 }
 
-function RecordCard({ item, selected, onDeleteUser }) {
-  const canDelete = selected === "users" && !isOwnerAccount(item);
+function RecordCard({ item, selected, onRemove }) {
+  const removable = (selected === "owners" || selected === "users") && !isProtectedPlatformAccount(item);
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-950/55 p-4">
       <div className="flex items-start justify-between gap-3">
         <p className="min-w-0 truncate text-sm font-black text-white">{titleOf(item)}</p>
-        {canDelete && (
-          <button
-            type="button"
-            onClick={() => onDeleteUser?.(item)}
-            className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-red-300/25 bg-red-500/15 px-2.5 py-1.5 text-[11px] font-black text-red-100 hover:bg-red-500/25"
-            data-testid="app-owner-delete-user"
-            title="Delete user"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Delete
+        {removable && (
+          <button type="button" onClick={() => onRemove(item)} className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-red-300/25 bg-red-500/15 px-2.5 py-1.5 text-[11px] font-black text-red-100 hover:bg-red-500/25" data-testid="app-owner-delete-user">
+            <Trash2 className="h-3.5 w-3.5" /> Remove
           </button>
         )}
       </div>
@@ -194,22 +127,11 @@ function RecordCard({ item, selected, onDeleteUser }) {
 }
 
 function selectedLabel(id) {
-  const labels = {
-    owners: "Owners",
-    users: "Users",
-    businesses: "Businesses",
-    jobs: "Jobs",
-    clients: "Clients",
-    quotes: "Quotes",
-    invoices: "Invoices",
-    automation: "Automation",
-    notifications: "Notifications",
-  };
-  return labels[id] || id;
+  return ({ owners: "Owners", users: "Users", businesses: "Businesses", jobs: "Jobs", clients: "Clients", quotes: "Quotes", invoices: "Invoices", automation: "Automation", notifications: "Notifications" })[id] || id;
 }
 
 export default function AppOwnerPage() {
-  const [data, setData] = useState(() => normalizeFallback({}));
+  const [data, setData] = useState(emptyData);
   const [selected, setSelected] = useState("owners");
   const [loading, setLoading] = useState(true);
   const [warning, setWarning] = useState("");
@@ -220,25 +142,8 @@ export default function AppOwnerPage() {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  const handleLogout = async () => {
-    const token = localStorage.getItem("token") || localStorage.getItem("authToken") || "";
-    try {
-      await fetch(`${API_BASE}/api/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      });
-    } catch (_) {}
-
-    localStorage.removeItem("token");
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("owner_portal_session");
-    localStorage.removeItem("platform_owner_email");
-    window.location.assign("/login");
-  };
-
-  const fetchJson = useCallback(async (path) => {
-    const res = await fetch(`${API_BASE}${path}`, { credentials: "include", headers: { Accept: "application/json", ...headers() } });
+  const fetchJson = useCallback(async (path, options = {}) => {
+    const res = await fetch(`${API_BASE}${path}`, { credentials: "include", headers: { Accept: "application/json", "Content-Type": "application/json", ...headers() }, ...options });
     const json = await res.json().catch(() => null);
     if (!res.ok) throw new Error(json?.detail || json?.message || `${path} ${res.status}`);
     return json;
@@ -251,20 +156,13 @@ export default function AppOwnerPage() {
       for (const endpoint of ADMIN_ENDPOINTS) {
         try {
           const payload = await fetchJson(endpoint);
-          setData(normalizeAdmin(payload, endpoint));
+          setData(normalizePayload(payload, endpoint));
           setUpdated(new Date());
           return;
         } catch (_) {}
       }
-
-      const settled = await Promise.allSettled(Object.entries(FALLBACK_ENDPOINTS).map(async ([key, path]) => [key, await fetchJson(path)]));
-      const results = {};
-      settled.forEach((r) => { if (r.status === "fulfilled") results[r.value[0]] = r.value[1]; });
-      setData(normalizeFallback(results));
-      setWarning("Full platform admin endpoints are not live yet. Showing live data available from the current app endpoints.");
-      setUpdated(new Date());
+      throw new Error("Full platform admin endpoint did not respond");
     } catch (err) {
-      setData(normalizeFallback({}));
       setWarning(err.message || "Owner dashboard could not load live data yet.");
       setUpdated(new Date());
     } finally {
@@ -272,35 +170,30 @@ export default function AppOwnerPage() {
     }
   }, [fetchJson]);
 
-  const handleDeleteUser = useCallback(async (item) => {
+  const handleRemoveAccount = useCallback(async (item) => {
     const userId = idOf(item);
     const label = titleOf(item);
-    if (!userId) {
-      setWarning("Could not find this user's ID.");
-      return;
-    }
-    if (isOwnerAccount(item)) {
-      setWarning("Owner and platform owner accounts are protected. Delete workers/team users only.");
-      return;
-    }
-    const ok = window.confirm(`Delete user ${label}? This removes the team user account and cannot be undone from the dashboard.`);
+    if (!userId) return setWarning("Could not find this account ID.");
+    if (isProtectedPlatformAccount(item)) return setWarning("The protected platform owner account cannot be removed here.");
+    const ok = window.confirm(`Remove account ${label}? Login access will be removed and business records will be kept.`);
     if (!ok) return;
-
     try {
-      const res = await fetch(`${API_BASE}/api/admin/users/${encodeURIComponent(userId)}`, {
-        method: "DELETE",
-        credentials: "include",
-        headers: { Accept: "application/json", "Content-Type": "application/json", ...headers() },
-      });
-      const json = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(json?.detail || json?.message || `Delete failed (${res.status})`);
-      setWarning(`Deleted user: ${label}`);
+      await fetchJson(`/api/admin/users/${encodeURIComponent(userId)}`, { method: "DELETE" });
+      setWarning(`Removed account: ${label}`);
       await load();
-      setSelected("users");
     } catch (err) {
-      setWarning(err.message || "Could not delete user.");
+      setWarning(err.message || "Could not remove account.");
     }
-  }, [load]);
+  }, [fetchJson, load]);
+
+  const handleLogout = async () => {
+    try { await fetchJson("/api/auth/logout", { method: "POST" }); } catch (_) {}
+    localStorage.removeItem("token");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("owner_portal_session");
+    localStorage.removeItem("platform_owner_email");
+    window.location.assign("/login");
+  };
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => { const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
@@ -331,12 +224,8 @@ export default function AppOwnerPage() {
               <p className="mt-3 max-w-3xl text-sm font-semibold leading-6 text-slate-300 md:text-base">Separate app-owner dashboard for platform health, owners, users, businesses, jobs, invoices, automation and alerts.</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button onClick={load} className="inline-flex items-center gap-2 rounded-full border border-cyan-200/25 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/15">
-                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
-              </button>
-              <button onClick={handleLogout} className="inline-flex items-center gap-2 rounded-full border border-red-200/25 bg-red-500/15 px-4 py-2 text-sm font-black text-red-100 hover:bg-red-500/25" data-testid="app-owner-logout">
-                <LogOut className="h-4 w-4" /> Log out
-              </button>
+              <button onClick={load} className="inline-flex items-center gap-2 rounded-full border border-cyan-200/25 bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/15"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</button>
+              <button onClick={handleLogout} className="inline-flex items-center gap-2 rounded-full border border-red-200/25 bg-red-500/15 px-4 py-2 text-sm font-black text-red-100 hover:bg-red-500/25" data-testid="app-owner-logout"><LogOut className="h-4 w-4" /> Log out</button>
             </div>
           </div>
           <div className="mt-6 grid gap-3 md:grid-cols-4">
@@ -351,27 +240,16 @@ export default function AppOwnerPage() {
 
         <div className="mt-5 grid gap-5 xl:grid-cols-[1fr_420px]">
           <main className="space-y-5">
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {metrics.map((m) => <Metric key={m.id} {...m} selected={selected === m.id} onClick={setSelected} />)}
-            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{metrics.map((m) => <Metric key={m.id} {...m} selected={selected === m.id} onClick={setSelected} />)}</div>
             <section className="rounded-3xl border border-white/10 bg-white/[0.055] p-5 shadow-xl shadow-black/20">
               <h2 className="text-xl font-black">Plan mix</h2>
-              <div className="mt-5 grid gap-4 md:grid-cols-2">
-                {Object.entries(data.plans || {}).map(([plan, count]) => (
-                  <div key={plan} className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                    <div className="flex justify-between text-sm"><span className="font-bold capitalize text-slate-200">{plan}</span><span className="font-black">{count}</span></div>
-                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-cyan-300" style={{ width: `${Math.min(100, (Number(count || 0) / totalPlans) * 100)}%` }} /></div>
-                  </div>
-                ))}
-              </div>
+              <div className="mt-5 grid gap-4 md:grid-cols-2">{Object.entries(data.plans || {}).map(([plan, count]) => <div key={plan} className="rounded-2xl border border-white/10 bg-slate-950/50 p-4"><div className="flex justify-between text-sm"><span className="font-bold capitalize text-slate-200">{plan}</span><span className="font-black">{count}</span></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-cyan-300" style={{ width: `${Math.min(100, (Number(count || 0) / totalPlans) * 100)}%` }} /></div></div>)}</div>
             </section>
           </main>
           <aside className="rounded-3xl border border-white/10 bg-white/[0.055] p-5 shadow-xl shadow-black/20">
             <h2 className="text-xl font-black">{selectedLabel(selected)}</h2>
             <p className="mt-1 text-sm font-semibold text-slate-400">{records.length} records shown · {data.source}</p>
-            <div className="mt-4 max-h-[72vh] space-y-3 overflow-auto pr-1">
-              {records.length ? records.map((item, index) => <RecordCard key={idOf(item) || index} item={item} selected={selected} onDeleteUser={handleDeleteUser} />) : <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-5 text-sm font-semibold text-slate-400">No records yet.</div>}
-            </div>
+            <div className="mt-4 max-h-[72vh] space-y-3 overflow-auto pr-1">{records.length ? records.map((item, index) => <RecordCard key={idOf(item) || index} item={item} selected={selected} onRemove={handleRemoveAccount} />) : <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-5 text-sm font-semibold text-slate-400">No records yet.</div>}</div>
           </aside>
         </div>
       </div>
