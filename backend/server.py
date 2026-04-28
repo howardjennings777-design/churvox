@@ -8396,6 +8396,9 @@ def _ai_user_role(current_user: dict) -> str:
 _AI_OWNER_ACTION_ALLOWED_ROLES = {"owner", "admin", "employer", "manager", "office_admin"}
 _AI_OWNER_ACTION_BLOCKED_ROLES = {"worker", "payroll"}
 _AI_ACTION_ACTIVE_STATUSES = {"open", "snoozed", "approved"}
+_AI_AUTOMATION_ALLOWED_ROLES = {"owner", "admin", "employer", "manager", "office_admin"}
+_AI_AUTOMATION_BLOCKED_ROLES = {"worker", "payroll"}
+_AI_AUTOMATION_ACTIVE_STATUSES = {"open", "snoozed"}
 
 
 def _ai_action_now():
@@ -8419,6 +8422,198 @@ def _ai_action_role_guard(current_user: dict):
     role = _ai_user_role(current_user)
     if role in _AI_OWNER_ACTION_BLOCKED_ROLES or role not in _AI_OWNER_ACTION_ALLOWED_ROLES:
         raise HTTPException(status_code=403, detail="AI Action Queue is not available for this role")
+
+
+def _ai_automation_role_guard(current_user: dict):
+    role = _ai_user_role(current_user)
+    if role in _AI_AUTOMATION_BLOCKED_ROLES or role not in _AI_AUTOMATION_ALLOWED_ROLES:
+        raise HTTPException(status_code=403, detail="AI Automation Builder is not available for this role")
+
+
+def _ai_automation_to_response(doc: dict) -> dict:
+    clean = safe_doc(doc) or {}
+    clean["priority"] = str(clean.get("priority") or "medium").lower()
+    clean["confidence"] = str(clean.get("confidence") or "medium").lower()
+    clean["status"] = str(clean.get("status") or "open").lower()
+    if "id" not in clean:
+        clean["id"] = str(clean.get("_id") or "")
+    return make_json_safe(clean)
+
+
+def _ai_automation_conditions(trigger_type: str, source_doc: dict | None = None) -> dict:
+    trigger = str(trigger_type or "").strip().lower()
+    if trigger == "quote_pending_days":
+        return {"minimum_pending_days": 3, "quote_status": ["sent", "pending", "draft"]}
+    if trigger == "invoice_overdue":
+        return {"invoice_status": ["overdue", "sent", "unpaid", "partial"], "needs_collection_review": True}
+    if trigger == "job_completed_no_invoice":
+        return {"job_status": ["completed", "done"], "invoice_linked": False}
+    if trigger == "job_unassigned":
+        return {"job_status_exclude": ["completed", "cancelled"], "assigned_worker_required": True}
+    if trigger == "client_missing_contact":
+        return {"requires_phone": True, "requires_email": True}
+    if trigger == "timesheet_anomaly":
+        return {"review_statuses": ["warning", "flagged", "rejected"], "max_shift_hours": 16}
+    if trigger == "automation_failure":
+        return {"automation_status": ["failed", "error"]}
+    return {"source_id": str((source_doc or {}).get("id") or (source_doc or {}).get("_id") or "")}
+
+
+def _ai_timesheet_anomaly(timesheet: dict) -> bool:
+    row = timesheet or {}
+    status = str(row.get("status") or "").strip().lower().replace(" ", "_")
+    if status in {"warning", "flagged", "rejected", "needs_review"}:
+        return True
+    hours = row.get("hours") or row.get("total_hours") or row.get("duration_hours")
+    try:
+        return float(hours or 0) >= 16
+    except Exception:
+        return False
+
+
+async def _generate_ai_automation_candidates(business_id: str) -> list[dict]:
+    now = _ai_action_now()
+    query = {"business_id": str(business_id)}
+    jobs = await db.jobs.find(query).to_list(length=500)
+    invoices = await db.invoices.find(query).to_list(length=500)
+    quotes = await db.quotes.find(query).to_list(length=500)
+    clients = await db.clients.find(query).to_list(length=500)
+    timesheets = await db.timesheets.find(query).to_list(length=500)
+    automation_runs = await db.automation_runs.find(query).sort("created_at", -1).to_list(length=500)
+    invoice_job_ids = {str(inv.get("job_id") or "") for inv in invoices if inv.get("job_id")}
+    candidates: list[dict] = []
+
+    for quote in quotes:
+        quote_status = str(quote.get("status") or "").strip().lower()
+        if quote_status not in {"sent", "pending", "draft"}:
+            continue
+        created = _parse_date_like(quote.get("sent_at") or quote.get("updated_at") or quote.get("created_at"))
+        if not created or (now - created).days < 3:
+            continue
+        candidates.append({
+            "title": "Draft quote follow-up automation",
+            "description": "Quote has been pending for several days. Create a follow-up task draft for owner/admin review.",
+            "trigger_type": "quote_pending_days",
+            "action_type": "create_quote_followup_task",
+            "recommended_rule": "When quote remains pending for 3+ days, create an internal follow-up task draft.",
+            "reason": "Pending quotes are warm revenue opportunities and can be chased safely with owner approval.",
+            "impact": "Improves quote conversion consistency without auto-sending customer messages.",
+            "priority": "medium",
+            "confidence": "high",
+            "conditions": _ai_automation_conditions("quote_pending_days", quote),
+        })
+        break
+
+    for invoice in invoices:
+        status = str(invoice.get("status") or "").strip().lower()
+        due_dt = _parse_date_like(invoice.get("due_date") or invoice.get("due_at"))
+        if status in {"paid", "void", "cancelled", "canceled"}:
+            continue
+        if status == "overdue" or (due_dt and due_dt < now):
+            candidates.append({
+                "title": "Draft overdue invoice reminder automation",
+                "description": "Invoice is overdue. Create an internal reminder task draft for collection follow-up.",
+                "trigger_type": "invoice_overdue",
+                "action_type": "create_invoice_reminder_task",
+                "recommended_rule": "When invoice becomes overdue, create an owner/admin follow-up task draft.",
+                "reason": "Overdue invoices need repeatable reminders and internal tracking.",
+                "impact": "Protects cash flow while keeping all external messaging manual.",
+                "priority": "high",
+                "confidence": "high",
+                "conditions": _ai_automation_conditions("invoice_overdue", invoice),
+            })
+            break
+
+    for job in jobs:
+        status = str(job.get("status") or job.get("job_status") or "").strip().lower().replace(" ", "_")
+        job_id = str(job.get("id") or job.get("_id") or "")
+        if status in {"completed", "done"} and job_id and job_id not in invoice_job_ids:
+            candidates.append({
+                "title": "Draft invoice setup for completed jobs",
+                "description": "Completed job has no invoice. Create draft-invoice automation rule for admin review.",
+                "trigger_type": "job_completed_no_invoice",
+                "action_type": "create_draft_invoice_task",
+                "recommended_rule": "When job is marked completed and no invoice exists, create a draft invoice task.",
+                "reason": "Completed work should be invoiced quickly to reduce leakage.",
+                "impact": "Reduces missed billing without marking invoices paid automatically.",
+                "priority": "high",
+                "confidence": "high",
+                "conditions": _ai_automation_conditions("job_completed_no_invoice", job),
+            })
+            break
+
+    for job in jobs:
+        status = str(job.get("status") or job.get("job_status") or "").strip().lower().replace(" ", "_")
+        if status in {"completed", "cancelled", "canceled"}:
+            continue
+        if not (job.get("assigned_worker_id") or job.get("worker_id") or job.get("assigned_to")):
+            candidates.append({
+                "title": "Alert for unassigned jobs",
+                "description": "A live job has no worker assigned. Draft owner/manager alert automation for review.",
+                "trigger_type": "job_unassigned",
+                "action_type": "alert_owner_manager",
+                "recommended_rule": "When a non-completed job has no assigned worker, create an owner/manager alert.",
+                "reason": "Unassigned jobs create schedule risk and missed SLAs.",
+                "impact": "Improves dispatch reliability without changing job status automatically.",
+                "priority": "high",
+                "confidence": "high",
+                "conditions": _ai_automation_conditions("job_unassigned", job),
+            })
+            break
+
+    for client in clients:
+        email = str(client.get("email") or "").strip()
+        phone = clean_phone(client.get("phone") or client.get("mobile") or client.get("phone_number"))
+        if email and phone:
+            continue
+        candidates.append({
+            "title": "Admin cleanup for missing client contact",
+            "description": "Client record is missing phone or email. Draft admin cleanup task automation.",
+            "trigger_type": "client_missing_contact",
+            "action_type": "create_admin_cleanup_task",
+            "recommended_rule": "When a client is missing phone/email, create an admin cleanup task draft.",
+            "reason": "Missing contact details block quoting, reminders, and invoice follow-up.",
+            "impact": "Improves data quality and reduces billing delays.",
+            "priority": "medium",
+            "confidence": "high",
+            "conditions": _ai_automation_conditions("client_missing_contact", client),
+        })
+        break
+
+    for timesheet in timesheets:
+        if _ai_timesheet_anomaly(timesheet):
+            candidates.append({
+                "title": "Flag timesheet anomaly for payroll review",
+                "description": "Timesheet anomaly detected. Draft payroll review task automation for approval.",
+                "trigger_type": "timesheet_anomaly",
+                "action_type": "flag_payroll_review",
+                "recommended_rule": "When a timesheet is flagged or exceeds threshold hours, create payroll review task.",
+                "reason": "Timesheet anomalies should be reviewed before payroll processing.",
+                "impact": "Supports payroll accuracy with explicit human approval.",
+                "priority": "high",
+                "confidence": "medium",
+                "conditions": _ai_automation_conditions("timesheet_anomaly", timesheet),
+            })
+            break
+
+    for run in automation_runs:
+        run_status = str(run.get("status") or "").strip().lower()
+        if run_status in {"failed", "error"}:
+            candidates.append({
+                "title": "Alert on automation failure",
+                "description": "An automation run failed. Draft owner/admin alert automation.",
+                "trigger_type": "automation_failure",
+                "action_type": "alert_owner_admin_failure",
+                "recommended_rule": "When automation run fails, create owner/admin incident alert task.",
+                "reason": "Automation failures can silently interrupt follow-up workflows.",
+                "impact": "Increases operational visibility without making risky automatic changes.",
+                "priority": "medium",
+                "confidence": "medium",
+                "conditions": _ai_automation_conditions("automation_failure", run),
+            })
+            break
+
+    return candidates
 
 
 async def _ai_action_audit_event(business_id: str, action: dict, event_type: str, current_user: dict, payload: dict | None = None):
@@ -8730,6 +8925,214 @@ async def complete_ai_action(action_id: str, payload: dict | None = None, curren
 @api_router.post("/ai/actions/{action_id}/approve")
 async def approve_ai_action(action_id: str, payload: dict | None = None, current_user: dict = Depends(get_current_user)):
     return await _mutate_ai_action(action_id, "approved", current_user, payload)
+
+
+@api_router.get("/ai/automation-suggestions")
+async def list_ai_automation_suggestions(current_user: dict = Depends(get_current_user)):
+    _ai_automation_role_guard(current_user)
+    business_id = await get_user_business_id(current_user)
+    docs = await db.ai_automation_suggestions.find({"business_id": str(business_id)}).sort([("updated_at", -1), ("created_at", -1)]).limit(200).to_list(length=200)
+    return {"success": True, "suggestions": [_ai_automation_to_response(row) for row in docs]}
+
+
+@api_router.post("/ai/automation-suggestions/generate")
+async def generate_ai_automation_suggestions(current_user: dict = Depends(get_current_user)):
+    _ai_automation_role_guard(current_user)
+    business_id = await get_user_business_id(current_user)
+    now = _ai_action_now()
+    candidates = await _generate_ai_automation_candidates(str(business_id))
+    created = 0
+    updated = 0
+    for candidate in candidates:
+        trigger_type = str(candidate.get("trigger_type") or "").strip().lower()
+        action_type = str(candidate.get("action_type") or "").strip().lower()
+        if not trigger_type or not action_type:
+            continue
+        existing_open = await db.ai_automation_suggestions.find_one({
+            "business_id": str(business_id),
+            "trigger_type": trigger_type,
+            "action_type": action_type,
+            "status": "open",
+        })
+        payload = {
+            "business_id": str(business_id),
+            "title": _safe_text(candidate.get("title"), "AI automation suggestion"),
+            "description": _safe_text(candidate.get("description"), ""),
+            "trigger_type": trigger_type,
+            "action_type": action_type,
+            "conditions": candidate.get("conditions") if isinstance(candidate.get("conditions"), dict) else {},
+            "recommended_rule": _safe_text(candidate.get("recommended_rule"), ""),
+            "reason": _safe_text(candidate.get("reason"), ""),
+            "impact": _safe_text(candidate.get("impact"), ""),
+            "priority": str(candidate.get("priority") or "medium").lower(),
+            "confidence": str(candidate.get("confidence") or "medium").lower(),
+            "status": "open",
+            "updated_at": now,
+        }
+        if existing_open:
+            await db.ai_automation_suggestions.update_one({"_id": existing_open["_id"]}, {"$set": payload})
+            updated += 1
+            continue
+
+        prior = await db.ai_automation_suggestions.find_one(
+            {"business_id": str(business_id), "trigger_type": trigger_type, "action_type": action_type},
+            sort=[("updated_at", -1)],
+        )
+        if prior and str(prior.get("status") or "").lower() in {"dismissed", "approved", "snoozed"}:
+            await db.ai_automation_suggestions.update_one(
+                {"_id": prior["_id"]},
+                {"$set": payload, "$setOnInsert": {"created_at": now}},
+            )
+            updated += 1
+            continue
+
+        doc = {
+            "id": str(_automation_uuid.uuid4()),
+            **payload,
+            "created_at": now,
+            "approved_by": None,
+            "approved_at": None,
+        }
+        await db.ai_automation_suggestions.insert_one(doc)
+        created += 1
+    await db.ai_automation_events.insert_one({
+        "id": str(_automation_uuid.uuid4()),
+        "business_id": str(business_id),
+        "event_type": "generated",
+        "created": created,
+        "updated": updated,
+        "created_at": now,
+        "actor_id": str(current_user.get("id") or current_user.get("_id") or ""),
+    })
+    return {"success": True, "created": created, "updated": updated, "message": "AI suggests automation. You approve before anything runs."}
+
+
+async def _mutate_ai_automation_suggestion(suggestion_id: str, next_status: str, current_user: dict, payload: dict | None = None):
+    _ai_automation_role_guard(current_user)
+    business_id = await get_user_business_id(current_user)
+    now = _ai_action_now()
+    suggestion = await db.ai_automation_suggestions.find_one({"id": suggestion_id, "business_id": str(business_id)})
+    if not suggestion:
+        raise HTTPException(status_code=404, detail="AI automation suggestion not found")
+
+    updates = {"status": next_status, "updated_at": now}
+    setup_task = None
+    created_rule = None
+    if next_status == "approved":
+        updates["approved_by"] = str(current_user.get("id") or current_user.get("_id") or "")
+        updates["approved_at"] = now
+        action_map = {
+            "create_quote_followup_task": ("quote.pending.stale", "create_followup_task"),
+            "create_invoice_reminder_task": ("invoice.overdue", "create_followup_task"),
+            "create_draft_invoice_task": ("job.completed", "create_draft_invoice"),
+            "alert_owner_manager": ("job.unassigned", "notify_owner"),
+            "create_admin_cleanup_task": ("client.updated", "create_followup_task"),
+            "flag_payroll_review": ("timesheet.flagged", "payroll_admin_alert"),
+            "alert_owner_admin_failure": ("automation.failed", "notify_owner"),
+        }
+        rule_trigger, rule_action = action_map.get(
+            str(suggestion.get("action_type") or ""),
+            ("", ""),
+        )
+        if rule_trigger and rule_action:
+            existing_rule = await db.automation_rules.find_one({
+                "business_id": str(business_id),
+                "trigger": rule_trigger,
+                "action": rule_action,
+            })
+            if existing_rule:
+                created_rule = _automation_clean_doc(existing_rule)
+            else:
+                rule = {
+                    "id": str(_automation_uuid.uuid4()),
+                    "business_id": str(business_id),
+                    "name": _safe_text(suggestion.get("title"), "AI automation draft"),
+                    "description": _safe_text(suggestion.get("description"), ""),
+                    "trigger": rule_trigger,
+                    "action": rule_action,
+                    "enabled": False,
+                    "conditions": suggestion.get("conditions") if isinstance(suggestion.get("conditions"), dict) else {},
+                    "config": {
+                        "source": "ai_automation_builder",
+                        "suggestion_id": str(suggestion.get("id") or ""),
+                        "draft_rule_only": True,
+                        "safety": "Nothing sends automatically",
+                    },
+                    "action_config": {
+                        "requires_human_approval": True,
+                        "safety_notes": [
+                            "Never auto-send customer messages",
+                            "Never auto-approve payroll",
+                            "Never sync MYOB automatically",
+                            "Never change pricing",
+                            "Never mark invoices paid",
+                            "Never change job status automatically",
+                        ],
+                    },
+                    "created_by": _automation_user_id(current_user),
+                    "created_at": now,
+                    "updated_at": now,
+                }
+                await db.automation_rules.insert_one(rule)
+                created_rule = _automation_clean_doc(rule)
+        if not created_rule:
+            setup_task = {
+                "business_id": str(business_id),
+                "owner_id": str(business_id),
+                "title": f"Automation setup: {_safe_text(suggestion.get('title'), 'AI suggestion')}",
+                "description": "Draft rule only. Nothing sends automatically. Review and configure in Automation.",
+                "related_type": "ai_automation_suggestion",
+                "related_id": str(suggestion.get("id") or ""),
+                "assigned_user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+                "status": "pending",
+                "priority": str(suggestion.get("priority") or "medium"),
+                "source": "ai_automation_builder",
+                "due_at": now + timedelta(days=2),
+                "created_at": now,
+                "updated_at": now,
+            }
+            insert_task = await db.follow_up_tasks.insert_one(setup_task)
+            setup_task["id"] = str(insert_task.inserted_id)
+
+    if next_status == "snoozed":
+        days = int((payload or {}).get("days") or 7)
+        updates["snoozed_until"] = now + timedelta(days=max(1, min(30, days)))
+    await db.ai_automation_suggestions.update_one({"_id": suggestion["_id"]}, {"$set": updates})
+    suggestion.update(updates)
+
+    await db.ai_automation_events.insert_one({
+        "id": str(_automation_uuid.uuid4()),
+        "business_id": str(business_id),
+        "suggestion_id": str(suggestion.get("id") or suggestion_id),
+        "event_type": next_status,
+        "payload": payload or {},
+        "created_rule_id": (created_rule or {}).get("id"),
+        "setup_task_id": (setup_task or {}).get("id"),
+        "created_at": now,
+        "actor_id": str(current_user.get("id") or current_user.get("_id") or ""),
+    })
+    return {
+        "success": True,
+        "suggestion": _ai_automation_to_response(suggestion),
+        "draft_rule": created_rule,
+        "setup_task": make_json_safe(setup_task) if setup_task else None,
+        "message": "Draft rule only. Nothing sends automatically.",
+    }
+
+
+@api_router.post("/ai/automation-suggestions/{suggestion_id}/approve")
+async def approve_ai_automation_suggestion(suggestion_id: str, payload: dict | None = None, current_user: dict = Depends(get_current_user)):
+    return await _mutate_ai_automation_suggestion(suggestion_id, "approved", current_user, payload)
+
+
+@api_router.post("/ai/automation-suggestions/{suggestion_id}/dismiss")
+async def dismiss_ai_automation_suggestion(suggestion_id: str, payload: dict | None = None, current_user: dict = Depends(get_current_user)):
+    return await _mutate_ai_automation_suggestion(suggestion_id, "dismissed", current_user, payload)
+
+
+@api_router.post("/ai/automation-suggestions/{suggestion_id}/snooze")
+async def snooze_ai_automation_suggestion(suggestion_id: str, payload: dict | None = None, current_user: dict = Depends(get_current_user)):
+    return await _mutate_ai_automation_suggestion(suggestion_id, "snoozed", current_user, payload)
 
 
 def _safe_text(value, fallback="") -> str:
