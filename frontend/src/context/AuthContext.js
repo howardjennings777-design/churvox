@@ -166,22 +166,32 @@ export function AuthProvider({ children }) {
   const isPayroll = isPayrollRole(user?.role);
   const isOwnerUser = isOwner(user?.role);
 
+  const trialExpiredByDate = (() => {
+    if (!user?.trial_ends_at) return false;
+    try {
+      return new Date(user.trial_ends_at).getTime() < Date.now();
+    } catch {
+      return false;
+    }
+  })();
+
   const isPaidActive = (() => {
     if (!user) return false;
     const subscriptionStatus = String(user.subscription_status || "").toLowerCase();
     const planStatus = String(user.plan_status || "").toLowerCase();
-    return Boolean(user.stripe_subscription_id) || subscriptionStatus === "active" || planStatus === "active" || planStatus === "paid";
+    const hasStripeSubscription = Boolean(user.stripe_subscription_id || user.stripe_subscription);
+    const explicitPaid = user.has_paid_subscription === true || planStatus === "paid" || subscriptionStatus === "paid";
+    return hasStripeSubscription || explicitPaid;
   })();
 
   const isTrialExpired = (() => {
     if (!user) return false;
     if (isPaidActive) return false;
-    if (!user.trial_ends_at) return false;
-    try {
-      return new Date(user.trial_ends_at) < new Date();
-    } catch {
-      return false;
-    }
+    const subscriptionStatus = String(user.subscription_status || "").toLowerCase();
+    const planStatus = String(user.plan_status || "").toLowerCase();
+    if (["expired", "trial_expired", "cancelled", "canceled"].includes(subscriptionStatus)) return true;
+    if (["expired", "trial_expired", "cancelled", "canceled"].includes(planStatus)) return true;
+    return trialExpiredByDate;
   })();
 
   const mustChoosePlan = (() => {
