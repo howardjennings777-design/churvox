@@ -7,7 +7,7 @@ const HELP_TOPICS = [
     path: "/dashboard",
     label: "Smart Hub",
     title: "Smart Hub help",
-    steps: ["Check today’s work first.", "Use urgent actions to see what needs attention.", "Open jobs, quotes, invoices, payroll or automation from the quick cards."],
+    steps: ["Check today’s work first.", "Use urgent actions to see what needs attention.", "Open jobs, quotes, invoices, timesheets or automation from the quick cards."],
   },
   {
     path: "/clients",
@@ -43,7 +43,7 @@ const HELP_TOPICS = [
     path: "/team",
     label: "Team",
     title: "Team help",
-    steps: ["Invite workers, managers, office admins or payroll users.", "Keep roles correct so each person only sees what they need.", "Open team members to review their work where available."],
+    steps: ["Invite workers, managers, office admins or timesheet users.", "Keep roles correct so each person only sees what they need.", "Open team members to review their work where available."],
   },
   {
     path: "/automation",
@@ -52,10 +52,10 @@ const HELP_TOPICS = [
     steps: ["Turn rules on or off from this page.", "Use Test to check a rule before relying on it.", "Keep launch rules simple: job completion, quote accepted, invoice overdue, worker updates."],
   },
   {
-    path: "/payroll",
-    label: "Payroll",
-    title: "Payroll help",
-    steps: ["Create a pay run when hours are ready.", "Review timesheets and worker summaries.", "Lock and export when payroll is checked."],
+    path: "/timesheets",
+    label: "Timesheets",
+    title: "Timesheets help",
+    steps: ["Review worker time and pending approvals.", "Lock clean periods once hours are checked.", "Export CSV files for your external payroll provider, accountant or bookkeeper."],
   },
   {
     path: "/reports",
@@ -75,32 +75,55 @@ function findTopic(pathname) {
   return HELP_TOPICS.find((topic) => pathname === topic.path || pathname.startsWith(topic.path + "/")) || HELP_TOPICS[0];
 }
 
-function getPanelPosition(button) {
-  if (!button || typeof window === "undefined") {
-    return { top: 76, left: 12, width: 360 };
-  }
+function getPanelPosition(button, sidebar = false) {
+  const fallback = { top: 72, left: 12, width: 360, maxHeight: "calc(100vh - 96px)" };
+  if (!button || typeof window === "undefined") return fallback;
 
   const rect = button.getBoundingClientRect();
   const margin = 12;
+  const desktop = window.innerWidth >= 768;
+
+  if (sidebar && desktop) {
+    const left = Math.min(rect.right + margin, window.innerWidth - 420 - margin);
+    const safeLeft = Math.max(margin, left);
+    const width = Math.min(860, window.innerWidth - safeLeft - margin);
+    return {
+      top: 72,
+      left: safeLeft,
+      width: Math.max(360, width),
+      maxHeight: "calc(100vh - 96px)",
+    };
+  }
+
   const width = Math.min(390, window.innerWidth - margin * 2);
   const left = Math.min(Math.max(margin, rect.right - width), window.innerWidth - width - margin);
-  const top = Math.min(rect.bottom + 8, window.innerHeight - 80);
+  const belowTop = rect.bottom + 8;
+  const maxBottom = window.innerHeight - margin;
+  const estimatedHeight = Math.min(560, window.innerHeight - margin * 2);
+  const top = belowTop + estimatedHeight > maxBottom
+    ? Math.max(margin, maxBottom - estimatedHeight)
+    : belowTop;
 
-  return { top, left, width };
+  return {
+    top,
+    left,
+    width,
+    maxHeight: `${Math.max(280, window.innerHeight - top - margin)}px`,
+  };
 }
 
 export default function HelpDropdown({ compact = false, sidebar = false }) {
   const location = useLocation();
   const buttonRef = useRef(null);
   const [open, setOpen] = useState(false);
-  const [panelStyle, setPanelStyle] = useState({ top: 76, left: 12, width: 360 });
+  const [panelStyle, setPanelStyle] = useState({ top: 72, left: 12, width: 360, maxHeight: "calc(100vh - 96px)" });
   const [selectedPath, setSelectedPath] = useState("");
   const currentTopic = useMemo(() => findTopic(location.pathname), [location.pathname]);
   const selectedTopic = HELP_TOPICS.find((topic) => topic.path === selectedPath) || currentTopic;
 
   useEffect(() => {
     if (!open) return undefined;
-    const update = () => setPanelStyle(getPanelPosition(buttonRef.current));
+    const update = () => setPanelStyle(getPanelPosition(buttonRef.current, sidebar));
     update();
     window.addEventListener("resize", update);
     window.addEventListener("scroll", update, true);
@@ -108,6 +131,15 @@ export default function HelpDropdown({ compact = false, sidebar = false }) {
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
     };
+  }, [open, sidebar]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
   const buttonClass = sidebar
@@ -132,8 +164,8 @@ export default function HelpDropdown({ compact = false, sidebar = false }) {
 
       {open && (
         <div
-          className="fixed z-[90] overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-[0_22px_70px_rgba(15,23,42,0.22)]"
-          style={{ top: panelStyle.top, left: panelStyle.left, width: panelStyle.width, maxHeight: "calc(100vh - 24px)" }}
+          className="fixed z-[120] overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-[0_22px_70px_rgba(15,23,42,0.22)]"
+          style={{ top: panelStyle.top, left: panelStyle.left, width: panelStyle.width, maxHeight: panelStyle.maxHeight }}
           data-testid="help-dropdown-panel"
         >
           <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
@@ -146,7 +178,7 @@ export default function HelpDropdown({ compact = false, sidebar = false }) {
             </button>
           </div>
 
-          <div className="grid max-h-[70vh] gap-0 overflow-y-auto md:grid-cols-[155px_1fr]">
+          <div className="grid gap-0 overflow-y-auto md:grid-cols-[155px_1fr]" style={{ maxHeight: "calc(100% - 65px)" }}>
             <div className="border-b border-slate-100 bg-white p-2 md:border-b-0 md:border-r">
               {HELP_TOPICS.map((topic) => {
                 const active = selectedTopic.path === topic.path;
