@@ -268,7 +268,7 @@ function App() {
           <Route path="/team" element={<TeamRoute><TeamPage /></TeamRoute>} />
           <Route path="/notifications" element={<NotificationsRoute><NotificationsPage /></NotificationsRoute>} />
           <Route path="/automation" element={<TeamRoute><AutomationPage /></TeamRoute>} />
-          <Route path="/automation/runs" element={<TeamRoute><AutomationRunsPage /></AutomationRunsPage></TeamRoute>} />
+          <Route path="/automation/runs" element={<TeamRoute><AutomationRunsPage /></TeamRoute>} />
           <Route path="/payroll" element={<PayrollRoute><PayrollPage /></PayrollRoute>} />
 
           <Route path="/worker/jobs" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
