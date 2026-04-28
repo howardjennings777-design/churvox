@@ -98,7 +98,7 @@ body:has(a[href="/payroll"].active) .cx-page > section.grid:has(> div.rounded-2x
   font-weight: 900 !important;
 }
 
-body:has(a[href="/payroll"].active) .cx-page > section:has(h2):has(.grid) .grid,
+body:has(a[href="/payroll"].active) .cx-page section:has(h2):has(.grid) .grid,
 body:has(a[href="/payroll"].active) .cx-page section:has(h2):has(button) .grid {
   max-width: 100% !important;
 }
@@ -122,6 +122,46 @@ body:has(a[href="/payroll"].active) .cx-page > div.rounded-3xl {
 body:has(a[href="/payroll"].active) .cx-page table,
 body:has(a[href="/payroll"].active) .cx-page .overflow-x-auto {
   max-width: 100% !important;
+}
+
+/* Force the actual Timesheet AI review card to use Smart Hub blue, overriding compact payroll rules. */
+[data-testid="ai-timesheet-review-card"],
+body:has(a[href="/payroll"].active) [data-testid="ai-timesheet-review-card"],
+body:has(a[href="/timesheets"].active) [data-testid="ai-timesheet-review-card"] {
+  background:
+    radial-gradient(circle at 88% 10%, rgba(56, 189, 248, 0.38), transparent 18rem),
+    linear-gradient(135deg, #073b91 0%, #0b5bd3 52%, #0744a3 100%) !important;
+  background-color: #0b5bd3 !important;
+  background-image:
+    radial-gradient(circle at 88% 10%, rgba(56, 189, 248, 0.38), transparent 18rem),
+    linear-gradient(135deg, #073b91 0%, #0b5bd3 52%, #0744a3 100%) !important;
+  border: 1px solid rgba(191, 219, 254, 0.34) !important;
+  box-shadow: 0 24px 70px rgba(37, 99, 235, 0.20) !important;
+  color: #ffffff !important;
+}
+
+[data-testid="ai-timesheet-review-card"] h1,
+[data-testid="ai-timesheet-review-card"] h2,
+[data-testid="ai-timesheet-review-card"] h3,
+[data-testid="ai-timesheet-review-card"] p,
+[data-testid="ai-timesheet-review-card"] span,
+[data-testid="ai-timesheet-review-card"] div,
+[data-testid="ai-timesheet-review-card"] svg {
+  color: #ffffff !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+[data-testid="ai-timesheet-review-card"] > div,
+[data-testid="ai-timesheet-review-card"] .rounded-2xl {
+  background: rgba(255, 255, 255, 0.14) !important;
+  background-color: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(219, 234, 254, 0.28) !important;
+}
+
+[data-testid="ai-timesheet-review-card"] [style],
+[data-testid="ai-timesheet-review-card"] [style] * {
+  color: #ffffff !important;
 }
 
 @media (max-width: 1180px) {
