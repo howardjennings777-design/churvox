@@ -676,14 +676,15 @@ div[class*="from-slate-950"] {
   color: #ffffff !important;
 }
 
-/* Jobs board and compact grids should use the blue brand backdrop instead of black gaps. */
+/* Keep job card grid clean and light. Do not put a blue backdrop behind job cards. */
 .cx-page.max-w-7xl > section.space-y-3:has(> [data-testid^="job-card-"]) {
-  background:
-    radial-gradient(circle at 88% 10%, rgba(56, 189, 248, 0.18), transparent 16rem),
-    linear-gradient(135deg, #073b91 0%, #0b5bd3 100%) !important;
-  border-radius: 28px !important;
-  padding: 14px !important;
-  border: 1px solid rgba(191, 219, 254, 0.24) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
 /* Preserve actual white cards inside blue sections. */
