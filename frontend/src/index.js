@@ -21,11 +21,13 @@ import { startTeamTownGroupingEnhancer } from "./utils/teamTownGroupingEnhancer"
 import { startClientAreaGroupingEnhancer } from "./utils/clientAreaGroupingEnhancer";
 import { startAutomationActionFixer } from "./utils/automationActionFixer";
 import { startWorkerFlowEnhancer } from "./utils/workerFlowEnhancer";
+import { startAskChurvoxAnswerFixer } from "./utils/askChurvoxAnswerFixer";
 
 startTeamTownGroupingEnhancer();
 startClientAreaGroupingEnhancer();
 startAutomationActionFixer();
 startWorkerFlowEnhancer();
+startAskChurvoxAnswerFixer();
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
