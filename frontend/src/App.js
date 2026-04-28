@@ -68,21 +68,22 @@ function PrivateRoute({ children }) {
 }
 
 function PublicRoute({ children }) {
-  const { user, loading, normalizedRole } = useAuth();
+  const { user, loading, normalizedRole, mustChoosePlan } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return children;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
+  if (mustChoosePlan) return <Navigate to="/plans" replace />;
   return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
 }
 
 function BusinessRoute({ children }) {
-  const { user, loading, isWorker, isPayroll, hasAppAccess } = useAuth();
+  const { user, loading, isWorker, isPayroll, hasAppAccess, mustChoosePlan } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
   if (isPayroll) return <Navigate to="/payroll" replace />;
-  if (!hasAppAccess) return <Navigate to="/plans" replace />;
+  if (mustChoosePlan || !hasAppAccess) return <Navigate to="/plans" replace />;
   return children;
 }
 
@@ -98,14 +99,23 @@ function OwnerRoute({ children }) {
 }
 
 function TeamRoute({ children }) {
-  const { user, loading, isWorker, isPayroll, hasAppAccess, normalizedRole } = useAuth();
+  const { user, loading, isWorker, isPayroll, hasAppAccess, mustChoosePlan, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
   if (isPayroll) return <Navigate to="/payroll" replace />;
-  if (!hasAppAccess) return <Navigate to="/plans" replace />;
+  if (mustChoosePlan || !hasAppAccess) return <Navigate to="/plans" replace />;
   if (normalizedRole !== "owner" && normalizedRole !== "manager") return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
+function NotificationsRoute({ children }) {
+  const { user, loading, isWorker, hasAppAccess, mustChoosePlan } = useAuth();
+  if (loading) return <Spinner />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
+  if (!isWorker && (mustChoosePlan || !hasAppAccess)) return <Navigate to="/plans" replace />;
   return children;
 }
 
@@ -119,33 +129,35 @@ function WorkerRoute({ children }) {
 }
 
 function PayrollRoute({ children }) {
-  const { user, loading, normalizedRole, hasAppAccess } = useAuth();
+  const { user, loading, normalizedRole, hasAppAccess, mustChoosePlan } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (normalizedRole !== "owner" && normalizedRole !== "manager" && normalizedRole !== "payroll") {
     return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
   }
-  if (normalizedRole !== "payroll" && !hasAppAccess) return <Navigate to="/plans" replace />;
+  if (normalizedRole !== "payroll" && (mustChoosePlan || !hasAppAccess)) return <Navigate to="/plans" replace />;
   return children;
 }
 
 function ReportsRoute({ children }) {
-  const { user, loading, normalizedRole } = useAuth();
+  const { user, loading, normalizedRole, hasAppAccess, mustChoosePlan } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (!["owner", "manager", "office_admin"].includes(normalizedRole)) {
     return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
   }
+  if (mustChoosePlan || !hasAppAccess) return <Navigate to="/plans" replace />;
   return children;
 }
 
 function RoleRedirect() {
-  const { user, loading, normalizedRole } = useAuth();
+  const { user, loading, normalizedRole, mustChoosePlan } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
+  if (mustChoosePlan) return <Navigate to="/plans" replace />;
   return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
 }
 
@@ -162,6 +174,7 @@ function App() {
         const checkout = params.get("checkout");
         const sessionId = params.get("session_id") || "";
         const plan = (params.get("plan") || "").toLowerCase();
+        const addon = (params.get("addon") || "").toLowerCase();
         if (!checkout && !sessionId) return;
 
         const token = localStorage.getItem("token");
@@ -169,19 +182,20 @@ function App() {
 
         if (sessionId && token && backendUrl) {
           try {
-            await fetch(`${backendUrl}/api/billing/confirm-checkout`, {
+            const confirmPath = addon === "extra_user_block" ? "/api/billing/confirm-extra-user-block" : "/api/billing/confirm-checkout";
+            await fetch(`${backendUrl}${confirmPath}`, {
               method: "POST",
               headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
               credentials: "include",
               body: JSON.stringify({ session_id: sessionId }),
             });
           } catch (err) {
-            console.warn("confirm-checkout failed (non-fatal):", err);
+            console.warn("checkout confirmation failed (non-fatal):", err);
           }
         }
 
         if (checkout === "success") {
-          toast.success(plan ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is now active` : "Plan updated");
+          toast.success(addon === "extra_user_block" ? "Extra 50-user block added" : plan ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is now active` : "Plan updated");
         } else if (checkout === "cancelled") {
           toast.info("Checkout cancelled — no changes to your plan");
         }
@@ -189,7 +203,7 @@ function App() {
         window.dispatchEvent(new Event("churvox-auth-refresh"));
 
         const cleaned = new URL(window.location.href);
-        ["checkout", "session_id", "plan"].forEach((k) => cleaned.searchParams.delete(k));
+        ["checkout", "session_id", "plan", "addon"].forEach((k) => cleaned.searchParams.delete(k));
         window.history.replaceState({}, document.title, cleaned.toString());
       } catch (err) { console.error("Checkout return handler failed:", err); }
     };
@@ -252,9 +266,9 @@ function App() {
 
           <Route path="/plans" element={<OwnerRoute><PlansPage /></OwnerRoute>} />
           <Route path="/team" element={<TeamRoute><TeamPage /></TeamRoute>} />
-          <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
+          <Route path="/notifications" element={<NotificationsRoute><NotificationsPage /></NotificationsRoute>} />
           <Route path="/automation" element={<TeamRoute><AutomationPage /></TeamRoute>} />
-          <Route path="/automation/runs" element={<TeamRoute><AutomationRunsPage /></TeamRoute>} />
+          <Route path="/automation/runs" element={<TeamRoute><AutomationRunsPage /></AutomationRunsPage></TeamRoute>} />
           <Route path="/payroll" element={<PayrollRoute><PayrollPage /></PayrollRoute>} />
 
           <Route path="/worker/jobs" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
