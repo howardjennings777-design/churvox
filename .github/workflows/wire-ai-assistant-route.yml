@@ -1,0 +1,89 @@
+name: Wire AI Assistant Route
+
+on:
+  push:
+    paths:
+      - ".github/workflows/wire-ai-assistant-route.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  wire-ai-assistant:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wire AI Assistant route and dashboard card
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          app = Path("frontend/src/App.js")
+          text = app.read_text(encoding="utf-8", errors="ignore")
+          if 'import AIAssistantPage from "./pages/AIAssistantPage";' not in text:
+              text = text.replace(
+                  'import DashboardPage from "./pages/DashboardPage";',
+                  'import DashboardPage from "./pages/DashboardPage";\nimport AIAssistantPage from "./pages/AIAssistantPage";'
+              )
+          if 'path="/ai-assistant"' not in text:
+              text = text.replace(
+                  '<Route path="/overview" element={<BusinessRoute><DashboardPage /></BusinessRoute>} />',
+                  '<Route path="/overview" element={<BusinessRoute><DashboardPage /></BusinessRoute>} />\n          <Route path="/ai-assistant" element={<BusinessRoute><AIAssistantPage /></BusinessRoute>} />'
+              )
+          app.write_text(text, encoding="utf-8")
+
+          dash = Path("frontend/src/pages/DashboardPage.js")
+          dash_text = dash.read_text(encoding="utf-8", errors="ignore")
+          if 'AIBusinessBriefCard' not in dash_text:
+              dash_text = dash_text.replace(
+                  'import { AppShell, PageHeader, StatCard, SectionCard, EmptyState, LoadingState, ErrorState, StatusBadge } from "../components/premium/PremiumUI";',
+                  'import { AppShell, PageHeader, StatCard, SectionCard, EmptyState, LoadingState, ErrorState, StatusBadge } from "../components/premium/PremiumUI";\nimport AIBusinessBriefCard from "../components/ai/AIBusinessBriefCard";'
+              )
+              dash_text = dash_text.replace(
+                  '''        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-3 dashboard-stat-strip">
+          {cockpitCards.map((card) => <StatCard key={card.label} {...card} onClick={() => navigate(card.path)} />)}
+        </div>''',
+                  '''        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-3 dashboard-stat-strip">
+          {cockpitCards.map((card) => <StatCard key={card.label} {...card} onClick={() => navigate(card.path)} />)}
+        </div>
+
+        {isAdmin && <AIBusinessBriefCard />}'''
+              )
+          dash.write_text(dash_text, encoding="utf-8")
+
+          roles = Path("frontend/src/lib/roles.js")
+          roles_text = roles.read_text(encoding="utf-8", errors="ignore")
+          fallback = '''  if (typeof window !== "undefined" && window.location?.pathname === "/ai-assistant") {
+    if (r === "worker") return "/worker/jobs";
+    if (r === "payroll") return "/timesheets";
+    return "/integrations";
+  }
+'''
+          roles_text = roles_text.replace(fallback, "")
+          roles.write_text(roles_text, encoding="utf-8")
+
+          layout = Path("frontend/src/components/Layout.js")
+          layout_text = layout.read_text(encoding="utf-8", errors="ignore")
+          layout_text = layout_text.replace('path: "/dashboard", label: "AI Assistant"', 'path: "/ai-assistant", label: "AI Assistant"')
+          layout_text = layout_text.replace('key={item.path}', 'key={`${item.path}-${item.label}`}')
+          layout.write_text(layout_text, encoding="utf-8")
+          PY
+
+      - name: Validate frontend build
+        run: npm --prefix frontend install --legacy-peer-deps && npm --prefix frontend run build
+
+      - name: Commit route fix
+        run: |
+          git config user.name "churvox-ai-bot"
+          git config user.email "hello@churvox.com"
+          git add frontend/src/App.js frontend/src/pages/DashboardPage.js frontend/src/lib/roles.js frontend/src/components/Layout.js
+          if git diff --cached --quiet; then
+            echo "No route changes needed"
+          else
+            git commit -m "Wire AI Assistant route properly"
+            git push origin main
+          fi
