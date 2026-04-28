@@ -16,6 +16,7 @@ import "./styles/churvox-worker-premium.css";
 import "./styles/churvox-owner-premium-cleanup.css";
 import "./styles/churvox-automation-cleanup.css";
 import "./styles/smart-hub-automation-readable.css";
+import "./styles/churvox-restore-original-colors.css";
 import { startTeamTownGroupingEnhancer } from "./utils/teamTownGroupingEnhancer";
 import { startClientAreaGroupingEnhancer } from "./utils/clientAreaGroupingEnhancer";
 import { startAutomationActionFixer } from "./utils/automationActionFixer";
@@ -26,12 +27,9 @@ startClientAreaGroupingEnhancer();
 startAutomationActionFixer();
 startWorkerFlowEnhancer();
 
-// Register service worker for PWA installability (iPhone Add to Home Screen + Chrome install)
-// Network-first SW — no aggressive caching, new deploys always picked up
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/sw.js").then((reg) => {
-      // Check for SW updates on each page load
       reg.update().catch(() => {});
     }).catch((err) => {
       console.warn("SW registration failed:", err);
