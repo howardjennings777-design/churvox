@@ -6,6 +6,7 @@ import asyncio
 import csv
 import io
 from passlib.context import CryptContext
+from ai_service import generate_ai_text
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 def make_json_safe(value):
@@ -8386,6 +8387,117 @@ async def automation_test_rule(rule_id: str, current_user: dict = Depends(get_cu
 
     await db.automation_runs.insert_one(run)
     return {"success": True, "run": _automation_clean_doc(run)}
+
+
+def _ai_user_role(current_user: dict) -> str:
+    return str((current_user or {}).get("role") or "").strip().lower().replace("-", "_").replace(" ", "_")
+
+
+def _safe_text(value, fallback="") -> str:
+    return str(value or fallback).strip()
+
+
+def _count_open_status(items: list[dict], closed_statuses: set[str]) -> int:
+    total = 0
+    for item in items:
+        status = str(item.get("status") or item.get("job_status") or item.get("workflow_status") or "").strip().lower().replace(" ", "_")
+        if status not in closed_statuses:
+            total += 1
+    return total
+
+
+async def _build_ai_business_snapshot(current_user: dict) -> dict:
+    business_id = await get_user_business_id(current_user)
+    query = {"business_id": str(business_id)}
+
+    jobs = await db.jobs.find(query).to_list(length=500)
+    quotes = await db.quotes.find(query).to_list(length=500)
+    invoices = await db.invoices.find(query).to_list(length=500)
+    workers = await db.users.find({"business_id": str(business_id), "role": {"$in": ["worker", "manager", "office_admin", "payroll"]}}).to_list(length=300)
+
+    overdue_invoices = 0
+    unpaid_invoices = 0
+    for invoice in invoices:
+        status = str(invoice.get("status") or "").strip().lower()
+        if status in {"sent", "overdue", "unpaid", "partial", "draft", "pending"}:
+            unpaid_invoices += 1
+        if status == "overdue":
+            overdue_invoices += 1
+
+    counts = {
+        "jobs_total": len(jobs),
+        "jobs_open": _count_open_status(jobs, {"completed", "cancelled", "canceled", "done"}),
+        "quotes_open": _count_open_status(quotes, {"accepted", "declined", "cancelled", "canceled"}),
+        "invoices_total": len(invoices),
+        "invoices_unpaid": unpaid_invoices,
+        "invoices_overdue": overdue_invoices,
+        "workers_total": len(workers),
+    }
+    return {"business_id": str(business_id), "counts": counts}
+
+
+def _ai_fallback_answer(question: str, snapshot: dict) -> str:
+    counts = (snapshot or {}).get("counts") or {}
+    q = _safe_text(question).lower()
+    if any(term in q for term in ["owe", "owed", "unpaid", "invoice", "money", "cash"]):
+        return (
+            f"You currently have {counts.get('invoices_unpaid', 0)} unpaid invoice(s), "
+            f"including {counts.get('invoices_overdue', 0)} overdue invoice(s)."
+        )
+    if any(term in q for term in ["quote", "follow"]):
+        return f"You currently have {counts.get('quotes_open', 0)} active quote(s) waiting for action."
+    if any(term in q for term in ["job", "schedule", "work"]):
+        return f"You currently have {counts.get('jobs_open', 0)} open job(s) from {counts.get('jobs_total', 0)} total."
+    if any(term in q for term in ["worker", "team", "staff"]):
+        return f"You currently have {counts.get('workers_total', 0)} worker/team profile(s) in this business."
+    return (
+        "Business snapshot: "
+        f"{counts.get('jobs_open', 0)} open jobs, "
+        f"{counts.get('quotes_open', 0)} active quotes, "
+        f"{counts.get('invoices_unpaid', 0)} unpaid invoices "
+        f"({counts.get('invoices_overdue', 0)} overdue)."
+    )
+
+
+async def _ask_churvox_impl(payload: dict, current_user: dict) -> dict:
+    role = _ai_user_role(current_user)
+    if role in {"worker", "payroll"}:
+        raise HTTPException(status_code=403, detail="AI Assistant is not available for this role")
+
+    question = _safe_text((payload or {}).get("question"))
+    if not question:
+        raise HTTPException(status_code=400, detail="question is required")
+
+    snapshot = await _build_ai_business_snapshot(current_user)
+    fallback = _ai_fallback_answer(question, snapshot)
+
+    ai = generate_ai_text(
+        "You are Churvox AI Assistant. Use only the provided business snapshot. "
+        "You can suggest, summarise, draft and warn only. "
+        "Do not approve payroll, send customer messages, change pricing, mark invoices paid, or sync MYOB.",
+        json.dumps({"question": question, "snapshot": snapshot.get("counts", {})}),
+        fallback,
+        350,
+    )
+    return {
+        "success": True,
+        "configured": bool(ai.get("configured")),
+        "used_ai": bool(ai.get("used_ai")),
+        "answer": _safe_text(ai.get("text"), fallback),
+        "message": _safe_text(ai.get("message"), "Smart fallback response used."),
+        "error_type": ai.get("error_type"),
+        "model": _safe_text(ai.get("model"), os.environ.get("OPENAI_MODEL", "gpt-4o-mini") or "gpt-4o-mini"),
+    }
+
+
+@api_router.post("/ai/ask")
+async def ask_churvox_ai(payload: dict, current_user: dict = Depends(get_current_user)):
+    return await _ask_churvox_impl(payload, current_user)
+
+
+@api_router.post("/launch/ai-ask")
+async def launch_ask_churvox_ai(payload: dict, current_user: dict = Depends(get_current_user)):
+    return await _ask_churvox_impl(payload, current_user)
 
 
 app.include_router(api_router)
