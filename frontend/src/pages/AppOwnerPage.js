@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, AlertTriangle, Briefcase, Building2, CreditCard, FileText, LogOut, RefreshCw, ShieldCheck, Users, Zap } from "lucide-react";
+import { Activity, AlertTriangle, Briefcase, Building2, CreditCard, FileText, LogOut, RefreshCw, ShieldCheck, Trash2, Users, Zap } from "lucide-react";
 import API_BASE from "../lib/apiBase";
 
 const ADMIN_ENDPOINTS = [
@@ -162,10 +162,25 @@ function Metric({ id, label, value, detail, icon: Icon, selected, onClick }) {
   );
 }
 
-function RecordCard({ item }) {
+function RecordCard({ item, selected, onDeleteUser }) {
+  const canDelete = selected === "users" && !isOwnerAccount(item);
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-950/55 p-4">
-      <p className="truncate text-sm font-black text-white">{titleOf(item)}</p>
+      <div className="flex items-start justify-between gap-3">
+        <p className="min-w-0 truncate text-sm font-black text-white">{titleOf(item)}</p>
+        {canDelete && (
+          <button
+            type="button"
+            onClick={() => onDeleteUser?.(item)}
+            className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-red-300/25 bg-red-500/15 px-2.5 py-1.5 text-[11px] font-black text-red-100 hover:bg-red-500/25"
+            data-testid="app-owner-delete-user"
+            title="Delete user"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Delete
+          </button>
+        )}
+      </div>
       <div className="mt-3 grid gap-2 text-xs font-semibold text-slate-300">
         {Object.entries(item || {}).slice(0, 8).map(([key, value]) => (
           <div key={key} className="flex justify-between gap-3 rounded-xl bg-white/[0.04] px-3 py-2">
@@ -257,6 +272,36 @@ export default function AppOwnerPage() {
     }
   }, [fetchJson]);
 
+  const handleDeleteUser = useCallback(async (item) => {
+    const userId = idOf(item);
+    const label = titleOf(item);
+    if (!userId) {
+      setWarning("Could not find this user's ID.");
+      return;
+    }
+    if (isOwnerAccount(item)) {
+      setWarning("Owner and platform owner accounts are protected. Delete workers/team users only.");
+      return;
+    }
+    const ok = window.confirm(`Delete user ${label}? This removes the team user account and cannot be undone from the dashboard.`);
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/users/${encodeURIComponent(userId)}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: { Accept: "application/json", "Content-Type": "application/json", ...headers() },
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(json?.detail || json?.message || `Delete failed (${res.status})`);
+      setWarning(`Deleted user: ${label}`);
+      await load();
+      setSelected("users");
+    } catch (err) {
+      setWarning(err.message || "Could not delete user.");
+    }
+  }, [load]);
+
   useEffect(() => { load(); }, [load]);
   useEffect(() => { const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
@@ -325,7 +370,7 @@ export default function AppOwnerPage() {
             <h2 className="text-xl font-black">{selectedLabel(selected)}</h2>
             <p className="mt-1 text-sm font-semibold text-slate-400">{records.length} records shown · {data.source}</p>
             <div className="mt-4 max-h-[72vh] space-y-3 overflow-auto pr-1">
-              {records.length ? records.map((item, index) => <RecordCard key={idOf(item) || index} item={item} />) : <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-5 text-sm font-semibold text-slate-400">No records yet.</div>}
+              {records.length ? records.map((item, index) => <RecordCard key={idOf(item) || index} item={item} selected={selected} onDeleteUser={handleDeleteUser} />) : <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-5 text-sm font-semibold text-slate-400">No records yet.</div>}
             </div>
           </aside>
         </div>
