@@ -1,0 +1,33 @@
+/* Exact Smart Hub control-tower colour for Timesheet AI panel only. */
+[data-testid="ai-timesheet-review-card"] {
+  background: linear-gradient(135deg, #071120 0%, #0f2746 45%, #0b5bd3 100%) !important;
+  background-color: #071120 !important;
+  background-image: linear-gradient(135deg, #071120 0%, #0f2746 45%, #0b5bd3 100%) !important;
+  border: 1px solid rgba(96, 165, 250, 0.35) !important;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22) !important;
+  color: #ffffff !important;
+}
+
+[data-testid="ai-timesheet-review-card"] h1,
+[data-testid="ai-timesheet-review-card"] h2,
+[data-testid="ai-timesheet-review-card"] h3,
+[data-testid="ai-timesheet-review-card"] p,
+[data-testid="ai-timesheet-review-card"] span,
+[data-testid="ai-timesheet-review-card"] div,
+[data-testid="ai-timesheet-review-card"] svg {
+  color: #ffffff !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+[data-testid="ai-timesheet-review-card"] > div,
+[data-testid="ai-timesheet-review-card"] .rounded-2xl {
+  background: rgba(255, 255, 255, 0.12) !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+[data-testid="ai-timesheet-review-card"] [style],
+[data-testid="ai-timesheet-review-card"] [style] * {
+  color: #ffffff !important;
+}
