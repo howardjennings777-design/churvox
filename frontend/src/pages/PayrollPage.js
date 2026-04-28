@@ -55,6 +55,7 @@ export default function PayrollPage() {
   const [selectedTimesheetIds, setSelectedTimesheetIds] = useState([]);
   const [newRun, setNewRun] = useState({ name: "", start_date: "", end_date: "", pay_date: "", pay_frequency: "fortnightly", notes: "" });
   const [adjustmentForm, setAdjustmentForm] = useState({ worker_id: "", type: "allowance", label: "", amount: "", taxable: false, notes: "" });
+  const [payRateForm, setPayRateForm] = useState({ worker_id: "", hourly_rate: "", pay_type: "hourly", payroll_notes: "" });
 
   const withAction = async (key, fn) => {
     setActionLoading((s) => ({ ...s, [key]: true }));
@@ -174,7 +175,16 @@ export default function PayrollPage() {
   const openWorkerDetails = async (workerId) => withAction(`worker-${workerId}`, async () => {
     const res = await get(`/payroll/workers/${workerId}?period_id=${activePeriodId}`);
     if (!res?.success) return toast.error(res?.error || "Failed to load worker details");
-    setWorkerDetails(res.data);
+    const details = res.data || {};
+    setWorkerDetails(details);
+    const worker = details.worker || details.summary || details;
+    const workerId = details.worker_id || worker.worker_id || worker.id || worker.user_id || workerId;
+    setPayRateForm({
+      worker_id: workerId,
+      hourly_rate: String(worker.hourly_rate ?? worker.pay_rate ?? worker.payroll_rate ?? details.hourly_rate ?? 0),
+      pay_type: worker.pay_type || details.pay_type || "hourly",
+      payroll_notes: worker.payroll_notes || details.payroll_notes || "",
+    });
   });
 
   const approveOne = async (entryId) => withAction(`approve-${entryId}`, async () => {
@@ -259,6 +269,23 @@ export default function PayrollPage() {
     toast.success("Payroll settings saved");
     setShowSettings(false);
     await loadInitial();
+  });
+
+
+  const saveWorkerPayRate = async () => withAction(`save-rate-${payRateForm.worker_id}`, async () => {
+    if (!payRateForm.worker_id) return toast.error("Select a worker first");
+    const rate = Number(payRateForm.hourly_rate || 0);
+    if (Number.isNaN(rate) || rate < 0) return toast.error("Enter a valid hourly rate");
+    const res = await post(`/payroll/workers/${payRateForm.worker_id}/rate`, {
+      hourly_rate: rate,
+      pay_type: payRateForm.pay_type || "hourly",
+      payroll_notes: payRateForm.payroll_notes || "",
+    });
+    if (!res?.success) return toast.error(res?.error || "Failed to save pay rate");
+    toast.success("Worker pay rate saved");
+    await loadInitial();
+    if (activePeriodId) await loadPeriodData(activePeriodId);
+    if (workerDetails) await openWorkerDetails(payRateForm.worker_id);
   });
 
   const workerOptions = workerSummaries.length ? workerSummaries.map((w) => ({ id: w.worker_id, name: w.name || w.worker_name || "Worker" })) : workers.map((w) => ({ id: w.id, name: w.name || "Worker" }));
@@ -386,7 +413,8 @@ export default function PayrollPage() {
                   <p>Pending: {Number(w.pending_hours || 0)}h</p>
                   <p>Jobs: {Number(w.jobs_worked || 0)}</p>
                   <p>Adjustments: {formatCurrency(w.adjustments_total || 0)}</p>
-                  <p className="col-span-2">Estimated gross: {formatCurrency(w.gross_pay || 0)}</p>
+                  <p>Rate: {Number(w.hourly_rate || w.pay_rate || 0) > 0 ? formatCurrency(w.hourly_rate || w.pay_rate) + "/hr" : "Needs rate"}</p>
+                  <p className="col-span-2">Estimated gross: {formatCurrency(w.gross_pay || (Number(w.approved_hours || 0) * Number(w.hourly_rate || w.pay_rate || 0)) + Number(w.adjustments_total || 0))}</p>
                 </div>
                 <button className="cx-button-secondary mt-3" onClick={() => openWorkerDetails(w.worker_id)}>View details</button>
               </div>

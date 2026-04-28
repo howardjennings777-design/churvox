@@ -1106,6 +1106,104 @@ async def admin_user_detail(user_id: str, current_user: dict = Depends(require_p
 
 # ===================== END PLATFORM OWNER ADMIN ENDPOINTS =====================
 
+
+
+# ===================== PAYROLL WORKER PAY RATES =====================
+
+def _safe_money(value, default=0.0):
+    try:
+        if value is None or value == "":
+            return float(default)
+        return round(float(value), 2)
+    except Exception:
+        return float(default)
+
+async def _get_worker_pay_rate(worker_id: str, business_id: str = ""):
+    user = None
+    queries = []
+    try:
+        queries.append({"_id": ObjectId(str(worker_id))})
+    except Exception:
+        pass
+    queries.append({"id": str(worker_id)})
+    queries.append({"user_id": str(worker_id)})
+    queries.append({"email": str(worker_id).strip().lower()})
+    for q in queries:
+        if business_id:
+            q = {**q, "business_id": business_id}
+        user = await db.users.find_one(q)
+        if user:
+            break
+    if not user:
+        user = await db.users.find_one({"$or": queries})
+    if not user:
+        return {"hourly_rate": 0, "pay_type": "hourly", "payroll_notes": "", "needs_rate": True}
+    rate = _safe_money(user.get("hourly_rate") or user.get("pay_rate") or user.get("payroll_rate") or 0)
+    return {
+        "hourly_rate": rate,
+        "pay_type": user.get("pay_type") or user.get("payroll_type") or "hourly",
+        "payroll_notes": user.get("payroll_notes") or "",
+        "needs_rate": rate <= 0,
+    }
+
+@api_router.post("/payroll/workers/{worker_id}/rate")
+async def save_payroll_worker_rate(worker_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower()
+    if role not in {"owner", "employer", "admin", "manager", "payroll", "office_admin"}:
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    business_id = str(current_user.get("business_id") or "")
+    hourly_rate = _safe_money((payload or {}).get("hourly_rate") or (payload or {}).get("pay_rate") or 0)
+    pay_type = str((payload or {}).get("pay_type") or "hourly").strip().lower()
+    if pay_type not in {"hourly", "salary", "contractor"}:
+        pay_type = "hourly"
+    notes = str((payload or {}).get("payroll_notes") or (payload or {}).get("notes") or "").strip()
+
+    if hourly_rate < 0:
+        raise HTTPException(status_code=400, detail="Hourly rate cannot be negative")
+
+    queries = []
+    try:
+        queries.append({"_id": ObjectId(str(worker_id))})
+    except Exception:
+        pass
+    queries.append({"id": str(worker_id)})
+    queries.append({"user_id": str(worker_id)})
+    queries.append({"email": str(worker_id).strip().lower()})
+
+    target = None
+    for q in queries:
+        candidate = {**q}
+        if business_id:
+            candidate["business_id"] = business_id
+        target = await db.users.find_one(candidate)
+        if target:
+            break
+    if not target:
+        target = await db.users.find_one({"$or": queries})
+    if not target:
+        raise HTTPException(status_code=404, detail="Worker not found")
+
+    await db.users.update_one(
+        {"_id": target["_id"]},
+        {"$set": {
+            "hourly_rate": hourly_rate,
+            "pay_rate": hourly_rate,
+            "pay_type": pay_type,
+            "payroll_notes": notes,
+            "payroll_rate_updated_at": datetime.now(timezone.utc),
+        }}
+    )
+    return {"success": True, "worker_id": str(target.get("_id")), "hourly_rate": hourly_rate, "pay_type": pay_type, "payroll_notes": notes}
+
+@api_router.get("/payroll/workers/{worker_id}/rate")
+async def get_payroll_worker_rate(worker_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get("business_id") or "")
+    data = await _get_worker_pay_rate(worker_id, business_id)
+    return {"success": True, **data}
+
+# ===================== END PAYROLL WORKER PAY RATES =====================
+
 @api_router.get("/payroll/periods")
 async def payroll_periods_alias(current_user: dict = Depends(get_current_user)):
     return await payroll_list_periods(current_user)
