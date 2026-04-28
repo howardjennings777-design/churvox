@@ -1,18 +1,17 @@
 import React from "react";
 import { Bot, Info, ShieldCheck, TrendingUp } from "lucide-react";
 
-// Matches Smart Hub control tower exactly.
 const heroStyle = {
-  background: "linear-gradient(135deg, #071120 0%, #0f2746 45%, #0b5bd3 100%)",
+  background: "linear-gradient(135deg, #061426 0%, #0f2746 48%, #123b7a 100%)",
   color: "#ffffff",
-  border: "1px solid rgba(96, 165, 250, 0.35)",
-  boxShadow: "0 24px 70px rgba(15, 23, 42, 0.22)",
+  border: "1px solid rgba(96, 165, 250, 0.45)",
+  boxShadow: "0 24px 70px rgba(15, 23, 42, 0.26)",
   opacity: 1,
 };
 
 const glassStyle = {
-  background: "rgba(255, 255, 255, 0.12)",
-  border: "1px solid rgba(255, 255, 255, 0.18)",
+  background: "rgba(255, 255, 255, 0.13)",
+  border: "1px solid rgba(255, 255, 255, 0.2)",
   color: "#ffffff",
   opacity: 1,
 };
