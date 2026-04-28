@@ -93,6 +93,63 @@ function jobMatchesWorker(job, worker) {
   return false;
 }
 
+
+function normalizeRegionName(value) {
+  return lower(value).replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+const ADDRESS_REGION_HINTS = [
+  { region: "northland", words: ["northland", "whangarei", "whangārei", "kaitaia", "kerikeri", "kaikohe", "dargaville", "paihia", "ruakaka", "mangawhai"] },
+  { region: "auckland", words: ["auckland", "manukau", "waitakere", "albany", "takapuna", "papakura", "pukekohe"] },
+  { region: "waikato", words: ["waikato", "hamilton", "cambridge", "te awamutu", "huntly", "taupo", "matamata"] },
+  { region: "bay of plenty", words: ["bay of plenty", "tauranga", "rotorua", "whakatane", "katikati", "te puke"] },
+  { region: "gisborne", words: ["gisborne", "tairawhiti"] },
+  { region: "hawke s bay", words: ["hawke", "napier", "hastings", "wairoa"] },
+  { region: "taranaki", words: ["taranaki", "new plymouth", "hawera", "stratford"] },
+  { region: "manawatu whanganui", words: ["manawatu", "whanganui", "palmerston north", "levin", "feilding"] },
+  { region: "wellington", words: ["wellington", "porirua", "lower hutt", "upper hutt", "kapiti", "paraparaumu", "masterton", "wainuiomata"] },
+  { region: "tasman", words: ["tasman", "motueka", "richmond"] },
+  { region: "nelson", words: ["nelson"] },
+  { region: "marlborough", words: ["marlborough", "blenheim", "picton"] },
+  { region: "west coast", words: ["west coast", "greymouth", "hokitika", "westport"] },
+  { region: "canterbury", words: ["canterbury", "christchurch", "ashburton", "timaru", "rangiora"] },
+  { region: "otago", words: ["otago", "dunedin", "queenstown", "wanaka", "alexandra"] },
+  { region: "southland", words: ["southland", "invercargill", "gore"] },
+];
+
+function inferRegionFromAddress(job) {
+  const text = normalizeRegionName([
+    job?.region,
+    job?.job_region,
+    job?.service_region,
+    job?.client_region,
+    job?.customer_region,
+    job?.client?.region,
+    job?.customer?.region,
+    job?.address,
+    job?.client_address,
+    job?.customer_address,
+  ].filter(Boolean).join(" "));
+  if (!text) return "";
+  for (const hint of ADDRESS_REGION_HINTS) {
+    if (hint.words.some((word) => text.includes(normalizeRegionName(word)))) return hint.region;
+  }
+  return text;
+}
+
+function jobMatchesWorkerRegion(job, worker) {
+  const workerRegion = normalizeRegionName(worker?.region);
+  if (!workerRegion) return true;
+  const jobRegion = inferRegionFromAddress(job);
+  if (!jobRegion) return true;
+  return normalizeRegionName(jobRegion) === workerRegion;
+}
+
+function filterWorkerJobsForWorkerRegion(jobs, worker) {
+  if (!Array.isArray(jobs)) return [];
+  return jobs.filter((job) => jobMatchesWorkerRegion(job, worker));
+}
+
 function buildWorkerClientHistory(jobs) {
   const map = new Map();
   const now = new Date();
@@ -164,7 +221,9 @@ export default function TeamPage() {
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef(null);
 
-  const workerClients = useMemo(() => buildWorkerClientHistory(workerJobs), [workerJobs]);
+  const regionMatchedWorkerJobs = useMemo(() => filterWorkerJobsForWorkerRegion(workerJobs, selectedWorker), [workerJobs, selectedWorker]);
+  const hiddenRegionMismatchCount = Math.max(0, workerJobs.length - regionMatchedWorkerJobs.length);
+  const workerClients = useMemo(() => buildWorkerClientHistory(regionMatchedWorkerJobs), [regionMatchedWorkerJobs]);
 
   const isFeatureEnabled = (key) => {
     const normalized = lower(key);
@@ -450,9 +509,10 @@ export default function TeamPage() {
                       <div className="flex flex-wrap gap-2">
                         <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-500">Status: {selectedWorker?.status || "active"}</span>
                         <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-500">{selectedWorker?.country || "New Zealand"} · {selectedWorker?.region || "No region"}</span>
-                        <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">{workerJobs.length} job{workerJobs.length !== 1 ? "s" : ""}</span>
+                        <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">{regionMatchedWorkerJobs.length} job{regionMatchedWorkerJobs.length !== 1 ? "s" : ""}</span>
                         <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">{workerClients.length} client{workerClients.length !== 1 ? "s" : ""} served</span>
                       </div>
+                      {hiddenRegionMismatchCount > 0 ? <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">Hidden {hiddenRegionMismatchCount} out-of-region job{hiddenRegionMismatchCount !== 1 ? "s" : ""} for this worker location.</div> : null}
                     </div>
                     <Button type="button" variant="outline" onClick={closeWorkerPanel} className="border-slate-200 text-slate-500 hover:text-slate-900">Close</Button>
                   </div>
@@ -483,7 +543,7 @@ export default function TeamPage() {
 
                   <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3">
                     <div className="flex items-center justify-between gap-3">
-                      <div><div className="text-slate-900 font-semibold flex items-center gap-2"><Users size={17} /> Clients served by this worker</div><div className="text-xs text-slate-500">Client history is built from jobs assigned to this worker. Clients still belong to the business.</div></div>
+                      <div><div className="text-slate-900 font-semibold flex items-center gap-2"><Users size={17} /> Clients served by this worker</div><div className="text-xs text-slate-500">Client history is built from jobs assigned to this worker in their saved region. Clients still belong to the business.</div></div>
                     </div>
                     {workerJobsLoading ? <div className="text-sm text-slate-500">Loading worker client history...</div> : workerClients.length > 0 ? (
                       <div className="grid gap-3 lg:grid-cols-2">
@@ -516,10 +576,10 @@ export default function TeamPage() {
                   </div>
 
                   <div className="rounded-2xl border border-slate-200 bg-slate-50/25 p-4 space-y-3">
-                    <div className="flex items-center justify-between gap-3"><div><div className="text-slate-900 font-semibold flex items-center gap-2"><Briefcase size={17} /> Assigned Jobs</div><div className="text-xs text-slate-500">Jobs currently linked to this worker</div></div><Button type="button" onClick={() => navigate(`/jobs/new?workerId=${workerId(selectedWorker)}`)} className="bg-blue-600 hover:bg-blue-700 text-white">Add / Assign Job</Button></div>
-                    {workerJobsLoading ? <div className="text-sm text-slate-500">Loading assigned jobs...</div> : workerJobs.length > 0 ? (
+                    <div className="flex items-center justify-between gap-3"><div><div className="text-slate-900 font-semibold flex items-center gap-2"><Briefcase size={17} /> Assigned Jobs</div><div className="text-xs text-slate-500">Jobs currently linked to this worker in their saved region</div></div><Button type="button" onClick={() => navigate(`/jobs/new?workerId=${workerId(selectedWorker)}`)} className="bg-blue-600 hover:bg-blue-700 text-white">Add / Assign Job</Button></div>
+                    {workerJobsLoading ? <div className="text-sm text-slate-500">Loading assigned jobs...</div> : regionMatchedWorkerJobs.length > 0 ? (
                       <div className="space-y-3">
-                        {workerJobs.map((job, index) => {
+                        {regionMatchedWorkerJobs.map((job, index) => {
                           const id = jobId(job);
                           return <div key={id || index} className="rounded-lg border border-slate-200 bg-white p-3 flex items-start justify-between gap-3"><div className="min-w-0"><div className="text-slate-900 font-medium">{getJobTitle(job)}</div><div className="text-sm text-slate-500">{getJobClient(job)}</div><div className="text-sm text-slate-500">{job.address || "-"}</div><div className="text-sm text-slate-500">Status: {job.status || "-"}</div><div className="text-sm text-slate-500 flex items-center gap-1"><CalendarDays size={13} /> {formatShortDate(getJobDate(job))}</div></div>{id && <Button type="button" variant="outline" onClick={() => navigate(`/jobs/${id}`)}>Open Job</Button>}</div>;
                         })}
