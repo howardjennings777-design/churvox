@@ -259,9 +259,9 @@ function App() {
           <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
           <Route path="/owner/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
 
-          <Route path="/dashboard" element={<BusinessRoute><DashboardPage /></BusinessRoute>} />
-          <Route path="/ai-assistant" element={<AIRoute><AIAssistantPage /></AIRoute>} />
-          <Route path="/overview" element={<BusinessRoute><DashboardPage /></BusinessRoute>} />
+          <Route path="/dashboard" element={<AIRoute><AIAssistantPage /></AIRoute>} />
+          <Route path="/ai-assistant" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/overview" element={<Navigate to="/dashboard" replace />} />
           <Route path="/jobs" element={<BusinessRoute><JobsPage /></BusinessRoute>} />
           <Route path="/schedule" element={<BusinessRoute><SchedulePage /></BusinessRoute>} />
           <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
