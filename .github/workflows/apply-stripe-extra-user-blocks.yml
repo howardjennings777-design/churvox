@@ -1,0 +1,43 @@
+name: Apply Stripe Extra User Blocks
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/patch_stripe_extra_user_blocks.py'
+      - '.github/workflows/apply-stripe-extra-user-blocks.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-stripe-extra-user-blocks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Apply backend Stripe extra user block patch
+        run: python scripts/patch_stripe_extra_user_blocks.py
+
+      - name: Backend syntax check
+        run: python -m py_compile backend/server.py
+
+      - name: Commit backend Stripe extra user block patch
+        run: |
+          if git diff --quiet; then
+            echo "No backend changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/server.py
+          git commit -m "Wire Stripe checkout for extra user blocks"
+          git push origin main
