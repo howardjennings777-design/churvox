@@ -1,5 +1,5 @@
 // Targeted Ask Churvox answer fixer.
-// Uses the real backend AI endpoint first, then falls back to safe local business rules.
+// Uses the reliable launch AI endpoint first, then falls back to safe local business rules.
 
 import API_BASE from "../lib/apiBase";
 
@@ -43,16 +43,24 @@ async function apiGet(path) {
   }
 }
 
+async function askAiEndpoint(path, question) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question }),
+  });
+  if (!res.ok) return { error: `AI backend error ${res.status}` };
+  return await res.json();
+}
+
 async function askRealAi(question) {
   try {
-    const res = await fetch(`${API_BASE}/api/ai/ask`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question }),
-    });
-    if (!res.ok) return `AI backend error ${res.status}. Check Render backend deploy and login session.\n\n— Smart fallback`;
-    const payload = await res.json();
+    let payload = await askAiEndpoint("/api/launch/ai-ask", question);
+    if (payload?.error) {
+      payload = await askAiEndpoint("/api/ai/ask", question);
+    }
+    if (payload?.error) return `${payload.error}. Check Render backend deploy and login session.\n\n— Smart fallback`;
     const answer = text(payload?.answer || payload?.data?.answer || payload?.text);
     if (!answer) return null;
     const isReal = payload?.used_ai === true || payload?.mode === "openai" || (payload?.configured === true && payload?.used_ai !== false);
