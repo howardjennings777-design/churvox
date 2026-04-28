@@ -7,7 +7,7 @@ import { InstallPrompt } from "./InstallPrompt";
 import { canAccess } from "../lib/roles";
 import {
   LayoutDashboard, Briefcase, Users, MoreHorizontal, LogOut,
-  Settings, FileText, Receipt, CreditCard, UserPlus, MessageSquare, DollarSign, Zap, ListChecks, CalendarDays,
+  Settings, FileText, Receipt, CreditCard, UserPlus, DollarSign, Zap, ListChecks, CalendarDays,
 } from "lucide-react";
 import NotificationsBell from "./NotificationsBell";
 import HelpDropdown from "./HelpDropdown";
@@ -38,9 +38,7 @@ export default function Layout({ children }) {
     canAccess(role, "team") && (isOwnerUser || hasPlanAccess(safePlan, "team")) && { path: "/team", label: "Team", icon: UserPlus, group: "Operations" },
     (role === "owner" || role === "employer" || role === "manager") && { path: "/automation", label: "Automation", icon: Zap, group: "Operations" },
     canAccess(role, "payroll") && { path: "/timesheets", label: "Timesheets", icon: DollarSign, group: "Operations" },
-    canAccess(role, "sms") && { path: "/sms", label: "Communications", icon: MessageSquare, group: "Operations" },
-    canAccess(role, "reports") && role !== "payroll" && { path: "/reports", label: "Reports", icon: FileText, group: "Admin" },
-    canAccess(role, "integrations") && { path: "/integrations", label: "Document Studio", icon: Zap, group: "Admin" },
+    canAccess(role, "integrations") && { path: "/integrations", label: "Integrations", icon: Zap, group: "Admin" },
     isOwnerUser && { path: "/plans", label: "Plans & Billing", icon: CreditCard, group: "Admin" },
     canAccess(role, "settings") && { path: "/settings", label: "Settings", icon: Settings, group: "Admin" },
   ].filter(Boolean);
