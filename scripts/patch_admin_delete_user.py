@@ -3,24 +3,29 @@ from pathlib import Path
 SERVER = Path('backend/server.py')
 text = SERVER.read_text(encoding='utf-8')
 
-if '@api_router.delete("/admin/users/{user_id}")' in text:
-    print('Admin delete user endpoint already present')
-    raise SystemExit(0)
-
 marker = '# ===================== END PLATFORM OWNER ADMIN ENDPOINTS ====================='
 if marker not in text:
     raise SystemExit('Could not find admin endpoints end marker in backend/server.py')
 
+# Replace an existing admin delete endpoint if present so the behavior updates safely.
+start = text.find('@api_router.delete("/admin/users/{user_id}")')
+if start != -1:
+    end = text.find(marker, start)
+    if end == -1:
+        raise SystemExit('Could not find end marker after existing delete endpoint')
+    text = text[:start].rstrip() + '\n\n' + text[end:]
+
 block = r'''
 
 @api_router.delete("/admin/users/{user_id}")
-async def admin_delete_team_user(user_id: str, current_user: dict = Depends(require_platform_owner_user)):
-    """Delete a non-owner/team user from the platform owner dashboard.
+async def admin_delete_platform_user(user_id: str, current_user: dict = Depends(require_platform_owner_user)):
+    """Delete a user or business owner from the platform owner dashboard.
 
     Protected by design:
-    - platform owners cannot delete themselves
-    - owner/employer/admin/business_owner/platform_owner records are blocked
-    - password/secrets are never returned
+    - platform owner accounts cannot be deleted here
+    - hello@churvox.com cannot be deleted here
+    - the logged-in platform owner cannot delete themselves
+    - deleted records are archived into deleted_users first
     """
     target_query = None
     try:
@@ -38,20 +43,20 @@ async def admin_delete_team_user(user_id: str, current_user: dict = Depends(requ
     current_email = str(current_user.get("email") or "").strip().lower()
     target_role = str(target.get("role") or "").strip().lower()
 
-    protected_roles = {"owner", "employer", "admin", "business_owner", "platform_owner"}
     if target_id and current_id and target_id == current_id:
         raise HTTPException(status_code=400, detail="You cannot delete your own platform owner account")
     if target_email and current_email and target_email == current_email:
         raise HTTPException(status_code=400, detail="You cannot delete your own platform owner account")
-    if target.get("is_platform_owner") is True or is_platform_owner(target):
+    if target_email == "hello@churvox.com":
+        raise HTTPException(status_code=400, detail="hello@churvox.com is the protected platform owner account")
+    if target.get("is_platform_owner") is True or is_platform_owner(target) or target_role == "platform_owner":
         raise HTTPException(status_code=400, detail="Platform owner accounts cannot be deleted here")
-    if target_role in protected_roles:
-        raise HTTPException(status_code=400, detail="Owner/business admin accounts cannot be deleted here. Delete only workers/team users from this action.")
 
     archive = dict(target)
     archive["original_user_id"] = str(target.get("_id") or "")
     archive["deleted_at"] = datetime.now(timezone.utc)
     archive["deleted_by"] = current_email or current_id
+    archive["delete_source"] = "app_owner_dashboard"
     archive.pop("password_hash", None)
     archive.pop("password", None)
     try:
@@ -61,9 +66,9 @@ async def admin_delete_team_user(user_id: str, current_user: dict = Depends(requ
 
     await db.users.delete_one({"_id": target.get("_id")})
 
-    # Best effort cleanup for common team/worker references.
     business_id = str(target.get("business_id") or "")
     if business_id:
+        # Best effort cleanup for worker assignments. Business data itself is not deleted here.
         try:
             await db.jobs.update_many(
                 {"business_id": business_id, "assigned_worker_id": target_id},
@@ -78,11 +83,11 @@ async def admin_delete_team_user(user_id: str, current_user: dict = Depends(requ
         "user_id": target_id,
         "email": target_email,
         "role": target_role,
-        "message": "Team user deleted",
+        "message": "User deleted",
     }
 
 '''
 
 text = text.replace(marker, block + marker, 1)
 SERVER.write_text(text, encoding='utf-8')
-print('Inserted protected admin delete user endpoint into backend/server.py')
+print('Inserted app-owner user/business-owner delete endpoint into backend/server.py')
