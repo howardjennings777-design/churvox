@@ -34,11 +34,16 @@ function getItemId(item) {
   return String(item?.id || item?._id || item?.invoice_id || item?.quote_id || item?.job_id || "");
 }
 
+function getCustomerName(item) {
+  return item?.customer_name || item?.client_name || item?.customer?.name || item?.client?.name || item?.name || "Customer";
+}
+
 export default function SafeAIAssistantPage() {
   const { get } = useApi();
   const [jobs, setJobs] = useState([]);
   const [quotes, setQuotes] = useState([]);
   const [invoices, setInvoices] = useState([]);
+  const [copiedDraftId, setCopiedDraftId] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -134,6 +139,78 @@ export default function SafeAIAssistantPage() {
     });
   }, [jobs, quotes, invoices]);
 
+  const draftCards = useMemo(() => {
+    const now = new Date();
+    const drafts = [];
+
+    const overdueInvoice = invoices.find((invoice) => {
+      const status = normalize(invoice?.status || invoice?.payment_status);
+      const paid = Boolean(invoice?.paid_at || invoice?.date_paid || invoice?.is_paid || status === "paid");
+      if (paid) return false;
+      const dueRaw = invoice?.due_date || invoice?.dueDate;
+      const dueDate = dueRaw ? new Date(dueRaw) : null;
+      return dueDate && !Number.isNaN(dueDate.getTime()) && dueDate < now;
+    });
+
+    if (overdueInvoice) {
+      drafts.push({
+        id: `invoice-${getItemId(overdueInvoice) || "overdue"}`,
+        type: "Invoice reminder draft",
+        related: `${getCustomerName(overdueInvoice)} • Invoice ${overdueInvoice?.invoice_number || getItemId(overdueInvoice) || "N/A"}`,
+        text: `Hi ${getCustomerName(overdueInvoice)}, this is a friendly reminder that invoice ${overdueInvoice?.invoice_number || ""} is overdue. Please review and let us know if you need a copy or payment details.`,
+      });
+    }
+
+    const followUpQuote = quotes.find((quote) => ["pending", "open", "sent"].includes(normalize(quote?.status)));
+    if (followUpQuote) {
+      drafts.push({
+        id: `quote-${getItemId(followUpQuote) || "follow-up"}`,
+        type: "Quote follow-up draft",
+        related: `${getCustomerName(followUpQuote)} • Quote ${followUpQuote?.quote_number || getItemId(followUpQuote) || "N/A"}`,
+        text: `Hi ${getCustomerName(followUpQuote)}, just checking in on quote ${followUpQuote?.quote_number || ""}. Please let us know if you would like any changes or if you're ready for us to book the work.`,
+      });
+    }
+
+    const updateJob = jobs.find((job) => {
+      const status = normalize(job?.status);
+      const hasWorker = Boolean(job?.assigned_worker_id || job?.worker_id || job?.assigned_to || job?.assigned_worker_name || job?.worker_name);
+      return ["overdue", "paused"].includes(status) || !hasWorker;
+    });
+    if (updateJob) {
+      drafts.push({
+        id: `job-update-${getItemId(updateJob) || "update"}`,
+        type: "Customer job update draft",
+        related: `${getCustomerName(updateJob)} • Job ${updateJob?.job_number || getItemId(updateJob) || "N/A"}`,
+        text: `Hi ${getCustomerName(updateJob)}, quick update on job ${updateJob?.job_number || ""}: we're reviewing scheduling and next steps now and will confirm the updated timeline shortly.`,
+      });
+    }
+
+    const unassignedJob = jobs.find((job) => {
+      const hasWorker = Boolean(job?.assigned_worker_id || job?.worker_id || job?.assigned_to || job?.assigned_worker_name || job?.worker_name);
+      return !hasWorker;
+    });
+    if (unassignedJob) {
+      drafts.push({
+        id: `worker-${getItemId(unassignedJob) || "instruction"}`,
+        type: "Worker instruction draft",
+        related: `${getCustomerName(unassignedJob)} • Job ${unassignedJob?.job_number || getItemId(unassignedJob) || "N/A"}`,
+        text: `Team, please review job ${unassignedJob?.job_number || ""} for ${getCustomerName(unassignedJob)} and confirm availability so we can assign the best worker and schedule safely.`,
+      });
+    }
+
+    return drafts;
+  }, [jobs, quotes, invoices]);
+
+  const handleCopyDraft = async (draftId, text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedDraftId(draftId);
+      window.setTimeout(() => setCopiedDraftId(""), 2500);
+    } catch (error) {
+      setCopiedDraftId("");
+    }
+  };
+
   const priorityClasses = {
     high: "border-red-200 bg-red-50 text-red-700",
     medium: "border-amber-200 bg-amber-50 text-amber-700",
@@ -181,6 +258,26 @@ export default function SafeAIAssistantPage() {
           </div>
         </section>
 
+        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="flex items-center gap-2 text-lg font-black text-slate-950"><Bot className="h-5 w-5 text-blue-600" />AI Draft Centre</h2>
+          <p className="mt-2 text-sm font-semibold text-slate-600">AI drafts only. Nothing is sent without your approval.</p>
+          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+            {draftCards.length ? draftCards.map((draft) => (
+              <div key={draft.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs font-black uppercase tracking-wide text-blue-700">{draft.type}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-700">{draft.related}</p>
+                <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">{draft.text}</p>
+                <div className="mt-3 flex items-center gap-3">
+                  <button type="button" onClick={() => handleCopyDraft(draft.id, draft.text)} className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-black uppercase tracking-wide text-blue-700 hover:bg-blue-100">
+                    Copy
+                  </button>
+                  {copiedDraftId === draft.id ? <span className="text-xs font-black text-emerald-700">Draft copied. Review before sending.</span> : null}
+                </div>
+              </div>
+            )) : <p className="text-sm font-semibold text-slate-500">No draft suggestions available from current Jobs, Quotes, and Invoices data.</p>}
+          </div>
+        </section>
+
         <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="flex items-center gap-2 text-lg font-black text-slate-950"><Bot className="h-5 w-5 text-blue-600" />AI status</h2>
@@ -199,3 +296,4 @@ export default function SafeAIAssistantPage() {
     </Layout>
   );
 }
+
