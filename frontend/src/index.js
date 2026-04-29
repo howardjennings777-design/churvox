@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import ChurvoxErrorBoundary from "./components/ChurvoxErrorBoundary";
 import "./index.css";
 import "./styles/churvox-theme.css";
 import "./styles/churvox-hotfix-contrast.css";
@@ -42,6 +43,8 @@ if ("serviceWorker" in navigator) {
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <App />
+    <ChurvoxErrorBoundary>
+      <App />
+    </ChurvoxErrorBoundary>
   </React.StrictMode>
 );
