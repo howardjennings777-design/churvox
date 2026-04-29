@@ -14,7 +14,7 @@ import SignupPage from "./pages/auth/SignupPage";
 import InviteSetupPage from "./pages/auth/InviteSetupPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
-import AIAssistantPage from "./pages/AIAssistantPage";
+import AIAssistantPage from "./pages/SafeAIAssistantPage";
 import JobsPage from "./pages/jobs/JobsPage";
 import JobFormPage from "./pages/jobs/JobFormPage";
 import JobDetailPage from "./pages/jobs/JobDetailPage";
