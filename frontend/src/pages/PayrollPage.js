@@ -56,6 +56,7 @@ export default function PayrollPage() {
   const [newRun, setNewRun] = useState({ name: "", start_date: "", end_date: "", pay_date: "", pay_frequency: "fortnightly", notes: "" });
   const [adjustmentForm, setAdjustmentForm] = useState({ worker_id: "", type: "allowance", label: "", amount: "", taxable: false, notes: "" });
   const [payRateForm, setPayRateForm] = useState({ worker_id: "", hourly_rate: "", pay_type: "hourly", payroll_notes: "" });
+  const [teamPayroll, setTeamPayroll] = useState(null);
 
   const withAction = async (key, fn) => {
     setActionLoading((s) => ({ ...s, [key]: true }));
@@ -86,10 +87,11 @@ export default function PayrollPage() {
 
   const loadInitial = useCallback(async () => {
     setInitializing(true);
-    const [periodRes, workerRes, settingsRes] = await Promise.all([
+    const [periodRes, workerRes, settingsRes, teamPayrollRes] = await Promise.all([
       get("/payroll/periods"),
       get("/payroll/workers"),
       get("/payroll/settings"),
+      get("/ai/team-payroll"),
     ]);
     const loadedPeriods = periodRes?.success ? (periodRes.data?.pay_periods || []) : [];
     const loadedWorkers = workerRes?.success ? (workerRes.data?.workers || []) : [];
@@ -103,6 +105,7 @@ export default function PayrollPage() {
       default_pay_frequency: loadedSettings?.default_pay_frequency || "fortnightly",
       notes: loadedSettings?.notes || DISCLAIMER,
     });
+    setTeamPayroll(teamPayrollRes?.success ? teamPayrollRes.data?.snapshot || null : null);
 
     const nextId = loadedPeriods[0]?.id || "";
     setActivePeriodId((current) => current || nextId);
@@ -290,6 +293,12 @@ export default function PayrollPage() {
 
   const workerOptions = workerSummaries.length ? workerSummaries.map((w) => ({ id: w.worker_id, name: w.name || w.worker_name || "Worker" })) : workers.map((w) => ({ id: w.id, name: w.name || "Worker" }));
   const payRunPart = safeFilePart(activePeriod?.name || activePeriodId);
+  const generateWatchtower = async () => {
+    const res = await post("/ai/team-payroll/generate", {});
+    if (!res?.success) return toast.error(res?.error || "Could not generate watchtower snapshot");
+    toast.success("Team/payroll watchtower generated");
+    await loadInitial();
+  };
 
   return (
     <Layout>
@@ -319,6 +328,16 @@ export default function PayrollPage() {
               </div>
             );
           })}
+        </section>
+        <section className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold text-slate-900">AI Team & Payroll Watchtower</h2>
+            <button className="cx-button-secondary" onClick={generateWatchtower}>Generate team/payroll watchtower</button>
+          </div>
+          <p className="mt-2 text-xs font-semibold text-slate-600">AI highlights team and payroll risks. It does not approve payroll, change rates, edit timesheets, or pay workers.</p>
+          {!teamPayroll ? <p className="mt-3 rounded-xl border border-dashed border-border bg-slate-50 p-3 text-sm text-slate-600">No team or payroll risks found yet. Churvox will highlight setup, workload, timesheet and payroll review issues here.</p> : <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4 text-sm">{[
+            ["Risk", teamPayroll.risk_level],["Workers", teamPayroll.worker_count],["Missing rates", teamPayroll.missing_rate_count],["Open timesheets", teamPayroll.open_timesheet_count],["Warnings", teamPayroll.payroll_warning_count],
+          ].map(([k,v]) => <div key={k} className="rounded-xl border border-border bg-slate-50 p-2"><p className="text-xs text-slate-500">{k}</p><p className="font-semibold capitalize">{v}</p></div>)}</div>}
         </section>
 
         <section className="rounded-2xl border border-border bg-white p-4 shadow-sm">
