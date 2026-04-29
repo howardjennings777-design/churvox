@@ -8399,6 +8399,8 @@ _AI_ACTION_ACTIVE_STATUSES = {"open", "snoozed", "approved"}
 _AI_AUTOMATION_ALLOWED_ROLES = {"owner", "admin", "employer", "manager", "office_admin"}
 _AI_AUTOMATION_BLOCKED_ROLES = {"worker", "payroll"}
 _AI_AUTOMATION_ACTIVE_STATUSES = {"open", "snoozed"}
+_AI_JOB_CONTROL_ALLOWED_ROLES = {"owner", "admin", "employer", "manager", "office_admin"}
+_AI_JOB_CONTROL_BLOCKED_ROLES = {"worker", "payroll"}
 
 
 def _ai_action_now():
@@ -8428,6 +8430,95 @@ def _ai_automation_role_guard(current_user: dict):
     role = _ai_user_role(current_user)
     if role in _AI_AUTOMATION_BLOCKED_ROLES or role not in _AI_AUTOMATION_ALLOWED_ROLES:
         raise HTTPException(status_code=403, detail="AI Automation Builder is not available for this role")
+
+
+def _ai_job_control_role_guard(current_user: dict):
+    role = _ai_user_role(current_user)
+    if role in _AI_JOB_CONTROL_BLOCKED_ROLES or role not in _AI_JOB_CONTROL_ALLOWED_ROLES:
+        raise HTTPException(status_code=403, detail="AI Job Control Tower is not available for this role")
+
+
+def _job_route(job: dict) -> str:
+    jid = str(job.get("id") or job.get("_id") or "").strip()
+    return f"/jobs/{jid}" if jid else "/jobs"
+
+
+async def _generate_ai_job_control_snapshot(current_user: dict) -> dict:
+    _ai_job_control_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    now = datetime.now(timezone.utc)
+    query = {"business_id": business_id}
+    jobs = await db.jobs.find(query).to_list(length=1000)
+    clients = await db.clients.find(query).to_list(length=1000)
+    workers = await db.users.find({"business_id": business_id}).to_list(length=500)
+    invoices = await db.invoices.find(query).to_list(length=1000)
+    client_by_id = {str(c.get("id") or c.get("_id") or ""): c for c in clients}
+    worker_name_by_id = {str(w.get("id") or w.get("_id") or ""): _safe_text(w.get("name") or w.get("full_name") or w.get("email"), "Worker") for w in workers}
+    invoiced_job_ids = {str(i.get("job_id") or "") for i in invoices if i.get("job_id")}
+
+    def _job_status(job: dict) -> str:
+        return str(job.get("status") or job.get("job_status") or "").strip().lower().replace(" ", "_")
+    def _sched(job: dict): return _parse_date_like(job.get("scheduled_date") or job.get("date") or job.get("start_date"))
+    today = now.date()
+    open_jobs = [j for j in jobs if _job_status(j) not in {"completed", "done", "cancelled", "canceled"}]
+    jobs_today = [j for j in jobs if (_sched(j) and _sched(j).date() == today)]
+    unassigned_jobs, overdue_jobs, paused_jobs, completed_uninvoiced_jobs, customer_update_candidates = [], [], [], [], []
+    worker_load = {}
+    for job in jobs:
+        jid = str(job.get("id") or job.get("_id") or "")
+        status = _job_status(job)
+        scheduled = _sched(job)
+        client = client_by_id.get(str(job.get("client_id") or job.get("customer_id") or ""))
+        customer = _safe_text(job.get("customer_name") or job.get("client_name") or (client or {}).get("name"), "Customer")
+        addr = _safe_text(job.get("address"), "")
+        assigned_id = str(job.get("assigned_worker_id") or job.get("worker_id") or job.get("assigned_to") or "")
+        if status not in {"completed", "done", "cancelled", "canceled"}:
+            worker_key = worker_name_by_id.get(assigned_id, "Unassigned") if assigned_id else "Unassigned"
+            worker_load[worker_key] = worker_load.get(worker_key, 0) + 1
+        if status not in {"completed", "done", "cancelled", "canceled"} and not assigned_id:
+            item = {"job_id": jid, "title": _safe_text(job.get("title") or job.get("job_title"), "Job"), "customer": customer, "address": addr, "scheduled_date": job.get("scheduled_date") or job.get("date") or job.get("start_date"), "estimated_duration": job.get("estimated_duration") or job.get("duration"), "route": _job_route(job)}
+            unassigned_jobs.append(item); customer_update_candidates.append(item)
+        if status not in {"completed", "done", "cancelled", "canceled"} and scheduled and scheduled.date() < today:
+            item = {"job_id": jid, "title": _safe_text(job.get("title") or job.get("job_title"), "Job"), "customer": customer, "address": addr, "scheduled_date": scheduled, "status": status}
+            overdue_jobs.append(item); customer_update_candidates.append(item)
+        if status in {"paused", "on_hold", "blocked", "stuck"}:
+            item = {"job_id": jid, "title": _safe_text(job.get("title") or job.get("job_title"), "Job"), "customer": customer, "address": addr, "scheduled_date": job.get("scheduled_date") or job.get("date") or job.get("start_date"), "status": status, "route": _job_route(job)}
+            paused_jobs.append(item); customer_update_candidates.append(item)
+        if status in {"completed", "done"} and jid and jid not in invoiced_job_ids:
+            completed_uninvoiced_jobs.append({"job_id": jid, "title": _safe_text(job.get("title") or job.get("job_title"), "Job"), "customer": customer, "estimated_amount": job.get("price") or job.get("job_price") or job.get("total"), "completed_date": job.get("completed_at") or job.get("updated_at"), "route": _job_route(job)})
+
+    recommended_actions = []
+    if unassigned_jobs: recommended_actions.append({"type": "assignment", "title": "Review unassigned jobs", "count": len(unassigned_jobs), "route": "/jobs"})
+    if overdue_jobs: recommended_actions.append({"type": "overdue", "title": "Prioritise overdue jobs today", "count": len(overdue_jobs), "route": "/jobs?filter=overdue"})
+    if completed_uninvoiced_jobs: recommended_actions.append({"type": "invoicing", "title": "Create draft invoice tasks", "count": len(completed_uninvoiced_jobs), "route": "/invoices"})
+    risk_level = "low"
+    if len(overdue_jobs) + len(unassigned_jobs) + len(paused_jobs) >= 8: risk_level = "high"
+    elif len(overdue_jobs) + len(unassigned_jobs) + len(paused_jobs) >= 3: risk_level = "medium"
+    fallback_headline = f"{len(overdue_jobs)} overdue, {len(unassigned_jobs)} unassigned, {len(completed_uninvoiced_jobs)} completed not invoiced."
+    ai = generate_ai_text("You summarise job risk for owners. Keep concise and operational.", json.dumps({"unassigned": len(unassigned_jobs), "overdue": len(overdue_jobs), "paused": len(paused_jobs), "completed_uninvoiced": len(completed_uninvoiced_jobs), "worker_load": worker_load}), fallback_headline, 180)
+    snapshot = {
+        "id": str(_automation_uuid.uuid4()), "business_id": business_id, "headline": _safe_text(ai.get("text"), fallback_headline), "summary": fallback_headline,
+        "risk_level": risk_level, "jobs_today_count": len(jobs_today), "open_jobs_count": len(open_jobs), "unassigned_jobs_count": len(unassigned_jobs), "overdue_jobs_count": len(overdue_jobs), "paused_jobs_count": len(paused_jobs), "completed_uninvoiced_count": len(completed_uninvoiced_jobs),
+        "worker_load_summary": [{"worker": k, "open_jobs": v} for k, v in sorted(worker_load.items(), key=lambda x: x[1], reverse=True)],
+        "unassigned_jobs": unassigned_jobs[:50], "overdue_jobs": overdue_jobs[:50], "paused_jobs": paused_jobs[:50], "completed_uninvoiced_jobs": completed_uninvoiced_jobs[:50], "customer_update_candidates": customer_update_candidates[:80], "recommended_actions": recommended_actions, "created_at": now, "updated_at": now,
+    }
+    await db.ai_job_control_snapshots.insert_one(snapshot)
+    await db.ai_job_control_events.insert_one({"id": str(_automation_uuid.uuid4()), "business_id": business_id, "event_type": "generated", "snapshot_id": snapshot["id"], "created_at": now, "actor_id": str(current_user.get("id") or current_user.get("_id") or "")})
+    return make_json_safe(snapshot)
+
+
+@api_router.get("/ai/job-control")
+async def get_ai_job_control(current_user: dict = Depends(get_current_user)):
+    _ai_job_control_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    latest = await db.ai_job_control_snapshots.find_one({"business_id": business_id}, sort=[("updated_at", -1), ("created_at", -1)])
+    return {"success": True, "snapshot": make_json_safe(safe_doc(latest) or {})}
+
+
+@api_router.post("/ai/job-control/generate")
+async def generate_ai_job_control(current_user: dict = Depends(get_current_user)):
+    snapshot = await _generate_ai_job_control_snapshot(current_user)
+    return {"success": True, "snapshot": snapshot, "message": "AI highlights job risks. You approve next actions."}
 
 
 def _ai_automation_to_response(doc: dict) -> dict:

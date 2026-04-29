@@ -233,6 +233,8 @@ export default function AIAssistantPage() {
   const [copied, setCopied] = useState("");
   const [queueNotice, setQueueNotice] = useState("");
   const [automationNotice, setAutomationNotice] = useState("");
+  const [jobControlNotice, setJobControlNotice] = useState("");
+  const [jobControl, setJobControl] = useState({});
   const [reviewed, setReviewed] = useState({});
   const [data, setData] = useState({ stats: {}, jobs: [], quotes: [], invoices: [], workers: [], followUps: [], aiActions: [], automationSuggestions: [] });
 
@@ -255,12 +257,21 @@ export default function AIAssistantPage() {
         aiActions: pickList(apiData(aiActionsRes, []), ["actions", "items", "data"]),
         automationSuggestions: pickList(apiData(automationSuggestionsRes, []), ["suggestions", "items", "data"]),
       });
+      const jcRes = await get("/ai/job-control");
+      if (jcRes?.success) setJobControl(jcRes.data?.snapshot || {});
     } catch (err) {
       setError(safeText(err?.message || err, "Smart Hub could not load."));
     } finally {
       setLoading(false);
     }
   }, [get]);
+
+  const generateJobControl = useCallback(async () => {
+    const result = await post("/ai/job-control/generate", {});
+    if (!result?.success) return setJobControlNotice(safeText(result?.error, "Could not generate job control."));
+    setJobControl(result?.data?.snapshot || {});
+    setJobControlNotice("AI highlights job risks. It does not assign workers, change job status, send messages, or create live invoices without approval.");
+  }, [post]);
 
   const refreshAiActions = useCallback(async () => {
     const result = await post("/ai/actions/generate", {});
@@ -396,6 +407,7 @@ export default function AIAssistantPage() {
 
         {copied && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-800">{copied}</div>}
         {queueNotice && <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-black text-blue-800">{queueNotice}</div>}
+        {jobControlNotice && <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-black text-blue-800">{jobControlNotice}</div>}
 
         <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="rounded-3xl p-5" style={darkPanelStyle}>
@@ -412,6 +424,17 @@ export default function AIAssistantPage() {
           </div>
           <Section title={`Why risk is ${smart.risk}`} icon={Target}><div className="space-y-2">{smart.riskItems.map((item) => <RiskItem key={item.label} {...item} />)}</div></Section>
         </section>
+        <Section title="AI Job Control Tower" subtitle="AI highlights job risks. It does not assign workers, change job status, send messages, or create live invoices without approval." icon={AlertTriangle}>
+          <div className="mb-3 flex flex-wrap gap-2"><button onClick={generateJobControl} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50"><RefreshCw className="mr-2 h-4 w-4" />Generate job control</button></div>
+          {!jobControl?.id ? <p className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-600">No job risks found yet. Churvox will highlight unassigned, overdue, stuck and completed-not-invoiced jobs here.</p> : (
+            <div className="space-y-3">
+              <p className="font-black text-slate-950">{safeText(jobControl.headline, "Job control summary")}</p>
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4 text-sm font-semibold">
+                <p>Risk: <strong>{safeText(jobControl.risk_level, "low")}</strong></p><p>Today: <strong>{safeNumber(jobControl.jobs_today_count, 0)}</strong></p><p>Open: <strong>{safeNumber(jobControl.open_jobs_count, 0)}</strong></p><p>Unassigned: <strong>{safeNumber(jobControl.unassigned_jobs_count, 0)}</strong></p><p>Overdue: <strong>{safeNumber(jobControl.overdue_jobs_count, 0)}</strong></p><p>Paused/Stuck: <strong>{safeNumber(jobControl.paused_jobs_count, 0)}</strong></p><p>Completed not invoiced: <strong>{safeNumber(jobControl.completed_uninvoiced_count, 0)}</strong></p>
+              </div>
+            </div>
+          )}
+        </Section>
 
         <section className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
           <MetricCard icon={Briefcase} label="Total jobs" value={smart.jobs.length} detail={`${smart.todayJobs.length} today`} to="/jobs" tone="blue" />

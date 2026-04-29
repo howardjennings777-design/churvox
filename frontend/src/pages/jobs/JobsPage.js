@@ -145,6 +145,7 @@ export default function JobsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteId, setDeleteId] = useState(null);
+  const [jobControl, setJobControl] = useState(null);
 
   const clientLookup = useMemo(() => {
     const lookup = {};
@@ -158,13 +159,15 @@ export default function JobsPage() {
 
   const fetchJobs = useCallback(async () => {
     setPageLoading(true);
-    const [jobsRes, clientsRes] = await Promise.all([
+    const [jobsRes, clientsRes, jobControlRes] = await Promise.all([
       get("/jobs"),
       get("/clients"),
+      get("/ai/job-control"),
     ]);
 
     if (jobsRes.success) setJobs(extractList(jobsRes.data, ["jobs", "items", "data"]));
     if (clientsRes.success) setClients(extractList(clientsRes.data, ["clients", "items", "data"]));
+    if (jobControlRes?.success) setJobControl(jobControlRes?.data?.snapshot || null);
 
     setPageLoading(false);
   }, [get]);
@@ -254,6 +257,15 @@ export default function JobsPage() {
             <StatCard icon={PlayCircle} label="In Progress" value={stats.inProgress} tone="blue" />
             <StatCard icon={CheckCircle2} label="Completed" value={stats.completed} tone="green" />
             <StatCard icon={AlertTriangle} label="Overdue" value={stats.overdue} tone={stats.overdue ? "red" : "amber"} />
+          </div>
+        </section>
+        <section className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-700">AI Job Control</p>
+              <p className="text-sm font-semibold text-slate-700">{jobControl?.headline || "No job risks found yet. Churvox will highlight unassigned, overdue, stuck and completed-not-invoiced jobs here."}</p>
+            </div>
+            <Link to="/dashboard" className="rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-black text-blue-700">Open tower</Link>
           </div>
         </section>
 
