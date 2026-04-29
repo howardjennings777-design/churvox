@@ -8401,6 +8401,8 @@ _AI_AUTOMATION_BLOCKED_ROLES = {"worker", "payroll"}
 _AI_AUTOMATION_ACTIVE_STATUSES = {"open", "snoozed"}
 _AI_DAILY_BRIEF_ALLOWED_ROLES = {"owner", "admin", "employer", "manager", "office_admin"}
 _AI_DAILY_BRIEF_BLOCKED_ROLES = {"worker", "payroll"}
+_AI_TEAM_PAYROLL_ALLOWED_ROLES = {"owner", "admin", "employer", "manager", "office_admin", "payroll"}
+_AI_TEAM_PAYROLL_BLOCKED_ROLES = {"worker"}
 
 
 def _ai_action_now():
@@ -8446,6 +8448,12 @@ def _ai_daily_brief_role_guard(current_user: dict):
     role = _ai_user_role(current_user)
     if role in _AI_DAILY_BRIEF_BLOCKED_ROLES or role not in _AI_DAILY_BRIEF_ALLOWED_ROLES:
         raise HTTPException(status_code=403, detail="AI Daily Brief is not available for this role")
+
+
+def _ai_team_payroll_role_guard(current_user: dict):
+    role = _ai_user_role(current_user)
+    if role in _AI_TEAM_PAYROLL_BLOCKED_ROLES or role not in _AI_TEAM_PAYROLL_ALLOWED_ROLES:
+        raise HTTPException(status_code=403, detail="AI Team & Payroll Watchtower is not available for this role")
 
 
 def _is_open_job(job: dict) -> bool:
@@ -8785,6 +8793,123 @@ async def _generate_ai_automation_candidates(business_id: str) -> list[dict]:
             break
 
     return candidates
+
+
+def _safe_minutes(row: dict) -> int:
+    for key in ("minutes", "total_minutes", "duration_minutes"):
+        if row.get(key) is not None:
+            try:
+                return int(float(row.get(key)))
+            except Exception:
+                continue
+    hours = row.get("hours") or row.get("total_hours") or row.get("duration_hours")
+    try:
+        return int(float(hours or 0) * 60)
+    except Exception:
+        return 0
+
+
+async def _generate_team_payroll_watchtower_doc(current_user: dict, force: bool = False) -> dict:
+    _ai_team_payroll_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    now = datetime.now(timezone.utc)
+    if not force:
+        existing = await db.ai_team_payroll_snapshots.find_one({"business_id": business_id}, sort=[("created_at", -1)])
+        if existing:
+            return existing
+    users = await db.users.find({"business_id": business_id, "role": {"$in": ["worker", "manager", "office_admin", "payroll"]}}).to_list(length=1200)
+    jobs = await db.jobs.find({"business_id": business_id}).to_list(length=2000)
+    timesheets = await db.timesheets.find({"business_id": business_id}).to_list(length=2400)
+    payroll_rows = await db.payroll.find({"business_id": business_id}).to_list(length=1000)
+    workers_by_id = {str(w.get("_id")): w for w in users}
+    workers_by_public = {str(w.get("id") or ""): w for w in users if w.get("id")}
+    worker_count = len(users)
+    active_worker_count = sum(1 for w in users if str(w.get("status") or "").lower() not in {"inactive", "disabled"})
+    worker_setup_issues = []
+    missing_rate_count = missing_region_count = missing_role_count = 0
+    for w in users:
+        issues = []
+        if not (w.get("hourly_rate") or w.get("rate")):
+            missing_rate_count += 1
+            issues.append("Missing hourly rate")
+        if not w.get("region"):
+            missing_region_count += 1
+            issues.append("Missing region")
+        if not w.get("role"):
+            missing_role_count += 1
+            issues.append("Missing role")
+        if not (w.get("email") or w.get("phone")):
+            issues.append("Missing contact info")
+        status = str(w.get("status") or "").lower()
+        if status in {"pending", "invited", "invite_pending", "inactive"}:
+            issues.append(f"Status: {status}")
+        if issues:
+            worker_setup_issues.append({"worker_id": str(w.get("id") or w.get("_id")), "worker_name": w.get("name") or w.get("email") or "Worker", "issues": issues})
+    workload_map = {}
+    open_jobs = [j for j in jobs if str(j.get("status") or "").lower() not in {"completed", "done", "cancelled", "canceled"}]
+    for j in open_jobs:
+        wid = str(j.get("assigned_worker_id") or j.get("worker_id") or j.get("assigned_to") or "")
+        if not wid:
+            continue
+        w = workers_by_id.get(wid) or workers_by_public.get(wid)
+        key = str(w.get("id") or w.get("_id")) if w else wid
+        workload_map[key] = {"worker_id": key, "worker_name": (w or {}).get("name") or "Worker", "open_jobs": workload_map.get(key, {}).get("open_jobs", 0) + 1}
+    workload_summary = sorted(workload_map.values(), key=lambda x: x.get("open_jobs", 0), reverse=True)
+    workload_risks = [x for x in workload_summary if x.get("open_jobs", 0) >= 8]
+    workload_risks.extend([x for x in workload_summary if x.get("open_jobs", 0) <= 1][:4])
+    timesheet_review_items = []
+    open_timesheet_count = 0
+    for t in timesheets:
+        status = str(t.get("status") or "").lower()
+        minutes = _safe_minutes(t)
+        if status in {"pending", "submitted", "needs_review"}:
+            open_timesheet_count += 1
+            timesheet_review_items.append({"timesheet_id": str(t.get("id") or t.get("_id")), "issue": "Pending approval", "worker_id": str(t.get("worker_id") or "")})
+        if minutes == 0:
+            timesheet_review_items.append({"timesheet_id": str(t.get("id") or t.get("_id")), "issue": "Zero-minute shift", "worker_id": str(t.get("worker_id") or "")})
+        if minutes >= 16 * 60:
+            timesheet_review_items.append({"timesheet_id": str(t.get("id") or t.get("_id")), "issue": "Very long shift", "worker_id": str(t.get("worker_id") or "")})
+        if not t.get("start_time") or not t.get("end_time"):
+            timesheet_review_items.append({"timesheet_id": str(t.get("id") or t.get("_id")), "issue": "Missing start/finish", "worker_id": str(t.get("worker_id") or "")})
+    payroll_review_items = [{"type": "missing_rates", "count": missing_rate_count}, {"type": "pending_timesheets", "count": open_timesheet_count}]
+    if any(str(p.get("status") or "").lower() in {"pending", "review", "flagged"} for p in payroll_rows):
+        payroll_review_items.append({"type": "payroll_pending_review", "count": sum(1 for p in payroll_rows if str(p.get("status") or "").lower() in {"pending", "review", "flagged"})})
+    payroll_warning_count = sum(1 for x in payroll_review_items if (x.get("count") or 0) > 0)
+    recommended_actions = [
+        "Review workers with missing rates, roles or regions.",
+        "Clear pending/flagged timesheets before payroll export.",
+        "Check workers with very high or very low open-job load.",
+        "Confirm payroll export readiness checklist before exporting.",
+    ]
+    risk_score = missing_rate_count + open_timesheet_count + len(workload_risks) + len(timesheet_review_items) // 3
+    risk_level = "high" if risk_score >= 12 else "medium" if risk_score >= 5 else "low"
+    fallback_summary = f"{worker_count} workers, {missing_rate_count} missing rates, {open_timesheet_count} open timesheets, {payroll_warning_count} payroll warning areas."
+    ai = generate_ai_text("Summarise team/payroll risk snapshot for owner/admin. No automatic actions.", json.dumps({"worker_count": worker_count, "active_worker_count": active_worker_count, "missing_rate_count": missing_rate_count, "missing_region_count": missing_region_count, "open_timesheet_count": open_timesheet_count, "payroll_warning_count": payroll_warning_count}), fallback_summary, 140)
+    doc = {
+        "id": str(_automation_uuid.uuid4()), "business_id": business_id, "headline": "AI Team & Payroll Watchtower snapshot",
+        "summary": _safe_text(ai.get("text"), fallback_summary), "risk_level": risk_level, "worker_count": worker_count, "active_worker_count": active_worker_count,
+        "missing_rate_count": missing_rate_count, "missing_region_count": missing_region_count, "missing_role_count": missing_role_count,
+        "open_timesheet_count": open_timesheet_count, "payroll_warning_count": payroll_warning_count, "workload_summary": workload_summary[:80],
+        "worker_setup_issues": worker_setup_issues[:120], "timesheet_review_items": timesheet_review_items[:200], "payroll_review_items": payroll_review_items,
+        "workload_risks": workload_risks[:80], "recommended_actions": recommended_actions, "created_at": now, "updated_at": now
+    }
+    await db.ai_team_payroll_snapshots.insert_one(doc)
+    await db.ai_team_payroll_events.insert_one({"id": str(_automation_uuid.uuid4()), "business_id": business_id, "event_type": "generated", "created_at": now, "actor_id": str(current_user.get("id") or "")})
+    return doc
+
+
+@api_router.get("/ai/team-payroll")
+async def get_ai_team_payroll(current_user: dict = Depends(get_current_user)):
+    _ai_team_payroll_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    doc = await db.ai_team_payroll_snapshots.find_one({"business_id": business_id}, sort=[("created_at", -1)])
+    return {"success": True, "snapshot": make_json_safe(doc) if doc else None}
+
+
+@api_router.post("/ai/team-payroll/generate")
+async def generate_ai_team_payroll(current_user: dict = Depends(get_current_user)):
+    doc = await _generate_team_payroll_watchtower_doc(current_user, force=True)
+    return {"success": True, "snapshot": make_json_safe(doc), "message": "AI highlights team and payroll risks. It does not approve payroll, change rates, edit timesheets, or pay workers."}
 
 
 async def _ai_action_audit_event(business_id: str, action: dict, event_type: str, current_user: dict, payload: dict | None = None):

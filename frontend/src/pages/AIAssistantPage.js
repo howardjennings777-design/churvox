@@ -236,6 +236,7 @@ export default function AIAssistantPage() {
   const [automationNotice, setAutomationNotice] = useState("");
   const [reviewed, setReviewed] = useState({});
   const [brief, setBrief] = useState(null);
+  const [teamPayroll, setTeamPayroll] = useState(null);
   const [memory, setMemory] = useState([]);
   const [briefNotice, setBriefNotice] = useState("");
   const [data, setData] = useState({ stats: {}, jobs: [], quotes: [], invoices: [], workers: [], followUps: [], aiActions: [], automationSuggestions: [] });
@@ -246,9 +247,9 @@ export default function AIAssistantPage() {
     setLoading(true);
     setError("");
     try {
-      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, followUpsRes, aiActionsRes, automationSuggestionsRes, briefRes, memoryRes] = await Promise.allSettled([
+      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, followUpsRes, aiActionsRes, automationSuggestionsRes, briefRes, memoryRes, teamPayrollRes] = await Promise.allSettled([
         get("/dashboard/stats"), get("/jobs"), get("/quotes"), get("/invoices"), get("/team/workers"), get("/follow-up-tasks"), get("/ai/actions"), get("/ai/automation-suggestions"),
-        get("/ai/daily-brief"), get("/ai/business-memory"),
+        get("/ai/daily-brief"), get("/ai/business-memory"), get("/ai/team-payroll"),
       ]);
       setData({
         stats: apiData(statsRes, {}) || {},
@@ -262,6 +263,7 @@ export default function AIAssistantPage() {
       });
       setBrief((apiData(briefRes, {}) || {}).brief || null);
       setMemory(pickList(apiData(memoryRes, []), ["memory", "items", "data"]));
+      setTeamPayroll((apiData(teamPayrollRes, {}) || {}).snapshot || null);
     } catch (err) {
       setError(safeText(err?.message || err, "Smart Hub could not load."));
     } finally {
@@ -314,6 +316,12 @@ export default function AIAssistantPage() {
     const result = await post("/ai/daily-brief/generate", {});
     if (!result?.success) return setBriefNotice(safeText(result?.error, "Could not generate daily brief."));
     setBriefNotice("AI highlights patterns. You decide what to do.");
+    await load();
+  }, [load, post]);
+  const generateTeamPayroll = useCallback(async () => {
+    const result = await post("/ai/team-payroll/generate", {});
+    if (!result?.success) return setBriefNotice(safeText(result?.error, "Could not generate team/payroll watchtower."));
+    setBriefNotice("AI highlights team and payroll risks. It does not approve payroll, change rates, edit timesheets, or pay workers.");
     await load();
   }, [load, post]);
   const refreshBusinessMemory = useCallback(async () => {
@@ -436,6 +444,25 @@ export default function AIAssistantPage() {
         <Section title="Business Memory" subtitle="AI highlights patterns. You decide what to do." icon={Brain}>
           <div className="mb-3 flex flex-wrap gap-2"><button onClick={refreshBusinessMemory} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50"><RefreshCw className="mr-2 h-4 w-4" />Refresh business memory</button></div>
           {!memory.length ? <p className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-600">No recurring patterns found yet.</p> : <div className="grid gap-3 md:grid-cols-2">{memory.map((m)=><div key={idOf(m,m.type)} className="rounded-2xl border border-slate-200 bg-white p-4"><p className="font-black text-slate-950">{safeText(m.title,"Pattern")}</p><p className="text-xs font-semibold text-slate-500">{safeText(m.type,"")}</p><p className="mt-2 text-sm font-semibold text-slate-700">{safeText(m.description,"")}</p><p className="mt-2 text-xs text-slate-600">Confidence: {safeText(m.confidence,"medium")} · Evidence: {safeNumber(m.evidence_count,0)} · Last seen: {safeText(m.last_seen_at,"n/a")}</p><button onClick={()=>dismissMemory(m.id)} className="mt-3 inline-flex rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50">Dismiss</button></div>)}</div>}
+        </Section>
+        <Section title="AI Team & Payroll Watchtower" subtitle="AI highlights team and payroll risks. It does not approve payroll, change rates, edit timesheets, or pay workers." icon={Users}>
+          <div className="mb-3 flex flex-wrap gap-2"><button onClick={generateTeamPayroll} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50"><RefreshCw className="mr-2 h-4 w-4" />Generate team/payroll watchtower</button></div>
+          {!teamPayroll ? <p className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-600">No team or payroll risks found yet. Churvox will highlight setup, workload, timesheet and payroll review issues here.</p> : (
+            <div className="space-y-3 text-sm">
+              <p className="text-lg font-black text-slate-950">{safeText(teamPayroll.headline, "Team and payroll snapshot")}</p>
+              <Pill tone={teamPayroll.risk_level === "high" ? "red" : teamPayroll.risk_level === "medium" ? "amber" : "green"}>{safeText(teamPayroll.risk_level, "low")} risk</Pill>
+              <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{safeText(teamPayroll.summary, "")}</p>
+              <div className="grid gap-2 md:grid-cols-4">{[
+                ["Workers", teamPayroll.worker_count],["Active workers", teamPayroll.active_worker_count],["Missing rates", teamPayroll.missing_rate_count],["Missing regions", teamPayroll.missing_region_count],["Open timesheets", teamPayroll.open_timesheet_count],["Payroll warnings", teamPayroll.payroll_warning_count],
+              ].map(([label,val]) => <div key={label} className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-black uppercase text-slate-500">{label}</p><p className="text-xl font-black text-slate-950">{safeNumber(val,0)}</p></div>)}</div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-black uppercase text-slate-600">Worker setup</p>{safeArray(teamPayroll.worker_setup_issues).slice(0,4).map((i,idx)=><p key={idx} className="mt-1 text-slate-700">• {safeText(i.worker_name,"Worker")}: {safeArray(i.issues).join(", ")}</p>)}</div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-black uppercase text-slate-600">Timesheet review</p>{safeArray(teamPayroll.timesheet_review_items).slice(0,4).map((i,idx)=><p key={idx} className="mt-1 text-slate-700">• {safeText(i.issue,"Review needed")}</p>)}</div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-black uppercase text-slate-600">Payroll review</p>{safeArray(teamPayroll.payroll_review_items).slice(0,4).map((i,idx)=><p key={idx} className="mt-1 text-slate-700">• {safeText(i.type,"Issue")}: {safeNumber(i.count,0)}</p>)}</div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-black uppercase text-slate-600">Recommended actions</p>{safeArray(teamPayroll.recommended_actions).map((i,idx)=><p key={idx} className="mt-1 text-slate-700">• {i}</p>)}</div>
+              </div>
+            </div>
+          )}
         </Section>
 
         <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.2fr_0.8fr]">
