@@ -399,7 +399,9 @@ export default function SafeAIAssistantPage() {
       .filter((job) => normalize(job?.status) === "completed" && !Boolean(job?.invoice_id || job?.invoiced_at || job?.is_invoiced || job?.invoice_number))
       .map((job) => toInsight(job, "Job is complete but no invoice is linked.", "medium"));
 
-    const workerLoad = workers.length ? workers.map((worker) => {
+    const hasAssignmentSignals = jobs.some((job) => Boolean(job?.assigned_worker_id || job?.worker_id || job?.assigned_to || job?.assigned_worker_name || job?.worker_name));
+
+    const workerLoad = workers.length && hasAssignmentSignals ? workers.map((worker) => {
       const workerId = String(worker?.id || worker?._id || "");
       const workerName = worker?.name || worker?.full_name || worker?.worker_name || "Worker";
       const assignedCount = openJobs.filter((job) => {
@@ -416,7 +418,7 @@ export default function SafeAIAssistantPage() {
       };
     }) : [];
 
-    return { needsAssignment, overdue, pausedOrStuck, completedNotInvoiced, workerLoad };
+    return { openJobsCount: openJobs.length, needsAssignment, overdue, pausedOrStuck, completedNotInvoiced, workerLoad, hasAssignmentSignals };
   }, [jobs, workers]);
 
   return (
@@ -473,6 +475,7 @@ export default function SafeAIAssistantPage() {
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="flex items-center gap-2 text-lg font-black text-slate-950"><Briefcase className="h-5 w-5 text-blue-600" />AI Job Control</h2>
           <p className="mt-2 text-sm font-semibold text-slate-600">AI highlights job risks. It does not assign workers, change status, send messages, or create invoices without approval.</p>
+          <p className="mt-1 text-xs font-semibold text-slate-500">Open jobs reviewed: {jobControl.openJobsCount}</p>
           <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2">
             {[
               { key: "needs-assignment", title: "Needs assignment", items: jobControl.needsAssignment },
@@ -517,7 +520,7 @@ export default function SafeAIAssistantPage() {
                       <Link to="/schedule" className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-100">Open schedule</Link>
                     </div>
                   </div>
-                )) : <p className="text-sm font-semibold text-slate-500">Worker load is unavailable from current data.</p>}
+                )) : <p className="text-sm font-semibold text-slate-500">Worker load is unavailable from current data{jobControl.hasAssignmentSignals ? "." : " (no worker assignment fields found on current jobs)."}</p>}
               </div>
             </div>
           </div>
