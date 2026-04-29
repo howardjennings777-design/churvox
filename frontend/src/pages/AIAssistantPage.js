@@ -234,7 +234,8 @@ export default function AIAssistantPage() {
   const [queueNotice, setQueueNotice] = useState("");
   const [automationNotice, setAutomationNotice] = useState("");
   const [reviewed, setReviewed] = useState({});
-  const [data, setData] = useState({ stats: {}, jobs: [], quotes: [], invoices: [], workers: [], followUps: [], aiActions: [], automationSuggestions: [] });
+  const [data, setData] = useState({ stats: {}, jobs: [], quotes: [], invoices: [], workers: [], followUps: [], aiActions: [], automationSuggestions: [], financialRadar: null });
+  const [financialNotice, setFinancialNotice] = useState("");
 
   const allowed = ["owner", "manager", "office_admin", "employer", "admin"].includes(normalizedRole || "owner");
 
@@ -242,8 +243,8 @@ export default function AIAssistantPage() {
     setLoading(true);
     setError("");
     try {
-      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, followUpsRes, aiActionsRes, automationSuggestionsRes] = await Promise.allSettled([
-        get("/dashboard/stats"), get("/jobs"), get("/quotes"), get("/invoices"), get("/team/workers"), get("/follow-up-tasks"), get("/ai/actions"), get("/ai/automation-suggestions"),
+      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, followUpsRes, aiActionsRes, automationSuggestionsRes, financialRadarRes] = await Promise.allSettled([
+        get("/dashboard/stats"), get("/jobs"), get("/quotes"), get("/invoices"), get("/team/workers"), get("/follow-up-tasks"), get("/ai/actions"), get("/ai/automation-suggestions"), get("/ai/financial-radar"),
       ]);
       setData({
         stats: apiData(statsRes, {}) || {},
@@ -254,6 +255,7 @@ export default function AIAssistantPage() {
         followUps: pickList(apiData(followUpsRes, []), ["follow_ups", "tasks", "items", "data"]),
         aiActions: pickList(apiData(aiActionsRes, []), ["actions", "items", "data"]),
         automationSuggestions: pickList(apiData(automationSuggestionsRes, []), ["suggestions", "items", "data"]),
+        financialRadar: (apiData(financialRadarRes, {}) || {}).snapshot || null,
       });
     } catch (err) {
       setError(safeText(err?.message || err, "Smart Hub could not load."));
@@ -301,6 +303,16 @@ export default function AIAssistantPage() {
       return;
     }
     setAutomationNotice(successMessage);
+    await load();
+  }, [load, post]);
+
+  const generateFinancialRadar = useCallback(async () => {
+    const result = await post("/ai/financial-radar/generate", {});
+    if (!result?.success) {
+      setFinancialNotice(safeText(result?.error, "Could not generate AI Financial Radar."));
+      return;
+    }
+    setFinancialNotice("AI Financial Radar updated. AI highlights cash and revenue risks only.");
     await load();
   }, [load, post]);
 
@@ -396,6 +408,7 @@ export default function AIAssistantPage() {
 
         {copied && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-800">{copied}</div>}
         {queueNotice && <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-black text-blue-800">{queueNotice}</div>}
+        {financialNotice && <div className="rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-black text-indigo-800">{financialNotice}</div>}
 
         <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="rounded-3xl p-5" style={darkPanelStyle}>
@@ -412,6 +425,34 @@ export default function AIAssistantPage() {
           </div>
           <Section title={`Why risk is ${smart.risk}`} icon={Target}><div className="space-y-2">{smart.riskItems.map((item) => <RiskItem key={item.label} {...item} />)}</div></Section>
         </section>
+
+        <Section title="AI Financial Radar" subtitle="AI highlights cash and revenue risks. It does not mark invoices paid, change prices, or sync MYOB." icon={DollarSign}>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <button onClick={generateFinancialRadar} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50"><RefreshCw className="mr-2 h-4 w-4" />Generate financial radar</button>
+            <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">MYOB sync status is advisory only. No MYOB change is made from AI.</p>
+          </div>
+          {!data.financialRadar ? (
+            <p className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-600">No money risks found yet. Churvox will highlight unpaid invoices, quote follow-ups and uninvoiced completed work here.</p>
+          ) : (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <p className="text-lg font-black text-slate-950">{safeText(data.financialRadar.headline, "AI Financial Radar")}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-600">{safeText(data.financialRadar.summary, "")}</p>
+                <div className="mt-3 grid gap-2 md:grid-cols-3">
+                  <div><p className="text-xs font-black uppercase text-slate-500">Risk level</p><p className="text-sm font-black text-slate-900">{safeText(data.financialRadar.risk_level, "low")}</p></div>
+                  <div><p className="text-xs font-black uppercase text-slate-500">Revenue at risk</p><p className="text-sm font-black text-slate-900">{money(Number(data.financialRadar.revenue_at_risk || 0))}</p></div>
+                  <div><p className="text-xs font-black uppercase text-slate-500">Cash waiting</p><p className="text-sm font-black text-slate-900">{money(Number(data.financialRadar.unpaid_invoice_value || 0))}</p></div>
+                </div>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-black uppercase text-slate-500">Money waiting</p><p className="text-xl font-black text-slate-950">{money(Number(data.financialRadar.unpaid_invoice_value || 0))}</p></div>
+                <div className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-black uppercase text-slate-500">Overdue</p><p className="text-xl font-black text-slate-950">{money(Number(data.financialRadar.overdue_invoice_value || 0))}</p></div>
+                <div className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-black uppercase text-slate-500">Quotes</p><p className="text-xl font-black text-slate-950">{money(Number(data.financialRadar.open_quote_value || 0))}</p></div>
+                <div className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-black uppercase text-slate-500">Uninvoiced jobs</p><p className="text-xl font-black text-slate-950">{money(Number(data.financialRadar.completed_uninvoiced_estimate || 0))}</p></div>
+              </div>
+            </div>
+          )}
+        </Section>
 
         <section className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
           <MetricCard icon={Briefcase} label="Total jobs" value={smart.jobs.length} detail={`${smart.todayJobs.length} today`} to="/jobs" tone="blue" />

@@ -8399,6 +8399,7 @@ _AI_ACTION_ACTIVE_STATUSES = {"open", "snoozed", "approved"}
 _AI_AUTOMATION_ALLOWED_ROLES = {"owner", "admin", "employer", "manager", "office_admin"}
 _AI_AUTOMATION_BLOCKED_ROLES = {"worker", "payroll"}
 _AI_AUTOMATION_ACTIVE_STATUSES = {"open", "snoozed"}
+_AI_FINANCIAL_RISK_LEVELS = ("low", "medium", "high")
 
 
 def _ai_action_now():
@@ -8428,6 +8429,141 @@ def _ai_automation_role_guard(current_user: dict):
     role = _ai_user_role(current_user)
     if role in _AI_AUTOMATION_BLOCKED_ROLES or role not in _AI_AUTOMATION_ALLOWED_ROLES:
         raise HTTPException(status_code=403, detail="AI Automation Builder is not available for this role")
+
+
+def _ai_financial_role_guard(current_user: dict):
+    role = _ai_user_role(current_user)
+    if role in _AI_OWNER_ACTION_BLOCKED_ROLES or role not in _AI_OWNER_ACTION_ALLOWED_ROLES:
+        raise HTTPException(status_code=403, detail="AI Financial Radar is not available for this role")
+
+
+def _as_amount(value) -> float:
+    try:
+        if isinstance(value, str):
+            filtered = "".join(ch for ch in value if ch in "0123456789.-")
+            return float(filtered or 0)
+        return float(value or 0)
+    except Exception:
+        return 0.0
+
+
+def _as_iso(value):
+    parsed = _parse_date_like(value)
+    return parsed.isoformat() if parsed else None
+
+
+def _quote_days_waiting(quote: dict) -> int | None:
+    now = _ai_action_now()
+    dt = _parse_date_like(quote.get("sent_at") or quote.get("updated_at") or quote.get("created_at"))
+    if not dt:
+        return None
+    return max(0, (now - dt).days)
+
+
+async def _generate_financial_radar_snapshot(current_user: dict) -> dict:
+    _ai_financial_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    now = _ai_action_now()
+    query = {"business_id": business_id}
+    invoices = await db.invoices.find(query).to_list(length=1000)
+    quotes = await db.quotes.find(query).to_list(length=1000)
+    jobs = await db.jobs.find(query).to_list(length=1000)
+    clients = await db.clients.find(query).to_list(length=1000)
+    client_map = {str(c.get("id") or c.get("_id") or ""): c for c in clients}
+    invoices_by_job = {str(inv.get("job_id") or ""): inv for inv in invoices if inv.get("job_id")}
+
+    unpaid = [i for i in invoices if str(i.get("status") or "").strip().lower() in {"unpaid", "sent", "partial", "overdue", "pending", "draft"}]
+    overdue = [i for i in unpaid if str(i.get("status") or "").strip().lower() == "overdue" or (_parse_date_like(i.get("due_date") or i.get("due_at")) and _parse_date_like(i.get("due_date") or i.get("due_at")) < now)]
+    quote_followups = [q for q in quotes if str(q.get("status") or "").strip().lower() in {"sent", "pending", "draft"}]
+    completed_uninvoiced = []
+    for job in jobs:
+        jid = str(job.get("id") or job.get("_id") or "")
+        st = str(job.get("status") or job.get("job_status") or "").strip().lower().replace(" ", "_")
+        if st in {"completed", "done"} and jid and jid not in invoices_by_job and not job.get("invoice_id") and not job.get("invoice_number"):
+            completed_uninvoiced.append(job)
+
+    top_debtors = []
+    for inv in sorted(unpaid, key=lambda x: _as_amount(x.get("balance_due") or x.get("amount_due") or x.get("total") or x.get("amount")), reverse=True)[:5]:
+        client_id = str(inv.get("client_id") or inv.get("customer_id") or "")
+        client = client_map.get(client_id) or {}
+        top_debtors.append({
+            "client_name": _safe_text(inv.get("client_name") or inv.get("customer_name") or client.get("name"), "Client"),
+            "invoice_number": _safe_text(inv.get("invoice_number") or inv.get("number"), ""),
+            "amount": round(_as_amount(inv.get("balance_due") or inv.get("amount_due") or inv.get("total") or inv.get("amount")), 2),
+            "status": _safe_text(inv.get("status"), "unpaid").lower(),
+            "due_date": _as_iso(inv.get("due_date") or inv.get("due_at")),
+            "invoice_id": str(inv.get("id") or inv.get("_id") or ""),
+        })
+
+    quote_items = []
+    for quote in sorted(quote_followups, key=lambda x: _as_amount(x.get("total") or x.get("amount")), reverse=True)[:8]:
+        quote_items.append({
+            "customer_name": _safe_text(quote.get("customer_name") or quote.get("client_name"), "Customer"),
+            "quote_amount": round(_as_amount(quote.get("total") or quote.get("amount")), 2),
+            "status": _safe_text(quote.get("status"), "pending").lower(),
+            "days_waiting": _quote_days_waiting(quote),
+            "quote_id": str(quote.get("id") or quote.get("_id") or ""),
+        })
+
+    uninvoiced_items = []
+    for job in completed_uninvoiced[:8]:
+        uninvoiced_items.append({
+            "job_title": _safe_text(job.get("title") or job.get("job_title") or job.get("name"), "Completed job"),
+            "customer_name": _safe_text(job.get("client_name") or job.get("customer_name"), "Customer"),
+            "estimated_value": round(_as_amount(job.get("price") or job.get("job_price") or job.get("total")), 2),
+            "completed_date": _as_iso(job.get("completed_at") or job.get("updated_at")),
+            "job_id": str(job.get("id") or job.get("_id") or ""),
+        })
+
+    unpaid_value = round(sum(_as_amount(i.get("balance_due") or i.get("amount_due") or i.get("total") or i.get("amount")) for i in unpaid), 2)
+    overdue_value = round(sum(_as_amount(i.get("balance_due") or i.get("amount_due") or i.get("total") or i.get("amount")) for i in overdue), 2)
+    quote_value = round(sum(_as_amount(q.get("total") or q.get("amount")) for q in quote_followups), 2)
+    uninvoiced_value = round(sum(_as_amount(j.get("price") or j.get("job_price") or j.get("total")) for j in completed_uninvoiced), 2)
+    revenue_at_risk = round(overdue_value + quote_value * 0.35 + uninvoiced_value, 2)
+    risk_level = "high" if revenue_at_risk >= 20000 or overdue_value >= 10000 else "medium" if revenue_at_risk >= 5000 else "low"
+    recommended_actions = [
+        "Open highest-value overdue invoices and draft reminders first.",
+        "Follow up quotes waiting 3+ days with AI draft follow-up text.",
+        "Create draft invoices for completed uninvoiced jobs.",
+    ]
+    fallback_summary = (
+        f"Cash waiting signal: {len(unpaid)} unpaid invoice(s) worth ${unpaid_value:,.2f}, "
+        f"{len(overdue)} overdue worth ${overdue_value:,.2f}, "
+        f"{len(quote_followups)} open quote(s) worth ${quote_value:,.2f}, "
+        f"and {len(completed_uninvoiced)} completed uninvoiced job(s) estimated at ${uninvoiced_value:,.2f}. "
+        "This is a revenue signal, not true profit."
+    )
+    ai = generate_ai_text(
+        "You are Churvox AI Financial Radar. Be concise and honest. Never call revenue profit unless costs are provided.",
+        json.dumps({"unpaid_value": unpaid_value, "overdue_value": overdue_value, "quote_value": quote_value, "uninvoiced_value": uninvoiced_value, "revenue_at_risk": revenue_at_risk}),
+        fallback_summary,
+        220,
+    )
+    headline = "High revenue risk needs immediate follow-up." if risk_level == "high" else "Revenue follow-ups needed this week." if risk_level == "medium" else "Low money risk right now."
+
+    return {
+        "id": str(_automation_uuid.uuid4()),
+        "business_id": business_id,
+        "headline": headline,
+        "summary": _safe_text(ai.get("text"), fallback_summary),
+        "unpaid_invoice_count": len(unpaid),
+        "unpaid_invoice_value": unpaid_value,
+        "overdue_invoice_count": len(overdue),
+        "overdue_invoice_value": overdue_value,
+        "open_quote_count": len(quote_followups),
+        "open_quote_value": quote_value,
+        "completed_uninvoiced_job_count": len(completed_uninvoiced),
+        "completed_uninvoiced_estimate": uninvoiced_value,
+        "revenue_at_risk": revenue_at_risk,
+        "top_debtors": top_debtors,
+        "quote_followups": quote_items,
+        "invoice_followups": top_debtors,
+        "uninvoiced_jobs": uninvoiced_items,
+        "recommended_actions": recommended_actions,
+        "risk_level": risk_level if risk_level in _AI_FINANCIAL_RISK_LEVELS else "low",
+        "created_at": now,
+        "updated_at": now,
+    }
 
 
 def _ai_automation_to_response(doc: dict) -> dict:
@@ -9133,6 +9269,34 @@ async def dismiss_ai_automation_suggestion(suggestion_id: str, payload: dict | N
 @api_router.post("/ai/automation-suggestions/{suggestion_id}/snooze")
 async def snooze_ai_automation_suggestion(suggestion_id: str, payload: dict | None = None, current_user: dict = Depends(get_current_user)):
     return await _mutate_ai_automation_suggestion(suggestion_id, "snoozed", current_user, payload)
+
+
+@api_router.get("/ai/financial-radar")
+async def get_ai_financial_radar(current_user: dict = Depends(get_current_user)):
+    _ai_financial_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    latest = await db.ai_financial_snapshots.find_one({"business_id": business_id}, sort=[("created_at", -1)])
+    if not latest:
+        return {"success": True, "snapshot": None, "events": []}
+    events = await db.ai_financial_events.find({"business_id": business_id, "snapshot_id": str(latest.get("id") or "")}).sort("created_at", -1).limit(20).to_list(length=20)
+    return {"success": True, "snapshot": make_json_safe(safe_doc(latest)), "events": make_json_safe(safe_list(events))}
+
+
+@api_router.post("/ai/financial-radar/generate")
+async def generate_ai_financial_radar(current_user: dict = Depends(get_current_user)):
+    snapshot = await _generate_financial_radar_snapshot(current_user)
+    await db.ai_financial_snapshots.insert_one(snapshot)
+    await db.ai_financial_events.insert_one({
+        "id": str(_automation_uuid.uuid4()),
+        "business_id": str(snapshot.get("business_id") or ""),
+        "snapshot_id": str(snapshot.get("id") or ""),
+        "event_type": "generated",
+        "risk_level": snapshot.get("risk_level"),
+        "revenue_at_risk": snapshot.get("revenue_at_risk"),
+        "created_at": _ai_action_now(),
+        "actor_id": str(current_user.get("id") or current_user.get("_id") or ""),
+    })
+    return {"success": True, "snapshot": make_json_safe(snapshot)}
 
 
 def _safe_text(value, fallback="") -> str:
