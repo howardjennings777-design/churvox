@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { safeArray, safeNumber, safeText } from "../utils/safeRender";
 import {
   AlertTriangle,
+  Brain,
   Bot,
   Briefcase,
   CalendarDays,
@@ -234,6 +235,9 @@ export default function AIAssistantPage() {
   const [queueNotice, setQueueNotice] = useState("");
   const [automationNotice, setAutomationNotice] = useState("");
   const [reviewed, setReviewed] = useState({});
+  const [brief, setBrief] = useState(null);
+  const [memory, setMemory] = useState([]);
+  const [briefNotice, setBriefNotice] = useState("");
   const [data, setData] = useState({ stats: {}, jobs: [], quotes: [], invoices: [], workers: [], followUps: [], aiActions: [], automationSuggestions: [] });
 
   const allowed = ["owner", "manager", "office_admin", "employer", "admin"].includes(normalizedRole || "owner");
@@ -242,8 +246,9 @@ export default function AIAssistantPage() {
     setLoading(true);
     setError("");
     try {
-      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, followUpsRes, aiActionsRes, automationSuggestionsRes] = await Promise.allSettled([
+      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, followUpsRes, aiActionsRes, automationSuggestionsRes, briefRes, memoryRes] = await Promise.allSettled([
         get("/dashboard/stats"), get("/jobs"), get("/quotes"), get("/invoices"), get("/team/workers"), get("/follow-up-tasks"), get("/ai/actions"), get("/ai/automation-suggestions"),
+        get("/ai/daily-brief"), get("/ai/business-memory"),
       ]);
       setData({
         stats: apiData(statsRes, {}) || {},
@@ -255,6 +260,8 @@ export default function AIAssistantPage() {
         aiActions: pickList(apiData(aiActionsRes, []), ["actions", "items", "data"]),
         automationSuggestions: pickList(apiData(automationSuggestionsRes, []), ["suggestions", "items", "data"]),
       });
+      setBrief((apiData(briefRes, {}) || {}).brief || null);
+      setMemory(pickList(apiData(memoryRes, []), ["memory", "items", "data"]));
     } catch (err) {
       setError(safeText(err?.message || err, "Smart Hub could not load."));
     } finally {
@@ -301,6 +308,23 @@ export default function AIAssistantPage() {
       return;
     }
     setAutomationNotice(successMessage);
+    await load();
+  }, [load, post]);
+  const generateDailyBrief = useCallback(async () => {
+    const result = await post("/ai/daily-brief/generate", {});
+    if (!result?.success) return setBriefNotice(safeText(result?.error, "Could not generate daily brief."));
+    setBriefNotice("AI highlights patterns. You decide what to do.");
+    await load();
+  }, [load, post]);
+  const refreshBusinessMemory = useCallback(async () => {
+    const result = await post("/ai/business-memory/refresh", {});
+    if (!result?.success) return setBriefNotice(safeText(result?.error, "Could not refresh business memory."));
+    setBriefNotice("Business memory refreshed.");
+    await load();
+  }, [load, post]);
+  const dismissMemory = useCallback(async (id) => {
+    const result = await post(`/ai/business-memory/${id}/dismiss`, {});
+    if (!result?.success) return setBriefNotice(safeText(result?.error, "Could not dismiss memory."));
     await load();
   }, [load, post]);
 
@@ -396,6 +420,23 @@ export default function AIAssistantPage() {
 
         {copied && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-800">{copied}</div>}
         {queueNotice && <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-black text-blue-800">{queueNotice}</div>}
+        {briefNotice && <div className="rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-black text-indigo-800">{briefNotice}</div>}
+
+        <Section title="AI Daily Brief" subtitle="AI highlights patterns. You decide what to do." icon={CalendarDays}>
+          <div className="mb-3 flex flex-wrap gap-2"><button onClick={generateDailyBrief} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50"><RefreshCw className="mr-2 h-4 w-4" />Generate today’s brief</button></div>
+          {!brief ? <p className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-600">Generate today’s brief to see what needs attention.</p> : (
+            <div className="space-y-2 text-sm">
+              <p className="text-lg font-black text-slate-950">{safeText(brief.headline, "Daily brief")}</p><Pill tone={brief.risk_level === "high" ? "red" : brief.risk_level === "medium" ? "amber" : "green"}>{safeText(brief.risk_level, "low")} risk</Pill>
+              {["summary","money_summary","job_summary","quote_summary","invoice_summary","team_summary","automation_summary"].map((k)=><p key={k} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{safeText(brief[k], "")}</p>)}
+              <div>{safeArray(brief.recommended_actions).map((a,i)=><p key={`${i}-${a}`} className="mt-1 text-slate-700">• {a}</p>)}</div>
+            </div>
+          )}
+        </Section>
+
+        <Section title="Business Memory" subtitle="AI highlights patterns. You decide what to do." icon={Brain}>
+          <div className="mb-3 flex flex-wrap gap-2"><button onClick={refreshBusinessMemory} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50"><RefreshCw className="mr-2 h-4 w-4" />Refresh business memory</button></div>
+          {!memory.length ? <p className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-600">No recurring patterns found yet.</p> : <div className="grid gap-3 md:grid-cols-2">{memory.map((m)=><div key={idOf(m,m.type)} className="rounded-2xl border border-slate-200 bg-white p-4"><p className="font-black text-slate-950">{safeText(m.title,"Pattern")}</p><p className="text-xs font-semibold text-slate-500">{safeText(m.type,"")}</p><p className="mt-2 text-sm font-semibold text-slate-700">{safeText(m.description,"")}</p><p className="mt-2 text-xs text-slate-600">Confidence: {safeText(m.confidence,"medium")} · Evidence: {safeNumber(m.evidence_count,0)} · Last seen: {safeText(m.last_seen_at,"n/a")}</p><button onClick={()=>dismissMemory(m.id)} className="mt-3 inline-flex rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50">Dismiss</button></div>)}</div>}
+        </Section>
 
         <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="rounded-3xl p-5" style={darkPanelStyle}>
