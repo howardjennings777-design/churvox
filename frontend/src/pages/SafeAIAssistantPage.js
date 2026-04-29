@@ -38,6 +38,13 @@ function getCustomerName(item) {
   return item?.customer_name || item?.client_name || item?.customer?.name || item?.client?.name || item?.name || "Customer";
 }
 
+function getJobDueDate(job) {
+  const raw = job?.due_date || job?.dueDate || job?.scheduled_end || job?.scheduledEnd || job?.target_date || job?.targetDate;
+  if (!raw) return null;
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export default function SafeAIAssistantPage() {
   const { get } = useApi();
   const [jobs, setJobs] = useState([]);
@@ -349,6 +356,69 @@ export default function SafeAIAssistantPage() {
     low: "border-blue-200 bg-blue-50 text-blue-700",
   };
 
+  const jobControl = useMemo(() => {
+    const now = new Date();
+    const openStatus = new Set(["new", "open", "pending", "scheduled", "in progress", "in-progress", "assigned"]);
+    const pausedStatus = new Set(["paused", "stuck", "on hold", "on-hold", "blocked"]);
+    const closedStatus = new Set(["completed", "cancelled", "canceled"]);
+
+    const isAssigned = (job) => Boolean(job?.assigned_worker_id || job?.worker_id || job?.assigned_to || job?.assigned_worker_name || job?.worker_name);
+    const getJobLabel = (job) => job?.title || job?.job_title || job?.job_name || job?.job_number || `Job ${getItemId(job) || ""}`.trim();
+    const getJobRoute = (job) => (getItemId(job) ? `/jobs/${getItemId(job)}` : "/jobs");
+
+    const toInsight = (job, reason, priority) => ({
+      id: `job-${getItemId(job) || Math.random().toString(36).slice(2)}`,
+      label: `${getJobLabel(job)} • ${getCustomerName(job)}`,
+      status: normalize(job?.status) || "unknown",
+      reason,
+      priority,
+      to: getJobRoute(job),
+    });
+
+    const openJobs = jobs.filter((job) => {
+      const status = normalize(job?.status);
+      return !closedStatus.has(status) && (openStatus.has(status) || !status);
+    });
+
+    const needsAssignment = openJobs
+      .filter((job) => !isAssigned(job))
+      .map((job) => toInsight(job, "Open job has no worker assigned.", "high"));
+
+    const overdue = openJobs
+      .filter((job) => {
+        const dueDate = getJobDueDate(job);
+        return dueDate && dueDate < now;
+      })
+      .map((job) => toInsight(job, "Due date is in the past.", "high"));
+
+    const pausedOrStuck = jobs
+      .filter((job) => pausedStatus.has(normalize(job?.status)))
+      .map((job) => toInsight(job, "Job status indicates it may be blocked.", "medium"));
+
+    const completedNotInvoiced = jobs
+      .filter((job) => normalize(job?.status) === "completed" && !Boolean(job?.invoice_id || job?.invoiced_at || job?.is_invoiced || job?.invoice_number))
+      .map((job) => toInsight(job, "Job is complete but no invoice is linked.", "medium"));
+
+    const workerLoad = workers.length ? workers.map((worker) => {
+      const workerId = String(worker?.id || worker?._id || "");
+      const workerName = worker?.name || worker?.full_name || worker?.worker_name || "Worker";
+      const assignedCount = openJobs.filter((job) => {
+        const workerRefs = [job?.assigned_worker_id, job?.worker_id, job?.assigned_to].map((v) => String(v || ""));
+        const nameRefs = [job?.assigned_worker_name, job?.worker_name].map((v) => normalize(v));
+        return (workerId && workerRefs.includes(workerId)) || nameRefs.includes(normalize(workerName));
+      }).length;
+      return {
+        id: `worker-${workerId || workerName}`,
+        workerName,
+        assignedCount,
+        priority: assignedCount >= 6 ? "high" : assignedCount >= 3 ? "medium" : "low",
+        reason: assignedCount >= 6 ? "Heavy active load." : assignedCount >= 3 ? "Moderate active load." : "Light active load.",
+      };
+    }) : [];
+
+    return { needsAssignment, overdue, pausedOrStuck, completedNotInvoiced, workerLoad };
+  }, [jobs, workers]);
+
   return (
     <Layout>
       <div className="cx-page space-y-6">
@@ -395,6 +465,59 @@ export default function SafeAIAssistantPage() {
                     {action.label}
                   </Link>
                 ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="flex items-center gap-2 text-lg font-black text-slate-950"><Briefcase className="h-5 w-5 text-blue-600" />AI Job Control</h2>
+          <p className="mt-2 text-sm font-semibold text-slate-600">AI highlights job risks. It does not assign workers, change status, send messages, or create invoices without approval.</p>
+          <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2">
+            {[
+              { key: "needs-assignment", title: "Needs assignment", items: jobControl.needsAssignment },
+              { key: "overdue", title: "Overdue", items: jobControl.overdue },
+              { key: "paused", title: "Paused/Stuck", items: jobControl.pausedOrStuck },
+              { key: "completed-not-invoiced", title: "Completed not invoiced", items: jobControl.completedNotInvoiced },
+            ].map((group) => (
+              <div key={group.key} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <h3 className="text-sm font-black text-slate-900">{group.title}</h3>
+                <div className="mt-3 space-y-3">
+                  {group.items.length ? group.items.slice(0, 4).map((item) => (
+                    <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-black text-slate-900">{item.label}</p>
+                        <span className={`rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-wide ${priorityClasses[item.priority] || priorityClasses.low}`}>{item.priority}</span>
+                      </div>
+                      <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Status: {item.status}</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-700">{item.reason}</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <Link to={item.to} className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 hover:bg-blue-100">Open job</Link>
+                        <Link to="/jobs" className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-100">Open jobs page</Link>
+                        <Link to="/schedule" className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-100">Open schedule</Link>
+                      </div>
+                    </div>
+                  )) : <p className="text-sm font-semibold text-slate-500">No items found.</p>}
+                </div>
+              </div>
+            ))}
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 xl:col-span-2">
+              <h3 className="text-sm font-black text-slate-900">Worker load</h3>
+              <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                {jobControl.workerLoad.length ? jobControl.workerLoad.map((worker) => (
+                  <div key={worker.id} className="rounded-xl border border-slate-200 bg-white p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-black text-slate-900">{worker.workerName}</p>
+                      <span className={`rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-wide ${priorityClasses[worker.priority] || priorityClasses.low}`}>{worker.priority}</span>
+                    </div>
+                    <p className="mt-1 text-sm font-semibold text-slate-700">{worker.assignedCount} open job{worker.assignedCount === 1 ? "" : "s"} assigned.</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-700">{worker.reason}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Link to="/jobs" className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-100">Open jobs page</Link>
+                      <Link to="/schedule" className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-100">Open schedule</Link>
+                    </div>
+                  </div>
+                )) : <p className="text-sm font-semibold text-slate-500">Worker load is unavailable from current data.</p>}
               </div>
             </div>
           </div>
