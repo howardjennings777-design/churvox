@@ -145,7 +145,6 @@ export default function JobsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteId, setDeleteId] = useState(null);
-  const [jobControl, setJobControl] = useState(null);
 
   const clientLookup = useMemo(() => {
     const lookup = {};
@@ -159,15 +158,13 @@ export default function JobsPage() {
 
   const fetchJobs = useCallback(async () => {
     setPageLoading(true);
-    const [jobsRes, clientsRes, jobControlRes] = await Promise.all([
+    const [jobsRes, clientsRes] = await Promise.all([
       get("/jobs"),
       get("/clients"),
-      get("/ai/job-control"),
     ]);
 
     if (jobsRes.success) setJobs(extractList(jobsRes.data, ["jobs", "items", "data"]));
     if (clientsRes.success) setClients(extractList(clientsRes.data, ["clients", "items", "data"]));
-    if (jobControlRes.success) setJobControl(jobControlRes.data?.snapshot || null);
 
     setPageLoading(false);
   }, [get]);
@@ -409,14 +406,3 @@ export default function JobsPage() {
     </Layout>
   );
 }
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-blue-700">AI Job Control Tower</p>
-              <p className="text-sm font-semibold text-slate-600">AI highlights job risks. It does not assign workers, change job status, send messages, or create live invoices without approval.</p>
-            </div>
-            <Button variant="outline" onClick={async()=>{const r=await post('/ai/job-control/generate',{}); if(r?.success){setJobControl(r.data?.snapshot||null); toast.success('Job control generated');} else toast.error(r?.error||'Could not generate job control');}}>Generate job control</Button>
-          </div>
-          {!jobControl ? <p className="mt-3 text-sm font-semibold text-slate-500">No job risks found yet. Churvox will highlight unassigned, overdue, stuck and completed-not-invoiced jobs here.</p> : <div className="mt-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">{[["Open",jobControl.open_jobs_count],["Unassigned",jobControl.unassigned_jobs_count],["Overdue",jobControl.overdue_jobs_count],["Paused",jobControl.paused_jobs_count],["Completed not invoiced",jobControl.completed_uninvoiced_count],["Risk",jobControl.risk_level]].map(([k,v]) => <div key={k} className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-black uppercase text-slate-500">{k}</p><p className="text-lg font-black text-slate-950">{String(v ?? 0)}</p></div>)}</div>}
-        </section>
-
