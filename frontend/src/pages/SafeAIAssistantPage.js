@@ -17,8 +17,11 @@ const isInvoicePaid = (inv) => { const status = normalize(inv?.status || inv?.pa
 const money = (v) => new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(v || 0);
 
 export default function SafeAIAssistantPage() {
-  const { get } = useApi();
+  const { get, post } = useApi();
   const [jobs, setJobs] = useState([]); const [quotes, setQuotes] = useState([]); const [invoices, setInvoices] = useState([]); const [workers, setWorkers] = useState([]); const [copiedDraftId, setCopiedDraftId] = useState("");
+  const [askQuestion, setAskQuestion] = useState("");
+  const [askLoading, setAskLoading] = useState(false);
+  const [askResult, setAskResult] = useState(null);
 
   useEffect(() => { let active = true; (async () => {
     const [jr, qr, ir, wr] = await Promise.allSettled([get("/jobs"), get("/quotes"), get("/invoices"), get("/team/workers")]);
@@ -48,6 +51,55 @@ export default function SafeAIAssistantPage() {
   const priorityClasses = { high: "border-red-200 bg-red-50 text-red-700", medium: "border-amber-200 bg-amber-50 text-amber-700", low: "border-blue-200 bg-blue-50 text-blue-700" };
 
   const handleCopy = async (id, text) => { try { await navigator.clipboard.writeText(text); setCopiedDraftId(id); setTimeout(() => setCopiedDraftId(""), 2500); } catch { setCopiedDraftId(""); } };
+  const buildLocalFallback = (question) => {
+    const normalizedQuestion = normalize(question);
+    if (!normalizedQuestion) return "Ask about unpaid invoices, open quotes, or jobs needing action.";
+    if (normalizedQuestion.includes("owe") || normalizedQuestion.includes("money") || normalizedQuestion.includes("invoice")) {
+      if (!data.unpaidInvoices.length) return "No unpaid invoices found right now.";
+      const top = data.unpaidInvoices
+        .slice()
+        .sort((a, b) => getAmount(b) - getAmount(a))
+        .slice(0, 3)
+        .map((item) => `${getCustomer(item)} (${money(getAmount(item))})`);
+      return `Unpaid invoices: ${data.unpaidInvoices.length}. Top balances: ${top.join(", ")}.`;
+    }
+    if (normalizedQuestion.includes("job") && (normalizedQuestion.includes("action") || normalizedQuestion.includes("need"))) {
+      return `Jobs needing action: ${data.unassignedJobs.length} unassigned, ${data.pausedJobs.length} paused/stuck, ${data.completedNotInvoiced.length} completed not invoiced.`;
+    }
+    if (normalizedQuestion.includes("quote") || normalizedQuestion.includes("follow-up")) {
+      return `Quotes to follow up: ${data.openQuotes.length} pending/open.`;
+    }
+    if (normalizedQuestion.includes("today") || normalizedQuestion.includes("next")) {
+      const steps = [];
+      if (data.overdueInvoices.length) steps.push(`follow up ${data.overdueInvoices.length} overdue invoices`);
+      if (data.unassignedJobs.length) steps.push(`assign ${data.unassignedJobs.length} unassigned jobs`);
+      if (data.completedNotInvoiced.length) steps.push(`invoice ${data.completedNotInvoiced.length} completed jobs`);
+      if (!steps.length) steps.push("review open quotes and confirm priorities");
+      return `Suggested next steps: ${steps.join("; ")}.`;
+    }
+    return `Current priorities: ${data.overdueInvoices.length} overdue invoices, ${data.unassignedJobs.length} unassigned jobs, ${data.openQuotes.length} open quotes.`;
+  };
+  const handleAsk = async (event) => {
+    event.preventDefault();
+    const question = askQuestion.trim();
+    if (!question) return;
+    setAskLoading(true);
+    try {
+      const res = await post("/ai/ask", { question });
+      if (res?.success) {
+        const payload = res.data?.data || res.data || {};
+        const answer = payload?.answer || payload?.message || buildLocalFallback(question);
+        const usedAI = Boolean(payload?.used_ai);
+        setAskResult({ answer, usedAI, reason: payload?.reason || payload?.message || "" });
+      } else {
+        setAskResult({ answer: buildLocalFallback(question), usedAI: false, reason: res?.error || "AI endpoint unavailable." });
+      }
+    } catch {
+      setAskResult({ answer: buildLocalFallback(question), usedAI: false, reason: "AI endpoint unavailable." });
+    } finally {
+      setAskLoading(false);
+    }
+  };
 
   const actionQueue = [
     ["unassigned", "Unassigned jobs", data.unassignedJobs.length, "Jobs need worker assignment.", "high", "high", "/jobs"],
@@ -68,6 +120,20 @@ export default function SafeAIAssistantPage() {
           <p className="text-sm font-semibold text-slate-600">AI drafts only. Nothing is sent without your approval.</p>
         </section>
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="font-black"><Sparkles className="inline h-5 w-5"/> AI Daily Brief</h2><p className="mt-2">Risk: <span className={`rounded-full border px-2 py-1 text-xs ${priorityClasses[riskLevel]}`}>{riskLevel}</span></p><p className="mt-2 text-sm">Money summary: {data.unpaidInvoices.length} unpaid ({money(data.unpaidInvoices.reduce((s,i)=>s+getAmount(i),0))}), {data.overdueInvoices.length} overdue ({money(data.overdueInvoices.reduce((s,i)=>s+getAmount(i),0))}).</p><p className="text-sm">Job summary: {jobs.length} total, {data.unassignedJobs.length} unassigned, {data.pausedJobs.length} paused/stuck, {data.completedNotInvoiced.length} completed not invoiced.</p><p className="text-sm">Quote summary: {data.openQuotes.length} pending/open.</p><p className="text-sm">Team summary: {workers.length} workers.</p></section>
+        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="font-black"><Bot className="inline h-5 w-5"/> Ask Churvox</h2>
+          <p className="mt-2 text-sm text-slate-700">Ask Churvox can explain and draft. It does not change records without your approval.</p>
+          <form onSubmit={handleAsk} className="mt-3 space-y-3">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input value={askQuestion} onChange={(e)=>setAskQuestion(e.target.value)} placeholder="Ask who owes money, what needs action, or what should I do next…" className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-400" />
+              <button type="submit" disabled={askLoading || !askQuestion.trim()} className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">{askLoading ? "Asking..." : "Ask"}</button>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              {["Who owes money?", "What should I do today?", "What jobs need action?", "What quotes need follow-up?"].map((q)=><button key={q} type="button" onClick={()=>setAskQuestion(q)} className="rounded-full border border-slate-300 px-3 py-1 text-slate-700 hover:bg-slate-50">{q}</button>)}
+            </div>
+          </form>
+          {askResult && <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4"><p className="text-sm text-slate-900">{askResult.answer}</p><p className="mt-2 text-xs font-semibold text-slate-600">{askResult.usedAI ? "— Real AI" : "— Smart fallback"}</p>{!askResult.usedAI && askResult.reason && <p className="mt-1 text-xs text-slate-500">{askResult.reason}</p>}</div>}
+        </section>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="font-black"><Briefcase className="inline h-5 w-5"/> AI Action Queue</h2><div className="mt-3 grid gap-3 md:grid-cols-2">{actionQueue.map((a)=><div key={a[0]} className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><h3 className="font-black">{a[1]}</h3><p className="text-sm">{a[2]} items. {a[3]}</p><p className="text-xs">Priority: {a[4]} • Confidence: {a[5]}</p><Link to={a[6]} className="text-blue-700 font-black">Open →</Link></div>)}</div></section>
 
