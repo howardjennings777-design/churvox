@@ -278,6 +278,61 @@ export default function SafeAIAssistantPage() {
     ].filter(Boolean);
   }, [jobs, quotes, invoices, workers]);
 
+  const dailyBrief = useMemo(() => {
+    const now = new Date();
+    const todayLabel = now.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+    const openJobs = jobs.filter((job) => !["completed", "cancelled", "canceled"].includes(normalize(job?.status)));
+    const unassignedJobs = jobs.filter((job) => {
+      const hasWorker = Boolean(job?.assigned_worker_id || job?.worker_id || job?.assigned_to || job?.assigned_worker_name || job?.worker_name);
+      return !hasWorker;
+    });
+    const stuckJobs = jobs.filter((job) => ["paused", "stuck", "overdue", "on hold", "on-hold"].includes(normalize(job?.status)));
+    const completedNotInvoicedJobs = jobs.filter((job) => normalize(job?.status) === "completed" && !Boolean(job?.invoice_id || job?.invoiced_at || job?.is_invoiced || job?.invoice_number));
+    const openQuotes = quotes.filter((quote) => ["pending", "open", "sent", "draft"].includes(normalize(quote?.status)));
+    const acceptedQuotes = quotes.filter((quote) => ["accepted", "approved", "won"].includes(normalize(quote?.status)));
+
+    const unpaidInvoices = invoices.filter((invoice) => {
+      const status = normalize(invoice?.status || invoice?.payment_status);
+      return !(invoice?.paid_at || invoice?.date_paid || invoice?.is_paid || status === "paid");
+    });
+    const overdueInvoices = unpaidInvoices.filter((invoice) => {
+      const dueDate = new Date(invoice?.due_date || invoice?.dueDate || "");
+      return !Number.isNaN(dueDate.getTime()) && dueDate < now;
+    });
+
+    const riskLevel = overdueInvoices.length || unassignedJobs.length || completedNotInvoicedJobs.length || stuckJobs.length
+      ? "high"
+      : (openQuotes.length || unpaidInvoices.length || openJobs.length ? "medium" : "low");
+
+    const recommendedActions = [
+      overdueInvoices.length ? { label: `Follow up ${overdueInvoices.length} overdue invoice${overdueInvoices.length === 1 ? "" : "s"}`, to: "/invoices" } : null,
+      unassignedJobs.length ? { label: `Assign ${unassignedJobs.length} unassigned job${unassignedJobs.length === 1 ? "" : "s"}`, to: "/jobs" } : null,
+      completedNotInvoicedJobs.length ? { label: `Create invoices for ${completedNotInvoicedJobs.length} completed job${completedNotInvoicedJobs.length === 1 ? "" : "s"}`, to: "/jobs" } : null,
+      openQuotes.length ? { label: `Review ${openQuotes.length} open quote${openQuotes.length === 1 ? "" : "s"}`, to: "/quotes" } : null,
+      stuckJobs.length ? { label: `Unblock ${stuckJobs.length} paused/stuck job${stuckJobs.length === 1 ? "" : "s"}`, to: "/jobs" } : null,
+      workers.length ? { label: "Check team capacity and allocations", to: "/team" } : null,
+      { label: "Set up safe reminders in automation", to: "/automation" },
+    ].filter(Boolean).slice(0, 6);
+
+    while (recommendedActions.length < 3) {
+      recommendedActions.push({ label: "Review active work items", to: "/jobs" });
+    }
+
+    return {
+      headline: `AI Daily Brief • ${todayLabel}`,
+      todaysFocus: riskLevel === "high" ? "Stabilise urgent risks first, then clear backlog."
+        : riskLevel === "medium" ? "Keep momentum on open work and collections."
+          : "Maintain consistency and monitor new activity.",
+      moneySummary: `${invoices.length} invoices total • ${unpaidInvoices.length} unpaid • ${overdueInvoices.length} overdue.`,
+      jobSummary: `${jobs.length} jobs total • ${openJobs.length} open • ${unassignedJobs.length} unassigned • ${completedNotInvoicedJobs.length} completed not invoiced.`,
+      quoteSummary: `${quotes.length} quotes total • ${openQuotes.length} open/pending • ${acceptedQuotes.length} accepted.`,
+      invoiceSummary: `${unpaidInvoices.length} unpaid invoice${unpaidInvoices.length === 1 ? "" : "s"} and ${overdueInvoices.length} overdue.`,
+      teamSummary: workers.length ? `${workers.length} worker${workers.length === 1 ? "" : "s"} available in current team list.` : "",
+      riskLevel,
+      recommendedActions,
+    };
+  }, [jobs, quotes, invoices, workers]);
+
   const handleCopyDraft = async (draftId, text) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -310,6 +365,39 @@ export default function SafeAIAssistantPage() {
           <Card title="Quotes" text="Open quotes and follow-ups." to="/quotes" icon={FileText} />
           <Card title="Invoices" text="Invoices, unpaid work and customer billing." to="/invoices" icon={Receipt} />
           <Card title="Team" text="Workers, roles and team setup." to="/team" icon={Users} />
+        </section>
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="flex items-center gap-2 text-lg font-black text-slate-950"><Sparkles className="h-5 w-5 text-blue-600" />AI Daily Brief</h2>
+          <p className="mt-2 text-sm font-semibold text-slate-600">AI highlights patterns. You decide what to do.</p>
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-black text-slate-900">{dailyBrief.headline}</p>
+              <span className={`rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-wide ${priorityClasses[dailyBrief.riskLevel] || priorityClasses.low}`}>
+                Risk: {dailyBrief.riskLevel}
+              </span>
+            </div>
+            <p className="mt-2 text-sm font-semibold text-slate-700">{dailyBrief.todaysFocus}</p>
+            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <p className="text-sm font-semibold text-slate-700"><span className="font-black text-slate-900">Money:</span> {dailyBrief.moneySummary}</p>
+              <p className="text-sm font-semibold text-slate-700"><span className="font-black text-slate-900">Jobs:</span> {dailyBrief.jobSummary}</p>
+              <p className="text-sm font-semibold text-slate-700"><span className="font-black text-slate-900">Quotes:</span> {dailyBrief.quoteSummary}</p>
+              <p className="text-sm font-semibold text-slate-700"><span className="font-black text-slate-900">Invoices:</span> {dailyBrief.invoiceSummary}</p>
+              {dailyBrief.teamSummary ? (
+                <p className="text-sm font-semibold text-slate-700 md:col-span-2"><span className="font-black text-slate-900">Team:</span> {dailyBrief.teamSummary}</p>
+              ) : null}
+            </div>
+            <div className="mt-4">
+              <p className="text-xs font-black uppercase tracking-wide text-slate-500">Recommended actions</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {dailyBrief.recommendedActions.map((action, idx) => (
+                  <Link key={`${action.to}-${idx}`} to={action.to} className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 hover:bg-blue-100">
+                    {action.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
