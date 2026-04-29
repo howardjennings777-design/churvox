@@ -43,22 +43,25 @@ export default function SafeAIAssistantPage() {
   const [jobs, setJobs] = useState([]);
   const [quotes, setQuotes] = useState([]);
   const [invoices, setInvoices] = useState([]);
+  const [workers, setWorkers] = useState([]);
   const [copiedDraftId, setCopiedDraftId] = useState("");
 
   useEffect(() => {
     let active = true;
     async function loadData() {
-      const [jobsRes, quotesRes, invoicesRes] = await Promise.all([
+      const [jobsRes, quotesRes, invoicesRes, workersRes] = await Promise.allSettled([
         get("/jobs"),
         get("/quotes"),
         get("/invoices"),
+        get("/workers"),
       ]);
 
       if (!active) return;
 
-      if (jobsRes?.success) setJobs(extractList(jobsRes.data, ["jobs", "items", "data"]));
-      if (quotesRes?.success) setQuotes(extractList(quotesRes.data, ["quotes", "items", "data"]));
-      if (invoicesRes?.success) setInvoices(extractList(invoicesRes.data, ["invoices", "items", "data"]));
+      if (jobsRes.status === "fulfilled" && jobsRes.value?.success) setJobs(extractList(jobsRes.value.data, ["jobs", "items", "data"]));
+      if (quotesRes.status === "fulfilled" && quotesRes.value?.success) setQuotes(extractList(quotesRes.value.data, ["quotes", "items", "data"]));
+      if (invoicesRes.status === "fulfilled" && invoicesRes.value?.success) setInvoices(extractList(invoicesRes.value.data, ["invoices", "items", "data"]));
+      if (workersRes.status === "fulfilled" && workersRes.value?.success) setWorkers(extractList(workersRes.value.data, ["workers", "items", "data"]));
     }
 
     loadData();
@@ -201,6 +204,80 @@ export default function SafeAIAssistantPage() {
     return drafts;
   }, [jobs, quotes, invoices]);
 
+  const automationSuggestions = useMemo(() => {
+    const now = new Date();
+    const completedNotInvoicedCount = jobs.filter((job) => {
+      const status = normalize(job?.status);
+      const invoiced = Boolean(job?.invoice_id || job?.invoiced_at || job?.is_invoiced || job?.invoice_number);
+      return status === "completed" && !invoiced;
+    }).length;
+
+    const unassignedJobCount = jobs.filter((job) => {
+      const hasWorker = Boolean(job?.assigned_worker_id || job?.worker_id || job?.assigned_to || job?.assigned_worker_name || job?.worker_name);
+      return !hasWorker;
+    }).length;
+
+    const quoteFollowUpCount = quotes.filter((quote) => ["pending", "open"].includes(normalize(quote?.status))).length;
+    const overdueOrUnpaidCount = invoices.filter((invoice) => {
+      const status = normalize(invoice?.status || invoice?.payment_status);
+      const isPaid = Boolean(invoice?.paid_at || invoice?.date_paid || invoice?.is_paid || status === "paid");
+      if (isPaid) return false;
+      const dueRaw = invoice?.due_date || invoice?.dueDate;
+      const dueDate = dueRaw ? new Date(dueRaw) : null;
+      const isOverdue = dueDate && !Number.isNaN(dueDate.getTime()) && dueDate < now;
+      return isOverdue || ["overdue", "unpaid"].includes(status);
+    }).length;
+
+    const workersMissingSetupCount = workers.filter((worker) => {
+      const missingPhone = !String(worker?.phone || worker?.mobile || "").trim();
+      const missingRole = !String(worker?.role || worker?.position || "").trim();
+      return missingPhone || missingRole;
+    }).length;
+
+    return [
+      quoteFollowUpCount > 0 ? {
+        key: "quote-follow-up",
+        title: "Quote follow-up workflow",
+        trigger: `${quoteFollowUpCount} quote${quoteFollowUpCount === 1 ? "" : "s"} are pending/open.`,
+        suggestedAction: "Create a follow-up automation draft for owner approval.",
+        reason: "Fast follow-up can improve win rate without manual tracking.",
+        priority: "medium",
+      } : null,
+      overdueOrUnpaidCount > 0 ? {
+        key: "invoice-reminder",
+        title: "Invoice reminder workflow",
+        trigger: `${overdueOrUnpaidCount} invoice${overdueOrUnpaidCount === 1 ? "" : "s"} are overdue/unpaid.`,
+        suggestedAction: "Prepare reminder message drafts in automation for review.",
+        reason: "Consistent reminders reduce late payments.",
+        priority: "high",
+      } : null,
+      completedNotInvoicedCount > 0 ? {
+        key: "completed-not-invoiced",
+        title: "Completed job invoicing workflow",
+        trigger: `${completedNotInvoicedCount} completed job${completedNotInvoicedCount === 1 ? "" : "s"} have no invoice.`,
+        suggestedAction: "Add a draft task to prompt invoice creation after completion.",
+        reason: "Billing quickly improves cash flow and reduces missed revenue.",
+        priority: "high",
+      } : null,
+      unassignedJobCount > 0 ? {
+        key: "unassigned-alert",
+        title: "Unassigned job alert workflow",
+        trigger: `${unassignedJobCount} job${unassignedJobCount === 1 ? "" : "s"} are unassigned.`,
+        suggestedAction: "Draft an owner/manager assignment alert rule for approval.",
+        reason: "Unassigned jobs can delay service and customer updates.",
+        priority: "medium",
+      } : null,
+      workers.length && workersMissingSetupCount > 0 ? {
+        key: "team-cleanup",
+        title: "Team setup cleanup workflow",
+        trigger: `${workersMissingSetupCount} worker${workersMissingSetupCount === 1 ? "" : "s"} appear to have incomplete setup.`,
+        suggestedAction: "Create a weekly team-data cleanup task draft.",
+        reason: "Complete worker profiles reduce scheduling and payroll friction.",
+        priority: "low",
+      } : null,
+    ].filter(Boolean);
+  }, [jobs, quotes, invoices, workers]);
+
   const handleCopyDraft = async (draftId, text) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -233,6 +310,32 @@ export default function SafeAIAssistantPage() {
           <Card title="Quotes" text="Open quotes and follow-ups." to="/quotes" icon={FileText} />
           <Card title="Invoices" text="Invoices, unpaid work and customer billing." to="/invoices" icon={Receipt} />
           <Card title="Team" text="Workers, roles and team setup." to="/team" icon={Users} />
+        </section>
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="flex items-center gap-2 text-lg font-black text-slate-950"><Sparkles className="h-5 w-5 text-blue-600" />AI Automation Suggestions</h2>
+          <p className="mt-2 text-sm font-semibold text-slate-600">AI suggests automation. You approve before anything runs.</p>
+          <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {automationSuggestions.length ? automationSuggestions.map((suggestion) => (
+              <div key={suggestion.key} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-black text-slate-900">{suggestion.title}</h3>
+                  <span className={`rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-wide ${priorityClasses[suggestion.priority] || priorityClasses.low}`}>
+                    {suggestion.priority}
+                  </span>
+                </div>
+                <p className="mt-2 text-xs font-black uppercase tracking-wide text-slate-500">Trigger</p>
+                <p className="mt-1 text-sm font-semibold text-slate-700">{suggestion.trigger}</p>
+                <p className="mt-2 text-xs font-black uppercase tracking-wide text-slate-500">Suggested action</p>
+                <p className="mt-1 text-sm font-semibold text-slate-700">{suggestion.suggestedAction}</p>
+                <p className="mt-2 text-xs font-black uppercase tracking-wide text-slate-500">Reason</p>
+                <p className="mt-1 text-sm font-semibold text-slate-700">{suggestion.reason}</p>
+                <Link to="/automation" className="mt-3 inline-flex text-sm font-black text-blue-700 hover:text-blue-800">
+                  Open Automation →
+                </Link>
+              </div>
+            )) : <p className="text-sm font-semibold text-slate-500">No automation suggestions from current Jobs, Quotes, Invoices, and Team data.</p>}
+          </div>
         </section>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -296,4 +399,3 @@ export default function SafeAIAssistantPage() {
     </Layout>
   );
 }
-
