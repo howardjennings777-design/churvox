@@ -8405,6 +8405,8 @@ _AI_TEAM_PAYROLL_ALLOWED_ROLES = {"owner", "admin", "employer", "manager", "offi
 _AI_TEAM_PAYROLL_BLOCKED_ROLES = {"worker"}
 _AI_JOB_CONTROL_ALLOWED_ROLES = {"owner", "admin", "employer", "manager", "office_admin"}
 _AI_JOB_CONTROL_BLOCKED_ROLES = {"worker", "payroll"}
+_AI_FINANCIAL_RADAR_ALLOWED_ROLES = {"owner", "admin", "employer", "manager", "office_admin"}
+_AI_FINANCIAL_RADAR_BLOCKED_ROLES = {"worker", "payroll"}
 
 
 def _ai_action_now():
@@ -8462,6 +8464,154 @@ def _ai_job_control_role_guard(current_user: dict):
     role = _ai_user_role(current_user)
     if role in _AI_JOB_CONTROL_BLOCKED_ROLES or role not in _AI_JOB_CONTROL_ALLOWED_ROLES:
         raise HTTPException(status_code=403, detail="AI Job Control Tower is not available for this role")
+
+
+def _ai_financial_radar_role_guard(current_user: dict):
+    role = _ai_user_role(current_user)
+    if role in _AI_FINANCIAL_RADAR_BLOCKED_ROLES or role not in _AI_FINANCIAL_RADAR_ALLOWED_ROLES:
+        raise HTTPException(status_code=403, detail="AI Financial Radar is not available for this role")
+
+
+def _financial_amount(row: dict) -> float:
+    return float(row.get("balance_due") or row.get("amount_due") or row.get("total") or row.get("amount") or row.get("price") or row.get("job_price") or 0)
+
+
+async def _generate_financial_radar_snapshot(current_user: dict, force: bool = False) -> dict:
+    _ai_financial_radar_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    now = datetime.now(timezone.utc)
+    if not force:
+        existing = await db.ai_financial_snapshots.find_one({"business_id": business_id}, sort=[("created_at", -1)])
+        if existing:
+            return existing
+    query = {"business_id": business_id}
+    invoices = await db.invoices.find(query).to_list(length=1500)
+    quotes = await db.quotes.find(query).to_list(length=1200)
+    jobs = await db.jobs.find(query).to_list(length=1500)
+    clients = await db.clients.find(query).to_list(length=1200)
+    today = now.date()
+    client_map = {str(c.get("_id")): str(c.get("name") or c.get("client_name") or c.get("customer_name") or "Customer") for c in clients}
+    invoice_job_ids = {str(i.get("job_id") or i.get("source_job_id") or "") for i in invoices if (i.get("job_id") or i.get("source_job_id"))}
+
+    unpaid_invoices = [i for i in invoices if str(i.get("status") or "").strip().lower() not in {"paid", "void", "cancelled", "canceled"}]
+    overdue_invoices = [i for i in unpaid_invoices if str(i.get("status") or "").strip().lower() == "overdue" or ((_parse_date_like(i.get("due_date") or i.get("due_at")) or now).date() < today)]
+    open_quotes = [q for q in quotes if str(q.get("status") or "").strip().lower() in {"pending", "sent", "draft"}]
+    completed_uninvoiced_jobs = []
+    for job in jobs:
+        status = str(job.get("status") or "").strip().lower()
+        if status not in {"completed", "done"}:
+            continue
+        jid = str(job.get("_id") or job.get("id") or "")
+        if jid and jid not in invoice_job_ids:
+            completed_uninvoiced_jobs.append(job)
+
+    unpaid_value = sum(_financial_amount(i) for i in unpaid_invoices)
+    overdue_value = sum(_financial_amount(i) for i in overdue_invoices)
+    open_quote_value = sum(_financial_amount(q) for q in open_quotes)
+    uninvoiced_estimate = sum(_financial_amount(j) for j in completed_uninvoiced_jobs)
+    revenue_at_risk = overdue_value + open_quote_value + uninvoiced_estimate
+
+    top_debtors = []
+    for inv in sorted(unpaid_invoices, key=lambda x: _financial_amount(x), reverse=True)[:10]:
+        cid = str(inv.get("client_id") or inv.get("customer_id") or "")
+        top_debtors.append({
+            "client_name": inv.get("customer_name") or inv.get("client_name") or client_map.get(cid, "Customer"),
+            "invoice_number": inv.get("invoice_number") or inv.get("number"),
+            "amount": _financial_amount(inv),
+            "status": str(inv.get("status") or "unpaid").lower(),
+            "due_date": inv.get("due_date") or inv.get("due_at"),
+            "invoice_id": str(inv.get("id") or inv.get("_id") or ""),
+        })
+
+    quote_followups = []
+    for q in sorted(open_quotes, key=lambda x: _financial_amount(x), reverse=True)[:15]:
+        created_dt = _parse_date_like(q.get("created_at") or q.get("sent_at") or q.get("updated_at"))
+        quote_followups.append({
+            "customer_name": q.get("customer_name") or q.get("client_name") or client_map.get(str(q.get("client_id") or ""), "Customer"),
+            "quote_amount": _financial_amount(q),
+            "status": str(q.get("status") or "pending").lower(),
+            "days_waiting": (today - created_dt.date()).days if created_dt else None,
+            "quote_id": str(q.get("id") or q.get("_id") or ""),
+        })
+
+    uninvoiced_jobs = []
+    for j in completed_uninvoiced_jobs[:15]:
+        uninvoiced_jobs.append({
+            "job_id": str(j.get("id") or j.get("_id") or ""),
+            "job_title": j.get("title") or j.get("job_title") or "Completed job",
+            "customer_name": j.get("customer_name") or j.get("client_name") or client_map.get(str(j.get("client_id") or ""), "Customer"),
+            "estimated_value": _financial_amount(j),
+            "completed_date": j.get("completed_at") or j.get("updated_at") or j.get("scheduled_date"),
+        })
+
+    invoice_followups = top_debtors[:12]
+    recommended_actions = []
+    if overdue_invoices:
+        recommended_actions.append("Review overdue invoices first and prepare reminder drafts for top debtors.")
+    if open_quotes:
+        recommended_actions.append("Prioritise high-value quote follow-ups to protect revenue signal.")
+    if completed_uninvoiced_jobs:
+        recommended_actions.append("Create draft invoices for completed jobs that are not yet billed.")
+    if not recommended_actions:
+        recommended_actions.append("No material money risks found right now.")
+    risk_points = (len(overdue_invoices) * 3) + (len(open_quotes) * 1) + (len(completed_uninvoiced_jobs) * 2)
+    risk_level = "high" if risk_points >= 12 else "medium" if risk_points >= 4 else "low"
+    headline = f"{len(overdue_invoices)} overdue invoices, {len(open_quotes)} open quotes, {len(completed_uninvoiced_jobs)} completed jobs not invoiced."
+    summary = "AI highlights cash and revenue risks. This is a revenue signal, not true profit, because costs/expenses are not included."
+    if os.environ.get("OPENAI_API_KEY", "").strip():
+        ai = generate_ai_text(
+            "You are Churvox AI Financial Radar. Write one short headline and one short summary. Never call revenue profit unless costs exist.",
+            json.dumps({
+                "risk_level": risk_level,
+                "unpaid_invoice_value": unpaid_value,
+                "overdue_invoice_value": overdue_value,
+                "open_quote_value": open_quote_value,
+                "completed_uninvoiced_estimate": uninvoiced_estimate,
+                "revenue_at_risk": revenue_at_risk,
+            }),
+            f"{headline}\n{summary}",
+            150,
+        )
+        if ai.get("ok") and ai.get("text"):
+            lines = [line.strip() for line in str(ai.get("text")).splitlines() if line.strip()]
+            if lines:
+                headline = lines[0][:180]
+            if len(lines) > 1:
+                summary = lines[1][:280]
+
+    snapshot = {
+        "id": str(uuid.uuid4()),
+        "business_id": business_id,
+        "headline": headline,
+        "summary": summary,
+        "unpaid_invoice_count": len(unpaid_invoices),
+        "unpaid_invoice_value": unpaid_value,
+        "overdue_invoice_count": len(overdue_invoices),
+        "overdue_invoice_value": overdue_value,
+        "open_quote_count": len(open_quotes),
+        "open_quote_value": open_quote_value,
+        "completed_uninvoiced_job_count": len(completed_uninvoiced_jobs),
+        "completed_uninvoiced_estimate": uninvoiced_estimate,
+        "revenue_at_risk": revenue_at_risk,
+        "top_debtors": top_debtors,
+        "quote_followups": quote_followups,
+        "invoice_followups": invoice_followups,
+        "uninvoiced_jobs": uninvoiced_jobs,
+        "recommended_actions": recommended_actions,
+        "risk_level": risk_level,
+        "created_at": now,
+        "updated_at": now,
+    }
+    await db.ai_financial_snapshots.insert_one(snapshot)
+    await db.ai_financial_events.insert_one({
+        "id": str(uuid.uuid4()),
+        "business_id": business_id,
+        "event_type": "generated",
+        "snapshot_id": snapshot["id"],
+        "created_at": now,
+        "created_by": str(current_user.get("_id") or current_user.get("id") or ""),
+    })
+    return snapshot
 
 
 def _job_route(job_id: str) -> str:
@@ -8655,6 +8805,20 @@ async def get_ai_daily_brief(current_user: dict = Depends(get_current_user)):
     business_id = str(await get_user_business_id(current_user))
     doc = await db.ai_daily_briefs.find_one({"business_id": business_id, "date": datetime.now(timezone.utc).date().isoformat()})
     return {"success": True, "brief": make_json_safe(doc) if doc else None}
+
+
+@api_router.get("/ai/financial-radar")
+async def get_ai_financial_radar(current_user: dict = Depends(get_current_user)):
+    _ai_financial_radar_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    doc = await db.ai_financial_snapshots.find_one({"business_id": business_id}, sort=[("created_at", -1)])
+    return {"success": True, "snapshot": make_json_safe(doc) if doc else None}
+
+
+@api_router.post("/ai/financial-radar/generate")
+async def generate_ai_financial_radar(current_user: dict = Depends(get_current_user)):
+    doc = await _generate_financial_radar_snapshot(current_user, force=True)
+    return {"success": True, "snapshot": make_json_safe(doc), "message": "AI highlights cash and revenue risks. No records are changed automatically."}
 
 
 @api_router.post("/ai/daily-brief/generate")

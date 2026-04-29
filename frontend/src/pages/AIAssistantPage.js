@@ -240,6 +240,7 @@ export default function AIAssistantPage() {
   const [memory, setMemory] = useState([]);
   const [briefNotice, setBriefNotice] = useState("");
   const [jobControl, setJobControl] = useState(null);
+  const [financialRadar, setFinancialRadar] = useState(null);
   const [data, setData] = useState({ stats: {}, jobs: [], quotes: [], invoices: [], workers: [], followUps: [], aiActions: [], automationSuggestions: [] });
 
   const allowed = ["owner", "manager", "office_admin", "employer", "admin"].includes(normalizedRole || "owner");
@@ -248,9 +249,9 @@ export default function AIAssistantPage() {
     setLoading(true);
     setError("");
     try {
-      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, followUpsRes, aiActionsRes, automationSuggestionsRes, briefRes, memoryRes, teamPayrollRes, jobControlRes] = await Promise.allSettled([
+      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, followUpsRes, aiActionsRes, automationSuggestionsRes, briefRes, memoryRes, teamPayrollRes, jobControlRes, financialRadarRes] = await Promise.allSettled([
         get("/dashboard/stats"), get("/jobs"), get("/quotes"), get("/invoices"), get("/team/workers"), get("/follow-up-tasks"), get("/ai/actions"), get("/ai/automation-suggestions"),
-        get("/ai/daily-brief"), get("/ai/business-memory"), get("/ai/team-payroll"), get("/ai/job-control"),
+        get("/ai/daily-brief"), get("/ai/business-memory"), get("/ai/team-payroll"), get("/ai/job-control"), get("/ai/financial-radar"),
       ]);
       setData({
         stats: apiData(statsRes, {}) || {},
@@ -265,6 +266,7 @@ export default function AIAssistantPage() {
       setBrief((apiData(briefRes, {}) || {}).brief || null);
       setMemory(pickList(apiData(memoryRes, []), ["memory", "items", "data"]));
       setTeamPayroll((apiData(teamPayrollRes, {}) || {}).snapshot || null);
+      setFinancialRadar((apiData(financialRadarRes, {}) || {}).snapshot || null);
     } catch (err) {
       setError(safeText(err?.message || err, "Smart Hub could not load."));
     } finally {
@@ -329,6 +331,12 @@ export default function AIAssistantPage() {
     const result = await post("/ai/business-memory/refresh", {});
     if (!result?.success) return setBriefNotice(safeText(result?.error, "Could not refresh business memory."));
     setBriefNotice("Business memory refreshed.");
+    await load();
+  }, [load, post]);
+  const generateFinancialRadar = useCallback(async () => {
+    const result = await post("/ai/financial-radar/generate", {});
+    if (!result?.success) return setBriefNotice(safeText(result?.error, "Could not generate financial radar."));
+    setBriefNotice("AI highlights cash and revenue risks. It does not mark invoices paid, change prices, or sync MYOB.");
     await load();
   }, [load, post]);
   const dismissMemory = useCallback(async (id) => {
@@ -508,6 +516,29 @@ export default function AIAssistantPage() {
             <Pill tone={jobControl.risk_level === "high" ? "red" : jobControl.risk_level === "medium" ? "amber" : "green"}>{safeText(jobControl.risk_level, "low")} risk</Pill>
             <div className="grid gap-2 md:grid-cols-4">{[["Jobs today",jobControl.jobs_today_count],["Open jobs",jobControl.open_jobs_count],["Unassigned",jobControl.unassigned_jobs_count],["Overdue",jobControl.overdue_jobs_count],["Paused",jobControl.paused_jobs_count],["Completed not invoiced",jobControl.completed_uninvoiced_count]].map(([k,v]) => <div key={k} className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-black uppercase text-slate-500">{k}</p><p className="text-xl font-black text-slate-950">{safeNumber(v,0)}</p></div>)}</div>
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-semibold text-slate-700">{safeText(jobControl.summary, "")}</div>
+          </div>}
+        </Section>
+
+        <Section title="AI Financial Radar" subtitle="AI highlights cash and revenue risks. It does not mark invoices paid, change prices, or sync MYOB." icon={DollarSign}>
+          <div className="mb-3 flex flex-wrap gap-2"><button onClick={generateFinancialRadar} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50"><RefreshCw className="mr-2 h-4 w-4" />Generate financial radar</button></div>
+          {!financialRadar ? <p className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-600">No money risks found yet. Churvox will highlight unpaid invoices, quote follow-ups and uninvoiced completed work here.</p> : <div className="space-y-3">
+            <p className="text-lg font-black text-slate-950">{safeText(financialRadar.headline, "Financial radar snapshot")}</p>
+            <Pill tone={financialRadar.risk_level === "high" ? "red" : financialRadar.risk_level === "medium" ? "amber" : "green"}>{safeText(financialRadar.risk_level, "low")} risk</Pill>
+            <div className="grid gap-2 md:grid-cols-3">{[
+              ["Unpaid invoice value", money(financialRadar.unpaid_invoice_value)],
+              ["Overdue invoice value", money(financialRadar.overdue_invoice_value)],
+              ["Open quote value", money(financialRadar.open_quote_value)],
+              ["Completed uninvoiced estimate", money(financialRadar.completed_uninvoiced_estimate)],
+              ["Revenue at risk", money(financialRadar.revenue_at_risk)],
+            ].map(([k,v]) => <div key={k} className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-black uppercase text-slate-500">{k}</p><p className="text-xl font-black text-slate-950">{v}</p></div>)}</div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-black uppercase text-slate-600">Money waiting</p>{safeArray(financialRadar.top_debtors).slice(0,5).map((i,idx)=><div key={idx} className="mt-2 flex items-center justify-between gap-2 text-sm"><span>{safeText(i.client_name,"Customer")} · {safeText(i.invoice_number,"Invoice")}</span><div className="flex gap-2"><span>{money(i.amount)}</span>{i.invoice_id ? <Link to={`/invoices/${i.invoice_id}`} className="text-blue-700">Open invoice</Link> : null}</div></div>)}</div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-black uppercase text-slate-600">Overdue</p>{safeArray(financialRadar.invoice_followups).slice(0,5).map((i,idx)=><p key={idx} className="mt-1 text-slate-700">• {safeText(i.client_name,"Customer")} {money(i.amount)} ({safeText(i.status,"unpaid")})</p>)}</div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-black uppercase text-slate-600">Quotes</p>{safeArray(financialRadar.quote_followups).slice(0,5).map((i,idx)=><div key={idx} className="mt-2 flex items-center justify-between gap-2 text-sm"><span>{safeText(i.customer_name,"Customer")} · {money(i.quote_amount)}</span>{i.quote_id ? <Link to={`/quotes/${i.quote_id}`} className="text-blue-700">Open quote</Link> : null}</div>)}</div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-black uppercase text-slate-600">Uninvoiced jobs</p>{safeArray(financialRadar.uninvoiced_jobs).slice(0,5).map((i,idx)=><div key={idx} className="mt-2 flex items-center justify-between gap-2 text-sm"><span>{safeText(i.job_title,"Job")} · {money(i.estimated_value)}</span>{i.job_id ? <Link to={`/jobs/${i.job_id}`} className="text-blue-700">Open job</Link> : null}</div>)}</div>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-semibold text-slate-700">{safeText(financialRadar.summary, "")}</div>
+            <div>{safeArray(financialRadar.recommended_actions).map((a,i)=><p key={i} className="mt-1 text-slate-700">• {a}</p>)}</div>
           </div>}
         </Section>
 
