@@ -8403,6 +8403,8 @@ _AI_DAILY_BRIEF_ALLOWED_ROLES = {"owner", "admin", "employer", "manager", "offic
 _AI_DAILY_BRIEF_BLOCKED_ROLES = {"worker", "payroll"}
 _AI_TEAM_PAYROLL_ALLOWED_ROLES = {"owner", "admin", "employer", "manager", "office_admin", "payroll"}
 _AI_TEAM_PAYROLL_BLOCKED_ROLES = {"worker"}
+_AI_JOB_CONTROL_ALLOWED_ROLES = {"owner", "admin", "employer", "manager", "office_admin"}
+_AI_JOB_CONTROL_BLOCKED_ROLES = {"worker", "payroll"}
 
 
 def _ai_action_now():
@@ -8454,6 +8456,89 @@ def _ai_team_payroll_role_guard(current_user: dict):
     role = _ai_user_role(current_user)
     if role in _AI_TEAM_PAYROLL_BLOCKED_ROLES or role not in _AI_TEAM_PAYROLL_ALLOWED_ROLES:
         raise HTTPException(status_code=403, detail="AI Team & Payroll Watchtower is not available for this role")
+
+
+def _ai_job_control_role_guard(current_user: dict):
+    role = _ai_user_role(current_user)
+    if role in _AI_JOB_CONTROL_BLOCKED_ROLES or role not in _AI_JOB_CONTROL_ALLOWED_ROLES:
+        raise HTTPException(status_code=403, detail="AI Job Control Tower is not available for this role")
+
+
+def _job_route(job_id: str) -> str:
+    return f"/jobs/{job_id}" if job_id else "/jobs"
+
+
+async def _generate_job_control_snapshot(current_user: dict, force: bool = False) -> dict:
+    _ai_job_control_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    now = datetime.now(timezone.utc)
+    if not force:
+        existing = await db.ai_job_control_snapshots.find_one({"business_id": business_id}, sort=[("created_at", -1)])
+        if existing:
+            return existing
+    query = {"business_id": business_id}
+    jobs = await db.jobs.find(query).to_list(length=1000)
+    clients = await db.clients.find(query).to_list(length=1000)
+    workers = await db.business_users.find(query).to_list(length=500)
+    invoices = await db.invoices.find(query).to_list(length=1200)
+    today = now.date()
+    invoice_job_ids = {str(i.get("job_id") or i.get("source_job_id") or "") for i in invoices if (i.get("job_id") or i.get("source_job_id"))}
+    client_names = {str(c.get("_id")): str(c.get("name") or c.get("client_name") or c.get("customer_name") or "") for c in clients}
+    worker_names = {str(w.get("_id")): str(w.get("name") or w.get("email") or "Worker") for w in workers}
+
+    open_jobs, unassigned_jobs, overdue_jobs, paused_jobs, completed_uninvoiced_jobs, customer_update_candidates = [], [], [], [], [], []
+    worker_load = {}
+    for job in jobs:
+        jid = str(job.get("_id") or job.get("id") or "")
+        status = str(job.get("status") or "").strip().lower()
+        scheduled = _parse_date_like(job.get("scheduled_date") or job.get("date") or job.get("due_date"))
+        item = {"job_id": jid, "title": job.get("title") or "Untitled Job", "customer": job.get("customer_name") or job.get("client_name") or client_names.get(str(job.get("client_id") or ""), ""), "address": job.get("address") or "", "scheduled_date": scheduled.isoformat() if scheduled else None, "status": status or "assigned", "estimated_duration": job.get("estimated_duration"), "estimated_amount": job.get("price") or 0, "completed_date": (_parse_date_like(job.get("completed_at")) or scheduled).isoformat() if (job.get("completed_at") or scheduled) else None, "route": _job_route(jid)}
+        is_done = status in {"completed", "done"}
+        is_paused = status in {"paused", "stuck", "on_hold"}
+        is_open = status not in {"completed", "done", "cancelled", "canceled"}
+        if scheduled and scheduled.date() == today:
+            pass
+        if is_open:
+            open_jobs.append(job)
+            wid = str(job.get("assigned_worker_id") or job.get("worker_id") or "").strip()
+            if wid:
+                worker_load[wid] = worker_load.get(wid, 0) + 1
+            else:
+                unassigned_jobs.append(item)
+        if is_open and scheduled and scheduled.date() < today:
+            overdue_jobs.append(item)
+        if is_paused:
+            paused_jobs.append(item)
+        if is_done and jid and jid not in invoice_job_ids:
+            completed_uninvoiced_jobs.append(item)
+        if is_paused or (is_open and scheduled and scheduled.date() < today) or (is_open and not (job.get("assigned_worker_id") or job.get("worker_id"))):
+            customer_update_candidates.append(item)
+
+    worker_load_summary = [{"worker_id": wid, "worker_name": worker_names.get(wid, "Worker"), "open_jobs_count": count} for wid, count in sorted(worker_load.items(), key=lambda kv: kv[1], reverse=True)]
+    jobs_today_count = sum(1 for j in jobs if (_parse_date_like(j.get("scheduled_date") or j.get("date")) and _parse_date_like(j.get("scheduled_date") or j.get("date")).date() == today))
+    risk_score = len(overdue_jobs) * 2 + len(unassigned_jobs) + len(paused_jobs) * 2 + len(completed_uninvoiced_jobs)
+    risk_level = "high" if risk_score >= 8 else "medium" if risk_score >= 3 else "low"
+    recommended_actions = []
+    if unassigned_jobs: recommended_actions.append("Review unassigned jobs and manually assign a worker.")
+    if overdue_jobs: recommended_actions.append("Replan overdue jobs and contact affected customers with a draft update.")
+    if completed_uninvoiced_jobs: recommended_actions.append("Create draft invoice tasks for completed jobs pending billing.")
+    if paused_jobs: recommended_actions.append("Review paused/stuck jobs and unblock next steps.")
+    if not recommended_actions: recommended_actions.append("No urgent job risks detected today.")
+    headline = f"{len(overdue_jobs)} overdue, {len(unassigned_jobs)} unassigned, {len(completed_uninvoiced_jobs)} completed-not-invoiced."
+    summary = "AI highlights job risks. It does not assign workers, change job status, send messages, or create live invoices without approval."
+    if os.environ.get("OPENAI_API_KEY", "").strip():
+        ai = generate_ai_text(
+            "You are Churvox AI Job Control Tower. Summarise operational job risk in 1 sentence headline and 1 sentence summary.",
+            f"Risk level: {risk_level}. Unassigned: {len(unassigned_jobs)}. Overdue: {len(overdue_jobs)}. Paused: {len(paused_jobs)}. Completed uninvoiced: {len(completed_uninvoiced_jobs)}. Recommended: {recommended_actions[:3]}",
+            max_tokens=120,
+        )
+        if ai.get("ok") and ai.get("text"):
+            txt = str(ai.get("text")).strip()
+            headline = txt.split("\n")[0][:180] or headline
+    snapshot = {"id": str(uuid.uuid4()), "business_id": business_id, "headline": headline, "summary": summary, "risk_level": risk_level, "jobs_today_count": jobs_today_count, "open_jobs_count": len(open_jobs), "unassigned_jobs_count": len(unassigned_jobs), "overdue_jobs_count": len(overdue_jobs), "paused_jobs_count": len(paused_jobs), "completed_uninvoiced_count": len(completed_uninvoiced_jobs), "worker_load_summary": worker_load_summary, "unassigned_jobs": unassigned_jobs[:50], "overdue_jobs": overdue_jobs[:50], "paused_jobs": paused_jobs[:50], "completed_uninvoiced_jobs": completed_uninvoiced_jobs[:50], "customer_update_candidates": customer_update_candidates[:50], "recommended_actions": recommended_actions, "created_at": now, "updated_at": now}
+    await db.ai_job_control_snapshots.insert_one(snapshot)
+    await db.ai_job_control_events.insert_one({"id": str(uuid.uuid4()), "business_id": business_id, "event_type": "generated", "snapshot_id": snapshot["id"], "created_at": now, "created_by": str(current_user.get("_id") or current_user.get("id") or "")})
+    return snapshot
 
 
 def _is_open_job(job: dict) -> bool:
@@ -8546,6 +8631,22 @@ async def _generate_daily_brief_doc(current_user: dict, force: bool = False) -> 
     await db.ai_daily_briefs.update_one({"business_id": business_id, "date": date_key}, {"$set": doc}, upsert=True)
     await db.ai_brief_events.insert_one({"id": str(_automation_uuid.uuid4()), "business_id": business_id, "date": date_key, "event_type": "generated", "created_at": now, "actor_id": doc["generated_by"]})
     return doc
+
+
+@api_router.get("/ai/job-control")
+async def get_ai_job_control(current_user: dict = Depends(get_current_user)):
+    _ai_job_control_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    doc = await db.ai_job_control_snapshots.find_one({"business_id": business_id}, sort=[("created_at", -1)])
+    if not doc:
+        return {"success": True, "snapshot": None}
+    return {"success": True, "snapshot": make_json_safe(doc)}
+
+
+@api_router.post("/ai/job-control/generate")
+async def generate_ai_job_control(current_user: dict = Depends(get_current_user)):
+    doc = await _generate_job_control_snapshot(current_user, force=True)
+    return {"success": True, "snapshot": make_json_safe(doc)}
 
 
 @api_router.get("/ai/daily-brief")

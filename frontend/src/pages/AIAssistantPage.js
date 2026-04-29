@@ -239,6 +239,7 @@ export default function AIAssistantPage() {
   const [teamPayroll, setTeamPayroll] = useState(null);
   const [memory, setMemory] = useState([]);
   const [briefNotice, setBriefNotice] = useState("");
+  const [jobControl, setJobControl] = useState(null);
   const [data, setData] = useState({ stats: {}, jobs: [], quotes: [], invoices: [], workers: [], followUps: [], aiActions: [], automationSuggestions: [] });
 
   const allowed = ["owner", "manager", "office_admin", "employer", "admin"].includes(normalizedRole || "owner");
@@ -247,9 +248,9 @@ export default function AIAssistantPage() {
     setLoading(true);
     setError("");
     try {
-      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, followUpsRes, aiActionsRes, automationSuggestionsRes, briefRes, memoryRes, teamPayrollRes] = await Promise.allSettled([
+      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, followUpsRes, aiActionsRes, automationSuggestionsRes, briefRes, memoryRes, teamPayrollRes, jobControlRes] = await Promise.allSettled([
         get("/dashboard/stats"), get("/jobs"), get("/quotes"), get("/invoices"), get("/team/workers"), get("/follow-up-tasks"), get("/ai/actions"), get("/ai/automation-suggestions"),
-        get("/ai/daily-brief"), get("/ai/business-memory"), get("/ai/team-payroll"),
+        get("/ai/daily-brief"), get("/ai/business-memory"), get("/ai/team-payroll"), get("/ai/job-control"),
       ]);
       setData({
         stats: apiData(statsRes, {}) || {},
@@ -499,6 +500,16 @@ export default function AIAssistantPage() {
             <Section title="Money waiting" icon={DollarSign}><div className="grid gap-2"><div className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-black uppercase text-slate-500">Quote value</p><p className="text-xl font-black text-slate-950">{money(smart.quoteValue)}</p></div><div className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-black uppercase text-slate-500">Unpaid invoices</p><p className="text-xl font-black text-slate-950">{money(smart.unpaidValue)}</p></div><div className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-black uppercase text-slate-500">Draft / uninvoiced</p><p className="text-xl font-black text-slate-950">{money(smart.draftValue + smart.uninvoicedValue)}</p></div></div></Section>
           </div>
         </section>
+
+        <Section title="AI Job Control Tower" subtitle="AI highlights job risks. It does not assign workers, change job status, send messages, or create live invoices without approval." icon={Briefcase}>
+          <div className="mb-3 flex flex-wrap gap-2"><button onClick={generateJobControl} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50"><RefreshCw className="mr-2 h-4 w-4" />Generate job control</button></div>
+          {!jobControl ? <p className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-600">No job risks found yet. Churvox will highlight unassigned, overdue, stuck and completed-not-invoiced jobs here.</p> : <div className="space-y-3">
+            <p className="text-lg font-black text-slate-950">{safeText(jobControl.headline, "Job control snapshot")}</p>
+            <Pill tone={jobControl.risk_level === "high" ? "red" : jobControl.risk_level === "medium" ? "amber" : "green"}>{safeText(jobControl.risk_level, "low")} risk</Pill>
+            <div className="grid gap-2 md:grid-cols-4">{[["Jobs today",jobControl.jobs_today_count],["Open jobs",jobControl.open_jobs_count],["Unassigned",jobControl.unassigned_jobs_count],["Overdue",jobControl.overdue_jobs_count],["Paused",jobControl.paused_jobs_count],["Completed not invoiced",jobControl.completed_uninvoiced_count]].map(([k,v]) => <div key={k} className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-black uppercase text-slate-500">{k}</p><p className="text-xl font-black text-slate-950">{safeNumber(v,0)}</p></div>)}</div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-semibold text-slate-700">{safeText(jobControl.summary, "")}</div>
+          </div>}
+        </Section>
 
         <Section title="AI Action Queue" subtitle="AI suggests. You approve. Draft only. No payroll, MYOB, pricing, invoice status, or customer messages are changed without approval." icon={Bot}>
           <div className="mb-3 flex flex-wrap gap-2">
