@@ -8399,6 +8399,8 @@ _AI_ACTION_ACTIVE_STATUSES = {"open", "snoozed", "approved"}
 _AI_AUTOMATION_ALLOWED_ROLES = {"owner", "admin", "employer", "manager", "office_admin"}
 _AI_AUTOMATION_BLOCKED_ROLES = {"worker", "payroll"}
 _AI_AUTOMATION_ACTIVE_STATUSES = {"open", "snoozed"}
+_AI_DAILY_BRIEF_ALLOWED_ROLES = {"owner", "admin", "employer", "manager", "office_admin"}
+_AI_DAILY_BRIEF_BLOCKED_ROLES = {"worker", "payroll"}
 
 
 def _ai_action_now():
@@ -8438,6 +8440,175 @@ def _ai_automation_to_response(doc: dict) -> dict:
     if "id" not in clean:
         clean["id"] = str(clean.get("_id") or "")
     return make_json_safe(clean)
+
+
+def _ai_daily_brief_role_guard(current_user: dict):
+    role = _ai_user_role(current_user)
+    if role in _AI_DAILY_BRIEF_BLOCKED_ROLES or role not in _AI_DAILY_BRIEF_ALLOWED_ROLES:
+        raise HTTPException(status_code=403, detail="AI Daily Brief is not available for this role")
+
+
+def _is_open_job(job: dict) -> bool:
+    return str(job.get("status") or "").strip().lower() not in {"completed", "done", "cancelled", "canceled"}
+
+
+async def _build_daily_brief_and_memory_input(business_id: str) -> dict:
+    query = {"business_id": str(business_id)}
+    now = datetime.now(timezone.utc)
+    today = now.date()
+    jobs = await db.jobs.find(query).to_list(length=800)
+    quotes = await db.quotes.find(query).to_list(length=800)
+    invoices = await db.invoices.find(query).to_list(length=800)
+    clients = await db.clients.find(query).to_list(length=800)
+    timesheets = await db.timesheets.find(query).to_list(length=800)
+    payroll = await db.payroll.find(query).to_list(length=400)
+    automation_runs = await db.automation_runs.find(query).sort("created_at", -1).to_list(length=800)
+    invoice_job_ids = {str(inv.get("job_id") or "") for inv in invoices if inv.get("job_id")}
+    due_today, overdue_jobs, unassigned_jobs, completed_not_invoiced = [], [], [], []
+    for job in jobs:
+        if not _is_open_job(job):
+            if str(job.get("id") or job.get("_id") or "") not in invoice_job_ids:
+                completed_not_invoiced.append(job)
+            continue
+        due = _parse_date_like(job.get("due_date") or job.get("scheduled_date") or job.get("date") or job.get("start_date"))
+        if due and due.date() == today:
+            due_today.append(job)
+        if due and due.date() < today:
+            overdue_jobs.append(job)
+        if not (job.get("assigned_to") or job.get("worker_id") or job.get("assigned_worker_id") or job.get("assigned_user_id")):
+            unassigned_jobs.append(job)
+    pending_quotes = [q for q in quotes if str(q.get("status") or "").strip().lower() in {"pending", "sent", "draft"}]
+    unpaid_invoices = [i for i in invoices if str(i.get("status") or "").strip().lower() in {"unpaid", "sent", "partial", "overdue", "pending", "draft"}]
+    overdue_invoices = [i for i in unpaid_invoices if str(i.get("status") or "").strip().lower() == "overdue" or ((_parse_date_like(i.get("due_date") or i.get("due_at")) or now).date() < today)]
+    bad_clients = [c for c in clients if not c.get("email") or not c.get("phone")]
+    timesheet_flags = [t for t in timesheets if _ai_timesheet_anomaly(t)]
+    payroll_flags = [p for p in payroll if str(p.get("status") or "").strip().lower() in {"pending", "review", "needs_review", "flagged"}]
+    failed_runs = [r for r in automation_runs if str(r.get("status") or "").strip().lower() in {"failed", "error"}]
+    unpaid_value = sum(float(i.get("balance_due") or i.get("amount_due") or i.get("total") or i.get("amount") or 0) for i in unpaid_invoices)
+    overdue_value = sum(float(i.get("balance_due") or i.get("amount_due") or i.get("total") or i.get("amount") or 0) for i in overdue_invoices)
+    return locals()
+
+
+def _brief_risk_level(metrics: dict) -> str:
+    score = 0
+    score += len(metrics["overdue_jobs"]) * 2
+    score += len(metrics["overdue_invoices"]) * 3
+    score += len(metrics["failed_runs"]) * 2
+    score += len(metrics["timesheet_flags"]) + len(metrics["payroll_flags"])
+    if score >= 12:
+        return "high"
+    if score >= 5:
+        return "medium"
+    return "low"
+
+
+async def _generate_daily_brief_doc(current_user: dict, force: bool = False) -> dict:
+    _ai_daily_brief_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    now = datetime.now(timezone.utc)
+    date_key = now.date().isoformat()
+    if not force:
+        existing = await db.ai_daily_briefs.find_one({"business_id": business_id, "date": date_key})
+        if existing:
+            return existing
+    m = await _build_daily_brief_and_memory_input(business_id)
+    actions = []
+    if m["overdue_invoices"]: actions.append("Review overdue invoices and approve reminder drafts.")
+    if m["completed_not_invoiced"]: actions.append("Create invoice drafts for completed jobs.")
+    if m["unassigned_jobs"]: actions.append("Assign workers to unassigned jobs due soon.")
+    if m["pending_quotes"]: actions.append("Follow up pending quotes to protect revenue.")
+    if m["timesheet_flags"] or m["payroll_flags"]: actions.append("Review timesheet/payroll anomalies before approval.")
+    if m["failed_runs"]: actions.append("Fix failed automation runs and retest.")
+    risk = _brief_risk_level(m)
+    fallback = f"{len(m['overdue_jobs'])} overdue jobs, {len(m['overdue_invoices'])} overdue invoices, {len(m['pending_quotes'])} pending quotes need attention."
+    ai = generate_ai_text("Write a concise operational daily brief for owner/admin. No automatic actions.", json.dumps({"metrics": {"due_today_jobs": len(m["due_today"]), "overdue_jobs": len(m["overdue_jobs"]), "unassigned_jobs": len(m["unassigned_jobs"]), "completed_not_invoiced": len(m["completed_not_invoiced"]), "pending_quotes": len(m["pending_quotes"]), "unpaid_invoices": len(m["unpaid_invoices"]), "overdue_invoices": len(m["overdue_invoices"]), "timesheet_flags": len(m["timesheet_flags"]), "payroll_flags": len(m["payroll_flags"]), "failed_automation_runs": len(m["failed_runs"])}}), fallback, 180)
+    doc = {
+        "id": str(_automation_uuid.uuid4()), "business_id": business_id, "date": date_key,
+        "headline": f"Today: {len(m['overdue_invoices'])} overdue invoice(s), {len(m['overdue_jobs'])} overdue job(s)",
+        "summary": _safe_text(ai.get("text"), fallback),
+        "money_summary": f"${m['unpaid_value']:.2f} unpaid, ${m['overdue_value']:.2f} overdue.",
+        "job_summary": f"{len(m['due_today'])} due today, {len(m['overdue_jobs'])} overdue, {len(m['unassigned_jobs'])} unassigned, {len(m['completed_not_invoiced'])} completed not invoiced.",
+        "quote_summary": f"{len(m['pending_quotes'])} quotes pending follow-up.",
+        "invoice_summary": f"{len(m['unpaid_invoices'])} unpaid invoices, {len(m['overdue_invoices'])} overdue.",
+        "team_summary": f"{len(m['timesheet_flags'])} timesheet anomaly item(s), {len(m['payroll_flags'])} payroll item(s) pending review.",
+        "automation_summary": f"{len(m['failed_runs'])} failed automation run(s) need review.",
+        "recommended_actions": actions[:8], "risk_level": risk, "created_at": now, "updated_at": now,
+        "generated_by": str(current_user.get("id") or current_user.get("_id") or "system"),
+    }
+    await db.ai_daily_briefs.update_one({"business_id": business_id, "date": date_key}, {"$set": doc}, upsert=True)
+    await db.ai_brief_events.insert_one({"id": str(_automation_uuid.uuid4()), "business_id": business_id, "date": date_key, "event_type": "generated", "created_at": now, "actor_id": doc["generated_by"]})
+    return doc
+
+
+@api_router.get("/ai/daily-brief")
+async def get_ai_daily_brief(current_user: dict = Depends(get_current_user)):
+    _ai_daily_brief_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    doc = await db.ai_daily_briefs.find_one({"business_id": business_id, "date": datetime.now(timezone.utc).date().isoformat()})
+    return {"success": True, "brief": make_json_safe(doc) if doc else None}
+
+
+@api_router.post("/ai/daily-brief/generate")
+async def generate_ai_daily_brief(current_user: dict = Depends(get_current_user)):
+    doc = await _generate_daily_brief_doc(current_user, force=True)
+    return {"success": True, "brief": make_json_safe(doc), "message": "AI highlights patterns. You decide what to do."}
+
+
+async def _refresh_business_memory_docs(current_user: dict) -> list[dict]:
+    _ai_daily_brief_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    now = datetime.now(timezone.utc)
+    m = await _build_daily_brief_and_memory_input(business_id)
+    patterns = []
+    if len(m["overdue_invoices"]) >= 2:
+        patterns.append(("invoice_overdue_cluster", "Recurring overdue invoices", "Multiple overdue invoices are recurring."))
+    if len(m["pending_quotes"]) >= 3:
+        patterns.append(("quote_pending", "Quotes staying pending", "Quotes are frequently staying pending without follow-up."))
+    if len(m["completed_not_invoiced"]) >= 2:
+        patterns.append(("job_completed_no_invoice", "Completed jobs waiting for invoices", "Completed jobs are repeatedly left without invoices."))
+    if len(m["unassigned_jobs"]) >= 2:
+        patterns.append(("job_unassigned", "Jobs often unassigned", "Several open jobs are repeatedly unassigned."))
+    if len(m["bad_clients"]) >= 2:
+        patterns.append(("client_missing_contact", "Clients missing contact details", "Client records often miss phone or email details."))
+    if len(m["timesheet_flags"]) >= 2 or len(m["payroll_flags"]) >= 2:
+        patterns.append(("timesheet_anomaly", "Timesheet/payroll anomalies recurring", "Timesheet or payroll anomalies are recurring."))
+    if len(m["failed_runs"]) >= 2:
+        patterns.append(("automation_failure", "Automation failures recurring", "Automation runs are failing repeatedly."))
+    docs = []
+    for t, title, desc in patterns:
+        existing = await db.ai_business_memory.find_one({"business_id": business_id, "type": t, "status": "active"})
+        doc = existing or {"id": str(_automation_uuid.uuid4()), "business_id": business_id, "type": t, "title": title, "first_seen_at": now, "status": "active"}
+        doc.update({"description": desc, "evidence_count": len(patterns), "last_seen_at": now, "confidence": "high" if len(patterns) > 3 else "medium", "related_record_ids": []})
+        await db.ai_business_memory.update_one({"business_id": business_id, "type": t}, {"$set": doc}, upsert=True)
+        docs.append(doc)
+    await db.ai_brief_events.insert_one({"id": str(_automation_uuid.uuid4()), "business_id": business_id, "event_type": "memory_refresh", "created_at": now, "actor_id": str(current_user.get("id") or current_user.get("_id") or "")})
+    return docs
+
+
+@api_router.get("/ai/business-memory")
+async def get_ai_business_memory(current_user: dict = Depends(get_current_user)):
+    _ai_daily_brief_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    rows = await db.ai_business_memory.find({"business_id": business_id, "status": "active"}).sort("last_seen_at", -1).to_list(length=100)
+    return {"success": True, "memory": make_json_safe(rows)}
+
+
+@api_router.post("/ai/business-memory/refresh")
+async def refresh_ai_business_memory(current_user: dict = Depends(get_current_user)):
+    rows = await _refresh_business_memory_docs(current_user)
+    return {"success": True, "memory": make_json_safe(rows), "message": "AI highlights patterns. You decide what to do."}
+
+
+@api_router.post("/ai/business-memory/{memory_id}/dismiss")
+async def dismiss_ai_business_memory(memory_id: str, current_user: dict = Depends(get_current_user)):
+    _ai_daily_brief_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    now = datetime.now(timezone.utc)
+    result = await db.ai_business_memory.update_one({"id": memory_id, "business_id": business_id}, {"$set": {"status": "dismissed", "last_seen_at": now}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Business memory item not found")
+    await db.ai_brief_events.insert_one({"id": str(_automation_uuid.uuid4()), "business_id": business_id, "memory_id": memory_id, "event_type": "dismissed", "created_at": now, "actor_id": str(current_user.get("id") or current_user.get("_id") or "")})
+    return {"success": True}
 
 
 def _ai_automation_conditions(trigger_type: str, source_doc: dict | None = None) -> dict:
