@@ -37,6 +37,14 @@ export default function Layout({ children }) {
   const showHelp = role !== "worker";
   const routeAIArea = role !== "worker" && role !== "payroll" ? aiAreaForPath(location.pathname) : null;
   const showAIOperationsEngine = role !== "worker" && role !== "payroll" && location.pathname === "/smart-hub";
+  const showQuickCreate = role !== "worker" && role !== "payroll";
+  const quickItems = [
+    { label: "New job", to: "/jobs/new" },
+    { label: "New client", to: "/clients/new" },
+    { label: "New quote", to: "/quotes/new" },
+    { label: "New invoice", to: "/invoices/new" },
+    { label: "New team member", to: "/team" },
+  ];
 
   const handleLogout = async () => {
     await logout();
@@ -146,6 +154,20 @@ export default function Layout({ children }) {
         </header>
 
         <main className="flex-1">
+          {showQuickCreate && (
+            <div className="cx-page pb-0">
+              <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Quick Create</span>
+                  {quickItems.map((item) => (
+                    <Link key={item.to} to={item.to} className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50">
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
           {showAIOperationsEngine && (
             <div className="cx-page pb-0" data-testid="ai-operations-engine-container">
               <AIOperationsEnginePanel />

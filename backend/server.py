@@ -5,6 +5,7 @@ import urllib.error
 import asyncio
 import csv
 import io
+import hashlib
 from passlib.context import CryptContext
 from ai_service import generate_ai_text
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
@@ -156,6 +157,7 @@ from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depend
 from app.plan_rules import normalize_plan, get_plan_features, can_use_feature, get_max_clients
 from owner_bootstrap import ensure_owner_account
 from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
+from pydantic import BaseModel
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
 
@@ -289,6 +291,14 @@ DEFAULT_GST_RATE = float(os.environ.get('DEFAULT_GST_RATE', '15'))
 BUSINESS_ROLES = {"owner", "admin", "employer", "manager", "office_admin"}
 ACCOUNTING_CONFIG_ROLES = {"owner", "admin", "employer", "manager"}
 INVOICE_MODES = {"churvox_only", "myob_sync", "myob_external"}
+
+class PortalTokenBody(BaseModel):
+    entity_type: str
+    entity_id: str
+
+def make_portal_token(business_id: str, entity_type: str, entity_id: str):
+    raw = f"{business_id}:{entity_type}:{entity_id}:{JWT_SECRET}"
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:40]
 
 
 
@@ -10031,6 +10041,38 @@ async def ask_churvox_ai(payload: dict, current_user: dict = Depends(get_current
 @api_router.post("/launch/ai-ask")
 async def launch_ask_churvox_ai(payload: dict, current_user: dict = Depends(get_current_user)):
     return await _ask_churvox_impl(payload, current_user)
+
+
+@api_router.post("/customer-portal/token")
+async def create_customer_portal_token(body: PortalTokenBody, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    role = str(current_user.get("role", "")).lower()
+    if role not in BUSINESS_ROLES:
+        raise HTTPException(status_code=403, detail="Not allowed")
+    token = make_portal_token(business_id, body.entity_type, str(body.entity_id))
+    await db.portal_links.update_one(
+        {"business_id": business_id, "token": token},
+        {"$set": {"business_id": business_id, "token": token, "entity_type": body.entity_type, "entity_id": str(body.entity_id), "updated_at": datetime.utcnow()}},
+        upsert=True,
+    )
+    return {"success": True, "token": token, "url": f"{FRONTEND_URL}/public/customer-portal/{token}"}
+
+
+@api_router.get("/public/customer-portal/{token}")
+async def read_customer_portal(token: str):
+    link = await db.portal_links.find_one({"token": token})
+    if not link:
+        raise HTTPException(status_code=404, detail="Portal link not found")
+    business_id = str(link.get("business_id") or "")
+    entity_id = str(link.get("entity_id") or "")
+    jobs = await db.jobs.find(business_filter(business_id, {"client_id": entity_id})).sort("updated_at", -1).limit(10).to_list(10)
+    quotes = await db.quotes.find(business_filter(business_id, {"client_id": entity_id})).sort("updated_at", -1).limit(10).to_list(10)
+    invoices = await db.invoices.find(business_filter(business_id, {"client_id": entity_id})).sort("updated_at", -1).limit(10).to_list(10)
+    for row in jobs + quotes + invoices:
+        row["_id"] = str(row.get("_id"))
+        row.pop("internal_notes", None)
+        row.pop("gps_logs", None)
+    return {"success": True, "jobs": jobs, "quotes": quotes, "invoices": invoices, "privacy_note": "No internal worker coordinates or business-only fields are shown."}
 
 
 app.include_router(api_router)
