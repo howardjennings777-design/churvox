@@ -9696,6 +9696,236 @@ async def snooze_ai_automation_suggestion(suggestion_id: str, payload: dict | No
     return await _mutate_ai_automation_suggestion(suggestion_id, "snoozed", current_user, payload)
 
 
+_AI_DRAFT_TYPES = {
+    "quote_follow_up", "invoice_reminder", "job_reminder", "job_completion_summary", "customer_update",
+    "worker_instruction", "quote_wording", "invoice_wording", "client_missing_details_request"
+}
+
+
+def _ai_finance_role_guard(current_user: dict):
+    role = _ai_user_role(current_user)
+    if role in {"worker", "payroll"}:
+        raise HTTPException(status_code=403, detail="Financial foundations are not available for this role")
+
+
+async def _ai_draft_event(business_id: str, draft_id: str, event_type: str, current_user: dict):
+    await db.ai_draft_events.insert_one({
+        "id": str(uuid.uuid4()),
+        "business_id": str(business_id),
+        "draft_id": str(draft_id),
+        "event_type": event_type,
+        "created_at": _ai_action_now(),
+        "actor_id": str(current_user.get("id") or current_user.get("_id") or ""),
+    })
+
+
+@api_router.get("/ai/drafts")
+async def list_ai_drafts(current_user: dict = Depends(get_current_user)):
+    _ai_action_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    rows = await db.ai_drafts.find({"business_id": business_id}).sort("created_at", -1).limit(200).to_list(length=200)
+    return {"success": True, "drafts": make_json_safe(rows)}
+
+
+@api_router.post("/ai/drafts/create")
+async def create_ai_draft(payload: dict, current_user: dict = Depends(get_current_user)):
+    _ai_action_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    now = _ai_action_now()
+    draft_type = str((payload or {}).get("type") or "").strip().lower()
+    if draft_type not in _AI_DRAFT_TYPES:
+        raise HTTPException(status_code=400, detail="Unsupported draft type")
+    source_record_id = _safe_text((payload or {}).get("source_record_id"))
+    source_record_type = _safe_text((payload or {}).get("source_record_type")).lower()
+    context_summary = "AI suggests. You approve."
+    if source_record_id and source_record_type in {"job", "quote", "invoice", "client", "worker"}:
+        coll = {"job": db.jobs, "quote": db.quotes, "invoice": db.invoices, "client": db.clients, "worker": db.users}[source_record_type]
+        source = await coll.find_one({"business_id": business_id, "$or": [{"id": source_record_id}, {"_id": ObjectId(source_record_id)}]}) if ObjectId.is_valid(source_record_id) else await coll.find_one({"business_id": business_id, "id": source_record_id})
+        if source:
+            context_summary = f"Source {source_record_type}: {_safe_text(source.get('title') or source.get('name') or source.get('invoice_number') or source.get('quote_number'), source_record_id)}. AI suggests. You approve."
+    fallback_text = f"Draft type: {draft_type.replace('_', ' ')}. AI suggests. You approve."
+    draft_text = fallback_text
+    used_ai = False
+    model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+    if os.environ.get("OPENAI_API_KEY", "").strip():
+        try:
+            ai = generate_ai_text(
+                "Create a short safe business draft. Never send. Include: AI suggests. You approve.",
+                json.dumps({"type": draft_type, "context": context_summary, "custom_prompt": (payload or {}).get("custom_prompt")}),
+                fallback_text,
+                220,
+            )
+            if ai.get("ok") and ai.get("text"):
+                draft_text = _safe_text(ai.get("text"), fallback_text)
+                used_ai = True
+        except Exception:
+            draft_text = fallback_text
+    doc = {
+        "id": str(uuid.uuid4()), "business_id": business_id, "type": draft_type,
+        "title": _safe_text((payload or {}).get("title"), draft_type.replace("_", " ").title()),
+        "context_summary": context_summary, "draft_text": draft_text, "source_record_id": source_record_id or None,
+        "source_record_type": source_record_type or None, "status": "draft", "created_at": now, "updated_at": now,
+        "created_by": str(current_user.get("id") or current_user.get("_id") or ""), "used_at": None, "dismissed_at": None,
+        "used_ai": used_ai, "model": model,
+    }
+    await db.ai_drafts.insert_one(doc)
+    await _ai_draft_event(business_id, doc["id"], "created", current_user)
+    return {"success": True, "draft": make_json_safe(doc), "used_ai": used_ai, "message": "AI suggests. You approve."}
+
+
+@api_router.post("/ai/drafts/{draft_id}/mark-used")
+async def mark_ai_draft_used(draft_id: str, current_user: dict = Depends(get_current_user)):
+    _ai_action_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    now = _ai_action_now()
+    r = await db.ai_drafts.find_one_and_update({"id": draft_id, "business_id": business_id}, {"$set": {"status": "used", "used_at": now, "updated_at": now}}, return_document=True)
+    if not r: raise HTTPException(status_code=404, detail="Draft not found")
+    await _ai_draft_event(business_id, draft_id, "used", current_user)
+    return {"success": True, "draft": make_json_safe(r)}
+
+
+@api_router.post("/ai/drafts/{draft_id}/dismiss")
+async def dismiss_ai_draft(draft_id: str, current_user: dict = Depends(get_current_user)):
+    _ai_action_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    now = _ai_action_now()
+    r = await db.ai_drafts.find_one_and_update({"id": draft_id, "business_id": business_id}, {"$set": {"status": "dismissed", "dismissed_at": now, "updated_at": now}}, return_document=True)
+    if not r: raise HTTPException(status_code=404, detail="Draft not found")
+    await _ai_draft_event(business_id, draft_id, "dismissed", current_user)
+    return {"success": True, "draft": make_json_safe(r)}
+
+
+@api_router.delete("/ai/drafts/{draft_id}")
+async def delete_ai_draft(draft_id: str, current_user: dict = Depends(get_current_user)):
+    _ai_action_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    r = await db.ai_drafts.delete_one({"id": draft_id, "business_id": business_id})
+    if r.deleted_count == 0: raise HTTPException(status_code=404, detail="Draft not found")
+    await _ai_draft_event(business_id, draft_id, "deleted", current_user)
+    return {"success": True}
+
+
+@api_router.get("/expenses")
+async def list_expenses(current_user: dict = Depends(get_current_user)):
+    _ai_finance_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    rows = await db.expenses.find({"business_id": business_id}).sort("date", -1).limit(300).to_list(length=300)
+    return {"success": True, "expenses": make_json_safe(rows)}
+
+
+@api_router.post("/expenses")
+async def create_expense(payload: dict, current_user: dict = Depends(get_current_user)):
+    _ai_finance_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    now = _ai_action_now()
+    doc = {"id": str(uuid.uuid4()), "business_id": business_id, "category": _safe_text(payload.get("category"), "other"), "description": _safe_text(payload.get("description"), "Expense"), "amount": float(payload.get("amount") or 0), "date": payload.get("date") or now.date().isoformat(), "vendor": payload.get("vendor"), "job_id": payload.get("job_id"), "invoice_id": payload.get("invoice_id"), "tax_amount": payload.get("tax_amount"), "notes": payload.get("notes"), "created_at": now, "updated_at": now, "created_by": str(current_user.get("id") or current_user.get("_id") or "")}
+    await db.expenses.insert_one(doc)
+    return {"success": True, "expense": make_json_safe(doc)}
+
+
+@api_router.put("/expenses/{expense_id}")
+async def update_expense(expense_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    _ai_finance_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    payload["updated_at"] = _ai_action_now()
+    r = await db.expenses.find_one_and_update({"id": expense_id, "business_id": business_id}, {"$set": payload}, return_document=True)
+    if not r: raise HTTPException(status_code=404, detail="Expense not found")
+    return {"success": True, "expense": make_json_safe(r)}
+
+
+@api_router.delete("/expenses/{expense_id}")
+async def delete_expense(expense_id: str, current_user: dict = Depends(get_current_user)):
+    _ai_finance_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    r = await db.expenses.delete_one({"id": expense_id, "business_id": business_id})
+    if r.deleted_count == 0: raise HTTPException(status_code=404, detail="Expense not found")
+    return {"success": True}
+
+
+@api_router.get("/job-costs")
+async def list_job_costs(current_user: dict = Depends(get_current_user)):
+    _ai_finance_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    rows = await db.job_costs.find({"business_id": business_id}).sort("date", -1).limit(300).to_list(length=300)
+    return {"success": True, "job_costs": make_json_safe(rows)}
+
+
+@api_router.post("/job-costs")
+async def create_job_cost(payload: dict, current_user: dict = Depends(get_current_user)):
+    _ai_finance_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    now = _ai_action_now()
+    doc = {"id": str(uuid.uuid4()), "business_id": business_id, "job_id": _safe_text(payload.get("job_id")), "type": _safe_text(payload.get("type"), "other"), "description": _safe_text(payload.get("description"), "Job cost"), "amount": float(payload.get("amount") or 0), "quantity": payload.get("quantity"), "unit_cost": payload.get("unit_cost"), "worker_id": payload.get("worker_id"), "date": payload.get("date") or now.date().isoformat(), "notes": payload.get("notes"), "created_at": now, "updated_at": now, "created_by": str(current_user.get("id") or current_user.get("_id") or "")}
+    await db.job_costs.insert_one(doc)
+    return {"success": True, "job_cost": make_json_safe(doc)}
+
+
+@api_router.put("/job-costs/{cost_id}")
+async def update_job_cost(cost_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    _ai_finance_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    payload["updated_at"] = _ai_action_now()
+    r = await db.job_costs.find_one_and_update({"id": cost_id, "business_id": business_id}, {"$set": payload}, return_document=True)
+    if not r: raise HTTPException(status_code=404, detail="Job cost not found")
+    return {"success": True, "job_cost": make_json_safe(r)}
+
+
+@api_router.delete("/job-costs/{cost_id}")
+async def delete_job_cost(cost_id: str, current_user: dict = Depends(get_current_user)):
+    _ai_finance_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    r = await db.job_costs.delete_one({"id": cost_id, "business_id": business_id})
+    if r.deleted_count == 0: raise HTTPException(status_code=404, detail="Job cost not found")
+    return {"success": True}
+
+
+async def _generate_profit_snapshot_doc(current_user: dict) -> dict:
+    _ai_finance_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    now = _ai_action_now()
+    invoices = await db.invoices.find({"business_id": business_id}).to_list(length=1500)
+    quotes = await db.quotes.find({"business_id": business_id}).to_list(length=1200)
+    jobs = await db.jobs.find({"business_id": business_id}).to_list(length=1200)
+    expenses = await db.expenses.find({"business_id": business_id}).to_list(length=2000)
+    job_costs = await db.job_costs.find({"business_id": business_id}).to_list(length=2000)
+    invoice_job_ids = {str(i.get("job_id") or i.get("source_job_id") or "") for i in invoices if (i.get("job_id") or i.get("source_job_id"))}
+    unpaid = [i for i in invoices if str(i.get("status") or "").lower() not in {"paid", "void", "cancelled", "canceled"}]
+    paid = [i for i in invoices if str(i.get("status") or "").lower() in {"paid"}]
+    open_quotes = [q for q in quotes if str(q.get("status") or "").lower() in {"pending", "sent", "draft", "open"}]
+    completed_uninvoiced = [j for j in jobs if str(j.get("status") or "").lower() in {"completed", "done"} and str(j.get("id") or j.get("_id") or "") not in invoice_job_ids]
+    unpaid_val = sum(_financial_amount(i) for i in unpaid)
+    paid_val = sum(_financial_amount(i) for i in paid)
+    open_quote_val = sum(_financial_amount(q) for q in open_quotes)
+    uninvoiced_val = sum(_financial_amount(j) for j in completed_uninvoiced)
+    expense_total = sum(float(x.get("amount") or 0) for x in expenses)
+    job_cost_total = sum(float(x.get("amount") or 0) for x in job_costs)
+    revenue_signal = paid_val + unpaid_val + uninvoiced_val
+    estimated_margin = revenue_signal - expense_total - job_cost_total
+    profit_known = paid_val > 0 and expense_total > 0
+    warning = "Profit is not final until expenses and payments are complete."
+    doc = {"id": str(uuid.uuid4()), "business_id": business_id, "revenue_signal": revenue_signal, "unpaid_invoice_value": unpaid_val, "paid_invoice_value": paid_val, "open_quote_value": open_quote_val, "completed_uninvoiced_value": uninvoiced_val, "expense_total": expense_total, "job_cost_total": job_cost_total, "estimated_margin": estimated_margin, "profit_known": profit_known, "warning": warning, "created_at": now, "updated_at": now}
+    await db.profit_snapshots.insert_one(doc)
+    await db.profit_events.insert_one({"id": str(uuid.uuid4()), "business_id": business_id, "snapshot_id": doc["id"], "event_type": "generated", "created_at": now, "created_by": str(current_user.get("id") or current_user.get("_id") or "")})
+    return doc
+
+
+@api_router.get("/profit/snapshot")
+async def get_profit_snapshot(current_user: dict = Depends(get_current_user)):
+    _ai_finance_role_guard(current_user)
+    business_id = str(await get_user_business_id(current_user))
+    doc = await db.profit_snapshots.find_one({"business_id": business_id}, sort=[("created_at", -1)])
+    if not doc:
+        doc = await _generate_profit_snapshot_doc(current_user)
+    return {"success": True, "snapshot": make_json_safe(doc), "message": "AI suggests. You approve. Profit is not final until expenses and payments are complete."}
+
+
+@api_router.post("/profit/snapshot/generate")
+async def generate_profit_snapshot(current_user: dict = Depends(get_current_user)):
+    doc = await _generate_profit_snapshot_doc(current_user)
+    return {"success": True, "snapshot": make_json_safe(doc), "message": "Estimated margin and revenue signal only. AI suggests. You approve."}
+
+
+
 def _safe_text(value, fallback="") -> str:
     return str(value or fallback).strip()
 
