@@ -28,6 +28,7 @@ export function normalizeRole(raw) {
 
 // Keep this matrix aligned with frontend/src/App.js route guards and Layout.js nav.
 const ROUTE_ACCESS = {
+  smart_hub: ["owner", "manager", "office_admin"],
   overview: ["owner", "manager", "office_admin"],
   dashboard: ["owner", "manager", "office_admin"],
   jobs: ["owner", "manager", "office_admin"],
@@ -80,11 +81,11 @@ export function getDefaultRoute(role) {
   if (typeof window !== "undefined" && window.location?.pathname === "/ai-assistant") {
     if (r === "worker") return "/worker/jobs";
     if (r === "payroll") return "/timesheets";
-    return "/integrations";
+    return "/smart-hub";
   }
   if (r === "worker") return "/worker/jobs";
   if (r === "payroll") return "/timesheets";
-  return "/dashboard";
+  return "/smart-hub";
 }
 
 export const INVITE_ROLES = [
