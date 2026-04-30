@@ -21,6 +21,7 @@ import {
 import Layout from "../components/Layout";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
+import { canAccess } from "../lib/roles";
 
 const safeArray = (value, key) => {
   if (Array.isArray(value)) return value;
@@ -130,6 +131,14 @@ export default function SafeAIAssistantPage() {
   const [apiSuggestions, setApiSuggestions] = useState([]);
   const [digestPreview, setDigestPreview] = useState("");
   const [digestData, setDigestData] = useState({});
+  const [quickOpen, setQuickOpen] = useState(false);
+  const quickItems = useMemo(() => ([
+    { label: "New job", to: "/jobs/new" },
+    { label: "New client", to: "/clients/new" },
+    { label: "New quote", to: "/quotes/new" },
+    { label: "New invoice", to: "/invoices/new" },
+    { label: "New team member", to: "/team", require: "team" },
+  ]).filter((item) => !item.require || canAccess(normalizedRole || "owner", item.require)), [normalizedRole]);
 
   const fetchHubData = useCallback(async (manual = false) => {
     if (manual) setRefreshing(true); else setLoading(true);
@@ -293,20 +302,34 @@ export default function SafeAIAssistantPage() {
     <Layout>
       <div className="cx-page space-y-6 pb-28 md:pb-8">
         <section className="overflow-hidden rounded-3xl border border-slate-900/20 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-6 text-white shadow-2xl">
-          <div className="flex flex-wrap items-center justify-between gap-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">Command Centre</p>
               <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">Smart Hub</h1>
               <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-slate-300">Your daily command centre for jobs, invoices, quotes, team activity, follow-ups, automation, and safe AI actions.</p>
             </div>
-            <div className="min-w-[180px] rounded-3xl border border-white/15 bg-white/10 p-4 text-center backdrop-blur">
+            <div className="min-w-[168px] rounded-2xl border border-white/15 bg-white/10 p-3 text-center backdrop-blur">
               <p className="text-xs font-black uppercase tracking-wide text-slate-300">Business Health</p>
               <p className="mt-1 text-4xl font-black text-white">{digestData?.health_score?.overall?.score ?? model.health.overallScore}%</p>
               <p className="text-xs font-semibold text-slate-300">{model.urgentActions.length} action{model.urgentActions.length === 1 ? "" : "s"} need attention</p>
             </div>
-            <button onClick={() => fetchHubData(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-white/15 disabled:opacity-60">
-              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} /> {refreshing ? "Refreshing..." : "Refresh"}
-            </button>
+            <div className="flex items-center gap-2">
+              {normalizedRole !== "worker" && normalizedRole !== "payroll" && (
+                <div className="relative">
+                  <button type="button" onClick={() => setQuickOpen((v) => !v)} className="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-black text-white hover:bg-white/20">Quick Create ▾</button>
+                  {quickOpen && (
+                    <div className="absolute right-0 mt-2 w-52 rounded-xl border border-slate-200 bg-white p-2 text-left shadow-xl z-20">
+                      {quickItems.map((item) => (
+                        <Link key={item.to} to={item.to} onClick={() => setQuickOpen(false)} className="block rounded-lg px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">{item.label}</Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              <button onClick={() => fetchHubData(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-white/15 disabled:opacity-60">
+                <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} /> {refreshing ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
           </div>
           {loading && <p className="mt-3 text-sm font-semibold text-slate-300">Loading Smart Hub data...</p>}
           {loadErrors.length > 0 && <div className="mt-4 rounded-xl border border-amber-200/40 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100">Some sections are in safe fallback mode: {loadErrors.join(", ")}.</div>}
@@ -323,24 +346,33 @@ export default function SafeAIAssistantPage() {
           <SnapshotCard title="Urgent follow-ups" value={model.urgentActions.length} hint="Action centre priorities" icon={Sparkles} to="/follow-ups" />
         </section>
 
-        <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+        <section className="grid gap-3 xl:grid-cols-[1fr_1fr]">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h2 className="text-lg font-black text-slate-950">Business Health</h2>
+            <div className="mt-3 grid gap-2">
+              <HealthBar label="Overall score" score={digestData?.health_score?.overall?.score ?? model.health.overallScore} reason="Across jobs, cashflow, quotes, team, automation, and follow-ups" />
+            </div>
+          </div>
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-black text-slate-950">Owner Daily Digest</h2>
                 <p className="text-sm font-semibold text-slate-500">A quick read of today’s work, cashflow, team, and automation risks.</p>
               </div>
-              <button type="button" onClick={() => navigator.clipboard?.writeText(model.digestEmail)} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700"><Mail className="mr-1 inline h-3.5 w-3.5" />Copy digest</button>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => navigator.clipboard?.writeText(model.digestEmail)} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700"><Mail className="mr-1 inline h-3.5 w-3.5" />Copy digest</button>
+                <button type="button" onClick={async()=>{const r=await get('/smart-hub/digest-email/test'); alert(r?.success ? 'Test digest sent' : (r?.error || 'Could not send test digest'));}} className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-black text-white">Send test digest</button>
+              </div>
             </div>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {model.dailyDigest.map((line) => <div key={line} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700">{line}</div>)}
             </div>
+            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-semibold text-slate-700">{digestPreview || "No digest available yet."}</div>
           </div>
-
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-black text-slate-950">Advanced Health Score</h2>
-            <p className="mt-1 text-sm font-semibold text-slate-500">Category scores are digest-backed with fallback if partial data is unavailable.</p>
-            <div className="mt-4 grid gap-3">
+            <h2 className="text-lg font-black text-slate-950">Daily Digest Metrics</h2>
+            <p className="mt-1 text-sm font-semibold text-slate-500">Digest-backed with safe fallback data.</p>
+            <div className="mt-3 grid gap-2">
               <HealthBar label="Jobs" score={digestData?.health_score?.jobs?.score ?? model.health.jobHealth} reason={digestData?.health_score?.jobs?.reason || `${model.overdueJobs.length} overdue · ${model.jobsNeedingAssignment.length} unassigned`} to={digestData?.health_score?.jobs?.route || "/jobs"} />
               <HealthBar label="Cashflow" score={digestData?.health_score?.cashflow?.score ?? model.health.cashflowHealth} reason={digestData?.health_score?.cashflow?.reason || `${model.overdueInvoices.length} overdue · ${model.unpaidInvoices.length} unpaid`} to={digestData?.health_score?.cashflow?.route || "/invoices"} />
               <HealthBar label="Quote pipeline" score={digestData?.health_score?.quote_pipeline?.score ?? model.health.quoteHealth} reason={digestData?.health_score?.quote_pipeline?.reason || `${model.staleQuotes.length} stale · ${model.openQuotes.length} open`} to={digestData?.health_score?.quote_pipeline?.route || "/quotes"} />
@@ -355,15 +387,7 @@ export default function SafeAIAssistantPage() {
           <h2 className="text-lg font-black text-slate-950">Urgent Action Centre</h2>
           <p className="mt-1 text-sm font-semibold text-slate-500">The highest-impact actions to keep jobs, money, and customers moving.</p>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {model.urgentActions.length ? model.urgentActions.map((item) => <ActionCard key={item.key} item={item} />) : <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm font-semibold text-slate-500">Nothing urgent right now — your business is looking clear.</p>}
-          </div>
-        </section>
-
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-black text-slate-950">Smart Follow-up Suggestions</h2>
-          <p className="mt-1 text-sm font-semibold text-slate-500">Approval-first drafts only. Churvox never sends customer messages automatically.</p>
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {model.smartSuggestions.length ? model.smartSuggestions.map((item) => <ActionCard key={item.key} item={item} />) : <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm font-semibold text-slate-500">No smart follow-ups detected from loaded data.</p>}
+            {model.urgentActions.length ? model.urgentActions.map((item) => <ActionCard key={item.key} item={item} />) : <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-center text-sm font-semibold text-slate-500">Nothing urgent right now — your business is looking clear.</p>}
           </div>
         </section>
 
@@ -379,7 +403,7 @@ export default function SafeAIAssistantPage() {
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {assistantPrompts.map((prompt) => <button type="button" key={prompt.key} onClick={() => setAssistantMode(prompt.key)} className={`rounded-xl border px-3 py-2 text-left text-sm font-bold ${assistantMode === prompt.key ? "border-blue-200 bg-blue-50 text-blue-800" : "border-slate-200 bg-slate-50 text-slate-700"}`}><Bot className="mr-2 inline h-4 w-4 text-blue-600" />{prompt.label}</button>)}
             </div>
-            <pre className="mt-4 whitespace-pre-wrap rounded-2xl border border-slate-200 bg-slate-950 p-4 text-sm font-semibold leading-6 text-slate-100">{assistantResponses[assistantMode]}</pre>
+            <div className="mt-4 whitespace-pre-wrap rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-semibold leading-6 text-slate-800">{assistantResponses[assistantMode]}</div>
           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -423,14 +447,14 @@ export default function SafeAIAssistantPage() {
             </div>
           </div>
         </section>
+        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-black text-slate-950">Smart Follow-up Suggestions</h2>
+          <p className="mt-1 text-sm font-semibold text-slate-500">Approval-first drafts only. Churvox never sends customer messages automatically.</p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {(model.smartSuggestions.length ? model.smartSuggestions : apiSuggestions.slice(0, 6).map((s) => ({ key: s.key || s.id, title: s.title, text: s.reason, to: s.route || "/follow-ups", cta: "Open", copy: s.draft_text, type: "Suggestion" }))).length ? (model.smartSuggestions.length ? model.smartSuggestions : apiSuggestions.slice(0, 6).map((s) => ({ key: s.key || s.id, title: s.title, text: s.reason, to: s.route || "/follow-ups", cta: "Open", copy: s.draft_text, type: "Suggestion" }))).map((item) => <ActionCard key={item.key} item={item} />) : <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-center text-sm font-semibold text-slate-500">No smart follow-up suggestions available yet.</p>}
+          </div>
+        </section>
       </div>
-    
-      <section className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
-        <div className="flex items-center justify-between"><h2 className="text-sm font-black text-blue-900">Smart follow-up suggestions</h2></div>
-        <p className="mt-1 text-xs font-semibold text-blue-800">Approval-first: nothing sends automatically.</p>
-        <div className="mt-3 grid gap-2">{apiSuggestions.slice(0,6).map((s)=><div key={s.key} className="rounded-xl border border-blue-200 bg-white p-3"><p className="text-sm font-black">{s.title}</p><p className="text-xs text-slate-600">{s.reason}</p><div className="mt-2 flex gap-2"><Link to={s.route || '/follow-ups'} className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-black text-white">Open</Link><button type="button" onClick={()=>navigator.clipboard?.writeText(s.draft_text || '')} className="rounded-lg border px-3 py-1 text-xs font-black">Copy draft</button></div></div>)}</div>
-      </section>
-      <section className="rounded-2xl border border-slate-200 bg-white p-4"><div className="flex items-center justify-between"><h2 className="text-sm font-black text-slate-900">Daily digest preview</h2><div className="flex gap-2"><button type="button" onClick={()=>navigator.clipboard?.writeText(digestPreview || '')} className="rounded-lg border px-3 py-1 text-xs font-black">Copy digest</button><button type="button" onClick={async()=>{const r=await get('/smart-hub/digest-email/test'); alert(r?.success ? 'Test digest sent' : (r?.error || 'Could not send test digest'));}} className="rounded-lg bg-slate-900 px-3 py-1 text-xs font-black text-white">Send test digest to myself</button></div></div><pre className="mt-3 whitespace-pre-wrap rounded-xl bg-slate-50 p-3 text-xs">{digestPreview || 'No digest available yet.'}</pre></section>
 </Layout>
   );
 }

@@ -37,8 +37,8 @@ export default function Layout({ children }) {
   const role = normalizedRole || "owner";
   const showHelp = role !== "worker";
   const routeAIArea = role !== "worker" && role !== "payroll" ? aiAreaForPath(location.pathname) : null;
-  const showAIOperationsEngine = role !== "worker" && role !== "payroll" && location.pathname === "/smart-hub";
-  const showQuickCreate = role !== "worker" && role !== "payroll";
+  const showAIOperationsEngine = false;
+  const showQuickCreate = role !== "worker" && role !== "payroll" && location.pathname !== "/smart-hub";
   const quickItems = [
     { label: "New job", to: "/jobs/new" },
     { label: "New client", to: "/clients/new" },
