@@ -127,6 +127,8 @@ export default function SafeAIAssistantPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [loadErrors, setLoadErrors] = useState([]);
   const [assistantMode, setAssistantMode] = useState("attention");
+  const [apiSuggestions, setApiSuggestions] = useState([]);
+  const [digestPreview, setDigestPreview] = useState("");
 
   const fetchHubData = useCallback(async (manual = false) => {
     if (manual) setRefreshing(true); else setLoading(true);
@@ -139,6 +141,8 @@ export default function SafeAIAssistantPage() {
       get("/automation/runs"),
       get("/clients"),
       get("/follow-up-tasks?status=open"),
+      get("/follow-up-suggestions"),
+      get("/smart-hub/digest"),
     ]);
     const next = {
       jobs: safeArray(unwrap(requests[0]), "jobs"),
@@ -151,7 +155,9 @@ export default function SafeAIAssistantPage() {
       followUps: safeArray(unwrap(requests[7]), "tasks"),
     };
     setData(next);
-    const sections = ["Jobs", "Quotes", "Invoices", "Team", "Automation rules", "Automation runs", "Clients", "Follow-ups"];
+    setApiSuggestions(safeArray(unwrap(requests[8]), "items"));
+    setDigestPreview((unwrap(requests[9]) || {}).digest_text || "");
+    const sections = ["Jobs", "Quotes", "Invoices", "Team", "Automation rules", "Automation runs", "Clients", "Follow-ups", "Suggestions", "Digest"];
     const failures = requests.flatMap((r, i) => (r.status === "fulfilled" && r.value?.success ? [] : [sections[i]]));
     setLoadErrors(failures);
     setLoading(false);
@@ -414,6 +420,13 @@ export default function SafeAIAssistantPage() {
           </div>
         </section>
       </div>
-    </Layout>
+    
+      <section className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+        <div className="flex items-center justify-between"><h2 className="text-sm font-black text-blue-900">Smart follow-up suggestions</h2></div>
+        <p className="mt-1 text-xs font-semibold text-blue-800">Approval-first: nothing sends automatically.</p>
+        <div className="mt-3 grid gap-2">{apiSuggestions.slice(0,6).map((s)=><div key={s.key} className="rounded-xl border border-blue-200 bg-white p-3"><p className="text-sm font-black">{s.title}</p><p className="text-xs text-slate-600">{s.reason}</p><div className="mt-2 flex gap-2"><Link to={s.route || '/follow-ups'} className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-black text-white">Open</Link><button type="button" onClick={()=>navigator.clipboard?.writeText(s.draft_text || '')} className="rounded-lg border px-3 py-1 text-xs font-black">Copy draft</button></div></div>)}</div>
+      </section>
+      <section className="rounded-2xl border border-slate-200 bg-white p-4"><div className="flex items-center justify-between"><h2 className="text-sm font-black text-slate-900">Daily digest preview</h2><div className="flex gap-2"><button type="button" onClick={()=>navigator.clipboard?.writeText(digestPreview || '')} className="rounded-lg border px-3 py-1 text-xs font-black">Copy digest</button><button type="button" onClick={async()=>{const r=await get('/smart-hub/digest-email/test'); alert(r?.success ? 'Test digest sent' : (r?.error || 'Could not send test digest'));}} className="rounded-lg bg-slate-900 px-3 py-1 text-xs font-black text-white">Send test digest to myself</button></div></div><pre className="mt-3 whitespace-pre-wrap rounded-xl bg-slate-50 p-3 text-xs">{digestPreview || 'No digest available yet.'}</pre></section>
+</Layout>
   );
 }

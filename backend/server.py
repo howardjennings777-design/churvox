@@ -10124,36 +10124,162 @@ async def get_client_timeline(client_id: str, current_user: dict = Depends(get_c
 @api_router.get("/follow-up-suggestions")
 async def get_follow_up_suggestions(current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
-    suggestions = await db.follow_up_suggestions.find(business_filter(business_id, {"dismissed": {"$ne": True}})).sort("created_at", -1).limit(50).to_list(50)
-    out = []
-    for s in suggestions:
-        s["id"] = str(s.get("_id"))
-        s.pop("_id", None)
-        out.append(s)
-    return {"success": True, "items": out}
+    role = str(current_user.get("role") or "").lower()
+    if role in {"worker", "payroll"} or role not in BUSINESS_ROLES:
+        raise HTTPException(status_code=403, detail="Not allowed")
 
-@api_router.post("/follow-up-suggestions/generate")
-async def generate_follow_up_suggestions(current_user: dict = Depends(get_current_user)):
-    business_id = await get_user_business_id(current_user)
     now = datetime.utcnow()
-    quotes = await db.quotes.find(business_filter(business_id, {"status": {"$in": ["sent", "open", "pending"]}})).sort("updated_at", 1).limit(15).to_list(15)
-    created = 0
-    for q in quotes[:5]:
-        qid = str(q.get("_id"))
-        exists = await db.follow_up_suggestions.find_one(business_filter(business_id, {"source_type": "quote", "source_id": qid, "dismissed": {"$ne": True}}))
-        if exists:
-            continue
-        draft = "Hi, just checking in on your quote. Happy to answer questions and lock in a date."
-        await db.follow_up_suggestions.insert_one({"business_id": business_id, "source_type": "quote", "source_id": qid, "title": "Quote follow-up", "draft": draft, "route": f"/quotes/{qid}", "dismissed": False, "created_at": now})
-        created += 1
-    return {"success": True, "created": created}
+    today = now.date()
+    suggestion_items = []
 
-@api_router.post("/follow-up-suggestions/{suggestion_id}/dismiss")
-async def dismiss_follow_up_suggestion(suggestion_id: str, current_user: dict = Depends(get_current_user)):
+    quotes = await db.quotes.find(business_filter(business_id, {"status": {"$in": ["sent", "open", "pending", "awaiting"]}})).sort("updated_at", 1).limit(200).to_list(200)
+    for q in quotes:
+        sent_at = q.get("sent_at") or q.get("updated_at") or q.get("created_at")
+        if not isinstance(sent_at, datetime):
+            continue
+        if (now - sent_at).days >= 3:
+            qid = str(q.get("_id"))
+            suggestion_items.append({
+                "key": f"quote-followup:{qid}", "type": "quote_followup", "title": "Quote sent 3+ days ago",
+                "reason": f"Quote has been waiting {(now - sent_at).days} days without approval.", "route": f"/quotes/{qid}",
+                "related_record_id": qid,
+                "draft_text": "Hi, just checking in on the quote we sent through. Happy to answer questions or lock in a date when you are ready.",
+                "created_reason": "Quote status is still open/sent after 3 days.", "status": "open"
+            })
+
+    invoices = await db.invoices.find(business_filter(business_id, {"status": {"$nin": ["paid", "void", "cancelled", "canceled"]}})).sort("due_date", 1).limit(200).to_list(200)
+    for inv in invoices:
+        due = inv.get("due_date")
+        try:
+            due_dt = due if isinstance(due, datetime) else datetime.fromisoformat(str(due).replace("Z", "+00:00"))
+        except Exception:
+            due_dt = None
+        if due_dt and due_dt.date() < today:
+            iid = str(inv.get("_id"))
+            suggestion_items.append({"key": f"invoice-overdue:{iid}", "type": "invoice_overdue", "title": "Invoice overdue — send reminder", "reason": "Invoice due date has passed and payment is still outstanding.", "route": f"/invoices/{iid}", "related_record_id": iid, "draft_text": "Hi, friendly reminder that this invoice is now overdue. Please let us know if you need payment details resent.", "created_reason": "Invoice unpaid and past due date.", "status": "open"})
+
+    jobs = await db.jobs.find(business_filter(business_id, {})).sort("updated_at", -1).limit(500).to_list(500)
+    for job in jobs:
+        jid = str(job.get("_id"))
+        job_status = str(job.get("status") or job.get("job_status") or job.get("workflow_status") or "").lower()
+        is_completed = job_status in {"completed", "complete", "done"} or bool(job.get("completed") or job.get("completed_at"))
+        assigned = bool(job.get("assigned_worker_id") or job.get("worker_id") or job.get("assigned_to") or job.get("assigned_worker_name"))
+
+        if is_completed:
+            suggestion_items.append({"key": f"job-review:{jid}", "type": "job_review", "title": "Completed job — ask for review", "reason": "Job is completed and customer feedback can improve trust.", "route": f"/jobs/{jid}", "related_record_id": jid, "draft_text": "Thanks again for choosing us. If you are happy with the work, would you mind leaving a quick Google review?", "created_reason": "Job marked completed.", "status": "open"})
+            inv = await db.invoices.find_one(business_filter(business_id, {"job_id": jid}))
+            if not inv:
+                suggestion_items.append({"key": f"job-no-invoice:{jid}", "type": "invoice_draft", "title": "Completed job with no invoice", "reason": "Job is complete but no linked invoice exists yet.", "route": f"/jobs/{jid}", "related_record_id": jid, "draft_text": "Create and review an invoice draft for this completed job before sending.", "created_reason": "Completed job missing invoice.", "status": "open"})
+
+        due_raw = job.get("due_date") or job.get("scheduled_for") or job.get("scheduled_date") or job.get("date")
+        due_date = None
+        if isinstance(due_raw, datetime):
+            due_date = due_raw.date()
+        elif isinstance(due_raw, str):
+            try:
+                due_date = datetime.fromisoformat(due_raw.replace("Z", "+00:00")).date()
+            except Exception:
+                try:
+                    due_date = datetime.strptime(due_raw[:10], "%Y-%m-%d").date()
+                except Exception:
+                    due_date = None
+        if due_date == today and not assigned and not is_completed:
+            suggestion_items.append({"key": f"job-unassigned-today:{jid}", "type": "job_assignment", "title": "Job due today with no worker", "reason": "This job is due today and has no worker assigned yet.", "route": f"/jobs/{jid}", "related_record_id": jid, "draft_text": "Please confirm who is assigned to this job today and update the schedule.", "created_reason": "Due today + no assigned worker.", "status": "open"})
+
+    clients = await db.clients.find(business_filter(business_id, {})).sort("updated_at", 1).limit(300).to_list(300)
+    for c in clients:
+        last_touch = c.get("last_contact_at") or c.get("updated_at") or c.get("created_at")
+        if isinstance(last_touch, datetime) and (now - last_touch).days >= 60:
+            cid = str(c.get("_id"))
+            suggestion_items.append({"key": f"client-inactive:{cid}", "type": "client_checkin", "title": "Client inactive 60+ days", "reason": f"No recent activity for {(now - last_touch).days} days.", "route": f"/clients/{cid}", "related_record_id": cid, "draft_text": "Hi, checking in to see if you need anything scheduled in the coming weeks.", "created_reason": "No client activity for 60+ days.", "status": "open"})
+
+    dismissed = await db.follow_up_suggestions.find(business_filter(business_id, {"dismissed": True})).to_list(500)
+    dismissed_keys = {str(d.get("suggestion_key") or d.get("key") or "") for d in dismissed}
+    items = [i for i in suggestion_items if i["key"] not in dismissed_keys][:80]
+    return {"success": True, "items": items, "message": "Suggestions are recommendations only. Nothing is sent automatically."}
+
+
+@api_router.post("/follow-up-suggestions/{suggestion_key}/dismiss")
+async def dismiss_follow_up_suggestion(suggestion_key: str, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
-    await update_one_in_business(db.follow_up_suggestions, business_id, {"_id": ObjectId(suggestion_id)}, {"dismissed": True, "dismissed_at": datetime.utcnow()})
+    role = str(current_user.get("role") or "").lower()
+    if role in {"worker", "payroll"} or role not in BUSINESS_ROLES:
+        raise HTTPException(status_code=403, detail="Not allowed")
+    key = str(suggestion_key or "").strip()
+    if not key:
+        raise HTTPException(status_code=400, detail="Invalid suggestion key")
+    await db.follow_up_suggestions.update_one(
+        business_filter(business_id, {"suggestion_key": key}),
+        {"$set": {"business_id": str(business_id), "suggestion_key": key, "dismissed": True, "dismissed_at": datetime.utcnow(), "updated_at": datetime.utcnow()}},
+        upsert=True,
+    )
     return {"success": True}
 
+
+@api_router.get("/business/settings")
+async def get_business_settings(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    role = str(current_user.get("role") or "").lower()
+    if role not in {"owner", "admin", "employer", "manager", "office_admin"}:
+        raise HTTPException(status_code=403, detail="Not allowed")
+    doc = await db.business_settings.find_one(business_filter(business_id, {})) or {}
+    return {"success": True, "google_review_link": doc.get("google_review_link") or "", "daily_digest_enabled": bool(doc.get("daily_digest_enabled", False)), "daily_digest_email": doc.get("daily_digest_email") or ""}
+
+
+@api_router.patch("/business/settings")
+async def patch_business_settings(payload: dict, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    role = str(current_user.get("role") or "").lower()
+    if role not in {"owner", "admin", "employer", "manager", "office_admin"}:
+        raise HTTPException(status_code=403, detail="Not allowed")
+    link = str((payload or {}).get("google_review_link") or "").strip()
+    if link and not (link.startswith("http://") or link.startswith("https://")):
+        raise HTTPException(status_code=400, detail="google_review_link must start with http:// or https://")
+    update = {"updated_at": datetime.utcnow(), "business_id": str(business_id), "google_review_link": link, "daily_digest_enabled": bool((payload or {}).get("daily_digest_enabled", False)), "daily_digest_email": str((payload or {}).get("daily_digest_email") or "").strip()}
+    await db.business_settings.update_one(business_filter(business_id, {}), {"$set": update, "$setOnInsert": {"created_at": datetime.utcnow()}}, upsert=True)
+    return {"success": True}
+
+
+@api_router.get("/smart-hub/digest")
+async def smart_hub_digest(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    role = str(current_user.get("role") or "").lower()
+    if role not in {"owner", "admin", "employer", "manager", "office_admin"}:
+        raise HTTPException(status_code=403, detail="Not allowed")
+    today = datetime.utcnow().date().isoformat()
+    jobs = await db.jobs.find(business_filter(business_id, {})).limit(500).to_list(500)
+    invoices = await db.invoices.find(business_filter(business_id, {})).limit(500).to_list(500)
+    quotes = await db.quotes.find(business_filter(business_id, {})).limit(500).to_list(500)
+    runs = await db.automation_runs.find(business_filter(business_id, {})).sort("created_at", -1).limit(100).to_list(100)
+    suggestions = (await get_follow_up_suggestions(current_user)).get("items", [])
+    todays_jobs = [j for j in jobs if str(j.get("due_date") or j.get("scheduled_date") or j.get("date") or "")[:10] == today]
+    unassigned = [j for j in jobs if not (j.get("assigned_worker_id") or j.get("worker_id") or j.get("assigned_to")) and str(j.get("status") or "").lower() not in {"completed", "done", "cancelled", "canceled"}]
+    overdue_invoices = [i for i in invoices if str(i.get("status") or "").lower() == "overdue"]
+    open_quotes = [q for q in quotes if str(q.get("status") or "").lower() in {"open", "sent", "pending", "draft", "awaiting"}]
+    automation_issues = [r for r in runs if str(r.get("status") or "").lower() in {"failed", "error", "paused"}]
+    health_summary = f"{len(todays_jobs)} jobs today, {len(overdue_invoices)} overdue invoices, {len(unassigned)} unassigned jobs."
+    lines = ["Churvox Daily Digest", "", f"Business health snapshot: {health_summary}", f"• Today's jobs: {len(todays_jobs)}", f"• Overdue invoices: {len(overdue_invoices)}", f"• Open quotes: {len(open_quotes)}", f"• Unassigned jobs: {len(unassigned)}", f"• Urgent follow-ups: {len(suggestions)}", f"• Automation issues: {len(automation_issues)}", "", "Approval-first reminder: nothing sends automatically."]
+    return {"success": True, "today_jobs": todays_jobs[:30], "overdue_invoices": overdue_invoices[:30], "open_quotes": open_quotes[:30], "unassigned_jobs": unassigned[:30], "urgent_follow_ups": suggestions[:30], "automation_issues": automation_issues[:20], "business_health_summary": health_summary, "digest_text": "\n".join(lines)}
+
+
+@api_router.post("/smart-hub/digest-email/test")
+async def send_smart_hub_digest_test(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    role = str(current_user.get("role") or "").lower()
+    if role not in {"owner", "admin", "employer", "manager", "office_admin"}:
+        raise HTTPException(status_code=403, detail="Not allowed")
+    settings = await db.business_settings.find_one(business_filter(business_id, {})) or {}
+    to_email = str(settings.get("daily_digest_email") or current_user.get("email") or "").strip()
+    if not to_email:
+        raise HTTPException(status_code=400, detail="Set a daily digest email in settings first")
+    provider_ok = bool(os.environ.get("POSTMARK_API_TOKEN") or os.environ.get("POSTMARK_SERVER_TOKEN"))
+    if not provider_ok:
+        raise HTTPException(status_code=503, detail="Email provider not configured. Add Postmark credentials to enable test sends.")
+    digest = await smart_hub_digest(current_user)
+    if not digest.get("success"):
+        raise HTTPException(status_code=500, detail="Could not build digest")
+    await send_email(to_email=to_email, subject="Churvox Daily Digest (Test)", html_content=(digest.get("digest_text") or "").replace("\n", "<br/>"))
+    return {"success": True, "sent_to": to_email}
 
 app.include_router(api_router)
 
