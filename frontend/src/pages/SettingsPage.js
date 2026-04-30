@@ -57,6 +57,10 @@ export default function SettingsPage() {
   const [myobConnected, setMyobConnected] = useState(false);
   const [myobLoading, setMyobLoading] = useState(true);
 
+  const [googleReviewLink, setGoogleReviewLink] = useState("");
+  const [dailyDigestEnabled, setDailyDigestEnabled] = useState(false);
+  const [dailyDigestEmail, setDailyDigestEmail] = useState("");
+
   React.useEffect(() => {
     (async () => {
       const res = await get("/myob/settings");
@@ -95,6 +99,23 @@ export default function SettingsPage() {
     } else {
       toast.error(result.error);
     }
+  };
+
+
+  React.useEffect(() => {
+    (async () => {
+      const res = await get("/business/settings");
+      if (res?.success) {
+        setGoogleReviewLink(res.data.google_review_link || "");
+        setDailyDigestEnabled(!!res.data.daily_digest_enabled);
+        setDailyDigestEmail(res.data.daily_digest_email || "");
+      }
+    })();
+  }, [get]);
+
+  const saveBusinessSettings = async () => {
+    const res = await patch("/business/settings", { google_review_link: googleReviewLink, daily_digest_enabled: dailyDigestEnabled, daily_digest_email: dailyDigestEmail });
+    if (res?.success) toast.success("Business settings saved"); else toast.error(res?.error || "Could not save settings");
   };
 
   const handleSaveMyob = async (e) => {
@@ -249,6 +270,18 @@ export default function SettingsPage() {
             </form>
           </CardContent>
         </Card>
+
+
+        <Card className="card-surface" data-testid="business-settings-card">
+          <CardHeader><CardTitle className="text-lg font-heading">Reviews & Daily Digest</CardTitle><CardDescription>Manage Google review link and digest preferences.</CardDescription></CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2"><Label htmlFor="google_review_link">Google review link</Label><Input id="google_review_link" value={googleReviewLink} onChange={(e)=>setGoogleReviewLink(e.target.value)} placeholder="https://..." className="bg-secondary border-border max-w-xl" /></div>
+            <div className="space-y-2"><Label htmlFor="daily_digest_email">Daily digest email</Label><Input id="daily_digest_email" value={dailyDigestEmail} onChange={(e)=>setDailyDigestEmail(e.target.value)} placeholder="owner@business.com" className="bg-secondary border-border max-w-sm" /></div>
+            <label className="flex items-center gap-3 text-sm font-medium"><input type="checkbox" checked={dailyDigestEnabled} onChange={(e)=>setDailyDigestEnabled(e.target.checked)} /> Enable daily digest email preference</label>
+            <Button onClick={saveBusinessSettings} className="bg-primary hover:bg-primary/90">Save review & digest settings</Button>
+          </CardContent>
+        </Card>
+
 
         {/* MYOB Integration */}
         {isFeatureEnabled("myob") ? (
