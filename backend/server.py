@@ -4959,7 +4959,8 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
 async def create_draft_invoice_from_job(job_id: str, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in BUSINESS_ROLES:
+    role = str(current_user.get("role") or "").strip().lower()
+    if role not in {"owner", "admin", "employer", "manager", "office_admin"}:
         raise HTTPException(status_code=403, detail="Not authorized")
 
     business_id = _resolve_business_id(current_user)
@@ -4985,7 +4986,14 @@ async def create_draft_invoice_from_job(job_id: str, current_user: dict = Depend
     if existing_invoice_id:
         return {"success": True, "invoice_id": existing_invoice_id, "message": "Invoice already linked"}
 
-    subtotal = float(job.get("price") or 0)
+    pricing_type = str(job.get("pricing_type") or "fixed").strip().lower()
+    worked_hours = float(job.get("time_spent_minutes") or 0) / 60
+    estimated_hours = float(job.get("estimated_duration") or 0) / 60
+    hourly_rate = float(job.get("hourly_rate") or 0)
+    fixed_price = float(job.get("price") or 0)
+    subtotal = fixed_price
+    if pricing_type == "hourly" and hourly_rate > 0:
+        subtotal = hourly_rate * (worked_hours if worked_hours > 0 else estimated_hours)
     gst_rate = float(current_user.get("gst_rate") or 15)
     gst_amount = subtotal * (gst_rate / 100)
     total = subtotal + gst_amount
@@ -5002,6 +5010,7 @@ async def create_draft_invoice_from_job(job_id: str, current_user: dict = Depend
         "customer_email": job.get("customer_email") or "",
         "address": job.get("address") or "",
         "description": job.get("title") or "Job invoice",
+        "job_notes": job.get("description") or job.get("notes") or "",
         "subtotal": subtotal,
         "gst_rate": gst_rate,
         "gst_amount": gst_amount,
@@ -5009,8 +5018,9 @@ async def create_draft_invoice_from_job(job_id: str, current_user: dict = Depend
         "status": "draft",
         "job_id": str(obj_id),
         "pricing_type": job.get("pricing_type") or "fixed",
-        "hourly_rate": float(job.get("hourly_rate") or 0),
-        "hours_worked": float(job.get("time_spent_minutes") or 0) / 60,
+        "hourly_rate": hourly_rate,
+        "hours_worked": worked_hours if worked_hours > 0 else estimated_hours,
+        "fixed_price": fixed_price,
         "extras": job.get("extras") or [],
         "myob_sync_status": "not_synced" if invoice_mode == "myob_sync" else "not_synced",
         "source": "churvox_internal_draft" if invoice_mode == "myob_external" else "invoice",
@@ -5029,6 +5039,42 @@ async def create_draft_invoice_from_job(job_id: str, current_user: dict = Depend
     if invoice_mode == "myob_external":
         message = "Billing draft prepared. Create the official invoice in MYOB."
     return {"success": True, "invoice_id": invoice_id, "message": message, "invoice_mode": invoice_mode}
+
+
+@api_router.patch("/jobs/{job_id}/customer-status")
+async def update_job_customer_status(job_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    allowed_statuses = {"scheduled", "assigned", "on_the_way", "in_progress", "completed"}
+    status = str((payload or {}).get("customer_live_status") or (payload or {}).get("status") or "").strip().lower()
+    if status not in allowed_statuses:
+        raise HTTPException(status_code=400, detail="Invalid customer status")
+
+    business_id = await get_user_business_id(current_user)
+    role = str(current_user.get("role") or "").strip().lower()
+    user_id = str(current_user.get("id") or current_user.get("_id") or "")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    try:
+        obj_id = ObjectId(job_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid job ID")
+
+    job = await db.jobs.find_one(business_filter(business_id, {"_id": obj_id}))
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if role in {"worker"}:
+        assigned_worker_id = str(job.get("assigned_worker_id") or job.get("worker_id") or "")
+        if not assigned_worker_id or assigned_worker_id != user_id:
+            raise HTTPException(status_code=403, detail="Not allowed to update this job")
+    elif role not in {"owner", "admin", "employer", "manager", "office_admin"}:
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    update_doc = {"customer_live_status": status, "updated_at": datetime.utcnow()}
+    if status == "completed" and not job.get("completed_at"):
+        update_doc["completed_at"] = datetime.utcnow()
+    await db.jobs.update_one(business_filter(business_id, {"_id": obj_id}), {"$set": update_doc})
+    return {"success": True, "customer_live_status": status}
 
 @api_router.post("/jobs/{job_id}/assign")
 async def assign_job_worker(job_id: str, payload: dict, current_user: dict = Depends(get_current_user)):

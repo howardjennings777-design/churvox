@@ -30,7 +30,7 @@ export default function PublicCustomerPortalPage() {
   return <div className="mx-auto max-w-4xl space-y-4 p-4 md:p-6">
     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <h1 className="text-2xl font-black text-slate-900">Customer Portal</h1>
-      <p className="mt-1 text-sm text-slate-600">Track your service progress, quotes, and invoices.</p>
+      <p className="mt-1 text-sm text-slate-600">Track customer-safe service status updates, quotes, and invoices (no live GPS is shared).</p>
       <p className="mt-2 text-xs font-semibold text-slate-500">{data?.privacy_note}</p>
     </div>
     {data?.jobs?.length ? <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><h2 className="text-lg font-bold text-slate-900">Jobs</h2>{data.jobs.map((job) => <div key={job._id} className="mt-2 rounded-xl border border-slate-200 p-3 text-sm"><div className="font-semibold">{job.title}</div><div>Status: {nice(job.customer_live_status || job.status)}</div><div>Scheduled: {job.scheduled_date ? new Date(job.scheduled_date).toLocaleString() : "-"}</div>{job.customer_notes ? <p className="mt-1 text-slate-600">{job.customer_notes}</p> : null}</div>)}</div> : null}
