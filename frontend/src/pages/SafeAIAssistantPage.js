@@ -105,14 +105,14 @@ function HealthBar({ label, score, reason, to }) {
 
 function ActionCard({ item }) {
   return (
-    <div className="rounded-2xl border border-slate-300 bg-white p-4 shadow-md shadow-slate-300/20">
+    <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm shadow-slate-200/80">
       <div className="flex items-start justify-between gap-2">
         <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-blue-700">{item.type || "Action"}</span>
         {item.meta ? <span className="text-[11px] font-bold text-slate-500">{item.meta}</span> : null}
       </div>
-      <p className="mt-3 text-sm font-black text-slate-950">{item.title}</p>
-      <p className="mt-1 text-xs font-semibold leading-5 text-slate-600">{item.text}</p>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <p className="mt-2 text-sm font-black text-slate-900">{item.title}</p>
+      <p className="mt-1 text-xs font-semibold leading-5 text-slate-700">{item.text}</p>
+      <div className="mt-2.5 flex flex-wrap gap-2">
         <Link to={item.to} className="inline-flex rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-black text-white hover:bg-blue-700">{item.cta}</Link>
         {item.copy ? <button type="button" onClick={() => navigator.clipboard?.writeText(item.copy)} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-black text-slate-700">Copy draft</button> : null}
       </div>
@@ -283,7 +283,7 @@ export default function SafeAIAssistantPage() {
   }, [data]);
 
   const assistantResponses = {
-    attention: model.urgentActions.length ? model.urgentActions.map((a) => `• ${a.title}: ${a.text}`).join("\n") : "Nothing urgent right now — your business is looking clear.",
+    attention: model.urgentActions.length ? model.urgentActions.map((a) => `• ${a.title}: ${a.text}`).join("\n") : "All clear. No urgent actions right now.",
     invoice: model.overdueInvoices.length ? `Draft reminder ready for ${model.overdueInvoices.length} overdue invoice(s). Open Invoices, review the customer, then send only after approval.` : "No overdue invoices found right now.",
     jobs: model.todayJobs.length ? `Today has ${model.todayJobs.length} job(s), ${model.jobsNeedingAssignment.length} needing assignment, and ${model.jobsInProgress.length} currently in progress.` : "No jobs scheduled for today from the loaded data.",
     action: model.jobsNeedingAssignment.length ? `${model.jobsNeedingAssignment.length} job(s) need assignment. Start with the oldest scheduled job and assign a worker.` : "No unassigned active jobs found.",
@@ -300,13 +300,13 @@ export default function SafeAIAssistantPage() {
 
   return (
     <Layout>
-      <div className="cx-page space-y-5 pb-24 md:pb-8">
+      <div className="cx-page space-y-4 pb-20 md:pb-8">
         <section className="overflow-hidden rounded-3xl border border-slate-900/20 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-6 text-white shadow-2xl">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">Command Centre</p>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">Smart Hub</p>
               <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">Smart Hub</h1>
-              <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-slate-300">Your daily command centre for jobs, invoices, quotes, team activity, follow-ups, automation, and safe AI actions.</p>
+              <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-slate-300">Your premium command centre for jobs, cashflow, team activity, automation, and safe AI recommendations.</p>
             </div>
             <div className="min-w-[168px] rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white via-slate-50 to-slate-100 p-3 text-center shadow-lg shadow-slate-900/20">
               <p className="text-xs font-black uppercase tracking-wide text-slate-950">Business Health</p>
@@ -346,17 +346,18 @@ export default function SafeAIAssistantPage() {
           <SnapshotCard title="Urgent follow-ups" value={model.urgentActions.length} hint="Action centre priorities" icon={Sparkles} to="/follow-ups" />
         </section>
 
-        <section className="grid gap-3 xl:grid-cols-[1fr_1fr]">
+        <section className="grid gap-3 xl:grid-cols-2">
           <div className="rounded-2xl border border-slate-300 bg-white p-4 shadow-md shadow-slate-300/30">
-            <h2 className="text-lg font-black text-slate-950">Business Health</h2>
+            <h2 className="text-lg font-black text-slate-950">Business Health Summary</h2>
+            <p className="mt-1 text-sm font-semibold text-slate-600">Advanced scoring across jobs, cashflow, quotes, team, automation, and follow-ups.</p>
             <div className="mt-3 grid gap-2">
-              <HealthBar label="Overall score" score={digestData?.health_score?.overall?.score ?? model.health.overallScore} reason="Across jobs, cashflow, quotes, team, automation, and follow-ups" />
+              <HealthBar label="Overall score" score={digestData?.health_score?.overall?.score ?? model.health.overallScore} reason="Live snapshot from Smart Hub activity" />
             </div>
           </div>
           <div className="rounded-3xl border border-slate-300 bg-white p-5 shadow-md shadow-slate-300/30">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-black text-slate-950">Owner Daily Digest</h2>
+                <h2 className="text-lg font-black text-slate-950">Daily Digest</h2>
                 <p className="text-sm font-semibold text-slate-600">A quick read of today’s work, cashflow, team, and automation risks.</p>
               </div>
               <div className="flex gap-2">
@@ -367,11 +368,11 @@ export default function SafeAIAssistantPage() {
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {model.dailyDigest.map((line) => <div key={line} className="rounded-2xl border border-slate-300 bg-slate-100 px-4 py-3 text-sm font-bold text-slate-800">{line}</div>)}
             </div>
-            <div className="mt-3 rounded-xl border border-slate-300 bg-slate-100 p-3 text-xs font-semibold text-slate-700">{digestPreview || "No digest available yet."}</div>
+            <div className="mt-3 rounded-xl border border-slate-300 bg-slate-100 p-3 text-xs font-semibold text-slate-700">{digestPreview || "Digest will appear after more activity is available."}</div>
           </div>
           <div className="rounded-3xl border border-slate-300 bg-white p-5 shadow-md shadow-slate-300/30">
-            <h2 className="text-lg font-black text-slate-950">Daily Digest Metrics</h2>
-            <p className="mt-1 text-sm font-semibold text-slate-600">Digest-backed with safe fallback data.</p>
+            <h2 className="text-lg font-black text-slate-950">Advanced Health Score</h2>
+            <p className="mt-1 text-sm font-semibold text-slate-600">Detailed scorecards with compact fallback data.</p>
             <div className="mt-3 grid gap-2">
               <HealthBar label="Jobs" score={digestData?.health_score?.jobs?.score ?? model.health.jobHealth} reason={digestData?.health_score?.jobs?.reason || `${model.overdueJobs.length} overdue · ${model.jobsNeedingAssignment.length} unassigned`} to={digestData?.health_score?.jobs?.route || "/jobs"} />
               <HealthBar label="Cashflow" score={digestData?.health_score?.cashflow?.score ?? model.health.cashflowHealth} reason={digestData?.health_score?.cashflow?.reason || `${model.overdueInvoices.length} overdue · ${model.unpaidInvoices.length} unpaid`} to={digestData?.health_score?.cashflow?.route || "/invoices"} />
@@ -387,7 +388,7 @@ export default function SafeAIAssistantPage() {
           <h2 className="text-lg font-black text-slate-950">Urgent Action Centre</h2>
           <p className="mt-1 text-sm font-semibold text-slate-600">The highest-impact actions to keep jobs, money, and customers moving.</p>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {model.urgentActions.length ? model.urgentActions.map((item) => <ActionCard key={item.key} item={item} />) : <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-center text-sm font-semibold text-slate-600">Nothing urgent right now — your business is looking clear.</p>}
+            {model.urgentActions.length ? model.urgentActions.map((item) => <ActionCard key={item.key} item={item} />) : <p className="col-span-full rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2.5 text-center text-sm font-semibold text-slate-700">All clear. No urgent actions right now.</p>}
           </div>
         </section>
 
@@ -407,7 +408,7 @@ export default function SafeAIAssistantPage() {
           </div>
 
           <div className="rounded-3xl border border-slate-300 bg-white p-5 shadow-md shadow-slate-300/30">
-            <h2 className="text-lg font-black text-slate-950">Automation Command Centre</h2>
+            <h2 className="text-lg font-black text-slate-950">Automation Smart Hub</h2>
             <div className="mt-3 grid grid-cols-3 gap-2 text-center">
               <div className="rounded-xl border border-slate-300 bg-slate-50 p-3"><p className="text-xs text-slate-600">Active rules</p><p className="text-xl font-black text-slate-900">{digestData?.active_rules_count ?? model.activeRules}</p></div>
               <div className="rounded-xl border border-slate-300 bg-slate-50 p-3"><p className="text-xs text-slate-600">Recent runs</p><p className="text-xl font-black text-slate-900">{data.runs.length}</p></div>
@@ -429,7 +430,7 @@ export default function SafeAIAssistantPage() {
           <div className="rounded-3xl border border-slate-300 bg-white p-5 shadow-md shadow-slate-300/30">
             <h2 className="text-lg font-black text-slate-950">Cashflow & Follow-ups</h2>
             <p className="mt-2 text-sm font-semibold text-slate-800">{model.unpaidInvoices.length} unpaid invoices, {model.openQuotes.length} open quotes, and {model.openFollowUps.length} active follow-ups.</p>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2.5 flex flex-wrap gap-2">
               <Link to="/invoices" className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-800">Review unpaid invoices</Link>
               <Link to="/quotes" className="rounded-lg border border-slate-400 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-100">Review open quotes</Link>
               <Link to="/follow-ups" className="rounded-lg border border-slate-400 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-100">Open follow-ups</Link>
@@ -439,7 +440,7 @@ export default function SafeAIAssistantPage() {
           <div className="rounded-3xl border border-slate-300 bg-white p-5 shadow-md shadow-slate-300/30">
             <h2 className="text-lg font-black text-slate-950">Jobs, Team & Route Planning</h2>
             <p className="mt-2 text-sm font-semibold text-slate-800">{model.jobsNeedingAssignment.length} jobs need worker assignment. {model.todayJobs.length} jobs are on today's schedule.</p>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2.5 flex flex-wrap gap-2">
               <Link to="/jobs/new" className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-800">New job</Link>
               <Link to="/jobs" className="rounded-lg border border-slate-400 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-100">View jobs</Link>
               <Link to="/schedule" className="rounded-lg border border-slate-400 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-100">Route planner</Link>
@@ -451,7 +452,7 @@ export default function SafeAIAssistantPage() {
           <h2 className="text-lg font-black text-slate-950">Smart Follow-up Suggestions</h2>
           <p className="mt-1 text-sm font-semibold text-slate-600">Approval-first drafts only. Churvox never sends customer messages automatically.</p>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {(model.smartSuggestions.length ? model.smartSuggestions : apiSuggestions.slice(0, 6).map((s) => ({ key: s.key || s.id, title: s.title, text: s.reason, to: s.route || "/follow-ups", cta: "Open", copy: s.draft_text, type: "Suggestion" }))).length ? (model.smartSuggestions.length ? model.smartSuggestions : apiSuggestions.slice(0, 6).map((s) => ({ key: s.key || s.id, title: s.title, text: s.reason, to: s.route || "/follow-ups", cta: "Open", copy: s.draft_text, type: "Suggestion" }))).map((item) => <ActionCard key={item.key} item={item} />) : <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-3 text-center text-sm font-semibold text-slate-600">No smart follow-up suggestions available yet.</p>}
+            {(model.smartSuggestions.length ? model.smartSuggestions : apiSuggestions.slice(0, 6).map((s) => ({ key: s.key || s.id, title: s.title, text: s.reason, to: s.route || "/follow-ups", cta: "Open", copy: s.draft_text, type: "Suggestion" }))).length ? (model.smartSuggestions.length ? model.smartSuggestions : apiSuggestions.slice(0, 6).map((s) => ({ key: s.key || s.id, title: s.title, text: s.reason, to: s.route || "/follow-ups", cta: "Open", copy: s.draft_text, type: "Suggestion" }))).map((item) => <ActionCard key={item.key} item={item} />) : <p className="col-span-full rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2.5 text-center text-sm font-semibold text-slate-700">No smart suggestions right now.</p>}
           </div>
         </section>
       </div>
