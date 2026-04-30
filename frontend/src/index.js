@@ -23,12 +23,14 @@ import { startClientAreaGroupingEnhancer } from "./utils/clientAreaGroupingEnhan
 import { startAutomationActionFixer } from "./utils/automationActionFixer";
 import { startWorkerFlowEnhancer } from "./utils/workerFlowEnhancer";
 import { startAskChurvoxAnswerFixer } from "./utils/askChurvoxAnswerFixer";
+import { startSmartHubReadabilityFixer } from "./utils/smartHubReadabilityFixer";
 
 startTeamTownGroupingEnhancer();
 startClientAreaGroupingEnhancer();
 startAutomationActionFixer();
 startWorkerFlowEnhancer();
 startAskChurvoxAnswerFixer();
+startSmartHubReadabilityFixer();
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
