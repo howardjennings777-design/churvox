@@ -7,7 +7,7 @@ const checks = [
   "Clients, jobs, quotes and invoices",
   "Payroll workflow",
   "Automation rules and test runs",
-  "Reports and live business health",
+  "Launch check and live business health",
   "Notifications and timestamps",
   "Mobile/PWA layout",
 ];
@@ -36,11 +36,11 @@ export default function LaunchAuditPage() {
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-3">
-          <a href="/admin" className="rounded-3xl border border-white/10 bg-white/[0.06] p-5 font-black text-white hover:bg-white/[0.10]">
-            <ShieldCheck className="mb-3 h-6 w-6 text-cyan-300" /> Owner dashboard
+          <a href="/smart-hub" className="rounded-3xl border border-white/10 bg-white/[0.06] p-5 font-black text-white hover:bg-white/[0.10]">
+            <ShieldCheck className="mb-3 h-6 w-6 text-cyan-300" /> Smart Hub
           </a>
-          <a href="/reports" className="rounded-3xl border border-white/10 bg-white/[0.06] p-5 font-black text-white hover:bg-white/[0.10]">
-            <Activity className="mb-3 h-6 w-6 text-cyan-300" /> Reports
+          <a href="/launch-check" className="rounded-3xl border border-white/10 bg-white/[0.06] p-5 font-black text-white hover:bg-white/[0.10]">
+            <Activity className="mb-3 h-6 w-6 text-cyan-300" /> Launch check
           </a>
           <a href="/automation" className="rounded-3xl border border-white/10 bg-white/[0.06] p-5 font-black text-white hover:bg-white/[0.10]">
             <ExternalLink className="mb-3 h-6 w-6 text-cyan-300" /> Automation
