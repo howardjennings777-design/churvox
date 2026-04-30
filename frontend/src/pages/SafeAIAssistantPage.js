@@ -15,6 +15,10 @@ const unwrap = (settled) => {
   if (settled?.status !== "fulfilled" || !settled.value?.success) return null;
   return settled.value?.data || {};
 };
+const withTimeout = (promise, ms = 7000) => Promise.race([
+  promise,
+  new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out")), ms)),
+]);
 
 export default function SafeAIAssistantPage() {
   const { get, post, del } = useApi();
@@ -32,12 +36,12 @@ export default function SafeAIAssistantPage() {
   const loadAll = async () => {
     const ws = [];
     const calls = await Promise.allSettled([
-      get("/ai/actions"),
-      get("/ai/drafts"),
-      get("/ai/automation-suggestions"),
-      get("/ai/daily-brief"),
-      get("/ai/business-memory"),
-      get("/profit/snapshot"),
+      withTimeout(get("/ai/actions"), 5000),
+      withTimeout(get("/ai/drafts"), 5000),
+      withTimeout(get("/ai/automation-suggestions"), 5000),
+      withTimeout(get("/ai/daily-brief"), 5000),
+      withTimeout(get("/ai/business-memory"), 5000),
+      withTimeout(get("/profit/snapshot"), 5000),
     ]);
 
     const actionsPayload = unwrap(calls[0]);
@@ -71,8 +75,17 @@ export default function SafeAIAssistantPage() {
 
   const run = async (label, fn) => {
     setBusy(label);
-    try { await fn(); }
-    finally { setBusy(""); await loadAll(); }
+    try {
+      const res = await withTimeout(fn(), 7000);
+      if (res && res.success === false) {
+        setWarnings((prev) => [...prev, `${label} failed: ${res.error || "backend unavailable"}`]);
+      }
+    } catch (err) {
+      setWarnings((prev) => [...prev, `${label} timed out or failed. Safe fallback kept the page usable.`]);
+    } finally {
+      setBusy("");
+      await loadAll();
+    }
   };
 
   const mutateAction = (id, op) => run(`action-${op}`, () => post(`/ai/actions/${id}/${op}`, {}));
