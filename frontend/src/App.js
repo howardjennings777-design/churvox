@@ -53,6 +53,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
 const TIMESHEETS_PATH = "/timesheets";
+const SMART_HUB_PATH = "/smart-hub";
 const isPlatformOwnerEmail = (user) => String(user?.email || "").trim().toLowerCase() === PLATFORM_OWNER_EMAIL;
 
 const Spinner = () => (
@@ -104,7 +105,7 @@ function TeamRoute({ children }) {
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
   if (isPayroll) return <Navigate to={TIMESHEETS_PATH} replace />;
   if (mustChoosePlan || !hasAppAccess) return <Navigate to="/plans" replace />;
-  if (normalizedRole !== "owner" && normalizedRole !== "manager") return <Navigate to="/dashboard" replace />;
+  if (normalizedRole !== "owner" && normalizedRole !== "manager") return <Navigate to={SMART_HUB_PATH} replace />;
   return children;
 }
 
@@ -116,7 +117,7 @@ function AIRoute({ children }) {
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
   if (isPayroll) return <Navigate to={TIMESHEETS_PATH} replace />;
   if (mustChoosePlan || !hasAppAccess) return <Navigate to="/plans" replace />;
-  if (!["owner", "employer", "manager", "office_admin"].includes(normalizedRole)) return <Navigate to="/dashboard" replace />;
+  if (!["owner", "employer", "manager", "office_admin"].includes(normalizedRole)) return <Navigate to={SMART_HUB_PATH} replace />;
   return children;
 }
 
@@ -134,7 +135,7 @@ function WorkerRoute({ children }) {
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
-  if (!isWorker) return <Navigate to="/dashboard" replace />;
+  if (!isWorker) return <Navigate to={SMART_HUB_PATH} replace />;
   return children;
 }
 
@@ -236,14 +237,14 @@ function App() {
 
           <Route path="/owner-login" element={<Navigate to="/login" replace />} />
           <Route path="/admin/login" element={<Navigate to="/login" replace />} />
-          <Route path="/owner" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/owner" element={<Navigate to={SMART_HUB_PATH} replace />} />
           <Route path="/owner/login" element={<Navigate to="/login" replace />} />
           <Route path="/dispatch" element={<Navigate to="/schedule" replace />} />
           <Route path="/calendar" element={<Navigate to="/schedule" replace />} />
           <Route path="/payroll" element={<Navigate to={TIMESHEETS_PATH} replace />} />
 
           <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
-          <Route path="/owner/dashboard" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/owner/dashboard" element={<Navigate to={SMART_HUB_PATH} replace />} />
           <Route path="/platform-dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
           <Route path="/app-owner" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
           <Route path="/admin/launch-audit" element={<PlatformAdminRoute><LaunchAuditPage /></PlatformAdminRoute>} />
@@ -251,9 +252,10 @@ function App() {
           <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
           <Route path="/owner/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
 
-          <Route path="/dashboard" element={<AIRoute><AIAssistantPage /></AIRoute>} />
-          <Route path="/ai-assistant" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/overview" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/smart-hub" element={<AIRoute><AIAssistantPage /></AIRoute>} />
+          <Route path="/dashboard" element={<Navigate to={SMART_HUB_PATH} replace />} />
+          <Route path="/ai-assistant" element={<Navigate to={SMART_HUB_PATH} replace />} />
+          <Route path="/overview" element={<Navigate to={SMART_HUB_PATH} replace />} />
           <Route path="/jobs" element={<BusinessRoute><JobsPage /></BusinessRoute>} />
           <Route path="/schedule" element={<BusinessRoute><SchedulePage /></BusinessRoute>} />
           <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
