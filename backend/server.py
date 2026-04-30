@@ -8287,10 +8287,63 @@ _AUTOMATION_TEMPLATES = [
     {"id": "client_created_timeline", "name": "New client → timeline entry", "trigger": "client.created", "action": "timeline.create", "description": "Records new client activity in the business timeline."},
 ]
 
+_DEEP_AUTOMATION_TEMPLATES = [
+    {"key": "job_completed_invoice_draft", "title": "Job completed → create invoice draft", "description": "When a job is completed, create a draft invoice for owner/admin review.", "trigger": "job.completed", "action": "invoice.create_draft", "approval_first": True},
+    {"key": "invoice_overdue_reminder", "title": "Invoice overdue → suggest reminder", "description": "When an invoice is overdue, create a reminder suggestion draft only.", "trigger": "invoice.overdue", "action": "suggest.invoice_reminder", "approval_first": True},
+    {"key": "quote_sent_followup", "title": "Quote sent 3 days → suggest follow-up", "description": "When a quote has been sent for 3+ days, create a follow-up suggestion draft.", "trigger": "quote.sent_3d", "action": "suggest.quote_followup", "approval_first": True},
+    {"key": "job_due_tomorrow_owner_reminder", "title": "Job due tomorrow → remind owner/admin", "description": "Create an internal reminder when tomorrow's job needs owner/admin visibility.", "trigger": "job.due_tomorrow", "action": "notification.create", "approval_first": False},
+    {"key": "worker_completed_job_notify", "title": "Worker completed job → notify owner/admin", "description": "When a worker marks a job completed, notify owner/admin.", "trigger": "worker.job_completed", "action": "notification.create", "approval_first": False},
+    {"key": "new_customer_welcome_checkin", "title": "New customer added → suggest welcome/check-in", "description": "Create a welcome/check-in draft suggestion for newly added customers.", "trigger": "customer.created", "action": "suggest.customer_checkin", "approval_first": True},
+    {"key": "job_completed_review_request", "title": "Job completed → draft review request", "description": "Create a customer review request draft after completed work.", "trigger": "job.completed", "action": "suggest.review_request", "approval_first": True},
+]
+
 @api_router.get("/automation/templates")
 async def automation_templates(current_user: dict = Depends(get_current_user)):
     _automation_require_manager(current_user)
-    return {"success": True, "templates": _AUTOMATION_TEMPLATES}
+    business_id = _automation_business_id(current_user)
+    docs = await db.automation_rules.find({"business_id": business_id, "template_key": {"$exists": True}}).to_list(200)
+    enabled = {str(d.get("template_key") or "") for d in docs}
+    templates = []
+    for t in _DEEP_AUTOMATION_TEMPLATES:
+        row = dict(t)
+        row["id"] = t["key"]
+        row["name"] = t["title"]
+        row["enabled"] = t["key"] in enabled
+        templates.append(row)
+    return {"success": True, "templates": templates}
+
+@api_router.post("/automation/templates/{template_key}/enable")
+async def automation_enable_template(template_key: str, current_user: dict = Depends(get_current_user)):
+    _automation_require_manager(current_user)
+    role = _automation_role(current_user)
+    if role not in {"owner", "manager", "office_admin", "admin", "employer", "platform_owner"}:
+        raise HTTPException(status_code=403, detail="Not allowed")
+    business_id = _automation_business_id(current_user)
+    template = next((t for t in _DEEP_AUTOMATION_TEMPLATES if t["key"] == str(template_key or "").strip()), None)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    existing = await db.automation_rules.find_one({"business_id": business_id, "template_key": template["key"]})
+    if existing:
+        return {"success": True, "already_enabled": True, "rule": _automation_clean_doc(existing)}
+    now = _automation_now()
+    rule = {
+        "id": str(_automation_uuid.uuid4()),
+        "business_id": business_id,
+        "template_key": template["key"],
+        "name": template["title"],
+        "description": template["description"],
+        "trigger": template["trigger"],
+        "action": template["action"],
+        "enabled": True,
+        "approval_first": bool(template.get("approval_first", True)),
+        "customer_facing_auto_send": False,
+        "config": {"mode": "suggestion_only" if template.get("approval_first") else "internal_notify"},
+        "created_by": _automation_user_id(current_user),
+        "created_at": now,
+        "updated_at": now,
+    }
+    await db.automation_rules.insert_one(rule)
+    return {"success": True, "already_enabled": False, "rule": _automation_clean_doc(rule)}
 
 @api_router.get("/automation/rules")
 async def automation_list_rules(current_user: dict = Depends(get_current_user)):
@@ -10444,15 +10497,34 @@ async def smart_hub_digest(current_user: dict = Depends(get_current_user)):
     invoices = await db.invoices.find(business_filter(business_id, {})).limit(500).to_list(500)
     quotes = await db.quotes.find(business_filter(business_id, {})).limit(500).to_list(500)
     runs = await db.automation_runs.find(business_filter(business_id, {})).sort("created_at", -1).limit(100).to_list(100)
+    rules = await db.automation_rules.find(business_filter(business_id, {})).limit(200).to_list(200)
+    workers = await db.users.find(business_filter(business_id, {"role": "worker"})).limit(300).to_list(300)
     suggestions = (await get_follow_up_suggestions(current_user)).get("items", [])
     todays_jobs = [j for j in jobs if str(j.get("due_date") or j.get("scheduled_date") or j.get("date") or "")[:10] == today]
     unassigned = [j for j in jobs if not (j.get("assigned_worker_id") or j.get("worker_id") or j.get("assigned_to")) and str(j.get("status") or "").lower() not in {"completed", "done", "cancelled", "canceled"}]
     overdue_invoices = [i for i in invoices if str(i.get("status") or "").lower() == "overdue"]
     open_quotes = [q for q in quotes if str(q.get("status") or "").lower() in {"open", "sent", "pending", "draft", "awaiting"}]
     automation_issues = [r for r in runs if str(r.get("status") or "").lower() in {"failed", "error", "paused"}]
+    assigned_today = set(str(j.get("assigned_worker_id") or j.get("worker_id") or j.get("assigned_to") or "") for j in todays_jobs if (j.get("assigned_worker_id") or j.get("worker_id") or j.get("assigned_to")))
+    jobs_score = max(0, 100 - (len(unassigned) * 10))
+    cashflow_score = max(0, 100 - (len(overdue_invoices) * 15))
+    quote_score = max(0, 100 - (len(open_quotes) * 2))
+    team_score = max(0, 100 - max(0, len(todays_jobs) - len(assigned_today)) * 12)
+    automation_score = max(0, 100 - (len(automation_issues) * 20))
+    followup_score = max(0, 100 - (len(suggestions) * 7))
+    overall_score = int(round((jobs_score + cashflow_score + quote_score + team_score + automation_score + followup_score) / 6))
+    health_score = {
+        "overall": {"score": overall_score, "reason": f"{len(todays_jobs)} jobs today, {len(overdue_invoices)} overdue invoices.", "recommended_action": "Review today's assignments and overdue invoices.", "route": "/smart-hub"},
+        "jobs": {"score": jobs_score, "reason": f"{len(unassigned)} jobs need assignment/action.", "recommended_action": "Assign workers to open jobs.", "route": "/jobs"},
+        "cashflow": {"score": cashflow_score, "reason": f"{len(overdue_invoices)} overdue invoices found.", "recommended_action": "Review overdue invoices and send approved reminders.", "route": "/invoices"},
+        "quote_pipeline": {"score": quote_score, "reason": f"{len(open_quotes)} open quotes in pipeline.", "recommended_action": "Follow up open quotes older than 3 days.", "route": "/quotes"},
+        "team_activity": {"score": team_score, "reason": f"{len(assigned_today)} workers assigned today out of {len(todays_jobs)} jobs.", "recommended_action": "Confirm job assignments for today.", "route": "/team"},
+        "automation_health": {"score": automation_score, "reason": f"{len(automation_issues)} failed/paused automation runs.", "recommended_action": "Open automation runs and resolve failures.", "route": "/automation/runs"},
+        "follow_up_health": {"score": followup_score, "reason": f"{len(suggestions)} urgent follow-up suggestions.", "recommended_action": "Review follow-ups and approve next contact drafts.", "route": "/follow-ups"},
+    }
     health_summary = f"{len(todays_jobs)} jobs today, {len(overdue_invoices)} overdue invoices, {len(unassigned)} unassigned jobs."
     lines = ["Churvox Daily Digest", "", f"Business health snapshot: {health_summary}", f"• Today's jobs: {len(todays_jobs)}", f"• Overdue invoices: {len(overdue_invoices)}", f"• Open quotes: {len(open_quotes)}", f"• Unassigned jobs: {len(unassigned)}", f"• Urgent follow-ups: {len(suggestions)}", f"• Automation issues: {len(automation_issues)}", "", "Approval-first reminder: nothing sends automatically."]
-    return {"success": True, "today_jobs": todays_jobs[:30], "overdue_invoices": overdue_invoices[:30], "open_quotes": open_quotes[:30], "unassigned_jobs": unassigned[:30], "urgent_follow_ups": suggestions[:30], "automation_issues": automation_issues[:20], "business_health_summary": health_summary, "digest_text": "\n".join(lines)}
+    return {"success": True, "today_jobs": todays_jobs[:30], "overdue_invoices": overdue_invoices[:30], "open_quotes": open_quotes[:30], "workers_assigned_today": len(assigned_today), "jobs_needing_assignment_action": unassigned[:30], "automation_issues": automation_issues[:20], "urgent_follow_ups": suggestions[:30], "recommended_actions": [{"title": "Assign today's unassigned jobs", "route": "/jobs", "count": len(unassigned)}, {"title": "Review overdue invoices", "route": "/invoices", "count": len(overdue_invoices)}, {"title": "Resolve failed automation runs", "route": "/automation/runs", "count": len(automation_issues)}], "active_templates_count": len([r for r in rules if r.get("template_key")]), "active_rules_count": len([r for r in rules if r.get("enabled", True)]), "failed_runs_count": len(automation_issues), "team_workers_count": len(workers), "health_score": health_score, "business_health_summary": health_summary, "digest_text": "\n".join(lines)}
 
 
 @api_router.post("/smart-hub/digest-email/test")

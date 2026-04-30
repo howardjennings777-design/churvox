@@ -129,6 +129,7 @@ export default function SafeAIAssistantPage() {
   const [assistantMode, setAssistantMode] = useState("attention");
   const [apiSuggestions, setApiSuggestions] = useState([]);
   const [digestPreview, setDigestPreview] = useState("");
+  const [digestData, setDigestData] = useState({});
 
   const fetchHubData = useCallback(async (manual = false) => {
     if (manual) setRefreshing(true); else setLoading(true);
@@ -156,7 +157,9 @@ export default function SafeAIAssistantPage() {
     };
     setData(next);
     setApiSuggestions(safeArray(unwrap(requests[8]), "items"));
-    setDigestPreview((unwrap(requests[9]) || {}).digest_text || "");
+    const digestPayload = unwrap(requests[9]) || {};
+    setDigestData(digestPayload);
+    setDigestPreview(digestPayload.digest_text || "");
     const sections = ["Jobs", "Quotes", "Invoices", "Team", "Automation rules", "Automation runs", "Clients", "Follow-ups", "Suggestions", "Digest"];
     const failures = requests.flatMap((r, i) => (r.status === "fulfilled" && r.value?.success ? [] : [sections[i]]));
     setLoadErrors(failures);
@@ -298,7 +301,7 @@ export default function SafeAIAssistantPage() {
             </div>
             <div className="min-w-[180px] rounded-3xl border border-white/15 bg-white/10 p-4 text-center backdrop-blur">
               <p className="text-xs font-black uppercase tracking-wide text-slate-300">Business Health</p>
-              <p className="mt-1 text-4xl font-black text-white">{model.health.overallScore}%</p>
+              <p className="mt-1 text-4xl font-black text-white">{digestData?.health_score?.overall?.score ?? model.health.overallScore}%</p>
               <p className="text-xs font-semibold text-slate-300">{model.urgentActions.length} action{model.urgentActions.length === 1 ? "" : "s"} need attention</p>
             </div>
             <button onClick={() => fetchHubData(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-white/15 disabled:opacity-60">
@@ -336,13 +339,14 @@ export default function SafeAIAssistantPage() {
 
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-black text-slate-950">Advanced Health Score</h2>
-            <p className="mt-1 text-sm font-semibold text-slate-500">Category scores are calculated from the loaded business data.</p>
+            <p className="mt-1 text-sm font-semibold text-slate-500">Category scores are digest-backed with fallback if partial data is unavailable.</p>
             <div className="mt-4 grid gap-3">
-              <HealthBar label="Jobs" score={model.health.jobHealth} reason={`${model.overdueJobs.length} overdue · ${model.jobsNeedingAssignment.length} unassigned`} to="/jobs" />
-              <HealthBar label="Cashflow" score={model.health.cashflowHealth} reason={`${model.overdueInvoices.length} overdue · ${model.unpaidInvoices.length} unpaid`} to="/invoices" />
-              <HealthBar label="Quote pipeline" score={model.health.quoteHealth} reason={`${model.staleQuotes.length} stale · ${model.openQuotes.length} open`} to="/quotes" />
-              <HealthBar label="Automation" score={model.health.automationHealth} reason={`${model.failedRuns.length} issues · ${model.activeRules} active`} to="/automation" />
-              <HealthBar label="Follow-ups" score={model.health.followUpHealth} reason={`${model.overdueFollowUps.length} overdue · ${model.openFollowUps.length} open`} to="/follow-ups" />
+              <HealthBar label="Jobs" score={digestData?.health_score?.jobs?.score ?? model.health.jobHealth} reason={digestData?.health_score?.jobs?.reason || `${model.overdueJobs.length} overdue · ${model.jobsNeedingAssignment.length} unassigned`} to={digestData?.health_score?.jobs?.route || "/jobs"} />
+              <HealthBar label="Cashflow" score={digestData?.health_score?.cashflow?.score ?? model.health.cashflowHealth} reason={digestData?.health_score?.cashflow?.reason || `${model.overdueInvoices.length} overdue · ${model.unpaidInvoices.length} unpaid`} to={digestData?.health_score?.cashflow?.route || "/invoices"} />
+              <HealthBar label="Quote pipeline" score={digestData?.health_score?.quote_pipeline?.score ?? model.health.quoteHealth} reason={digestData?.health_score?.quote_pipeline?.reason || `${model.staleQuotes.length} stale · ${model.openQuotes.length} open`} to={digestData?.health_score?.quote_pipeline?.route || "/quotes"} />
+              <HealthBar label="Team activity" score={digestData?.health_score?.team_activity?.score ?? model.health.teamHealth} reason={digestData?.health_score?.team_activity?.reason || `${model.assignedToday} assigned today`} to={digestData?.health_score?.team_activity?.route || "/team"} />
+              <HealthBar label="Automation" score={digestData?.health_score?.automation_health?.score ?? model.health.automationHealth} reason={digestData?.health_score?.automation_health?.reason || `${model.failedRuns.length} issues · ${model.activeRules} active`} to={digestData?.health_score?.automation_health?.route || "/automation"} />
+              <HealthBar label="Follow-ups" score={digestData?.health_score?.follow_up_health?.score ?? model.health.followUpHealth} reason={digestData?.health_score?.follow_up_health?.reason || `${model.overdueFollowUps.length} overdue · ${model.openFollowUps.length} open`} to={digestData?.health_score?.follow_up_health?.route || "/follow-ups"} />
             </div>
           </div>
         </section>
@@ -381,9 +385,9 @@ export default function SafeAIAssistantPage() {
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-black text-slate-950">Automation Command Centre</h2>
             <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-              <div className="rounded-xl border border-slate-200 p-3"><p className="text-xs text-slate-500">Active rules</p><p className="text-xl font-black text-slate-900">{model.activeRules}</p></div>
+              <div className="rounded-xl border border-slate-200 p-3"><p className="text-xs text-slate-500">Active rules</p><p className="text-xl font-black text-slate-900">{digestData?.active_rules_count ?? model.activeRules}</p></div>
               <div className="rounded-xl border border-slate-200 p-3"><p className="text-xs text-slate-500">Recent runs</p><p className="text-xl font-black text-slate-900">{data.runs.length}</p></div>
-              <div className="rounded-xl border border-slate-200 p-3"><p className="text-xs text-slate-500">Failed runs</p><p className="text-xl font-black text-rose-600">{model.failedRuns.length}</p></div>
+              <div className="rounded-xl border border-slate-200 p-3"><p className="text-xs text-slate-500">Failed runs</p><p className="text-xl font-black text-rose-600">{digestData?.failed_runs_count ?? model.failedRuns.length}</p></div>
             </div>
             <div className="mt-4 grid gap-2 text-xs font-bold text-slate-600">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><ClipboardCheck className="mr-2 inline h-4 w-4 text-blue-600" />Template: completed job → invoice draft</div>

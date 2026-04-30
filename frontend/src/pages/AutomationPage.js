@@ -198,6 +198,7 @@ function AutomationPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [suggestions, setSuggestions] = useState([]);
+  const [enablingTemplate, setEnablingTemplate] = useState("");
 
   const editingRule = useMemo(() => rules.find((rule) => rule.id === editingId), [rules, editingId]);
 
@@ -283,6 +284,21 @@ function AutomationPage() {
     setError("");
     setNotice("Template loaded. Review details and save to create this workflow.");
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const enableTemplate = async (templateKey) => {
+    if (!templateKey) return;
+    setEnablingTemplate(templateKey);
+    setError("");
+    try {
+      const res = await apiRequest(`/automation/templates/${templateKey}/enable`, { method: "POST" });
+      setNotice(res?.already_enabled ? "Template already enabled." : "Template enabled.");
+      await load();
+    } catch (err) {
+      setError(err.message || "Could not enable template.");
+    } finally {
+      setEnablingTemplate("");
+    }
   };
 
   const startEdit = (rule) => {
@@ -686,15 +702,19 @@ function AutomationPage() {
 
               <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {templateChoices.map((template) => (
-                  <button
+                  <div
                     key={template.id || template.name}
-                    type="button"
-                    onClick={() => applyTemplate(template)}
                     className="group rounded-2xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4 text-left transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
                   >
                     <p className="text-sm font-bold text-slate-950">{displayText(template.name)}</p>
                     <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{displayText(template.description)}</p>
-                  </button>
+                    <div className="mt-2 text-[11px] text-slate-500">Trigger: {prettifyToken(template.trigger || template.event || template.type)} · Action: {prettifyToken(template.action || template.actions)}</div>
+                    {template.approval_first ? <div className="mt-2 inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-black text-amber-700">Approval-first</div> : null}
+                    <div className="mt-3 flex gap-2">
+                      <button type="button" onClick={() => applyTemplate(template)} className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-bold text-slate-700">Use in builder</button>
+                      <button type="button" disabled={template.enabled || enablingTemplate === template.key} onClick={() => enableTemplate(template.key)} className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-bold text-white disabled:opacity-50">{template.enabled ? "Enabled" : enablingTemplate === template.key ? "Enabling..." : "Enable"}</button>
+                    </div>
+                  </div>
                 ))}
               </div>
             </section>
