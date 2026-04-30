@@ -10063,16 +10063,40 @@ async def read_customer_portal(token: str):
     link = await db.portal_links.find_one({"token": token})
     if not link:
         raise HTTPException(status_code=404, detail="Portal link not found")
+
     business_id = str(link.get("business_id") or "")
+    entity_type = str(link.get("entity_type") or "client").strip().lower()
     entity_id = str(link.get("entity_id") or "")
-    jobs = await db.jobs.find(business_filter(business_id, {"client_id": entity_id})).sort("updated_at", -1).limit(10).to_list(10)
-    quotes = await db.quotes.find(business_filter(business_id, {"client_id": entity_id})).sort("updated_at", -1).limit(10).to_list(10)
-    invoices = await db.invoices.find(business_filter(business_id, {"client_id": entity_id})).sort("updated_at", -1).limit(10).to_list(10)
-    for row in jobs + quotes + invoices:
-        row["_id"] = str(row.get("_id"))
-        row.pop("internal_notes", None)
-        row.pop("gps_logs", None)
-    return {"success": True, "jobs": jobs, "quotes": quotes, "invoices": invoices, "privacy_note": "No internal worker coordinates or business-only fields are shown."}
+    if not business_id or not entity_id:
+        raise HTTPException(status_code=404, detail="Portal link is invalid")
+
+    def safe_job(job: dict):
+        return {
+            "_id": str(job.get("_id")), "title": job.get("title") or "Job", "status": job.get("status") or "scheduled",
+            "scheduled_date": job.get("scheduled_date") or job.get("scheduled_at") or job.get("booking_date"),
+            "customer_live_status": job.get("customer_live_status") or job.get("status") or "scheduled",
+            "customer_notes": job.get("customer_notes") or "", "completion_photos": job.get("completion_photos") or job.get("photos") or [],
+            "completed_at": job.get("completed_at"),
+        }
+
+    def safe_quote(quote: dict):
+        return {"_id": str(quote.get("_id")), "title": quote.get("title") or quote.get("quote_number") or "Quote", "status": quote.get("status") or "draft", "total": quote.get("total") or quote.get("amount") or 0}
+
+    def safe_invoice(inv: dict):
+        return {"_id": str(inv.get("_id")), "invoice_number": inv.get("invoice_number") or "Invoice", "status": inv.get("status") or "draft", "total": inv.get("total") or 0, "payment_url": inv.get("payment_url") or inv.get("payment_link") or ""}
+
+    jobs, quotes, invoices = [], [], []
+    if entity_type == "client":
+        jobs = [safe_job(j) for j in await db.jobs.find(business_filter(business_id, {"client_id": entity_id})).sort("updated_at", -1).limit(20).to_list(20)]
+        quotes = [safe_quote(q) for q in await db.quotes.find(business_filter(business_id, {"client_id": entity_id})).sort("updated_at", -1).limit(20).to_list(20)]
+        invoices = [safe_invoice(i) for i in await db.invoices.find(business_filter(business_id, {"client_id": entity_id})).sort("updated_at", -1).limit(20).to_list(20)]
+    elif entity_type == "job" and ObjectId.is_valid(entity_id):
+        job = await db.jobs.find_one(business_filter(business_id, {"_id": ObjectId(entity_id)}))
+        if not job:
+            raise HTTPException(status_code=404, detail="Portal record not found")
+        jobs = [safe_job(job)]
+
+    return {"success": True, "entity_type": entity_type, "jobs": jobs, "quotes": quotes, "invoices": invoices, "privacy_note": "Only customer-safe records are shown. No GPS, payroll, worker-private, internal, or admin-only details are included."}
 
 
 app.include_router(api_router)

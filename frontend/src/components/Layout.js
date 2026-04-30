@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ChurvoxLogo } from "./ChurvoxLogo";
@@ -32,6 +32,7 @@ export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
   const safePlan = normalizePlan(user?.plan);
   const role = normalizedRole || "owner";
   const showHelp = role !== "worker";
@@ -43,8 +44,9 @@ export default function Layout({ children }) {
     { label: "New client", to: "/clients/new" },
     { label: "New quote", to: "/quotes/new" },
     { label: "New invoice", to: "/invoices/new" },
-    { label: "New team member", to: "/team" },
+    { label: "New team member", to: "/team", require: "team" },
   ];
+  const visibleQuickItems = useMemo(() => quickItems.filter((item) => !item.require || canAccess(role, item.require)), [role]);
 
   const handleLogout = async () => {
     await logout();
@@ -156,15 +158,15 @@ export default function Layout({ children }) {
         <main className="flex-1">
           {showQuickCreate && (
             <div className="cx-page pb-0">
-              <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Quick Create</span>
-                  {quickItems.map((item) => (
-                    <Link key={item.to} to={item.to} className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50">
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
+              <div className="relative rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                <button type="button" onClick={() => setQuickOpen((v) => !v)} className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50">Quick Create ▾</button>
+                {quickOpen && (
+                  <div className="absolute mt-2 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-lg z-20">
+                    {visibleQuickItems.map((item) => (
+                      <Link key={item.to} to={item.to} onClick={() => setQuickOpen(false)} className="block rounded-lg px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">{item.label}</Link>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
