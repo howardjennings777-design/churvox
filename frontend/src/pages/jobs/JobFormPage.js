@@ -7,7 +7,7 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { toast } from "sonner";
-import { AlertTriangle, DollarSign, Repeat, Users } from "lucide-react";
+import { AlertTriangle, ClipboardList, DollarSign, Repeat, Users } from "lucide-react";
 
 const COUNTRY_OPTIONS = [
   { value: "New Zealand", label: "New Zealand" },
@@ -16,32 +16,10 @@ const COUNTRY_OPTIONS = [
 
 const REGION_OPTIONS = {
   "New Zealand": [
-    "Northland",
-    "Auckland",
-    "Waikato",
-    "Bay of Plenty",
-    "Gisborne",
-    "Hawke's Bay",
-    "Taranaki",
-    "Manawatu-Whanganui",
-    "Wellington",
-    "Tasman",
-    "Nelson",
-    "Marlborough",
-    "West Coast",
-    "Canterbury",
-    "Otago",
-    "Southland",
+    "Northland", "Auckland", "Waikato", "Bay of Plenty", "Gisborne", "Hawke's Bay", "Taranaki", "Manawatu-Whanganui", "Wellington", "Tasman", "Nelson", "Marlborough", "West Coast", "Canterbury", "Otago", "Southland",
   ],
   "Australia": [
-    "New South Wales",
-    "Victoria",
-    "Queensland",
-    "Western Australia",
-    "South Australia",
-    "Tasmania",
-    "Northern Territory",
-    "Australian Capital Territory",
+    "New South Wales", "Victoria", "Queensland", "Western Australia", "South Australia", "Tasmania", "Northern Territory", "Australian Capital Territory",
   ],
 };
 
@@ -50,6 +28,73 @@ const PRICING_OPTIONS = [
   { value: "hourly", label: "Hourly" },
   { value: "fixed_extras", label: "Fixed + Extras" },
   { value: "hourly_extras", label: "Hourly + Extras" },
+];
+
+const JOB_TEMPLATES = [
+  {
+    id: "lawn_mowing",
+    label: "Lawn mowing",
+    title: "Lawn mowing service",
+    pricing_type: "fixed",
+    notes: "Mow lawns, trim edges, blow paths and check site is tidy before leaving.",
+    checklist: ["Confirm site access", "Mow lawns", "Trim edges", "Blow paths and driveway", "Take completion photos"],
+  },
+  {
+    id: "cleaning",
+    label: "Cleaning",
+    title: "Cleaning service",
+    pricing_type: "hourly",
+    notes: "Complete agreed cleaning areas, report issues, and leave site ready for customer handover.",
+    checklist: ["Confirm rooms/areas", "Complete clean", "Check bins/supplies", "Final walkthrough", "Take completion photos"],
+  },
+  {
+    id: "plumbing_callout",
+    label: "Plumbing callout",
+    title: "Plumbing callout",
+    pricing_type: "hourly_extras",
+    notes: "Attend site, diagnose plumbing issue, complete approved repair or record required follow-up parts.",
+    checklist: ["Inspect issue", "Confirm approval before extras", "Complete repair", "Test water/pressure", "Record materials used"],
+  },
+  {
+    id: "electrical_inspection",
+    label: "Electrical inspection",
+    title: "Electrical inspection",
+    pricing_type: "fixed",
+    notes: "Inspect electrical issue, record findings, complete safe approved work, and note any follow-up required.",
+    checklist: ["Confirm safe access", "Inspect issue", "Record findings", "Complete approved work", "Customer-safe completion notes"],
+  },
+  {
+    id: "landscaping",
+    label: "Landscaping",
+    title: "Landscaping job",
+    pricing_type: "fixed_extras",
+    notes: "Complete landscaping scope, record materials/extras, and take progress/completion photos.",
+    checklist: ["Confirm scope", "Prepare area", "Complete landscaping work", "Record materials/extras", "Take completion photos"],
+  },
+  {
+    id: "pest_control",
+    label: "Pest control",
+    title: "Pest control service",
+    pricing_type: "fixed",
+    notes: "Complete pest control treatment according to site instructions and record customer-safe notes.",
+    checklist: ["Confirm pest issue", "Inspect site", "Complete treatment", "Record safety notes", "Customer handover"],
+  },
+  {
+    id: "handyman_repair",
+    label: "Handyman repair",
+    title: "Handyman repair",
+    pricing_type: "hourly_extras",
+    notes: "Complete repair work, record extras/materials, and note any further work required.",
+    checklist: ["Inspect repair", "Confirm parts/materials", "Complete repair", "Test/check work", "Record completion notes"],
+  },
+  {
+    id: "general_service",
+    label: "General service job",
+    title: "General service job",
+    pricing_type: "fixed",
+    notes: "Complete agreed service work, add notes, and take completion photos if useful.",
+    checklist: ["Confirm job scope", "Complete work", "Check quality", "Add notes", "Take completion photos"],
+  },
 ];
 
 function getRegionOptions(country) {
@@ -111,6 +156,7 @@ export default function JobFormPage() {
   const [clients, setClients] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState("");
   const [form, setForm] = useState({
     title: "",
     client_id: clientIdFromQuery,
@@ -127,6 +173,8 @@ export default function JobFormPage() {
     hourly_rate: "",
     estimated_hours: "",
     extras_amount: "",
+    checklist_items: [],
+    job_template: "",
     is_recurring: false,
     recurring_frequency: "weekly",
   });
@@ -150,6 +198,7 @@ export default function JobFormPage() {
           const jobRes = await get(`/jobs/${id}`);
           if (jobRes?.success && jobRes.data) {
             const j = jobRes.data;
+            setSelectedTemplate(j.job_template || "");
             setForm({
               title: j.title || "",
               client_id: j.client_id || "",
@@ -166,6 +215,8 @@ export default function JobFormPage() {
               hourly_rate: j.hourly_rate || "",
               estimated_hours: j.estimated_hours || j.hours_worked || "",
               extras_amount: j.extras_amount || "",
+              checklist_items: Array.isArray(j.checklist_items || j.checklist) ? (j.checklist_items || j.checklist) : [],
+              job_template: j.job_template || "",
               is_recurring: j.is_recurring || j.recurring || false,
               recurring_frequency: j.recurring_frequency || "weekly",
             });
@@ -196,6 +247,25 @@ export default function JobFormPage() {
 
   const setField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const applyTemplate = (templateId) => {
+    const template = JOB_TEMPLATES.find((item) => item.id === templateId);
+    setSelectedTemplate(templateId);
+    if (!template) return;
+    setForm((prev) => ({
+      ...prev,
+      title: prev.title || template.title,
+      notes: prev.notes ? `${prev.notes}\n\n${template.notes}` : template.notes,
+      pricing_type: template.pricing_type,
+      job_template: template.id,
+      checklist_items: template.checklist.map((label, index) => ({
+        id: `template-${template.id}-${index}`,
+        label,
+        done: false,
+      })),
+    }));
+    toast.success(`${template.label} template applied`);
   };
 
   const filteredWorkers = useMemo(() => workers.filter((worker) => workerMatchesJobCountryRegion(worker, form)), [workers, form]);
@@ -262,6 +332,8 @@ export default function JobFormPage() {
         estimated_hours: moneyNumber(form.estimated_hours),
         extras_amount: moneyNumber(form.extras_amount),
         estimated_total: estimatedTotal,
+        checklist_items: form.checklist_items || [],
+        job_template: form.job_template || selectedTemplate || null,
         is_recurring: Boolean(form.is_recurring),
         recurring_frequency: form.is_recurring ? form.recurring_frequency : null,
       };
@@ -298,12 +370,31 @@ export default function JobFormPage() {
         <section className="overflow-hidden rounded-3xl border border-slate-900/20 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-6 text-white shadow-2xl">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">Job setup centre</p>
           <h1 className="mt-3 text-3xl font-black tracking-tight md:text-4xl">{isEdit ? "Edit Job" : "New Job"}</h1>
-          <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-300">Create work with the right client, region, worker, schedule, recurring rule and pricing source for invoices.</p>
+          <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-300">Create work with the right client, region, worker, schedule, recurring rule, template, checklist and pricing source for invoices.</p>
         </section>
 
         <Card className="bg-white border-slate-200 shadow-sm rounded-3xl">
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
+              {!isEdit && (
+                <section className="space-y-4 rounded-2xl border border-blue-100 bg-blue-50 p-4" data-testid="job-template-selector">
+                  <div className="flex items-center gap-2 text-base font-black text-blue-950"><ClipboardList className="h-5 w-5 text-blue-700" /> Job templates</div>
+                  <p className="text-sm font-semibold text-blue-800">Start faster with a trade/service template. You can still edit everything manually.</p>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {JOB_TEMPLATES.map((template) => (
+                      <button
+                        key={template.id}
+                        type="button"
+                        onClick={() => applyTemplate(template.id)}
+                        className={`rounded-2xl border p-3 text-left text-sm font-black transition ${selectedTemplate === template.id ? "border-blue-500 bg-white text-blue-800 shadow-sm" : "border-blue-100 bg-white/80 text-slate-800 hover:border-blue-300"}`}
+                      >
+                        {template.label}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               <section className="space-y-4">
                 <div className="flex items-center gap-2 text-base font-black text-slate-950"><Users className="h-5 w-5 text-blue-600" /> Customer and site</div>
                 <div>
@@ -341,6 +432,7 @@ export default function JobFormPage() {
                     <select id="status" value={form.status} onChange={(e) => setField("status", e.target.value)} className="w-full rounded-md border border-slate-200 bg-white text-slate-900 p-3">
                       <option value="assigned">Assigned</option>
                       <option value="acknowledged">Acknowledged</option>
+                      <option value="on_the_way">On the way</option>
                       <option value="in_progress">In Progress</option>
                       <option value="paused">Paused</option>
                       <option value="completed">Completed</option>
@@ -431,6 +523,15 @@ export default function JobFormPage() {
                 </div>
                 <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-semibold text-blue-800">Estimated invoice source total: <span className="font-black">${estimatedTotal.toFixed(2)}</span></div>
               </section>
+
+              {form.checklist_items?.length > 0 && (
+                <section className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center gap-2 text-base font-black text-slate-950"><ClipboardList className="h-5 w-5 text-blue-600" /> Template checklist</div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {form.checklist_items.map((item, index) => <div key={item.id || index} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700">{item.label || item}</div>)}
+                  </div>
+                </section>
+              )}
 
               <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <label className="flex items-center gap-3 cursor-pointer">
