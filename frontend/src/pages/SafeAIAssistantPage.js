@@ -372,7 +372,7 @@ export default function SafeAIAssistantPage() {
           </div>
           <div className="rounded-3xl border border-slate-300 bg-white p-5 shadow-md shadow-slate-300/30">
             <h2 className="text-lg font-black text-slate-950">Advanced Health Score</h2>
-            <p className="mt-1 text-sm font-semibold text-slate-600">Detailed scorecards with compact fallback data.</p>
+            <p className="mt-1 text-sm font-semibold text-slate-700">Detailed scorecards with compact fallback data.</p>
             <div className="mt-3 grid gap-2">
               <HealthBar label="Jobs" score={digestData?.health_score?.jobs?.score ?? model.health.jobHealth} reason={digestData?.health_score?.jobs?.reason || `${model.overdueJobs.length} overdue · ${model.jobsNeedingAssignment.length} unassigned`} to={digestData?.health_score?.jobs?.route || "/jobs"} />
               <HealthBar label="Cashflow" score={digestData?.health_score?.cashflow?.score ?? model.health.cashflowHealth} reason={digestData?.health_score?.cashflow?.reason || `${model.overdueInvoices.length} overdue · ${model.unpaidInvoices.length} unpaid`} to={digestData?.health_score?.cashflow?.route || "/invoices"} />
