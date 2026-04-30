@@ -86,10 +86,10 @@ export default function AIOperationsEnginePanel() {
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-4">
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><p className="text-xs font-black text-emerald-700">HEALTH</p><p className="text-3xl font-black text-emerald-800">{snapshot.health}</p></div>
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4"><p className="text-xs font-black text-red-700">RISK</p><p className="text-3xl font-black text-red-800">{snapshot.risk}</p></div>
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4"><p className="text-xs font-black text-blue-700">UNPAID</p><p className="text-3xl font-black text-blue-800">{cash(snapshot.unpaidValue)}</p></div>
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><p className="text-xs font-black text-amber-700">ACTIONS</p><p className="text-3xl font-black text-amber-800">{actions.length}</p></div>
+        <div className="rounded-2xl border border-emerald-200 bg-gradient-to-b from-white to-emerald-50 p-4 shadow-sm"><p className="text-xs font-black text-slate-950">HEALTH</p><p className="text-3xl font-black text-emerald-800">{snapshot.health}</p></div>
+        <div className="rounded-2xl border border-red-200 bg-gradient-to-b from-white to-red-50 p-4 shadow-sm"><p className="text-xs font-black text-slate-950">RISK</p><p className="text-3xl font-black text-red-800">{snapshot.risk}</p></div>
+        <div className="rounded-2xl border border-blue-200 bg-gradient-to-b from-white to-blue-50 p-4 shadow-sm"><p className="text-xs font-black text-slate-950">UNPAID</p><p className="text-3xl font-black text-blue-800">{cash(snapshot.unpaidValue)}</p></div>
+        <div className="rounded-2xl border border-amber-200 bg-gradient-to-b from-white to-amber-50 p-4 shadow-sm"><p className="text-xs font-black text-slate-950">ACTIONS</p><p className="text-3xl font-black text-amber-800">{actions.length}</p></div>
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
