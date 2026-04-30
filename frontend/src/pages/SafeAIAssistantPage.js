@@ -91,7 +91,7 @@ function HealthBar({ label, score, reason, to }) {
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-black text-slate-950">{label}</p>
-          <p className="mt-1 text-xs font-semibold text-slate-700">{reason}</p>
+          <p className="mt-1 text-xs font-semibold text-slate-800">{reason}</p>
         </div>
         <span className="text-lg font-black text-slate-950">{score}%</span>
       </div>
