@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
@@ -241,6 +241,7 @@ export default function AIAssistantPage() {
   const [briefNotice, setBriefNotice] = useState("");
   const [jobControl, setJobControl] = useState(null);
   const [financialRadar, setFinancialRadar] = useState(null);
+  const [assistantPrompt, setAssistantPrompt] = useState("attention");
   const [data, setData] = useState({ stats: {}, jobs: [], quotes: [], invoices: [], workers: [], followUps: [], aiActions: [], automationSuggestions: [] });
 
   const allowed = ["owner", "manager", "office_admin", "employer", "admin"].includes(normalizedRole || "owner");
@@ -344,6 +345,12 @@ export default function AIAssistantPage() {
     if (!result?.success) return setBriefNotice(safeText(result?.error, "Could not dismiss memory."));
     await load();
   }, [load, post]);
+  const generateJobControl = useCallback(async () => {
+    const result = await post("/ai/job-control/generate", {});
+    if (!result?.success) return setBriefNotice(safeText(result?.error, "Could not generate job control snapshot."));
+    setBriefNotice("AI highlights job risks. You approve all changes.");
+    await load();
+  }, [load, post]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -420,7 +427,21 @@ export default function AIAssistantPage() {
   }, [data]);
 
   const riskTone = smart.risk >= 50 ? "Needs attention" : smart.risk >= 20 ? "Watch closely" : "Under control";
+  const urgentItems = smart.actions.map((item, index) => ({
+    ...item,
+    id: `${item.title}-${index}`,
+    type: item.primaryLabel?.toLowerCase().includes("invoice") ? "Invoice" : item.primaryLabel?.toLowerCase().includes("quote") ? "Quote" : item.primaryLabel?.toLowerCase().includes("automation") ? "Automation" : "Job",
+  }));
+  const assistantResponse = useMemo(() => {
+    if (assistantPrompt === "attention") return `Top priorities: ${smart.actions.slice(0, 3).map((a) => a.title).join(" • ") || "No urgent priorities right now."}`;
+    if (assistantPrompt === "invoice") return smart.overdueInvoices.length ? `Draft starter: Hi ${clientName(smart.overdueInvoices[0])}, just checking in on your overdue invoice for ${money(valueOf(smart.overdueInvoices[0]))}.` : "No overdue invoice found. Try reviewing unpaid invoices and set a follow-up reminder.";
+    if (assistantPrompt === "jobs") return smart.todayJobs.length ? `Today has ${smart.todayJobs.length} scheduled jobs and ${smart.unassignedJobs.length} unassigned jobs. Start with: ${jobTitle(smart.todayJobs[0])}.` : "No jobs are scheduled today yet. Open Schedule to plan today’s run.";
+    if (assistantPrompt === "action") return smart.unassignedJobs.length || smart.overdueInvoices.length ? `Jobs needing assignment: ${smart.unassignedJobs.length}. Overdue invoices: ${smart.overdueInvoices.length}. Follow-up tasks open: ${safeArray(data.followUps).length}.` : "No high-risk blockers found. Focus on quote follow-ups and automation improvements.";
+    return `Suggested automations: completed job → draft invoice, quote reminder after 3 days, unassigned job alert. Active suggestions available: ${smart.automationSuggestions.length}.`;
+  }, [assistantPrompt, smart, data.followUps]);
 
+  if (normalizedRole === "worker") return <Navigate to="/worker/jobs" replace />;
+  if (normalizedRole === "payroll") return <Navigate to="/timesheets" replace />;
   if (!allowed) return <Layout><div className="cx-page"><Section title="Smart Hub locked" icon={ShieldCheck}><p className="text-sm font-semibold text-slate-600">Only owners, managers and office admins can use Smart Hub.</p></Section></div></Layout>;
   if (loading) return <Layout><div className="cx-page"><Section title="Building Smart Hub" icon={RefreshCw}><p className="text-sm font-semibold text-slate-600">Loading business data and ranking today’s priorities...</p></Section></div></Layout>;
   if (error) return <Layout><div className="cx-page"><Section title="Smart Hub could not load" icon={AlertTriangle}><p className="text-sm font-semibold text-slate-600">{error}</p><button onClick={load} className="mt-4 inline-flex rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white hover:bg-blue-700">Retry</button></Section></div></Layout>;
@@ -428,10 +449,14 @@ export default function AIAssistantPage() {
   return (
     <Layout>
       <div className="cx-page space-y-6" data-testid="ai-assistant-page">
-        <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-[#f6f9ff] to-[#eef6ff] p-6 shadow-sm">
+        <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-[#f8fbff] to-[#edf4ff] p-6 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <div><p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">Smart Hub</p><h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">AI Business Assistant</h1><p className="mt-2 max-w-4xl text-sm font-semibold leading-6 text-slate-600">A practical command layer for {safeText(user?.business_name || "your business", "your business")}: risks, ranked actions, follow-up drafts, automation suggestions and approval-first guardrails.</p></div>
-            <button onClick={load} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50"><RefreshCw className="mr-2 h-4 w-4" />Refresh</button>
+            <div><p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">Smart Hub</p><h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">Smart Hub</h1><p className="mt-2 max-w-4xl text-sm font-semibold leading-6 text-slate-700">Your daily command centre for jobs, invoices, quotes, team activity, follow-ups, and automation.</p></div>
+            <div className="flex flex-wrap gap-2">
+              <ActionLink to="/jobs/new">New Job</ActionLink>
+              <ActionLink to="/schedule" variant="secondary">View Schedule</ActionLink>
+              <button onClick={load} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50"><RefreshCw className="mr-2 h-4 w-4" />Refresh</button>
+            </div>
           </div>
         </section>
 
@@ -490,24 +515,37 @@ export default function AIAssistantPage() {
           <Section title={`Why risk is ${smart.risk}`} icon={Target}><div className="space-y-2">{smart.riskItems.map((item) => <RiskItem key={item.label} {...item} />)}</div></Section>
         </section>
 
-        <section className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
-          <MetricCard icon={Briefcase} label="Total jobs" value={smart.jobs.length} detail={`${smart.todayJobs.length} today`} to="/jobs" tone="blue" />
-          <MetricCard icon={Users} label="Assigned" value={smart.assignedJobs.length} detail={`${smart.unassignedJobs.length} unassigned`} to="/jobs" tone="amber" />
-          <MetricCard icon={CalendarDays} label="In progress" value={smart.inProgressJobs.length} detail="Active work" to="/schedule" tone="blue" />
-          <MetricCard icon={CheckCircle2} label="Completed" value={smart.completedJobs.length} detail={`${smart.completedNoInvoice.length} not invoiced`} to="/jobs" tone="green" />
-          <MetricCard icon={Receipt} label="Overdue" value={smart.overdueInvoices.length} detail={money(smart.overdueValue)} to="/invoices" tone="red" />
-          <MetricCard icon={FileText} label="Quotes" value={smart.quoteFollowups.length} detail={money(smart.quoteValue)} to="/quotes" tone="slate" />
+        <section className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <MetricCard icon={CalendarDays} label="Today’s jobs" value={smart.todayJobs.length} detail="Scheduled for today" to="/schedule" tone="blue" />
+          <MetricCard icon={Briefcase} label="In progress" value={smart.inProgressJobs.length} detail="Jobs actively running" to="/jobs" tone="blue" />
+          <MetricCard icon={CheckCircle2} label="Completed" value={smart.completedJobs.length} detail="Finished jobs" to="/jobs" tone="green" />
+          <MetricCard icon={AlertTriangle} label="Overdue jobs" value={smart.stuckJobs.length} detail="Paused / blocked" to="/jobs" tone="amber" />
+          <MetricCard icon={FileText} label="Open quotes" value={smart.quoteFollowups.length} detail={money(smart.quoteValue)} to="/quotes" tone="slate" />
+          <MetricCard icon={Receipt} label="Unpaid invoices" value={smart.unpaidInvoices.length} detail={money(smart.unpaidValue)} to="/invoices" tone="red" />
+          <MetricCard icon={Users} label="Team members" value={smart.workers.length} detail="Active workers loaded" to={allowed ? "/team" : undefined} tone="green" />
+          <MetricCard icon={Target} label="Urgent follow-ups" value={safeArray(data.followUps).length} detail="Needs review today" to="/follow-ups" tone="amber" />
         </section>
 
         <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.35fr_0.65fr]">
-          <Section title="Ranked AI priority queue" subtitle="Sorted by business impact. AI drafts and suggests — you approve." icon={Sparkles}>
-            <div className="space-y-3">{smart.actions.map((action, index) => <ActionCard key={`${action.title}-${index}`} action={action} rank={index + 1} reviewed={Boolean(reviewed[action.title])} onToggleReviewed={() => setReviewed((prev) => ({ ...prev, [action.title]: !prev[action.title] }))} setCopied={setCopied} />)}</div>
+          <Section title="Urgent Action Centre" subtitle="Highest-impact work to clear first." icon={Sparkles}>
+            {!urgentItems.length ? <p className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-600">Nothing urgent right now — your business is looking clear.</p> : <div className="space-y-3">{urgentItems.map((action, index) => <ActionCard key={action.id} action={action} rank={index + 1} reviewed={Boolean(reviewed[action.title])} onToggleReviewed={() => setReviewed((prev) => ({ ...prev, [action.title]: !prev[action.title] }))} setCopied={setCopied} />)}</div>}
           </Section>
           <div className="space-y-4">
             <Section title="Today’s job pulse" icon={CalendarDays}><div className="space-y-2">{smart.todayJobs.slice(0, 5).map((job, index) => <Link key={idOf(job, index)} to={idOf(job) ? `/jobs/${idOf(job)}` : "/jobs"} className="block rounded-xl border border-slate-200 bg-white p-3 hover:bg-slate-50"><p className="truncate text-sm font-black text-slate-950">{jobTitle(job)}</p><p className="mt-1 truncate text-xs font-semibold text-slate-500">{safeText(job.client_name || job.customer_name || job.address, "No details")}</p></Link>)}{!smart.todayJobs.length && <p className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-semibold text-slate-600">No jobs scheduled today.</p>}</div></Section>
             <Section title="Money waiting" icon={DollarSign}><div className="grid gap-2"><div className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-black uppercase text-slate-500">Quote value</p><p className="text-xl font-black text-slate-950">{money(smart.quoteValue)}</p></div><div className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-black uppercase text-slate-500">Unpaid invoices</p><p className="text-xl font-black text-slate-950">{money(smart.unpaidValue)}</p></div><div className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs font-black uppercase text-slate-500">Draft / uninvoiced</p><p className="text-xl font-black text-slate-950">{money(smart.draftValue + smart.uninvoicedValue)}</p></div></div></Section>
           </div>
         </section>
+        <Section title="AI Business Assistant" subtitle="AI can draft, summarise, and suggest next actions. It never sends messages, changes pricing, or edits payroll without approval." icon={Bot}>
+          <div className="mb-3 flex flex-wrap items-center gap-2"><Pill tone="blue">Approval-first</Pill></div>
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
+            <button className="rounded-xl border border-slate-200 bg-white p-3 text-left text-sm font-black text-slate-800" onClick={() => setAssistantPrompt("attention")}>What needs attention today?</button>
+            <button className="rounded-xl border border-slate-200 bg-white p-3 text-left text-sm font-black text-slate-800" onClick={() => setAssistantPrompt("invoice")}>Draft follow-up for overdue invoice</button>
+            <button className="rounded-xl border border-slate-200 bg-white p-3 text-left text-sm font-black text-slate-800" onClick={() => setAssistantPrompt("jobs")}>Summarise today’s jobs</button>
+            <button className="rounded-xl border border-slate-200 bg-white p-3 text-left text-sm font-black text-slate-800" onClick={() => setAssistantPrompt("action")}>Find jobs that need action</button>
+            <button className="rounded-xl border border-slate-200 bg-white p-3 text-left text-sm font-black text-slate-800" onClick={() => setAssistantPrompt("automation")}>Suggest automations</button>
+          </div>
+          <div className="mt-3 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm font-semibold text-slate-800">{assistantResponse}</div>
+        </Section>
 
         <Section title="AI Job Control Tower" subtitle="AI highlights job risks. It does not assign workers, change job status, send messages, or create live invoices without approval." icon={Briefcase}>
           <div className="mb-3 flex flex-wrap gap-2"><button onClick={generateJobControl} className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50"><RefreshCw className="mr-2 h-4 w-4" />Generate job control</button></div>
