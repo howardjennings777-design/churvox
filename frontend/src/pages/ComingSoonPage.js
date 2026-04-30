@@ -12,7 +12,7 @@ export default function ComingSoonPage({ title = "Coming soon", description = "T
         <PageHeader
           title={title}
           description={description}
-          action={<Button asChild className="bg-blue-600 hover:bg-blue-700"><Link to="/dashboard">Back to Smart Hub</Link></Button>}
+          action={<Button asChild className="bg-blue-600 hover:bg-blue-700"><Link to="/smart-hub">Back to Smart Hub</Link></Button>}
         />
         <SectionCard title="Launch-safe placeholder" action={<Clock className="h-5 w-5 text-blue-600" />}>
           <div className="grid gap-3 md:grid-cols-3">

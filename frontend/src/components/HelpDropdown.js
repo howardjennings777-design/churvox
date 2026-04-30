@@ -4,7 +4,7 @@ import { HelpCircle, ChevronDown, X } from "lucide-react";
 
 const HELP_TOPICS = [
   {
-    path: "/dashboard",
+    path: "/smart-hub",
     label: "Smart Hub",
     title: "Smart Hub help",
     steps: ["Check today’s work first.", "Use urgent actions to see what needs attention.", "Open jobs, quotes, invoices, timesheets or automation from the quick cards."],

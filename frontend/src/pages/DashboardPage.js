@@ -171,7 +171,7 @@ export default function DashboardPage() {
   const cockpitCards = [
     { label: "Today", value: smart.todayJobs.length, icon: Calendar, path: "/jobs" },
     { label: "Urgent", value: smart.urgentJobs.length, icon: AlertTriangle, path: "/jobs" },
-    { label: "Follow-ups", value: smart.openFollowUps.length, icon: ListChecks, path: "/dashboard" },
+    { label: "Follow-ups", value: smart.openFollowUps.length, icon: ListChecks, path: "/follow-ups" },
     { label: "Quotes", value: smart.quotesWaiting.length, icon: FileText, path: "/quotes" },
     { label: "Invoices", value: smart.pendingInvoices.length, icon: Receipt, path: "/invoices" },
     { label: "Team", value: `${smart.workersActive}/${smart.teamCount}`, icon: Users, path: "/team" },
