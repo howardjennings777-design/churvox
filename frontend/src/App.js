@@ -49,6 +49,7 @@ import IntegrationsPage from "./pages/IntegrationsPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
 import PublicQuotePage from "./pages/public/PublicQuotePage";
 import PublicInvoicePage from "./pages/public/PublicInvoicePage";
+import PublicCustomerPortalPage from "./pages/public/PublicCustomerPortalPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
@@ -234,6 +235,7 @@ function App() {
           <Route path="/invite/setup/:token" element={<InviteSetupPage />} />
           <Route path="/public/quote/:token" element={<PublicQuotePage />} />
           <Route path="/public/invoice/:token" element={<PublicInvoicePage />} />
+          <Route path="/public/customer-portal/:token" element={<PublicCustomerPortalPage />} />
 
           <Route path="/owner-login" element={<Navigate to="/login" replace />} />
           <Route path="/admin/login" element={<Navigate to="/login" replace />} />
