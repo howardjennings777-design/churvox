@@ -4368,7 +4368,7 @@ async def get_job(job_id: str, current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail="Failed to load job")
 
 @api_router.get("/jobs")
-async def get_jobs(current_user: dict = Depends(get_current_user)):
+async def get_jobs(limit: int = Query(default=100, ge=1, le=300), current_user: dict = Depends(get_current_user)):
     try:
         business_id = str(
             current_user.get("business_id")
@@ -4397,17 +4397,11 @@ async def get_jobs(current_user: dict = Depends(get_current_user)):
                     pass
             return str(value)
 
-        query = {
-            "$or": [
-                {"business_id": business_id},
-                {"business_id": str(business_id)},
-                {"owner_id": owner_id},
-            ]
-        }
+        query = business_filter(business_id)
 
         if current_role == "worker":
             worker_ids = set()
-            async for buser in db.business_users.find({"email": current_email, "role": "worker"}):
+            async for buser in db.business_users.find(business_filter(business_id, {"email": current_email, "role": "worker"}), {"_id": 1, "id": 1}):
                 worker_ids.add(str(buser.get("_id")))
                 if buser.get("id"):
                     worker_ids.add(str(buser.get("id")))
@@ -4417,13 +4411,41 @@ async def get_jobs(current_user: dict = Depends(get_current_user)):
             else:
                 return []
 
+        projection = {
+            "title": 1,
+            "job_type": 1,
+            "client_id": 1,
+            "client_name": 1,
+            "customer_name": 1,
+            "address": 1,
+            "scheduled_date": 1,
+            "scheduled_time": 1,
+            "estimated_duration": 1,
+            "price": 1,
+            "pricing_type": 1,
+            "hourly_rate": 1,
+            "extras": 1,
+            "notes": 1,
+            "assigned_worker_id": 1,
+            "assigned_worker_name": 1,
+            "status": 1,
+            "is_recurring": 1,
+            "recurring_frequency": 1,
+            "custom_repeat_days": 1,
+            "business_id": 1,
+            "created_at": 1,
+            "updated_at": 1,
+        }
+
         jobs = []
-        async for job in db.jobs.find(query).sort("created_at", -1):
+        cursor = db.jobs.find(query, projection).sort([("scheduled_date", -1), ("created_at", -1)]).limit(limit)
+        async for job in cursor:
             jobs.append({
                 "id": str(job.get("_id") or job.get("id") or ""),
                 "title": job.get("title") or "Untitled Job",
                 "job_type": job.get("job_type") or "other",
                 "client_id": job.get("client_id"),
+                "client_name": job.get("client_name") or "",
                 "customer_name": job.get("customer_name") or "",
                 "address": job.get("address") or "",
                 "scheduled_date": safe_iso(job.get("scheduled_date")),
@@ -4435,6 +4457,7 @@ async def get_jobs(current_user: dict = Depends(get_current_user)):
                 "extras": job.get("extras") or [],
                 "notes": job.get("notes") or "",
                 "assigned_worker_id": job.get("assigned_worker_id"),
+                "assigned_worker_name": job.get("assigned_worker_name") or "",
                 "status": job.get("status") or "assigned",
                 "is_recurring": bool(job.get("is_recurring") or False),
                 "recurring_frequency": job.get("recurring_frequency"),
