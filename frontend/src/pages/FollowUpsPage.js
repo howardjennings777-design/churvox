@@ -78,6 +78,7 @@ function TaskCard({ task, onComplete, onDelete, busy }) {
 export default function FollowUpsPage() {
   const { get, post, del } = useApi();
   const [tasks, setTasks] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
   const [filter, setFilter] = useState("open");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
@@ -85,9 +86,10 @@ export default function FollowUpsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await get(`/follow-up-tasks?status=${filter}`);
+    const [res, sug] = await Promise.all([get(`/follow-up-tasks?status=${filter}`), get("/follow-up-suggestions")]);
     if (res?.success) setTasks(safeArray(res.data));
     else toast.error(safeText(res?.error, "Could not load follow-ups"));
+    if (sug?.success) setSuggestions(safeArray(sug.data, "items"));
     setLoading(false);
   }, [get, filter]);
 
@@ -220,3 +222,19 @@ export default function FollowUpsPage() {
     </Layout>
   );
 }
+        <section className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-black text-blue-900">Smart follow-up suggestions</h2>
+            <Button size="sm" variant="outline" onClick={async()=>{await post("/follow-up-suggestions/generate"); await load();}}>Refresh</Button>
+          </div>
+          {!suggestions.length ? <p className="text-xs text-blue-800">No suggestions currently.</p> : <div className="space-y-2">{suggestions.map((s)=>(
+            <div key={s.id} className="rounded-xl border border-blue-200 bg-white p-3 text-sm">
+              <div className="font-bold text-slate-900">{safeText(s.title,"Suggestion")}</div>
+              <div className="mt-1 text-slate-600">{safeText(s.draft,"")}</div>
+              <div className="mt-2 flex gap-2">
+                <button type="button" onClick={()=>navigator.clipboard?.writeText(s.draft||"")} className="rounded-lg border px-2 py-1 text-xs font-bold">Copy draft</button>
+                <button type="button" onClick={async()=>{await post(`/follow-up-suggestions/${s.id}/dismiss`); await load();}} className="rounded-lg border px-2 py-1 text-xs font-bold">Dismiss</button>
+              </div>
+            </div>
+          ))}</div>}
+        </section>
