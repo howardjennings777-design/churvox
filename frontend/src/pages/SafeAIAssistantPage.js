@@ -308,10 +308,10 @@ export default function SafeAIAssistantPage() {
               <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">Smart Hub</h1>
               <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-slate-300">Your daily command centre for jobs, invoices, quotes, team activity, follow-ups, automation, and safe AI actions.</p>
             </div>
-            <div className="min-w-[168px] rounded-2xl border border-white/15 bg-white/10 p-3 text-center backdrop-blur">
-              <p className="text-xs font-black uppercase tracking-wide text-slate-300">Business Health</p>
-              <p className="mt-1 text-4xl font-black text-white">{digestData?.health_score?.overall?.score ?? model.health.overallScore}%</p>
-              <p className="text-xs font-semibold text-slate-300">{model.urgentActions.length} action{model.urgentActions.length === 1 ? "" : "s"} need attention</p>
+            <div className="min-w-[168px] rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white via-slate-50 to-slate-100 p-3 text-center shadow-lg shadow-slate-900/20">
+              <p className="text-xs font-black uppercase tracking-wide text-slate-950">Business Health</p>
+              <p className="mt-1 text-4xl font-black text-slate-950">{digestData?.health_score?.overall?.score ?? model.health.overallScore}%</p>
+              <p className="text-xs font-semibold text-slate-700">{model.urgentActions.length} action{model.urgentActions.length === 1 ? "" : "s"} need attention</p>
             </div>
             <div className="flex items-center gap-2">
               {normalizedRole !== "worker" && normalizedRole !== "payroll" && (
