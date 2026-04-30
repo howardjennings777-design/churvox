@@ -23,7 +23,7 @@ export default function PlatformAdminRoute({ children }) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (!isPlatformOwner(user)) return <Navigate to="/dashboard" replace />;
+  if (!isPlatformOwner(user)) return <Navigate to="/smart-hub" replace />;
 
   return children;
 }

@@ -53,7 +53,7 @@ export default function AIBusinessBriefCard() {
           <h2 className="text-xl font-black text-slate-950">Today’s Business Brief</h2>
           <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-700">{brief?.brief || "AI Assistant is ready to help you see what needs attention today."}</p>
         </div>
-        <Button type="button" onClick={() => navigate("/ai-assistant")} className="bg-blue-600 hover:bg-blue-700">Ask AI<ArrowRight className="ml-2 h-4 w-4" /></Button>
+        <Button type="button" onClick={() => navigate("/smart-hub")} className="bg-blue-600 hover:bg-blue-700">Ask AI<ArrowRight className="ml-2 h-4 w-4" /></Button>
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
