@@ -2,6 +2,7 @@ import os
 import json
 import urllib.request
 import urllib.error
+import urllib.parse
 import asyncio
 import csv
 import io
@@ -10144,27 +10145,173 @@ async def read_customer_portal(token: str):
 
     return {"success": True, "entity_type": entity_type, "jobs": jobs, "quotes": quotes, "invoices": invoices, "privacy_note": "Only customer-safe records are shown. No GPS, payroll, worker-private, internal, or admin-only details are included."}
 
+
+
+@api_router.post("/route-optimisation")
+async def route_optimisation(payload: dict, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    role = str(current_user.get("role") or "").lower()
+    if role == "payroll":
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    target_date = str((payload or {}).get("date") or "").strip()
+    if not target_date:
+        raise HTTPException(status_code=400, detail="date is required")
+    worker_id = str((payload or {}).get("worker_id") or "").strip()
+
+    query = {"scheduled_date": {"$regex": f"^{target_date}"}}
+    if role == "worker":
+        query["assigned_worker_id"] = str(current_user.get("id") or current_user.get("_id") or "")
+    elif role in {"owner", "manager", "office_admin", "admin", "employer"}:
+        if worker_id:
+            query["assigned_worker_id"] = worker_id
+    else:
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    jobs = await db.jobs.find(business_filter(business_id, query)).to_list(500)
+
+    def parse_float(v):
+        try:
+            return float(v)
+        except Exception:
+            return None
+
+    def distance(a,b):
+        ax, ay = parse_float(a.get('lat')), parse_float(a.get('lng'))
+        bx, by = parse_float(b.get('lat')), parse_float(b.get('lng'))
+        if None in (ax,ay,bx,by):
+            return float('inf')
+        return ((ax-bx)**2 + (ay-by)**2) ** 0.5
+
+    all_have_coords = bool(jobs) and all(parse_float(j.get('lat')) is not None and parse_float(j.get('lng')) is not None for j in jobs)
+    if all_have_coords:
+        remaining = jobs[:]
+        ordered = [remaining.pop(0)]
+        while remaining:
+            last = ordered[-1]
+            nxt = min(remaining, key=lambda x: distance(last, x))
+            remaining.remove(nxt)
+            ordered.append(nxt)
+    else:
+        ordered = sorted(jobs, key=lambda j: (
+            str(j.get('region') or '').lower(),
+            str(j.get('scheduled_time') or j.get('start_time') or ''),
+            str(j.get('address') or '').lower()
+        ))
+
+    def stop_row(j):
+        jid = str(j.get('_id'))
+        return {
+            "id": jid,
+            "title": j.get("title") or "Job",
+            "address": j.get("address") or "",
+            "status": j.get("status") or "assigned",
+            "time": j.get("scheduled_time") or j.get("start_time") or "",
+            "route": f"/jobs/{jid}",
+        }
+
+    stops = [stop_row(j) for j in ordered if j.get('address')]
+    waypoint_addresses = [urllib.parse.quote_plus(s['address']) for s in stops if s.get('address')]
+    maps_url = ""
+    if waypoint_addresses:
+        origin = waypoint_addresses[0]
+        destination = waypoint_addresses[-1]
+        waypoints = "|".join(waypoint_addresses[1:-1]) if len(waypoint_addresses) > 2 else ""
+        maps_url = f"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}"
+        if waypoints:
+            maps_url += f"&waypoints={waypoints}"
+
+    return {
+        "success": True,
+        "date": target_date,
+        "jobs": [stop_row(j) for j in ordered],
+        "google_maps_url": maps_url,
+        "note": "Route Optimisation V1 is address/order planning only and does not include live traffic or GPS tracking.",
+    }
+
+
+@api_router.get("/launch-check")
+async def launch_check(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    role = str(current_user.get("role") or "").lower()
+    if role not in {"owner", "admin", "employer"}:
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    async def c(coll):
+        try:
+            return await coll.count_documents(business_filter(business_id, {}))
+        except Exception:
+            return 0
+
+    data = {
+        "auth_user_present": bool(current_user.get("id") or current_user.get("_id")),
+        "business_id_present": bool(business_id),
+        "role": role,
+        "plan": current_user.get("plan") or current_user.get("subscription_plan") or "unknown",
+        "clients_count": await c(db.clients),
+        "jobs_count": await c(db.jobs),
+        "quotes_count": await c(db.quotes),
+        "invoices_count": await c(db.invoices),
+        "team_count": await c(db.workers),
+        "automation_rules_count": await c(db.automations),
+        "automation_runs_count": await c(db.automation_runs),
+        "notifications_count": await c(db.notifications),
+        "worker_route_note": "Worker routes are separated and limited to assigned jobs/settings.",
+        "payroll_route_note": "Payroll routes are limited to timesheets/payroll workflows.",
+    }
+    checks = [
+        {"key": "auth_user", "label": "Authenticated user", "pass": data["auth_user_present"]},
+        {"key": "business", "label": "Business context", "pass": data["business_id_present"]},
+        {"key": "role", "label": "Owner/admin role", "pass": role in {"owner", "admin", "employer"}},
+    ]
+    return {"success": True, "checks": checks, "data": data}
+
 @api_router.get("/clients/{client_id}/timeline")
 async def get_client_timeline(client_id: str, current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
-    jobs = await db.jobs.find(business_filter(business_id, {"client_id": client_id})).sort("updated_at", -1).limit(50).to_list(50)
-    quotes = await db.quotes.find(business_filter(business_id, {"client_id": client_id})).sort("updated_at", -1).limit(50).to_list(50)
-    invoices = await db.invoices.find(business_filter(business_id, {"client_id": client_id})).sort("updated_at", -1).limit(50).to_list(50)
-    tasks = await db.follow_up_tasks.find(business_filter(business_id, {"client_id": client_id})).sort("updated_at", -1).limit(50).to_list(50)
+    role = str(current_user.get("role") or "").lower()
+    if role not in {"owner", "manager", "office_admin", "admin", "employer"}:
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    client_doc = await db.clients.find_one(business_filter(business_id, {"_id": normalize_object_id(client_id)})) if ObjectId.is_valid(client_id) else None
+    if not client_doc:
+        client_doc = await db.clients.find_one(business_filter(business_id, {"id": str(client_id)}))
+    if not client_doc:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    cid = str(client_doc.get("_id"))
+    id_options = [cid, str(client_doc.get("id") or cid), str(client_id)]
     items = []
+    async def collect(collection, query):
+        try:
+            return await collection.find(business_filter(business_id, query)).sort("updated_at", -1).limit(100).to_list(100)
+        except Exception:
+            return []
+
+    jobs = await collect(db.jobs, {"client_id": {"$in": id_options}})
+    quotes = await collect(db.quotes, {"client_id": {"$in": id_options}})
+    invoices = await collect(db.invoices, {"client_id": {"$in": id_options}})
+    tasks = await collect(db.follow_up_tasks, {"$or": [{"client_id": {"$in": id_options}}, {"related_type": "client", "related_id": {"$in": id_options}}]})
+    payments = await collect(db.payments, {"client_id": {"$in": id_options}})
+
     for j in jobs:
         jid = str(j.get("_id"))
-        items.append({"id": f"job-{jid}", "type": "job", "title": j.get("title") or "Job", "status": j.get("status") or "scheduled", "at": j.get("updated_at") or j.get("created_at"), "route": f"/jobs/{jid}"})
+        photos = [p for p in (j.get("completion_photos") or j.get("photos") or []) if isinstance(p, str)][:4]
+        items.append({"id": jid, "type": "job", "title": j.get("title") or "Job", "status": j.get("status") or "assigned", "date": j.get("scheduled_date") or j.get("updated_at") or j.get("created_at"), "route": f"/jobs/{jid}", "amount": j.get("price") or j.get("estimated_total"), "description": j.get("notes") or j.get("address") or "Job activity", "photos": photos})
     for q in quotes:
         qid = str(q.get("_id"))
-        items.append({"id": f"quote-{qid}", "type": "quote", "title": q.get("title") or q.get("quote_number") or "Quote", "status": q.get("status") or "draft", "at": q.get("updated_at") or q.get("created_at"), "route": f"/quotes/{qid}"})
+        items.append({"id": qid, "type": "quote", "title": q.get("quote_number") or q.get("title") or "Quote", "status": q.get("status") or "draft", "date": q.get("updated_at") or q.get("created_at"), "route": f"/quotes/{qid}", "amount": q.get("total") or q.get("amount"), "description": q.get("job_description") or q.get("notes") or "Quote activity"})
     for i in invoices:
         iid = str(i.get("_id"))
-        items.append({"id": f"invoice-{iid}", "type": "invoice", "title": i.get("invoice_number") or "Invoice", "status": i.get("status") or "draft", "amount": i.get("total") or 0, "at": i.get("updated_at") or i.get("created_at"), "route": f"/invoices/{iid}"})
+        items.append({"id": iid, "type": "invoice", "title": i.get("invoice_number") or "Invoice", "status": i.get("status") or "draft", "date": i.get("paid_at") or i.get("updated_at") or i.get("created_at"), "route": f"/invoices/{iid}", "amount": i.get("total") or i.get("amount"), "description": i.get("description") or "Invoice activity"})
+    for p in payments:
+        pid = str(p.get("_id"))
+        items.append({"id": pid, "type": "payment", "title": p.get("reference") or "Payment", "status": p.get("status") or "received", "date": p.get("payment_date") or p.get("updated_at") or p.get("created_at"), "route": f"/invoices/{str(p.get('invoice_id') or '')}" if p.get('invoice_id') else "/invoices", "amount": p.get("amount") or 0, "description": p.get("notes") or "Payment recorded"})
     for t in tasks:
         tid = str(t.get("_id"))
-        items.append({"id": f"followup-{tid}", "type": "followup", "title": t.get("title") or "Follow-up", "status": t.get("status") or "open", "at": t.get("updated_at") or t.get("created_at"), "route": "/follow-ups"})
-    items.sort(key=lambda x: str(x.get("at") or ""), reverse=True)
+        items.append({"id": tid, "type": "follow_up", "title": t.get("title") or "Follow-up", "status": t.get("status") or "open", "date": t.get("due_at") or t.get("updated_at") or t.get("created_at"), "route": "/follow-ups", "description": t.get("description") or "Client follow-up"})
+
+    items.sort(key=lambda x: str(x.get("date") or ""), reverse=True)
     return {"success": True, "items": items}
 
 @api_router.get("/follow-up-suggestions")

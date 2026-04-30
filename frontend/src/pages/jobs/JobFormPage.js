@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { normalizeRole } from "../../lib/roles";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Layout from "../../components/Layout";
 import { useApi } from "../../hooks/useApi";
@@ -37,10 +38,16 @@ const JOB_TEMPLATES = [
     title: "Lawn mowing service",
     pricing_type: "fixed",
     notes: "Mow lawns, trim edges, blow paths and check site is tidy before leaving.",
+    estimated_hours: 1.5,
+    job_type: "lawn_mowing",
+    pricing_hint: "$80-$140 typical",
     checklist: ["Confirm site access", "Mow lawns", "Trim edges", "Blow paths and driveway", "Take completion photos"],
   },
   {
     id: "cleaning",
+    job_type: "cleaning",
+    estimated_hours: 2,
+    pricing_hint: "Set based on scope",
     label: "Cleaning",
     title: "Cleaning service",
     pricing_type: "hourly",
@@ -49,6 +56,9 @@ const JOB_TEMPLATES = [
   },
   {
     id: "plumbing_callout",
+    job_type: "plumbing",
+    estimated_hours: 2,
+    pricing_hint: "Set based on scope",
     label: "Plumbing callout",
     title: "Plumbing callout",
     pricing_type: "hourly_extras",
@@ -57,6 +67,9 @@ const JOB_TEMPLATES = [
   },
   {
     id: "electrical_inspection",
+    job_type: "electrical",
+    estimated_hours: 2,
+    pricing_hint: "Set based on scope",
     label: "Electrical inspection",
     title: "Electrical inspection",
     pricing_type: "fixed",
@@ -65,6 +78,9 @@ const JOB_TEMPLATES = [
   },
   {
     id: "landscaping",
+    job_type: "landscaping",
+    estimated_hours: 2,
+    pricing_hint: "Set based on scope",
     label: "Landscaping",
     title: "Landscaping job",
     pricing_type: "fixed_extras",
@@ -73,6 +89,9 @@ const JOB_TEMPLATES = [
   },
   {
     id: "pest_control",
+    job_type: "pest_control",
+    estimated_hours: 2,
+    pricing_hint: "Set based on scope",
     label: "Pest control",
     title: "Pest control service",
     pricing_type: "fixed",
@@ -81,6 +100,9 @@ const JOB_TEMPLATES = [
   },
   {
     id: "handyman_repair",
+    job_type: "handyman",
+    estimated_hours: 2,
+    pricing_hint: "Set based on scope",
     label: "Handyman repair",
     title: "Handyman repair",
     pricing_type: "hourly_extras",
@@ -89,6 +111,9 @@ const JOB_TEMPLATES = [
   },
   {
     id: "general_service",
+    job_type: "general",
+    estimated_hours: 2,
+    pricing_hint: "Set based on scope",
     label: "General service job",
     title: "General service job",
     pricing_type: "fixed",
@@ -150,6 +175,8 @@ export default function JobFormPage() {
   const workerIdFromQuery = searchParams.get("workerId") || "";
   const clientIdFromQuery = searchParams.get("clientId") || searchParams.get("client_id") || "";
   const { get, post, patch } = useApi();
+  const currentRole = normalizeRole(JSON.parse(localStorage.getItem("user") || "{}").role);
+  const canSeePricingHints = ["owner","manager","office_admin"].includes(currentRole);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -174,6 +201,8 @@ export default function JobFormPage() {
     estimated_hours: "",
     extras_amount: "",
     checklist_items: [],
+    job_type: "",
+    template_key: "",
     job_template: "",
     is_recurring: false,
     recurring_frequency: "weekly",
@@ -259,6 +288,7 @@ export default function JobFormPage() {
       notes: prev.notes ? `${prev.notes}\n\n${template.notes}` : template.notes,
       pricing_type: template.pricing_type,
       job_template: template.id,
+      template_key: template.id,
       checklist_items: template.checklist.map((label, index) => ({
         id: `template-${template.id}-${index}`,
         label,
@@ -333,6 +363,8 @@ export default function JobFormPage() {
         extras_amount: moneyNumber(form.extras_amount),
         estimated_total: estimatedTotal,
         checklist_items: form.checklist_items || [],
+        job_type: form.job_type || null,
+        template_key: form.template_key || selectedTemplate || null,
         job_template: form.job_template || selectedTemplate || null,
         is_recurring: Boolean(form.is_recurring),
         recurring_frequency: form.is_recurring ? form.recurring_frequency : null,
