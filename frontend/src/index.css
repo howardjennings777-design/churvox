@@ -28,7 +28,7 @@
     --ch-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
     --ch-radius: 20px;
 
-    --background: 218 40% 96%;
+    --background: 215 28% 90%;
     --foreground: 213 52% 13%;
     --card: 0 0% 100%;
     --card-foreground: 213 52% 13%;
@@ -68,7 +68,7 @@
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     text-rendering: optimizeLegibility;
-    background-image: radial-gradient(circle at 0% 0%, #eef5ff 0%, #e8f0fe 42%, #e2ebfb 100%);
+    background-image: radial-gradient(circle at 0% 0%, #dfe8f5 0%, #d7e1f0 42%, #d1dcea 100%);
     pointer-events: auto;
   }
 
@@ -93,7 +93,7 @@
 
 @layer components {
   .app-shell { @apply min-h-screen bg-background; }
-  .cx-app-shell { @apply min-h-screen text-slate-900 bg-background; }
+  .cx-app-shell { @apply min-h-screen text-slate-900 bg-slate-100; }
   .cx-page { @apply mx-auto w-full max-w-[1500px] px-4 py-5 pb-24 md:px-7 md:py-7 md:pb-8 space-y-5; }
   .cx-page-hero {
     @apply rounded-3xl border p-5 md:p-7;
