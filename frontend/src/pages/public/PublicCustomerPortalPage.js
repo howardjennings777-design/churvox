@@ -14,8 +14,15 @@ export default function PublicCustomerPortalPage() {
     setLoading(true); setError("");
     try {
       const resp = await fetch(`${API_BASE}/api/public/customer-portal/${token}`);
-      const res = await resp.json();
-      if (!resp.ok) throw new Error(res?.detail || res?.error || "Could not load portal");
+      const raw = await resp.text();
+      let res = null;
+      try {
+        res = raw ? JSON.parse(raw) : null;
+      } catch {
+        res = null;
+      }
+      if (!resp.ok) throw new Error(res?.detail || res?.error || `Could not load portal (${resp.status})`);
+      if (!res || typeof res !== "object") throw new Error("Portal response was invalid.");
       setData(res);
     } catch (e) {
       setError(e?.message || "Could not load portal");
