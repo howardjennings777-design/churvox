@@ -87,11 +87,11 @@ function SnapshotCard({ title, value, hint, icon: Icon, to }) {
 function HealthBar({ label, score, reason, to }) {
   const color = score >= 80 ? "bg-emerald-500" : score >= 60 ? "bg-blue-500" : score >= 40 ? "bg-amber-500" : "bg-red-500";
   return (
-    <div className="rounded-2xl border border-slate-300 bg-white p-4 shadow-md shadow-slate-300/30">
+    <div className="rounded-2xl border border-slate-200 bg-gradient-to-b from-white via-slate-50 to-slate-100 p-4 shadow-md shadow-slate-300/30">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-black text-slate-950">{label}</p>
-          <p className="mt-1 text-xs font-semibold text-slate-600">{reason}</p>
+          <p className="mt-1 text-xs font-semibold text-slate-700">{reason}</p>
         </div>
         <span className="text-lg font-black text-slate-950">{score}%</span>
       </div>
