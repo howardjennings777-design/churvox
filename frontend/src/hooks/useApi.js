@@ -1,5 +1,4 @@
-const MIN_LOADING_MS = 350;
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import axios from "axios"
 axios.defaults.withCredentials = true;
 import { formatApiErrorDetail } from "../lib/utils";
@@ -18,6 +17,7 @@ function optionalEmptyEndpoint(method, endpoint) {
 export function useApi() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const pendingRequestsRef = useRef(0);
 
   const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem("token");
@@ -31,6 +31,7 @@ export function useApi() {
         return { success: true, data: optionalEmpty };
       }
 
+      pendingRequestsRef.current += 1;
       setLoading(true);
       setError(null);
       try {
@@ -61,7 +62,8 @@ export function useApi() {
         setError(errorMessage);
         return { success: false, error: errorMessage };
       } finally {
-        setLoading(false);
+        pendingRequestsRef.current = Math.max(0, pendingRequestsRef.current - 1);
+        setLoading(pendingRequestsRef.current > 0);
       }
     },
     [getAuthHeaders]

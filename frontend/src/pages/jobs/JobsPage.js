@@ -4,7 +4,7 @@ import Layout from "../../components/Layout";
 import { useAuth } from "../../context/AuthContext";
 import { useApi } from "../../hooks/useApi";
 import { Button } from "../../components/ui/button";
-import { Plus, MapPin, Clock, UserCheck, Trash2, Briefcase, CalendarDays, AlertTriangle, CheckCircle2, PlayCircle, ClipboardList } from "lucide-react";
+import { Plus, MapPin, Clock, UserCheck, Trash2, Briefcase, CalendarDays, AlertTriangle, CheckCircle2, PlayCircle, ClipboardList, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency } from "../../lib/utils";
 import { AppShell, EmptyState, LoadingState, SearchInput, StatusBadge } from "../../components/premium/PremiumUI";
@@ -142,6 +142,8 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState([]);
   const [clients, setClients] = useState([]);
   const [pageLoading, setPageLoading] = useState(true);
+  const [clientsLoading, setClientsLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteId, setDeleteId] = useState(null);
@@ -158,15 +160,26 @@ export default function JobsPage() {
 
   const fetchJobs = useCallback(async () => {
     setPageLoading(true);
-    const [jobsRes, clientsRes] = await Promise.all([
-      get("/jobs"),
-      get("/clients"),
-    ]);
+    setLoadError("");
 
-    if (jobsRes.success) setJobs(extractList(jobsRes.data, ["jobs", "items", "data"]));
-    if (clientsRes.success) setClients(extractList(clientsRes.data, ["clients", "items", "data"]));
+    const jobsRes = await get("/jobs");
+    if (!jobsRes.success) {
+      setLoadError(jobsRes.error || "Could not load jobs.");
+      setJobs([]);
+      setPageLoading(false);
+      return;
+    }
 
+    setJobs(extractList(jobsRes.data, ["jobs", "items", "data"]));
     setPageLoading(false);
+
+    setClientsLoading(true);
+    const results = await Promise.allSettled([get("/clients")]);
+    const clientsRes = results[0]?.status === "fulfilled" ? results[0].value : null;
+    if (clientsRes?.success) {
+      setClients(extractList(clientsRes.data, ["clients", "items", "data"]));
+    }
+    setClientsLoading(false);
   }, [get]);
 
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
@@ -263,6 +276,16 @@ export default function JobsPage() {
               <SearchInput value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search client, address, worker, or job title" />
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1 xl:pb-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={fetchJobs}
+                disabled={pageLoading || clientsLoading}
+                className="border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:text-blue-700"
+              >
+                <RefreshCw size={14} className={`mr-1 ${pageLoading ? "animate-spin" : ""}`} /> Refresh
+              </Button>
               {FILTERS.map((filter) => {
                 const active = statusFilter === filter.value;
                 return (
@@ -284,10 +307,16 @@ export default function JobsPage() {
           </div>
         </section>
 
-        {pageLoading ? <LoadingState title="Loading jobs" /> : filtered.length === 0 ? (
+        {pageLoading ? <LoadingState title="Loading jobs" description="Fetching your latest jobs…" /> : loadError ? (
+          <EmptyState
+            title="Could not load jobs"
+            description={loadError}
+            action={<Button type="button" onClick={fetchJobs} className="bg-blue-600 hover:bg-blue-700 text-white">Retry</Button>}
+          />
+        ) : filtered.length === 0 ? (
           <EmptyState
             title={search ? "No jobs match your search" : "No jobs yet"}
-            description={search ? "Try a different search term or filter." : "Create your first job to start scheduling and field execution."}
+            description={search ? "Try a different search term or filter." : "No jobs found yet. Create your first job to start scheduling."}
             action={!search && isEmployer ? <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white"><Link to="/jobs/new"><Plus size={14} className="mr-1" /> Create First Job</Link></Button> : null}
           />
         ) : (
