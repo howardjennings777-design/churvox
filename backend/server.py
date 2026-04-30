@@ -10098,6 +10098,62 @@ async def read_customer_portal(token: str):
 
     return {"success": True, "entity_type": entity_type, "jobs": jobs, "quotes": quotes, "invoices": invoices, "privacy_note": "Only customer-safe records are shown. No GPS, payroll, worker-private, internal, or admin-only details are included."}
 
+@api_router.get("/clients/{client_id}/timeline")
+async def get_client_timeline(client_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    jobs = await db.jobs.find(business_filter(business_id, {"client_id": client_id})).sort("updated_at", -1).limit(50).to_list(50)
+    quotes = await db.quotes.find(business_filter(business_id, {"client_id": client_id})).sort("updated_at", -1).limit(50).to_list(50)
+    invoices = await db.invoices.find(business_filter(business_id, {"client_id": client_id})).sort("updated_at", -1).limit(50).to_list(50)
+    tasks = await db.follow_up_tasks.find(business_filter(business_id, {"client_id": client_id})).sort("updated_at", -1).limit(50).to_list(50)
+    items = []
+    for j in jobs:
+        jid = str(j.get("_id"))
+        items.append({"id": f"job-{jid}", "type": "job", "title": j.get("title") or "Job", "status": j.get("status") or "scheduled", "at": j.get("updated_at") or j.get("created_at"), "route": f"/jobs/{jid}"})
+    for q in quotes:
+        qid = str(q.get("_id"))
+        items.append({"id": f"quote-{qid}", "type": "quote", "title": q.get("title") or q.get("quote_number") or "Quote", "status": q.get("status") or "draft", "at": q.get("updated_at") or q.get("created_at"), "route": f"/quotes/{qid}"})
+    for i in invoices:
+        iid = str(i.get("_id"))
+        items.append({"id": f"invoice-{iid}", "type": "invoice", "title": i.get("invoice_number") or "Invoice", "status": i.get("status") or "draft", "amount": i.get("total") or 0, "at": i.get("updated_at") or i.get("created_at"), "route": f"/invoices/{iid}"})
+    for t in tasks:
+        tid = str(t.get("_id"))
+        items.append({"id": f"followup-{tid}", "type": "followup", "title": t.get("title") or "Follow-up", "status": t.get("status") or "open", "at": t.get("updated_at") or t.get("created_at"), "route": "/follow-ups"})
+    items.sort(key=lambda x: str(x.get("at") or ""), reverse=True)
+    return {"success": True, "items": items}
+
+@api_router.get("/follow-up-suggestions")
+async def get_follow_up_suggestions(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    suggestions = await db.follow_up_suggestions.find(business_filter(business_id, {"dismissed": {"$ne": True}})).sort("created_at", -1).limit(50).to_list(50)
+    out = []
+    for s in suggestions:
+        s["id"] = str(s.get("_id"))
+        s.pop("_id", None)
+        out.append(s)
+    return {"success": True, "items": out}
+
+@api_router.post("/follow-up-suggestions/generate")
+async def generate_follow_up_suggestions(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    now = datetime.utcnow()
+    quotes = await db.quotes.find(business_filter(business_id, {"status": {"$in": ["sent", "open", "pending"]}})).sort("updated_at", 1).limit(15).to_list(15)
+    created = 0
+    for q in quotes[:5]:
+        qid = str(q.get("_id"))
+        exists = await db.follow_up_suggestions.find_one(business_filter(business_id, {"source_type": "quote", "source_id": qid, "dismissed": {"$ne": True}}))
+        if exists:
+            continue
+        draft = "Hi, just checking in on your quote. Happy to answer questions and lock in a date."
+        await db.follow_up_suggestions.insert_one({"business_id": business_id, "source_type": "quote", "source_id": qid, "title": "Quote follow-up", "draft": draft, "route": f"/quotes/{qid}", "dismissed": False, "created_at": now})
+        created += 1
+    return {"success": True, "created": created}
+
+@api_router.post("/follow-up-suggestions/{suggestion_id}/dismiss")
+async def dismiss_follow_up_suggestion(suggestion_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    await update_one_in_business(db.follow_up_suggestions, business_id, {"_id": ObjectId(suggestion_id)}, {"dismissed": True, "dismissed_at": datetime.utcnow()})
+    return {"success": True}
+
 
 app.include_router(api_router)
 
