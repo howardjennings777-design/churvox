@@ -36,7 +36,7 @@ export default function Layout({ children }) {
   const role = normalizedRole || "owner";
   const showHelp = role !== "worker";
   const routeAIArea = role !== "worker" && role !== "payroll" ? aiAreaForPath(location.pathname) : null;
-  const showAIOperationsEngine = role !== "worker" && role !== "payroll" && location.pathname === "/dashboard";
+  const showAIOperationsEngine = role !== "worker" && role !== "payroll" && location.pathname === "/smart-hub";
 
   const handleLogout = async () => {
     await logout();
@@ -44,7 +44,7 @@ export default function Layout({ children }) {
   };
 
   const navItems = [
-    canAccess(role, "dashboard") && { path: "/dashboard", label: "Smart Hub", icon: LayoutDashboard, group: "Core" },
+    canAccess(role, "smart_hub") && { path: "/smart-hub", label: "Smart Hub", icon: LayoutDashboard, group: "Core" },
     canAccess(role, "jobs") && { path: "/jobs", label: "Jobs", icon: Briefcase, group: "Core" },
     canAccess(role, "jobs") && { path: "/schedule", label: "Schedule", icon: CalendarDays, group: "Core" },
     canAccess(role, "clients") && { path: "/clients", label: "Clients", icon: Users, group: "Core" },
@@ -67,7 +67,7 @@ export default function Layout({ children }) {
     Admin: navItems.filter((n) => n.group === "Admin"),
   };
 
-  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/") || (path === "/smart-hub" && location.pathname === "/dashboard");
 
   return (
     <div className="cx-app-shell tap-safe-root min-h-screen overflow-x-clip" data-testid="layout-container">
