@@ -131,6 +131,7 @@ export default function WorkerJobDetailPage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [checklistItems, setChecklistItems] = useState([]);
   const [savingChecklist, setSavingChecklist] = useState(false);
+  const [statusSaving, setStatusSaving] = useState(false);
 
   const loadJob = useCallback(async () => {
     setLoading(true);
@@ -224,6 +225,18 @@ export default function WorkerJobDetailPage() {
     await saveChecklist(next);
   };
 
+
+  const markOnTheWay = async () => {
+    setStatusSaving(true);
+    const res = await patch(`/jobs/${id}/customer-status`, { customer_live_status: "on_the_way" });
+    if (res?.success) {
+      toast.success("Customer-safe status updated");
+      await loadJob();
+    } else {
+      toast.error(safeText(res?.error, "Could not update status"));
+    }
+    setStatusSaving(false);
+  };
   const handleSaveNotes = async () => {
     setSavingNotes(true);
     const res = await patch(`/jobs/${id}`, { worker_notes: workerNotes });
@@ -390,7 +403,14 @@ export default function WorkerJobDetailPage() {
                 <div className="h-full rounded-full bg-blue-600" style={{ width: `${checklist.percent}%` }} />
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm">
+        <div className="font-semibold text-slate-900">Customer-safe status</div>
+        <div className="text-slate-600 mt-1">{String(job?.customer_live_status || job?.status || "scheduled").replaceAll("_", " ")}</div>
+        {(String(job?.assigned_worker_id||job?.worker_id||"") && String(job?.status||"") !== "completed") ? (
+          <button type="button" onClick={markOnTheWay} disabled={statusSaving} className="mt-2 rounded-lg bg-blue-600 px-3 py-1.5 text-white text-xs">{statusSaving ? "Saving..." : "Mark on the way"}</button>
+        ) : null}
+      </div>
+      <div className="space-y-2">
               {checklistItems.map((item) => (
                 <label key={item.id} className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-700">
                   <input type="checkbox" checked={item.done} disabled={savingChecklist} onChange={() => toggleChecklistItem(item.id)} className="h-4 w-4 rounded border-slate-300 text-blue-600" />

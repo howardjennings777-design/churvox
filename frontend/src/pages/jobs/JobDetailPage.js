@@ -93,6 +93,11 @@ export default function JobDetailPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [photoLightboxIndex, setPhotoLightboxIndex] = useState(null);
+  const [statusSaving, setStatusSaving] = useState(false);
+  const [invoiceCreating, setInvoiceCreating] = useState(false);
+  const [reviewLink, setReviewLink] = useState("");
+  const [followUpDraft, setFollowUpDraft] = useState("");
+  const [reviewDraft, setReviewDraft] = useState("");
 
   const [workerNotes, setWorkerNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
@@ -107,10 +112,11 @@ export default function JobDetailPage() {
     setError("");
 
     try {
-      const [jobRes, workersRes, accountingRes] = await Promise.all([
+      const [jobRes, workersRes, accountingRes, settingsRes] = await Promise.all([
         get(`/jobs/${id}`),
         get("/team/workers"),
         get("/accounting/settings"),
+        get("/business/settings"),
       ]);
 
       if (!jobRes?.success || !jobRes?.data) {
@@ -127,6 +133,7 @@ export default function JobDetailPage() {
           loadedJob?.worker_id ||
           ""
         );
+        buildDrafts(loadedJob);
       }
 
       if (workersRes?.success && Array.isArray(workersRes.data)) {
@@ -135,6 +142,7 @@ export default function JobDetailPage() {
         setWorkers([]);
       }
       if (accountingRes?.success) setAccounting(accountingRes.data || null);
+      if (settingsRes?.success) setReviewLink(settingsRes.google_review_link || "");
     } catch {
       setError("Failed to load job");
       setJob(null);
@@ -198,7 +206,7 @@ export default function JobDetailPage() {
       return;
     }
 
-    setSaving(true);
+    setInvoiceCreating(true);
     try {
       const res = await post(`/jobs/${id}/assign`, { worker_id: selectedWorker });
       if (res?.success) {
@@ -210,7 +218,7 @@ export default function JobDetailPage() {
     } catch {
       toast.error("Failed to assign worker");
     } finally {
-      setSaving(false);
+      setInvoiceCreating(false);
     }
   };
 
@@ -314,6 +322,31 @@ export default function JobDetailPage() {
     }
   };
 
+
+  const handleCustomerStatusChange = async (nextStatus) => {
+    setStatusSaving(true);
+    try {
+      const res = await patch(`/jobs/${id}/customer-status`, { customer_live_status: nextStatus });
+      if (res?.success) {
+        setJob((prev) => ({ ...(prev || {}), customer_live_status: res.customer_live_status || nextStatus }));
+        toast.success("Customer-safe status updated");
+      } else {
+        toast.error(safeText(res?.error, "Failed to update customer status"));
+      }
+    } catch {
+      toast.error("Failed to update customer status");
+    } finally {
+      setStatusSaving(false);
+    }
+  };
+
+  const buildDrafts = (jobData = job) => {
+    const customer = jobData?.client_name || jobData?.customer_name || "there";
+    const title = jobData?.title || "your recent job";
+    const biz = user?.business_name || "our team";
+    setFollowUpDraft(`Hi ${customer},\n\nThanks again for choosing ${biz}. We have marked "${title}" as complete. Please reply if you would like us to adjust anything and we will action it first.\n\nKind regards,\n${biz}`);
+    setReviewDraft(`Hi ${customer},\n\nThanks for having ${biz} complete "${title}". If you are happy with the service, would you be open to leaving us a quick review?\n${reviewLink || "[Add Google review link in Settings]"}\n\nThank you!`);
+  };
   if (pageLoading) {
     return (
       <Layout>
@@ -394,8 +427,8 @@ export default function JobDetailPage() {
                   AI job update draft
                 </Button>
                 {currentStatus === "completed" && !job?.invoice_id && (
-                  <Button onClick={handleCreateDraftInvoice} className="bg-blue-600 hover:bg-blue-700 text-white">
-                    {invoiceMode === "myob_external" ? "Prepare billing draft for MYOB" : "Create Draft Invoice"}
+                  <Button onClick={handleCreateDraftInvoice} disabled={invoiceCreating} className="bg-blue-600 hover:bg-blue-700 text-white">
+                    {invoiceCreating ? "Creating..." : (invoiceMode === "myob_external" ? "Prepare billing draft for MYOB" : "Create Draft Invoice")}
                   </Button>
                 )}
                 {job?.invoice_id && (
@@ -714,6 +747,38 @@ export default function JobDetailPage() {
                   </button>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+
+        {isOwnerView && (currentStatus === "completed" || currentStatus === "in_progress" || currentStatus === "paused") && (
+          <Card className="border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm">
+            <CardContent className="p-5 space-y-4">
+              <div className="text-slate-900 font-semibold text-lg">Completion Pack</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div><span className="text-slate-500">Started:</span> {safeDate(job?.started_at)}</div>
+                <div><span className="text-slate-500">Completed:</span> {safeDate(job?.completed_at)}</div>
+                <div><span className="text-slate-500">Total worked:</span> {formatMinutes(job?.time_spent_minutes)}</div>
+                <div><span className="text-slate-500">Paused time:</span> {formatMinutes(job?.paused_minutes)}</div>
+                <div><span className="text-slate-500">Customer-safe status:</span> {niceStatus(job?.customer_live_status || job?.status)}</div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {["scheduled","assigned","on_the_way","in_progress","completed"].map((s)=> (
+                  <Button key={s} size="sm" variant={(job?.customer_live_status||job?.status)===s?"default":"outline"} disabled={statusSaving} onClick={()=>handleCustomerStatusChange(s)}>{niceStatus(s)}</Button>
+                ))}
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <textarea value={followUpDraft} onChange={(e)=>setFollowUpDraft(e.target.value)} rows={5} className="w-full rounded-md border border-slate-200 p-2 text-sm" placeholder="Draft customer follow-up"/>
+                <textarea value={reviewDraft} onChange={(e)=>setReviewDraft(e.target.value)} rows={5} className="w-full rounded-md border border-slate-200 p-2 text-sm" placeholder="Draft review request"/>
+              </div>
+              {!reviewLink ? <div className="text-xs text-amber-700">Google review link not set. <Link className="underline" to="/settings">Open Settings</Link>.</div> : null}
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={()=>navigator.clipboard?.writeText(followUpDraft||"")}>Copy follow-up</Button>
+                <Button size="sm" variant="outline" onClick={()=>navigator.clipboard?.writeText(reviewDraft||"")}>Copy review request</Button>
+                <Button size="sm" variant="outline" onClick={()=>window.open(`/public/customer-portal/${job?.portal_token||""}`,'_blank')}>Open portal</Button>
+              </div>
+              {(!job?.photos?.length && !job?.worker_notes && !job?.notes && !(job?.extras||[]).length) ? <div className="rounded-xl border border-dashed p-3 text-sm text-slate-500">No photos, notes, or extras yet.</div> : null}
             </CardContent>
           </Card>
         )}
