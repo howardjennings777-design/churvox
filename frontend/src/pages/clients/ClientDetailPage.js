@@ -101,17 +101,21 @@ export default function ClientDetailPage() {
   const [quotes, setQuotes] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [followUps, setFollowUps] = useState([]);
+  const [timelineItems, setTimelineItems] = useState([]);
+  const [timelineLoading, setTimelineLoading] = useState(false);
+  const [timelineError, setTimelineError] = useState("");
   const [loading, setLoading] = useState(true);
   const [creatingFollowUp, setCreatingFollowUp] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const [clientRes, jobsRes, quotesRes, invoicesRes, followUpsRes] = await Promise.allSettled([
+    const [clientRes, jobsRes, quotesRes, invoicesRes, followUpsRes, timelineRes] = await Promise.allSettled([
       get(`/clients/${id}`),
       get(`/clients/${id}/jobs`),
       get("/quotes"),
       get("/invoices"),
       get("/follow-up-tasks?status=all"),
+      get(`/clients/${id}/timeline`),
     ]);
 
     const clientData = clientRes.status === "fulfilled" && clientRes.value?.success ? clientRes.value.data : null;
@@ -122,6 +126,9 @@ export default function ClientDetailPage() {
     setQuotes(safeArray(quotesRes.status === "fulfilled" && quotesRes.value?.success ? quotesRes.value.data : []));
     setInvoices(safeArray(invoicesRes.status === "fulfilled" && invoicesRes.value?.success ? invoicesRes.value.data : []));
     const followUpPayload = followUpsRes.status === "fulfilled" && followUpsRes.value?.success ? followUpsRes.value.data : [];
+    const timelinePayload = timelineRes.status === "fulfilled" && timelineRes.value?.success ? timelineRes.value.data : null;
+    if (timelinePayload && Array.isArray(timelinePayload.items)) { setTimelineItems(timelinePayload.items); setTimelineError(""); }
+    else { setTimelineItems([]); setTimelineError("Timeline unavailable"); }
     setFollowUps(safeArray(followUpPayload?.data || followUpPayload));
     setLoading(false);
   }, [get, id, navigate]);
@@ -136,50 +143,23 @@ export default function ClientDetailPage() {
   const outstanding = useMemo(() => clientInvoices.filter((invoice) => !["paid", "cancelled"].includes(String(invoice.status || "").toLowerCase())).reduce((sum, invoice) => sum + Number(invoice.total || invoice.amount || invoice.subtotal || 0), 0), [clientInvoices]);
 
   const timeline = useMemo(() => {
-    const rows = [
-      ...jobs.map((job) => ({
-        id: `job-${recordId(job)}`,
-        type: "Job",
-        icon: Briefcase,
-        title: job.title || "Job",
-        subtitle: job.address || job.client_name || "Job activity",
-        status: job.status,
-        date: job.scheduled_date || job.completed_at || job.updated_at || job.created_at,
-        to: `/jobs/${recordId(job)}`,
-      })),
-      ...clientQuotes.map((quote) => ({
-        id: `quote-${recordId(quote)}`,
-        type: "Quote",
-        icon: FileText,
-        title: quote.quote_number || quote.job_description || "Quote",
-        subtitle: quote.address || quote.customer_name || "Quote activity",
-        status: quote.status,
-        date: quote.updated_at || quote.created_at || quote.valid_until,
-        to: `/quotes/${recordId(quote)}`,
-      })),
-      ...clientInvoices.map((invoice) => ({
-        id: `invoice-${recordId(invoice)}`,
-        type: "Invoice",
-        icon: Receipt,
-        title: invoice.invoice_number || "Invoice",
-        subtitle: invoice.description || invoice.address || "Invoice activity",
-        status: invoice.status,
-        date: invoice.paid_at || invoice.updated_at || invoice.created_at || invoice.due_date,
-        to: `/invoices/${recordId(invoice)}`,
-      })),
-      ...clientFollowUps.map((task) => ({
-        id: `followup-${recordId(task)}`,
-        type: "Follow-up",
-        icon: ListChecks,
-        title: task.title || "Follow-up",
-        subtitle: task.description || "Customer follow-up",
-        status: task.status || "open",
-        date: task.due_at || task.updated_at || task.created_at,
-        to: "/follow-ups",
-      })),
-    ];
-    return rows.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0)).slice(0, 12);
-  }, [jobs, clientQuotes, clientInvoices, clientFollowUps]);
+    if (timelineItems.length) {
+      return timelineItems.slice(0, 20).map((item) => ({
+        id: `${item.type}-${item.id}`,
+        type: item.type,
+        icon: item.type === "invoice" ? Receipt : item.type === "quote" ? FileText : item.type === "follow_up" ? ListChecks : Briefcase,
+        title: item.title || "Activity",
+        subtitle: item.description || "",
+        status: item.status,
+        date: item.date,
+        to: item.route || "/clients",
+        amount: item.amount,
+        photos: item.photos || [],
+      }));
+    }
+    const rows = [...jobs.map((job)=>({id:`job-${recordId(job)}`,type:"job",icon:Briefcase,title:job.title||"Job",subtitle:job.address||"",status:job.status,date:job.scheduled_date||job.created_at,to:`/jobs/${recordId(job)}`}))];
+    return rows.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  }, [timelineItems, jobs]);
 
   const handleDelete = async () => {
     const confirmed = window.confirm("Delete this client? This cannot be undone.");
@@ -296,7 +276,7 @@ export default function ClientDetailPage() {
             <section data-testid="client-timeline">
               <h2 className="mb-3 flex items-center gap-2 text-base font-black text-slate-950"><Clock size={16} /> Client timeline</h2>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {timeline.length ? timeline.map((item) => <TimelineItem key={item.id} item={item} />) : <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500">No activity yet.</div>}
+                {timelineError ? <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-700">{timelineError} <Button size="sm" className="ml-2" onClick={fetchData}>Retry</Button></div> : timeline.length ? timeline.map((item) => <div key={item.id}><TimelineItem item={item} />{item.amount ? <p className="text-xs font-bold text-slate-500 mt-1">{formatCurrency(item.amount)}</p> : null}{item.photos?.length ? <div className="mt-1 flex gap-1">{item.photos.slice(0,3).map((photo,idx)=><img key={idx} src={photo} alt="job" className="h-10 w-10 rounded object-cover" />)}</div> : null}</div>) : <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-500">No activity yet.</div>}
               </div>
             </section>
 

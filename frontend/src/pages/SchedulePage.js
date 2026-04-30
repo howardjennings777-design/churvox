@@ -85,12 +85,18 @@ function JobScheduleCard({ job }) {
 
 export default function SchedulePage() {
   const { get, post } = useApi();
+  const role = String(JSON.parse(localStorage.getItem("user")||"{}").role||"").toLowerCase();
+  const canRouteOptimise = ["owner","manager","office_admin"].includes(role);
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sweepingRecurring, setSweepingRecurring] = useState(false);
   const [lastRecurringSweep, setLastRecurringSweep] = useState(null);
   const [weekOffset, setWeekOffset] = useState(0);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [routeDate, setRouteDate] = useState(new Date().toISOString().slice(0,10));
+  const [routeData, setRouteData] = useState(null);
+  const [routeLoading, setRouteLoading] = useState(false);
+  const [routeError, setRouteError] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -115,6 +121,16 @@ export default function SchedulePage() {
     setSweepingRecurring(false);
   };
 
+
+
+  const runRouteOptimisation = async () => {
+    setRouteLoading(true);
+    setRouteError("");
+    const res = await post("/route-optimisation", { date: routeDate });
+    if (res?.success) setRouteData(res);
+    else setRouteError(safeText(res?.error, "Could not optimise route"));
+    setRouteLoading(false);
+  };
   const weekStart = useMemo(() => addDays(startOfWeek(new Date()), weekOffset * 7), [weekOffset]);
   const days = useMemo(() => Array.from({ length: 7 }, (_, index) => addDays(weekStart, index)), [weekStart]);
 
@@ -202,7 +218,9 @@ export default function SchedulePage() {
           </section>
         ) : null}
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+        {canRouteOptimise ? <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex flex-wrap items-center gap-2 justify-between"><h2 className="text-lg font-black">Route Optimisation V1</h2><div className="flex gap-2"><input type="date" value={routeDate} onChange={(e)=>setRouteDate(e.target.value)} className="rounded-full border px-3 py-2"/><Button onClick={runRouteOptimisation} className="rounded-full">{routeLoading?"Optimising...":"Optimise"}</Button></div></div><p className="text-xs mt-2 text-slate-500">Address/order planning only. No live traffic.</p>{routeError?<p className="text-sm text-red-600 mt-2">{routeError}</p>:null}{routeData?.jobs?.length?<div className="mt-3 grid gap-2">{routeData.jobs.map((j,i)=><div key={j.id} className="rounded-xl border p-2 text-sm"><div className="font-bold">{i+1}. {j.title}</div><div>{j.address || "No address"}</div><div className="text-xs text-slate-500">{j.time || "Any time"} • {j.status}</div></div>)}</div>:null}{routeData?.google_maps_url?<a href={routeData.google_maps_url} target="_blank" rel="noreferrer" className="inline-block mt-3 text-blue-700 font-bold">Open in Google Maps</a>:null}</section> : null}
+
+<section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={() => setWeekOffset((v) => v - 1)} className="rounded-full"><ChevronLeft className="h-4 w-4" /></Button>
