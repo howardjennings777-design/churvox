@@ -347,9 +347,9 @@ export default function SafeAIAssistantPage() {
         </section>
 
         <section className="grid gap-3 xl:grid-cols-2">
-          <div className="rounded-2xl border border-slate-300 bg-white p-4 shadow-md shadow-slate-300/30">
+          <div className="rounded-2xl border border-slate-300 bg-slate-50 p-4 shadow-md shadow-slate-300/30">
             <h2 className="text-lg font-black text-slate-950">Business Health Summary</h2>
-            <p className="mt-1 text-sm font-semibold text-slate-600">Advanced scoring across jobs, cashflow, quotes, team, automation, and follow-ups.</p>
+            <p className="mt-1 text-sm font-semibold text-slate-700">Advanced scoring across jobs, cashflow, quotes, team, automation, and follow-ups.</p>
             <div className="mt-3 grid gap-2">
               <HealthBar label="Overall score" score={digestData?.health_score?.overall?.score ?? model.health.overallScore} reason="Live snapshot from Smart Hub activity" />
             </div>
