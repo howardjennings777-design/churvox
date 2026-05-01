@@ -147,6 +147,9 @@ export default function JobsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteId, setDeleteId] = useState(null);
+  const [workerFilter, setWorkerFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   const clientLookup = useMemo(() => {
     const lookup = {};
@@ -171,6 +174,7 @@ export default function JobsPage() {
     }
 
     setJobs(extractList(jobsRes.data, ["jobs", "items", "data"]));
+    setLastUpdated(new Date());
     setPageLoading(false);
 
     setClientsLoading(true);
@@ -216,6 +220,8 @@ export default function JobsPage() {
     };
   }, [jobs]);
 
+  const workerOptions = useMemo(() => Array.from(new Set(jobs.map((job) => getWorkerName(job)).filter((name) => name && name !== "Unassigned"))), [jobs]);
+
   const filtered = useMemo(() => {
     const q = normalise(search);
     const today = new Date();
@@ -232,12 +238,17 @@ export default function JobsPage() {
       const matchesSearch = !q || haystack.includes(q);
       if (!matchesSearch) return false;
 
+      if (workerFilter !== "all" && getWorkerName(job) !== workerFilter) return false;
+      if (dateFilter === "today" && !isSameDay(getJobDate(job), today)) return false;
+      if (dateFilter === "overdue" && !isOverdue(job)) return false;
+      if (dateFilter === "this_week") { const d = new Date(getJobDate(job)); const now = new Date(); const end = new Date(now); end.setDate(now.getDate()+7); if (Number.isNaN(d.getTime()) || d < now || d > end) return false; }
+
       if (statusFilter === "all") return true;
       if (statusFilter === "today") return isSameDay(getJobDate(job), today);
       if (statusFilter === "overdue") return isOverdue(job);
       return normalise(job.status) === statusFilter;
     });
-  }, [jobs, clientLookup, search, statusFilter]);
+  }, [jobs, clientLookup, search, statusFilter, workerFilter, dateFilter]);
 
   const activeDeleteJob = jobs.find((job) => String(job.id || job._id) === String(deleteId));
 
@@ -250,12 +261,12 @@ export default function JobsPage() {
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-300">Churvox jobs</p>
               <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Jobs Command Board</h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base">
-                Track scheduled, assigned, in-progress, and completed work from one clean operational board.
+                Plan, assign, track, and invoice work from one place.
               </p>
             </div>
             {isEmployer ? (
               <Button asChild className="bg-white text-slate-950 hover:bg-slate-100 shadow-xl">
-                <Link to="/jobs/new"><Plus size={16} className="mr-2" /> New Job</Link>
+                <Link to="/jobs/new"><Plus size={16} className="mr-2" /> Create Job</Link>
               </Button>
             ) : null}
           </div>
@@ -286,6 +297,14 @@ export default function JobsPage() {
               >
                 <RefreshCw size={14} className={`mr-1 ${pageLoading ? "animate-spin" : ""}`} /> Refresh
               </Button>
+              
+            <select value={workerFilter} onChange={(e)=>setWorkerFilter(e.target.value)} className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
+              <option value="all">All workers</option>
+              {workerOptions.map((worker)=> <option key={worker} value={worker}>{worker}</option>)}
+            </select>
+            <select value={dateFilter} onChange={(e)=>setDateFilter(e.target.value)} className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
+              <option value="all">All dates</option><option value="today">Today</option><option value="this_week">This week</option><option value="overdue">Overdue</option>
+            </select>
               {FILTERS.map((filter) => {
                 const active = statusFilter === filter.value;
                 return (
@@ -304,6 +323,7 @@ export default function JobsPage() {
                 );
               })}
             </div>
+            <p className="mt-3 text-xs text-slate-200">Last updated: {lastUpdated ? lastUpdated.toLocaleString() : "Not loaded yet"}</p>
           </div>
         </section>
 
@@ -356,9 +376,9 @@ export default function JobsPage() {
 
                       <div className="mt-3 grid gap-2 text-sm text-slate-600 md:grid-cols-2 xl:grid-cols-4">
                         <span className="min-w-0 truncate font-semibold text-slate-800">{clientName}</span>
-                        <span className="flex min-w-0 items-center gap-1.5 truncate"><MapPin size={14} className="shrink-0 text-slate-400" />{job.address || "No address set"}</span>
-                        <span className="flex min-w-0 items-center gap-1.5 truncate"><Clock size={14} className="shrink-0 text-slate-400" />{date ? formatDate(date) : "No date"} {job.scheduled_time || ""}</span>
-                        <span className="flex min-w-0 items-center gap-1.5 truncate"><UserCheck size={14} className="shrink-0 text-slate-400" />{workerName}</span>
+                        <span className="flex min-w-0 items-center gap-1.5 truncate"><MapPin size={14} className="shrink-0 text-slate-500" />{job.address || "No address set"}</span>
+                        <span className="flex min-w-0 items-center gap-1.5 truncate"><Clock size={14} className="shrink-0 text-slate-500" />{date ? formatDate(date) : "No date"} {job.scheduled_time || ""}</span>
+                        <span className="flex min-w-0 items-center gap-1.5 truncate"><UserCheck size={14} className="shrink-0 text-slate-500" />{workerName}</span>
                       </div>
                     </div>
 
@@ -402,7 +422,7 @@ export default function JobsPage() {
                             event.stopPropagation();
                             setDeleteId(jobId);
                           }}
-                          className="text-slate-400 opacity-70 hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+                          className="text-slate-500  hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
                           aria-label={`Delete ${title}`}
                         >
                           <Trash2 size={15} />
@@ -426,7 +446,7 @@ export default function JobsPage() {
               </p>
               <div className="mt-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
                 <button type="button" onClick={() => setDeleteId(null)} className="cx-button-secondary">Cancel</button>
-                <button type="button" disabled={loading} onClick={handleDelete} className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50">{loading ? "Deleting…" : "Delete"}</button>
+                <button type="button" disabled={loading} onClick={handleDelete} className="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:bg-red-400">{loading ? "Deleting…" : "Delete"}</button>
               </div>
             </div>
           </div>

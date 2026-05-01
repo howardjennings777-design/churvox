@@ -521,7 +521,7 @@ export default function JobDetailPage() {
                 <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                   <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-sm font-semibold text-slate-700">
                     <input type="checkbox" checked={item.done} onChange={() => toggleChecklistItem(item.id)} disabled={savingChecklist} />
-                    <span className={item.done ? "truncate text-slate-400 line-through" : "truncate"}>{item.label}</span>
+                    <span className={item.done ? "truncate text-slate-500 line-through" : "truncate"}>{item.label}</span>
                   </label>
                   {isOwnerView && (
                     <button type="button" onClick={() => removeChecklistItem(item.id)} disabled={savingChecklist} className="text-xs font-bold text-red-500 hover:text-red-700">Remove</button>
@@ -798,7 +798,7 @@ export default function JobDetailPage() {
                 </div>
               )}
               {job.location_captured_at && (
-                <div className="text-xs text-slate-400">Captured: {safeDate(job.location_captured_at)}</div>
+                <div className="text-xs text-slate-500">Captured: {safeDate(job.location_captured_at)}</div>
               )}
             </CardContent>
           </Card>
