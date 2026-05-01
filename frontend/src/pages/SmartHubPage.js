@@ -227,11 +227,69 @@ export default function SmartHubPage() {
     <Layout>
       <div className="cx-page smart-hub-v3 space-y-6 pb-20 md:pb-8">
         <style>{`
-          .smart-hub-v3 > section:nth-of-type(4),
-          .smart-hub-v3 > section:nth-of-type(4) * {
+          .smart-hub-v3 [data-smart-hub-ai-panel],
+          .smart-hub-v3 [data-smart-hub-ai-panel] * {
             opacity: 1 !important;
             filter: none !important;
             text-shadow: none !important;
+          }
+          .smart-hub-v3 [data-smart-hub-ai-panel] {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            background-image: none !important;
+            border-color: #e2e8f0 !important;
+            color: #0f172a !important;
+          }
+          .smart-hub-v3 [data-smart-hub-ai-panel] h2 {
+            color: #020617 !important;
+          }
+          .smart-hub-v3 [data-smart-hub-ai-panel] p {
+            color: #334155 !important;
+          }
+          .smart-hub-v3 [data-smart-hub-ai-panel] button:not([data-active-prompt="true"]) {
+            background: #ffffff !important;
+            color: #020617 !important;
+            border-color: #cbd5e1 !important;
+          }
+          .smart-hub-v3 [data-smart-hub-ai-panel] button[data-active-prompt="true"] {
+            background: #2563eb !important;
+            color: #ffffff !important;
+            border-color: #2563eb !important;
+          }
+          .smart-hub-v3 [data-smart-hub-ai-response],
+          .smart-hub-v3 [data-smart-hub-ai-response] * {
+            opacity: 1 !important;
+            filter: none !important;
+            text-shadow: none !important;
+          }
+          .smart-hub-v3 [data-smart-hub-ai-response] {
+            background: linear-gradient(135deg, #020617 0%, #0f172a 58%, #172554 100%) !important;
+            background-color: #020617 !important;
+            color: #ffffff !important;
+            border-color: #0f172a !important;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28) !important;
+          }
+          .smart-hub-v3 [data-smart-hub-ai-response] h2,
+          .smart-hub-v3 [data-smart-hub-ai-response] [data-ai-heading] {
+            color: #ffffff !important;
+          }
+          .smart-hub-v3 [data-smart-hub-ai-response] [data-ai-eyebrow] {
+            color: #a5f3fc !important;
+          }
+          .smart-hub-v3 [data-smart-hub-ai-response] [data-ai-answer] {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-color: rgba(255, 255, 255, 0.16) !important;
+            color: #f8fafc !important;
+          }
+          .smart-hub-v3 [data-smart-hub-ai-response] button {
+            background: #ffffff !important;
+            color: #020617 !important;
+            border-color: #ffffff !important;
+          }
+          .smart-hub-v3 [data-smart-hub-ai-response] a {
+            color: #f8fafc !important;
+            border-color: rgba(255, 255, 255, 0.26) !important;
+            background: rgba(255, 255, 255, 0.04) !important;
           }
           .smart-hub-v3 .force-readable-card,
           .smart-hub-v3 .force-readable-card * {
@@ -276,7 +334,7 @@ export default function SmartHubPage() {
         </section>
 
         <section className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-          <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/80 md:p-6">
+          <article data-smart-hub-ai-panel="true" className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/80 md:p-6">
             <div className="flex items-start gap-3">
               <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-700"><Bot className="h-6 w-6" /></span>
               <div>
@@ -289,6 +347,7 @@ export default function SmartHubPage() {
                 <button
                   key={id}
                   type="button"
+                  data-active-prompt={activePrompt === id ? "true" : "false"}
                   onClick={() => askAssistant(id)}
                   className={activePrompt === id ? "rounded-2xl border border-blue-600 bg-blue-600 px-4 py-3 text-left text-sm font-black text-white shadow-lg shadow-blue-900/15" : "rounded-2xl border border-slate-300 bg-white px-4 py-3 text-left text-sm font-black text-slate-950 transition hover:border-blue-300 hover:bg-blue-50"}
                 >
@@ -298,15 +357,15 @@ export default function SmartHubPage() {
             </div>
           </article>
 
-          <article className="rounded-3xl border border-slate-900 bg-slate-950 p-5 text-white shadow-xl shadow-slate-900/20 md:p-6">
+          <article data-smart-hub-ai-response="true" className="rounded-3xl border border-slate-900 bg-slate-950 p-5 text-white shadow-xl shadow-slate-900/20 md:p-6">
             <div className="flex items-start gap-3">
               <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-cyan-200"><Sparkles className="h-5 w-5" /></span>
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-cyan-200">Assistant response</p>
-                <h2 className="mt-1 text-xl font-black text-white">Draft-only guidance</h2>
+                <p data-ai-eyebrow="true" className="text-xs font-black uppercase tracking-[0.18em] text-cyan-200">Assistant response</p>
+                <h2 data-ai-heading="true" className="mt-1 text-xl font-black text-white">Draft-only guidance</h2>
               </div>
             </div>
-            <p className="mt-4 min-h-28 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm font-semibold leading-6 text-slate-100">
+            <p data-ai-answer="true" className="mt-4 min-h-28 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm font-semibold leading-6 text-slate-100">
               {assistantLoading ? "Loading assistant response…" : assistant}
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
