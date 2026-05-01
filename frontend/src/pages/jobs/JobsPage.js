@@ -117,12 +117,12 @@ function isOverdue(job) {
 
 function StatCard({ icon: Icon, label, value, tone = "blue" }) {
   const toneClass = {
-    blue: "bg-blue-500/15 text-blue-100 border-blue-200/20",
-    green: "bg-emerald-500/15 text-emerald-100 border-emerald-200/20",
-    amber: "bg-amber-500/15 text-amber-100 border-amber-200/20",
-    red: "bg-red-500/15 text-red-100 border-red-200/20",
-    slate: "bg-white/10 text-slate-100 border-white/15",
-  }[tone] || "bg-white/10 text-slate-100 border-white/15";
+    blue: "bg-blue-50 text-blue-800 border-blue-100",
+    green: "bg-emerald-50 text-emerald-800 border-emerald-100",
+    amber: "bg-amber-50 text-amber-800 border-amber-100",
+    red: "bg-red-50 text-red-800 border-red-100",
+    slate: "bg-slate-50 text-slate-800 border-slate-200",
+  }[tone] || "bg-slate-50 text-slate-800 border-slate-200";
 
   return (
     <div className={`rounded-2xl border p-4 backdrop-blur ${toneClass}`}>
@@ -130,7 +130,7 @@ function StatCard({ icon: Icon, label, value, tone = "blue" }) {
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-current/75">{label}</p>
         <Icon className="h-4 w-4 opacity-80" />
       </div>
-      <p className="mt-3 text-3xl font-black leading-none text-white">{value}</p>
+      <p className="mt-3 text-3xl font-black leading-none text-slate-900">{value}</p>
     </div>
   );
 }
@@ -255,17 +255,17 @@ export default function JobsPage() {
   return (
     <Layout>
       <AppShell className="max-w-7xl">
-        <section className="overflow-hidden rounded-3xl border border-slate-900/20 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-6 text-white shadow-2xl lg:p-8">
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 text-slate-900 shadow-sm lg:p-8">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-3xl">
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-300">Churvox jobs</p>
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-blue-600">Churvox jobs</p>
               <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Jobs Command Board</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
                 Plan, assign, track, and invoice work from one place.
               </p>
             </div>
             {isEmployer ? (
-              <Button asChild className="bg-white text-slate-950 hover:bg-slate-100 shadow-xl">
+              <Button asChild className="bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
                 <Link to="/jobs/new"><Plus size={16} className="mr-2" /> Create Job</Link>
               </Button>
             ) : null}
@@ -323,7 +323,7 @@ export default function JobsPage() {
                 );
               })}
             </div>
-            <p className="mt-3 text-xs text-slate-200">Last updated: {lastUpdated ? lastUpdated.toLocaleString() : "Not loaded yet"}</p>
+            <p className="mt-3 text-xs text-slate-500">Last updated: {lastUpdated ? lastUpdated.toLocaleString() : "Not loaded yet"}</p>
           </div>
         </section>
 
