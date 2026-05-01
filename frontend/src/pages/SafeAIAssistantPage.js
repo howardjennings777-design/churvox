@@ -60,6 +60,15 @@ const daysOld = (v) => {
   return Math.max(0, Math.floor((Date.now() - dt.getTime()) / 86400000));
 };
 
+const HUB_REQUEST_TIMEOUT_MS = 10000;
+
+const withTimeout = (promise, timeoutMs = HUB_REQUEST_TIMEOUT_MS) => Promise.race([
+  promise,
+  new Promise((_, reject) => {
+    setTimeout(() => reject(new Error("Smart Hub request timed out")), timeoutMs);
+  }),
+]);
+
 const routeForAction = (kind, id) => {
   if (kind === "invoice") return id ? `/invoices/${id}` : "/invoices";
   if (kind === "quote") return id ? `/quotes/${id}` : "/quotes";
@@ -142,19 +151,22 @@ export default function SafeAIAssistantPage() {
 
   const fetchHubData = useCallback(async (manual = false) => {
     if (manual) setRefreshing(true); else setLoading(true);
-    const requests = await Promise.allSettled([
-      get("/jobs"),
-      get("/quotes"),
-      get("/invoices"),
-      get("/team/workers"),
-      get("/automation/rules"),
-      get("/automation/runs"),
-      get("/clients"),
-      get("/follow-up-tasks?status=open"),
-      get("/follow-up-suggestions"),
-      get("/smart-hub/digest"),
-    ]);
-    const next = {
+
+    try {
+      const requests = await Promise.allSettled([
+        withTimeout(get("/jobs")),
+        withTimeout(get("/quotes")),
+        withTimeout(get("/invoices")),
+        withTimeout(get("/team/workers")),
+        withTimeout(get("/automation/rules")),
+        withTimeout(get("/automation/runs")),
+        withTimeout(get("/clients")),
+        withTimeout(get("/follow-up-tasks?status=open")),
+        withTimeout(get("/follow-up-suggestions")),
+        withTimeout(get("/smart-hub/digest")),
+      ]);
+
+      const next = {
       jobs: safeArray(unwrap(requests[0]), "jobs"),
       quotes: safeArray(unwrap(requests[1]), "quotes"),
       invoices: safeArray(unwrap(requests[2]), "invoices"),
@@ -172,8 +184,12 @@ export default function SafeAIAssistantPage() {
     const sections = ["Jobs", "Quotes", "Invoices", "Team", "Automation rules", "Automation runs", "Clients", "Follow-ups", "Suggestions", "Digest"];
     const failures = requests.flatMap((r, i) => (r.status === "fulfilled" && r.value?.success ? [] : [sections[i]]));
     setLoadErrors(failures);
-    setLoading(false);
-    setRefreshing(false);
+    } catch {
+      setLoadErrors(["Smart Hub data"]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [get]);
 
   useEffect(() => {

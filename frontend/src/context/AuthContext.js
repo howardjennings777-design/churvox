@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import axios from "axios";
 import API_BASE from "../lib/apiBase";
 import { normalizeRole, isBusinessRole, isOwner, isWorkerRole, isPayrollRole } from "../lib/roles";
@@ -8,22 +8,42 @@ axios.defaults.withCredentials = true;
 const AuthContext = createContext(null);
 const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
 
+const AUTH_TIMEOUT_MS = 12000;
+
+function withTimeout(promise, timeoutMs = AUTH_TIMEOUT_MS) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Auth check timed out")), timeoutMs);
+    }),
+  ]);
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const checkAuthInFlightRef = useRef(false);
 
   const checkAuth = useCallback(async () => {
+    if (checkAuthInFlightRef.current) return;
+    checkAuthInFlightRef.current = true;
+    setLoading(true);
+
     const token = localStorage.getItem("token");
     if (!token) {
+      setUser(null);
       setLoading(false);
+      checkAuthInFlightRef.current = false;
       return;
     }
 
     try {
-      const response = await axios.get(`${API_BASE}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      });
+      const response = await withTimeout(
+        axios.get(`${API_BASE}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        })
+      );
       setUser({ ...response.data, token });
     } catch {
       localStorage.removeItem("token");
@@ -32,6 +52,7 @@ export function AuthProvider({ children }) {
       setUser(null);
     } finally {
       setLoading(false);
+      checkAuthInFlightRef.current = false;
     }
   }, []);
 
