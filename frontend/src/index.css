@@ -428,3 +428,20 @@
 @media (max-width: 768px) {
   .mobile-nav { padding-bottom: env(safe-area-inset-bottom); }
 }
+
+.smart-hub-health-reason {
+  color: #1f2937 !important;
+  font-weight: 900 !important;
+  opacity: 1 !important;
+}
+
+[data-testid="smart-hub-health-score-card"] p,
+[data-testid="smart-hub-health-score-card"] span,
+[data-testid="smart-hub-health-score-card"] a {
+  opacity: 1 !important;
+}
+
+[data-testid="smart-hub-health-score-card"] .smart-hub-health-reason {
+  color: #1f2937 !important;
+  font-weight: 900 !important;
+}
