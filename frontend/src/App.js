@@ -58,11 +58,33 @@ const TIMESHEETS_PATH = "/timesheets";
 const SMART_HUB_PATH = "/smart-hub";
 const isPlatformOwnerEmail = (user) => String(user?.email || "").trim().toLowerCase() === PLATFORM_OWNER_EMAIL;
 
+const clearAuthStorage = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("owner_portal_session");
+  localStorage.removeItem("platform_owner_email");
+};
+
+function useRouteLoadingTimeout(loading, ms = 10000) {
+  const [timedOut, setTimedOut] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!loading) {
+      setTimedOut(false);
+      return undefined;
+    }
+
+    const timer = setTimeout(() => setTimedOut(true), ms);
+    return () => clearTimeout(timer);
+  }, [loading, ms]);
+
+  return timedOut;
+}
+
 const Spinner = () => {
   const [showFallback, setShowFallback] = React.useState(false);
 
   React.useEffect(() => {
-    const timer = setTimeout(() => setShowFallback(true), 7000);
+    const timer = setTimeout(() => setShowFallback(true), 8000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -70,10 +92,29 @@ const Spinner = () => {
     <div className="min-h-screen chx-worker-shell flex items-center justify-center px-4">
       <div className="text-center">
         <div className="mx-auto animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
+        <p className="mt-3 text-sm font-semibold text-slate-700">Loading Churvox…</p>
         {showFallback ? (
           <div className="mt-4">
-            <p className="text-sm font-semibold text-slate-700">Still loading? Refresh or return to login.</p>
-            <a href="/login" className="mt-2 inline-block text-sm font-bold text-blue-700 hover:underline">Go to login</a>
+            <p className="text-sm font-semibold text-slate-700">Still loading?</p>
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  clearAuthStorage();
+                  window.location.href = "/login";
+                }}
+                className="rounded-md bg-blue-600 px-3 py-2 text-sm font-bold text-white hover:bg-blue-700"
+              >
+                Return to login
+              </button>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
+              >
+                Refresh
+              </button>
+            </div>
           </div>
         ) : null}
       </div>
@@ -87,7 +128,12 @@ function roleDefaultRoute(role) {
 
 function PublicRoute({ children }) {
   const { user, loading, normalizedRole, mustChoosePlan } = useAuth();
-  if (loading) return <Spinner />;
+  const loadingTimedOut = useRouteLoadingTimeout(loading);
+  if (loading && !loadingTimedOut) return <Spinner />;
+  if (loading && loadingTimedOut) {
+    clearAuthStorage();
+    return <Navigate to="/login" replace />;
+  }
   if (!user) return children;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (mustChoosePlan) return <Navigate to="/plans" replace />;
@@ -96,7 +142,12 @@ function PublicRoute({ children }) {
 
 function BusinessRoute({ children }) {
   const { user, loading, isWorker, isPayroll, hasAppAccess, mustChoosePlan } = useAuth();
-  if (loading) return <Spinner />;
+  const loadingTimedOut = useRouteLoadingTimeout(loading);
+  if (loading && !loadingTimedOut) return <Spinner />;
+  if (loading && loadingTimedOut) {
+    clearAuthStorage();
+    return <Navigate to="/login" replace />;
+  }
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
@@ -107,7 +158,12 @@ function BusinessRoute({ children }) {
 
 function OwnerRoute({ children }) {
   const { user, loading, isOwnerUser, isWorker, isPayroll, normalizedRole } = useAuth();
-  if (loading) return <Spinner />;
+  const loadingTimedOut = useRouteLoadingTimeout(loading);
+  if (loading && !loadingTimedOut) return <Spinner />;
+  if (loading && loadingTimedOut) {
+    clearAuthStorage();
+    return <Navigate to="/login" replace />;
+  }
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
@@ -118,7 +174,12 @@ function OwnerRoute({ children }) {
 
 function TeamRoute({ children }) {
   const { user, loading, isWorker, isPayroll, hasAppAccess, mustChoosePlan, normalizedRole } = useAuth();
-  if (loading) return <Spinner />;
+  const loadingTimedOut = useRouteLoadingTimeout(loading);
+  if (loading && !loadingTimedOut) return <Spinner />;
+  if (loading && loadingTimedOut) {
+    clearAuthStorage();
+    return <Navigate to="/login" replace />;
+  }
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
@@ -130,7 +191,12 @@ function TeamRoute({ children }) {
 
 function AIRoute({ children }) {
   const { user, loading, isWorker, isPayroll, hasAppAccess, mustChoosePlan, normalizedRole } = useAuth();
-  if (loading) return <Spinner />;
+  const loadingTimedOut = useRouteLoadingTimeout(loading);
+  if (loading && !loadingTimedOut) return <Spinner />;
+  if (loading && loadingTimedOut) {
+    clearAuthStorage();
+    return <Navigate to="/login" replace />;
+  }
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (isWorker) return <Navigate to="/worker/jobs" replace />;
@@ -142,7 +208,12 @@ function AIRoute({ children }) {
 
 function NotificationsRoute({ children }) {
   const { user, loading, isWorker, hasAppAccess, mustChoosePlan } = useAuth();
-  if (loading) return <Spinner />;
+  const loadingTimedOut = useRouteLoadingTimeout(loading);
+  if (loading && !loadingTimedOut) return <Spinner />;
+  if (loading && loadingTimedOut) {
+    clearAuthStorage();
+    return <Navigate to="/login" replace />;
+  }
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (!isWorker && (mustChoosePlan || !hasAppAccess)) return <Navigate to="/plans" replace />;
@@ -151,7 +222,12 @@ function NotificationsRoute({ children }) {
 
 function WorkerRoute({ children }) {
   const { user, loading, isWorker } = useAuth();
-  if (loading) return <Spinner />;
+  const loadingTimedOut = useRouteLoadingTimeout(loading);
+  if (loading && !loadingTimedOut) return <Spinner />;
+  if (loading && loadingTimedOut) {
+    clearAuthStorage();
+    return <Navigate to="/login" replace />;
+  }
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (!isWorker) return <Navigate to={SMART_HUB_PATH} replace />;
@@ -160,7 +236,12 @@ function WorkerRoute({ children }) {
 
 function TimesheetsRoute({ children }) {
   const { user, loading, normalizedRole, hasAppAccess, mustChoosePlan } = useAuth();
-  if (loading) return <Spinner />;
+  const loadingTimedOut = useRouteLoadingTimeout(loading);
+  if (loading && !loadingTimedOut) return <Spinner />;
+  if (loading && loadingTimedOut) {
+    clearAuthStorage();
+    return <Navigate to="/login" replace />;
+  }
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (normalizedRole !== "owner" && normalizedRole !== "manager" && normalizedRole !== "payroll") {
@@ -172,7 +253,12 @@ function TimesheetsRoute({ children }) {
 
 function ReportsRoute({ children }) {
   const { user, loading, normalizedRole, hasAppAccess, mustChoosePlan } = useAuth();
-  if (loading) return <Spinner />;
+  const loadingTimedOut = useRouteLoadingTimeout(loading);
+  if (loading && !loadingTimedOut) return <Spinner />;
+  if (loading && loadingTimedOut) {
+    clearAuthStorage();
+    return <Navigate to="/login" replace />;
+  }
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (!["owner", "manager", "office_admin"].includes(normalizedRole)) {
@@ -184,7 +270,12 @@ function ReportsRoute({ children }) {
 
 function RoleRedirect() {
   const { user, loading, normalizedRole, mustChoosePlan } = useAuth();
-  if (loading) return <Spinner />;
+  const loadingTimedOut = useRouteLoadingTimeout(loading);
+  if (loading && !loadingTimedOut) return <Spinner />;
+  if (loading && loadingTimedOut) {
+    clearAuthStorage();
+    return <Navigate to="/login" replace />;
+  }
   if (!user) return <Navigate to="/login" replace />;
   if (isPlatformOwnerEmail(user)) return <Navigate to="/admin" replace />;
   if (mustChoosePlan) return <Navigate to="/plans" replace />;

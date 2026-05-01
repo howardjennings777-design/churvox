@@ -56,9 +56,14 @@ export function AuthProvider({ children }) {
         axios.get(`${API_BASE}/api/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
+          timeout: AUTH_TIMEOUT_MS,
         })
       );
-      setUser({ ...response.data, token });
+      const authData = response?.data;
+      if (!authData || typeof authData !== "object") {
+        throw new Error("Invalid auth response payload");
+      }
+      setUser({ ...authData, token });
     } catch {
       localStorage.removeItem("token");
       localStorage.removeItem("owner_portal_session");
