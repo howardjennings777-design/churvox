@@ -1,101 +1,181 @@
-# Manual Launch Test Checklist
+# Churvox Manual Launch Test Checklist
 
-Run in this exact order. For every failed step, capture:
-- full-page screenshot,
-- browser console screenshot/log,
-- network request/response payload (if applicable),
-- relevant backend log lines with timestamp.
+Use this checklist for manual launch verification. Do **not** mark as passed unless tested in your environment.
 
-1. **Login owner**
-   - Expected: Owner can log in and lands on authenticated app without error loop.
-   - Capture on fail: Login form state, auth API response, cookies/local storage.
-2. **Check /jobs**
-   - Expected: `/jobs` loads as default operational landing area with job list UI visible.
-   - Capture on fail: URL bar, blank/error region, jobs API response.
-3. **Create job**
-   - Expected: Job creation succeeds and new job appears in list/detail.
-   - Capture on fail: Form payload, response error, validation message.
-4. **Open job detail**
-   - Expected: Job detail renders with core fields and actions.
-   - Capture on fail: Detail pane and failing request trace.
-5. **Assign worker**
-   - Expected: Worker assignment persists and is visible after refresh.
-   - Capture on fail: Assignment request/response and post-refresh state.
-6. **Complete job**
-   - Expected: Status transition to completed works and audit/timestamp updates.
-   - Capture on fail: Status control state and API response.
-7. **Create client**
-   - Expected: Client record saves and appears in client list/search.
-   - Capture on fail: Create client request and validation errors.
-8. **Open client**
-   - Expected: Client profile renders with linked jobs/quotes/invoices where applicable.
-   - Capture on fail: Client detail blank/error screen.
-9. **Create quote**
-   - Expected: Quote saves with totals and links to client/job correctly.
-   - Capture on fail: Quote payload, totals calc, backend response.
-10. **Open quote**
-   - Expected: Quote detail page loads and displays line items/totals.
-   - Capture on fail: Quote detail view and failed request.
-11. **Public quote link**
-   - Expected: Public quote URL opens correctly with expected public-safe data.
-   - Capture on fail: Public page screenshot, HTTP status, token/link value.
-12. **Create invoice**
-   - Expected: Invoice creates successfully from workflow.
-   - Capture on fail: Invoice create payload and error response.
-13. **Open invoice**
-   - Expected: Invoice detail renders and actions are available as expected.
-   - Capture on fail: Invoice detail page and network errors.
-14. **Public invoice link**
-   - Expected: Public invoice URL renders without auth leaks or blank screen.
-   - Capture on fail: Public page screenshot + response status.
-15. **Clear/delete invoice**
-   - Expected: Clear/delete flow works per role rules and updates list.
-   - Capture on fail: Confirmation modal, API response, stale list state.
-16. **Invite worker**
-   - Expected: Worker invite flow completes and invite state is trackable.
-   - Capture on fail: Invite form + outbound request/response.
-17. **Worker login**
-   - Expected: Worker can log in with role-appropriate access only.
-   - Capture on fail: Login result and role claims payload.
-18. **Worker job detail**
-   - Expected: Worker can open assigned job details within permissions.
-   - Capture on fail: Unauthorized or blank detail state.
-19. **Worker acknowledge/start/complete**
-   - Expected: Worker lifecycle actions function and are permission-safe.
-   - Capture on fail: Action button state, API response, role checks.
-20. **Timesheets/payroll page**
-   - Expected: Payroll/timesheet access respects role protections; no unintended auto-changes.
-   - Capture on fail: Role-based UI mismatch, unauthorized responses.
-21. **Smart Hub**
-   - Expected: Smart Hub page renders in Layout with readable fallback if API partial/fails.
-   - Capture on fail: Blank state, smart-hub API payload.
-22. **Reports**
-   - Expected: Reports page renders and summary/export controls behave safely.
-   - Capture on fail: CSV endpoint response/error and page UI.
-23. **SMS page**
-   - Expected: SMS page loads; send action is explicit/manual only (no auto-send).
-   - Capture on fail: Auto-trigger evidence, send request trace.
-24. **Integrations/MYOB page**
-   - Expected: Integrations page renders; MYOB actions are explicit/manual only (no auto-sync).
-   - Capture on fail: Sync trigger evidence and API request logs.
-25. **Automation rules**
-   - Expected: Automation rules list/manage UI renders without dead critical actions.
-   - Capture on fail: Rules API response + broken action controls.
-26. **Automation runs**
-   - Expected: Automation runs page renders history/fallback states cleanly.
-   - Capture on fail: Runs API response and blank/error region.
-27. **Launch Check**
-   - Expected: Launch Check page renders readable checks and statuses.
-   - Capture on fail: Launch Check UI + backing request errors.
-28. **Mobile bottom nav/taps**
-   - Expected: Bottom nav visible and tap targets route correctly on mobile viewport.
-   - Capture on fail: Mobile screenshot/video and route mismatch.
-29. **PWA install prompt**
-   - Expected: Installability conditions and prompt behavior are correct where supported.
-   - Capture on fail: Browser installability diagnostics.
-30. **Logout/login again**
-   - Expected: Session clears and re-login works cleanly with correct role context.
-   - Capture on fail: Token/session residue evidence.
-31. **Render deploy check**
-   - Expected: Deployed environment health check passes and key pages load.
-   - Capture on fail: Deployment logs, failing endpoint URL/status.
+For every failed item, capture:
+- Screenshot of the failing screen state.
+- Route URL and user role used.
+- Browser + device.
+- Console/API error text.
+
+## Expected result baseline
+Expected result for every item: flow works without blank screens, fatal errors, or unauthorized data exposure.
+
+## AUTH
+- Owner login
+- Owner logout
+- Signup
+- Forgot password
+- Reset password
+- Bad token/session recovery
+
+## JOBS
+- Jobs page loads
+- Create job
+- Open job detail
+- Edit job
+- Assign worker
+- Worker conflict warning if scheduled overlap exists
+- Start job
+- Pause/resume job
+- Complete job
+- Job status colors visible
+- Job pricing visible to owner/admin only
+- Invoice generation path visible
+
+## CLIENTS
+- Clients page loads
+- Create client
+- Open client detail
+- Edit client
+- Import client CSV
+- Client phone/email/address display correctly
+
+## QUOTES
+- Quotes page loads
+- Create quote
+- Open quote detail
+- Edit quote
+- Public quote link opens
+- Public quote accept works if enabled
+- Public quote decline works if enabled
+- Quote follow-up path visible
+
+## INVOICES
+- Invoices page loads
+- Create invoice
+- Open invoice detail
+- Edit invoice if enabled
+- Clear/delete invoice
+- Public invoice link opens
+- Pay Now link works if configured
+- MYOB sync status visible if enabled
+- Payment status clear
+
+## TEAM
+- Team page loads
+- Invite worker
+- Invite manager
+- Invite office admin
+- Invite payroll user
+- Update role
+- Remove worker
+- Import team CSV
+- Worker profile opens
+- Assign job from worker profile if built
+
+## WORKER
+- Worker login
+- Worker jobs page loads
+- Worker opens job detail
+- Worker acknowledges job
+- Worker starts job
+- Worker pauses/resumes job
+- Worker completes job
+- Worker uploads photo
+- Worker adds note if built
+- Worker cannot see pricing
+- Worker cannot see owner-only settings
+- Worker cannot see MYOB/payroll/plans
+
+## PAYROLL / TIMESHEETS
+- Timesheets page loads
+- Pay period selector works
+- Worker hours visible
+- Approve timesheet
+- Reject timesheet
+- Payroll summary visible
+- Payroll CSV export works
+- Payroll role access restricted
+- No bank/tax/government submission shown
+
+## SMART HUB
+- Smart Hub page loads
+- Sidebar visible
+- Live metrics visible
+- AI assistant visible
+- AI response readable
+- AI fallback works if provider missing
+- Command shortcuts work
+- Approval-first notice visible
+
+## REPORTS
+- Reports page loads
+- Revenue cards visible
+- Jobs snapshot visible
+- Quotes snapshot visible
+- Invoice snapshot visible
+- Team/payroll snapshot visible
+- Top clients visible
+- Export invoices CSV
+- Export jobs CSV
+- Export quotes CSV
+- Export payroll CSV
+- Empty/error states work
+
+## SMS
+- SMS page loads
+- Credit balance visible
+- Credit packs visible
+- Not configured state clear
+- Template selector works
+- Recipient input works
+- Message editor works
+- Confirmation before send appears
+- Send blocked/clear if provider missing
+- SMS history visible
+
+## MYOB / INTEGRATIONS
+- Integrations page loads
+- MYOB status visible
+- Plan rules visible
+- Company file settings save
+- Test connection gives clear result
+- Connect button does not open broken URL if not configured
+- Internal invoice note visible
+- Manual sync only notice visible
+- Invoice detail MYOB panel visible if enabled
+
+## AUTOMATION
+- Automation page loads
+- Templates visible
+- Create rule from template
+- Rule builder validates fields
+- Rules list visible
+- Edit rule
+- Pause/resume rule
+- Delete rule
+- Automation runs page loads
+- Failed run retry queues safe retry
+- No auto-send SMS/email
+- No auto MYOB sync
+- No payroll auto-change
+
+## MOBILE / PWA
+- Mobile bottom nav visible
+- Sidebar/header not blocking taps
+- Cards tappable
+- Forms usable on mobile
+- Modals fit screen
+- PWA install prompt appears if supported
+- Refresh/login does not blank
+
+## DEPLOY / RENDER
+- Frontend build passes
+- Backend compile passes
+- GitHub check passes
+- Render deploy starts after push
+- Render deploy succeeds
+- Live site opens
+- Hard refresh works
+- No blank screen after login
