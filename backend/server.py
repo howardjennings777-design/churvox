@@ -5627,6 +5627,12 @@ async def _send_sms_real(payload: dict, current_user: dict):
     business_id = str(user.get("business_id") or user.get("id"))
     sms_type = str(payload.get("type") or payload.get("message_type") or "").strip().lower()
     custom_message = str(payload.get("message") or "").strip()
+    if not custom_message and str(payload.get("custom_message") or "").strip():
+        custom_message = str(payload.get("custom_message") or "").strip()
+    if not sms_type and not custom_message:
+        raise HTTPException(status_code=400, detail="Message or template is required")
+    if not sms_provider or not getattr(sms_provider, "configured", True):
+        raise HTTPException(status_code=400, detail="not_configured")
 
     # --- Lookup job & client context (same logic as previous fixed endpoint) ---
     job = None
@@ -5672,11 +5678,11 @@ async def _send_sms_real(payload: dict, current_user: dict):
     sms_cost = 2
     sms_credits = await db.sms_credits.find_one({"business_id": business_id})
     if not sms_credits:
-        raise HTTPException(status_code=402, detail="Not enough SMS credits")
+        raise HTTPException(status_code=402, detail="insufficient_credits")
     balance_field = "balance" if "balance" in sms_credits else "credits"
     current_balance = int(sms_credits.get(balance_field, 0) or 0)
     if current_balance < sms_cost:
-        raise HTTPException(status_code=402, detail="Not enough SMS credits")
+        raise HTTPException(status_code=402, detail="insufficient_credits")
 
     await db.sms_credits.update_one(
         {"business_id": business_id},
@@ -8465,6 +8471,18 @@ async def automation_update_rule(rule_id: str, payload: dict, current_user: dict
 async def automation_patch_rule(rule_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
     return await automation_update_rule(rule_id, payload, current_user)
 
+@api_router.post("/automation/rules/{rule_id}/toggle")
+async def automation_toggle_rule(rule_id: str, current_user: dict = Depends(get_current_user)):
+    _automation_require_manager(current_user)
+    business_id = _automation_business_id(current_user)
+    doc = await db.automation_rules.find_one({"id": rule_id, "business_id": business_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Automation rule not found.")
+    new_enabled = not bool(doc.get("enabled", True))
+    await db.automation_rules.update_one({"id": rule_id, "business_id": business_id}, {"$set": {"enabled": new_enabled, "updated_at": _automation_now()}})
+    doc["enabled"] = new_enabled
+    return {"success": True, "rule": _automation_clean_doc(doc)}
+
 @api_router.delete("/automation/rules/{rule_id}")
 async def automation_delete_rule(rule_id: str, current_user: dict = Depends(get_current_user)):
     _automation_require_manager(current_user)
@@ -8495,6 +8513,29 @@ async def automation_list_runs(current_user: dict = Depends(get_current_user)):
     cursor = db.automation_runs.find({"business_id": business_id}).sort("created_at", -1)
     runs = await cursor.to_list(length=100)
     return {"success": True, "runs": _automation_clean_docs(runs)}
+
+@api_router.get("/automation/runs/{run_id}")
+async def automation_get_run(run_id: str, current_user: dict = Depends(get_current_user)):
+    _automation_require_manager(current_user)
+    business_id = _automation_business_id(current_user)
+    doc = await db.automation_runs.find_one({"id": run_id, "business_id": business_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Automation run not found.")
+    return {"success": True, "run": _automation_clean_doc(doc)}
+
+@api_router.post("/automation/runs/{run_id}/retry")
+async def automation_retry_run(run_id: str, current_user: dict = Depends(get_current_user)):
+    _automation_require_manager(current_user)
+    business_id = _automation_business_id(current_user)
+    run = await db.automation_runs.find_one({"id": run_id, "business_id": business_id})
+    if not run:
+        raise HTTPException(status_code=404, detail="Automation run not found.")
+    if str(run.get("status", "")).lower() not in {"failed", "error"}:
+        return {"success": False, "error": "Only failed runs can be retried safely."}
+    rule = await db.automation_rules.find_one({"id": run.get("rule_id"), "business_id": business_id})
+    if not rule:
+        return {"success": False, "error": "Rule no longer exists; retry unavailable."}
+    return await automation_test_rule(str(rule.get("id")), current_user)
 
 @api_router.post("/automation/rules/{rule_id}/test")
 async def automation_test_rule(rule_id: str, current_user: dict = Depends(get_current_user)):
@@ -11002,14 +11043,29 @@ async def sms_history(current_user: dict = Depends(get_current_user)):
 async def sms_buy_credits(payload: dict, current_user: dict = Depends(get_current_user)):
     pack = int((payload or {}).get("pack") or 0)
     if pack not in {100, 500, 1000}:
-        return {'success': False, 'error': 'Invalid pack selected.', 'configured': False}
-    return {'success': False, 'error': 'SMS credit purchasing is not configured yet.', 'configured': False, 'not_configured': True}
+        return {'success': False, 'error': 'Invalid pack selected.', 'configured': False, 'not_configured': True}
+    checkout_price_map = {100: os.environ.get("STRIPE_SMS_PRICE_100"), 500: os.environ.get("STRIPE_SMS_PRICE_500"), 1000: os.environ.get("STRIPE_SMS_PRICE_1000")}
+    price_id = checkout_price_map.get(pack)
+    if not STRIPE_SECRET_KEY or not price_id or not FRONTEND_URL:
+        return {'success': False, 'error': 'SMS credit checkout is not configured yet.', 'configured': False, 'not_configured': True}
+    try:
+        session = stripe.checkout.Session.create(
+            mode="payment",
+            line_items=[{"price": price_id, "quantity": 1}],
+            success_url=f"{FRONTEND_URL}/sms?checkout=success",
+            cancel_url=f"{FRONTEND_URL}/sms?checkout=cancelled",
+            metadata={"business_id": str(current_user.get("business_id") or current_user.get("id") or ""), "pack": str(pack), "type": "sms_credits"},
+        )
+        return {"success": True, "data": {"checkout_url": session.url}}
+    except Exception:
+        return {'success': False, 'error': 'SMS credit checkout is not configured yet.', 'configured': False, 'not_configured': True}
 
 @api_router.get('/myob/status')
 async def myob_status(current_user: dict = Depends(get_current_user)):
     settings = await get_myob_settings(current_user)
     data = settings.get('data') if isinstance(settings, dict) else {}
-    return {'success': True, 'data': {'status': data.get('myob_status', 'not_connected'), 'connected': bool(data.get('connected')), 'last_sync_time': data.get('last_sync_at'), 'not_configured': not bool(data.get('connected'))}}
+    oauth_configured = bool(os.environ.get("MYOB_CLIENT_ID") and os.environ.get("MYOB_CLIENT_SECRET"))
+    return {'success': True, 'data': {'status': data.get('myob_status', 'not_connected'), 'connected': bool(data.get('connected')), 'last_sync_time': data.get('last_sync_at'), 'not_configured': not oauth_configured, "oauth_configured": oauth_configured}}
 
 @api_router.post('/myob/test-connection')
 async def myob_test_connection(current_user: dict = Depends(get_current_user)):
@@ -11033,7 +11089,7 @@ async def myob_settings_save(payload: dict, current_user: dict = Depends(get_cur
         {"$set": {"business_id": business_id, "myob_company_file_id": company_file_id, "myob_company_file_name": company_file_name, "updated_at": datetime.now(timezone.utc)}},
         upsert=True,
     )
-    return {"success": True, "data": {"company_file_id": company_file_id, "company_file_name": company_file_name}}
+    return {"success": True, "data": {"company_file_id": company_file_id, "company_file_name": company_file_name, "oauth_configured": bool(os.environ.get("MYOB_CLIENT_ID") and os.environ.get("MYOB_CLIENT_SECRET"))}}
 
 @api_router.post('/myob/invoices/{invoice_id}/sync')
 async def myob_invoice_sync_alias(invoice_id: str, current_user: dict = Depends(get_current_user)):
@@ -11054,19 +11110,19 @@ async def _csv_rows(collection, business_id):
 async def reports_invoices_csv(current_user: dict = Depends(get_current_user)):
     business_id = str(current_user.get('business_id') or '')
     rows = await _csv_rows('invoices', business_id)
-    out = 'id,status,total,created_at\n' + '\n'.join([f"{r.get('id','')},{r.get('status','')},{r.get('total',r.get('amount',0))},{r.get('created_at','')}" for r in rows])
+    out = 'invoice_number,customer_name,customer_email,status,subtotal,gst_rate,total,created_at,due_date,myob_sync_status\n' + '\n'.join([f"{r.get('invoice_number','')},{r.get('customer_name','')},{r.get('customer_email','')},{r.get('status','')},{r.get('subtotal',0)},{r.get('gst_rate',0)},{r.get('total',r.get('amount',0))},{r.get('created_at','')},{r.get('due_date','')},{r.get('myob_sync_status','')}" for r in rows])
     return PlainTextResponse(out, media_type='text/csv')
 
 @api_router.get('/reports/jobs.csv')
 async def reports_jobs_csv(current_user: dict = Depends(get_current_user)):
     business_id = str(current_user.get('business_id') or '')
     rows = await _csv_rows('jobs', business_id)
-    out = 'id,status,title,created_at\n' + '\n'.join([f"{r.get('id','')},{r.get('status','')},{str(r.get('title','')).replace(',',' ')},{r.get('created_at','')}" for r in rows])
+    out = 'title,customer_name,address,status,scheduled_date,assigned_worker_name,price,pricing_type,created_at\n' + '\n'.join([f"{str(r.get('title','')).replace(',',' ')},{r.get('customer_name','')},{str(r.get('address','')).replace(',',' ')},{r.get('status','')},{r.get('scheduled_date','')},{r.get('assigned_worker_name','')},{r.get('price',0)},{r.get('pricing_type','')},{r.get('created_at','')}" for r in rows])
     return PlainTextResponse(out, media_type='text/csv')
 
 @api_router.get('/reports/quotes.csv')
 async def reports_quotes_csv(current_user: dict = Depends(get_current_user)):
     business_id = str(current_user.get('business_id') or '')
     rows = await _csv_rows('quotes', business_id)
-    out = 'id,status,total,created_at\n' + '\n'.join([f"{r.get('id','')},{r.get('status','')},{r.get('total',0)},{r.get('created_at','')}" for r in rows])
+    out = 'customer_name,customer_email,address,status,price,valid_until,created_at\n' + '\n'.join([f"{r.get('customer_name','')},{r.get('customer_email','')},{str(r.get('address','')).replace(',',' ')},{r.get('status','')},{r.get('price',r.get('total',0))},{r.get('valid_until','')},{r.get('created_at','')}" for r in rows])
     return PlainTextResponse(out, media_type='text/csv')

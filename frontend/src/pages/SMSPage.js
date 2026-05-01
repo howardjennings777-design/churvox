@@ -19,10 +19,13 @@ export default function SMSPage() {
   const [message, setMessage] = useState(templates[0][2]);
   const [status, setStatus] = useState("");
   const [buying, setBuying] = useState(0);
+  const [checkoutConfigured, setCheckoutConfigured] = useState(false);
 
   useEffect(() => { (async () => {
     const [b, h] = await Promise.allSettled([get("/sms/balance"), get("/sms/history")]);
-    setBalance(b.status === "fulfilled" && b.value?.success ? b.value.data : { configured: false, credits: 0, message: "SMS is not fully configured yet" });
+    const balanceData = b.status === "fulfilled" && b.value?.success ? b.value.data : { configured: false, credits: 0, message: "SMS is not fully configured yet" };
+    setBalance(balanceData);
+    setCheckoutConfigured(Boolean(balanceData?.checkout_configured));
     setHistory(h.status === "fulfilled" && h.value?.success ? (h.value.data?.history || []) : []);
   })(); }, [get]);
 
@@ -30,7 +33,7 @@ export default function SMSPage() {
     if (!window.confirm("Send this SMS now?")) return;
     const payload = { type, phone: to, custom_message: type === "custom" ? message : undefined };
     const r = await post("/sms/send", payload);
-    setStatus(r?.success ? "SMS sent." : (r?.error || "SMS failed."));
+    setStatus(r?.success ? "SMS sent." : (r?.error || r?.message || "SMS failed."));
   };
   const buyCredits = async (pack) => {
     setBuying(pack);
@@ -40,14 +43,18 @@ export default function SMSPage() {
       window.open(res.data.checkout_url, "_blank", "noopener,noreferrer");
       return;
     }
-    setStatus(res?.error || "SMS is not fully configured yet");
+    if (res?.not_configured) {
+      setStatus("SMS credit checkout is not configured yet. Manual SMS remains disabled until setup is complete.");
+      return;
+    }
+    setStatus(res?.error || res?.message || "SMS is not fully configured yet");
   };
 
   return <Layout><div className="cx-page space-y-4">
     <h1 className="text-3xl font-black text-slate-950">Communications / SMS</h1>
     <p className="text-slate-700">Manual send only. No automatic SMS actions are enabled.</p>
     <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="font-black text-slate-950">Credits</p><p className="text-slate-800">Balance: {balance?.credits ?? balance?.balance ?? 0}</p>{!balance?.configured && <p className="text-amber-700 text-sm">SMS is not fully configured yet</p>}</div>
-    <div className="rounded-2xl border border-slate-200 bg-white p-4"><p className="font-black text-slate-950">Credit packs</p><div className="mt-2 grid md:grid-cols-3 gap-2">{[[100,"$10"],[500,"$45"],[1000,"$80"]].map(([p,price])=><button key={p} disabled={!balance?.configured || buying===p} onClick={()=>buyCredits(p)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 font-semibold disabled:opacity-60">{p} credits / {price}</button>)}</div></div>
+    <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4"><p className="font-black text-slate-950">Credit packs</p><div className="mt-2 grid md:grid-cols-3 gap-2">{[[100,"$10"],[500,"$45"],[1000,"$80"]].map(([p,price])=><button key={p} disabled={!checkoutConfigured || buying===p} onClick={()=>buyCredits(p)} className="rounded-xl border border-blue-200 bg-white px-3 py-3 text-slate-900 font-semibold shadow-sm disabled:opacity-60">{p} credits / {price}</button>)}</div>{!checkoutConfigured && <p className="mt-2 text-sm text-amber-700">SMS credit checkout is not configured yet. Manual SMS remains disabled until setup is complete.</p>}</div>
     <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-2"><p className="font-black text-slate-950">Draft message templates</p><select className="w-full border rounded-xl p-2 text-slate-900" value={type} onChange={(e)=>{const v=e.target.value;setType(v);const f=templates.find((t)=>t[0]===v);if(v!=="custom") setMessage(f?.[2]||"");}}>{templates.map((t)=><option key={t[0]} value={t[0]}>{t[1]}</option>)}</select><input className="w-full border rounded-xl p-2 text-slate-900" placeholder="Recipient phone" value={to} onChange={(e)=>setTo(e.target.value)} />
     <textarea className="w-full border rounded-xl p-2 text-slate-900" rows={4} value={message} onChange={(e)=>setMessage(e.target.value)} />
     <button onClick={send} className="rounded-xl bg-blue-600 text-white font-black px-4 py-2">Send SMS</button>{status && <p className="text-sm text-slate-700">{status}</p>}</div>

@@ -135,6 +135,17 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [dataSource, setDataSource] = useState("live");
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [notice, setNotice] = useState("");
+
+  const downloadCsv = (path) => {
+    try {
+      const win = window.open(`/api${path}`, "_blank", "noopener,noreferrer");
+      if (!win) throw new Error("Popup blocked");
+      setNotice("");
+    } catch (_error) {
+      setNotice("Could not start CSV download. Please allow popups and try again.");
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -240,6 +251,9 @@ export default function ReportsPage() {
               <p className="mt-2 text-xs font-bold text-slate-500">Source: {dataSource}{lastUpdated ? ` • updated ${lastUpdated.toLocaleTimeString()}` : ""}</p>
             </div>
             <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
+              <button className="reports-filter-btn reports-filter-btn-inactive" onClick={() => downloadCsv("/reports/invoices.csv")}><span className="reports-filter-label">Export invoices CSV</span></button>
+              <button className="reports-filter-btn reports-filter-btn-inactive" onClick={() => downloadCsv("/reports/jobs.csv")}><span className="reports-filter-label">Export jobs CSV</span></button>
+              <button className="reports-filter-btn reports-filter-btn-inactive" onClick={() => downloadCsv("/reports/quotes.csv")}><span className="reports-filter-label">Export quotes CSV</span></button>
               <FilterButton active={range === "this_month"} onClick={() => setRange("this_month")}>This month</FilterButton>
               <FilterButton active={range === "last_month"} onClick={() => setRange("last_month")}>Last month</FilterButton>
               <button className="reports-filter-btn reports-filter-btn-inactive" onClick={load}>
@@ -247,6 +261,7 @@ export default function ReportsPage() {
               </button>
             </div>
           </div>
+          {notice ? <p className="mt-3 text-sm font-semibold text-amber-700">{notice}</p> : null}
           {(accounting?.invoice_mode === "myob_sync" || accounting?.invoice_mode === "myob_external") && <p className="mt-3 text-xs font-semibold text-slate-500">Accounting status is synced from MYOB when connected.</p>}
         </div>
         <div key={`cards-${range}-${lastUpdated?.getTime() || 0}`} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">

@@ -47,6 +47,7 @@ export default function IntegrationsPage() {
   const isConnected = Boolean(myob?.myob_connected ?? myob?.connected);
   const mode = myob?.invoice_mode || "churvox_only";
   const isUpgrade = myob?.myob_status === "upgrade_required" || !canUseMyob;
+  const oauthReady = Boolean(myob?.oauth_configured);
   const saveMyobSettings = async () => {
     const r = await post("/myob/settings", myobForm);
     if (r?.success) toast.success("MYOB settings saved"); else toast.error(r?.error || "Could not save settings");
@@ -89,7 +90,7 @@ export default function IntegrationsPage() {
           <input className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900" placeholder="Company file name" value={myobForm.company_file_name} onChange={(e)=>setMyobForm((s)=>({...s, company_file_name:e.target.value}))} />
           <p className="text-sm text-slate-700">Last sync: {myob?.last_sync_at || "Never"}</p>
           <div className="flex gap-2">
-            <button className="rounded-xl bg-blue-600 px-4 py-2 text-white font-semibold" onClick={()=>window.open("/api/myob/oauth/start","_blank")}>Connect MYOB</button>
+            <button className="rounded-xl bg-blue-600 px-4 py-2 text-white font-semibold disabled:opacity-60" disabled={!oauthReady} title={!oauthReady ? "MYOB OAuth not configured yet" : ""} onClick={()=>window.open("/api/myob/oauth/start","_blank")}>{oauthReady ? "Connect MYOB" : "MYOB OAuth not configured yet"}</button>
             <button className="rounded-xl bg-white border border-slate-200 px-4 py-2 text-slate-900 font-semibold" onClick={saveMyobSettings}>Save settings</button>
             <button className="rounded-xl bg-white border border-slate-200 px-4 py-2 text-slate-900 font-semibold" onClick={testConnection}>Test connection</button>
           </div>
