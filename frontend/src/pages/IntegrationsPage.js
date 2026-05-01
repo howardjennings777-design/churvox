@@ -28,12 +28,15 @@ export default function IntegrationsPage() {
   const { get, post } = useApi();
   const [myob, setMyob] = useState(null);
   const [savingMode, setSavingMode] = useState(false);
+  const [myobForm, setMyobForm] = useState({ company_file_id: "", company_file_name: "" });
 
   useEffect(() => {
     (async () => {
       const [myobRes, accountingRes] = await Promise.all([get("/myob/settings"), get("/accounting/settings")]);
       if (myobRes?.success || accountingRes?.success) {
-        setMyob({ ...(myobRes?.data || {}), ...(accountingRes?.data || {}) });
+        const merged = { ...(myobRes?.data || {}), ...(accountingRes?.data || {}) };
+        setMyob(merged);
+        setMyobForm({ company_file_id: merged?.company_file_id || "", company_file_name: merged?.company_file_name || "" });
       } else {
         setMyob({ connected: false, invoice_mode: "churvox_only", myob_plan_allowed: false, myob_status: "upgrade_required" });
       }
@@ -44,6 +47,14 @@ export default function IntegrationsPage() {
   const isConnected = Boolean(myob?.myob_connected ?? myob?.connected);
   const mode = myob?.invoice_mode || "churvox_only";
   const isUpgrade = myob?.myob_status === "upgrade_required" || !canUseMyob;
+  const saveMyobSettings = async () => {
+    const r = await post("/myob/settings", myobForm);
+    if (r?.success) toast.success("MYOB settings saved"); else toast.error(r?.error || "Could not save settings");
+  };
+  const testConnection = async () => {
+    const r = await post("/myob/test-connection", {});
+    if (r?.success) toast.success("MYOB connection is healthy"); else toast.error(r?.error || "Not configured");
+  };
 
   const saveMode = async (invoice_mode) => {
     setSavingMode(true);
@@ -67,8 +78,21 @@ export default function IntegrationsPage() {
         <div className="cx-panel p-5 space-y-4">
           <p className="text-sm text-slate-700">Plan: <span className="font-semibold uppercase">{user?.plan || "solo"}</span></p>
           <p className="text-sm text-slate-700">MYOB availability: <span className={`cx-status-badge ${isUpgrade ? "status-overdue" : "status-completed"}`}>{isUpgrade ? "Upgrade required" : "Available"}</span></p>
-          <p className="text-sm text-slate-700">Connection status: <span className={`cx-status-badge ${isConnected ? "status-completed" : "status-pending"}`}>{isConnected ? "Connected" : "Setup required"}</span></p>
+          <p className="text-sm text-slate-700">Connection status: <span className={`cx-status-badge ${isConnected ? "status-completed" : "status-pending"}`}>{myob?.myob_status === "sync_error" ? "Sync error" : (isConnected ? "Connected" : (myob?.myob_status === "not_configured" ? "Not configured" : "Not connected"))}</span></p>
           <p className="text-xs text-slate-500">MYOB available on Pro add-on and Enterprise.</p>
+          <p className="text-sm text-slate-700">Solo: no MYOB · Team: no MYOB · Pro: optional MYOB add-on · Enterprise: included.</p>
+          <p className="text-sm text-slate-700">Churvox invoices stay internal unless you choose to sync selected invoices to MYOB.</p>
+        </div>
+        <div className="cx-panel mt-4 p-5 space-y-3">
+          <h2 className="text-lg font-semibold text-slate-900">MYOB settings</h2>
+          <input className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900" placeholder="Company file ID" value={myobForm.company_file_id} onChange={(e)=>setMyobForm((s)=>({...s, company_file_id:e.target.value}))} />
+          <input className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900" placeholder="Company file name" value={myobForm.company_file_name} onChange={(e)=>setMyobForm((s)=>({...s, company_file_name:e.target.value}))} />
+          <p className="text-sm text-slate-700">Last sync: {myob?.last_sync_at || "Never"}</p>
+          <div className="flex gap-2">
+            <button className="rounded-xl bg-blue-600 px-4 py-2 text-white font-semibold" onClick={()=>window.open("/api/myob/oauth/start","_blank")}>Connect MYOB</button>
+            <button className="rounded-xl bg-white border border-slate-200 px-4 py-2 text-slate-900 font-semibold" onClick={saveMyobSettings}>Save settings</button>
+            <button className="rounded-xl bg-white border border-slate-200 px-4 py-2 text-slate-900 font-semibold" onClick={testConnection}>Test connection</button>
+          </div>
         </div>
 
         <div className="cx-panel mt-4 p-5 space-y-4">

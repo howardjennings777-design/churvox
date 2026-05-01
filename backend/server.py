@@ -10981,7 +10981,7 @@ async def ai_business_assistant(payload: dict, current_user: dict = Depends(get_
     p = str((payload or {}).get('prompt_type') or 'attention')
     msg = f"Draft only. {jobs} jobs, {unpaid} unpaid invoices, {open_quotes} open quotes. Prioritise overdue work and approvals first."
     if p == 'invoice_followup': msg = 'Draft only: Friendly reminder that your invoice is due. Let us know if you need another copy.'
-    return {'success': True, 'data': {'response': msg, 'prompt_type': p}}
+    return {'success': True, 'data': {'response': msg, 'mode': 'fallback', 'draft_only': True, 'prompt_type': p}}
 
 @api_router.get('/sms/balance')
 async def sms_balance(current_user: dict = Depends(get_current_user)):
@@ -11000,7 +11000,10 @@ async def sms_history(current_user: dict = Depends(get_current_user)):
 
 @api_router.post('/sms/buy-credits')
 async def sms_buy_credits(payload: dict, current_user: dict = Depends(get_current_user)):
-    return {'success': False, 'error': 'SMS credit purchasing is not configured yet.'}
+    pack = int((payload or {}).get("pack") or 0)
+    if pack not in {100, 500, 1000}:
+        return {'success': False, 'error': 'Invalid pack selected.', 'configured': False}
+    return {'success': False, 'error': 'SMS credit purchasing is not configured yet.', 'configured': False, 'not_configured': True}
 
 @api_router.get('/myob/status')
 async def myob_status(current_user: dict = Depends(get_current_user)):
@@ -11013,8 +11016,24 @@ async def myob_test_connection(current_user: dict = Depends(get_current_user)):
     settings = await get_myob_settings(current_user)
     data = settings.get('data') if isinstance(settings, dict) else {}
     if not data.get('connected'):
-        return {'success': False, 'error': 'not_configured'}
+        return {'success': False, 'error': 'not_configured', 'configured': False}
     return {'success': True, 'data': {'status': 'connected'}}
+
+@api_router.post('/myob/settings')
+async def myob_settings_save(payload: dict, current_user: dict = Depends(get_current_user)):
+    if str(current_user.get("role") or "").lower() not in {"owner", "manager", "office_admin"}:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    business_id = str(current_user.get("business_id") or current_user.get("id") or "")
+    company_file_id = str((payload or {}).get("company_file_id") or "").strip()
+    company_file_name = str((payload or {}).get("company_file_name") or "").strip()
+    if not business_id:
+        return {"success": False, "error": "not_configured", "configured": False}
+    await db.accounting_settings.update_one(
+        {"business_id": business_id},
+        {"$set": {"business_id": business_id, "myob_company_file_id": company_file_id, "myob_company_file_name": company_file_name, "updated_at": datetime.now(timezone.utc)}},
+        upsert=True,
+    )
+    return {"success": True, "data": {"company_file_id": company_file_id, "company_file_name": company_file_name}}
 
 @api_router.post('/myob/invoices/{invoice_id}/sync')
 async def myob_invoice_sync_alias(invoice_id: str, current_user: dict = Depends(get_current_user)):
