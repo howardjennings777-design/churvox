@@ -1,3 +1,14 @@
 import { SimpleDataPage } from './_tradieFactory';
-// CHURVOX_TRADIE_V3_ACTIVE_PAGE
-export default function CommunicationsPage(){return <SimpleDataPage title='Communications' subtitle='Manage your CommunicationsPage workspace with premium controls.' endpoint='/sms' createTo='#' />}
+import { SimpleDataPage } from './_tradieFactory';
+
+// CHURVOX_MODERN_WEBSITE_ACTIVE_PAGE
+export default function CommunicationsPage() {
+  return (
+    <SimpleDataPage
+      title="Communications"
+      subtitle="Send updates, reminders, and customer broadcasts."
+      endpoint="/sms"
+      createTo="#"
+    />
+  );
+}

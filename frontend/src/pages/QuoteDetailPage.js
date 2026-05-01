@@ -1,3 +1,14 @@
 import { SimpleDataPage } from './_tradieFactory';
-// CHURVOX_TRADIE_V3_ACTIVE_PAGE
-export default function QuoteDetailPage(){return <SimpleDataPage title='QuoteDetail' subtitle='Manage your QuoteDetailPage workspace with premium controls.' endpoint='/quotes' createTo='#' />}
+import { SimpleDataPage } from './_tradieFactory';
+
+// CHURVOX_MODERN_WEBSITE_ACTIVE_PAGE
+export default function QuoteDetailPage() {
+  return (
+    <SimpleDataPage
+      title="Quote Detail"
+      subtitle="Review quote line items and approval status."
+      endpoint="/quotes"
+      createTo="#"
+    />
+  );
+}

@@ -1,3 +1,14 @@
 import { SimpleDataPage } from './_tradieFactory';
-// CHURVOX_TRADIE_V3_ACTIVE_PAGE
-export default function ClientDetailPage(){return <SimpleDataPage title='ClientDetail' subtitle='Manage your ClientDetailPage workspace with premium controls.' endpoint='/clients' createTo='#' />}
+import { SimpleDataPage } from './_tradieFactory';
+
+// CHURVOX_MODERN_WEBSITE_ACTIVE_PAGE
+export default function ClientDetailPage() {
+  return (
+    <SimpleDataPage
+      title="Client Detail"
+      subtitle="View client history, jobs, quotes, and invoices."
+      endpoint="/clients"
+      createTo="#"
+    />
+  );
+}

@@ -29,17 +29,39 @@ export function SimpleDataPage({ title, subtitle, endpoint, createTo, secondary 
       <ModernHero
         title={title}
         subtitle={subtitle}
-        actions={<><ModernButton to={createTo || '#'}>Create</ModernButton>{secondary ? <ModernButton variant="secondary" to={secondary.to}>{secondary.label}</ModernButton> : null}</>}
+        actions={
+          <>
+            <ModernButton to={createTo || '#'}>Create</ModernButton>
+            {secondary ? (
+              <ModernButton variant="secondary" to={secondary.to}>
+                {secondary.label}
+              </ModernButton>
+            ) : null}
+          </>
+        }
       />
       <ModernCard title={`${title} List`}>
         {loading ? <ModernLoadingState /> : null}
-        {!loading && err ? <ModernEmptyState message="We couldn’t load this section." hint="Try refreshing or check your connection." /> : null}
-        {!loading && !err && !data.length ? <ModernEmptyState message="No records yet." hint="Create your first record to get started." /> : null}
+        {!loading && err ? (
+          <ModernEmptyState
+            message="We couldn’t load this section."
+            hint="Try refreshing or check your connection."
+          />
+        ) : null}
+        {!loading && !err && !data.length ? (
+          <ModernEmptyState
+            message="No records yet."
+            hint="Create your first record to get started."
+          />
+        ) : null}
         {!loading && !err && data.length ? (
           <ModernTable
             columns={[title, 'Status']}
             rows={data.slice(0, 20).map((item, i) => (
-              <tr key={item.id || i}><td>{item.name || item.title || item.number || `Item ${i + 1}`}</td><td>{item.status || 'Active'}</td></tr>
+              <tr key={item.id || i}>
+                <td>{item.name || item.title || item.number || `Item ${i + 1}`}</td>
+                <td>{item.status || 'Active'}</td>
+              </tr>
             ))}
           />
         ) : null}
