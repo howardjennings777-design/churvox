@@ -227,6 +227,10 @@ export default function SmartHubPage() {
     await askAssistant("custom", trimmed);
   };
 
+  const clearQuestion = () => {
+    setQuestion("");
+  };
+
   const copyResponse = async () => {
     try {
       await navigator.clipboard.writeText(assistant || "");
@@ -383,15 +387,23 @@ export default function SmartHubPage() {
                   value={question}
                   onChange={(event) => setQuestion(event.target.value)}
                   placeholder="Ask Churvox about today’s jobs, invoices, quotes, team, or automation…"
-                  rows={3}
+                  rows={2}
                   className="w-full resize-y rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none ring-blue-200 placeholder:text-slate-500 focus:border-blue-400 focus:ring-2"
                 />
-                <div className="mt-2 flex justify-end">
+                <div className="mt-3 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={clearQuestion}
+                    disabled={assistantLoading || !question}
+                    className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-black text-black transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-400"
+                  >
+                    Clear
+                  </button>
                   <button
                     type="button"
                     onClick={sendQuestion}
                     disabled={assistantLoading || !question.trim()}
-                    className="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                    className="inline-flex items-center rounded-xl border border-blue-700 bg-blue-600 px-5 py-2 text-sm font-black text-white shadow-md shadow-blue-700/30 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:border-blue-300 disabled:bg-blue-300"
                   >
                     {assistantLoading ? "Sending…" : "Send"}
                   </button>
