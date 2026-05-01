@@ -260,7 +260,7 @@ export default function SmartHubPage() {
 
   return (
     <Layout>
-      <PremiumPageShell className="dashboard-compact" smart-hub-v3 space-y-6 pb-20 md:pb-8">
+      <PremiumPageShell className="dashboard-compact smart-hub-v3 space-y-6 pb-20 md:pb-8">
         <style>{`
           .smart-hub-v3 [data-smart-hub-ai-panel],
           .smart-hub-v3 [data-smart-hub-ai-panel] * {
@@ -334,13 +334,13 @@ export default function SmartHubPage() {
           }
         `}</style>
 
-        <section className="overflow-hidden rounded-[2rem] border border-slate-900/10 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-6 text-white shadow-2xl shadow-slate-900/20 md:p-8">
+        <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-6 text-slate-900 md:p-8">
           <div className="grid gap-6 lg:grid-cols-[1.5fr_0.75fr] lg:items-center">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">CHURVOX COMMAND CENTRE</p>
-              <h1 className="mt-3 text-4xl font-black tracking-tight text-white md:text-5xl">Smart Hub</h1>
-              <p className="mt-3 max-w-3xl text-sm font-semibold leading-6 text-slate-100 md:text-base">
-                Run the day from one place: jobs, clients, quotes, invoices, team, schedule, follow-ups, automation, and AI assistance.
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-600">CHURVOX COMMAND CENTRE</p>
+              <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-900 md:text-5xl">Smart Hub</h1>
+              <p className="mt-3 max-w-3xl text-sm font-semibold leading-6 text-slate-600 md:text-base">
+                Run the day from one calm command centre with clear priorities and quieter actions.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 {quickCreateActions.map(([label, href, kind]) => <SmartButton key={href} label={label} href={href} kind={kind} />)}
@@ -355,7 +355,8 @@ export default function SmartHubPage() {
                   {item}
                 </div>
               ))}
-            </div>} />
+            </div>
+          </div>
         </section>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -478,6 +479,7 @@ export default function SmartHubPage() {
             <div>
               <h2 className="text-2xl font-black text-slate-950">Command shortcuts</h2>
               <p className="mt-1 text-sm font-semibold text-slate-700">Fast access to launch-critical work areas.</p>
+            </div>
             <Link to="/jobs" className="hidden rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-950 hover:border-blue-300 hover:bg-blue-50 sm:inline-flex">Back to Jobs</Link>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
