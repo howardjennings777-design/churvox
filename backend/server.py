@@ -8496,6 +8496,15 @@ async def automation_list_runs(current_user: dict = Depends(get_current_user)):
     runs = await cursor.to_list(length=100)
     return {"success": True, "runs": _automation_clean_docs(runs)}
 
+@api_router.get("/automation/runs/{run_id}")
+async def automation_get_run(run_id: str, current_user: dict = Depends(get_current_user)):
+    _automation_require_manager(current_user)
+    business_id = _automation_business_id(current_user)
+    run = await db.automation_runs.find_one({"id": run_id, "business_id": business_id})
+    if not run:
+        return {"success": False, "error": "not_found", "run": None}
+    return {"success": True, "run": _automation_clean_doc(run)}
+
 @api_router.post("/automation/rules/{rule_id}/test")
 async def automation_test_rule(rule_id: str, current_user: dict = Depends(get_current_user)):
     _automation_require_manager(current_user)
