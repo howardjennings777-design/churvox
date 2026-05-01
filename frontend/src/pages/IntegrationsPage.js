@@ -1,3 +1,14 @@
 import { SimpleDataPage } from './_tradieFactory';
-// CHURVOX_TRADIE_V3_ACTIVE_PAGE
-export default function IntegrationsPage(){return <SimpleDataPage title='Integrations' subtitle='Manage your IntegrationsPage workspace with premium controls.' endpoint='/integrations' createTo='#' />}
+import { SimpleDataPage } from './_tradieFactory';
+
+// CHURVOX_MODERN_WEBSITE_ACTIVE_PAGE
+export default function IntegrationsPage() {
+  return (
+    <SimpleDataPage
+      title="Integrations"
+      subtitle="Connect operational tools and accounting services."
+      endpoint="/integrations"
+      createTo="#"
+    />
+  );
+}

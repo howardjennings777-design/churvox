@@ -1,3 +1,14 @@
 import { SimpleDataPage } from './_tradieFactory';
-// CHURVOX_TRADIE_V3_ACTIVE_PAGE
-export default function JobFormPage(){return <SimpleDataPage title='JobForm' subtitle='Manage your JobFormPage workspace with premium controls.' endpoint='/jobs' createTo='#' />}
+import { SimpleDataPage } from './_tradieFactory';
+
+// CHURVOX_MODERN_WEBSITE_ACTIVE_PAGE
+export default function JobFormPage() {
+  return (
+    <SimpleDataPage
+      title="Create Job"
+      subtitle="Capture scope, customer, and scheduling details."
+      endpoint="/jobs"
+      createTo="#"
+    />
+  );
+}
