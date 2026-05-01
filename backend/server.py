@@ -11079,3 +11079,13 @@ async def reports_quotes_csv(current_user: dict = Depends(get_current_user)):
     rows = await _csv_rows('quotes', business_id)
     out = 'id,status,total,created_at\n' + '\n'.join([f"{r.get('id','')},{r.get('status','')},{r.get('total',0)},{r.get('created_at','')}" for r in rows])
     return PlainTextResponse(out, media_type='text/csv')
+
+@api_router.get('/reports/payroll.csv')
+async def reports_payroll_csv(current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get('role') or '').lower()
+    if role not in {'owner','manager','office_admin','payroll'}:
+        raise HTTPException(status_code=403, detail='Payroll export requires payroll/admin access.')
+    business_id = str(current_user.get('business_id') or '')
+    rows = await _csv_rows('timesheets', business_id)
+    out = 'worker_name,worker_email,pay_period,status,total_hours,approved_hours,gross_pay,created_at\n' + '\n'.join([f"{r.get('worker_name','')},{r.get('worker_email','')},{r.get('pay_period','')},{r.get('status','')},{r.get('total_hours',r.get('hours',0))},{r.get('approved_hours',0)},{r.get('gross_pay',0)},{r.get('created_at','')}" for r in rows])
+    return PlainTextResponse(out, media_type='text/csv')
