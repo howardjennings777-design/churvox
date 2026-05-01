@@ -1,0 +1,1 @@
+export default function TradieEmptyState({message='We couldn’t load this section.',hint='Try refreshing or check your connection.'}){return <div className='empty'><strong>{message}</strong><div>{hint}</div></div>}
