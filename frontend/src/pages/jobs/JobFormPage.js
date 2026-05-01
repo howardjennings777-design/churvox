@@ -402,7 +402,7 @@ export default function JobFormPage() {
         <section className="overflow-hidden rounded-3xl border border-slate-900/20 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-6 text-white shadow-2xl">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">Job setup centre</p>
           <h1 className="mt-3 text-3xl font-black tracking-tight md:text-4xl">{isEdit ? "Edit Job" : "New Job"}</h1>
-          <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-300">Create work with the right client, region, worker, schedule, recurring rule, template, checklist and pricing source for invoices.</p>
+          <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-200">Create work with the right client, region, worker, schedule, recurring rule, template, checklist and pricing source for invoices.</p>
         </section>
 
         <Card className="bg-white border-slate-200 shadow-sm rounded-3xl">
