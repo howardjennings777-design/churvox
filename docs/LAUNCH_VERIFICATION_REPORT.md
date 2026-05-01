@@ -1,76 +1,65 @@
 # Launch Verification Report
 
-- **Timestamp (UTC):** 2026-05-01 07:26:11 UTC
-- **Latest commit at verification start:** `a57c8ad`
+- **Date/time generated (UTC):** 2026-05-01 10:01:21 UTC
+- **Branch:** `work`
+- **Latest git commit at verification:** `ad894f494056539a831173d00caa93348588625c`
 
-## Build and Compile Results
+## Build / Compile / Smoke Results
 
-- **Frontend dependency install (`npm --prefix frontend install`):** ❌ Failed with `403 Forbidden` fetching package metadata from `https://registry.npmjs.org/eslint`.
-- **Frontend production build (`npm --prefix frontend run build`):** ⚠️ Not run because dependency install failed.
-- **Backend syntax compile (`python3 -m py_compile backend/server.py`):** ✅ Passed.
-- **Backend full compile (`python3 -m compileall -q backend`):** ✅ Passed.
-- **Launch seed script compile (`python3 -m py_compile scripts/churvox_seed_launch_test_data.py`):** ✅ Passed.
+- **Frontend dependency install (`npm --prefix frontend install`):** ❌ Failed (`403 Forbidden` from `https://registry.npmjs.org/eslint`).
+- **Frontend build (`npm --prefix frontend run build`):** ⚠️ Not run because install failed.
+- **Backend compile (`python3 -m py_compile backend/server.py`):** ✅ Passed.
+- **Backend compile-all (`python3 -m compileall -q backend`):** ✅ Passed.
+- **Seed script compile (`python3 -m py_compile scripts/churvox_seed_launch_test_data.py`):** ✅ Passed.
+- **Smoke script (`bash scripts/churvox_launch_smoke.sh`):** ❌ Failed at frontend dependency install with same npm 403 blocker.
 
-## Smoke Script Result
+## E2E Status
 
-- **Smoke script (`bash scripts/churvox_launch_smoke.sh`):** ❌ Failed early during frontend dependency installation with the same npm `403 Forbidden` error, so route/browser checks inside the script did not execute.
+- **Status:** Failed to execute in this pass.
+- **Reason:** Smoke path did not reach E2E phase because frontend dependency install failed first.
+- **E2E_BASE_URL handling:** Not reached in this run; no skip branch executed.
 
-## Browser E2E Status
+## Routes Verified by Static Review
 
-- **Status:** Failed to execute due to dependency installation blocker in smoke script.
-- **E2E base URL:** No explicit `E2E_BASE_URL` evidence captured in this pass because execution stopped before the script reached E2E branching.
+Static route review completed in `frontend/src/App.js`, including:
+- Public/auth routes: `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/privacy`, `/terms`, `/privacy-policy`, `/terms-of-service`, `/public/quote/:token`, `/public/invoice/:token`.
+- Business routes: `/jobs`, `/jobs/new`, `/jobs/:id`, `/clients`, `/clients/new`, `/quotes`, `/quotes/new`, `/invoices`, `/invoices/new`, `/team`, `/settings`, `/plans`, `/smart-hub`, `/reports`, `/sms`, `/integrations`, `/automation`, `/automation/runs`, `/launch-check`, `/timesheets`.
+- Worker routes: `/worker/jobs`, `/worker/jobs/:id`, `/worker/settings`.
+- Redirects: `/dashboard -> /jobs`, `/overview -> /jobs`, business default `/jobs`, worker default `/worker/jobs`, payroll default `/timesheets`.
 
-## Routes Verified (Static Route Wiring Check)
+## Backend Endpoints Verified by Static Review
 
-Verified in `frontend/src/App.js`:
-- `/jobs` route exists and remains explicitly wired.
-- `/smart-hub` -> `SmartHubPage`
-- `/reports` -> `ReportsPage`
-- `/sms` -> `SMSPage`
-- `/integrations` -> `IntegrationsPage`
-- `/automation` -> `AutomationPage`
-- `/automation/runs` -> `AutomationRunsPage`
-- `/launch-check` -> `LaunchCheckPage`
+Verified in backend code (`backend/server.py` and fallback boot wiring in `backend/launch_complete_backend_boot.py`):
+- Billing: `/billing/status`, `/billing/start-trial`, `/stripe/create-checkout-session`, `/billing/confirm-checkout`, billing webhook.
+- Reports: `/reports/summary`, `/reports/invoices.csv`, `/reports/jobs.csv`, `/reports/quotes.csv`, `/reports/payroll.csv`.
+- SMS: `/sms/balance`, `/sms/history`, `/sms/send`, `/sms/buy-credits`.
+- MYOB: `/myob/status`, `/myob/settings`, `/myob/test-connection`, `/myob/oauth/start`, `/myob/oauth/callback`, `/myob/invoices/{invoice_id}/sync`, `/myob/invoices/{invoice_id}/pull-payment-status`.
+- Automation: `/automation/templates`, `/automation/rules`, `/automation/runs`, `/automation/runs/{run_id}/retry`.
+- Payroll: `/timesheets`, `/timesheets/summary`, `/timesheets/{id}/approve`, `/timesheets/{id}/reject`, `/payroll/summary`, `/payroll/export.csv`.
+- CSV imports: `/clients/import-csv`, `/team/import-csv`.
+- Notifications: `/notifications`, `/notifications/{id}/read`, `/notifications/read-all`.
 
-## Backend Endpoints Verified (Presence in `backend/server.py`)
+No new fallback routes were added in this pass.
 
-Confirmed present:
-- `/smart-hub/summary`
-- `/ai/business-assistant`
-- `/reports/summary`
-- `/reports/invoices.csv`
-- `/reports/jobs.csv`
-- `/reports/quotes.csv`
-- `/sms/balance`
-- `/sms/history`
-- `/sms/send`
-- `/sms/buy-credits`
-- `/myob/status`
-- `/myob/settings`
-- `/myob/test-connection`
-- `/myob/invoices/{invoice_id}/sync`
-- `/myob/invoices/{invoice_id}/pull-payment-status`
-- `/automation/templates`
-- `/automation/rules`
-- `/automation/runs`
+## Known Not-Configured Systems (Env-dependent)
 
-No missing endpoint fallbacks were required in this pass.
+- SMS provider may be unavailable if SMS env/provider setup is missing.
+- SMS credit checkout may be unavailable if Stripe SMS prices are not configured.
+- MYOB OAuth unavailable unless `MYOB_CLIENT_ID`, `MYOB_CLIENT_SECRET`, `MYOB_REDIRECT_URI` are set.
+- AI provider may run in fallback mode if provider key/service is missing.
+- Stripe checkout unavailable if required Stripe env vars are missing.
 
-## Known Not-Configured Systems (Environment Dependent)
+## Manual Testing Still Required
 
-- SMS credit checkout may be not configured depending on provider credentials/env.
-- MYOB OAuth/invoice sync paths may be not configured depending on tenant and secrets.
-- AI provider may run in fallback mode if upstream provider keys/services are unavailable.
+Manual browser/device tests are still required per `docs/MANUAL_LAUNCH_TEST_CHECKLIST.md`.
 
-## Manual Test List Still Required
+## Do Not Launch Until
 
-Manual launch validation remains required; see:
-- `docs/MANUAL_LAUNCH_TEST_CHECKLIST.md`
-
-## Do Not Launch Until These Pass
-
-1. Frontend dependency installation succeeds in the target environment.
-2. Frontend production build succeeds.
-3. Smoke script runs end-to-end without install/build blockers.
-4. Browser E2E pass (or documented acceptable skips with rationale) is completed against deployed/staging URL.
-5. Manual checklist critical path (owner + worker auth, jobs, quote/invoice public links, payroll protections, Smart Hub/Reports/SMS/MYOB/Automation/Launch Check pages) is executed and signed off.
+- [ ] Owner login tested live.
+- [ ] Job create/open/assign tested live.
+- [ ] Worker login/job action tested live.
+- [ ] Public quote link tested live.
+- [ ] Public invoice link tested live.
+- [ ] Plans/trial/Stripe return tested live.
+- [ ] Mobile taps tested live.
+- [ ] Render deploy verified.
