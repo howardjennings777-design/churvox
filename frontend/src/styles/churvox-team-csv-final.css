@@ -1,0 +1,30 @@
+/* Final Team CSV import button override. Keep one real label, force black writing. */
+[data-testid="csv-import-button"] {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  border-color: #cbd5e1 !important;
+  background: #ffffff !important;
+}
+
+[data-testid="csv-import-button"] *,
+[data-testid="csv-import-button"] span,
+[data-testid="csv-import-button"] div {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+[data-testid="csv-import-button"] svg,
+[data-testid="csv-import-button"] svg * {
+  color: #1d4ed8 !important;
+  -webkit-text-fill-color: unset !important;
+  stroke: #1d4ed8 !important;
+  opacity: 1 !important;
+}
+
+[data-testid="csv-import-button"]::before,
+[data-testid="csv-import-button"]::after {
+  content: none !important;
+  display: none !important;
+}
