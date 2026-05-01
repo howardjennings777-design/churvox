@@ -6,16 +6,16 @@
 
 ## Build / Compile / Smoke Results
 
-- **Frontend dependency install (`npm --prefix frontend install`):** ❌ Failed (`403 Forbidden` from `https://registry.npmjs.org/eslint`).
-- **Frontend build (`npm --prefix frontend run build`):** ❌ Failed (`craco: not found`, because dependency install did not complete).
+- **Frontend dependency install (`npm --prefix frontend install`):** ❌ Failed in the Codex verification environment (`403 Forbidden` while fetching `eslint`).
+- **Frontend build (`npm --prefix frontend run build`):** ❌ Failed in that same run (`craco: not found`, because dependency install did not complete).
 - **Backend compile (`python3 -m py_compile backend/server.py`):** ✅ Passed.
 - **Backend compile-all (`python3 -m compileall -q backend`):** ✅ Passed.
 - **Seed script compile (`python3 -m py_compile scripts/churvox_seed_launch_test_data.py`):** ✅ Passed.
-- **Smoke script (`bash scripts/churvox_launch_smoke.sh`):** ❌ Failed at frontend dependency install with same npm 403 blocker.
+- **Smoke script (`bash scripts/churvox_launch_smoke.sh`):** ❌ Failed at frontend dependency install with the same npm 403 blocker in that environment.
 
 ## E2E Status
 
-- **Status:** Failed to execute in this pass.
+- **Status:** Failed to execute in the recorded verification pass.
 - **Reason:** Smoke path did not reach E2E phase because frontend dependency install failed first.
 - **E2E_BASE_URL handling:** Not reached in this run; no skip branch executed.
 
@@ -64,9 +64,13 @@ Manual browser/device tests are still required per `docs/MANUAL_LAUNCH_TEST_CHEC
 - [ ] Mobile taps tested live.
 - [ ] Render deploy verified.
 
-
 ## 2026-05-01 Build blocker follow-up
 
-- Updated `frontend/.npmrc` to remove `omit=dev` so build tooling like `craco` is no longer excluded from install.
-- Retried `npm --prefix frontend install --legacy-peer-deps`; still blocked by upstream `403 Forbidden` on fetching `eslint` from the registry in this environment.
-- Because install is blocked upstream, `npm --prefix frontend run build` still cannot complete (`craco: not found` until dependencies can be installed).
+- Earlier pass removed `omit=dev` from `frontend/.npmrc` so build tooling like `craco` is no longer intentionally excluded from install.
+- Follow-up commit `5e2150303a6a696e6316f3980c46c468b4057128` now pins `frontend/.npmrc` to the public npm registry and keeps legacy peer dependency handling enabled:
+  - `registry=https://registry.npmjs.org/`
+  - `legacy-peer-deps=true`
+  - `fund=false`
+  - `audit=false`
+- This repo-side fix is pushed to `main`. The remaining proof is to pull latest `main` in Codespaces/Render and rerun install/build there.
+- If dependency install still fails after this config, the remaining issue is environment/network/registry access rather than missing app code.
