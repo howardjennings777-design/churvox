@@ -1749,7 +1749,7 @@ async def create_checkout_session(payload: dict, current_user: dict = Depends(ge
     plan = (payload.get("plan_type") or "solo").lower()
 
     if not STRIPE_SECRET_KEY:
-        raise HTTPException(status_code=500, detail="Stripe secret key is missing on the server")
+        return {"success": False, "not_configured": True, "error": "Stripe checkout is not configured yet."}
 
     # Resolve country & currency with the correct source-of-truth order:
     # saved user/business > request hint > safe NZ default.
@@ -1770,7 +1770,7 @@ async def create_checkout_session(payload: dict, current_user: dict = Depends(ge
     if not user_id:
         raise HTTPException(status_code=401, detail="Authenticated user id missing")
     email = current_user.get("email", "")
-    success_url = f"{BACKEND_PUBLIC_URL}/api/stripe/checkout-success?session_id={{CHECKOUT_SESSION_ID}}"
+    success_url = f"{FRONTEND_URL}/plans?session_id={{CHECKOUT_SESSION_ID}}&plan={plan}&checkout=success"
     cancel_url = f"{FRONTEND_URL}/plans?checkout=cancelled&plan={plan}"
 
     try:
@@ -1794,7 +1794,9 @@ async def create_checkout_session(payload: dict, current_user: dict = Depends(ge
             "cancel_url": cancel_url,
             "metadata": {
                 "user_id": user_id,
+                "business_id": str(current_user.get("business_id") or user_id),
                 "plan": plan,
+                "plan_type": plan,
                 "currency": currency,
                 "country": country,
             },
@@ -6621,6 +6623,8 @@ class ConfirmCheckoutRequest(BaseModel):
 
 @api_router.post("/billing/confirm-checkout")
 async def confirm_checkout(request: ConfirmCheckoutRequest, current_user: dict = Depends(get_current_user)):
+    if not STRIPE_SECRET_KEY:
+        return {"success": False, "not_configured": True, "error": "Stripe checkout is not configured yet."}
     try:
         session = stripe.checkout.Session.retrieve(request.session_id)
     except Exception as e:
@@ -6636,10 +6640,17 @@ async def confirm_checkout(request: ConfirmCheckoutRequest, current_user: dict =
     if payment_status not in ("paid", "no_payment_required", "unpaid"):
         raise HTTPException(status_code=400, detail="Checkout session not completed")
 
+    subscription_id = getattr(session, "subscription", None) or session.get("subscription")
+    customer_id = getattr(session, "customer", None) or session.get("customer")
     await db.users.update_one(
         {"_id": current_user["_id"]},
         {"$set": {
             "plan": selected_plan,
+            "plan_status": "paid",
+            "subscription_status": "active",
+            "has_paid_subscription": True,
+            "stripe_subscription_id": str(subscription_id) if subscription_id else current_user.get("stripe_subscription_id"),
+            "stripe_customer_id": str(customer_id) if customer_id else current_user.get("stripe_customer_id"),
             "updated_at": datetime.utcnow()
         }}
     )
@@ -6659,6 +6670,10 @@ async def confirm_checkout(request: ConfirmCheckoutRequest, current_user: dict =
         "plan": normalize_plan((refreshed_user or {}).get("plan", selected_plan)),
         "plan_features": get_plan_features((refreshed_user or {}).get("plan", selected_plan)),
     }
+
+@api_router.get("/billing/confirm-checkout")
+async def confirm_checkout_get(session_id: str, current_user: dict = Depends(get_current_user)):
+    return await confirm_checkout(ConfirmCheckoutRequest(session_id=session_id), current_user)
 
 
 
