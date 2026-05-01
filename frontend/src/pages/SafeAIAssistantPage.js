@@ -61,6 +61,9 @@ const daysOld = (v) => {
 };
 
 const HUB_REQUEST_TIMEOUT_MS = 10000;
+const FALLBACK_SUGGESTIONS = [
+  { type: "System", title: "Suggestions temporarily unavailable", text: "Open Jobs, Quotes, and Invoices to continue working while Smart Hub reconnects.", to: "/smart-hub", cta: "Stay in Smart Hub" },
+];
 
 const withTimeout = (promise, timeoutMs = HUB_REQUEST_TIMEOUT_MS) => Promise.race([
   promise,
@@ -177,10 +180,11 @@ export default function SafeAIAssistantPage() {
       followUps: safeArray(unwrap(requests[7]), "tasks"),
     };
     setData(next);
-    setApiSuggestions(safeArray(unwrap(requests[8]), "items"));
+    const suggestionItems = safeArray(unwrap(requests[8]), "items");
+    setApiSuggestions(suggestionItems.length ? suggestionItems : FALLBACK_SUGGESTIONS);
     const digestPayload = unwrap(requests[9]) || {};
     setDigestData(digestPayload);
-    setDigestPreview(digestPayload.digest_text || "");
+    setDigestPreview(digestPayload.digest_text || "Daily digest is temporarily unavailable. Use the cards below to review key business actions.");
     const sections = ["Jobs", "Quotes", "Invoices", "Team", "Automation rules", "Automation runs", "Clients", "Follow-ups", "Suggestions", "Digest"];
     const failures = requests.flatMap((r, i) => (r.status === "fulfilled" && r.value?.success ? [] : [sections[i]]));
     setLoadErrors(failures);
