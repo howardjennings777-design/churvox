@@ -74,3 +74,11 @@ Manual browser/device tests are still required per `docs/MANUAL_LAUNCH_TEST_CHEC
   - `audit=false`
 - This repo-side fix is pushed to `main`. The remaining proof is to pull latest `main` in Codespaces/Render and rerun install/build there.
 - If dependency install still fails after this config, the remaining issue is environment/network/registry access rather than missing app code.
+
+## Advanced Feature Verification Update
+- Dispatch Board: built and polished; live test not yet run.
+- Route Planner: manual planning available; live test not yet run.
+- Recurring Jobs: built with manual generate-next; live test not yet run.
+- System Health: human-readable status cards powered by config booleans; live test not yet run.
+- Push Notifications: foundation implemented; not_configured until env variables are configured.
+- Customer Portal/Login: token portal flow implemented, account login remains foundation.

@@ -29,3 +29,10 @@
 | System Health | `/system-health` | `/system-health/*` | Built, needs live test | Low | Yes | Returns boolean config states only; no secret exposure. |
 | Push Notifications | `/push-notifications` | `/push/*` | Not configured until env set | Low | Yes | Optional and user-controlled; manual test send only. |
 | Customer Portal/Login | `/customer`, `/customer/login`, `/customer/portal/:token` | `/customer-portal/*`, `/customer/login` | Built, needs live test | Medium | Yes | Token-scoped public data only; customer login foundation not configured. |
+
+- Dispatch Board: Built, needs live test
+- Route Planner: Manual route planning only, needs live test
+- Recurring Jobs: Built, manual generate-next, needs live test
+- System Health: Built, config booleans only, needs live test
+- Push Notifications: Foundation, not_configured until env set
+- Customer Portal/Login: Token portal built, account login foundation only
