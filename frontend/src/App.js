@@ -111,6 +111,7 @@ function Guard({ children, type = "business" }) {
   }
   if (auth.isWorker) return <Navigate to="/worker/jobs" replace />;
   if (auth.isPayroll) return <Navigate to={TIMESHEETS_PATH} replace />;
+  if (type === "plans") return children;
   if (auth.mustChoosePlan || !auth.hasAppAccess) return <Navigate to="/plans" replace />;
   if (type === "team" && !["owner", "manager"].includes(auth.normalizedRole)) return <Navigate to={SAFE_HOME} replace />;
   return children;
@@ -190,7 +191,7 @@ function AppRoutes() {
       <Route path="/follow-ups" element={<Guard><FollowUpsPage /></Guard>} />
       <Route path="/integrations" element={<Guard><IntegrationsPage /></Guard>} />
       <Route path="/settings" element={<Guard><SettingsPage /></Guard>} />
-      <Route path="/plans" element={<Guard><PlansPage /></Guard>} />
+      <Route path="/plans" element={<Guard type="plans"><PlansPage /></Guard>} />
       <Route path="/notifications" element={<Guard><NotificationsPage /></Guard>} />
       <Route path="/reports" element={<Guard><ComingSoonPage title="Reports coming soon" description="Reports will return when they provide strong business insight instead of basic or half-finished numbers." /></Guard>} />
       <Route path="/sms" element={<Guard><ComingSoonPage title="Communications coming soon" description="SMS and customer communications are being kept out of the core launch path until sending, credits and reminders are fully reliable." /></Guard>} />
