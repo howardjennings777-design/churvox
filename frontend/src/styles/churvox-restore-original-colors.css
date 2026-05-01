@@ -121,14 +121,100 @@ aside a.active,
 
 /* Smart Hub v3 hard readability repair.
    This overrides the old global .cx-page > section:nth-of-type(3) AI-timesheet patch
-   that was accidentally washing out Smart Hub snapshot-card text. */
-.smart-hub-v3 > section:nth-of-type(3) {
+   that was accidentally washing out Smart Hub cards. */
+.smart-hub-v3 > section:nth-of-type(3),
+.smart-hub-v3 > section:nth-of-type(4) {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
   border: 0 !important;
   box-shadow: none !important;
   color: #0f172a !important;
+}
+
+.smart-hub-v3 > section:nth-of-type(3) > article:first-child {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #0f172a !important;
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+.smart-hub-v3 > section:nth-of-type(3) > article:first-child h1,
+.smart-hub-v3 > section:nth-of-type(3) > article:first-child h2,
+.smart-hub-v3 > section:nth-of-type(3) > article:first-child h3 {
+  color: #020617 !important;
+  font-weight: 900 !important;
+  opacity: 1 !important;
+}
+
+.smart-hub-v3 > section:nth-of-type(3) > article:first-child p,
+.smart-hub-v3 > section:nth-of-type(3) > article:first-child div,
+.smart-hub-v3 > section:nth-of-type(3) > article:first-child span {
+  color: #334155 !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.smart-hub-v3 > section:nth-of-type(3) > article:first-child button {
+  background: #ffffff !important;
+  color: #020617 !important;
+  border-color: #cbd5e1 !important;
+  opacity: 1 !important;
+}
+
+.smart-hub-v3 > section:nth-of-type(3) > article:first-child button.bg-blue-600,
+.smart-hub-v3 > section:nth-of-type(3) > article:first-child button[class*="bg-blue-600"] {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+}
+
+.smart-hub-v3 > section:nth-of-type(3) > article:last-child {
+  background: #020617 !important;
+  background-color: #020617 !important;
+  background-image: linear-gradient(135deg, #020617 0%, #0f172a 58%, #172554 100%) !important;
+  border-color: #0f172a !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+.smart-hub-v3 > section:nth-of-type(3) > article:last-child h1,
+.smart-hub-v3 > section:nth-of-type(3) > article:last-child h2,
+.smart-hub-v3 > section:nth-of-type(3) > article:last-child h3 {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+.smart-hub-v3 > section:nth-of-type(3) > article:last-child p {
+  color: #f8fafc !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  opacity: 1 !important;
+}
+
+.smart-hub-v3 > section:nth-of-type(3) > article:last-child span,
+.smart-hub-v3 > section:nth-of-type(3) > article:last-child div {
+  color: inherit !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.smart-hub-v3 > section:nth-of-type(3) > article:last-child button {
+  background: #ffffff !important;
+  color: #020617 !important;
+  border-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+.smart-hub-v3 > section:nth-of-type(3) > article:last-child a {
+  color: #f8fafc !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  opacity: 1 !important;
 }
 
 .smart-hub-v3 > section:nth-of-type(3) .sh-snapshot-card,
