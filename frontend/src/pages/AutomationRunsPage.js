@@ -45,6 +45,7 @@ export default function AutomationRunsPage() {
   const { get, post } = useApi();
   const [runs, setRuns] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [expanded, setExpanded] = useState({});
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
@@ -52,10 +53,22 @@ export default function AutomationRunsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const qs = statusFilter ? `?limit=100&status=${statusFilter}` : "?limit=100";
-    const r = await get(`/automation/runs${qs}`);
-    if (r?.success) setRuns(asList(r.data, "runs"));
-    setLoading(false);
+    setError("");
+    try {
+      const qs = statusFilter ? `?limit=100&status=${statusFilter}` : "?limit=100";
+      const r = await get(`/automation/runs${qs}`);
+      if (r?.success) {
+        setRuns(asList(r.data, "runs"));
+      } else {
+        setRuns([]);
+        setError(r?.error || "Could not load automation runs.");
+      }
+    } catch (_err) {
+      setRuns([]);
+      setError("Could not load automation runs.");
+    } finally {
+      setLoading(false);
+    }
   }, [get, statusFilter]);
 
   useEffect(() => { load(); }, [load]);
@@ -130,11 +143,12 @@ export default function AutomationRunsPage() {
         )}
 
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          {error ? <div className="border-b border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div> : null}
           {loading ? (
             <div className="p-8 text-center text-sm text-slate-500">Loading...</div>
           ) : filtered.length === 0 ? (
             <div className="p-12 text-center">
-              <History className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+              <History className="h-10 w-10 text-slate-500 mx-auto mb-3" />
               <p className="text-sm text-slate-600">
                 {runs.length === 0 ? "No runs yet." : "No runs match your search."}
               </p>
@@ -156,7 +170,7 @@ export default function AutomationRunsPage() {
                       onClick={() => setExpanded({ ...expanded, [r.id]: !isOpen })}
                       className="min-w-0 flex-1 text-left flex items-start gap-3"
                     >
-                      <span className="mt-0.5 text-slate-400">
+                          <span className="mt-0.5 text-slate-500">
                         {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                       </span>
                       <div className="min-w-0 flex-1">
@@ -180,7 +194,7 @@ export default function AutomationRunsPage() {
                           <span>{r.results?.length || 0} action(s)</span>
                           {dur !== null && (<><span className="text-slate-300">·</span><span>{dur}ms</span></>)}
                           <span className="text-slate-300">·</span>
-                          <span className="text-slate-400">{new Date(r.started_at).toLocaleString()}</span>
+                          <span className="text-slate-600">{new Date(r.started_at).toLocaleString()}</span>
                         </div>
                       </div>
                     </button>
