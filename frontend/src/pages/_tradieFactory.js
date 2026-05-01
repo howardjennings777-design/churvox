@@ -14,6 +14,15 @@ const AI_COPY = {
   Clients: 'Suggested summary: generate a client activity recap before your next callout. Approval required before share.',
   Automation: 'Suggested rule: remind overdue invoice clients 48 hours after due date. Keep every automation approval-first.',
 };
+const AI_TITLE = {
+  Jobs: 'AI Job Assistant',
+  Clients: 'AI Client Assistant',
+  Quotes: 'AI Quote Follow-up',
+  Invoices: 'AI Invoice Assistant',
+  Automation: 'AI Automation Suggestions',
+  Payroll: 'AI Payroll Summary',
+  Reports: 'AI Reports Summary',
+};
 
 export function SimpleDataPage({ title, subtitle, endpoint, createTo, secondary }) {
   const [data, setData] = useState([]);
@@ -66,7 +75,7 @@ export function SimpleDataPage({ title, subtitle, endpoint, createTo, secondary 
         </PremiumCard>
 
         <PremiumActionCard
-          title="AI helper"
+          title={AI_TITLE[title] || 'AI helper'}
           description={AI_COPY[title] || 'Review AI suggestions before applying changes. Approval-first always.'}
           ctaLabel="Review workflow"
           ctaTo={createTo || '#'}

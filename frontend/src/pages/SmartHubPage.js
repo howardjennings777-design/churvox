@@ -125,14 +125,22 @@ export default function SmartHubPage() {
 
         <aside className="modern-hub-ai">
           <ModernCard title="AI Business Assistant">
+            <div className="modern-ai-panel">
+              <h4>Today’s summary</h4>
+              <p>{summary.openJobs.length} active jobs, {summary.openInvoices.length} open invoices, {summary.pendingQuotes.length} pending quotes. Review every draft before sending.</p>
+            </div>
             <p className="modern-hub-muted">Business suggestions based on your current workload and cashflow.</p>
             {loading ? <p className="modern-loading">Analyzing your business…</p> : aiSuggestions.length ? (
-              <ul className="modern-hub-ai-list">{aiSuggestions.map((item) => <li key={item}>{item}</li>)}</ul>
+              <div className="modern-section-soft">
+                <ul className="modern-hub-ai-list">{aiSuggestions.map((item) => <li key={item}>{item}</li>)}</ul>
+              </div>
             ) : <ModernEmptyState message="No critical alerts right now." hint="Your operations look stable for today." />}
 
             <label className="modern-hub-label" htmlFor="assistantPrompt">Ask for help drafting follow-ups</label>
             <textarea id="assistantPrompt" className="modern-hub-textarea" value={assistantPrompt} onChange={(e) => setAssistantPrompt(e.target.value)} placeholder="e.g. Draft a friendly follow-up for overdue invoices due this week." />
             <div className="modern-hub-draft">
+              <strong>Approval-first:</strong> No automatic customer messages are sent.
+              <br />
               <strong>Draft preview (approval required):</strong>
               <p>{assistantPrompt ? `Draft for review: ${assistantPrompt}` : 'No draft started. Type a request to generate wording for review.'}</p>
             </div>
