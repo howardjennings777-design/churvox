@@ -3,12 +3,12 @@ import axios from "axios";
 import API_BASE from "../lib/apiBase";
 import { normalizeRole, isBusinessRole, isOwner, isWorkerRole, isPayrollRole } from "../lib/roles";
 
+const AUTH_TIMEOUT_MS = 12000;
 axios.defaults.withCredentials = true;
+axios.defaults.timeout = AUTH_TIMEOUT_MS;
 
 const AuthContext = createContext(null);
 const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
-
-const AUTH_TIMEOUT_MS = 12000;
 
 function withTimeout(promise, timeoutMs = AUTH_TIMEOUT_MS) {
   return Promise.race([
@@ -23,15 +23,29 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const checkAuthInFlightRef = useRef(false);
+  const authFailsafeTimerRef = useRef(null);
 
   const checkAuth = useCallback(async () => {
+    if (authFailsafeTimerRef.current) {
+      clearTimeout(authFailsafeTimerRef.current);
+      authFailsafeTimerRef.current = null;
+    }
     if (checkAuthInFlightRef.current) return;
     checkAuthInFlightRef.current = true;
     setLoading(true);
+    authFailsafeTimerRef.current = setTimeout(() => {
+      checkAuthInFlightRef.current = false;
+      setUser(null);
+      setLoading(false);
+    }, AUTH_TIMEOUT_MS + 3000);
 
     const token = localStorage.getItem("token");
     if (!token) {
       setUser(null);
+      if (authFailsafeTimerRef.current) {
+        clearTimeout(authFailsafeTimerRef.current);
+        authFailsafeTimerRef.current = null;
+      }
       setLoading(false);
       checkAuthInFlightRef.current = false;
       return;
@@ -51,6 +65,10 @@ export function AuthProvider({ children }) {
       localStorage.removeItem("platform_owner_email");
       setUser(null);
     } finally {
+      if (authFailsafeTimerRef.current) {
+        clearTimeout(authFailsafeTimerRef.current);
+        authFailsafeTimerRef.current = null;
+      }
       setLoading(false);
       checkAuthInFlightRef.current = false;
     }
@@ -59,6 +77,14 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  useEffect(() => () => {
+    if (authFailsafeTimerRef.current) {
+      clearTimeout(authFailsafeTimerRef.current);
+      authFailsafeTimerRef.current = null;
+    }
+    checkAuthInFlightRef.current = false;
+  }, []);
 
   useEffect(() => {
     const handleAuthRefresh = () => {

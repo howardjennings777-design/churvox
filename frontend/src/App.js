@@ -58,11 +58,28 @@ const TIMESHEETS_PATH = "/timesheets";
 const SMART_HUB_PATH = "/smart-hub";
 const isPlatformOwnerEmail = (user) => String(user?.email || "").trim().toLowerCase() === PLATFORM_OWNER_EMAIL;
 
-const Spinner = () => (
-  <div className="min-h-screen chx-worker-shell flex items-center justify-center">
-    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
-  </div>
-);
+const Spinner = () => {
+  const [showFallback, setShowFallback] = React.useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setShowFallback(true), 7000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div className="min-h-screen chx-worker-shell flex items-center justify-center px-4">
+      <div className="text-center">
+        <div className="mx-auto animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
+        {showFallback ? (
+          <div className="mt-4">
+            <p className="text-sm font-semibold text-slate-700">Still loading? Refresh or return to login.</p>
+            <a href="/login" className="mt-2 inline-block text-sm font-bold text-blue-700 hover:underline">Go to login</a>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+};
 
 function roleDefaultRoute(role) {
   return role === "payroll" ? TIMESHEETS_PATH : getDefaultRoute(role);
