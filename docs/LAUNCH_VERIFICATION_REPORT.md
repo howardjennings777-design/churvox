@@ -63,3 +63,10 @@ Manual browser/device tests are still required per `docs/MANUAL_LAUNCH_TEST_CHEC
 - [ ] Plans/trial/Stripe return tested live.
 - [ ] Mobile taps tested live.
 - [ ] Render deploy verified.
+
+
+## 2026-05-01 Build blocker follow-up
+
+- Updated `frontend/.npmrc` to remove `omit=dev` so build tooling like `craco` is no longer excluded from install.
+- Retried `npm --prefix frontend install --legacy-peer-deps`; still blocked by upstream `403 Forbidden` on fetching `eslint` from the registry in this environment.
+- Because install is blocked upstream, `npm --prefix frontend run build` still cannot complete (`craco: not found` until dependencies can be installed).
