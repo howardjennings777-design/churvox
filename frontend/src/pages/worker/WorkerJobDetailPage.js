@@ -1,4 +1,5 @@
 // CHURVOX_PREMIUM_TRADIE_REDESIGN_ACTIVE
+// CHURVOX_NEW_FRONTEND_REAL_PAGE
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useApi } from "@/hooks/useApi";

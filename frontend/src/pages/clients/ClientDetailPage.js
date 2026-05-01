@@ -1,4 +1,5 @@
 // CHURVOX_PREMIUM_TRADIE_REDESIGN_ACTIVE
+// CHURVOX_NEW_FRONTEND_REAL_PAGE
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import Layout from "../../components/Layout";

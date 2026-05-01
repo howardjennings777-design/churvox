@@ -1,4 +1,5 @@
 // CHURVOX_PREMIUM_TRADIE_REDESIGN_ACTIVE
+// CHURVOX_NEW_FRONTEND_REAL_PAGE
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useApi } from "@/hooks/useApi";
