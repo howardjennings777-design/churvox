@@ -50,6 +50,11 @@ const ROUTE_ACCESS = {
   worker_jobs: ["worker"],
   worker_settings: ["worker"],
   payroll: ["owner", "manager", "payroll"],
+  dispatch: ["owner", "manager", "office_admin"],
+  route_planner: ["owner", "manager", "office_admin"],
+  recurring_jobs: ["owner", "manager", "office_admin"],
+  system_health: ["owner"],
+  push_notifications: ["owner", "manager", "office_admin", "worker", "payroll"],
 };
 
 export function canAccess(role, route) {

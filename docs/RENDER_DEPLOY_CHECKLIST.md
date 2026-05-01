@@ -36,3 +36,6 @@ Use this checklist for release deployment validation. Never include secret value
 - [ ] Failed route URL + timestamp
 - [ ] Browser console output
 - [ ] Network request details for failing API
+- [ ] `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` present if enabling push notifications.
+- [ ] Customer portal token routes tested (`/customer` and `/customer/portal/:token`).
+- [ ] Dispatch/route-planner/recurring-jobs/system-health pages reachable by correct roles.

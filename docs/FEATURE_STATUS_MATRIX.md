@@ -23,3 +23,9 @@
 | Seed data | n/a | `scripts/churvox_seed_launch_test_data.py` | Built | Low | No | Script compiles in this pass. |
 | Smoke tests | `scripts/churvox_launch_smoke.sh` | mixed API + frontend checks | Built, needs live test | Medium | Yes | Blocked in this environment by npm registry 403. |
 | Render deploy | Render services | deploy pipeline + env config | Built, needs live test | High | Yes | Must be verified after GitHub push in Render dashboard. |
+| Dispatch Board | `/dispatch` | `/dispatch/*` | Built, needs live test | Medium | Yes | Manual assign/reschedule only; no auto notifications. |
+| Route Planner | `/route-planner` | `/route-planner/*` | Built, needs live test | Low | Yes | Manual ordering only; no live tracking/GPS surveillance. |
+| Recurring Jobs | `/recurring-jobs` | `/recurring-jobs*` | Built, needs live test | Medium | Yes | Generate-next is manual only; no auto SMS/email/MYOB sync. |
+| System Health | `/system-health` | `/system-health/*` | Built, needs live test | Low | Yes | Returns boolean config states only; no secret exposure. |
+| Push Notifications | `/push-notifications` | `/push/*` | Not configured until env set | Low | Yes | Optional and user-controlled; manual test send only. |
+| Customer Portal/Login | `/customer`, `/customer/login`, `/customer/portal/:token` | `/customer-portal/*`, `/customer/login` | Built, needs live test | Medium | Yes | Token-scoped public data only; customer login foundation not configured. |

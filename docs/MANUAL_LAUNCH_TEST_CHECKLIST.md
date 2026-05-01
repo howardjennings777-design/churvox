@@ -176,3 +176,13 @@ For every failure capture:
 - **Expected result:** Session recovers; no blank page after login.
 - **Capture if fail:** Route recovery screenshot, console and auth API requests.
 - **Result:** [ ] Pass [ ] Fail [ ] Not run
+
+## 28) Dispatch board
+- **Test steps:** Open `/dispatch`, filter by worker/status/date, assign and reschedule.
+- **Expected result:** Board columns render and actions are manual only.
+- **Result:** [ ] Pass [ ] Fail [ ] Not run
+
+## 29) Route planner
+- **Test steps:** Open `/route-planner`, select date/worker, reorder, save sequence.
+- **Expected result:** Manual order persists; optimisation fallback notice visible.
+- **Result:** [ ] Pass [ ] Fail [ ] Not run

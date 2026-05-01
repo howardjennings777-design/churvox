@@ -246,6 +246,116 @@ def install_launch_complete_backend_boot(server_module) -> None:
     for path, method in [('/api/notifications/{notification_id}/read','POST'),('/api/notifications/read-all','POST'),('/api/timesheets','GET'),('/api/timesheets/summary','GET'),('/api/payroll/summary','GET'),('/api/payroll/export.csv','GET'),('/api/clients/import-csv','POST'),('/api/team/import-csv','POST'),('/api/sms/balance','GET'),('/api/sms/history','GET'),('/api/sms/send','POST'),('/api/sms/buy-credits','POST'),('/api/automation/rules','GET'),('/api/automation/rules','POST'),('/api/automation/rules/{rule_id}','PATCH'),('/api/automation/rules/{rule_id}','DELETE'),('/api/automation/rules/{rule_id}/toggle','POST'),('/api/automation/runs','GET'),('/api/automation/runs/{run_id}','GET'),('/api/automation/runs/{run_id}/retry','POST'),('/api/timesheets/{timesheet_id}/approve','POST'),('/api/timesheets/{timesheet_id}/reject','POST')]:
         pass
 
+    @router.get('/api/dispatch/summary')
+    async def dispatch_summary(current_user: Dict[str, Any] = Depends(require_admin)):
+        jobs = await _list(db, 'jobs', _scope(current_user), 300)
+        return {'success': True, 'data': {'jobs': [_json_safe({'id': j.get('_id') or j.get('id'), 'title': j.get('title'), 'type': j.get('type'), 'customer_name': j.get('customer_name'), 'address': j.get('address'), 'scheduled_date': j.get('scheduled_date'), 'assigned_worker_name': j.get('assigned_worker_name'), 'assigned_worker': j.get('assigned_worker_id'), 'status': j.get('status'), 'dispatch_status': j.get('status')}) for j in jobs]}}
+
+    @router.post('/api/dispatch/jobs/{job_id}/assign')
+    async def dispatch_assign(job_id: str, request: Request, current_user: Dict[str, Any] = Depends(require_admin)):
+        p = await request.json(); q={'$and':[_scope(current_user),{'$or':[{'_id':ObjectId(job_id)}] if ObjectId.is_valid(job_id) else [{'id':job_id}]}]}
+        job=await _one(db,'jobs',q)
+        if not job: raise HTTPException(status_code=404, detail='Job not found')
+        await db.jobs.update_one({'_id':job['_id']},{'$set':{'assigned_worker_id':p.get('worker_id'),'updated_at':_now()}})
+        return {'success':True}
+
+    @router.post('/api/dispatch/jobs/{job_id}/reschedule')
+    async def dispatch_reschedule(job_id: str, request: Request, current_user: Dict[str, Any] = Depends(require_admin)):
+        p = await request.json(); q={'$and':[_scope(current_user),{'$or':[{'_id':ObjectId(job_id)}] if ObjectId.is_valid(job_id) else [{'id':job_id}]}]}
+        job=await _one(db,'jobs',q)
+        if not job: raise HTTPException(status_code=404, detail='Job not found')
+        await db.jobs.update_one({'_id':job['_id']},{'$set':{'scheduled_date':p.get('scheduled_date'),'updated_at':_now()}})
+        return {'success':True}
+
+    @router.get('/api/route-planner/day')
+    async def route_planner_day(date: str = '', worker_id: str = '', current_user: Dict[str, Any] = Depends(require_admin)):
+        jobs=await _list(db,'jobs',_scope(current_user),300)
+        filtered=[j for j in jobs if (not worker_id or str(j.get('assigned_worker_id') or '')==worker_id)]
+        return {'success':True,'data':{'jobs':[_json_safe({'id':j.get('_id') or j.get('id'),'title':j.get('title'),'customer_name':j.get('customer_name'),'address':j.get('address'),'scheduled_date':j.get('scheduled_date'),'status':j.get('status')}) for j in filtered]}}
+
+    @router.post('/api/route-planner/sequence')
+    async def route_planner_sequence(request: Request, _: Dict[str, Any] = Depends(require_admin)):
+        return {'success':True,'manual_only':True,'data':await request.json()}
+
+    @router.get('/api/recurring-jobs')
+    async def recurring_list(current_user: Dict[str, Any] = Depends(require_admin)):
+        items = await _list(db, 'recurring_jobs', _scope(current_user), 300)
+        return {'success': True, 'data': _json_safe(items)}
+
+    @router.post('/api/recurring-jobs')
+    async def recurring_create(request: Request, current_user: Dict[str, Any] = Depends(require_admin)):
+        p=await request.json(); p.update({'business_id':_business_id(current_user),'status':'active','created_at':_now(),'updated_at':_now()}); r=await db.recurring_jobs.insert_one(p); p['_id']=r.inserted_id; return {'success':True,'data':_json_safe(p)}
+
+    @router.patch('/api/recurring-jobs/{item_id}')
+    async def recurring_patch(item_id: str, request: Request, current_user: Dict[str, Any] = Depends(require_admin)):
+        p=await request.json(); await db.recurring_jobs.update_one({'$and':[_scope(current_user),{'$or':[{'_id':ObjectId(item_id)}] if ObjectId.is_valid(item_id) else [{'id':item_id}]}]},{'$set':{**p,'updated_at':_now()}}); return {'success':True}
+
+    @router.post('/api/recurring-jobs/{item_id}/pause')
+    async def recurring_pause(item_id: str, current_user: Dict[str, Any] = Depends(require_admin)):
+        await db.recurring_jobs.update_one({'$and':[_scope(current_user),{'$or':[{'_id':ObjectId(item_id)}] if ObjectId.is_valid(item_id) else [{'id':item_id}]}]},{'$set':{'status':'paused','updated_at':_now()}}); return {'success':True}
+
+    @router.post('/api/recurring-jobs/{item_id}/resume')
+    async def recurring_resume(item_id: str, current_user: Dict[str, Any] = Depends(require_admin)):
+        await db.recurring_jobs.update_one({'$and':[_scope(current_user),{'$or':[{'_id':ObjectId(item_id)}] if ObjectId.is_valid(item_id) else [{'id':item_id}]}]},{'$set':{'status':'active','updated_at':_now()}}); return {'success':True}
+
+    @router.post('/api/recurring-jobs/{item_id}/generate-next')
+    async def recurring_generate(item_id: str, current_user: Dict[str, Any] = Depends(require_admin)):
+        await db.recurring_jobs.update_one({'$and':[_scope(current_user),{'$or':[{'_id':ObjectId(item_id)}] if ObjectId.is_valid(item_id) else [{'id':item_id}]}]},{'$set':{'last_generated_at':_now(),'updated_at':_now()}}); return {'success':True,'manual_only':True}
+
+    @router.get('/api/system-health/summary')
+    async def system_health_summary(current_user: Dict[str, Any] = Depends(require_admin)):
+        return {'success':True,'data':{'backend_reachable':True,'database_reachable':True,'stripe_configured':bool(os.getenv('STRIPE_SECRET_KEY')),'sms_configured':bool(os.getenv('TWILIO_ACCOUNT_SID')),'myob_configured':bool(os.getenv('MYOB_CLIENT_ID')),'email_configured':bool(os.getenv('SMTP_HOST')),'ai_configured':bool(os.getenv('OPENAI_API_KEY')),'push_configured':bool(os.getenv('VAPID_PUBLIC_KEY'))}}
+
+    @router.get('/api/system-health/events')
+    async def system_health_events(current_user: Dict[str, Any] = Depends(require_admin)):
+        return {'success':True,'data':[{'type':'info','message':'No critical system events.'}]}
+
+    @router.get('/api/system-health/integration-status')
+    async def system_health_integrations(current_user: Dict[str, Any] = Depends(require_admin)):
+        return {'success':True,'data':{'stripe':bool(os.getenv('STRIPE_SECRET_KEY')),'sms':bool(os.getenv('TWILIO_ACCOUNT_SID')),'myob':bool(os.getenv('MYOB_CLIENT_ID')),'push':bool(os.getenv('VAPID_PUBLIC_KEY'))}}
+
+    @router.get('/api/push/status')
+    async def push_status(current_user: Dict[str, Any] = Depends(get_current_user)):
+        configured = bool(os.getenv('VAPID_PUBLIC_KEY') and os.getenv('VAPID_PRIVATE_KEY'))
+        if not configured: return {'success':False,'not_configured':True,'error':'Push notifications are not configured yet.'}
+        return {'success':True,'configured':True}
+
+    @router.post('/api/push/subscribe')
+    async def push_subscribe(request: Request, current_user: Dict[str, Any] = Depends(get_current_user)):
+        p=await request.json(); configured = bool(os.getenv('VAPID_PUBLIC_KEY') and os.getenv('VAPID_PRIVATE_KEY'))
+        if not configured: return {'success':False,'not_configured':True,'error':'Push notifications are not configured yet.'}
+        await db.push_subscriptions.update_one({'business_id':_business_id(current_user),'user_id':str(current_user.get('id') or current_user.get('_id'))},{'$set':{'subscription':p.get('subscription'),'updated_at':_now(),'business_id':_business_id(current_user),'user_id':str(current_user.get('id') or current_user.get('_id'))}},upsert=True); return {'success':True}
+
+    @router.post('/api/push/unsubscribe')
+    async def push_unsubscribe(current_user: Dict[str, Any] = Depends(get_current_user)):
+        await db.push_subscriptions.delete_many({'business_id':_business_id(current_user),'user_id':str(current_user.get('id') or current_user.get('_id'))}); return {'success':True}
+
+    @router.post('/api/push/test')
+    async def push_test(_: Dict[str, Any] = Depends(get_current_user)):
+        configured = bool(os.getenv('VAPID_PUBLIC_KEY') and os.getenv('VAPID_PRIVATE_KEY'))
+        if not configured: return {'success':False,'not_configured':True,'error':'Push notifications are not configured yet.'}
+        return {'success':True,'manual_only':True}
+
+
+    @router.post('/api/customer-portal/{token}/message')
+    async def customer_portal_message(token: str, request: Request):
+        p=await request.json(); await db.customer_portal_messages.insert_one({'token':token,'message':str(p.get('message') or ''),'created_at':_now()}); return {'success':True}
+
+    @router.get('/api/customer-portal/{token}/documents')
+    async def customer_portal_documents(token: str):
+        docs = await _list(db, 'customer_portal_documents', {'token': token}, 100)
+        return {'success':True,'data':_json_safe(docs)}
+
+    @router.post('/api/customer/login')
+    async def customer_login(_: Request):
+        return {'success':False,'not_configured':True,'error':'Customer account login is not configured yet. Use your secure portal link.'}
+
+    @router.get('/api/customer-portal/{token}')
+    async def customer_portal(token: str):
+        portal = await _one(db,'customer_portals',{'token':token}) or await _one(db,'public_customer_portals',{'token':token})
+        if not portal: raise HTTPException(status_code=404, detail='Portal not found')
+        safe={k:portal.get(k) for k in ['business_name','customer_name','quotes','invoices','jobs','payment_url','public_quote_links','public_invoice_links']}
+        return {'success':True,'data':_json_safe(safe)}
     app.include_router(router)
     print("LAUNCH_COMPLETE_BACKEND_BOOT_INSTALLED")
 

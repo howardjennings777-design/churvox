@@ -14,3 +14,7 @@
 - No automatic MYOB sync.
 - Public Pay Now requires `payment_url`/`payment_link` on invoice.
 - Smoke tests do not mutate production data.
+- Route planner advanced optimisation is not configured; manual sequence only.
+- Push notifications require VAPID env and remain optional/manual test only.
+- Customer account login foundation not configured; secure token links are primary.
+- Recurring jobs next generation is manual confirmation-first.

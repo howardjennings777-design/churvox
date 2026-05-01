@@ -52,6 +52,14 @@ import SMSPage from "./pages/SMSPage";
 import PublicQuotePage from "./pages/public/PublicQuotePage";
 import PublicInvoicePage from "./pages/public/PublicInvoicePage";
 import PublicCustomerPortalPage from "./pages/public/PublicCustomerPortalPage";
+import DispatchBoardPage from "./pages/DispatchBoardPage";
+import RoutePlannerPage from "./pages/RoutePlannerPage";
+import RecurringJobsPage from "./pages/RecurringJobsPage";
+import SystemHealthPage from "./pages/SystemHealthPage";
+import PushNotificationsPage from "./pages/PushNotificationsPage";
+import CustomerPortalLandingPage from "./pages/customer/CustomerPortalLandingPage";
+import CustomerLoginPage from "./pages/customer/CustomerLoginPage";
+import CustomerPortalPage from "./pages/customer/CustomerPortalPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const SAFE_HOME = "/jobs";
@@ -198,6 +206,14 @@ function AppRoutes() {
       <Route path="/onboarding" element={<Guard><OnboardingPage /></Guard>} />
       <Route path="/help" element={<Guard><HelpCenterPage /></Guard>} />
       <Route path="/support" element={<Guard><SupportPage /></Guard>} />
+      <Route path="/dispatch" element={<Guard><DispatchBoardPage /></Guard>} />
+      <Route path="/route-planner" element={<Guard><RoutePlannerPage /></Guard>} />
+      <Route path="/recurring-jobs" element={<Guard><RecurringJobsPage /></Guard>} />
+      <Route path="/system-health" element={<Guard><SystemHealthPage /></Guard>} />
+      <Route path="/push-notifications" element={<Guard><PushNotificationsPage /></Guard>} />
+      <Route path="/customer" element={<CustomerPortalLandingPage />} />
+      <Route path="/customer/login" element={<CustomerLoginPage />} />
+      <Route path="/customer/portal/:token" element={<CustomerPortalPage />} />
       <Route path="/plans" element={<Guard type="plans"><PlansPage /></Guard>} />
       <Route path="/notifications" element={<Guard><NotificationsPage /></Guard>} />
       <Route path="/reports" element={<Guard type="team"><ReportsPage /></Guard>} />

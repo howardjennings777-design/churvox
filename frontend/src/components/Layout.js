@@ -57,6 +57,9 @@ export default function Layout({ children }) {
     canAccess(role, "smart_hub") && { path: "/smart-hub", label: "Smart Hub", icon: LayoutDashboard, group: "Core" },
     canAccess(role, "jobs") && { path: "/jobs", label: "Jobs", icon: Briefcase, group: "Core" },
     canAccess(role, "jobs") && { path: "/schedule", label: "Schedule", icon: CalendarDays, group: "Core" },
+    canAccess(role, "dispatch") && { path: "/dispatch", label: "Dispatch", icon: CalendarDays, group: "Operations" },
+    canAccess(role, "route_planner") && { path: "/route-planner", label: "Route Planner", icon: CalendarDays, group: "Operations" },
+    canAccess(role, "recurring_jobs") && { path: "/recurring-jobs", label: "Recurring Jobs", icon: ListChecks, group: "Operations" },
     canAccess(role, "clients") && { path: "/clients", label: "Clients", icon: Users, group: "Core" },
     canAccess(role, "quotes") && { path: "/quotes", label: "Quotes", icon: FileText, group: "Operations" },
     canAccess(role, "invoices") && { path: "/invoices", label: "Invoices", icon: Receipt, group: "Operations" },
@@ -67,6 +70,8 @@ export default function Layout({ children }) {
     canAccess(role, "integrations") && { path: "/integrations", label: "Integrations", icon: Zap, group: "Admin" },
     isOwnerUser && { path: "/plans", label: "Plans & Billing", icon: CreditCard, group: "Admin" },
     canAccess(role, "settings") && { path: "/settings", label: "Settings", icon: Settings, group: "Admin" },
+    canAccess(role, "push_notifications") && { path: "/push-notifications", label: "Push Notifications", icon: Zap, group: "Admin" },
+    canAccess(role, "system_health") && { path: "/system-health", label: "System Health", icon: ListChecks, group: "Admin" },
     { path: "/help", label: "Help", icon: FileText, group: "Admin" },
     { path: "/support", label: "Support", icon: Users, group: "Admin" },
   ].filter(Boolean);
