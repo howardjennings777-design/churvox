@@ -26,3 +26,14 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui
 .modern-hub-draft{margin-top:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:10px}
 @media (max-width:1200px){.modern-hub-grid{grid-template-columns:1fr}.modern-hub-two-col{grid-template-columns:1fr 1fr}}
 @media (max-width:700px){.modern-hub-two-col{grid-template-columns:1fr}.modern-hero h1{font-size:28px}}
+.modern-eyebrow{display:block;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#1d4ed8;margin-bottom:6px}
+.modern-stat-card small{display:block;color:var(--muted);margin-top:8px}
+.modern-record-layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr);gap:16px}
+.modern-record-list{display:grid;gap:10px}
+.modern-record-item{border:1px solid #e2e8f0;border-radius:12px;padding:12px;background:#fff}
+.modern-record-item p{margin:6px 0;color:var(--muted)}
+.modern-record-item span{display:inline-block;font-size:12px;font-weight:700;background:#eff6ff;color:#1d4ed8;padding:4px 8px;border-radius:999px}
+.modern-action-card{background:#fff;border-radius:16px;padding:18px;box-shadow:0 8px 24px rgba(15,23,42,.06);display:grid;gap:10px;align-content:start}
+.modern-action-card h3{margin:0;font-size:20px}
+.modern-action-card p{margin:0;color:var(--muted)}
+@media (max-width:960px){.modern-record-layout{grid-template-columns:1fr}}
