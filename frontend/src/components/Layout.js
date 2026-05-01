@@ -67,6 +67,8 @@ export default function Layout({ children }) {
     canAccess(role, "integrations") && { path: "/integrations", label: "Integrations", icon: Zap, group: "Admin" },
     isOwnerUser && { path: "/plans", label: "Plans & Billing", icon: CreditCard, group: "Admin" },
     canAccess(role, "settings") && { path: "/settings", label: "Settings", icon: Settings, group: "Admin" },
+    { path: "/help", label: "Help", icon: FileText, group: "Admin" },
+    { path: "/support", label: "Support", icon: Users, group: "Admin" },
   ].filter(Boolean);
 
   const mainNav = navItems.slice(0, 4);

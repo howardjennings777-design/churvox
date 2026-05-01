@@ -26,6 +26,9 @@ import InvoicesPage from "./pages/invoices/InvoicesPage";
 import InvoiceFormPage from "./pages/invoices/InvoiceFormPage";
 import InvoiceDetailPage from "./pages/invoices/InvoiceDetailPage";
 import SettingsPage from "./pages/SettingsPage";
+import SupportPage from "./pages/SupportPage";
+import HelpCenterPage from "./pages/HelpCenterPage";
+import OnboardingPage from "./pages/OnboardingPage";
 import PlansPage from "./pages/PlansPage";
 import TeamPage from "./pages/TeamPage";
 import TimesheetsPage from "./pages/TimesheetsPage";
@@ -192,6 +195,9 @@ function AppRoutes() {
       <Route path="/follow-ups" element={<Guard><FollowUpsPage /></Guard>} />
       <Route path="/integrations" element={<Guard><IntegrationsPage /></Guard>} />
       <Route path="/settings" element={<Guard><SettingsPage /></Guard>} />
+      <Route path="/onboarding" element={<Guard><OnboardingPage /></Guard>} />
+      <Route path="/help" element={<Guard><HelpCenterPage /></Guard>} />
+      <Route path="/support" element={<Guard><SupportPage /></Guard>} />
       <Route path="/plans" element={<Guard type="plans"><PlansPage /></Guard>} />
       <Route path="/notifications" element={<Guard><NotificationsPage /></Guard>} />
       <Route path="/reports" element={<Guard type="team"><ReportsPage /></Guard>} />
