@@ -118,3 +118,63 @@ aside a.active,
 [data-testid="ai-timesheet-review-card"] svg {
   color: #ffffff !important;
 }
+
+/* Smart Hub v3 hard readability repair.
+   This overrides the old global .cx-page > section:nth-of-type(3) AI-timesheet patch
+   that was accidentally washing out Smart Hub snapshot-card text. */
+.smart-hub-v3 > section:nth-of-type(3) {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: #0f172a !important;
+}
+
+.smart-hub-v3 > section:nth-of-type(3) .sh-snapshot-card,
+.smart-hub-v3 > section:nth-of-type(3) article.sh-card,
+.smart-hub-v3 .sh-card {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #0f172a !important;
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+.smart-hub-v3 > section:nth-of-type(3) .sh-snapshot-card *,
+.smart-hub-v3 > section:nth-of-type(3) article.sh-card *,
+.smart-hub-v3 .sh-card * {
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+.smart-hub-v3 > section:nth-of-type(3) .sh-snapshot-card h3,
+.smart-hub-v3 > section:nth-of-type(3) article.sh-card h3,
+.smart-hub-v3 .sh-card h3,
+.smart-hub-v3 .sh-title {
+  color: #020617 !important;
+  font-weight: 900 !important;
+}
+
+.smart-hub-v3 > section:nth-of-type(3) .sh-snapshot-card p,
+.smart-hub-v3 > section:nth-of-type(3) article.sh-card p,
+.smart-hub-v3 .sh-card p,
+.smart-hub-v3 .sh-body {
+  color: #1f2937 !important;
+  font-weight: 800 !important;
+}
+
+.smart-hub-v3 .sh-card .sh-cta,
+.smart-hub-v3 .sh-cta {
+  color: #1d4ed8 !important;
+  font-weight: 900 !important;
+}
+
+.smart-hub-v3 .sh-icon,
+.smart-hub-v3 .sh-icon svg {
+  color: #1d4ed8 !important;
+  opacity: 1 !important;
+}
