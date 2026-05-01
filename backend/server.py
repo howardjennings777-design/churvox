@@ -5774,7 +5774,18 @@ async def _send_sms_real(payload: dict, current_user: dict):
 @api_router.post("/sms/send")
 async def send_sms(payload: dict, current_user: dict = Depends(get_current_user)):
     """Primary SMS send endpoint — real provider, real credits, real audit log."""
-    return await _send_sms_real(payload, current_user)
+    role = str(current_user.get("role") or "").lower().strip()
+    if role not in {"owner", "manager", "office_admin"}:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    try:
+        return await _send_sms_real(payload, current_user)
+    except HTTPException as e:
+        detail = str(e.detail or "")
+        if e.status_code == 402:
+            return {"success": False, "insufficient_credits": True, "error": "Insufficient SMS credits"}
+        if e.status_code in {501, 503} or "not configured" in detail.lower():
+            return {"success": False, "configured": False, "not_configured": True, "error": "SMS is not fully configured yet"}
+        raise
 
 
 @api_router.post("/sms/send-fixed")
@@ -10994,12 +11005,20 @@ async def ai_business_assistant(payload: dict, current_user: dict = Depends(get_
 
 @api_router.get('/sms/balance')
 async def sms_balance(current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower().strip()
+    if role not in {"owner", "manager", "office_admin"}:
+        raise HTTPException(status_code=403, detail="Not authorized")
     business_id = str(current_user.get('business_id') or '')
     row = await db.sms_credits.find_one({'business_id': business_id}) if hasattr(db,'sms_credits') else None
-    return {'success': True, 'data': {'configured': bool(sms_provider), 'credits': int((row or {}).get('balance', (row or {}).get('credits', 0) or 0))}}
+    configured = bool(os.environ.get("CLICKSEND_USERNAME") and os.environ.get("CLICKSEND_API_KEY"))
+    credits = int((row or {}).get('balance', (row or {}).get('credits', 0) or 0))
+    return {'success': True, 'data': {'configured': configured, 'credits': credits, 'balance': credits, 'provider': 'clicksend' if configured else 'not_configured', 'low_credit': credits < 20}}
 
 @api_router.get('/sms/history')
 async def sms_history(current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower().strip()
+    if role not in {"owner", "manager", "office_admin"}:
+        raise HTTPException(status_code=403, detail="Not authorized")
     business_id = str(current_user.get('business_id') or '')
     rows = []
     if hasattr(db,'sms_log'):
@@ -11009,10 +11028,14 @@ async def sms_history(current_user: dict = Depends(get_current_user)):
 
 @api_router.post('/sms/buy-credits')
 async def sms_buy_credits(payload: dict, current_user: dict = Depends(get_current_user)):
-    pack = int((payload or {}).get("pack") or 0)
-    if pack not in {100, 500, 1000}:
+    role = str(current_user.get("role") or "").lower().strip()
+    if role not in {"owner", "manager", "office_admin"}:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    pack_value = str((payload or {}).get("pack") or "").strip()
+    packs = {"100": {"credits": 100, "price": 10}, "500": {"credits": 500, "price": 45}, "1000": {"credits": 1000, "price": 80}}
+    if pack_value not in packs:
         return {'success': False, 'error': 'Invalid pack selected.', 'configured': False}
-    return {'success': False, 'error': 'SMS credit purchasing is not configured yet.', 'configured': False, 'not_configured': True}
+    return {'success': False, 'not_configured': True, 'error': 'SMS credit checkout is not configured yet.', 'pack': {'pack': pack_value, **packs[pack_value]}}
 
 @api_router.get('/myob/status')
 async def myob_status(current_user: dict = Depends(get_current_user)):
