@@ -20,6 +20,7 @@ import "./styles/churvox-restore-original-colors.css";
 import "./styles/churvox-team-csv-button.css";
 import "./styles/churvox-smart-hub-ai-layout.css";
 import "./styles/churvox-smart-hub-send-controls.css";
+import "./styles/churvox-premium-calm-pass.css";
 import { startTeamTownGroupingEnhancer } from "./utils/teamTownGroupingEnhancer";
 import { startClientAreaGroupingEnhancer } from "./utils/clientAreaGroupingEnhancer";
 import { startAutomationActionFixer } from "./utils/automationActionFixer";
