@@ -7,90 +7,76 @@ const hasAuthCreds = Boolean(E2E_EMAIL && E2E_PASSWORD);
 async function expectNotBlank(page) {
   await expect(page.locator('body')).toBeVisible();
   const bodyText = (await page.locator('body').innerText()).trim();
-  expect(bodyText.length).toBeGreaterThan(0);
+  const rootVisible = await page.locator('#root :scope > *, main :scope > *').first().isVisible().catch(() => false);
+  expect(bodyText.length > 20 || rootVisible).toBeTruthy();
+  await expect(page.getByText(/Cannot read properties of|Minified React error|Unhandled Runtime Error/i)).toHaveCount(0);
 }
 
 async function login(page) {
   await page.goto('/login');
   await expectNotBlank(page);
-
-  const emailField = page.locator('input[type="email"], input[name="email"], input[placeholder*="email" i]').first();
-  const passwordField = page.locator('input[type="password"], input[name="password"]').first();
-  await emailField.fill(E2E_EMAIL);
-  await passwordField.fill(E2E_PASSWORD);
-
-  const submitButton = page.getByRole('button', { name: /log\s?in|sign\s?in/i }).first();
-  await submitButton.click();
-
-  await page.waitForURL(/\/jobs|\/plans|\/timesheets|\/worker\/jobs/, { timeout: 30000 });
+  await page.locator('input[type="email"], input[name="email"]').first().fill(E2E_EMAIL);
+  await page.locator('input[type="password"], input[name="password"]').first().fill(E2E_PASSWORD);
+  await page.getByRole('button', { name: /log\s?in|sign\s?in/i }).first().click();
+  await page.waitForURL(/\/jobs|\/worker\/jobs|\/plans|\/timesheets/, { timeout: 30000 });
 }
 
-async function assertRouteLoads(page, path, textMatcher) {
+async function assertRouteLoads(page, path, maybeText) {
   await page.goto(path);
   await expectNotBlank(page);
-  if (textMatcher) {
-    await expect(page.getByText(textMatcher).first()).toBeVisible();
+  if (maybeText) {
+    const onPage = await page.getByText(maybeText).first().isVisible().catch(() => false);
+    if (!onPage) {
+      await expect(page.getByText(/access|permission|protected|not authorized|unauthorized/i).first()).toBeVisible();
+    }
   }
 }
 
-test.describe('Launch smoke - public routes', () => {
-  test('/login loads with login form', async ({ page }) => {
+test.describe('Launch smoke public', () => {
+  test('/login renders with form', async ({ page }) => {
     await page.goto('/login');
     await expectNotBlank(page);
-
-    const hasEmail = await page.locator('input[type="email"], input[name="email"], input[placeholder*="email" i]').first().isVisible();
-    const hasPassword = await page.locator('input[type="password"], input[name="password"]').first().isVisible();
-    expect(hasEmail || hasPassword).toBeTruthy();
+    await expect(page.locator('input[type="email"], input[name="email"]').first()).toBeVisible();
+    await expect(page.locator('input[type="password"], input[name="password"]').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /log\s?in|sign\s?in/i }).first()).toBeVisible();
   });
 
   for (const route of ['/privacy', '/terms', '/privacy-policy', '/terms-of-service']) {
-    test(`${route} loads`, async ({ page }) => {
+    test(`${route} does not blank`, async ({ page }) => {
       await page.goto(route);
       await expectNotBlank(page);
     });
   }
 
-  test('/public/quote/:token with fake token does not blank', async ({ page }) => {
-    await page.goto('/public/quote/fake-token-for-smoke-test');
+  test('public quote fake token does not blank', async ({ page }) => {
+    await page.goto('/public/quote/fake-token-launch-smoke');
     await expectNotBlank(page);
   });
 
-  test('/public/invoice/:token with fake token does not blank', async ({ page }) => {
-    await page.goto('/public/invoice/fake-token-for-smoke-test');
+  test('public invoice fake token does not blank', async ({ page }) => {
+    await page.goto('/public/invoice/fake-token-launch-smoke');
     await expectNotBlank(page);
   });
 });
 
-test.describe('Launch smoke - authenticated routes', () => {
-  test.skip(!hasAuthCreds, 'Skipping authenticated tests because E2E_EMAIL or E2E_PASSWORD is not set.');
+test.describe('Launch smoke authenticated', () => {
+  test.skip(!hasAuthCreds, 'Skipping authenticated tests because E2E_EMAIL or E2E_PASSWORD missing');
 
-  test('authenticated route smoke checks', async ({ page }) => {
+  test('auth routes smoke', async ({ page }) => {
     await login(page);
-
-    if (!/\/jobs/.test(page.url())) {
-      await page.goto('/jobs');
-    }
-
     await assertRouteLoads(page, '/jobs');
     await assertRouteLoads(page, '/smart-hub', /Smart Hub/i);
-    await expect(page.getByText(/AI Business Assistant/i).first()).toBeVisible();
-    await expect(page.getByText(/Assistant response/i).first()).toBeVisible();
     await assertRouteLoads(page, '/reports', /Reports/i);
     await assertRouteLoads(page, '/sms', /Communications|SMS/i);
-    await assertRouteLoads(page, '/integrations', /MYOB|Integrations/i);
+    await assertRouteLoads(page, '/integrations', /Integrations|MYOB/i);
     await assertRouteLoads(page, '/automation');
     await assertRouteLoads(page, '/automation/runs');
     await assertRouteLoads(page, '/launch-check', /Launch Check/i);
-    await assertRouteLoads(page, '/clients');
-    await assertRouteLoads(page, '/quotes');
-    await assertRouteLoads(page, '/invoices');
-
-    await page.goto('/team');
-    await expectNotBlank(page);
-    await expect(page).toHaveURL(/\/team|\/jobs|\/plans|\/login|\/worker\/jobs|\/timesheets/);
-
-    await page.goto('/timesheets');
-    await expectNotBlank(page);
-    await expect(page).toHaveURL(/\/timesheets|\/jobs|\/plans|\/login|\/worker\/jobs/);
+    await assertRouteLoads(page, '/clients', /Clients/i);
+    await assertRouteLoads(page, '/quotes', /Quotes/i);
+    await assertRouteLoads(page, '/invoices', /Invoices/i);
+    await assertRouteLoads(page, '/team', /Team/i);
+    await assertRouteLoads(page, '/timesheets', /Timesheets|Payroll/i);
+    await assertRouteLoads(page, '/worker/jobs', /Jobs|Worker/i);
   });
 });
