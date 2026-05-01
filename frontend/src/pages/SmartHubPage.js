@@ -20,6 +20,7 @@ import {
   Zap,
 } from "lucide-react";
 import Layout from "../components/Layout";
+import { PremiumPageShell, PremiumPageHeader, PremiumCard, PremiumActionBar, PremiumStatusBadge } from "../components/premium/PremiumUI";
 import { useApi } from "../hooks/useApi";
 
 const promptButtons = [
@@ -90,7 +91,7 @@ function SmartButton({ label, href, kind }) {
 
 function MetricCard({ title, value, icon: Icon, helper }) {
   return (
-    <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/80">
+    <PremiumCard className="rounded-3xl">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-black text-slate-700">{title}</p>
@@ -101,13 +102,13 @@ function MetricCard({ title, value, icon: Icon, helper }) {
           <Icon className="h-5 w-5" />
         </span>
       </div>
-    </article>
+    </PremiumCard>
   );
 }
 
 function SnapshotCard({ icon: Icon, title, body }) {
   return (
-    <article
+    <PremiumCard
       className="rounded-3xl border border-slate-300 bg-white p-5 shadow-md shadow-slate-300/40"
       style={{ background: "#ffffff", color: "#0f172a", opacity: 1, filter: "none" }}
     >
@@ -116,7 +117,7 @@ function SnapshotCard({ icon: Icon, title, body }) {
       </span>
       <h3 className="mt-4 text-base font-black text-slate-950" style={{ color: "#020617", opacity: 1 }}>{title}</h3>
       <p className="mt-2 text-sm font-bold leading-6 text-slate-800" style={{ color: "#1f2937", opacity: 1 }}>{body}</p>
-    </article>
+    </PremiumCard>
   );
 }
 
@@ -125,7 +126,7 @@ function ShortcutCard({ item }) {
   return (
     <Link
       to={item.href}
-      className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-100/70"
+      className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-300"
       style={{ background: "#ffffff", color: "#0f172a", opacity: 1, filter: "none" }}
     >
       <div className="flex items-start justify-between gap-3">
@@ -259,7 +260,7 @@ export default function SmartHubPage() {
 
   return (
     <Layout>
-      <div className="cx-page smart-hub-v3 space-y-6 pb-20 md:pb-8">
+      <PremiumPageShell className="dashboard-compact" smart-hub-v3 space-y-6 pb-20 md:pb-8">
         <style>{`
           .smart-hub-v3 [data-smart-hub-ai-panel],
           .smart-hub-v3 [data-smart-hub-ai-panel] * {
@@ -354,8 +355,7 @@ export default function SmartHubPage() {
                   {item}
                 </div>
               ))}
-            </div>
-          </div>
+            </div>} />
         </section>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -478,7 +478,6 @@ export default function SmartHubPage() {
             <div>
               <h2 className="text-2xl font-black text-slate-950">Command shortcuts</h2>
               <p className="mt-1 text-sm font-semibold text-slate-700">Fast access to launch-critical work areas.</p>
-            </div>
             <Link to="/jobs" className="hidden rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-950 hover:border-blue-300 hover:bg-blue-50 sm:inline-flex">Back to Jobs</Link>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -509,7 +508,7 @@ export default function SmartHubPage() {
             </div>
           </article>
         </section>
-      </div>
+      </PremiumPageShell>
     </Layout>
   );
 }
