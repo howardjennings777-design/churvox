@@ -6843,9 +6843,11 @@ async def create_automation_rule(payload: dict, current_user: dict = Depends(get
     _require_auto_admin(current_user)
     bid = _business_scope(current_user)
     now = datetime.now(timezone.utc)
-    trigger = str((payload or {}).get("trigger") or "").strip()
+    trigger = auto.normalize_trigger(str((payload or {}).get("trigger") or "").strip())
     if trigger not in auto.TRIGGERS:
         raise HTTPException(status_code=400, detail=f"Unknown trigger: {trigger}")
+    action = str((payload or {}).get("action") or "").strip()
+    actions = (payload or {}).get("actions") or ([{"type": action, "config": {}}] if action else [])
     doc = {
         "business_id": bid,
         "name": str((payload or {}).get("name") or "Untitled rule")[:120],
@@ -6854,7 +6856,11 @@ async def create_automation_rule(payload: dict, current_user: dict = Depends(get
         "enabled": bool((payload or {}).get("enabled", True)),
         "condition_mode": (payload or {}).get("condition_mode") or "all",
         "conditions": (payload or {}).get("conditions") or [],
-        "actions": (payload or {}).get("actions") or [],
+        "actions": actions,
+        "action": action or (actions[0].get("type") if actions else ""),
+        "approval_first": bool((payload or {}).get("approval_first", True)),
+        "template_key": (payload or {}).get("template_key"),
+        "delay": (payload or {}).get("delay"),
         "created_at": now,
         "updated_at": now,
         "created_by_user_id": _me_id(current_user),
@@ -6896,6 +6902,11 @@ async def update_automation_rule(rule_id: str, payload: dict, current_user: dict
     return _serialize_rule(r)
 
 
+@api_router.patch("/automation/rules/{rule_id}")
+async def patch_automation_rule(rule_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    return await update_automation_rule(rule_id=rule_id, payload=payload, current_user=current_user)
+
+
 @api_router.delete("/automation/rules/{rule_id}")
 async def delete_automation_rule(rule_id: str, current_user: dict = Depends(get_current_user)):
     _require_auto_admin(current_user)
@@ -6907,14 +6918,15 @@ async def delete_automation_rule(rule_id: str, current_user: dict = Depends(get_
 
 
 @api_router.post("/automation/rules/{rule_id}/toggle")
-async def toggle_automation_rule(rule_id: str, current_user: dict = Depends(get_current_user)):
+async def toggle_automation_rule(rule_id: str, payload: dict = None, current_user: dict = Depends(get_current_user)):
     _require_auto_admin(current_user)
     bid = _business_scope(current_user)
     try: obj = ObjectId(rule_id)
     except Exception: raise HTTPException(400, "Invalid rule id")
     r = await db.automation_rules.find_one({"_id": obj, "business_id": bid})
     if not r: raise HTTPException(404, "Rule not found")
-    new_enabled = not bool(r.get("enabled", True))
+    requested = (payload or {}).get("enabled")
+    new_enabled = bool(requested) if requested is not None else (not bool(r.get("enabled", True)))
     await db.automation_rules.update_one({"_id": obj}, {"$set": {"enabled": new_enabled, "updated_at": datetime.now(timezone.utc)}})
     r["enabled"] = new_enabled
     return _serialize_rule(r)
@@ -6958,6 +6970,20 @@ async def list_automation_runs(
     return out
 
 
+@api_router.get("/automation/runs/{run_id}")
+async def get_automation_run(run_id: str, current_user: dict = Depends(get_current_user)):
+    _require_auto_admin(current_user)
+    bid = _business_scope(current_user)
+    try:
+        obj = ObjectId(run_id)
+    except Exception:
+        raise HTTPException(400, "Invalid run id")
+    run = await db.automation_runs.find_one({"_id": obj, "business_id": bid})
+    if not run:
+        raise HTTPException(404, "Run not found")
+    return _serialize_run(run)
+
+
 @api_router.post("/automation/events/emit")
 async def automation_emit(payload: dict, current_user: dict = Depends(get_current_user)):
     _require_auto_admin(current_user)
@@ -6986,6 +7012,11 @@ async def run_test_automation(rule_id: str, payload: dict = None, current_user: 
     return {"success": True, "run": _serialize_run(run)}
 
 
+@api_router.post("/automation/rules/{rule_id}/test")
+async def run_test_automation_alias(rule_id: str, payload: dict = None, current_user: dict = Depends(get_current_user)):
+    return await run_test_automation(rule_id=rule_id, payload=payload, current_user=current_user)
+
+
 # -------- Engine enhancements: templates, trigger schema, retry, rule stats --------
 from automation_templates import TRIGGER_SCHEMAS, AUTOMATION_TEMPLATES  # noqa: E402
 
@@ -6993,7 +7024,16 @@ from automation_templates import TRIGGER_SCHEMAS, AUTOMATION_TEMPLATES  # noqa: 
 @api_router.get("/automation/templates")
 async def list_automation_templates(current_user: dict = Depends(get_current_user)):
     _require_auto_admin(current_user)
-    return AUTOMATION_TEMPLATES
+    return [
+        {"key":"completed_job_draft_invoice","name":"Completed job → draft invoice","description":"Creates a draft invoice when a job is completed. It does not send it.","trigger":"job.completed","action":"invoice.create_draft","approval_first":True,"enabled":False,"category":"invoices"},
+        {"key":"quote_sent_followup_draft","name":"Quote sent 3 days → follow-up draft","description":"Creates a quote follow-up draft. It does not send it.","trigger":"quote.sent_3_days","action":"message.create_draft","approval_first":True,"enabled":False,"category":"quotes"},
+        {"key":"overdue_invoice_reminder_draft","name":"Overdue invoice → reminder draft","description":"Creates an overdue invoice reminder draft. It does not send it.","trigger":"invoice.overdue","action":"message.create_draft","approval_first":True,"enabled":False,"category":"invoices"},
+        {"key":"worker_job_complete_owner_notification","name":"Worker completes job → owner notification","description":"Notifies the owner/admin when a worker completes a job.","trigger":"job.worker_completed","action":"notification.create","approval_first":False,"enabled":False,"category":"team"},
+        {"key":"job_assigned_worker_notification","name":"Job assigned → worker notification","description":"Notifies a worker when a job is assigned.","trigger":"job.assigned","action":"notification.create","approval_first":False,"enabled":False,"category":"jobs"},
+        {"key":"invoice_paid_owner_notification","name":"Invoice paid → owner notification","description":"Notifies the owner/admin when an invoice is paid.","trigger":"invoice.paid","action":"notification.create","approval_first":False,"enabled":False,"category":"invoices"},
+        {"key":"quote_accepted_owner_notification","name":"Quote accepted → owner notification","description":"Notifies the owner/admin when a quote is accepted.","trigger":"quote.accepted","action":"notification.create","approval_first":False,"enabled":False,"category":"quotes"},
+        {"key":"worker_note_added_owner_notification","name":"Worker note added → owner notification","description":"Notifies the owner/admin when a worker note is added.","trigger":"job.worker_note_added","action":"notification.create","approval_first":False,"enabled":False,"category":"team"},
+    ]
 
 
 @api_router.get("/automation/triggers/{trigger}/schema")
@@ -7033,8 +7073,25 @@ async def retry_automation_run(run_id: str, current_user: dict = Depends(get_cur
     evt.setdefault("business_id", bid)
     evt.setdefault("actor", {"id": _me_id(current_user), "role": current_user.get("role")})
     evt["retry_of_run_id"] = str(run.get("_id"))
-    new_run = await auto._execute_rule(db, rule, evt, test=False)
-    return {"success": True, "run": _serialize_run(new_run)}
+    now = datetime.now(timezone.utc)
+    queued = {
+        "business_id": bid,
+        "rule_id": str(rule.get("_id")),
+        "rule_name": rule.get("name") or run.get("rule_name") or "Rule",
+        "trigger": rule.get("trigger") or run.get("trigger"),
+        "status": "queued_safe_retry",
+        "event_payload": evt,
+        "results": [],
+        "error": None,
+        "retry_of_run_id": str(run.get("_id")),
+        "started_at": now,
+        "finished_at": now,
+        "queued_only": True,
+        "external_sends_blocked": True,
+    }
+    inserted = await db.automation_runs.insert_one(queued)
+    queued["_id"] = inserted.inserted_id
+    return {"success": True, "run": _serialize_run(queued), "message": "Safe retry queued. No automatic external sends."}
 
 
 async def _rule_stats_map(business_id: str, rule_ids: list) -> dict:
