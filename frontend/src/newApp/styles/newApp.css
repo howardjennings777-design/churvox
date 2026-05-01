@@ -1,0 +1,13 @@
+:root { --bg:#f3f5f9; --panel:#fff; --text:#0f172a; --muted:#64748b; --accent:#2563eb; --border:#e2e8f0; }
+.newapp{display:flex;min-height:100vh;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif}
+.newapp-sidebar{width:250px;background:#fff;border-right:1px solid var(--border);padding:20px;position:sticky;top:0;height:100vh}
+.newapp-logo{font-size:22px;font-weight:800;margin-bottom:20px}
+.newapp-nav a{display:block;padding:10px 12px;border-radius:10px;color:var(--text);text-decoration:none;margin-bottom:6px}
+.newapp-nav a.active,.newapp-nav a:hover{background:#dbeafe;color:#1d4ed8}
+.newapp-main{flex:1;padding:24px}
+.newapp-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:16px}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700}
+.btn.secondary{background:#fff;color:var(--text);border:1px solid var(--border)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+@media (max-width:900px){.newapp{flex-direction:column}.newapp-sidebar{width:100%;height:auto;position:relative}}
