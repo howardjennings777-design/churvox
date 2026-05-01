@@ -129,7 +129,7 @@ export default function AutomationRunsPage() {
         {runs.length > 0 && (
           <div className="bg-white border border-slate-200 rounded-xl p-2">
             <div className="relative">
-              <Search className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="h-4 w-4 text-slate-700 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={search}
@@ -153,7 +153,7 @@ export default function AutomationRunsPage() {
                 {runs.length === 0 ? "No runs yet." : "No runs match your search."}
               </p>
               {runs.length === 0 && (
-                <p className="text-xs text-slate-400 mt-1">Once a rule matches an event, it'll appear here.</p>
+                <p className="text-xs text-slate-700 mt-1">Once a rule matches an event, it'll appear here.</p>
               )}
             </div>
           ) : (
@@ -190,10 +190,10 @@ export default function AutomationRunsPage() {
                         </div>
                         <div className="text-xs text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
                           <span>{timeAgo(r.started_at)}</span>
-                          <span className="text-slate-300">·</span>
+                          <span className="text-slate-700">·</span>
                           <span>{r.results?.length || 0} action(s)</span>
-                          {dur !== null && (<><span className="text-slate-300">·</span><span>{dur}ms</span></>)}
-                          <span className="text-slate-300">·</span>
+                          {dur !== null && (<><span className="text-slate-700">·</span><span>{dur}ms</span></>)}
+                          <span className="text-slate-700">·</span>
                           <span className="text-slate-600">{new Date(r.started_at).toLocaleString()}</span>
                         </div>
                       </div>
@@ -230,7 +230,7 @@ export default function AutomationRunsPage() {
                               </div>
                               {res.message && <div className="text-[11px] text-slate-600 mt-1">{res.message}</div>}
                               {res.error && <div className="text-[11px] text-red-600 mt-1">{res.error}</div>}
-                              <div className="text-[10px] text-slate-400 mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                              <div className="text-[10px] text-slate-700 mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
                                 {res.notification_id && <span>notification: <span className="font-mono">{res.notification_id}</span></span>}
                                 {res.job_id && <span>job: <span className="font-mono">{res.job_id}</span></span>}
                                 {res.invoice_id && <span>invoice: <span className="font-mono">{res.invoice_id}</span></span>}

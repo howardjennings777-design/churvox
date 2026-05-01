@@ -470,7 +470,7 @@ function AutomationPage() {
                 { label: "Paused", value: pausedRules },
               ].map((stat) => (
                 <div key={stat.label} className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur">
-                  <p className="text-xs uppercase tracking-wide text-slate-300">{stat.label}</p>
+                  <p className="text-xs uppercase tracking-wide text-slate-700">{stat.label}</p>
                   <p className="mt-2 text-2xl font-bold text-white">{stat.value}</p>
                 </div>
               ))}
@@ -602,7 +602,7 @@ function AutomationPage() {
                   <button
                     type="submit"
                     disabled={saving}
-                    className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     {saving ? "Saving..." : editingRule ? "Save" : "Create"}
                   </button>
@@ -665,7 +665,7 @@ function AutomationPage() {
                       <div className="min-w-0 flex-1 truncate rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
                         {prettifyToken(firstTrigger(rule))}
                       </div>
-                      <span className="text-slate-400">→</span>
+                      <span className="text-slate-700">→</span>
                       <div className="min-w-0 flex-1 truncate rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
                         {prettifyToken(firstAction(rule))}
                       </div>
@@ -674,8 +674,8 @@ function AutomationPage() {
                     <div className="mt-3 grid grid-cols-4 gap-2">
                       <button type="button" onClick={() => startEdit(rule)} className="rounded-xl border border-slate-300 bg-white px-2 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">Edit</button>
                       <button type="button" onClick={() => toggleRule(rule)} className="rounded-xl border border-slate-300 bg-white px-2 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">{rule.enabled === false ? "On" : "Pause"}</button>
-                      <button type="button" onClick={() => testRule(rule)} disabled={testingId === rule.id} className="rounded-xl bg-slate-900 px-2 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60">{testingId === rule.id ? "..." : "Test"}</button>
-                      <button type="button" onClick={() => setConfirmDeleteId(rule.id)} disabled={deletingId === rule.id} className="rounded-xl bg-red-600 px-2 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-60">Del</button>
+                      <button type="button" onClick={() => testRule(rule)} disabled={testingId === rule.id} className="rounded-xl bg-slate-900 px-2 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-70">{testingId === rule.id ? "..." : "Test"}</button>
+                      <button type="button" onClick={() => setConfirmDeleteId(rule.id)} disabled={deletingId === rule.id} className="rounded-xl bg-red-600 px-2 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-70">Del</button>
                     </div>
 
                     {confirmDeleteId === rule.id ? (
@@ -712,7 +712,7 @@ function AutomationPage() {
                     {template.approval_first ? <div className="mt-2 inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-black text-amber-700">Approval-first</div> : null}
                     <div className="mt-3 flex gap-2">
                       <button type="button" onClick={() => applyTemplate(template)} className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-bold text-slate-700">Use in builder</button>
-                      <button type="button" disabled={template.enabled || enablingTemplate === template.key} onClick={() => enableTemplate(template.key)} className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-bold text-white disabled:opacity-50">{template.enabled ? "Enabled" : enablingTemplate === template.key ? "Enabling..." : "Enable"}</button>
+                      <button type="button" disabled={template.enabled || enablingTemplate === template.key} onClick={() => enableTemplate(template.key)} className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-bold text-white disabled:opacity-70">{template.enabled ? "Enabled" : enablingTemplate === template.key ? "Enabling..." : "Enable"}</button>
                     </div>
                   </div>
                 ))}
