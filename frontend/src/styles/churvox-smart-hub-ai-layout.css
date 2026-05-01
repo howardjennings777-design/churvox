@@ -1,0 +1,29 @@
+/* Smart Hub AI layout: keep the typing area directly above the response panel. */
+.smart-hub-v3 [data-smart-hub-ai-panel],
+.smart-hub-v3 [data-smart-hub-ai-response] {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+}
+
+.smart-hub-v3 [data-smart-hub-ai-panel] {
+  order: 1 !important;
+}
+
+.smart-hub-v3 [data-smart-hub-ai-response] {
+  order: 2 !important;
+}
+
+.smart-hub-v3 #ask-churvox {
+  min-height: 96px !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  background: #ffffff !important;
+  border: 2px solid #cbd5e1 !important;
+  opacity: 1 !important;
+}
+
+.smart-hub-v3 #ask-churvox::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
+}
