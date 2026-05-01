@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import ModernButton from '../components/modern/ModernButton';
-import ModernCard from '../components/modern/ModernCard';
-import ModernActionCard from '../components/modern/ModernActionCard';
-import ModernEmptyState from '../components/modern/ModernEmptyState';
-import ModernLoadingState from '../components/modern/ModernLoadingState';
-import ModernPage from '../components/modern/ModernPage';
-import ModernPageHeader from '../components/modern/ModernPageHeader';
-import ModernStatCard from '../components/modern/ModernStatCard';
+import { PremiumActionCard, PremiumBadge, PremiumButton, PremiumCard, PremiumEmptyState, PremiumHeader, PremiumLoadingState, PremiumPage, PremiumStatCard } from '../components/PremiumUI';
 import { apiFetch } from '../api/client';
 
 const AI_COPY = {
+  Payroll: 'AI payroll summary only: flag missing hours and approval gaps. Review before final export. No auto-payroll changes.',
+  Reports: 'AI summary: highlight trend changes, risk signals, and opportunities. Human review required for decisions.',
+  Plans: 'AI growth hint: compare usage vs plan limits before upgrading. Approval-first billing changes only.',
+  Communications: 'AI messaging helper drafts outbound updates only. Review and approve before sending any customer SMS.',
+  Integrations: 'AI integration assistant suggests sync checks and setup tasks. Confirm all accounting mappings manually.',
   Jobs: 'Suggested next action: confirm assignment and start window before dispatch. Approval required before any outbound update.',
   Invoices: 'Suggested follow-up: draft a polite payment reminder for overdue balances. Approval required before send.',
   Quotes: 'Suggested follow-up: draft a same-day quote check-in with clear expiry and next steps. Approval required before send.',
@@ -36,38 +34,38 @@ export function SimpleDataPage({ title, subtitle, endpoint, createTo, secondary 
   }), [data]);
 
   return (
-    <ModernPage>
-      <ModernPageHeader
+    <PremiumPage>
+      <PremiumHeader
         title={title}
         subtitle={subtitle}
         eyebrow="Tradie workspace"
-        actions={<><ModernButton to={createTo || '#'}>Create</ModernButton>{secondary ? <ModernButton variant="secondary" to={secondary.to}>{secondary.label}</ModernButton> : null}</>}
+        actions={<><PremiumButton to={createTo || '#'}>Create</PremiumButton>{secondary ? <PremiumButton variant="secondary" to={secondary.to}>{secondary.label}</PremiumButton> : null}</>}
       />
 
       <section className="modern-stats">
-        <ModernStatCard label={`Total ${title.toLowerCase()}`} value={summary.total} />
-        <ModernStatCard label="Active items" value={summary.open} hint="Live workload across your team" />
+        <PremiumStatCard label={`Total ${title.toLowerCase()}`} value={summary.total} />
+        <PremiumStatCard label="Active items" value={summary.open} hint="Live workload across your team" />
       </section>
 
       <section className="modern-record-layout">
-        <ModernCard title={`${title} workspace`}>
-          {loading ? <ModernLoadingState /> : null}
-          {!loading && err ? <ModernEmptyState message="We couldn’t load this section." hint="Try refreshing or check your connection." /> : null}
-          {!loading && !err && !data.length ? <ModernEmptyState message="No records yet." hint="Create your first record to get started." /> : null}
+        <PremiumCard title={`${title} workspace`}>
+          {loading ? <PremiumLoadingState /> : null}
+          {!loading && err ? <PremiumEmptyState message="We couldn’t load this section." hint="Try refreshing or check your connection." /> : null}
+          {!loading && !err && !data.length ? <PremiumEmptyState message="No records yet." hint="Create your first record to get started." /> : null}
           {!loading && !err && data.length ? (
             <div className="modern-record-list">
               {data.slice(0, 20).map((item, i) => (
                 <article key={item.id || i} className="modern-record-item">
                   <strong>{item.name || item.title || item.number || `Item ${i + 1}`}</strong>
                   <p>{item.address || item.email || item.phone || item.description || 'Details available in this record.'}</p>
-                  <span>{item.status || 'Active'}</span>
+                  <PremiumBadge tone={String(item.status||'').toLowerCase().includes('complete')||String(item.status||'').toLowerCase().includes('paid')?'success':String(item.status||'').toLowerCase().includes('cancel')?'danger':String(item.status||'').toLowerCase().includes('pause')?'warning':'info'}>{item.status || 'Active'}</PremiumBadge>
                 </article>
               ))}
             </div>
           ) : null}
-        </ModernCard>
+        </PremiumCard>
 
-        <ModernActionCard
+        <PremiumActionCard
           title="AI helper"
           description={AI_COPY[title] || 'Review AI suggestions before applying changes. Approval-first always.'}
           ctaLabel="Review workflow"
@@ -75,6 +73,6 @@ export function SimpleDataPage({ title, subtitle, endpoint, createTo, secondary 
           ctaVariant="ghost"
         />
       </section>
-    </ModernPage>
+    </PremiumPage>
   );
 }
