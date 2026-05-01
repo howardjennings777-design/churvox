@@ -12,7 +12,7 @@ import SignupPage from "./pages/auth/SignupPage";
 import InviteSetupPage from "./pages/auth/InviteSetupPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
-import AIAssistantPage from "./pages/SafeAIAssistantPage";
+import SmartHubPage from "./pages/SmartHubPage";
 import JobsPage from "./pages/jobs/JobsPage";
 import JobFormPage from "./pages/jobs/JobFormPage";
 import JobDetailPage from "./pages/jobs/JobDetailPage";
@@ -170,7 +170,7 @@ function AppRoutes() {
       <Route path="/launch-audit" element={<PlatformAdminRoute><LaunchAuditPage /></PlatformAdminRoute>} />
       <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
       <Route path="/owner/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
-      <Route path="/smart-hub" element={<Guard><AIAssistantPage /></Guard>} />
+      <Route path="/smart-hub" element={<Guard><SmartHubPage /></Guard>} />
       <Route path="/ai-assistant" element={<Navigate to="/smart-hub" replace />} />
       <Route path="/jobs" element={<Guard><JobsPage /></Guard>} />
       <Route path="/jobs/new" element={<Guard><JobFormPage /></Guard>} />

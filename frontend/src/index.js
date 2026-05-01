@@ -16,14 +16,11 @@ import "./styles/churvox-payroll-compact.css";
 import "./styles/churvox-worker-premium.css";
 import "./styles/churvox-owner-premium-cleanup.css";
 import "./styles/churvox-automation-cleanup.css";
-import "./styles/smart-hub-automation-readable.css";
 import "./styles/churvox-restore-original-colors.css";
 import { startTeamTownGroupingEnhancer } from "./utils/teamTownGroupingEnhancer";
 import { startClientAreaGroupingEnhancer } from "./utils/clientAreaGroupingEnhancer";
 import { startAutomationActionFixer } from "./utils/automationActionFixer";
 import { startWorkerFlowEnhancer } from "./utils/workerFlowEnhancer";
-import { startAskChurvoxAnswerFixer } from "./utils/askChurvoxAnswerFixer";
-import { startSmartHubReadabilityFixer } from "./utils/smartHubReadabilityFixer";
 
 const clearOldPwaCaches = async () => {
   try {
@@ -46,8 +43,6 @@ startTeamTownGroupingEnhancer();
 startClientAreaGroupingEnhancer();
 startAutomationActionFixer();
 startWorkerFlowEnhancer();
-startAskChurvoxAnswerFixer();
-startSmartHubReadabilityFixer();
 
 const rootEl = document.getElementById("root");
 const root = ReactDOM.createRoot(rootEl);
