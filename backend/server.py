@@ -11016,21 +11016,28 @@ async def sms_buy_credits(payload: dict, current_user: dict = Depends(get_curren
 
 @api_router.get('/myob/status')
 async def myob_status(current_user: dict = Depends(get_current_user)):
+    configured = bool(os.getenv("MYOB_CLIENT_ID") and os.getenv("MYOB_CLIENT_SECRET") and os.getenv("MYOB_REDIRECT_URI"))
     settings = await get_myob_settings(current_user)
     data = settings.get('data') if isinstance(settings, dict) else {}
-    return {'success': True, 'data': {'status': data.get('myob_status', 'not_connected'), 'connected': bool(data.get('connected')), 'last_sync_time': data.get('last_sync_at'), 'not_configured': not bool(data.get('connected'))}}
+    status_value = data.get('myob_status', 'not_connected')
+    if not configured:
+        status_value = "not_configured"
+    return {'success': True, 'data': {'configured': configured, 'status': status_value, 'connected': bool(data.get('connected')), 'company_file_id': data.get('company_file_id') or "", 'company_file_name': data.get('company_file_name') or "", 'last_sync_at': data.get('last_sync_at'), 'error': data.get('error') or "", 'plan': normalize_plan(current_user.get("plan") or "solo"), 'plan_allowed': bool(data.get('enabled'))}}
 
 @api_router.post('/myob/test-connection')
 async def myob_test_connection(current_user: dict = Depends(get_current_user)):
+    configured = bool(os.getenv("MYOB_CLIENT_ID") and os.getenv("MYOB_CLIENT_SECRET") and os.getenv("MYOB_REDIRECT_URI"))
     settings = await get_myob_settings(current_user)
     data = settings.get('data') if isinstance(settings, dict) else {}
+    if not configured or not data.get("company_file_id"):
+        return {'success': False, 'not_configured': True, 'error': 'MYOB OAuth is not configured yet.'}
     if not data.get('connected'):
-        return {'success': False, 'error': 'not_configured', 'configured': False}
+        return {'success': False, 'error': 'MYOB is not connected yet.', 'configured': configured}
     return {'success': True, 'data': {'status': 'connected'}}
 
 @api_router.post('/myob/settings')
 async def myob_settings_save(payload: dict, current_user: dict = Depends(get_current_user)):
-    if str(current_user.get("role") or "").lower() not in {"owner", "manager", "office_admin"}:
+    if str(current_user.get("role") or "").lower() not in {"owner", "manager", "office_admin", "admin", "employer"}:
         raise HTTPException(status_code=403, detail="Not authorized")
     business_id = str(current_user.get("business_id") or current_user.get("id") or "")
     company_file_id = str((payload or {}).get("company_file_id") or "").strip()
@@ -11044,12 +11051,40 @@ async def myob_settings_save(payload: dict, current_user: dict = Depends(get_cur
     )
     return {"success": True, "data": {"company_file_id": company_file_id, "company_file_name": company_file_name}}
 
+@api_router.get('/myob/oauth/start')
+async def myob_oauth_start(current_user: dict = Depends(get_current_user)):
+    if str(current_user.get("role") or "").lower() not in {"owner", "manager", "office_admin", "admin", "employer"}:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    client_id = os.getenv("MYOB_CLIENT_ID")
+    redirect_uri = os.getenv("MYOB_REDIRECT_URI")
+    client_secret = os.getenv("MYOB_CLIENT_SECRET")
+    if not client_id or not client_secret or not redirect_uri:
+        return {'success': False, 'not_configured': True, 'error': 'MYOB OAuth is not configured yet.'}
+    params = urllib.parse.urlencode({"client_id": client_id, "redirect_uri": redirect_uri, "response_type": "code", "scope": "CompanyFile"})
+    url = f"https://secure.myob.com/oauth2/account/authorize?{params}"
+    return {"success": True, "authorization_url": url, "data": {"authorization_url": url}}
+
+@api_router.get('/myob/oauth/callback')
+async def myob_oauth_callback(code: str = "", state: str = "", current_user: dict = Depends(get_current_user)):
+    _ = state
+    if str(current_user.get("role") or "").lower() not in {"owner", "manager", "office_admin", "admin", "employer"}:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    client_id = os.getenv("MYOB_CLIENT_ID")
+    redirect_uri = os.getenv("MYOB_REDIRECT_URI")
+    client_secret = os.getenv("MYOB_CLIENT_SECRET")
+    if not client_id or not client_secret or not redirect_uri or not code:
+        return {'success': False, 'not_configured': True, 'error': 'MYOB OAuth is not configured yet.'}
+    return RedirectResponse(url="/integrations?myob=oauth-callback")
+
 @api_router.post('/myob/invoices/{invoice_id}/sync')
 async def myob_invoice_sync_alias(invoice_id: str, current_user: dict = Depends(get_current_user)):
     return await invoice_myob_sync(invoice_id, current_user)
 
 @api_router.post('/myob/invoices/{invoice_id}/pull-payment-status')
 async def myob_pull_payment(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    configured = bool(os.getenv("MYOB_CLIENT_ID") and os.getenv("MYOB_CLIENT_SECRET") and os.getenv("MYOB_REDIRECT_URI"))
+    if not configured:
+        return {'success': False, 'not_configured': True, 'error': 'MYOB OAuth is not configured yet.'}
     return await invoice_myob_status(invoice_id, current_user)
 from fastapi.responses import PlainTextResponse
 
