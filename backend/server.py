@@ -10960,3 +10960,94 @@ async def _platform_stats_impl(current_user: dict):
 
 
 # CORS_HARD_FIX_20260412
+
+@api_router.get('/smart-hub/summary')
+async def smart_hub_summary(current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get('business_id') or current_user.get('id') or '')
+    jobs = await db.jobs.count_documents({'business_id': business_id}) if hasattr(db,'jobs') else 0
+    in_progress = await db.jobs.count_documents({'business_id': business_id,'status':'in_progress'}) if hasattr(db,'jobs') else 0
+    overdue = await db.jobs.count_documents({'business_id': business_id,'status':'overdue'}) if hasattr(db,'jobs') else 0
+    open_quotes = await db.quotes.count_documents({'business_id': business_id,'status': {'$in':['draft','open','sent']}}) if hasattr(db,'quotes') else 0
+    unpaid = await db.invoices.count_documents({'business_id': business_id,'status': {'$nin':['paid','cancelled']}}) if hasattr(db,'invoices') else 0
+    team = await db.users.count_documents({'business_id': business_id,'role': {'$in':['worker','manager','owner','office_admin']}}) if hasattr(db,'users') else 0
+    return {'success': True, 'data': {'today_jobs': 0, 'jobs_in_progress': in_progress, 'completed_jobs': 0, 'overdue_jobs': overdue, 'open_quotes': open_quotes, 'unpaid_invoices': unpaid, 'team_members': team, 'urgent_followups': [], 'automation_issues': [], 'health_score': max(0, 100 - overdue*5), 'last_updated': datetime.now(timezone.utc).isoformat()}}
+
+@api_router.post('/ai/business-assistant')
+async def ai_business_assistant(payload: dict, current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get('business_id') or current_user.get('id') or '')
+    jobs = await db.jobs.count_documents({'business_id': business_id}) if hasattr(db,'jobs') else 0
+    unpaid = await db.invoices.count_documents({'business_id': business_id,'status': {'$nin':['paid','cancelled']}}) if hasattr(db,'invoices') else 0
+    open_quotes = await db.quotes.count_documents({'business_id': business_id,'status': {'$in':['draft','open','sent']}}) if hasattr(db,'quotes') else 0
+    p = str((payload or {}).get('prompt_type') or 'attention')
+    msg = f"Draft only. {jobs} jobs, {unpaid} unpaid invoices, {open_quotes} open quotes. Prioritise overdue work and approvals first."
+    if p == 'invoice_followup': msg = 'Draft only: Friendly reminder that your invoice is due. Let us know if you need another copy.'
+    return {'success': True, 'data': {'response': msg, 'prompt_type': p}}
+
+@api_router.get('/sms/balance')
+async def sms_balance(current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get('business_id') or '')
+    row = await db.sms_credits.find_one({'business_id': business_id}) if hasattr(db,'sms_credits') else None
+    return {'success': True, 'data': {'configured': bool(sms_provider), 'credits': int((row or {}).get('balance', (row or {}).get('credits', 0) or 0))}}
+
+@api_router.get('/sms/history')
+async def sms_history(current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get('business_id') or '')
+    rows = []
+    if hasattr(db,'sms_log'):
+      cursor = db.sms_log.find({'business_id': business_id}).sort('created_at', -1).limit(50)
+      rows = await cursor.to_list(length=50)
+    return {'success': True, 'data': {'history': rows}}
+
+@api_router.post('/sms/buy-credits')
+async def sms_buy_credits(payload: dict, current_user: dict = Depends(get_current_user)):
+    return {'success': False, 'error': 'SMS credit purchasing is not configured yet.'}
+
+@api_router.get('/myob/status')
+async def myob_status(current_user: dict = Depends(get_current_user)):
+    settings = await get_myob_settings(current_user)
+    data = settings.get('data') if isinstance(settings, dict) else {}
+    return {'success': True, 'data': {'status': data.get('myob_status', 'not_connected'), 'connected': bool(data.get('connected')), 'last_sync_time': data.get('last_sync_at'), 'not_configured': not bool(data.get('connected'))}}
+
+@api_router.post('/myob/test-connection')
+async def myob_test_connection(current_user: dict = Depends(get_current_user)):
+    settings = await get_myob_settings(current_user)
+    data = settings.get('data') if isinstance(settings, dict) else {}
+    if not data.get('connected'):
+        return {'success': False, 'error': 'not_configured'}
+    return {'success': True, 'data': {'status': 'connected'}}
+
+@api_router.post('/myob/invoices/{invoice_id}/sync')
+async def myob_invoice_sync_alias(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    return await invoice_myob_sync(invoice_id, current_user)
+
+@api_router.post('/myob/invoices/{invoice_id}/pull-payment-status')
+async def myob_pull_payment(invoice_id: str, current_user: dict = Depends(get_current_user)):
+    return await invoice_myob_status(invoice_id, current_user)
+from fastapi.responses import PlainTextResponse
+
+async def _csv_rows(collection, business_id):
+    if not hasattr(db, collection):
+        return []
+    rows = await getattr(db, collection).find({'business_id': business_id}).limit(1000).to_list(length=1000)
+    return rows
+
+@api_router.get('/reports/invoices.csv')
+async def reports_invoices_csv(current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get('business_id') or '')
+    rows = await _csv_rows('invoices', business_id)
+    out = 'id,status,total,created_at\n' + '\n'.join([f"{r.get('id','')},{r.get('status','')},{r.get('total',r.get('amount',0))},{r.get('created_at','')}" for r in rows])
+    return PlainTextResponse(out, media_type='text/csv')
+
+@api_router.get('/reports/jobs.csv')
+async def reports_jobs_csv(current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get('business_id') or '')
+    rows = await _csv_rows('jobs', business_id)
+    out = 'id,status,title,created_at\n' + '\n'.join([f"{r.get('id','')},{r.get('status','')},{str(r.get('title','')).replace(',',' ')},{r.get('created_at','')}" for r in rows])
+    return PlainTextResponse(out, media_type='text/csv')
+
+@api_router.get('/reports/quotes.csv')
+async def reports_quotes_csv(current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get('business_id') or '')
+    rows = await _csv_rows('quotes', business_id)
+    out = 'id,status,total,created_at\n' + '\n'.join([f"{r.get('id','')},{r.get('status','')},{r.get('total',0)},{r.get('created_at','')}" for r in rows])
+    return PlainTextResponse(out, media_type='text/csv')
