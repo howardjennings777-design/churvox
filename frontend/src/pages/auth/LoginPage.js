@@ -6,15 +6,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, Lock, AlertCircle, Loader2, ShieldCheck, Zap, BriefcaseBusiness } from "lucide-react";
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
-import { normalizeRole, getDefaultRoute } from "@/lib/roles";
+import { normalizeRole } from "@/lib/roles";
 
 const PLATFORM_OWNER_EMAIL = "hello@churvox.com";
 
 const getPostLoginPath = (payload = {}) => {
   const user = payload?.user || payload || {};
   const email = String(user?.email || payload?.email || "").trim().toLowerCase();
+  const role = normalizeRole(user?.role || payload?.role);
+
   if (email === PLATFORM_OWNER_EMAIL) return "/admin";
-  return getDefaultRoute(normalizeRole(user?.role || payload?.role));
+  if (role === "worker") return "/worker/jobs";
+  if (role === "payroll") return "/timesheets";
+
+  // Emergency launch-safe landing: Smart Hub is currently being debugged after login.
+  // Jobs is the safest core page to land business users inside the app without a blank screen.
+  return "/jobs";
 };
 
 export default function LoginPage() {
@@ -33,7 +40,7 @@ export default function LoginPage() {
     try {
       const result = await login(email, password);
       if (result?.token) {
-        navigate(getPostLoginPath(result));
+        navigate(getPostLoginPath(result), { replace: true });
       } else {
         setError("Login failed. Please try again.");
       }
@@ -52,7 +59,7 @@ export default function LoginPage() {
             <span className="text-xs uppercase tracking-[0.14em] text-slate-500 font-semibold">Secure Login</span>
           </div>
           <h1 className="text-3xl font-semibold text-slate-900">Welcome back</h1>
-          <p className="mt-2 text-slate-600">Sign in to your Churvox Smart Hub.</p>
+          <p className="mt-2 text-slate-600">Sign in to your Churvox workspace.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4 mt-6">
             {error && (
