@@ -1,0 +1,1 @@
+export default function ModernCard({ title, actions, children, className = '' }) { return <section className={`modern-card ${className}`.trim()}>{(title || actions) && <header className="modern-card-header">{title ? <h3>{title}</h3> : <span />}{actions}</header>}{children}</section>; }

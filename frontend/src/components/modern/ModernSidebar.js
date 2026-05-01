@@ -1,0 +1,3 @@
+import { NavLink } from 'react-router-dom';
+const nav = [['/smart-hub','Smart Hub'],['/jobs','Jobs'],['/clients','Clients'],['/quotes','Quotes'],['/invoices','Invoices'],['/team','Team'],['/timesheets','Payroll'],['/automation','Automation'],['/reports','Reports'],['/settings','Settings'],['/plans','Plans'],['/sms','Communications'],['/integrations','Integrations']];
+export default function ModernSidebar() { return <aside className="modern-sidebar"><div className="modern-brand">Churvox</div><p className="modern-brand-sub">Tradie command centre</p><nav>{nav.map(([to,label]) => <NavLink key={to} to={to} className="modern-nav-link">{label}</NavLink>)}</nav></aside>; }

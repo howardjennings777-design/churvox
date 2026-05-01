@@ -1,15 +1,36 @@
-import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { apiFetch } from '../api/client';
+import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-// CHURVOX_NEW_REAL_PAGE_ACTIVE
-export default function LoginPage(){
- const {user,login,signup}=useAuth()||{}; const {id,token}=useParams(); const nav=useNavigate?.();
- const [data,setData]=useState(null); const [err,setErr]=useState(''); const [loading,setLoading]=useState(false);
- const [form,setForm]=useState({email:'',password:'',name:''});
- const key='LoginPage';
- useEffect(()=>{const map={SmartHubPage:'/dashboard/summary',ClientsPage:'/clients',ClientDetailPage:'/clients/'+id,JobsPage:'/jobs',JobDetailPage:'/jobs/'+id,QuotesPage:'/quotes',QuoteDetailPage:'/quotes/'+id,InvoicesPage:'/invoices',InvoiceDetailPage:'/invoices/'+id,TeamPage:'/team',WorkerDashboardPage:'/worker/jobs',WorkerJobDetailPage:'/worker/jobs/'+id,PayrollPage:'/timesheets',AutomationPage:'/automation',ReportsPage:'/reports',SettingsPage:'/settings',PlansPage:'/plans',CommunicationsPage:'/sms',IntegrationsPage:'/integrations',PublicQuotePage:'/public/quote/'+token,PublicInvoicePage:'/public/invoice/'+token}[key]; if(!map) return; setLoading(true); apiFetch(map).then(setData).catch(e=>setErr(String(e))).finally(()=>setLoading(false));},[id,token,key]);
- if(key==='LoginPage') return <div className='panel'><h1>Login</h1><input placeholder='email' onChange={e=>setForm({...form,email:e.target.value})}/><input placeholder='password' type='password' onChange={e=>setForm({...form,password:e.target.value})}/><button onClick={async()=>{await login(form);nav('/smart-hub')}}>Login</button><Link to='/signup'>Signup</Link></div>;
- if(key==='SignupPage') return <div className='panel'><h1>Signup</h1><input placeholder='name' onChange={e=>setForm({...form,name:e.target.value})}/><input placeholder='email' onChange={e=>setForm({...form,email:e.target.value})}/><input type='password' placeholder='password' onChange={e=>setForm({...form,password:e.target.value})}/><button onClick={async()=>{await signup(form);nav('/login')}}>Create account</button></div>;
- return <div className='panel'><h1>{key.replace('Page','')}</h1>{loading&&<p>Loading...</p>}{err&&<p>{err}</p>}<pre>{JSON.stringify(data,null,2)}</pre>{!loading&&!err&&!data&&<p>No data yet</p>}</div>
+
+// CHURVOX_MODERN_WEBSITE_ACTIVE_PAGE
+export default function LoginPage() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
+
+  const submit = async () => {
+    try {
+      setError('');
+      await login(form);
+      navigate('/smart-hub');
+    } catch (e) {
+      console.log(e);
+      setError('We couldn’t load this section. Try refreshing or check your connection.');
+    }
+  };
+
+  return (
+    <div className="auth-wrap">
+      <div className="auth-card">
+        <h1>Churvox</h1>
+        <p>Premium command centre for tradies and service businesses.</p>
+        <input placeholder="Email" onChange={(e) => setForm({ ...form, email: e.target.value })} />
+        <input type="password" placeholder="Password" onChange={(e) => setForm({ ...form, password: e.target.value })} />
+        {error ? <p>{error}</p> : null}
+        <button className="modern-button primary" onClick={submit}>Log in</button>
+        <p><Link to="/signup">Create an account</Link></p>
+      </div>
+    </div>
+  );
 }

@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import './styles/churvox-tradie.css';
+import './styles/churvox-modern.css';
 import App from './App';
 import { AuthProvider } from './context/AuthContext';
 

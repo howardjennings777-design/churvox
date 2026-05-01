@@ -1,0 +1,1 @@
+export default function ModernHero({ title, subtitle, actions }) { return <section className="modern-hero"><div><h1>{title}</h1><p>{subtitle}</p></div><div className="modern-hero-actions">{actions}</div></section>; }

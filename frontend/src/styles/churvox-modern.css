@@ -1,0 +1,14 @@
+/* CHURVOX_MODERN_WEBSITE_ACTIVE_STYLE */
+:root{--bg:#f3f6fb;--card:#fff;--text:#0f172a;--muted:#64748b;--blue:#2563eb;--green:#16a34a;--amber:#d97706;--red:#dc2626}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif}
+.modern-shell{display:flex;min-height:100vh}.modern-sidebar{width:250px;background:#fff;padding:24px;box-shadow:0 8px 20px rgba(15,23,42,.08)}
+.modern-brand{font-size:28px;font-weight:800}.modern-brand-sub{color:var(--muted);margin:4px 0 18px}.modern-nav-link{display:block;padding:10px 12px;margin-bottom:6px;border-radius:10px;color:#1e293b;text-decoration:none}.modern-nav-link.active{background:#dbeafe;color:#1d4ed8;font-weight:700}
+.modern-main{flex:1;padding:20px}.modern-topbar,.modern-card,.modern-hero{background:#fff;border-radius:16px;padding:18px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
+.modern-topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.modern-page{display:grid;gap:16px}
+.modern-hero{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.modern-hero h1{margin:0;font-size:34px}.modern-hero p{margin:8px 0 0;color:var(--muted)}.modern-hero-actions{display:flex;gap:8px;flex-wrap:wrap}
+.modern-button{padding:10px 14px;border:none;border-radius:10px;text-decoration:none;cursor:pointer;font-weight:600}.modern-button.primary{background:var(--blue);color:#fff}.modern-button.secondary{background:#e2e8f0;color:#0f172a}.modern-button.ghost{background:#fff;border:1px solid #cbd5e1;color:#334155}
+.modern-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.modern-stat{background:#fff;padding:14px;border-radius:14px}.modern-stat p{color:var(--muted);margin:0 0 6px}.modern-stat strong{font-size:28px}
+.modern-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.modern-empty,.modern-loading{padding:24px;color:var(--muted)}
+.modern-table{width:100%;border-collapse:collapse}.modern-table th,.modern-table td{padding:12px;border-bottom:1px solid #e2e8f0;text-align:left}.modern-badge{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700}.modern-badge.success{background:#dcfce7;color:var(--green)}.modern-badge.warning{background:#fef3c7;color:var(--amber)}.modern-badge.danger{background:#fee2e2;color:var(--red)}.modern-badge.info{background:#dbeafe;color:var(--blue)}
+.auth-wrap{min-height:100vh;display:grid;place-items:center;padding:20px}.auth-card{max-width:460px;width:100%;background:#fff;padding:28px;border-radius:18px;box-shadow:0 12px 30px rgba(15,23,42,.09)}.auth-card input{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:10px}
+@media (max-width:900px){.modern-sidebar{display:none}.modern-main{padding:12px}.modern-hero{flex-direction:column}}
