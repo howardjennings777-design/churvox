@@ -4471,6 +4471,61 @@ async def get_jobs(limit: int = Query(default=100, ge=1, le=300), current_user: 
         print("JOBS_ROUTE_ERROR", str(e), current_user)
         return []
 
+
+def worker_job_public(job: dict) -> dict:
+    def safe_iso(value):
+        if value is None:
+            return None
+        if hasattr(value, "isoformat"):
+            try:
+                return value.isoformat()
+            except Exception:
+                pass
+        return str(value)
+
+    return {
+        "id": str(job.get("_id") or job.get("id") or ""),
+        "title": job.get("title") or "Untitled Job",
+        "job_type": job.get("job_type") or "other",
+        "client_name": job.get("client_name") or job.get("customer_name") or "",
+        "customer_name": job.get("customer_name") or job.get("client_name") or "",
+        "address": job.get("address") or "",
+        "scheduled_date": safe_iso(job.get("scheduled_date")),
+        "scheduled_time": job.get("scheduled_time") or "",
+        "estimated_duration": job.get("estimated_duration") or 60,
+        "status": job.get("status") or "assigned",
+        "notes": job.get("notes") or "",
+        "worker_notes": job.get("worker_notes") or "",
+        "assigned_worker_id": job.get("assigned_worker_id"),
+        "assigned_worker_name": job.get("assigned_worker_name") or "",
+        "photos": job.get("photos") or [],
+        "started_at": safe_iso(job.get("started_at") or job.get("in_progress_at")),
+        "paused_at": safe_iso(job.get("paused_at")),
+        "resumed_at": safe_iso(job.get("resumed_at")),
+        "completed_at": safe_iso(job.get("completed_at")),
+        "accepted_at": safe_iso(job.get("accepted_at") or job.get("acknowledged_at")),
+        "total_time_seconds": job.get("total_time_seconds") or 0,
+        "updated_at": safe_iso(job.get("updated_at")),
+    }
+
+
+@api_router.get("/worker/jobs")
+async def get_worker_jobs(current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower()
+    if role != "worker":
+        raise HTTPException(status_code=403, detail="Worker access only")
+    jobs = await get_jobs(limit=200, current_user=current_user)
+    return [worker_job_public(j) for j in (jobs or [])]
+
+
+@api_router.get("/worker/jobs/{job_id}")
+async def get_worker_job(job_id: str, current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower()
+    if role != "worker":
+        raise HTTPException(status_code=403, detail="Worker access only")
+    job = await get_job(job_id=job_id, current_user=current_user)
+    return worker_job_public(job or {})
+
 @api_router.post("/jobs")
 async def create_job(request: Request, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
@@ -5303,6 +5358,73 @@ async def pause_job(job_id: str, current_user: dict = Depends(get_current_user))
         {"$set": {"status": "paused", "updated_at": datetime.now(timezone.utc)}}
     )
     return {"success": True, "status": "paused"}
+
+
+@api_router.post("/jobs/{job_id}/start")
+async def start_job(job_id: str, payload: dict | None = None, current_user: dict = Depends(get_current_user)):
+    body = dict(payload or {})
+    body["status"] = "in_progress"
+    class _Req:
+        async def json(self_inner):
+            return body
+    return await update_job(job_id=job_id, request=_Req(), current_user=current_user)
+
+
+@api_router.post("/jobs/{job_id}/resume")
+async def resume_job(job_id: str, current_user: dict = Depends(get_current_user)):
+    class _Req:
+        async def json(self_inner):
+            return {"status": "in_progress"}
+    return await update_job(job_id=job_id, request=_Req(), current_user=current_user)
+
+
+@api_router.post("/jobs/{job_id}/complete")
+async def complete_job(job_id: str, current_user: dict = Depends(get_current_user)):
+    class _Req:
+        async def json(self_inner):
+            return {"status": "completed"}
+    return await update_job(job_id=job_id, request=_Req(), current_user=current_user)
+
+
+@api_router.post("/jobs/{job_id}/photos")
+async def add_job_photo(job_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    photos = payload.get("photos")
+    photo = payload.get("photo")
+    if photo and not photos:
+        photos = [photo]
+    if not isinstance(photos, list) or not photos:
+        raise HTTPException(status_code=400, detail="photos is required")
+    class _Req:
+        async def json(self_inner):
+            return {"photos": photos}
+    result = await update_job(job_id=job_id, request=_Req(), current_user=current_user)
+    try:
+        await notify(user_id=str(current_user.get("business_owner_id") or current_user.get("owner_id") or ""),
+                     business_id=str(current_user.get("business_id") or ""), type="worker_photo_uploaded",
+                     title="Worker uploaded job photos", message=f"{len(photos)} photo(s) added",
+                     route=f"/jobs/{job_id}", target_type="job", target_id=job_id)
+    except Exception:
+        pass
+    return result
+
+
+@api_router.post("/jobs/{job_id}/worker-notes")
+async def set_worker_note(job_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    note = str((payload or {}).get("note") or (payload or {}).get("worker_notes") or "").strip()
+    if not note:
+        raise HTTPException(status_code=400, detail="note is required")
+    class _Req:
+        async def json(self_inner):
+            return {"worker_notes": note}
+    result = await update_job(job_id=job_id, request=_Req(), current_user=current_user)
+    try:
+        await notify(user_id=str(current_user.get("business_owner_id") or current_user.get("owner_id") or ""),
+                     business_id=str(current_user.get("business_id") or ""), type="worker_note_added",
+                     title="Worker added a note", message=note[:120],
+                     route=f"/jobs/{job_id}", target_type="job", target_id=job_id)
+    except Exception:
+        pass
+    return result
 
 
 
