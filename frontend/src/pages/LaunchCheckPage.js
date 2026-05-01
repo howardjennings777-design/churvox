@@ -15,6 +15,7 @@ export default function LaunchCheckPage(){
   const copy=()=>navigator.clipboard.writeText(summary);
   return <Layout><div className="cx-page space-y-4"><h1 className="text-3xl font-black text-slate-950">Launch Check</h1><p className="text-slate-700">{summary}</p><div className="flex gap-2"><button onClick={reset} className="rounded-xl bg-white border border-slate-200 px-4 py-2 font-black text-slate-900">Reset checklist</button><button onClick={copy} className="rounded-xl bg-blue-600 px-4 py-2 font-black text-white">Copy test summary</button></div>
   <p className="text-xs text-slate-600">Version: {process.env.REACT_APP_VERSION || "local"}</p>
+  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4"><h2 className="text-lg font-black text-amber-900">Test data reminder</h2><p className="text-amber-800">Seed test data before full launch testing.</p><pre className="mt-2 rounded bg-white p-2 text-xs text-slate-800">bash scripts/churvox_seed_launch_test_data.sh</pre></div>
   {Object.entries(groups).map(([group,items])=><div key={group} className="rounded-2xl border border-slate-200 bg-white p-4"><h2 className="text-xl font-black text-slate-950">{group}</h2><div className="mt-2 grid md:grid-cols-2 gap-2">{items.map((item)=>{const id=`${group}:${item}`;return <label key={id} className="flex gap-2 text-slate-800"><input type="checkbox" checked={!!checks[id]} onChange={()=>toggle(id)} />{item}</label>;})}</div></div>)}
   </div></Layout>;
 }
