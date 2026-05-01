@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import Layout from "../components/Layout";
 
 const assistantPrompts = [
   {
@@ -92,8 +93,8 @@ export default function SmartHubPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+    <Layout>
+      <div className="cx-page space-y-6">
         <section className="rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-6 shadow-xl ring-1 ring-blue-900 md:p-7">
           <div className="grid gap-5 lg:grid-cols-3 lg:items-center">
             <div className="lg:col-span-2">
@@ -219,6 +220,6 @@ export default function SmartHubPage() {
           </article>
         </section>
       </div>
-    </div>
+    </Layout>
   );
 }
