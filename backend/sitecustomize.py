@@ -35,6 +35,7 @@ class _ServerBootLoader(importlib.abc.Loader):
             ("client_360_boot", "install_client_360_boot", "CLIENT_360_BOOT_INSTALL_ERR"),
             ("launch_audit_boot", "install_launch_audit_boot", "LAUNCH_AUDIT_BOOT_INSTALL_ERR"),
             ("launch_ops_boot", "install_launch_ops_boot", "LAUNCH_OPS_BOOT_INSTALL_ERR"),
+            ("launch_complete_backend_boot", "install_launch_complete_backend_boot", "LAUNCH_COMPLETE_BACKEND_BOOT_INSTALL_ERR"),
             ("ai_router", "install_ai_router", "AI_ASSISTANT_BOOT_INSTALL_ERR"),
         ]
         for module_name, function_name, error_label in boot_steps:
