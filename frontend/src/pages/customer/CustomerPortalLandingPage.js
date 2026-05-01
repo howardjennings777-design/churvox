@@ -1,0 +1,3 @@
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+export default function CustomerPortalLandingPage(){const [token,setToken]=useState(''); return <div className='min-h-screen bg-slate-50 p-6'><div className='mx-auto max-w-xl rounded-3xl border bg-white p-6 shadow-sm'><h1 className='text-2xl font-black text-slate-950'>Open your customer portal</h1><input className='mt-4 w-full rounded-xl border p-2' placeholder='Enter secure token' value={token} onChange={(e)=>setToken(e.target.value)}/><Link className='mt-3 inline-block rounded-xl bg-blue-600 px-4 py-2 font-bold text-white' to={`/customer/portal/${token}`}>Open portal</Link><p className='mt-3 text-sm text-slate-700'>Need help? Contact support.</p></div></div>;}
