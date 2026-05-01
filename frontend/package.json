@@ -68,7 +68,10 @@
     "audit:launch": "playwright test --config=playwright.config.js",
     "audit:deep": "playwright test --config=playwright.deep.config.js",
     "audit:headed": "playwright test --config=playwright.config.js --headed",
-    "render-build": "npm install --legacy-peer-deps && npm run build"
+    "render-build": "npm install --legacy-peer-deps && npm run build",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:launch": "playwright test tests/launch-smoke.spec.js"
   },
   "browserslist": {
     "production": [
