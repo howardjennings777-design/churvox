@@ -14,6 +14,7 @@ import {
 import NotificationsBell from "./NotificationsBell";
 import HelpDropdown from "./HelpDropdown";
 import FirstRunGuide from "./FirstRunGuide";
+import { PremiumAppShell } from "./premiumV2";
 
 function aiAreaForPath(pathname) {
   if (pathname === "/jobs" || pathname.startsWith("/jobs/")) return "jobs";
@@ -87,14 +88,15 @@ export default function Layout({ children }) {
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/") || (path === "/smart-hub" && location.pathname === "/dashboard");
 
   return (
+    <PremiumAppShell>
     <div className="cx-app-shell tap-safe-root min-h-screen overflow-x-clip" data-testid="layout-container">
       <aside className="hidden md:flex md:flex-col md:w-[272px] md:fixed md:inset-y-0 z-40" data-testid="desktop-sidebar">
-        <div className="h-[92px] px-5 border-b border-slate-700/70 flex items-center justify-between gap-2">
+        <div className="h-[92px] px-5 border-b border-slate-200 bg-white flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-3">
             <ChurvoxLogo size="sm" dataTestId="sidebar-logo" />
             <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-300/70">Churvox</p>
-              <p className="text-sm font-semibold text-white">Smart Hub</p>
+              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Churvox</p>
+              <p className="text-sm font-semibold text-slate-900">Smart Hub</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
@@ -115,7 +117,7 @@ export default function Layout({ children }) {
                         key={item.path}
                         to={item.path}
                         data-nav="item"
-                        className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold border border-transparent transition-all ${active ? "active" : "hover:bg-[#1a3150]"}`}
+                        className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] font-semibold border border-transparent transition-all ${active ? "bg-blue-50 text-blue-700" : "text-slate-700 hover:bg-slate-100"}`}
                       >
                         <item.icon className="h-[17px] w-[17px] shrink-0" />
                         <span>{item.label}</span>
@@ -134,14 +136,14 @@ export default function Layout({ children }) {
           )}
         </nav>
 
-        <div className="p-3 border-t border-slate-700/70 bg-[#0c1729]">
-          <div className="px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900/35">
-            <p className="text-xs font-semibold text-slate-100 truncate">{user?.name}</p>
-            <p className="text-[11px] text-slate-400 truncate">{user?.business_name || user?.email}</p>
+        <div className="p-3 border-t border-slate-200 bg-white">
+          <div className="px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50">
+            <p className="text-xs font-semibold text-slate-900 truncate">{user?.name}</p>
+            <p className="text-[11px] text-slate-500 truncate">{user?.business_name || user?.email}</p>
           </div>
           <button
             onClick={handleLogout}
-            className="mt-2 flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-[13px] font-medium text-slate-300 hover:bg-red-500/10 hover:text-red-200 transition-all"
+            className="mt-2 flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-[13px] font-medium text-slate-600 hover:bg-red-50 hover:text-red-700 transition-all"
             data-testid="logout-button"
           >
             <LogOut className="h-[17px] w-[17px]" />Log out
@@ -234,5 +236,6 @@ export default function Layout({ children }) {
       <InstallPrompt />
       <FirstRunGuide user={user} enabled={showHelp && location.pathname !== "/plans"} />
     </div>
+    </PremiumAppShell>
   );
 }
