@@ -148,6 +148,8 @@ export default function SmartHubPage() {
   const [assistant, setAssistant] = useState(fallbackAssistant.attention);
   const [activePrompt, setActivePrompt] = useState("attention");
   const [assistantLoading, setAssistantLoading] = useState(false);
+  const [assistantError, setAssistantError] = useState("");
+  const [question, setQuestion] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
   const [copied, setCopied] = useState(false);
 
@@ -192,17 +194,37 @@ export default function SmartHubPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const askAssistant = async (promptType) => {
+  const askAssistant = async (promptType, customQuestion = "") => {
     setActivePrompt(promptType);
     setAssistantLoading(true);
+    setAssistantError("");
     try {
-      const res = await post("/ai/business-assistant", { prompt_type: promptType });
-      setAssistant((res?.success && (res?.data?.response || res?.data?.answer)) || fallbackAssistant[promptType] || fallbackAssistant.attention);
+      const payload = customQuestion
+        ? { prompt_type: promptType, prompt: customQuestion, question: customQuestion }
+        : { prompt_type: promptType };
+      const res = await post("/ai/business-assistant", payload);
+      const nextResponse = res?.success && (res?.data?.response || res?.data?.answer);
+      if (nextResponse) {
+        setAssistant(nextResponse);
+      } else {
+        setAssistant(customQuestion
+          ? "Assistant is currently unavailable. Here is a safe draft-only fallback: review today’s jobs, unpaid invoices, and open quotes first; prepare draft follow-ups for approval before sending."
+          : (fallbackAssistant[promptType] || fallbackAssistant.attention));
+      }
     } catch (_error) {
-      setAssistant(fallbackAssistant[promptType] || fallbackAssistant.attention);
+      setAssistantError("Assistant backend is unavailable right now. Showing a safe draft-only fallback response.");
+      setAssistant(customQuestion
+        ? "Safe fallback: focus on overdue or unassigned jobs first, then prepare draft invoice and quote follow-ups for approval. No messages, payroll, or accounting changes will be sent automatically."
+        : (fallbackAssistant[promptType] || fallbackAssistant.attention));
     } finally {
       setAssistantLoading(false);
     }
+  };
+
+  const sendQuestion = async () => {
+    const trimmed = question.trim();
+    if (!trimmed) return;
+    await askAssistant("custom", trimmed);
   };
 
   const copyResponse = async () => {
@@ -354,6 +376,27 @@ export default function SmartHubPage() {
               </div>
             </div>
             <div className="mt-5 grid gap-3">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                <label htmlFor="ask-churvox" className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-700">Ask Churvox</label>
+                <textarea
+                  id="ask-churvox"
+                  value={question}
+                  onChange={(event) => setQuestion(event.target.value)}
+                  placeholder="Ask Churvox about today’s jobs, invoices, quotes, team, or automation…"
+                  rows={3}
+                  className="w-full resize-y rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none ring-blue-200 placeholder:text-slate-500 focus:border-blue-400 focus:ring-2"
+                />
+                <div className="mt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={sendQuestion}
+                    disabled={assistantLoading || !question.trim()}
+                    className="inline-flex items-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-black text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                  >
+                    {assistantLoading ? "Sending…" : "Send"}
+                  </button>
+                </div>
+              </div>
               {promptButtons.map(([id, label]) => (
                 <button
                   key={id}
@@ -379,6 +422,7 @@ export default function SmartHubPage() {
             <p data-ai-answer="true" className="mt-4 min-h-28 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm font-semibold leading-6 text-slate-100">
               {assistantLoading ? "Loading assistant response…" : assistant}
             </p>
+            {assistantError ? <p className="mt-3 text-sm font-bold text-amber-200">{assistantError}</p> : null}
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <button onClick={copyResponse} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-black text-slate-950 transition hover:bg-slate-100"><Copy className="h-4 w-4" />{copied ? "Copied" : "Copy response"}</button>
               <Link to="/jobs" className="rounded-xl border border-white/15 px-3 py-2 text-sm font-bold text-slate-100 hover:border-cyan-300">Jobs</Link>
