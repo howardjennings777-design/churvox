@@ -1,44 +1,48 @@
-# Churvox Launch Test Data
+# Launch Test Data Seeding
 
-This repo includes a safe, idempotent launch test-data seeding script for creating/updating sample records in one business context.
-
-## Run
+Run launch seed:
 
 ```bash
 bash scripts/churvox_seed_launch_test_data.sh
 ```
 
-The wrapper loads `backend/.env` (if present) and runs the Python seed tool.
+## Environment Variables
+- `MONGO_URL` (**required**)
+- `DB_NAME` (**required**)
+- `TEST_OWNER_EMAIL` (default: `hello@churvox.com`)
+- `TEST_OWNER_PASSWORD` (default: `TempPass123!`)
+- `TEST_BUSINESS_NAME` (default: `Churvox Launch Test Business`)
 
-## Test Accounts Created
+If `MONGO_URL` or `DB_NAME` is missing, the script exits safely with a clear error.
 
-- Owner: `TEST_OWNER_EMAIL` (default `hello@churvox.com`)
+## Test Accounts
+- Owner: `TEST_OWNER_EMAIL`
 - Manager: `manager.test@churvox.local`
-- Office admin: `office.test@churvox.local`
+- Office Admin: `office.test@churvox.local`
 - Payroll: `payroll.test@churvox.local`
 - Worker: `worker.test@churvox.local`
+- Worker 2: `worker2.test@churvox.local`
 
-Default password for seeded users is `TEST_OWNER_PASSWORD` (default `TempPass123!`) hashed via bcrypt.
+All users are connected to one launch test business by `business_id`.
 
-## What gets seeded
+## Seeded Data
+- Business-scoped users/roles
+- 7 launch test clients
+- 11 launch jobs (assigned/in progress/paused/completed/overdue/unassigned/recurring/hourly/fixed+extras/photos/note)
+- 6 quotes (draft/sent/accepted/declined/expiring/public token)
+- 8 invoices (draft/sent unpaid/paid/overdue/MYOB sample statuses/public token/payment URL placeholder)
+- 8 automation rules + 4 automation runs
+- 6 timesheet/payroll samples
+- 6 notifications
 
-- Users, clients, jobs, quotes, invoices.
-- Automation rules/runs only if collections exist.
-- SMS history sample entries only if `sms_log` exists.
-- Timesheet/payroll sample records only if corresponding collections exist.
+## Safety
+- Upsert-only by stable `seed_key + business_id`
+- No delete operations
+- No SMS sending
+- No email sending
+- No MYOB API calls
+- No Stripe API calls
 
-## Safety markers
-
-All seeded records are tagged with:
-
+## Record Identification
 - `launch_test_data: true`
-- `seeded_by: churvox_launch_seed`
-
-These markers allow easy filtering and cleanup of test data.
-
-## Warnings
-
-- This is **test data** only.
-- The script is upsert-only and does not delete production data.
-- Do **not** run against real customer production unless intentionally testing.
-- The script does not send real emails/SMS and does not call Stripe/MYOB.
+- `seeded_by: "churvox_launch_seed"`
