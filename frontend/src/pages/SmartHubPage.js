@@ -136,7 +136,7 @@ function ShortcutCard({ item }) {
       </div>
       <h3 className="sh-title mt-4 text-lg font-black text-slate-950">{item.title}</h3>
       <p className="sh-body mt-2 text-sm font-semibold leading-6 text-slate-700">{item.description}</p>
-      <p className="mt-4 text-xs font-black uppercase tracking-wide text-blue-700">Open {item.title}</p>
+      <p className="sh-cta mt-4 text-xs font-black uppercase tracking-wide text-blue-700">Open {item.title}</p>
     </Link>
   );
 }
@@ -144,12 +144,12 @@ function ShortcutCard({ item }) {
 function SnapshotCard({ card }) {
   const Icon = card.icon;
   return (
-    <article className="sh-card rounded-3xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/80">
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-700">
+    <article className="sh-card sh-snapshot-card rounded-3xl border border-slate-300 bg-white p-5 shadow-md shadow-slate-300/40">
+      <span className="sh-icon inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-200 bg-blue-50 text-blue-700">
         <Icon className="h-5 w-5" />
       </span>
       <h3 className="sh-title mt-4 text-base font-black text-slate-950">{card.title}</h3>
-      <p className="sh-body mt-2 text-sm font-semibold leading-6 text-slate-700">{card.body}</p>
+      <p className="sh-body mt-2 text-sm font-bold leading-6 text-slate-800">{card.body}</p>
     </article>
   );
 }
@@ -177,12 +177,33 @@ export default function SmartHubPage() {
           .smart-hub-v3 .sh-card * {
             opacity: 1 !important;
             filter: none !important;
+            text-shadow: none !important;
           }
-          .smart-hub-v3 .sh-title {
+          .smart-hub-v3 .sh-card {
+            background-color: #ffffff !important;
+          }
+          .smart-hub-v3 .sh-title,
+          .smart-hub-v3 .sh-snapshot-card .sh-title,
+          .smart-hub-v3 .sh-card h2,
+          .smart-hub-v3 .sh-card h3 {
             color: #020617 !important;
+            font-weight: 900 !important;
           }
-          .smart-hub-v3 .sh-body {
-            color: #334155 !important;
+          .smart-hub-v3 .sh-body,
+          .smart-hub-v3 .sh-snapshot-card .sh-body,
+          .smart-hub-v3 .sh-card p:not(.sh-cta) {
+            color: #1f2937 !important;
+            font-weight: 800 !important;
+          }
+          .smart-hub-v3 .sh-cta,
+          .smart-hub-v3 .sh-card .sh-cta {
+            color: #1d4ed8 !important;
+            font-weight: 900 !important;
+          }
+          .smart-hub-v3 .sh-icon,
+          .smart-hub-v3 .sh-icon svg {
+            color: #1d4ed8 !important;
+            opacity: 1 !important;
           }
           .smart-hub-v3 a,
           .smart-hub-v3 button {
