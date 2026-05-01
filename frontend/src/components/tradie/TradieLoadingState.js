@@ -1,1 +1,8 @@
-export default function TradieLoadingState(){return <div className='empty'>Loading…</div>}
+export default function TradieLoadingState({ label = 'Loading…' }) {
+  return (
+    <div className="tradie-loading-state" role="status" aria-live="polite">
+      <span className="tradie-loading-dot" />
+      {label}
+    </div>
+  );
+}
