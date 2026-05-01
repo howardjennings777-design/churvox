@@ -1,287 +1,268 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import Layout from "../components/Layout";
 import { useApi } from "../hooks/useApi";
+import API_BASE from "../lib/apiBase";
 import { formatCurrency } from "../lib/utils";
 import { safeArray, safeNumber, safeText } from "../utils/safeRender";
-import { Activity, AlertTriangle, Briefcase, CreditCard, FileText, RefreshCw, TrendingUp, Users } from "lucide-react";
+import { Activity, AlertTriangle, Briefcase, CheckCircle2, CreditCard, FileText, RefreshCw, TrendingUp, Users } from "lucide-react";
 
-function withinRange(dateValue, range) {
-  if (!dateValue) return true;
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return true;
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  if (range === "last_month") {
-    const lastStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastEnd = new Date(now.getFullYear(), now.getMonth(), 1);
-    return date >= lastStart && date < lastEnd;
-  }
-  return date >= start && date < end;
-}
+const RANGE_OPTIONS = [
+  { key: "this_month", label: "This month" },
+  { key: "last_month", label: "Last month" },
+  { key: "last_90_days", label: "Last 90 days" },
+  { key: "year_to_date", label: "Year to date" },
+];
 
-function countBy(items, key) {
-  return safeArray(items).reduce((acc, item) => {
-    const value = safeText(item?.[key], "unknown");
-    acc[value] = (acc[value] || 0) + 1;
-    return acc;
-  }, {});
-}
+const EXPORTS = [
+  { key: "invoices", label: "Export invoices CSV", endpoint: "/reports/invoices.csv", roles: "report/admin" },
+  { key: "jobs", label: "Export jobs CSV", endpoint: "/reports/jobs.csv", roles: "report/admin" },
+  { key: "quotes", label: "Export quotes CSV", endpoint: "/reports/quotes.csv", roles: "report/admin" },
+  { key: "payroll", label: "Export payroll CSV", endpoint: "/reports/payroll.csv", roles: "payroll/admin" },
+];
 
-function idOf(item) {
-  return String(item?.id || item?._id || item?.client_id || item?.customer_name || item?.client_name || "unknown");
-}
+const roleLabel = (s) => safeText(s, "unknown").replace(/_/g, " ");
 
-function computeFallbackSummary({ jobs, invoices, quotes, clients, workers, range }) {
-  const rangeJobs = safeArray(jobs).filter((job) => withinRange(job.completed_at || job.updated_at || job.created_at || job.scheduled_date, range));
-  const rangeInvoices = safeArray(invoices).filter((invoice) => withinRange(invoice.paid_at || invoice.updated_at || invoice.created_at || invoice.due_date, range));
-  const rangeQuotes = safeArray(quotes).filter((quote) => withinRange(quote.updated_at || quote.created_at || quote.valid_until, range));
-  const paidInvoices = rangeInvoices.filter((invoice) => String(invoice.status || "").toLowerCase() === "paid");
-  const outstanding = rangeInvoices.filter((invoice) => !["paid", "cancelled"].includes(String(invoice.status || "").toLowerCase()));
-  const overdue = rangeInvoices.filter((invoice) => String(invoice.status || "").toLowerCase() === "overdue");
-  const acceptedQuotes = rangeQuotes.filter((quote) => String(quote.status || "").toLowerCase() === "accepted");
-  const sentQuotes = rangeQuotes.filter((quote) => ["sent", "accepted", "declined"].includes(String(quote.status || "").toLowerCase()));
+const countBy = (items, key) => safeArray(items).reduce((acc, item) => {
+  const v = String(item?.[key] || "unknown").toLowerCase();
+  acc[v] = (acc[v] || 0) + 1;
+  return acc;
+}, {});
+
+function buildFallback({ jobs, invoices, quotes, clients, workers }) {
+  const paid = safeArray(invoices).filter((i) => String(i?.status || "").toLowerCase() === "paid");
+  const outstanding = safeArray(invoices).filter((i) => !["paid", "cancelled", "void"].includes(String(i?.status || "").toLowerCase()));
+  const overdue = safeArray(invoices).filter((i) => String(i?.status || "").toLowerCase() === "overdue");
+  const completedJobs = safeArray(jobs).filter((j) => String(j?.status || "").toLowerCase() === "completed");
+  const activeJobs = safeArray(jobs).filter((j) => ["assigned", "acknowledged", "in_progress", "paused", "scheduled"].includes(String(j?.status || "").toLowerCase()));
+  const acceptedQuotes = safeArray(quotes).filter((q) => String(q?.status || "").toLowerCase() === "accepted");
+  const decidedQuotes = safeArray(quotes).filter((q) => ["accepted", "declined", "sent"].includes(String(q?.status || "").toLowerCase()));
   const clientMap = new Map();
-  rangeInvoices.forEach((invoice) => {
-    const key = idOf(invoice);
-    const existing = clientMap.get(key) || { client_id: key, client_name: invoice.customer_name || invoice.client_name || "Unknown client", revenue: 0, jobs: 0 };
-    existing.revenue += safeNumber(invoice.total || invoice.amount || invoice.subtotal, 0);
-    clientMap.set(key, existing);
+  safeArray(invoices).forEach((i) => {
+    const key = String(i?.client_id || i?.customer_name || "unknown");
+    const row = clientMap.get(key) || { client_name: i?.customer_name || i?.client_name || "Unknown client", revenue: 0, jobs: 0, last_activity: i?.updated_at || i?.created_at || "" };
+    row.revenue += safeNumber(i?.total || i?.amount || i?.subtotal, 0);
+    clientMap.set(key, row);
   });
-  rangeJobs.forEach((job) => {
-    const key = idOf(job);
-    const existing = clientMap.get(key) || { client_id: key, client_name: job.customer_name || job.client_name || "Unknown client", revenue: 0, jobs: 0 };
-    existing.jobs += 1;
-    clientMap.set(key, existing);
+  safeArray(jobs).forEach((j) => {
+    const key = String(j?.client_id || j?.customer_name || "unknown");
+    const row = clientMap.get(key) || { client_name: j?.customer_name || j?.client_name || "Unknown client", revenue: 0, jobs: 0, last_activity: j?.updated_at || j?.created_at || "" };
+    row.jobs += 1;
+    if (!row.last_activity) row.last_activity = j?.updated_at || j?.created_at || "";
+    clientMap.set(key, row);
   });
-  const workerHours = rangeJobs.reduce((total, job) => {
-    const seconds = safeNumber(job.total_time_seconds || job.worked_seconds || job.net_worked_seconds, 0);
-    const hours = safeNumber(job.hours_worked, 0);
-    return total + (seconds ? seconds / 3600 : hours);
-  }, 0);
+  const workerHours = safeArray(jobs).reduce((sum, j) => sum + (safeNumber(j?.total_time_seconds, 0) / 3600 || safeNumber(j?.hours_worked, 0)), 0);
   return {
-    revenue_this_month: paidInvoices.reduce((sum, invoice) => sum + safeNumber(invoice.total || invoice.amount || invoice.subtotal, 0), 0),
-    outstanding_invoices: outstanding.reduce((sum, invoice) => sum + safeNumber(invoice.total || invoice.amount || invoice.subtotal, 0), 0),
+    revenue_this_month: paid.reduce((sum, i) => sum + safeNumber(i?.total || i?.amount || i?.subtotal, 0), 0),
+    outstanding_invoices: outstanding.reduce((sum, i) => sum + safeNumber(i?.total || i?.amount || i?.subtotal, 0), 0),
     overdue_invoices: overdue.length,
-    paid_invoices: paidInvoices.length,
-    completed_jobs: rangeJobs.filter((job) => String(job.status || "").toLowerCase() === "completed").length,
-    active_jobs: rangeJobs.filter((job) => ["assigned", "acknowledged", "in_progress", "paused"].includes(String(job.status || "").toLowerCase())).length,
-    worker_hours: Number(workerHours.toFixed(1)),
-    payroll_hours_summary: Number(workerHours.toFixed(1)),
-    quote_win_rate: sentQuotes.length ? acceptedQuotes.length / sentQuotes.length : 0,
-    recurring_jobs_due: rangeJobs.filter((job) => job.is_recurring || job.recurring).length,
-    myob_sync_issues: rangeInvoices.filter((invoice) => String(invoice.myob_sync_status || "").toLowerCase() === "sync_failed").length,
-    jobs_by_status: countBy(rangeJobs, "status"),
-    invoice_status_breakdown: countBy(rangeInvoices, "status"),
-    quote_status_breakdown: countBy(rangeQuotes, "status"),
+    paid_invoices: paid.length,
+    completed_jobs: completedJobs.length,
+    active_jobs: activeJobs.length,
+    worker_hours: Number(workerHours.toFixed(2)),
+    payroll_hours_summary: Number(workerHours.toFixed(2)),
+    quote_win_rate: decidedQuotes.length ? acceptedQuotes.length / decidedQuotes.length : 0,
+    recurring_jobs_due: safeArray(jobs).filter((j) => j?.is_recurring || j?.recurring || j?.recurrence).length,
+    myob_sync_issues: safeArray(invoices).filter((i) => ["failed", "sync_failed", "setup_required", "error"].includes(String(i?.myob_sync_status || "").toLowerCase())).length,
+    jobs_by_status: countBy(jobs, "status"),
+    invoice_status_breakdown: countBy(invoices, "status"),
+    quote_status_breakdown: countBy(quotes, "status"),
     top_clients: Array.from(clientMap.values()).sort((a, b) => b.revenue - a.revenue || b.jobs - a.jobs).slice(0, 8),
     total_clients: safeArray(clients).length,
     total_workers: safeArray(workers).length,
   };
 }
 
-function FilterButton({ active, children, onClick }) {
-  const label = String(children || "");
-  return (
-    <button
-      type="button"
-      className={`reports-filter-btn ${active ? "reports-filter-btn-active" : "reports-filter-btn-inactive"}`}
-      data-report-label={label}
-      onClick={onClick}
-    >
-      <span className="reports-filter-label">{label}</span>
-    </button>
-  );
-}
-
-function StatTile({ label, value, icon: Icon, tone = "blue" }) {
-  const tones = { blue: "bg-blue-50 text-blue-700 border-blue-100", green: "bg-emerald-50 text-emerald-700 border-emerald-100", amber: "bg-amber-50 text-amber-700 border-amber-100", red: "bg-red-50 text-red-700 border-red-100", slate: "bg-slate-50 text-slate-700 border-slate-100" };
-  return (
-    <div className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.07)]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.13em] text-slate-500">{label}</p>
-          <p className="mt-2 text-2xl font-black tracking-tight text-slate-950">{value}</p>
-        </div>
-        <span className={`rounded-xl border p-2 ${tones[tone] || tones.blue}`}><Icon className="h-4 w-4" /></span>
-      </div>
-    </div>
-  );
-}
-
-function BreakdownCard({ title, items, empty }) {
-  const entries = Object.entries(items || {});
-  return (
-    <div className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.07)]">
-      <p className="text-sm font-black text-slate-950">{title}</p>
-      <div className="mt-3 space-y-2">
-        {entries.map(([status, count]) => (
-          <div key={status} className="flex justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm">
-            <span className="capitalize text-slate-600">{safeText(status, "unknown").replace(/_/g, " ")}</span>
-            <span className="font-black text-slate-950">{safeNumber(count, 0)}</span>
-          </div>
-        ))}
-        {!entries.length && <p className="text-sm text-slate-500">{empty}</p>}
-      </div>
-    </div>
-  );
-}
-
 export default function ReportsPage() {
   const { get } = useApi();
   const [summary, setSummary] = useState({});
-  const [accounting, setAccounting] = useState(null);
   const [range, setRange] = useState("this_month");
   const [loading, setLoading] = useState(true);
-  const [dataSource, setDataSource] = useState("live");
+  const [errorBanner, setErrorBanner] = useState("");
+  const [exportState, setExportState] = useState({});
+  const [message, setMessage] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  const load = useCallback(async () => {
+  const loadSummary = useCallback(async () => {
     setLoading(true);
-    setSummary({});
-    const [summaryRes, accountingRes, jobsRes, invoicesRes, quotesRes, clientsRes, workersRes] = await Promise.allSettled([
-      get(`/reports/summary?range=${range}`), get("/accounting/settings"), get("/jobs"), get("/invoices"), get("/quotes"), get("/clients"), get("/team/workers"),
+    setErrorBanner("");
+    const [summaryRes, jobsRes, invoicesRes, quotesRes, clientsRes, workersRes] = await Promise.allSettled([
+      get(`/reports/summary?range=${range}`), get("/jobs"), get("/invoices"), get("/quotes"), get("/clients"), get("/team/workers"),
     ]);
-    const liveSummary = summaryRes.status === "fulfilled" && summaryRes.value?.success ? summaryRes.value.data : null;
-    const fallback = computeFallbackSummary({
+
+    const fallback = buildFallback({
       jobs: jobsRes.status === "fulfilled" && jobsRes.value?.success ? jobsRes.value.data : [],
       invoices: invoicesRes.status === "fulfilled" && invoicesRes.value?.success ? invoicesRes.value.data : [],
       quotes: quotesRes.status === "fulfilled" && quotesRes.value?.success ? quotesRes.value.data : [],
       clients: clientsRes.status === "fulfilled" && clientsRes.value?.success ? clientsRes.value.data : [],
       workers: workersRes.status === "fulfilled" && workersRes.value?.success ? workersRes.value.data : [],
-      range,
     });
-    setSummary({ ...fallback, ...(liveSummary || {}) });
-    setDataSource(liveSummary ? "backend report" : "computed from live records");
-    if (accountingRes.status === "fulfilled" && accountingRes.value?.success) setAccounting(accountingRes.value.data || null);
+
+    if (summaryRes.status === "fulfilled" && summaryRes.value?.success) {
+      setSummary({ ...fallback, ...(summaryRes.value.data || {}) });
+    } else {
+      const detail = summaryRes.status === "fulfilled" ? summaryRes.value?.error : summaryRes.reason?.message;
+      if (String(detail || "").toLowerCase().includes("403")) {
+        setErrorBanner("Access denied: reports require report/admin access.");
+      } else {
+        setErrorBanner("Reports summary is unavailable. Showing fallback data from jobs, invoices, quotes, clients, and team.");
+      }
+      setSummary(fallback);
+    }
     setLastUpdated(new Date());
     setLoading(false);
   }, [get, range]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { loadSummary(); }, [loadSummary]);
 
-  const cards = useMemo(() => [
-    ["Revenue", formatCurrency(summary?.revenue_this_month), TrendingUp, "green"],
-    ["Outstanding", formatCurrency(summary?.outstanding_invoices), CreditCard, "amber"],
-    ["Overdue", safeNumber(summary?.overdue_invoices, 0), AlertTriangle, safeNumber(summary?.overdue_invoices, 0) ? "red" : "slate"],
-    ["Paid invoices", safeNumber(summary?.paid_invoices, 0), FileText, "green"],
-    ["Completed jobs", safeNumber(summary?.completed_jobs, 0), Briefcase, "blue"],
-    ["Active jobs", safeNumber(summary?.active_jobs, 0), Activity, "blue"],
-    ["Worker hours", safeNumber(summary?.worker_hours, 0), Users, "slate"],
-    ["Quote win rate", `${Math.round(safeNumber(summary?.quote_win_rate, 0) * 100)}%`, TrendingUp, "green"],
-    ["Recurring due", safeNumber(summary?.recurring_jobs_due, 0), RefreshCw, "blue"],
-    ["MYOB issues", safeNumber(summary?.myob_sync_issues, 0), AlertTriangle, safeNumber(summary?.myob_sync_issues, 0) ? "red" : "slate"],
-  ], [summary]);
+  const downloadCsv = useCallback(async (name, endpoint) => {
+    setExportState((prev) => ({ ...prev, [name]: "loading" }));
+    setMessage("");
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE}/api${endpoint}`, {
+        method: "GET",
+        credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!response.ok) {
+        if (response.status === 403 && name === "payroll") {
+          throw new Error("Payroll export requires payroll/admin access.");
+        }
+        const text = await response.text();
+        throw new Error(text || `Export failed (${response.status}).`);
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${name}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      setExportState((prev) => ({ ...prev, [name]: "success" }));
+      setMessage(`${roleLabel(name)} export downloaded.`);
+    } catch (err) {
+      setExportState((prev) => ({ ...prev, [name]: "error" }));
+      setMessage(safeText(err?.message, "Export failed."));
+    }
+  }, []);
 
-  const launchHealth = useMemo(() => [
-    ["Invoices unpaid", formatCurrency(summary?.outstanding_invoices)],
-    ["Quote win rate", `${Math.round(safeNumber(summary?.quote_win_rate, 0) * 100)}%`],
-    ["Payroll hours source", `${safeNumber(summary?.payroll_hours_summary || summary?.worker_hours, 0)}h`],
-    ["Data mode", dataSource],
-  ], [summary, dataSource]);
+  const topClients = safeArray(summary?.top_clients);
+  const hasData = safeNumber(summary?.total_clients, 0) > 0 || safeNumber(summary?.completed_jobs, 0) > 0 || safeNumber(summary?.paid_invoices, 0) > 0;
 
   return (
     <Layout>
-      <style>{`
-        .reports-premium-page .reports-filter-btn {
-          align-items: center !important;
-          background: #ffffff !important;
-          border: 1px solid #bfdbfe !important;
-          border-radius: 999px !important;
-          box-shadow: 0 8px 18px rgba(15,23,42,0.06) !important;
-          color: #1d4ed8 !important;
-          display: inline-flex !important;
-          font-size: 14px !important;
-          font-weight: 900 !important;
-          justify-content: center !important;
-          line-height: 1.2 !important;
-          min-height: 42px !important;
-          min-width: 124px !important;
-          opacity: 1 !important;
-          padding: 10px 16px !important;
-          text-indent: 0 !important;
-          visibility: visible !important;
-          -webkit-text-fill-color: #1d4ed8 !important;
-          white-space: nowrap !important;
-        }
-        .reports-premium-page .reports-filter-btn-active {
-          background: #2563eb !important;
-          border-color: #2563eb !important;
-          box-shadow: 0 14px 30px rgba(37,99,235,0.24) !important;
-          color: #ffffff !important;
-          -webkit-text-fill-color: #ffffff !important;
-        }
-        .reports-premium-page .reports-filter-label,
-        .reports-premium-page .reports-filter-btn span,
-        .reports-premium-page .reports-filter-btn svg {
-          display: inline-flex !important;
-          opacity: 1 !important;
-          text-indent: 0 !important;
-          visibility: visible !important;
-        }
-        .reports-premium-page .reports-filter-label,
-        .reports-premium-page .reports-filter-btn-inactive .reports-filter-label {
-          color: #1d4ed8 !important;
-          -webkit-text-fill-color: #1d4ed8 !important;
-          font-size: 14px !important;
-          font-weight: 900 !important;
-        }
-        .reports-premium-page .reports-filter-btn-active .reports-filter-label {
-          color: #ffffff !important;
-          -webkit-text-fill-color: #ffffff !important;
-        }
-      `}</style>
-      <div className="cx-page reports-premium-page" data-testid="reports-page">
-        <div className="cx-page-hero reports-hero">
-          <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
-            <div className="min-w-0">
-              <h1 className="cx-page-title">Reports</h1>
-              <p className="cx-page-subtitle">Live analytics for revenue, jobs, invoices, quotes, clients, payroll and MYOB health.</p>
-              <p className="mt-2 text-xs font-bold text-slate-500">Source: {dataSource}{lastUpdated ? ` • updated ${lastUpdated.toLocaleTimeString()}` : ""}</p>
+      <div className="min-h-screen bg-slate-50 p-4 md:p-6">
+        <div className="mx-auto max-w-7xl space-y-4">
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <h1 className="text-3xl font-black text-slate-950">Reports</h1>
+                <p className="mt-1 text-sm text-slate-700">Business reporting centre for revenue, jobs, quotes, invoices, team, payroll export and MYOB connection status.</p>
+                <p className="mt-2 text-xs font-semibold text-slate-700">Last updated: {lastUpdated ? lastUpdated.toLocaleString() : "Not yet loaded"}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {RANGE_OPTIONS.map((o) => (
+                  <button key={o.key} type="button" onClick={() => setRange(o.key)} className={`rounded-full border px-4 py-2 text-sm font-bold ${range === o.key ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 bg-white text-slate-900"}`}>{o.label}</button>
+                ))}
+                <button type="button" onClick={loadSummary} className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Refresh</button>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
-              <FilterButton active={range === "this_month"} onClick={() => setRange("this_month")}>This month</FilterButton>
-              <FilterButton active={range === "last_month"} onClick={() => setRange("last_month")}>Last month</FilterButton>
-              <button className="reports-filter-btn reports-filter-btn-inactive" onClick={load}>
-                <span className="reports-filter-label" style={{ alignItems: "center", gap: 4 }}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />Refresh</span>
-              </button>
-            </div>
-          </div>
-          {(accounting?.invoice_mode === "myob_sync" || accounting?.invoice_mode === "myob_external") && <p className="mt-3 text-xs font-semibold text-slate-500">Accounting status is synced from MYOB when connected.</p>}
-        </div>
-        <div key={`cards-${range}-${lastUpdated?.getTime() || 0}`} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {cards.map(([label, value, Icon, tone]) => <StatTile key={label} label={label} value={value} icon={Icon} tone={tone} />)}
-        </div>
-        <div key={`breakdowns-${range}-${lastUpdated?.getTime() || 0}`} className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
-          <BreakdownCard title="Jobs by status" items={summary?.jobs_by_status} empty="No jobs in this period." />
-          <BreakdownCard title="Invoices by status" items={summary?.invoice_status_breakdown} empty="No invoices yet." />
-          <BreakdownCard title="Quotes by status" items={summary?.quote_status_breakdown} empty="No quotes yet." />
-        </div>
-        <div key={`bottom-${range}-${lastUpdated?.getTime() || 0}`} className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <div className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.07)]">
-            <p className="text-sm font-black text-slate-950">Top clients</p>
-            <div className="mt-3 space-y-2">
-              {safeArray(summary?.top_clients).map((client, index) => (
-                <div key={`${range}-${client.client_id}-${client.client_name}-${index}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                  <span className="min-w-0 truncate text-sm font-semibold text-slate-700">{index + 1}. {safeText(client.client_name, "Unknown client")}</span>
-                  <span className="shrink-0 text-sm font-black text-slate-950">{formatCurrency(safeNumber(client.revenue, 0))} • {safeNumber(client.jobs, 0)} jobs</span>
-                </div>
-              ))}
-              {safeArray(summary?.top_clients).length === 0 && <p className="text-sm text-slate-500">Top clients will appear after invoices and completed jobs.</p>}
-            </div>
-          </div>
-          <div className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.07)] reports-health-card">
-            <p className="text-sm font-black text-slate-950">Launch health</p>
-            <div className="mt-3 grid gap-2">
-              {launchHealth.map(([label, value]) => (
-                <div key={`${range}-${label}-${value}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                  <span>{label}</span><strong className="text-slate-950">{value}</strong>
-                </div>
+            {!!errorBanner && <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{errorBanner}</div>}
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm font-black text-slate-950">CSV exports</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {EXPORTS.map((exp) => (
+                <button key={exp.key} type="button" onClick={() => downloadCsv(exp.key, exp.endpoint)} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-900">
+                  {exportState?.[exp.key] === "loading" ? `Exporting ${exp.key}...` : exp.label}
+                </button>
               ))}
             </div>
-          </div>
+            {!!message && <p className="mt-2 text-sm font-semibold text-slate-700">{message}</p>}
+          </section>
+
+          <section className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+            <Stat title="Revenue this period" value={formatCurrency(summary?.revenue_this_month)} icon={TrendingUp} />
+            <Stat title="Outstanding invoices value" value={formatCurrency(summary?.outstanding_invoices)} icon={CreditCard} />
+            <Stat title="Paid invoices count" value={safeNumber(summary?.paid_invoices, 0)} icon={CheckCircle2} />
+            <Stat title="Overdue invoices count" value={safeNumber(summary?.overdue_invoices, 0)} icon={AlertTriangle} />
+          </section>
+
+          <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <Breakdown title="Jobs snapshot" chips={[`Completed ${safeNumber(summary?.completed_jobs, 0)}`, `Active ${safeNumber(summary?.active_jobs, 0)}`, `Recurring due ${safeNumber(summary?.recurring_jobs_due, 0)}`]} map={summary?.jobs_by_status} />
+            <Breakdown title="Quotes snapshot" chips={[`Win rate ${Math.round(safeNumber(summary?.quote_win_rate, 0) * 100)}%`, `Open ${safeNumber(summary?.quote_status_breakdown?.sent, 0)}`, `Accepted ${safeNumber(summary?.quote_status_breakdown?.accepted, 0)}`, `Declined ${safeNumber(summary?.quote_status_breakdown?.declined, 0)}`]} map={summary?.quote_status_breakdown} />
+          </section>
+
+          <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <Breakdown title="Invoice snapshot" chips={[`Overdue ${safeNumber(summary?.overdue_invoices, 0)}`, `Outstanding ${formatCurrency(summary?.outstanding_invoices)}`, `MYOB sync issues ${safeNumber(summary?.myob_sync_issues, 0)}`]} map={summary?.invoice_status_breakdown} />
+            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h3 className="text-lg font-black text-slate-950">Team and payroll snapshot</h3>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                <Info label="Worker hours" value={safeNumber(summary?.worker_hours, 0)} />
+                <Info label="Total workers" value={safeNumber(summary?.total_workers, 0)} />
+                <Info label="Payroll hours summary" value={safeNumber(summary?.payroll_hours_summary, 0)} />
+                <Info label="Payroll export status" value="Export only / Payroll review" />
+              </div>
+              <p className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs font-semibold text-slate-800">Payroll is export/review only. No bank payout, tax filing, or government submission is performed by this page.</p>
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h3 className="text-lg font-black text-slate-950">Top clients</h3>
+            {!topClients.length ? <p className="mt-3 text-sm text-slate-700">No client revenue activity yet.</p> : (
+              <div className="mt-3 overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead><tr className="text-slate-700"><th className="pb-2">Client</th><th className="pb-2">Revenue</th><th className="pb-2">Jobs</th><th className="pb-2">Last activity</th></tr></thead>
+                  <tbody>
+                    {topClients.map((c, idx) => <tr key={`${safeText(c?.client_name, "client")}-${idx}`} className="border-t border-slate-100"><td className="py-2 text-slate-900">{safeText(c?.client_name, "Unknown client")}</td><td className="py-2 text-slate-800">{formatCurrency(c?.revenue)}</td><td className="py-2 text-slate-800">{safeNumber(c?.jobs, 0)}</td><td className="py-2 text-slate-700">{safeText(c?.last_activity, "-")}</td></tr>)}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <LaunchAction title="Overdue invoices to chase" count={safeNumber(summary?.overdue_invoices, 0)} route="/invoices" />
+            <LaunchAction title="Quotes to follow up" count={safeNumber(summary?.quote_status_breakdown?.sent, 0)} route="/quotes" />
+            <LaunchAction title="Active jobs to review" count={safeNumber(summary?.active_jobs, 0)} route="/jobs" />
+            <LaunchAction title="MYOB sync issues to check" count={safeNumber(summary?.myob_sync_issues, 0)} route="/settings" />
+            <LaunchAction title="Payroll hours to review" count={safeNumber(summary?.payroll_hours_summary, 0)} route="/timesheets" />
+          </section>
+
+          {!hasData && !loading && (
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+              <h3 className="text-xl font-black text-slate-950">No report data yet</h3>
+              <p className="mt-1 text-sm text-slate-700">Start creating records and this reporting centre will populate automatically.</p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                <Link to="/jobs" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white">Create/View jobs</Link>
+                <Link to="/clients" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-900">Create clients</Link>
+                <Link to="/quotes" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-900">Create quotes</Link>
+                <Link to="/invoices" className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-900">Create invoices</Link>
+              </div>
+            </section>
+          )}
         </div>
       </div>
     </Layout>
   );
+}
+
+function Stat({ title, value, icon: Icon }) {
+  return <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-xs font-black uppercase tracking-wide text-slate-700">{title}</p><div className="mt-2 flex items-center justify-between"><p className="text-2xl font-black text-slate-950">{value}</p><Icon className="h-5 w-5 text-blue-600" /></div></div>;
+}
+
+function Breakdown({ title, chips, map }) {
+  return <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><h3 className="text-lg font-black text-slate-950">{title}</h3><div className="mt-2 flex flex-wrap gap-2">{safeArray(chips).map((c) => <span key={c} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-800">{c}</span>)}</div><div className="mt-3 space-y-2">{Object.entries(map || {}).map(([k, v]) => <div key={k} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm"><span className="text-slate-700">{roleLabel(k)}</span><span className="font-black text-slate-950">{safeNumber(v, 0)}</span></div>)}{!Object.keys(map || {}).length && <p className="text-sm text-slate-700">No records in this section.</p>}</div></div>;
+}
+
+function Info({ label, value }) {
+  return <div className="rounded-xl border border-slate-100 bg-slate-50 p-3"><p className="text-xs font-bold uppercase text-slate-700">{label}</p><p className="mt-1 text-base font-black text-slate-950">{value}</p></div>;
+}
+
+function LaunchAction({ title, count, route }) {
+  return <Link to={route} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-sm font-bold text-slate-700">{title}</p><p className="mt-1 text-2xl font-black text-slate-950">{count}</p><p className="mt-2 text-xs font-semibold text-blue-700">Open</p></Link>;
 }
