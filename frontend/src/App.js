@@ -45,6 +45,8 @@ import AutomationPage from "./pages/AutomationPage";
 import AutomationRunsPage from "./pages/AutomationRunsPage";
 import IntegrationsPage from "./pages/IntegrationsPage";
 import ComingSoonPage from "./pages/ComingSoonPage";
+import ReportsPage from "./pages/ReportsPage";
+import SMSPage from "./pages/SMSPage";
 import PublicQuotePage from "./pages/public/PublicQuotePage";
 import PublicInvoicePage from "./pages/public/PublicInvoicePage";
 import PublicCustomerPortalPage from "./pages/public/PublicCustomerPortalPage";
@@ -193,8 +195,8 @@ function AppRoutes() {
       <Route path="/settings" element={<Guard><SettingsPage /></Guard>} />
       <Route path="/plans" element={<Guard type="plans"><PlansPage /></Guard>} />
       <Route path="/notifications" element={<Guard><NotificationsPage /></Guard>} />
-      <Route path="/reports" element={<Guard><ComingSoonPage title="Reports coming soon" description="Reports will return when they provide strong business insight instead of basic or half-finished numbers." /></Guard>} />
-      <Route path="/sms" element={<Guard><ComingSoonPage title="Communications coming soon" description="SMS and customer communications are being kept out of the core launch path until sending, credits and reminders are fully reliable." /></Guard>} />
+      <Route path="/reports" element={<Guard type="team"><ReportsPage /></Guard>} />
+      <Route path="/sms" element={<Guard type="team"><SMSPage /></Guard>} />
       <Route path="/launch-check" element={<Guard><LaunchCheckPage /></Guard>} />
       <Route path="/team" element={<Guard type="team"><TeamPage /></Guard>} />
       <Route path="/automation" element={<Guard type="team"><AutomationPage /></Guard>} />
