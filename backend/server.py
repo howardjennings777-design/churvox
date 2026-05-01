@@ -2649,6 +2649,10 @@ async def public_invoice_view(public_token: str):
         "payment_link": invoice.get("payment_link") or "",
     }
 
+@api_router.get("/public/invoices/{public_token}")
+async def public_invoices_view(public_token: str):
+    return await public_invoice_view(public_token)
+
 @api_router.get("/quotes")
 async def get_quotes(current_user: dict = Depends(get_current_user)):
     try:
@@ -3153,6 +3157,10 @@ async def public_quote_view(public_token: str):
         "valid_until": quote.get("valid_until"),
     }
 
+@api_router.get("/public/quotes/{public_token}")
+async def public_quotes_view(public_token: str):
+    return await public_quote_view(public_token)
+
 
 @api_router.post("/public/quote/{public_token}/accept")
 async def public_quote_accept(public_token: str):
@@ -3163,6 +3171,10 @@ async def public_quote_accept(public_token: str):
     await db.quotes.update_one({"_id": quote["_id"]}, {"$set": {"status": "accepted", "accepted_at": now, "updated_at": now}})
     return {"success": True, "status": "accepted"}
 
+@api_router.post("/public/quotes/{public_token}/accept")
+async def public_quotes_accept(public_token: str):
+    return await public_quote_accept(public_token)
+
 
 @api_router.post("/public/quote/{public_token}/decline")
 async def public_quote_decline(public_token: str):
@@ -3172,6 +3184,10 @@ async def public_quote_decline(public_token: str):
     now = datetime.now(timezone.utc)
     await db.quotes.update_one({"_id": quote["_id"]}, {"$set": {"status": "declined", "declined_at": now, "updated_at": now}})
     return {"success": True, "status": "declined"}
+
+@api_router.post("/public/quotes/{public_token}/decline")
+async def public_quotes_decline(public_token: str):
+    return await public_quote_decline(public_token)
 
 @api_router.post("/quotes")
 async def create_quote(request: Request, current_user: dict = Depends(get_current_user)):
