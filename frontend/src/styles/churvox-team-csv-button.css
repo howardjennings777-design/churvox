@@ -1,37 +1,56 @@
-/* Make Team CSV import impossible to miss on light backgrounds. */
+/* Team CSV import button: one clean override only. */
 [data-testid="csv-import-button"] {
+  min-width: 170px !important;
+  min-height: 52px !important;
+  padding: 0 20px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
   background: #ffffff !important;
-  color: #111827 !important;
   border: 2px solid #cbd5e1 !important;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.10) !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
   font-weight: 900 !important;
   opacity: 1 !important;
 }
 
-[data-testid="csv-import-button"],
 [data-testid="csv-import-button"] *,
 [data-testid="csv-import-button"] span,
 [data-testid="csv-import-button"] div {
-  color: #111827 !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
   opacity: 1 !important;
   visibility: visible !important;
 }
 
-[data-testid="csv-import-button"] svg {
+[data-testid="csv-import-button"] svg,
+[data-testid="csv-import-button"] svg * {
   color: #1d4ed8 !important;
+  -webkit-text-fill-color: unset !important;
+  stroke: #1d4ed8 !important;
   opacity: 1 !important;
   visibility: visible !important;
+}
+
+[data-testid="csv-import-button"]::before,
+[data-testid="csv-import-button"]::after {
+  content: none !important;
+  display: none !important;
 }
 
 [data-testid="csv-import-button"]:hover {
   background: #f8fafc !important;
-  color: #111827 !important;
   border-color: #94a3b8 !important;
+  color: #000000 !important;
 }
 
 [data-testid="csv-import-button"]:disabled {
   background: #f8fafc !important;
-  color: #111827 !important;
   border-color: #cbd5e1 !important;
+  color: #000000 !important;
   opacity: 0.9 !important;
 }
