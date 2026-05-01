@@ -1,0 +1,67 @@
+/* Smart Hub AI send controls: make Send visible and obvious. */
+.smart-hub-v3 #ask-churvox {
+  min-height: 78px !important;
+  max-height: 150px !important;
+}
+
+.smart-hub-v3 #ask-churvox + div {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  margin-top: 12px !important;
+  padding-top: 0 !important;
+  min-height: 46px !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.smart-hub-v3 #ask-churvox + div::before {
+  content: "Type a question, then send it for draft-only guidance.";
+  margin-right: auto !important;
+  color: #475569 !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+}
+
+.smart-hub-v3 #ask-churvox + div button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 118px !important;
+  min-height: 44px !important;
+  border-radius: 14px !important;
+  border: 2px solid #1d4ed8 !important;
+  background: #2563eb !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.24) !important;
+}
+
+.smart-hub-v3 #ask-churvox + div button:disabled {
+  background: #93c5fd !important;
+  border-color: #93c5fd !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  cursor: not-allowed !important;
+}
+
+@media (max-width: 640px) {
+  .smart-hub-v3 #ask-churvox + div {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  .smart-hub-v3 #ask-churvox + div::before {
+    margin-right: 0 !important;
+  }
+
+  .smart-hub-v3 #ask-churvox + div button {
+    width: 100% !important;
+  }
+}
