@@ -1,119 +1,150 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
-const INVOICE_MODES = [
-  {
-    value: "churvox_only",
-    label: "Churvox invoices only",
-    description: "Use Churvox to create, send, and track invoices without MYOB.",
-  },
-  {
-    value: "myob_sync",
-    label: "Sync Churvox invoices to MYOB",
-    description: "Create invoices in Churvox, then sync approved invoices to MYOB for accounting and reconciliation.",
-    recommended: true,
-  },
-  {
-    value: "myob_external",
-    label: "MYOB is invoice source of truth",
-    description: "Create official invoices in MYOB and sync invoice/payment status back into Churvox.",
-  },
-];
-
 export default function IntegrationsPage() {
-  const { user } = useAuth();
+  const { user, normalizedRole } = useAuth();
   const { get, post } = useApi();
-  const [myob, setMyob] = useState(null);
-  const [savingMode, setSavingMode] = useState(false);
+  const [myob, setMyob] = useState({});
+  const [bannerError, setBannerError] = useState("");
+  const [accessDenied, setAccessDenied] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [connectingOauth, setConnectingOauth] = useState(false);
   const [myobForm, setMyobForm] = useState({ company_file_id: "", company_file_name: "" });
 
-  useEffect(() => {
-    (async () => {
-      const [myobRes, accountingRes] = await Promise.all([get("/myob/settings"), get("/accounting/settings")]);
-      if (myobRes?.success || accountingRes?.success) {
-        const merged = { ...(myobRes?.data || {}), ...(accountingRes?.data || {}) };
-        setMyob(merged);
-        setMyobForm({ company_file_id: merged?.company_file_id || "", company_file_name: merged?.company_file_name || "" });
-      } else {
-        setMyob({ connected: false, invoice_mode: "churvox_only", myob_plan_allowed: false, myob_status: "upgrade_required" });
-      }
-    })();
+  const isManagerRole = useMemo(
+    () => ["owner", "admin", "manager", "office_admin", "employer"].includes(String(normalizedRole || user?.role || "").toLowerCase()),
+    [normalizedRole, user?.role],
+  );
+
+  const loadMyob = useCallback(async () => {
+    setRefreshing(true);
+    setBannerError("");
+    setAccessDenied(false);
+    const [statusRes, settingsRes] = await Promise.allSettled([get("/myob/status"), get("/myob/settings")]);
+    const errors = [];
+    const statusData = statusRes.status === "fulfilled" ? statusRes.value?.data || {} : {};
+    const settingsData = settingsRes.status === "fulfilled" ? settingsRes.value?.data || {} : {};
+    if ((statusRes.status === "fulfilled" && !statusRes.value?.success) || (settingsRes.status === "fulfilled" && !settingsRes.value?.success)) {
+      const err = statusRes.value?.error || settingsRes.value?.error || "";
+      if (String(err).toLowerCase().includes("403") || String(err).toLowerCase().includes("not authorized")) setAccessDenied(true);
+      errors.push(err || "Could not load one or more MYOB endpoints.");
+    }
+    if (statusRes.status === "rejected" || settingsRes.status === "rejected") errors.push("Could not load one or more MYOB endpoints.");
+    if (errors.length) setBannerError(errors[0]);
+    const merged = { ...settingsData, ...statusData };
+    setMyob(merged || {});
+    setMyobForm({
+      company_file_id: merged?.company_file_id || "",
+      company_file_name: merged?.company_file_name || "",
+    });
+    setLastUpdated(new Date());
+    setRefreshing(false);
   }, [get]);
 
-  const canUseMyob = Boolean(myob?.myob_plan_allowed);
-  const isConnected = Boolean(myob?.myob_connected ?? myob?.connected);
-  const mode = myob?.invoice_mode || "churvox_only";
-  const isUpgrade = myob?.myob_status === "upgrade_required" || !canUseMyob;
+  useEffect(() => { loadMyob(); }, [loadMyob]);
+
+  const plan = String(myob?.plan || user?.plan || "solo").toLowerCase();
+  const canUseMyob = Boolean(myob?.plan_allowed ?? myob?.myob_plan_allowed ?? myob?.enabled);
+  const connected = Boolean(myob?.connected);
+  const status = String(myob?.status || myob?.myob_status || (myob?.not_configured ? "not_configured" : connected ? "connected" : "not_connected"));
   const saveMyobSettings = async () => {
+    setSavingSettings(true);
     const r = await post("/myob/settings", myobForm);
-    if (r?.success) toast.success("MYOB settings saved"); else toast.error(r?.error || "Could not save settings");
+    if (r?.success) {
+      toast.success("MYOB settings saved");
+      await loadMyob();
+    } else toast.error(r?.error || "Could not save settings");
+    setSavingSettings(false);
   };
   const testConnection = async () => {
+    setTestingConnection(true);
     const r = await post("/myob/test-connection", {});
-    if (r?.success) toast.success("MYOB connection is healthy"); else toast.error(r?.error || "Not configured");
+    if (r?.success) toast.success("MYOB connection is healthy");
+    else toast.warning(r?.not_configured ? "MYOB OAuth is not configured yet." : (r?.error || "Not configured"));
+    setTestingConnection(false);
   };
-
-  const saveMode = async (invoice_mode) => {
-    setSavingMode(true);
-    const res = await post("/accounting/settings", { invoice_mode });
-    if (res?.success) {
-      setMyob((prev) => ({ ...(prev || {}), ...(res.data || {}) }));
-      toast.success("Invoice handling updated");
+  const connectMyob = async () => {
+    setConnectingOauth(true);
+    const r = await get("/myob/oauth/start");
+    const data = r?.data || {};
+    if (!r?.success || data?.not_configured || r?.not_configured) {
+      toast.warning("MYOB OAuth is not configured yet.");
     } else {
-      toast.error(res?.error || "Could not update invoice mode");
+      const url = data?.authorization_url || data?.url || data?.auth_url;
+      if (url) window.open(url, "_blank", "noopener,noreferrer");
+      else toast.warning("MYOB OAuth is not configured yet.");
     }
-    setSavingMode(false);
+    setConnectingOauth(false);
   };
 
   return (
     <Layout>
       <div className="cx-page">
         <div className="cx-page-hero">
-          <h1 className="cx-page-title">MYOB / Integrations</h1>
-          <p className="cx-page-subtitle">Accounting sync setup, sync health, and plan-based access at a glance.</p>
+          <h1 className="cx-page-title text-slate-950">Integrations</h1>
+          <p className="cx-page-subtitle text-slate-700">Connect accounting and workflow tools without losing Churvox as your source of truth.</p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <button className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white" onClick={loadMyob} disabled={refreshing}>{refreshing ? "Refreshing..." : "Refresh"}</button>
+            <p className="text-sm text-slate-700">Last updated: {lastUpdated ? lastUpdated.toLocaleString() : "Not loaded yet"}</p>
+          </div>
         </div>
-        <div className="cx-panel p-5 space-y-4">
-          <p className="text-sm text-slate-700">Plan: <span className="font-semibold uppercase">{user?.plan || "solo"}</span></p>
-          <p className="text-sm text-slate-700">MYOB availability: <span className={`cx-status-badge ${isUpgrade ? "status-overdue" : "status-completed"}`}>{isUpgrade ? "Upgrade required" : "Available"}</span></p>
-          <p className="text-sm text-slate-700">Connection status: <span className={`cx-status-badge ${isConnected ? "status-completed" : "status-pending"}`}>{myob?.myob_status === "sync_error" ? "Sync error" : (isConnected ? "Connected" : (myob?.myob_status === "not_configured" ? "Not configured" : "Not connected"))}</span></p>
-          <p className="text-xs text-slate-500">MYOB available on Pro add-on and Enterprise.</p>
-          <p className="text-sm text-slate-700">Solo: no MYOB · Team: no MYOB · Pro: optional MYOB add-on · Enterprise: included.</p>
-          <p className="text-sm text-slate-700">Churvox invoices stay internal unless you choose to sync selected invoices to MYOB.</p>
+        {bannerError ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{bannerError}</div> : null}
+        {accessDenied ? <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">Access denied. You need owner, admin, or manager access to manage MYOB integrations.</div> : null}
+        <div className="cx-panel rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
+          <h2 className="text-lg font-semibold text-slate-950">MYOB status</h2>
+          <p className="text-sm text-slate-800">Status: <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-bold text-slate-700">{status === "sync_error" ? "Sync error" : status === "connected" ? "Connected" : status === "not_configured" ? "Not configured" : "Not connected"}</span></p>
+          <p className="text-sm text-slate-800">Provider configured: {myob?.configured ? "Yes" : "No"}</p>
+          <p className="text-sm text-slate-800">Connected: {connected ? "Yes" : "No"}</p>
+          <p className="text-sm text-slate-800">Company file ID: {myob?.company_file_id || "—"}</p>
+          <p className="text-sm text-slate-800">Company file name: {myob?.company_file_name || "—"}</p>
+          <p className="text-sm text-slate-800">Last sync time: {myob?.last_sync_at || myob?.last_sync_time || "Never"}</p>
+          {myob?.error ? <p className="text-sm font-semibold text-red-700">Last error: {myob.error}</p> : null}
         </div>
-        <div className="cx-panel mt-4 p-5 space-y-3">
+        <div className="cx-panel mt-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
+          <h2 className="text-lg font-semibold text-slate-950">Plan rules</h2>
+          <p className="text-sm text-slate-800">Solo: MYOB unavailable</p>
+          <p className="text-sm text-slate-800">Team: MYOB unavailable</p>
+          <p className="text-sm text-slate-800">Pro: optional MYOB add-on</p>
+          <p className="text-sm text-slate-800">Enterprise: MYOB included</p>
+          <p className="text-sm text-slate-800">Current plan: <span className="font-semibold uppercase">{plan}</span></p>
+          <p className="text-sm text-slate-800">MYOB available on this plan: {canUseMyob ? "Yes" : "No"}</p>
+          {!canUseMyob ? <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">MYOB is locked on this plan.</div> : null}
+        </div>
+        <div className="cx-panel mt-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
           <h2 className="text-lg font-semibold text-slate-900">MYOB settings</h2>
           <input className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900" placeholder="Company file ID" value={myobForm.company_file_id} onChange={(e)=>setMyobForm((s)=>({...s, company_file_id:e.target.value}))} />
           <input className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-900" placeholder="Company file name" value={myobForm.company_file_name} onChange={(e)=>setMyobForm((s)=>({...s, company_file_name:e.target.value}))} />
-          <p className="text-sm text-slate-700">Last sync: {myob?.last_sync_at || "Never"}</p>
           <div className="flex gap-2">
-            <button className="rounded-xl bg-blue-600 px-4 py-2 text-white font-semibold" onClick={()=>window.open("/api/myob/oauth/start","_blank")}>Connect MYOB</button>
-            <button className="rounded-xl bg-white border border-slate-200 px-4 py-2 text-slate-900 font-semibold" onClick={saveMyobSettings}>Save settings</button>
-            <button className="rounded-xl bg-white border border-slate-200 px-4 py-2 text-slate-900 font-semibold" onClick={testConnection}>Test connection</button>
+            <button className="rounded-xl bg-white border border-slate-200 px-4 py-2 text-slate-900 font-semibold disabled:cursor-not-allowed" onClick={saveMyobSettings} disabled={!isManagerRole || savingSettings}>{savingSettings ? "Saving..." : "Save settings"}</button>
+            <button className="rounded-xl bg-white border border-slate-200 px-4 py-2 text-slate-900 font-semibold disabled:cursor-not-allowed" onClick={testConnection} disabled={!isManagerRole || testingConnection}>{testingConnection ? "Testing..." : "Test connection"}</button>
+            <button className="rounded-xl bg-blue-600 px-4 py-2 text-white font-semibold disabled:cursor-not-allowed" onClick={connectMyob} disabled={!isManagerRole || connectingOauth}>{connectingOauth ? "Connecting..." : "Connect MYOB"}</button>
           </div>
         </div>
-
-        <div className="cx-panel mt-4 p-5 space-y-4">
-          <h2 className="text-lg font-semibold text-slate-900">Invoice handling</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {INVOICE_MODES.map((item) => {
-              const disabled = item.value !== "churvox_only" && isUpgrade;
-              return (
-                <button
-                  key={item.value}
-                  type="button"
-                  disabled={disabled || savingMode}
-                  onClick={() => saveMode(item.value)}
-                  className={`text-left border rounded-xl p-4 transition ${mode === item.value ? "border-blue-500 bg-blue-50" : "border-slate-200 bg-white"} ${disabled ? "opacity-70 cursor-not-allowed" : ""}`}
-                >
-                  <p className="font-semibold text-slate-900">{item.label} {item.recommended && <span className="text-xs text-blue-700">— Recommended</span>}</p>
-                  <p className="text-xs text-slate-600 mt-2">{item.description}</p>
-                </button>
-              );
-            })}
-          </div>
+        <div className="cx-panel mt-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-2">
+          <h2 className="text-lg font-semibold text-slate-950">Internal invoice coexistence</h2>
+          <p className="text-sm text-slate-800">Churvox invoices stay internal unless you choose to sync a selected invoice to MYOB.</p>
+          <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">
+            <li>Internal Churvox invoices continue working when MYOB is off.</li>
+            <li>MYOB sync is manual and approval-first.</li>
+            <li>Payment status pull is manual.</li>
+            <li>No background MYOB sync runs without approval.</li>
+          </ul>
+        </div>
+        <div className="cx-panel mt-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-2">
+          <h2 className="text-lg font-semibold text-slate-950">Sync safety checklist</h2>
+          <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">
+            <li>No auto-sync</li>
+            <li>No background accounting changes</li>
+            <li>No secrets shown in browser</li>
+            <li>Selected invoice sync only</li>
+            <li>Manual payment-status pull only</li>
+          </ul>
         </div>
       </div>
     </Layout>

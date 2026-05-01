@@ -8,6 +8,7 @@ import { Button } from "../../components/ui/button";
 import { ArrowLeft, Trash2, Send, CheckCircle, MapPin, Mail, Briefcase, Clock, MessageSquare, RefreshCw, Link2, ExternalLink, CreditCard, Printer, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, INVOICE_STATUSES, MYOB_SYNC_STATUSES } from "../../lib/utils";
+import { useAuth } from "../../context/AuthContext";
 
 function copyText(value, message) {
   if (!value) return;
@@ -38,6 +39,7 @@ function Metric({ label, value, tone = "slate" }) {
 }
 
 export default function InvoiceDetailPage() {
+  const { normalizedRole } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
   const { get, post, del, loading } = useApi();
@@ -95,10 +97,18 @@ export default function InvoiceDetailPage() {
   };
 
   const handleMyobSync = async () => {
-    const endpoint = String(invoice?.myob_sync_status || "") === "failed" ? `/invoices/${id}/myob-retry` : `/invoices/${id}/myob-sync`;
-    const res = await post(endpoint);
-    if (res.success) toast.success("MYOB sync updated");
+    const res = await post(`/myob/invoices/${id}/sync`);
+    if (res.success) toast.success("Selected invoice sync requested.");
+    else if (res?.not_configured) toast.warning("MYOB is not configured yet.");
     else toast.error(res?.message || res?.error || "MYOB setup required");
+    await fetchInvoice();
+  };
+
+  const handleMyobPaymentPull = async () => {
+    const res = await post(`/myob/invoices/${id}/pull-payment-status`);
+    if (res.success) toast.success("Payment status pull completed.");
+    else if (res?.not_configured) toast.warning("MYOB is not configured yet.");
+    else toast.error(res?.message || res?.error || "Could not pull payment status");
     await fetchInvoice();
   };
 
@@ -129,6 +139,7 @@ export default function InvoiceDetailPage() {
   const paymentUrl = invoice.payment_link || invoice.payment_url || invoice.stripe_payment_url || "";
   const syncKey = mode === "myob_external" ? "external" : (invoice.myob_sync_status || "not_synced");
   const syncInfo = MYOB_SYNC_STATUSES[syncKey] || MYOB_SYNC_STATUSES.not_synced;
+  const canManageMyob = ["owner", "admin", "manager", "office_admin", "employer"].includes(String(normalizedRole || "").toLowerCase());
 
   return (
     <Layout>
@@ -141,7 +152,7 @@ export default function InvoiceDetailPage() {
               </button>
               <p className="text-xs font-black uppercase tracking-[0.22em] text-cyan-300">Invoice command centre</p>
               <h1 className="mt-3 text-3xl font-black tracking-tight md:text-4xl">{invoice.invoice_number}</h1>
-              <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-300">Send, collect, sync, mark paid, open the customer invoice, and review linked job details.</p>
+              <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-200">Send, collect, sync, mark paid, open the customer invoice, and review linked job details.</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <span className={`inline-flex rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-wide ring-1 ${statusTone(invoice.status)}`} data-testid="invoice-status-badge">
@@ -229,21 +240,24 @@ export default function InvoiceDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 bg-white shadow-sm" data-testid="myob-sync-section">
+            {canManageMyob ? <Card className="border-slate-200 bg-white shadow-sm" data-testid="myob-sync-section">
               <CardContent className="p-5 space-y-3">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-black text-slate-950">Accounting</p>
+                  <p className="text-sm font-black text-slate-950">MYOB</p>
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase text-slate-700">{mode.replace("_", " ")}</span>
                 </div>
                 <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${syncInfo.bg} ${syncInfo.color}`} data-testid="myob-sync-badge">{syncInfo.label}</span>
+                {invoice.myob_invoice_id && <p className="text-xs font-semibold text-slate-500">MYOB invoice ID: {invoice.myob_invoice_id}</p>}
                 {invoice.myob_invoice_number && <p className="text-xs font-semibold text-slate-500">MYOB invoice #{invoice.myob_invoice_number}</p>}
                 {invoice.myob_payment_status && <p className="text-xs font-semibold text-slate-500">MYOB payment: {invoice.myob_payment_status}</p>}
                 {invoice.myob_last_synced_at && <p className="text-xs font-semibold text-slate-500">Last synced: {formatDate(invoice.myob_last_synced_at)}</p>}
                 {invoice.myob_error && <p className="text-xs font-semibold text-red-500">{invoice.myob_error}</p>}
+                <p className="text-xs font-semibold text-slate-600">Internal invoice remains available even when MYOB is off.</p>
                 {invoice.myob_invoice_url && <a href={invoice.myob_invoice_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-bold text-blue-700 hover:underline"><ExternalLink size={14} /> Open in MYOB</a>}
-                {(mode === "myob_sync" || mode === "myob_external") && <Button variant="outline" onClick={handleMyobSync} disabled={loading || !myobConnected} className="h-10 w-full rounded-2xl font-black" data-testid="sync-to-myob-button"><RefreshCw size={14} className="mr-2" /> {myobConnected ? (String(invoice.myob_sync_status) === "failed" ? "Retry sync" : "Sync to MYOB") : "Setup MYOB"}</Button>}
+                <Button variant="outline" onClick={handleMyobSync} disabled={loading || !myobConnected} className="h-10 w-full rounded-2xl font-black" data-testid="sync-to-myob-button"><RefreshCw size={14} className="mr-2" /> Sync selected invoice to MYOB</Button>
+                <Button variant="outline" onClick={handleMyobPaymentPull} disabled={loading || !myobConnected} className="h-10 w-full rounded-2xl font-black">Pull payment status from MYOB</Button>
               </CardContent>
-            </Card>
+            </Card> : null}
           </aside>
         </div>
       </div>
