@@ -132,6 +132,10 @@ function ActionCard({ item }) {
   );
 }
 
+function SkeletonCard() {
+  return <div className="h-24 animate-pulse rounded-2xl border border-slate-200 bg-slate-100" />;
+}
+
 export default function SafeAIAssistantPage() {
   const { get } = useApi();
   const { normalizedRole } = useAuth();
@@ -351,10 +355,14 @@ export default function SafeAIAssistantPage() {
               </button>
             </div>
           </div>
-          {loading && <p className="mt-3 text-sm font-semibold text-slate-300">Loading Smart Hub data...</p>}
-          {loadErrors.length > 0 && <div className="mt-4 rounded-xl border border-amber-200/40 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100">Some sections are in safe fallback mode: {loadErrors.join(", ")}.</div>}
+          {loadErrors.length > 0 && <div className="mt-4 rounded-xl border border-amber-200/40 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100">Some Smart Hub data could not load. Using safe fallbacks for: {loadErrors.join(", ")}.</div>}
         </section>
 
+        {loading ? (
+          <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, idx) => <SkeletonCard key={idx} />)}
+          </section>
+        ) : (
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <SnapshotCard title="Today's jobs" value={model.todayJobs.length} hint="Scheduled for today" icon={CalendarClock} to="/schedule" />
           <SnapshotCard title="Jobs in progress" value={model.jobsInProgress.length} hint="Live active work" icon={Clock3} to="/jobs" />
@@ -365,6 +373,7 @@ export default function SafeAIAssistantPage() {
           <SnapshotCard title="Team members" value={model.workers.length} hint="Workers available" icon={Users} to={normalizedRole === "office_admin" ? undefined : "/team"} />
           <SnapshotCard title="Urgent follow-ups" value={model.urgentActions.length} hint="Action centre priorities" icon={Sparkles} to="/follow-ups" />
         </section>
+        )}
 
         <section className="grid gap-3 xl:grid-cols-2">
           <div className="rounded-2xl border border-slate-300 bg-slate-50 p-4 shadow-md shadow-slate-300/30">
@@ -381,8 +390,7 @@ export default function SafeAIAssistantPage() {
                 <p className="text-sm font-semibold text-slate-600">A quick read of today’s work, cashflow, team, and automation risks.</p>
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={() => navigator.clipboard?.writeText(model.digestEmail)} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700"><Mail className="mr-1 inline h-3.5 w-3.5" />Copy digest</button>
-                <button type="button" onClick={async()=>{const r=await get('/smart-hub/digest-email/test'); alert(r?.success ? 'Test digest sent' : (r?.error || 'Could not send test digest'));}} className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-black text-white">Send test digest</button>
+                <button type="button" onClick={() => navigator?.clipboard?.writeText?.(model.digestEmail)} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-700"><Mail className="mr-1 inline h-3.5 w-3.5" />Copy digest</button>
               </div>
             </div>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -428,7 +436,7 @@ export default function SafeAIAssistantPage() {
           </div>
 
           <div className="rounded-3xl border border-slate-300 bg-white p-5 shadow-md shadow-slate-300/30">
-            <h2 className="text-lg font-black text-slate-950">Automation Smart Hub</h2>
+            <h2 className="text-lg font-black text-slate-950">Automation Shortcuts</h2>
             <div className="mt-3 grid grid-cols-3 gap-2 text-center">
               <div className="rounded-xl border border-slate-300 bg-slate-50 p-3"><p className="text-xs text-slate-600">Active rules</p><p className="text-xl font-black text-slate-900">{digestData?.active_rules_count ?? model.activeRules}</p></div>
               <div className="rounded-xl border border-slate-300 bg-slate-50 p-3"><p className="text-xs text-slate-600">Recent runs</p><p className="text-xl font-black text-slate-900">{data.runs.length}</p></div>
@@ -473,6 +481,20 @@ export default function SafeAIAssistantPage() {
           <p className="mt-1 text-sm font-semibold text-slate-600">Approval-first drafts only. Churvox never sends customer messages automatically.</p>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {(model.smartSuggestions.length ? model.smartSuggestions : apiSuggestions.slice(0, 6).map((s) => ({ key: s.key || s.id, title: s.title, text: s.reason, to: s.route || "/follow-ups", cta: "Open", copy: s.draft_text, type: "Suggestion" }))).length ? (model.smartSuggestions.length ? model.smartSuggestions : apiSuggestions.slice(0, 6).map((s) => ({ key: s.key || s.id, title: s.title, text: s.reason, to: s.route || "/follow-ups", cta: "Open", copy: s.draft_text, type: "Suggestion" }))).map((item) => <ActionCard key={item.key} item={item} />) : <p className="col-span-full rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2.5 text-center text-sm font-semibold text-slate-700">No smart suggestions right now.</p>}
+          </div>
+        </section>
+        <section className="rounded-3xl border border-slate-300 bg-white p-5 shadow-md shadow-slate-300/30">
+          <h2 className="text-lg font-black text-slate-950">Safe Shortcuts</h2>
+          <p className="mt-1 text-sm font-semibold text-slate-700">Direct links to core pages that always stay available.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link to="/jobs" className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-black text-slate-800 hover:bg-slate-50">Jobs</Link>
+            <Link to="/clients" className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-black text-slate-800 hover:bg-slate-50">Clients</Link>
+            <Link to="/quotes" className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-black text-slate-800 hover:bg-slate-50">Quotes</Link>
+            <Link to="/invoices" className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-black text-slate-800 hover:bg-slate-50">Invoices</Link>
+            <Link to="/schedule" className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-black text-slate-800 hover:bg-slate-50">Schedule</Link>
+            <Link to="/automation" className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-black text-slate-800 hover:bg-slate-50">Automation</Link>
+            <Link to="/follow-ups" className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-black text-slate-800 hover:bg-slate-50">Follow-ups</Link>
+            <Link to="/settings" className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-black text-slate-800 hover:bg-slate-50">Settings</Link>
           </div>
         </section>
       </div>
