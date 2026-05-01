@@ -18,3 +18,7 @@
 - Push notifications require VAPID env and remain optional/manual test only.
 - Customer account login foundation not configured; secure token links are primary.
 - Recurring jobs next generation is manual confirmation-first.
+
+- Route Planner is manual ordering only (no live GPS tracking).
+- Push notifications require explicit backend env config.
+- Customer login is foundation-only; secure token portal is primary flow.

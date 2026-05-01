@@ -186,3 +186,11 @@ For every failure capture:
 - **Test steps:** Open `/route-planner`, select date/worker, reorder, save sequence.
 - **Expected result:** Manual order persists; optimisation fallback notice visible.
 - **Result:** [ ] Pass [ ] Fail [ ] Not run
+
+## Advanced pages
+- Dispatch Board built; live test pending.
+- Route Planner manual mode only; live test pending.
+- Recurring Jobs manual generate-next; live test pending.
+- System Health config-boolean cards; live test pending.
+- Push notifications remain not_configured until env is set.
+- Customer account login remains foundation-only; token portal available.
