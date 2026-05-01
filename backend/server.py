@@ -8073,6 +8073,81 @@ async def payroll_get_timesheets(period_id: str = Query(...), current_user: dict
     return {"timesheets": await _get_period_timesheets(period, business_id)}
 
 
+async def _resolve_payroll_period_from_query(business_id: str, pay_period: str | None = None):
+    if pay_period and ObjectId.is_valid(str(pay_period)):
+        found = await db.payroll_pay_periods.find_one({"_id": ObjectId(str(pay_period)), "business_id": business_id})
+        if found:
+            return found
+    if pay_period:
+        found = await db.payroll_pay_periods.find_one({"id": str(pay_period), "business_id": business_id})
+        if found:
+            return found
+        found = await db.payroll_pay_periods.find_one({"name": str(pay_period), "business_id": business_id})
+        if found:
+            return found
+    return await db.payroll_pay_periods.find_one({"business_id": business_id}, sort=[("start_date", -1)])
+
+
+@api_router.get("/timesheets")
+async def payroll_timesheets_frontend_alias(pay_period: str | None = Query(default=None), current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _resolve_payroll_period_from_query(business_id, pay_period)
+    if not period:
+        return {"timesheets": []}
+    timesheets = await _get_period_timesheets(period, business_id)
+    for row in timesheets:
+        row["id"] = row.get("entry_id")
+        row["timesheet_id"] = row.get("entry_id")
+        row["pay_period"] = period.get("name") or period.get("id") or str(period.get("_id"))
+        row["total_hours"] = row.get("net_hours", 0)
+        row["approved_hours"] = row.get("net_hours", 0) if row.get("status") == "approved" else 0
+    return {"timesheets": timesheets}
+
+
+@api_router.get("/timesheets/summary")
+async def payroll_timesheets_summary_alias(pay_period: str | None = Query(default=None), current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _resolve_payroll_period_from_query(business_id, pay_period)
+    if not period:
+        return {"total_hours": 0, "approved_hours": 0, "pending_timesheets": 0, "rejected_timesheets": 0, "timesheets": 0, "gross_pay": 0, "export_only": True, "no_bank_or_tax_submission": True}
+    summary = await _build_period_summary(period, business_id)
+    return {
+        "total_hours": summary.get("total_hours", 0),
+        "approved_hours": summary.get("approved_hours", 0),
+        "pending_timesheets": summary.get("pending_review_count", 0),
+        "rejected_timesheets": summary.get("rejected_count", 0),
+        "timesheets": summary.get("timesheets_count", 0),
+        "worker_count": summary.get("workers_included", 0),
+        "gross_pay": summary.get("gross_pay_estimate", 0),
+        "export_only": True,
+        "no_bank_or_tax_submission": True,
+    }
+
+
+@api_router.get("/payroll/export.csv")
+async def payroll_export_csv_frontend_alias(pay_period: str | None = Query(default=None), current_user: dict = Depends(get_current_user)):
+    business_id = _require_payroll_access(current_user)
+    period = await _resolve_payroll_period_from_query(business_id, pay_period)
+    if not period:
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["worker_name", "worker_email", "hours", "status", "notes"])
+        return Response(content=output.getvalue(), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=churvox-payroll-export.csv"})
+    period_id = str(period.get("id") or period.get("_id"))
+    return await payroll_export_csv(period_id, current_user)
+
+
+@api_router.post("/timesheets/{timesheet_id}/approve")
+async def payroll_timesheets_approve_alias(timesheet_id: str, current_user: dict = Depends(get_current_user)):
+    return await payroll_approve_timesheet(timesheet_id, current_user)
+
+
+@api_router.post("/timesheets/{timesheet_id}/reject")
+async def payroll_timesheets_reject_alias(timesheet_id: str, payload: dict = None, current_user: dict = Depends(get_current_user)):
+    safe_payload = {"notes": str((payload or {}).get("reason") or (payload or {}).get("notes") or "").strip()}
+    return await payroll_reject_timesheet(timesheet_id, safe_payload, current_user)
+
+
 @api_router.post("/payroll/timesheets/{entry_id}/approve")
 async def payroll_approve_timesheet(entry_id: str, current_user: dict = Depends(get_current_user)):
     business_id = _require_payroll_access(current_user)
