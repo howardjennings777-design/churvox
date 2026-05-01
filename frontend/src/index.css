@@ -70,11 +70,13 @@
     text-rendering: optimizeLegibility;
     background-image: radial-gradient(circle at 0% 0%, #dfe8f5 0%, #d7e1f0 42%, #d1dcea 100%);
     pointer-events: auto;
+    overflow-x: hidden;
   }
 
   #root {
     min-height: 100vh;
     pointer-events: auto;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -318,6 +320,7 @@
 .tap-safe-root select,
 .tap-safe-root [role="button"] {
   pointer-events: auto;
+  touch-action: manipulation;
 }
 
 .tap-safe-root main {

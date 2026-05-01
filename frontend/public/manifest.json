@@ -28,8 +28,8 @@
       "purpose": "maskable"
     }
   ],
-  "start_url": "/dashboard",
-  "display": "minimal-ui",
+  "start_url": "/jobs",
+  "display": "standalone",
   "theme_color": "#ffffff",
   "background_color": "#ffffff",
   "scope": "/",
