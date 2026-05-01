@@ -1,13 +1,13 @@
 # Launch Verification Report
 
-- **Date/time generated (UTC):** 2026-05-01 10:01:21 UTC
+- **Date/time generated (UTC):** 2026-05-01 10:08:30 UTC
 - **Branch:** `work`
-- **Latest git commit at verification:** `ad894f494056539a831173d00caa93348588625c`
+- **Latest git commit at verification:** `9a7351c958572ac8953fe2518936c6b2689d409f`
 
 ## Build / Compile / Smoke Results
 
 - **Frontend dependency install (`npm --prefix frontend install`):** ❌ Failed (`403 Forbidden` from `https://registry.npmjs.org/eslint`).
-- **Frontend build (`npm --prefix frontend run build`):** ⚠️ Not run because install failed.
+- **Frontend build (`npm --prefix frontend run build`):** ❌ Failed (`craco: not found`, because dependency install did not complete).
 - **Backend compile (`python3 -m py_compile backend/server.py`):** ✅ Passed.
 - **Backend compile-all (`python3 -m compileall -q backend`):** ✅ Passed.
 - **Seed script compile (`python3 -m py_compile scripts/churvox_seed_launch_test_data.py`):** ✅ Passed.
