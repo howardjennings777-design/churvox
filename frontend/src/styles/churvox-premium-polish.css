@@ -1,0 +1,177 @@
+/*
+  Churvox safe premium polish pass.
+  CSS-only: no routing, auth, API, data, or business logic changes.
+*/
+
+body.churvox-theme {
+  background:
+    radial-gradient(circle at 10% -10%, rgba(37, 99, 235, 0.16), transparent 34%),
+    radial-gradient(circle at 90% 0%, rgba(14, 165, 233, 0.12), transparent 30%),
+    linear-gradient(180deg, #edf4fb 0%, #f8fafc 48%, #edf2f7 100%) !important;
+  color: #0f172a !important;
+}
+
+body.churvox-theme .cx-page,
+body.churvox-theme .page-wrap {
+  color: #0f172a !important;
+}
+
+body.churvox-theme .cx-page-hero,
+body.churvox-theme .worker-premium-hero,
+body.churvox-theme .surface-card,
+body.churvox-theme .cx-card,
+body.churvox-theme .cx-panel,
+body.churvox-theme .cx-stat-card,
+body.churvox-theme .cx-document-card,
+body.churvox-theme .cx-client-card,
+body.churvox-theme .cx-list-card,
+body.churvox-theme .cx-empty-state,
+body.churvox-theme .cx-loading-state,
+body.churvox-theme .cx-error-state {
+  border-color: rgba(148, 163, 184, 0.45) !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06), 0 18px 46px rgba(15, 23, 42, 0.08) !important;
+}
+
+body.churvox-theme .cx-page-hero {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(37, 99, 235, 0.12), transparent 32%),
+    linear-gradient(135deg, #ffffff 0%, #f6faff 55%, #edf5ff 100%) !important;
+}
+
+body.churvox-theme .cx-page-title,
+body.churvox-theme .page-title,
+body.churvox-theme h1,
+body.churvox-theme h2,
+body.churvox-theme h3 {
+  color: #020617;
+}
+
+body.churvox-theme .cx-page-subtitle,
+body.churvox-theme .page-subtitle,
+body.churvox-theme p {
+  color: #334155;
+}
+
+body.churvox-theme button,
+body.churvox-theme a,
+body.churvox-theme input,
+body.churvox-theme textarea,
+body.churvox-theme select {
+  touch-action: manipulation;
+}
+
+body.churvox-theme input,
+body.churvox-theme textarea,
+body.churvox-theme select,
+body.churvox-theme .cx-input {
+  border-color: #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a;
+}
+
+body.churvox-theme input::placeholder,
+body.churvox-theme textarea::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b;
+  opacity: 1 !important;
+}
+
+body.churvox-theme input:focus,
+body.churvox-theme textarea:focus,
+body.churvox-theme select:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14) !important;
+  outline: none !important;
+}
+
+body.churvox-theme .cx-button-primary,
+body.churvox-theme button.bg-blue-600,
+body.churvox-theme a.bg-blue-600 {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.24) !important;
+}
+
+body.churvox-theme .cx-button-primary:hover,
+body.churvox-theme button.bg-blue-600:hover,
+body.churvox-theme a.bg-blue-600:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+}
+
+body.churvox-theme .cx-button-secondary,
+body.churvox-theme button[variant="outline"],
+body.churvox-theme .border-slate-200.bg-white {
+  border-color: #cbd5e1;
+}
+
+body.churvox-theme .rounded-3xl,
+body.churvox-theme .cx-card,
+body.churvox-theme .cx-panel,
+body.churvox-theme .surface-card {
+  transition: box-shadow 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+body.churvox-theme a.rounded-3xl:hover,
+body.churvox-theme button.rounded-3xl:hover,
+body.churvox-theme .cx-client-card:hover,
+body.churvox-theme .cx-document-card:hover,
+body.churvox-theme .cx-list-card:hover {
+  border-color: rgba(37, 99, 235, 0.35) !important;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08), 0 24px 54px rgba(37, 99, 235, 0.10) !important;
+}
+
+body.churvox-theme .status-completed,
+body.churvox-theme .status-paid,
+body.churvox-theme .status-accepted {
+  color: #166534 !important;
+  background: #dcfce7 !important;
+  border-color: #86efac !important;
+}
+
+body.churvox-theme .status-in-progress,
+body.churvox-theme .status-sent {
+  color: #1e40af !important;
+  background: #dbeafe !important;
+  border-color: #93c5fd !important;
+}
+
+body.churvox-theme .status-paused,
+body.churvox-theme .status-pending,
+body.churvox-theme .status-unpaid {
+  color: #92400e !important;
+  background: #fef3c7 !important;
+  border-color: #fcd34d !important;
+}
+
+body.churvox-theme .status-cancelled,
+body.churvox-theme .status-failed,
+body.churvox-theme .status-overdue,
+body.churvox-theme .status-declined {
+  color: #991b1b !important;
+  background: #fee2e2 !important;
+  border-color: #fca5a5 !important;
+}
+
+body.churvox-theme [data-testid="desktop-sidebar"] {
+  box-shadow: 12px 0 32px rgba(2, 6, 23, 0.18);
+}
+
+body.churvox-theme [data-testid="mobile-header"],
+body.churvox-theme [data-testid="mobile-bottom-nav"] {
+  box-shadow: 0 -10px 28px rgba(15, 23, 42, 0.10);
+}
+
+@media (max-width: 768px) {
+  body.churvox-theme .cx-page {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  body.churvox-theme .cx-page-hero,
+  body.churvox-theme .cx-card,
+  body.churvox-theme .cx-panel,
+  body.churvox-theme .surface-card {
+    border-radius: 22px !important;
+  }
+}
