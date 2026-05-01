@@ -14,7 +14,7 @@ import {
 import NotificationsBell from "./NotificationsBell";
 import HelpDropdown from "./HelpDropdown";
 import FirstRunGuide from "./FirstRunGuide";
-import { PremiumAppShell } from "./premiumV2";
+import { TradieAppShell } from "./premiumTradie";
 
 function aiAreaForPath(pathname) {
   if (pathname === "/jobs" || pathname.startsWith("/jobs/")) return "jobs";
@@ -88,9 +88,9 @@ export default function Layout({ children }) {
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/") || (path === "/smart-hub" && location.pathname === "/dashboard");
 
   return (
-    <PremiumAppShell>
+    <TradieAppShell>
     <div className="cx-app-shell tap-safe-root min-h-screen overflow-x-clip" data-testid="layout-container">
-      <aside className="hidden md:flex md:flex-col md:w-[272px] md:fixed md:inset-y-0 z-40" data-testid="desktop-sidebar">
+      <aside className="hidden md:flex md:flex-col md:w-[272px] md:fixed md:inset-y-0 z-40 border-r border-slate-200 bg-white" data-testid="desktop-sidebar">
         <div className="h-[92px] px-5 border-b border-slate-200 bg-white flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-3">
             <ChurvoxLogo size="sm" dataTestId="sidebar-logo" />
@@ -155,12 +155,12 @@ export default function Layout({ children }) {
         <header className="md:hidden px-4 py-3 flex items-center justify-between sticky top-0 z-30" data-testid="mobile-header">
           <div className="flex items-center gap-2">
             <ChurvoxLogo size="sm" dataTestId="mobile-logo" />
-            <span className="text-xs text-slate-300 font-medium">Smart Hub</span>
+            <span className="text-xs text-slate-600 font-medium">Smart Hub</span>
           </div>
           <div className="flex items-center gap-2">
             {showHelp && <HelpDropdown />}
             <NotificationsBell />
-            <span className="text-xs font-medium text-slate-300">{user?.name?.split(" ")[0]}</span>
+            <span className="text-xs font-medium text-slate-600">{user?.name?.split(" ")[0]}</span>
           </div>
         </header>
 
@@ -214,11 +214,11 @@ export default function Layout({ children }) {
           </div>
 
           {moreOpen && (
-            <div className="absolute bottom-full left-0 right-0 bg-[#122640] border-t border-slate-700 shadow-xl max-h-[60vh] overflow-y-auto" data-testid="mobile-more-menu">
+            <div className="absolute bottom-full left-0 right-0 bg-white border-t border-slate-200 shadow-xl max-h-[60vh] overflow-y-auto" data-testid="mobile-more-menu">
               <div className="p-3 space-y-1">
                 {moreNav.map((item) => (
                   <Link key={item.path} to={item.path} onClick={() => setMoreOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium ${isActive(item.path) ? "bg-blue-600 text-white" : "text-slate-200 hover:bg-[#1a3150]"}`}>
+                    className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium ${isActive(item.path) ? "bg-blue-600 text-white" : "text-slate-700 hover:bg-slate-100"}`}>
                     <item.icon className="h-5 w-5" />{item.label}
                   </Link>
                 ))}
@@ -236,6 +236,6 @@ export default function Layout({ children }) {
       <InstallPrompt />
       <FirstRunGuide user={user} enabled={showHelp && location.pathname !== "/plans"} />
     </div>
-    </PremiumAppShell>
+    </TradieAppShell>
   );
 }
