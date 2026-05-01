@@ -30,12 +30,20 @@ const promptButtons = [
   ["jobs_needing_action", "Find jobs needing action"],
 ];
 
-const quickActions = [
+const quickCreateActions = [
   ["New job", "/jobs/new", "primary"],
+  ["New client", "/clients/new", "primary"],
+  ["New quote", "/quotes/new", "primary"],
+  ["New invoice", "/invoices/new", "primary"],
+];
+
+const openAreaActions = [
   ["Jobs", "/jobs", "light"],
   ["Clients", "/clients", "light"],
   ["Quotes", "/quotes", "light"],
   ["Invoices", "/invoices", "light"],
+  ["Automation", "/automation", "light"],
+  ["Reports", "/reports", "light"],
 ];
 
 const shortcuts = [
@@ -308,7 +316,10 @@ export default function SmartHubPage() {
                 Run the day from one place: jobs, clients, quotes, invoices, team, schedule, follow-ups, automation, and AI assistance.
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
-                {quickActions.map(([label, href, kind]) => <SmartButton key={href} label={label} href={href} kind={kind} />)}
+                {quickCreateActions.map(([label, href, kind]) => <SmartButton key={href} label={label} href={href} kind={kind} />)}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-3">
+                {openAreaActions.map(([label, href, kind]) => <SmartButton key={href} label={label} href={href} kind={kind} />)}
               </div>
             </div>
             <div className="grid gap-3">
@@ -375,6 +386,30 @@ export default function SmartHubPage() {
               <Link to="/quotes" className="rounded-xl border border-white/15 px-3 py-2 text-sm font-bold text-slate-100 hover:border-cyan-300">Quotes</Link>
               <Link to="/automation" className="rounded-xl border border-white/15 px-3 py-2 text-sm font-bold text-slate-100 hover:border-cyan-300">Automation</Link>
             </div>
+          </article>
+        </section>
+
+
+        <section className="grid gap-5 md:grid-cols-2">
+          <article className="rounded-3xl border border-amber-200 bg-white p-5 shadow-sm shadow-amber-100/70 md:p-6">
+            <h2 className="text-xl font-black text-slate-950">Urgent follow-ups</h2>
+            <ul className="mt-3 space-y-2 text-sm font-semibold text-slate-800">
+              {safeArray(summary.urgent_followups).length ? safeArray(summary.urgent_followups).map((item, idx) => (
+                <li key={`followup-${idx}`} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  {item?.label || item?.title || item?.message || `Follow-up item ${idx + 1}`}
+                </li>
+              )) : <li className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">No urgent follow-ups right now.</li>}
+            </ul>
+          </article>
+          <article className="rounded-3xl border border-rose-200 bg-white p-5 shadow-sm shadow-rose-100/70 md:p-6">
+            <h2 className="text-xl font-black text-slate-950">Automation issues</h2>
+            <ul className="mt-3 space-y-2 text-sm font-semibold text-slate-800">
+              {safeArray(summary.automation_issues).length ? safeArray(summary.automation_issues).map((run, idx) => (
+                <li key={`run-${run?.id || idx}`} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  {run?.name || run?.rule_name || `Run ${run?.id || idx + 1}`} — {run?.status || "failed"}
+                </li>
+              )) : <li className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">No failed automation runs detected.</li>}
+            </ul>
           </article>
         </section>
 
