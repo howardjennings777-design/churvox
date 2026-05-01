@@ -44,7 +44,6 @@ import NotificationsPage from "./pages/NotificationsPage";
 import AutomationPage from "./pages/AutomationPage";
 import AutomationRunsPage from "./pages/AutomationRunsPage";
 import IntegrationsPage from "./pages/IntegrationsPage";
-import ComingSoonPage from "./pages/ComingSoonPage";
 import ReportsPage from "./pages/ReportsPage";
 import SMSPage from "./pages/SMSPage";
 import PublicQuotePage from "./pages/public/PublicQuotePage";

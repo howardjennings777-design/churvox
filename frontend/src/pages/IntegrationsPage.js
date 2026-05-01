@@ -106,7 +106,7 @@ export default function IntegrationsPage() {
                   type="button"
                   disabled={disabled || savingMode}
                   onClick={() => saveMode(item.value)}
-                  className={`text-left border rounded-xl p-4 transition ${mode === item.value ? "border-blue-500 bg-blue-50" : "border-slate-200 bg-white"} ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
+                  className={`text-left border rounded-xl p-4 transition ${mode === item.value ? "border-blue-500 bg-blue-50" : "border-slate-200 bg-white"} ${disabled ? "opacity-70 cursor-not-allowed" : ""}`}
                 >
                   <p className="font-semibold text-slate-900">{item.label} {item.recommended && <span className="text-xs text-blue-700">— Recommended</span>}</p>
                   <p className="text-xs text-slate-600 mt-2">{item.description}</p>
