@@ -1,0 +1,1 @@
+export default function ModernEmptyState({ message = "Nothing here yet.", hint = 'Create your first record to get started.' }) { return <div className="modern-empty"><p>{message}</p><small>{hint}</small></div>; }

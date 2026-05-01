@@ -1,7 +1,70 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
-import TradieShell from './components/tradie/TradieShell';
-import LoginPage from './pages/LoginPage'; import SignupPage from './pages/SignupPage'; import SmartHubPage from './pages/SmartHubPage'; import ClientsPage from './pages/ClientsPage'; import ClientDetailPage from './pages/ClientDetailPage'; import JobsPage from './pages/JobsPage'; import JobDetailPage from './pages/JobDetailPage'; import JobFormPage from './pages/JobFormPage'; import QuotesPage from './pages/QuotesPage'; import QuoteDetailPage from './pages/QuoteDetailPage'; import InvoicesPage from './pages/InvoicesPage'; import InvoiceDetailPage from './pages/InvoiceDetailPage'; import TeamPage from './pages/TeamPage'; import WorkerDashboardPage from './pages/WorkerDashboardPage'; import WorkerJobDetailPage from './pages/WorkerJobDetailPage'; import PayrollPage from './pages/PayrollPage'; import AutomationPage from './pages/AutomationPage'; import ReportsPage from './pages/ReportsPage'; import SettingsPage from './pages/SettingsPage'; import PlansPage from './pages/PlansPage'; import CommunicationsPage from './pages/CommunicationsPage'; import IntegrationsPage from './pages/IntegrationsPage'; import PublicQuotePage from './pages/PublicQuotePage'; import PublicInvoicePage from './pages/PublicInvoicePage';
-// CHURVOX_TRADIE_V3_ACTIVE_ROUTES
-const Guard=({children})=>{const {user,loading}=useAuth(); if(loading) return <div>Loading...</div>; return user?children:<Navigate to='/login' replace/>}
-export default function App(){return <Routes><Route path='/login' element={<LoginPage/>}/><Route path='/signup' element={<SignupPage/>}/><Route path='/public/quote/:token' element={<PublicQuotePage/>}/><Route path='/public/invoice/:token' element={<PublicInvoicePage/>}/><Route element={<Guard><TradieShell/></Guard>}><Route path='/' element={<Navigate to='/smart-hub' replace/>}/><Route path='/smart-hub' element={<SmartHubPage/>}/><Route path='/dashboard' element={<Navigate to='/smart-hub' replace/>}/><Route path='/clients' element={<ClientsPage/>}/><Route path='/clients/:id' element={<ClientDetailPage/>}/><Route path='/jobs' element={<JobsPage/>}/><Route path='/jobs/new' element={<JobFormPage/>}/><Route path='/jobs/:id' element={<JobDetailPage/>}/><Route path='/quotes' element={<QuotesPage/>}/><Route path='/quotes/:id' element={<QuoteDetailPage/>}/><Route path='/invoices' element={<InvoicesPage/>}/><Route path='/invoices/:id' element={<InvoiceDetailPage/>}/><Route path='/team' element={<TeamPage/>}/><Route path='/worker/jobs' element={<WorkerDashboardPage/>}/><Route path='/worker/jobs/:id' element={<WorkerJobDetailPage/>}/><Route path='/timesheets' element={<PayrollPage/>}/><Route path='/automation' element={<AutomationPage/>}/><Route path='/reports' element={<ReportsPage/>}/><Route path='/settings' element={<SettingsPage/>}/><Route path='/plans' element={<PlansPage/>}/><Route path='/sms' element={<CommunicationsPage/>}/><Route path='/integrations' element={<IntegrationsPage/>}/></Route><Route path='*' element={<Navigate to='/smart-hub' replace/>}/></Routes>}
+import ModernShell from './components/modern/ModernShell';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
+import SmartHubPage from './pages/SmartHubPage';
+import ClientsPage from './pages/ClientsPage';
+import ClientDetailPage from './pages/ClientDetailPage';
+import JobsPage from './pages/JobsPage';
+import JobDetailPage from './pages/JobDetailPage';
+import JobFormPage from './pages/JobFormPage';
+import QuotesPage from './pages/QuotesPage';
+import QuoteDetailPage from './pages/QuoteDetailPage';
+import InvoicesPage from './pages/InvoicesPage';
+import InvoiceDetailPage from './pages/InvoiceDetailPage';
+import TeamPage from './pages/TeamPage';
+import WorkerDashboardPage from './pages/WorkerDashboardPage';
+import WorkerJobDetailPage from './pages/WorkerJobDetailPage';
+import PayrollPage from './pages/PayrollPage';
+import AutomationPage from './pages/AutomationPage';
+import ReportsPage from './pages/ReportsPage';
+import SettingsPage from './pages/SettingsPage';
+import PlansPage from './pages/PlansPage';
+import CommunicationsPage from './pages/CommunicationsPage';
+import IntegrationsPage from './pages/IntegrationsPage';
+import PublicQuotePage from './pages/PublicQuotePage';
+import PublicInvoicePage from './pages/PublicInvoicePage';
+
+function Guard({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="modern-loading">Loading…</div>;
+  return user ? children : <Navigate to="/login" replace />;
+}
+
+// CHURVOX_MODERN_WEBSITE_ACTIVE_ROUTES
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
+      <Route path="/public/quote/:token" element={<PublicQuotePage />} />
+      <Route path="/public/invoice/:token" element={<PublicInvoicePage />} />
+      <Route element={<Guard><ModernShell /></Guard>}>
+        <Route path="/" element={<Navigate to="/smart-hub" replace />} />
+        <Route path="/smart-hub" element={<SmartHubPage />} />
+        <Route path="/dashboard" element={<Navigate to="/smart-hub" replace />} />
+        <Route path="/clients" element={<ClientsPage />} />
+        <Route path="/clients/:id" element={<ClientDetailPage />} />
+        <Route path="/jobs" element={<JobsPage />} />
+        <Route path="/jobs/new" element={<JobFormPage />} />
+        <Route path="/jobs/:id" element={<JobDetailPage />} />
+        <Route path="/quotes" element={<QuotesPage />} />
+        <Route path="/quotes/:id" element={<QuoteDetailPage />} />
+        <Route path="/invoices" element={<InvoicesPage />} />
+        <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
+        <Route path="/team" element={<TeamPage />} />
+        <Route path="/worker/jobs" element={<WorkerDashboardPage />} />
+        <Route path="/worker/jobs/:id" element={<WorkerJobDetailPage />} />
+        <Route path="/timesheets" element={<PayrollPage />} />
+        <Route path="/automation" element={<AutomationPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/plans" element={<PlansPage />} />
+        <Route path="/sms" element={<CommunicationsPage />} />
+        <Route path="/integrations" element={<IntegrationsPage />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/smart-hub" replace />} />
+    </Routes>
+  );
+}

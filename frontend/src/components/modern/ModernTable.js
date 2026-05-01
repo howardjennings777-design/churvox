@@ -1,0 +1,1 @@
+export default function ModernTable({ columns = [], rows = [] }) { return <div className="modern-table-wrap"><table className="modern-table"><thead><tr>{columns.map((c) => <th key={c}>{c}</th>)}</tr></thead><tbody>{rows}</tbody></table></div>; }
