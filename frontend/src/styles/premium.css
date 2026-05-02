@@ -676,7 +676,42 @@
   background: var(--px-surface);
   border: 1px solid var(--px-border);
   box-shadow: var(--px-shadow-lg);
-  padding: 32px 28px;
+  padding: 32px 28px 36px;
+}
+.px-login-form {
+  display: grid;
+  gap: 16px;
+}
+.px-login-input-wrap { position: relative; }
+.px-login-input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: #7d8ba3;
+  pointer-events: none;
+}
+.px-login-input {
+  height: 54px;
+  padding-left: 46px;
+  border-radius: 14px;
+}
+.px-login-input::placeholder { color: #8b9ab2; }
+.px-login-submit {
+  min-height: 54px;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 14px;
+  color: #ffffff;
+}
+.px-login-submit:disabled {
+  opacity: 0.72;
+  color: #f8fbff;
+}
+@media (max-width: 480px) {
+  .px-auth__card { padding: 28px 20px 32px; }
 }
 .px-auth__brand {
   display: none;

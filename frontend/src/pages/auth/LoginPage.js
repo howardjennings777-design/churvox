@@ -56,7 +56,7 @@ export default function LoginPage() {
             <p className="text-[14px] text-[#5b6c87] mt-2">Sign in to manage jobs, clients, quotes, invoices and your crew.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4" data-testid="login-form">
+          <form onSubmit={handleSubmit} className="px-login-form" data-testid="login-form">
             {error && (
               <div className="flex items-center gap-2 p-3 bg-[#fff5f5] border border-[#fecaca] rounded-xl text-[#b91c1c] text-sm" data-testid="login-error">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -65,15 +65,15 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label className="block text-[12.5px] font-semibold text-[#1a2c4d] mb-1.5">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7d8ba3]" />
+              <label className="block text-[12.5px] font-semibold text-[#1a2c4d] mb-2">Email</label>
+              <div className="relative px-login-input-wrap">
+                <Mail className="px-login-input-icon" />
                 <input
                   type="email"
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="px-input pl-10"
+                  className="px-input px-login-input"
                   required
                   data-testid="login-email-input"
                 />
@@ -81,20 +81,20 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center justify-between mb-2">
                 <label className="block text-[12.5px] font-semibold text-[#1a2c4d]">Password</label>
                 <Link to="/forgot-password" className="text-[12.5px] font-semibold text-[#1d4ed8] hover:underline" data-testid="forgot-password-link">
                   Forgot password?
                 </Link>
               </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7d8ba3]" />
+              <div className="relative px-login-input-wrap">
+                <Lock className="px-login-input-icon" />
                 <input
                   type="password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="px-input pl-10"
+                  className="px-input px-login-input"
                   required
                   data-testid="login-password-input"
                 />
@@ -104,7 +104,7 @@ export default function LoginPage() {
             <PremiumButton
               type="submit"
               size="lg"
-              className="w-full"
+              className="w-full px-login-submit"
               disabled={loading}
               dataTestId="login-submit-button"
               iconLeft={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -113,12 +113,12 @@ export default function LoginPage() {
             </PremiumButton>
           </form>
 
-          <p className="text-center text-[13px] text-[#5b6c87] mt-6">
+          <p className="text-center text-[13px] text-[#5b6c87] mt-7">
             Don't have an account?{" "}
             <Link to="/signup" className="font-semibold text-[#1d4ed8] hover:underline" data-testid="signup-link">Sign up</Link>
           </p>
 
-          <div className="flex justify-center gap-4 mt-4 text-[11.5px] text-[#7d8ba3]">
+          <div className="flex justify-center gap-6 mt-5 text-[11.5px] text-[#7d8ba3]">
             <Link to="/privacy" className="hover:text-[#5b6c87]" data-testid="login-privacy-link">Privacy</Link>
             <Link to="/terms" className="hover:text-[#5b6c87]" data-testid="login-terms-link">Terms</Link>
           </div>
