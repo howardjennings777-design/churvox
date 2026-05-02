@@ -115,7 +115,6 @@ export default function WorkerJobsPage() {
               <PremiumButton onClick={fetchJobs} iconLeft={<RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />}>Refresh jobs</PremiumButton>
               <PremiumButton variant="secondary" className="w-full" onClick={() => setShowContactOffice(true)}>Contact office</PremiumButton>
             </div>
-            <PremiumCard className="w-full max-w-sm mt-3"><div className="px-card__body"><p className="text-sm font-semibold text-[#0d1b34]">Need help?</p><p className="text-xs text-[#5b6c87] mb-2">If dispatch seems delayed, send the office a quick help request.</p><PremiumButton className="w-full" variant="secondary" onClick={() => setShowContactOffice(true)}>Open contact panel</PremiumButton></div></PremiumCard>
           </div>
         ) : null}
 
