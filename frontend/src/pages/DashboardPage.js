@@ -1,5 +1,6 @@
 import { useNavigate, Link } from "react-router-dom";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { toast } from "sonner";
 import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
@@ -31,6 +32,8 @@ export default function DashboardPage() {
   const [workers, setWorkers] = useState([]);
   const [myobSettings, setMyobSettings] = useState(null);
   const [aiInput, setAiInput] = useState("");
+  const [hubPanel, setHubPanel] = useState({ open: false, key: null });
+  const [panelLoading, setPanelLoading] = useState(false);
   const { loading: aiLoading, draft, llmAvailable, setDraft, generate } = useAiDraft('smart_hub');
 
   const isAdmin = normalizedRole === "owner" || normalizedRole === "manager" || normalizedRole === "office_admin";
@@ -61,6 +64,11 @@ export default function DashboardPage() {
   }, [get]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+  const openPanel = (key) => {
+    setHubPanel({ open: true, key });
+    setPanelLoading(true);
+  };
+  const closePanel = () => setHubPanel({ open: false, key: null });
 
   const smart = useMemo(() => {
     const todayKey = new Date().toISOString().slice(0, 10);
@@ -98,7 +106,7 @@ export default function DashboardPage() {
         icon: <UserPlus className="h-4 w-4" />,
         title: `${smart.unassignedJobs} job${smart.unassignedJobs === 1 ? "" : "s"} need${smart.unassignedJobs === 1 ? "s" : ""} a worker assigned`,
         description: "Open dispatch and assign the right crew member.",
-        action: <PremiumButton size="sm" variant="secondary" onClick={() => navigate("/dispatch")}>Open</PremiumButton>,
+        action: <PremiumButton size="sm" variant="secondary" onClick={() => openPanel("dispatch")}>Open</PremiumButton>,
       });
     }
     if (smart.quotesWaiting > 0) {
@@ -106,7 +114,7 @@ export default function DashboardPage() {
         icon: <FileSignature className="h-4 w-4" />,
         title: `${smart.quotesWaiting} quote${smart.quotesWaiting === 1 ? "" : "s"} awaiting customer response`,
         description: "Draft a polite follow-up. AI will prepare wording — you approve before sending.",
-        action: <PremiumButton size="sm" variant="secondary" onClick={() => navigate("/quotes")}>Review</PremiumButton>,
+        action: <PremiumButton size="sm" variant="secondary" onClick={() => openPanel("quoteFollowup")}>Review</PremiumButton>,
       });
     }
     if (smart.overdueInvoices > 0 || smart.pendingInvoices > 0) {
@@ -114,7 +122,7 @@ export default function DashboardPage() {
         icon: <Receipt className="h-4 w-4" />,
         title: `${smart.overdueInvoices} overdue and ${smart.pendingInvoices} open invoice${smart.pendingInvoices === 1 ? "" : "s"}`,
         description: "AI can draft a friendly payment reminder — review before sending.",
-        action: <PremiumButton size="sm" variant="secondary" onClick={() => navigate("/invoices")}>Open</PremiumButton>,
+        action: <PremiumButton size="sm" variant="secondary" onClick={() => openPanel("invoiceReminder")}>Open</PremiumButton>,
       });
     }
     if (smart.completedJobs > 0) {
@@ -122,7 +130,7 @@ export default function DashboardPage() {
         icon: <CheckCircle className="h-4 w-4" />,
         title: `${smart.completedJobs} completed job${smart.completedJobs === 1 ? "" : "s"} ready to invoice`,
         description: "Convert finished work into invoices and keep cash flowing.",
-        action: <PremiumButton size="sm" variant="secondary" onClick={() => navigate("/jobs?status=completed")}>Convert</PremiumButton>,
+        action: <PremiumButton size="sm" variant="secondary" onClick={() => openPanel("invoiceFromJob")}>Convert</PremiumButton>,
       });
     }
     if (out.length === 0) {
@@ -133,7 +141,19 @@ export default function DashboardPage() {
       });
     }
     return out.slice(0, 4);
-  }, [smart, navigate]);
+  }, [smart]);
+
+  const panelConfig = {
+    job: { title: "New job", src: "/jobs/new", successPath: "/jobs" },
+    quote: { title: "New quote", src: "/quotes/new", successPath: "/quotes" },
+    invoice: { title: "New invoice", src: "/invoices/new", successPath: "/invoices" },
+    client: { title: "Add client", src: "/clients/new", successPath: "/clients" },
+    dispatch: { title: "Dispatch board", src: "/dispatch", successPath: null },
+    quoteFollowup: { title: "Quote follow-up panel", src: "/quotes", successPath: null },
+    invoiceReminder: { title: "Invoice reminder panel", src: "/invoices?status=overdue", successPath: null },
+    invoiceFromJob: { title: "Invoice from completed jobs", src: "/jobs?status=completed", successPath: null },
+  };
+  const activePanel = hubPanel.key ? panelConfig[hubPanel.key] : null;
 
   if (pageLoading) {
     return (
@@ -168,11 +188,11 @@ export default function DashboardPage() {
           actions={
             isAdmin ? (
               <>
-                <PremiumButton onClick={() => navigate("/jobs/new")} iconLeft={<Plus className="h-4 w-4" />}>New job</PremiumButton>
-                <PremiumButton variant="secondary" onClick={() => navigate("/quotes/new")}>New quote</PremiumButton>
-                <PremiumButton variant="secondary" onClick={() => navigate("/invoices/new")}>New invoice</PremiumButton>
-                <PremiumButton variant="secondary" onClick={() => navigate("/clients/new")}>Add client</PremiumButton>
-                <PremiumButton variant="ghost" onClick={() => navigate("/dispatch")} iconLeft={<Calendar className="h-4 w-4" />}>Dispatch board</PremiumButton>
+                <PremiumButton onClick={() => openPanel("job")} iconLeft={<Plus className="h-4 w-4" />}>New job</PremiumButton>
+                <PremiumButton variant="secondary" onClick={() => openPanel("quote")}>New quote</PremiumButton>
+                <PremiumButton variant="secondary" onClick={() => openPanel("invoice")}>New invoice</PremiumButton>
+                <PremiumButton variant="secondary" onClick={() => openPanel("client")}>Add client</PremiumButton>
+                <PremiumButton variant="ghost" onClick={() => openPanel("dispatch")} iconLeft={<Calendar className="h-4 w-4" />}>Dispatch board</PremiumButton>
               </>
             ) : null
           }
@@ -239,7 +259,7 @@ export default function DashboardPage() {
                 icon={<Calendar className="h-5 w-5" />}
                 title="No jobs scheduled today"
                 subtitle="Schedule new work or open the dispatch board to plan the day."
-                action={<PremiumButton variant="secondary" onClick={() => navigate("/dispatch")}>Open dispatch</PremiumButton>}
+                action={<PremiumButton variant="secondary" onClick={() => openPanel("dispatch")}>Open dispatch</PremiumButton>}
               />
             ) : (
               todayList.map((job) => (
@@ -267,7 +287,7 @@ export default function DashboardPage() {
                 icon={<Briefcase className="h-5 w-5" />}
                 title="No active jobs"
                 subtitle="Create or assign new work to keep the crew moving."
-                action={<PremiumButton variant="secondary" onClick={() => navigate("/jobs/new")} iconLeft={<Plus className="h-4 w-4" />}>New job</PremiumButton>}
+                action={<PremiumButton variant="secondary" onClick={() => openPanel("job")} iconLeft={<Plus className="h-4 w-4" />}>New job</PremiumButton>}
               />
             ) : (
               activeList.map((job) => (
@@ -288,9 +308,9 @@ export default function DashboardPage() {
         {isAdmin && (
           <PremiumSection title="Quick actions" subtitle="Most-used flows on Churvox">
             <div className="px-grid px-grid--3">
-              <PremiumActionCard tone="blue"   icon={<Plus className="h-5 w-5" />}     title="New job"           description="Schedule and assign work" onClick={() => navigate("/jobs/new")} />
-              <PremiumActionCard tone="violet" icon={<FileSignature className="h-5 w-5" />} title="New quote"     description="Send a professional quote" onClick={() => navigate("/quotes/new")} />
-              <PremiumActionCard tone="teal"   icon={<Receipt className="h-5 w-5" />}  title="New invoice"       description="Bill for completed work" onClick={() => navigate("/invoices/new")} />
+              <PremiumActionCard tone="blue"   icon={<Plus className="h-5 w-5" />}     title="New job"           description="Schedule and assign work" onClick={() => openPanel("job")} />
+              <PremiumActionCard tone="violet" icon={<FileSignature className="h-5 w-5" />} title="New quote"     description="Send a professional quote" onClick={() => openPanel("quote")} />
+              <PremiumActionCard tone="teal"   icon={<Receipt className="h-5 w-5" />}  title="New invoice"       description="Bill for completed work" onClick={() => openPanel("invoice")} />
               <PremiumActionCard tone="sky"    icon={<UserPlus className="h-5 w-5" />} title="Invite worker"     description="Grow your crew" onClick={() => navigate("/team")} />
               <PremiumActionCard tone="amber"  icon={<MessageSquare className="h-5 w-5" />} title="Communications" description="SMS reminders" onClick={() => navigate("/sms")} />
               <PremiumActionCard tone="blue"   icon={<Zap className="h-5 w-5" />}      title="Automation"        description="Rules & templates" onClick={() => navigate("/automation")} />
@@ -325,6 +345,36 @@ export default function DashboardPage() {
           </PremiumCard>
         )}
       </PremiumPage>
+      {hubPanel.open && activePanel ? (
+        <div className="fixed inset-0 z-[70] bg-[#0b1730]/45 backdrop-blur-sm p-0 sm:p-4" role="dialog" aria-modal="true">
+          <div className="ml-auto h-full w-full sm:max-w-5xl bg-white shadow-2xl border-l border-[#d8e3f3] flex flex-col">
+            <div className="px-4 py-3 border-b border-[#e6eef9] flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-[#0d1b34]">{activePanel.title}</p>
+                <Link to={activePanel.src} className="text-xs text-[#2563eb] hover:underline">Open full page</Link>
+              </div>
+              <button className="text-sm text-[#5b6c87]" onClick={closePanel}>Close</button>
+            </div>
+            {panelLoading ? <div className="px-4 py-2 text-sm text-[#5b6c87]">Loading panel…</div> : null}
+            <iframe
+              title={activePanel.title}
+              src={activePanel.src}
+              className="w-full flex-1"
+              onLoad={(e) => {
+                setPanelLoading(false);
+                try {
+                  const path = e.currentTarget.contentWindow?.location?.pathname;
+                  if (activePanel.successPath && path === activePanel.successPath) {
+                    closePanel();
+                    fetchData();
+                    toast.success(`${activePanel.title} saved`);
+                  }
+                } catch (_err) {}
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
     </Layout>
   );
 }
