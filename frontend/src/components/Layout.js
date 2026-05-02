@@ -31,16 +31,16 @@ export default function Layout({ children }) {
       label: "Workspace",
       items: [
         canAccess(role, "dashboard") && { path: "/dashboard", label: "Smart Hub", icon: LayoutDashboard },
-        canAccess(role, "jobs") && { path: "/jobs", label: "Jobs", icon: Briefcase },
-        canAccess(role, "calendar") && { path: "/dispatch", label: "Dispatch", icon: Calendar },
-        canAccess(role, "clients") && { path: "/clients", label: "Clients", icon: Users },
+        canAccess(role, "jobs") && { path: "/jobs", label: "All Jobs", icon: Briefcase },
+        canAccess(role, "calendar") && { path: "/dispatch", label: "Dispatch Board", icon: Calendar },
+        canAccess(role, "clients") && { path: "/clients", label: "Client List", icon: Users },
       ].filter(Boolean),
     },
     {
       label: "Sales",
       items: [
-        canAccess(role, "quotes") && { path: "/quotes", label: "Quotes", icon: FileText },
-        canAccess(role, "invoices") && { path: "/invoices", label: "Invoices", icon: Receipt },
+        canAccess(role, "quotes") && { path: "/quotes", label: "All Quotes", icon: FileText },
+        canAccess(role, "invoices") && { path: "/invoices", label: "All Invoices", icon: Receipt },
       ].filter(Boolean),
     },
     {
