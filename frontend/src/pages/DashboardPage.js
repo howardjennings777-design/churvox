@@ -48,8 +48,8 @@ export default function DashboardPage() {
         get("/jobs"), get("/clients"), get("/quotes"), get("/invoices"), get("/team/workers"), isOwnerView ? get("/ai/operator/approval-items") : Promise.resolve([])
       ]);
       setData({
-        jobs: pickList(jobsRes, ["jobs"]), clients: pickList(clientsRes, ["clients"]), quotes: pickList(quotesRes, ["quotes"]),
-        invoices: pickList(invoicesRes, ["invoices"]), workers: pickList(workersRes, ["workers"]), approvals: pickList(approvalsRes, ["approval_items"])
+        jobs: pickList(jobsRes?.data ?? jobsRes, ["jobs"]), clients: pickList(clientsRes?.data ?? clientsRes, ["clients"]), quotes: pickList(quotesRes?.data ?? quotesRes, ["quotes"]),
+        invoices: pickList(invoicesRes?.data ?? invoicesRes, ["invoices"]), workers: pickList(workersRes?.data ?? workersRes, ["workers"]), approvals: pickList(approvalsRes?.data ?? approvalsRes, ["approval_items"])
       });
     } catch (e) {
       setError(e?.response?.data?.detail || "Failed to load Smart Hub data");
@@ -61,7 +61,7 @@ export default function DashboardPage() {
   const dedupWorkers = useMemo(() => {
     const map = new Map();
     for (const w of data.workers) {
-      const key = (w.email || w.phone || w.name || w.id || w._id || "").toLowerCase();
+      const key = String(w.email || w.phone || w.name || w.id || w._id || "").toLowerCase();
       if (!key) continue;
       if (!map.has(key) || String(w.status || "").toLowerCase() === "active") map.set(key, w);
     }
@@ -94,7 +94,7 @@ export default function DashboardPage() {
     try {
       await post("/ai/operator/run-daily-check", {});
       const approvalsRes = await get("/ai/operator/approval-items");
-      setData(s => ({ ...s, approvals: pickList(approvalsRes, ["approval_items"]) }));
+      setData(s => ({ ...s, approvals: pickList(approvalsRes?.data ?? approvalsRes, ["approval_items"]) }));
       toast.success("Daily check complete");
     } catch {
       const local = fallbackApprovals();
@@ -162,10 +162,10 @@ export default function DashboardPage() {
       {modal === "dispatch" && <div><p>Open dispatch board for allocations.</p><button className="mt-3 rounded bg-blue-600 px-3 py-2 text-white" onClick={() => navigate("/dispatch")}>Open Dispatch</button></div>}
       {modal === "assign" && <div><p>Assign workers to unassigned jobs.</p><button className="mt-3 rounded bg-blue-600 px-3 py-2 text-white" onClick={() => navigate("/dispatch")}>Open Assignment Board</button></div>}
       {modal === "quote" && <div><p>Review quotes that need follow-up.</p><button className="mt-3 rounded bg-blue-600 px-3 py-2 text-white" onClick={() => navigate("/quotes")}>Open Quotes</button></div>}
-      {modal === "invoice" || modal === "reminder" && <div><p>Review open and overdue invoices.</p><button className="mt-3 rounded bg-blue-600 px-3 py-2 text-white" onClick={() => navigate("/invoices")}>Open Invoices</button></div>}
+      {(modal === "invoice" || modal === "reminder") && <div><p>Review open and overdue invoices.</p><button className="mt-3 rounded bg-blue-600 px-3 py-2 text-white" onClick={() => navigate("/invoices")}>Open Invoices</button></div>}
       {modal === "convert" && <div><p>Convert completed jobs to invoices.</p><button className="mt-3 rounded bg-blue-600 px-3 py-2 text-white" onClick={() => navigate("/jobs?status=completed")}>Open Completed Jobs</button></div>}
-      {modal === "prepare" && <div className="space-y-2">{prepareActions.length ? prepareActions.map((a) => <div key={a.key} className="rounded border p-2"><p className="font-medium text-sm">{a.title}</p><p className="text-xs text-slate-600">{a.reason}</p></div>) : <p>No suggested actions yet.</p>}</div>}
-      {modal === "ask" && <div><input className="w-full rounded border px-3 py-2" placeholder="Ask AI about today" value={askInput} onChange={(e) => setAskInput(e.target.value)} /><div className="mt-2 flex flex-wrap gap-2">{["What should I do next?", "Jobs needing attention", "Invoice follow-up", "Quote follow-up"].map(c => <button key={c} className="rounded bg-slate-200 px-2 py-1 text-xs" onClick={() => setAskInput(c)}>{c}</button>)}</div><button disabled={busy.ask} className="mt-3 rounded bg-blue-600 px-3 py-2 text-white" onClick={async () => { setBusy(s => ({ ...s, ask: true })); try { const res = await post("/ai/operator/ask", { question: askInput }); setAskResponse(res?.response || "No response."); } catch { toast.error("AI request failed"); } finally { setBusy(s => ({ ...s, ask: false })); } }}>{busy.ask ? "Asking..." : "Ask AI"}</button>{askResponse ? <div className="mt-2 rounded border bg-slate-50 p-2 text-sm">{askResponse}</div> : null}</div>}
+      {modal === "prepare" && <div className="space-y-2">{prepareActions.length ? prepareActions.map((a, idx) => <div key={a.key || idx} className="rounded border p-2"><p className="font-medium text-sm">{a.title}</p><p className="text-xs text-slate-600">{a.reason}</p></div>) : <p>No suggested actions yet.</p>}</div>}
+      {modal === "ask" && <div><input className="w-full rounded border px-3 py-2" placeholder="Ask AI about today" value={askInput} onChange={(e) => setAskInput(e.target.value)} /><div className="mt-2 flex flex-wrap gap-2">{["What should I do next?", "Jobs needing attention", "Invoice follow-up", "Quote follow-up"].map(c => <button key={c} className="rounded bg-slate-200 px-2 py-1 text-xs" onClick={() => setAskInput(c)}>{c}</button>)}</div><button disabled={busy.ask} className="mt-3 rounded bg-blue-600 px-3 py-2 text-white" onClick={async () => { setBusy(s => ({ ...s, ask: true })); try { const res = await post("/ai/operator/ask", { question: askInput }); setAskResponse(res?.data?.response || res?.response || "No response."); } catch { toast.error("AI request failed"); } finally { setBusy(s => ({ ...s, ask: false })); } }}>{busy.ask ? "Asking..." : "Ask AI"}</button>{askResponse ? <div className="mt-2 rounded border bg-slate-50 p-2 text-sm">{askResponse}</div> : null}</div>}
       {modal === "edit" && <div><p>Edit is available from full workspace records.</p></div>}
     </Modal>
   </div></Layout>;

@@ -17,21 +17,23 @@ export class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
+      const fallbackHref = this.props.fallbackHref || "/dashboard";
+      const fallbackLabel = this.props.fallbackLabel || "Back to Smart Hub";
       return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
           <div className="max-w-md w-full bg-white border border-slate-200 rounded-2xl shadow-sm p-6 text-center space-y-4">
-            <h1 className="text-xl font-semibold text-slate-900">Something went wrong</h1>
+            <h1 className="text-xl font-semibold text-slate-900">Something went wrong loading this page.</h1>
             <p className="text-sm text-slate-500">
               {safeReactChild(this.state.error, "An unexpected error occurred.")}
             </p>
             <button
               onClick={() => {
                 this.setState({ hasError: false, error: null });
-                window.location.href = "/dashboard";
+                window.location.href = fallbackHref;
               }}
               className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
             >
-              Go to Dashboard
+              {fallbackLabel}
             </button>
           </div>
         </div>
