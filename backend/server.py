@@ -5577,14 +5577,20 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
         raise HTTPException(status_code=400, detail="CSV file is empty")
 
     def norm_header(value):
-        return re.sub(r"[^a-z0-9]+", "", str(value or "").strip().lower())
+        value = str(value or "").replace("\ufeff", "").strip().lower()
+        value = re.sub(r"[\s\-\/]+", "_", value)
+        value = re.sub(r"_+", "_", value).strip("_")
+        return value
 
     header_aliases = {
-        "name": {"name", "fullname", "full_name", "workername", "worker_name", "employee", "employeename", "employee_name", "staffname", "staff_name"},
-        "first_name": {"firstname", "first_name", "givenname", "given_name"},
-        "last_name": {"lastname", "last_name", "surname", "familyname", "family_name"},
-        "email": {"email", "emailaddress", "email_address", "workeremail", "worker_email", "employeeemail", "employee_email", "staffemail", "staff_email"},
-        "phone": {"phone", "phonenumber", "phone_number", "mobile", "mobilenumber", "mobile_number", "cell", "telephone"},
+        "name": {"name", "full_name", "employee_name", "worker_name"},
+        "first_name": {"first_name", "firstname", "given_name", "givenname"},
+        "last_name": {"last_name", "lastname", "surname", "family_name", "familyname"},
+        "email": {"email", "email_address", "worker_email", "employee_email"},
+        "phone": {"phone", "mobile", "mobile_phone", "phone_number", "contact_number", "mobile_number"},
+        "role": {"role", "worker_role", "employee_role", "position"},
+        "region": {"region", "state", "region_state", "area"},
+        "country": {"country"},
     }
 
     first = [norm_header(v) for v in rows[0]]
@@ -5599,7 +5605,7 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
         return mapping
 
     header_map = detect_header_map(first)
-    has_header = any(k in header_map for k in ["name", "first_name", "last_name", "email", "phone"])
+    has_header = any(k in header_map for k in ["name", "first_name", "last_name", "email", "phone", "role", "region", "country"])
 
     if has_header:
         data_rows = rows[1:]
@@ -5620,6 +5626,21 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
             return ""
         return str(cells[idx]).strip()
 
+    def normalize_role(raw_role: str) -> str:
+        role_key = norm_header(raw_role)
+        role_map = {
+            "worker": "worker",
+            "employee": "worker",
+            "staff": "worker",
+            "manager": "manager",
+            "office_admin": "office_admin",
+            "payroll": "payroll",
+        }
+        safe_role = role_map.get(role_key, "worker")
+        if safe_role in {"owner", "platform_owner"}:
+            return "worker"
+        return safe_role
+
     business_id = str(
         current_user.get("business_id")
         or current_user.get("businessId")
@@ -5639,6 +5660,7 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
         raise HTTPException(status_code=400, detail="Could not determine business ID for team import")
 
     invited = 0
+    updated = 0
     skipped = 0
     details = []
 
@@ -5649,37 +5671,57 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
             last_name = get_cell(row, "last_name")
             email = get_cell(row, "email").lower()
             phone = get_cell(row, "phone")
+            role = normalize_role(get_cell(row, "role"))
+            region = get_cell(row, "region")
+            country = get_cell(row, "country")
 
             if not name:
                 name = " ".join(part for part in [first_name, last_name] if part).strip()
-
-            if not name:
-                skipped += 1
-                details.append({"row": row_num, "status": "skipped", "reason": "Missing name"})
-                continue
+            if not name and first_name:
+                name = first_name
 
             if not email:
                 skipped += 1
                 details.append({"row": row_num, "status": "skipped", "reason": "Missing email"})
                 continue
 
+            if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+                skipped += 1
+                details.append({"row": row_num, "status": "skipped", "reason": "Invalid email"})
+                continue
+
+            if not name:
+                skipped += 1
+                details.append({"row": row_num, "status": "skipped", "reason": "Missing name"})
+                continue
+
             existing = await db.business_users.find_one({
                 "business_id": business_id,
                 "email": email,
-                "role": "worker"
             })
 
             if existing:
-                skipped += 1
-                details.append({"row": row_num, "status": "skipped", "reason": "Worker already exists"})
+                update_doc = {
+                    "name": name,
+                    "phone": phone,
+                    "role": role,
+                    "country": country,
+                    "region": region,
+                    "updated_at": datetime.now(timezone.utc),
+                }
+                await db.business_users.update_one({"_id": existing["_id"]}, {"$set": update_doc})
+                updated += 1
+                details.append({"row": row_num, "status": "updated", "reason": ""})
                 continue
 
             worker_doc = {
                 "name": name,
                 "email": email,
                 "phone": phone,
-                "role": "worker",
+                "role": role,
                 "status": "invited",
+                "country": country,
+                "region": region,
                 "business_id": business_id,
                 "owner_id": owner_id,
                 "created_at": datetime.now(timezone.utc),
@@ -5696,7 +5738,7 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
                     name=name,
                     invite_link=invite_link,
                     business_name=biz_name,
-                    role="worker",
+                    role=role,
                 )
                 await send_email(to_email=email, subject=inv_subject, html_content=inv_html)
                 print(f"TEAM_INVITE_CSV_EMAIL_SENT to={email}")
@@ -5713,11 +5755,12 @@ async def import_csv_workers(request: Request, current_user: dict = Depends(get_
     return {
         "success": True,
         "invited": invited,
+        "updated": updated,
         "imported": invited,
         "skipped": skipped,
         "total": len(data_rows),
         "details": details,
-        "message": f"Invited {invited} workers, skipped {skipped} rows."
+        "message": f"{invited} invited, {updated} updated, {skipped} skipped of {len(data_rows)} rows."
     }
 
 # CLIENT_IMPORT_CORS_REDEPLOY_MARKER
