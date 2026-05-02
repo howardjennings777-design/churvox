@@ -289,9 +289,17 @@ export default function DashboardPage() {
               <PremiumActionCard tone="blue"   icon={<Plus className="h-5 w-5" />}     title="New job"           description="Schedule and assign work" onClick={() => navigate("/jobs/new")} />
               <PremiumActionCard tone="violet" icon={<FileSignature className="h-5 w-5" />} title="New quote"     description="Send a professional quote" onClick={() => navigate("/quotes/new")} />
               <PremiumActionCard tone="teal"   icon={<Receipt className="h-5 w-5" />}  title="New invoice"       description="Bill for completed work" onClick={() => navigate("/invoices/new")} />
-              <PremiumActionCard tone="sky"    icon={<UserPlus className="h-5 w-5" />} title="Invite worker"     description="Grow your crew" onClick={() => navigate("/team")} />
-              <PremiumActionCard tone="amber"  icon={<MessageSquare className="h-5 w-5" />} title="Communications" description="SMS reminders" onClick={() => navigate("/sms")} />
-              <PremiumActionCard tone="blue"   icon={<Zap className="h-5 w-5" />}      title="Automation"        description="Rules & templates" onClick={() => navigate("/automation")} />
+            </div>
+          </PremiumSection>
+        )}
+
+        {/* More tools */}
+        {isAdmin && (
+          <PremiumSection title="More tools" subtitle="Secondary actions">
+            <div className="px-grid px-grid--3">
+              <PremiumActionCard tone="sky" icon={<UserPlus className="h-5 w-5" />} title="Invite worker" description="Add crew or office staff" onClick={() => navigate("/team")} />
+              <PremiumActionCard tone="amber" icon={<MessageSquare className="h-5 w-5" />} title="Communications" description="Customer messages and reminders" onClick={() => navigate("/sms")} />
+              <PremiumActionCard tone="blue" icon={<Zap className="h-5 w-5" />} title="Automation" description="Rules and templates" onClick={() => navigate("/automation")} />
             </div>
           </PremiumSection>
         )}
