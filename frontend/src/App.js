@@ -34,6 +34,7 @@ import SMSPage from "./pages/SMSPage";
 import PayrollPage from "./pages/PayrollPage";
 import WorkerJobsPage from "./pages/worker/WorkerJobsPage";
 import WorkerJobDetailPage from "./pages/worker/WorkerJobDetailPage";
+import OnboardingPage from "./pages/OnboardingPage";
 import WorkerSettingsPage from "./pages/worker/WorkerSettingsPage";
 import PrivacyPage from "./pages/legal/PrivacyPage";
 import TermsPage from "./pages/legal/TermsPage";
@@ -235,6 +236,7 @@ function App() {
           {/* Business routes (owner, manager, office_admin) */}
           <Route path="/dashboard" element={<BusinessRoute><DashboardPage /></BusinessRoute>} />
           <Route path="/overview" element={<BusinessRoute><DashboardPage /></BusinessRoute>} />
+          <Route path="/onboarding" element={<BusinessRoute><OnboardingPage /></BusinessRoute>} />
           <Route path="/jobs" element={<BusinessRoute><JobsPage /></BusinessRoute>} />
           <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
           <Route path="/jobs/:id" element={<BusinessRoute><JobDetailPage /></BusinessRoute>} />
