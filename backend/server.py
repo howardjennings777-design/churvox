@@ -6321,6 +6321,89 @@ async def mark_all_notifications_read(current_user: dict = Depends(get_current_u
     return {"success": True, "modified": r.modified_count}
 
 
+@api_router.get("/worker/office-contact")
+async def get_worker_office_contact(current_user: dict = Depends(get_current_user)):
+    role = str((current_user or {}).get("role") or "").lower()
+    if role != "worker":
+        raise HTTPException(status_code=403, detail="Workers only")
+
+    business_id = await get_user_business_id(current_user)
+    contact_roles = {"owner", "admin", "employer", "manager", "office_admin"}
+    contacts = []
+
+    cursor = db.users.find(
+        {"business_id": str(business_id), "role": {"$in": list(contact_roles)}},
+        {"name": 1, "email": 1, "phone": 1, "mobile": 1, "phone_number": 1, "role": 1, "business_name": 1},
+    ).sort("name", 1)
+    async for user in cursor:
+        phone = clean_phone(user.get("phone") or user.get("mobile") or user.get("phone_number"))
+        contact = {
+            "name": user.get("name") or user.get("email") or "Office contact",
+            "role": str(user.get("role") or "").replace("_", " ").title() or "Office",
+            "email": user.get("email") or None,
+            "phone": phone,
+        }
+        contacts.append(contact)
+
+    business_name = (
+        current_user.get("business_name")
+        or (contacts[0].get("name") if contacts else None)
+        or "Your Office"
+    )
+
+    if not contacts:
+        return {
+            "success": True,
+            "business_name": business_name,
+            "contacts": [],
+            "message": "No office contact has been set yet.",
+        }
+
+    return {"success": True, "business_name": business_name, "contacts": contacts}
+
+
+@api_router.post("/worker/contact-office")
+async def worker_contact_office(payload: dict, current_user: dict = Depends(get_current_user)):
+    role = str((current_user or {}).get("role") or "").lower()
+    if role != "worker":
+        raise HTTPException(status_code=403, detail="Workers only")
+
+    business_id = await get_user_business_id(current_user)
+    message = str((payload or {}).get("message") or "").strip()
+    job_id = str((payload or {}).get("job_id") or "").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="Message is required")
+
+    recipients = await db.users.find(
+        {"business_id": str(business_id), "role": {"$in": ["owner", "manager", "office_admin"]}},
+        {"_id": 1, "id": 1},
+    ).to_list(length=50)
+
+    actor_name = current_user.get("name") or current_user.get("email") or "Worker"
+    sent = 0
+    for recipient in recipients:
+        recipient_id = str(recipient.get("id") or recipient.get("_id") or "")
+        if not recipient_id:
+            continue
+        await notify(
+            user_id=recipient_id,
+            business_id=business_id,
+            type="worker_help_request",
+            title="Worker requested office help",
+            message=f"{actor_name}: {message}",
+            route="/admin/jobs",
+            target_type="job" if job_id else "",
+            target_id=job_id or "",
+        )
+        sent += 1
+
+    return {
+        "success": True,
+        "message": "Your help request has been sent to the office team." if sent else "No office contacts available yet, but your request was recorded.",
+        "notified": sent,
+    }
+
+
 # ==========================================================================
 # Automation Engine V1 — routes
 # ==========================================================================

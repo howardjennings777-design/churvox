@@ -6,6 +6,7 @@ import { Briefcase, Clock3, MapPin, Play, ChevronRight, LogOut, Settings, Calend
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 import { PremiumStatusBadge, PremiumButton, PremiumCard } from "@/components/premium";
 import WorkerBottomNav from "@/components/worker/WorkerBottomNav";
+import WorkerContactOfficePanel from "@/components/worker/WorkerContactOfficePanel";
 
 const canStart = (status) => ["assigned", "acknowledged", "paused"].includes(String(status || "").toLowerCase());
 
@@ -17,6 +18,7 @@ export default function WorkerJobsPage() {
   const [error, setError] = useState("");
   const [startingId, setStartingId] = useState("");
   const [lastSynced, setLastSynced] = useState(null);
+  const [showContactOffice, setShowContactOffice] = useState(false);
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
@@ -111,8 +113,9 @@ export default function WorkerJobsPage() {
             <p className="px-empty__sub">No jobs are assigned yet. Refresh your jobs page or contact the office if something looks wrong.</p>
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-sm">
               <PremiumButton onClick={fetchJobs} iconLeft={<RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />}>Refresh jobs</PremiumButton>
-              <Link to="/worker/settings#help"><PremiumButton variant="secondary" className="w-full">Contact office</PremiumButton></Link>
+              <PremiumButton variant="secondary" className="w-full" onClick={() => setShowContactOffice(true)}>Contact office</PremiumButton>
             </div>
+            <PremiumCard className="w-full max-w-sm mt-3"><div className="px-card__body"><p className="text-sm font-semibold text-[#0d1b34]">Need help?</p><p className="text-xs text-[#5b6c87] mb-2">If dispatch seems delayed, send the office a quick help request.</p><PremiumButton className="w-full" variant="secondary" onClick={() => setShowContactOffice(true)}>Open contact panel</PremiumButton></div></PremiumCard>
           </div>
         ) : null}
 
@@ -141,6 +144,7 @@ export default function WorkerJobsPage() {
           );
         }) : null}
       </main>
+      <WorkerContactOfficePanel open={showContactOffice} onClose={() => setShowContactOffice(false)} />
       <WorkerBottomNav active="today" />
     </div>
   );
