@@ -12,7 +12,7 @@ import { formatDate, formatCurrency } from "@/lib/utils";
 import Layout from "@/components/Layout";
 import {
   PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton,
-  PremiumAIBox, PremiumEmptyState, PremiumStatusBadge,
+  PremiumAIBox, PremiumAIDraftPanel, PremiumEmptyState, PremiumStatusBadge,
 } from "@/components/premium";
 
 const safeArray = (v) => (Array.isArray(v) ? v : []);
@@ -153,6 +153,8 @@ export default function QuotesPage() {
           {draft ? <div className="mt-2 rounded-xl border border-[#d8e3f3] bg-[#f6faff] p-3 whitespace-pre-wrap text-[13px]">{draft}</div> : null}
           {!llmAvailable ? <p className="mt-2 text-[11.5px] text-[#b45309]">Fallback draft — connect AI key for live AI.</p> : null}
         </PremiumAIBox>
+
+        <PremiumAIDraftPanel title="AI Quote Drafts" subtitle="Follow-ups and pending quote summaries." surface="quotes" context={{ quotes: filteredQuotes?.slice?.(0,12)?.map?.((q)=>({title:q.title,status:q.status,client:q.client_name})) }} quickActions={[{ label: "Quote follow-up", prompt: "Draft a concise quote follow-up." },{ label: "Owner summary", prompt: "Summarise pending quotes and suggested actions." }]} />
 
         <div className="px-grid px-grid--4">
           <PremiumStatCard label="Total quotes" value={quoteMetrics.total} icon={<FileText className="h-4 w-4" />} onClick={() => setStatusFilter("all")} />

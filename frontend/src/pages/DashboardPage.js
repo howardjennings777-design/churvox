@@ -13,7 +13,7 @@ import {
 import { safeArray, safeNumber, safeText } from "../utils/safeRender";
 import {
   PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumActionCard,
-  PremiumSection, PremiumButton, PremiumBadge, PremiumAIBox, PremiumListRow,
+  PremiumSection, PremiumButton, PremiumBadge, PremiumAIBox, PremiumAIDraftPanel, PremiumListRow,
   PremiumLoadingState, PremiumErrorState, PremiumEmptyState,
 } from "../components/premium";
 import PremiumStatusBadge from "../components/premium/PremiumStatusBadge";
@@ -210,6 +210,8 @@ export default function DashboardPage() {
             </p>
           </div>
         </PremiumAIBox>
+
+        <PremiumAIDraftPanel title="Smart Hub AI Drafts" subtitle="Daily summary and follow-up drafts." surface="smart_hub" context={{ stats, smart }} quickActions={[{ label: "Daily owner summary", prompt: "Give a concise daily owner summary." },{ label: "Jobs needing attention", prompt: "List jobs needing attention and next actions." },{ label: "Invoice follow-up", prompt: "Draft concise follow-up for overdue invoices." },{ label: "Quote follow-up", prompt: "Draft concise follow-up for pending quotes." }]} />
 
         {/* Stat grid */}
         <div className="px-grid px-grid--4">
