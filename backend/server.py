@@ -1689,6 +1689,96 @@ async def ai_operator_approval_items(current_user: dict = Depends(get_current_us
     records = [serialize_doc(r) async for r in db.ai_approval_items.find({"business_id": business_id}).sort("created_at", -1).limit(120)]
     return {"success": True, "data": records}
 
+
+
+@api_router.post("/ai/operator/approvals/{item_id}/approve")
+async def ai_operator_approve(item_id: str, current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower()
+    _owner_roles_only(role)
+    business_id = await get_user_business_id(current_user)
+    if not ObjectId.is_valid(item_id):
+        raise HTTPException(status_code=400, detail="Invalid approval item id")
+    item = await db.ai_approval_items.find_one({"_id": ObjectId(item_id), "business_id": business_id})
+    if not item:
+        raise HTTPException(status_code=404, detail="Approval item not found")
+
+    now = datetime.now(timezone.utc)
+    payload = item.get("draft_payload") or {}
+    item_type = str(item.get("type") or "")
+    result = {"action": "none"}
+
+    if item_type == "assign_worker":
+        job_id = str(payload.get("job_id") or item.get("related_entity_id") or "")
+        assigned_worker_id = str(payload.get("assigned_worker_id") or "")
+        if job_id and assigned_worker_id:
+            await db.jobs.update_one({"id": job_id, "business_id": business_id}, {"$set": {"assigned_worker_id": assigned_worker_id, "updated_at": now}})
+            result = {"action": "assigned_worker", "job_id": job_id, "assigned_worker_id": assigned_worker_id}
+        else:
+            result = {"action": "needs_manual_assignment"}
+
+    await db.ai_approval_items.update_one({"_id": ObjectId(item_id)}, {"$set": {"status": "approved", "approved_at": now, "updated_at": now}})
+    return {"success": True, "result": result}
+
+
+@api_router.post("/ai/operator/approvals/{item_id}/dismiss")
+async def ai_operator_dismiss(item_id: str, current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower()
+    _owner_roles_only(role)
+    business_id = await get_user_business_id(current_user)
+    if not ObjectId.is_valid(item_id):
+        raise HTTPException(status_code=400, detail="Invalid approval item id")
+    result = await db.ai_approval_items.update_one({"_id": ObjectId(item_id), "business_id": business_id}, {"$set": {"status": "dismissed", "updated_at": datetime.now(timezone.utc)}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Approval item not found")
+    return {"success": True}
+
+
+@api_router.post("/ai/operator/prepare-today")
+async def ai_operator_prepare_today(current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower()
+    _owner_roles_only(role)
+    business_id = await get_user_business_id(current_user)
+    jobs = [serialize_doc(j) async for j in db.jobs.find({"business_id": business_id}).limit(80)]
+    quotes = [serialize_doc(q) async for q in db.quotes.find({"business_id": business_id}).limit(80)]
+    invoices = [serialize_doc(i) async for i in db.invoices.find({"business_id": business_id}).limit(80)]
+
+    unassigned = [j for j in jobs if not j.get("assigned_worker_id")]
+    completed = [j for j in jobs if str(j.get("status") or "") == "completed"]
+    waiting_quotes = [q for q in quotes if str(q.get("status") or "") in {"sent", "draft"}]
+    open_invoices = [i for i in invoices if str(i.get("status") or "") in {"sent", "overdue", "draft"}]
+
+    actions = [
+        {"key": "assign", "title": f"Assign {len(unassigned)} unassigned jobs", "reason": "Unassigned jobs can delay today’s schedule.", "action": "Open dispatch"},
+        {"key": "invoice", "title": f"Convert {len(completed)} completed jobs to invoices", "reason": "Completed work should be billed quickly.", "action": "Open invoices"},
+        {"key": "quotes", "title": f"Review {len(waiting_quotes)} quotes waiting", "reason": "Faster follow-up improves conversion.", "action": "Open quotes"},
+        {"key": "invoices", "title": f"Check {len(open_invoices)} open invoices", "reason": "Keep cashflow healthy and reduce overdue debt.", "action": "Open invoices"},
+        {"key": "crew", "title": "Review crew workload", "reason": "Balance assignment load and avoid overload.", "action": "Open dispatch"},
+    ]
+    return {"success": True, "actions": actions}
+
+
+@api_router.post("/ai/operator/ask")
+async def ai_operator_ask(payload: dict, current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower()
+    _owner_roles_only(role)
+    business_id = await get_user_business_id(current_user)
+    question = str((payload or {}).get("question") or "").strip()
+
+    jobs = [serialize_doc(j) async for j in db.jobs.find({"business_id": business_id}).limit(80)]
+    quotes = [serialize_doc(q) async for q in db.quotes.find({"business_id": business_id}).limit(80)]
+    invoices = [serialize_doc(i) async for i in db.invoices.find({"business_id": business_id}).limit(80)]
+    unassigned = len([j for j in jobs if not j.get("assigned_worker_id")])
+    completed = len([j for j in jobs if str(j.get("status") or "") == "completed"])
+    waiting_quotes = len([q for q in quotes if str(q.get("status") or "") in {"sent", "draft"}])
+    open_invoices = len([i for i in invoices if str(i.get("status") or "") in {"sent", "overdue", "draft"}])
+
+    response = (
+        f"Top priorities today: assign {unassigned} unassigned jobs, convert {completed} completed jobs to invoices, "
+        f"follow up {waiting_quotes} quotes, and review {open_invoices} open invoices. "
+        f"Question received: {question or 'What should I do next?'}"
+    )
+    return {"success": True, "response": response}
+
 @api_router.post("/auth/refresh")
 async def refresh_token(request: Request, response: Response):
     token = request.cookies.get("refresh_token")
