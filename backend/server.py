@@ -1691,7 +1691,7 @@ async def ai_operator_approval_items(current_user: dict = Depends(get_current_us
 
 
 
-@api_router.post("/ai/operator/approvals/{item_id}/approve")
+@api_router.post("/ai/operator/approval-items/{item_id}/approve")
 async def ai_operator_approve(item_id: str, current_user: dict = Depends(get_current_user)):
     role = str(current_user.get("role") or "").lower()
     _owner_roles_only(role)
@@ -1720,7 +1720,7 @@ async def ai_operator_approve(item_id: str, current_user: dict = Depends(get_cur
     return {"success": True, "result": result}
 
 
-@api_router.post("/ai/operator/approvals/{item_id}/dismiss")
+@api_router.post("/ai/operator/approval-items/{item_id}/dismiss")
 async def ai_operator_dismiss(item_id: str, current_user: dict = Depends(get_current_user)):
     role = str(current_user.get("role") or "").lower()
     _owner_roles_only(role)
@@ -1757,6 +1757,16 @@ async def ai_operator_prepare_today(current_user: dict = Depends(get_current_use
     return {"success": True, "actions": actions}
 
 
+@api_router.get("/ai/operator/run-daily-check")
+async def ai_operator_run_daily_check_get(current_user: dict = Depends(get_current_user)):
+    return await ai_operator_run_daily_check(current_user)
+
+
+@api_router.get("/ai/operator/prepare-today")
+async def ai_operator_prepare_today_get(current_user: dict = Depends(get_current_user)):
+    return await ai_operator_prepare_today(current_user)
+
+
 @api_router.post("/ai/operator/ask")
 async def ai_operator_ask(payload: dict, current_user: dict = Depends(get_current_user)):
     role = str(current_user.get("role") or "").lower()
@@ -1778,6 +1788,11 @@ async def ai_operator_ask(payload: dict, current_user: dict = Depends(get_curren
         f"Question received: {question or 'What should I do next?'}"
     )
     return {"success": True, "response": response}
+
+
+@api_router.get("/ai/operator/ask")
+async def ai_operator_ask_get(question: str = "", current_user: dict = Depends(get_current_user)):
+    return await ai_operator_ask({"question": question}, current_user)
 
 @api_router.post("/auth/refresh")
 async def refresh_token(request: Request, response: Response):
