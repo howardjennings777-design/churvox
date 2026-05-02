@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
+import useAiDraft from "../hooks/useAiDraft";
 import {
   Briefcase, Calendar, CheckCircle, FileText, Users, Plus, ArrowRight,
   AlertTriangle, Receipt, UserPlus, Clock3, MessageSquareWarning, RefreshCw,
@@ -30,6 +31,7 @@ export default function DashboardPage() {
   const [workers, setWorkers] = useState([]);
   const [myobSettings, setMyobSettings] = useState(null);
   const [aiInput, setAiInput] = useState("");
+  const { loading: aiLoading, draft, llmAvailable, setDraft, generate } = useAiDraft('smart_hub');
 
   const isAdmin = normalizedRole === "owner" || normalizedRole === "manager" || normalizedRole === "office_admin";
 
@@ -196,10 +198,13 @@ export default function DashboardPage() {
                 placeholder="e.g. Draft a polite reminder for unpaid invoices over 14 days"
                 className="px-input flex-1"
               />
-              <PremiumButton iconLeft={<Send className="h-4 w-4" />} disabled>
+              <PremiumButton iconLeft={<Send className="h-4 w-4" />} disabled={aiLoading} onClick={() => generate(aiInput)}>
                 Generate draft
               </PremiumButton>
             </div>
+            {draft ? <div className="mt-3 rounded-xl border border-[#d8e3f3] bg-[#f6faff] p-3 text-[13px] text-[#1a2c4d] whitespace-pre-wrap">{draft}</div> : null}
+            {!llmAvailable ? <p className="mt-2 text-[11.5px] text-[#b45309]">Fallback draft — connect AI key for live AI.</p> : null}
+            {draft ? <div className="mt-2 flex gap-2"><PremiumButton size="sm" variant="secondary" onClick={() => navigator.clipboard?.writeText(draft)}>Copy draft</PremiumButton><PremiumButton size="sm" variant="ghost" onClick={() => setDraft('')}>Clear</PremiumButton></div> : null}
             <p className="text-[11.5px] text-[#5b6c87] mt-2">
               Drafts appear here for your review. AI never auto-sends customer messages and never makes payroll, legal or tax decisions.
             </p>
