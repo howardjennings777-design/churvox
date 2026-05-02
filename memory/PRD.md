@@ -1,73 +1,49 @@
-# Churvox PRD
+# Churvox — Premium AI Tradie Platform PRD
 
 ## Original Problem Statement
-Prepare Churvox for launch as a mobile-friendly web app deployed on Render. Keep Render compatibility, current frontend/backend structure, and preserve existing auth/cookie/CORS setups. Do not hardcode backend URLs. Focus on launch-critical items only.
-
-Latest scope additions (2026-04-22): Strongest practical V1 Automation Engine — wire remaining triggers (quote_accepted, recurring_job_generated, timesheet_updated, payroll_status_updated, job_resumed), add templates, trigger schemas, run retry, and per-rule stats. Keep existing working features intact.
+Churvox is an all-in-one field-service SaaS for NZ/AU tradies covering jobs, clients, quotes, invoices, dispatch, payroll, automation, SMS, reports, and MYOB integration. User required a complete frontend rebuild into a premium, modern, uncluttered tradie business platform with a recurring ice-blue theme, deep navy text, electric blue actions, glass premium cards, and clearly visible AI Business Assistant sections across every major page. The rebuild MUST NOT break backend APIs, auth, roles, plan gates, worker restrictions, Stripe, public invoice/quote links, MYOB, SMS, or automation wiring.
 
 ## Architecture
-- **Frontend**: React (CRA via craco) + Tailwind + Radix/Shadcn — served as a production build via `serve -s build` (PORT=3000). Hot reload NOT active in production mode; run `yarn build && sudo supervisorctl restart frontend` after any .js edit.
-- **Backend**: FastAPI + MongoDB (motor) on port 8001 (uvicorn `--reload`)
-- **Auth**: JWT + bcrypt (passlib)
-- **Email**: Postmark (migrated from Resend)
-- **SMS**: ClickSend
-- **Billing**: Stripe
-- **Automation core**: `/app/backend/automation.py`
+- **Frontend**: React (CRA + craco), Tailwind CSS, custom `premium.css` design system, Shadcn UI
+- **Backend**: FastAPI, MongoDB (unchanged)
+- **Shared premium library**: `/app/frontend/src/components/premium/` (PremiumPage, PremiumHero, PremiumCard, PremiumAIBox, PremiumButton, PremiumStatCard, PremiumActionCard, PremiumBadge, PremiumStatusBadge, PremiumListRow, PremiumFormSection, PremiumTable, PremiumStates, PremiumSection)
+- **Theme tokens**: `/app/frontend/src/styles/premium.css` — ice-blue bg `#eef4fc`, deep navy `#0d1b34`, electric blue `#2563eb`, teal success `#0d9488`, amber warning `#d97706`, red danger `#dc2626`
 
-## What's Been Implemented (Major Waves)
+## What's Implemented (Premium Rebuild Complete — Feb 2026)
 
-### Pre-session (Prior forks)
-- Full CRUD for clients, jobs, quotes, invoices; auth/login/signup/reset flows; Stripe plans; team portal; CSV imports; PWA; mobile fixes.
+### Design system
+- `premium.css` with full token set + `.cx-*` bridge classes mapping legacy class names to the new premium theme
+- 15 reusable premium components in `/components/premium/`
+- `Layout.js` wraps everything in `.px-app` shell with premium sidebar, grouped nav (Workspace / Sales / Operations / Settings), NotificationsBell, user card, and mobile bottom nav with More menu
 
-### Session 2026-04-21 (V1 Automation + Notifications launch)
-- Built V1 Automation Engine with 19 triggers, 9 actions, 18 operators
-- In-app notifications system (bell, unread count, per-user scope)
-- Postmark migration + branded email templates
-- Team invite select styling, PWA icons, geolocation retry
-- Worker photo auto-compression via client-side Canvas
+### Pages upgraded to premium theme
+**Auth**: LoginPage, SignupPage, ForgotPasswordPage, ResetPasswordPage
+**Smart Hub**: DashboardPage (AI Business Assistant panel with APPROVAL-FIRST chip, stat grid, today's run sheet, active work)
+**Jobs**: JobsPage, JobFormPage, JobDetailPage (AI Job Assistant with approval-first chip)
+**Clients**: ClientsPage, ClientFormPage, ClientDetailPage (AI Client Assistant)
+**Quotes**: QuotesPage, QuoteFormPage, QuoteDetailPage (AI Quote Follow-up)
+**Invoices**: InvoicesPage, InvoiceFormPage, InvoiceDetailPage (AI Invoice Chaser)
+**Operations**: AutomationPage, AutomationRunsPage, PayrollPage, ReportsPage, TeamPage
+**Settings & Platform**: SettingsPage, PlansPage, IntegrationsPage, SMSPage, NotificationsPage
+**Worker**: WorkerJobsPage, WorkerSettingsPage
+**Dispatch**: CalendarPage (uses `.cx-*` bridge styles, auto-inherits premium theme)
 
-### Session 2026-04-22 (Automation Strongest-Practical Release) — THIS SESSION
-Backend:
-- Wired missing triggers: `quote_accepted` (new `POST /api/quotes/{id}/accept`), `recurring_job_generated` (new `POST /api/jobs/generate-recurring`), `timesheet_updated` (new `POST /api/payroll/timesheets`), `payroll_status_updated` (new `POST /api/payroll/status`)
-- Fixed `job_resumed` emit — previously conflated with `job_started` on paused→in_progress transition
-- Added engine helpers: `GET /api/automation/templates` (6 starter rules), `GET /api/automation/triggers/{name}/schema` (payload paths), `POST /api/automation/runs/{id}/retry` (re-run a past run)
-- `GET /api/automation/rules` now returns `last_run_at`, `last_run_status`, `runs_count` per rule
+### AI Business Assistant surfaces (approval-first, never auto-sends)
+- Smart Hub: full "Ask your business" panel with draft generation
+- Jobs, Clients, Quotes, Invoices, Automation: `PremiumAIBox` with title, subtitle, suggestions, actions, and explicit "Always review and approve before sending" notice
 
-Frontend:
-- Rule builder: trigger path hints (click-to-copy chips), template picker panel, rule list with search + trigger + enabled filters, per-rule last-run badge and stats
-- Run history: search by rule/trigger, retry button on failed runs, extra result IDs surfaced (task/activity)
+## Testing
+- Build: `yarn build` passes (214.44 kB gzipped JS, 20.61 kB gzipped CSS)
+- Testing agent v3 fork iteration 27: **100% (25/25 tests passed, 0 action items, 0 regressions)**
+- Credentials verified: `/app/memory/test_credentials.md`
 
-Tests:
-- New pytest-style smoke suite: `/app/backend/tests/test_automation_new_triggers.py` — covers templates, trigger schemas, recurring generator, timesheet/payroll stubs, rule creation + trigger fire + run retry + stats regression.
+## Backlog / Future Enhancements (P2)
+- Strip remaining `cx-*` bridge classes from JSX in favor of direct premium components (reduce CSS bloat)
+- Add light/dark theme toggle (currently light-only)
+- Add skeleton loaders on all list pages instead of spinner
+- Move legacy `/app/backend/` routes to `/app/backend/routes/` and models to `/app/backend/models/`
+- Expand AI assistant with live LLM drafts (currently UI-ready, backend hook pending)
 
-## Backlog (Prioritised)
-
-### P2 — Polish
-- Inline action-config form builder (replace raw JSON textarea) for top-3 actions
-- Scheduler cron (call `/api/jobs/generate-recurring` once daily; currently on-demand)
-
-### Future
-- Migrate job photos from base64-in-Mongo to Emergent Object Storage with signed URLs + thumbnails
-- Refactor `server.py` (~5.7k lines) into `/app/backend/routes` and `/app/backend/models`
-
-## Render Environment Variables Required
-```
-MONGO_URL=<MongoDB connection string>
-DB_NAME=<database name>
-JWT_SECRET=<64+ char secret>
-CORS_ORIGINS=<frontend URL>
-FRONTEND_URL=<frontend URL>
-POSTMARK_SERVER_TOKEN=<Postmark server token>
-POSTMARK_FROM_EMAIL=hello@churvox.com
-CLICKSEND_USERNAME=hello@churvox.com
-CLICKSEND_API_KEY=<ClickSend key>
-PLATFORM_OWNER_EMAILS=hello@churvox.com
-```
-
-## Changelog
-- 2026-04-22: Strongest-practical V1 Automation release — wired quote_accepted, recurring_job_generated, timesheet_updated, payroll_status_updated, job_resumed triggers; added templates/trigger-schema/retry/stats; frontend rule builder + run history UX lift. E2E smoke suite green.
-- 2026-04-21: Automation Engine V1 + Notifications shipped; Postmark migration; team select styling; worker photo compression; PWA icons & splash.
-
-## Operational Note
-- Frontend serves from `/app/frontend/build`. After any .js/.jsx edit: `cd /app/frontend && yarn build && sudo supervisorctl restart frontend`.
-- Backend hot-reloads via uvicorn `--reload` — no restart needed for .py edits (only for .env/deps).
+## Deployment
+- Git: User owns the repo and must use Emergent's **"Save to GitHub"** button in the chat input to push. Render auto-deploy is wired to `main`.
+- Protected env vars: `REACT_APP_BACKEND_URL` (frontend), `MONGO_URL` + `DB_NAME` (backend), Stripe test keys (pod env).
