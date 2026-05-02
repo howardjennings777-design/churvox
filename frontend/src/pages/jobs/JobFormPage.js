@@ -8,6 +8,7 @@ import { Label } from "../../components/ui/label";
 import { ArrowLeft, Briefcase, Save } from "lucide-react";
 import { toast } from "sonner";
 import { PremiumPage, PremiumHero, PremiumCard, PremiumButton } from "../../components/premium";
+import JobCreateForm from "../../components/forms/JobCreateForm";
 
 const COUNTRY_OPTIONS = [
   { value: "New Zealand", label: "New Zealand" },
@@ -182,6 +183,20 @@ export default function JobFormPage() {
       setSaving(false);
     }
   };
+
+
+  if (!isEdit) {
+    return (
+      <Layout>
+        <PremiumPage maxWidth={820}>
+          <PremiumHero eyebrow="New" title="New Job" subtitle="Create and assign a job." />
+          <PremiumCard>
+            <JobCreateForm onCancel={() => navigate("/jobs")} onSuccess={(data) => navigate(`/jobs/${data?.id || data?._id || ""}`)} submitLabel="Create Job" />
+          </PremiumCard>
+        </PremiumPage>
+      </Layout>
+    );
+  }
 
   if (loading) {
     return (

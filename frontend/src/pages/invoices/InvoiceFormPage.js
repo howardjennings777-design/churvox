@@ -10,6 +10,7 @@ import { ArrowLeft, Loader2, Receipt, Save } from "lucide-react";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { PremiumPage, PremiumHero, PremiumCard, PremiumButton } from "@/components/premium";
+import InvoiceCreateForm from "@/components/forms/InvoiceCreateForm";
 
 export default function InvoiceFormPage() {
   const navigate = useNavigate();
@@ -122,6 +123,19 @@ export default function InvoiceFormPage() {
   const gstRate = Number(formData.gst_rate) || 0;
   const gstAmount = subtotal * (gstRate / 100);
   const total = subtotal + gstAmount;
+
+  if (!isEdit) {
+    return (
+      <Layout>
+        <PremiumPage maxWidth={820}>
+          <PremiumHero eyebrow="New" title="New Invoice" subtitle="Create in full page layout." />
+          <PremiumCard>
+            <InvoiceCreateForm onCancel={() => navigate("/invoices")} onSuccess={() => navigate("/invoices")} submitLabel="Create" />
+          </PremiumCard>
+        </PremiumPage>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

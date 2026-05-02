@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { PremiumPage, PremiumHero, PremiumCard, PremiumButton } from "@/components/premium";
+import ClientCreateForm from "@/components/forms/ClientCreateForm";
 
 export default function ClientFormPage() {
   const navigate = useNavigate();
@@ -97,6 +98,19 @@ export default function ClientFormPage() {
       toast.error("Failed to save client");
     }
   };
+
+  if (!isEdit) {
+    return (
+      <Layout>
+        <PremiumPage maxWidth={820}>
+          <PremiumHero eyebrow="New" title="New Client" subtitle="Create in full page layout." />
+          <PremiumCard>
+            <ClientCreateForm onCancel={() => navigate("/clients")} onSuccess={() => navigate("/clients")} submitLabel="Create" />
+          </PremiumCard>
+        </PremiumPage>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

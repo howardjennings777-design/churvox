@@ -1,4 +1,5 @@
 import { useNavigate, Link } from "react-router-dom";
+import { X } from "lucide-react";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import Layout from "../components/Layout";
@@ -18,6 +19,10 @@ import {
   PremiumLoadingState, PremiumErrorState, PremiumEmptyState,
 } from "../components/premium";
 import PremiumStatusBadge from "../components/premium/PremiumStatusBadge";
+import JobCreateForm from "../components/forms/JobCreateForm";
+import QuoteCreateForm from "../components/forms/QuoteCreateForm";
+import InvoiceCreateForm from "../components/forms/InvoiceCreateForm";
+import ClientCreateForm from "../components/forms/ClientCreateForm";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -33,7 +38,7 @@ export default function DashboardPage() {
   const [myobSettings, setMyobSettings] = useState(null);
   const [aiInput, setAiInput] = useState("");
   const [hubPanel, setHubPanel] = useState({ open: false, key: null });
-  const [panelLoading, setPanelLoading] = useState(false);
+  
   const { loading: aiLoading, draft, llmAvailable, setDraft, generate } = useAiDraft('smart_hub');
 
   const isAdmin = normalizedRole === "owner" || normalizedRole === "manager" || normalizedRole === "office_admin";
@@ -64,10 +69,7 @@ export default function DashboardPage() {
   }, [get]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
-  const openPanel = (key) => {
-    setHubPanel({ open: true, key });
-    setPanelLoading(true);
-  };
+  const openPanel = (key) => setHubPanel({ open: true, key });
   const closePanel = () => setHubPanel({ open: false, key: null });
 
   const smart = useMemo(() => {
@@ -144,10 +146,10 @@ export default function DashboardPage() {
   }, [smart]);
 
   const panelConfig = {
-    job: { title: "New job", src: "/jobs/new", successPath: "/jobs" },
-    quote: { title: "New quote", src: "/quotes/new", successPath: "/quotes" },
-    invoice: { title: "New invoice", src: "/invoices/new", successPath: "/invoices" },
-    client: { title: "Add client", src: "/clients/new", successPath: "/clients" },
+    job: { title: "New job", subtitle: "Create and assign work from the command centre", src: "/jobs/new" },
+    quote: { title: "New quote", subtitle: "Create and send quotes from the command centre", src: "/quotes/new" },
+    invoice: { title: "New invoice", subtitle: "Create and bill work from the command centre", src: "/invoices/new" },
+    client: { title: "Add client", subtitle: "Create customer records from the command centre", src: "/clients/new" },
     dispatch: { title: "Dispatch board", src: "/dispatch", successPath: null },
     quoteFollowup: { title: "Quote follow-up panel", src: "/quotes", successPath: null },
     invoiceReminder: { title: "Invoice reminder panel", src: "/invoices?status=overdue", successPath: null },
@@ -346,32 +348,22 @@ export default function DashboardPage() {
         )}
       </PremiumPage>
       {hubPanel.open && activePanel ? (
-        <div className="fixed inset-0 z-[70] bg-[#0b1730]/45 backdrop-blur-sm p-0 sm:p-4" role="dialog" aria-modal="true">
-          <div className="ml-auto h-full w-full sm:max-w-5xl bg-white shadow-2xl border-l border-[#d8e3f3] flex flex-col">
-            <div className="px-4 py-3 border-b border-[#e6eef9] flex items-center justify-between gap-3">
+        <div className="fixed inset-0 z-[70] bg-[#0b1730]/45 backdrop-blur-sm" role="dialog" aria-modal="true">
+          <div className="ml-auto h-full w-full md:max-w-[720px] bg-white shadow-2xl border-l border-[#d8e3f3] flex flex-col">
+            <div className="px-5 py-4 border-b border-[#e6eef9] flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-[#0d1b34]">{activePanel.title}</p>
-                <Link to={activePanel.src} className="text-xs text-[#2563eb] hover:underline">Open full page</Link>
+                <p className="text-lg font-semibold text-[#0d1b34]">{activePanel.title}</p>
+                <p className="text-sm text-[#5b6c87] mt-1">{activePanel.subtitle}</p>
+                <Link to={activePanel.src} className="text-xs text-[#2563eb] hover:underline mt-2 inline-block">Open full page</Link>
               </div>
-              <button className="text-sm text-[#5b6c87]" onClick={closePanel}>Close</button>
+              <button className="text-[#5b6c87]" onClick={closePanel}><X className="h-5 w-5" /></button>
             </div>
-            {panelLoading ? <div className="px-4 py-2 text-sm text-[#5b6c87]">Loading panel…</div> : null}
-            <iframe
-              title={activePanel.title}
-              src={activePanel.src}
-              className="w-full flex-1"
-              onLoad={(e) => {
-                setPanelLoading(false);
-                try {
-                  const path = e.currentTarget.contentWindow?.location?.pathname;
-                  if (activePanel.successPath && path === activePanel.successPath) {
-                    closePanel();
-                    fetchData();
-                    toast.success(`${activePanel.title} saved`);
-                  }
-                } catch (_err) {}
-              }}
-            />
+            <div className="p-5 overflow-y-auto flex-1">
+              {hubPanel.key === "job" ? <JobCreateForm onCancel={closePanel} onSuccess={() => { closePanel(); fetchData(); toast.success("Job created"); }} submitLabel="Create job" /> : null}
+              {hubPanel.key === "quote" ? <QuoteCreateForm onCancel={closePanel} onSuccess={() => { closePanel(); fetchData(); toast.success("Quote created"); }} submitLabel="Create quote" /> : null}
+              {hubPanel.key === "invoice" ? <InvoiceCreateForm onCancel={closePanel} onSuccess={() => { closePanel(); fetchData(); toast.success("Invoice created"); }} submitLabel="Create invoice" /> : null}
+              {hubPanel.key === "client" ? <ClientCreateForm onCancel={closePanel} onSuccess={() => { closePanel(); fetchData(); toast.success("Client created"); }} submitLabel="Add client" /> : null}
+            </div>
           </div>
         </div>
       ) : null}
