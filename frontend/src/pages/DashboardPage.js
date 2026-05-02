@@ -1,140 +1,97 @@
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { toast } from "sonner";
+import { AlertTriangle, Briefcase, Calendar, FileText, Receipt, Users, X } from "lucide-react";
 import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
-import useAiDraft from "../hooks/useAiDraft";
-import {
-  Briefcase, Calendar, FileText, Users, Plus, ArrowRight,
-  AlertTriangle, Receipt, Clock3, Sparkles, Send, DollarSign,
-  ShieldCheck, FileSignature, UserPlus, CheckCircle2,
-} from "lucide-react";
-import { safeArray, safeNumber, safeText } from "../utils/safeRender";
-import {
-  PremiumPage, PremiumCard, PremiumButton, PremiumBadge, PremiumAIBox,
-  PremiumLoadingState, PremiumErrorState, PremiumEmptyState,
-} from "../components/premium";
-import PremiumStatusBadge from "../components/premium/PremiumStatusBadge";
+import { safeArray, safeText } from "../utils/safeRender";
+
+const OWNER_ROLES = ["owner", "manager", "office_admin"];
+const today = () => new Date().toISOString().slice(0, 10);
+
+function Modal({ open, title, onClose, children }) {
+  if (!open) return null;
+  return <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true">
+    <div className="w-full sm:max-w-xl bg-white rounded-t-2xl sm:rounded-2xl border border-slate-200 shadow-2xl">
+      <div className="flex items-center justify-between p-3 border-b"><h3 className="font-semibold">{title}</h3><button onClick={onClose}><X className="h-4 w-4"/></button></div>
+      <div className="p-4">{children}</div>
+    </div>
+  </div>;
+}
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, normalizedRole } = useAuth();
-  const { get } = useApi();
-  const [pageLoading, setPageLoading] = useState(true);
-  const [pageError, setPageError] = useState("");
-  const [stats, setStats] = useState({});
-  const [jobs, setJobs] = useState([]);
-  const [quotes, setQuotes] = useState([]);
-  const [invoices, setInvoices] = useState([]);
-  const [workers, setWorkers] = useState([]);
-  const [aiInput, setAiInput] = useState("");
-  const { loading: aiLoading, draft, llmAvailable, setDraft, generate } = useAiDraft("smart_hub");
+  const { get, post } = useApi();
+  const isOwnerHub = OWNER_ROLES.includes(normalizedRole);
+  const [state, setState] = useState({ loading: true, error: "", jobs: [], quotes: [], invoices: [], workers: [], approvals: [] });
+  const [activeModal, setActiveModal] = useState("");
+  const [askInput, setAskInput] = useState("");
+  const [askAnswer, setAskAnswer] = useState("");
+  const [prepared, setPrepared] = useState([]);
 
-  const isAdmin = ["owner", "manager", "office_admin"].includes(normalizedRole);
-  const isWorker = normalizedRole === "worker";
-
-  const fetchData = useCallback(async () => {
-    setPageLoading(true);
-    setPageError("");
+  const load = useCallback(async () => {
+    setState((s) => ({ ...s, loading: true, error: "" }));
     try {
-      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes] = await Promise.all([
-        get("/dashboard/stats"), get("/jobs"), get("/quotes"), get("/invoices"), get("/team/workers"),
+      const [jobs, quotes, invoices, workers, approvals] = await Promise.all([
+        get("/jobs"), get("/quotes"), get("/invoices"), get("/team/workers"), isOwnerHub ? get("/ai/operator/approvals") : Promise.resolve({ data: [] }),
       ]);
-      setStats(statsRes?.success ? (statsRes.data || {}) : {});
-      setJobs(safeArray(jobsRes?.success ? jobsRes.data : []));
-      setQuotes(safeArray(quotesRes?.success ? quotesRes.data : []));
-      setInvoices(safeArray(invoicesRes?.success ? invoicesRes.data : []));
-      setWorkers(safeArray(workersRes?.success ? workersRes.data : []));
-    } catch (err) {
-      setPageError(safeText(err, "Failed to load Smart Hub"));
-    } finally { setPageLoading(false); }
-  }, [get]);
-  useEffect(() => { fetchData(); }, [fetchData]);
+      setState({ loading: false, error: "", jobs: safeArray(jobs?.data), quotes: safeArray(quotes?.data), invoices: safeArray(invoices?.data), workers: safeArray(workers?.data), approvals: safeArray(approvals?.data) });
+    } catch (e) {
+      setState((s) => ({ ...s, loading: false, error: safeText(e, "Failed to load command centre") }));
+    }
+  }, [get, isOwnerHub]);
+  useEffect(() => { load(); }, [load]);
 
-  const smart = useMemo(() => {
-    const todayKey = new Date().toISOString().slice(0, 10);
-    const todayList = jobs.filter((j) => String(j.scheduled_date || "").slice(0, 10) === todayKey);
-    const unassigned = jobs.filter((j) => !j.assigned_worker_id);
-    const active = jobs.filter((j) => ["assigned", "acknowledged", "in_progress", "paused"].includes(String(j.status || "")));
-    const completed = jobs.filter((j) => String(j.status || "") === "completed");
-    const quotesWaiting = quotes.filter((q) => ["sent", "draft"].includes(String(q.status || "")));
-    const openInvoices = invoices.filter((inv) => ["draft", "sent", "overdue"].includes(String(inv.status || "")));
-    const overdue = invoices.filter((inv) => String(inv.status || "") === "overdue");
-    const activeCrew = new Set(active.map((j) => j.assigned_worker_id).filter(Boolean)).size;
-
+  const d = useMemo(() => {
+    const todayJobs = state.jobs.filter((j) => String(j.scheduled_date || "").slice(0, 10) === today());
+    const unassigned = state.jobs.filter((j) => !j.assigned_worker_id);
+    const activeJobs = state.jobs.filter((j) => ["assigned", "acknowledged", "in_progress", "paused"].includes(String(j.status || "")));
+    const ready = state.jobs.filter((j) => String(j.status || "") === "completed");
+    const quotesWaiting = state.quotes.filter((q) => ["sent", "draft"].includes(String(q.status || "")));
+    const openInvoices = state.invoices.filter((i) => ["draft", "sent", "overdue"].includes(String(i.status || "")));
+    const overdue = state.invoices.filter((i) => String(i.status || "") === "overdue");
+    const crew = new Set(activeJobs.map((j) => j.assigned_worker_id).filter(Boolean)).size;
+    const workerMap = new Map();
+    state.workers.forEach((w) => { const k = String(w.email || w.phone || w.name || w.id || "").toLowerCase(); if (!workerMap.has(k) && w.active !== false) workerMap.set(k, w); });
     const queue = [
-      ...unassigned.slice(0, 3).map((j) => ({ id: `u-${j.id || j._id}`, title: safeText(j.title, "Untitled job"), reason: "Needs worker assignment", type: "Needs assignment", cta: "Assign", to: "/dispatch" })),
-      ...quotesWaiting.slice(0, 2).map((q) => ({ id: `q-${q.id || q._id}`, title: safeText(q.title || q.reference, "Quote follow-up"), reason: "Waiting for customer response", type: "Quote follow-up", cta: "Review", to: "/quotes" })),
-      ...overdue.slice(0, 2).map((i) => ({ id: `i-${i.id || i._id}`, title: safeText(i.invoice_number || i.title, "Invoice reminder"), reason: "Payment overdue", type: "Invoice reminder", cta: "Remind", to: "/invoices?status=overdue" })),
-      ...completed.slice(0, 2).map((j) => ({ id: `c-${j.id || j._id}`, title: safeText(j.title, "Completed job"), reason: "Ready to convert to invoice", type: "Ready to invoice", cta: "Convert", to: "/jobs?status=completed" })),
-    ].slice(0, 6);
-
-    return { todayList, unassigned, active, completed, quotesWaiting, openInvoices, overdue, activeCrew, queue };
-  }, [jobs, quotes, invoices]);
+      ...unassigned.map((j) => ({ id: `u${j.id || j._id}`, title: safeText(j.title, "Untitled job"), reason: "Needs assignment", action: "Assign", modal: "assign" })),
+      ...quotesWaiting.map((q) => ({ id: `q${q.id || q._id}`, title: safeText(q.title || q.reference, "Quote"), reason: "Quote follow-up", action: "Review", modal: "quoteFollowup" })),
+      ...overdue.map((i) => ({ id: `i${i.id || i._id}`, title: safeText(i.invoice_number || i.title, "Invoice"), reason: "Invoice reminder", action: "Remind", modal: "invoiceReminder" })),
+      ...ready.map((j) => ({ id: `r${j.id || j._id}`, title: safeText(j.title, "Completed job"), reason: "Ready to invoice", action: "Convert", modal: "convert" })),
+    ];
+    return { todayJobs, unassigned, activeJobs, ready, quotesWaiting, openInvoices, overdue, crew, queue, workers: Array.from(workerMap.values()) };
+  }, [state]);
 
   const metrics = [
-    { label: "Jobs today", count: smart.todayList.length, icon: Calendar, hint: "Open", onClick: () => document.getElementById("today-run-sheet")?.scrollIntoView({ behavior: "smooth", block: "start" }) },
-    { label: "Unassigned jobs", count: smart.unassigned.length, icon: Clock3, hint: "Assign", onClick: () => navigate("/dispatch") },
-    { label: "Active jobs", count: smart.active.length, icon: Briefcase, hint: "Open", onClick: () => navigate("/jobs") },
-    { label: "Quotes waiting", count: smart.quotesWaiting.length, icon: FileText, hint: "Review", onClick: () => navigate("/quotes") },
-    { label: "Open invoices", count: smart.openInvoices.length, icon: DollarSign, hint: "Review", onClick: () => navigate("/invoices") },
-    { label: "Ready to invoice", count: smart.completed.length, icon: Receipt, hint: "Convert", onClick: () => navigate("/jobs?status=completed") },
-    { label: "Overdue invoices", count: smart.overdue.length, icon: AlertTriangle, hint: "Remind", onClick: () => navigate("/invoices?status=overdue") },
-    { label: "Crew on site", count: smart.activeCrew, icon: Users, hint: "Open", onClick: () => document.getElementById("crew-dispatch")?.scrollIntoView({ behavior: "smooth", block: "start" }) },
+    ["Jobs today", d.todayJobs.length, Calendar, "Open", () => document.getElementById("today-run-sheet")?.scrollIntoView({ behavior: "smooth" })],
+    ["Unassigned jobs", d.unassigned.length, Briefcase, "Assign", () => setActiveModal("assign")],
+    ["Active jobs", d.activeJobs.length, Briefcase, "Open", () => navigate("/jobs")],
+    ["Quotes waiting", d.quotesWaiting.length, FileText, "Review", () => setActiveModal("quoteFollowup")],
+    ["Open invoices", d.openInvoices.length, Receipt, "Review", () => setActiveModal("invoiceList")],
+    ["Ready to invoice", d.ready.length, Receipt, "Convert", () => setActiveModal("convert")],
+    ["Overdue invoices", d.overdue.length, AlertTriangle, "Remind", () => setActiveModal("invoiceReminder")],
+    ["Crew on site", d.crew, Users, "Open", () => document.getElementById("crew-dispatch")?.scrollIntoView({ behavior: "smooth" })],
   ];
 
-  if (pageLoading) return <Layout><PremiumPage><PremiumLoadingState title="Loading your Smart Hub" subtitle="Pulling jobs, quotes, invoices and team activity…" /></PremiumPage></Layout>;
-  if (pageError) return <Layout><PremiumPage><PremiumErrorState title="Smart Hub unavailable" subtitle={pageError} action={<PremiumButton onClick={fetchData}>Retry</PremiumButton>} /></PremiumPage></Layout>;
+  const runDailyCheck = async () => { try { await post("/ai/operator/run-daily-check", {}); toast.success("Daily check complete"); load(); } catch (e) { toast.error(safeText(e, "Daily check failed")); } };
+  const prepareToday = async () => { try { const r = await post("/ai/operator/prepare-today", {}); setPrepared(safeArray(r?.data?.actions || r?.data)); setActiveModal("prepare"); toast.success("Prepared today's actions"); } catch (e) { toast.error(safeText(e, "Unable to prepare actions")); } };
+  const askAi = async () => { try { const r = await post("/ai/operator/ask", { prompt: askInput }); setAskAnswer(safeText(r?.data?.answer || r?.data || "No response")); } catch (e) { toast.error(safeText(e, "AI request failed")); } };
 
-  return <Layout><PremiumPage>
-    <div className="rounded-3xl border border-[#d8e3f3] bg-white p-4 md:p-5 shadow-sm space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <PremiumBadge tone="blue" icon={<Sparkles className="h-3 w-3" />}>Command Centre</PremiumBadge>
-        <p className="text-xs text-[#5b6c87]">{new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</p>
-      </div>
-      <h1 className="text-2xl font-bold text-[#0d1b34]">Welcome back, {safeText(user?.name?.split(" ")?.[0], "there")}</h1>
-      <p className="text-sm text-[#415371]">Live operations: {smart.todayList.length} jobs today, {smart.unassigned.length} unassigned, {smart.openInvoices.length} invoices open, {smart.activeCrew} crew active.</p>
-      {isAdmin && <div className="flex flex-wrap gap-2">
-        <PremiumButton onClick={() => navigate("/jobs/new")} iconLeft={<Plus className="h-4 w-4" />}>New job</PremiumButton>
-        <PremiumButton variant="secondary" onClick={() => navigate("/quotes/new")}>New quote</PremiumButton>
-        <PremiumButton variant="secondary" onClick={() => navigate("/invoices/new")}>New invoice</PremiumButton>
-        <PremiumButton variant="secondary" onClick={() => navigate("/clients/new")}>Add client</PremiumButton>
-        <PremiumButton variant="ghost" onClick={() => navigate("/dispatch")}>Dispatch board</PremiumButton>
-      </div>}
-    </div>
+  if (state.loading) return <Layout><div className="min-h-screen bg-slate-100 p-4">Loading command centre…</div></Layout>;
+  if (state.error) return <Layout><div className="min-h-screen bg-slate-100 p-4"><div className="bg-white rounded-xl p-4 border">{state.error}</div></div></Layout>;
 
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-      {metrics.map((m) => { const I = m.icon; return <button key={m.label} onClick={m.onClick} className="text-left rounded-2xl border border-[#d8e3f3] bg-white p-3 shadow-sm hover:border-[#9ab6e6]"><div className="flex items-center justify-between"><I className="h-4 w-4 text-[#2a5bd7]"/><span className="text-[11px] text-[#5b6c87]">{m.hint}</span></div><p className="text-2xl font-bold mt-2 text-[#0d1b34]">{safeNumber(m.count,0)}</p><p className="text-xs text-[#415371]">{m.label}</p></button>; })}
-    </div>
+  return <Layout><div className="min-h-screen bg-slate-100 p-3 md:p-5 space-y-4">
+    <section className="bg-white rounded-2xl border shadow-sm p-4 space-y-2"><span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">Command Centre</span><h1 className="text-2xl font-bold">Welcome back, {safeText(user?.name?.split(" ")?.[0], "there")}</h1><p className="text-sm text-slate-600">Live operations: {d.todayJobs.length} jobs today, {d.unassigned.length} unassigned, {d.openInvoices.length} invoices open, {d.crew} crew active.</p>{isOwnerHub && <div className="flex flex-wrap gap-2"><button className="px-3 py-2 rounded-xl bg-blue-600 text-white" onClick={() => setActiveModal("newJob")}>New job</button><button className="px-3 py-2 rounded-xl bg-blue-600 text-white" onClick={() => setActiveModal("newQuote")}>New quote</button><button className="px-3 py-2 rounded-xl bg-blue-600 text-white" onClick={() => setActiveModal("newInvoice")}>New invoice</button><button className="px-3 py-2 rounded-xl bg-blue-600 text-white" onClick={() => setActiveModal("addClient")}>Add client</button><button className="px-3 py-2 rounded-xl bg-slate-200" onClick={() => setActiveModal("dispatch")}>Dispatch board</button></div>}</section>
 
-    <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 mt-4">
-      <div className="xl:col-span-2"><PremiumCard title="Priority Queue" subtitle="Fix these things now" bodyClassName="space-y-2">
-        {smart.queue.length === 0 ? <PremiumEmptyState title="No urgent actions" subtitle="You're clear for now." icon={<CheckCircle2 className="h-5 w-5"/>}/> : smart.queue.map((item) => <div key={item.id} className="rounded-xl border border-[#d8e3f3] p-3 bg-white"><div className="flex items-start justify-between gap-2"><div><p className="font-semibold text-sm text-[#0d1b34]">{item.title}</p><p className="text-xs text-[#5b6c87]">{item.reason}</p></div><PremiumStatusBadge status={item.type} /></div><div className="mt-2"><PremiumButton size="sm" onClick={() => navigate(item.to)}>{item.cta}</PremiumButton></div></div>)}
-        {(smart.unassigned.length + smart.quotesWaiting.length + smart.overdue.length + smart.completed.length) > 6 && <button onClick={() => navigate("/jobs")} className="px-link text-sm inline-flex items-center gap-1">View all actions <ArrowRight className="h-3 w-3"/></button>}
-      </PremiumCard></div>
+    {isOwnerHub && <section className="bg-white rounded-2xl border shadow-sm p-4 space-y-2"><h2 className="font-semibold">AI Operator</h2><p className="text-sm text-slate-600">I check jobs, quotes, invoices, crew, and follow-ups. Review what should happen next.</p><div className="flex gap-2 flex-wrap"><button className="px-3 py-2 rounded-lg bg-blue-600 text-white text-sm" onClick={runDailyCheck}>Run daily check</button><button className="px-3 py-2 rounded-lg bg-slate-200 text-sm" onClick={() => document.getElementById("approval-queue")?.scrollIntoView({ behavior: "smooth" })}>Review approvals</button><button className="px-3 py-2 rounded-lg bg-slate-200 text-sm" onClick={prepareToday}>Prepare today’s actions</button><button className="px-3 py-2 rounded-lg bg-slate-200 text-sm" onClick={() => setActiveModal("askAi")}>Ask AI</button></div>{state.approvals.length === 0 ? <p className="text-sm text-slate-600">No approvals pending. Run daily check to prepare actions.</p> : <div id="approval-queue" className="space-y-2">{state.approvals.slice(0, 6).map((a) => <div key={a.id || a._id} className="border rounded-lg p-2"><div className="font-medium text-sm">{safeText(a.title, "Approval")}</div><div className="text-xs text-slate-600">{safeText(a.reason, "Review")}</div><div className="mt-2 flex gap-1 text-xs"><button className="px-2 py-1 rounded bg-green-600 text-white">Approve</button><button className="px-2 py-1 rounded bg-slate-200">Edit</button><button className="px-2 py-1 rounded bg-slate-200">Dismiss</button><button className="px-2 py-1 rounded bg-slate-200">Open record</button></div></div>)}</div>}</section>}
 
-      <div className="xl:col-span-3 space-y-4">
-        <PremiumCard id="today-run-sheet" title="Today’s Run Sheet" subtitle={smart.todayList.length ? `${smart.todayList.length} scheduled today` : "No jobs scheduled today"}>
-          {smart.todayList.length === 0 ? <div className="flex flex-wrap gap-2 items-center"><p className="text-sm text-[#5b6c87]">No jobs scheduled today</p>{isAdmin && <><PremiumButton size="sm" onClick={() => navigate('/jobs/new')}>New job</PremiumButton><PremiumButton size="sm" variant="secondary" onClick={() => navigate('/dispatch')}>Open dispatch</PremiumButton></>}</div> : <div className="space-y-2">{smart.todayList.slice(0,6).map((job)=><div key={job.id||job._id} className="grid grid-cols-12 gap-2 items-center rounded-xl border border-[#e5edf8] p-2 text-xs"><div className="col-span-2">{safeText(job.scheduled_time || "--:--")}</div><div className="col-span-3 font-medium">{safeText(job.title, "Untitled")}</div><div className="col-span-3">{safeText(job.customer_name || job.client_name, "No client")}</div><div className="col-span-2">{safeText(job.assigned_worker_name, "Unassigned")}</div><div className="col-span-1"><PremiumStatusBadge status={job.status}/></div><div className="col-span-1"><PremiumButton size="sm" variant="ghost" onClick={()=>navigate(`/jobs/${job.id||job._id}`)}>Open</PremiumButton></div></div>)}</div>}
-        </PremiumCard>
+    <section className="grid grid-cols-2 lg:grid-cols-4 gap-2">{metrics.map(([label, count, Icon, hint, onClick]) => <button key={label} onClick={onClick} className="bg-white border rounded-xl p-3 text-left hover:border-blue-300"><div className="flex justify-between"><Icon className="h-4 w-4 text-blue-600"/><span className="text-[11px] text-slate-500">{hint}</span></div><div className="text-xl font-bold">{count}</div><div className="text-xs text-slate-600">{label}</div></button>)}</section>
 
-        <PremiumCard id="crew-dispatch" title="Crew + Dispatch" subtitle="Team availability and assignment control" actions={isAdmin ? <PremiumButton size="sm" onClick={() => navigate('/dispatch')} iconLeft={<UserPlus className="h-4 w-4"/>}>Assign now</PremiumButton> : null}>
-          <p className="text-sm text-[#415371] mb-2">{smart.unassigned.length} unassigned jobs</p>
-          <div className="space-y-2">{workers.slice(0,6).map((w)=>{ const c = jobs.filter((j)=>j.assigned_worker_id===w.id && String(j.scheduled_date||"").slice(0,10)===new Date().toISOString().slice(0,10)).length; const status = c===0?"available":c>2?"busy":"assigned"; return <div key={w.id} className="rounded-xl border border-[#e5edf8] p-2 flex items-center justify-between"><div><p className="text-sm font-medium">{safeText(w.name,"Worker")}</p><p className="text-xs text-[#5b6c87]">{c} jobs today</p></div><div className="flex items-center gap-2"><PremiumStatusBadge status={status}/>{isAdmin && <PremiumButton size="sm" variant="secondary" onClick={()=>navigate('/dispatch')}>Quick assign</PremiumButton>}</div></div>; })}</div>
-        </PremiumCard>
+    <section className="grid grid-cols-1 xl:grid-cols-5 gap-4"><div className="xl:col-span-2 bg-white border rounded-2xl p-4"><h3 className="font-semibold">Priority Queue</h3><div className="mt-2 space-y-2">{d.queue.slice(0, 6).map((q) => <div key={q.id} className="border rounded-lg p-2"><div className="text-sm font-medium">{q.title}</div><div className="text-xs text-slate-600">{q.reason}</div><button className="mt-1 px-2 py-1 rounded bg-blue-600 text-white text-xs" onClick={() => setActiveModal(q.modal)}>{q.action}</button></div>)}{d.queue.length > 6 && <button className="text-sm text-blue-700">View all actions</button>}</div></div><div className="xl:col-span-3 space-y-4"><div id="today-run-sheet" className="bg-white border rounded-2xl p-4"><h3 className="font-semibold">Today’s Run Sheet</h3>{d.todayJobs.length === 0 ? <div className="text-sm text-slate-600 mt-2">No jobs scheduled today <div className="flex gap-2 mt-2"><button className="px-2 py-1 rounded bg-blue-600 text-white" onClick={() => setActiveModal("newJob")}>New job</button><button className="px-2 py-1 rounded bg-slate-200" onClick={() => setActiveModal("dispatch")}>Open dispatch</button></div></div> : <div className="space-y-2 mt-2">{d.todayJobs.slice(0, 6).map((j) => <div key={j.id || j._id} className="grid grid-cols-12 gap-2 text-xs border rounded p-2"><div className="col-span-2">{safeText(j.scheduled_time, "--:--")}</div><div className="col-span-3">{safeText(j.title, "Untitled")}</div><div className="col-span-3">{safeText(j.customer_name || j.client_name, "No client")}</div><div className="col-span-2">{safeText(j.assigned_worker_name, "Unassigned")}</div><button className="col-span-2 text-blue-700" onClick={() => navigate(`/jobs/${j.id || j._id}`)}>Open</button></div>)}</div>}</div><div id="crew-dispatch" className="bg-white border rounded-2xl p-4"><div className="flex justify-between"><h3 className="font-semibold">Crew + Dispatch</h3><button className="px-2 py-1 rounded bg-slate-200 text-sm" onClick={() => setActiveModal("assign")}>Assign now</button></div><p className="text-sm text-slate-600 mt-1">{d.unassigned.length} unassigned jobs</p><div className="space-y-2 mt-2">{d.workers.slice(0, 6).map((w) => <div key={w.id} className="flex justify-between border rounded p-2"><div><div className="text-sm font-medium">{safeText(w.name, "Worker")}</div><div className="text-xs text-slate-600">{state.jobs.filter((j) => j.assigned_worker_id === w.id && String(j.scheduled_date || "").slice(0, 10) === today()).length} jobs today</div></div><button className="px-2 py-1 rounded bg-slate-200 text-xs" onClick={() => setActiveModal("assign")}>Quick assign</button></div>)}</div></div></div></section>
 
-        {!isWorker && <PremiumAIBox title="AI Business Assistant" subtitle="Compact command helper" chip="Approval-first" suggestions={[]} actions={<PremiumBadge tone="violet" icon={<ShieldCheck className="h-3 w-3" />}>Review before approval</PremiumBadge>}>
-          <div className="space-y-2">
-            <input value={aiInput} onChange={(e)=>setAiInput(e.target.value)} className="px-input w-full" placeholder="Ask your business"/>
-            <div className="flex flex-wrap gap-2 text-xs">{["What should I do next?","Jobs needing attention","Invoice follow-up","Quote follow-up","Daily owner summary"].map((c)=><button key={c} className="px-2 py-1 rounded-full bg-[#eef4ff]" onClick={()=>setAiInput(c)}>{c}</button>)}</div>
-            <PremiumButton disabled={aiLoading} iconLeft={<Send className="h-4 w-4"/>} onClick={()=>generate(aiInput)}>Generate draft</PremiumButton>
-            {draft && <div className="rounded-xl border border-[#d8e3f3] bg-[#f6faff] p-3 text-sm whitespace-pre-wrap">{draft}</div>}
-            <p className="text-[11px] text-[#5b6c87]">AI never auto-sends customer messages and never changes payroll, pricing, or legal/tax/compliance decisions.</p>
-            {!llmAvailable && <p className="text-[11px] text-[#b45309]">Fallback draft mode is active.</p>}
-            {draft && <PremiumButton size="sm" variant="ghost" onClick={()=>setDraft("")}>Clear</PremiumButton>}
-          </div>
-        </PremiumAIBox>}
-      </div>
-    </div>
-  </PremiumPage></Layout>;
+    <Modal open={!!activeModal} title="Command" onClose={() => setActiveModal("")}>{[
+      ["newJob", "/jobs/new", "Open the full New Job form."], ["newQuote", "/quotes/new", "Open quote form."], ["newInvoice", "/invoices/new", "Open invoice form."], ["addClient", "/clients/new", "Open add client form."], ["dispatch", "/dispatch", "Open dispatch board."], ["assign", "/dispatch", "Assign workers from dispatch."], ["quoteFollowup", "/quotes", "Review quote follow-ups."], ["invoiceReminder", "/invoices?status=overdue", "Send reminders for overdue invoices."], ["convert", "/jobs?status=completed", "Convert completed jobs to invoices."], ["invoiceList", "/invoices", "Review open invoices."]].filter(([k]) => k === activeModal).map(([k, url, text]) => <div key={k} className="space-y-3"><p className="text-sm text-slate-700">{text}</p><button className="px-3 py-2 rounded bg-blue-600 text-white" onClick={() => { setActiveModal(""); navigate(url); }}>{url.includes("?") ? "Open workflow" : "Open page"}</button></div>)}{activeModal === "prepare" && <div><p className="text-sm mb-2">Top recommended actions:</p><ul className="list-disc pl-5 text-sm">{prepared.length ? prepared.slice(0, 5).map((a, i) => <li key={i}>{safeText(a.title || a.action || a, "Action")}</li>) : <li>No actions returned.</li>}</ul></div>}{activeModal === "askAi" && <div className="space-y-2"><input className="w-full border rounded p-2 text-sm" placeholder="Ask AI Operator" value={askInput} onChange={(e) => setAskInput(e.target.value)} /><div className="flex gap-2 flex-wrap">{["What should happen next?", "Who needs follow-up?", "What can I invoice today?"].map((s) => <button key={s} className="px-2 py-1 rounded bg-slate-100 text-xs" onClick={() => setAskInput(s)}>{s}</button>)}</div><button className="px-3 py-2 rounded bg-blue-600 text-white" onClick={askAi}>Ask AI</button>{askAnswer && <div className="text-sm border rounded p-2 bg-slate-50 whitespace-pre-wrap">{askAnswer}</div>}</div>}</Modal>
+  </div></Layout>;
 }
