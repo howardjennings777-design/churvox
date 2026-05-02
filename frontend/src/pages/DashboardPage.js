@@ -8,8 +8,8 @@ import { useApi } from "../hooks/useApi";
 import useAiDraft from "../hooks/useAiDraft";
 import {
   Briefcase, Calendar, CheckCircle, FileText, Users, Plus,
-  AlertTriangle, Receipt, Clock3, Send, BellRing,
-  ShieldCheck, Radio, Bot, ListChecks,
+  AlertTriangle, Receipt, Clock3, BellRing,
+  Radio, Bot, ListChecks,
 } from "lucide-react";
 import { safeArray, safeNumber, safeText } from "../utils/safeRender";
 import {
@@ -47,7 +47,7 @@ export default function DashboardPage() {
   const [editingApproval, setEditingApproval] = useState(null);
   const approvalQueueRef = useRef(null);
 
-  const { loading: aiLoading, draft, llmAvailable, setDraft, generate } = useAiDraft("smart_hub");
+  const { setDraft } = useAiDraft("smart_hub");
 
   const isAdmin = ["owner", "manager", "office_admin"].includes(normalizedRole);
 
@@ -112,6 +112,25 @@ export default function DashboardPage() {
     smart.completedJobs.slice(0, 1).forEach((j) => items.push({ id: `c-${j.id || j._id}`, title: safeText(j.title, "Completed job"), reason: "Completed and ready to bill", chip: "Ready to invoice", action: "Convert", onClick: () => openPanel("invoiceFromJob") }));
     return items.slice(0, 6);
   }, [smart]);
+  const displayWorkers = useMemo(() => {
+    const workerMap = new Map();
+    workers.forEach((worker) => {
+      const emailKey = safeText(worker.email, "").trim().toLowerCase();
+      const phoneKey = safeText(worker.phone, "").replace(/\D/g, "");
+      const identityKey = emailKey || phoneKey || `id-${worker.id}`;
+      const existing = workerMap.get(identityKey);
+      if (!existing) {
+        workerMap.set(identityKey, worker);
+        return;
+      }
+      const existingActive = Boolean(existing?.active);
+      const candidateActive = Boolean(worker?.active);
+      if (!existingActive && candidateActive) {
+        workerMap.set(identityKey, worker);
+      }
+    });
+    return Array.from(workerMap.values());
+  }, [workers]);
 
   const panelConfig = { job: { title: "New job", subtitle: "Create, schedule, and assign work.", src: "/jobs/new" }, quote: { title: "New quote", subtitle: "Create and send quote drafts.", src: "/quotes/new" }, invoice: { title: "New invoice", subtitle: "Create and bill from Smart Hub.", src: "/invoices/new" }, client: { title: "Add client", subtitle: "Create customer records.", src: "/clients/new" }, dispatch: { title: "Dispatch Board", subtitle: "Assign workers and balance today’s schedule.", src: "/dispatch", large: true }, quoteFollowup: { title: "Quote follow-up", subtitle: "Review quotes awaiting response and draft follow-ups.", src: "/quotes" }, invoiceReminder: { title: "Invoice follow-up", subtitle: "Review open/overdue invoices and draft reminders.", src: "/invoices" }, invoiceFromJob: { title: "Convert completed jobs", subtitle: "Create invoices from completed jobs.", src: "/jobs?status=completed" }, assignWorker: { title: "Assign worker", subtitle: "Assign unassigned jobs to available crew.", src: "/dispatch" } };
 
@@ -252,7 +271,7 @@ export default function DashboardPage() {
         </div>
       </div>
       {dailyPlan.length > 0 ? <div className="rounded-xl border border-[#d8e3f3] p-3"><p className="text-sm font-semibold mb-2">Daily owner plan</p>{dailyPlan.map((line, idx) => <p key={`${line}-${idx}`} className="text-sm text-[#4f6280]">{idx + 1}. {line}</p>)}</div> : null}
-      <div ref={approvalQueueRef}>
+      {pendingApprovals.length > 0 ? <div ref={approvalQueueRef}>
       <PremiumCard title="Approval Queue" icon={<ListChecks className="h-4 w-4" />} subtitle="Prepared for approval" bodyClassName="space-y-2">
         {pendingApprovals.slice(0, 8).map((item) => <div key={item.id || item._id} className="rounded-xl border border-[#d8e3f3] p-3">
           <div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold">{safeText(item.recommendation, safeText(item.title, "AI action"))}</p><PremiumBadge tone={item.risk_level === "high" ? "red" : "amber"}>{safeText(item.risk_level, "medium")}</PremiumBadge></div>
@@ -265,12 +284,14 @@ export default function DashboardPage() {
             <PremiumButton size="sm" variant="ghost" onClick={() => handleApprovalAction(item, "open")}>Open record</PremiumButton>
           </div>
         </div>)}
-        {pendingApprovals.length === 0 ? <PremiumEmptyState title="No approvals pending" subtitle="Run daily check to prepare operator actions." /> : null}
       </PremiumCard>
-      </div>
+      </div> : <div ref={approvalQueueRef} className="rounded-xl border border-[#d8e3f3] bg-[#f8fbff] px-3 py-2">
+        <p className="text-sm font-semibold text-[#0d1b34]">No approvals pending</p>
+        <p className="text-xs text-[#5b6c87]">Run daily check to prepare actions.</p>
+      </div>}
     </PremiumCard> : null}
 
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-4">{commandCards.map((card) => <div key={card.label} className="space-y-1"><PremiumStatCard label={card.label} value={card.value} icon={card.icon} tone={card.tone} onClick={card.onClick} /><p className="text-[11px] text-[#5b6c87] pl-1">{card.hint}</p></div>)}</div>
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 mb-3">{commandCards.map((card) => <div key={card.label} className="space-y-1"><PremiumStatCard label={card.label} value={card.value} icon={card.icon} tone={card.tone} onClick={card.onClick} className="!p-2.5" /><p className="text-[11px] text-[#5b6c87] pl-1">{card.hint}</p></div>)}</div>
 
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
       <div className="xl:col-span-5">
@@ -287,25 +308,16 @@ export default function DashboardPage() {
           </PremiumCard>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <div ref={crewRef}>
-            <PremiumCard title="Crew + Dispatch" subtitle="Crew status and assignment flow" icon={<Users className="h-4 w-4" />} bodyClassName="space-y-2">
+            <PremiumCard title="Crew + Dispatch" subtitle="Crew status only" icon={<Users className="h-4 w-4" />} bodyClassName="space-y-2">
               <div className="rounded-xl border border-[#d8e3f3] bg-[#f8fbff] p-3 flex items-center justify-between"><p className="text-sm font-semibold">{smart.unassignedJobs.length} unassigned jobs</p><PremiumButton size="sm" onClick={() => openPanel("assignWorker")}>Assign now</PremiumButton></div>
-              {workers.slice(0, 4).map((w) => {
+              {displayWorkers.slice(0, 6).map((w) => {
                 const assignedToday = smart.todayJobs.filter((j) => String(j.assigned_worker_id) === String(w.id)).length;
                 return <div key={w.id} className="rounded-xl border border-[#d8e3f3] p-3"><div className="flex items-center justify-between"><div><p className="text-sm font-semibold">{safeText(w.name, "Worker")}</p><p className="text-xs text-[#5b6c87]">{assignedToday} jobs today</p></div><PremiumBadge tone={assignedToday > 0 ? "sky" : "slate"}>{assignedToday > 0 ? "Busy" : "Available"}</PremiumBadge></div><PremiumButton size="sm" variant="secondary" className="mt-2" onClick={() => openPanel("assignWorker")}>Quick assign</PremiumButton></div>;
               })}
             </PremiumCard>
           </div>
-
-          <PremiumCard title="AI Assistant helper" icon={<ShieldCheck className="h-4 w-4" />} subtitle="Quick helper while AI Operator runs approvals" bodyClassName="space-y-2">
-            <input className="px-input w-full h-10" value={aiInput} onChange={(e) => setAiInput(e.target.value)} placeholder="Ask about jobs, invoices, quotes, crew, or today’s priorities" />
-            <div className="flex flex-wrap gap-2"><PremiumButton size="sm" variant="secondary" onClick={() => generate("What should I do next?")}>What should I do next?</PremiumButton><PremiumButton size="sm" variant="secondary" onClick={() => generate("Jobs needing attention")}>Jobs needing attention</PremiumButton><PremiumButton size="sm" variant="secondary" onClick={() => generate("Invoice follow-up")}>Invoice follow-up</PremiumButton><PremiumButton size="sm" variant="secondary" onClick={() => generate("Quote follow-up")}>Quote follow-up</PremiumButton></div>
-            <PremiumButton size="sm" iconLeft={<Send className="h-4 w-4" />} disabled={aiLoading} onClick={() => generate(aiInput)}>Generate draft</PremiumButton>
-            <p className="text-xs text-[#5b6c87]">Approval-first: review drafts before sending to clients.</p>
-            {draft ? <div className="rounded-xl border border-[#d8e3f3] bg-[#f6faff] p-3 text-sm whitespace-pre-wrap">{draft}</div> : null}
-            {!llmAvailable ? <p className="text-xs text-amber-700">Fallback mode active - connect AI key for live AI output.</p> : null}
-          </PremiumCard>
         </div>
 
         
