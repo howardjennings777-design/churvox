@@ -7,11 +7,12 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { UserPlus, Trash2, Upload, RefreshCw, Shield } from "lucide-react";
+import { UserPlus, Trash2, Upload, RefreshCw, Shield, Sparkles, ShieldCheck, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { usePlanLimits } from "../hooks/usePlanLimits";
 import { hasPlanAccess, normalizePlan } from "../utils/planRules";
 import { UpgradePrompt } from "../components/UpgradePrompt";
+import { PremiumAIBox } from "../components/premium";
 import axios from "axios"
 import API_BASE from "../lib/apiBase";
 
@@ -359,6 +360,22 @@ export default function TeamPage() {
                 </Button>
               </div>
             </div>
+
+            <PremiumAIBox
+              title="AI Team Assistant"
+              subtitle="Crew insights, role suggestions and onboarding drafts — review before sending"
+              chip="Approval-first"
+              notice="AI never makes payroll, tax or compliance decisions. Worker invites are always actioned by you."
+              suggestions={[
+                workers.length === 0
+                  ? { icon: <UserPlus className="h-4 w-4" />, title: "Invite your first worker", description: "Send a CSV of crew members or invite individually." }
+                  : { icon: <Sparkles className="h-4 w-4" />, title: `${workers.length} active crew member${workers.length === 1 ? "" : "s"}`, description: "AI can suggest assignments based on region, trade and availability." },
+                { icon: <ShieldCheck className="h-4 w-4" />, title: "Role-based access is on", description: "Workers don’t see pricing, owner-only reports or admin pages." },
+                planData?.max_workers >= 0 && workers.length >= (planData.max_workers - 1)
+                  ? { icon: <AlertTriangle className="h-4 w-4" />, title: "Approaching team limit", description: "Upgrade your plan to add more workers." }
+                  : null,
+              ].filter(Boolean)}
+            />
 
             {showAdd && (
               <Card className="bg-white border-slate-200 shadow-lg shadow-black/20">

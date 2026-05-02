@@ -3,27 +3,20 @@ import Layout from "../components/Layout";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { Plug, Database, ShieldCheck, AlertTriangle, CheckCircle2, ArrowUpRight, RefreshCw, Sparkles } from "lucide-react";
+import {
+  PremiumPage, PremiumHero, PremiumCard, PremiumButton, PremiumBadge, PremiumAIBox,
+} from "../components/premium";
 
 const INVOICE_MODES = [
-  {
-    value: "churvox_only",
-    label: "Churvox invoices only",
-    description: "Use Churvox to create, send, and track invoices without MYOB.",
-  },
-  {
-    value: "myob_sync",
-    label: "Sync Churvox invoices to MYOB",
-    description: "Create invoices in Churvox, then sync approved invoices to MYOB for accounting and reconciliation.",
-    recommended: true,
-  },
-  {
-    value: "myob_external",
-    label: "MYOB is invoice source of truth",
-    description: "Create official invoices in MYOB and sync invoice/payment status back into Churvox.",
-  },
+  { value: "churvox_only", label: "Churvox invoices only", description: "Use Churvox to create, send, and track invoices without MYOB." },
+  { value: "myob_sync", label: "Sync Churvox invoices to MYOB", description: "Create in Churvox, then sync approved invoices to MYOB for accounting and reconciliation.", recommended: true },
+  { value: "myob_external", label: "MYOB is invoice source of truth", description: "Create official invoices in MYOB and sync invoice / payment status back into Churvox." },
 ];
 
 export default function IntegrationsPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { get, post } = useApi();
   const [myob, setMyob] = useState(null);
@@ -59,39 +52,94 @@ export default function IntegrationsPage() {
 
   return (
     <Layout>
-      <div className="cx-page">
-        <div className="cx-page-hero">
-          <h1 className="cx-page-title">MYOB / Integrations</h1>
-          <p className="cx-page-subtitle">Accounting sync setup, sync health, and plan-based access at a glance.</p>
-        </div>
-        <div className="cx-panel p-5 space-y-4">
-          <p className="text-sm text-slate-700">Plan: <span className="font-semibold uppercase">{user?.plan || "solo"}</span></p>
-          <p className="text-sm text-slate-700">MYOB availability: <span className={`cx-status-badge ${isUpgrade ? "status-overdue" : "status-completed"}`}>{isUpgrade ? "Upgrade required" : "Available"}</span></p>
-          <p className="text-sm text-slate-700">Connection status: <span className={`cx-status-badge ${isConnected ? "status-completed" : "status-pending"}`}>{isConnected ? "Connected" : "Setup required"}</span></p>
-          <p className="text-xs text-slate-500">MYOB available on Pro add-on and Enterprise.</p>
-        </div>
+      <PremiumPage>
+        <PremiumHero
+          icon={<Plug className="h-7 w-7" />}
+          eyebrow={<><Database className="h-3 w-3" /> Integrations</>}
+          title="MYOB & Integrations"
+          subtitle="Accounting sync setup, sync health and plan-based access — keep Churvox and your financial books in step."
+        />
 
-        <div className="cx-panel mt-4 p-5 space-y-4">
-          <h2 className="text-lg font-semibold text-slate-900">Invoice handling</h2>
+        <PremiumAIBox
+          title="AI Integration Assistant"
+          subtitle="Watches sync health and suggests fixes — never makes accounting decisions for you"
+          chip="Read-only suggestions"
+          notice="AI suggestions are informational only. Always review and approve before retrying or changing accounting settings."
+          suggestions={[
+            isConnected
+              ? { icon: <CheckCircle2 className="h-4 w-4" />, title: "MYOB connection healthy", description: "Sync is active for new invoices and status updates." }
+              : isUpgrade
+                ? { icon: <AlertTriangle className="h-4 w-4" />, title: "MYOB needs an upgrade", description: "MYOB sync is available on the Pro add-on and Enterprise plans." }
+                : { icon: <RefreshCw className="h-4 w-4" />, title: "Connect MYOB to enable sync", description: "Choose how invoices flow between Churvox and MYOB below." },
+            { icon: <ShieldCheck className="h-4 w-4" />, title: "We never auto-change your books", description: "Mode changes are explicit, and AI never edits invoices for you." },
+          ]}
+        />
+
+        <PremiumCard title="Account & plan" icon={<ShieldCheck className="h-4 w-4" />}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="rounded-2xl border border-[#e6eef9] bg-[#f6faff] px-4 py-3">
+              <p className="text-[11px] font-bold uppercase text-[#7d8ba3] tracking-wide">Current plan</p>
+              <p className="text-[16px] font-bold text-[#0d1b34] mt-1 capitalize">{user?.plan || "Solo"}</p>
+            </div>
+            <div className="rounded-2xl border border-[#e6eef9] bg-[#f6faff] px-4 py-3">
+              <p className="text-[11px] font-bold uppercase text-[#7d8ba3] tracking-wide">MYOB availability</p>
+              <div className="mt-1">
+                {isUpgrade ? <PremiumBadge tone="amber" icon={<AlertTriangle className="h-3 w-3" />}>Upgrade required</PremiumBadge>
+                          : <PremiumBadge tone="green" icon={<CheckCircle2 className="h-3 w-3" />}>Available</PremiumBadge>}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-[#e6eef9] bg-[#f6faff] px-4 py-3">
+              <p className="text-[11px] font-bold uppercase text-[#7d8ba3] tracking-wide">Connection</p>
+              <div className="mt-1">
+                {isConnected ? <PremiumBadge tone="green" icon={<CheckCircle2 className="h-3 w-3" />}>Connected</PremiumBadge>
+                            : <PremiumBadge tone="slate">Setup required</PremiumBadge>}
+              </div>
+            </div>
+          </div>
+          {isUpgrade && (
+            <div className="mt-4">
+              <PremiumButton onClick={() => navigate("/plans")} iconLeft={<ArrowUpRight className="h-4 w-4" />}>View plans</PremiumButton>
+            </div>
+          )}
+        </PremiumCard>
+
+        <PremiumCard title="Invoice handling" icon={<Database className="h-4 w-4" />} subtitle="Choose how invoices flow between Churvox and MYOB">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {INVOICE_MODES.map((item) => {
               const disabled = item.value !== "churvox_only" && isUpgrade;
+              const active = mode === item.value;
               return (
                 <button
                   key={item.value}
                   type="button"
                   disabled={disabled || savingMode}
                   onClick={() => saveMode(item.value)}
-                  className={`text-left border rounded-xl p-4 transition ${mode === item.value ? "border-blue-500 bg-blue-50" : "border-slate-200 bg-white"} ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
+                  className={`text-left rounded-2xl p-5 transition border ${active ? "border-[#1d4ed8] bg-[#eff4ff] shadow-md" : "border-[#e6eef9] bg-white hover:border-[#c7dcfb]"} ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
                 >
-                  <p className="font-semibold text-slate-900">{item.label} {item.recommended && <span className="text-xs text-blue-700">— Recommended</span>}</p>
-                  <p className="text-xs text-slate-600 mt-2">{item.description}</p>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-bold text-[#0d1b34]">{item.label}</p>
+                      {item.recommended && <PremiumBadge tone="soft">Recommended</PremiumBadge>}
+                    </div>
+                    {active && <CheckCircle2 className="h-5 w-5 text-[#1d4ed8]" />}
+                  </div>
+                  <p className="text-[12.5px] text-[#5b6c87] mt-2">{item.description}</p>
                 </button>
               );
             })}
           </div>
-        </div>
-      </div>
+        </PremiumCard>
+
+        <PremiumCard title="Sync activity" icon={<RefreshCw className="h-4 w-4" />} subtitle="Recent invoice sync events with MYOB">
+          {!isConnected ? (
+            <div className="text-center py-6">
+              <p className="text-[13.5px] text-[#5b6c87]">Connect MYOB to start seeing live sync activity here.</p>
+            </div>
+          ) : (
+            <p className="text-[13.5px] text-[#5b6c87]">Real-time sync status appears on each invoice. Use Invoices to retry failed syncs or review last sync timestamps.</p>
+          )}
+        </PremiumCard>
+      </PremiumPage>
     </Layout>
   );
 }

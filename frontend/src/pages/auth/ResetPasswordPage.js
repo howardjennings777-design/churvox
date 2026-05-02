@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock, AlertCircle, Loader2, CheckCircle, ArrowLeft } from "lucide-react";
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
+import { PremiumButton } from "@/components/premium";
 
 export default function ResetPasswordPage() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { resetPassword } = useAuth();
   const [token, setToken] = useState("");
@@ -20,160 +16,79 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const tokenFromUrl = searchParams.get("token");
-    if (tokenFromUrl) {
-      setToken(tokenFromUrl);
-    }
+    const t = searchParams.get("token");
+    if (t) setToken(t);
   }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
-    if (!token) {
-      setError("Reset token is required");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
-
+    if (!token) { setError("Reset token is required"); return; }
+    if (password !== confirmPassword) { setError("Passwords do not match"); return; }
+    if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
     setLoading(true);
     const result = await resetPassword(token, password);
-
-    if (result.success) {
-      setSuccess(true);
-    } else {
-      setError(result.error);
-    }
+    if (result.success) setSuccess(true);
+    else setError(result.error);
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <div className="w-full max-w-md animate-in">
-        <div className="text-center mb-8">
-          <ChurvoxLogo size="lg" className="mx-auto mb-6" />
-          <h1 className="text-3xl font-semibold text-slate-900">Reset password</h1>
-          <p className="text-muted-foreground mt-2">Enter your new password</p>
-        </div>
+    <div className="px-auth" style={{ gridTemplateColumns: '1fr' }}>
+      <div className="px-auth__panel">
+        <div className="px-auth__card">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center mb-4"><ChurvoxLogo size="lg" /></div>
+            <h1 className="font-heading text-[26px] font-bold text-[#0d1b34]">Reset password</h1>
+            <p className="text-[14px] text-[#5b6c87] mt-1">Choose a strong password for your account.</p>
+          </div>
 
-        <Card className="bg-card border-border">
-          <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-xl font-heading">New password</CardTitle>
-            <CardDescription>Choose a strong password for your account</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {success ? (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400" data-testid="reset-password-success">
-                  <CheckCircle className="h-5 w-5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Password reset successful!</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      You can now sign in with your new password.
-                    </p>
-                  </div>
+          {success ? (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-4 rounded-2xl bg-[#ecfdf5] border border-[#a7f3d0]" data-testid="reset-password-success">
+                <CheckCircle className="h-5 w-5 flex-shrink-0 text-[#15803d] mt-0.5" />
+                <div>
+                  <p className="font-semibold text-[#0d1b34]">Password reset successful</p>
+                  <p className="text-[13px] text-[#5b6c87] mt-1">You can now sign in with your new password.</p>
                 </div>
-
-                <Link to="/login">
-                  <Button className="w-full bg-primary hover:bg-primary/90" data-testid="go-to-login-button">
-                    Go to login
-                  </Button>
-                </Link>
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {error && (
-                  <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm" data-testid="reset-password-error">
-                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                    <span>{error}</span>
-                  </div>
-                )}
-
-                {!searchParams.get("token") && (
-                  <div className="space-y-2">
-                    <Label htmlFor="token">Reset Token</Label>
-                    <Input
-                      id="token"
-                      type="text"
-                      placeholder="Paste your reset token"
-                      value={token}
-                      onChange={(e) => setToken(e.target.value)}
-                      className="bg-background border-border font-mono text-sm"
-                      required
-                      data-testid="reset-token-input"
-                    />
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">New Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 bg-background border-border"
-                      required
-                      data-testid="reset-new-password-input"
-                    />
-                  </div>
+              <Link to="/login"><PremiumButton size="lg" className="w-full" dataTestId="go-to-login-button">Go to login</PremiumButton></Link>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="flex items-center gap-2 p-3 bg-[#fff5f5] border border-[#fecaca] rounded-xl text-[#b91c1c] text-sm" data-testid="reset-password-error">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" /><span>{error}</span>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      placeholder="••••••••"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-10 bg-background border-border"
-                      required
-                      data-testid="reset-confirm-password-input"
-                    />
-                  </div>
+              )}
+              {!searchParams.get("token") && (
+                <div>
+                  <label className="block text-[12.5px] font-semibold text-[#1a2c4d] mb-1.5">Reset token</label>
+                  <input type="text" placeholder="Paste your reset token" value={token} onChange={(e) => setToken(e.target.value)} className="px-input font-mono text-[13px]" required data-testid="reset-token-input" />
                 </div>
-
-                <Button 
-                  type="submit" 
-                  className="w-full bg-primary hover:bg-primary/90"
-                  disabled={loading}
-                  data-testid="reset-password-submit-button"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Resetting...
-                    </>
-                  ) : (
-                    "Reset password"
-                  )}
-                </Button>
-
-                <Link to="/login" className="block">
-                  <Button variant="ghost" className="w-full" data-testid="back-to-login-link">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to login
-                  </Button>
-                </Link>
-              </form>
-            )}
-          </CardContent>
-        </Card>
+              )}
+              <div>
+                <label className="block text-[12.5px] font-semibold text-[#1a2c4d] mb-1.5">New password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7d8ba3]" />
+                  <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="px-input pl-10" required data-testid="reset-new-password-input" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[12.5px] font-semibold text-[#1a2c4d] mb-1.5">Confirm password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7d8ba3]" />
+                  <input type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="px-input pl-10" required data-testid="reset-confirm-password-input" />
+                </div>
+              </div>
+              <PremiumButton type="submit" size="lg" className="w-full" disabled={loading} dataTestId="reset-password-submit-button"
+                iconLeft={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}>
+                {loading ? "Resetting…" : "Reset password"}
+              </PremiumButton>
+              <Link to="/login" className="block"><PremiumButton variant="ghost" className="w-full" iconLeft={<ArrowLeft className="h-4 w-4" />} dataTestId="back-to-login-link">Back to login</PremiumButton></Link>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );

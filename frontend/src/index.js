@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import "./styles/premium.css";
 
 // Register service worker for PWA installability (iPhone Add to Home Screen + Chrome install)
 // Network-first SW — no aggressive caching, new deploys always picked up

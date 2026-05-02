@@ -1,25 +1,30 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Layout from "../../components/Layout";
 import { useAuth } from "../../context/AuthContext";
 import { useApi } from "../../hooks/useApi";
-import { Card, CardContent } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { Plus, Search, MapPin, Clock, UserCheck, Trash2, Briefcase, ClipboardList, CalendarDays } from "lucide-react";
+import {
+  Plus, Search, MapPin, Trash2, Briefcase, ClipboardList, CalendarDays,
+  UserCheck, Sparkles, ListChecks, AlertTriangle, Filter,
+} from "lucide-react";
 import { toast } from "sonner";
-import { formatDate, formatCurrency, JOB_STATUSES, JOB_STATUS_MAP } from "../../lib/utils";
-import PageState from "../../components/ui/PageState";
+import { formatDate, formatCurrency, JOB_STATUSES } from "../../lib/utils";
+import {
+  PremiumPage, PremiumHero, PremiumCard, PremiumButton, PremiumBadge,
+  PremiumAIBox, PremiumEmptyState, PremiumLoadingState, PremiumStatusBadge,
+} from "../../components/premium";
 
 export default function JobsPage() {
-  const { isEmployer } = useAuth();
+  const navigate = useNavigate();
+  const { isEmployer, normalizedRole } = useAuth();
   const { get, del, loading } = useApi();
   const [jobs, setJobs] = useState([]);
   const [pageLoading, setPageLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteId, setDeleteId] = useState(null);
+
+  const isWorker = normalizedRole === "worker";
 
   const fetchJobs = useCallback(async () => {
     const params = statusFilter !== "all" ? `?status=${statusFilter}` : "";
@@ -42,137 +47,197 @@ export default function JobsPage() {
     }
   };
 
-  const filtered = jobs.filter((j) => {
+  const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return (j.title?.toLowerCase().includes(q) || j.customer_name?.toLowerCase().includes(q) || j.address?.toLowerCase().includes(q));
-  });
+    return jobs.filter((j) =>
+      (j.title?.toLowerCase().includes(q) ||
+       j.customer_name?.toLowerCase().includes(q) ||
+       j.address?.toLowerCase().includes(q))
+    );
+  }, [jobs, search]);
+
+  // AI insights
+  const aiSuggestions = useMemo(() => {
+    const out = [];
+    const unassigned = jobs.filter((j) => !j.assigned_worker_id && j.status !== "completed");
+    const inProgress = jobs.filter((j) => j.status === "in_progress");
+    const paused = jobs.filter((j) => j.status === "paused");
+    const completedNoInvoice = jobs.filter((j) => j.status === "completed");
+
+    if (unassigned.length > 0) {
+      out.push({
+        icon: <UserCheck className="h-4 w-4" />,
+        title: `${unassigned.length} unassigned job${unassigned.length === 1 ? "" : "s"}`,
+        description: "Open the dispatch board to assign workers.",
+        action: <PremiumButton size="sm" variant="secondary" onClick={() => navigate("/dispatch")}>Dispatch</PremiumButton>,
+      });
+    }
+    if (paused.length > 0) {
+      out.push({
+        icon: <AlertTriangle className="h-4 w-4" />,
+        title: `${paused.length} paused job${paused.length === 1 ? "" : "s"} — draft a status update`,
+        description: "AI can summarise progress and prepare a customer message — review before sending.",
+      });
+    }
+    if (inProgress.length > 0) {
+      out.push({
+        icon: <ListChecks className="h-4 w-4" />,
+        title: `${inProgress.length} jobs currently in progress`,
+        description: "AI can summarise notes, photos and timer activity for any job in seconds.",
+      });
+    }
+    if (completedNoInvoice.length > 0) {
+      out.push({
+        icon: <Sparkles className="h-4 w-4" />,
+        title: `${completedNoInvoice.length} completed job${completedNoInvoice.length === 1 ? "" : "s"} ready to invoice`,
+        description: "Convert finished work into invoices and follow up with the customer.",
+      });
+    }
+    if (out.length === 0) {
+      out.push({ icon: <Sparkles className="h-4 w-4" />, title: "All clear", description: "No urgent job actions right now." });
+    }
+    return out.slice(0, 4);
+  }, [jobs, navigate]);
 
   return (
     <Layout>
-      <div className="cx-page max-w-5xl" data-testid="jobs-page">
-        <div className="cx-page-hero flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="cx-page-title" data-testid="jobs-heading">Jobs & Work Orders</h1>
-            <p className="cx-page-subtitle">Jobs on site, assigned work, worker updates, and ready-to-invoice progress.</p>
-          </div>
-          {isEmployer && (
-            <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white" data-testid="new-job-button">
-              <Link to="/jobs/new"><Plus size={16} className="mr-2" /> New Job</Link>
-            </Button>
-          )}
-        </div>
+      <PremiumPage>
+        <PremiumHero
+          icon={<Briefcase className="h-7 w-7" />}
+          eyebrow={<><ClipboardList className="h-3 w-3" /> Work orders</>}
+          title="Jobs & Dispatch"
+          subtitle="Today's run sheet, in-progress work, ready-to-invoice jobs and crew assignments — in one premium dispatch view."
+          actions={
+            isEmployer ? (
+              <>
+                <PremiumButton onClick={() => navigate("/jobs/new")} iconLeft={<Plus className="h-4 w-4" />}>New job</PremiumButton>
+                <PremiumButton variant="secondary" onClick={() => navigate("/dispatch")} iconLeft={<CalendarDays className="h-4 w-4" />}>Dispatch board</PremiumButton>
+              </>
+            ) : null
+          }
+        />
+
+        {/* AI Assistant — only for non-workers (workers don't see pricing/global summary) */}
+        {!isWorker && (
+          <PremiumAIBox
+            title="AI Job Assistant"
+            subtitle="Summarise jobs, draft customer updates, and suggest next actions — review before sending"
+            chip="Approval-first"
+            suggestions={aiSuggestions}
+          />
+        )}
 
         {/* Filters */}
-        <div className="cx-toolbar cx-panel p-3 md:p-4 flex gap-3">
-          <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search jobs..." className="pl-9 bg-white border-slate-200 text-slate-900" data-testid="jobs-search" />
+        <PremiumCard noBody bodyClassName="">
+          <div className="px-card__body flex flex-col md:flex-row md:items-center gap-3">
+            <div className="relative flex-1">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8ba3]" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by title, client or address…"
+                className="px-input pl-10"
+                data-testid="jobs-search"
+              />
+            </div>
+            <div className="relative">
+              <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8ba3] pointer-events-none" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-select pl-9 pr-8 min-w-[180px]"
+                data-testid="jobs-status-filter"
+              >
+                <option value="all">All statuses</option>
+                {JOB_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select>
+            </div>
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40 bg-white border-slate-200 text-slate-900" data-testid="jobs-status-filter">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent className="bg-white border-slate-200 shadow-sm">
-              <SelectItem value="all">All</SelectItem>
-              {JOB_STATUSES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        </PremiumCard>
 
-        {/* Loading state */}
+        {/* Job list */}
         {pageLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
-          </div>
+          <PremiumLoadingState title="Loading jobs…" />
         ) : filtered.length === 0 ? (
-          <div className="cx-empty-state">
-            <Briefcase size={32} className="mx-auto mb-3 text-slate-300" />
-            <p className="text-slate-900 font-medium mb-1">{search ? "No jobs match your search" : "No jobs yet"}</p>
-            <p className="text-xs text-slate-500 mb-4">
-              {search ? "Try a different search term" : "Create your first job to start tracking work"}
-            </p>
-            {!search && isEmployer && (
-                <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-                  <Link to="/jobs/new" data-testid="create-first-job"><Plus size={14} className="mr-1" /> Create Your First Job</Link>
-                </Button>
-              )}
-          </div>
+          <PremiumEmptyState
+            icon={<Briefcase className="h-6 w-6" />}
+            title={search ? "No jobs match your search" : "No jobs yet"}
+            subtitle={search ? "Try a different search term." : "Create your first job to start tracking work, photos, time and invoicing."}
+            action={!search && isEmployer ? (
+              <PremiumButton onClick={() => navigate("/jobs/new")} iconLeft={<Plus className="h-4 w-4" />} dataTestId="create-first-job">
+                Create your first job
+              </PremiumButton>
+            ) : null}
+          />
         ) : (
           <div className="space-y-3">
-            {filtered.map((job) => {
-              const statusInfo = JOB_STATUS_MAP[job.status];
-              return (
-                <Card key={job.id} className="cx-command-card hover:border-blue-300 transition-all" data-testid={`job-card-${job.id}`}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <Link to={`/jobs/${job.id}`} className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-600">
-                            <ClipboardList size={11} /> Work order
-                          </span>
-                          <h3 className="text-slate-900 font-medium truncate">{job.title}</h3>
-                          <span className={`cx-status-badge ${statusInfo?.color || "bg-slate-100 text-slate-700 border border-slate-200"}`}>
-                            {statusInfo?.label || job.status}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-500">
-                          {job.customer_name && <span><strong className="text-slate-700">Customer:</strong> {job.customer_name}</span>}
-                          {job.address && <span className="flex items-center gap-1"><MapPin size={11} /> <strong className="text-slate-700">Address:</strong> {job.address}</span>}
-                          <span className="flex items-center gap-1"><CalendarDays size={11} /> <strong className="text-slate-700">Date/time:</strong> {formatDate(job.scheduled_date)}</span>
-                          {job.price > 0 && <span className="text-blue-600 font-medium">{formatCurrency(job.price)}</span>}
-                        </div>
-                        {job.assigned_worker_name && (
-                          <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
-                            <UserCheck size={12} /> <span className="text-slate-700">Assigned worker:</span> {job.assigned_worker_name}
-                          </p>
+            {filtered.map((job) => (
+              <div
+                key={job.id}
+                className="px-card px-card--hover cursor-pointer"
+                onClick={() => navigate(`/jobs/${job.id}`)}
+                data-testid={`job-card-${job.id}`}
+              >
+                <div className="px-card__body">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <PremiumBadge tone="soft" icon={<ClipboardList className="h-3 w-3" />}>Work order</PremiumBadge>
+                        <h3 className="font-heading font-bold text-[15.5px] text-[#0d1b34] truncate">{job.title}</h3>
+                        <PremiumStatusBadge status={job.status} />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2 text-[12.5px] text-[#5b6c87]">
+                        {job.customer_name && (
+                          <span><span className="text-[#1a2c4d] font-semibold">Customer:</span> {job.customer_name}</span>
                         )}
-                      </Link>
-                      {isEmployer && (
-                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(job.id)} className="text-slate-500 hover:text-red-400 ml-2" data-testid={`delete-job-${job.id}`}>
-                          <Trash2 size={14} />
-                        </Button>
+                        {job.address && (
+                          <span className="flex items-center gap-1"><MapPin size={11} /><span className="text-[#1a2c4d] font-semibold">Address:</span> {job.address}</span>
+                        )}
+                        <span className="flex items-center gap-1"><CalendarDays size={11} /><span className="text-[#1a2c4d] font-semibold">Date:</span> {formatDate(job.scheduled_date)}</span>
+                        {!isWorker && job.price > 0 && (
+                          <span className="text-[#1d4ed8] font-semibold">{formatCurrency(job.price)}</span>
+                        )}
+                      </div>
+                      {job.assigned_worker_name && (
+                        <p className="text-[12.5px] text-[#0d9488] mt-2 flex items-center gap-1.5">
+                          <UserCheck size={12} /> Assigned to <span className="font-semibold text-[#1a2c4d]">{job.assigned_worker_name}</span>
+                        </p>
                       )}
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    {isEmployer && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteId(job.id); }}
+                        className="px-btn px-btn--ghost px-btn--sm text-[#94a3b8] hover:!text-[#dc2626]"
+                        data-testid={`delete-job-${job.id}`}
+                        title="Delete job"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Delete Confirmation – plain modal, no Radix DismissableLayer */}
+        {/* Delete modal */}
         {!!deleteId && (
           <div className="fixed inset-0 z-50 flex items-center justify-center" data-testid="delete-job-dialog">
-            {/* backdrop */}
-            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setDeleteId(null)} />
-            {/* modal card */}
-            <div className="relative z-10 w-full max-w-md mx-4 rounded-lg border bg-white border-slate-200 p-6 shadow-lg">
-              <h2 className="text-lg font-semibold text-slate-900">Delete Job</h2>
-              <p className="mt-2 text-sm text-slate-500">Are you sure? This cannot be undone.</p>
-              <div className="mt-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setDeleteId(null)}
-                  className="inline-flex items-center justify-center rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-500 hover:bg-blue-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  data-testid="confirm-delete-job"
-                  disabled={loading}
-                  onClick={handleDelete}
-                  className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors"
-                >
+            <div className="absolute inset-0 bg-[#0d1b34]/50 backdrop-blur-sm" onClick={() => setDeleteId(null)} />
+            <div className="relative z-10 w-full max-w-md mx-4 rounded-2xl border border-[#d8e3f3] bg-white p-6 shadow-2xl">
+              <h2 className="font-heading text-lg font-bold text-[#0d1b34]">Delete job</h2>
+              <p className="mt-2 text-[13.5px] text-[#5b6c87]">Are you sure? This cannot be undone.</p>
+              <div className="mt-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                <PremiumButton variant="secondary" onClick={() => setDeleteId(null)}>Cancel</PremiumButton>
+                <PremiumButton variant="danger" onClick={handleDelete} disabled={loading} dataTestId="confirm-delete-job">
                   {loading ? "Deleting…" : "Delete"}
-                </button>
+                </PremiumButton>
               </div>
             </div>
           </div>
         )}
-      </div>
+      </PremiumPage>
     </Layout>
   );
 }

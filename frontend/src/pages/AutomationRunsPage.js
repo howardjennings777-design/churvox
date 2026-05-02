@@ -5,6 +5,7 @@ import { useApi } from "@/hooks/useApi";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, History, RotateCw, Search, CheckCircle2, XCircle, Clock, CircleDashed, ChevronRight, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
+import { PremiumPage, PremiumHero, PremiumCard, PremiumButton } from "@/components/premium";
 
 const STATUS_STYLE = {
   completed: { cls: "bg-green-50 text-green-700 border-green-200", Icon: CheckCircle2 },
@@ -78,18 +79,16 @@ export default function AutomationRunsPage() {
 
   return (
     <Layout>
-      <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900 flex items-center gap-2">
-              <History className="h-6 w-6 text-blue-600" /> Automation runs
-            </h1>
-            <p className="text-sm text-slate-500">Every time a rule executes, it lands here.</p>
-          </div>
-          <Button variant="outline" asChild>
-            <Link to="/automation"><ArrowLeft className="h-4 w-4 mr-1" /> Back to rules</Link>
-          </Button>
-        </div>
+      <PremiumPage maxWidth={1200}>
+        <PremiumHero
+          eyebrow="Automation log"
+          title="Automation runs"
+          subtitle="Every time a rule executes — success, failure, retry — it lands here."
+          icon={<History className="h-6 w-6" />}
+          actions={
+            <Link to="/automation" className="px-btn px-btn--secondary"><ArrowLeft className="h-4 w-4 mr-1" /> Back to rules</Link>
+          }
+        />
 
         {/* Stat pills */}
         {runs.length > 0 && (
@@ -103,32 +102,32 @@ export default function AutomationRunsPage() {
         )}
 
         {runs.length > 0 && (
-          <div className="bg-white border border-slate-200 rounded-xl p-2">
+          <PremiumCard noBody className="p-2">
             <div className="relative">
-              <Search className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="h-4 w-4 text-[#7d8ba3] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by rule name or trigger..."
-                className="w-full h-9 pl-9 pr-3 rounded-md border border-slate-300 bg-white text-sm text-slate-900"
+                className="w-full h-9 pl-9 pr-3 rounded-md border border-[#d8e3f3] bg-[#f6faff] text-sm text-[#0d1b34]"
                 data-testid="runs-search"
               />
             </div>
-          </div>
+          </PremiumCard>
         )}
 
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <PremiumCard noBody>
           {loading ? (
-            <div className="p-8 text-center text-sm text-slate-500">Loading...</div>
+            <div className="p-8 text-center text-sm text-[#5b6c87]">Loading...</div>
           ) : filtered.length === 0 ? (
             <div className="p-12 text-center">
-              <History className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-              <p className="text-sm text-slate-600">
+              <History className="h-10 w-10 text-[#b8c8de] mx-auto mb-3" />
+              <p className="text-sm text-[#0d1b34] font-semibold">
                 {runs.length === 0 ? "No runs yet." : "No runs match your search."}
               </p>
               {runs.length === 0 && (
-                <p className="text-xs text-slate-400 mt-1">Once a rule matches an event, it'll appear here.</p>
+                <p className="text-xs text-[#7d8ba3] mt-1">Once a rule matches an event, it'll appear here.</p>
               )}
             </div>
           ) : (
@@ -139,37 +138,37 @@ export default function AutomationRunsPage() {
               const dur = durationMs(r.started_at, r.finished_at);
               const failed = (r.results || []).filter((x) => !x.ok).length;
               return (
-                <div key={r.id} className="border-b border-slate-100" data-testid={`run-row-${r.id}`}>
-                  <div className="w-full px-5 py-3 flex items-center justify-between gap-3 hover:bg-slate-50/60">
+                <div key={r.id} className="border-b border-[#e6eef9] last:border-b-0" data-testid={`run-row-${r.id}`}>
+                  <div className="w-full px-5 py-3 flex items-center justify-between gap-3 hover:bg-[#eff4ff]/40">
                     <button
                       onClick={() => setExpanded({ ...expanded, [r.id]: !isOpen })}
                       className="min-w-0 flex-1 text-left flex items-start gap-3"
                     >
-                      <span className="mt-0.5 text-slate-400">
+                      <span className="mt-0.5 text-[#7d8ba3]">
                         {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-slate-900 truncate">{r.rule_name || "Rule"}</span>
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono">{r.trigger}</span>
-                          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border ${style.cls}`}>
+                          <span className="font-semibold text-[#0d1b34] truncate">{r.rule_name || "Rule"}</span>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-[#eff4ff] text-[#1d4ed8] font-mono font-semibold">{r.trigger}</span>
+                          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border font-semibold ${style.cls}`}>
                             <style.Icon className="h-3 w-3" />
                             {r.status}
                           </span>
-                          {r.test && <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">test</span>}
+                          {r.test && <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-semibold">test</span>}
                           {r.status === "completed" && failed > 0 && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
                               {failed} action error(s)
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
+                        <div className="text-xs text-[#5b6c87] mt-1 flex items-center gap-2 flex-wrap">
                           <span>{timeAgo(r.started_at)}</span>
-                          <span className="text-slate-300">·</span>
+                          <span className="text-[#b8c8de]">·</span>
                           <span>{r.results?.length || 0} action(s)</span>
-                          {dur !== null && (<><span className="text-slate-300">·</span><span>{dur}ms</span></>)}
-                          <span className="text-slate-300">·</span>
-                          <span className="text-slate-400">{new Date(r.started_at).toLocaleString()}</span>
+                          {dur !== null && (<><span className="text-[#b8c8de]">·</span><span>{dur}ms</span></>)}
+                          <span className="text-[#b8c8de]">·</span>
+                          <span className="text-[#7d8ba3]">{new Date(r.started_at).toLocaleString()}</span>
                         </div>
                       </div>
                     </button>
@@ -179,6 +178,7 @@ export default function AutomationRunsPage() {
                         size="sm"
                         disabled={!!retrying[r.id]}
                         onClick={() => retry(r.id)}
+                        className="border-[#d8e3f3] text-[#1a2c4d] hover:bg-[#eff4ff]"
                         data-testid={`retry-run-${r.id}`}
                       >
                         <RotateCw className={`h-3 w-3 mr-1 ${retrying[r.id] ? "animate-spin" : ""}`} />
@@ -187,13 +187,13 @@ export default function AutomationRunsPage() {
                     )}
                   </div>
                   {isOpen && (
-                    <div className="px-5 pb-4 pt-1 space-y-3 bg-slate-50/50 border-t border-slate-100">
+                    <div className="px-5 pb-4 pt-1 space-y-3 bg-[#f6faff]/70 border-t border-[#e6eef9]">
                       <CollapsibleBlock label="Action results">
                         <div className="space-y-1.5">
                           {(r.results || []).map((res, i) => (
-                            <div key={i} className={`rounded-md p-2.5 bg-white border ${res.ok ? "border-slate-200" : "border-red-200"}`}>
+                            <div key={i} className={`rounded-md p-2.5 bg-white border ${res.ok ? "border-[#d8e3f3]" : "border-red-200"}`}>
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className={`inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full border ${
+                                <span className={`inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full border font-semibold ${
                                   res.ok ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"
                                 }`}>
                                   {res.ok
@@ -201,11 +201,11 @@ export default function AutomationRunsPage() {
                                     : <XCircle className="h-3 w-3" />}
                                   {res.ok ? "ok" : "failed"}
                                 </span>
-                                <span className="font-mono text-[11px] text-slate-700">{res.type}</span>
+                                <span className="font-mono text-[11px] text-[#1a2c4d]">{res.type}</span>
                               </div>
-                              {res.message && <div className="text-[11px] text-slate-600 mt-1">{res.message}</div>}
+                              {res.message && <div className="text-[11px] text-[#5b6c87] mt-1">{res.message}</div>}
                               {res.error && <div className="text-[11px] text-red-600 mt-1">{res.error}</div>}
-                              <div className="text-[10px] text-slate-400 mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                              <div className="text-[10px] text-[#7d8ba3] mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
                                 {res.notification_id && <span>notification: <span className="font-mono">{res.notification_id}</span></span>}
                                 {res.job_id && <span>job: <span className="font-mono">{res.job_id}</span></span>}
                                 {res.invoice_id && <span>invoice: <span className="font-mono">{res.invoice_id}</span></span>}
@@ -216,12 +216,12 @@ export default function AutomationRunsPage() {
                               </div>
                             </div>
                           ))}
-                          {(!r.results || r.results.length === 0) && <div className="text-xs text-slate-500">No actions executed.</div>}
+                          {(!r.results || r.results.length === 0) && <div className="text-xs text-[#5b6c87]">No actions executed.</div>}
                         </div>
                       </CollapsibleBlock>
 
                       <CollapsibleBlock label="Event payload" defaultOpen={false}>
-                        <pre className="text-[11px] bg-white border border-slate-200 rounded p-2 overflow-x-auto max-h-52">{JSON.stringify(r.event_payload, null, 2)}</pre>
+                        <pre className="text-[11px] bg-white border border-[#d8e3f3] rounded p-2 overflow-x-auto max-h-52">{JSON.stringify(r.event_payload, null, 2)}</pre>
                       </CollapsibleBlock>
 
                       {r.error && (
@@ -235,8 +235,8 @@ export default function AutomationRunsPage() {
               );
             })
           )}
-        </div>
-      </div>
+        </PremiumCard>
+      </PremiumPage>
     </Layout>
   );
 }

@@ -2,18 +2,12 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/context/AuthContext";
-import { Briefcase, Clock, MapPin, ChevronRight } from "lucide-react";
-
-const STATUS_COLORS = {
-  assigned: "bg-blue-100 text-blue-700",
-  acknowledged: "bg-indigo-100 text-indigo-700",
-  in_progress: "bg-amber-100 text-amber-700",
-  paused: "bg-slate-200 text-slate-600",
-  completed: "bg-emerald-100 text-emerald-700",
-};
+import { Briefcase, Clock, MapPin, ChevronRight, LogOut, Settings, Sparkles } from "lucide-react";
+import { ChurvoxLogo } from "@/components/ChurvoxLogo";
+import { PremiumStatusBadge } from "@/components/premium";
 
 export default function WorkerJobsPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { get } = useApi();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,61 +22,62 @@ export default function WorkerJobsPage() {
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-[#fcfaf6] border-b border-border px-4 py-4 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">My Jobs</h1>
-            <p className="text-sm text-slate-600">{user?.name || "Worker"}</p>
-          </div>
-          <Link to="/worker/settings" className="text-sm text-blue-600 hover:text-blue-700 font-medium">Settings</Link>
+    <div className="px-app min-h-screen">
+      <header className="px-mobile-header">
+        <ChurvoxLogo size="sm" />
+        <div className="flex items-center gap-2">
+          <Link to="/worker/settings" className="px-btn px-btn--ghost px-btn--sm" title="Settings"><Settings className="h-4 w-4" /></Link>
+          <button onClick={logout} className="px-btn px-btn--ghost px-btn--sm" title="Log out"><LogOut className="h-4 w-4" /></button>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <main className="max-w-2xl mx-auto px-4 py-5 space-y-4">
+        <div className="px-hero" style={{ padding: '20px' }}>
+          <span className="px-hero__eyebrow"><Briefcase className="h-3 w-3" /> My work</span>
+          <h1 className="px-hero__title" style={{ fontSize: '22px' }}>Hello, {user?.name?.split(" ")[0] || "team"}</h1>
+          <p className="px-hero__sub">Your assigned jobs, schedule and quick status updates — all in one place.</p>
+        </div>
+
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
-          </div>
+          <div className="px-loading"><div className="px-loading__spinner" /><p className="text-[13px] text-[#5b6c87]">Loading your jobs…</p></div>
         ) : jobs.length === 0 ? (
-          <div className="text-center py-16">
-            <Briefcase className="mx-auto h-12 w-12 text-slate-300" />
-            <p className="mt-3 text-slate-500 font-medium">No jobs assigned yet</p>
-            <p className="text-sm text-slate-400">Jobs assigned to you will appear here.</p>
+          <div className="px-empty">
+            <div className="px-empty__icon"><Briefcase className="h-6 w-6" /></div>
+            <h3 className="px-empty__title">No jobs assigned yet</h3>
+            <p className="px-empty__sub">Jobs assigned to you will appear here. Check back soon.</p>
           </div>
         ) : (
           jobs.map((job) => {
             const id = job.id || job._id;
-            const status = (job.status || "assigned").toLowerCase();
             return (
               <Link
                 key={id}
                 to={`/worker/jobs/${id}`}
-                className="block bg-white rounded-2xl border border-border p-4 hover:border-blue-300 transition-colors shadow-sm"
+                className="px-card px-card--hover block"
                 data-testid={`worker-job-${id}`}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold text-slate-900 truncate">{job.title || "Untitled Job"}</h3>
-                    {job.client_name && <p className="text-sm text-slate-500 mt-0.5">{job.client_name}</p>}
-                    {job.address && (
-                      <p className="text-sm text-slate-400 mt-1 flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5 shrink-0" />{job.address}
-                      </p>
-                    )}
-                    {job.scheduled_date && (
-                      <p className="text-sm text-slate-400 mt-1 flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5 shrink-0" />
-                        {String(job.scheduled_date).slice(0, 10)}
-                        {job.scheduled_time ? ` at ${job.scheduled_time}` : ""}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex flex-col items-end gap-2 shrink-0">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUS_COLORS[status] || "bg-slate-100 text-slate-600"}`}>
-                      {status.replace(/_/g, " ")}
-                    </span>
-                    <ChevronRight className="h-5 w-5 text-slate-300" />
+                <div className="px-card__body">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-bold text-[15px] text-[#0d1b34] truncate">{job.title || "Untitled Job"}</h3>
+                        <PremiumStatusBadge status={job.status} />
+                      </div>
+                      {job.client_name && <p className="text-[13px] text-[#5b6c87] mt-1">{job.client_name}</p>}
+                      {job.address && (
+                        <p className="text-[12.5px] text-[#7d8ba3] mt-1 flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5 shrink-0" />{job.address}
+                        </p>
+                      )}
+                      {job.scheduled_date && (
+                        <p className="text-[12.5px] text-[#7d8ba3] mt-1 flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5 shrink-0" />
+                          {String(job.scheduled_date).slice(0, 10)}
+                          {job.scheduled_time ? ` at ${job.scheduled_time}` : ""}
+                        </p>
+                      )}
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-[#94a3b8]" />
                   </div>
                 </div>
               </Link>

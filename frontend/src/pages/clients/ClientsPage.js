@@ -1,32 +1,20 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Layout from "../../components/Layout";
 import { useAuth } from "../../context/AuthContext";
 import { useApi } from "../../hooks/useApi";
-import { Card, CardContent } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
 import {
-  Users,
-  UserPlus,
-  Trash2,
-  Upload,
-  Mail,
-  Phone,
-  MapPin,
-  Pencil,
-  Search,
-  CalendarClock,
-  Receipt,
-  Sparkles,
-  AlertTriangle,
-  Briefcase,
-  FileText,
+  Users, UserPlus, Trash2, Upload, Mail, Phone, MapPin, Pencil, Search,
+  CalendarClock, Receipt, Sparkles, Briefcase, FileText, Plus, MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 import API_BASE from "../../lib/apiBase";
+import {
+  PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton,
+  PremiumAIBox, PremiumEmptyState, PremiumLoadingState, PremiumErrorState,
+  PremiumFormSection,
+} from "../../components/premium";
 
 axios.defaults.withCredentials = true;
 
@@ -35,7 +23,6 @@ const safeText = (value, fallback = "—") => {
   const text = String(value).trim();
   return text || fallback;
 };
-
 const normalizeDate = (value) => {
   if (!value) return null;
   const date = new Date(value);
@@ -43,6 +30,7 @@ const normalizeDate = (value) => {
 };
 
 export default function ClientsPage() {
+  const navigate = useNavigate();
   const { user, isEmployer } = useAuth();
   const { get, post, del, loading } = useApi();
 
@@ -56,12 +44,7 @@ export default function ClientsPage() {
   const fileInputRef = useRef(null);
 
   const [form, setForm] = useState({
-    client_name: "",
-    contact_name: "",
-    email: "",
-    phone: "",
-    address: "",
-    notes: "",
+    client_name: "", contact_name: "", email: "", phone: "", address: "", notes: "",
   });
 
   const fetchClients = useCallback(async () => {
@@ -85,52 +68,50 @@ export default function ClientsPage() {
   const filteredClients = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     if (!query) return clients;
-
-    return clients.filter((client) => {
-      const pool = [
-        client.client_name,
-        client.name,
-        client.contact_name,
-        client.email,
-        client.phone,
-        client.address,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
+    return clients.filter((c) => {
+      const pool = [c.client_name, c.name, c.contact_name, c.email, c.phone, c.address]
+        .filter(Boolean).join(" ").toLowerCase();
       return pool.includes(query);
     });
   }, [clients, searchTerm]);
 
   const metrics = useMemo(() => {
     const total = clients.length;
-    const active = clients.filter((client) => {
-      const hasContact = Boolean(client.email || client.phone);
-      const hasRecentDate = normalizeDate(client.updated_at || client.last_activity_at || client.created_at);
-      return hasContact || Boolean(hasRecentDate);
+    const active = clients.filter((c) => Boolean(c.email || c.phone || normalizeDate(c.updated_at || c.last_activity_at))).length;
+    const withInvoices = clients.filter((c) => Number(c.invoices_count ?? c.invoice_count ?? c.total_invoices ?? 0) > 0).length;
+    const recent = clients.filter((c) => {
+      const d = normalizeDate(c.created_at || c.createdAt || c.added_at);
+      if (!d) return false;
+      return Date.now() - d.getTime() <= 30 * 24 * 60 * 60 * 1000;
     }).length;
+    return { total, active, withInvoices, recent };
+  }, [clients]);
 
-    const withInvoices = clients.filter((client) => {
-      const explicit = Number(client.invoices_count ?? client.invoice_count ?? client.total_invoices ?? 0);
-      return Number.isFinite(explicit) && explicit > 0;
-    }).length;
-
-    const recent = clients.filter((client) => {
-      const createdDate = normalizeDate(client.created_at || client.createdAt || client.added_at);
-      if (!createdDate) return false;
-      const msIn30Days = 30 * 24 * 60 * 60 * 1000;
-      return Date.now() - createdDate.getTime() <= msIn30Days;
-    }).length;
-
-    return {
-      total,
-      active,
-      withInvoices,
-      recent,
-      invoicesFallback: withInvoices === 0,
-      recentFallback: recent === 0,
-    };
+  const aiSuggestions = useMemo(() => {
+    const noEmail = clients.filter((c) => !c.email && !c.phone);
+    const out = [];
+    if (clients.length === 0) {
+      out.push({ icon: <Users className="h-4 w-4" />, title: "Add your first client", description: "Or import a CSV with names, emails, phones, addresses." });
+    } else {
+      out.push({
+        icon: <Sparkles className="h-4 w-4" />,
+        title: "Activity summary ready",
+        description: "AI can summarise jobs, quotes and invoices per client — open any client to draft a follow-up.",
+      });
+      if (noEmail.length > 0) {
+        out.push({
+          icon: <Mail className="h-4 w-4" />,
+          title: `${noEmail.length} client${noEmail.length === 1 ? "" : "s"} missing contact info`,
+          description: "Add email or phone so reminders, quotes and invoices can be delivered.",
+        });
+      }
+      out.push({
+        icon: <MessageSquare className="h-4 w-4" />,
+        title: "Draft a polite check-in for inactive clients",
+        description: "AI can prepare wording — you approve before sending.",
+      });
+    }
+    return out.slice(0, 4);
   }, [clients]);
 
   const handleAdd = async (e) => {
@@ -143,18 +124,10 @@ export default function ClientsPage() {
       address: form.address.trim(),
       notes: form.notes.trim(),
     };
-
     const res = await post("/clients", payload);
     if (res.success) {
       toast.success("Client added");
-      setForm({
-        client_name: "",
-        contact_name: "",
-        email: "",
-        phone: "",
-        address: "",
-        notes: "",
-      });
+      setForm({ client_name: "", contact_name: "", email: "", phone: "", address: "", notes: "" });
       setShowAdd(false);
       fetchClients();
     } else {
@@ -164,14 +137,9 @@ export default function ClientsPage() {
 
   const handleDelete = async (client) => {
     const clientId = client?.id || client?._id;
-    if (!clientId) {
-      toast.error("Client ID missing");
-      return;
-    }
-
+    if (!clientId) { toast.error("Client ID missing"); return; }
     const ok = window.confirm("Delete this client?");
     if (!ok) return;
-
     const res = await del(`/clients/${clientId}`);
     if (res.success) {
       toast.success("Client removed");
@@ -184,23 +152,16 @@ export default function ClientsPage() {
   const handleCSVImport = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setImporting(true);
     setImportResults(null);
-
     try {
       const token = localStorage.getItem("token");
       const formData = new FormData();
       formData.append("file", file);
-
       const response = await axios.post(`${API_BASE}/api/clients/import-csv`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
         withCredentials: true,
       });
-
       setImportResults(response.data || null);
       toast.success("CSV import completed");
       await fetchClients();
@@ -215,375 +176,182 @@ export default function ClientsPage() {
 
   return (
     <Layout>
-      <div className="cx-page space-y-6" data-testid="clients-page">
-        <div className="cx-page-hero flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="cx-page-title">Clients</h1>
-            <p className="cx-page-subtitle">Manage service clients, site details, job history, and billing relationships.</p>
-          </div>
+      <PremiumPage>
+        <PremiumHero
+          icon={<Users className="h-7 w-7" />}
+          eyebrow={<><Users className="h-3 w-3" /> Customers</>}
+          title="Clients"
+          subtitle="Customer cards, site details, contact channels and AI-suggested follow-ups for every relationship."
+          actions={
+            isEmployer ? (
+              <>
+                <input ref={fileInputRef} type="file" accept=".csv" onChange={handleCSVImport} className="hidden" />
+                <PremiumButton variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={importing} iconLeft={<Upload className="h-4 w-4" />}>
+                  {importing ? "Importing…" : "CSV import"}
+                </PremiumButton>
+                <PremiumButton onClick={() => setShowAdd((p) => !p)} iconLeft={<UserPlus className="h-4 w-4" />} dataTestId="add-client-button">
+                  {showAdd ? "Close" : "Add client"}
+                </PremiumButton>
+              </>
+            ) : null
+          }
+        />
 
-          {isEmployer && (
-            <div className="flex flex-wrap items-center gap-2">
+        <PremiumAIBox
+          title="AI Client Assistant"
+          subtitle="Activity summaries and follow-up drafts — review before sending"
+          chip="Approval-first"
+          suggestions={aiSuggestions}
+        />
+
+        <div className="px-grid px-grid--4">
+          <PremiumStatCard label="Total clients" value={metrics.total} icon={<Users className="h-4 w-4" />} onClick={() => {}} />
+          <PremiumStatCard label="Active" value={metrics.active} icon={<Sparkles className="h-4 w-4" />} tone="teal" onClick={() => {}} />
+          <PremiumStatCard label="With invoices" value={metrics.withInvoices} icon={<Receipt className="h-4 w-4" />} tone="amber" onClick={() => navigate("/invoices")} />
+          <PremiumStatCard label="Added this month" value={metrics.recent} icon={<CalendarClock className="h-4 w-4" />} tone="sky" onClick={() => {}} />
+        </div>
+
+        {/* Search */}
+        <PremiumCard noBody>
+          <div className="px-card__body">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8ba3]" />
               <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv"
-                onChange={handleCSVImport}
-                className="hidden"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by name, email, phone, or address…"
+                className="px-input pl-10"
+                data-testid="clients-search-input"
               />
-
-              <Button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={importing}
-                className="cx-button-secondary"
-              >
-                <Upload size={16} className="mr-2" />
-                {importing ? "Importing..." : "CSV Import"}
-              </Button>
-
-              <Button
-                type="button"
-                onClick={() => setShowAdd((prev) => !prev)}
-                className="cx-button-primary"
-                data-testid="add-client-button"
-              >
-                <UserPlus size={16} className="mr-2" />
-                {showAdd ? "Close" : "Add Client"}
-              </Button>
             </div>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-          <Card className="cx-stat-card">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#667085]">Total clients</p>
-                  <p className="mt-1 text-2xl font-semibold text-[#172033]">{metrics.total}</p>
-                </div>
-                <span className="rounded-xl bg-[#EAF2FF] p-2 text-[#155EEF]"><Users size={16} /></span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="cx-stat-card">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#667085]">Active clients</p>
-                  <p className="mt-1 text-2xl font-semibold text-[#172033]">{metrics.active}</p>
-                </div>
-                <span className="rounded-xl bg-[#EAF8EF] p-2 text-[#16A34A]"><Sparkles size={16} /></span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="cx-stat-card">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#667085]">With invoices</p>
-                  <p className="mt-1 text-2xl font-semibold text-[#172033]">{metrics.withInvoices}</p>
-                  {metrics.invoicesFallback && <p className="text-xs text-[#667085] mt-1">Waiting for invoice-linked data.</p>}
-                </div>
-                <span className="rounded-xl bg-[#FFF6E5] p-2 text-[#F59E0B]"><Receipt size={16} /></span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="cx-stat-card">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#667085]">Recently added</p>
-                  <p className="mt-1 text-2xl font-semibold text-[#172033]">{metrics.recent}</p>
-                  {metrics.recentFallback && <p className="text-xs text-[#667085] mt-1">No recent additions detected.</p>}
-                </div>
-                <span className="rounded-xl bg-[#EAF2FF] p-2 text-[#155EEF]"><CalendarClock size={16} /></span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="cx-toolbar cx-panel p-3 md:p-4">
-          <div className="relative flex-1 min-w-[220px]">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#667085]" />
-            <Input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by name, email, phone, or address"
-              className="pl-9 cx-input"
-              data-testid="clients-search-input"
-            />
           </div>
-        </div>
+        </PremiumCard>
 
         {showAdd && (
-          <Card className="cx-panel" data-testid="add-client-form">
-            <CardContent className="p-6 space-y-4 text-slate-900">
-              <div>
-                <div className="text-lg font-semibold text-slate-900">Add Client</div>
-                <div className="text-sm text-slate-500 mt-1">Fill in client details below.</div>
+          <PremiumFormSection title="Add a new client" subtitle="Their details will appear on quotes and invoices.">
+            <form onSubmit={handleAdd} className="space-y-4" data-testid="add-client-form">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="px-field__label">Client name *</label>
+                  <input value={form.client_name} onChange={(e) => setForm({ ...form, client_name: e.target.value })} required className="px-input" data-testid="add-client-name-input" />
+                </div>
+                <div>
+                  <label className="px-field__label">Contact name</label>
+                  <input value={form.contact_name} onChange={(e) => setForm({ ...form, contact_name: e.target.value })} className="px-input" data-testid="add-client-contact-input" />
+                </div>
+                <div>
+                  <label className="px-field__label">Email</label>
+                  <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="px-input" data-testid="add-client-email-input" />
+                </div>
+                <div>
+                  <label className="px-field__label">Phone</label>
+                  <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="px-input" data-testid="add-client-phone-input" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="px-field__label">Address</label>
+                  <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="px-input" data-testid="add-client-address-input" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="px-field__label">Notes</label>
+                  <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="px-input" data-testid="add-client-notes-input" />
+                </div>
               </div>
-
-              <form onSubmit={handleAdd} className="space-y-4">
-                <div>
-                  <Label>Client Name</Label>
-                  <Input
-                    value={form.client_name}
-                    onChange={(e) => setForm({ ...form, client_name: e.target.value })}
-                    required
-                    className="cx-input"
-                    data-testid="add-client-name-input"
-                  />
-                </div>
-
-                <div>
-                  <Label>Contact Name</Label>
-                  <Input
-                    value={form.contact_name}
-                    onChange={(e) => setForm({ ...form, contact_name: e.target.value })}
-                    className="cx-input"
-                    data-testid="add-client-contact-input"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Email</Label>
-                    <Input
-                      type="email"
-                      value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      className="cx-input"
-                      data-testid="add-client-email-input"
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Phone</Label>
-                    <Input
-                      value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                      className="cx-input"
-                      data-testid="add-client-phone-input"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Address</Label>
-                  <Input
-                    value={form.address}
-                    onChange={(e) => setForm({ ...form, address: e.target.value })}
-                    className="cx-input"
-                    data-testid="add-client-address-input"
-                  />
-                </div>
-
-                <div>
-                  <Label>Notes</Label>
-                  <Input
-                    value={form.notes}
-                    onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                    className="cx-input"
-                    data-testid="add-client-notes-input"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setShowAdd(false);
-                      setForm({ client_name: "", contact_name: "", email: "", phone: "", address: "", notes: "" });
-                    }}
-                    data-testid="add-client-cancel-button"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="cx-button-primary"
-                    data-testid="add-client-save-button"
-                  >
-                    {loading ? "Saving..." : "Save Client"}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+              <div className="flex justify-end gap-2 pt-2">
+                <PremiumButton type="button" variant="secondary" onClick={() => setShowAdd(false)} dataTestId="add-client-cancel-button">Cancel</PremiumButton>
+                <PremiumButton type="submit" disabled={loading} dataTestId="add-client-save-button">
+                  {loading ? "Saving…" : "Save client"}
+                </PremiumButton>
+              </div>
+            </form>
+          </PremiumFormSection>
         )}
 
         {importResults && (
-          <Card className="cx-panel">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-slate-900 font-medium">Import Results</p>
-                <button
-                  onClick={() => setImportResults(null)}
-                  className="text-xs text-slate-500 hover:text-slate-900"
-                >
-                  Dismiss
-                </button>
-              </div>
-
-              <p className="text-sm text-slate-500">
-                Imported: {importResults.imported ?? 0} | Skipped: {importResults.skipped ?? 0} | Total: {importResults.total ?? 0}
-              </p>
-            </CardContent>
-          </Card>
+          <PremiumCard
+            title="Import results"
+            actions={<button onClick={() => setImportResults(null)} className="text-[12.5px] text-[#5b6c87] hover:text-[#0d1b34] font-semibold">Dismiss</button>}
+          >
+            <p className="text-[13.5px] text-[#5b6c87]">
+              Imported: <span className="font-bold text-[#0d1b34]">{importResults.imported ?? 0}</span> ·
+              Skipped: <span className="font-bold text-[#0d1b34]">{importResults.skipped ?? 0}</span> ·
+              Total: <span className="font-bold text-[#0d1b34]">{importResults.total ?? 0}</span>
+            </p>
+          </PremiumCard>
         )}
 
         {pageLoading && clients.length === 0 ? (
-          <div className="cx-loading-state">
-            <div className="mx-auto mb-4 animate-spin rounded-full h-8 w-8 border-t-2 border-[#155EEF]" />
-            <p className="text-sm text-[#667085]">Loading your clients workspace…</p>
-          </div>
+          <PremiumLoadingState title="Loading clients…" />
         ) : pageError ? (
-          <div className="cx-error-state">
-            <AlertTriangle className="mx-auto mb-3 text-[#DC2626]" size={28} />
-            <p className="text-[#172033] font-medium mb-1">Couldn&apos;t load clients</p>
-            <p className="text-sm text-[#667085] mb-4">{safeText(pageError, "Please try again.")}</p>
-            <Button onClick={fetchClients} className="cx-button-secondary">Retry</Button>
-          </div>
+          <PremiumErrorState title="Couldn't load clients" subtitle={safeText(pageError, "Please try again.")} action={<PremiumButton onClick={fetchClients} variant="secondary">Retry</PremiumButton>} />
         ) : filteredClients.length === 0 && !loading ? (
-          <Card className="cx-empty-state">
-            <CardContent className="p-8 text-center">
-              <Users className="mx-auto mb-3 text-slate-500/40" size={32} />
-              <p className="text-slate-900 font-medium mb-1">{searchTerm ? "No matching clients" : "No clients yet"}</p>
-              <p className="text-sm text-slate-500 mb-4">
-                {searchTerm
-                  ? "Try another name, email, phone, or address."
-                  : "Add your first customer or import a CSV to get started."}
-              </p>
-              {isEmployer && !searchTerm && (
-                <div className="flex gap-2 justify-center flex-wrap">
-                  <Button
-                    onClick={() => setShowAdd(true)}
-                    size="sm"
-                    className="cx-button-primary"
-                  >
-                    <UserPlus size={14} className="mr-1" />
-                    Add Client
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="cx-button-secondary"
-                  >
-                    <Upload size={14} className="mr-1" />
-                    CSV Import
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <PremiumEmptyState
+            icon={<Users className="h-6 w-6" />}
+            title={searchTerm ? "No matching clients" : "No clients yet"}
+            subtitle={searchTerm ? "Try another name, email, phone or address." : "Add your first customer or import a CSV to get started."}
+            action={isEmployer && !searchTerm ? (
+              <div className="flex gap-2 justify-center flex-wrap">
+                <PremiumButton onClick={() => setShowAdd(true)} iconLeft={<UserPlus className="h-4 w-4" />}>Add client</PremiumButton>
+                <PremiumButton variant="secondary" onClick={() => fileInputRef.current?.click()} iconLeft={<Upload className="h-4 w-4" />}>CSV import</PremiumButton>
+              </div>
+            ) : null}
+          />
         ) : (
           <div className="grid gap-3">
             {filteredClients.map((client) => {
               const cid = client.id || client._id;
               const clientName = client.client_name || client.name || "Unnamed Client";
               const avatarLetter = safeText(clientName, "U").charAt(0).toUpperCase();
-
               return (
-                <Card key={cid} className="cx-client-card" data-testid={`client-card-${cid}`}>
-                  <CardContent className="p-4 md:p-5">
+                <div key={cid} className="px-card px-card--hover" data-testid={`client-card-${cid}`}>
+                  <div className="px-card__body">
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                      <div className="min-w-0 flex-1">
+                      <Link to={`/clients/${cid}`} className="min-w-0 flex-1 group">
                         <div className="flex items-start gap-3">
-                          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF2FF] text-[#155EEF] font-semibold">
+                          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white font-bold text-[15px]"
+                                style={{ background: 'linear-gradient(135deg, #2563eb, #7c3aed)' }}>
                             {avatarLetter}
                           </span>
-
                           <div className="min-w-0">
-                            <Link to={`/clients/${cid}`} className="text-slate-900 hover:text-[#155EEF] transition-colors">
-                              <p className="text-base md:text-lg font-semibold truncate">{clientName}</p>
-                            </Link>
+                            <p className="text-[15.5px] font-bold text-[#0d1b34] truncate group-hover:text-[#1d4ed8] transition">{clientName}</p>
                             {client.contact_name && (
-                              <p className="text-sm text-[#667085] mt-0.5 truncate">Contact: {client.contact_name}</p>
+                              <p className="text-[12.5px] text-[#5b6c87] mt-0.5 truncate">Contact: {client.contact_name}</p>
                             )}
                           </div>
                         </div>
 
-                        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-y-1.5 gap-x-4 text-sm text-[#667085]">
-                          <p className="flex items-center gap-1.5 min-w-0">
-                            <Mail size={13} className="shrink-0" />
-                            <span className="truncate">{safeText(client.email)}</span>
-                          </p>
-                          <p className="flex items-center gap-1.5 min-w-0">
-                            <Phone size={13} className="shrink-0" />
-                            <span className="truncate">{safeText(client.phone)}</span>
-                          </p>
-                          <p className="flex items-center gap-1.5 min-w-0 sm:col-span-2">
-                            <MapPin size={13} className="shrink-0" />
-                            <span className="truncate">{safeText(client.address)}</span>
-                          </p>
+                        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-y-1.5 gap-x-4 text-[12.5px] text-[#5b6c87]">
+                          <p className="flex items-center gap-1.5 min-w-0"><Mail size={13} className="shrink-0" /><span className="truncate">{safeText(client.email)}</span></p>
+                          <p className="flex items-center gap-1.5 min-w-0"><Phone size={13} className="shrink-0" /><span className="truncate">{safeText(client.phone)}</span></p>
+                          <p className="flex items-center gap-1.5 min-w-0 sm:col-span-2"><MapPin size={13} className="shrink-0" /><span className="truncate">{safeText(client.address)}</span></p>
                         </div>
 
                         {client.notes && (
-                          <p className="mt-3 rounded-xl bg-[#fbfaf7] border border-border p-2.5 text-sm text-[#667085] line-clamp-2">
-                            {client.notes}
-                          </p>
+                          <p className="mt-3 rounded-xl bg-[#f6faff] border border-[#e6eef9] p-3 text-[12.5px] text-[#5b6c87] line-clamp-2">{client.notes}</p>
                         )}
+                      </Link>
 
-                        <div className="mt-3 flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Button asChild size="sm" variant="outline" className="h-8 rounded-lg border-border">
-                            <Link to="/jobs">
-                              <Briefcase size={13} className="mr-1" /> View jobs
-                            </Link>
-                          </Button>
-                          <Button asChild size="sm" variant="outline" className="h-8 rounded-lg border-border">
-                            <Link to="/jobs/new">
-                              <Briefcase size={13} className="mr-1" /> New job
-                            </Link>
-                          </Button>
-                          <Button asChild size="sm" variant="outline" className="h-8 rounded-lg border-border">
-                            <Link to="/quotes/new">
-                              <FileText size={13} className="mr-1" /> New quote
-                            </Link>
-                          </Button>
-                        </div>
+                      <div className="flex flex-wrap items-center gap-2 md:flex-col md:items-end" onClick={(e) => e.stopPropagation()}>
+                        <PremiumButton size="sm" variant="secondary" onClick={() => navigate(`/jobs/new?client=${cid}`)} iconLeft={<Briefcase size={13} />}>New job</PremiumButton>
+                        <PremiumButton size="sm" variant="secondary" onClick={() => navigate(`/quotes/new?client=${cid}`)} iconLeft={<FileText size={13} />}>New quote</PremiumButton>
+                        {isEmployer && (
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => navigate(`/clients/${cid}/edit`)} className="px-btn px-btn--ghost px-btn--sm text-[#5b6c87]" title="Edit">
+                              <Pencil size={15} />
+                            </button>
+                            <button onClick={() => handleDelete(client)} className="px-btn px-btn--ghost px-btn--sm text-[#dc2626] hover:!bg-[#fff5f5]" title="Delete">
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        )}
                       </div>
-
-                      {isEmployer && (
-                        <div className="flex items-center gap-1 md:pl-2" onClick={(e) => e.preventDefault()}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            asChild
-                            className="text-slate-500 hover:text-slate-900 hover:bg-blue-50"
-                          >
-                            <Link to={`/clients/${cid}/edit`} onClick={(e) => e.stopPropagation()}>
-                              <Pencil size={16} />
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              handleDelete(client);
-                            }}
-                            className="text-[#DC2626] hover:text-[#DC2626] hover:bg-red-50"
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        </div>
-                      )}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               );
             })}
           </div>
         )}
-      </div>
+      </PremiumPage>
     </Layout>
   );
 }

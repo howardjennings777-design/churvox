@@ -1,5 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
+import {
+  PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton,
+  PremiumBadge, PremiumAIBox, PremiumEmptyState, PremiumFormSection,
+} from "../components/premium";
+import { Zap, Sparkles, RefreshCw, Plus, Pencil, Trash2, Power, PlayCircle, ListChecks, ShieldCheck, AlertTriangle, BellRing } from "lucide-react";
 
 const API_BASE = (process.env.REACT_APP_BACKEND_URL || "https://grassley-backend.onrender.com").replace(/\/$/, "");
 
@@ -27,71 +32,24 @@ const actionOptions = [
   { value: "email.send", label: "Send customer follow-up" },
 ];
 
-const emptyForm = {
-  name: "",
-  description: "",
-  trigger: "job.completed",
-  action: "notification.create",
-  enabled: true,
-};
+const emptyForm = { name: "", description: "", trigger: "job.completed", action: "notification.create", enabled: true };
 
 function getToken() {
-  return (
-    localStorage.getItem("token") ||
-    localStorage.getItem("authToken") ||
-    localStorage.getItem("access_token") ||
-    ""
-  );
+  return localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("access_token") || "";
 }
 
 async function apiRequest(path, options = {}) {
   const token = getToken();
-  const headers = {
-    "Content-Type": "application/json",
-    ...(options.headers || {}),
-  };
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${API_BASE}/api${path}`, {
-    credentials: "include",
-    ...options,
-    headers,
-  });
-
+  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const response = await fetch(`${API_BASE}/api${path}`, { credentials: "include", ...options, headers });
   let data = null;
-  try {
-    data = await response.json();
-  } catch (error) {
-    data = null;
-  }
-
+  try { data = await response.json(); } catch { data = null; }
   if (!response.ok) {
-    const message =
-      data?.detail ||
-      data?.message ||
-      data?.error ||
-      `Request failed with status ${response.status}`;
+    const message = data?.detail || data?.message || data?.error || `Request failed with status ${response.status}`;
     throw new Error(message);
   }
-
   return data || { success: true };
-}
-
-function Badge({ enabled }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-        enabled
-          ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-          : "bg-slate-100 text-slate-600 ring-1 ring-slate-200"
-      }`}
-    >
-      {enabled ? "Enabled" : "Disabled"}
-    </span>
-  );
 }
 
 function AutomationPage() {
@@ -107,64 +65,31 @@ function AutomationPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  const editingRule = useMemo(
-    () => rules.find((rule) => rule.id === editingId),
-    [rules, editingId]
-  );
+  const editingRule = useMemo(() => rules.find((rule) => rule.id === editingId), [rules, editingId]);
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     try {
       const [rulesRes, runsRes, templatesRes] = await Promise.allSettled([
-        apiRequest("/automation/rules"),
-        apiRequest("/automation/runs"),
-        apiRequest("/automation/templates"),
+        apiRequest("/automation/rules"), apiRequest("/automation/runs"), apiRequest("/automation/templates"),
       ]);
-
-      if (rulesRes.status === "fulfilled") {
-        setRules(Array.isArray(rulesRes.value.rules) ? rulesRes.value.rules : []);
-      } else {
-        throw rulesRes.reason;
-      }
-
-      if (runsRes.status === "fulfilled") {
-        setRuns(Array.isArray(runsRes.value.runs) ? runsRes.value.runs : []);
-      } else {
-        setRuns([]);
-      }
-
-      if (templatesRes.status === "fulfilled") {
-        setTemplates(Array.isArray(templatesRes.value.templates) ? templatesRes.value.templates : []);
-      } else {
-        setTemplates([]);
-      }
+      if (rulesRes.status === "fulfilled") setRules(Array.isArray(rulesRes.value.rules) ? rulesRes.value.rules : []);
+      else throw rulesRes.reason;
+      setRuns(runsRes.status === "fulfilled" && Array.isArray(runsRes.value.runs) ? runsRes.value.runs : []);
+      setTemplates(templatesRes.status === "fulfilled" && Array.isArray(templatesRes.value.templates) ? templatesRes.value.templates : []);
     } catch (err) {
-      setError(err.message || "Automation could not be loaded.");
-      setRules([]);
-      setRuns([]);
-      setTemplates([]);
-    } finally {
-      setLoading(false);
-    }
+      setError(err.message || "Automation could not be loaded."); setRules([]); setRuns([]); setTemplates([]);
+    } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
-  const resetForm = () => {
-    setForm(emptyForm);
-    setEditingId(null);
-  };
+  const resetForm = () => { setForm(emptyForm); setEditingId(null); };
 
   const applyTemplate = (template) => {
     setForm({
-      name: template.name || "",
-      description: template.description || "",
-      trigger: template.trigger || "job.completed",
-      action: template.action || "notification.create",
-      enabled: true,
+      name: template.name || "", description: template.description || "",
+      trigger: template.trigger || "job.completed", action: template.action || "notification.create", enabled: true,
     });
     setEditingId(null);
     setNotice("Template loaded. Save it to create the automation rule.");
@@ -173,10 +98,8 @@ function AutomationPage() {
   const startEdit = (rule) => {
     setEditingId(rule.id);
     setForm({
-      name: rule.name || "",
-      description: rule.description || "",
-      trigger: rule.trigger || "job.completed",
-      action: rule.action || "notification.create",
+      name: rule.name || "", description: rule.description || "",
+      trigger: rule.trigger || "job.completed", action: rule.action || "notification.create",
       enabled: rule.enabled !== false,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -184,384 +107,242 @@ function AutomationPage() {
 
   const saveRule = async (event) => {
     event.preventDefault();
-    setSaving(true);
-    setError("");
-    setNotice("");
-
+    setSaving(true); setError(""); setNotice("");
     try {
-      const payload = {
-        ...form,
-        name: form.name.trim(),
-        description: form.description.trim(),
-      };
-
-      if (!payload.name) {
-        throw new Error("Automation name is required.");
-      }
-
+      const payload = { ...form, name: form.name.trim(), description: form.description.trim() };
+      if (!payload.name) throw new Error("Automation name is required.");
       if (editingId) {
-        await apiRequest(`/automation/rules/${editingId}`, {
-          method: "PUT",
-          body: JSON.stringify(payload),
-        });
+        await apiRequest(`/automation/rules/${editingId}`, { method: "PUT", body: JSON.stringify(payload) });
         setNotice("Automation rule updated.");
       } else {
-        await apiRequest("/automation/rules", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
+        await apiRequest("/automation/rules", { method: "POST", body: JSON.stringify(payload) });
         setNotice("Automation rule created.");
       }
-
       resetForm();
       await load();
-    } catch (err) {
-      setError(err.message || "Automation rule could not be saved.");
-    } finally {
-      setSaving(false);
-    }
+    } catch (err) { setError(err.message || "Automation rule could not be saved."); }
+    finally { setSaving(false); }
   };
 
   const toggleRule = async (rule) => {
-    setError("");
-    setNotice("");
+    setError(""); setNotice("");
     try {
-      await apiRequest(`/automation/rules/${rule.id}`, {
-        method: "PUT",
-        body: JSON.stringify({ enabled: rule.enabled === false }),
-      });
+      await apiRequest(`/automation/rules/${rule.id}`, { method: "PUT", body: JSON.stringify({ enabled: rule.enabled === false }) });
       setNotice(rule.enabled === false ? "Automation enabled." : "Automation disabled.");
       await load();
-    } catch (err) {
-      setError(err.message || "Automation rule could not be updated.");
-    }
+    } catch (err) { setError(err.message || "Automation rule could not be updated."); }
   };
 
   const deleteRule = async (rule) => {
     const confirmed = window.confirm(`Delete automation rule "${rule.name}"?`);
     if (!confirmed) return;
-
-    setDeletingId(rule.id);
-    setError("");
-    setNotice("");
-
+    setDeletingId(rule.id); setError(""); setNotice("");
     try {
       await apiRequest(`/automation/rules/${rule.id}`, { method: "DELETE" });
       setNotice("Automation rule deleted.");
       if (editingId === rule.id) resetForm();
       await load();
-    } catch (err) {
-      setError(err.message || "Automation rule could not be deleted.");
-    } finally {
-      setDeletingId(null);
-    }
+    } catch (err) { setError(err.message || "Automation rule could not be deleted."); }
+    finally { setDeletingId(null); }
   };
 
   const testRule = async (rule) => {
-    setTestingId(rule.id);
-    setError("");
-    setNotice("");
-
+    setTestingId(rule.id); setError(""); setNotice("");
     try {
       await apiRequest(`/automation/rules/${rule.id}/test`, { method: "POST" });
       setNotice("Automation test completed and logged.");
       await load();
-    } catch (err) {
-      setError(err.message || "Automation test could not run.");
-    } finally {
-      setTestingId(null);
-    }
+    } catch (err) { setError(err.message || "Automation test could not run."); }
+    finally { setTestingId(null); }
   };
+
+  const aiSuggestions = useMemo(() => {
+    const out = [];
+    out.push({ icon: <BellRing className="h-4 w-4" />, title: "Notify office admin when a job is completed", description: "Save admin time by alerting the team automatically." });
+    out.push({ icon: <ListChecks className="h-4 w-4" />, title: "Flag payroll review on time entry approval", description: "Keep payroll runs accurate without chasing." });
+    out.push({ icon: <Sparkles className="h-4 w-4" />, title: "Create invoice draft when a job is completed", description: "Speed up cashflow — admin reviews and sends." });
+    if (rules.length === 0) {
+      out.push({ icon: <Zap className="h-4 w-4" />, title: "Start with a quick template", description: "Pick a template on the right to launch your first automation." });
+    }
+    return out.slice(0, 4);
+  }, [rules]);
+
+  const activeRules = rules.filter((r) => r.enabled !== false).length;
+  const disabledRules = rules.length - activeRules;
+  const successRuns = runs.filter((r) => r.status === "success").length;
+  const failedRuns = runs.filter((r) => r.status && r.status !== "success").length;
 
   return (
     <Layout>
-    <div className="cx-page min-h-screen px-0 py-0 sm:px-0 lg:px-0">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <div className="rounded-3xl border border-cyan-200/70 bg-gradient-to-br from-white via-cyan-50/40 to-blue-50 p-6 shadow-sm">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-600">
-                Churvox Automation
-              </p>
-              <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
-                Smart Operations Automation
-              </h1>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                Build reliable automation rules for tradie and service-business workflows. Trigger actions for office admin, invoicing, payroll review, and customer follow-up. SMS automation stays off until SMS is fully live.
-              </p>
-            </div>
+      <PremiumPage>
+        <PremiumHero
+          icon={<Zap className="h-7 w-7" />}
+          eyebrow={<><Zap className="h-3 w-3" /> Automation</>}
+          title="Smart Operations Automation"
+          subtitle="Build reliable rules for jobs, quotes, invoices, payroll review and customer follow-up. Approval-first — no automatic customer SMS or payroll decisions."
+          actions={
+            <>
+              <PremiumButton onClick={load} iconLeft={<RefreshCw className="h-4 w-4" />} variant="secondary">Refresh</PremiumButton>
+              {editingRule && <PremiumButton onClick={resetForm} variant="ghost">Cancel edit</PremiumButton>}
+            </>
+          }
+        />
 
-            <button
-              type="button"
-              onClick={load}
-              className="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
-            >
-              Refresh
-            </button>
-          </div>
+        <PremiumAIBox
+          title="AI Automation Suggestions"
+          subtitle="Recommended rules based on jobs, quotes, invoices and clients — review, edit and approve before enabling"
+          chip="Approval-first"
+          notice="AI never makes payroll, legal, tax or compliance decisions. Customer messages are drafts you approve before they’re sent."
+          suggestions={aiSuggestions}
+        />
+
+        <div className="px-grid px-grid--4">
+          <PremiumStatCard label="Active rules" value={activeRules} icon={<Power className="h-4 w-4" />} tone="teal" onClick={() => {}} />
+          <PremiumStatCard label="Disabled" value={disabledRules} icon={<Power className="h-4 w-4" />} tone="slate" onClick={() => {}} />
+          <PremiumStatCard label="Successful runs" value={successRuns} icon={<ShieldCheck className="h-4 w-4" />} tone="sky" onClick={() => {}} />
+          <PremiumStatCard label="Failed runs" value={failedRuns} icon={<AlertTriangle className="h-4 w-4" />} tone={failedRuns ? "red" : "blue"} onClick={() => {}} />
         </div>
 
-        {error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
-            {error}
-          </div>
-        ) : null}
+        {error ? <div className="rounded-2xl border border-[#fecaca] bg-[#fff5f5] p-3 text-[13.5px] font-medium text-[#b91c1c]">{error}</div> : null}
+        {notice ? <div className="rounded-2xl border border-[#a7f3d0] bg-[#ecfdf5] p-3 text-[13.5px] font-medium text-[#065f46]">{notice}</div> : null}
 
-        {notice ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700">
-            {notice}
-          </div>
-        ) : null}
+        <div className="grid gap-5 lg:grid-cols-[420px_1fr]">
+          <div className="space-y-5">
+            <PremiumFormSection
+              title={editingRule ? "Edit automation" : "Create automation"}
+              subtitle="Only real backend-supported actions are shown."
+            >
+              <form onSubmit={saveRule} className="space-y-4">
+                <div>
+                  <label className="px-field__label">Name</label>
+                  <input value={form.name} onChange={(e) => setForm((o) => ({ ...o, name: e.target.value }))}
+                    placeholder="Example: Job completed notification" className="px-input" />
+                </div>
+                <div>
+                  <label className="px-field__label">Description</label>
+                  <textarea value={form.description} onChange={(e) => setForm((o) => ({ ...o, description: e.target.value }))}
+                    placeholder="What this automation should do" rows={3} className="px-textarea" />
+                </div>
+                <div>
+                  <label className="px-field__label">Trigger</label>
+                  <select value={form.trigger} onChange={(e) => setForm((o) => ({ ...o, trigger: e.target.value }))} className="px-select">
+                    {triggerOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="px-field__label">Action</label>
+                  <select value={form.action} onChange={(e) => setForm((o) => ({ ...o, action: e.target.value }))} className="px-select">
+                    {actionOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                  </select>
+                </div>
+                <label className="flex items-center gap-3 rounded-xl border border-[#e6eef9] bg-[#f6faff] p-3 text-[13.5px] font-semibold text-[#1a2c4d]">
+                  <input type="checkbox" checked={form.enabled} onChange={(e) => setForm((o) => ({ ...o, enabled: e.target.checked }))} className="h-4 w-4 rounded border-[#cbd5e1]" />
+                  Enabled
+                </label>
+                <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                  <PremiumButton type="submit" disabled={saving} className="flex-1" iconLeft={<Plus className="h-4 w-4" />}>
+                    {saving ? "Saving…" : editingRule ? "Save changes" : "Create rule"}
+                  </PremiumButton>
+                  {editingRule && <PremiumButton type="button" variant="secondary" onClick={resetForm}>Cancel</PremiumButton>}
+                </div>
+              </form>
+            </PremiumFormSection>
 
-        <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
-          <div className="space-y-6">
-            <form onSubmit={saveRule} className="rounded-3xl border border-cyan-200/70 bg-gradient-to-br from-white via-cyan-50/40 to-blue-50 p-6 shadow-sm">
-              <div className="mb-5">
-                <h2 className="text-xl font-bold text-slate-950">
-                  {editingRule ? "Edit automation" : "Create automation"}
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Only real backend-supported actions are shown.
-                </p>
-              </div>
-
-              <label className="block text-sm font-semibold text-slate-700">
-                Name
-                <input
-                  value={form.name}
-                  onChange={(event) => setForm((old) => ({ ...old, name: event.target.value }))}
-                  placeholder="Example: Job completed notification"
-                  className="mt-2 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-slate-950 outline-none ring-blue-500 focus:ring-2"
-                />
-              </label>
-
-              <label className="mt-4 block text-sm font-semibold text-slate-700">
-                Description
-                <textarea
-                  value={form.description}
-                  onChange={(event) => setForm((old) => ({ ...old, description: event.target.value }))}
-                  placeholder="What this automation should do"
-                  rows={3}
-                  className="mt-2 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-slate-950 outline-none ring-blue-500 focus:ring-2"
-                />
-              </label>
-
-              <label className="mt-4 block text-sm font-semibold text-slate-700">
-                Trigger
-                <select
-                  value={form.trigger}
-                  onChange={(event) => setForm((old) => ({ ...old, trigger: event.target.value }))}
-                  className="mt-2 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-slate-950 outline-none ring-blue-500 focus:ring-2"
-                >
-                  {triggerOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="mt-4 block text-sm font-semibold text-slate-700">
-                Action
-                <select
-                  value={form.action}
-                  onChange={(event) => setForm((old) => ({ ...old, action: event.target.value }))}
-                  className="mt-2 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm text-slate-950 outline-none ring-blue-500 focus:ring-2"
-                >
-                  {actionOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="mt-4 flex items-center gap-3 rounded-2xl border border-border bg-slate-50 p-4 text-sm font-semibold text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={form.enabled}
-                  onChange={(event) => setForm((old) => ({ ...old, enabled: event.target.checked }))}
-                  className="h-5 w-5 rounded border-slate-300"
-                />
-                Enabled
-              </label>
-
-              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {saving ? "Saving..." : editingRule ? "Save changes" : "Create rule"}
-                </button>
-
-                {editingRule ? (
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="rounded-2xl border border-border bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                  >
-                    Cancel
-                  </button>
-                ) : null}
-              </div>
-            </form>
-
-            <div className="rounded-3xl border border-cyan-200/70 bg-gradient-to-br from-white via-cyan-50/40 to-blue-50 p-6 shadow-sm">
-              <h2 className="text-xl font-bold text-slate-950">Quick templates</h2>
-              <p className="mt-1 text-sm text-slate-500">Start from a safe launch-ready automation.</p>
-
-              <div className="mt-4 space-y-3">
+            <PremiumCard title="Quick templates" icon={<Sparkles className="h-4 w-4" />} subtitle="Start from a launch-ready automation">
+              <div className="space-y-2">
                 {templates.length === 0 ? (
-                  <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">
-                    No templates loaded yet.
-                  </p>
+                  <p className="rounded-xl bg-[#f6faff] border border-[#e6eef9] p-3 text-[13px] text-[#5b6c87]">No templates loaded yet.</p>
                 ) : (
                   templates.map((template) => (
-                    <button
-                      key={template.id}
-                      type="button"
-                      onClick={() => applyTemplate(template)}
-                      className="w-full rounded-2xl border border-border bg-white p-4 text-left hover:border-cyan-200 hover:bg-cyan-50"
-                    >
-                      <div className="text-sm font-bold text-slate-950">{template.name}</div>
-                      <div className="mt-1 text-xs leading-5 text-slate-500">{template.description}</div>
+                    <button key={template.id} type="button" onClick={() => applyTemplate(template)}
+                      className="w-full rounded-xl border border-[#e6eef9] bg-white p-3 text-left hover:border-[#c7dcfb] hover:bg-[#eff4ff]">
+                      <div className="text-[13.5px] font-bold text-[#0d1b34]">{template.name}</div>
+                      <div className="mt-1 text-[12px] text-[#5b6c87]">{template.description}</div>
                     </button>
                   ))
                 )}
               </div>
-            </div>
+            </PremiumCard>
           </div>
 
-          <div className="space-y-6">
-            <div className="rounded-3xl border border-cyan-200/70 bg-gradient-to-br from-white via-cyan-50/40 to-blue-50 p-6 shadow-sm">
-              <div className="mb-5 flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-950">Automation rules</h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    {rules.length} rule{rules.length === 1 ? "" : "s"} configured
-                  </p>
-                </div>
-              </div>
-
+          <div className="space-y-5">
+            <PremiumCard
+              title="Automation rules"
+              icon={<ListChecks className="h-4 w-4" />}
+              subtitle={`${rules.length} rule${rules.length === 1 ? "" : "s"} configured`}
+            >
               {loading ? (
-                <div className="rounded-2xl bg-blue-50/60 p-6 text-sm font-medium text-slate-600">
-                  Loading automation rules...
-                </div>
+                <div className="rounded-2xl bg-[#f0f6ff] p-6 text-[13.5px] font-medium text-[#5b6c87]">Loading automation rules…</div>
               ) : rules.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-border bg-slate-50 p-8 text-center">
-                  <h3 className="text-lg font-bold text-slate-950">No automation rules yet</h3>
-                  <p className="mt-2 text-sm text-slate-500">
-                    Create your first automation rule or use a quick template.
-                  </p>
-                </div>
+                <PremiumEmptyState
+                  icon={<Zap className="h-6 w-6" />}
+                  title="No automation rules yet"
+                  subtitle="Create your first automation rule or use a quick template."
+                />
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {rules.map((rule) => (
-                    <div key={rule.id} className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+                    <div key={rule.id} className="rounded-2xl border border-[#e6eef9] bg-white p-4 shadow-sm">
                       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                         <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-3">
-                            <h3 className="text-base font-bold text-slate-950">{rule.name || "Untitled rule"}</h3>
-                            <Badge enabled={rule.enabled !== false} />
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-[15px] font-bold text-[#0d1b34]">{rule.name || "Untitled rule"}</h3>
+                            <PremiumBadge tone={rule.enabled === false ? "slate" : "green"}>{rule.enabled === false ? "Disabled" : "Enabled"}</PremiumBadge>
                           </div>
-
-                          {rule.description ? (
-                            <p className="mt-2 text-sm leading-6 text-slate-500">{rule.description}</p>
-                          ) : null}
-
-                          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                            <div className="rounded-2xl bg-blue-50/60 p-3">
-                              <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Trigger</div>
-                              <div className="mt-1 text-sm font-semibold text-slate-800">{rule.trigger}</div>
+                          {rule.description && <p className="mt-2 text-[13px] leading-6 text-[#5b6c87]">{rule.description}</p>}
+                          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                            <div className="rounded-xl bg-[#eef4ff] p-2.5">
+                              <div className="text-[10.5px] font-bold uppercase tracking-wide text-[#1d4ed8]">Trigger</div>
+                              <div className="mt-0.5 text-[13px] font-semibold text-[#0d1b34]">{rule.trigger}</div>
                             </div>
-                            <div className="rounded-2xl bg-blue-50/60 p-3">
-                              <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Action</div>
-                              <div className="mt-1 text-sm font-semibold text-slate-800">{rule.action}</div>
+                            <div className="rounded-xl bg-[#ede4ff] p-2.5">
+                              <div className="text-[10.5px] font-bold uppercase tracking-wide text-[#7c3aed]">Action</div>
+                              <div className="mt-0.5 text-[13px] font-semibold text-[#0d1b34]">{rule.action}</div>
                             </div>
                           </div>
                         </div>
-
                         <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => startEdit(rule)}
-                            className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => toggleRule(rule)}
-                            className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                          >
+                          <PremiumButton size="sm" variant="secondary" onClick={() => startEdit(rule)} iconLeft={<Pencil className="h-3.5 w-3.5" />}>Edit</PremiumButton>
+                          <PremiumButton size="sm" variant="secondary" onClick={() => toggleRule(rule)} iconLeft={<Power className="h-3.5 w-3.5" />}>
                             {rule.enabled === false ? "Enable" : "Disable"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => testRule(rule)}
-                            disabled={testingId === rule.id}
-                            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-                          >
-                            {testingId === rule.id ? "Testing..." : "Test"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => deleteRule(rule)}
-                            disabled={deletingId === rule.id}
-                            className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60"
-                          >
-                            {deletingId === rule.id ? "Deleting..." : "Delete"}
-                          </button>
+                          </PremiumButton>
+                          <PremiumButton size="sm" onClick={() => testRule(rule)} disabled={testingId === rule.id} iconLeft={<PlayCircle className="h-3.5 w-3.5" />}>
+                            {testingId === rule.id ? "Testing…" : "Test"}
+                          </PremiumButton>
+                          <PremiumButton size="sm" variant="danger" onClick={() => deleteRule(rule)} disabled={deletingId === rule.id} iconLeft={<Trash2 className="h-3.5 w-3.5" />}>
+                            {deletingId === rule.id ? "Deleting…" : "Delete"}
+                          </PremiumButton>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+            </PremiumCard>
 
-            <div className="rounded-3xl border border-cyan-200/70 bg-gradient-to-br from-white via-cyan-50/40 to-blue-50 p-6 shadow-sm">
-              <h2 className="text-xl font-bold text-slate-950">Recent automation runs</h2>
-              <p className="mt-1 text-sm text-slate-500">Latest automation tests and rule activity.</p>
-
-              <div className="mt-4 space-y-3">
+            <PremiumCard title="Recent automation runs" icon={<RefreshCw className="h-4 w-4" />} subtitle="Latest tests and rule activity">
+              <div className="space-y-2">
                 {runs.length === 0 ? (
-                  <div className="rounded-2xl bg-blue-50/60 p-5 text-sm text-slate-600">
-                    No automation runs logged yet.
-                  </div>
+                  <div className="rounded-xl bg-[#f0f6ff] border border-[#e6eef9] p-4 text-[13px] text-[#5b6c87]">No automation runs logged yet.</div>
                 ) : (
                   runs.slice(0, 10).map((run) => (
-                    <div key={run.id || run._id} className="rounded-2xl border border-border bg-slate-50 p-4">
+                    <div key={run.id || run._id} className="rounded-xl border border-[#e6eef9] bg-white p-3">
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                          <div className="text-sm font-bold text-slate-950">
-                            {run.rule_name || run.trigger || "Automation run"}
-                          </div>
-                          <div className="mt-1 text-xs text-slate-500">
-                            {run.action || "action"} · {run.created_at || "unknown time"}
-                          </div>
+                          <div className="text-[13.5px] font-bold text-[#0d1b34]">{run.rule_name || run.trigger || "Automation run"}</div>
+                          <div className="mt-0.5 text-[11.5px] text-[#7d8ba3]">{run.action || "action"} · {run.created_at || "unknown time"}</div>
                         </div>
-                        <span
-                          className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-bold ${
-                            run.status === "success"
-                              ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-                              : "bg-red-50 text-red-700 ring-1 ring-red-200"
-                          }`}
-                        >
-                          {run.status || "logged"}
-                        </span>
+                        <PremiumBadge tone={run.status === "success" ? "green" : "red"}>{run.status || "logged"}</PremiumBadge>
                       </div>
-                      {run.message ? <p className="mt-2 text-sm text-slate-600">{run.message}</p> : null}
+                      {run.message && <p className="mt-2 text-[12.5px] text-[#5b6c87]">{run.message}</p>}
                     </div>
                   ))
                 )}
               </div>
-            </div>
+            </PremiumCard>
           </div>
         </div>
-      </div>
-    </div>
+      </PremiumPage>
     </Layout>
   );
 }

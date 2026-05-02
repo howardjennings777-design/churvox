@@ -3,13 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useApi } from "@/hooks/useApi";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Receipt, Save } from "lucide-react";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
+import { PremiumPage, PremiumHero, PremiumCard, PremiumButton } from "@/components/premium";
 
 export default function InvoiceFormPage() {
   const navigate = useNavigate();
@@ -125,51 +125,34 @@ export default function InvoiceFormPage() {
 
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto space-y-6 animate-in" data-testid="invoice-form-page">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/invoices")}
-            data-testid="back-button"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900">
-              {isEdit ? "Edit Invoice" : "New Invoice"}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {isEdit ? "Update invoice details" : "Create a new invoice"}
-            </p>
-          </div>
-        </div>
+      <PremiumPage maxWidth={820}>
+        <button onClick={() => navigate("/invoices")} className="flex items-center gap-2 text-[#5b6c87] hover:text-[#0d1b34] text-sm font-semibold" data-testid="back-button">
+          <ArrowLeft size={16} /> Back to invoices
+        </button>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-lg font-heading">Customer Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        <PremiumHero
+          eyebrow={isEdit ? "Edit invoice" : "New invoice"}
+          title={isEdit ? "Edit Invoice" : "New Invoice"}
+          subtitle={isEdit ? "Update invoice details, amounts and GST." : "Create a new invoice for your customer."}
+          icon={<Receipt className="h-6 w-6" />}
+        />
+
+        <form onSubmit={handleSubmit} className="space-y-6" data-testid="invoice-form-page">
+          <PremiumCard title="Customer details" icon={<Receipt className="h-5 w-5" />}>
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="client_id">Client</Label>
+                <Label htmlFor="client_id" className="text-[#0d1b34] font-semibold">Client</Label>
                 <select
                   id="client_id"
                   name="client_id"
                   value={formData.client_id}
                   onChange={(e) => handleClientSelect(e.target.value)}
-                  className="w-full h-10 rounded-md border border-border bg-background px-3 text-white"
+                  className="w-full h-10 rounded-md border border-[#d8e3f3] bg-[#f6faff] px-3 text-[#0d1b34]"
                   data-testid="invoice-client-select"
                 >
-                  <option value="" style={{ color: "#111827", backgroundColor: "#ffffff" }}>Select saved client</option>
+                  <option value="">Select saved client</option>
                   {clients.map((client) => (
-                    <option
-                      key={client.id || client._id}
-                      value={client.id || client._id}
-                      style={{ color: "#111827", backgroundColor: "#ffffff" }}
-                    >
+                    <option key={client.id || client._id} value={client.id || client._id}>
                       {client.client_name || client.name || client.contact_name || "Unnamed client"}
                     </option>
                   ))}
@@ -177,21 +160,21 @@ export default function InvoiceFormPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="customer_name">Customer Name *</Label>
+                <Label htmlFor="customer_name" className="text-[#0d1b34] font-semibold">Customer Name *</Label>
                 <Input
                   id="customer_name"
                   name="customer_name"
                   value={formData.customer_name}
                   onChange={handleChange}
                   placeholder="John Smith"
-                  className="bg-background border-border"
+                  className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]"
                   required
                   data-testid="invoice-customer-name-input"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="customer_email">Customer Email</Label>
+                <Label htmlFor="customer_email" className="text-[#0d1b34] font-semibold">Customer Email</Label>
                 <Input
                   id="customer_email"
                   name="customer_email"
@@ -199,48 +182,45 @@ export default function InvoiceFormPage() {
                   value={formData.customer_email}
                   onChange={handleChange}
                   placeholder="john@example.com"
-                  className="bg-background border-border"
+                  className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]"
                   data-testid="invoice-customer-email-input"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
+                <Label htmlFor="address" className="text-[#0d1b34] font-semibold">Address</Label>
                 <Input
                   id="address"
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
                   placeholder="123 Main Street, Auckland"
-                  className="bg-background border-border"
+                  className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]"
                   data-testid="invoice-address-input"
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </PremiumCard>
 
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-lg font-heading">Invoice Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <PremiumCard title="Invoice details" icon={<Receipt className="h-5 w-5" />}>
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="description">Description *</Label>
+                <Label htmlFor="description" className="text-[#0d1b34] font-semibold">Description *</Label>
                 <Textarea
                   id="description"
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
                   placeholder="Describe the services provided..."
-                  className="bg-background border-border min-h-[100px]"
+                  className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34] min-h-[120px]"
                   required
                   data-testid="invoice-description-input"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="subtotal">Subtotal (NZD) *</Label>
+                  <Label htmlFor="subtotal" className="text-[#0d1b34] font-semibold">Subtotal (NZD) *</Label>
                   <Input
                     id="subtotal"
                     name="subtotal"
@@ -250,14 +230,14 @@ export default function InvoiceFormPage() {
                     placeholder="0.00"
                     min="0"
                     step="0.01"
-                    className="bg-background border-border"
+                    className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]"
                     required
                     data-testid="invoice-subtotal-input"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="gst_rate">GST Rate (%)</Label>
+                  <Label htmlFor="gst_rate" className="text-[#0d1b34] font-semibold">GST Rate (%)</Label>
                   <Input
                     id="gst_rate"
                     name="gst_rate"
@@ -267,73 +247,73 @@ export default function InvoiceFormPage() {
                     min="0"
                     max="100"
                     step="0.5"
-                    className="bg-background border-border"
+                    className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]"
                     data-testid="invoice-gst-rate-input"
                   />
                 </div>
               </div>
 
-              {/* Totals Preview */}
-              <div className="p-4 bg-secondary/50 rounded-lg space-y-2">
+              <div className="p-4 bg-[#eff4ff] border border-[#dbe7ff] rounded-xl space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="text-slate-900">${subtotal.toFixed(2)}</span>
+                  <span className="text-[#5b6c87]">Subtotal</span>
+                  <span className="text-[#0d1b34] font-semibold">${subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">GST ({gstRate}%)</span>
-                  <span className="text-slate-900">${gstAmount.toFixed(2)}</span>
+                  <span className="text-[#5b6c87]">GST ({gstRate}%)</span>
+                  <span className="text-[#0d1b34] font-semibold">${gstAmount.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-lg font-semibold pt-2 border-t border-border">
-                  <span className="text-slate-900">Total</span>
-                  <span className="text-slate-900">${total.toFixed(2)}</span>
+                <div className="flex justify-between text-lg font-bold pt-2 border-t border-[#d8e3f3]">
+                  <span className="text-[#0d1b34]">Total</span>
+                  <span className="text-[#2563eb]" style={{ fontFamily: "'Outfit', sans-serif" }}>${total.toFixed(2)}</span>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
+                <Label htmlFor="notes" className="text-[#0d1b34] font-semibold">Notes</Label>
                 <Textarea
                   id="notes"
                   name="notes"
                   value={formData.notes}
                   onChange={handleChange}
                   placeholder="Any additional notes or payment terms..."
-                  className="bg-background border-border min-h-[80px]"
+                  className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34] min-h-[80px]"
                   data-testid="invoice-notes-input"
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </PremiumCard>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <Button
               type="button"
               variant="outline"
-              className="flex-1 border-border"
+              className="flex-1 min-w-[140px] border-[#d8e3f3] text-[#1a2c4d] hover:bg-[#eff4ff]"
               onClick={() => navigate("/invoices")}
               data-testid="cancel-button"
             >
               Cancel
             </Button>
-            <Button
+            <PremiumButton
               type="submit"
-              className="flex-1 bg-primary hover:bg-primary/90"
               disabled={loading}
-              data-testid="save-invoice-button"
+              dataTestId="save-invoice-button"
+              className="flex-1 min-w-[200px]"
             >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
                 </>
-              ) : isEdit ? (
-                "Update Invoice"
               ) : (
-                "Create Invoice"
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  {isEdit ? "Update Invoice" : "Create Invoice"}
+                </>
               )}
-            </Button>
+            </PremiumButton>
           </div>
         </form>
-      </div>
+      </PremiumPage>
     </Layout>
   );
 }

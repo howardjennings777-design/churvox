@@ -1,54 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useApi } from "@/hooks/useApi";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Loader2, Building2, Briefcase, Receipt, RefreshCw, Lock, FileText, Trash2 } from "lucide-react";
+import { Loader2, Building2, Briefcase, Receipt, RefreshCw, Lock, FileText, Trash2, Settings as SettingsIcon, ShieldCheck, ArrowUpRight, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { TRADE_TYPES } from "@/lib/utils";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
-import { Link } from "react-router-dom";
-import PageState from "../components/ui/PageState";
+import {
+  PremiumPage, PremiumHero, PremiumCard, PremiumButton, PremiumBadge, PremiumFormSection,
+} from "@/components/premium";
 
 export default function SettingsPage() {
   const { user, updateUser } = useAuth();
   const { patch, get, post, loading } = useApi();
   const planLimits = usePlanLimits(user?.plan);
+
   const isFeatureEnabled = (key) => {
     const features = planLimits?.features || {};
-    const normalized = String(key || "").trim().toLowerCase();
-
-    if (normalized === "team" || normalized === "teammanagement" || normalized === "team_management") {
-      return !!features.teamManagement;
-    }
-    if (normalized === "csvteamimport" || normalized === "csv_team_import") {
-      return !!features.csvTeamImport;
-    }
-    if (normalized === "csvclientimport" || normalized === "csv_client_import") {
-      return !!features.csvClientImport;
-    }
-    if (normalized === "recurringjobs" || normalized === "recurring_jobs") {
-      return !!features.recurringJobs;
-    }
-    if (normalized === "myob" || normalized === "myobsync" || normalized === "myob_sync") {
-      return !!features.myobSync;
-    }
-    if (normalized === "enterpriseuserblocks" || normalized === "enterprise_user_blocks") {
-      return !!features.enterpriseUserBlocks;
-    }
-
+    const k = String(key || "").trim().toLowerCase();
+    if (k === "myob" || k === "myob_sync") return !!features.myobSync;
     return !!features[key];
   };
+
   const [gstRate, setGstRate] = useState(user?.gst_rate?.toString() || "15");
   const [tradeType, setTradeType] = useState(user?.trade_type || "other");
   const [myobKey, setMyobKey] = useState("");
@@ -57,7 +31,7 @@ export default function SettingsPage() {
   const [myobConnected, setMyobConnected] = useState(false);
   const [myobLoading, setMyobLoading] = useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     (async () => {
       const res = await get("/myob/settings");
       if (res.success) {
@@ -72,29 +46,17 @@ export default function SettingsPage() {
   const handleUpdateGST = async (e) => {
     e.preventDefault();
     const rate = Number(gstRate);
-    if (isNaN(rate) || rate < 0 || rate > 100) {
-      toast.error("Please enter a valid GST rate between 0 and 100");
-      return;
-    }
-
+    if (isNaN(rate) || rate < 0 || rate > 100) { toast.error("Please enter a valid GST rate between 0 and 100"); return; }
     const result = await patch("/user/gst", { gst_rate: rate });
-    if (result.success) {
-      updateUser({ gst_rate: rate });
-      toast.success("GST rate updated");
-    } else {
-      toast.error(result.error);
-    }
+    if (result.success) { updateUser({ gst_rate: rate }); toast.success("GST rate updated"); }
+    else toast.error(result.error);
   };
 
   const handleUpdateTrade = async (value) => {
     setTradeType(value);
     const result = await patch("/user/trade", { trade_type: value });
-    if (result.success) {
-      updateUser({ trade_type: value });
-      toast.success("Trade type updated");
-    } else {
-      toast.error(result.error);
-    }
+    if (result.success) { updateUser({ trade_type: value }); toast.success("Trade type updated"); }
+    else toast.error(result.error);
   };
 
   const handleSaveMyob = async (e) => {
@@ -104,281 +66,146 @@ export default function SettingsPage() {
     if (myobFileId) payload.company_file_id = myobFileId;
     if (myobFileName) payload.company_file_name = myobFileName;
     const res = await post("/myob/settings", payload);
-    if (res.success) {
-      toast.success("MYOB settings saved");
-      setMyobConnected(true);
-      setMyobKey("");
-    } else toast.error(res.error || "Failed to save MYOB settings");
+    if (res.success) { toast.success("MYOB settings saved"); setMyobConnected(true); setMyobKey(""); }
+    else toast.error(res.error || "Failed to save MYOB settings");
   };
+
+  const trialBadge = (() => {
+    if (user?.plan_status === "trialing" && user?.trial_ends_at) {
+      try {
+        const ended = new Date(user.trial_ends_at) < new Date();
+        if (ended) return <PremiumBadge tone="amber" icon={<AlertTriangle className="h-3 w-3" />}>Trial ended</PremiumBadge>;
+        const days = Math.max(0, Math.ceil((new Date(user.trial_ends_at) - new Date()) / 86400000));
+        return <PremiumBadge tone="sky">Trial · {days} day{days !== 1 ? "s" : ""} left</PremiumBadge>;
+      } catch { return null; }
+    }
+    if (user?.plan_status === "paid") return <PremiumBadge tone="green" icon={<ShieldCheck className="h-3 w-3" />}>Paid</PremiumBadge>;
+    if (!user?.plan) return <PremiumBadge tone="amber">No plan</PremiumBadge>;
+    return null;
+  })();
 
   return (
     <Layout>
-      <div className="cx-page max-w-3xl animate-in" data-testid="settings-page">
-        {/* Header */}
-        <div className="cx-page-hero">
-          <h1 className="cx-page-title">Settings</h1>
-          <p className="cx-page-subtitle">Configure your field-service workspace, team defaults, and business settings</p>
-        </div>
+      <PremiumPage>
+        <PremiumHero
+          icon={<SettingsIcon className="h-7 w-7" />}
+          eyebrow={<><SettingsIcon className="h-3 w-3" /> Configuration</>}
+          title="Settings"
+          subtitle="Configure your trade workspace, business profile, accounting and account security."
+        />
 
         {/* Account Info */}
-        <Card className="card-surface">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center">
-                <Building2 className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="text-lg font-heading">Account Information</CardTitle>
-                <CardDescription>Your account details</CardDescription>
-              </div>
+        <PremiumCard
+          icon={<Building2 className="h-4 w-4" />}
+          title="Account information"
+          subtitle="Your account details and subscription"
+          actions={trialBadge}
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-[#e6eef9] bg-[#f6faff] px-4 py-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[#7d8ba3]">Name</p>
+              <p className="text-[14px] text-[#0d1b34] font-semibold mt-1">{user?.name}</p>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Name</Label>
-                <p className="text-slate-900 mt-1">{user?.name}</p>
-              </div>
-              <div>
-                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Email</Label>
-                <p className="text-slate-900 mt-1">{user?.email}</p>
-              </div>
-              <div>
-                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Business Name</Label>
-                <p className="text-slate-900 mt-1">{user?.business_name || "Not set"}</p>
-              </div>
-              <div>
-                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Plan</Label>
-                <p className="text-slate-900 capitalize mt-1">{user?.plan || "No plan selected"}</p>
-                {user?.plan_status === "trialing" && user?.trial_ends_at && (() => {
-                  try {
-                    const ended = new Date(user.trial_ends_at) < new Date();
-                    if (ended) return (
-                      <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
-                        <p className="text-xs text-amber-200 font-medium">Trial ended — <a href="/plans" className="underline text-amber-100">subscribe to continue</a></p>
-                      </div>
-                    );
-                    const days = Math.max(0, Math.ceil((new Date(user.trial_ends_at) - new Date()) / 86400000));
-                    return <p className="text-xs text-blue-400 mt-1">Trial active — {days} day{days !== 1 ? "s" : ""} left</p>;
-                  } catch { return null; }
-                })()}
-                {user?.plan_status === "paid" && <p className="text-xs text-emerald-400 mt-1">Paid subscription active</p>}
-                {!user?.plan && <a href="/plans" className="text-xs text-blue-600 hover:underline mt-1 inline-block">Choose a plan</a>}
-              </div>
+            <div className="rounded-2xl border border-[#e6eef9] bg-[#f6faff] px-4 py-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[#7d8ba3]">Email</p>
+              <p className="text-[14px] text-[#0d1b34] font-semibold mt-1">{user?.email}</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="rounded-2xl border border-[#e6eef9] bg-[#f6faff] px-4 py-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[#7d8ba3]">Business name</p>
+              <p className="text-[14px] text-[#0d1b34] font-semibold mt-1">{user?.business_name || "Not set"}</p>
+            </div>
+            <div className="rounded-2xl border border-[#e6eef9] bg-[#f6faff] px-4 py-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[#7d8ba3]">Plan</p>
+              <p className="text-[14px] text-[#0d1b34] font-semibold mt-1 capitalize">{user?.plan || "No plan"}</p>
+              {!user?.plan && <Link to="/plans" className="px-link text-[12px]">Choose a plan →</Link>}
+            </div>
+          </div>
+        </PremiumCard>
 
-        {/* Trade Type */}
-        <Card className="card-surface">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-violet-500/15 flex items-center justify-center">
-                <Briefcase className="h-5 w-5 text-violet-400" />
-              </div>
-              <div>
-                <CardTitle className="text-lg font-heading">Trade Type</CardTitle>
-                <CardDescription>Select your primary trade or service type</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="trade_type">Your Trade</Label>
-              <Select value={tradeType} onValueChange={handleUpdateTrade}>
-                <SelectTrigger className="bg-secondary border-border max-w-sm" data-testid="trade-type-select">
-                  <SelectValue placeholder="Select your trade" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  {TRADE_TYPES.map((trade) => (
-                    <SelectItem key={trade.value} value={trade.value}>
-                      {trade.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground mt-2">
-                This helps customize your job types and experience.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Trade type */}
+        <PremiumFormSection title="Trade type" subtitle="Helps customise job types and quote/invoice templates.">
+          <select value={tradeType} onChange={(e) => handleUpdateTrade(e.target.value)} className="px-select max-w-md" data-testid="trade-type-select">
+            {TRADE_TYPES.map((trade) => (<option key={trade.value} value={trade.value}>{trade.label}</option>))}
+          </select>
+        </PremiumFormSection>
 
-        {/* GST Settings */}
-        <Card className="card-surface">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-                <Receipt className="h-5 w-5 text-emerald-400" />
-              </div>
-              <div>
-                <CardTitle className="text-lg font-heading">Tax Settings</CardTitle>
-                <CardDescription>Configure your GST/tax rate for invoices</CardDescription>
-              </div>
+        {/* GST */}
+        <PremiumFormSection title="Tax settings" subtitle="Default GST rate applied to new invoices. NZ standard is 15%.">
+          <form onSubmit={handleUpdateGST} className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+            <div className="flex-1 max-w-[200px]">
+              <label className="px-field__label">Default GST rate (%)</label>
+              <input type="number" value={gstRate} onChange={(e) => setGstRate(e.target.value)} min="0" max="100" step="0.5" className="px-input" data-testid="gst-rate-input" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleUpdateGST} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="gst_rate">Default GST Rate (%)</Label>
-                <div className="flex gap-3">
-                  <Input
-                    id="gst_rate"
-                    type="number"
-                    value={gstRate}
-                    onChange={(e) => setGstRate(e.target.value)}
-                    min="0"
-                    max="100"
-                    step="0.5"
-                    className="bg-secondary border-border max-w-[120px]"
-                    data-testid="gst-rate-input"
-                  />
-                  <Button 
-                    type="submit" 
-                    className="bg-primary hover:bg-primary/90"
-                    disabled={loading}
-                    data-testid="save-gst-button"
-                  >
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  This rate will be applied to new invoices by default. NZ standard is 15%.
-                </p>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+            <PremiumButton type="submit" disabled={loading} dataTestId="save-gst-button">
+              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /><span>Saving…</span></> : "Save"}
+            </PremiumButton>
+          </form>
+        </PremiumFormSection>
 
-        {/* MYOB Integration */}
+        {/* MYOB */}
         {isFeatureEnabled("myob") ? (
-        <Card className="card-surface" data-testid="myob-settings-card">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-blue-500/15 flex items-center justify-center">
-                <RefreshCw className="h-5 w-5 text-blue-400" />
-              </div>
-              <div>
-                <CardTitle className="text-lg font-heading">MYOB Integration</CardTitle>
-                <CardDescription>Sync invoices and payments with MYOB</CardDescription>
-              </div>
-              {myobConnected && (
-                <span className="ml-auto px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-green-500/20 text-green-400" data-testid="myob-connected-badge">
-                  Connected
-                </span>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
+          <PremiumCard
+            icon={<RefreshCw className="h-4 w-4" />}
+            title="MYOB integration"
+            subtitle="Sync invoices and payment status with MYOB"
+            actions={myobConnected ? <PremiumBadge tone="green" icon={<ShieldCheck className="h-3 w-3" />}>Connected</PremiumBadge> : <PremiumBadge tone="slate">Not connected</PremiumBadge>}
+          >
             {myobLoading ? (
-              <div className="flex items-center justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+              <div className="flex items-center justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-[#1d4ed8]" /></div>
             ) : (
-              <form onSubmit={handleSaveMyob} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="myob_key">MYOB API Key</Label>
-                  <Input
-                    id="myob_key"
-                    type="password"
-                    value={myobKey}
-                    onChange={(e) => setMyobKey(e.target.value)}
-                    placeholder={myobConnected ? "••••••••" : "Enter MYOB API key"}
-                    className="bg-secondary border-border max-w-sm"
-                    data-testid="myob-api-key-input"
-                  />
+              <form onSubmit={handleSaveMyob} className="space-y-4 max-w-lg">
+                <div>
+                  <label className="px-field__label">MYOB API key</label>
+                  <input type="password" value={myobKey} onChange={(e) => setMyobKey(e.target.value)} placeholder={myobConnected ? "••••••••" : "Enter MYOB API key"} className="px-input" data-testid="myob-api-key-input" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="myob_file">Company File Name (optional)</Label>
-                  <Input
-                    id="myob_file"
-                    value={myobFileName}
-                    onChange={(e) => setMyobFileName(e.target.value)}
-                    placeholder="e.g. My Business Pty Ltd"
-                    className="bg-secondary border-border max-w-sm"
-                    data-testid="myob-company-name-input"
-                  />
+                <div>
+                  <label className="px-field__label">Company file name (optional)</label>
+                  <input value={myobFileName} onChange={(e) => setMyobFileName(e.target.value)} placeholder="e.g. My Business Pty Ltd" className="px-input" data-testid="myob-company-name-input" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="myob_file_id">Company File ID (optional)</Label>
-                  <Input
-                    id="myob_file_id"
-                    value={myobFileId}
-                    onChange={(e) => setMyobFileId(e.target.value)}
-                    placeholder="e.g. cf-12345"
-                    className="bg-secondary border-border max-w-sm"
-                    data-testid="myob-file-id-input"
-                  />
+                <div>
+                  <label className="px-field__label">Company file ID (optional)</label>
+                  <input value={myobFileId} onChange={(e) => setMyobFileId(e.target.value)} placeholder="e.g. cf-12345" className="px-input" data-testid="myob-file-id-input" />
                 </div>
-                <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={loading} data-testid="save-myob-button">
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : myobConnected ? "Update Connection" : "Connect MYOB"}
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  MYOB sync is currently a placeholder. Once connected, invoices can be synced from the invoice detail page.
-                </p>
+                <PremiumButton type="submit" disabled={loading} dataTestId="save-myob-button">
+                  {loading ? <><Loader2 className="h-4 w-4 animate-spin" /><span>Saving…</span></> : myobConnected ? "Update connection" : "Connect MYOB"}
+                </PremiumButton>
+                <p className="text-[11.5px] text-[#7d8ba3]">Once connected, invoices can be synced from the invoice detail page.</p>
               </form>
             )}
-          </CardContent>
-        </Card>
+          </PremiumCard>
         ) : (
-          <Card className="card-surface border-border" data-testid="myob-locked-card">
-            <CardContent className="p-6 text-center space-y-3">
-              <div className="h-10 w-10 rounded-full bg-blue-600/15 flex items-center justify-center mx-auto">
-                <Lock size={18} className="text-blue-600" />
-              </div>
-              <p className="text-sm text-slate-900">MYOB integration requires an Enterprise plan</p>
-              <a href="/plans" className="text-xs text-blue-600 hover:underline" data-testid="myob-upgrade-link">View Plans</a>
-            </CardContent>
-          </Card>
+          <PremiumCard icon={<Lock className="h-4 w-4" />} title="MYOB integration" subtitle="Available on Pro add-on and Enterprise" actions={<PremiumBadge tone="amber">Upgrade required</PremiumBadge>}>
+            <PremiumButton variant="secondary" iconLeft={<ArrowUpRight className="h-4 w-4" />}>
+              <Link to="/plans" data-testid="myob-upgrade-link">View plans</Link>
+            </PremiumButton>
+          </PremiumCard>
         )}
 
         {/* Help & Legal */}
-        <Card className="card-surface" data-testid="help-legal-card">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-slate-500/15 flex items-center justify-center">
-                <FileText className="h-5 w-5 text-slate-400" />
-              </div>
-              <div>
-                <CardTitle className="text-lg font-heading">Help & Legal</CardTitle>
-                <CardDescription>Legal information and support</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Link to="/privacy" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-blue-50 hover:text-slate-900 transition-all" data-testid="settings-privacy-link">
-              <FileText size={16} /> Privacy Policy
-            </Link>
-            <Link to="/terms" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-blue-50 hover:text-slate-900 transition-all" data-testid="settings-terms-link">
-<Link to="/terms-of-service" className="inline-flex w-full rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-blue-50 hover:text-slate-900 transition-all" data-testid="settings-terms-of-service-link">              <FileText size={16} /> Terms of Service
-            </Link></Link>
-            <Link to="/account-deletion" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-blue-50 hover:text-slate-900 transition-all" data-testid="settings-account-deletion-link">
-              <FileText size={16} /> Account Deletion
-            </Link>
-          </CardContent>
-        </Card>
+        <PremiumCard icon={<FileText className="h-4 w-4" />} title="Help & legal" subtitle="Documents and account controls" data-testid="help-legal-card">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <Link to="/privacy" className="px-row" data-testid="settings-privacy-link"><FileText className="h-4 w-4 text-[#5b6c87]" /><div className="px-row__main"><div className="px-row__title">Privacy policy</div></div></Link>
+            <Link to="/terms" className="px-row" data-testid="settings-terms-link"><FileText className="h-4 w-4 text-[#5b6c87]" /><div className="px-row__main"><div className="px-row__title">Terms</div></div></Link>
+            <Link to="/account-deletion" className="px-row" data-testid="settings-account-deletion-link"><FileText className="h-4 w-4 text-[#5b6c87]" /><div className="px-row__main"><div className="px-row__title">Account deletion</div></div></Link>
+          </div>
+        </PremiumCard>
 
-        {/* Delete Account */}
-        <Card className="card-surface border-red-500/20" data-testid="delete-account-card">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-red-500/15 flex items-center justify-center">
-                <Trash2 className="h-5 w-5 text-red-400" />
-              </div>
-              <div>
-                <CardTitle className="text-lg font-heading text-red-400">Danger Zone</CardTitle>
-                <CardDescription>Permanently delete your account and all data</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground mb-4">
-              This will permanently delete your account, all jobs, clients, invoices, quotes, team members, and associated data. This action cannot be undone.
-            </p>
-            <Button asChild variant="outline" className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300" data-testid="delete-account-button">
-              <Link to="/account-deletion">Delete Account</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+        {/* Danger Zone */}
+        <PremiumCard
+          icon={<Trash2 className="h-4 w-4" />}
+          title="Danger zone"
+          subtitle="Permanent actions you can’t undo"
+          className="!border-[#fecaca]"
+          data-testid="delete-account-card"
+        >
+          <p className="text-[13px] text-[#5b6c87] mb-4">
+            This permanently deletes your account, jobs, clients, invoices, quotes, team and associated data.
+          </p>
+          <Link to="/account-deletion">
+            <PremiumButton variant="danger" iconLeft={<Trash2 className="h-4 w-4" />} dataTestId="delete-account-button">Delete account</PremiumButton>
+          </Link>
+        </PremiumCard>
+      </PremiumPage>
     </Layout>
   );
 }

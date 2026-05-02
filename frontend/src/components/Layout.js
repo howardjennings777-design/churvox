@@ -8,6 +8,7 @@ import { canAccess } from "../lib/roles";
 import {
   LayoutDashboard, Briefcase, Calendar, Users, MoreHorizontal, LogOut,
   Settings, FileText, Receipt, CreditCard, UserPlus, MessageSquare, DollarSign, Zap,
+  Sparkles, Plug,
 } from "lucide-react";
 import NotificationsBell from "./NotificationsBell";
 
@@ -24,126 +25,176 @@ export default function Layout({ children }) {
     navigate("/login");
   };
 
-  const navItems = [
-    canAccess(role, "dashboard") && { path: "/dashboard", label: "Overview", icon: LayoutDashboard },
-    canAccess(role, "jobs") && { path: "/jobs", label: "Jobs", icon: Briefcase },
-    canAccess(role, "calendar") && { path: "/dispatch", label: "Dispatch", icon: Calendar },
-    canAccess(role, "clients") && { path: "/clients", label: "Clients", icon: Users },
-    canAccess(role, "quotes") && { path: "/quotes", label: "Quotes", icon: FileText },
-    canAccess(role, "invoices") && { path: "/invoices", label: "Invoices", icon: Receipt },
-    canAccess(role, "team") && (isOwnerUser || hasPlanAccess(safePlan, "team")) && { path: "/team", label: "Team", icon: UserPlus },
-    (role === "owner" || role === "employer" || role === "manager") && { path: "/automation", label: "Automation", icon: Zap },
-    canAccess(role, "payroll") && { path: "/payroll", label: "Payroll", icon: DollarSign },
-    canAccess(role, "sms") && { path: "/sms", label: "SMS", icon: MessageSquare },
-    canAccess(role, "reports") && { path: "/reports", label: "Reports", icon: FileText },
-    canAccess(role, "integrations") && { path: "/integrations", label: "Integrations", icon: Zap },
-    isOwnerUser && { path: "/plans", label: "Plans", icon: CreditCard },
-    canAccess(role, "settings") && { path: "/settings", label: "Settings", icon: Settings },
-  ].filter(Boolean);
+  // Group navigation for clarity
+  const groups = [
+    {
+      label: "Workspace",
+      items: [
+        canAccess(role, "dashboard") && { path: "/dashboard", label: "Smart Hub", icon: LayoutDashboard },
+        canAccess(role, "jobs") && { path: "/jobs", label: "Jobs", icon: Briefcase },
+        canAccess(role, "calendar") && { path: "/dispatch", label: "Dispatch", icon: Calendar },
+        canAccess(role, "clients") && { path: "/clients", label: "Clients", icon: Users },
+      ].filter(Boolean),
+    },
+    {
+      label: "Sales",
+      items: [
+        canAccess(role, "quotes") && { path: "/quotes", label: "Quotes", icon: FileText },
+        canAccess(role, "invoices") && { path: "/invoices", label: "Invoices", icon: Receipt },
+      ].filter(Boolean),
+    },
+    {
+      label: "Operations",
+      items: [
+        canAccess(role, "team") && (isOwnerUser || hasPlanAccess(safePlan, "team")) && { path: "/team", label: "Team", icon: UserPlus },
+        canAccess(role, "payroll") && { path: "/payroll", label: "Payroll", icon: DollarSign },
+        (role === "owner" || role === "employer" || role === "manager") && { path: "/automation", label: "Automation", icon: Zap },
+        canAccess(role, "reports") && { path: "/reports", label: "Reports", icon: FileText },
+      ].filter(Boolean),
+    },
+    {
+      label: "Settings",
+      items: [
+        canAccess(role, "sms") && { path: "/sms", label: "Communications", icon: MessageSquare },
+        canAccess(role, "integrations") && { path: "/integrations", label: "Integrations", icon: Plug },
+        isOwnerUser && { path: "/plans", label: "Plans & Billing", icon: CreditCard },
+        canAccess(role, "settings") && { path: "/settings", label: "Settings", icon: Settings },
+      ].filter(Boolean),
+    },
+  ].filter((g) => g.items.length > 0);
 
-  const mainNav = navItems.slice(0, 4);
-  const moreNav = navItems.slice(4);
+  const flatNav = groups.flatMap((g) => g.items);
+  const mainNav = flatNav.slice(0, 4);
+  const moreNav = flatNav.slice(4);
 
-  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
+  const isActive = (path) =>
+    location.pathname === path || location.pathname.startsWith(path + "/");
+
+  const initials = (user?.name || user?.email || "U")
+    .split(" ")
+    .map((n) => n[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
-    <div className="cx-app-shell tap-safe-root min-h-screen bg-background" data-testid="layout-container">
-      {/* Desktop Sidebar — Premium narrow style */}
-      <aside className="hidden md:flex md:flex-col md:w-[256px] md:fixed md:inset-y-0 bg-[#0b1426] border-r border-[#1f314f] z-40 shadow-[12px_0_30px_rgba(2,6,23,0.55)]" data-testid="desktop-sidebar">
-        {/* Logo */}
-        <div className="flex items-center justify-between px-6 h-[86px] border-b border-[#1f314f] bg-[#0f1c34]">
+    <div className="px-app tap-safe-root cx-app-shell" data-testid="layout-container">
+      {/* Desktop Sidebar — Premium light */}
+      <aside className="px-sidebar hidden md:flex" data-testid="desktop-sidebar">
+        <div className="px-sidebar__brand">
           <ChurvoxLogo size="lg" dataTestId="sidebar-logo" />
           <NotificationsBell />
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-1.5">
-          {navItems.map((item) => {
-            const active = isActive(item.path);
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-[13px] font-semibold transition-all ${
-                  active
-                    ? "bg-primary text-primary-foreground shadow-[0_12px_24px_rgba(37,99,235,0.28)] border border-blue-700"
-                    : "text-slate-200 hover:bg-[#142b52] hover:text-white border border-transparent"
-                }`}
-                data-testid={`nav-${item.label.toLowerCase()}`}
-              >
-                <item.icon className={`h-[18px] w-[18px] shrink-0 ${active ? "text-white" : "text-slate-400"}`} />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
+        <nav className="px-sidebar__nav">
+          {groups.map((g) => (
+            <div key={g.label}>
+              <div className="px-nav-group">{g.label}</div>
+              {g.items.map((item) => {
+                const active = isActive(item.path);
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`px-nav-item ${active ? "is-active" : ""}`}
+                    data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
+                  >
+                    <Icon className="px-nav-item__icon h-[18px] w-[18px]" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
-        {/* User + Logout */}
-        <div className="p-3 border-t border-[#1f314f] space-y-2 bg-[#0f1c34]">
-          <div className="px-3 py-2.5 rounded-xl bg-[#14233f] border border-[#263b60] shadow-[0_2px_10px_rgba(2,6,23,0.45)]">
-            <p className="text-xs font-semibold text-white truncate">{user?.name}</p>
-            <p className="text-[11px] text-slate-300 truncate">{user?.business_name || user?.email}</p>
+        <div className="px-sidebar__foot">
+          <div className="px-user-card">
+            <div className="px-user-card__avatar">{initials}</div>
+            <div className="min-w-0 flex-1">
+              <p className="px-user-card__name truncate">{user?.name || "Account"}</p>
+              <p className="px-user-card__sub truncate">{user?.business_name || user?.email}</p>
+            </div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-[13px] font-medium text-slate-300 hover:bg-[#2b1f30] hover:text-red-300 transition-all border border-transparent hover:border-[#5a3650]"
-            data-testid="logout-button"
-          >
+          <button onClick={handleLogout} className="px-logout" data-testid="logout-button">
             <LogOut className="h-[18px] w-[18px]" />
             Log out
           </button>
         </div>
       </aside>
 
-      {/* Main content */}
-      <div className="md:ml-[256px] min-h-screen flex flex-col" data-testid="main-content-area">
+      {/* Main */}
+      <div className="px-main" data-testid="main-content-area">
         {/* Mobile header */}
-        <header className="md:hidden bg-[#0f1c34] border-b border-[#1f314f] px-4 py-3 flex items-center justify-between sticky top-0 z-30" data-testid="mobile-header">
+        <header className="md:hidden px-mobile-header" data-testid="mobile-header">
           <ChurvoxLogo size="sm" dataTestId="mobile-logo" />
           <div className="flex items-center gap-2">
             <NotificationsBell />
-            <span className="text-xs font-medium text-slate-200">{user?.name?.split(" ")[0]}</span>
+            <span className="text-xs font-semibold text-[#0d1b34]">{(user?.name || "").split(" ")[0]}</span>
           </div>
         </header>
 
-        {/* Content */}
         <main className="flex-1">{children}</main>
 
         {/* Mobile bottom nav */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0f1c34] border-t border-[#1f314f] z-40 safe-area-bottom" data-testid="mobile-bottom-nav">
-          <div className="flex items-center justify-around py-1">
+        <nav className="md:hidden px-mobile-bottom" data-testid="mobile-bottom-nav">
+          <div className="flex items-center justify-around px-2 py-1">
             {mainNav.map((item) => {
               const active = isActive(item.path);
+              const Icon = item.icon;
               return (
-                <Link key={item.path} to={item.path}
-                  className={`flex flex-col items-center gap-0.5 px-2 py-1.5 min-w-[56px] ${active ? "text-blue-300" : "text-slate-400"}`}
-                  data-testid={`mobile-nav-${item.label.toLowerCase()}`}>
-                  <item.icon className="h-5 w-5" />
-                  <span className="text-[10px] font-medium">{item.label}</span>
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`px-mobile-tab ${active ? "is-active" : ""}`}
+                  data-testid={`mobile-nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span>{item.label}</span>
                 </Link>
               );
             })}
-            <button type="button" onClick={() => setMoreOpen(!moreOpen)}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 min-w-[56px] ${moreOpen ? "text-blue-300" : "text-slate-400"}`}
-              data-testid="mobile-more-button">
+            <button
+              type="button"
+              onClick={() => setMoreOpen(!moreOpen)}
+              className={`px-mobile-tab ${moreOpen ? "is-active" : ""}`}
+              data-testid="mobile-more-button"
+            >
               <MoreHorizontal className="h-5 w-5" />
-              <span className="text-[10px] font-medium">More</span>
+              <span>More</span>
             </button>
           </div>
 
           {moreOpen && (
-            <div className="absolute bottom-full left-0 right-0 bg-white border-t border-slate-200 shadow-lg max-h-[60vh] overflow-y-auto" data-testid="mobile-more-menu">
-              <div className="p-3 space-y-0.5">
-                {moreNav.map((item) => (
-                  <Link key={item.path} to={item.path} onClick={() => setMoreOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium ${
-                      isActive(item.path) ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-blue-50"
-                    }`}>
-                    <item.icon className="h-5 w-5" />{item.label}
-                  </Link>
-                ))}
-                <button onClick={() => { setMoreOpen(false); handleLogout(); }}
-                  className="flex items-center gap-3 w-full px-3 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50">
+            <div
+              className="absolute bottom-full left-0 right-0 bg-white border-t border-[#e6eef9] shadow-2xl max-h-[60vh] overflow-y-auto"
+              data-testid="mobile-more-menu"
+            >
+              <div className="p-3 space-y-1">
+                {moreNav.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setMoreOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold ${
+                        isActive(item.path)
+                          ? "bg-[#2563eb] text-white"
+                          : "text-[#0d1b34] hover:bg-[#eff4ff]"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+                <button
+                  onClick={() => { setMoreOpen(false); handleLogout(); }}
+                  className="flex items-center gap-3 w-full px-3 py-3 rounded-xl text-sm font-semibold text-[#dc2626] hover:bg-[#fff5f5]"
+                >
                   <LogOut className="h-5 w-5" />Log out
                 </button>
               </div>

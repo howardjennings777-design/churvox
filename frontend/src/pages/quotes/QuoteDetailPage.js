@@ -3,12 +3,11 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import Layout from "../../components/Layout";
 import { useAuth } from "../../context/AuthContext";
 import { useApi } from "../../hooks/useApi";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { ArrowLeft, Edit, Trash2, MapPin, Mail, DollarSign, Send, Briefcase, Link2 } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, MapPin, Mail, DollarSign, Send, Briefcase, Link2, FileSignature } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, QUOTE_STATUSES } from "../../lib/utils";
 import { safeText } from "../../utils/safeRender";
+import { PremiumPage, PremiumHero, PremiumCard, PremiumButton } from "../../components/premium";
 
 export default function QuoteDetailPage() {
   const { id } = useParams();
@@ -52,106 +51,126 @@ export default function QuoteDetailPage() {
     if (res.success) { toast.success("Quote deleted"); navigate("/quotes"); }
   };
 
-  if (!quote) return <Layout><div className="p-6 flex items-center justify-center min-h-[50vh]"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" /></div></Layout>;
+  if (!quote) return <Layout><div className="p-6 flex items-center justify-center min-h-[50vh]"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#2563eb]" /></div></Layout>;
 
   const statusInfo = QUOTE_STATUSES.find((s) => s.value === quote.status);
   const pricingLabel = { fixed: "Fixed Price", hourly: "Hourly", fixed_extras: "Fixed + Extras", hourly_extras: "Hourly + Extras" }[quote.pricing_type] || "Fixed";
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4" data-testid="quote-detail-page">
-        <div className="flex items-center justify-between">
-          <button onClick={() => navigate("/quotes")} className="flex items-center gap-2 text-slate-500 hover:text-slate-900" data-testid="back-to-quotes">
-            <ArrowLeft size={18} /> Quotes
-          </button>
-          {isEmployer && (
-            <div className="flex items-center gap-2">
-              <Button asChild variant="outline" size="sm" className="border-slate-200 text-slate-500 hover:text-slate-900" data-testid="edit-quote-button">
-                <Link to={`/quotes/${id}/edit`}><Edit size={14} className="mr-1" /> Edit</Link>
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleDelete} className="border-red-500/30 text-red-400 hover:bg-red-500/10" data-testid="delete-quote-trigger">
-                <Trash2 size={14} />
-              </Button>
+      <PremiumPage maxWidth={960}>
+        <button onClick={() => navigate("/quotes")} className="flex items-center gap-2 text-[#5b6c87] hover:text-[#0d1b34] text-sm font-semibold" data-testid="back-to-quotes">
+          <ArrowLeft size={16} /> Back to quotes
+        </button>
+
+        <PremiumHero
+          eyebrow="Quote"
+          title={safeText(quote.quote_number, "Quote")}
+          subtitle={`${safeText(quote.customer_name, "Customer")} • ${pricingLabel}`}
+          icon={<FileSignature className="h-6 w-6" />}
+          actions={
+            isEmployer && (
+              <div className="flex items-center gap-2">
+                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase text-white ${statusInfo?.color || "bg-slate-500"}`} data-testid="quote-status-badge">
+                  {statusInfo?.label || quote.status}
+                </span>
+                <PremiumButton variant="secondary" size="sm" dataTestId="edit-quote-button" onClick={() => navigate(`/quotes/${id}/edit`)}>
+                  <Edit size={14} className="mr-1" /> Edit
+                </PremiumButton>
+                <PremiumButton variant="danger" size="sm" onClick={handleDelete} dataTestId="delete-quote-trigger">
+                  <Trash2 size={14} />
+                </PremiumButton>
+              </div>
+            )
+          }
+        />
+
+        <PremiumCard title="Quote details" icon={<FileSignature className="h-5 w-5" />}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-xs text-[#7d8ba3] mb-0.5">Customer</p>
+              <p className="text-[#0d1b34] font-semibold">{quote.customer_name}</p>
+            </div>
+            {quote.customer_email && (
+              <div>
+                <p className="text-xs text-[#7d8ba3] mb-0.5">Email</p>
+                <p className="text-[#1a2c4d] flex items-center gap-1.5"><Mail size={13} /> {quote.customer_email}</p>
+              </div>
+            )}
+            {quote.address && (
+              <div className="md:col-span-2">
+                <p className="text-xs text-[#7d8ba3] mb-0.5">Address</p>
+                <p className="text-[#1a2c4d] flex items-center gap-1.5"><MapPin size={13} /> {quote.address}</p>
+              </div>
+            )}
+            <div>
+              <p className="text-xs text-[#7d8ba3] mb-0.5">Total</p>
+              <p className="text-[#0d1b34] font-bold text-lg flex items-center gap-1"><DollarSign size={16} className="text-[#2563eb]" /> {formatCurrency(quote.price)}</p>
+            </div>
+            {quote.valid_until && (
+              <div>
+                <p className="text-xs text-[#7d8ba3] mb-0.5">Valid until</p>
+                <p className="text-[#0d1b34]">{formatDate(quote.valid_until)}</p>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 pt-4 border-t border-[#e6eef9]">
+            <p className="text-xs text-[#7d8ba3] mb-1">Description</p>
+            <p className="text-sm text-[#1a2c4d] whitespace-pre-wrap">{safeText(quote.job_description, "No description")}</p>
+          </div>
+
+          {quote.pricing_type && quote.pricing_type !== "fixed" && (
+            <div className="mt-4 pt-4 border-t border-[#e6eef9] text-sm">
+              {(quote.pricing_type === "hourly" || quote.pricing_type === "hourly_extras") && quote.hourly_rate > 0 && (
+                <p className="text-[#5b6c87]">Hourly rate: <span className="text-[#0d1b34] font-semibold">{formatCurrency(quote.hourly_rate)}/hr</span></p>
+              )}
+              {quote.extras && quote.extras.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-xs text-[#7d8ba3] mb-1">Extras</p>
+                  {quote.extras.map((ex, i) => (
+                    <p key={i} className="text-[#1a2c4d] text-xs ml-2">• {ex.description}: <strong>{formatCurrency(ex.amount)}</strong></p>
+                  ))}
+                </div>
+              )}
             </div>
           )}
-        </div>
 
-        {/* Quote Info */}
-        <Card className="bg-white border-slate-200 shadow-sm" data-testid="quote-info-card">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl text-slate-900">{safeText(quote.quote_number, "Quote")}</CardTitle>
-              <span className={`px-3 py-1 rounded text-xs font-semibold uppercase text-slate-900 ${statusInfo?.color || "bg-slate-500"}`} data-testid="quote-status-badge">
-                {statusInfo?.label || quote.status}
-              </span>
+          {quote.notes && (
+            <div className="mt-4 pt-4 border-t border-[#e6eef9]">
+              <p className="text-xs text-[#7d8ba3] mb-1">Notes</p>
+              <p className="text-sm text-[#1a2c4d]">{safeText(quote.notes)}</p>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="text-slate-500">Customer: <span className="text-slate-900">{quote.customer_name}</span></div>
-              {quote.customer_email && <div className="flex items-center gap-2 text-slate-500"><Mail size={14} /> {quote.customer_email}</div>}
-              {quote.address && <div className="flex items-center gap-2 text-slate-500 col-span-2"><MapPin size={14} /> {quote.address}</div>}
-              <div className="flex items-center gap-2 text-slate-500"><DollarSign size={14} /> {formatCurrency(quote.price)} <span className="text-xs text-blue-600">({pricingLabel})</span></div>
-              {quote.valid_until && <div className="text-slate-500">Valid until: <span className="text-slate-900">{formatDate(quote.valid_until)}</span></div>}
-            </div>
+          )}
 
-            <div className="pt-3 border-t border-slate-200">
-              <p className="text-xs text-slate-500 mb-1">Description</p>
-              <p className="text-sm text-slate-700">{safeText(quote.job_description, "No description")}</p>
-            </div>
+          <p className="text-xs text-[#7d8ba3] mt-4 pt-4 border-t border-[#e6eef9]">Created {formatDate(quote.created_at)}</p>
+        </PremiumCard>
 
-            {quote.pricing_type && quote.pricing_type !== "fixed" && (
-              <div className="pt-3 border-t border-slate-200 text-sm">
-                {(quote.pricing_type === "hourly" || quote.pricing_type === "hourly_extras") && quote.hourly_rate > 0 && (
-                  <p className="text-slate-500">Hourly rate: <span className="text-slate-900">{formatCurrency(quote.hourly_rate)}/hr</span></p>
-                )}
-                {quote.extras && quote.extras.length > 0 && (
-                  <div className="mt-1">
-                    <p className="text-slate-500 text-xs mb-1">Extras:</p>
-                    {quote.extras.map((ex, i) => (
-                      <p key={i} className="text-slate-700 text-xs ml-2">- {ex.description}: {formatCurrency(ex.amount)}</p>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {quote.notes && (
-              <div className="pt-3 border-t border-slate-200">
-                <p className="text-xs text-slate-500 mb-1">Notes</p>
-                <p className="text-sm text-slate-700">{safeText(quote.notes)}</p>
-              </div>
-            )}
-
-            <p className="text-xs text-slate-500 pt-2">Created {formatDate(quote.created_at)}</p>
-          </CardContent>
-        </Card>
-
-        {/* Actions */}
-        <div className="flex gap-3" data-testid="quote-actions">
+        <div className="flex gap-3 flex-wrap" data-testid="quote-actions">
           {quote.status === "draft" && (
-            <Button onClick={handleSend} disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" data-testid="send-quote-button">
+            <PremiumButton onClick={handleSend} disabled={loading} dataTestId="send-quote-button" className="flex-1 min-w-[200px]">
               <Send size={16} className="mr-2" /> Send Quote
-            </Button>
+            </PremiumButton>
           )}
           {quote.status === "accepted" && !quote.converted_job_id && (
-            <Button onClick={handleConvert} disabled={loading} className="flex-1 bg-emerald-500 hover:bg-emerald-600" data-testid="convert-to-job-button">
+            <PremiumButton variant="success" onClick={handleConvert} disabled={loading} dataTestId="convert-to-job-button" className="flex-1 min-w-[200px]">
               <Briefcase size={16} className="mr-2" /> Convert to Job
-            </Button>
+            </PremiumButton>
           )}
           {quote.public_quote_url && (
-            <Button variant="outline" className="flex-1" onClick={() => navigator.clipboard.writeText(quote.public_quote_url).then(() => toast.success("Public quote link copied"))}>
+            <PremiumButton variant="secondary" onClick={() => navigator.clipboard.writeText(quote.public_quote_url).then(() => toast.success("Public quote link copied"))} className="flex-1 min-w-[200px]">
               <Link2 size={16} className="mr-2" /> Copy Public Link
-            </Button>
+            </PremiumButton>
           )}
           {quote.converted_job_id && (
-            <Button asChild className="flex-1 bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600/30">
-              <Link to={`/jobs/${quote.converted_job_id}`} data-testid="view-linked-job"><Briefcase size={16} className="mr-2" /> View Job</Link>
-            </Button>
+            <Link to={`/jobs/${quote.converted_job_id}`} data-testid="view-linked-job" className="flex-1 min-w-[200px]">
+              <PremiumButton variant="success" className="w-full">
+                <Briefcase size={16} className="mr-2" /> View Job
+              </PremiumButton>
+            </Link>
           )}
         </div>
-
-      </div>
+      </PremiumPage>
     </Layout>
   );
 }

@@ -2,11 +2,12 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Layout from "../../components/Layout";
 import { useApi } from "../../hooks/useApi";
-import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
+import { ArrowLeft, Briefcase, Save } from "lucide-react";
 import { toast } from "sonner";
+import { PremiumPage, PremiumHero, PremiumCard, PremiumButton } from "../../components/premium";
 
 const COUNTRY_OPTIONS = [
   { value: "New Zealand", label: "New Zealand" },
@@ -194,32 +195,37 @@ export default function JobFormPage() {
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{isEdit ? "Edit Job" : "New Job"}</h1>
-          <p className="text-sm text-slate-500 mt-1">Create or update a job.</p>
-        </div>
+      <PremiumPage maxWidth={820}>
+        <button onClick={() => navigate("/jobs")} className="flex items-center gap-2 text-[#5b6c87] hover:text-[#0d1b34] text-sm font-semibold" data-testid="back-to-jobs">
+          <ArrowLeft size={16} /> Back to jobs
+        </button>
 
-        <Card className="bg-white border-slate-200 shadow-sm">
-          <CardContent className="p-6">
+        <PremiumHero
+          eyebrow={isEdit ? "Edit job" : "New job"}
+          title={isEdit ? "Edit Job" : "New Job"}
+          subtitle={isEdit ? "Update job details, schedule and assignment." : "Create a job and assign it to a worker."}
+          icon={<Briefcase className="h-6 w-6" />}
+        />
+
+        <PremiumCard title="Job details" icon={<Briefcase className="h-5 w-5" />}>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="title">Job Title</Label>
+                <Label htmlFor="title" className="text-[#0d1b34] font-semibold">Job Title</Label>
                 <Input
                   id="title"
                   value={form.title}
                   onChange={(e) => setField("title", e.target.value)}
-                  className="bg-slate-50 border-slate-200 text-slate-900"
+                  className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]"
                 />
               </div>
 
               <div>
-                <Label htmlFor="client_id">Client</Label>
+                <Label htmlFor="client_id" className="text-[#0d1b34] font-semibold">Client</Label>
                 <select
                   id="client_id"
                   value={form.client_id}
                   onChange={(e) => handleClientChange(e.target.value)}
-                  className="w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 p-3"
+                  className="w-full rounded-md border border-[#d8e3f3] bg-[#f6faff] text-[#0d1b34] p-3"
                 >
                   <option value="">Select client</option>
                   {clients.map((client) => {
@@ -234,35 +240,35 @@ export default function JobFormPage() {
               </div>
 
               <div>
-                <Label htmlFor="address">Address</Label>
+                <Label htmlFor="address" className="text-[#0d1b34] font-semibold">Address</Label>
                 <Input
                   id="address"
                   value={form.address}
                   onChange={(e) => setField("address", e.target.value)}
-                  className="bg-slate-50 border-slate-200 text-slate-900"
+                  className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]"
                 />
               </div>
 
               <div>
-                <Label htmlFor="scheduled_date">Scheduled Date</Label>
+                <Label htmlFor="scheduled_date" className="text-[#0d1b34] font-semibold">Scheduled Date</Label>
                 <Input
                   id="scheduled_date"
                   type="datetime-local"
                   value={form.scheduled_date}
                   onChange={(e) => setField("scheduled_date", e.target.value)}
                   style={{ colorScheme: "light" }}
-                  className="bg-slate-50 border-slate-200 text-slate-900"
+                  className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="job-country">Country</Label>
+                  <Label htmlFor="job-country" className="text-[#0d1b34] font-semibold">Country</Label>
                   <select
                     id="job-country"
                     value={form.country || "New Zealand"}
                     onChange={(e) => setForm((prev) => ({ ...prev, country: e.target.value, region: "", assigned_worker_id: "" }))}
-                    className="w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 p-3"
+                    className="w-full rounded-md border border-[#d8e3f3] bg-[#f6faff] text-[#0d1b34] p-3"
                   >
                     {COUNTRY_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -273,12 +279,12 @@ export default function JobFormPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="job-region">Region / State</Label>
+                  <Label htmlFor="job-region" className="text-[#0d1b34] font-semibold">Region / State</Label>
                   <select
                     id="job-region"
                     value={form.region || ""}
                     onChange={(e) => setForm((prev) => ({ ...prev, region: e.target.value, assigned_worker_id: "" }))}
-                    className="w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 p-3"
+                    className="w-full rounded-md border border-[#d8e3f3] bg-[#f6faff] text-[#0d1b34] p-3"
                   >
                     <option value="">Select region / state</option>
                     {getRegionOptions(form.country || "New Zealand").map((region) => (
@@ -291,12 +297,12 @@ export default function JobFormPage() {
               </div>
 
               <div>
-                <Label htmlFor="assigned_worker_id">Assigned Worker</Label>
+                <Label htmlFor="assigned_worker_id" className="text-[#0d1b34] font-semibold">Assigned Worker</Label>
                 <select
                   id="assigned_worker_id"
                   value={form.assigned_worker_id}
                   onChange={(e) => setField("assigned_worker_id", e.target.value)}
-                  className="w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 p-3"
+                  className="w-full rounded-md border border-[#d8e3f3] bg-[#f6faff] text-[#0d1b34] p-3"
                 >
                   <option value="">Select worker</option>
                   {filteredWorkers.map((worker) => {
@@ -313,12 +319,12 @@ export default function JobFormPage() {
               </div>
 
               <div>
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status" className="text-[#0d1b34] font-semibold">Status</Label>
                 <select
                   id="status"
                   value={form.status}
                   onChange={(e) => setField("status", e.target.value)}
-                  className="w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 p-3"
+                  className="w-full rounded-md border border-[#d8e3f3] bg-[#f6faff] text-[#0d1b34] p-3"
                 >
                   <option value="assigned">Assigned</option>
                   <option value="acknowledged">Acknowledged</option>
@@ -328,36 +334,36 @@ export default function JobFormPage() {
               </div>
 
               <div>
-                <Label htmlFor="notes">Notes</Label>
+                <Label htmlFor="notes" className="text-[#0d1b34] font-semibold">Notes</Label>
                 <textarea
                   id="notes"
                   value={form.notes}
                   onChange={(e) => setField("notes", e.target.value)}
                   rows={4}
-                  className="w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 p-3 outline-none"
+                  className="w-full rounded-md border border-[#d8e3f3] bg-[#f6faff] text-[#0d1b34] p-3 outline-none focus:border-[#2563eb]"
                 />
               </div>
 
               {/* Recurring Job */}
-              <div className="border border-slate-200 rounded-lg p-4 space-y-3">
+              <div className="border border-[#d8e3f3] bg-[#f6faff] rounded-xl p-4 space-y-3">
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={form.is_recurring}
                     onChange={(e) => setField("is_recurring", e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded border-[#d8e3f3] text-[#2563eb] focus:ring-[#2563eb]"
                     data-testid="recurring-checkbox"
                   />
-                  <span className="text-sm font-medium text-slate-700">Recurring job</span>
+                  <span className="text-sm font-semibold text-[#0d1b34]">Recurring job</span>
                 </label>
                 {form.is_recurring && (
                   <div>
-                    <Label htmlFor="recurring_frequency">Frequency</Label>
+                    <Label htmlFor="recurring_frequency" className="text-[#0d1b34] font-semibold">Frequency</Label>
                     <select
                       id="recurring_frequency"
                       value={form.recurring_frequency}
                       onChange={(e) => setField("recurring_frequency", e.target.value)}
-                      className="w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 p-3"
+                      className="w-full rounded-md border border-[#d8e3f3] bg-white text-[#0d1b34] p-3"
                       data-testid="recurring-frequency"
                     >
                       <option value="weekly">Weekly</option>
@@ -368,18 +374,18 @@ export default function JobFormPage() {
                 )}
               </div>
 
-              <div className="flex gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={() => navigate("/jobs")}>
+              <div className="flex gap-3 pt-2 flex-wrap">
+                <Button type="button" variant="outline" onClick={() => navigate("/jobs")} className="flex-1 min-w-[140px] border-[#d8e3f3] text-[#1a2c4d] hover:bg-[#eff4ff]">
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-slate-900">
+                <PremiumButton type="submit" disabled={saving} className="flex-1 min-w-[200px]">
+                  <Save className="h-4 w-4 mr-2" />
                   {saving ? "Saving..." : isEdit ? "Update Job" : "Create Job"}
-                </Button>
+                </PremiumButton>
               </div>
             </form>
-          </CardContent>
-        </Card>
-      </div>
+        </PremiumCard>
+      </PremiumPage>
     </Layout>
   );
 }

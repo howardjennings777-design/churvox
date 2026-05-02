@@ -1,14 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
+import { Mail, Lock, AlertCircle, Loader2, Sparkles, ShieldCheck, Briefcase, Calendar, Receipt, Users } from "lucide-react";
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 import { normalizeRole, getDefaultRoute } from "@/lib/roles";
-
+import { PremiumButton } from "@/components/premium";
 
 const getPostLoginPath = (payload = {}) => {
   const user = payload?.user || payload || {};
@@ -17,11 +13,9 @@ const getPostLoginPath = (payload = {}) => {
     email === "hello@churvox.com" ||
     user?.is_platform_owner === true ||
     user?.is_admin === true;
-
   if (isPlatformOwner) return "/admin";
   return getDefaultRoute(normalizeRole(user?.role || payload?.role));
 };
-
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -35,7 +29,6 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-
     try {
       const result = await login(email, password);
       if (result?.token) {
@@ -50,129 +43,127 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left side - Login form */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md animate-in">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center mb-6">
-              <ChurvoxLogo size="lg" />
-            </div>
-            <h1 className="text-2xl font-semibold text-slate-900">Welcome back</h1>
-            <p className="text-muted-foreground mt-2">Sign in to manage your jobs</p>
+    <div className="px-auth">
+      {/* Form panel */}
+      <div className="px-auth__panel">
+        <div className="px-auth__card">
+          <div className="flex flex-col items-center text-center mb-7">
+            <div className="mb-3"><ChurvoxLogo size="lg" /></div>
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#dbe7ff] text-[#1d4ed8] text-[11px] font-bold uppercase tracking-wider">
+              <Sparkles className="h-3 w-3" /> Premium tradie platform
+            </span>
+            <h1 className="font-heading text-[28px] font-bold text-[#0d1b34] mt-4 leading-tight tracking-tight">Welcome back</h1>
+            <p className="text-[14px] text-[#5b6c87] mt-2">Sign in to manage jobs, clients, quotes, invoices and your crew.</p>
           </div>
 
-          <Card className="bg-card border-border">
-            <CardHeader className="space-y-1 pb-4">
-              <CardTitle className="text-xl font-heading">Sign in</CardTitle>
-              <CardDescription>Enter your credentials to access your dashboard</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {error && (
-                  <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm" data-testid="login-error">
-                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                    <span>{error}</span>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 bg-secondary border-border"
-                      required
-                      data-testid="login-email-input"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    <Link 
-                      to="/forgot-password" 
-                      className="text-sm text-primary hover:text-primary/80 transition-colors"
-                      data-testid="forgot-password-link"
-                    >
-                      Forgot password?
-                    </Link>
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 bg-secondary border-border"
-                      required
-                      data-testid="login-password-input"
-                    />
-                  </div>
-                </div>
-
-                <Button 
-                  type="submit" 
-                  className="w-full bg-primary hover:bg-primary/90 font-medium"
-                  disabled={loading}
-                  data-testid="login-submit-button"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Signing in...
-                    </>
-                  ) : (
-                    "Sign in"
-                  )}
-                </Button>
-              </form>
-
-              <p className="text-center text-sm text-muted-foreground mt-6">
-                Don't have an account?{" "}
-                <Link 
-                  to="/signup" 
-                  className="text-primary hover:text-primary/80 font-medium transition-colors"
-                  data-testid="signup-link"
-                >
-                  Sign up
-                </Link>
-              </p>
-
-              <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground/60">
-                <Link to="/privacy" className="hover:text-muted-foreground transition-colors" data-testid="login-privacy-link">Privacy</Link>
-                <Link to="/terms" className="hover:text-muted-foreground transition-colors" data-testid="login-terms-link">Terms</Link>
+          <form onSubmit={handleSubmit} className="space-y-4" data-testid="login-form">
+            {error && (
+              <div className="flex items-center gap-2 p-3 bg-[#fff5f5] border border-[#fecaca] rounded-xl text-[#b91c1c] text-sm" data-testid="login-error">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <span>{error}</span>
               </div>
-            </CardContent>
-          </Card>
+            )}
+
+            <div>
+              <label className="block text-[12.5px] font-semibold text-[#1a2c4d] mb-1.5">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7d8ba3]" />
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="px-input pl-10"
+                  required
+                  data-testid="login-email-input"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[12.5px] font-semibold text-[#1a2c4d]">Password</label>
+                <Link to="/forgot-password" className="text-[12.5px] font-semibold text-[#1d4ed8] hover:underline" data-testid="forgot-password-link">
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7d8ba3]" />
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="px-input pl-10"
+                  required
+                  data-testid="login-password-input"
+                />
+              </div>
+            </div>
+
+            <PremiumButton
+              type="submit"
+              size="lg"
+              className="w-full"
+              disabled={loading}
+              dataTestId="login-submit-button"
+              iconLeft={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            >
+              {loading ? "Signing in…" : "Sign in"}
+            </PremiumButton>
+          </form>
+
+          <p className="text-center text-[13px] text-[#5b6c87] mt-6">
+            Don't have an account?{" "}
+            <Link to="/signup" className="font-semibold text-[#1d4ed8] hover:underline" data-testid="signup-link">Sign up</Link>
+          </p>
+
+          <div className="flex justify-center gap-4 mt-4 text-[11.5px] text-[#7d8ba3]">
+            <Link to="/privacy" className="hover:text-[#5b6c87]" data-testid="login-privacy-link">Privacy</Link>
+            <Link to="/terms" className="hover:text-[#5b6c87]" data-testid="login-terms-link">Terms</Link>
+          </div>
         </div>
       </div>
 
-      {/* Right side - Decorative */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-50 via-white to-slate-100 items-center justify-center p-12">
-        <div className="max-w-lg text-center">
-          <div className="inline-flex items-center justify-center mb-8">
-            <ChurvoxLogo size="xl" />
-          </div>
-          <h2 className="text-3xl font-semibold text-slate-900 mb-4">
-            Run your trade business smarter
-          </h2>
-          <p className="text-muted-foreground text-lg mb-6">
-            Jobs, quotes, invoices, team management, and scheduling — all in one platform built for contractors.
+      {/* Brand panel */}
+      <div className="px-auth__brand">
+        <div className="px-auth__brand-inner">
+          <div className="inline-flex items-center justify-center"><ChurvoxLogo size="xl" /></div>
+          <h2 className="px-auth__brand-title">Run your trade<br/>business smarter</h2>
+          <p className="px-auth__brand-sub">
+            Jobs, quotes, invoices, dispatch, payroll and your crew —
+            unified in one premium command platform with an AI assistant
+            that drafts customer messages for you to approve.
           </p>
-          <div className="flex flex-wrap justify-center gap-3 text-sm text-muted-foreground/70">
-            <span className="px-3 py-1 rounded-full bg-blue-50">Multi-trade</span>
-            <span className="px-3 py-1 rounded-full bg-blue-50">Mobile-first</span>
-            <span className="px-3 py-1 rounded-full bg-blue-50">MYOB sync</span>
-            <span className="px-3 py-1 rounded-full bg-blue-50">SMS reminders</span>
+
+          <div className="grid grid-cols-2 gap-3 mt-8 max-w-md mx-auto">
+            <div className="rounded-2xl bg-white/70 border border-[#d8e3f3] p-4 backdrop-blur shadow-sm text-left">
+              <div className="h-9 w-9 rounded-xl bg-[#dbe7ff] text-[#1d4ed8] inline-flex items-center justify-center"><Briefcase className="h-4 w-4" /></div>
+              <p className="text-[13px] font-bold text-[#0d1b34] mt-2">Jobs & Dispatch</p>
+              <p className="text-[12px] text-[#5b6c87] mt-1">Assign, track and complete</p>
+            </div>
+            <div className="rounded-2xl bg-white/70 border border-[#d8e3f3] p-4 backdrop-blur shadow-sm text-left">
+              <div className="h-9 w-9 rounded-xl bg-[#ccfbf1] text-[#0d9488] inline-flex items-center justify-center"><Receipt className="h-4 w-4" /></div>
+              <p className="text-[13px] font-bold text-[#0d1b34] mt-2">Quotes & Invoices</p>
+              <p className="text-[12px] text-[#5b6c87] mt-1">Public links, accept & pay</p>
+            </div>
+            <div className="rounded-2xl bg-white/70 border border-[#d8e3f3] p-4 backdrop-blur shadow-sm text-left">
+              <div className="h-9 w-9 rounded-xl bg-[#ede4ff] text-[#7c3aed] inline-flex items-center justify-center"><Sparkles className="h-4 w-4" /></div>
+              <p className="text-[13px] font-bold text-[#0d1b34] mt-2">AI Assistant</p>
+              <p className="text-[12px] text-[#5b6c87] mt-1">Approval-first drafts</p>
+            </div>
+            <div className="rounded-2xl bg-white/70 border border-[#d8e3f3] p-4 backdrop-blur shadow-sm text-left">
+              <div className="h-9 w-9 rounded-xl bg-[#fff1d6] text-[#d97706] inline-flex items-center justify-center"><Users className="h-4 w-4" /></div>
+              <p className="text-[13px] font-bold text-[#0d1b34] mt-2">Crew & Payroll</p>
+              <p className="text-[12px] text-[#5b6c87] mt-1">Roles, timesheets, exports</p>
+            </div>
+          </div>
+
+          <div className="px-auth__chips">
+            <span className="px-auth__chip"><ShieldCheck className="h-3 w-3 inline mr-1 text-[#0d9488]" />Approval-first AI</span>
+            <span className="px-auth__chip">MYOB sync</span>
+            <span className="px-auth__chip">Mobile-first</span>
+            <span className="px-auth__chip">SMS reminders</span>
           </div>
         </div>
       </div>
