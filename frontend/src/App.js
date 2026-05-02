@@ -49,6 +49,7 @@ import ReportsPage from "./pages/ReportsPage";
 import IntegrationsPage from "./pages/IntegrationsPage";
 import PublicQuotePage from "./pages/public/PublicQuotePage";
 import PublicInvoicePage from "./pages/public/PublicInvoicePage";
+import QAAuditorPage from "./pages/admin/QAAuditorPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const Spinner = () => (
@@ -139,6 +140,18 @@ function ReportsRoute({ children }) {
 }
 
 // Catch-all redirect based on role
+
+function QaAuditorRoute({ children }) {
+  const { user, loading, normalizedRole, isPayroll, isWorker } = useAuth();
+  if (loading) return <Spinner />;
+  if (!user) return <Navigate to="/login" replace />;
+  const email = (user?.email || "").toLowerCase();
+  const isPlatformOwner = email === "hello@churvox.com" || user?.is_platform_owner === true || user?.is_admin === true;
+  const allowed = isPlatformOwner || normalizedRole === "owner";
+  if (!allowed || isWorker || isPayroll) return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
+  return children;
+}
+
 function RoleRedirect() {
   const { user, loading, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
@@ -232,6 +245,7 @@ function App() {
           <Route path="/app-owner" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
           <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
           <Route path="/owner/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
+          <Route path="/admin/qa-auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
 
           {/* Business routes (owner, manager, office_admin) */}
           <Route path="/dashboard" element={<BusinessRoute><DashboardPage /></BusinessRoute>} />
