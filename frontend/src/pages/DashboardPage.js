@@ -348,8 +348,9 @@ export default function DashboardPage() {
         )}
       </PremiumPage>
       {hubPanel.open && activePanel ? (
-        <div className="fixed inset-0 z-[70] bg-[#0b1730]/45 backdrop-blur-sm" role="dialog" aria-modal="true">
-          <div className="ml-auto h-full w-full md:max-w-[740px] bg-[#f3f6fb] shadow-2xl border-l border-[#d8e3f3] flex flex-col">
+        <div className="fixed inset-0 z-[70] bg-slate-900/20 backdrop-blur-[3px] px-4 py-8 md:py-10" role="dialog" aria-modal="true">
+          <div className="mx-auto flex h-full w-full max-w-[760px] items-center justify-center">
+            <div className="w-full max-h-[85vh] overflow-hidden rounded-3xl border border-[#dfe7f4] bg-white shadow-[0_28px_80px_rgba(15,23,42,0.24)] flex flex-col">
             <div className="px-5 py-4 border-b border-[#e6eef9] flex items-start justify-between gap-3">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#5b6c87]">COMMAND ACTION</p><p className="text-2xl font-semibold text-[#0d1b34] mt-1">{activePanel.title}</p>
@@ -358,11 +359,12 @@ export default function DashboardPage() {
               </div>
               <button className="text-[#5b6c87]" onClick={closePanel}><X className="h-5 w-5" /></button>
             </div>
-            <div className="p-4 md:p-5 overflow-y-auto flex-1">
+            <div className="p-4 md:p-5 overflow-y-auto flex-1 bg-[#f8fbff]">
               {hubPanel.key === "job" ? <JobCreateForm isWorker={normalizedRole === "worker"} onCancel={closePanel} onSuccess={() => { toast.success("Job created"); closePanel(); fetchData(); }} submitLabel="Create job" /> : null}
               {hubPanel.key === "quote" ? <QuoteCreateForm onCancel={closePanel} onSuccess={() => { toast.success("Quote created"); closePanel(); fetchData(); }} submitLabel="Create quote" /> : null}
               {hubPanel.key === "invoice" ? <InvoiceCreateForm onCancel={closePanel} onSuccess={() => { toast.success("Invoice created"); closePanel(); fetchData(); }} submitLabel="Create invoice" /> : null}
               {hubPanel.key === "client" ? <ClientCreateForm onCancel={closePanel} onSuccess={() => { toast.success("Client created"); closePanel(); fetchData(); }} submitLabel="Add client" /> : null}
+            </div>
             </div>
           </div>
         </div>
