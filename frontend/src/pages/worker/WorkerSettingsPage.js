@@ -29,7 +29,11 @@ export default function WorkerSettingsPage() {
           <PremiumButton onClick={logout} iconLeft={<LogOut className="h-4 w-4" />} className="w-full">Log out</PremiumButton>
         </PremiumPage>
       </main>
-      <WorkerContactOfficePanel open={showContactOffice} onClose={() => setShowContactOffice(false)} />
+      <WorkerContactOfficePanel
+        open={showContactOffice}
+        onClose={() => setShowContactOffice(false)}
+        defaultMessage="I need help with my Churvox worker account."
+      />
       <WorkerBottomNav active="settings" />
     </div>
   );

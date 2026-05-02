@@ -143,7 +143,11 @@ export default function WorkerJobsPage() {
           );
         }) : null}
       </main>
-      <WorkerContactOfficePanel open={showContactOffice} onClose={() => setShowContactOffice(false)} />
+      <WorkerContactOfficePanel
+        open={showContactOffice}
+        onClose={() => setShowContactOffice(false)}
+        defaultMessage="I need help with my assigned jobs. No jobs are showing for me."
+      />
       <WorkerBottomNav active="today" />
     </div>
   );

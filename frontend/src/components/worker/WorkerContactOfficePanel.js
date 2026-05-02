@@ -4,11 +4,12 @@ import { PremiumButton, PremiumCard } from "@/components/premium";
 import { useApi } from "@/hooks/useApi";
 import { toast } from "sonner";
 
-export default function WorkerContactOfficePanel({ open, onClose, defaultMessage = "I need help with my jobs", jobId = "" }) {
+export default function WorkerContactOfficePanel({ open, onClose, defaultMessage = "I need help with my jobs", jobId = "", jobTitle = "" }) {
   const { get, post } = useApi();
   const [loading, setLoading] = useState(false);
   const [businessName, setBusinessName] = useState("Your Office");
   const [contacts, setContacts] = useState([]);
+  const [officeMessage, setOfficeMessage] = useState("");
   const [message, setMessage] = useState(defaultMessage);
   const [sending, setSending] = useState(false);
 
@@ -23,6 +24,7 @@ export default function WorkerContactOfficePanel({ open, onClose, defaultMessage
         const payload = res.data || {};
         setBusinessName(payload.business_name || "Your Office");
         setContacts(Array.isArray(payload.contacts) ? payload.contacts : []);
+        setOfficeMessage(payload.message || "");
       }
       setLoading(false);
     };
@@ -49,11 +51,12 @@ export default function WorkerContactOfficePanel({ open, onClose, defaultMessage
 
           {!loading && !hasContacts ? (
             <div className="rounded-xl border border-[#dbe6f5] bg-[#f8fbff] p-3">
-              <p className="text-sm font-semibold text-[#0d1b34]">No office contact has been set yet.</p>
+              <p className="text-sm font-semibold text-[#0d1b34]">{officeMessage || "No office contact has been set yet."}</p>
               <p className="text-sm text-[#5b6c87]">Ask your manager to add office contact details.</p>
             </div>
           ) : null}
 
+          {hasContacts ? <p className="text-xs font-semibold uppercase tracking-wide text-[#2563eb]">Primary office contact</p> : null}
           {contacts.map((contact, idx) => (
             <div key={`${contact.email || contact.phone || contact.name}-${idx}`} className="rounded-xl border border-[#dbe6f5] p-3 space-y-2">
               <p className="font-semibold text-[#0d1b34]">{contact.name}</p>
@@ -71,7 +74,7 @@ export default function WorkerContactOfficePanel({ open, onClose, defaultMessage
             <textarea rows={3} className="px-input" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tell the office what you need help with" />
             <PremiumButton className="w-full" onClick={async () => {
               setSending(true);
-              const res = await post("/worker/contact-office", { message, job_id: jobId || undefined });
+              const res = await post("/worker/contact-office", { message, job_id: jobId || undefined, job_title: jobTitle || undefined });
               if (res?.success) toast.success(res.data?.message || "Help request sent");
               else toast.error(res?.error || "Could not send help request");
               setSending(false);

@@ -6345,38 +6345,90 @@ async def get_worker_office_contact(current_user: dict = Depends(get_current_use
         raise HTTPException(status_code=403, detail="Workers only")
 
     business_id = await get_user_business_id(current_user)
-    contact_roles = {"owner", "admin", "employer", "manager", "office_admin"}
-    contacts = []
+    role_labels = {
+        "owner": "Owner",
+        "employer": "Owner",
+        "admin": "Admin",
+        "manager": "Manager",
+        "office_admin": "Office Admin",
+    }
 
-    cursor = db.users.find(
-        {"business_id": str(business_id), "role": {"$in": list(contact_roles)}},
-        {"name": 1, "email": 1, "phone": 1, "mobile": 1, "phone_number": 1, "role": 1, "business_name": 1},
-    ).sort("name", 1)
-    async for user in cursor:
-        phone = clean_phone(user.get("phone") or user.get("mobile") or user.get("phone_number"))
-        contact = {
-            "name": user.get("name") or user.get("email") or "Office contact",
-            "role": str(user.get("role") or "").replace("_", " ").title() or "Office",
-            "email": user.get("email") or None,
-            "phone": phone,
-        }
-        contacts.append(contact)
+    business = await db.businesses.find_one(
+        {"_id": normalize_object_id(business_id)}
+    ) or await db.businesses.find_one({"business_id": str(business_id)})
 
     business_name = (
-        current_user.get("business_name")
-        or (contacts[0].get("name") if contacts else None)
+        (business or {}).get("business_name")
+        or current_user.get("business_name")
         or "Your Office"
     )
 
-    if not contacts:
-        return {
-            "success": True,
-            "business_name": business_name,
-            "contacts": [],
-            "message": "No office contact has been set yet.",
-        }
+    contacts = []
+    seen = set()
 
-    return {"success": True, "business_name": business_name, "contacts": contacts}
+    def _norm_email(v):
+        return str(v or "").strip().lower()
+
+    def _safe_add(name, role, email=None, phone=None):
+        clean_email = str(email or "").strip() or None
+        clean_phone = clean_phone_fn(phone)
+        if not clean_email and not clean_phone:
+            return
+        key = (_norm_email(clean_email), clean_phone or "")
+        if key in seen:
+            return
+        seen.add(key)
+        contacts.append({
+            "name": name or clean_email or "Office contact",
+            "role": role,
+            "email": clean_email,
+            "phone": clean_phone,
+        })
+
+    def clean_phone_fn(value):
+        return clean_phone(value)
+
+    # Priority B first for preferred display
+    contact_roles = ["owner", "employer", "admin", "manager", "office_admin"]
+    cursor = db.users.find(
+        {"business_id": str(business_id), "role": {"$in": contact_roles}},
+        {"name": 1, "email": 1, "phone": 1, "mobile": 1, "phone_number": 1, "role": 1},
+    ).sort([("role", 1), ("name", 1)])
+    async for user in cursor:
+        raw_role = str(user.get("role") or "").lower()
+        _safe_add(
+            name=user.get("name") or "",
+            role=role_labels.get(raw_role, "Office"),
+            email=user.get("email"),
+            phone=user.get("phone") or user.get("mobile") or user.get("phone_number"),
+        )
+
+    # Priority A business profile fields (deduped against staff contacts)
+    profile_name = (business or {}).get("office_contact_name") or business_name
+    profile_email = (
+        (business or {}).get("office_contact_email")
+        or (business or {}).get("contact_email")
+        or (business or {}).get("business_email")
+        or (business or {}).get("email")
+    )
+    profile_phone = (
+        (business or {}).get("office_contact_phone")
+        or (business or {}).get("contact_phone")
+        or (business or {}).get("business_phone")
+        or (business or {}).get("phone")
+    )
+    _safe_add(profile_name, "Office Admin", profile_email, profile_phone)
+
+    message = ""
+    if not contacts:
+        message = "No office contact has been set yet."
+
+    return {
+        "success": True,
+        "business_name": business_name,
+        "contacts": contacts,
+        "message": message,
+    }
 
 
 @api_router.post("/worker/contact-office")
@@ -6392,12 +6444,14 @@ async def worker_contact_office(payload: dict, current_user: dict = Depends(get_
         raise HTTPException(status_code=400, detail="Message is required")
 
     recipients = await db.users.find(
-        {"business_id": str(business_id), "role": {"$in": ["owner", "manager", "office_admin"]}},
+        {"business_id": str(business_id), "role": {"$in": ["owner", "employer", "manager", "office_admin"]}},
         {"_id": 1, "id": 1},
     ).to_list(length=50)
 
     actor_name = current_user.get("name") or current_user.get("email") or "Worker"
     sent = 0
+    job_title = str((payload or {}).get("job_title") or "").strip()
+    job_context = f" | Job: {job_title}" if job_title else (f" | Job ID: {job_id}" if job_id else "")
     for recipient in recipients:
         recipient_id = str(recipient.get("id") or recipient.get("_id") or "")
         if not recipient_id:
@@ -6407,7 +6461,7 @@ async def worker_contact_office(payload: dict, current_user: dict = Depends(get_
             business_id=business_id,
             type="worker_help_request",
             title="Worker requested office help",
-            message=f"{actor_name}: {message}",
+            message=f"{actor_name}: {message}{job_context}",
             route="/admin/jobs",
             target_type="job" if job_id else "",
             target_id=job_id or "",
