@@ -11,6 +11,7 @@ import { ArrowLeft, Plus, Trash2, FileSignature, Save } from "lucide-react";
 import { toast } from "sonner";
 import { JOB_TYPES_BY_CATEGORY } from "../../lib/utils";
 import { PremiumPage, PremiumHero, PremiumCard, PremiumButton } from "../../components/premium";
+import QuoteCreateForm from "../../components/forms/QuoteCreateForm";
 
 const PRICING_TYPES = [
   { value: "fixed", label: "Fixed Price" },
@@ -94,6 +95,19 @@ export default function QuoteFormPage() {
   const showHourly = form.pricing_type === "hourly" || form.pricing_type === "hourly_extras";
   const showFixed = form.pricing_type === "fixed" || form.pricing_type === "fixed_extras";
   const showExtras = form.pricing_type === "fixed_extras" || form.pricing_type === "hourly_extras";
+
+  if (!isEdit) {
+    return (
+      <Layout>
+        <PremiumPage maxWidth={820}>
+          <PremiumHero eyebrow="New" title="New Quote" subtitle="Create in full page layout." />
+          <PremiumCard>
+            <QuoteCreateForm onCancel={() => navigate("/quotes")} onSuccess={() => navigate("/quotes")} submitLabel="Create" />
+          </PremiumCard>
+        </PremiumPage>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
