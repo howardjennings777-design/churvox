@@ -108,7 +108,7 @@ export default function DashboardPage() {
         icon: <UserPlus className="h-4 w-4" />,
         title: `${smart.unassignedJobs} job${smart.unassignedJobs === 1 ? "" : "s"} need${smart.unassignedJobs === 1 ? "s" : ""} a worker assigned`,
         description: "Open dispatch and assign the right crew member.",
-        action: <PremiumButton size="sm" variant="secondary" onClick={() => openPanel("dispatch")}>Open</PremiumButton>,
+        action: <PremiumButton size="sm" variant="secondary" onClick={() => navigate("/dispatch")}>Open</PremiumButton>,
       });
     }
     if (smart.quotesWaiting > 0) {
@@ -150,7 +150,6 @@ export default function DashboardPage() {
     quote: { title: "New quote", subtitle: "Create and send quotes from the command centre", src: "/quotes/new" },
     invoice: { title: "New invoice", subtitle: "Create and bill work from the command centre", src: "/invoices/new" },
     client: { title: "Add client", subtitle: "Create customer records from the command centre", src: "/clients/new" },
-    dispatch: { title: "Dispatch board", src: "/dispatch", successPath: null },
     quoteFollowup: { title: "Quote follow-up panel", src: "/quotes", successPath: null },
     invoiceReminder: { title: "Invoice reminder panel", src: "/invoices?status=overdue", successPath: null },
     invoiceFromJob: { title: "Invoice from completed jobs", src: "/jobs?status=completed", successPath: null },
@@ -194,7 +193,7 @@ export default function DashboardPage() {
                 <PremiumButton variant="secondary" onClick={() => openPanel("quote")}>New quote</PremiumButton>
                 <PremiumButton variant="secondary" onClick={() => openPanel("invoice")}>New invoice</PremiumButton>
                 <PremiumButton variant="secondary" onClick={() => openPanel("client")}>Add client</PremiumButton>
-                <PremiumButton variant="ghost" onClick={() => openPanel("dispatch")} iconLeft={<Calendar className="h-4 w-4" />}>Dispatch board</PremiumButton>
+                <PremiumButton variant="ghost" onClick={() => navigate("/dispatch")} iconLeft={<Calendar className="h-4 w-4" />}>Dispatch board</PremiumButton>
               </>
             ) : null
           }
@@ -261,7 +260,7 @@ export default function DashboardPage() {
                 icon={<Calendar className="h-5 w-5" />}
                 title="No jobs scheduled today"
                 subtitle="Schedule new work or open the dispatch board to plan the day."
-                action={<PremiumButton variant="secondary" onClick={() => openPanel("dispatch")}>Open dispatch</PremiumButton>}
+                action={<PremiumButton variant="secondary" onClick={() => navigate("/dispatch")}>Open dispatch</PremiumButton>}
               />
             ) : (
               todayList.map((job) => (
