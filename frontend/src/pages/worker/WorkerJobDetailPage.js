@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { safeText } from "../../utils/safeRender";
 import { PremiumStatusBadge, PremiumButton, PremiumCard, PremiumAIDraftPanel } from "@/components/premium";
 import WorkerBottomNav from "@/components/worker/WorkerBottomNav";
+import WorkerContactOfficePanel from "@/components/worker/WorkerContactOfficePanel";
 
 async function fileToDataUrl(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file); }); }
 async function compressImage(file, { maxWidth = 1600, quality = 0.78 } = {}) { const dataUrl = await fileToDataUrl(file); const img = await new Promise((resolve, reject) => { const el = new Image(); el.onload = () => resolve(el); el.onerror = () => reject(new Error("image decode failed")); el.src = dataUrl; }); const ratio = img.width > maxWidth ? maxWidth / img.width : 1; const targetW = Math.round(img.width * ratio); const targetH = Math.round(img.height * ratio); const canvas = document.createElement("canvas"); canvas.width = targetW; canvas.height = targetH; const ctx = canvas.getContext("2d"); ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, targetW, targetH); ctx.drawImage(img, 0, 0, targetW, targetH); return canvas.toDataURL("image/jpeg", quality); }
@@ -20,6 +21,7 @@ export default function WorkerJobDetailPage() {
   const [savingNotes, setSavingNotes] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [finalNote, setFinalNote] = useState("");
+  const [showContactOffice, setShowContactOffice] = useState(false);
 
   const loadJob = useCallback(async () => {
     setLoading(true);
@@ -122,7 +124,9 @@ export default function WorkerJobDetailPage() {
         />
 
         <PremiumCard><div className="px-card__body space-y-2"><p className="text-sm font-semibold text-[#0d1b34]">Completion</p><textarea className="px-input" rows={3} value={finalNote} onChange={(e) => setFinalNote(e.target.value)} placeholder="Final completion note..." /><p className="text-xs text-[#5b6c87]">Reminder: add at least one final photo where possible before completion.</p><PremiumButton className="w-full" onClick={async () => { await handleSaveNotes(finalNote); await handleStatus("completed"); }} disabled={saving || savingNotes || status === "completed"}>Complete job now</PremiumButton></div></PremiumCard>
+        <PremiumCard><div className="px-card__body space-y-2"><p className="text-sm font-semibold text-[#0d1b34]">Need help with this job?</p><p className="text-xs text-[#5b6c87]">Contact your office team for scheduling, access, or job instruction support.</p><PremiumButton variant="secondary" className="w-full" onClick={() => setShowContactOffice(true)} iconLeft={<ClipboardList className="h-4 w-4" />}>Contact office</PremiumButton></div></PremiumCard>
       </main>
+      <WorkerContactOfficePanel open={showContactOffice} onClose={() => setShowContactOffice(false)} jobId={id} defaultMessage={`I need help with this job: ${job?.title || "Untitled Job"}`} />
       <WorkerBottomNav active="jobs" />
     </div>
   );
