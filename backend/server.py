@@ -1607,6 +1607,88 @@ async def ai_generate_draft(payload: dict, current_user: dict = Depends(get_curr
         llm_available = False
     return {"success": True, "draft": draft, "suggested_actions": [], "approval_required": True, "llm_available": llm_available}
 
+
+def _ai_risk_level(action_type: str) -> str:
+    return "high" if action_type in {"invoice_reminder", "quote_followup"} else "medium"
+
+
+def _owner_roles_only(role: str):
+    if role not in {"owner", "manager", "office_admin"}:
+        raise HTTPException(status_code=403, detail="AI Operator is restricted to owner/manager roles")
+
+
+@api_router.post("/ai/operator/run-daily-check")
+async def ai_operator_run_daily_check(current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower()
+    _owner_roles_only(role)
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    jobs = [serialize_doc(j) async for j in db.jobs.find({"business_id": business_id}).sort("created_at", -1).limit(60)]
+    quotes = [serialize_doc(q) async for q in db.quotes.find({"business_id": business_id}).sort("created_at", -1).limit(60)]
+    invoices = [serialize_doc(i) async for i in db.invoices.find({"business_id": business_id}).sort("created_at", -1).limit(60)]
+    workers = [serialize_doc(w) async for w in db.business_users.find({"business_id": business_id, "role": {"$in": ["worker", "manager", "office_admin"]}}).limit(30)]
+
+    items = []
+    unassigned = [j for j in jobs if not j.get("assigned_worker_id")][:8]
+    available_workers = [w for w in workers if str(w.get("role") or "") == "worker"] or workers
+    for idx, job in enumerate(unassigned):
+        worker = available_workers[idx % len(available_workers)] if available_workers else None
+        if not worker:
+            continue
+        items.append({
+            "business_id": business_id, "type": "assign_worker", "related_entity_type": "job", "related_entity_id": str(job.get("id") or job.get("_id")),
+            "title": f"Assign {worker.get('name') or 'worker'} to {job.get('title') or 'job'}",
+            "summary": "Suggested assignment",
+            "recommendation": f"{worker.get('name') or 'Worker'} is available and suitable for this job.",
+            "draft_payload": {"job_id": str(job.get("id") or job.get("_id")), "assigned_worker_id": str(worker.get("id") or worker.get("_id"))},
+            "risk_level": _ai_risk_level("assign_worker"), "status": "pending", "created_by": "ai", "created_at": now, "updated_at": now
+        })
+    completed = [j for j in jobs if str(j.get("status") or "") == "completed"][:6]
+    for job in completed:
+        amount = float(job.get("price") or job.get("total_price") or 0)
+        items.append({
+            "business_id": business_id, "type": "invoice_draft", "related_entity_type": "job", "related_entity_id": str(job.get("id") or job.get("_id")),
+            "title": f"Create draft invoice for {job.get('title') or 'completed job'}",
+            "summary": "Ready to create draft",
+            "recommendation": "Create a draft invoice for review before sending.",
+            "draft_payload": {"job_id": str(job.get("id") or job.get("_id")), "line_items": [{"description": job.get("title") or "Service", "amount": amount}], "amount": amount},
+            "risk_level": _ai_risk_level("invoice_draft"), "status": "pending", "created_by": "ai", "created_at": now, "updated_at": now
+        })
+    for inv in [i for i in invoices if str(i.get("status") or "") in {"overdue", "sent"}][:6]:
+        items.append({
+            "business_id": business_id, "type": "invoice_reminder", "related_entity_type": "invoice", "related_entity_id": str(inv.get("id") or inv.get("_id")),
+            "title": "Send payment reminder to client", "summary": "Prepared for approval",
+            "recommendation": "Review before sending.",
+            "draft_payload": {"message": f"Hi, this is a reminder that invoice {inv.get('number') or inv.get('id')} is still outstanding. Please let us know if you need a copy."},
+            "risk_level": _ai_risk_level("invoice_reminder"), "status": "pending", "created_by": "ai", "created_at": now, "updated_at": now
+        })
+    for q in [x for x in quotes if str(x.get("status") or "") in {"sent", "draft"}][:6]:
+        items.append({
+            "business_id": business_id, "type": "quote_followup", "related_entity_type": "quote", "related_entity_id": str(q.get("id") or q.get("_id")),
+            "title": "Follow up quote with client", "summary": "Needs owner approval",
+            "recommendation": "Send a polite follow-up.", "draft_payload": {"message": f"Hi, just checking in on quote {q.get('number') or q.get('id')}. Happy to answer any questions."},
+            "risk_level": _ai_risk_level("quote_followup"), "status": "pending", "created_by": "ai", "created_at": now, "updated_at": now
+        })
+
+    if items:
+        await db.ai_approval_items.insert_many(items)
+    daily_plan = [
+        f"Assign {len(unassigned)} unassigned jobs.",
+        f"Create {len(completed)} draft invoices from completed jobs.",
+        f"Follow up {min(6, len([x for x in quotes if str(x.get('status') or '') in {'sent', 'draft'}]))} quotes waiting for response.",
+        f"Chase {min(6, len([x for x in invoices if str(x.get('status') or '') in {'overdue', 'sent'}]))} open/overdue invoices.",
+    ]
+    return {"success": True, "created": len(items), "daily_plan": daily_plan}
+
+
+@api_router.get("/ai/operator/approval-items")
+async def ai_operator_approval_items(current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower()
+    _owner_roles_only(role)
+    business_id = await get_user_business_id(current_user)
+    records = [serialize_doc(r) async for r in db.ai_approval_items.find({"business_id": business_id}).sort("created_at", -1).limit(120)]
+    return {"success": True, "data": records}
+
 @api_router.post("/auth/refresh")
 async def refresh_token(request: Request, response: Response):
     token = request.cookies.get("refresh_token")

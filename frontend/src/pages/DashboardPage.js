@@ -9,7 +9,7 @@ import useAiDraft from "../hooks/useAiDraft";
 import {
   Briefcase, Calendar, CheckCircle, FileText, Users, Plus,
   AlertTriangle, Receipt, Clock3, Send, BellRing,
-  ShieldCheck, Radio,
+  ShieldCheck, Radio, Bot, ListChecks,
 } from "lucide-react";
 import { safeArray, safeNumber, safeText } from "../utils/safeRender";
 import {
@@ -27,7 +27,7 @@ import SmartHubDispatchPanel from "../components/SmartHubDispatchPanel";
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, normalizedRole } = useAuth();
-  const { get } = useApi();
+  const { get, post } = useApi();
   const runSheetRef = useRef(null);
   const crewRef = useRef(null);
   const [pageLoading, setPageLoading] = useState(true);
@@ -39,6 +39,8 @@ export default function DashboardPage() {
   const [workers, setWorkers] = useState([]);
   const [aiInput, setAiInput] = useState("");
   const [hubPanel, setHubPanel] = useState({ open: false, key: null, payload: null });
+  const [approvalItems, setApprovalItems] = useState([]);
+  const [dailyPlan, setDailyPlan] = useState([]);
 
   const { loading: aiLoading, draft, llmAvailable, setDraft, generate } = useAiDraft("smart_hub");
 
@@ -67,7 +69,14 @@ export default function DashboardPage() {
     }
   }, [get]);
 
+  const fetchApprovals = useCallback(async () => {
+    if (!isAdmin) return;
+    const res = await get("/ai/operator/approval-items");
+    if (res?.success && res.data?.success) setApprovalItems(safeArray(res.data.data));
+  }, [get, isAdmin]);
+
   useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { fetchApprovals(); }, [fetchApprovals]);
   const openPanel = (key, payload = null) => setHubPanel({ open: true, key, payload });
   const closePanel = () => setHubPanel({ open: false, key: null, payload: null });
 
@@ -113,6 +122,7 @@ export default function DashboardPage() {
 
   const activePanel = hubPanel.key ? panelConfig[hubPanel.key] : null;
   const todayLabel = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const pendingApprovals = approvalItems.filter((i) => i.status === "pending");
 
   return <Layout><PremiumPage>
     <div className="rounded-2xl border border-[#dbe7fb] bg-gradient-to-r from-[#ecf3ff] via-white to-[#f3f8ff] px-4 py-4 md:px-5 md:py-4 mb-4 shadow-[0_8px_30px_rgba(15,23,42,0.06)]">
@@ -170,6 +180,33 @@ export default function DashboardPage() {
             {!llmAvailable ? <p className="text-xs text-amber-700">Fallback mode active - connect AI key for live AI output.</p> : null}
           </PremiumCard>
         </div>
+
+        {isAdmin ? <PremiumCard title="AI Operator" icon={<Bot className="h-4 w-4" />} subtitle="I’ve checked your jobs, quotes, invoices, crew, and follow-ups. Review and approve what should happen next." bodyClassName="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <PremiumButton size="sm" onClick={async () => { const res = await post("/ai/operator/run-daily-check", {}); if (res?.success && res.data?.success) { toast.success(`Prepared ${res.data.created} items for approval`); setDailyPlan(safeArray(res.data.daily_plan)); fetchApprovals(); } }}>Run daily check</PremiumButton>
+            <PremiumButton size="sm" variant="secondary" onClick={() => fetchApprovals()}>Review approvals</PremiumButton>
+            <PremiumButton size="sm" variant="secondary" onClick={() => generate("Prepare today’s actions and approvals")}>Prepare today’s actions</PremiumButton>
+            <PremiumButton size="sm" variant="ghost" onClick={() => generate("Operator mode: what needs owner approval today?")}>Ask AI</PremiumButton>
+          </div>
+          <div className="rounded-xl border border-[#d8e3f3] bg-[#f6faff] p-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#45618d]">Needs owner approval</p>
+            <p className="text-2xl font-semibold text-[#0d1b34]">{pendingApprovals.length}</p>
+          </div>
+          {dailyPlan.length > 0 ? <div className="rounded-xl border border-[#d8e3f3] p-3"><p className="text-sm font-semibold mb-2">Daily owner plan</p>{dailyPlan.map((line, idx) => <p key={`${line}-${idx}`} className="text-sm text-[#4f6280]">{idx + 1}. {line}</p>)}</div> : null}
+          <PremiumCard title="Approval Queue" icon={<ListChecks className="h-4 w-4" />} subtitle="Prepared for approval" bodyClassName="space-y-2">
+            {pendingApprovals.slice(0, 8).map((item) => <div key={item.id || item._id} className="rounded-xl border border-[#d8e3f3] p-3">
+              <div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold">{safeText(item.title, "AI action")}</p><PremiumBadge tone={item.risk_level === "high" ? "red" : "amber"}>{safeText(item.risk_level, "medium")}</PremiumBadge></div>
+              <p className="text-xs text-[#5b6c87] mt-1">{safeText(item.recommendation, item.summary)}</p>
+              <p className="text-xs text-[#5b6c87] mt-1">Type: {safeText(item.type, "-")} · Ready to review before sending</p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <PremiumButton size="sm" variant="secondary">Approve</PremiumButton>
+                <PremiumButton size="sm" variant="ghost">Edit</PremiumButton>
+                <PremiumButton size="sm" variant="ghost">Dismiss</PremiumButton>
+              </div>
+            </div>)}
+            {pendingApprovals.length === 0 ? <PremiumEmptyState title="No approvals pending" subtitle="Run daily check to prepare operator actions." /> : null}
+          </PremiumCard>
+        </PremiumCard> : null}
 
         {isAdmin ? <PremiumSection title="More tools" subtitle="Secondary actions"><div className="flex flex-wrap gap-3 text-sm"><button type="button" className="text-[#35518a] font-medium" onClick={() => navigate("/team")}>Invite worker</button><button type="button" className="text-[#35518a] font-medium" onClick={() => navigate("/communications")}>Communications</button><button type="button" className="text-[#35518a] font-medium" onClick={() => navigate("/automation")}>Automation</button></div></PremiumSection> : null}
       </div>
