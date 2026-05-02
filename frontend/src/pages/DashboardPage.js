@@ -14,7 +14,7 @@ import {
 import { safeArray, safeNumber, safeText } from "../utils/safeRender";
 import {
   PremiumPage, PremiumCard, PremiumStatCard,
-  PremiumSection, PremiumButton, PremiumBadge,
+  PremiumButton, PremiumBadge,
   PremiumLoadingState, PremiumErrorState, PremiumEmptyState,
 } from "../components/premium";
 import PremiumStatusBadge from "../components/premium/PremiumStatusBadge";
@@ -143,6 +143,36 @@ export default function DashboardPage() {
       </div>
     </div>
 
+    {isAdmin ? <PremiumCard title="AI Operator" icon={<Bot className="h-4 w-4" />} subtitle="I’ve checked your jobs, quotes, invoices, crew, and follow-ups. Review what should happen next." bodyClassName="space-y-3" className="mb-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="rounded-xl border border-[#d8e3f3] bg-[#f6faff] p-3 min-w-[180px]">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#45618d]">Pending approvals</p>
+          <p className="text-2xl font-semibold text-[#0d1b34]">{pendingApprovals.length}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <PremiumButton size="sm" onClick={async () => { const res = await post("/ai/operator/run-daily-check", {}); if (res?.success && res.data?.success) { toast.success(`Prepared ${res.data.created} items for approval`); setDailyPlan(safeArray(res.data.daily_plan)); fetchApprovals(); } }}>Run daily check</PremiumButton>
+          <PremiumButton size="sm" variant="secondary" onClick={() => fetchApprovals()}>Review approvals</PremiumButton>
+          <PremiumButton size="sm" variant="secondary" onClick={() => generate("Prepare today’s actions and approvals")}>Prepare today’s actions</PremiumButton>
+          <PremiumButton size="sm" variant="ghost" onClick={() => generate("Operator mode: what needs owner approval today?")}>Ask AI</PremiumButton>
+        </div>
+      </div>
+      {dailyPlan.length > 0 ? <div className="rounded-xl border border-[#d8e3f3] p-3"><p className="text-sm font-semibold mb-2">Daily owner plan</p>{dailyPlan.map((line, idx) => <p key={`${line}-${idx}`} className="text-sm text-[#4f6280]">{idx + 1}. {line}</p>)}</div> : null}
+      <PremiumCard title="Approval Queue" icon={<ListChecks className="h-4 w-4" />} subtitle="Prepared for approval" bodyClassName="space-y-2">
+        {pendingApprovals.slice(0, 8).map((item) => <div key={item.id || item._id} className="rounded-xl border border-[#d8e3f3] p-3">
+          <div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold">{safeText(item.recommendation, safeText(item.title, "AI action"))}</p><PremiumBadge tone={item.risk_level === "high" ? "red" : "amber"}>{safeText(item.risk_level, "medium")}</PremiumBadge></div>
+          <p className="text-xs text-[#5b6c87] mt-1"><span className="font-semibold text-[#324a76]">Reason:</span> {safeText(item.reason, safeText(item.summary, "Prepared by AI Operator for owner review."))}</p>
+          <p className="text-xs text-[#5b6c87] mt-1"><span className="font-semibold text-[#324a76]">Record:</span> {safeText(item.related_record || item.reference || item.related_type || item.type, "Related job/quote/invoice/client")}</p>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <PremiumButton size="sm" variant="secondary">Approve</PremiumButton>
+            <PremiumButton size="sm" variant="ghost">Edit</PremiumButton>
+            <PremiumButton size="sm" variant="ghost">Dismiss</PremiumButton>
+            <PremiumButton size="sm" variant="ghost">Open record</PremiumButton>
+          </div>
+        </div>)}
+        {pendingApprovals.length === 0 ? <PremiumEmptyState title="No approvals pending" subtitle="Run daily check to prepare operator actions." /> : null}
+      </PremiumCard>
+    </PremiumCard> : null}
+
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-4">{commandCards.map((card) => <div key={card.label} className="space-y-1"><PremiumStatCard label={card.label} value={card.value} icon={card.icon} tone={card.tone} onClick={card.onClick} /><p className="text-[11px] text-[#5b6c87] pl-1">{card.hint}</p></div>)}</div>
 
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
@@ -171,7 +201,7 @@ export default function DashboardPage() {
             </PremiumCard>
           </div>
 
-          <PremiumCard title="AI Business Assistant" icon={<ShieldCheck className="h-4 w-4" />} subtitle="Fast helper for daily decisions" bodyClassName="space-y-2">
+          <PremiumCard title="AI Assistant helper" icon={<ShieldCheck className="h-4 w-4" />} subtitle="Quick helper while AI Operator runs approvals" bodyClassName="space-y-2">
             <input className="px-input w-full h-10" value={aiInput} onChange={(e) => setAiInput(e.target.value)} placeholder="Ask your business" />
             <div className="flex flex-wrap gap-2"><PremiumButton size="sm" variant="secondary" onClick={() => generate("What should I do next?")}>What should I do next?</PremiumButton><PremiumButton size="sm" variant="secondary" onClick={() => generate("Jobs needing attention")}>Jobs needing attention</PremiumButton><PremiumButton size="sm" variant="secondary" onClick={() => generate("Invoice follow-up")}>Invoice follow-up</PremiumButton><PremiumButton size="sm" variant="secondary" onClick={() => generate("Quote follow-up")}>Quote follow-up</PremiumButton></div>
             <PremiumButton size="sm" iconLeft={<Send className="h-4 w-4" />} disabled={aiLoading} onClick={() => generate(aiInput)}>Generate draft</PremiumButton>
@@ -181,34 +211,7 @@ export default function DashboardPage() {
           </PremiumCard>
         </div>
 
-        {isAdmin ? <PremiumCard title="AI Operator" icon={<Bot className="h-4 w-4" />} subtitle="I’ve checked your jobs, quotes, invoices, crew, and follow-ups. Review and approve what should happen next." bodyClassName="space-y-3">
-          <div className="flex flex-wrap gap-2">
-            <PremiumButton size="sm" onClick={async () => { const res = await post("/ai/operator/run-daily-check", {}); if (res?.success && res.data?.success) { toast.success(`Prepared ${res.data.created} items for approval`); setDailyPlan(safeArray(res.data.daily_plan)); fetchApprovals(); } }}>Run daily check</PremiumButton>
-            <PremiumButton size="sm" variant="secondary" onClick={() => fetchApprovals()}>Review approvals</PremiumButton>
-            <PremiumButton size="sm" variant="secondary" onClick={() => generate("Prepare today’s actions and approvals")}>Prepare today’s actions</PremiumButton>
-            <PremiumButton size="sm" variant="ghost" onClick={() => generate("Operator mode: what needs owner approval today?")}>Ask AI</PremiumButton>
-          </div>
-          <div className="rounded-xl border border-[#d8e3f3] bg-[#f6faff] p-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#45618d]">Needs owner approval</p>
-            <p className="text-2xl font-semibold text-[#0d1b34]">{pendingApprovals.length}</p>
-          </div>
-          {dailyPlan.length > 0 ? <div className="rounded-xl border border-[#d8e3f3] p-3"><p className="text-sm font-semibold mb-2">Daily owner plan</p>{dailyPlan.map((line, idx) => <p key={`${line}-${idx}`} className="text-sm text-[#4f6280]">{idx + 1}. {line}</p>)}</div> : null}
-          <PremiumCard title="Approval Queue" icon={<ListChecks className="h-4 w-4" />} subtitle="Prepared for approval" bodyClassName="space-y-2">
-            {pendingApprovals.slice(0, 8).map((item) => <div key={item.id || item._id} className="rounded-xl border border-[#d8e3f3] p-3">
-              <div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold">{safeText(item.title, "AI action")}</p><PremiumBadge tone={item.risk_level === "high" ? "red" : "amber"}>{safeText(item.risk_level, "medium")}</PremiumBadge></div>
-              <p className="text-xs text-[#5b6c87] mt-1">{safeText(item.recommendation, item.summary)}</p>
-              <p className="text-xs text-[#5b6c87] mt-1">Type: {safeText(item.type, "-")} · Ready to review before sending</p>
-              <div className="flex flex-wrap gap-2 mt-2">
-                <PremiumButton size="sm" variant="secondary">Approve</PremiumButton>
-                <PremiumButton size="sm" variant="ghost">Edit</PremiumButton>
-                <PremiumButton size="sm" variant="ghost">Dismiss</PremiumButton>
-              </div>
-            </div>)}
-            {pendingApprovals.length === 0 ? <PremiumEmptyState title="No approvals pending" subtitle="Run daily check to prepare operator actions." /> : null}
-          </PremiumCard>
-        </PremiumCard> : null}
-
-        {isAdmin ? <PremiumSection title="More tools" subtitle="Secondary actions"><div className="flex flex-wrap gap-3 text-sm"><button type="button" className="text-[#35518a] font-medium" onClick={() => navigate("/team")}>Invite worker</button><button type="button" className="text-[#35518a] font-medium" onClick={() => navigate("/communications")}>Communications</button><button type="button" className="text-[#35518a] font-medium" onClick={() => navigate("/automation")}>Automation</button></div></PremiumSection> : null}
+        
       </div>
     </div>
 
