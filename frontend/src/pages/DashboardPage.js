@@ -23,6 +23,7 @@ import JobCreateForm from "../components/forms/JobCreateForm";
 import QuoteCreateForm from "../components/forms/QuoteCreateForm";
 import InvoiceCreateForm from "../components/forms/InvoiceCreateForm";
 import ClientCreateForm from "../components/forms/ClientCreateForm";
+import SmartHubDispatchPanel from "../components/SmartHubDispatchPanel";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -153,6 +154,7 @@ export default function DashboardPage() {
     quoteFollowup: { title: "Quote follow-up panel", src: "/quotes", successPath: null },
     invoiceReminder: { title: "Invoice reminder panel", src: "/invoices?status=overdue", successPath: null },
     invoiceFromJob: { title: "Invoice from completed jobs", src: "/jobs?status=completed", successPath: null },
+    dispatch: { title: "Dispatch Board", subtitle: "Assign work, check today’s schedule, and manage the crew from Smart Hub.", src: "/dispatch", large: true },
   };
   const activePanel = hubPanel.key ? panelConfig[hubPanel.key] : null;
 
@@ -193,7 +195,7 @@ export default function DashboardPage() {
                 <PremiumButton variant="secondary" onClick={() => openPanel("quote")}>New quote</PremiumButton>
                 <PremiumButton variant="secondary" onClick={() => openPanel("invoice")}>New invoice</PremiumButton>
                 <PremiumButton variant="secondary" onClick={() => openPanel("client")}>Add client</PremiumButton>
-                <PremiumButton variant="ghost" onClick={() => navigate("/dispatch")} iconLeft={<Calendar className="h-4 w-4" />}>Dispatch board</PremiumButton>
+                <PremiumButton variant="ghost" onClick={() => openPanel("dispatch")} iconLeft={<Calendar className="h-4 w-4" />}>Dispatch board</PremiumButton>
               </>
             ) : null
           }
@@ -314,7 +316,7 @@ export default function DashboardPage() {
               <PremiumActionCard tone="teal"   icon={<Receipt className="h-5 w-5" />}  title="New invoice"       description="Bill for completed work" onClick={() => openPanel("invoice")} />
               <PremiumActionCard tone="sky"    icon={<UserPlus className="h-5 w-5" />} title="Invite worker"     description="Grow your crew" onClick={() => navigate("/team")} />
               <PremiumActionCard tone="amber"  icon={<MessageSquare className="h-5 w-5" />} title="Communications" description="SMS reminders" onClick={() => navigate("/sms")} />
-              <PremiumActionCard tone="blue"   icon={<Zap className="h-5 w-5" />}      title="Automation"        description="Rules & templates" onClick={() => navigate("/automation")} />
+              <PremiumActionCard tone="sky"    icon={<Calendar className="h-5 w-5" />} title="Dispatch Board"    description="Assign and balance today's jobs" onClick={() => openPanel("dispatch")} />
             </div>
           </PremiumSection>
         )}
@@ -348,13 +350,13 @@ export default function DashboardPage() {
       </PremiumPage>
       {hubPanel.open && activePanel ? (
         <div className="fixed inset-0 z-[70] bg-slate-900/20 backdrop-blur-[3px] px-4 py-8 md:py-10" role="dialog" aria-modal="true">
-          <div className="mx-auto flex h-full w-full max-w-[760px] items-center justify-center">
+          <div className={`mx-auto flex h-full w-full ${activePanel?.large ? "max-w-[1100px]" : "max-w-[760px]"} items-center justify-center`}>
             <div className="w-full max-h-[85vh] overflow-hidden rounded-3xl border border-[#dfe7f4] bg-white shadow-[0_28px_80px_rgba(15,23,42,0.24)] flex flex-col">
             <div className="px-5 py-4 border-b border-[#e6eef9] flex items-start justify-between gap-3">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#5b6c87]">COMMAND ACTION</p><p className="text-2xl font-semibold text-[#0d1b34] mt-1">{activePanel.title}</p>
                 <p className="text-sm text-[#5b6c87] mt-1">{activePanel.subtitle}</p>
-                <Link to={activePanel.src} className="text-xs text-[#5b6c87] hover:text-[#2563eb] hover:underline mt-2 inline-block">Open full page</Link>
+                <Link to={activePanel.src} className="text-xs text-[#5b6c87] hover:text-[#2563eb] hover:underline mt-2 inline-block">{hubPanel.key === "dispatch" ? "Open full dispatch page" : "Open full page"}</Link>
               </div>
               <button className="text-[#5b6c87]" onClick={closePanel}><X className="h-5 w-5" /></button>
             </div>
@@ -363,6 +365,7 @@ export default function DashboardPage() {
               {hubPanel.key === "quote" ? <QuoteCreateForm onCancel={closePanel} onSuccess={() => { toast.success("Quote created"); closePanel(); fetchData(); }} submitLabel="Create quote" /> : null}
               {hubPanel.key === "invoice" ? <InvoiceCreateForm onCancel={closePanel} onSuccess={() => { toast.success("Invoice created"); closePanel(); fetchData(); }} submitLabel="Create invoice" /> : null}
               {hubPanel.key === "client" ? <ClientCreateForm onCancel={closePanel} onSuccess={() => { toast.success("Client created"); closePanel(); fetchData(); }} submitLabel="Add client" /> : null}
+              {hubPanel.key === "dispatch" ? <SmartHubDispatchPanel canManageDispatch={isAdmin} onAssigned={fetchData} /> : null}
             </div>
             </div>
           </div>
