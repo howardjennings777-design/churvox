@@ -41,6 +41,11 @@ export default function DashboardPage() {
   const [hubPanel, setHubPanel] = useState({ open: false, key: null, payload: null });
   const [approvalItems, setApprovalItems] = useState([]);
   const [dailyPlan, setDailyPlan] = useState([]);
+  const [operatorLoading, setOperatorLoading] = useState({ check: false, review: false, prepare: false, ask: false });
+  const [operatorModal, setOperatorModal] = useState({ open: false, type: null });
+  const [askResponse, setAskResponse] = useState("");
+  const [editingApproval, setEditingApproval] = useState(null);
+  const approvalQueueRef = useRef(null);
 
   const { loading: aiLoading, draft, llmAvailable, setDraft, generate } = useAiDraft("smart_hub");
 
@@ -71,8 +76,12 @@ export default function DashboardPage() {
 
   const fetchApprovals = useCallback(async () => {
     if (!isAdmin) return;
-    const res = await get("/ai/operator/approval-items");
-    if (res?.success && res.data?.success) setApprovalItems(safeArray(res.data.data));
+    try {
+      const res = await get("/ai/operator/approval-items");
+      if (res?.success && res.data?.success) setApprovalItems(safeArray(res.data.data));
+    } catch (err) {
+      toast.error(safeText(err, "Failed to load approvals"));
+    }
   }, [get, isAdmin]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -123,6 +132,92 @@ export default function DashboardPage() {
   const activePanel = hubPanel.key ? panelConfig[hubPanel.key] : null;
   const todayLabel = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
   const pendingApprovals = approvalItems.filter((i) => i.status === "pending");
+  const runDailyCheck = async () => {
+    setOperatorLoading((s) => ({ ...s, check: true }));
+    try {
+      const res = await post("/ai/operator/run-daily-check", {});
+      if (!(res?.success && res.data?.success)) throw new Error("Daily check failed");
+      const created = safeNumber(res.data.created, 0);
+      setDailyPlan(safeArray(res.data.daily_plan));
+      await fetchApprovals();
+      toast.success(created > 0 ? `Prepared ${created} items for approval` : "No approvals needed right now");
+    } catch (err) {
+      toast.error(safeText(err, "Failed to run daily check"));
+    } finally {
+      setOperatorLoading((s) => ({ ...s, check: false }));
+    }
+  };
+  const reviewApprovals = async () => {
+    setOperatorLoading((s) => ({ ...s, review: true }));
+    await fetchApprovals();
+    approvalQueueRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setOperatorModal({ open: true, type: "approvals" });
+    setOperatorLoading((s) => ({ ...s, review: false }));
+  };
+  const prepareToday = async () => {
+    setOperatorLoading((s) => ({ ...s, prepare: true }));
+    try {
+      const res = await post("/ai/operator/prepare-today", {});
+      if (!(res?.success && res.data?.success)) throw new Error("Prepare failed");
+      setDailyPlan(safeArray((res.data.actions || []).map((a) => `${a.title} — ${a.reason}`)));
+      setOperatorModal({ open: true, type: "plan", actions: safeArray(res.data.actions) });
+      toast.success("Prepared today’s actions");
+    } catch (err) {
+      toast.error(safeText(err, "Failed to prepare actions"));
+    } finally {
+      setOperatorLoading((s) => ({ ...s, prepare: false }));
+    }
+  };
+  const askOperator = async (promptText = "") => {
+    setOperatorModal({ open: true, type: "ask" });
+    if (!promptText) return;
+    setOperatorLoading((s) => ({ ...s, ask: true }));
+    try {
+      const res = await post("/ai/operator/ask", { question: promptText });
+      if (!(res?.success && res.data?.success)) throw new Error("Ask failed");
+      setAskResponse(safeText(res.data.response, ""));
+      toast.success("AI response ready");
+    } catch (err) {
+      toast.error(safeText(err, "Failed to generate AI response"));
+    } finally {
+      setOperatorLoading((s) => ({ ...s, ask: false }));
+    }
+  };
+  const handleApprovalAction = async (item, action) => {
+    try {
+      if (action === "approve") {
+        const res = await post(`/ai/operator/approvals/${item.id || item._id}/approve`, {});
+        if (!(res?.success && res.data?.success)) throw new Error("Approve failed");
+        if (item.type === "assign_worker" && res.data.result?.action === "needs_manual_assignment") openPanel("assignWorker");
+        if (item.type === "invoice_draft") openPanel("invoice");
+        if (item.type === "quote_followup") openPanel("quoteFollowup");
+        if (item.type === "invoice_reminder") openPanel("invoiceReminder");
+        toast.success("Approval completed");
+      }
+      if (action === "dismiss") {
+        const res = await post(`/ai/operator/approvals/${item.id || item._id}/dismiss`, {});
+        if (!(res?.success && res.data?.success)) throw new Error("Dismiss failed");
+        toast.success("Approval dismissed");
+      }
+      if (action === "open") {
+        const id = item.related_entity_id;
+        const type = item.related_entity_type;
+        if (type === "job") navigate(`/jobs/${id}`);
+        else if (type === "quote") navigate(`/quotes/${id}`);
+        else if (type === "invoice") navigate(`/invoices/${id}`);
+        else navigate("/dashboard");
+        return;
+      }
+      if (action === "edit") {
+        setEditingApproval(item);
+        setOperatorModal({ open: true, type: "edit" });
+        return;
+      }
+      await fetchApprovals();
+    } catch (err) {
+      toast.error(safeText(err, "Approval action failed"));
+    }
+  };
 
   return <Layout><PremiumPage>
     <div className="rounded-2xl border border-[#dbe7fb] bg-gradient-to-r from-[#ecf3ff] via-white to-[#f3f8ff] px-4 py-4 md:px-5 md:py-4 mb-4 shadow-[0_8px_30px_rgba(15,23,42,0.06)]">
@@ -150,27 +245,29 @@ export default function DashboardPage() {
           <p className="text-2xl font-semibold text-[#0d1b34]">{pendingApprovals.length}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <PremiumButton size="sm" onClick={async () => { const res = await post("/ai/operator/run-daily-check", {}); if (res?.success && res.data?.success) { toast.success(`Prepared ${res.data.created} items for approval`); setDailyPlan(safeArray(res.data.daily_plan)); fetchApprovals(); } }}>Run daily check</PremiumButton>
-          <PremiumButton size="sm" variant="secondary" onClick={() => fetchApprovals()}>Review approvals</PremiumButton>
-          <PremiumButton size="sm" variant="secondary" onClick={() => generate("Prepare today’s actions and approvals")}>Prepare today’s actions</PremiumButton>
-          <PremiumButton size="sm" variant="ghost" onClick={() => generate("Operator mode: what needs owner approval today?")}>Ask AI</PremiumButton>
+          <PremiumButton size="sm" onClick={runDailyCheck} disabled={operatorLoading.check}>{operatorLoading.check ? "Checking..." : "Run daily check"}</PremiumButton>
+          <PremiumButton size="sm" variant="secondary" onClick={reviewApprovals} disabled={operatorLoading.review}>Review approvals</PremiumButton>
+          <PremiumButton size="sm" variant="secondary" onClick={prepareToday} disabled={operatorLoading.prepare}>{operatorLoading.prepare ? "Preparing..." : "Prepare today’s actions"}</PremiumButton>
+          <PremiumButton size="sm" variant="ghost" onClick={() => askOperator(aiInput || "What should I do next?")}>Ask AI</PremiumButton>
         </div>
       </div>
       {dailyPlan.length > 0 ? <div className="rounded-xl border border-[#d8e3f3] p-3"><p className="text-sm font-semibold mb-2">Daily owner plan</p>{dailyPlan.map((line, idx) => <p key={`${line}-${idx}`} className="text-sm text-[#4f6280]">{idx + 1}. {line}</p>)}</div> : null}
+      <div ref={approvalQueueRef}>
       <PremiumCard title="Approval Queue" icon={<ListChecks className="h-4 w-4" />} subtitle="Prepared for approval" bodyClassName="space-y-2">
         {pendingApprovals.slice(0, 8).map((item) => <div key={item.id || item._id} className="rounded-xl border border-[#d8e3f3] p-3">
           <div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold">{safeText(item.recommendation, safeText(item.title, "AI action"))}</p><PremiumBadge tone={item.risk_level === "high" ? "red" : "amber"}>{safeText(item.risk_level, "medium")}</PremiumBadge></div>
           <p className="text-xs text-[#5b6c87] mt-1"><span className="font-semibold text-[#324a76]">Reason:</span> {safeText(item.reason, safeText(item.summary, "Prepared by AI Operator for owner review."))}</p>
           <p className="text-xs text-[#5b6c87] mt-1"><span className="font-semibold text-[#324a76]">Record:</span> {safeText(item.related_record || item.reference || item.related_type || item.type, "Related job/quote/invoice/client")}</p>
           <div className="flex flex-wrap gap-2 mt-2">
-            <PremiumButton size="sm" variant="secondary">Approve</PremiumButton>
-            <PremiumButton size="sm" variant="ghost">Edit</PremiumButton>
-            <PremiumButton size="sm" variant="ghost">Dismiss</PremiumButton>
-            <PremiumButton size="sm" variant="ghost">Open record</PremiumButton>
+            <PremiumButton size="sm" variant="secondary" onClick={() => handleApprovalAction(item, "approve")}>Approve</PremiumButton>
+            <PremiumButton size="sm" variant="ghost" onClick={() => handleApprovalAction(item, "edit")}>Edit</PremiumButton>
+            <PremiumButton size="sm" variant="ghost" onClick={() => handleApprovalAction(item, "dismiss")}>Dismiss</PremiumButton>
+            <PremiumButton size="sm" variant="ghost" onClick={() => handleApprovalAction(item, "open")}>Open record</PremiumButton>
           </div>
         </div>)}
         {pendingApprovals.length === 0 ? <PremiumEmptyState title="No approvals pending" subtitle="Run daily check to prepare operator actions." /> : null}
       </PremiumCard>
+      </div>
     </PremiumCard> : null}
 
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-4">{commandCards.map((card) => <div key={card.label} className="space-y-1"><PremiumStatCard label={card.label} value={card.value} icon={card.icon} tone={card.tone} onClick={card.onClick} /><p className="text-[11px] text-[#5b6c87] pl-1">{card.hint}</p></div>)}</div>
@@ -202,7 +299,7 @@ export default function DashboardPage() {
           </div>
 
           <PremiumCard title="AI Assistant helper" icon={<ShieldCheck className="h-4 w-4" />} subtitle="Quick helper while AI Operator runs approvals" bodyClassName="space-y-2">
-            <input className="px-input w-full h-10" value={aiInput} onChange={(e) => setAiInput(e.target.value)} placeholder="Ask your business" />
+            <input className="px-input w-full h-10" value={aiInput} onChange={(e) => setAiInput(e.target.value)} placeholder="Ask about jobs, invoices, quotes, crew, or today’s priorities" />
             <div className="flex flex-wrap gap-2"><PremiumButton size="sm" variant="secondary" onClick={() => generate("What should I do next?")}>What should I do next?</PremiumButton><PremiumButton size="sm" variant="secondary" onClick={() => generate("Jobs needing attention")}>Jobs needing attention</PremiumButton><PremiumButton size="sm" variant="secondary" onClick={() => generate("Invoice follow-up")}>Invoice follow-up</PremiumButton><PremiumButton size="sm" variant="secondary" onClick={() => generate("Quote follow-up")}>Quote follow-up</PremiumButton></div>
             <PremiumButton size="sm" iconLeft={<Send className="h-4 w-4" />} disabled={aiLoading} onClick={() => generate(aiInput)}>Generate draft</PremiumButton>
             <p className="text-xs text-[#5b6c87]">Approval-first: review drafts before sending to clients.</p>
@@ -215,6 +312,7 @@ export default function DashboardPage() {
       </div>
     </div>
 
+    {operatorModal.open ? <div className="fixed inset-0 z-[72] bg-slate-900/30 px-3 py-10" role="dialog" aria-modal="true"><div className="mx-auto max-w-[720px] rounded-2xl border border-[#dfe7f4] bg-white p-4 shadow-xl"><div className="flex items-center justify-between"><p className="text-lg font-semibold">AI Operator</p><button onClick={() => setOperatorModal({ open: false, type: null })}><X className="h-5 w-5" /></button></div>{operatorModal.type === "approvals" ? <div className="mt-3">{pendingApprovals.length === 0 ? <PremiumEmptyState title="No approvals pending" subtitle="Run daily check to prepare operator actions." /> : pendingApprovals.slice(0, 8).map((item) => <div key={`modal-${item.id || item._id}`} className="border rounded-lg p-2 mb-2"><p className="font-semibold text-sm">{safeText(item.title, "Approval item")}</p><p className="text-xs text-[#5b6c87]">{safeText(item.summary, "")}</p></div>)}</div> : null}{operatorModal.type === "plan" ? <div className="mt-3 space-y-2">{safeArray(operatorModal.actions).map((action) => <div key={action.key} className="border rounded-lg p-2"><p className="text-sm font-semibold">{action.title}</p><p className="text-xs text-[#5b6c87]">{action.reason}</p></div>)}</div> : null}{operatorModal.type === "ask" ? <div className="mt-3 space-y-2"><input className="px-input w-full h-10" value={aiInput} onChange={(e) => setAiInput(e.target.value)} placeholder="Ask about jobs, invoices, quotes, crew, or today’s priorities" /><div className="flex flex-wrap gap-2"><PremiumButton size="sm" variant="secondary" onClick={() => setAiInput("What should I do next?")}>What should I do next?</PremiumButton><PremiumButton size="sm" variant="secondary" onClick={() => setAiInput("Jobs needing attention")}>Jobs needing attention</PremiumButton><PremiumButton size="sm" variant="secondary" onClick={() => setAiInput("Invoice follow-up")}>Invoice follow-up</PremiumButton><PremiumButton size="sm" variant="secondary" onClick={() => setAiInput("Quote follow-up")}>Quote follow-up</PremiumButton></div><PremiumButton size="sm" onClick={() => askOperator(aiInput)} disabled={operatorLoading.ask}>{operatorLoading.ask ? "Generating..." : "Generate response"}</PremiumButton>{askResponse ? <div className="rounded-xl border border-[#d8e3f3] bg-[#f6faff] p-3 text-sm whitespace-pre-wrap">{askResponse}</div> : null}</div> : null}{operatorModal.type === "edit" && editingApproval ? <div className="mt-3 space-y-2"><p className="text-sm font-semibold">Edit approval draft</p><textarea className="px-input w-full min-h-[120px]" value={safeText(editingApproval.recommendation, "")} onChange={(e) => setEditingApproval((s) => ({ ...s, recommendation: e.target.value }))} /><PremiumButton size="sm" onClick={() => { setApprovalItems((items) => items.map((i) => String(i.id || i._id) === String(editingApproval.id || editingApproval._id) ? { ...i, recommendation: editingApproval.recommendation } : i)); setOperatorModal({ open: false, type: null }); toast.success("Approval draft updated"); }}>Save edit</PremiumButton></div> : null}</div></div> : null}
     {hubPanel.open && activePanel ? <div className="fixed inset-0 z-[70] bg-slate-900/20 backdrop-blur-[3px] px-2 md:px-4 py-2 md:py-10" role="dialog" aria-modal="true"><div className={`mx-auto flex h-full w-full ${activePanel?.large ? "max-w-[1220px]" : "max-w-[760px]"} items-center justify-center`}><div className="w-full h-full md:h-auto md:max-h-[85vh] overflow-hidden rounded-none md:rounded-3xl border border-[#dfe7f4] bg-white shadow-[0_28px_80px_rgba(15,23,42,0.24)] flex flex-col"><div className="px-5 py-4 border-b border-[#e6eef9] flex items-start justify-between gap-3"><div><p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#5b6c87]">COMMAND ACTION</p><p className="text-2xl font-semibold text-[#0d1b34] mt-1">{activePanel.title}</p><p className="text-sm text-[#5b6c87] mt-1">{activePanel.subtitle}</p><Link to={activePanel.src} className="mt-3 inline-flex items-center rounded-lg border border-[#d8e3f3] bg-white px-3 py-1.5 text-xs font-semibold text-[#35518a] hover:border-[#b9c9e6]">Open full page</Link></div><button className="text-[#5b6c87]" onClick={closePanel}><X className="h-5 w-5" /></button></div><div className="p-4 md:p-5 overflow-y-auto flex-1 bg-[#f8fbff]">{hubPanel.key === "job" ? <JobCreateForm isWorker={normalizedRole === "worker"} onCancel={closePanel} onSuccess={() => { toast.success("Job created"); closePanel(); fetchData(); }} submitLabel="Create job" /> : null}{hubPanel.key === "quote" ? <QuoteCreateForm onCancel={closePanel} onSuccess={() => { toast.success("Quote created"); closePanel(); fetchData(); }} submitLabel="Create quote" /> : null}{hubPanel.key === "invoice" ? <InvoiceCreateForm onCancel={closePanel} onSuccess={() => { toast.success("Invoice created"); closePanel(); fetchData(); }} submitLabel="Create invoice" /> : null}{hubPanel.key === "client" ? <ClientCreateForm onCancel={closePanel} onSuccess={() => { toast.success("Client created"); closePanel(); fetchData(); }} submitLabel="Add client" /> : null}{hubPanel.key === "dispatch" || hubPanel.key === "assignWorker" ? <SmartHubDispatchPanel canManageDispatch={isAdmin} onAssigned={() => { toast.success("Assignment updated"); fetchData(); }} /> : null}</div></div></div></div> : null}
 
   </PremiumPage></Layout>;
