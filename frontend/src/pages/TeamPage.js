@@ -214,7 +214,10 @@ export default function TeamPage() {
       });
       setImportResults(res.data);
       const invited = Number(res?.data?.invited ?? res?.data?.imported ?? 0);
-      toast.success(`${invited} worker(s) invited`);
+      const updated = Number(res?.data?.updated ?? 0);
+      const skipped = Number(res?.data?.skipped ?? 0);
+      const total = Number(res?.data?.total ?? 0);
+      toast.success(`${invited} invited, ${updated} updated, ${skipped} skipped of ${total} rows`);
       await fetchWorkers();
     } catch (err) {
       toast.error(err?.response?.data?.detail || "CSV import failed");
@@ -343,6 +346,9 @@ export default function TeamPage() {
                   <Upload size={16} className="mr-2" />
                   {importing ? "Importing..." : "CSV Import"}
                 </Button>
+                <p className="w-full text-xs text-slate-500">
+                  CSV columns: <span className="font-mono">name,email,phone,role,country,region</span>. Also accepts <span className="font-medium">Full Name</span> and <span className="font-medium">First Name + Last Name</span>.
+                </p>
 
                 <Button
                   onClick={() => {
@@ -672,10 +678,10 @@ export default function TeamPage() {
                     </button>
                   </div>
                   <p className="text-sm text-slate-500 mb-2">
-                    {importResults.invited || 0} invited, {importResults.skipped || 0} skipped of {importResults.total || 0} rows
+                    {importResults.invited || 0} invited, {importResults.updated || 0} updated, {importResults.skipped || 0} skipped of {importResults.total || 0} rows
                   </p>
                   {Array.isArray(importResults.details) && importResults.details.filter((d) => d.status !== "invited").length > 0 && (
-                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                    <div className="space-y-1 max-h-40 overflow-y-auto rounded border border-slate-200 p-2">
                       {importResults.details.filter((d) => d.status !== "invited").map((d, i) => (
                         <p key={i} className="text-xs text-slate-500/70">
                           Row {d.row}: {d.reason}
