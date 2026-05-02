@@ -126,7 +126,13 @@ export default function WorkerJobDetailPage() {
         <PremiumCard><div className="px-card__body space-y-2"><p className="text-sm font-semibold text-[#0d1b34]">Completion</p><textarea className="px-input" rows={3} value={finalNote} onChange={(e) => setFinalNote(e.target.value)} placeholder="Final completion note..." /><p className="text-xs text-[#5b6c87]">Reminder: add at least one final photo where possible before completion.</p><PremiumButton className="w-full" onClick={async () => { await handleSaveNotes(finalNote); await handleStatus("completed"); }} disabled={saving || savingNotes || status === "completed"}>Complete job now</PremiumButton></div></PremiumCard>
         <PremiumCard><div className="px-card__body space-y-2"><p className="text-sm font-semibold text-[#0d1b34]">Need help with this job?</p><p className="text-xs text-[#5b6c87]">Contact your office team for scheduling, access, or job instruction support.</p><PremiumButton variant="secondary" className="w-full" onClick={() => setShowContactOffice(true)} iconLeft={<ClipboardList className="h-4 w-4" />}>Contact office</PremiumButton></div></PremiumCard>
       </main>
-      <WorkerContactOfficePanel open={showContactOffice} onClose={() => setShowContactOffice(false)} jobId={id} defaultMessage={`I need help with this job: ${job?.title || "Untitled Job"}`} />
+      <WorkerContactOfficePanel
+        open={showContactOffice}
+        onClose={() => setShowContactOffice(false)}
+        jobId={id}
+        jobTitle={job?.title || ""}
+        defaultMessage={`I need help with this job: ${job?.title || "Untitled Job"}`}
+      />
       <WorkerBottomNav active="jobs" />
     </div>
   );
