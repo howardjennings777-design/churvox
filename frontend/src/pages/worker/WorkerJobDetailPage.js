@@ -5,6 +5,7 @@ import { ArrowLeft, MapPin, Clock3, User, CheckCircle, Camera, X, Navigation, Pl
 import { toast } from "sonner";
 import { safeText } from "../../utils/safeRender";
 import { PremiumStatusBadge, PremiumButton, PremiumCard, PremiumAIDraftPanel } from "@/components/premium";
+import WorkerBottomNav from "@/components/worker/WorkerBottomNav";
 
 async function fileToDataUrl(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(file); }); }
 async function compressImage(file, { maxWidth = 1600, quality = 0.78 } = {}) { const dataUrl = await fileToDataUrl(file); const img = await new Promise((resolve, reject) => { const el = new Image(); el.onload = () => resolve(el); el.onerror = () => reject(new Error("image decode failed")); el.src = dataUrl; }); const ratio = img.width > maxWidth ? maxWidth / img.width : 1; const targetW = Math.round(img.width * ratio); const targetH = Math.round(img.height * ratio); const canvas = document.createElement("canvas"); canvas.width = targetW; canvas.height = targetH; const ctx = canvas.getContext("2d"); ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, targetW, targetH); ctx.drawImage(img, 0, 0, targetW, targetH); return canvas.toDataURL("image/jpeg", quality); }
@@ -91,7 +92,7 @@ export default function WorkerJobDetailPage() {
   if (!job) return <div className="min-h-screen flex items-center justify-center"><Link to="/worker/jobs">Back</Link></div>;
 
   return (
-    <div className="px-app min-h-screen">
+    <div className="px-app min-h-screen pb-28">
       <header className="bg-white/90 backdrop-blur border-b border-[#e6eef9] px-4 py-4 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto flex items-center gap-3"><Link to="/worker/jobs"><ArrowLeft className="h-5 w-5 text-[#5b6c87]" /></Link><h1 className="text-lg font-bold text-[#0d1b34]">Job checklist</h1></div>
       </header>
@@ -122,6 +123,7 @@ export default function WorkerJobDetailPage() {
 
         <PremiumCard><div className="px-card__body space-y-2"><p className="text-sm font-semibold text-[#0d1b34]">Completion</p><textarea className="px-input" rows={3} value={finalNote} onChange={(e) => setFinalNote(e.target.value)} placeholder="Final completion note..." /><p className="text-xs text-[#5b6c87]">Reminder: add at least one final photo where possible before completion.</p><PremiumButton className="w-full" onClick={async () => { await handleSaveNotes(finalNote); await handleStatus("completed"); }} disabled={saving || savingNotes || status === "completed"}>Complete job now</PremiumButton></div></PremiumCard>
       </main>
+      <WorkerBottomNav active="jobs" />
     </div>
   );
 }

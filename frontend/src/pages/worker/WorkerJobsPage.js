@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/context/AuthContext";
-import { Briefcase, Clock3, MapPin, Play, ChevronRight, LogOut, Settings, CalendarClock, CheckCircle2, Timer } from "lucide-react";
+import { Briefcase, Clock3, MapPin, Play, ChevronRight, LogOut, Settings, CalendarClock, CheckCircle2, Timer, RefreshCw } from "lucide-react";
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 import { PremiumStatusBadge, PremiumButton, PremiumCard } from "@/components/premium";
+import WorkerBottomNav from "@/components/worker/WorkerBottomNav";
 
 const canStart = (status) => ["assigned", "acknowledged", "paused"].includes(String(status || "").toLowerCase());
 
@@ -15,12 +16,16 @@ export default function WorkerJobsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [startingId, setStartingId] = useState("");
+  const [lastSynced, setLastSynced] = useState(null);
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
     setError("");
     const res = await get("/jobs");
-    if (res.success) setJobs(Array.isArray(res.data) ? res.data : []);
+    if (res.success) {
+      setJobs(Array.isArray(res.data) ? res.data : []);
+      setLastSynced(new Date());
+    }
     else setError("Could not load your jobs. Please refresh.");
     setLoading(false);
   }, [get]);
@@ -46,10 +51,11 @@ export default function WorkerJobsPage() {
   };
 
   return (
-    <div className="px-app min-h-screen">
+    <div className="px-app min-h-screen pb-28">
       <header className="px-mobile-header">
         <ChurvoxLogo size="sm" />
         <div className="flex items-center gap-2">
+          <button onClick={fetchJobs} className="px-btn px-btn--ghost px-btn--sm" title="Refresh jobs" disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /></button>
           <Link to="/worker/settings" className="px-btn px-btn--ghost px-btn--sm" title="Settings"><Settings className="h-4 w-4" /></Link>
           <button onClick={logout} className="px-btn px-btn--ghost px-btn--sm" title="Log out"><LogOut className="h-4 w-4" /></button>
         </div>
@@ -62,11 +68,21 @@ export default function WorkerJobsPage() {
           <p className="px-hero__sub">Your field schedule, actions, and status updates — ready for the day.</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <PremiumCard><div className="px-card__body"><p className="text-xs text-[#5b6c87]">Assigned jobs</p><p className="text-2xl font-bold text-[#0d1b34]">{stats.total}</p></div></PremiumCard>
-          <PremiumCard><div className="px-card__body"><p className="text-xs text-[#5b6c87]">Due today</p><p className="text-2xl font-bold text-[#0d1b34]">{stats.dueToday}</p></div></PremiumCard>
-          <PremiumCard><div className="px-card__body"><p className="text-xs text-[#5b6c87]">In progress</p><p className="text-2xl font-bold text-[#0d1b34]">{stats.inProgress}</p></div></PremiumCard>
-          <PremiumCard><div className="px-card__body"><p className="text-xs text-[#5b6c87]">Completed</p><p className="text-2xl font-bold text-[#0d1b34]">{stats.completed}</p></div></PremiumCard>
+        <PremiumCard>
+          <div className="px-card__body flex items-center justify-between gap-3 py-3">
+            <div>
+              <p className="text-xs font-semibold text-[#2563eb] uppercase tracking-wide">Ready for dispatch</p>
+              <p className="text-xs text-[#5b6c87]">Last synced: {lastSynced ? lastSynced.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"}</p>
+            </div>
+            <PremiumButton onClick={fetchJobs} disabled={loading} variant="secondary" iconLeft={<RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />}>Refresh jobs</PremiumButton>
+          </div>
+        </PremiumCard>
+
+        <div className="grid grid-cols-2 gap-2">
+          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[#5b6c87]">Assigned jobs</p><p className="text-xl font-bold text-[#0d1b34]">{stats.total}</p></div></PremiumCard>
+          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[#5b6c87]">Due today</p><p className="text-xl font-bold text-[#0d1b34]">{stats.dueToday}</p></div></PremiumCard>
+          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[#5b6c87]">In progress</p><p className="text-xl font-bold text-[#0d1b34]">{stats.inProgress}</p></div></PremiumCard>
+          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[#5b6c87]">Completed</p><p className="text-xl font-bold text-[#0d1b34]">{stats.completed}</p></div></PremiumCard>
         </div>
 
         {nextJob && !loading ? (
@@ -91,8 +107,12 @@ export default function WorkerJobsPage() {
         {!loading && !error && jobs.length === 0 ? (
           <div className="px-empty">
             <div className="px-empty__icon"><Briefcase className="h-6 w-6" /></div>
-            <h3 className="px-empty__title">No jobs assigned yet</h3>
-            <p className="px-empty__sub">Your assigned work will appear here when your team dispatches it.</p>
+            <h3 className="px-empty__title">Waiting for dispatch</h3>
+            <p className="px-empty__sub">No jobs are assigned yet. Refresh your jobs page or contact the office if something looks wrong.</p>
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-sm">
+              <PremiumButton onClick={fetchJobs} iconLeft={<RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />}>Refresh jobs</PremiumButton>
+              <Link to="/worker/settings#help"><PremiumButton variant="secondary" className="w-full">Contact office</PremiumButton></Link>
+            </div>
           </div>
         ) : null}
 
@@ -121,6 +141,7 @@ export default function WorkerJobsPage() {
           );
         }) : null}
       </main>
+      <WorkerBottomNav active="today" />
     </div>
   );
 }
