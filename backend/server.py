@@ -1471,12 +1471,28 @@ def _safe_ai_fallback(surface: str, prompt: str = "") -> str:
 
 @api_router.get("/onboarding/status")
 async def onboarding_status(current_user: dict = Depends(get_current_user)):
-    completed = bool(current_user.get("onboarding_completed", False))
-    return {"success": True, "onboarding_completed": completed}
+    business_id = await get_user_business_id(current_user)
+    user_doc = await db.users.find_one({"_id": ObjectId(current_user["id"])})
+    business_doc = (
+        await db.businesses.find_one({"_id": ObjectId(business_id)})
+        if ObjectId.is_valid(business_id)
+        else await db.businesses.find_one({"id": str(business_id)})
+    )
+    onboarding_data = (
+        (user_doc or {}).get("onboarding_answers")
+        or (business_doc or {}).get("onboarding_answers")
+        or {}
+    )
+    completed = bool(
+        (user_doc or {}).get("onboarding_completed", False)
+        or (business_doc or {}).get("onboarding_completed", False)
+    )
+    return {"success": True, "onboarding_completed": completed, "onboarding_data": onboarding_data}
 
 
 @api_router.post("/onboarding/save")
 async def onboarding_save(payload: dict, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     now = datetime.now(timezone.utc)
     allowed = {
         "business_name": payload.get("business_name"),
@@ -1486,19 +1502,44 @@ async def onboarding_save(payload: dict, current_user: dict = Depends(get_curren
         "uses_myob": bool(payload.get("uses_myob", False)),
         "sms_later": bool(payload.get("sms_later", False)),
     }
-    await db.users.update_one({"_id": ObjectId(current_user["id"])}, {"$set": {"onboarding_answers": allowed, "updated_at": now}})
+    await db.users.update_one(
+        {"_id": ObjectId(current_user["id"])},
+        {"$set": {"onboarding_answers": allowed, "updated_at": now}}
+    )
+    business_filter_query = (
+        {"_id": ObjectId(business_id)}
+        if ObjectId.is_valid(business_id)
+        else {"id": str(business_id)}
+    )
+    await db.businesses.update_one(
+        business_filter_query,
+        {"$set": {"onboarding_answers": allowed, "updated_at": now}}
+    )
     return {"success": True}
 
 
 @api_router.post("/onboarding/complete")
 async def onboarding_complete(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
     now = datetime.now(timezone.utc)
-    await db.users.update_one({"_id": ObjectId(current_user["id"])}, {"$set": {"onboarding_completed": True, "onboarding_completed_at": now, "updated_at": now}})
+    await db.users.update_one(
+        {"_id": ObjectId(current_user["id"])},
+        {"$set": {"onboarding_completed": True, "onboarding_completed_at": now, "updated_at": now}}
+    )
+    business_filter_query = (
+        {"_id": ObjectId(business_id)}
+        if ObjectId.is_valid(business_id)
+        else {"id": str(business_id)}
+    )
+    await db.businesses.update_one(
+        business_filter_query,
+        {"$set": {"onboarding_completed": True, "onboarding_completed_at": now, "updated_at": now}}
+    )
     return {"success": True, "onboarding_completed": True}
 
 
 async def _collect_ai_context(current_user: dict, surface: str, incoming_context: dict):
-    business_id = str(current_user.get("business_id") or current_user.get("id"))
+    business_id = await get_user_business_id(current_user)
     role = str(current_user.get("role") or "").lower()
     base_query = {"business_id": business_id}
     jobs_q = dict(base_query)
@@ -1530,7 +1571,7 @@ async def ai_generate_draft(payload: dict, current_user: dict = Depends(get_curr
     surface = str(payload.get("surface") or "smart_hub")
     prompt = str(payload.get("prompt") or "").strip()[:800]
     context = payload.get("context") or {}
-    llm_available = bool(os.getenv("OPENAI_API_KEY") or os.getenv("ANTHROPIC_API_KEY") or os.getenv("EMERGENT_LLM_KEY"))
+    llm_available = bool(os.getenv("OPENAI_API_KEY"))
     safe_context = await _collect_ai_context(current_user, surface, context)
     system = (
         "You are Churvox AI Business Assistant for tradie/service businesses. "
@@ -1547,7 +1588,7 @@ async def ai_generate_draft(payload: dict, current_user: dict = Depends(get_curr
             print(f"AI_PROVIDER_ERROR: {type(e).__name__}")
     if not draft:
         draft = _safe_ai_fallback(surface, prompt)
-        llm_available = False if not draft or not os.getenv("OPENAI_API_KEY") else llm_available
+        llm_available = False
     return {"success": True, "draft": draft, "suggested_actions": [], "approval_required": True, "llm_available": llm_available}
 
 @api_router.post("/auth/refresh")
