@@ -4,19 +4,11 @@ import Layout from "@/components/Layout";
 import { useApi } from "@/hooks/useApi";
 import { Bell, CheckCheck, Inbox, ChevronRight } from "lucide-react";
 import { PremiumPage, PremiumHero, PremiumCard, PremiumButton } from "@/components/premium";
+import { formatLocalDateTime, formatRelativeTime } from "@/lib/time";
 
 function humanType(t) {
   if (!t) return "";
   return String(t).replace(/_/g, " ");
-}
-
-function timeAgo(iso) {
-  if (!iso) return "";
-  const s = Math.max(1, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return `${Math.floor(s)}s ago`;
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
 }
 
 export default function NotificationsPage() {
@@ -25,6 +17,7 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("all");
   const nav = useNavigate();
+  const [, setNowTick] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -34,6 +27,13 @@ export default function NotificationsPage() {
   }, [get]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNowTick((v) => v + 1);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const onOpen = async (n) => {
     if (!n.read) {
@@ -110,7 +110,7 @@ export default function NotificationsPage() {
                       )}
                     </div>
                     {n.message && <div className="text-sm text-[#5b6c87] mt-0.5 line-clamp-2">{n.message}</div>}
-                    <div className="text-xs text-[#7d8ba3] mt-1">{timeAgo(n.created_at)} · {new Date(n.created_at).toLocaleString()}</div>
+                    <div className="text-xs text-[#7d8ba3] mt-1">{formatRelativeTime(n.created_at)} · {formatLocalDateTime(n.created_at)}</div>
                   </div>
                   {n.route && <ChevronRight className="h-4 w-4 text-[#b8c8de] mt-1 flex-shrink-0 group-hover:text-[#2563eb]" />}
                 </div>

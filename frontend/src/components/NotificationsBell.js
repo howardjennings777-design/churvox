@@ -1,17 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { formatRelativeTime } from "@/lib/time";
 import { createPortal } from "react-dom";
 import { Bell, CheckCheck, Inbox } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "@/hooks/useApi";
-
-function timeAgo(iso) {
-  if (!iso) return "";
-  const s = Math.max(1, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return `${Math.floor(s)}s ago`;
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
-}
 
 export default function NotificationsBell() {
   const { get, post, patch } = useApi();
@@ -22,6 +14,7 @@ export default function NotificationsBell() {
   const btnRef = useRef(null);
   const panelRef = useRef(null);
   const [anchor, setAnchor] = useState({ top: 64, left: null, right: 16, width: 360 });
+  const [, setNowTick] = useState(0);
 
   const refreshUnread = useCallback(async () => {
     const r = await get("/notifications/unread-count");
@@ -39,6 +32,13 @@ export default function NotificationsBell() {
     return () => clearInterval(t);
   }, [refreshUnread]);
 
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNowTick((v) => v + 1);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
   // Recompute anchor whenever the panel opens or the viewport changes.
   const computeAnchor = useCallback(() => {
     if (!btnRef.current) return;
@@ -239,7 +239,7 @@ function NotifRow({ n, onClick }) {
             {n.title || n.type}
           </div>
           {n.message && <div className="text-xs text-slate-500 line-clamp-2 mt-0.5">{n.message}</div>}
-          <div className="text-[11px] text-slate-400 mt-1">{timeAgo(n.created_at)}</div>
+          <div className="text-[11px] text-slate-400 mt-1">{formatRelativeTime(n.created_at)}</div>
         </div>
       </div>
     </button>

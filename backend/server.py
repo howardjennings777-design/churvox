@@ -6250,6 +6250,7 @@ async def notify(
             "target_id": str(target_id)[:64],
             "read": False,
             "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
         }
         await db.notifications.insert_one(doc)
     except Exception as e:
@@ -6273,8 +6274,24 @@ async def list_notifications(
     limit = max(1, min(int(limit or 20), 50))
     items = []
     def _iso(v):
-        try: return v.isoformat() if hasattr(v, "isoformat") else (str(v) if v else None)
-        except Exception: return None
+        try:
+            if not v:
+                return None
+            if isinstance(v, datetime):
+                dt = v if v.tzinfo else v.replace(tzinfo=timezone.utc)
+                return dt.isoformat()
+            txt = str(v).strip()
+            if not txt:
+                return None
+            parsed = datetime.fromisoformat(txt.replace("Z", "+00:00"))
+            if not parsed.tzinfo:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed.isoformat()
+        except Exception:
+            try:
+                return str(v)
+            except Exception:
+                return None
     async for n in db.notifications.find(q).sort("created_at", -1).limit(limit):
         items.append({
             "id": str(n.get("_id")),
