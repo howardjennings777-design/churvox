@@ -1,19 +1,17 @@
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Layout from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
 import useAiDraft from "../hooks/useAiDraft";
 import {
-  Briefcase, Calendar, CheckCircle, FileText, Users, Plus, ArrowRight,
-  AlertTriangle, Receipt, UserPlus, Clock3, MessageSquareWarning, RefreshCw,
-  ClipboardList, MapPin, Truck, Sparkles, Zap, Send, MessageSquare, DollarSign,
-  ShieldCheck, ListChecks, FileSignature, BellRing,
+  Briefcase, Calendar, FileText, Users, Plus, ArrowRight,
+  AlertTriangle, Receipt, Clock3, Sparkles, Send, DollarSign,
+  ShieldCheck, FileSignature, UserPlus, CheckCircle2,
 } from "lucide-react";
 import { safeArray, safeNumber, safeText } from "../utils/safeRender";
 import {
-  PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumActionCard,
-  PremiumSection, PremiumButton, PremiumBadge, PremiumAIBox, PremiumListRow,
+  PremiumPage, PremiumCard, PremiumButton, PremiumBadge, PremiumAIBox,
   PremiumLoadingState, PremiumErrorState, PremiumEmptyState,
 } from "../components/premium";
 import PremiumStatusBadge from "../components/premium/PremiumStatusBadge";
@@ -29,308 +27,114 @@ export default function DashboardPage() {
   const [quotes, setQuotes] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [workers, setWorkers] = useState([]);
-  const [myobSettings, setMyobSettings] = useState(null);
   const [aiInput, setAiInput] = useState("");
-  const { loading: aiLoading, draft, llmAvailable, setDraft, generate } = useAiDraft('smart_hub');
+  const { loading: aiLoading, draft, llmAvailable, setDraft, generate } = useAiDraft("smart_hub");
 
-  const isAdmin = normalizedRole === "owner" || normalizedRole === "manager" || normalizedRole === "office_admin";
+  const isAdmin = ["owner", "manager", "office_admin"].includes(normalizedRole);
+  const isWorker = normalizedRole === "worker";
 
   const fetchData = useCallback(async () => {
     setPageLoading(true);
     setPageError("");
     try {
-      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes, myobRes] = await Promise.all([
-        get("/dashboard/stats"),
-        get("/jobs"),
-        get("/quotes"),
-        get("/invoices"),
-        get("/team/workers"),
-        get("/myob/settings"),
+      const [statsRes, jobsRes, quotesRes, invoicesRes, workersRes] = await Promise.all([
+        get("/dashboard/stats"), get("/jobs"), get("/quotes"), get("/invoices"), get("/team/workers"),
       ]);
       setStats(statsRes?.success ? (statsRes.data || {}) : {});
       setJobs(safeArray(jobsRes?.success ? jobsRes.data : []));
       setQuotes(safeArray(quotesRes?.success ? quotesRes.data : []));
       setInvoices(safeArray(invoicesRes?.success ? invoicesRes.data : []));
       setWorkers(safeArray(workersRes?.success ? workersRes.data : []));
-      setMyobSettings(myobRes?.success ? (myobRes.data || null) : null);
     } catch (err) {
       setPageError(safeText(err, "Failed to load Smart Hub"));
-    } finally {
-      setPageLoading(false);
-    }
+    } finally { setPageLoading(false); }
   }, [get]);
-
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const smart = useMemo(() => {
     const todayKey = new Date().toISOString().slice(0, 10);
-    const activeJobs = jobs.filter((j) => ["assigned", "acknowledged", "in_progress", "paused"].includes(String(j.status || "")));
-    const completedJobs = jobs.filter((j) => String(j.status || "") === "completed");
-    const todayJobs = jobs.filter((j) => String(j.scheduled_date || "").slice(0, 10) === todayKey);
-    const unassignedJobs = jobs.filter((j) => !j.assigned_worker_id);
-    const overdueInvoices = invoices.filter((inv) => String(inv.status || "") === "overdue");
-    const pendingInvoices = invoices.filter((inv) => ["draft", "sent"].includes(String(inv.status || "")));
+    const todayList = jobs.filter((j) => String(j.scheduled_date || "").slice(0, 10) === todayKey);
+    const unassigned = jobs.filter((j) => !j.assigned_worker_id);
+    const active = jobs.filter((j) => ["assigned", "acknowledged", "in_progress", "paused"].includes(String(j.status || "")));
+    const completed = jobs.filter((j) => String(j.status || "") === "completed");
     const quotesWaiting = quotes.filter((q) => ["sent", "draft"].includes(String(q.status || "")));
-    const inProgress = jobs.filter((j) => String(j.status || "") === "in_progress");
+    const openInvoices = invoices.filter((inv) => ["draft", "sent", "overdue"].includes(String(inv.status || "")));
+    const overdue = invoices.filter((inv) => String(inv.status || "") === "overdue");
+    const activeCrew = new Set(active.map((j) => j.assigned_worker_id).filter(Boolean)).size;
 
-    return {
-      activeJobs: activeJobs.length,
-      completedJobs: completedJobs.length,
-      teamCount: safeNumber(stats.team_count, workers.length),
-      todayJobs: todayJobs.length,
-      unassignedJobs: unassignedJobs.length,
-      overdueInvoices: overdueInvoices.length,
-      pendingInvoices: pendingInvoices.length,
-      quotesWaiting: quotesWaiting.length,
-      lowSmsCredits: safeNumber(stats.sms_credits, 0) > 0 && safeNumber(stats.sms_credits, 0) <= 10 ? 1 : 0,
-      myobIssues: myobSettings && myobSettings.connected === false ? 1 : 0,
-      workersActive: inProgress.filter((j) => j.assigned_worker_id).length,
-      todayList: todayJobs,
-      activeList: activeJobs,
-    };
-  }, [jobs, invoices, quotes, stats, workers, myobSettings]);
+    const queue = [
+      ...unassigned.slice(0, 3).map((j) => ({ id: `u-${j.id || j._id}`, title: safeText(j.title, "Untitled job"), reason: "Needs worker assignment", type: "Needs assignment", cta: "Assign", to: "/dispatch" })),
+      ...quotesWaiting.slice(0, 2).map((q) => ({ id: `q-${q.id || q._id}`, title: safeText(q.title || q.reference, "Quote follow-up"), reason: "Waiting for customer response", type: "Quote follow-up", cta: "Review", to: "/quotes" })),
+      ...overdue.slice(0, 2).map((i) => ({ id: `i-${i.id || i._id}`, title: safeText(i.invoice_number || i.title, "Invoice reminder"), reason: "Payment overdue", type: "Invoice reminder", cta: "Remind", to: "/invoices?status=overdue" })),
+      ...completed.slice(0, 2).map((j) => ({ id: `c-${j.id || j._id}`, title: safeText(j.title, "Completed job"), reason: "Ready to convert to invoice", type: "Ready to invoice", cta: "Convert", to: "/jobs?status=completed" })),
+    ].slice(0, 6);
 
-  // AI suggestions derived from real data
-  const aiSuggestions = useMemo(() => {
-    const out = [];
-    if (smart.unassignedJobs > 0) {
-      out.push({
-        icon: <UserPlus className="h-4 w-4" />,
-        title: `${smart.unassignedJobs} job${smart.unassignedJobs === 1 ? "" : "s"} need${smart.unassignedJobs === 1 ? "s" : ""} a worker assigned`,
-        description: "Open dispatch and assign the right crew member.",
-        action: <PremiumButton size="sm" variant="secondary" onClick={() => navigate("/dispatch")}>Open</PremiumButton>,
-      });
-    }
-    if (smart.quotesWaiting > 0) {
-      out.push({
-        icon: <FileSignature className="h-4 w-4" />,
-        title: `${smart.quotesWaiting} quote${smart.quotesWaiting === 1 ? "" : "s"} awaiting customer response`,
-        description: "Draft a polite follow-up. AI will prepare wording — you approve before sending.",
-        action: <PremiumButton size="sm" variant="secondary" onClick={() => navigate("/quotes")}>Review</PremiumButton>,
-      });
-    }
-    if (smart.overdueInvoices > 0 || smart.pendingInvoices > 0) {
-      out.push({
-        icon: <Receipt className="h-4 w-4" />,
-        title: `${smart.overdueInvoices} overdue and ${smart.pendingInvoices} open invoice${smart.pendingInvoices === 1 ? "" : "s"}`,
-        description: "AI can draft a friendly payment reminder — review before sending.",
-        action: <PremiumButton size="sm" variant="secondary" onClick={() => navigate("/invoices")}>Open</PremiumButton>,
-      });
-    }
-    if (smart.completedJobs > 0) {
-      out.push({
-        icon: <CheckCircle className="h-4 w-4" />,
-        title: `${smart.completedJobs} completed job${smart.completedJobs === 1 ? "" : "s"} ready to invoice`,
-        description: "Convert finished work into invoices and keep cash flowing.",
-        action: <PremiumButton size="sm" variant="secondary" onClick={() => navigate("/jobs?status=completed")}>Convert</PremiumButton>,
-      });
-    }
-    if (out.length === 0) {
-      out.push({
-        icon: <Sparkles className="h-4 w-4" />,
-        title: "All clear — no urgent actions",
-        description: "Your business is running smoothly. Use the Ask box to draft messages or summaries.",
-      });
-    }
-    return out.slice(0, 4);
-  }, [smart, navigate]);
+    return { todayList, unassigned, active, completed, quotesWaiting, openInvoices, overdue, activeCrew, queue };
+  }, [jobs, quotes, invoices]);
 
-  if (pageLoading) {
-    return (
-      <Layout>
-        <PremiumPage>
-          <PremiumLoadingState title="Loading your Smart Hub" subtitle="Pulling jobs, quotes, invoices and team activity…" />
-        </PremiumPage>
-      </Layout>
-    );
-  }
-  if (pageError) {
-    return (
-      <Layout>
-        <PremiumPage>
-          <PremiumErrorState title="Smart Hub unavailable" subtitle={pageError} action={<PremiumButton onClick={fetchData}>Retry</PremiumButton>} />
-        </PremiumPage>
-      </Layout>
-    );
-  }
+  const metrics = [
+    { label: "Jobs today", count: smart.todayList.length, icon: Calendar, hint: "Open", onClick: () => document.getElementById("today-run-sheet")?.scrollIntoView({ behavior: "smooth", block: "start" }) },
+    { label: "Unassigned jobs", count: smart.unassigned.length, icon: Clock3, hint: "Assign", onClick: () => navigate("/dispatch") },
+    { label: "Active jobs", count: smart.active.length, icon: Briefcase, hint: "Open", onClick: () => navigate("/jobs") },
+    { label: "Quotes waiting", count: smart.quotesWaiting.length, icon: FileText, hint: "Review", onClick: () => navigate("/quotes") },
+    { label: "Open invoices", count: smart.openInvoices.length, icon: DollarSign, hint: "Review", onClick: () => navigate("/invoices") },
+    { label: "Ready to invoice", count: smart.completed.length, icon: Receipt, hint: "Convert", onClick: () => navigate("/jobs?status=completed") },
+    { label: "Overdue invoices", count: smart.overdue.length, icon: AlertTriangle, hint: "Remind", onClick: () => navigate("/invoices?status=overdue") },
+    { label: "Crew on site", count: smart.activeCrew, icon: Users, hint: "Open", onClick: () => document.getElementById("crew-dispatch")?.scrollIntoView({ behavior: "smooth", block: "start" }) },
+  ];
 
-  const todayList = smart.todayList.slice(0, 5);
-  const activeList = smart.activeList.slice(0, 5);
+  if (pageLoading) return <Layout><PremiumPage><PremiumLoadingState title="Loading your Smart Hub" subtitle="Pulling jobs, quotes, invoices and team activity…" /></PremiumPage></Layout>;
+  if (pageError) return <Layout><PremiumPage><PremiumErrorState title="Smart Hub unavailable" subtitle={pageError} action={<PremiumButton onClick={fetchData}>Retry</PremiumButton>} /></PremiumPage></Layout>;
 
-  return (
-    <Layout>
-      <PremiumPage>
-        <PremiumHero
-          eyebrow={<><Sparkles className="h-3 w-3" /> Command Centre</>}
-          icon={<Briefcase className="h-7 w-7" />}
-          title={`Welcome back, ${safeText(user?.name?.split(" ")?.[0], "there")}`}
-          subtitle="Today’s run sheet, urgent actions, and AI-suggested follow-ups for your trade business — all in one premium command centre."
-          actions={
-            isAdmin ? (
-              <>
-                <PremiumButton onClick={() => navigate("/jobs/new")} iconLeft={<Plus className="h-4 w-4" />}>New job</PremiumButton>
-                <PremiumButton variant="secondary" onClick={() => navigate("/quotes/new")}>New quote</PremiumButton>
-                <PremiumButton variant="secondary" onClick={() => navigate("/invoices/new")}>New invoice</PremiumButton>
-                <PremiumButton variant="secondary" onClick={() => navigate("/clients/new")}>Add client</PremiumButton>
-                <PremiumButton variant="ghost" onClick={() => navigate("/dispatch")} iconLeft={<Calendar className="h-4 w-4" />}>Dispatch board</PremiumButton>
-              </>
-            ) : null
-          }
-        />
+  return <Layout><PremiumPage>
+    <div className="rounded-3xl border border-[#d8e3f3] bg-white p-4 md:p-5 shadow-sm space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <PremiumBadge tone="blue" icon={<Sparkles className="h-3 w-3" />}>Command Centre</PremiumBadge>
+        <p className="text-xs text-[#5b6c87]">{new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</p>
+      </div>
+      <h1 className="text-2xl font-bold text-[#0d1b34]">Welcome back, {safeText(user?.name?.split(" ")?.[0], "there")}</h1>
+      <p className="text-sm text-[#415371]">Live operations: {smart.todayList.length} jobs today, {smart.unassigned.length} unassigned, {smart.openInvoices.length} invoices open, {smart.activeCrew} crew active.</p>
+      {isAdmin && <div className="flex flex-wrap gap-2">
+        <PremiumButton onClick={() => navigate("/jobs/new")} iconLeft={<Plus className="h-4 w-4" />}>New job</PremiumButton>
+        <PremiumButton variant="secondary" onClick={() => navigate("/quotes/new")}>New quote</PremiumButton>
+        <PremiumButton variant="secondary" onClick={() => navigate("/invoices/new")}>New invoice</PremiumButton>
+        <PremiumButton variant="secondary" onClick={() => navigate("/clients/new")}>Add client</PremiumButton>
+        <PremiumButton variant="ghost" onClick={() => navigate("/dispatch")}>Dispatch board</PremiumButton>
+      </div>}
+    </div>
 
-        {/* AI Business Assistant — top of Smart Hub */}
-        <PremiumAIBox
-          title="AI Business Assistant"
-          subtitle="Today’s summary, urgent actions, and suggested follow-ups for your business"
-          chip="Approval-first"
-          suggestions={aiSuggestions}
-          actions={
-            <PremiumBadge tone="violet" icon={<ShieldCheck className="h-3 w-3" />}>Review before sending</PremiumBadge>
-          }
-        >
-          <div className="bg-white rounded-2xl border border-[#d8e3f3] p-3 shadow-sm">
-            <label className="block text-[12px] font-semibold text-[#1a2c4d] mb-2">Ask your business</label>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="text"
-                value={aiInput}
-                onChange={(e) => setAiInput(e.target.value)}
-                placeholder="e.g. Draft a polite reminder for unpaid invoices over 14 days"
-                className="px-input flex-1"
-              />
-              <PremiumButton iconLeft={<Send className="h-4 w-4" />} disabled={aiLoading} onClick={() => generate(aiInput)}>
-                Generate draft
-              </PremiumButton>
-            </div>
-            {draft ? <div className="mt-3 rounded-xl border border-[#d8e3f3] bg-[#f6faff] p-3 text-[13px] text-[#1a2c4d] whitespace-pre-wrap">{draft}</div> : null}
-            {!llmAvailable ? <p className="mt-2 text-[11.5px] text-[#b45309]">Fallback draft — connect AI key for live AI.</p> : null}
-            {draft ? <div className="mt-2 flex gap-2"><PremiumButton size="sm" variant="secondary" onClick={() => navigator.clipboard?.writeText(draft)}>Copy draft</PremiumButton><PremiumButton size="sm" variant="ghost" onClick={() => setDraft('')}>Clear</PremiumButton></div> : null}
-            <p className="text-[11.5px] text-[#5b6c87] mt-2">
-              Drafts appear here for your review. AI never auto-sends customer messages and never makes payroll, legal or tax decisions.
-            </p>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+      {metrics.map((m) => { const I = m.icon; return <button key={m.label} onClick={m.onClick} className="text-left rounded-2xl border border-[#d8e3f3] bg-white p-3 shadow-sm hover:border-[#9ab6e6]"><div className="flex items-center justify-between"><I className="h-4 w-4 text-[#2a5bd7]"/><span className="text-[11px] text-[#5b6c87]">{m.hint}</span></div><p className="text-2xl font-bold mt-2 text-[#0d1b34]">{safeNumber(m.count,0)}</p><p className="text-xs text-[#415371]">{m.label}</p></button>; })}
+    </div>
+
+    <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 mt-4">
+      <div className="xl:col-span-2"><PremiumCard title="Priority Queue" subtitle="Fix these things now" bodyClassName="space-y-2">
+        {smart.queue.length === 0 ? <PremiumEmptyState title="No urgent actions" subtitle="You're clear for now." icon={<CheckCircle2 className="h-5 w-5"/>}/> : smart.queue.map((item) => <div key={item.id} className="rounded-xl border border-[#d8e3f3] p-3 bg-white"><div className="flex items-start justify-between gap-2"><div><p className="font-semibold text-sm text-[#0d1b34]">{item.title}</p><p className="text-xs text-[#5b6c87]">{item.reason}</p></div><PremiumStatusBadge status={item.type} /></div><div className="mt-2"><PremiumButton size="sm" onClick={() => navigate(item.to)}>{item.cta}</PremiumButton></div></div>)}
+        {(smart.unassigned.length + smart.quotesWaiting.length + smart.overdue.length + smart.completed.length) > 6 && <button onClick={() => navigate("/jobs")} className="px-link text-sm inline-flex items-center gap-1">View all actions <ArrowRight className="h-3 w-3"/></button>}
+      </PremiumCard></div>
+
+      <div className="xl:col-span-3 space-y-4">
+        <PremiumCard id="today-run-sheet" title="Today’s Run Sheet" subtitle={smart.todayList.length ? `${smart.todayList.length} scheduled today` : "No jobs scheduled today"}>
+          {smart.todayList.length === 0 ? <div className="flex flex-wrap gap-2 items-center"><p className="text-sm text-[#5b6c87]">No jobs scheduled today</p>{isAdmin && <><PremiumButton size="sm" onClick={() => navigate('/jobs/new')}>New job</PremiumButton><PremiumButton size="sm" variant="secondary" onClick={() => navigate('/dispatch')}>Open dispatch</PremiumButton></>}</div> : <div className="space-y-2">{smart.todayList.slice(0,6).map((job)=><div key={job.id||job._id} className="grid grid-cols-12 gap-2 items-center rounded-xl border border-[#e5edf8] p-2 text-xs"><div className="col-span-2">{safeText(job.scheduled_time || "--:--")}</div><div className="col-span-3 font-medium">{safeText(job.title, "Untitled")}</div><div className="col-span-3">{safeText(job.customer_name || job.client_name, "No client")}</div><div className="col-span-2">{safeText(job.assigned_worker_name, "Unassigned")}</div><div className="col-span-1"><PremiumStatusBadge status={job.status}/></div><div className="col-span-1"><PremiumButton size="sm" variant="ghost" onClick={()=>navigate(`/jobs/${job.id||job._id}`)}>Open</PremiumButton></div></div>)}</div>}
+        </PremiumCard>
+
+        <PremiumCard id="crew-dispatch" title="Crew + Dispatch" subtitle="Team availability and assignment control" actions={isAdmin ? <PremiumButton size="sm" onClick={() => navigate('/dispatch')} iconLeft={<UserPlus className="h-4 w-4"/>}>Assign now</PremiumButton> : null}>
+          <p className="text-sm text-[#415371] mb-2">{smart.unassigned.length} unassigned jobs</p>
+          <div className="space-y-2">{workers.slice(0,6).map((w)=>{ const c = jobs.filter((j)=>j.assigned_worker_id===w.id && String(j.scheduled_date||"").slice(0,10)===new Date().toISOString().slice(0,10)).length; const status = c===0?"available":c>2?"busy":"assigned"; return <div key={w.id} className="rounded-xl border border-[#e5edf8] p-2 flex items-center justify-between"><div><p className="text-sm font-medium">{safeText(w.name,"Worker")}</p><p className="text-xs text-[#5b6c87]">{c} jobs today</p></div><div className="flex items-center gap-2"><PremiumStatusBadge status={status}/>{isAdmin && <PremiumButton size="sm" variant="secondary" onClick={()=>navigate('/dispatch')}>Quick assign</PremiumButton>}</div></div>; })}</div>
+        </PremiumCard>
+
+        {!isWorker && <PremiumAIBox title="AI Business Assistant" subtitle="Compact command helper" chip="Approval-first" suggestions={[]} actions={<PremiumBadge tone="violet" icon={<ShieldCheck className="h-3 w-3" />}>Review before approval</PremiumBadge>}>
+          <div className="space-y-2">
+            <input value={aiInput} onChange={(e)=>setAiInput(e.target.value)} className="px-input w-full" placeholder="Ask your business"/>
+            <div className="flex flex-wrap gap-2 text-xs">{["What should I do next?","Jobs needing attention","Invoice follow-up","Quote follow-up","Daily owner summary"].map((c)=><button key={c} className="px-2 py-1 rounded-full bg-[#eef4ff]" onClick={()=>setAiInput(c)}>{c}</button>)}</div>
+            <PremiumButton disabled={aiLoading} iconLeft={<Send className="h-4 w-4"/>} onClick={()=>generate(aiInput)}>Generate draft</PremiumButton>
+            {draft && <div className="rounded-xl border border-[#d8e3f3] bg-[#f6faff] p-3 text-sm whitespace-pre-wrap">{draft}</div>}
+            <p className="text-[11px] text-[#5b6c87]">AI never auto-sends customer messages and never changes payroll, pricing, or legal/tax/compliance decisions.</p>
+            {!llmAvailable && <p className="text-[11px] text-[#b45309]">Fallback draft mode is active.</p>}
+            {draft && <PremiumButton size="sm" variant="ghost" onClick={()=>setDraft("")}>Clear</PremiumButton>}
           </div>
-        </PremiumAIBox>
-
-        {/* Stat grid */}
-        <div className="px-grid px-grid--4">
-          <PremiumStatCard label="Jobs today" value={safeNumber(smart.todayJobs, 0)} icon={<ClipboardList className="h-4 w-4" />} onClick={() => navigate("/dispatch")} dataTestId="stat-jobs-today" />
-          <PremiumStatCard label="Active jobs" value={safeNumber(smart.activeJobs, 0)} icon={<Briefcase className="h-4 w-4" />} tone="sky" onClick={() => navigate("/jobs")} dataTestId="stat-active-jobs" />
-          <PremiumStatCard label="Crew on site" value={safeNumber(smart.workersActive, 0)} icon={<Users className="h-4 w-4" />} tone="teal" onClick={() => navigate("/team")} dataTestId="stat-crew" />
-          <PremiumStatCard label="Ready to invoice" value={safeNumber(smart.completedJobs, 0)} icon={<Receipt className="h-4 w-4" />} tone="violet" onClick={() => navigate("/jobs?status=completed")} dataTestId="stat-ready-invoice" />
-          <PremiumStatCard label="Quotes waiting" value={safeNumber(smart.quotesWaiting, 0)} icon={<FileText className="h-4 w-4" />} tone="amber" onClick={() => navigate("/quotes")} dataTestId="stat-quotes" />
-          <PremiumStatCard label="Open invoices" value={safeNumber(smart.pendingInvoices, 0)} icon={<DollarSign className="h-4 w-4" />} tone="blue" onClick={() => navigate("/invoices")} dataTestId="stat-open-invoices" />
-          <PremiumStatCard label="Overdue invoices" value={safeNumber(smart.overdueInvoices, 0)} icon={<AlertTriangle className="h-4 w-4" />} tone="red" onClick={() => navigate("/invoices?status=overdue")} dataTestId="stat-overdue" />
-          <PremiumStatCard label="Unassigned jobs" value={safeNumber(smart.unassignedJobs, 0)} icon={<Clock3 className="h-4 w-4" />} tone="amber" onClick={() => navigate("/dispatch")} dataTestId="stat-unassigned" />
-        </div>
-
-        {/* Today + Active */}
-        <div className="px-grid px-grid--2">
-          <PremiumCard
-            icon={<Calendar className="h-4 w-4" />}
-            title="Today’s run sheet"
-            subtitle={todayList.length > 0 ? `${todayList.length} job${todayList.length === 1 ? "" : "s"} scheduled today` : "Nothing scheduled today"}
-            actions={<Link to="/dispatch" className="px-link text-[13px] inline-flex items-center gap-1">Dispatch <ArrowRight className="h-3 w-3" /></Link>}
-            bodyClassName="space-y-2"
-          >
-            {todayList.length === 0 ? (
-              <PremiumEmptyState
-                icon={<Calendar className="h-5 w-5" />}
-                title="No jobs scheduled today"
-                subtitle="Schedule new work or open the dispatch board to plan the day."
-                action={<PremiumButton variant="secondary" onClick={() => navigate("/dispatch")}>Open dispatch</PremiumButton>}
-              />
-            ) : (
-              todayList.map((job) => (
-                <PremiumListRow
-                  key={job.id || job._id}
-                  avatar={<Briefcase className="h-4 w-4" />}
-                  title={safeText(job.title, "Untitled job")}
-                  subtitle={safeText(job.customer_name || job.client_name || job.address, "No client details")}
-                  right={<PremiumStatusBadge status={job.status} />}
-                  onClick={() => navigate(`/jobs/${job.id || job._id}`)}
-                />
-              ))
-            )}
-          </PremiumCard>
-
-          <PremiumCard
-            icon={<Zap className="h-4 w-4" />}
-            title="Active work"
-            subtitle="In-progress, paused or assigned jobs"
-            actions={<Link to="/jobs" className="px-link text-[13px] inline-flex items-center gap-1">All jobs <ArrowRight className="h-3 w-3" /></Link>}
-            bodyClassName="space-y-2"
-          >
-            {activeList.length === 0 ? (
-              <PremiumEmptyState
-                icon={<Briefcase className="h-5 w-5" />}
-                title="No active jobs"
-                subtitle="Create or assign new work to keep the crew moving."
-                action={<PremiumButton variant="secondary" onClick={() => navigate("/jobs/new")} iconLeft={<Plus className="h-4 w-4" />}>New job</PremiumButton>}
-              />
-            ) : (
-              activeList.map((job) => (
-                <PremiumListRow
-                  key={job.id || job._id}
-                  avatar={<Briefcase className="h-4 w-4" />}
-                  title={safeText(job.title, "Untitled job")}
-                  subtitle={safeText(job.customer_name || job.client_name, "No client")}
-                  right={<PremiumStatusBadge status={job.status} />}
-                  onClick={() => navigate(`/jobs/${job.id || job._id}`)}
-                />
-              ))
-            )}
-          </PremiumCard>
-        </div>
-
-        {/* Quick actions */}
-        {isAdmin && (
-          <PremiumSection title="Quick actions" subtitle="Most-used flows on Churvox">
-            <div className="px-grid px-grid--3">
-              <PremiumActionCard tone="blue"   icon={<Plus className="h-5 w-5" />}     title="New job"           description="Schedule and assign work" onClick={() => navigate("/jobs/new")} />
-              <PremiumActionCard tone="violet" icon={<FileSignature className="h-5 w-5" />} title="New quote"     description="Send a professional quote" onClick={() => navigate("/quotes/new")} />
-              <PremiumActionCard tone="teal"   icon={<Receipt className="h-5 w-5" />}  title="New invoice"       description="Bill for completed work" onClick={() => navigate("/invoices/new")} />
-            </div>
-          </PremiumSection>
-        )}
-
-        {/* More tools */}
-        {isAdmin && (
-          <PremiumSection title="More tools" subtitle="Secondary actions">
-            <div className="px-grid px-grid--3">
-              <PremiumActionCard tone="sky" icon={<UserPlus className="h-5 w-5" />} title="Invite worker" description="Add crew or office staff" onClick={() => navigate("/team")} />
-              <PremiumActionCard tone="amber" icon={<MessageSquare className="h-5 w-5" />} title="Communications" description="Customer messages and reminders" onClick={() => navigate("/sms")} />
-              <PremiumActionCard tone="blue" icon={<Zap className="h-5 w-5" />} title="Automation" description="Rules and templates" onClick={() => navigate("/automation")} />
-            </div>
-          </PremiumSection>
-        )}
-
-        {/* Issues alert strip */}
-        {(smart.lowSmsCredits + smart.myobIssues + smart.overdueInvoices) > 0 && (
-          <PremiumCard icon={<BellRing className="h-4 w-4" />} title="Needs attention" subtitle="Things to check today" bodyClassName="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {smart.overdueInvoices > 0 && (
-              <button onClick={() => navigate("/invoices?status=overdue")} className="text-left rounded-2xl border border-[#fecaca] bg-[#fff7f7] p-4 hover:bg-[#ffefef]">
-                <p className="text-[11px] font-bold uppercase text-[#b91c1c] tracking-wide">Overdue invoices</p>
-                <p className="text-[20px] font-bold text-[#0d1b34] mt-1">{smart.overdueInvoices}</p>
-                <p className="text-[12.5px] text-[#5b6c87] mt-1">Send a friendly reminder via AI assistant.</p>
-              </button>
-            )}
-            {smart.lowSmsCredits > 0 && (
-              <button onClick={() => navigate("/sms")} className="text-left rounded-2xl border border-[#fde68a] bg-[#fffbed] p-4 hover:bg-[#fff7d6]">
-                <p className="text-[11px] font-bold uppercase text-[#b45309] tracking-wide">SMS credits low</p>
-                <p className="text-[20px] font-bold text-[#0d1b34] mt-1">Top up</p>
-                <p className="text-[12.5px] text-[#5b6c87] mt-1">Keep customer reminders flowing.</p>
-              </button>
-            )}
-            {smart.myobIssues > 0 && (
-              <button onClick={() => navigate("/integrations")} className="text-left rounded-2xl border border-[#bfdbfe] bg-[#eef4ff] p-4 hover:bg-[#e2ecff]">
-                <p className="text-[11px] font-bold uppercase text-[#1e40af] tracking-wide">MYOB sync</p>
-                <p className="text-[20px] font-bold text-[#0d1b34] mt-1">Reconnect</p>
-                <p className="text-[12.5px] text-[#5b6c87] mt-1">Restore accounting sync.</p>
-              </button>
-            )}
-          </PremiumCard>
-        )}
-      </PremiumPage>
-    </Layout>
-  );
+        </PremiumAIBox>}
+      </div>
+    </div>
+  </PremiumPage></Layout>;
 }
