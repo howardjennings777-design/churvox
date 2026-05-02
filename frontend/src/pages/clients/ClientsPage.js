@@ -12,7 +12,7 @@ import axios from "axios";
 import API_BASE from "../../lib/apiBase";
 import {
   PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton,
-  PremiumAIBox, PremiumEmptyState, PremiumLoadingState, PremiumErrorState,
+  PremiumAIBox, PremiumAIDraftPanel, PremiumEmptyState, PremiumLoadingState, PremiumErrorState,
   PremiumFormSection,
 } from "../../components/premium";
 

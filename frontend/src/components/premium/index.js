@@ -15,3 +15,5 @@ export { default as PremiumAIBox } from './PremiumAIBox';
 export { default as PremiumFormSection } from './PremiumFormSection';
 export { default as PremiumTable } from './PremiumTable';
 export { default as PremiumStatusBadge } from './PremiumStatusBadge';
+
+export { default as PremiumAIDraftPanel } from './PremiumAIDraftPanel';

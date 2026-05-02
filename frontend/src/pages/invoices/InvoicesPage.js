@@ -11,7 +11,7 @@ import { formatDate, formatCurrency, INVOICE_STATUSES, MYOB_SYNC_STATUSES } from
 import Layout from "@/components/Layout";
 import {
   PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton,
-  PremiumAIBox, PremiumEmptyState, PremiumStatusBadge, PremiumBadge,
+  PremiumAIBox, PremiumAIDraftPanel, PremiumEmptyState, PremiumStatusBadge, PremiumBadge,
 } from "@/components/premium";
 
 const safeArray = (v) => (Array.isArray(v) ? v : []);

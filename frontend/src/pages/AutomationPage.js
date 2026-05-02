@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
 import {
   PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton,
-  PremiumBadge, PremiumAIBox, PremiumEmptyState, PremiumFormSection,
+  PremiumBadge, PremiumAIBox, PremiumAIDraftPanel, PremiumEmptyState, PremiumFormSection,
 } from "../components/premium";
 import { Zap, Sparkles, RefreshCw, Plus, Pencil, Trash2, Power, PlayCircle, ListChecks, ShieldCheck, AlertTriangle, BellRing } from "lucide-react";
 

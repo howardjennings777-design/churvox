@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { formatDate, formatCurrency, JOB_STATUSES } from "../../lib/utils";
 import {
   PremiumPage, PremiumHero, PremiumCard, PremiumButton, PremiumBadge,
-  PremiumAIBox, PremiumEmptyState, PremiumLoadingState, PremiumStatusBadge,
+  PremiumAIBox, PremiumAIDraftPanel, PremiumEmptyState, PremiumLoadingState, PremiumStatusBadge,
 } from "../../components/premium";
 
 export default function JobsPage() {
@@ -125,6 +125,7 @@ export default function JobsPage() {
             chip="Approval-first"
             suggestions={aiSuggestions}
           />
+        {!isWorker && <PremiumAIDraftPanel title="AI Job Drafts" subtitle="Generate concise job summaries, customer updates, and next actions." surface="jobs" context={{ role: normalizedRole, statusFilter, search, visible_jobs: filtered.slice(0, 12).map((j) => ({ title: j.title, status: j.status, customer_name: j.customer_name })) }} quickActions={[{ label: "Job action list", prompt: "Generate a concise job action list for today." }, { label: "Customer message", prompt: "Draft a concise customer update for active jobs." }, { label: "Owner summary", prompt: "Summarise jobs needing owner attention." }]} />}
         )}
 
         {/* Filters */}
