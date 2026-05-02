@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Layout from "../../components/Layout";
 import { useAuth } from "../../context/AuthContext";
 import { useApi } from "../../hooks/useApi";
@@ -119,13 +119,34 @@ export default function JobsPage() {
 
         {/* AI Assistant — only for non-workers (workers don't see pricing/global summary) */}
         {!isWorker && (
-          <PremiumAIBox
-            title="AI Job Assistant"
-            subtitle="Summarise jobs, draft customer updates, and suggest next actions — review before sending"
-            chip="Approval-first"
-            suggestions={aiSuggestions}
-          />
-        {!isWorker && <PremiumAIDraftPanel title="AI Job Drafts" subtitle="Generate concise job summaries, customer updates, and next actions." surface="jobs" context={{ role: normalizedRole, statusFilter, search, visible_jobs: filtered.slice(0, 12).map((j) => ({ title: j.title, status: j.status, customer_name: j.customer_name })) }} quickActions={[{ label: "Job action list", prompt: "Generate a concise job action list for today." }, { label: "Customer message", prompt: "Draft a concise customer update for active jobs." }, { label: "Owner summary", prompt: "Summarise jobs needing owner attention." }]} />}
+          <>
+            <PremiumAIBox
+              title="AI Job Assistant"
+              subtitle="Summarise jobs, draft customer updates, and suggest next actions — review before sending"
+              chip="Approval-first"
+              suggestions={aiSuggestions}
+            />
+            <PremiumAIDraftPanel
+              title="AI Job Drafts"
+              subtitle="Generate concise job summaries, customer updates, and next actions."
+              surface="jobs"
+              context={{
+                role: normalizedRole,
+                statusFilter,
+                search,
+                visible_jobs: filtered.slice(0, 12).map((j) => ({
+                  title: j.title,
+                  status: j.status,
+                  customer_name: j.customer_name,
+                })),
+              }}
+              quickActions={[
+                { label: "Job action list", prompt: "Generate a concise job action list for today." },
+                { label: "Customer message", prompt: "Draft a concise customer update for active jobs." },
+                { label: "Owner summary", prompt: "Summarise jobs needing owner attention." },
+              ]}
+            />
+          </>
         )}
 
         {/* Filters */}
@@ -242,4 +263,3 @@ export default function JobsPage() {
     </Layout>
   );
 }
-
