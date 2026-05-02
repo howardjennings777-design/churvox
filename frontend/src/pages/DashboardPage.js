@@ -146,7 +146,7 @@ export default function DashboardPage() {
   }, [smart]);
 
   const panelConfig = {
-    job: { title: "New job", subtitle: "Create and assign work from the command centre", src: "/jobs/new" },
+    job: { title: "New job", subtitle: "Create, schedule, and assign work without leaving Smart Hub.", src: "/jobs/new" },
     quote: { title: "New quote", subtitle: "Create and send quotes from the command centre", src: "/quotes/new" },
     invoice: { title: "New invoice", subtitle: "Create and bill work from the command centre", src: "/invoices/new" },
     client: { title: "Add client", subtitle: "Create customer records from the command centre", src: "/clients/new" },
@@ -349,20 +349,20 @@ export default function DashboardPage() {
       </PremiumPage>
       {hubPanel.open && activePanel ? (
         <div className="fixed inset-0 z-[70] bg-[#0b1730]/45 backdrop-blur-sm" role="dialog" aria-modal="true">
-          <div className="ml-auto h-full w-full md:max-w-[720px] bg-white shadow-2xl border-l border-[#d8e3f3] flex flex-col">
+          <div className="ml-auto h-full w-full md:max-w-[740px] bg-[#f3f6fb] shadow-2xl border-l border-[#d8e3f3] flex flex-col">
             <div className="px-5 py-4 border-b border-[#e6eef9] flex items-start justify-between gap-3">
               <div>
-                <p className="text-lg font-semibold text-[#0d1b34]">{activePanel.title}</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#5b6c87]">COMMAND ACTION</p><p className="text-2xl font-semibold text-[#0d1b34] mt-1">{activePanel.title}</p>
                 <p className="text-sm text-[#5b6c87] mt-1">{activePanel.subtitle}</p>
-                <Link to={activePanel.src} className="text-xs text-[#2563eb] hover:underline mt-2 inline-block">Open full page</Link>
+                <Link to={activePanel.src} className="text-xs text-[#5b6c87] hover:text-[#2563eb] hover:underline mt-2 inline-block">Open full page</Link>
               </div>
               <button className="text-[#5b6c87]" onClick={closePanel}><X className="h-5 w-5" /></button>
             </div>
-            <div className="p-5 overflow-y-auto flex-1">
-              {hubPanel.key === "job" ? <JobCreateForm onCancel={closePanel} onSuccess={() => { closePanel(); fetchData(); toast.success("Job created"); }} submitLabel="Create job" /> : null}
-              {hubPanel.key === "quote" ? <QuoteCreateForm onCancel={closePanel} onSuccess={() => { closePanel(); fetchData(); toast.success("Quote created"); }} submitLabel="Create quote" /> : null}
-              {hubPanel.key === "invoice" ? <InvoiceCreateForm onCancel={closePanel} onSuccess={() => { closePanel(); fetchData(); toast.success("Invoice created"); }} submitLabel="Create invoice" /> : null}
-              {hubPanel.key === "client" ? <ClientCreateForm onCancel={closePanel} onSuccess={() => { closePanel(); fetchData(); toast.success("Client created"); }} submitLabel="Add client" /> : null}
+            <div className="p-4 md:p-5 overflow-y-auto flex-1">
+              {hubPanel.key === "job" ? <JobCreateForm isWorker={normalizedRole === "worker"} onCancel={closePanel} onSuccess={() => { toast.success("Job created"); closePanel(); fetchData(); }} submitLabel="Create job" /> : null}
+              {hubPanel.key === "quote" ? <QuoteCreateForm onCancel={closePanel} onSuccess={() => { toast.success("Quote created"); closePanel(); fetchData(); }} submitLabel="Create quote" /> : null}
+              {hubPanel.key === "invoice" ? <InvoiceCreateForm onCancel={closePanel} onSuccess={() => { toast.success("Invoice created"); closePanel(); fetchData(); }} submitLabel="Create invoice" /> : null}
+              {hubPanel.key === "client" ? <ClientCreateForm onCancel={closePanel} onSuccess={() => { toast.success("Client created"); closePanel(); fetchData(); }} submitLabel="Add client" /> : null}
             </div>
           </div>
         </div>
