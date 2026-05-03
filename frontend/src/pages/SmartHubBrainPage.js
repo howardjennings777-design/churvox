@@ -4,7 +4,7 @@ import { AlertTriangle, Bot, CalendarClock, CheckCircle2, ClipboardList, FileTex
 import Layout from "../components/Layout";
 import { get, post } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 import JobCreateForm from "../components/forms/JobCreateForm";
 import QuoteCreateForm from "../components/forms/QuoteCreateForm";
 import InvoiceCreateForm from "../components/forms/InvoiceCreateForm";
