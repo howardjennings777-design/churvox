@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
-import { get } from "../lib/api";
+import { get, post } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
 const safeArray = (value) => (Array.isArray(value) ? value : []);
@@ -48,10 +48,23 @@ const hasInvoiceForJob = (job, invoices) => {
 };
 
 const aiInvoiceDescription = (job, client) => {
+  const saved = [
+    job?.ai_invoice_description,
+    job?.invoice_description_draft,
+    job?.completion_notes,
+    job?.worker_completion_notes,
+    job?.worker_notes,
+    job?.job_notes,
+    job?.notes,
+    job?.description,
+  ]
+    .map((value) => String(value || "").trim())
+    .find(Boolean);
+  if (saved) return saved;
   const title = textOr(job?.title || job?.name, "service work");
-  const clientName = textOr(client?.name, "client");
-  const location = textOr(job?.address || job?.location, "site address pending");
-  return `Invoice draft for ${title} completed for ${clientName} at ${location}. Includes labour, materials, and agreed scope completion notes.`;
+  const clientName = textOr(client?.name || job?.client_name || job?.customer_name, "client");
+  const location = textOr(job?.address || job?.location, "their site");
+  return `${title} completed for ${clientName} at ${location}. Work has been marked complete and is ready for billing.`;
 };
 
 export default function SmartHubBrainPage() {
@@ -61,6 +74,8 @@ export default function SmartHubBrainPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [drawer, setDrawer] = useState("");
+  const [savingJobId, setSavingJobId] = useState("");
+  const [toast, setToast] = useState({ kind: "", message: "" });
   const [data, setData] = useState({ jobs: [], clients: [], quotes: [], invoices: [], workers: [] });
 
   const load = useCallback(async () => {
@@ -108,7 +123,14 @@ export default function SmartHubBrainPage() {
   const workers = safeArray(data?.workers);
 
   const readyToBillJobs = useMemo(
-    () => jobs.filter((job) => ["completed", "complete"].includes(statusOf(job?.status)) && !hasInvoiceForJob(job, invoices)),
+    () =>
+      jobs.filter((job) => {
+        const invoiceStatus = statusOf(job?.invoice_status);
+        const hasJobInvoiceFlag =
+          !!(job?.invoice_id || job?.draft_invoice_id || job?.invoice_created || job?.invoiced) ||
+          ["draft", "sent", "paid", "open", "overdue"].includes(invoiceStatus);
+        return ["completed", "complete"].includes(statusOf(job?.status)) && !hasJobInvoiceFlag && !hasInvoiceForJob(job, invoices);
+      }),
     [jobs, invoices]
   );
 
@@ -150,13 +172,62 @@ export default function SmartHubBrainPage() {
 
   const workspaceButtons = ["Jobs", "Clients", "Invoices", "Quotes", "Crew", "Payroll", "Approvals"];
 
+  const draftInvoices = useMemo(() => invoices.filter((inv) => statusOf(inv?.status) === "draft"), [invoices]);
+
+  const approveDraft = useCallback(
+    async (job) => {
+      const jobId = String(job?.id || job?._id || "");
+      if (!jobId) return;
+      const client = findByIds(clients, [job?.client_id, job?.clientId], ["id", "_id", "client_id"]);
+      const subtotal = Number(job?.subtotal ?? job?.price ?? job?.amount ?? 0);
+      const gstRate = Number(job?.gst_rate ?? 15);
+      const gstAmount = Number(job?.gst_amount ?? job?.gst ?? job?.tax ?? subtotal * (gstRate / 100));
+      const total = Number(job?.total ?? subtotal + gstAmount);
+      const description = aiInvoiceDescription(job, client);
+
+      setSavingJobId(jobId);
+      setToast({ kind: "", message: "" });
+      const res = await post(`/jobs/${jobId}/create-draft-invoice`, {
+        description,
+        subtotal,
+        gst_rate: gstRate,
+        gst_amount: gstAmount,
+        total,
+      });
+      setSavingJobId("");
+      if (!res?.success) {
+        setToast({ kind: "error", message: res?.error || "Failed to create draft invoice." });
+        return;
+      }
+      setToast({ kind: "success", message: "Draft invoice created and linked to this job." });
+      await load();
+    },
+    [clients, load]
+  );
+
   const renderDrawerContent = () => {
     if (!drawer) return null;
 
     if (drawer === "Invoices") {
       return (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-slate-900">Ready to Bill</h3>
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">Invoices Workspace</h3>
+            <p className="text-sm text-slate-600">Review ready-to-bill jobs, draft invoices and payment reminders.</p>
+          </div>
+          <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              ["Ready to bill", readyToBillJobs.length],
+              ["Open invoices", openInvoices.length],
+              ["Draft invoices", draftInvoices.length],
+              ["Quotes waiting", waitingQuotes.length],
+            ].map(([label, value]) => (
+              <article key={label} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
+                <p className="mt-1 text-xl font-semibold text-slate-900">{value}</p>
+              </article>
+            ))}
+          </section>
           {!readyToBillJobs.length ? (
             <p className="text-sm text-slate-600">No ready-to-bill jobs right now.</p>
           ) : (
@@ -171,6 +242,7 @@ export default function SmartHubBrainPage() {
                   <p className="font-semibold text-slate-900">{textOr(job?.title || job?.name, "Untitled job")}</p>
                   <p className="text-sm text-slate-600">Client: {textOr(client?.name, "Unknown client")}</p>
                   <p className="text-sm text-slate-600">Address: {textOr(job?.address || job?.location, "No address saved")}</p>
+                  <p className="text-sm text-slate-600">Completed: {textOr(job?.completed_at || job?.updated_at, "Unknown date")}</p>
                   <p className="mt-2 text-sm text-slate-700">{aiInvoiceDescription(job, client)}</p>
                   {Number.isFinite(subtotal) ? (
                     <div className="mt-3 grid grid-cols-1 gap-1 text-sm text-slate-700 sm:grid-cols-3">
@@ -181,6 +253,14 @@ export default function SmartHubBrainPage() {
                   ) : (
                     <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">Warning: price missing. Confirm pricing before invoicing.</p>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => approveDraft(job)}
+                    disabled={savingJobId === String(job?.id || job?._id || "")}
+                    className="mt-4 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {savingJobId === String(job?.id || job?._id || "") ? "Approving..." : "Approve draft"}
+                  </button>
                 </div>
               );
             })
@@ -262,6 +342,11 @@ export default function SmartHubBrainPage() {
               </div>
               <div className="max-h-[72vh] overflow-y-auto p-4">{renderDrawerContent()}</div>
             </div>
+          </div>
+        ) : null}
+        {toast?.message ? (
+          <div className={`fixed bottom-4 right-4 z-[60] rounded-lg px-4 py-2 text-sm text-white ${toast.kind === "error" ? "bg-rose-600" : "bg-emerald-600"}`}>
+            {toast.message}
           </div>
         ) : null}
 
