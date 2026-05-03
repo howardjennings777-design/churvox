@@ -64,9 +64,9 @@ function buildAssignmentApprovalDetails(action, jobs, workers, clients, today) {
   };
 }
 
-function SmartModal({ open, title, onClose, children }) {
+function SmartModal({ open, title, onClose, children, wide = false, actions = null }) {
   if (!open) return null;
-  return <div className="fixed inset-0 z-[80] bg-slate-900/50 backdrop-blur-sm p-0 sm:p-4 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true"><div className="w-full sm:max-w-3xl bg-white rounded-t-2xl sm:rounded-2xl border border-slate-200 shadow-2xl max-h-[95vh] overflow-auto"><div className="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between"><h3 className="font-semibold text-slate-900">{title}</h3><button onClick={onClose}><X className="h-5 w-5" /></button></div><div className="p-4">{children}</div></div></div>;
+  return <div className="fixed inset-0 z-[80] bg-slate-900/55 backdrop-blur-sm p-0 sm:p-4 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true"><div className={`w-full ${wide ? "sm:max-w-7xl" : "sm:max-w-3xl"} bg-white rounded-none sm:rounded-2xl border border-slate-200 shadow-2xl h-[100dvh] sm:h-[94vh] overflow-hidden`}><div className="sticky top-0 z-10 bg-white border-b px-4 py-3 flex items-center justify-between gap-3"><h3 className="font-semibold text-slate-900 capitalize">{title}</h3><div className="flex items-center gap-2">{actions}<button onClick={onClose} className="rounded-full border p-1"><X className="h-5 w-5" /></button></div></div><div className="p-4 h-[calc(100dvh-64px)] sm:h-[calc(94vh-64px)] overflow-y-auto">{children}</div></div></div>;
 }
 
 export default function SmartHubBrainPage() {
@@ -82,6 +82,9 @@ export default function SmartHubBrainPage() {
   const [activeSmartHubSection, setActiveSmartHubSection] = useState(null);
   const [selectedSmartHubAction, setSelectedSmartHubAction] = useState(null);
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
+  const [workspaceMode, setWorkspaceMode] = useState("list");
+  const [workspaceQuery, setWorkspaceQuery] = useState("");
+  const [workspaceRecord, setWorkspaceRecord] = useState(null);
   const [askQuery, setAskQuery] = useState("What should I approve first today?");
   const [askResponse, setAskResponse] = useState("");
   const [busy, setBusy] = useState({ run: false, prepare: false, ask: false, saving: false });
@@ -225,6 +228,12 @@ export default function SmartHubBrainPage() {
     }
   };
   const handleEditAction = (action) => { setSelectedAction(action); setEditedWorkerId(String(action?.recommended_worker_id || action?.worker_id || action?.assigned_worker_id || "")); toast("Edit mode enabled. Choose a worker below before approval."); };
+  const openWorkspace = (section, mode = "list", record = null) => {
+    setActiveWorkspace(section);
+    setActiveSmartHubSection(section);
+    setWorkspaceMode(mode);
+    setWorkspaceRecord(record);
+  };
 
   const actionDetails = useMemo(() => {
     if (!selectedAction) return null;
@@ -249,9 +258,9 @@ export default function SmartHubBrainPage() {
   return <Layout smartHubMode><div className="min-h-screen bg-slate-50"><div className="mx-auto max-w-[1500px] space-y-4 p-4 sm:p-6"><section className="rounded-2xl border bg-white p-4 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><ChurvoxLogo size="sm" /><div><p className="text-xs uppercase tracking-wide text-slate-500">Owner Workspace</p><h1 className="text-2xl font-bold text-slate-900">Smart Hub · {user?.business_name || "Churvox"}</h1></div></div><div className="hidden lg:block text-xs text-slate-500">Business pulse · {jobsToday.length} jobs today · {openInvoices.length} open invoices · {approvals.length} approvals</div><div className="flex items-center gap-2"><NotificationsBell /><button onClick={() => setModal("ask")} className="rounded-full bg-blue-600 text-white px-4 py-2 text-sm font-semibold">Ask AI</button><details className="relative"><summary className="list-none cursor-pointer rounded-full border px-3 py-2 text-sm font-semibold text-slate-700">{(user?.name || "Account").split(" ")[0]}</summary><div className="absolute right-0 mt-2 w-56 rounded-xl border bg-white p-2 shadow-xl z-20"><p className="px-2 py-1 text-xs text-slate-500">{user?.email}</p><Link to="/account" className="block rounded-lg px-2 py-2 text-sm hover:bg-slate-100">Account</Link><Link to="/settings" className="block rounded-lg px-2 py-2 text-sm hover:bg-slate-100">Settings</Link><button onClick={async () => { await logout(); navigate("/login"); }} className="mt-1 w-full text-left rounded-lg px-2 py-2 text-sm text-red-600 hover:bg-red-50">Log out</button></div></details></div></div></section>
     <section className="rounded-2xl border bg-white p-5 shadow-sm"><div className="flex flex-wrap justify-between gap-3"><div><h1 className="text-3xl font-bold text-slate-900">Welcome back, {user?.name || "Owner"}</h1><p className="mt-2 text-sm text-slate-600">Today: {jobsToday.length} jobs · {unassignedJobs.length} unassigned · {completedReadyToBill.length} ready to bill · {openInvoices.length} open invoices · {crewActive} crew active</p></div><div className="flex gap-2"><button onClick={() => setCreateMenuOpen(true)} className="rounded-full bg-blue-600 text-white px-4 py-2 text-sm font-semibold">Create</button><button onClick={() => setModal("ask")} className="rounded-full bg-blue-100 text-blue-700 px-4 py-2 text-sm font-semibold">Ask AI</button></div></div></section>
 
-    <section className="rounded-2xl border bg-white p-5 shadow-sm"><div className="flex flex-wrap justify-between gap-3"><div><h2 className="text-xl font-semibold flex items-center gap-2"><Bot className="h-5 w-5 text-blue-600" />AI Operator</h2><p className="text-sm text-slate-600">I check your jobs, crew, quotes and invoices, then prepare the admin for your approval.</p><p className="mt-2 text-sm">Last scan: just now · Actions prepared: {actionCards.length} · Pending approvals: {approvals.length} · Risk level: {actionCards.sort((a,b)=>(riskRank[a.risk]??3)-(riskRank[b.risk]??3))[0]?.risk || "low"}</p></div><div className="flex flex-wrap gap-2"><button onClick={runDailyCheck} className="rounded-full bg-blue-600 text-white px-4 py-2 text-sm">Run scan</button><button onClick={prepareToday} className="rounded-full border px-4 py-2 text-sm">Prepare today</button><button onClick={() => setActiveWorkspace("approvals")} className="rounded-full border px-4 py-2 text-sm">Review approvals</button><button onClick={() => setModal("ask")} className="rounded-full border px-4 py-2 text-sm">Ask AI</button></div></div></section>
+    <section className="rounded-2xl border bg-white p-5 shadow-sm"><div className="flex flex-wrap justify-between gap-3"><div><h2 className="text-xl font-semibold flex items-center gap-2"><Bot className="h-5 w-5 text-blue-600" />AI Operator</h2><p className="text-sm text-slate-600">I check your jobs, crew, quotes and invoices, then prepare the admin for your approval.</p><p className="mt-2 text-sm">Last scan: just now · Actions prepared: {actionCards.length} · Pending approvals: {approvals.length} · Risk level: {actionCards.sort((a,b)=>(riskRank[a.risk]??3)-(riskRank[b.risk]??3))[0]?.risk || "low"}</p></div><div className="flex flex-wrap gap-2"><button onClick={runDailyCheck} className="rounded-full bg-blue-600 text-white px-4 py-2 text-sm">Run scan</button><button onClick={prepareToday} className="rounded-full border px-4 py-2 text-sm">Prepare today</button><button onClick={() => openWorkspace("approvals")} className="rounded-full border px-4 py-2 text-sm">Review approvals</button><button onClick={() => setModal("ask")} className="rounded-full border px-4 py-2 text-sm">Ask AI</button></div></div></section>
 
-    <section className="rounded-2xl border bg-white p-4 shadow-sm"><div className="flex gap-2 overflow-x-auto">{workspaces.map((k) => <button key={k} onClick={() => { setActiveWorkspace(k); setActiveSmartHubSection(k); setSelectedSmartHubAction(null); }} className={`whitespace-nowrap rounded-full px-3 py-1.5 text-sm capitalize ${activeWorkspace === k ? "bg-blue-600 text-white" : "border text-slate-700"}`}>{k}</button>)}</div></section>
+    <section className="rounded-2xl border bg-white p-4 shadow-sm"><div className="flex gap-2 overflow-x-auto">{workspaces.map((k) => <button key={k} onClick={() => openWorkspace(k)} className={`whitespace-nowrap rounded-full px-3 py-1.5 text-sm capitalize ${activeWorkspace === k ? "bg-blue-600 text-white" : "border text-slate-700"}`}>{k}</button>)}</div></section>
 
     <section className="grid gap-4 lg:grid-cols-[2fr_1fr]"><div className="space-y-4"><div className="rounded-2xl border bg-white p-4 shadow-sm"><h3 className="text-lg font-semibold">AI Summary</h3><p className="text-sm text-slate-700 mt-2">AI found {unassignedJobs.length} unassigned jobs, {completedReadyToBill.length} completed jobs ready to bill, and {waitingQuotes.length} quotes waiting. The best first move is approving worker assignments, then invoice drafts.</p><p className="mt-2 font-semibold">Most important next move: Approve {unassignedJobs.length} worker assignment{unassignedJobs.length===1?"":"s"}</p></div>
       {[["Urgent", grouped.urgent],["Ready to approve", grouped.ready],["Drafts prepared", grouped.draft],["Watching", grouped.watching]].map(([g, items]) => <div key={g} className="rounded-2xl border bg-white p-4 shadow-sm"><h3 className="text-lg font-semibold">{g}</h3><div className="mt-3 space-y-3">{items.length ? items.map((a, i) => <div key={a.id || a._id || i} className="rounded-xl border p-3"><p className="font-semibold">{a.title}</p>{completedActionState[String(a.id || a._id || a.title || "")] ? <p className="text-xs text-emerald-700 mt-1">{completedActionState[String(a.id || a._id || a.title || "")]}</p> : null}<p className="text-sm text-slate-600 mt-1">AI recommends: {a.reason}</p><p className="text-xs text-slate-500 mt-1">Data AI used: {a.dataUsed}</p><div className="mt-2 flex flex-wrap gap-2"><span className="text-xs border rounded-full px-2 py-1">Risk: {a.risk || "medium"}</span><button onClick={() => handleApproveAction(a)} className="rounded-full bg-blue-600 text-white px-3 py-1.5 text-xs">{approvingActionId === String(a.id || a._id || a.title) ? "Approving…" : (a.primary || "Approve")}</button><button onClick={() => handleEditAction(a)} className="rounded-full border px-3 py-1.5 text-xs">Edit</button><button onClick={() => handleRejectAction(a)} className="rounded-full border px-3 py-1.5 text-xs">Reject</button><button onClick={() => handleReviewAction(a)} className="rounded-full border px-3 py-1.5 text-xs">View details</button></div></div>) : <p className="text-sm text-slate-500">No actions in this group.</p>}</div></div>)}
@@ -260,8 +269,37 @@ export default function SmartHubBrainPage() {
 
     
   </div></div>
-  <SmartModal open={Boolean(activeSmartHubSection)} title={`${activeSmartHubSection || ""} command centre`} onClose={() => setActiveSmartHubSection(null)}>
-    <div className="space-y-3 text-sm">
+  <SmartModal open={Boolean(activeSmartHubSection)} wide title={`${activeSmartHubSection || ""} workspace`} onClose={() => { setActiveSmartHubSection(null); setWorkspaceMode("list"); setWorkspaceRecord(null); }} actions={<button onClick={() => navigate(`/${activeSmartHubSection === "crew" ? "team" : activeSmartHubSection}`)} className="rounded-full border px-3 py-1 text-xs">Open full page</button>}>
+    <div className="space-y-4 text-sm">
+      <div className="flex flex-wrap gap-2">
+        <input value={workspaceQuery} onChange={(e) => setWorkspaceQuery(e.target.value)} placeholder="Search workspace…" className="min-w-[220px] flex-1 rounded-lg border px-3 py-2" />
+        {["clients","jobs","quotes","invoices"].includes(activeSmartHubSection) ? <button onClick={() => setWorkspaceMode("create")} className="rounded-full bg-blue-600 text-white px-3 py-2 text-xs">Create</button> : null}
+        {workspaceMode !== "list" ? <button onClick={() => { setWorkspaceMode("list"); setWorkspaceRecord(null); }} className="rounded-full border px-3 py-2 text-xs">Back to list</button> : null}
+      </div>
+      {workspaceMode === "create" && modal !== activeSmartHubSection ? <div className="rounded-xl border p-3">
+        {activeSmartHubSection === "clients" ? <ClientCreateForm onCancel={() => setWorkspaceMode("list")} onSuccess={() => { setWorkspaceMode("list"); load(); }} submitLabel="Add client" /> : null}
+        {activeSmartHubSection === "jobs" ? <JobCreateForm onCancel={() => setWorkspaceMode("list")} onSuccess={() => { setWorkspaceMode("list"); load(); }} submitLabel="Create job" /> : null}
+        {activeSmartHubSection === "quotes" ? <QuoteCreateForm onCancel={() => setWorkspaceMode("list")} onSuccess={() => { setWorkspaceMode("list"); load(); }} submitLabel="Create quote" /> : null}
+        {activeSmartHubSection === "invoices" ? <InvoiceCreateForm onCancel={() => setWorkspaceMode("list")} onSuccess={() => { setWorkspaceMode("list"); load(); }} submitLabel="Create invoice" /> : null}
+      </div> : null}
+      {workspaceMode !== "create" ? <div className="grid gap-3 md:grid-cols-2">
+        {(activeSmartHubSection === "clients" ? data.clients : activeSmartHubSection === "jobs" ? data.jobs : activeSmartHubSection === "quotes" ? data.quotes : activeSmartHubSection === "invoices" ? data.invoices : activeSmartHubSection === "crew" ? workers : activeSmartHubSection === "approvals" ? visibleActionCards : []).filter((row) => JSON.stringify(row).toLowerCase().includes(workspaceQuery.toLowerCase())).slice(0, 30).map((row, idx) => <div key={asId(row) || row.id || idx} className="rounded-xl border p-3">
+          <p className="font-semibold">{row.name || row.title || row.number || row.email || row.subject || `Record ${idx + 1}`}</p>
+          <p className="text-xs text-slate-600 mt-1">Status: {row.status || row.risk || "n/a"}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button onClick={() => { setWorkspaceMode("detail"); setWorkspaceRecord(row); }} className="rounded-full border px-2 py-1 text-xs">Detail</button>
+            {activeSmartHubSection === "approvals" ? <>
+              <button onClick={() => handleApproveAction(row)} className="rounded-full border px-2 py-1 text-xs">Approve</button>
+              <button onClick={() => handleRejectAction(row)} className="rounded-full border px-2 py-1 text-xs">Reject</button>
+            </> : null}
+            <button onClick={() => navigate(`/${activeSmartHubSection === "crew" ? "team" : activeSmartHubSection}/${asId(row)}`)} className="rounded-full border px-2 py-1 text-xs">Open detail page</button>
+          </div>
+        </div>)}
+      </div> : null}
+      {workspaceMode === "detail" && workspaceRecord ? <div className="rounded-xl border p-4 bg-slate-50">
+        <h4 className="font-semibold mb-2">{workspaceRecord.name || workspaceRecord.title || "Detail"}</h4>
+        <pre className="text-xs overflow-auto max-h-80">{JSON.stringify(workspaceRecord, null, 2)}</pre>
+      </div> : null}
       {activeSmartHubSection === "today" ? <><p>AI summary: {unassignedJobs.length} unassigned, {approvals.length} pending approvals, {overdueInvoices.length} overdue invoices.</p><p>Urgent actions: {grouped.urgent.length} · Risks: {overdueInvoices.length ? "Receivables" : "Low"}</p><div className="flex flex-wrap gap-2"><button onClick={() => { setActiveSmartHubSection("approvals"); }} className="rounded-full border px-3 py-1.5">View approvals</button><button onClick={runDailyCheck} className="rounded-full border px-3 py-1.5">Run scan</button><button onClick={prepareToday} className="rounded-full border px-3 py-1.5">Prepare today</button><button onClick={() => setModal("ask")} className="rounded-full border px-3 py-1.5">Ask AI</button></div></> : null}
       {activeSmartHubSection === "dispatch" ? <><p>Unassigned jobs: {unassignedJobs.length} · Available workers: {workers.length - crewActive}</p><p>AI recommended matches: {derivedActions.filter((a) => a.kind === "assign_worker").length} · Schedule conflicts: {Math.max(unassignedJobs.length - (workers.length - crewActive), 0)}</p><div className="flex flex-wrap gap-2">{visibleActionCards.filter((a) => String(a.kind || a.action_type).toLowerCase() === "assign_worker").slice(0, 3).map((a) => <button key={a.id || a.title} onClick={() => handleReviewAction(a)} className="rounded-full border px-3 py-1.5">View details</button>)}</div><div className="flex flex-wrap gap-2"><button onClick={() => navigate("/dispatch")} className="rounded-full border px-3 py-1.5">Open dispatch board</button><button onClick={() => setModal("job")} className="rounded-full border px-3 py-1.5">Create job</button></div></> : null}
       {activeSmartHubSection === "jobs" ? <><p>Today jobs: {jobsToday.length} · Unassigned: {unassignedJobs.length} · Recently completed: {completedReadyToBill.length} · Ready to bill: {completedReadyToBill.length}</p><div className="flex flex-wrap gap-2"><button onClick={() => setModal("job")} className="rounded-full border px-3 py-1.5">Create job</button><button onClick={() => navigate("/jobs")} className="rounded-full border px-3 py-1.5">Open full jobs page</button></div></> : null}
