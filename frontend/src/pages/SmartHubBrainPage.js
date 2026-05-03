@@ -175,6 +175,7 @@ export default function SmartHubBrainPage() {
   const [rejectedDispatchIds, setRejectedDispatchIds] = useState({});
   const [approvalFilter, setApprovalFilter] = useState("all");
   const [approvalDetail, setApprovalDetail] = useState(null);
+  const [approvalCentreOpen, setApprovalCentreOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -381,6 +382,16 @@ export default function SmartHubBrainPage() {
     };
     return [...approvalItems].sort((a,b)=>rank(a)-rank(b));
   }, [approvalItems]);
+  const approvalCounts = useMemo(
+    () =>
+      APPROVAL_GROUPS.reduce((acc, group) => {
+        if (group === "all") return { ...acc, all: approvalItems.length };
+        return { ...acc, [group]: approvalItems.filter((item) => item.group === group).length };
+      }, {}),
+    [approvalItems]
+  );
+  const approvalBadgeTone = approvalCounts.needs_decision ? "amber" : approvalCounts.all ? "green" : "slate";
+  const priorityItems = sortedApprovalItems.slice(0, 3);
 
   const bestNextMove = useMemo(() => {
     if (readyToBillJobs.length) {
@@ -734,7 +745,7 @@ export default function SmartHubBrainPage() {
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" onClick={runScanNow} className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700">Run scan</button>
-              <button type="button" onClick={() => openWorkspace(bestNextMove.drawer, bestNextMove.mode)} className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800">Review now</button>
+              <button type="button" onClick={() => { setApprovalFilter("all"); setApprovalCentreOpen(true); }} className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800">Review now</button>
             </div>
           </section>
 
@@ -758,25 +769,16 @@ export default function SmartHubBrainPage() {
 
           <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">AI Approval Centre</h2>
-            <p className="mt-1 text-sm text-slate-600">AI has prepared today&apos;s admin. Review, edit or approve everything from here.</p>
-            <div className="mt-3 flex flex-wrap gap-2">{APPROVAL_GROUPS.map((g)=><button key={g} type="button" onClick={()=>setApprovalFilter(g)} className={`rounded px-3 py-1 text-xs ${approvalFilter===g?"bg-slate-900 text-white":"bg-slate-100 text-slate-700"}`}>{g === "all" ? "All" : g.replace("_"," ")}</button>)}</div>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              {(approvalItems.filter((it)=>approvalFilter==="all" ? true : it.group===approvalFilter).slice(0,8)).map((item) => (
-                <article key={item.id} className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-4 shadow-sm">
-                  <p className="font-semibold text-slate-900">{item.title}</p>
-                  <p className="mt-1 text-sm text-slate-600">{item.reason}</p>
-                  <p className="mt-2 text-sm text-slate-700">{item.dataUsed}</p>
-                  <p className="mt-2 text-sm text-slate-700">{item.whatHappens}</p>
-                  <p className="mt-1 text-xs text-slate-500">Risk: {item.risk}</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button type="button" onClick={async ()=>{ if (item.type === "create_invoice_draft") await approveDraft(item.job); else if (item.type === "assign_worker") openWorkspace("AI Dispatch", "assign"); else if (item.type === "invoice_reminder") openWorkspace("Payment Reminders", "reminders"); else if (item.type === "quote_follow_up") openWorkspace("Quote Follow-ups", "followUps"); else setApprovalDetail(item); }} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">Approve</button>
-                    <button type="button" onClick={()=>setApprovalDetail(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Edit</button>
-                    <button type="button" className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Reject</button>
-                    <button type="button" onClick={()=>setApprovalDetail(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Details</button>
-                  </div>
-                </article>
-              ))}
-              {!approvalItems.length ? <article className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-4 shadow-sm"><p className="font-semibold text-slate-900">All clear. AI has checked today’s jobs, invoices, quotes and crew. No owner approvals are waiting.</p><div className="mt-3 flex gap-2"><button type="button" onClick={runScanNow} className="rounded-lg bg-teal-700 px-3 py-2 text-sm text-white">Run scan</button><button type="button" onClick={()=>openWorkspace("Jobs")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Open workspaces</button></div></article> : null}
+            <p className="mt-1 text-sm text-slate-600">AI has prepared today&apos;s admin. Review everything before anything changes.</p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button type="button" onClick={() => setApprovalCentreOpen(true)} className={`rounded-full px-3 py-1 text-xs font-medium ${approvalBadgeTone === "amber" ? "bg-amber-100 text-amber-800" : approvalBadgeTone === "green" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"}`}>{approvalCounts.all ? `${approvalCounts.all} approvals` : "All clear"}</button>
+              <p className="text-sm text-slate-700">{approvalCounts.all ? `${approvalCounts.all} approvals waiting` : "AI has checked today’s jobs, invoices, quotes and crew."}</p>
+            </div>
+            <p className="mt-2 text-sm text-slate-600">{approvalCounts.needs_decision || 0} need decision · {approvalCounts.ready || 0} ready · {approvalCounts.drafts || 0} drafts · {approvalCounts.watching || 0} watching</p>
+            {!!priorityItems.length && <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-slate-700">{priorityItems.map((item) => <li key={item.id}><button type="button" onClick={() => { setApprovalFilter("all"); setApprovalCentreOpen(true); }} className="text-left hover:text-slate-900">{item.title}</button></li>)}</ol>}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button type="button" onClick={() => { setApprovalFilter("all"); setApprovalCentreOpen(true); }} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">Open Approval Centre</button>
+              <button type="button" onClick={runScanNow} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Run scan</button>
             </div>
           </section>
 
@@ -845,6 +847,36 @@ export default function SmartHubBrainPage() {
                 </button>
               </div>
               <div className="max-h-[72vh] overflow-y-auto p-4">{renderDrawerContent()}</div>
+            </div>
+          </div>
+        ) : null}
+        {approvalCentreOpen ? (
+          <div className="fixed inset-0 z-[55] bg-slate-900/60">
+            <div className="h-screen w-screen overflow-y-auto bg-[#f6f4ef] p-4 sm:p-6">
+              <div className="mx-auto max-w-6xl rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h2 className="text-xl font-semibold text-slate-900">AI Approval Centre</h2>
+                    <p className="mt-1 text-sm text-slate-600">Review, edit or approve everything AI prepared.</p>
+                  </div>
+                  <button type="button" onClick={() => setApprovalCentreOpen(false)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Close</button>
+                </div>
+                <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{APPROVAL_GROUPS.map((g)=><button key={g} type="button" onClick={()=>setApprovalFilter(g)} className={`shrink-0 rounded px-3 py-1 text-xs ${approvalFilter===g?"bg-slate-900 text-white":"bg-slate-100 text-slate-700"}`}>{g === "all" ? "All" : g.replace("_"," ")}</button>)}</div>
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  {(approvalItems.filter((it)=>approvalFilter==="all" ? true : it.group===approvalFilter)).map((item) => (
+                    <article key={item.id} className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-4 shadow-sm">
+                      <p className="font-semibold text-slate-900">{item.title}</p><p className="mt-1 text-sm text-slate-600">{item.reason}</p><p className="mt-2 text-sm text-slate-700">{item.dataUsed}</p><p className="mt-2 text-sm text-slate-700">{item.whatHappens}</p><p className="mt-1 text-xs text-slate-500">Risk: {item.risk}</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button type="button" onClick={async ()=>{ if (item.type === "create_invoice_draft") await approveDraft(item.job); else if (item.type === "assign_worker") openWorkspace("AI Dispatch", "assign"); else if (item.type === "invoice_reminder") openWorkspace("Payment Reminders", "reminders"); else if (item.type === "quote_follow_up") openWorkspace("Quote Follow-ups", "followUps"); else setApprovalDetail(item); }} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">Approve</button>
+                        <button type="button" onClick={()=>setApprovalDetail(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Edit</button>
+                        <button type="button" className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Reject</button>
+                        <button type="button" onClick={()=>setApprovalDetail(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Details</button>
+                      </div>
+                    </article>
+                  ))}
+                  {!approvalItems.length ? <article className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-4 shadow-sm"><p className="font-semibold text-slate-900">No owner approvals are waiting.</p><div className="mt-3 flex gap-2"><button type="button" onClick={runScanNow} className="rounded-lg bg-teal-700 px-3 py-2 text-sm text-white">Run scan</button></div></article> : null}
+                </div>
+              </div>
             </div>
           </div>
         ) : null}
