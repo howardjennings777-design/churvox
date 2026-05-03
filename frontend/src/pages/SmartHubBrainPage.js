@@ -685,6 +685,26 @@ export default function SmartHubBrainPage() {
 
           {error ? <p className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
 
+          <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Workspace Dock</h2>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              {workspaceButtons.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => openWorkspace(name) }
+                  className="rounded-lg bg-teal-700 px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-teal-800"
+                >
+                  <span className="block">{name}</span>
+                  <span className="block text-xs text-teal-100">{workspaceMeta[name] || "Open workspace"}</span>
+                </button>
+              ))}
+              <button type="button" onClick={() => openWorkspace("Payment Reminders", "reminders")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Prepare reminders</button>
+              <button type="button" onClick={() => openWorkspace("Quote Follow-ups", "followUps")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Review follow-ups</button>
+              <button type="button" onClick={() => openWorkspace("AI Dispatch", "list")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Assign workers</button>
+            </div>
+          </section>
+
           <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
               ["Ready to bill", readyToBillJobs.length],
@@ -749,25 +769,6 @@ export default function SmartHubBrainPage() {
             </article>
           </section>
 
-          <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Workspace Dock</h2>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              {workspaceButtons.map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => openWorkspace(name) }
-                  className="rounded-lg bg-teal-700 px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-teal-800"
-                >
-                  <span className="block">{name}</span>
-                  <span className="block text-xs text-teal-100">{workspaceMeta[name] || "Open workspace"}</span>
-                </button>
-              ))}
-              <button type="button" onClick={() => openWorkspace("Payment Reminders", "reminders")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Prepare reminders</button>
-              <button type="button" onClick={() => openWorkspace("Quote Follow-ups", "followUps")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Review follow-ups</button>
-              <button type="button" onClick={() => openWorkspace("AI Dispatch", "list")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Assign workers</button>
-            </div>
-          </section>
           <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Recent Smart Hub activity</h3>
             <div className="mt-2 flex gap-2">{[["all","All"],["completed","Completed"],["rejected","Rejected"],["draft_prepared","Drafts"]].map(([k,l]) => <button key={k} type="button" onClick={() => setActivityFilter(k)} className={`rounded px-2 py-1 text-xs ${activityFilter===k?"bg-slate-800 text-white":"bg-slate-100 text-slate-700"}`}>{l}</button>)}</div>{!activity.length ? <p className="mt-2 text-sm text-slate-500">No AI actions approved yet. Approved work will appear here.</p> : <ul className="mt-3 space-y-2 text-sm text-slate-700">{activity.filter((a)=>activityFilter==="all"?true:String(a?.status||"")===activityFilter).map((a) => <li key={String(a?.id||a?._id)} className="rounded-lg border border-slate-200 p-2"><p>{a?.message || a?.title}</p><p className="text-xs text-slate-500">{textOr(a?.status, "completed")} · {a?.approved_by_name ? `${a.approved_by_name} · ` : ""}{new Date(a?.created_at || Date.now()).toLocaleString()}</p></li>)}</ul>}
