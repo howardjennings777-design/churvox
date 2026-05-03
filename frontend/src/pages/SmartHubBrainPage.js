@@ -97,6 +97,7 @@ export default function SmartHubBrainPage() {
   const [editedWorkerId, setEditedWorkerId] = useState("");
   const [localActionState, setLocalActionState] = useState({});
   const [completedActionState, setCompletedActionState] = useState({});
+  const [activityTrail, setActivityTrail] = useState([]);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -171,6 +172,12 @@ export default function SmartHubBrainPage() {
     if (!key) return;
     setCompletedActionState((s) => ({ ...s, [key]: message || "Approved" }));
     setLocalActionState((s) => ({ ...s, [key]: "approved" }));
+    setActivityTrail((trail) => [{
+      time: new Date().toISOString(),
+      action: action?.title || "AI action approved",
+      result: message || "Approved",
+      approvedBy: user?.name || "Owner",
+    }, ...trail].slice(0, 12));
   };
 
   const handleReviewAction = (action) => { setSelectedAction(action); setSelectedSmartHubAction(action); setActionError(""); setIsActionModalOpen(true); };
@@ -222,6 +229,12 @@ export default function SmartHubBrainPage() {
       }
       await post(`/ai/operator/actions/${actionId}/reject`, {});
       setLocalActionState((s) => ({ ...s, [actionId]: "rejected" }));
+      setActivityTrail((trail) => [{
+        time: new Date().toISOString(),
+        action: action?.title || "AI action",
+        result: "Rejected",
+        approvedBy: user?.name || "Owner",
+      }, ...trail].slice(0, 12));
       toast.success("Action rejected.");
       await refreshSmartHubAfterAction();
     } catch (e) {
@@ -325,10 +338,10 @@ export default function SmartHubBrainPage() {
     : completedReadyToBill.length > 0
       ? "Approve invoice drafts"
       : openInvoices.length > 0
-        ? "Prepare invoice reminders"
+        ? "Prepare payment reminders"
         : waitingQuotes.length > 0
-          ? "Approve quote follow-ups"
-          : "No urgent approvals needed";
+          ? "Review quote follow-ups"
+          : "All clear";
   const missionText = (unassignedJobs.length || completedReadyToBill.length || openInvoices.length || waitingQuotes.length)
     ? `AI found ${completedReadyToBill.length} completed jobs ready to bill, ${openInvoices.length} open invoices, and ${waitingQuotes.length} quotes waiting. The best first move is ${bestNextMove.toLowerCase()}.`
     : "AI checked today’s work. There are no urgent approvals waiting right now.";
@@ -343,26 +356,28 @@ export default function SmartHubBrainPage() {
 
   const heroRisk = actionCards.sort((a, b) => (riskRank[a.risk] ?? 3) - (riskRank[b.risk] ?? 3))[0]?.risk || "medium";
   const invoicesWaitingText = openInvoices.length ? `${openInvoices.length} invoices waiting` : "No invoices waiting";
-  const bestMove = completedReadyToBill.length > 0
-    ? "Approve invoice drafts"
-    : openInvoices.length > 0
-      ? "Prepare payment reminders"
-      : waitingQuotes.length > 0
-        ? `Follow up waiting quote${waitingQuotes.length > 1 ? "s" : ""}`
-        : "All clear";
+  const bestMove = unassignedJobs.length > 0
+    ? "Approve worker assignments"
+    : completedReadyToBill.length > 0
+      ? "Approve invoice drafts"
+      : openInvoices.length > 0
+        ? "Prepare payment reminders"
+        : waitingQuotes.length > 0
+          ? "Review quote follow-ups"
+          : "All clear";
   const decisionCards = [
-    completedReadyToBill.length > 0 ? { key: "invoice_drafts", title: `Create ${completedReadyToBill.length} draft invoice${completedReadyToBill.length > 1 ? "s" : ""}`, reason: "Completed jobs are ready for billing and cashflow.", primary: "Approve drafts", action: () => openWorkspace("invoices") } : null,
-    openInvoices.length > 0 ? { key: "invoice_reminders", title: `Prepare reminders for ${openInvoices.length} open invoice${openInvoices.length > 1 ? "s" : ""}`, reason: overdueInvoices.length > 0 ? `${overdueInvoices.length} are overdue and need follow-up.` : "Reminders can reduce outstanding receivables.", primary: "Prepare reminders", action: () => openWorkspace("invoices") } : null,
-    waitingQuotes.length > 0 ? { key: "quote_followups", title: `Follow up ${waitingQuotes.length} quote${waitingQuotes.length > 1 ? "s" : ""}`, reason: "Keep pipeline momentum by nudging waiting quotes.", primary: "Review follow-ups", action: () => openWorkspace("quotes") } : null,
+    completedReadyToBill.length > 0 ? { key: "invoice_drafts", title: `Create ${completedReadyToBill.length} draft invoice${completedReadyToBill.length > 1 ? "s" : ""}`, reason: `${completedReadyToBill.length} completed jobs are ready for billing.`, whatHappens: "Churvox will create editable draft invoices. Nothing is sent until you approve sending.", dataUsed: completedReadyToBill.slice(0, 3).map((j) => j.title || j.name || j.id).join(" · "), primary: "Approve drafts", action: () => openWorkspace("invoices") } : null,
+    openInvoices.length > 0 ? { key: "invoice_reminders", title: `Prepare reminders for ${openInvoices.length} open invoice${openInvoices.length > 1 ? "s" : ""}`, reason: overdueInvoices.length > 0 ? `${overdueInvoices.length} are overdue and need follow-up.` : "Unpaid invoices are ready for reminder drafts.", whatHappens: "AI prepares reminder drafts for owner approval. Messages are not sent automatically.", dataUsed: openInvoices.slice(0, 3).map((i) => i.number || i.id).join(" · "), primary: "Prepare reminders", action: () => openWorkspace("invoices") } : null,
+    waitingQuotes.length > 0 ? { key: "quote_followups", title: `Follow up ${waitingQuotes.length} quote${waitingQuotes.length > 1 ? "s" : ""}`, reason: "Quotes are waiting on customer response.", whatHappens: "AI drafts a follow-up for review. No message is sent without approval.", dataUsed: waitingQuotes.slice(0, 3).map((q) => q.title || q.number || q.id).join(" · "), primary: "Review follow-ups", action: () => openWorkspace("quotes") } : null,
   ].filter(Boolean).slice(0, 3);
 
   return <Layout smartHubMode><div className="min-h-screen bg-[#f4f1ea]"><div className="mx-auto max-w-[1300px] space-y-5 p-4 sm:p-6">
     <section className="rounded-2xl border border-slate-200/70 bg-[#fbf8f1] px-4 py-3 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><ChurvoxLogo size="sm" /><div><p className="text-xs uppercase tracking-[0.24em] text-slate-500">AI Command Centre</p><p className="text-sm font-semibold text-slate-800">Business pulse: {jobsToday.length} jobs · {openInvoices.length} invoices · {waitingQuotes.length} quotes</p></div></div><div className="flex items-center gap-2"><NotificationsBell /><button onClick={() => setModal("ask")} className="rounded-full bg-teal-700 px-4 py-2 text-sm font-semibold text-white shadow">Ask AI</button><details className="relative"><summary className="list-none cursor-pointer rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700">{(user?.name || "Profile").split(" ")[0]}</summary><div className="absolute right-0 mt-2 w-56 rounded-xl border bg-white p-2 shadow-xl z-20"><p className="px-2 py-1 text-xs text-slate-500">{user?.email}</p><Link to="/settings" className="block rounded-lg px-2 py-2 text-sm hover:bg-slate-100">Settings</Link><Link to="/account" className="block rounded-lg px-2 py-2 text-sm hover:bg-slate-100">Account</Link><button onClick={async () => { await logout(); navigate("/login"); }} className="mt-1 w-full text-left rounded-lg px-2 py-2 text-sm text-red-600 hover:bg-red-50">Log out</button></div></details></div></div></section>
-    <section className="rounded-3xl border border-slate-700/70 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-7 text-slate-100 shadow-2xl"><div className="grid gap-6 lg:grid-cols-[2fr_1fr]"><div><h2 className="text-3xl font-bold">AI is running today’s admin</h2><p className="mt-2 text-sm text-slate-300">Churvox has checked the day and prepared the next moves for approval.</p><div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{[["actions prepared", actionCards.length], ["need approval", approvals.length], ["$ / invoices waiting", invoicesWaitingText], ["risk", heroRisk]].map(([k, v]) => <div key={k} className="rounded-2xl border border-slate-700 bg-slate-800/70 p-3"><p className="text-xs uppercase tracking-wide text-slate-400">{k}</p><p className="mt-1 text-lg font-semibold">{v}</p></div>)}</div></div><div className="rounded-2xl border border-amber-300/30 bg-slate-800/80 p-4"><p className="text-xs uppercase tracking-wide text-amber-300">Best next move</p><p className="mt-2 text-xl font-semibold text-white">{bestMove}</p></div></div></section>
-    <section className="grid gap-4 lg:grid-cols-3">{decisionCards.length ? decisionCards.map((card) => <article key={card.key} className="rounded-3xl border border-slate-200/70 bg-[#f9f6ef] p-5 shadow-lg"><p className="text-xl font-semibold text-slate-900">{card.title}</p><p className="mt-2 text-sm text-slate-600">{card.reason}</p><div className="mt-4 flex gap-2"><button onClick={card.action} className="rounded-full bg-teal-700 px-4 py-2 text-sm font-semibold text-white">{card.primary}</button><button onClick={card.action} className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Details</button></div></article>) : <article className="rounded-3xl border border-slate-200/70 bg-[#f9f6ef] p-5 shadow-lg"><p className="text-xl font-semibold text-slate-900">All clear</p><p className="mt-2 text-sm text-slate-600">No actions needed right now.</p></article>}</section>
+    <section className="rounded-3xl border border-slate-700/70 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-7 text-slate-100 shadow-2xl"><div className="grid gap-6 lg:grid-cols-[2fr_1fr]"><div><h2 className="text-3xl font-bold">AI is running today’s admin</h2><p className="mt-2 text-sm text-slate-300">Churvox has checked the day and prepared the next moves for approval.</p><div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{[["actions prepared", actionCards.length], ["need approval", approvals.length], ["$ / invoices waiting", invoicesWaitingText], ["risk", heroRisk]].map(([k, v]) => <div key={k} className="rounded-2xl border border-slate-700 bg-slate-800/70 p-3"><p className="text-xs uppercase tracking-wide text-slate-400">{k}</p><p className="mt-1 text-lg font-semibold">{v}</p></div>)}</div></div><div className="rounded-2xl border border-amber-300/30 bg-slate-800/80 p-4"><p className="text-xs uppercase tracking-wide text-amber-300">Best next move</p><p className="mt-2 text-xl font-semibold text-white">{bestMove}</p><p className="mt-2 text-sm text-slate-300">{bestMove === "Approve invoice drafts" ? `${completedReadyToBill.length} completed jobs are ready to bill.` : bestMove === "Approve worker assignments" ? `${unassignedJobs.length} jobs are waiting for assignment.` : bestMove === "Prepare payment reminders" ? `${openInvoices.length} open invoices need follow-up.` : bestMove === "Review quote follow-ups" ? `${waitingQuotes.length} quotes are waiting on response.` : "All clear. AI has no urgent decisions waiting."}</p><button onClick={() => openWorkspace(bestMove === "Approve invoice drafts" ? "invoices" : bestMove === "Approve worker assignments" ? "jobs" : bestMove === "Prepare payment reminders" ? "invoices" : "quotes")} className="mt-3 rounded-full bg-teal-700 px-3 py-1.5 text-xs font-semibold text-white">{bestMove === "All clear" ? "View workspaces" : "Review drafts"}</button></div></div><p className="mt-5 text-xs text-slate-300">AI prepares the work. You approve before anything is sent, assigned, charged, or changed.</p></section>
+    <section className="grid gap-4 lg:grid-cols-3">{decisionCards.length ? decisionCards.map((card) => <article key={card.key} className="rounded-3xl border border-slate-200/70 bg-[#f9f6ef] p-5 shadow-lg"><p className="text-xl font-semibold text-slate-900">{card.title}</p><p className="mt-2 text-sm text-slate-600"><span className="font-semibold">Reason:</span> {card.reason}</p><p className="mt-1 text-sm text-slate-600"><span className="font-semibold">What happens:</span> {card.whatHappens}</p><p className="mt-1 text-xs text-slate-500">Real data: {card.dataUsed || "Using current live records"}</p><div className="mt-4 flex gap-2"><button onClick={card.action} className="rounded-full bg-teal-700 px-4 py-2 text-sm font-semibold text-white">{card.primary}</button><button onClick={card.action} className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Details</button></div></article>) : <article className="rounded-3xl border border-slate-200/70 bg-[#f9f6ef] p-5 shadow-lg"><p className="text-xl font-semibold text-slate-900">All clear</p><p className="mt-2 text-sm text-slate-600">All clear. AI has no urgent decisions waiting.</p></article>}</section>
     <section className="rounded-2xl border border-slate-200/80 bg-[#fbf8f1] p-4 shadow-sm"><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{[["Ready to bill", completedReadyToBill.length], ["Open invoices", openInvoices.length], ["Quotes waiting", waitingQuotes.length], ["Crew available", Math.max(workers.length - crewActive, 0)]].map(([label, value]) => <div key={label} className="rounded-xl border border-slate-200 bg-white/70 px-3 py-2"><p className="text-xs uppercase tracking-wide text-slate-500">{label}</p><p className="text-lg font-semibold text-slate-900">{value}</p></div>)}</div></section>
     <section className="rounded-3xl border border-slate-300/80 bg-white/80 p-4 shadow-md"><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{["Jobs", "Clients", "Invoices", "Quotes", "Crew", "Payroll", "Approvals"].map((name) => <button key={name} onClick={() => openWorkspace(name.toLowerCase())} className="rounded-2xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5"><p className="text-sm font-semibold text-slate-800">{name}</p></button>)}</div></section>
-    {error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
+    <section className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-sm"><h3 className="text-sm font-semibold text-slate-900">AI activity</h3>{activityTrail.length ? <div className="mt-2 space-y-2">{activityTrail.map((item, idx) => <div key={`${item.time}-${idx}`} className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs"><p className="font-semibold text-slate-800">{item.action}</p><p className="text-slate-600">{item.result} · {item.approvedBy}</p><p className="text-slate-500">{new Date(item.time).toLocaleString()}</p></div>)}</div> : <p className="mt-2 text-sm text-slate-600">No AI actions approved yet. Approved work will appear here.</p>}</section>{error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
   </div></div>
   <SmartModal open={Boolean(workspaceDrawer)} wide title={`${activeSmartHubSection || ""} workspace`} onClose={() => { setActiveSmartHubSection(null); setWorkspaceDrawer(null); setWorkspaceMode("list"); setWorkspaceRecord(null); }} actions={<button onClick={() => navigate(workspaceRoute(activeSmartHubSection, workspaceMode, workspaceRecord))} className="rounded-full border px-3 py-1 text-xs">Open full page</button>}>
     {!["today", "approvals"].includes(String(activeSmartHubSection || "").toLowerCase()) ? <div className="space-y-3">
