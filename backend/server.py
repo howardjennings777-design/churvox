@@ -157,45 +157,28 @@ def _safe_text(value):
 
 def _format_invoice_description_from_job(job: dict, client_name: str = "") -> str:
     if not isinstance(job, dict):
-        return f"Service work completed for {client_name}." if client_name else "Service work completed for this client."
+        return f"Service completed for {client_name}." if client_name else "Service completed."
 
-    title = _safe_text(job.get("title"))
-    job_type = _safe_text(job.get("job_type") or job.get("service_type"))
-    address = _safe_text(job.get("address"))
-    job_notes = _safe_text(job.get("notes"))
-    worker_notes = _safe_text(job.get("worker_notes"))
-    pricing_type = _safe_text(job.get("pricing_type"))
-    price = job.get("price")
-    completed_at = job.get("completed_at")
+    title = _safe_text(job.get("title") or job.get("name"))
+    resolved_client = _safe_text(
+        client_name
+        or job.get("client_name")
+        or job.get("customer_name")
+        or (job.get("client") if isinstance(job.get("client"), str) else "")
+    )
+    address = _safe_text(job.get("address") or job.get("job_address") or job.get("service_address"))
 
-    parts = []
+    if title and resolved_client and address:
+        return f"{title} completed for {resolved_client} at {address}."
+    if title and resolved_client:
+        return f"{title} completed for {resolved_client}."
     if title:
-        parts.append(f"Completed job: {title}.")
-    elif client_name:
-        parts.append(f"Service work completed for {client_name}.")
-    else:
-        parts.append("Service work completed for this client.")
-
-    detail_bits = [x for x in [job_type, address] if x]
-    if detail_bits:
-        parts.append(f"Details: {' · '.join(detail_bits)}.")
-    if job_notes:
-        parts.append(f"Job notes: {job_notes}")
-    if worker_notes:
-        parts.append(f"Completion notes: {worker_notes}")
-    if completed_at:
-        parts.append(f"Completion status: completed on {completed_at}.")
-    else:
-        parts.append("Completion status: completed.")
-    if price not in (None, ""):
-        try:
-            amount = float(price)
-            pricing_label = "Hourly" if pricing_type == "hourly" else "Fixed"
-            parts.append(f"Pricing context: {pricing_label} service, ${amount:.2f}.")
-        except Exception:
-            pass
-
-    return "\n".join(parts).strip()
+        return f"{title} completed."
+    if resolved_client and address:
+        return f"Service completed for {resolved_client} at {address}."
+    if resolved_client:
+        return f"Service completed for {resolved_client}."
+    return "Service completed."
 
 
 ROOT_DIR = Path(__file__).parent
@@ -5254,7 +5237,22 @@ async def create_draft_invoice_from_job(job_id: str, payload: dict | None = None
     if invoice_mode not in INVOICE_MODES:
         invoice_mode = "churvox_only"
 
-    description = payload.get("description") or payload.get("invoice_description") or job.get("title") or "Job invoice"
+    description = _safe_text(
+        payload.get("description")
+        or payload.get("invoice_description")
+        or job.get("ai_invoice_description")
+        or job.get("invoice_description_draft")
+        or job.get("completion_notes")
+        or job.get("worker_notes")
+        or job.get("notes")
+        or job.get("description")
+    )
+    if not description:
+        client_name = _safe_text(job.get("client_name") or job.get("customer_name"))
+        if not client_name:
+            linked_client = await db.clients.find_one({"$or": [{"_id": normalize_object_id(job.get("client_id"))}, {"id": str(job.get("client_id") or "")}]})
+            client_name = _safe_text((linked_client or {}).get("name") or (linked_client or {}).get("client_name"))
+        description = _format_invoice_description_from_job(job, client_name)
     client_id = payload.get("client_id") or job.get("client_id")
     doc = {
         "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{str(real_job_id)[-5:]}",
@@ -5290,6 +5288,10 @@ async def create_draft_invoice_from_job(job_id: str, payload: dict | None = None
     print("SMART HUB DRAFT INVOICE created invoice id", invoice_id)
     await _mark_job_billed(invoice_id)
     created_invoice = await db.invoices.find_one({"_id": result.inserted_id})
+    await db.jobs.update_one(
+        {"_id": real_job_id},
+        {"$set": {"ai_invoice_description": description, "invoice_description_draft": description, "updated_at": now}}
+    )
     updated_job = await db.jobs.find_one({"_id": real_job_id})
 
     message = "Draft invoice created"
