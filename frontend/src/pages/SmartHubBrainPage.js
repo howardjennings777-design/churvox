@@ -476,6 +476,9 @@ export default function SmartHubBrainPage() {
   const runScanNow = async () => {
     try {
       await post("/smart-hub/scan", {});
+      try {
+        await post("/smart-hub/process-due-communications", {});
+      } catch {}
       await load();
       setToast({ kind: "success", message: "Smart Hub scan complete." });
     } catch {
