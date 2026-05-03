@@ -335,6 +335,13 @@ export default function SmartHubBrainPage() {
     () => workers.filter((w) => w?.available !== false && !["inactive", "offboarded"].includes(statusOf(w?.status))).length,
     [workers]
   );
+  const jobsToday = useMemo(() => {
+    const today = new Date().toDateString();
+    return jobs.filter((job) => {
+      const scheduled = asDate(job?.scheduled_date || job?.date || job?.scheduled_at);
+      return scheduled && scheduled.toDateString() === today;
+    }).length;
+  }, [jobs]);
 
   const bestNextMove = useMemo(() => {
     if (readyToBillJobs.length) {
@@ -353,6 +360,16 @@ export default function SmartHubBrainPage() {
   }, [readyToBillJobs.length, unassignedJobs.length, openInvoices.length, waitingQuotes.length]);
 
   const workspaceButtons = ["Jobs", "Clients", "Invoices", "Quotes", "Crew", "Payroll", "Approvals", "AI Dispatch"];
+  const workspaceMeta = {
+    Jobs: `${unassignedJobs.length} unassigned`,
+    Clients: "Relationship health",
+    Invoices: `${readyToBillJobs.length} ready to bill`,
+    Quotes: `${waitingQuotes.length} waiting`,
+    Crew: `${crewAvailable} available`,
+    Payroll: "Weekly review",
+    Approvals: "Owner review",
+    "AI Dispatch": `${unassignedJobs.length} to assign`,
+  };
 
   const openWorkspace = (name, mode = "list") => {
     setWorkspaceDrawer(name);
@@ -636,7 +653,7 @@ export default function SmartHubBrainPage() {
     return (
       <div className="space-y-3">
         <h3 className="text-lg font-semibold text-slate-900">{workspaceDrawer} Workspace</h3>
-        <p className="text-sm text-slate-600">This workspace is in safe mode for build rescue. Use the full {workspaceDrawer.toLowerCase()} page for advanced actions.</p>
+        <p className="text-sm text-slate-600">Nothing needs attention here.</p>
         <button
           type="button"
           onClick={() => navigate(`/${workspaceDrawer.toLowerCase()}`)}
@@ -684,17 +701,66 @@ export default function SmartHubBrainPage() {
             ))}
           </section>
 
+          <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Owner Decision Queue</h2>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {[
+                readyToBillJobs.length > 0 ? { key: "bill", title: `Create invoices for ${readyToBillJobs.length} ready-to-bill job${readyToBillJobs.length === 1 ? "" : "s"}`, reason: "Completed jobs are waiting for billing.", impact: "AI prepares editable draft invoices. Nothing is sent until you approve.", cta: "Review drafts", onClick: () => openWorkspace("Invoices", "readyToBill") } : null,
+                unassignedJobs.length > 0 ? { key: "assign", title: `Assign workers to ${unassignedJobs.length} unassigned job${unassignedJobs.length === 1 ? "" : "s"}`, reason: "Unassigned jobs can delay today's schedule.", impact: "AI suggests best-fit crew assignments and lets you approve each one.", cta: "Assign workers", onClick: () => openWorkspace("AI Dispatch", "assign") } : null,
+                openInvoices.length > 0 ? { key: "reminders", title: `Prepare reminders for ${openInvoices.length} open invoice${openInvoices.length === 1 ? "" : "s"}`, reason: "Money is waiting on unpaid invoices.", impact: "AI drafts reminder messages for quick approval before sending.", cta: "Prepare reminders", onClick: () => openWorkspace("Payment Reminders", "reminders") } : null,
+                waitingQuotes.length > 0 ? { key: "quotes", title: `Follow up ${waitingQuotes.length} waiting quote${waitingQuotes.length === 1 ? "" : "s"}`, reason: "Follow-ups increase quote conversions.", impact: "AI drafts client follow-ups so you can review and approve in minutes.", cta: "Review follow-ups", onClick: () => openWorkspace("Quote Follow-ups", "followUps") } : null,
+              ].filter(Boolean).map((item) => (
+                <article key={item.key} className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-4 shadow-sm">
+                  <p className="font-semibold text-slate-900">{item.title}</p>
+                  <p className="mt-1 text-sm text-slate-600">{item.reason}</p>
+                  <p className="mt-2 text-sm text-slate-700">{item.impact}</p>
+                  <button type="button" onClick={item.onClick} className="mt-3 rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white hover:bg-teal-800">{item.cta}</button>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-6 grid gap-4 lg:grid-cols-2">
+            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Today&apos;s Plan</h2>
+              <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                {[["Jobs today", jobsToday], ["Unassigned jobs", unassignedJobs.length], ["Ready to bill", readyToBillJobs.length], ["Open invoices", openInvoices.length], ["Quotes waiting", waitingQuotes.length], ["Crew available", crewAvailable]].map(([label, value]) => (
+                  <div key={label} className="rounded-lg bg-[#f6f4ef] px-3 py-2">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
+                    <p className="text-lg font-semibold text-slate-900">{value}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700">
+                AI found {readyToBillJobs.length} {readyToBillJobs.length === 1 ? "job" : "jobs"} ready to bill, {unassignedJobs.length} unassigned {unassignedJobs.length === 1 ? "job" : "jobs"}, {openInvoices.length} open {openInvoices.length === 1 ? "invoice" : "invoices"} and {waitingQuotes.length} {waitingQuotes.length === 1 ? "quote" : "quotes"} waiting. Best next move: create invoice drafts.
+              </p>
+            </article>
+
+            <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Business Pulse</h2>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                {[["Money waiting", openInvoices.length], ["Billing ready", readyToBillJobs.length], ["Dispatch pressure", unassignedJobs.length], ["Pipeline", waitingQuotes.length], ["Crew", crewAvailable]].map(([label, value]) => (
+                  <div key={label} className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-3">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
+                    <p className="mt-1 text-xl font-semibold text-slate-900">{value}</p>
+                  </div>
+                ))}
+              </div>
+            </article>
+          </section>
+
           <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Workspace Dock</h2>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               {workspaceButtons.map((name) => (
                 <button
                   key={name}
                   type="button"
                   onClick={() => openWorkspace(name) }
-                  className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800"
+                  className="rounded-lg bg-teal-700 px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-teal-800"
                 >
-                  {name}
+                  <span className="block">{name}</span>
+                  <span className="block text-xs text-teal-100">{workspaceMeta[name] || "Open workspace"}</span>
                 </button>
               ))}
               <button type="button" onClick={() => openWorkspace("Payment Reminders", "reminders")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Prepare reminders</button>
