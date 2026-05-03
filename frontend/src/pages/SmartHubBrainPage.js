@@ -25,6 +25,39 @@ const listFrom = (value, keys = []) => {
   return [];
 };
 const riskRank = { urgent: 0, high: 1, medium: 2, low: 3 };
+const asId = (v) => String(v?.id || v?._id || "");
+const sameId = (a, b) => String(a || "") && String(a || "") === String(b || "");
+const textOr = (v, fallback) => (v === 0 ? "0" : (String(v || "").trim() || fallback));
+const fmtDateTime = (v) => v ? new Date(v).toLocaleString() : "No schedule time set";
+const calcWorkerLoadToday = (jobs, workerId, today) => jobs.filter((j) => sameId(j.assigned_worker_id || j.worker_id, workerId) && String(j.scheduled_date || j.date || "").slice(0, 10) === today).length;
+
+function buildAssignmentApprovalDetails(action, jobs, workers, clients, today) {
+  const jobId = action.job_id || action.related_job_id || action.related_entity_id;
+  const workerId = action.recommended_worker_id || action.worker_id || action.assigned_worker_id;
+  const job = jobs.find((j) => sameId(asId(j), jobId));
+  const worker = workers.find((w) => sameId(asId(w), workerId));
+  const client = clients.find((c) => sameId(asId(c), job?.client_id || action.client_id || action.related_client_id));
+  const assignedWorker = workers.find((w) => sameId(asId(w), job?.assigned_worker_id || job?.worker_id));
+  const workerLoadToday = worker ? calcWorkerLoadToday(jobs, asId(worker), today) : 0;
+  const area = textOr(job?.area || job?.region || job?.suburb, "No area saved");
+  const workerArea = textOr(worker?.region || worker?.area || worker?.zone, "No region saved");
+  const areaMatch = area !== "No area saved" && workerArea !== "No region saved" && area.toLowerCase() === workerArea.toLowerCase();
+  const workerName = textOr(worker?.name, "Recommended worker unavailable");
+  const title = textOr(job?.title || job?.name, "Untitled job");
+  return {
+    recommendedAction: `Assign ${workerName} to ${title}`,
+    whyAi: `${workerName} is recommended because they have ${workerLoadToday} jobs scheduled today, are ${textOr(worker?.status, "status unknown")}, and are marked ${worker?.available === false ? "not available" : "available"}. ${areaMatch ? `They also match the job area: ${area}.` : "Area match is not available."} ${worker?.skills?.length ? `Matched skills: ${worker.skills.slice(0, 4).join(", ")}.` : "Skill history was not available, so this recommendation is based on availability and workload."}`,
+    jobDetails: [
+      ["Job", title], ["Client", textOr(client?.name, "No client linked")], ["Address", textOr(job?.address, "No address saved")],
+      ["Date / Time", fmtDateTime(job?.scheduled_date || job?.date)], ["Status", textOr(job?.status, "No status saved")],
+      ["Service type", textOr(job?.service_type || job?.job_type, "No service type saved")], ["Notes", textOr(job?.notes || job?.description, "No completion notes saved")],
+      ["Current assigned worker", textOr(assignedWorker?.name, "No worker assigned")],
+    ],
+    workerDetails: [["Worker", workerName], ["Role", textOr(worker?.role, "No role saved")], ["Region", workerArea], ["Status", textOr(worker?.status, "Unknown")], ["Jobs today", String(workerLoadToday)], ["Current workload", textOr(worker?.workload, `Today load: ${workerLoadToday}`)], ["Skills", worker?.skills?.length ? worker.skills.join(", ") : "No worker skills saved yet"], ["Availability today", worker?.available === false ? "Unavailable" : "Available"], ["Schedule conflict", action?.schedule_conflict ? "Conflict detected" : "No conflict detected"]],
+    impact: ["Worker will be assigned to this job", "Job status will update if needed", `Activity note will be saved: \"AI recommended assigning ${workerName}. Owner approved.\"`, "Worker notification will be sent if notifications are available"],
+    links: { job: job ? `/jobs/${asId(job)}` : "/jobs", worker: worker ? `/team` : null },
+  };
+}
 
 function SmartModal({ open, title, onClose, children }) {
   if (!open) return null;
@@ -49,6 +82,7 @@ export default function SmartHubBrainPage() {
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [approvingActionId, setApprovingActionId] = useState("");
   const [actionError, setActionError] = useState("");
+  const [editedWorkerId, setEditedWorkerId] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -124,7 +158,21 @@ export default function SmartHubBrainPage() {
       toast.error(msg);
     }
   };
-  const handleEditAction = (action) => { setSelectedAction(action); toast("Inline edit is limited. Use Open full page for full edit."); };
+  const handleEditAction = (action) => { setSelectedAction(action); setEditedWorkerId(String(action?.recommended_worker_id || action?.worker_id || action?.assigned_worker_id || "")); toast("Edit mode enabled. Choose a worker below before approval."); };
+
+  const actionDetails = useMemo(() => {
+    if (!selectedAction) return null;
+    const type = String(selectedAction.action_type || selectedAction.kind || "").toLowerCase();
+    if (type === "assign_worker") return buildAssignmentApprovalDetails(selectedAction, data.jobs, workers, data.clients, today);
+    return {
+      recommendedAction: selectedAction.title || "AI prepared action",
+      whyAi: selectedAction.reason || "AI generated this recommendation from current records.",
+      jobDetails: [["Client", "No client linked"], ["Status", textOr(selectedAction.status, "pending")]],
+      workerDetails: [["Source data", textOr(selectedAction.summary || selectedAction.dataUsed, "No source data saved")]],
+      impact: ["Approve will save the prepared draft action", "No automatic sending occurs without separate confirmation"],
+      links: { job: "/jobs", worker: null },
+    };
+  }, [selectedAction, data.jobs, data.clients, workers, today]);
 
   const runDailyCheck = async () => { setBusy((s) => ({ ...s, run: true })); try { await post("/ai/control/run-scan", {}); } catch {} await load(); setBusy((s) => ({ ...s, run: false })); };
   const prepareToday = async () => { setBusy((s) => ({ ...s, prepare: true })); try { await post("/ai/control/prepare-today", {}); } catch {} await load(); setBusy((s) => ({ ...s, prepare: false })); };
@@ -148,7 +196,18 @@ export default function SmartHubBrainPage() {
   <SmartModal open={Boolean(modal)} title="Command Action" onClose={() => setModal(null)}>{modal === "job" ? <JobCreateForm onCancel={() => setModal(null)} onSuccess={() => { setModal(null); load(); }} submitLabel="Create job" /> : null}{modal === "quote" ? <QuoteCreateForm onCancel={() => setModal(null)} onSuccess={() => { setModal(null); load(); }} submitLabel="Create quote" /> : null}{modal === "invoice" ? <InvoiceCreateForm onCancel={() => setModal(null)} onSuccess={() => { setModal(null); load(); }} submitLabel="Create invoice" /> : null}{modal === "client" ? <ClientCreateForm onCancel={() => setModal(null)} onSuccess={() => { setModal(null); load(); }} submitLabel="Add client" /> : null}{modal === "dispatch" ? <SmartHubDispatchPanel canManageDispatch={canSeeOwnerControls} onAssigned={() => load()} /> : null}{modal === "ask" ? <div className="space-y-3"><textarea value={askQuery} onChange={(e) => setAskQuery(e.target.value)} className="w-full rounded-xl border p-3" rows={3} /><button onClick={askAi} disabled={busy.ask} className="rounded-full bg-blue-600 text-white px-4 py-2 text-sm">{busy.ask ? "Generating…" : "Ask AI"}</button><div className="rounded-xl border p-3 text-sm min-h-16">{askResponse || "AI response will appear here."}</div></div> : null}</SmartModal>
 
   <SmartModal open={isActionModalOpen} title={selectedAction?.title || "Action details"} onClose={() => setIsActionModalOpen(false)}>
-    {selectedAction ? <div className="space-y-3 text-sm"><p><span className="font-semibold">AI recommended action:</span> {selectedAction.title}</p><p><span className="font-semibold">Reason:</span> {selectedAction.reason || "AI recommends owner review."}</p><p><span className="font-semibold">AI used this data:</span> {selectedAction.dataUsed || selectedAction.summary || "Jobs, clients, quotes, invoices, and worker data."}</p><p><span className="font-semibold">Risk level:</span> {selectedAction.risk || selectedAction.risk_level || "medium"}</p><p><span className="font-semibold">Related info:</span> job #{selectedAction.job_id || selectedAction.related_job_id || "-"} · client #{selectedAction.client_id || selectedAction.related_client_id || "-"} · worker #{selectedAction.worker_id || selectedAction.assigned_worker_id || "-"} · invoice #{selectedAction.invoice_id || "-"} · quote #{selectedAction.quote_id || "-"}</p><p><span className="font-semibold">Current status:</span> {selectedAction.status || "pending"}</p>{actionError ? <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700">{actionError}</div> : null}<div className="flex flex-wrap gap-2 pt-2"><button onClick={() => handleApproveAction(selectedAction)} className="rounded-full bg-blue-600 text-white px-3 py-1.5">Approve</button><button onClick={() => handleEditAction(selectedAction)} className="rounded-full border px-3 py-1.5">Edit</button><button onClick={() => handleRejectAction(selectedAction)} className="rounded-full border px-3 py-1.5">Reject</button><button onClick={() => setIsActionModalOpen(false)} className="rounded-full border px-3 py-1.5">Close</button><button onClick={() => navigate(selectedAction.nav || "/dashboard")} className="rounded-full border px-3 py-1.5">Open full page</button></div></div> : null}
+    {selectedAction && actionDetails ? <div className="space-y-3 text-sm">
+      <div className="rounded-xl border p-3"><p className="text-xs uppercase text-slate-500">Recommended action</p><p className="font-semibold mt-1">{actionDetails.recommendedAction}</p></div>
+      <div className="rounded-xl border p-3"><p className="text-xs uppercase text-slate-500">Why AI chose this</p><p className="mt-1">{actionDetails.whyAi}</p></div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border p-3"><p className="text-xs uppercase text-slate-500">Job details</p>{actionDetails.jobDetails.map(([k,v]) => <p key={k} className="mt-1"><span className="font-semibold">{k}:</span> {v}</p>)}</div>
+        <div className="rounded-xl border p-3"><p className="text-xs uppercase text-slate-500">Worker match / source details</p>{actionDetails.workerDetails.map(([k,v]) => <p key={k} className="mt-1"><span className="font-semibold">{k}:</span> {v}</p>)}</div>
+      </div>
+      <div className="rounded-xl border p-3"><p className="text-xs uppercase text-slate-500">What happens when approved</p><ul className="list-disc pl-5 mt-1">{actionDetails.impact.map((i) => <li key={i}>{i}</li>)}</ul></div>
+      {editedWorkerId ? <div className="rounded-xl border p-3"><p className="text-xs uppercase text-slate-500">Edit recommendation</p><select className="mt-2 w-full rounded-lg border p-2" value={editedWorkerId} onChange={(e) => setEditedWorkerId(e.target.value)}>{workers.map((w) => <option key={asId(w)} value={asId(w)}>{w.name || w.email || asId(w)}</option>)}</select></div> : null}
+      {actionError ? <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700">{actionError}</div> : null}
+      <div className="flex flex-wrap gap-2 pt-2"><button onClick={() => handleApproveAction(selectedAction)} className="rounded-full bg-blue-600 text-white px-3 py-1.5">Approve assignment</button><button onClick={() => handleEditAction(selectedAction)} className="rounded-full border px-3 py-1.5">Edit recommendation</button><button onClick={() => handleRejectAction(selectedAction)} className="rounded-full border px-3 py-1.5">Reject</button><button onClick={() => navigate(actionDetails.links?.job || selectedAction.nav || "/dashboard")} className="rounded-full border px-3 py-1.5">Open job</button>{actionDetails.links?.worker ? <button onClick={() => navigate(actionDetails.links.worker)} className="rounded-full border px-3 py-1.5">Open worker profile</button> : null}</div>
+    </div> : null}
   </SmartModal>
   </Layout>;
 }
