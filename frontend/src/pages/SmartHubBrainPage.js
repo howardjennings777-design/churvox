@@ -86,6 +86,7 @@ export default function SmartHubBrainPage() {
   const [workspaceMode, setWorkspaceMode] = useState("list");
   const [workspaceQuery, setWorkspaceQuery] = useState("");
   const [workspaceRecord, setWorkspaceRecord] = useState(null);
+  const [workspaceFilter, setWorkspaceFilter] = useState("all");
   const [askQuery, setAskQuery] = useState("What should I approve first today?");
   const [askResponse, setAskResponse] = useState("");
   const [busy, setBusy] = useState({ run: false, prepare: false, ask: false, saving: false });
@@ -273,6 +274,34 @@ export default function SmartHubBrainPage() {
     return "/dashboard";
   };
 
+
+  const filteredWorkspaceRows = useMemo(() => {
+    const base = activeSmartHubSection === "clients" ? data.clients : activeSmartHubSection === "jobs" ? data.jobs : activeSmartHubSection === "quotes" ? data.quotes : activeSmartHubSection === "invoices" ? data.invoices : activeSmartHubSection === "crew" ? workers : activeSmartHubSection === "approvals" ? visibleActionCards : [];
+    const q = workspaceQuery.toLowerCase();
+    let rows = base.filter((row) => JSON.stringify(row).toLowerCase().includes(q));
+    if (activeSmartHubSection === "jobs") {
+      if (workspaceFilter === "today") rows = rows.filter((j) => String(j.scheduled_date || j.date || "").slice(0,10) === today);
+      if (workspaceFilter === "unassigned") rows = rows.filter((j) => !isAssignedJob(j));
+      if (workspaceFilter === "completed") rows = rows.filter((j) => String(j.status||"").toLowerCase() === "completed");
+      if (workspaceFilter === "ready_to_bill") rows = rows.filter((j) => String(j.status||"").toLowerCase() === "completed" && !hasDraftOrInvoice(j));
+    }
+    return rows.slice(0,50);
+  }, [activeSmartHubSection, data.clients, data.jobs, data.quotes, data.invoices, workers, visibleActionCards, workspaceQuery, workspaceFilter, today]);
+
+  const saveWorkspaceEdit = async () => {
+    if (!workspaceRecord || !activeSmartHubSection) return;
+    try {
+      const id = asId(workspaceRecord);
+      const payload = { ...workspaceRecord };
+      await post(`/${activeSmartHubSection}/${id}`, payload);
+      toast.success("Saved changes");
+      await load();
+      setWorkspaceMode("detail");
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Failed to save changes");
+    }
+  };
+
   const actionDetails = useMemo(() => {
     if (!selectedAction) return null;
     const type = String(selectedAction.action_type || selectedAction.kind || "").toLowerCase();
@@ -320,8 +349,10 @@ export default function SmartHubBrainPage() {
         {activeSmartHubSection === "quotes" ? <QuoteCreateForm onCancel={() => setWorkspaceMode("list")} onSuccess={() => { setWorkspaceMode("list"); load(); }} submitLabel="Create quote" /> : null}
         {activeSmartHubSection === "invoices" ? <InvoiceCreateForm onCancel={() => setWorkspaceMode("list")} onSuccess={() => { setWorkspaceMode("list"); load(); }} submitLabel="Create invoice" /> : null}
       </div> : null}
-      {workspaceMode !== "create" ? <div className="grid gap-3 md:grid-cols-2">
-        {(activeSmartHubSection === "clients" ? data.clients : activeSmartHubSection === "jobs" ? data.jobs : activeSmartHubSection === "quotes" ? data.quotes : activeSmartHubSection === "invoices" ? data.invoices : activeSmartHubSection === "crew" ? workers : activeSmartHubSection === "approvals" ? visibleActionCards : []).filter((row) => JSON.stringify(row).toLowerCase().includes(workspaceQuery.toLowerCase())).slice(0, 30).map((row, idx) => <div key={asId(row) || row.id || idx} className="rounded-xl border p-3">
+      {workspaceMode === "list" ? <div className="space-y-3">
+        {activeSmartHubSection === "jobs" ? <div className="flex flex-wrap gap-2"><button onClick={() => setWorkspaceFilter("all")} className="rounded-full border px-3 py-1 text-xs">All</button><button onClick={() => setWorkspaceFilter("today")} className="rounded-full border px-3 py-1 text-xs">Today</button><button onClick={() => setWorkspaceFilter("unassigned")} className="rounded-full border px-3 py-1 text-xs">Unassigned</button><button onClick={() => setWorkspaceFilter("completed")} className="rounded-full border px-3 py-1 text-xs">Completed</button><button onClick={() => setWorkspaceFilter("ready_to_bill")} className="rounded-full border px-3 py-1 text-xs">Ready to bill</button></div> : null}
+        <div className="grid gap-3 md:grid-cols-2">
+        {filteredWorkspaceRows.map((row, idx) => <div key={asId(row) || row.id || idx} className="rounded-xl border p-3">
           <p className="font-semibold">{row.name || row.title || row.number || row.email || row.subject || `Record ${idx + 1}`}</p>
           <p className="text-xs text-slate-600 mt-1">Status: {row.status || row.risk || "n/a"}</p>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -334,14 +365,10 @@ export default function SmartHubBrainPage() {
             {activeSmartHubSection === "jobs" ? <button onClick={() => { setWorkspaceMode("assign"); setWorkspaceRecord(row); }} className="rounded-full border px-2 py-1 text-xs">Assign</button> : null}
           </div>
         </div>)}
-      </div> : null}
-      {workspaceMode !== "list" ? <div className="rounded-xl border p-1 bg-slate-50">
-        <div className="flex items-center justify-between px-3 py-2">
-          <p className="text-xs text-slate-600">{workspaceMode.toUpperCase()} · {workspaceRecord?.name || workspaceRecord?.title || "Workspace"}</p>
-          <button onClick={() => { setWorkspaceMode("list"); setWorkspaceRecord(null); }} className="rounded-full border px-3 py-1 text-xs">Back</button>
-        </div>
-        <iframe title="workspace-embedded" src={workspaceRoute(activeSmartHubSection, workspaceMode, workspaceRecord)} className="h-[70vh] w-full rounded-lg border bg-white" />
-      </div> : null}
+      </div></div> : null}
+      {workspaceMode === "detail" && workspaceRecord ? <div className="rounded-xl border p-3 bg-white space-y-2"><p className="font-semibold text-base">{workspaceRecord.title || workspaceRecord.name || "Record detail"}</p><p>Status: {workspaceRecord.status || "n/a"}</p><p>Client: {workspaceRecord.client_name || workspaceRecord.customer_name || workspaceRecord.email || "n/a"}</p><p>Address: {workspaceRecord.address || "n/a"}</p><p>Notes: {workspaceRecord.notes || workspaceRecord.description || "n/a"}</p><div className="flex flex-wrap gap-2"><button onClick={() => setWorkspaceMode("edit")} className="rounded-full border px-3 py-1 text-xs">Edit</button>{activeSmartHubSection === "jobs" ? <button onClick={() => setWorkspaceMode("assign")} className="rounded-full border px-3 py-1 text-xs">Assign/change worker</button> : null}<button onClick={() => navigate(workspaceRoute(activeSmartHubSection, workspaceMode, workspaceRecord))} className="rounded-full border px-3 py-1 text-xs">Open full page</button></div></div> : null}
+      {workspaceMode === "assign" && workspaceRecord ? <div className="rounded-xl border p-3 bg-white space-y-2"><p className="font-semibold">Assign worker</p><select className="w-full rounded-lg border p-2" value={editedWorkerId} onChange={(e) => setEditedWorkerId(e.target.value)}><option value="">Select worker</option>{workers.map((w) => <option key={asId(w)} value={asId(w)}>{w.name || w.email}</option>)}</select><button onClick={async () => { if (!editedWorkerId) return; await post(`/jobs/${asId(workspaceRecord)}/assign-worker`, { worker_id: editedWorkerId }); toast.success("Worker assigned"); await load(); setWorkspaceMode("detail"); }} className="rounded-full bg-blue-600 text-white px-3 py-1 text-xs">Save assignment</button></div> : null}
+      {workspaceMode === "edit" && workspaceRecord ? <div className="rounded-xl border p-3 bg-white space-y-2"><input className="w-full rounded-lg border p-2" value={workspaceRecord.title || workspaceRecord.name || ""} onChange={(e) => setWorkspaceRecord((r) => ({ ...r, title: e.target.value, name: e.target.value }))} /><textarea className="w-full rounded-lg border p-2" rows={4} value={workspaceRecord.notes || workspaceRecord.description || ""} onChange={(e) => setWorkspaceRecord((r) => ({ ...r, notes: e.target.value, description: e.target.value }))} /><button onClick={saveWorkspaceEdit} className="rounded-full bg-blue-600 text-white px-3 py-1 text-xs">Save changes</button></div> : null}
       {activeSmartHubSection === "today" ? <><p>AI summary: {unassignedJobs.length} unassigned, {approvals.length} pending approvals, {overdueInvoices.length} overdue invoices.</p><p>Urgent actions: {grouped.urgent.length} · Risks: {overdueInvoices.length ? "Receivables" : "Low"}</p><div className="flex flex-wrap gap-2"><button onClick={() => openWorkspace("approvals")} className="rounded-full border px-3 py-1.5">View approvals</button><button onClick={runDailyCheck} className="rounded-full border px-3 py-1.5">Run scan</button><button onClick={prepareToday} className="rounded-full border px-3 py-1.5">Prepare today</button><button onClick={() => setModal("ask")} className="rounded-full border px-3 py-1.5">Ask AI</button></div></> : null}
       {activeSmartHubSection === "dispatch" ? <><p>Unassigned jobs: {unassignedJobs.length} · Available workers: {workers.length - crewActive}</p><p>AI recommended matches: {derivedActions.filter((a) => a.kind === "assign_worker").length} · Schedule conflicts: {Math.max(unassignedJobs.length - (workers.length - crewActive), 0)}</p><div className="flex flex-wrap gap-2">{visibleActionCards.filter((a) => String(a.kind || a.action_type).toLowerCase() === "assign_worker").slice(0, 3).map((a) => <button key={a.id || a.title} onClick={() => handleReviewAction(a)} className="rounded-full border px-3 py-1.5">View details</button>)}</div><div className="flex flex-wrap gap-2"><button onClick={() => navigate("/dispatch")} className="rounded-full border px-3 py-1.5">Open dispatch board</button><button onClick={() => openWorkspace("jobs", "create")} className="rounded-full border px-3 py-1.5">Create job</button></div></> : null}
       {activeSmartHubSection === "jobs" ? <><p>Today jobs: {jobsToday.length} · Unassigned: {unassignedJobs.length} · Recently completed: {completedReadyToBill.length} · Ready to bill: {completedReadyToBill.length}</p><div className="flex flex-wrap gap-2"><button onClick={() => openWorkspace("jobs", "create")} className="rounded-full border px-3 py-1.5">Create job</button><button onClick={() => navigate("/jobs")} className="rounded-full border px-3 py-1.5">Open full jobs page</button></div></> : null}
