@@ -124,6 +124,29 @@ const aiInvoiceDescription = (job, client) => {
   return `${title} completed for ${clientName} at ${location}. Work has been marked complete and is ready for billing.`;
 };
 
+
+const APPROVAL_GROUPS = ["all", "needs_decision", "ready", "drafts", "watching", "completed"];
+
+const buildSmartHubApprovalItems = ({ jobs, clients, invoices, quotes, workers, activity, dispatchRecs, reminderDrafts, quoteDrafts }) => {
+  const items = [];
+  safeArray(jobs).forEach((job) => {
+    const id = String(job?.id || job?._id || "");
+    const client = findByIds(clients, [job?.client_id, job?.clientId], ["id", "_id", "client_id"]);
+    const subtotal = Number(job?.subtotal ?? job?.price ?? job?.amount);
+    if (["completed", "complete"].includes(statusOf(job?.status)) && !hasInvoiceForJob(job, invoices) && !job?.invoice_id && !job?.draft_invoice_id) {
+      items.push({ id: `invoice-${id}`, type: Number.isFinite(subtotal) ? "create_invoice_draft" : "missing_price", group: Number.isFinite(subtotal) ? "ready" : "needs_decision", title: `Create draft invoice for ${textOr(client?.name || job?.title, "client")}`, reason: Number.isFinite(subtotal) ? "Job is completed and has pricing saved." : "Job is completed but pricing is missing.", dataUsed: `Client: ${textOr(client?.name, "Unknown")} • Address: ${textOr(job?.address || job?.location, "Not available")} • Subtotal: ${money(subtotal)}`, whatHappens: Number.isFinite(subtotal) ? "Churvox creates an editable draft invoice. Nothing is sent to the customer." : "Open pricing editor in Smart Hub. Nothing is invoiced until price is saved and approved.", risk: Number.isFinite(subtotal) ? "medium" : "high", status: "pending", relatedType: "job", relatedId: id, client, job, actionPayload: { job_id: id } });
+    }
+  });
+  safeArray(dispatchRecs).forEach((rec) => {
+    const jobId = String(rec?.job?.id || rec?.job?._id || "");
+    if (!jobId) return;
+    items.push({ id: `assign-${jobId}`, type: rec?.recommendation?.conflict ? "schedule_conflict" : "assign_worker", group: rec?.recommendation?.conflict ? "needs_decision" : "ready", title: `Assign ${textOr(rec?.recommendation?.worker?.name, "worker")} to ${textOr(rec?.job?.title, "job")}`, reason: rec?.recommendation?.conflict ? "Possible schedule conflict detected." : "Recommended worker is available and best fit.", dataUsed: `Worker load today: ${rec?.recommendation?.stats?.today ?? 0} • Region match: ${rec?.recommendation?.regionMatch ? "yes" : "no"} • Conflict: ${rec?.recommendation?.conflict ? "yes" : "none"}` , whatHappens: "Churvox assigns the worker and updates the job to assigned.", risk: rec?.recommendation?.conflict ? "high" : "low", status: "pending", relatedType: "job", relatedId: jobId, job: rec?.job, worker: rec?.recommendation?.worker, actionPayload: { job_id: jobId, worker_id: rec?.selectedWorkerId } });
+  });
+  safeArray(invoices).filter((inv)=>REMINDER_ELIGIBLE.includes(statusOf(inv?.status)) && !REMINDER_EXCLUDED.includes(statusOf(inv?.status))).forEach((inv)=>{ const id=String(inv?.id||inv?._id||""); items.push({id:`reminder-${id}`,type:"invoice_reminder",group:"drafts",title:`Prepare reminder draft for invoice ${textOr(inv?.invoice_number||inv?.number,id)}`,reason:"Invoice is open/unpaid.",dataUsed:`Status: ${textOr(inv?.status)} • Amount due: ${money(invoiceBalance(inv))}`,whatHappens:"Saves a reminder draft only. No message is sent.",risk:"low",status:"pending",relatedType:"invoice",relatedId:id,invoice:inv,actionPayload:{invoice_id:id,message:reminderDrafts?.[id]||""}}) });
+  safeArray(quotes).filter((q)=>QUOTE_FOLLOW_UP_ELIGIBLE.includes(statusOf(q?.status))).forEach((q)=>{ const id=String(q?.id||q?._id||""); items.push({id:`quote-${id}`,type:"quote_follow_up",group:"drafts",title:`Prepare quote follow-up for ${textOr(q?.quote_number||q?.title,id)}`,reason:"Quote is waiting for response.",dataUsed:`Status: ${textOr(q?.status)} • Age: ${quoteAgeDays(q) ?? "—"} days`,whatHappens:"Saves a follow-up draft only. No message is sent.",risk:"low",status:"pending",relatedType:"quote",relatedId:id,quote:q,actionPayload:{quote_id:id,message:quoteDrafts?.[id]||""}}) });
+  safeArray(activity).filter((a)=>statusOf(a?.status)==='completed').slice(0,5).forEach((a)=>items.push({id:`activity-${a?.id||a?._id}`,type:"info",group:"completed",title:textOr(a?.title,"Completed action"),reason:textOr(a?.message,"Completed in Smart Hub."),dataUsed:"Recorded in Smart Hub activity",whatHappens:"No further action.",risk:"low",status:"completed",relatedType:a?.related_type,relatedId:String(a?.related_id||"")}));
+  return items;
+};
 export default function SmartHubBrainPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -150,6 +173,8 @@ export default function SmartHubBrainPage() {
   const [activityFilter, setActivityFilter] = useState("all");
   const [dispatchOverrides, setDispatchOverrides] = useState({});
   const [rejectedDispatchIds, setRejectedDispatchIds] = useState({});
+  const [approvalFilter, setApprovalFilter] = useState("all");
+  const [approvalDetail, setApprovalDetail] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -343,10 +368,24 @@ export default function SmartHubBrainPage() {
     }).length;
   }, [jobs]);
 
+  const approvalItems = useMemo(() => buildSmartHubApprovalItems({ jobs, clients, invoices, quotes, workers, activity, dispatchRecs, reminderDrafts, quoteDrafts }), [jobs, clients, invoices, quotes, workers, activity, dispatchRecs, reminderDrafts, quoteDrafts]);
+
+  const sortedApprovalItems = useMemo(() => {
+    const rank = (item) => {
+      if (item.group === "needs_decision" && item.risk === "high") return 1;
+      if (item.group === "ready" && item.type === "create_invoice_draft") return 2;
+      if (item.group === "ready" && item.type === "assign_worker") return 3;
+      if (item.group === "drafts" && item.type === "invoice_reminder") return 4;
+      if (item.group === "drafts" && item.type === "quote_follow_up") return 5;
+      return 6;
+    };
+    return [...approvalItems].sort((a,b)=>rank(a)-rank(b));
+  }, [approvalItems]);
+
   const bestNextMove = useMemo(() => {
     if (readyToBillJobs.length) {
       return {
-        label: `Create invoices for ${readyToBillJobs.length} ready-to-bill job${readyToBillJobs.length === 1 ? "" : "s"}.`,
+        label: sortedApprovalItems[0]?.title || `Create invoices for ${readyToBillJobs.length} ready-to-bill job${readyToBillJobs.length === 1 ? "" : "s"}.`,
         drawer: "Invoices",
         mode: "readyToBill",
       };
@@ -718,21 +757,26 @@ export default function SmartHubBrainPage() {
           </section>
 
           <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Owner Decision Queue</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">AI Approval Centre</h2>
+            <p className="mt-1 text-sm text-slate-600">AI has prepared today&apos;s admin. Review, edit or approve everything from here.</p>
+            <div className="mt-3 flex flex-wrap gap-2">{APPROVAL_GROUPS.map((g)=><button key={g} type="button" onClick={()=>setApprovalFilter(g)} className={`rounded px-3 py-1 text-xs ${approvalFilter===g?"bg-slate-900 text-white":"bg-slate-100 text-slate-700"}`}>{g === "all" ? "All" : g.replace("_"," ")}</button>)}</div>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
-              {[
-                readyToBillJobs.length > 0 ? { key: "bill", title: `Create invoices for ${readyToBillJobs.length} ready-to-bill job${readyToBillJobs.length === 1 ? "" : "s"}`, reason: "Completed jobs are waiting for billing.", impact: "AI prepares editable draft invoices. Nothing is sent until you approve.", cta: "Review drafts", onClick: () => openWorkspace("Invoices", "readyToBill") } : null,
-                unassignedJobs.length > 0 ? { key: "assign", title: `Assign workers to ${unassignedJobs.length} unassigned job${unassignedJobs.length === 1 ? "" : "s"}`, reason: "Unassigned jobs can delay today's schedule.", impact: "AI suggests best-fit crew assignments and lets you approve each one.", cta: "Assign workers", onClick: () => openWorkspace("AI Dispatch", "assign") } : null,
-                openInvoices.length > 0 ? { key: "reminders", title: `Prepare reminders for ${openInvoices.length} open invoice${openInvoices.length === 1 ? "" : "s"}`, reason: "Money is waiting on unpaid invoices.", impact: "AI drafts reminder messages for quick approval before sending.", cta: "Prepare reminders", onClick: () => openWorkspace("Payment Reminders", "reminders") } : null,
-                waitingQuotes.length > 0 ? { key: "quotes", title: `Follow up ${waitingQuotes.length} waiting quote${waitingQuotes.length === 1 ? "" : "s"}`, reason: "Follow-ups increase quote conversions.", impact: "AI drafts client follow-ups so you can review and approve in minutes.", cta: "Review follow-ups", onClick: () => openWorkspace("Quote Follow-ups", "followUps") } : null,
-              ].filter(Boolean).map((item) => (
-                <article key={item.key} className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-4 shadow-sm">
+              {(approvalItems.filter((it)=>approvalFilter==="all" ? true : it.group===approvalFilter).slice(0,8)).map((item) => (
+                <article key={item.id} className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-4 shadow-sm">
                   <p className="font-semibold text-slate-900">{item.title}</p>
                   <p className="mt-1 text-sm text-slate-600">{item.reason}</p>
-                  <p className="mt-2 text-sm text-slate-700">{item.impact}</p>
-                  <button type="button" onClick={item.onClick} className="mt-3 rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white hover:bg-teal-800">{item.cta}</button>
+                  <p className="mt-2 text-sm text-slate-700">{item.dataUsed}</p>
+                  <p className="mt-2 text-sm text-slate-700">{item.whatHappens}</p>
+                  <p className="mt-1 text-xs text-slate-500">Risk: {item.risk}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button type="button" onClick={async ()=>{ if (item.type === "create_invoice_draft") await approveDraft(item.job); else if (item.type === "assign_worker") openWorkspace("AI Dispatch", "assign"); else if (item.type === "invoice_reminder") openWorkspace("Payment Reminders", "reminders"); else if (item.type === "quote_follow_up") openWorkspace("Quote Follow-ups", "followUps"); else setApprovalDetail(item); }} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">Approve</button>
+                    <button type="button" onClick={()=>setApprovalDetail(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Edit</button>
+                    <button type="button" className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Reject</button>
+                    <button type="button" onClick={()=>setApprovalDetail(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Details</button>
+                  </div>
                 </article>
               ))}
+              {!approvalItems.length ? <article className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-4 shadow-sm"><p className="font-semibold text-slate-900">All clear. AI has checked today’s jobs, invoices, quotes and crew. No owner approvals are waiting.</p><div className="mt-3 flex gap-2"><button type="button" onClick={runScanNow} className="rounded-lg bg-teal-700 px-3 py-2 text-sm text-white">Run scan</button><button type="button" onClick={()=>openWorkspace("Jobs")} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Open workspaces</button></div></article> : null}
             </div>
           </section>
 
