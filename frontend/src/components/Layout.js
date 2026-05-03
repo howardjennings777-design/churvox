@@ -78,7 +78,9 @@ export default function Layout({ children, smartHubMode = false }) {
     .join("")
     .toUpperCase();
 
-  const showSidebar = !smartHubMode;
+  const isSmartHubRoute = location.pathname === "/dashboard";
+  const isSmartHubLayout = smartHubMode || isSmartHubRoute;
+  const showSidebar = !isSmartHubLayout;
   return (
     <div className="px-app tap-safe-root cx-app-shell" data-testid="layout-container">
       {/* Desktop Sidebar — Premium light */}
@@ -127,20 +129,20 @@ export default function Layout({ children, smartHubMode = false }) {
       </aside>
 
       {/* Main */}
-      <div className="px-main" data-testid="main-content-area">
+      <div className={`px-main ${isSmartHubLayout ? "px-main--full" : ""}`} data-testid="main-content-area">
         {/* Mobile header */}
-        <header className="md:hidden px-mobile-header" data-testid="mobile-header">
+        {!isSmartHubLayout && <header className="md:hidden px-mobile-header" data-testid="mobile-header">
           <ChurvoxLogo size="sm" dataTestId="mobile-logo" />
           <div className="flex items-center gap-2">
             <NotificationsBell />
             <span className="text-xs font-semibold text-[#0d1b34]">{(user?.name || "").split(" ")[0]}</span>
           </div>
-        </header>
+        </header>}
 
         <main className="flex-1">{children}</main>
 
         {/* Mobile bottom nav */}
-        <nav className="md:hidden px-mobile-bottom" data-testid="mobile-bottom-nav">
+        {!isSmartHubLayout && <nav className="md:hidden px-mobile-bottom" data-testid="mobile-bottom-nav">
           <div className="flex items-center justify-around px-2 py-1">
             {mainNav.map((item) => {
               const active = isActive(item.path);
@@ -201,7 +203,7 @@ export default function Layout({ children, smartHubMode = false }) {
               </div>
             </div>
           )}
-        </nav>
+        </nav>}
       </div>
 
       <InstallPrompt />
