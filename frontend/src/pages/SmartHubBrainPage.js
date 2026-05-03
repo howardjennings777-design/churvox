@@ -220,6 +220,15 @@ export default function SmartHubBrainPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (!approvalCentreOpen) return undefined;
+    const { overflow } = document.body.style;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = overflow;
+    };
+  }, [approvalCentreOpen]);
+
   const jobs = safeArray(data?.jobs);
   const clients = safeArray(data?.clients);
   const quotes = safeArray(data?.quotes);
@@ -872,9 +881,9 @@ export default function SmartHubBrainPage() {
           </div>
         ) : null}
         {approvalCentreOpen ? (
-          <div className="fixed inset-0 z-[55] bg-slate-900/60">
-            <div className="h-screen w-screen overflow-y-auto bg-[#f6f4ef] p-4 sm:p-6">
-              <div className="mx-auto max-w-6xl rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
+          <div className="fixed inset-0 z-[80] overflow-hidden bg-slate-950/60">
+            <div className="mx-auto flex h-[100dvh] w-full max-w-6xl flex-col overflow-hidden bg-stone-50 sm:my-4 sm:h-[94vh] sm:rounded-3xl">
+              <div className="flex-none border-b border-slate-200 bg-white px-5 py-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <h2 className="text-xl font-semibold text-slate-900">AI Approval Centre</h2>
@@ -883,7 +892,9 @@ export default function SmartHubBrainPage() {
                   <button type="button" onClick={() => setApprovalCentreOpen(false)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Close</button>
                 </div>
                 <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{APPROVAL_GROUPS.map((g)=><button key={g} type="button" onClick={()=>setApprovalFilter(g)} className={`shrink-0 rounded px-3 py-1 text-xs ${approvalFilter===g?"bg-slate-900 text-white":"bg-slate-100 text-slate-700"}`}>{g === "all" ? "All" : g.replace("_"," ")}</button>)}</div>
-                <div className="mt-4 grid gap-3 md:grid-cols-2">
+              </div>
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4 pb-24">
+                <div className="grid gap-3 md:grid-cols-2">
                   {(approvalItems.filter((it)=>approvalFilter==="all" ? true : it.group===approvalFilter)).map((item) => (
                     <article key={item.id} className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-4 shadow-sm">
                       <p className="font-semibold text-slate-900">{item.title}</p><p className="mt-1 text-sm text-slate-600">{item.reason}</p><p className="mt-2 text-sm text-slate-700">{item.dataUsed}</p><p className="mt-2 text-sm text-slate-700">{item.whatHappens}</p><p className="mt-1 text-xs text-slate-500">Risk: {item.risk}</p>
