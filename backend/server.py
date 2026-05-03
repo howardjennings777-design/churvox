@@ -2005,8 +2005,8 @@ async def ai_operator_approve(item_id: str, current_user: dict = Depends(get_cur
     return {"success": True, "result": result}
 
 
-@api_router.post("/ai/operator/approval-items/{item_id}/dismiss")
-async def ai_operator_dismiss(item_id: str, current_user: dict = Depends(get_current_user)):
+@api_router.post("/ai/operator/approval-items/{item_id}/reject")
+async def ai_operator_reject(item_id: str, current_user: dict = Depends(get_current_user)):
     role = str(current_user.get("role") or "").lower()
     _owner_roles_only(role)
     business_id = await get_user_business_id(current_user)
@@ -2025,9 +2025,14 @@ async def ai_operator_actions_approve(action_id: str, current_user: dict = Depen
     return await ai_control_approve(action_id, current_user)
 
 
+@api_router.post("/ai/operator/actions/{action_id}/reject")
+async def ai_operator_actions_reject(action_id: str, current_user: dict = Depends(get_current_user)):
+    return await ai_control_dismiss(action_id, current_user)
+
+
 @api_router.post("/ai/operator/actions/{action_id}/dismiss")
 async def ai_operator_actions_dismiss(action_id: str, current_user: dict = Depends(get_current_user)):
-    return await ai_control_dismiss(action_id, current_user)
+    return await ai_operator_actions_reject(action_id, current_user)
 
 
 @api_router.post("/ai/operator/actions/{action_id}/edit")
@@ -9189,3 +9194,8 @@ async def _platform_stats_impl(current_user: dict):
 
 
 # CORS_HARD_FIX_20260412
+
+
+@api_router.post("/ai/operator/approval-items/{item_id}/dismiss")
+async def ai_operator_dismiss(item_id: str, current_user: dict = Depends(get_current_user)):
+    return await ai_operator_reject(item_id, current_user)
