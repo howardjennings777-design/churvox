@@ -430,6 +430,11 @@ export default function SmartHubBrainPage() {
     [approvalItems]
   );
   const approvalBadgeTone = approvalCounts.needs_decision ? "amber" : approvalCounts.all ? "green" : "slate";
+  const openApprovalCentre = useCallback(({ tab = "all", actionId = "" } = {}) => {
+    setApprovalFilter(tab);
+    setApprovalDetail(actionId ? { actionId } : null);
+    setApprovalCentreOpen(true);
+  }, []);
   const notificationItems = useMemo(() => {
     const aiApprovals = sortedApprovalItems.filter((item) => item.status !== "completed").slice(0, 6).map((item) => ({
       id: `approval-${item.id}`,
@@ -510,13 +515,6 @@ export default function SmartHubBrainPage() {
     Approvals: "Owner review",
     "AI Dispatch": `${unassignedJobs.length} to assign`,
   };
-
-
-  const openApprovalCentre = useCallback(({ tab = "all", actionId = "" } = {}) => {
-    setApprovalFilter(tab);
-    setApprovalDetail(actionId ? { actionId } : null);
-    setApprovalCentreOpen(true);
-  }, []);
 
   const openWorkspace = (name, mode = "list") => {
     setWorkspaceDrawer(name);
