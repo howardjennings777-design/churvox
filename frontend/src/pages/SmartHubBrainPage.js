@@ -50,7 +50,7 @@ export default function SmartHubBrainPage() {
     setLoading(true);
     const safe = async (path) => { try { return await get(path); } catch { return []; } };
     const [jobs, clients, quotes, invoices, workers, approvals] = await Promise.all([
-      safe("/jobs"), safe("/clients"), safe("/quotes"), safe("/invoices"), safe("/team/workers"), canSeeOwnerControls ? safe("/ai/operator/actions") : Promise.resolve([]),
+      safe("/jobs"), safe("/clients"), safe("/quotes"), safe("/invoices"), safe("/team/workers"), canSeeOwnerControls ? safe("/ai/control/actions") : Promise.resolve([]),
     ]);
     setData({ jobs: listFrom(jobs, ["jobs"]), clients: listFrom(clients, ["clients"]), quotes: listFrom(quotes, ["quotes"]), invoices: listFrom(invoices, ["invoices"]), workers: listFrom(workers, ["workers"]), approvals: listFrom(approvals, ["approval_items"]).filter((a) => APPROVAL_ACTION_TYPES.has(String(a.action_type || "").toLowerCase()) || !a.action_type) });
     setLoading(false);
@@ -107,21 +107,21 @@ export default function SmartHubBrainPage() {
     if (!stillExists) setSelectedContext(preparedActions[0]);
   }, [preparedActions, selectedContext]);
 
-  const runDailyCheck = async () => { setBusy((s) => ({ ...s, run: true })); try { await post("/ai/operator/run-scan", {}); } catch {} await load(); setBusy((s) => ({ ...s, run: false })); };
-  const prepareToday = async () => { setBusy((s) => ({ ...s, prepare: true })); try { await post("/ai/operator/prepare-today", {}); } catch {} await load(); setBusy((s) => ({ ...s, prepare: false })); setActiveWorkspace("today"); };
-  const askAi = async () => { setBusy((s) => ({ ...s, ask: true })); try { const res = await post("/ai/operator/ask", { question: askQuery }); setAskResponse(res?.answer || res?.data?.answer || "AI response received."); } catch { setAskResponse(`Suggested next steps: Assign ${stats.unassigned} unassigned jobs, follow up ${stats.quotesWaiting} quotes, and chase ${stats.overdueInvoices} overdue invoices.`); } setBusy((s) => ({ ...s, ask: false })); };
+  const runDailyCheck = async () => { setBusy((s) => ({ ...s, run: true })); try { await post("/ai/control/run-scan", {}); } catch {} await load(); setBusy((s) => ({ ...s, run: false })); };
+  const prepareToday = async () => { setBusy((s) => ({ ...s, prepare: true })); try { await post("/ai/control/prepare-today", {}); } catch {} await load(); setBusy((s) => ({ ...s, prepare: false })); setActiveWorkspace("today"); };
+  const askAi = async () => { setBusy((s) => ({ ...s, ask: true })); try { const res = await post("/ai/control/ask", { question: askQuery }); setAskResponse(res?.answer || res?.data?.answer || "AI response received."); } catch { setAskResponse(`Suggested next steps: Assign ${stats.unassigned} unassigned jobs, follow up ${stats.quotesWaiting} quotes, and chase ${stats.overdueInvoices} overdue invoices.`); } setBusy((s) => ({ ...s, ask: false })); };
 
 
   const approveAction = async (action) => {
     if (!action?.id && !action?._id) return;
     setBusy((v) => ({ ...v, saving: true }));
-    try { await post(`/ai/operator/actions/${action.id || action._id}/approve`, {}); await load(); } catch {}
+    try { await post(`/ai/control/actions/${action.id || action._id}/approve`, {}); await load(); } catch {}
     setBusy((v) => ({ ...v, saving: false }));
   };
   const dismissAction = async (action) => {
     if (!action?.id && !action?._id) return;
     setBusy((v) => ({ ...v, saving: true }));
-    try { await post(`/ai/operator/actions/${action.id || action._id}/dismiss`, {}); await load(); } catch {}
+    try { await post(`/ai/control/actions/${action.id || action._id}/dismiss`, {}); await load(); } catch {}
     setBusy((v) => ({ ...v, saving: false }));
   };
 
