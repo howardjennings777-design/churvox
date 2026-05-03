@@ -5216,6 +5216,19 @@ async def create_draft_invoice_from_job(job_id: str, payload: dict | None = None
     })
 
     linked_invoice_id = str((existing_invoice or {}).get("_id") or (existing_invoice or {}).get("id") or "")
+    if not existing_invoice:
+        linked_invoice_id = str(job.get("draft_invoice_id") or job.get("invoice_id") or "")
+        if linked_invoice_id:
+            linked_obj = normalize_object_id(linked_invoice_id)
+            if linked_obj is not None:
+                existing_invoice = await db.invoices.find_one({"_id": linked_obj})
+            if not existing_invoice:
+                existing_invoice = await db.invoices.find_one({
+                    "$or": [
+                        {"id": linked_invoice_id},
+                        {"invoice_number": linked_invoice_id},
+                    ]
+                })
     logger.info("SMART HUB DRAFT INVOICE existing=%s invoice_id=%s", bool(existing_invoice), linked_invoice_id)
 
     async def _mark_job_billed(invoice_id: str, draft_description: str | None = None):
@@ -5255,7 +5268,7 @@ async def create_draft_invoice_from_job(job_id: str, payload: dict | None = None
         }
 
     subtotal = float(payload.get("subtotal") if payload.get("subtotal") is not None else (job.get("price") or 0))
-    gst_rate = float(current_user.get("gst_rate") or 15)
+    gst_rate = float(payload.get("gst_rate") if payload.get("gst_rate") is not None else (current_user.get("gst_rate") or 15))
     gst_amount = float(payload.get("gst") if payload.get("gst") is not None else subtotal * (gst_rate / 100))
     total = float(payload.get("total") if payload.get("total") is not None else subtotal + gst_amount)
     accounting = await db.accounting_settings.find_one({"business_id": business_id}) if hasattr(db, "accounting_settings") else None
