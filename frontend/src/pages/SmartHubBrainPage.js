@@ -66,7 +66,7 @@ function buildAssignmentApprovalDetails(action, jobs, workers, clients, today) {
 
 function SmartModal({ open, title, onClose, children, wide = false, actions = null }) {
   if (!open) return null;
-  return <div className="fixed inset-0 z-[80] bg-slate-900/55 backdrop-blur-sm p-0 sm:p-4 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true"><div className={`w-full ${wide ? "sm:max-w-7xl" : "sm:max-w-3xl"} bg-white rounded-none sm:rounded-2xl border border-slate-200 shadow-2xl h-[100dvh] sm:h-[94vh] overflow-hidden`}><div className="sticky top-0 z-10 bg-white border-b px-4 py-3 flex items-center justify-between gap-3"><h3 className="font-semibold text-slate-900 capitalize">{title}</h3><div className="flex items-center gap-2">{actions}<button onClick={onClose} className="rounded-full border p-1"><X className="h-5 w-5" /></button></div></div><div className="p-4 h-[calc(100dvh-64px)] sm:h-[calc(94vh-64px)] overflow-y-auto">{children}</div></div></div>;
+  return <div className="fixed inset-0 z-[80] bg-slate-900/55 backdrop-blur-sm p-0 sm:p-4 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true"><div className={`w-full ${wide ? "sm:max-w-7xl" : "sm:max-w-3xl"} bg-white rounded-none sm:rounded-2xl border border-slate-200 shadow-2xl h-[100dvh] sm:h-[94vh] overflow-hidden pointer-events-auto`}><div className="sticky top-0 z-10 bg-white border-b px-4 py-3 flex items-center justify-between gap-3"><h3 className="font-semibold text-slate-900 capitalize">{title}</h3><div className="flex items-center gap-2">{actions}<button onClick={onClose} className="rounded-full border p-1"><X className="h-5 w-5" /></button></div></div><div className="p-4 h-[calc(100dvh-64px)] sm:h-[calc(94vh-64px)] overflow-y-auto">{children}</div></div></div>;
 }
 
 export default function SmartHubBrainPage() {
@@ -232,8 +232,45 @@ export default function SmartHubBrainPage() {
   const openWorkspace = (section, mode = "list", record = null) => {
     setActiveWorkspace(section);
     setActiveSmartHubSection(section);
+    setWorkspaceDrawer(section);
     setWorkspaceMode(mode);
     setWorkspaceRecord(record);
+  };
+
+  const workspaceRoute = (section, mode = "list", record = null) => {
+    const recordId = asId(record);
+    if (section === "jobs") {
+      if (mode === "create") return "/jobs/new";
+      if (mode === "edit" && recordId) return `/jobs/${recordId}/edit`;
+      if (mode === "detail" && recordId) return `/jobs/${recordId}`;
+      return "/jobs";
+    }
+    if (section === "clients") {
+      if (mode === "create") return "/clients/new";
+      if (mode === "edit" && recordId) return `/clients/${recordId}/edit`;
+      if (mode === "detail" && recordId) return `/clients/${recordId}`;
+      return "/clients";
+    }
+    if (section === "quotes") {
+      if (mode === "create") return "/quotes/new";
+      if (mode === "edit" && recordId) return `/quotes/${recordId}/edit`;
+      if (mode === "detail" && recordId) return `/quotes/${recordId}`;
+      return "/quotes";
+    }
+    if (section === "invoices") {
+      if (mode === "create") return "/invoices/new";
+      if (mode === "edit" && recordId) return `/invoices/${recordId}/edit`;
+      if (mode === "detail" && recordId) return `/invoices/${recordId}`;
+      return "/invoices";
+    }
+    if (section === "crew") return "/team";
+    if (section === "dispatch") return "/dispatch";
+    if (section === "payroll") return "/payroll";
+    if (section === "automation") return "/automation";
+    if (section === "reports") return "/reports";
+    if (section === "communications") return "/communications";
+    if (section === "approvals") return "/dashboard";
+    return "/dashboard";
   };
 
   const actionDetails = useMemo(() => {
@@ -305,13 +342,13 @@ export default function SmartHubBrainPage() {
         </div>
         <iframe title="workspace-embedded" src={workspaceRoute(activeSmartHubSection, workspaceMode, workspaceRecord)} className="h-[70vh] w-full rounded-lg border bg-white" />
       </div> : null}
-      {activeSmartHubSection === "today" ? <><p>AI summary: {unassignedJobs.length} unassigned, {approvals.length} pending approvals, {overdueInvoices.length} overdue invoices.</p><p>Urgent actions: {grouped.urgent.length} · Risks: {overdueInvoices.length ? "Receivables" : "Low"}</p><div className="flex flex-wrap gap-2"><button onClick={() => { setActiveSmartHubSection("approvals"); }} className="rounded-full border px-3 py-1.5">View approvals</button><button onClick={runDailyCheck} className="rounded-full border px-3 py-1.5">Run scan</button><button onClick={prepareToday} className="rounded-full border px-3 py-1.5">Prepare today</button><button onClick={() => setModal("ask")} className="rounded-full border px-3 py-1.5">Ask AI</button></div></> : null}
-      {activeSmartHubSection === "dispatch" ? <><p>Unassigned jobs: {unassignedJobs.length} · Available workers: {workers.length - crewActive}</p><p>AI recommended matches: {derivedActions.filter((a) => a.kind === "assign_worker").length} · Schedule conflicts: {Math.max(unassignedJobs.length - (workers.length - crewActive), 0)}</p><div className="flex flex-wrap gap-2">{visibleActionCards.filter((a) => String(a.kind || a.action_type).toLowerCase() === "assign_worker").slice(0, 3).map((a) => <button key={a.id || a.title} onClick={() => handleReviewAction(a)} className="rounded-full border px-3 py-1.5">View details</button>)}</div><div className="flex flex-wrap gap-2"><button onClick={() => navigate("/dispatch")} className="rounded-full border px-3 py-1.5">Open dispatch board</button><button onClick={() => setModal("job")} className="rounded-full border px-3 py-1.5">Create job</button></div></> : null}
-      {activeSmartHubSection === "jobs" ? <><p>Today jobs: {jobsToday.length} · Unassigned: {unassignedJobs.length} · Recently completed: {completedReadyToBill.length} · Ready to bill: {completedReadyToBill.length}</p><div className="flex flex-wrap gap-2"><button onClick={() => setModal("job")} className="rounded-full border px-3 py-1.5">Create job</button><button onClick={() => navigate("/jobs")} className="rounded-full border px-3 py-1.5">Open full jobs page</button></div></> : null}
-      {activeSmartHubSection === "clients" ? <><p>Recent clients: {data.clients.length} · Active job clients: {new Set(data.jobs.filter((j) => j.client_id).map((j) => String(j.client_id))).size}</p><p>Clients with open invoices: {new Set(openInvoices.map((i) => String(i.client_id || i.customer_id || ""))).size}</p><div className="flex flex-wrap gap-2"><button onClick={() => setModal("client")} className="rounded-full border px-3 py-1.5">Add client</button><button onClick={() => navigate("/clients")} className="rounded-full border px-3 py-1.5">Open full clients page</button></div></> : null}
-      {activeSmartHubSection === "quotes" ? <><p>Quotes waiting: {waitingQuotes.length} · AI follow-up drafts: {derivedActions.filter((a) => a.kind === "quote_follow_up").length}</p><div className="flex flex-wrap gap-2"><button onClick={() => setModal("quote")} className="rounded-full border px-3 py-1.5">Create quote</button><button onClick={() => navigate("/quotes")} className="rounded-full border px-3 py-1.5">Open full quotes page</button></div></> : null}
-      {activeSmartHubSection === "invoices" ? <><p>Ready to bill jobs: {completedReadyToBill.length} · Open invoices: {openInvoices.length} · Overdue: {overdueInvoices.length}</p><p>Draft invoices prepared: {derivedActions.filter((a) => a.kind === "create_invoice_draft").length}</p><div className="flex flex-wrap gap-2"><button onClick={() => setModal("invoice")} className="rounded-full border px-3 py-1.5">Create invoice</button><button onClick={() => navigate("/invoices")} className="rounded-full border px-3 py-1.5">Open full invoices page</button></div></> : null}
-      {activeSmartHubSection === "crew" ? <><p>Active crew: {crewActive} / {workers.length}</p><p>Workers with no jobs: {workers.filter((w) => calcWorkerLoadToday(data.jobs, asId(w), today)===0).length} · Overloaded: {workers.filter((w) => calcWorkerLoadToday(data.jobs, asId(w), today)>4).length}</p><div className="flex flex-wrap gap-2"><button onClick={() => navigate("/team")} className="rounded-full border px-3 py-1.5">Open team page</button><button onClick={() => setActiveSmartHubSection("dispatch")} className="rounded-full border px-3 py-1.5">Assign worker</button></div></> : null}
+      {activeSmartHubSection === "today" ? <><p>AI summary: {unassignedJobs.length} unassigned, {approvals.length} pending approvals, {overdueInvoices.length} overdue invoices.</p><p>Urgent actions: {grouped.urgent.length} · Risks: {overdueInvoices.length ? "Receivables" : "Low"}</p><div className="flex flex-wrap gap-2"><button onClick={() => openWorkspace("approvals")} className="rounded-full border px-3 py-1.5">View approvals</button><button onClick={runDailyCheck} className="rounded-full border px-3 py-1.5">Run scan</button><button onClick={prepareToday} className="rounded-full border px-3 py-1.5">Prepare today</button><button onClick={() => setModal("ask")} className="rounded-full border px-3 py-1.5">Ask AI</button></div></> : null}
+      {activeSmartHubSection === "dispatch" ? <><p>Unassigned jobs: {unassignedJobs.length} · Available workers: {workers.length - crewActive}</p><p>AI recommended matches: {derivedActions.filter((a) => a.kind === "assign_worker").length} · Schedule conflicts: {Math.max(unassignedJobs.length - (workers.length - crewActive), 0)}</p><div className="flex flex-wrap gap-2">{visibleActionCards.filter((a) => String(a.kind || a.action_type).toLowerCase() === "assign_worker").slice(0, 3).map((a) => <button key={a.id || a.title} onClick={() => handleReviewAction(a)} className="rounded-full border px-3 py-1.5">View details</button>)}</div><div className="flex flex-wrap gap-2"><button onClick={() => navigate("/dispatch")} className="rounded-full border px-3 py-1.5">Open dispatch board</button><button onClick={() => openWorkspace("jobs", "create")} className="rounded-full border px-3 py-1.5">Create job</button></div></> : null}
+      {activeSmartHubSection === "jobs" ? <><p>Today jobs: {jobsToday.length} · Unassigned: {unassignedJobs.length} · Recently completed: {completedReadyToBill.length} · Ready to bill: {completedReadyToBill.length}</p><div className="flex flex-wrap gap-2"><button onClick={() => openWorkspace("jobs", "create")} className="rounded-full border px-3 py-1.5">Create job</button><button onClick={() => navigate("/jobs")} className="rounded-full border px-3 py-1.5">Open full jobs page</button></div></> : null}
+      {activeSmartHubSection === "clients" ? <><p>Recent clients: {data.clients.length} · Active job clients: {new Set(data.jobs.filter((j) => j.client_id).map((j) => String(j.client_id))).size}</p><p>Clients with open invoices: {new Set(openInvoices.map((i) => String(i.client_id || i.customer_id || ""))).size}</p><div className="flex flex-wrap gap-2"><button onClick={() => openWorkspace("clients", "create")} className="rounded-full border px-3 py-1.5">Add client</button><button onClick={() => navigate("/clients")} className="rounded-full border px-3 py-1.5">Open full clients page</button></div></> : null}
+      {activeSmartHubSection === "quotes" ? <><p>Quotes waiting: {waitingQuotes.length} · AI follow-up drafts: {derivedActions.filter((a) => a.kind === "quote_follow_up").length}</p><div className="flex flex-wrap gap-2"><button onClick={() => openWorkspace("quotes", "create")} className="rounded-full border px-3 py-1.5">Create quote</button><button onClick={() => navigate("/quotes")} className="rounded-full border px-3 py-1.5">Open full quotes page</button></div></> : null}
+      {activeSmartHubSection === "invoices" ? <><p>Ready to bill jobs: {completedReadyToBill.length} · Open invoices: {openInvoices.length} · Overdue: {overdueInvoices.length}</p><p>Draft invoices prepared: {derivedActions.filter((a) => a.kind === "create_invoice_draft").length}</p><div className="flex flex-wrap gap-2"><button onClick={() => openWorkspace("invoices", "create")} className="rounded-full border px-3 py-1.5">Create invoice</button><button onClick={() => navigate("/invoices")} className="rounded-full border px-3 py-1.5">Open full invoices page</button></div></> : null}
+      {activeSmartHubSection === "crew" ? <><p>Active crew: {crewActive} / {workers.length}</p><p>Workers with no jobs: {workers.filter((w) => calcWorkerLoadToday(data.jobs, asId(w), today)===0).length} · Overloaded: {workers.filter((w) => calcWorkerLoadToday(data.jobs, asId(w), today)>4).length}</p><div className="flex flex-wrap gap-2"><button onClick={() => navigate("/team")} className="rounded-full border px-3 py-1.5">Open team page</button><button onClick={() => openWorkspace("dispatch")} className="rounded-full border px-3 py-1.5">Assign worker</button></div></> : null}
       {activeSmartHubSection === "payroll" ? <><p>Pay period summary proxy: approved hours from active crew status ({crewActive}). Pending timesheets should be reviewed in payroll workspace.</p><div className="flex flex-wrap gap-2"><button onClick={() => navigate("/payroll")} className="rounded-full border px-3 py-1.5">Open payroll</button><button onClick={() => navigate("/payroll")} className="rounded-full border px-3 py-1.5">Review timesheets</button></div></> : null}
       {activeSmartHubSection === "automation" ? <><p>Active automation rules and run history are managed in automation. Suggested automations: follow-up drafts and invoice reminders.</p><div className="flex flex-wrap gap-2"><button onClick={() => navigate("/automation")} className="rounded-full border px-3 py-1.5">Open automation</button></div></> : null}
       {activeSmartHubSection === "reports" ? <><p>Jobs completed: {completedReadyToBill.length} · Invoices open: {openInvoices.length} · Quotes waiting: {waitingQuotes.length} · Ready to bill: {completedReadyToBill.length}</p><div className="flex flex-wrap gap-2"><button onClick={() => navigate("/reports")} className="rounded-full border px-3 py-1.5">Open reports</button></div></> : null}
