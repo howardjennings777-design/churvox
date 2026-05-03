@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useApi } from "@/hooks/useApi";
-import { Loader2, Building2, Briefcase, Receipt, RefreshCw, Lock, FileText, Trash2, Settings as SettingsIcon, ShieldCheck, ArrowUpRight, AlertTriangle } from "lucide-react";
+import { Loader2, Building2, RefreshCw, Lock, FileText, Trash2, Settings as SettingsIcon, ShieldCheck, ArrowUpRight, AlertTriangle, LogOut, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { TRADE_TYPES } from "@/lib/utils";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { ChurvoxLogo } from "@/components/ChurvoxLogo";
+import NotificationsBell from "@/components/NotificationsBell";
 import {
   PremiumPage, PremiumHero, PremiumCard, PremiumButton, PremiumBadge, PremiumFormSection,
 } from "@/components/premium";
 
 export default function SettingsPage() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const { patch, get, post, loading } = useApi();
+  const navigate = useNavigate();
   const planLimits = usePlanLimits(user?.plan);
 
   const isFeatureEnabled = (key) => {
@@ -84,9 +87,37 @@ export default function SettingsPage() {
     return null;
   })();
 
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
+
   return (
-    <Layout>
+    <Layout smartHubMode>
       <PremiumPage>
+        <header className="mb-6 rounded-3xl border border-[#d8e2db] bg-[#2a3430] px-4 py-3 shadow-[0_16px_40px_rgba(15,23,42,0.14)] sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-4 text-white">
+              <ChurvoxLogo size="sm" />
+              <div className="h-6 w-px bg-white/20" />
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-[#b7c8be]">Settings</p>
+                <p className="text-sm font-semibold">Owner Workspace</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="rounded-full border border-white/15 bg-white/10 p-1.5 text-white">
+                <NotificationsBell />
+              </div>
+              <Link to="/dashboard" className="inline-flex items-center gap-1 rounded-full border border-[#90a597] bg-[#5a7568] px-3 py-2 text-xs font-semibold text-white hover:bg-[#4f695d]">
+                <Sparkles className="h-3.5 w-3.5" /> Ask AI
+              </Link>
+              <button onClick={handleLogout} className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20">
+                <LogOut className="h-3.5 w-3.5" /> Logout
+              </button>
+            </div>
+          </div>
+        </header>
         <PremiumHero
           icon={<SettingsIcon className="h-7 w-7" />}
           eyebrow={<><SettingsIcon className="h-3 w-3" /> Configuration</>}
@@ -119,6 +150,10 @@ export default function SettingsPage() {
               <p className="text-[14px] text-[#0d1b34] font-semibold mt-1 capitalize">{user?.plan || "No plan"}</p>
               {!user?.plan && <Link to="/plans" className="px-link text-[12px]">Choose a plan →</Link>}
             </div>
+            <div className="rounded-2xl border border-[#e6eef9] bg-[#f6faff] px-4 py-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[#7d8ba3]">Role</p>
+              <p className="text-[14px] text-[#0d1b34] font-semibold mt-1 capitalize">{user?.role || "Owner"}</p>
+            </div>
           </div>
         </PremiumCard>
 
@@ -147,7 +182,7 @@ export default function SettingsPage() {
           <PremiumCard
             icon={<RefreshCw className="h-4 w-4" />}
             title="MYOB integration"
-            subtitle="Sync invoices and payment status with MYOB"
+            subtitle="Sync invoices and payment status with MYOB to keep records aligned."
             actions={myobConnected ? <PremiumBadge tone="green" icon={<ShieldCheck className="h-3 w-3" />}>Connected</PremiumBadge> : <PremiumBadge tone="slate">Not connected</PremiumBadge>}
           >
             {myobLoading ? (
@@ -181,12 +216,15 @@ export default function SettingsPage() {
           </PremiumCard>
         )}
 
-        {/* Help & Legal */}
-        <PremiumCard icon={<FileText className="h-4 w-4" />} title="Help & legal" subtitle="Documents and account controls" data-testid="help-legal-card">
+        {/* Security / account */}
+        <PremiumCard icon={<ShieldCheck className="h-4 w-4" />} title="Security & account" subtitle="Session, legal docs, and account controls." data-testid="help-legal-card">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             <Link to="/privacy" className="px-row" data-testid="settings-privacy-link"><FileText className="h-4 w-4 text-[#5b6c87]" /><div className="px-row__main"><div className="px-row__title">Privacy policy</div></div></Link>
             <Link to="/terms" className="px-row" data-testid="settings-terms-link"><FileText className="h-4 w-4 text-[#5b6c87]" /><div className="px-row__main"><div className="px-row__title">Terms</div></div></Link>
             <Link to="/account-deletion" className="px-row" data-testid="settings-account-deletion-link"><FileText className="h-4 w-4 text-[#5b6c87]" /><div className="px-row__main"><div className="px-row__title">Account deletion</div></div></Link>
+          </div>
+          <div className="mt-4">
+            <PremiumButton variant="secondary" iconLeft={<LogOut className="h-4 w-4" />} onClick={handleLogout}>Log out</PremiumButton>
           </div>
         </PremiumCard>
 
