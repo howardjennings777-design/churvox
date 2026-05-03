@@ -1658,6 +1658,32 @@ def _owner_roles_only(role: str):
         raise HTTPException(status_code=403, detail="AI Operator is restricted to owner/manager roles")
 
 
+def _operator_group_for_type(action_type: str) -> str:
+    return {
+        "missing_price": "needs_decision",
+        "missing_contact": "needs_decision",
+        "schedule_conflict": "needs_decision",
+        "crew_workload": "watching",
+        "assign_worker": "ready",
+        "create_invoice_draft": "ready",
+        "invoice_reminder": "drafts",
+        "quote_follow_up": "drafts",
+    }.get(str(action_type or ""), "watching")
+
+
+def _operator_risk_for_type(action_type: str) -> str:
+    return {
+        "missing_price": "high",
+        "missing_contact": "medium",
+        "schedule_conflict": "high",
+        "crew_workload": "medium",
+        "assign_worker": "medium",
+        "create_invoice_draft": "medium",
+        "invoice_reminder": "low",
+        "quote_follow_up": "low",
+    }.get(str(action_type or ""), "medium")
+
+
 def _safe_action_doc(business_id: str, item: dict, now: datetime) -> dict:
     return {
         "business_id": business_id,
@@ -1990,11 +2016,25 @@ async def ai_operator_approve(item_id: str, current_user: dict = Depends(get_cur
         else:
             result = {"action": "needs_manual_assignment"}
     elif item_type in {"create_invoice_draft", "invoice_draft"}:
-        result = {"action": "draft_only", "status": "draft_prepared"}
+        job_id = str(payload.get("job_id") or item.get("job_id") or item.get("related_entity_id") or "")
+        client_id = str(payload.get("client_id") or item.get("client_id") or "")
+        subtotal = float(payload.get("subtotal") or 0)
+        gst_rate = float(payload.get("gst_rate") or 0.1)
+        gst_amount = round(subtotal * gst_rate, 2)
+        total = round(subtotal + gst_amount, 2)
+        invoice_doc = {"business_id": business_id, "job_id": job_id, "client_id": client_id, "status": "draft", "subtotal": subtotal, "gst_rate": gst_rate, "gst_amount": gst_amount, "total": total, "description": str(payload.get("description") or ""), "created_at": now, "updated_at": now}
+        invoice_res = await db.invoices.insert_one(invoice_doc)
+        invoice_id = str(invoice_res.inserted_id)
+        job_filter = {"business_id": business_id, "id": job_id}
+        if ObjectId.is_valid(job_id):
+            job_filter = {"business_id": business_id, "$or": [{"id": job_id}, {"_id": ObjectId(job_id)}]}
+        await db.jobs.update_one(job_filter, {"$set": {"invoice_id": invoice_id, "draft_invoice_id": invoice_id, "invoice_created": True, "invoiced": False, "invoice_status": "draft", "updated_at": now}})
+        result = {"action": "invoice_draft_created", "invoice_id": invoice_id}
+        completed = True
     elif item_type in {"invoice_reminder", "quote_follow_up", "job_instruction", "customer_update", "client_cleanup", "schedule_conflict", "crew_workload", "job_to_quote_or_invoice"}:
         result = {"action": "prepared_for_review", "status": "draft_only"}
 
-    await db.ai_operator_actions.update_one({"_id": ObjectId(item_id)}, {"$set": {"status": "completed" if completed else "approved", "approved_at": now, "completed_at": now if completed else None, "approved_by": str(current_user.get("id") or ""), "updated_at": now}})
+    await db.ai_operator_actions.update_one({"_id": ObjectId(item_id)}, {"$set": {"status": "completed" if completed else "approved", "group": "completed" if completed else item.get("group"), "approved_at": now, "completed_at": now if completed else None, "approved_by_user_id": str(current_user.get("id") or ""), "approved_by_name": str(current_user.get("name") or ""), "approved_by": str(current_user.get("id") or ""), "result": result, "updated_at": now}})
     await db.ai_operator_logs.insert_one({"business_id": business_id, "action_id": item_id, "event_type": "completed" if completed else "approved", "message": f"Action {item_type} approved", "user_id": str(current_user.get("id") or ""), "created_at": now})
     return {"success": True, "result": result}
 
@@ -2019,9 +2059,19 @@ async def ai_operator_actions_approve(action_id: str, current_user: dict = Depen
     return await ai_control_approve(action_id, current_user)
 
 
+@api_router.post("/ai-operator/actions/{action_id}/approve")
+async def ai_operator_actions_approve_v2(action_id: str, current_user: dict = Depends(get_current_user)):
+    return await ai_operator_approve(action_id, current_user)
+
+
 @api_router.post("/ai/operator/actions/{action_id}/reject")
 async def ai_operator_actions_reject(action_id: str, current_user: dict = Depends(get_current_user)):
     return await ai_control_dismiss(action_id, current_user)
+
+
+@api_router.post("/ai-operator/actions/{action_id}/reject")
+async def ai_operator_actions_reject_v2(action_id: str, current_user: dict = Depends(get_current_user)):
+    return await ai_operator_reject(action_id, current_user)
 
 
 @api_router.post("/ai/operator/actions/{action_id}/dismiss")
@@ -2043,6 +2093,27 @@ async def ai_operator_actions_edit(action_id: str, payload: dict, current_user: 
         raise HTTPException(status_code=404, detail="Action not found")
     await db.ai_operator_logs.insert_one({"business_id": business_id, "action_id": action_id, "event_type": "edited", "message": "Action edited by owner", "user_id": str(current_user.get("id") or ""), "created_at": now})
     return {"success": True}
+
+
+@api_router.patch("/ai-operator/actions/{action_id}")
+async def ai_operator_actions_patch(action_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower()
+    _owner_roles_only(role)
+    business_id = await get_user_business_id(current_user)
+    if not ObjectId.is_valid(action_id):
+        raise HTTPException(status_code=400, detail="Invalid action id")
+    now = datetime.now(timezone.utc)
+    allowed_payload_fields = {"description", "subtotal", "gst", "gst_rate", "worker_id", "recommended_worker_id", "message", "notes"}
+    existing = await db.ai_operator_actions.find_one({"_id": ObjectId(action_id), "business_id": business_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Action not found")
+    next_payload = dict(existing.get("payload") or {})
+    for key, value in (payload or {}).items():
+        if key in allowed_payload_fields:
+            next_payload[key] = value
+    patch = {"payload": next_payload, "updated_at": now}
+    await db.ai_operator_actions.update_one({"_id": ObjectId(action_id), "business_id": business_id}, {"$set": patch})
+    return {"success": True, "action": serialize_doc({**existing, **patch})}
 
 
 @api_router.post("/ai/operator/prepare-today")
@@ -2129,6 +2200,85 @@ async def ai_operator_run_scan(current_user: dict = Depends(get_current_user)):
 @api_router.get("/ai/operator/actions")
 async def ai_operator_actions(current_user: dict = Depends(get_current_user)):
     return await ai_control_actions(current_user)
+
+
+@api_router.get("/ai-operator/actions")
+async def get_ai_operator_actions(current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str(current_user.get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    rows = [serialize_doc(r) async for r in db.ai_operator_actions.find({"business_id": business_id}).limit(400)]
+    risk_rank = {"high": 0, "medium": 1, "low": 2}
+    def _sort_key(row: dict):
+        status = str(row.get("status") or "")
+        pending_rank = 0 if status == "pending" else 1
+        risk = risk_rank.get(str(row.get("risk") or row.get("risk_level") or "medium"), 1)
+        created = row.get("created_at") or datetime.fromtimestamp(0, tz=timezone.utc)
+        return (pending_rank, risk, -created.timestamp() if hasattr(created, "timestamp") else 0)
+    rows.sort(key=_sort_key)
+    return {"success": True, "actions": rows}
+
+
+@api_router.post("/smart-hub/scan")
+async def smart_hub_scan(current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str(current_user.get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    jobs = [serialize_doc(j) async for j in db.jobs.find({"business_id": business_id}).limit(300)]
+    invoices = [serialize_doc(i) async for i in db.invoices.find({"business_id": business_id}).limit(300)]
+    quotes = [serialize_doc(q) async for q in db.quotes.find({"business_id": business_id}).limit(300)]
+    clients = [serialize_doc(c) async for c in db.clients.find({"business_id": business_id}).limit(300)]
+    workers = [serialize_doc(w) async for w in db.business_users.find({"business_id": business_id}).limit(300)]
+    client_by_id = {str(c.get("id") or c.get("_id")): c for c in clients}
+    invoice_job_ids = {str(i.get("job_id") or i.get("jobId") or "") for i in invoices}
+    active_keys = set()
+    created = 0
+    updated = 0
+    async def _upsert_action(action_key: str, action_type: str, title: str, reason: str, payload: dict, related_type: str = None, related_id: str = None, job_id: str = None, client_id: str = None, invoice_id: str = None, quote_id: str = None, worker_id: str = None, what_happens: str = "", data_used: str = "", editable_fields: list = None):
+        nonlocal created, updated
+        active_keys.add(action_key)
+        group = _operator_group_for_type(action_type)
+        existing = await db.ai_operator_actions.find_one({"business_id": business_id, "action_key": action_key})
+        doc = {"business_id": business_id, "created_by": "ai_operator", "action_key": action_key, "action_type": action_type, "status": "pending", "group": group, "title": title, "reason": reason, "data_used": data_used, "what_happens": what_happens, "risk": _operator_risk_for_type(action_type), "related_type": related_type, "related_id": related_id, "job_id": job_id, "client_id": client_id, "invoice_id": invoice_id, "quote_id": quote_id, "worker_id": worker_id, "payload": payload or {}, "editable_fields": editable_fields or [], "updated_at": now}
+        if existing:
+            await db.ai_operator_actions.update_one({"_id": existing["_id"]}, {"$set": doc, "$setOnInsert": {"created_at": now}})
+            updated += 1
+        else:
+            doc["created_at"] = now
+            await db.ai_operator_actions.insert_one(doc)
+            created += 1
+    for job in jobs:
+        jid = str(job.get("id") or job.get("_id") or "")
+        if not jid:
+            continue
+        st = str(job.get("status") or "").lower()
+        client = client_by_id.get(str(job.get("client_id") or ""))
+        if st in {"completed", "complete"} and not (job.get("invoice_id") or job.get("draft_invoice_id") or jid in invoice_job_ids):
+            subtotal = float(job.get("subtotal") or job.get("price") or 0)
+            if subtotal <= 0:
+                await _upsert_action(f"missing_price:{jid}", "missing_price", f"Add price before invoicing {job.get('title') or 'job'}", "Completed job is missing price/subtotal.", {"job_id": jid}, "job", jid, jid, str(job.get("client_id") or ""), what_happens="Owner needs to add price before AI can prepare an invoice.", editable_fields=["payload.subtotal", "payload.gst_rate"])
+            else:
+                invoice_desc = str(job.get("ai_invoice_description") or job.get("invoice_description_draft") or job.get("completion_notes") or job.get("worker_completion_notes") or job.get("worker_notes") or job.get("job_notes") or job.get("notes") or job.get("description") or f"{job.get('title') or 'Service'} completed and ready for billing.")
+                await _upsert_action(f"create_invoice_draft:{jid}", "create_invoice_draft", f"Create draft invoice for {job.get('title') or (client or {}).get('name') or 'job'}", "Completed job is ready to bill.", {"job_id": jid, "client_id": str(job.get("client_id") or ""), "subtotal": subtotal, "description": invoice_desc}, "job", jid, jid, str(job.get("client_id") or ""), what_happens="Churvox creates an editable draft invoice. Nothing is sent to the customer.", editable_fields=["payload.description", "payload.subtotal", "payload.gst_rate"])
+        if st not in {"completed", "complete", "cancelled", "canceled", "archived"} and not (job.get("assigned_worker_id") or job.get("worker_id")):
+            rec = next((w for w in workers if str(w.get("role") or "").lower() == "worker"), None)
+            wid = str((rec or {}).get("id") or (rec or {}).get("_id") or "")
+            await _upsert_action(f"assign_worker:{jid}", "assign_worker", f"Assign worker to {job.get('title') or 'job'}", "Job has no assigned worker.", {"job_id": jid, "recommended_worker_id": wid, "worker_name": (rec or {}).get("name") or "", "reasoning": "Available active worker selected."}, "job", jid, jid, str(job.get("client_id") or ""), worker_id=wid, what_happens="Churvox assigns the worker and updates the job to assigned.", editable_fields=["payload.recommended_worker_id"])
+    for inv in invoices:
+        iid = str(inv.get("id") or inv.get("_id") or "")
+        if not iid:
+            continue
+        st = str(inv.get("status") or "").lower()
+        if st in {"open", "sent", "unpaid", "overdue", "pending_payment"} and st != "paid":
+            await _upsert_action(f"invoice_reminder:{iid}", "invoice_reminder", f"Prepare reminder draft for invoice {inv.get('number') or iid}", "Invoice is open/unpaid and may need reminder.", {"invoice_id": iid, "client_id": str(inv.get("client_id") or ""), "message": f"Hi, just a friendly reminder that invoice {inv.get('number') or iid} is still outstanding.", "channel": "draft"}, "invoice", iid, invoice_id=iid, client_id=str(inv.get("client_id") or ""), what_happens="Churvox prepares a reminder draft. Nothing is sent until you confirm sending.", editable_fields=["payload.message"])
+    for quote in quotes:
+        qid = str(quote.get("id") or quote.get("_id") or "")
+        st = str(quote.get("status") or "").lower()
+        if st in {"sent", "pending", "waiting", "awaiting_response", "viewed"}:
+            await _upsert_action(f"quote_follow_up:{qid}", "quote_follow_up", f"Prepare quote follow-up for {quote.get('number') or qid}", "Quote is waiting for client response.", {"quote_id": qid, "client_id": str(quote.get("client_id") or ""), "message": f"Hi, just checking in on quote {quote.get('number') or qid}."}, "quote", qid, quote_id=qid, client_id=str(quote.get("client_id") or ""), what_happens="Churvox prepares a quote follow-up draft. Nothing is sent until you confirm sending.", editable_fields=["payload.message"])
+    await db.ai_operator_actions.update_many({"business_id": business_id, "status": "pending", "action_key": {"$nin": list(active_keys)}}, {"$set": {"status": "completed", "group": "completed", "updated_at": now, "result": "resolved_by_latest_scan"}})
+    pending_count = await db.ai_operator_actions.count_documents({"business_id": business_id, "status": "pending"})
+    actions = [serialize_doc(a) async for a in db.ai_operator_actions.find({"business_id": business_id}).sort("updated_at", -1).limit(200)]
+    return {"success": True, "actions_created": created, "actions_updated": updated, "pending_count": pending_count, "actions": actions}
 
 @api_router.post("/auth/refresh")
 async def refresh_token(request: Request, response: Response):

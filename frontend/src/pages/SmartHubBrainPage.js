@@ -176,6 +176,7 @@ export default function SmartHubBrainPage() {
   const [approvalFilter, setApprovalFilter] = useState("all");
   const [approvalDetail, setApprovalDetail] = useState(null);
   const [approvalCentreOpen, setApprovalCentreOpen] = useState(false);
+  const [operatorActions, setOperatorActions] = useState([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -189,13 +190,14 @@ export default function SmartHubBrainPage() {
     };
 
     try {
-      const [jobsRes, clientsRes, quotesRes, invoicesRes, workersRes, activityRes] = await Promise.all([
+      const [jobsRes, clientsRes, quotesRes, invoicesRes, workersRes, activityRes, actionsRes] = await Promise.all([
         safeGet("/jobs"),
         safeGet("/clients"),
         safeGet("/quotes"),
         safeGet("/invoices"),
         safeGet("/team/workers"),
         safeGet("/smart-hub/activity"),
+        safeGet("/ai-operator/actions"),
       ]);
 
       setData({
@@ -206,6 +208,7 @@ export default function SmartHubBrainPage() {
         workers: listFrom(workersRes, ["workers"]),
       });
       setActivity(listFrom(activityRes, ["activities"]));
+      setOperatorActions(listFrom(actionsRes, ["actions"]));
     } catch {
       setError("Failed to load Smart Hub data.");
     } finally {
@@ -369,7 +372,25 @@ export default function SmartHubBrainPage() {
     }).length;
   }, [jobs]);
 
-  const approvalItems = useMemo(() => buildSmartHubApprovalItems({ jobs, clients, invoices, quotes, workers, activity, dispatchRecs, reminderDrafts, quoteDrafts }), [jobs, clients, invoices, quotes, workers, activity, dispatchRecs, reminderDrafts, quoteDrafts]);
+  const approvalItems = useMemo(() => {
+    if (safeArray(operatorActions).length) {
+      return safeArray(operatorActions).map((a) => ({
+        id: a.id || a._id,
+        type: a.action_type || a.type,
+        group: a.group || (a.status === "completed" ? "completed" : "watching"),
+        title: a.title,
+        reason: a.reason,
+        dataUsed: a.data_used,
+        whatHappens: a.what_happens,
+        risk: a.risk || a.risk_level || "medium",
+        status: a.status,
+        relatedType: a.related_type || a.related_entity_type,
+        relatedId: a.related_id || a.related_entity_id,
+        actionPayload: a.payload || a.draft_payload || {},
+      }));
+    }
+    return buildSmartHubApprovalItems({ jobs, clients, invoices, quotes, workers, activity, dispatchRecs, reminderDrafts, quoteDrafts });
+  }, [operatorActions, jobs, clients, invoices, quotes, workers, activity, dispatchRecs, reminderDrafts, quoteDrafts]);
 
   const sortedApprovalItems = useMemo(() => {
     const rank = (item) => {
