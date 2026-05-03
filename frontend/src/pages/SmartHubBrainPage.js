@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
-import { get, post } from "../lib/api";
+import { get, patch, post } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
 const safeArray = (value) => (Array.isArray(value) ? value : []);
@@ -82,10 +82,12 @@ const quoteFollowUpText = ({ clientName, quoteNo, amountText, title, ageDays }) 
   return `Hi ${clientName}, just checking in on the quote for ${title || "your requested work"}. Happy to answer any questions or adjust anything if needed.`;
 };
 
-const textOr = (value, fallback = "Not available") => {
+const safeText = (value, fallback = "Not available") => {
   const text = String(value || "").trim();
   return text || fallback;
 };
+
+const textOr = safeText;
 
 const findByIds = (list, ids, keys = ["id", "_id"]) => {
   const wanted = safeArray(ids).map((v) => String(v || "")).filter(Boolean);
@@ -128,7 +130,10 @@ export default function SmartHubBrainPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [drawer, setDrawer] = useState("");
+  const [workspaceDrawer, setWorkspaceDrawer] = useState("");
+  const [workspaceMode, setWorkspaceMode] = useState("list");
+  const [workspaceRecord, setWorkspaceRecord] = useState(null);
+  const [workspaceEditForm, setWorkspaceEditForm] = useState({});
   const [savingJobId, setSavingJobId] = useState("");
   const [toast, setToast] = useState({ kind: "", message: "" });
   const [data, setData] = useState({ jobs: [], clients: [], quotes: [], invoices: [], workers: [] });
@@ -379,9 +384,34 @@ export default function SmartHubBrainPage() {
   );
 
   const renderDrawerContent = () => {
-    if (!drawer) return null;
+    if (!workspaceDrawer) return null;
+    const recordId = String(workspaceRecord?.id || workspaceRecord?._id || "");
+    const startEdit = (record) => {
+      setWorkspaceRecord(record || null);
+      setWorkspaceMode("edit");
+      setWorkspaceEditForm({ ...(record || {}) });
+    };
+    const openDetail = (record) => {
+      setWorkspaceRecord(record || null);
+      setWorkspaceMode("detail");
+    };
+    const saveRecord = async (path, payload, key) => {
+      const res = await patch(path, payload);
+      if (!res?.success) return setToast({ kind: "error", message: res?.error || "Save failed." });
+      setData((prev) => ({ ...prev, [key]: safeArray(prev?.[key]).map((r) => String(r?.id || r?._id || "") === recordId ? { ...r, ...payload } : r) }));
+      setWorkspaceRecord((prev) => ({ ...(prev || {}), ...payload }));
+      setWorkspaceMode("detail");
+      setToast({ kind: "success", message: "Saved." });
+    };
 
-    if (drawer === "Invoices") {
+    if (workspaceDrawer === "Jobs") {
+      if (workspaceMode === "list") return <div className="space-y-3">{jobs.map((j) => <button key={String(j?.id || j?._id)} type="button" onClick={() => openDetail(j)} className="block w-full rounded border bg-white p-3 text-left"><p className="font-semibold">{safeText(j?.title || j?.name, "Untitled job")}</p><p className="text-sm text-slate-600">{safeText(j?.status, "Unknown")} · {safeText(j?.address || j?.location, "No address")}</p></button>)}</div>;
+      if (!workspaceRecord) return <p className="text-sm text-slate-700">Record details could not load.</p>;
+      if (workspaceMode === "edit") return <div className="space-y-2"><input className="w-full rounded border p-2" value={workspaceEditForm.title || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, title: e.target.value }))} placeholder="Job title" /><input className="w-full rounded border p-2" value={workspaceEditForm.address || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, address: e.target.value }))} placeholder="Address" /><input className="w-full rounded border p-2" value={workspaceEditForm.status || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, status: e.target.value }))} placeholder="Status" /><textarea className="w-full rounded border p-2" value={workspaceEditForm.notes || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Notes" /><div className="flex gap-2"><button type="button" className="rounded bg-teal-700 px-3 py-1 text-white" onClick={() => saveRecord(`/jobs/${recordId}`, { title: workspaceEditForm.title, address: workspaceEditForm.address, status: workspaceEditForm.status, notes: workspaceEditForm.notes }, "jobs")}>Save</button><button type="button" className="rounded border px-3 py-1" onClick={() => setWorkspaceMode("detail")}>Back</button></div></div>;
+      return <div className="space-y-2"><p className="font-semibold">{safeText(workspaceRecord?.title || workspaceRecord?.name, "Untitled job")}</p><p>Client: {safeText(findByIds(clients, [workspaceRecord?.client_id, workspaceRecord?.clientId], ["id","_id","client_id"])?.name || workspaceRecord?.client_name)}</p><p>Address: {safeText(workspaceRecord?.address || workspaceRecord?.location)}</p><p>Status: {safeText(workspaceRecord?.status)}</p><p>Assigned worker: {safeText(workspaceRecord?.assigned_worker || workspaceRecord?.assigned_worker_name)}</p><p>Scheduled date: {safeText(workspaceRecord?.scheduled_date || workspaceRecord?.date)}</p><p>Completed date: {safeText(workspaceRecord?.completed_at)}</p><p>Service type: {safeText(workspaceRecord?.service_type || workspaceRecord?.job_type)}</p><p>Notes: {safeText(workspaceRecord?.notes)}</p><div className="flex flex-wrap gap-2"><button type="button" className="rounded border px-3 py-1" onClick={() => startEdit(workspaceRecord)}>Edit job details</button><button type="button" className="rounded border px-3 py-1" onClick={() => setWorkspaceMode("list")}>Back</button><button type="button" className="rounded border px-3 py-1" onClick={() => navigate(`/jobs/${recordId}`)}>Open full job page</button></div></div>;
+    }
+
+    if (workspaceDrawer === "Invoices") {
       return (
         <div className="space-y-4">
           <div>
@@ -442,7 +472,7 @@ export default function SmartHubBrainPage() {
       );
     }
 
-    if (drawer === "Payment Reminders") {
+    if (workspaceDrawer === "Payment Reminders") {
       const draftCount = Object.values(approvedReminderIds).filter(Boolean).length;
       const overdueCount = reminderInvoices.filter((inv) => (daysOverdue(inv) || 0) > 0 || statusOf(inv?.status) === "overdue").length;
       const missingContactCount = reminderInvoices.filter((inv) => {
@@ -507,7 +537,7 @@ export default function SmartHubBrainPage() {
       );
     }
 
-    if (drawer === "Quotes" || drawer === "Quote Follow-ups") {
+    if (workspaceDrawer === "Quotes" || workspaceDrawer === "Quote Follow-ups") {
       const preparedCount = Object.values(approvedQuoteIds).filter(Boolean).length;
       const missingContactCount = waitingQuotes.filter((q) => {
         const client = findByIds(clients, [q?.client_id, q?.clientId], ["id", "_id", "client_id"]);
@@ -545,7 +575,7 @@ export default function SmartHubBrainPage() {
         </div>
       );
     }
-    if (drawer === "AI Dispatch" || drawer === "Jobs" || drawer === "Crew") {
+    if (workspaceDrawer === "AI Dispatch") {
       const applyAssign = async (job, workerId) => {
         if (!workerId) return;
         const jobId = String(job?.id || job?._id || "");
@@ -576,14 +606,14 @@ export default function SmartHubBrainPage() {
 
     return (
       <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-slate-900">{drawer} Workspace</h3>
-        <p className="text-sm text-slate-600">This workspace is in safe mode for build rescue. Use the full {drawer.toLowerCase()} page for advanced actions.</p>
+        <h3 className="text-lg font-semibold text-slate-900">{workspaceDrawer} Workspace</h3>
+        <p className="text-sm text-slate-600">This workspace is in safe mode for build rescue. Use the full {workspaceDrawer.toLowerCase()} page for advanced actions.</p>
         <button
           type="button"
-          onClick={() => navigate(`/${drawer.toLowerCase()}`)}
+          onClick={() => navigate(`/${workspaceDrawer.toLowerCase()}`)}
           className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white hover:bg-teal-800"
         >
-          Open {drawer} page
+          Open full page
         </button>
       </div>
     );
@@ -614,7 +644,7 @@ export default function SmartHubBrainPage() {
             ].map(([label, value]) => (
               <article key={label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-                <button type="button" onClick={() => (label === "Unassigned jobs" || label === "Crew available") ? setDrawer("AI Dispatch") : null} className="mt-2 text-2xl font-semibold text-slate-900">
+                <button type="button" onClick={() => (label === "Unassigned jobs" || label === "Crew available") ? setWorkspaceDrawer("AI Dispatch") : null} className="mt-2 text-2xl font-semibold text-slate-900">
                   {value}
                 </button>
               </article>
@@ -628,15 +658,15 @@ export default function SmartHubBrainPage() {
                 <button
                   key={name}
                   type="button"
-                  onClick={() => setDrawer(name)}
+                  onClick={() => { setWorkspaceDrawer(name); setWorkspaceMode("list"); setWorkspaceRecord(null); }}
                   className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800"
                 >
                   {name}
                 </button>
               ))}
-              <button type="button" onClick={() => setDrawer("Payment Reminders")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Prepare reminders</button>
-              <button type="button" onClick={() => setDrawer("Quote Follow-ups")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Review follow-ups</button>
-              <button type="button" onClick={() => setDrawer("AI Dispatch")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Assign workers</button>
+              <button type="button" onClick={() => { setWorkspaceDrawer("Payment Reminders"); setWorkspaceMode("reminders"); setWorkspaceRecord(null); }}} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Prepare reminders</button>
+              <button type="button" onClick={() => { setWorkspaceDrawer("Quote Follow-ups"); setWorkspaceMode("followUps"); setWorkspaceRecord(null); }}} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Review follow-ups</button>
+              <button type="button" onClick={() => { setWorkspaceDrawer("AI Dispatch"); setWorkspaceMode("list"); setWorkspaceRecord(null); }}} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Assign workers</button>
             </div>
           </section>
           <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -645,12 +675,12 @@ export default function SmartHubBrainPage() {
           </section>
         </div>
 
-        {drawer ? (
+        {workspaceDrawer ? (
           <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 sm:items-center sm:p-6">
             <div className="h-[86vh] w-full max-w-3xl rounded-t-2xl bg-[#fdfcf8] sm:h-auto sm:rounded-2xl">
               <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-                <h2 className="font-semibold text-slate-900">{drawer}</h2>
-                <button type="button" onClick={() => setDrawer("")} className="rounded-md border border-slate-300 px-3 py-1 text-sm text-slate-700">
+                <h2 className="font-semibold text-slate-900">{workspaceDrawer}</h2>
+                <button type="button" onClick={() => { setWorkspaceDrawer(""); setWorkspaceMode("list"); setWorkspaceRecord(null); }} className="rounded-md border border-slate-300 px-3 py-1 text-sm text-slate-700">
                   Close
                 </button>
               </div>
