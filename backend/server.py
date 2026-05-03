@@ -1911,6 +1911,19 @@ async def ai_control_logs(current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
     logs = [serialize_doc(r) async for r in db.ai_control_logs.find({"business_id": business_id}).sort("created_at", -1).limit(200)]
     return {"success": True, "data": logs}
+async def _upsert_operator_action(business_id: str, action_key: str, item: dict, now: datetime):
+    if not action_key:
+        return False, False
+    filt = {"business_id": business_id, "action_key": action_key}
+    existing = await db.ai_operator_actions.find_one(filt)
+    if existing and str(existing.get("status") or "") in {"pending", "ready", "watching", "draft"}:
+        await db.ai_operator_actions.update_one({"_id": existing.get("_id")}, {"$set": {**item, "updated_at": now}})
+        return False, True
+    if existing and str(existing.get("status") or "") in {"completed", "dismissed", "rejected"}:
+        return False, False
+    await db.ai_operator_actions.insert_one({**item, "business_id": business_id, "action_key": action_key, "created_at": now, "updated_at": now})
+    return True, False
+
 @api_router.post("/ai/operator/run-daily-check")
 async def ai_operator_run_daily_check(current_user: dict = Depends(get_current_user)):
     role = str(current_user.get("role") or "").lower()
@@ -1951,7 +1964,7 @@ async def ai_operator_run_daily_check(current_user: dict = Depends(get_current_u
     for inv in [i for i in invoices if str(i.get("status") or "") in {"overdue", "sent"}][:6]:
         items.append({
             "business_id": business_id, "type": "invoice_reminder", "related_entity_type": "invoice", "related_entity_id": str(inv.get("id") or inv.get("_id")),
-            "title": "Send payment reminder to client", "summary": "Prepared for approval",
+            "title": f"Send payment reminder to {inv.get('client_name') or 'client'}", "summary": "Prepared for approval",
             "recommendation": "Review before sending.",
             "draft_payload": {"message": f"Hi, this is a reminder that invoice {inv.get('number') or inv.get('id')} is still outstanding. Please let us know if you need a copy."},
             "risk_level": _ai_risk_level("invoice_reminder"), "status": "pending", "created_by": "ai", "created_at": now, "updated_at": now
@@ -1959,16 +1972,26 @@ async def ai_operator_run_daily_check(current_user: dict = Depends(get_current_u
     for q in [x for x in quotes if str(x.get("status") or "") in {"sent", "draft"}][:6]:
         items.append({
             "business_id": business_id, "type": "quote_followup", "related_entity_type": "quote", "related_entity_id": str(q.get("id") or q.get("_id")),
-            "title": "Follow up quote with client", "summary": "Needs owner approval",
+            "title": f"Follow up quote with {q.get('client_name') or 'client'}", "summary": "Needs owner approval",
             "recommendation": "Send a polite follow-up.", "draft_payload": {"message": f"Hi, just checking in on quote {q.get('number') or q.get('id')}. Happy to answer any questions."},
             "risk_level": _ai_risk_level("quote_followup"), "status": "pending", "created_by": "ai", "created_at": now, "updated_at": now
         })
 
     created = 0
+    updated = 0
     for item in items:
-        action_id = await _insert_operator_action_if_missing(_safe_action_doc(business_id, item, now))
-        if action_id:
-            created += 1
+        t = str(item.get("type") or "")
+        rid = str(item.get("related_entity_id") or "")
+        action_key = f"{t}:{rid}" if rid else ""
+        if t == "assign_worker": action_key = f"assign_worker:{rid}"
+        elif t in {"invoice_draft", "create_invoice_draft"}: action_key = f"create_invoice_draft:{rid}"
+        elif t == "invoice_reminder": action_key = f"invoice_reminder:{rid}"
+        elif t in {"quote_followup", "quote_follow_up"}: action_key = f"quote_follow_up:{rid}"
+        elif t == "missing_business_data": action_key = f"missing_contact:{rid}"
+        did_create, did_update = await _upsert_operator_action(business_id, action_key, _safe_action_doc(business_id, {**item, "action_key": action_key}, now), now)
+        created += 1 if did_create else 0
+        updated += 1 if did_update else 0
+    logger.info(f"smart_hub_scan business={business_id} created={created} updated={updated}")
     daily_plan = [
         f"Assign {len(unassigned)} unassigned jobs.",
         f"Create {len(completed)} draft invoices from completed jobs.",
