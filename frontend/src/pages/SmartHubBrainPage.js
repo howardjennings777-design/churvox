@@ -126,6 +126,29 @@ const aiInvoiceDescription = (job, client) => {
 
 
 const APPROVAL_GROUPS = ["all", "needs_decision", "ready", "drafts", "watching", "completed"];
+const getApprovalGroup = (action = {}) => {
+  const group = String(action.group || "").toLowerCase();
+  if (APPROVAL_GROUPS.includes(group) && group !== "all") return group;
+  const status = String(action.status || "").toLowerCase();
+  if (["completed", "approved", "done"].includes(status)) return "completed";
+  if (["draft", "edited"].includes(status)) return "drafts";
+  if (status === "ready") return "ready";
+  if (status === "watching") return "watching";
+  return "needs_decision";
+};
+const normalizeApprovalAction = (action = {}) => ({ ...action, id: String(action.id || action._id || ""), group: getApprovalGroup(action) });
+const getFilteredApprovalActions = (actions = [], activeTab = "all") => safeArray(actions).filter((a) => (activeTab === "all" ? true : a.group === activeTab));
+const getActionDisplayMeta = (item = {}) => ({
+  title: item.title || "Approval action",
+  subtitle: item.dataUsed || "",
+  reason: item.reason || "Review this action.",
+  whatHappens: item.whatHappens || "No further change.",
+  risk: item.risk || "medium",
+  status: item.status || "pending",
+  amountLabel: "",
+  badges: [item.relatedType || "general"],
+  primaryLabel: "Approve",
+});
 
 const buildSmartHubApprovalItems = ({ jobs, clients, invoices, quotes, workers, activity, dispatchRecs, reminderDrafts, quoteDrafts }) => {
   const items = [];
@@ -177,6 +200,7 @@ export default function SmartHubBrainPage() {
   const [approvalDetail, setApprovalDetail] = useState(null);
   const [approvalCentreOpen, setApprovalCentreOpen] = useState(false);
   const [operatorActions, setOperatorActions] = useState([]);
+  const [selectedApprovalIds, setSelectedApprovalIds] = useState([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -383,7 +407,7 @@ export default function SmartHubBrainPage() {
 
   const approvalItems = useMemo(() => {
     if (safeArray(operatorActions).length) {
-      return safeArray(operatorActions).map((a) => ({
+      return safeArray(operatorActions).map((a) => normalizeApprovalAction({
         id: a.id || a._id,
         type: a.action_type || a.type,
         group: a.group || (a.status === "completed" ? "completed" : "watching"),
@@ -421,7 +445,24 @@ export default function SmartHubBrainPage() {
     [approvalItems]
   );
   const approvalBadgeTone = approvalCounts.needs_decision ? "amber" : approvalCounts.all ? "green" : "slate";
+  const filteredApprovalItems = useMemo(() => getFilteredApprovalActions(sortedApprovalItems, approvalFilter), [sortedApprovalItems, approvalFilter]);
+  useEffect(() => {
+    const validIds = new Set(sortedApprovalItems.map((item) => String(item.id)));
+    setSelectedApprovalIds((prev) => prev.filter((id) => validIds.has(String(id))));
+  }, [sortedApprovalItems]);
   const priorityItems = sortedApprovalItems.slice(0, 3);
+  const toggleApprovalSelection = (id) => setSelectedApprovalIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  const toggleSelectAllVisible = () => {
+    const visible = filteredApprovalItems.map((i) => String(i.id));
+    const allSelected = visible.length && visible.every((id) => selectedApprovalIds.includes(id));
+    setSelectedApprovalIds((prev) => (allSelected ? prev.filter((id) => !visible.includes(id)) : Array.from(new Set([...prev, ...visible]))));
+  };
+  const clearApprovalSelection = () => setSelectedApprovalIds([]);
+  const runBulkAction = async (path, ids) => post(path, { action_ids: ids });
+  const handleBulkApprove = async () => { await runBulkAction("/ai-operator/actions/bulk-approve", selectedApprovalIds); await load(); clearApprovalSelection(); };
+  const handleBulkReject = async () => { await runBulkAction("/ai-operator/actions/bulk-reject", selectedApprovalIds); await load(); clearApprovalSelection(); };
+  const handleBulkDelete = async () => { await runBulkAction("/ai-operator/actions/bulk-delete", selectedApprovalIds); await load(); clearApprovalSelection(); };
+  const handleBulkMarkCompleted = async () => { await runBulkAction("/ai-operator/actions/bulk-complete", selectedApprovalIds); await load(); clearApprovalSelection(); };
 
   const bestNextMove = useMemo(() => {
     if (readyToBillJobs.length) {
@@ -894,13 +935,18 @@ export default function SmartHubBrainPage() {
                   </div>
                   <button type="button" onClick={() => setApprovalCentreOpen(false)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Close</button>
                 </div>
-                <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{APPROVAL_GROUPS.map((g)=><button key={g} type="button" onClick={()=>setApprovalFilter(g)} className={`shrink-0 rounded px-3 py-1 text-xs ${approvalFilter===g?"bg-slate-900 text-white":"bg-slate-100 text-slate-700"}`}>{g === "all" ? "All" : g.replace("_"," ")}</button>)}</div>
+                <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{APPROVAL_GROUPS.map((g)=><button key={g} type="button" onClick={()=>setApprovalFilter(g)} className={`shrink-0 rounded px-3 py-1 text-xs ${approvalFilter===g?"bg-slate-900 text-white ring-2 ring-slate-500":"bg-slate-100 text-slate-700"}`}>{g === "all" ? "All" : g.replace("_"," ")} ({approvalCounts[g] || 0})</button>)}</div>
+                <div className="mt-2 text-xs text-slate-600">Pending approvals: {approvalCounts.needs_decision || 0} · Selected: {selectedApprovalIds.length}</div>
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4 pb-24">
+                {!!sortedApprovalItems.length && <div className="sticky top-0 z-10 mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white p-2 text-xs"><span>Visible: {filteredApprovalItems.length}</span><span>Selected: {selectedApprovalIds.length}</span><button type="button" onClick={toggleSelectAllVisible} className="rounded border px-2 py-1">Select all visible</button><button type="button" onClick={clearApprovalSelection} className="rounded border px-2 py-1">Clear</button><button type="button" onClick={handleBulkApprove} className="rounded bg-teal-700 px-2 py-1 text-white">Approve selected</button><button type="button" onClick={handleBulkReject} className="rounded border px-2 py-1">Reject selected</button><button type="button" onClick={handleBulkDelete} className="rounded border px-2 py-1">Archive selected</button><button type="button" onClick={handleBulkMarkCompleted} className="rounded border px-2 py-1">Mark completed</button><button type="button" onClick={() => runBulkAction("/ai-operator/actions/bulk-approve", filteredApprovalItems.map((i) => i.id))} className="rounded border px-2 py-1">Approve all visible</button><button type="button" onClick={() => runBulkAction("/ai-operator/actions/bulk-reject", filteredApprovalItems.map((i) => i.id))} className="rounded border px-2 py-1">Reject all visible</button></div>}
                 <div className="grid gap-3 md:grid-cols-2">
-                  {(approvalItems.filter((it)=>approvalFilter==="all" ? true : it.group===approvalFilter)).map((item) => (
+                  {filteredApprovalItems.map((item) => {
+                    const meta = getActionDisplayMeta(item);
+                    return (
                     <article key={item.id} className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-4 shadow-sm">
-                      <p className="font-semibold text-slate-900">{item.title}</p><p className="mt-1 text-sm text-slate-600">{item.reason}</p><p className="mt-2 text-sm text-slate-700">{item.dataUsed}</p><p className="mt-2 text-sm text-slate-700">{item.whatHappens}</p><p className="mt-1 text-xs text-slate-500">Risk: {item.risk}</p>
+                      <div className="flex items-start justify-between"><label className="text-xs"><input type="checkbox" checked={selectedApprovalIds.includes(String(item.id))} onChange={() => toggleApprovalSelection(String(item.id))} className="mr-2" />Select</label><span className="text-xs uppercase">{meta.status}</span></div>
+                      <p className="font-semibold text-slate-900">{meta.title}</p><p className="mt-1 text-sm text-slate-600">{meta.subtitle}</p><p className="mt-1 text-sm text-slate-700">{meta.reason}</p><p className="mt-1 text-xs text-slate-500">Risk: {meta.risk}</p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <button type="button" onClick={async ()=>{ if (item.type === "create_invoice_draft") await approveDraft(item.job); else if (item.type === "assign_worker") openWorkspace("AI Dispatch", "assign"); else if (item.type === "invoice_reminder") openWorkspace("Payment Reminders", "reminders"); else if (item.type === "quote_follow_up") openWorkspace("Quote Follow-ups", "followUps"); else setApprovalDetail(item); }} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">Approve</button>
                         <button type="button" onClick={()=>setApprovalDetail(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Edit</button>
@@ -908,8 +954,8 @@ export default function SmartHubBrainPage() {
                         <button type="button" onClick={()=>setApprovalDetail(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Details</button>
                       </div>
                     </article>
-                  ))}
-                  {!approvalItems.length ? <article className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-4 shadow-sm"><p className="font-semibold text-slate-900">No owner approvals are waiting.</p><div className="mt-3 flex gap-2"><button type="button" onClick={runScanNow} className="rounded-lg bg-teal-700 px-3 py-2 text-sm text-white">Run scan</button></div></article> : null}
+                  );})}
+                  {!filteredApprovalItems.length ? <article className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-4 shadow-sm"><p className="font-semibold text-slate-900">No actions in this section.</p><div className="mt-3 flex gap-2"><button type="button" onClick={runScanNow} className="rounded-lg bg-teal-700 px-3 py-2 text-sm text-white">Run scan</button></div></article> : null}
                 </div>
               </div>
             </div>

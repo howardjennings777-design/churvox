@@ -2074,6 +2074,63 @@ async def ai_operator_actions_reject_v2(action_id: str, current_user: dict = Dep
     return await ai_operator_reject(action_id, current_user)
 
 
+async def _ai_operator_bulk_action(action_ids: list, current_user: dict, op: str):
+    _owner_roles_only(str(current_user.get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    results = []
+    succeeded = 0
+    failed = 0
+    for raw_id in (action_ids or []):
+        action_id = str(raw_id or "")
+        if not ObjectId.is_valid(action_id):
+            failed += 1
+            results.append({"id": action_id, "success": False, "error": "invalid_id"})
+            continue
+        try:
+            if op == "approve":
+                await ai_operator_approve(action_id, current_user)
+            elif op == "reject":
+                await ai_operator_reject(action_id, current_user)
+            elif op == "complete":
+                now = datetime.now(timezone.utc)
+                res = await db.ai_operator_actions.update_one({"_id": ObjectId(action_id), "business_id": business_id}, {"$set": {"status": "completed", "group": "completed", "completed_at": now, "updated_at": now}})
+                if not res.matched_count:
+                    raise HTTPException(status_code=404, detail="not_found")
+            elif op == "delete":
+                row = await db.ai_operator_actions.find_one({"_id": ObjectId(action_id), "business_id": business_id})
+                if not row:
+                    raise HTTPException(status_code=404, detail="not_found")
+                if str(row.get("status") or "") not in {"completed", "dismissed", "rejected", "draft", "edited"}:
+                    raise HTTPException(status_code=400, detail="unsafe_delete")
+                await db.ai_operator_actions.delete_one({"_id": ObjectId(action_id), "business_id": business_id})
+            succeeded += 1
+            results.append({"id": action_id, "success": True})
+        except Exception as e:
+            failed += 1
+            results.append({"id": action_id, "success": False, "error": str(getattr(e, "detail", str(e)))})
+    return {"success": True, "processed": len(action_ids or []), "succeeded": succeeded, "failed": failed, "items": results}
+
+
+@api_router.post("/ai-operator/actions/bulk-approve")
+async def ai_operator_actions_bulk_approve(payload: dict, current_user: dict = Depends(get_current_user)):
+    return await _ai_operator_bulk_action((payload or {}).get("action_ids") or [], current_user, "approve")
+
+
+@api_router.post("/ai-operator/actions/bulk-reject")
+async def ai_operator_actions_bulk_reject(payload: dict, current_user: dict = Depends(get_current_user)):
+    return await _ai_operator_bulk_action((payload or {}).get("action_ids") or [], current_user, "reject")
+
+
+@api_router.post("/ai-operator/actions/bulk-delete")
+async def ai_operator_actions_bulk_delete(payload: dict, current_user: dict = Depends(get_current_user)):
+    return await _ai_operator_bulk_action((payload or {}).get("action_ids") or [], current_user, "delete")
+
+
+@api_router.post("/ai-operator/actions/bulk-complete")
+async def ai_operator_actions_bulk_complete(payload: dict, current_user: dict = Depends(get_current_user)):
+    return await _ai_operator_bulk_action((payload or {}).get("action_ids") or [], current_user, "complete")
+
+
 @api_router.post("/ai/operator/actions/{action_id}/dismiss")
 async def ai_operator_actions_dismiss(action_id: str, current_user: dict = Depends(get_current_user)):
     return await ai_operator_actions_reject(action_id, current_user)
