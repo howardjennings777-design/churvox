@@ -5198,13 +5198,21 @@ async def create_draft_invoice_from_job(job_id: str, payload: dict | None = None
     real_job_id = job.get("_id")
     job_id_str = str(real_job_id)
 
+    business_filters = [business_id, str(business_id)]
+    owner_filters = [owner_id, str(owner_id)]
+    job_link_values = [job_id_str]
+    if obj_id is not None:
+        job_link_values.append(obj_id)
+
     existing_invoice = await db.invoices.find_one({
-        "business_id": business_id,
-        "$or": [
-            {"job_id": job_id_str},
-            {"linked_job_id": job_id_str},
-            {"source_job_id": job_id_str},
-        ],
+        "$and": [
+            {"$or": [{"business_id": v} for v in business_filters] + [{"owner_id": v} for v in owner_filters]},
+            {"$or": (
+                [{"job_id": v} for v in job_link_values]
+                + [{"linked_job_id": v} for v in job_link_values]
+                + [{"source_job_id": v} for v in job_link_values]
+            )},
+        ]
     })
 
     print("SMART HUB DRAFT INVOICE existing invoice found", "yes" if existing_invoice else "no")
