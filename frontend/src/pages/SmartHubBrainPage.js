@@ -80,6 +80,7 @@ export default function SmartHubBrainPage() {
   const [modal, setModal] = useState(null);
   const [activeWorkspace, setActiveWorkspace] = useState("today");
   const [activeSmartHubSection, setActiveSmartHubSection] = useState(null);
+  const [workspaceDrawer, setWorkspaceDrawer] = useState(null);
   const [selectedSmartHubAction, setSelectedSmartHubAction] = useState(null);
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const [workspaceMode, setWorkspaceMode] = useState("list");
@@ -269,7 +270,7 @@ export default function SmartHubBrainPage() {
 
     
   </div></div>
-  <SmartModal open={Boolean(activeSmartHubSection)} wide title={`${activeSmartHubSection || ""} workspace`} onClose={() => { setActiveSmartHubSection(null); setWorkspaceMode("list"); setWorkspaceRecord(null); }} actions={<button onClick={() => navigate(`/${activeSmartHubSection === "crew" ? "team" : activeSmartHubSection}`)} className="rounded-full border px-3 py-1 text-xs">Open full page</button>}>
+  <SmartModal open={Boolean(workspaceDrawer)} wide title={`${activeSmartHubSection || ""} workspace`} onClose={() => { setActiveSmartHubSection(null); setWorkspaceDrawer(null); setWorkspaceMode("list"); setWorkspaceRecord(null); }} actions={<button onClick={() => navigate(workspaceRoute(activeSmartHubSection, workspaceMode, workspaceRecord))} className="rounded-full border px-3 py-1 text-xs">Open full page</button>}>
     <div className="space-y-4 text-sm">
       <div className="flex flex-wrap gap-2">
         <input value={workspaceQuery} onChange={(e) => setWorkspaceQuery(e.target.value)} placeholder="Search workspace…" className="min-w-[220px] flex-1 rounded-lg border px-3 py-2" />
@@ -287,18 +288,22 @@ export default function SmartHubBrainPage() {
           <p className="font-semibold">{row.name || row.title || row.number || row.email || row.subject || `Record ${idx + 1}`}</p>
           <p className="text-xs text-slate-600 mt-1">Status: {row.status || row.risk || "n/a"}</p>
           <div className="mt-2 flex flex-wrap gap-2">
-            <button onClick={() => { setWorkspaceMode("detail"); setWorkspaceRecord(row); }} className="rounded-full border px-2 py-1 text-xs">Detail</button>
+            <button onClick={() => { setWorkspaceMode("detail"); setWorkspaceRecord(row); }} className="rounded-full border px-2 py-1 text-xs">View</button>
             {activeSmartHubSection === "approvals" ? <>
               <button onClick={() => handleApproveAction(row)} className="rounded-full border px-2 py-1 text-xs">Approve</button>
               <button onClick={() => handleRejectAction(row)} className="rounded-full border px-2 py-1 text-xs">Reject</button>
             </> : null}
-            <button onClick={() => navigate(`/${activeSmartHubSection === "crew" ? "team" : activeSmartHubSection}/${asId(row)}`)} className="rounded-full border px-2 py-1 text-xs">Open detail page</button>
+            {["jobs","clients","quotes","invoices"].includes(activeSmartHubSection) ? <button onClick={() => { setWorkspaceMode("edit"); setWorkspaceRecord(row); }} className="rounded-full border px-2 py-1 text-xs">Edit</button> : null}
+            {activeSmartHubSection === "jobs" ? <button onClick={() => { setWorkspaceMode("assign"); setWorkspaceRecord(row); }} className="rounded-full border px-2 py-1 text-xs">Assign</button> : null}
           </div>
         </div>)}
       </div> : null}
-      {workspaceMode === "detail" && workspaceRecord ? <div className="rounded-xl border p-4 bg-slate-50">
-        <h4 className="font-semibold mb-2">{workspaceRecord.name || workspaceRecord.title || "Detail"}</h4>
-        <pre className="text-xs overflow-auto max-h-80">{JSON.stringify(workspaceRecord, null, 2)}</pre>
+      {workspaceMode !== "list" ? <div className="rounded-xl border p-1 bg-slate-50">
+        <div className="flex items-center justify-between px-3 py-2">
+          <p className="text-xs text-slate-600">{workspaceMode.toUpperCase()} · {workspaceRecord?.name || workspaceRecord?.title || "Workspace"}</p>
+          <button onClick={() => { setWorkspaceMode("list"); setWorkspaceRecord(null); }} className="rounded-full border px-3 py-1 text-xs">Back</button>
+        </div>
+        <iframe title="workspace-embedded" src={workspaceRoute(activeSmartHubSection, workspaceMode, workspaceRecord)} className="h-[70vh] w-full rounded-lg border bg-white" />
       </div> : null}
       {activeSmartHubSection === "today" ? <><p>AI summary: {unassignedJobs.length} unassigned, {approvals.length} pending approvals, {overdueInvoices.length} overdue invoices.</p><p>Urgent actions: {grouped.urgent.length} · Risks: {overdueInvoices.length ? "Receivables" : "Low"}</p><div className="flex flex-wrap gap-2"><button onClick={() => { setActiveSmartHubSection("approvals"); }} className="rounded-full border px-3 py-1.5">View approvals</button><button onClick={runDailyCheck} className="rounded-full border px-3 py-1.5">Run scan</button><button onClick={prepareToday} className="rounded-full border px-3 py-1.5">Prepare today</button><button onClick={() => setModal("ask")} className="rounded-full border px-3 py-1.5">Ask AI</button></div></> : null}
       {activeSmartHubSection === "dispatch" ? <><p>Unassigned jobs: {unassignedJobs.length} · Available workers: {workers.length - crewActive}</p><p>AI recommended matches: {derivedActions.filter((a) => a.kind === "assign_worker").length} · Schedule conflicts: {Math.max(unassignedJobs.length - (workers.length - crewActive), 0)}</p><div className="flex flex-wrap gap-2">{visibleActionCards.filter((a) => String(a.kind || a.action_type).toLowerCase() === "assign_worker").slice(0, 3).map((a) => <button key={a.id || a.title} onClick={() => handleReviewAction(a)} className="rounded-full border px-3 py-1.5">View details</button>)}</div><div className="flex flex-wrap gap-2"><button onClick={() => navigate("/dispatch")} className="rounded-full border px-3 py-1.5">Open dispatch board</button><button onClick={() => setModal("job")} className="rounded-full border px-3 py-1.5">Create job</button></div></> : null}
