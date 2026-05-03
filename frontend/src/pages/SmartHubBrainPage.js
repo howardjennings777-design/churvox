@@ -271,19 +271,15 @@ export default function SmartHubBrainPage() {
       toast.error("Action details could not load.");
       return;
     }
+
     setSelectedAction(action);
     setSelectedSmartHubAction(action);
-    setReviewMode(mode);
-  const openSmartHubAction = (action) => {
-    setSelectedSmartHubAction(action || null);
-    setSelectedAction(action || null);
-    setReviewMode("list");
+    setReviewMode(mode || "list");
     setActionError("");
     setIsActionModalOpen(true);
   };
 
   const handleReviewAction = (action, mode = "list") => openSmartHubAction(action, mode);
-  const handleReviewAction = (action) => { openSmartHubAction(action); };
   const handleApproveAction = async (action) => {
     const actionId = String(action?.id || action?._id || "");
     const actionType = String(action?.action_type || action?.kind || "").toLowerCase();
