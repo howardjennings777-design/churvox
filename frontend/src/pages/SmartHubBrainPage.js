@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { get, patch, post } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import { buildArrivalSmsMessage, buildInvoiceDescription, buildInvoiceReminderMessage, buildJobUpdateMessage, buildQuoteFollowUpMessage } from "../lib/aiMessageBuilders";
 
 const safeArray = (value) => (Array.isArray(value) ? value : []);
 
@@ -52,15 +53,6 @@ const daysOverdue = (inv) => {
   return Math.floor(ms / (1000 * 60 * 60 * 24));
 };
 
-const reminderText = ({ clientName, invoiceNo, amount, overdue }) => {
-  if (overdue > 0) {
-    return `Hi ${clientName}, this is a friendly follow-up on overdue invoice ${invoiceNo || ""} for ${amount}. Please let us know if payment has already been made or if you need the payment link resent.`.replace("invoice  for", "your invoice for");
-  }
-  if (!invoiceNo) {
-    return `Hi ${clientName}, just a friendly reminder that your invoice for ${amount} is still outstanding. Please let us know if you need anything from us.`;
-  }
-  return `Hi ${clientName}, just a friendly reminder that invoice ${invoiceNo} for ${amount} is still outstanding. Please let us know if you need anything from us.`;
-};
 const QUOTE_FOLLOW_UP_ELIGIBLE = ["sent", "pending", "waiting", "awaiting_response", "viewed"];
 const QUOTE_FOLLOW_UP_EXCLUDED = ["accepted", "declined", "rejected", "converted", "invoiced", "cancelled", "canceled", "draft"];
 
@@ -72,15 +64,6 @@ const quoteAgeDays = (quote) => {
   return Math.floor(ms / (1000 * 60 * 60 * 24));
 };
 
-const quoteFollowUpText = ({ clientName, quoteNo, amountText, title, ageDays }) => {
-  if (Number.isFinite(ageDays) && ageDays >= 21) {
-    return `Hi ${clientName}, just checking whether you'd still like to proceed with quote ${quoteNo || title || "this quote"}. Happy to help with any changes before we book the work in.`;
-  }
-  if (quoteNo && amountText && amountText !== "—") {
-    return `Hi ${clientName}, just following up on quote ${quoteNo} for ${amountText}. Let us know if you'd like to go ahead or if you have any questions.`;
-  }
-  return `Hi ${clientName}, just checking in on the quote for ${title || "your requested work"}. Happy to answer any questions or adjust anything if needed.`;
-};
 
 const safeText = (value, fallback = "Not available") => {
   const text = String(value || "").trim();
@@ -104,25 +87,6 @@ const hasInvoiceForJob = (job, invoices) => {
   });
 };
 
-const aiInvoiceDescription = (job, client) => {
-  const saved = [
-    job?.ai_invoice_description,
-    job?.invoice_description_draft,
-    job?.completion_notes,
-    job?.worker_completion_notes,
-    job?.worker_notes,
-    job?.job_notes,
-    job?.notes,
-    job?.description,
-  ]
-    .map((value) => String(value || "").trim())
-    .find(Boolean);
-  if (saved) return saved;
-  const title = textOr(job?.title || job?.name, "service work");
-  const clientName = textOr(client?.name || job?.client_name || job?.customer_name, "client");
-  const location = textOr(job?.address || job?.location, "their site");
-  return `${title} completed for ${clientName} at ${location}. Work has been marked complete and is ready for billing.`;
-};
 
 
 const APPROVAL_GROUPS = ["all", "needs_decision", "ready", "drafts", "watching", "completed"];
@@ -332,7 +296,7 @@ export default function SmartHubBrainPage() {
         const clientName = textOr(client?.name || inv?.client_name || inv?.customer_name, "there");
         const invoiceNo = textOr(inv?.invoice_number || inv?.number || inv?.title || "", "");
         const overdue = daysOverdue(inv);
-        next[id] = reminderText({ clientName, invoiceNo, amount: money(invoiceBalance(inv)), overdue });
+        next[id] = buildInvoiceReminderMessage({ client, invoice: inv, business: user, channel: "email" });
       });
       return next;
     });
@@ -360,7 +324,7 @@ export default function SmartHubBrainPage() {
         const quoteNo = textOr(quote?.quote_number || quote?.number || quote?.reference || "", "");
         const title = textOr(quote?.title || quote?.name || quote?.description || "", "your requested work");
         const amountText = money(Number(quote?.total ?? quote?.amount ?? quote?.price));
-        const message = quoteFollowUpText({ clientName, quoteNo, amountText, title, ageDays: quoteAgeDays(quote) });
+        const message = buildQuoteFollowUpMessage({ client, quote, business: user, channel: "email" });
         originals[id] = message;
         if (!next[id]) next[id] = message;
       });
@@ -467,6 +431,13 @@ export default function SmartHubBrainPage() {
     "AI Dispatch": `${unassignedJobs.length} to assign`,
   };
 
+
+  const openApprovalCentre = useCallback(({ tab = "all", actionId = "" } = {}) => {
+    setApprovalFilter(tab);
+    setApprovalDetail(actionId ? { actionId } : null);
+    setApprovalCentreOpen(true);
+  }, []);
+
   const openWorkspace = (name, mode = "list") => {
     setWorkspaceDrawer(name);
     setWorkspaceMode(mode);
@@ -497,7 +468,7 @@ export default function SmartHubBrainPage() {
       const gstRate = Number(job?.gst_rate ?? 15);
       const gstAmount = Number(job?.gst_amount ?? job?.gst ?? job?.tax ?? subtotal * (gstRate / 100));
       const total = Number(job?.total ?? subtotal + gstAmount);
-      const description = aiInvoiceDescription(job, client);
+      const description = buildInvoiceDescription({ job, client });
 
       setSavingJobId(jobId);
       setToast({ kind: "", message: "" });
@@ -591,7 +562,7 @@ export default function SmartHubBrainPage() {
                   <p className="text-sm text-slate-600">Client: {textOr(client?.name, "Unknown client")}</p>
                   <p className="text-sm text-slate-600">Address: {textOr(job?.address || job?.location, "No address saved")}</p>
                   <p className="text-sm text-slate-600">Completed: {textOr(job?.completed_at || job?.updated_at, "Unknown date")}</p>
-                  <p className="mt-2 text-sm text-slate-700">{aiInvoiceDescription(job, client)}</p>
+                  <p className="mt-2 text-sm text-slate-700">{buildInvoiceDescription({ job, client })}</p>
                   {Number.isFinite(subtotal) ? (
                     <div className="mt-3 grid grid-cols-1 gap-1 text-sm text-slate-700 sm:grid-cols-3">
                       <p>Subtotal: {money(subtotal)}</p>
@@ -676,7 +647,7 @@ export default function SmartHubBrainPage() {
             const missingContact = !(contactEmail || contactPhone);
             const isEditing = !!editingDraft[id];
             const due = inv?.due_date || inv?.dueDate;
-            return <article key={id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex items-start justify-between gap-3"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedReminderIds.includes(id)} onChange={() => toggleSelected(id)} />Select</label><p className="text-xs font-medium uppercase tracking-wide text-slate-500">{approvedReminderIds[id] ? "Approved draft" : "Pending approval"}</p></div><p className="mt-2 font-semibold text-slate-900">{textOr(client?.name || inv?.client_name || inv?.customer_name, "Unknown client")}</p><p className="text-sm text-slate-600">Invoice: {textOr(inv?.invoice_number || inv?.number || inv?.title, "Untitled invoice")}</p><p className="text-sm text-slate-600">Amount due: {money(invoiceBalance(inv))}</p><p className="text-sm text-slate-600">Due date: {textOr(due, "No due date")}</p><p className="text-sm text-slate-600">Status: {textOr(inv?.status, "unknown")}</p><p className="text-sm text-slate-600">Overdue days: {daysOverdue(inv) ?? "—"}</p><p className="text-sm text-slate-600">Contact: {contactEmail || "—"} {contactPhone ? ` / ${contactPhone}` : ""}</p>{missingContact ? <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">Warning: missing client contact details. You can save/approve this draft, but it is not ready to send.</p> : null}{isEditing ? <textarea className="mt-3 w-full rounded-lg border border-slate-300 p-2 text-sm" rows={4} value={reminderDrafts[id] || ""} onChange={(e) => setReminderDrafts((prev) => ({ ...prev, [id]: e.target.value }))} /> : <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-800">{reminderDrafts[id]}</p>}<div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => setEditingDraft((prev) => ({ ...prev, [id]: true }))} className="rounded border border-slate-300 px-3 py-1 text-sm">Edit message</button><button type="button" onClick={() => setEditingDraft((prev) => ({ ...prev, [id]: false }))} className="rounded border border-slate-300 px-3 py-1 text-sm">Save message</button><button type="button" onClick={() => { setEditingDraft((prev) => ({ ...prev, [id]: false })); setReminderDrafts((prev) => ({ ...prev, [id]: reminderText({ clientName: textOr(client?.name || inv?.client_name || inv?.customer_name, "there"), invoiceNo: textOr(inv?.invoice_number || inv?.number || inv?.title || "", ""), amount: money(invoiceBalance(inv)), overdue: daysOverdue(inv) }) })); }} className="rounded border border-slate-300 px-3 py-1 text-sm">Cancel</button><button type="button" onClick={() => approveOne(inv)} className="rounded bg-teal-700 px-3 py-1 text-sm text-white">Approve reminder draft</button><button type="button" onClick={() => navigate(`/invoices/${id}`)} className="rounded border border-slate-300 px-3 py-1 text-sm">Open full invoice page</button></div></article>;
+            return <article key={id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex items-start justify-between gap-3"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedReminderIds.includes(id)} onChange={() => toggleSelected(id)} />Select</label><p className="text-xs font-medium uppercase tracking-wide text-slate-500">{approvedReminderIds[id] ? "Approved draft" : "Pending approval"}</p></div><p className="mt-2 font-semibold text-slate-900">{textOr(client?.name || inv?.client_name || inv?.customer_name, "Unknown client")}</p><p className="text-sm text-slate-600">Invoice: {textOr(inv?.invoice_number || inv?.number || inv?.title, "Untitled invoice")}</p><p className="text-sm text-slate-600">Amount due: {money(invoiceBalance(inv))}</p><p className="text-sm text-slate-600">Due date: {textOr(due, "No due date")}</p><p className="text-sm text-slate-600">Status: {textOr(inv?.status, "unknown")}</p><p className="text-sm text-slate-600">Overdue days: {daysOverdue(inv) ?? "—"}</p><p className="text-sm text-slate-600">Contact: {contactEmail || "—"} {contactPhone ? ` / ${contactPhone}` : ""}</p>{missingContact ? <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">Warning: missing client contact details. You can save/approve this draft, but it is not ready to send.</p> : null}{isEditing ? <textarea className="mt-3 w-full rounded-lg border border-slate-300 p-2 text-sm" rows={4} value={reminderDrafts[id] || ""} onChange={(e) => setReminderDrafts((prev) => ({ ...prev, [id]: e.target.value }))} /> : <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-800">{reminderDrafts[id]}</p>}<div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => setEditingDraft((prev) => ({ ...prev, [id]: true }))} className="rounded border border-slate-300 px-3 py-1 text-sm">Edit message</button><button type="button" onClick={() => setEditingDraft((prev) => ({ ...prev, [id]: false }))} className="rounded border border-slate-300 px-3 py-1 text-sm">Save message</button><button type="button" onClick={() => { setEditingDraft((prev) => ({ ...prev, [id]: false })); setReminderDrafts((prev) => ({ ...prev, [id]: buildInvoiceReminderMessage({ client, invoice: inv, business: user, channel: "email" }) })); }} className="rounded border border-slate-300 px-3 py-1 text-sm">Cancel</button><button type="button" onClick={() => approveOne(inv)} className="rounded bg-teal-700 px-3 py-1 text-sm text-white">Approve reminder draft</button><button type="button" onClick={() => navigate(`/invoices/${id}`)} className="rounded border border-slate-300 px-3 py-1 text-sm">Open full invoice page</button></div></article>;
           })}
         </div>
       );
@@ -778,7 +749,7 @@ export default function SmartHubBrainPage() {
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" onClick={runScanNow} className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700">Run scan</button>
-              <button type="button" onClick={() => { setApprovalFilter("all"); setApprovalCentreOpen(true); }} className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800">Review now</button>
+              <button type="button" onClick={() => { openApprovalCentre({ tab: "all" }); }} className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800">Review now</button>
             </div>
           </section>
 
@@ -804,13 +775,13 @@ export default function SmartHubBrainPage() {
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">AI Approval Centre</h2>
             <p className="mt-1 text-sm text-slate-600">AI has prepared today&apos;s admin. Review everything before anything changes.</p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => setApprovalCentreOpen(true)} className={`rounded-full px-3 py-1 text-xs font-medium ${approvalBadgeTone === "amber" ? "bg-amber-100 text-amber-800" : approvalBadgeTone === "green" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"}`}>{approvalCounts.all ? `${approvalCounts.all} approvals` : "All clear"}</button>
+              <button type="button" onClick={() => openApprovalCentre({ tab: "all" })} className={`rounded-full px-3 py-1 text-xs font-medium ${approvalBadgeTone === "amber" ? "bg-amber-100 text-amber-800" : approvalBadgeTone === "green" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"}`}>{approvalCounts.all ? `${approvalCounts.all} approvals` : "All clear"}</button>
               <p className="text-sm text-slate-700">{approvalCounts.all ? `${approvalCounts.all} approvals waiting` : "AI has checked today’s jobs, invoices, quotes and crew."}</p>
             </div>
             <p className="mt-2 text-sm text-slate-600">{approvalCounts.needs_decision || 0} need decision · {approvalCounts.ready || 0} ready · {approvalCounts.drafts || 0} drafts · {approvalCounts.watching || 0} watching</p>
-            {!!priorityItems.length && <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-slate-700">{priorityItems.map((item) => <li key={item.id}><button type="button" onClick={() => { setApprovalFilter("all"); setApprovalCentreOpen(true); }} className="text-left hover:text-slate-900">{item.title}</button></li>)}</ol>}
+            {!!priorityItems.length && <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-slate-700">{priorityItems.map((item) => <li key={item.id}><button type="button" onClick={() => { openApprovalCentre({ tab: "all" }); }} className="text-left hover:text-slate-900">{item.title}</button></li>)}</ol>}
             <div className="mt-4 flex flex-wrap gap-2">
-              <button type="button" onClick={() => { setApprovalFilter("all"); setApprovalCentreOpen(true); }} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">Open Approval Centre</button>
+              <button type="button" onClick={() => { openApprovalCentre({ tab: "all" }); }} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">Open Approval Centre</button>
               <button type="button" onClick={runScanNow} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Run scan</button>
             </div>
           </section>
