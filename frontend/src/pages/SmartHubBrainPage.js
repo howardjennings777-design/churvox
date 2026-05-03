@@ -102,6 +102,25 @@ const getApprovalGroup = (action = {}) => {
 };
 const normalizeApprovalAction = (action = {}) => ({ ...action, id: String(action.id || action._id || ""), group: getApprovalGroup(action) });
 const getFilteredApprovalActions = (actions = [], activeTab = "all") => safeArray(actions).filter((a) => (activeTab === "all" ? true : a.group === activeTab));
+const approvalDedupKey = (action = {}) => {
+  const actionKey = String(action.action_key || action.actionKey || "").trim();
+  if (actionKey) return actionKey;
+  const type = String(action.type || "unknown");
+  const rel = String(action.relatedId || action.related_id || action.related_entity_id || action.invoice_id || action.job_id || action.quote_id || action.client_id || "");
+  return `${type}:${rel}`;
+};
+
+const dedupeApprovalActions = (actions = []) => {
+  const map = new Map();
+  safeArray(actions).forEach((item) => {
+    const key = approvalDedupKey(item);
+    if (!key) return;
+    if (!map.has(key)) { map.set(key, item); return; }
+    const prev = map.get(key);
+    if (statusOf(prev?.status) === 'completed' && statusOf(item?.status) !== 'completed') map.set(key, item);
+  });
+  return Array.from(map.values());
+};
 const getActionDisplayMeta = (item = {}) => ({
   title: item.title || "Approval action",
   subtitle: item.dataUsed || "",
@@ -373,7 +392,7 @@ export default function SmartHubBrainPage() {
 
   const approvalItems = useMemo(() => {
     if (safeArray(operatorActions).length) {
-      return safeArray(operatorActions).map((a) => normalizeApprovalAction({
+      return dedupeApprovalActions(safeArray(operatorActions).map((a) => normalizeApprovalAction({
         id: a.id || a._id,
         type: a.action_type || a.type,
         group: a.group || (a.status === "completed" ? "completed" : "watching"),
@@ -386,7 +405,7 @@ export default function SmartHubBrainPage() {
         relatedType: a.related_type || a.related_entity_type,
         relatedId: a.related_id || a.related_entity_id,
         actionPayload: a.payload || a.draft_payload || {},
-      }));
+      })));
     }
     return buildSmartHubApprovalItems({ jobs, clients, invoices, quotes, workers, activity, dispatchRecs, reminderDrafts, quoteDrafts });
   }, [operatorActions, jobs, clients, invoices, quotes, workers, activity, dispatchRecs, reminderDrafts, quoteDrafts]);
@@ -833,7 +852,7 @@ export default function SmartHubBrainPage() {
             ].map(([label, value]) => (
               <article key={label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-                <button type="button" onClick={() => ({"Ready to bill":"Invoices","Unassigned jobs":"AI Dispatch","Open invoices":"Payment Reminders","Crew available":"AI Dispatch"}[label] ? openWorkspace({"Ready to bill":"Invoices","Unassigned jobs":"AI Dispatch","Open invoices":"Payment Reminders","Crew available":"AI Dispatch"}[label], {"Open invoices":"reminders"}[label] || "list") : null)} className="mt-2 text-2xl font-semibold text-slate-900">
+                <button type="button" onClick={() => ({"Ready to bill":"Invoices","Unassigned jobs":"AI Dispatch","Open invoices":"Payment Reminders","Crew available":"Crew"}[label] ? openWorkspace({"Ready to bill":"Invoices","Unassigned jobs":"AI Dispatch","Open invoices":"Payment Reminders","Crew available":"Crew"}[label], {"Open invoices":"reminders"}[label] || "list") : null)} className="mt-2 text-2xl font-semibold text-slate-900">
                   {value}
                 </button>
               </article>
@@ -860,10 +879,10 @@ export default function SmartHubBrainPage() {
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Today&apos;s Plan</h2>
               <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                 {[["Jobs today", jobsToday], ["Unassigned jobs", unassignedJobs.length], ["Ready to bill", readyToBillJobs.length], ["Open invoices", openInvoices.length], ["Quotes waiting", waitingQuotes.length], ["Crew available", crewAvailable]].map(([label, value]) => (
-                  <div key={label} className="rounded-lg bg-[#f6f4ef] px-3 py-2">
+                  <button type="button" key={label} onClick={() => ({"Jobs today":()=>openWorkspace("Jobs","list"),"Unassigned jobs":()=>openWorkspace("AI Dispatch","assign"),"Ready to bill":()=>openApprovalCentre({tab:"ready"}),"Open invoices":()=>openApprovalCentre({tab:"drafts"}),"Quotes waiting":()=>openApprovalCentre({tab:"drafts"}),"Crew available":()=>openWorkspace("Crew","list")}[label]?.()} className="rounded-lg bg-[#f6f4ef] px-3 py-2 text-left">
                     <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
                     <p className="text-lg font-semibold text-slate-900">{value}</p>
-                  </div>
+                  </button>
                 ))}
               </div>
               <p className="mt-4 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700">
@@ -875,10 +894,10 @@ export default function SmartHubBrainPage() {
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Business Pulse</h2>
               <div className="mt-3 grid grid-cols-2 gap-3">
                 {[["Money waiting", openInvoices.length], ["Billing ready", readyToBillJobs.length], ["Dispatch pressure", unassignedJobs.length], ["Pipeline", waitingQuotes.length], ["Crew", crewAvailable]].map(([label, value]) => (
-                  <div key={label} className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-3">
+                  <button type="button" key={label} onClick={() => ({"Money waiting":()=>openWorkspace("Payment Reminders","reminders"),"Billing ready":()=>openApprovalCentre({tab:"ready"}),"Dispatch pressure":()=>openWorkspace("AI Dispatch","assign"),"Pipeline":()=>openApprovalCentre({tab:"drafts"}),"Crew":()=>openWorkspace("Crew","list")}[label]?.()} className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-3 text-left">
                     <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
                     <p className="mt-1 text-xl font-semibold text-slate-900">{value}</p>
-                  </div>
+                  </button>
                 ))}
               </div>
             </article>
@@ -949,9 +968,9 @@ export default function SmartHubBrainPage() {
                       {item.type === "invoice_reminder" ? <><div className="mt-2 flex gap-1 text-[11px]"><span className="rounded bg-slate-100 px-2 py-0.5">Email</span><span className="rounded bg-slate-100 px-2 py-0.5">SMS</span></div><p className="mt-2 rounded bg-slate-50 p-2 text-xs text-slate-700">{reminderDrafts[item.relatedId] || buildInvoiceReminderMessage({ client: findByIds(clients, [item.invoice?.client_id, item.invoice?.clientId]), invoice: item.invoice, business: user, channel: "email" })}</p></> : null}
                       {item.type === "quote_follow_up" ? <><div className="mt-2 flex gap-1 text-[11px]"><span className="rounded bg-slate-100 px-2 py-0.5">Email</span><span className="rounded bg-slate-100 px-2 py-0.5">SMS</span></div><p className="mt-2 rounded bg-slate-50 p-2 text-xs text-slate-700">{quoteDrafts[item.relatedId] || buildQuoteFollowUpMessage({ client: findByIds(clients, [item.quote?.client_id, item.quote?.clientId]), quote: item.quote, business: user, channel: "email" })}</p></> : null}
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <button type="button" onClick={async ()=>{ if (item.type === "create_invoice_draft") await approveDraft(item.job); else if (item.type === "assign_worker") openWorkspace("AI Dispatch", "assign"); else if (item.type === "invoice_reminder") openWorkspace("Payment Reminders", "reminders"); else if (item.type === "quote_follow_up") openWorkspace("Quote Follow-ups", "followUps"); else setApprovalDetail(item); }} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">Approve</button>
+                        <button type="button" onClick={async ()=>{ try { await post(`/ai/operator/approval-items/${item.id}/approve`, {}); await load(); setToast({kind:"success", message:"Action approved."}); } catch { setToast({kind:"error", message:"Approve failed."}); } }} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">Approve</button>
                         <button type="button" onClick={()=>setApprovalDetail(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Edit</button>
-                        <button type="button" className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Reject</button>
+                        <button type="button" onClick={async ()=>{ await post(`/ai/operator/approval-items/${item.id}/reject`, {}); await load(); setToast({kind:"success", message:"Action rejected."}); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Reject</button>
                         <button type="button" onClick={()=>setApprovalDetail(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Details</button>
                       </div>
                     </article>
