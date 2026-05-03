@@ -27,28 +27,31 @@ const listFrom = (value, keys = []) => {
 const riskRank = { urgent: 0, high: 1, medium: 2, low: 3 };
 const asId = (v) => String(v?.id || v?._id || "");
 const sameId = (a, b) => String(a || "") && String(a || "") === String(b || "");
+const getAnyId = (v) => String(v?.id || v?._id || v?.job_id || v?.worker_id || v?.client_id || v?.user_id || "");
 const textOr = (v, fallback) => (v === 0 ? "0" : (String(v || "").trim() || fallback));
 const fmtDateTime = (v) => v ? new Date(v).toLocaleString() : "No schedule time set";
 const calcWorkerLoadToday = (jobs, workerId, today) => jobs.filter((j) => sameId(j.assigned_worker_id || j.worker_id, workerId) && String(j.scheduled_date || j.date || "").slice(0, 10) === today).length;
+const findByAnyId = (list, id, keys = ["id", "_id"]) => list.find((item) => keys.some((k) => sameId(item?.[k], id)));
 
 function buildAssignmentApprovalDetails(action, jobs, workers, clients, today) {
-  const jobId = action.job_id || action.related_job_id || action.related_entity_id;
-  const workerId = action.recommended_worker_id || action.worker_id || action.assigned_worker_id;
-  const job = jobs.find((j) => sameId(asId(j), jobId));
-  const worker = workers.find((w) => sameId(asId(w), workerId));
-  const client = clients.find((c) => sameId(asId(c), job?.client_id || action.client_id || action.related_client_id));
+  const jobId = action.job_id || action.related_job_id || action.related_entity_id || action?.job?.id || action?.job?._id || action?.job?.job_id;
+  const workerId = action.recommended_worker_id || action.worker_id || action.assigned_worker_id || action?.worker?.id || action?.worker?._id || action?.worker?.user_id;
+  const job = action?.job || findByAnyId(jobs, jobId, ["id", "_id", "job_id"]);
+  const worker = action?.worker || findByAnyId(workers, workerId, ["id", "_id", "user_id"]);
+  const clientId = action.client_id || action.related_client_id || job?.client_id || action?.client?.id || action?.client?._id || action?.client?.client_id;
+  const client = action?.client || findByAnyId(clients, clientId, ["id", "_id", "client_id"]);
   const assignedWorker = workers.find((w) => sameId(asId(w), job?.assigned_worker_id || job?.worker_id));
   const workerLoadToday = worker ? calcWorkerLoadToday(jobs, asId(worker), today) : 0;
   const area = textOr(job?.area || job?.region || job?.suburb, "No area saved");
   const workerArea = textOr(worker?.region || worker?.area || worker?.zone, "No region saved");
   const areaMatch = area !== "No area saved" && workerArea !== "No region saved" && area.toLowerCase() === workerArea.toLowerCase();
-  const workerName = textOr(worker?.name, "Recommended worker unavailable");
-  const title = textOr(job?.title || job?.name, "Untitled job");
+  const workerName = textOr(worker?.name, "Worker unavailable");
+  const title = textOr(job?.title || job?.name, "Job details unavailable");
   return {
     recommendedAction: `Assign ${workerName} to ${title}`,
     whyAi: `${workerName} is recommended because they have ${workerLoadToday} jobs scheduled today, are ${textOr(worker?.status, "status unknown")}, and are marked ${worker?.available === false ? "not available" : "available"}. ${areaMatch ? `They also match the job area: ${area}.` : "Area match is not available."} ${worker?.skills?.length ? `Matched skills: ${worker.skills.slice(0, 4).join(", ")}.` : "Skill history was not available, so this recommendation is based on availability and workload."}`,
     jobDetails: [
-      ["Job", title], ["Client", textOr(client?.name, "No client linked")], ["Address", textOr(job?.address, "No address saved")],
+      ["Job", title], ["Client", textOr(client?.name, "Client unavailable")], ["Address", textOr(job?.address, "No address saved")],
       ["Date / Time", fmtDateTime(job?.scheduled_date || job?.date)], ["Status", textOr(job?.status, "No status saved")],
       ["Service type", textOr(job?.service_type || job?.job_type, "No service type saved")], ["Notes", textOr(job?.notes || job?.description, "No completion notes saved")],
       ["Current assigned worker", textOr(assignedWorker?.name, "No worker assigned")],
@@ -83,6 +86,7 @@ export default function SmartHubBrainPage() {
   const [approvingActionId, setApprovingActionId] = useState("");
   const [actionError, setActionError] = useState("");
   const [editedWorkerId, setEditedWorkerId] = useState("");
+  const [localActionState, setLocalActionState] = useState({});
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -109,10 +113,25 @@ export default function SmartHubBrainPage() {
 
   const approvals = useMemo(() => data.approvals.filter((a) => String(a.status || "pending").toLowerCase() !== "approved"), [data.approvals]);
   const derivedActions = useMemo(() => {
-    const workerLoad = workers.map((w) => ({ w, load: jobsToday.filter((j) => String(j.assigned_worker_id || j.worker_id || "") === String(w.id || w._id)).length })).sort((a, b) => a.load - b.load);
-    const recommended = workerLoad[0]?.w;
+    const rankedUnassigned = [...unassignedJobs].sort((a, b) => {
+      const pA = String(a.priority || "").toLowerCase();
+      const pB = String(b.priority || "").toLowerCase();
+      return (riskRank[pA] ?? 4) - (riskRank[pB] ?? 4);
+    });
+    const targetJob = rankedUnassigned[0];
+    const rankedWorkers = workers.map((w) => {
+      const load = jobsToday.filter((j) => String(j.assigned_worker_id || j.worker_id || "") === String(w.id || w._id || w.user_id)).length;
+      const status = String(w.status || "").toLowerCase();
+      const activeScore = ["active", "available", "on_site", "busy"].includes(status) ? 2 : 0;
+      const availabilityScore = w.available === false ? -3 : 1;
+      const region = String(w.region || w.area || w.zone || "").toLowerCase();
+      const jobRegion = String(targetJob?.area || targetJob?.region || targetJob?.suburb || "").toLowerCase();
+      const regionScore = region && jobRegion && region === jobRegion ? 2 : 0;
+      return { w, load, score: activeScore + availabilityScore + regionScore - load };
+    }).sort((a, b) => b.score - a.score || a.load - b.load);
+    const recommended = rankedWorkers[0]?.w;
     const list = [];
-    if (unassignedJobs.length) list.push({ priority: "urgent", kind: "assign_worker", title: `Assign ${recommended?.name || "best available worker"} to ${unassignedJobs[0]?.title || "today's unassigned jobs"}`, reason: `AI recommends assignment using availability, workload, and area signals. ${unassignedJobs.length} jobs are unassigned.`, dataUsed: `Jobs: ${unassignedJobs.length} · Crew: ${workers.length} · Lowest load: ${workerLoad[0]?.load ?? 0}`, risk: "high", primary: "Approve assignment", nav: "/dispatch" });
+    if (targetJob && recommended) list.push({ id: `assign-worker-${getAnyId(targetJob)}-${getAnyId(recommended)}`, type: "assign_worker", action_type: "assign_worker", job_id: getAnyId(targetJob), worker_id: getAnyId(recommended), client_id: targetJob.client_id || "", job: targetJob, worker: recommended, priority: "urgent", kind: "assign_worker", title: `Assign ${recommended?.name || "worker"} to ${targetJob?.title || "job"}`, reason: `AI recommends this assignment based on availability, workload, area match, and schedule checks.`, dataUsed: `Job: ${targetJob?.title || getAnyId(targetJob)} · Worker load today: ${rankedWorkers[0]?.load ?? 0} · Unassigned jobs: ${unassignedJobs.length}`, risk: "high", primary: "Approve assignment", nav: "/dispatch", source: "frontend_recommendation" });
     if (completedReadyToBill.length) list.push({ priority: "ready", kind: "create_invoice_draft", title: `Create ${completedReadyToBill.length} draft invoice${completedReadyToBill.length > 1 ? "s" : ""}`, reason: "AI prepared invoice drafts for completed jobs with pricing not yet billed.", dataUsed: `Completed not invoiced: ${completedReadyToBill.length}`, risk: "medium", primary: "Approve draft", nav: "/invoices" });
     if (waitingQuotes.length) list.push({ priority: "draft", kind: "quote_follow_up", title: `Follow up ${waitingQuotes.length} quote${waitingQuotes.length > 1 ? "s" : ""}`, reason: "AI prepared follow-up drafts for quotes waiting response.", dataUsed: `Waiting quotes: ${waitingQuotes.length}`, risk: "low", primary: "Approve draft", nav: "/quotes" });
     if (openInvoices.length) list.push({ priority: "draft", kind: "invoice_reminder", title: `Prepare reminders for ${openInvoices.length} open invoice${openInvoices.length > 1 ? "s" : ""}`, reason: "AI prepared reminders for unpaid invoices.", dataUsed: `Overdue: ${overdueInvoices.length} · Open: ${openInvoices.length}`, risk: overdueInvoices.length ? "high" : "medium", primary: "Approve draft", nav: "/invoices" });
@@ -121,7 +140,8 @@ export default function SmartHubBrainPage() {
   }, [workers, jobsToday, unassignedJobs, completedReadyToBill, waitingQuotes, openInvoices, overdueInvoices, crewActive]);
 
   const actionCards = approvals.length ? approvals.map((a) => ({ ...a, priority: "ready", title: a.title || "AI prepared action", reason: a.reason || "AI recommends owner approval.", dataUsed: a.summary || "AI prepared from jobs, crew, quotes and invoices.", risk: a.risk_level || "medium", primary: "Approve", nav: "/dashboard" })) : derivedActions;
-  const grouped = useMemo(() => ({ urgent: actionCards.filter((a) => a.priority === "urgent" || a.risk === "high"), ready: actionCards.filter((a) => a.priority === "ready"), draft: actionCards.filter((a) => a.priority === "draft"), watching: actionCards.filter((a) => a.priority === "watching" || a.risk === "low") }), [actionCards]);
+  const visibleActionCards = useMemo(() => actionCards.filter((a) => localActionState[String(a.id || a._id || a.title || "")] !== "rejected"), [actionCards, localActionState]);
+  const grouped = useMemo(() => ({ urgent: visibleActionCards.filter((a) => a.priority === "urgent" || a.risk === "high"), ready: visibleActionCards.filter((a) => a.priority === "ready"), draft: visibleActionCards.filter((a) => a.priority === "draft"), watching: visibleActionCards.filter((a) => a.priority === "watching" || a.risk === "low") }), [visibleActionCards]);
 
   const handleReviewAction = (action) => { setSelectedAction(action); setActionError(""); setIsActionModalOpen(true); };
   const handleApproveAction = async (action) => {
@@ -130,7 +150,17 @@ export default function SmartHubBrainPage() {
     setApprovingActionId(actionId || action?.title || "local");
     setActionError("");
     try {
-      if (!actionId) throw new Error("Cannot approve yet: this recommendation is local-only and has no backend action id.");
+      if (actionType === "assign_worker" && (action?.job_id || action?.worker_id || editedWorkerId)) {
+        const workerId = editedWorkerId || action?.worker_id || action?.recommended_worker_id;
+        const jobId = action?.job_id || action?.related_job_id;
+        if (!jobId || !workerId) throw new Error("Cannot approve assignment: missing job or worker id.");
+        await post(`/jobs/${jobId}/assign-worker`, { worker_id: workerId, workerId });
+        toast.success("Worker assigned from AI recommendation.");
+        setIsActionModalOpen(false); setSelectedAction(null); setEditedWorkerId("");
+        await load();
+        return;
+      }
+      if (!actionId) throw new Error("Cannot approve yet: missing action id.");
       if (!APPROVAL_ACTION_TYPES.has(actionType)) throw new Error(`Cannot approve yet: unsupported action type '${actionType || "unknown"}'.`);
       await post(`/ai/control/actions/${actionId}/approve`, {});
       toast.success("Action approved.");
@@ -146,7 +176,13 @@ export default function SmartHubBrainPage() {
   const handleRejectAction = async (action) => {
     const actionId = String(action?.id || action?._id || "");
     try {
-      if (!actionId) throw new Error("Cannot reject yet: this recommendation is local-only and has no backend action id.");
+      if (!actionId) {
+        const localId = String(action?.id || action?.title || Math.random());
+        setLocalActionState((s) => ({ ...s, [localId]: "rejected" }));
+        toast.success("Recommendation rejected.");
+        setIsActionModalOpen(false);
+        return;
+      }
       await post(`/ai/control/actions/${actionId}/dismiss`, {});
       toast.success("Action rejected.");
       setIsActionModalOpen(false);
