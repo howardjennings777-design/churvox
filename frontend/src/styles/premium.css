@@ -7,40 +7,40 @@
 
 :root {
   /* Brand */
-  --px-bg:            #eef4fc;
+  --px-bg:            #F4F7FB;
   --px-bg-2:          #f4f8ff;
   --px-bg-3:          #e6f0fb;
   --px-surface:       #ffffff;
-  --px-surface-soft:  #f6faff;
+  --px-surface-soft:  #F8FAFC;
   --px-glass:         rgba(255,255,255,0.78);
 
-  --px-border:        #d8e3f3;
+  --px-border:        #DCE6F3;
   --px-border-soft:   #e6eef9;
   --px-border-strong: #b8c8de;
 
-  --px-text:          #0d1b34;
-  --px-text-2:        #1a2c4d;
-  --px-muted:         #5b6c87;
+  --px-text:          #0F172A;
+  --px-text-2:        #334155;
+  --px-muted:         #64748B;
   --px-muted-2:       #7d8ba3;
 
-  --px-primary:       #2563eb;
-  --px-primary-2:     #1d4ed8;
-  --px-primary-soft:  #dbe7ff;
-  --px-primary-50:    #eff4ff;
+  --px-primary:       #155EEF;
+  --px-primary-2:     #0F46C8;
+  --px-primary-soft:  #EAF1FF;
+  --px-primary-50:    #EAF1FF;
 
   --px-sky:           #38bdf8;
   --px-sky-soft:      #e0f3ff;
 
-  --px-teal:          #0d9488;
-  --px-teal-soft:     #ccfbf1;
+  --px-teal:          #12B981;
+  --px-teal-soft:     rgba(18,185,129,0.08);
 
-  --px-amber:         #d97706;
+  --px-amber:         #F59E0B;
   --px-amber-soft:    #fff1d6;
 
-  --px-red:           #dc2626;
+  --px-red:           #DC2626;
   --px-red-soft:      #ffe1e1;
 
-  --px-violet:        #7c3aed;
+  --px-violet:        #6D5DF6;
   --px-violet-soft:   #ede4ff;
 
   --px-shadow-sm:     0 1px 2px rgba(13,27,52,0.05);
@@ -647,6 +647,14 @@
 .px-main {
   margin-left: 256px;
   min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(21,94,239,0.10), transparent 30%),
+    radial-gradient(circle at top right, rgba(109,93,246,0.08), transparent 26%),
+    linear-gradient(rgba(18,185,129,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(21,94,239,0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(15,23,42,0.025) 1px, transparent 1px),
+    #F4F7FB;
+  background-size: auto, auto, 28px 28px, 28px 28px, 56px 56px, auto;
 }
 @media (max-width: 767.98px) {
   .px-main { margin-left: 0; padding-bottom: 86px; }
