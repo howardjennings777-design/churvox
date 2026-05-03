@@ -107,6 +107,7 @@ export default function SmartHubBrainPage() {
   const [draftDescriptions, setDraftDescriptions] = useState({});
   const [selectedDrafts, setSelectedDrafts] = useState({});
   const [draftApprovalState, setDraftApprovalState] = useState({});
+  const [locallyBilledJobIds, setLocallyBilledJobIds] = useState({});
   const [reviewMode, setReviewMode] = useState("list");
   const [selectedReviewItem, setSelectedReviewItem] = useState(null);
   const [reviewEditForm, setReviewEditForm] = useState(null);
@@ -134,10 +135,26 @@ export default function SmartHubBrainPage() {
   const workers = useMemo(() => [...new Map(data.workers.map((w) => [String(w.id || w._id || w.email || w.name), w])).values()], [data.workers]);
   const jobsToday = useMemo(() => data.jobs.filter((j) => String(j.scheduled_date || j.date || "").slice(0, 10) === today), [data.jobs, today]);
   const isAssignedJob = (j) => Boolean(j?.assigned_worker_id || j?.assigned_worker || j?.worker_id || j?.assignee || ["assigned", "in_progress", "completed"].includes(String(j?.status || "").toLowerCase()));
-  const hasInvoiceForJob = (job) => data.invoices.some((inv) => sameId(inv?.job_id || inv?.related_job_id, asId(job)));
-  const hasDraftOrInvoice = (j) => Boolean(j?.invoice_id || j?.invoice_created || j?.draft_invoice_id || ["created", "draft", "sent"].includes(String(j?.invoice_status || "").toLowerCase()) || hasInvoiceForJob(j));
+  const hasInvoiceForJob = (job) => {
+    const jobId = asId(job);
+    const linkedStatuses = new Set(["draft", "sent", "paid", "open", "overdue"]);
+    return data.invoices.some((inv) => {
+      const status = String(inv?.status || "").toLowerCase();
+      const linked = sameId(inv?.job_id, jobId) || sameId(inv?.linked_job_id, jobId) || sameId(inv?.related_job_id, jobId);
+      return linked && (linkedStatuses.has(status) || !status);
+    });
+  };
+  const hasDraftOrInvoice = (j) => Boolean(
+    locallyBilledJobIds[asId(j)] ||
+    j?.invoice_id ||
+    j?.draft_invoice_id ||
+    j?.invoice_created === true ||
+    j?.invoiced === true ||
+    ["created", "draft", "sent", "paid", "open", "overdue"].includes(String(j?.invoice_status || "").toLowerCase()) ||
+    hasInvoiceForJob(j)
+  );
   const unassignedJobs = useMemo(() => data.jobs.filter((j) => !isAssignedJob(j)), [data.jobs]);
-  const completedReadyToBill = useMemo(() => data.jobs.filter((j) => ["completed","complete"].includes(normalizeStatus(j.status)) && !hasDraftOrInvoice(j)), [data.jobs, data.invoices]);
+  const completedReadyToBill = useMemo(() => data.jobs.filter((j) => ["completed","complete"].includes(normalizeStatus(j.status)) && !hasDraftOrInvoice(j)), [data.jobs, data.invoices, locallyBilledJobIds]);
   const waitingQuotes = useMemo(() => data.quotes.filter((q) => ["sent", "pending"].includes(String(q.status || "").toLowerCase())), [data.quotes]);
   const openInvoices = useMemo(() => data.invoices.filter((i) => ["open", "overdue", "sent"].includes(String(i.status || "").toLowerCase())), [data.invoices]);
   const overdueInvoices = useMemo(() => openInvoices.filter((i) => String(i.status || "").toLowerCase() === "overdue"), [openInvoices]);
@@ -439,8 +456,16 @@ export default function SmartHubBrainPage() {
   };
 
   const approveDraftInvoice = useCallback(async (row) => {
-    await post(`/jobs/${row.jobId}/create-draft-invoice`, { description: draftDescriptions[row.jobId] || row.description, invoice_description: draftDescriptions[row.jobId] || row.description, client_id: row.job.client_id || row.job.clientId || row.job.customer_id || undefined });
+    const res = await post(`/jobs/${row.jobId}/create-draft-invoice`, { description: draftDescriptions[row.jobId] || row.description, invoice_description: draftDescriptions[row.jobId] || row.description, client_id: row.job.client_id || row.job.clientId || row.job.customer_id || undefined });
+    const invoiceId = String(res?.invoice_id || "");
+    setLocallyBilledJobIds((s) => ({ ...s, [row.jobId]: true }));
+    setSelectedDrafts((s) => ({ ...s, [row.jobId]: false }));
     setDraftApprovalState((s) => ({ ...s, [row.jobId]: "approved" }));
+    setData((prev) => ({
+      ...prev,
+      jobs: prev.jobs.map((j) => sameId(asId(j), row.jobId) ? { ...j, invoice_id: invoiceId || j.invoice_id || true, draft_invoice_id: invoiceId || j.draft_invoice_id, invoice_created: true, invoiced: true, invoice_status: "draft" } : j),
+      invoices: invoiceId ? [...prev.invoices, { id: invoiceId, _id: invoiceId, job_id: row.jobId, linked_job_id: row.jobId, client_id: row.job.client_id || row.job.clientId || row.job.customer_id || "", status: "draft", total: Number(row.total) || 0 }] : prev.invoices,
+    }));
     setActivityTrail((trail) => [{ time: new Date().toISOString(), action: `Draft invoice created for ${row.clientName}`, result: `Job: ${row.job.title || row.job.name || "Service job"}`, approvedBy: user?.name || "Owner" }, ...trail].slice(0, 12));
   }, [draftDescriptions, user?.name]);
 
