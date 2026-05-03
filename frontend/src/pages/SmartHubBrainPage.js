@@ -131,17 +131,33 @@ const dedupeApprovalActions = (actions = []) => {
   });
   return Array.from(map.values());
 };
-const getActionDisplayMeta = (item = {}) => ({
-  title: item.title || "Approval action",
-  subtitle: item.dataUsed || "",
-  reason: item.reason || "Review this action.",
-  whatHappens: item.whatHappens || "No further change.",
-  risk: item.risk || "medium",
-  status: item.status || "pending",
-  amountLabel: "",
-  badges: [item.relatedType || "general"],
-  primaryLabel: "Approve",
-});
+const getActionDisplayMeta = (item = {}, { jobs = [], clients = [], invoices = [], quotes = [], workers = [] } = {}) => {
+  const payload = item?.actionPayload || {};
+  const relatedId = String(item?.relatedId || item?.related_id || item?.related_entity_id || "");
+  const actionType = String(item?.type || item?.action_type || "").toLowerCase();
+  const invoice = item?.invoice || findByIds(invoices, [item?.invoice_id, payload?.invoice_id, relatedId], ["id", "_id", "invoice_id"]);
+  const quote = item?.quote || findByIds(quotes, [item?.quote_id, payload?.quote_id, relatedId], ["id", "_id", "quote_id"]);
+  const job = item?.job || findByIds(jobs, [item?.job_id, payload?.job_id, relatedId], ["id", "_id", "job_id"]);
+  const worker = item?.worker || findByIds(workers, [item?.worker_id, payload?.worker_id, payload?.recommended_worker_id, job?.assigned_worker_id], ["id", "_id", "worker_id"]);
+  const client = item?.client || findByIds(clients, [item?.client_id, payload?.client_id, invoice?.client_id, quote?.client_id, job?.client_id], ["id", "_id", "client_id"]);
+  const clientName = textOr(client?.name || invoice?.client_name || quote?.client_name || job?.client_name, "No client linked");
+  if (actionType === "invoice_reminder") {
+    return { title: `Send payment reminder to ${clientName}`, subtitle: `Invoice ${textOr(invoice?.invoice_number || invoice?.number, "No invoice number")} · ${money(invoiceBalance(invoice))} outstanding · ${textOr(invoice?.status, "unknown")}`, reason: item.reason || "Invoice is unpaid and ready for reminder review.", dataUsed: item.dataUsed || `Due: ${textOr(invoice?.due_date || invoice?.dueDate, "No due date")} · Phone: ${client?.phone || invoice?.client_phone ? "saved" : "No phone saved"} · Email: ${client?.email || invoice?.client_email ? "saved" : "No email saved"}`, whatHappens: item.whatHappens || "Approval sends the reminder via selected channel.", risk: item.risk || "medium", status: item.status || "pending", contactSummary: `Phone: ${client?.phone || invoice?.client_phone || "No phone saved"} · Email: ${client?.email || invoice?.client_email || "No email saved"}` };
+  }
+  if (actionType === "quote_follow_up") {
+    return { title: `Follow up quote with ${clientName}`, subtitle: `Quote ${textOr(quote?.quote_number || quote?.number || quote?.title, "No quote number")} · ${money(quote?.total ?? quote?.amount)} · ${textOr(quote?.status, "unknown")}`, reason: item.reason || "Quote is waiting for a client response.", dataUsed: item.dataUsed || `Phone: ${client?.phone ? "saved" : "No phone saved"} · Email: ${client?.email ? "saved" : "No email saved"}`, whatHappens: item.whatHappens || "Approval saves and/or sends the follow-up draft.", risk: item.risk || "low", status: item.status || "pending" };
+  }
+  if (actionType === "create_invoice_draft") {
+    return { title: `Create draft invoice for ${textOr(job?.title || clientName, "No client linked")}`, subtitle: `${clientName} · ${textOr(job?.address || job?.location, "No address saved")} · Total ${money(job?.total ?? payload?.subtotal ?? job?.subtotal)}`, reason: item.reason || "Completed work is ready for billing.", dataUsed: item.dataUsed || "Using job completion details and saved pricing.", whatHappens: item.whatHappens || "Creates draft invoice only.", risk: item.risk || "medium", status: item.status || "pending" };
+  }
+  if (actionType === "assign_worker") {
+    return { title: `Assign ${textOr(worker?.name, "No worker selected")} to ${textOr(job?.title, "job")}`, subtitle: `${clientName} · ${textOr(job?.address || job?.location, "No address saved")} · Workload ${payload?.jobsToday ?? 0} jobs today`, reason: item.reason || "Worker assignment needs approval.", dataUsed: item.dataUsed || "Recommendation uses worker load and availability.", whatHappens: item.whatHappens || "Updates job assignment.", risk: item.risk || "medium", status: item.status || "pending" };
+  }
+  if (actionType === "job_arrival_sms") {
+    return { title: `Send arrival SMS to ${clientName}`, subtitle: `${textOr(job?.title, "job")} · ${textOr(job?.scheduled_date || job?.scheduled_at, "No scheduled time")} · Worker ${textOr(worker?.name, "No worker selected")}`, reason: item.reason || "Arrival notification is due.", dataUsed: item.dataUsed || `Phone: ${client?.phone || payload?.to_phone || "No phone saved"}`, whatHappens: item.whatHappens || "Sends a 30-minute arrival SMS.", risk: item.risk || "low", status: item.status || "pending", contactSummary: `SMS to ${client?.phone || payload?.to_phone || "No phone saved"}` };
+  }
+  return { title: item.title || "Approval action", subtitle: item.dataUsed || "", reason: item.reason || "Review this action.", dataUsed: item.dataUsed || "", whatHappens: item.whatHappens || "No further change.", risk: item.risk || "medium", status: item.status || "pending" };
+};
 
 const buildSmartHubApprovalItems = ({ jobs, clients, invoices, quotes, workers, activity, dispatchRecs, reminderDrafts, quoteDrafts }) => {
   const items = [];
@@ -196,6 +212,9 @@ export default function SmartHubBrainPage() {
   const [selectedApprovalIds, setSelectedApprovalIds] = useState([]);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [readNotificationIds, setReadNotificationIds] = useState({});
+  const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
+  const defaultAiSettings = { ai_operator_enabled: true, auto_arrival_sms_enabled: false, arrival_sms_mode: "approval_required", arrival_sms_minutes_before: 30, invoice_reminder_mode: "draft_only", quote_followup_mode: "draft_only", worker_assignment_mode: "approval_required", accounting_changes_locked: true, payroll_changes_locked: true };
+  const [aiSettings, setAiSettings] = useState(defaultAiSettings);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -209,7 +228,7 @@ export default function SmartHubBrainPage() {
     };
 
     try {
-      const [jobsRes, clientsRes, quotesRes, invoicesRes, workersRes, activityRes, actionsRes] = await Promise.all([
+      const [jobsRes, clientsRes, quotesRes, invoicesRes, workersRes, activityRes, actionsRes, settingsRes] = await Promise.all([
         safeGet("/jobs"),
         safeGet("/clients"),
         safeGet("/quotes"),
@@ -217,6 +236,7 @@ export default function SmartHubBrainPage() {
         safeGet("/team/workers"),
         safeGet("/smart-hub/activity"),
         safeGet("/ai-operator/actions"),
+        safeGet("/api/ai-operator/settings"),
       ]);
 
       setData({
@@ -228,6 +248,7 @@ export default function SmartHubBrainPage() {
       });
       setActivity(listFrom(activityRes, ["activities"]));
       setOperatorActions(listFrom(actionsRes, ["actions"]));
+      if (settingsRes && typeof settingsRes === "object") setAiSettings((prev) => ({ ...prev, ...settingsRes }));
     } catch {
       setError("Failed to load Smart Hub data.");
     } finally {
@@ -446,7 +467,7 @@ export default function SmartHubBrainPage() {
     setApprovalCentreOpen(true);
   }, []);
   const notificationItems = useMemo(() => {
-    const aiApprovals = sortedApprovalItems.filter((item) => item.status !== "completed").slice(0, 6).map((item) => ({
+    const aiApprovals = sortedApprovalItems.filter((item) => isActiveApproval(item)).slice(0, 6).map((item) => ({
       id: `approval-${item.id}`,
       section: "AI approvals",
       title: item.title || "Approval ready",
@@ -987,6 +1008,21 @@ export default function SmartHubBrainPage() {
             </div>
           </section>
 
+
+          <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">AI Operator Settings</h2>
+            <p className="mt-1 text-sm text-slate-600">Control what AI can prepare, approve, and send.</p>
+            <div className="mt-2 text-sm text-slate-700 space-y-1">
+              <p>AI Operator: {aiSettings.ai_operator_enabled ? "On" : "Off"}</p>
+              <p>Arrival SMS: {!aiSettings.auto_arrival_sms_enabled ? "Off" : (aiSettings.arrival_sms_mode === "auto_send" ? "Auto-send" : "Approval required")}</p>
+              <p>Arrival timing: {aiSettings.arrival_sms_minutes_before} minutes before</p>
+              <p>Invoice reminders: {aiSettings.invoice_reminder_mode === "approval_send" ? "Send after approval" : "Draft only"}</p>
+              <p>Quote follow-ups: {aiSettings.quote_followup_mode === "approval_send" ? "Send after approval" : "Draft only"}</p>
+              <p>Worker assignment: Approval required</p><p>Accounting changes: Locked</p><p>Payroll changes: Locked</p>
+            </div>
+            <button type="button" onClick={() => setAiSettingsOpen(true)} className="mt-3 rounded-lg bg-teal-700 px-3 py-2 text-sm text-white">Open AI Settings</button>
+          </section>
+
           <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Recent Smart Hub activity</h3>
             <div className="mt-2 flex gap-2">{[["all","All"],["completed","Completed"],["rejected","Rejected"],["draft_prepared","Drafts"]].map(([k,l]) => <button key={k} type="button" onClick={() => setActivityFilter(k)} className={`rounded px-2 py-1 text-xs ${activityFilter===k?"bg-slate-800 text-white":"bg-slate-100 text-slate-700"}`}>{l}</button>)}</div>{!activity.length ? <p className="mt-2 text-sm text-slate-500">No AI actions approved yet. Approved work will appear here.</p> : <ul className="mt-3 space-y-2 text-sm text-slate-700">{activity.filter((a)=>activityFilter==="all"?true:String(a?.status||"")===activityFilter).map((a) => <li key={String(a?.id||a?._id)} className="rounded-lg border border-slate-200 p-2"><p>{a?.message || a?.title}</p><p className="text-xs text-slate-500">{textOr(a?.status, "completed")} · {a?.approved_by_name ? `${a.approved_by_name} · ` : ""}{new Date(a?.created_at || Date.now()).toLocaleString()}</p></li>)}</ul>}
@@ -1006,6 +1042,22 @@ export default function SmartHubBrainPage() {
             </div>
           </div>
         ) : null}
+
+        {aiSettingsOpen ? (
+          <div className="fixed inset-0 z-[70] bg-slate-950/50 p-4">
+            <div className="mx-auto mt-10 max-w-xl rounded-2xl bg-white p-4">
+              <h3 className="text-lg font-semibold">AI Operator Settings</h3>
+              <div className="mt-3 space-y-2 text-sm">
+                <label className="block"><input type="checkbox" checked={!!aiSettings.ai_operator_enabled} onChange={(e)=>setAiSettings((p)=>({...p,ai_operator_enabled:e.target.checked}))} className="mr-2"/>AI Operator enabled</label>
+                <label className="block"><input type="checkbox" checked={!!aiSettings.auto_arrival_sms_enabled} onChange={(e)=>setAiSettings((p)=>({...p,auto_arrival_sms_enabled:e.target.checked}))} className="mr-2"/>Auto arrival SMS enabled</label>
+                <select value={aiSettings.arrival_sms_mode} onChange={(e)=>setAiSettings((p)=>({...p,arrival_sms_mode:e.target.value}))} className="w-full rounded border p-2"><option value="approval_required">Approval required</option><option value="auto_send">Auto-send</option></select>
+                <input type="number" min="20" max="35" value={aiSettings.arrival_sms_minutes_before} onChange={(e)=>setAiSettings((p)=>({...p,arrival_sms_minutes_before:Number(e.target.value)||30}))} className="w-full rounded border p-2" />
+              </div>
+              <div className="mt-4 flex gap-2"><button type="button" className="rounded bg-teal-700 px-3 py-2 text-white" onClick={async ()=>{ try { const res = await patch('/api/ai-operator/settings', aiSettings); setAiSettings((p)=>({...p,...(res?.settings||{})})); setToast({kind:'success',message:'AI settings saved.'}); setAiSettingsOpen(false);} catch { setToast({kind:'error',message:'Failed to save AI settings.'}); } }}>Save</button><button type="button" className="rounded border px-3 py-2" onClick={()=>setAiSettingsOpen(false)}>Close</button></div>
+            </div>
+          </div>
+        ) : null}
+
         {approvalCentreOpen ? (
           <div className="fixed inset-0 z-[80] overflow-hidden bg-slate-950/60">
             <div className="mx-auto flex h-[100dvh] w-full max-w-6xl flex-col overflow-hidden bg-stone-50 sm:my-4 sm:h-[94vh] sm:rounded-3xl">
@@ -1024,11 +1076,11 @@ export default function SmartHubBrainPage() {
                 {!!sortedApprovalItems.length && <div className="sticky top-0 z-10 mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white p-2 text-xs"><span>Visible: {filteredApprovalItems.length}</span><span>Selected: {selectedApprovalIds.length}</span><button type="button" onClick={toggleSelectAllVisible} className="rounded border px-2 py-1">Select all visible</button><button type="button" onClick={clearApprovalSelection} className="rounded border px-2 py-1">Clear</button><button type="button" onClick={handleBulkApprove} className="rounded bg-teal-700 px-2 py-1 text-white">Approve selected</button><button type="button" onClick={handleBulkReject} className="rounded border px-2 py-1">Reject selected</button><button type="button" onClick={handleBulkDelete} className="rounded border px-2 py-1">Archive selected</button><button type="button" onClick={handleBulkMarkCompleted} className="rounded border px-2 py-1">Mark completed</button><button type="button" onClick={() => runBulkAction("/ai-operator/actions/bulk-approve", filteredApprovalItems.map((i) => i.id))} className="rounded border px-2 py-1">Approve all visible</button><button type="button" onClick={() => runBulkAction("/ai-operator/actions/bulk-reject", filteredApprovalItems.map((i) => i.id))} className="rounded border px-2 py-1">Reject all visible</button></div>}
                 <div className="grid gap-3 md:grid-cols-2">
                   {filteredApprovalItems.map((item) => {
-                    const meta = getActionDisplayMeta(item);
+                    const meta = getActionDisplayMeta(item, { jobs, clients, invoices, quotes, workers });
                     return (
                     <article key={item.id} className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-4 shadow-sm">
                       <div className="flex items-start justify-between"><label className="text-xs"><input type="checkbox" checked={selectedApprovalIds.includes(String(item.id))} onChange={() => toggleApprovalSelection(String(item.id))} className="mr-2" />Select</label><span className="text-xs uppercase">{meta.status}</span></div>
-                      <p className="font-semibold text-slate-900">{meta.title}</p><p className="mt-1 text-sm text-slate-600">{meta.subtitle}</p><p className="mt-1 text-sm text-slate-700">{meta.reason}</p><p className="mt-1 text-xs text-slate-500">Risk: {meta.risk}</p>
+                      <p className="font-semibold text-slate-900">{meta.title}</p><p className="mt-1 text-sm text-slate-600">{meta.subtitle}</p><p className="mt-1 text-sm text-slate-700">{meta.reason}</p><p className="mt-1 text-xs text-slate-500">{meta.dataUsed}</p><p className="mt-1 text-xs text-slate-500">{meta.whatHappens}</p><p className="mt-1 text-xs text-slate-500">Risk: {meta.risk}</p>{meta.contactSummary ? <p className="mt-1 text-xs text-slate-500">{meta.contactSummary}</p> : null}
                       {item.type === "invoice_reminder" ? <><div className="mt-2 flex gap-1 text-[11px]"><span className="rounded bg-slate-100 px-2 py-0.5">Email</span><span className="rounded bg-slate-100 px-2 py-0.5">SMS</span></div><p className="mt-2 rounded bg-slate-50 p-2 text-xs text-slate-700">{reminderDrafts[item.relatedId] || buildInvoiceReminderMessage({ client: findByIds(clients, [item.invoice?.client_id, item.invoice?.clientId]), invoice: item.invoice, business: user, channel: "email" })}</p></> : null}
                       {item.type === "quote_follow_up" ? <><div className="mt-2 flex gap-1 text-[11px]"><span className="rounded bg-slate-100 px-2 py-0.5">Email</span><span className="rounded bg-slate-100 px-2 py-0.5">SMS</span></div><p className="mt-2 rounded bg-slate-50 p-2 text-xs text-slate-700">{quoteDrafts[item.relatedId] || buildQuoteFollowUpMessage({ client: findByIds(clients, [item.quote?.client_id, item.quote?.clientId]), quote: item.quote, business: user, channel: "email" })}</p></> : null}
                       <div className="mt-3 flex flex-wrap gap-2">
