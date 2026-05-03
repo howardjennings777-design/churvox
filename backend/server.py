@@ -5163,7 +5163,7 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
 
 
 @api_router.post("/jobs/{job_id}/create-draft-invoice")
-async def create_draft_invoice_from_job(job_id: str, current_user: dict = Depends(get_current_user)):
+async def create_draft_invoice_from_job(job_id: str, payload: dict | None = None, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
     if current_user.get("role") not in BUSINESS_ROLES:
@@ -5188,33 +5188,71 @@ async def create_draft_invoice_from_job(job_id: str, current_user: dict = Depend
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
-    existing_invoice_id = str(job.get("invoice_id") or "").strip()
-    if existing_invoice_id:
-        return {"success": True, "invoice_id": existing_invoice_id, "message": "Invoice already linked"}
-
-    subtotal = float(job.get("price") or 0)
-    gst_rate = float(current_user.get("gst_rate") or 15)
-    gst_amount = subtotal * (gst_rate / 100)
-    total = subtotal + gst_amount
     now = datetime.now(timezone.utc)
+    payload = payload or {}
+    job_id_str = str(obj_id)
+
+    existing_invoice = await db.invoices.find_one({
+        "business_id": business_id,
+        "$or": [
+            {"job_id": job_id_str},
+            {"linked_job_id": job_id_str},
+            {"source_job_id": job_id_str},
+        ],
+    })
+
+    async def _mark_job_billed(invoice_id: str):
+        await db.jobs.update_one(
+            {"_id": obj_id},
+            {"$set": {
+                "invoice_id": invoice_id,
+                "draft_invoice_id": invoice_id,
+                "invoice_created": True,
+                "invoiced": True,
+                "invoice_status": "draft",
+                "updated_at": now,
+            }}
+        )
+
+    if existing_invoice:
+        invoice_id = str(existing_invoice.get("_id") or existing_invoice.get("id") or "")
+        await _mark_job_billed(invoice_id)
+        updated_job = await db.jobs.find_one({"_id": obj_id})
+        return {
+            "success": True,
+            "invoice_id": invoice_id,
+            "invoice": serialize_document(existing_invoice),
+            "job": serialize_document(updated_job),
+            "message": "Invoice already linked",
+        }
+
+    subtotal = float(payload.get("subtotal") if payload.get("subtotal") is not None else (job.get("price") or 0))
+    gst_rate = float(current_user.get("gst_rate") or 15)
+    gst_amount = float(payload.get("gst") if payload.get("gst") is not None else subtotal * (gst_rate / 100))
+    total = float(payload.get("total") if payload.get("total") is not None else subtotal + gst_amount)
     accounting = await db.accounting_settings.find_one({"business_id": business_id}) if hasattr(db, "accounting_settings") else None
     invoice_mode = str((accounting or {}).get("invoice_mode") or "churvox_only").strip().lower()
     if invoice_mode not in INVOICE_MODES:
         invoice_mode = "churvox_only"
 
+    description = payload.get("description") or payload.get("invoice_description") or job.get("title") or "Job invoice"
+    client_id = payload.get("client_id") or job.get("client_id")
     doc = {
         "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{str(obj_id)[-5:]}",
-        "client_id": job.get("client_id"),
+        "client_id": client_id,
         "customer_name": job.get("client_name") or job.get("customer_name") or "",
         "customer_email": job.get("customer_email") or "",
         "address": job.get("address") or "",
-        "description": job.get("title") or "Job invoice",
+        "description": description,
         "subtotal": subtotal,
         "gst_rate": gst_rate,
         "gst_amount": gst_amount,
+        "gst": gst_amount,
         "total": total,
         "status": "draft",
-        "job_id": str(obj_id),
+        "job_id": job_id_str,
+        "linked_job_id": job_id_str,
+        "source_job_id": job_id_str,
         "pricing_type": job.get("pricing_type") or "fixed",
         "hourly_rate": float(job.get("hourly_rate") or 0),
         "hours_worked": float(job.get("time_spent_minutes") or 0) / 60,
@@ -5230,12 +5268,21 @@ async def create_draft_invoice_from_job(job_id: str, current_user: dict = Depend
 
     result = await db.invoices.insert_one(doc)
     invoice_id = str(result.inserted_id)
-    await db.jobs.update_one({"_id": obj_id}, {"$set": {"invoice_id": invoice_id, "updated_at": now}})
+    await _mark_job_billed(invoice_id)
+    created_invoice = await db.invoices.find_one({"_id": result.inserted_id})
+    updated_job = await db.jobs.find_one({"_id": obj_id})
 
     message = "Draft invoice created"
     if invoice_mode == "myob_external":
         message = "Billing draft prepared. Create the official invoice in MYOB."
-    return {"success": True, "invoice_id": invoice_id, "message": message, "invoice_mode": invoice_mode}
+    return {
+        "success": True,
+        "invoice_id": invoice_id,
+        "invoice": serialize_document(created_invoice),
+        "job": serialize_document(updated_job),
+        "message": message,
+        "invoice_mode": invoice_mode,
+    }
 
 @api_router.post("/jobs/{job_id}/assign")
 async def assign_job_worker(job_id: str, payload: dict, current_user: dict = Depends(get_current_user)):

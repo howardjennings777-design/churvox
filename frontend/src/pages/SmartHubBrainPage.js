@@ -474,16 +474,27 @@ export default function SmartHubBrainPage() {
     console.info("[SmartHub] approve draft invoice:endpoint", `/jobs/${apiJobId}/create-draft-invoice`);
     const res = await post(`/jobs/${apiJobId}/create-draft-invoice`, payload);
     console.info("[SmartHub] approve draft invoice:response", res);
-    const invoiceId = String(res?.invoice_id || res?.id || res?.invoice?.id || "");
+    const returnedInvoice = res?.invoice || null;
+    const returnedJob = res?.job || null;
+    const invoiceId = String(res?.invoice_id || returnedInvoice?.id || returnedInvoice?._id || "");
     console.info("[SmartHub] approve draft invoice:created", { invoiceId });
     setLocallyBilledJobIds((s) => ({ ...s, [row.jobId]: true }));
     setSelectedDrafts((s) => ({ ...s, [row.jobId]: false }));
     setDraftApprovalState((s) => ({ ...s, [row.jobId]: "approved" }));
-    setData((prev) => ({
-      ...prev,
-      jobs: prev.jobs.map((j) => sameId(asId(j), row.jobId) ? { ...j, invoice_id: invoiceId || j.invoice_id || true, draft_invoice_id: invoiceId || j.draft_invoice_id, invoice_created: true, invoiced: true, invoice_status: "draft" } : j),
-      invoices: invoiceId ? [...prev.invoices, { id: invoiceId, _id: invoiceId, job_id: row.jobId, linked_job_id: row.jobId, client_id: row.job.client_id || row.job.clientId || row.job.customer_id || "", status: "draft", total: Number(row.total) || 0 }] : prev.invoices,
-    }));
+    setData((prev) => {
+      const nextJobs = prev.jobs.map((j) => {
+        if (!sameId(asId(j), row.jobId)) return j;
+        return returnedJob || { ...j, invoice_id: invoiceId || j.invoice_id || true, draft_invoice_id: invoiceId || j.draft_invoice_id, invoice_created: true, invoiced: true, invoice_status: "draft" };
+      });
+      const fallbackInvoice = invoiceId ? { id: invoiceId, _id: invoiceId, job_id: row.jobId, linked_job_id: row.jobId, source_job_id: row.jobId, client_id: row.job.client_id || row.job.clientId || row.job.customer_id || "", status: "draft", total: Number(row.total) || 0 } : null;
+      const invoiceRecord = returnedInvoice || fallbackInvoice;
+      const nextInvoices = invoiceRecord
+        ? prev.invoices.some((inv) => sameId(asId(inv), asId(invoiceRecord)) || sameId(inv?.job_id || inv?.linked_job_id || inv?.source_job_id, row.jobId))
+          ? prev.invoices.map((inv) => (sameId(asId(inv), asId(invoiceRecord)) ? { ...inv, ...invoiceRecord } : inv))
+          : [...prev.invoices, invoiceRecord]
+        : prev.invoices;
+      return { ...prev, jobs: nextJobs, invoices: nextInvoices };
+    });
     setActivityTrail((trail) => [{ time: new Date().toISOString(), action: `Draft invoice created for ${row.clientName || row.job.title || "job"}`, result: `Job: ${row.job.title || row.job.name || "Service job"}`, approvedBy: user?.name || "Owner" }, ...trail].slice(0, 12));
     await load();
   }, [draftDescriptions, load, user?.businessId, user?.business_id, user?.name]);
