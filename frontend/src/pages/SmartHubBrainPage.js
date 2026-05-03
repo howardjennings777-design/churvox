@@ -677,9 +677,9 @@ export default function SmartHubBrainPage() {
                   {name}
                 </button>
               ))}
-              <button type="button" onClick={() => { setWorkspaceDrawer("Payment Reminders"); setWorkspaceMode("reminders"); setWorkspaceRecord(null); }}} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Prepare reminders</button>
-              <button type="button" onClick={() => { setWorkspaceDrawer("Quote Follow-ups"); setWorkspaceMode("followUps"); setWorkspaceRecord(null); }}} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Review follow-ups</button>
-              <button type="button" onClick={() => { setWorkspaceDrawer("AI Dispatch"); setWorkspaceMode("list"); setWorkspaceRecord(null); }}} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Assign workers</button>
+              <button type="button" onClick={() => { setWorkspaceDrawer("Payment Reminders"); setWorkspaceMode("reminders"); setWorkspaceRecord(null); }} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Prepare reminders</button>
+              <button type="button" onClick={() => { setWorkspaceDrawer("Quote Follow-ups"); setWorkspaceMode("followUps"); setWorkspaceRecord(null); }} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Review follow-ups</button>
+              <button type="button" onClick={() => { setWorkspaceDrawer("AI Dispatch"); setWorkspaceMode("list"); setWorkspaceRecord(null); }} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Assign workers</button>
             </div>
           </section>
           <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
