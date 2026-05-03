@@ -2280,6 +2280,45 @@ async def smart_hub_scan(current_user: dict = Depends(get_current_user)):
     actions = [serialize_doc(a) async for a in db.ai_operator_actions.find({"business_id": business_id}).sort("updated_at", -1).limit(200)]
     return {"success": True, "actions_created": created, "actions_updated": updated, "pending_count": pending_count, "actions": actions}
 
+
+@api_router.post("/smart-hub/process-due-communications")
+async def smart_hub_process_due_communications(current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str(current_user.get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+
+    q = {
+        "business_id": business_id,
+        "status": {"$in": ["approved", "scheduled"]},
+        "$or": [
+            {"scheduled_for": {"$exists": False}},
+            {"scheduled_for": None},
+            {"scheduled_for": {"$lte": now}},
+        ],
+    }
+    rows = [serialize_doc(r) async for r in db.communications.find(q).sort("created_at", 1).limit(100)]
+    sent = 0
+    failed = 0
+    skipped = 0
+
+    for row in rows:
+        cid = str(row.get("id") or row.get("_id") or "")
+        if not cid:
+            skipped += 1
+            continue
+        if str(row.get("status") or "") == "sent":
+            skipped += 1
+            continue
+        try:
+            await send_communication(cid, current_user)
+            sent += 1
+        except HTTPException:
+            failed += 1
+        except Exception:
+            failed += 1
+
+    return {"success": True, "sent": sent, "failed": failed, "skipped": skipped}
+
 @api_router.post("/auth/refresh")
 async def refresh_token(request: Request, response: Response):
     token = request.cookies.get("refresh_token")
