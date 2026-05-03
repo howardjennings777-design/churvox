@@ -5417,6 +5417,42 @@ async def assign_job_worker(job_id: str, payload: dict, current_user: dict = Dep
     }
 
 
+@api_router.post("/jobs/{job_id}/assign-worker")
+async def assign_job_worker_alias(job_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    if current_user.get("role") not in BUSINESS_ROLES:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    worker_id = str((payload or {}).get("worker_id") or (payload or {}).get("assigned_worker_id") or "").strip()
+    if not worker_id:
+        raise HTTPException(status_code=400, detail="worker_id is required")
+    business_id = str(current_user.get("business_id") or current_user.get("businessId") or current_user.get("id") or "")
+    owner_id = str(current_user.get("_id") or current_user.get("id") or current_user.get("user_id") or "")
+
+    worker_query = {"role": {"$in": ["worker", "employee", "field_worker"]}, "$or": [{"id": worker_id}]}
+    if len(worker_id) == 24:
+        worker_query["$or"].append({"_id": ObjectId(worker_id)})
+    worker_query["$and"] = [{"$or": [{"business_id": business_id}, {"owner_id": owner_id}]}]
+    worker = await db.business_users.find_one(worker_query)
+    if not worker:
+        raise HTTPException(status_code=404, detail="Worker not found")
+
+    job = await db.jobs.find_one({"$or": [{"id": job_id}] + ([{"_id": ObjectId(job_id)}] if len(job_id) == 24 else []), "business_id": business_id})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    worker_ref = str(worker.get("id") or worker.get("_id"))
+    worker_name = str(worker.get("name") or "Worker")
+    current_status = str(job.get("status") or "").strip().lower()
+    next_status = "assigned" if current_status in {"", "new", "unassigned", "pending"} else (job.get("status") or "assigned")
+    now = datetime.utcnow()
+    await db.jobs.update_one({"_id": job["_id"]}, {"$set": {"assigned_worker_id": worker_ref, "worker_id": worker_ref, "assigned_worker_name": worker_name, "status": next_status, "updated_at": now}})
+    updated = await db.jobs.find_one({"_id": job["_id"]})
+    try:
+        await db.smart_hub_activity.insert_one({"id": str(uuid.uuid4()), "business_id": business_id, "type": "job_assignment", "message": f"Assigned {worker_name} to {str(job.get('title') or 'job')}", "job_id": str(job.get('id') or job.get('_id')), "worker_id": worker_ref, "created_at": now})
+    except Exception:
+        pass
+    return {"success": True, "message": "Worker assigned", "job": serialize_document(updated)}
+
+
 @api_router.post("/jobs/{job_id}/acknowledge")
 async def acknowledge_job(job_id: str, current_user: dict = Depends(get_current_user)):
     business_id = str(

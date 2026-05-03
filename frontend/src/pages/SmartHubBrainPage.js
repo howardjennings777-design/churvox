@@ -20,6 +20,12 @@ const listFrom = (value, keys = []) => {
 };
 
 const statusOf = (value) => String(value || "").toLowerCase().trim();
+const norm = (value) => String(value || "").toLowerCase().trim();
+const asDate = (value) => {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isFinite(d.getTime()) ? d : null;
+};
 
 const money = (value) => {
   const num = Number(value);
@@ -136,6 +142,8 @@ export default function SmartHubBrainPage() {
   const [selectedQuoteIds, setSelectedQuoteIds] = useState([]);
   const [approvedQuoteIds, setApprovedQuoteIds] = useState({});
   const [activity, setActivity] = useState([]);
+  const [dispatchOverrides, setDispatchOverrides] = useState({});
+  const [rejectedDispatchIds, setRejectedDispatchIds] = useState({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -193,10 +201,62 @@ export default function SmartHubBrainPage() {
     [jobs, invoices]
   );
 
-  const unassignedJobs = useMemo(
-    () => jobs.filter((job) => !(job?.assigned_worker_id || job?.worker_id || job?.assigned_worker)),
-    [jobs]
-  );
+  const unassignedJobs = useMemo(() => jobs.filter((job) => {
+    const st = statusOf(job?.status);
+    if (["completed", "complete", "cancelled", "canceled", "archived"].includes(st)) return false;
+    if ((st === "assigned" || st === "in_progress") && (job?.assigned_worker_id || job?.worker_id || job?.assigned_worker)) return false;
+    return !(job?.assigned_worker_id || job?.worker_id || job?.assigned_worker);
+  }), [jobs]);
+
+  const workerJobStats = useMemo(() => {
+    const map = {};
+    jobs.forEach((j) => {
+      const wid = String(j?.assigned_worker_id || j?.worker_id || "").trim();
+      if (!wid) return;
+      const st = statusOf(j?.status);
+      if (!map[wid]) map[wid] = { today: 0, active: 0, jobs: [] };
+      const sched = asDate(j?.scheduled_date || j?.date || j?.scheduled_at);
+      if (sched && sched.toDateString() === new Date().toDateString()) map[wid].today += 1;
+      if (!["completed", "complete", "cancelled", "canceled", "archived"].includes(st)) map[wid].active += 1;
+      map[wid].jobs.push(j);
+    });
+    return map;
+  }, [jobs]);
+
+  const dispatchRecs = useMemo(() => unassignedJobs.filter((j) => !rejectedDispatchIds[String(j?.id || j?._id || "")]).map((job) => {
+    const jobId = String(job?.id || job?._id || "");
+    const jobRegion = norm(job?.region || job?.area || job?.zone || job?.suburb);
+    const jobSkill = norm(job?.service_type || job?.job_type || job?.trade);
+    let best = null;
+    workers.forEach((w) => {
+      const role = norm(w?.role);
+      if (!["worker", "employee", "field_worker"].includes(role)) return;
+      const unavailable = w?.available === false || ["inactive", "deleted", "offboarded"].includes(norm(w?.status));
+      if (unavailable) return;
+      const wid = String(w?.id || w?._id || "");
+      const stats = workerJobStats[wid] || { today: 0, active: 0, jobs: [] };
+      const wRegion = norm(w?.region || w?.area || w?.zone);
+      const skills = norm([w?.skills, w?.trades, w?.service_types, w?.service_type].flat().join(" "));
+      const regionMatch = !!(jobRegion && wRegion && jobRegion === wRegion);
+      const skillMatch = !!(jobSkill && skills.includes(jobSkill));
+      const sched = asDate(job?.scheduled_date || job?.date || job?.scheduled_at);
+      const conflict = stats.jobs.some((wj) => {
+        const ws = asDate(wj?.scheduled_date || wj?.date || wj?.scheduled_at);
+        if (!sched || !ws) return false;
+        return sched.toISOString() === ws.toISOString();
+      });
+      let score = 0;
+      score += 30;
+      if (regionMatch) score += 20;
+      if (skillMatch) score += 20;
+      score += Math.max(0, 15 - (stats.today * 5));
+      score += Math.max(0, 15 - (stats.active * 3));
+      if (conflict) score -= 20;
+      const candidate = { worker: w, score, stats, regionMatch, skillMatch, conflict };
+      if (!best || candidate.score > best.score) best = candidate;
+    });
+    return { job, jobId, recommendation: best, selectedWorkerId: dispatchOverrides[jobId] || String(best?.worker?.id || best?.worker?._id || "") };
+  }), [unassignedJobs, workers, workerJobStats, dispatchOverrides, rejectedDispatchIds]);
 
   const openInvoices = useMemo(
     () => invoices.filter((inv) => ["open", "sent", "overdue"].includes(statusOf(inv?.status))),
@@ -284,7 +344,7 @@ export default function SmartHubBrainPage() {
     return { label: "All clear — no urgent actions in Smart Hub.", target: "Dashboard" };
   }, [readyToBillJobs.length, unassignedJobs.length, openInvoices.length, waitingQuotes.length]);
 
-  const workspaceButtons = ["Jobs", "Clients", "Invoices", "Quotes", "Crew", "Payroll", "Approvals"];
+  const workspaceButtons = ["Jobs", "Clients", "Invoices", "Quotes", "Crew", "Payroll", "Approvals", "AI Dispatch"];
 
   const draftInvoices = useMemo(() => invoices.filter((inv) => statusOf(inv?.status) === "draft"), [invoices]);
 
@@ -485,6 +545,34 @@ export default function SmartHubBrainPage() {
         </div>
       );
     }
+    if (drawer === "AI Dispatch" || drawer === "Jobs" || drawer === "Crew") {
+      const applyAssign = async (job, workerId) => {
+        if (!workerId) return;
+        const jobId = String(job?.id || job?._id || "");
+        setSavingJobId(jobId);
+        const res = await post(`/jobs/${jobId}/assign-worker`, { worker_id: workerId });
+        if (!res?.success) {
+          setToast({ kind: "error", message: res?.error || "Failed to assign worker." });
+        } else {
+          setToast({ kind: "success", message: "Worker assignment approved and saved." });
+          setActivity((prev) => [{ id: `assign-${jobId}-${Date.now()}`, text: `Assigned ${res?.job?.assigned_worker_name || "worker"} to ${textOr(job?.title, "job")}.` }, ...prev].slice(0, 12));
+          await load();
+        }
+        setSavingJobId("");
+      };
+      const conflicts = dispatchRecs.filter((r) => r?.recommendation?.conflict).length;
+      const missingData = dispatchRecs.filter((r) => !(r?.recommendation?.regionMatch && r?.recommendation?.skillMatch)).length;
+      return <div className="space-y-4"><div><h3 className="text-lg font-semibold text-slate-900">AI Dispatch</h3><p className="text-sm text-slate-600">Review recommended worker assignments before jobs are updated.</p></div>
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">{[["Unassigned jobs", dispatchRecs.length],["Crew available", crewAvailable],["Schedule conflicts", conflicts],["Missing job details", missingData]].map(([l,v])=><article key={l} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"><p className="text-xs uppercase tracking-wide text-slate-500">{l}</p><p className="mt-1 text-xl font-semibold text-slate-900">{v}</p></article>)}</section>
+      {!dispatchRecs.length ? <p className="text-sm text-slate-600">No unassigned jobs require approval right now.</p> : dispatchRecs.map(({ job, jobId, recommendation, selectedWorkerId }) => {
+        const selected = workers.find((w) => String(w?.id || w?._id || "") === String(selectedWorkerId));
+        const st = recommendation?.stats || { today: 0, active: 0 };
+        const reasoning = recommendation ? `AI recommends ${textOr(selected?.name || recommendation?.worker?.name, "this worker")} because ${recommendation.regionMatch ? "they are in the same region, " : ""}${recommendation.skillMatch ? "their skills match, " : ""}and they currently have ${st.today} jobs today (${st.active} active).${recommendation.conflict ? " Possible schedule conflict detected." : " No schedule conflict was detected."}` : "No perfect worker was found. Choose a worker manually.";
+        return <article key={jobId} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p className="font-semibold">{textOr(job?.title, "Untitled job")}</p><p className="text-sm text-slate-600">Client: {textOr(job?.client_name || job?.customer_name, "Unknown")}</p><p className="text-sm text-slate-600">Address: {textOr(job?.address || job?.location, "No address")}</p><p className="text-sm text-slate-600">Scheduled: {textOr(job?.scheduled_date || job?.date || job?.scheduled_at, "Unscheduled")}</p><p className="text-sm text-slate-600">Priority/Status: {textOr(job?.priority, "normal")} / {textOr(job?.status, "new")}</p><p className="mt-2 text-sm text-slate-700">{reasoning}</p>{recommendation?.conflict ? <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">Possible schedule conflict: this worker already has another job scheduled that day.</p> : null}
+        <div className="mt-3"><select className="w-full rounded border p-2 text-sm" value={selectedWorkerId} onChange={(e) => setDispatchOverrides((prev) => ({ ...prev, [jobId]: e.target.value }))}><option value="">Choose different worker</option>{workers.filter((w) => !["inactive","deleted","offboarded"].includes(norm(w?.status))).map((w) => <option key={String(w?.id || w?._id)} value={String(w?.id || w?._id)}>{textOr(w?.name, "Worker")} · {textOr(w?.region || w?.area || w?.zone, "No region")}</option>)}</select></div>
+        <div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={!selectedWorkerId || savingJobId===jobId} onClick={() => applyAssign(job, selectedWorkerId)} className="rounded bg-teal-700 px-3 py-1 text-sm text-white">Approve assignment</button><button type="button" onClick={() => navigate(`/jobs/${jobId}`)} className="rounded border px-3 py-1 text-sm">Open full job page</button><button type="button" onClick={() => setRejectedDispatchIds((prev) => ({ ...prev, [jobId]: true }))} className="rounded border px-3 py-1 text-sm">Reject recommendation</button></div></article>;
+      })}</div>;
+    }
 
     return (
       <div className="space-y-3">
@@ -520,13 +608,13 @@ export default function SmartHubBrainPage() {
           <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
               ["Ready to bill", readyToBillJobs.length],
+              ["Unassigned jobs", unassignedJobs.length],
               ["Open invoices", openInvoices.length],
-              ["Quotes waiting", waitingQuotes.length],
               ["Crew available", crewAvailable],
             ].map(([label, value]) => (
               <article key={label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-                <button type="button" onClick={() => label === "Quotes waiting" && setDrawer("Quote Follow-ups")} className="mt-2 text-2xl font-semibold text-slate-900">
+                <button type="button" onClick={() => (label === "Unassigned jobs" || label === "Crew available") ? setDrawer("AI Dispatch") : null} className="mt-2 text-2xl font-semibold text-slate-900">
                   {value}
                 </button>
               </article>
@@ -548,6 +636,7 @@ export default function SmartHubBrainPage() {
               ))}
               <button type="button" onClick={() => setDrawer("Payment Reminders")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Prepare reminders</button>
               <button type="button" onClick={() => setDrawer("Quote Follow-ups")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Review follow-ups</button>
+              <button type="button" onClick={() => setDrawer("AI Dispatch")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Assign workers</button>
             </div>
           </section>
           <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
