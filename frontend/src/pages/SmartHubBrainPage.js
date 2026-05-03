@@ -32,6 +32,12 @@ const sameId = (a, b) => String(a || "") && String(a || "") === String(b || "");
 const getAnyId = (v) => String(v?.id || v?._id || v?.job_id || v?.worker_id || v?.client_id || v?.user_id || "");
 const textOr = (v, fallback) => (v === 0 ? "0" : (String(v || "").trim() || fallback));
 const fmtDateTime = (v) => v ? new Date(v).toLocaleString() : "No schedule time set";
+const fmtMoney = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n.toLocaleString(undefined, { style: "currency", currency: "AUD" }) : "—";
+};
+const firstText = (...vals) => vals.map((v) => String(v || "").trim()).find(Boolean) || "";
+const normalizeStatus = (v) => String(v || "").toLowerCase().trim();
 const calcWorkerLoadToday = (jobs, workerId, today) => jobs.filter((j) => sameId(j.assigned_worker_id || j.worker_id, workerId) && String(j.scheduled_date || j.date || "").slice(0, 10) === today).length;
 const findByAnyId = (list, id, keys = ["id", "_id"]) => list.find((item) => keys.some((k) => sameId(item?.[k], id)));
 
@@ -98,6 +104,9 @@ export default function SmartHubBrainPage() {
   const [localActionState, setLocalActionState] = useState({});
   const [completedActionState, setCompletedActionState] = useState({});
   const [activityTrail, setActivityTrail] = useState([]);
+  const [draftDescriptions, setDraftDescriptions] = useState({});
+  const [selectedDrafts, setSelectedDrafts] = useState({});
+  const [draftApprovalState, setDraftApprovalState] = useState({});
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -119,7 +128,7 @@ export default function SmartHubBrainPage() {
   const hasInvoiceForJob = (job) => data.invoices.some((inv) => sameId(inv?.job_id || inv?.related_job_id, asId(job)));
   const hasDraftOrInvoice = (j) => Boolean(j?.invoice_id || j?.invoice_created || j?.draft_invoice_id || ["created", "draft", "sent"].includes(String(j?.invoice_status || "").toLowerCase()) || hasInvoiceForJob(j));
   const unassignedJobs = useMemo(() => data.jobs.filter((j) => !isAssignedJob(j)), [data.jobs]);
-  const completedReadyToBill = useMemo(() => data.jobs.filter((j) => String(j.status || "").toLowerCase() === "completed" && !hasDraftOrInvoice(j)), [data.jobs, data.invoices]);
+  const completedReadyToBill = useMemo(() => data.jobs.filter((j) => ["completed","complete"].includes(normalizeStatus(j.status)) && !hasDraftOrInvoice(j)), [data.jobs, data.invoices]);
   const waitingQuotes = useMemo(() => data.quotes.filter((q) => ["sent", "pending"].includes(String(q.status || "").toLowerCase())), [data.quotes]);
   const openInvoices = useMemo(() => data.invoices.filter((i) => ["open", "overdue", "sent"].includes(String(i.status || "").toLowerCase())), [data.invoices]);
   const overdueInvoices = useMemo(() => openInvoices.filter((i) => String(i.status || "").toLowerCase() === "overdue"), [openInvoices]);
@@ -316,6 +325,33 @@ export default function SmartHubBrainPage() {
     }
   };
 
+  const clientsById = useMemo(() => new Map(data.clients.map((c) => [String(c.id || c._id || c.client_id || ""), c])), [data.clients]);
+  const invoiceDraftRows = useMemo(() => completedReadyToBill.map((job) => {
+    const jobId = asId(job);
+    const clientId = String(job.client_id || job.clientId || job.customer_id || job.client?.id || job.client?._id || "");
+    const client = clientsById.get(clientId) || job.client || null;
+    const clientName = firstText(client?.name, job.client_name, job.customer_name, "No client linked");
+    const description = firstText(job.ai_invoice_description, job.invoice_description_draft, job.worker_completion_notes, job.completion_notes, job.notes, `${job.title || job.name || "Service work"} at ${job.address || "site"} for ${clientName}.`, `Service work completed for ${clientName}.`);
+    const subtotal = Number(job.subtotal ?? job.price ?? job.total_ex_gst);
+    const gst = Number(job.gst ?? job.tax ?? (Number.isFinite(subtotal) ? subtotal * 0.1 : NaN));
+    const total = Number(job.total ?? (Number.isFinite(subtotal) && Number.isFinite(gst) ? subtotal + gst : NaN));
+    const missingPrice = !Number.isFinite(total) || total <= 0;
+    return { job, jobId, clientName, description, subtotal, gst, total, missingPrice };
+  }), [completedReadyToBill, clientsById]);
+  useEffect(() => {
+    const next = {};
+    const selected = {};
+    invoiceDraftRows.forEach((r) => { next[r.jobId] = draftDescriptions[r.jobId] || r.description; selected[r.jobId] = selectedDrafts[r.jobId] ?? !r.missingPrice; });
+    setDraftDescriptions(next);
+    setSelectedDrafts(selected);
+  }, [isActionModalOpen, selectedAction?.action_type]);
+
+  const approveDraftInvoice = useCallback(async (row) => {
+    await post(`/jobs/${row.jobId}/create-draft-invoice`, { description: draftDescriptions[row.jobId] || row.description, invoice_description: draftDescriptions[row.jobId] || row.description, client_id: row.job.client_id || row.job.clientId || row.job.customer_id || undefined });
+    setDraftApprovalState((s) => ({ ...s, [row.jobId]: "approved" }));
+    setActivityTrail((trail) => [{ time: new Date().toISOString(), action: `Draft invoice created for ${row.clientName}`, result: `Job: ${row.job.title || row.job.name || "Service job"}`, approvedBy: user?.name || "Owner" }, ...trail].slice(0, 12));
+  }, [draftDescriptions, user?.name]);
+
   const actionDetails = useMemo(() => {
     if (!selectedAction) return null;
     const type = String(selectedAction.action_type || selectedAction.kind || "").toLowerCase();
@@ -434,8 +470,16 @@ export default function SmartHubBrainPage() {
   <SmartModal open={createMenuOpen} title="Create" onClose={() => setCreateMenuOpen(false)}><div className="grid gap-2">{[["New job", "job"], ["New quote", "quote"], ["New invoice", "invoice"], ["Add client", "client"], ["Open dispatch", "dispatch"]].map(([l, k]) => <button key={k} onClick={() => { setCreateMenuOpen(false); setModal(k); }} className="rounded-lg border p-2 text-left">{l}</button>)}</div></SmartModal>
   <SmartModal open={Boolean(modal)} title="Command Action" onClose={() => setModal(null)}>{modal === "job" ? <JobCreateForm onCancel={() => setModal(null)} onSuccess={() => { setModal(null); load(); }} submitLabel="Create job" /> : null}{modal === "quote" ? <QuoteCreateForm onCancel={() => setModal(null)} onSuccess={() => { setModal(null); load(); }} submitLabel="Create quote" /> : null}{modal === "invoice" ? <InvoiceCreateForm onCancel={() => setModal(null)} onSuccess={() => { setModal(null); load(); }} submitLabel="Create invoice" /> : null}{modal === "client" ? <ClientCreateForm onCancel={() => setModal(null)} onSuccess={() => { setModal(null); load(); }} submitLabel="Add client" /> : null}{modal === "dispatch" ? <SmartHubDispatchPanel canManageDispatch={canSeeOwnerControls} onAssigned={() => load()} /> : null}{modal === "ask" ? <div className="space-y-3"><textarea value={askQuery} onChange={(e) => setAskQuery(e.target.value)} className="w-full rounded-xl border p-3" rows={3} /><button onClick={askAi} disabled={busy.ask} className="rounded-full bg-teal-700 text-white px-4 py-2 text-sm">{busy.ask ? "Generating…" : "Ask AI"}</button><div className="rounded-xl border p-3 text-sm min-h-16">{askResponse || "AI response will appear here."}</div></div> : null}</SmartModal>
 
-  <SmartModal open={isActionModalOpen} title={selectedAction?.title || "Action details"} onClose={() => setIsActionModalOpen(false)}>
-    {selectedAction && actionDetails ? <div className="space-y-3 text-sm">
+  <SmartModal open={isActionModalOpen} wide title={String(selectedAction?.action_type || "").toLowerCase() === "create_invoice_draft" ? "Review invoice drafts" : (selectedAction?.title || "Action details")} onClose={() => setIsActionModalOpen(false)}>
+    {String(selectedAction?.action_type || "").toLowerCase() === "create_invoice_draft" ? <div className="space-y-4 text-sm"> 
+      <div className="rounded-2xl border border-slate-700/80 bg-gradient-to-r from-slate-900 to-slate-800 p-4 text-slate-100"><p className="text-xl font-semibold">Review invoice drafts</p><p className="text-sm text-slate-300 mt-1">AI found {invoiceDraftRows.length} completed jobs ready to bill. Review the draft details before creating invoices.</p><p className="mt-2 text-xs text-emerald-200">Nothing is sent to customers until you approve sending.</p></div>
+      <div className="grid gap-3 sm:grid-cols-4">{[["Ready to bill", invoiceDraftRows.length],["Drafts selected", Object.values(selectedDrafts).filter(Boolean).length],["Missing prices", invoiceDraftRows.filter((r)=>r.missingPrice).length],["Estimated total", fmtMoney(invoiceDraftRows.filter((r)=>!r.missingPrice).reduce((sum,r)=>sum+(Number.isFinite(r.total)?r.total:0),0))]].map(([k,v]) => <div key={k} className="rounded-xl border bg-[#f9f6ef] p-3"><p className="text-xs uppercase text-slate-500">{k}</p><p className="text-base font-semibold">{v}</p></div>)}</div>
+      <div className="space-y-3">{invoiceDraftRows.map((row) => <div key={row.jobId} className="rounded-2xl border border-slate-200 bg-[#fdfaf4] p-4 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-lg font-semibold text-slate-900">{row.job.title || row.job.name || "Completed job"}</p><label className="text-xs flex items-center gap-1"><input type="checkbox" checked={Boolean(selectedDrafts[row.jobId])} onChange={(e)=>setSelectedDrafts((s)=>({...s,[row.jobId]:e.target.checked}))}/>Select</label></div><p className="mt-1 text-slate-700">{row.clientName}</p><p className="text-xs text-slate-500">{row.job.address || row.job.job_address || "No address saved"} · Completed: {fmtDateTime(row.job.completed_at || row.job.completed_date || row.job.updated_at)} · Status: {textOr(row.job.status, "completed")}</p><textarea className="mt-3 w-full rounded-xl border p-3" rows={3} value={draftDescriptions[row.jobId] || ""} onChange={(e)=>setDraftDescriptions((s)=>({...s,[row.jobId]:e.target.value}))} />
+      <div className="mt-3 grid gap-2 sm:grid-cols-4"><div><p className="text-xs text-slate-500">Pricing type</p><p>{textOr(row.job.pricing_type || row.job.price_type, "Standard")}</p></div><div><p className="text-xs text-slate-500">Subtotal</p><p>{fmtMoney(row.subtotal)}</p></div><div><p className="text-xs text-slate-500">GST</p><p>{fmtMoney(row.gst)}</p></div><div><p className="text-xs text-slate-500">Total</p><p className="font-semibold">{fmtMoney(row.total)}</p></div></div>
+      {row.missingPrice ? <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-amber-800">Missing price — add price before creating invoice. <button onClick={()=>navigate(`/jobs/${row.jobId}/edit`)} className="ml-2 rounded-full border border-amber-400 px-2 py-0.5 text-xs">Edit price</button></div> : null}
+      <div className="mt-3 flex flex-wrap gap-2"><button disabled={row.missingPrice || draftApprovalState[row.jobId]==='approved'} onClick={async()=>{await approveDraftInvoice(row);toast.success('Draft invoice created');await load();}} className="rounded-full bg-teal-700 px-3 py-1.5 text-white disabled:opacity-50">{draftApprovalState[row.jobId]==='approved'?'Approved':'Approve draft'}</button><button onClick={()=>navigate(`/jobs/${row.jobId}/edit`)} className="rounded-full border px-3 py-1.5">Edit details</button><button onClick={()=>setSelectedDrafts((s)=>({...s,[row.jobId]:false}))} className="rounded-full border px-3 py-1.5">Reject</button><button onClick={()=>navigate(`/jobs/${row.jobId}`)} className="rounded-full border px-3 py-1.5">Open job</button></div></div>)}</div>
+      <div className="sticky bottom-0 bg-white/95 border-t pt-3 flex flex-wrap gap-2"><button onClick={async()=>{const rows=invoiceDraftRows.filter((r)=>selectedDrafts[r.jobId] && !r.missingPrice);const skipped=invoiceDraftRows.filter((r)=>selectedDrafts[r.jobId] && r.missingPrice).length;let created=0;for (const r of rows){await approveDraftInvoice(r);created++;} await load(); toast.success(`${created} draft invoices created.${skipped?` ${skipped} need missing prices.`:''}`);}} className="rounded-full bg-teal-700 px-4 py-2 text-white">Approve selected</button><button onClick={async()=>{const rows=invoiceDraftRows.filter((r)=>!r.missingPrice);const skipped=invoiceDraftRows.filter((r)=>r.missingPrice).length;let created=0;for (const r of rows){await approveDraftInvoice(r);created++;} await load(); toast.success(`${created} draft invoices created.${skipped?` ${skipped} need missing prices.`:''}`);}} className="rounded-full border px-4 py-2">Approve all ready drafts</button><button onClick={()=>setSelectedDrafts({})} className="rounded-full border px-4 py-2">Reject selected</button><button onClick={()=>setIsActionModalOpen(false)} className="rounded-full border px-4 py-2">Close</button></div>
+    </div> : selectedAction && actionDetails ? <div className="space-y-3 text-sm">
       <div className="rounded-xl border p-3"><p className="text-xs uppercase text-slate-500">Recommended action</p><p className="font-semibold mt-1">{actionDetails.recommendedAction}</p></div>
       <div className="rounded-xl border p-3"><p className="text-xs uppercase text-slate-500">Why AI chose this</p><p className="mt-1">{actionDetails.whyAi}</p></div>
       <div className="grid gap-3 sm:grid-cols-2">
