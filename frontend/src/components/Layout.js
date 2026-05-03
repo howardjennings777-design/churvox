@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import NotificationsBell from "./NotificationsBell";
 
-export default function Layout({ children }) {
+export default function Layout({ children, smartHubMode = false }) {
   const { user, logout, normalizedRole, isOwnerUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -78,10 +78,11 @@ export default function Layout({ children }) {
     .join("")
     .toUpperCase();
 
+  const showSidebar = !smartHubMode;
   return (
     <div className="px-app tap-safe-root cx-app-shell" data-testid="layout-container">
       {/* Desktop Sidebar — Premium light */}
-      <aside className="px-sidebar hidden md:flex" data-testid="desktop-sidebar">
+      <aside className={`px-sidebar hidden md:flex ${showSidebar ? "" : "md:hidden"}`} data-testid="desktop-sidebar">
         <div className="px-sidebar__brand">
           <ChurvoxLogo size="lg" dataTestId="sidebar-logo" />
           <NotificationsBell />
