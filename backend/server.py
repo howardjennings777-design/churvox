@@ -1609,12 +1609,61 @@ async def ai_generate_draft(payload: dict, current_user: dict = Depends(get_curr
 
 
 def _ai_risk_level(action_type: str) -> str:
-    return "high" if action_type in {"invoice_reminder", "quote_followup"} else "medium"
+    return "high" if action_type in {"invoice_reminder", "quote_follow_up", "create_invoice_draft"} else "medium"
 
 
 def _owner_roles_only(role: str):
-    if role not in {"owner", "manager", "office_admin"}:
+    if role not in {"owner", "employer", "admin", "manager", "office_admin", "platform_owner"}:
         raise HTTPException(status_code=403, detail="AI Operator is restricted to owner/manager roles")
+
+
+def _safe_action_doc(business_id: str, item: dict, now: datetime) -> dict:
+    return {
+        "business_id": business_id,
+        "type": str(item.get("type") or "general"),
+        "status": str(item.get("status") or "pending"),
+        "risk_level": str(item.get("risk_level") or "medium"),
+        "related_entity_type": item.get("related_entity_type"),
+        "related_entity_id": item.get("related_entity_id"),
+        "title": item.get("title") or "AI prepared action",
+        "summary": item.get("summary") or "Prepared for approval",
+        "reason": item.get("reason") or "",
+        "recommendation": item.get("recommendation") or "",
+        "draft_payload": item.get("draft_payload") or {},
+        "generated_message": item.get("generated_message") or "",
+        "proposed_changes": item.get("proposed_changes") or {},
+        "owner_notes": item.get("owner_notes") or "",
+        "created_by": "ai",
+        "approved_by": None,
+        "approved_at": None,
+        "dismissed_at": None,
+        "completed_at": None,
+        "error": None,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+
+async def _insert_operator_action_if_missing(action_doc: dict):
+    dup = await db.ai_operator_actions.find_one({
+        "business_id": action_doc["business_id"],
+        "type": action_doc["type"],
+        "related_entity_type": action_doc.get("related_entity_type"),
+        "related_entity_id": action_doc.get("related_entity_id"),
+        "status": "pending",
+    })
+    if dup:
+        return None
+    inserted = await db.ai_operator_actions.insert_one(action_doc)
+    await db.ai_operator_logs.insert_one({
+        "business_id": action_doc["business_id"],
+        "action_id": str(inserted.inserted_id),
+        "event_type": "created",
+        "message": action_doc.get("title") or "AI action created",
+        "user_id": "ai",
+        "created_at": datetime.now(timezone.utc),
+    })
+    return str(inserted.inserted_id)
 
 
 @api_router.post("/ai/operator/run-daily-check")
@@ -1670,15 +1719,19 @@ async def ai_operator_run_daily_check(current_user: dict = Depends(get_current_u
             "risk_level": _ai_risk_level("quote_followup"), "status": "pending", "created_by": "ai", "created_at": now, "updated_at": now
         })
 
-    if items:
-        await db.ai_approval_items.insert_many(items)
+    created = 0
+    for item in items:
+        action_id = await _insert_operator_action_if_missing(_safe_action_doc(business_id, item, now))
+        if action_id:
+            created += 1
     daily_plan = [
         f"Assign {len(unassigned)} unassigned jobs.",
         f"Create {len(completed)} draft invoices from completed jobs.",
         f"Follow up {min(6, len([x for x in quotes if str(x.get('status') or '') in {'sent', 'draft'}]))} quotes waiting for response.",
         f"Chase {min(6, len([x for x in invoices if str(x.get('status') or '') in {'overdue', 'sent'}]))} open/overdue invoices.",
     ]
-    return {"success": True, "created": len(items), "daily_plan": daily_plan}
+    await db.ai_operator_state.update_one({"business_id": business_id}, {"$set": {"business_id": business_id, "last_scan_at": now, "updated_at": now}}, upsert=True)
+    return {"success": True, "created": created, "daily_plan": daily_plan}
 
 
 @api_router.get("/ai/operator/approval-items")
@@ -1686,7 +1739,7 @@ async def ai_operator_approval_items(current_user: dict = Depends(get_current_us
     role = str(current_user.get("role") or "").lower()
     _owner_roles_only(role)
     business_id = await get_user_business_id(current_user)
-    records = [serialize_doc(r) async for r in db.ai_approval_items.find({"business_id": business_id}).sort("created_at", -1).limit(120)]
+    records = [serialize_doc(r) async for r in db.ai_operator_actions.find({"business_id": business_id}).sort("created_at", -1).limit(120)]
     return {"success": True, "data": records}
 
 
@@ -1698,7 +1751,7 @@ async def ai_operator_approve(item_id: str, current_user: dict = Depends(get_cur
     business_id = await get_user_business_id(current_user)
     if not ObjectId.is_valid(item_id):
         raise HTTPException(status_code=400, detail="Invalid approval item id")
-    item = await db.ai_approval_items.find_one({"_id": ObjectId(item_id), "business_id": business_id})
+    item = await db.ai_operator_actions.find_one({"_id": ObjectId(item_id), "business_id": business_id})
     if not item:
         raise HTTPException(status_code=404, detail="Approval item not found")
 
@@ -1707,16 +1760,23 @@ async def ai_operator_approve(item_id: str, current_user: dict = Depends(get_cur
     item_type = str(item.get("type") or "")
     result = {"action": "none"}
 
+    completed = False
     if item_type == "assign_worker":
         job_id = str(payload.get("job_id") or item.get("related_entity_id") or "")
         assigned_worker_id = str(payload.get("assigned_worker_id") or "")
         if job_id and assigned_worker_id:
             await db.jobs.update_one({"id": job_id, "business_id": business_id}, {"$set": {"assigned_worker_id": assigned_worker_id, "updated_at": now}})
             result = {"action": "assigned_worker", "job_id": job_id, "assigned_worker_id": assigned_worker_id}
+            completed = True
         else:
             result = {"action": "needs_manual_assignment"}
+    elif item_type in {"create_invoice_draft", "invoice_draft"}:
+        result = {"action": "draft_only", "status": "draft_prepared"}
+    elif item_type in {"invoice_reminder", "quote_follow_up", "job_instruction", "customer_update", "client_cleanup", "schedule_conflict", "crew_workload", "job_to_quote_or_invoice"}:
+        result = {"action": "prepared_for_review", "status": "draft_only"}
 
-    await db.ai_approval_items.update_one({"_id": ObjectId(item_id)}, {"$set": {"status": "approved", "approved_at": now, "updated_at": now}})
+    await db.ai_operator_actions.update_one({"_id": ObjectId(item_id)}, {"$set": {"status": "completed" if completed else "approved", "approved_at": now, "completed_at": now if completed else None, "approved_by": str(current_user.get("id") or ""), "updated_at": now}})
+    await db.ai_operator_logs.insert_one({"business_id": business_id, "action_id": item_id, "event_type": "completed" if completed else "approved", "message": f"Action {item_type} approved", "user_id": str(current_user.get("id") or ""), "created_at": now})
     return {"success": True, "result": result}
 
 
@@ -1727,9 +1787,37 @@ async def ai_operator_dismiss(item_id: str, current_user: dict = Depends(get_cur
     business_id = await get_user_business_id(current_user)
     if not ObjectId.is_valid(item_id):
         raise HTTPException(status_code=400, detail="Invalid approval item id")
-    result = await db.ai_approval_items.update_one({"_id": ObjectId(item_id), "business_id": business_id}, {"$set": {"status": "dismissed", "updated_at": datetime.now(timezone.utc)}})
+    now = datetime.now(timezone.utc)
+    result = await db.ai_operator_actions.update_one({"_id": ObjectId(item_id), "business_id": business_id}, {"$set": {"status": "dismissed", "dismissed_at": now, "updated_at": now}})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Approval item not found")
+    await db.ai_operator_logs.insert_one({"business_id": business_id, "action_id": item_id, "event_type": "dismissed", "message": "Action dismissed", "user_id": str(current_user.get("id") or ""), "created_at": now})
+    return {"success": True}
+
+
+@api_router.post("/ai/operator/actions/{action_id}/approve")
+async def ai_operator_actions_approve(action_id: str, current_user: dict = Depends(get_current_user)):
+    return await ai_operator_approve(action_id, current_user)
+
+
+@api_router.post("/ai/operator/actions/{action_id}/dismiss")
+async def ai_operator_actions_dismiss(action_id: str, current_user: dict = Depends(get_current_user)):
+    return await ai_operator_dismiss(action_id, current_user)
+
+
+@api_router.post("/ai/operator/actions/{action_id}/edit")
+async def ai_operator_actions_edit(action_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower()
+    _owner_roles_only(role)
+    business_id = await get_user_business_id(current_user)
+    if not ObjectId.is_valid(action_id):
+        raise HTTPException(status_code=400, detail="Invalid action id")
+    now = datetime.now(timezone.utc)
+    patch = {"owner_notes": str((payload or {}).get("owner_notes") or ""), "generated_message": str((payload or {}).get("generated_message") or ""), "proposed_changes": (payload or {}).get("proposed_changes") or {}, "status": "edited", "updated_at": now}
+    result = await db.ai_operator_actions.update_one({"_id": ObjectId(action_id), "business_id": business_id}, {"$set": patch})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Action not found")
+    await db.ai_operator_logs.insert_one({"business_id": business_id, "action_id": action_id, "event_type": "edited", "message": "Action edited by owner", "user_id": str(current_user.get("id") or ""), "created_at": now})
     return {"success": True}
 
 
@@ -1793,6 +1881,30 @@ async def ai_operator_ask(payload: dict, current_user: dict = Depends(get_curren
 @api_router.get("/ai/operator/ask")
 async def ai_operator_ask_get(question: str = "", current_user: dict = Depends(get_current_user)):
     return await ai_operator_ask({"question": question}, current_user)
+
+
+@api_router.get("/ai/operator/status")
+async def ai_operator_status(current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower()
+    _owner_roles_only(role)
+    business_id = await get_user_business_id(current_user)
+    jobs = [serialize_doc(j) async for j in db.jobs.find({"business_id": business_id}).limit(120)]
+    quotes = [serialize_doc(q) async for q in db.quotes.find({"business_id": business_id}).limit(120)]
+    invoices = [serialize_doc(i) async for i in db.invoices.find({"business_id": business_id}).limit(120)]
+    workers = [serialize_doc(w) async for w in db.business_users.find({"business_id": business_id, "role": {"$in": ["worker", "manager", "office_admin"]}}).limit(120)]
+    state = await db.ai_operator_state.find_one({"business_id": business_id}) or {}
+    pending_count = await db.ai_operator_actions.count_documents({"business_id": business_id, "status": "pending"})
+    return {"success": True, "status": "needs_approval" if pending_count else "ready", "pending_count": pending_count, "last_scan_at": state.get("last_scan_at"), "summary": {"jobs_today": len(jobs), "unassigned_jobs": len([j for j in jobs if not j.get("assigned_worker_id")]), "quotes_waiting": len([q for q in quotes if str(q.get("status") or "") in {"draft", "sent", "pending", "waiting"}]), "open_invoices": len([i for i in invoices if str(i.get("status") or "") in {"open", "sent", "overdue", "draft"}]), "ready_to_invoice": len([j for j in jobs if str(j.get("status") or "") == "completed"]), "crew_active": len([w for w in workers if str(w.get("status") or "").lower() in {"active", "busy", "on_site"}])}}
+
+
+@api_router.post("/ai/operator/run-scan")
+async def ai_operator_run_scan(current_user: dict = Depends(get_current_user)):
+    return await ai_operator_run_daily_check(current_user)
+
+
+@api_router.get("/ai/operator/actions")
+async def ai_operator_actions(current_user: dict = Depends(get_current_user)):
+    return await ai_operator_approval_items(current_user)
 
 @api_router.post("/auth/refresh")
 async def refresh_token(request: Request, response: Response):
