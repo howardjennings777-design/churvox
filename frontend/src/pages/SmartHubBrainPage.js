@@ -877,7 +877,21 @@ export default function SmartHubBrainPage() {
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Today&apos;s Plan</h2>
               <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                 {[["Jobs today", jobsToday], ["Unassigned jobs", unassignedJobs.length], ["Ready to bill", readyToBillJobs.length], ["Open invoices", openInvoices.length], ["Quotes waiting", waitingQuotes.length], ["Crew available", crewAvailable]].map(([label, value]) => (
-                  <button type="button" key={label} onClick={() => ({"Jobs today":()=>openWorkspace("Jobs","list"),"Unassigned jobs":()=>openWorkspace("AI Dispatch","assign"),"Ready to bill":()=>openApprovalCentre({tab:"ready"}),"Open invoices":()=>openApprovalCentre({tab:"drafts"}),"Quotes waiting":()=>openApprovalCentre({tab:"drafts"}),"Crew available":()=>openWorkspace("Crew","list")}[label]?.()} className="rounded-lg bg-[#f6f4ef] px-3 py-2 text-left">
+                  <button
+                    type="button"
+                    key={label}
+                    onClick={() =>
+                      ({
+                        "Jobs today": () => openWorkspace("Jobs", "list"),
+                        "Unassigned jobs": () => openWorkspace("AI Dispatch", "assign"),
+                        "Ready to bill": () => openApprovalCentre({ tab: "ready" }),
+                        "Open invoices": () => openApprovalCentre({ tab: "drafts" }),
+                        "Quotes waiting": () => openApprovalCentre({ tab: "drafts" }),
+                        "Crew available": () => openWorkspace("Crew", "list"),
+                      }[label]?.())
+                    }
+                    className="rounded-lg bg-[#f6f4ef] px-3 py-2 text-left"
+                  >
                     <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
                     <p className="text-lg font-semibold text-slate-900">{value}</p>
                   </button>
@@ -892,7 +906,20 @@ export default function SmartHubBrainPage() {
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Business Pulse</h2>
               <div className="mt-3 grid grid-cols-2 gap-3">
                 {[["Money waiting", openInvoices.length], ["Billing ready", readyToBillJobs.length], ["Dispatch pressure", unassignedJobs.length], ["Pipeline", waitingQuotes.length], ["Crew", crewAvailable]].map(([label, value]) => (
-                  <button type="button" key={label} onClick={() => ({"Money waiting":()=>openWorkspace("Payment Reminders","reminders"),"Billing ready":()=>openApprovalCentre({tab:"ready"}),"Dispatch pressure":()=>openWorkspace("AI Dispatch","assign"),"Pipeline":()=>openApprovalCentre({tab:"drafts"}),"Crew":()=>openWorkspace("Crew","list")}[label]?.()} className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-3 text-left">
+                  <button
+                    type="button"
+                    key={label}
+                    onClick={() =>
+                      ({
+                        "Money waiting": () => openWorkspace("Payment Reminders", "reminders"),
+                        "Billing ready": () => openApprovalCentre({ tab: "ready" }),
+                        "Dispatch pressure": () => openWorkspace("AI Dispatch", "assign"),
+                        Pipeline: () => openApprovalCentre({ tab: "drafts" }),
+                        Crew: () => openWorkspace("Crew", "list"),
+                      }[label]?.())
+                    }
+                    className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-3 text-left"
+                  >
                     <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
                     <p className="mt-1 text-xl font-semibold text-slate-900">{value}</p>
                   </button>
