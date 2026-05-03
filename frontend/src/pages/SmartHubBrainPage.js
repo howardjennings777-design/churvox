@@ -404,32 +404,32 @@ export default function SmartHubBrainPage() {
 
   const clientsById = useMemo(() => new Map(safeArray(data.clients).map((c) => [String(c?.id || c?._id || c?.client_id || ""), c])), [data.clients]);
   const buildSmartInvoiceDescription = useCallback((job, client = null) => {
-    const preferredDescription = firstText(
-      job?.ai_invoice_description,
-      job?.invoice_description_draft,
-      job?.completion_notes,
-      job?.worker_completion_notes,
-      job?.worker_notes,
-      job?.job_notes,
-      job?.notes,
-      job?.description,
-    );
-    if (preferredDescription) return preferredDescription;
+    const persisted = firstText(job?.ai_invoice_description, job?.invoice_description_draft);
+    if (persisted) return persisted;
+
     const clientName = firstText(client?.name, job?.client_name, job?.customer_name, "the client");
     const jobTitle = firstText(job?.title, job?.name, "");
-    const serviceType = firstText(job?.service_type, job?.job_type, "");
+    const serviceType = firstText(job?.service_type, job?.job_type, "service work");
     const address = firstText(job?.address, job?.job_address, job?.service_address, "");
-    const completedWork = firstText(job?.included_work, job?.scope_of_work, "");
-    const materialContext = firstText(job?.materials, job?.extras_summary, "");
-    const pricingType = firstText(job?.pricing_type, job?.price_type, "");
-    const lead = firstText(jobTitle, serviceType, "Service work");
+    const completionNotes = firstText(job?.completion_notes, job?.worker_completion_notes, "");
+    const workerNotes = firstText(job?.worker_notes, job?.job_notes, job?.notes, "");
+    const baseLead = firstText(jobTitle, serviceType, "Service work");
     const where = address ? ` at ${address}` : "";
-    const completionContext = firstText(job?.completion_notes, job?.worker_completion_notes, job?.worker_notes, "");
-    const workContext = completionContext || completedWork;
-    const detail = workContext ? `, including ${workContext}` : "";
-    const extras = materialContext ? ` Materials/extras: ${materialContext}.` : "";
-    const pricing = pricingType ? ` Pricing basis: ${pricingType}.` : "";
-    return `${lead} completed for ${clientName}${where}${detail}. Job marked complete and ready for billing.${extras}${pricing}`;
+    const includedWork = firstText(job?.included_work, job?.scope_of_work, "");
+    const materials = firstText(job?.materials, job?.extras_summary, "");
+    const pricingType = firstText(job?.pricing_type, job?.price_type, "");
+
+    const detailSource = firstText(completionNotes, workerNotes, includedWork, job?.description, "");
+    const trimmedDetail = String(detailSource || "").replace(/\s+/g, " ").trim();
+    let description = `${baseLead} completed for ${clientName}${where}.`;
+    if (trimmedDetail) {
+      description = `${baseLead} completed for ${clientName}${where}, including ${trimmedDetail}.`;
+    } else {
+      description = `${baseLead} completed for ${clientName}${where}. Work has been marked complete and is ready for billing.`;
+    }
+    if (materials) description += ` Materials/extras: ${materials}.`;
+    if (pricingType) description += ` Pricing basis: ${pricingType}.`;
+    return description;
   }, []);
   const invoiceDraftRows = useMemo(() => safeArray(completedReadyToBill).map((job) => {
     const jobId = asId(job);
@@ -480,7 +480,7 @@ export default function SmartHubBrainPage() {
     toast.success("Draft invoice created");
     await load();
   };
-  const handleEditReadyToBillDescription = (job) => openReviewJobEdit(job);
+  const handleEditReadyToBillDescription = (job) => { setIsActionModalOpen(true); openReviewJobEdit(job); };
   const handleSaveReadyToBillDescription = async (job, description) => {
     const value = String(description || "").trim();
     setDraftDescriptions((s) => ({ ...s, [job.jobId]: value }));
@@ -488,10 +488,11 @@ export default function SmartHubBrainPage() {
     toast.success("Invoice description saved");
     await load();
   };
-  const handleOpenReadyToBillJob = (job) => openReviewJobDetail(job);
+  const handleOpenReadyToBillJob = (job) => { setIsActionModalOpen(true); openReviewJobDetail(job); };
   const handleBackToReadyToBill = () => {
     setReviewMode("list");
     setSelectedReviewItem(null);
+    setReviewEditForm(null);
   };
   const saveReviewJobEdit = async () => {
     if (!selectedReviewItem || !reviewEditForm) return;

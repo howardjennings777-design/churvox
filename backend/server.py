@@ -159,20 +159,28 @@ def _format_invoice_description_from_job(job: dict, client_name: str = "") -> st
     if not isinstance(job, dict):
         return f"Service work completed for {client_name}. Job marked complete and ready for billing." if client_name else "Service work completed. Job marked complete and ready for billing."
 
-    for key in ["ai_invoice_description", "invoice_description_draft", "completion_notes", "worker_completion_notes", "worker_notes", "job_notes", "notes", "description"]:
-        value = _safe_text(job.get(key))
-        if value:
-            return value
+    persisted = _safe_text(job.get("ai_invoice_description") or job.get("invoice_description_draft"))
+    if persisted:
+        return persisted
 
-    title = _safe_text(job.get("title") or job.get("name") or job.get("service_type") or job.get("job_type") or "Service work")
+    title = _safe_text(job.get("title") or job.get("name"))
+    service_type = _safe_text(job.get("service_type") or job.get("job_type") or "Service work")
+    lead = title or service_type
     resolved_client = _safe_text(client_name or job.get("client_name") or job.get("customer_name") or (job.get("client") if isinstance(job.get("client"), str) else "")) or "the client"
     address = _safe_text(job.get("address") or job.get("job_address") or job.get("service_address"))
-    included_work = _safe_text(job.get("included_work") or job.get("scope_of_work"))
+    completion_notes = _safe_text(job.get("completion_notes") or job.get("worker_completion_notes"))
+    worker_notes = _safe_text(job.get("worker_notes") or job.get("job_notes") or job.get("notes"))
+    included_work = _safe_text(job.get("included_work") or job.get("scope_of_work") or job.get("description"))
     materials = _safe_text(job.get("materials") or job.get("extras_summary"))
     pricing_type = _safe_text(job.get("pricing_type") or job.get("price_type"))
     location = f" at {address}" if address else ""
-    details = f", including {included_work}" if included_work else ""
-    summary = f"{title} completed for {resolved_client}{location}{details}. Job marked complete and ready for billing."
+    detail = completion_notes or worker_notes or included_work
+
+    if detail:
+        summary = f"{lead} completed for {resolved_client}{location}, including {detail}."
+    else:
+        summary = f"{lead} completed for {resolved_client}{location}. Work has been marked complete and is ready for billing."
+
     if materials:
         summary = f"{summary} Materials/extras: {materials}."
     if pricing_type:
