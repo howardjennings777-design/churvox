@@ -5172,25 +5172,31 @@ async def create_draft_invoice_from_job(job_id: str, payload: dict | None = None
     business_id = _resolve_business_id(current_user)
     owner_id = _resolve_owner_id(current_user)
 
+    print("SMART HUB DRAFT INVOICE job_id", str(job_id))
+    job_id_filters = [{"_id": str(job_id)}]
     try:
         obj_id = ObjectId(job_id)
+        job_id_filters.append({"_id": obj_id})
     except Exception:
-        raise HTTPException(status_code=400, detail="Invalid job ID")
+        obj_id = None
 
     job = await db.jobs.find_one({
-        "_id": obj_id,
-        "$or": [
-            {"business_id": business_id},
-            {"business_id": str(business_id)},
-            {"owner_id": owner_id},
-        ],
+        "$and": [
+            {"$or": job_id_filters},
+            {"$or": [
+                {"business_id": business_id},
+                {"business_id": str(business_id)},
+                {"owner_id": owner_id},
+            ]},
+        ]
     })
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
     now = datetime.now(timezone.utc)
     payload = payload or {}
-    job_id_str = str(obj_id)
+    real_job_id = job.get("_id")
+    job_id_str = str(real_job_id)
 
     existing_invoice = await db.invoices.find_one({
         "business_id": business_id,
@@ -5201,23 +5207,28 @@ async def create_draft_invoice_from_job(job_id: str, payload: dict | None = None
         ],
     })
 
+    print("SMART HUB DRAFT INVOICE existing invoice found", "yes" if existing_invoice else "no")
+
     async def _mark_job_billed(invoice_id: str):
+        update_fields = {
+            "invoice_id": invoice_id,
+            "draft_invoice_id": invoice_id,
+            "invoice_created": True,
+            "invoiced": True,
+            "invoice_status": "draft",
+            "updated_at": now,
+        }
         await db.jobs.update_one(
-            {"_id": obj_id},
-            {"$set": {
-                "invoice_id": invoice_id,
-                "draft_invoice_id": invoice_id,
-                "invoice_created": True,
-                "invoiced": True,
-                "invoice_status": "draft",
-                "updated_at": now,
-            }}
+            {"_id": real_job_id},
+            {"$set": update_fields}
         )
+        print("SMART HUB DRAFT INVOICE updated job id", str(real_job_id))
+        print("SMART HUB DRAFT INVOICE updated job invoice fields", update_fields)
 
     if existing_invoice:
         invoice_id = str(existing_invoice.get("_id") or existing_invoice.get("id") or "")
         await _mark_job_billed(invoice_id)
-        updated_job = await db.jobs.find_one({"_id": obj_id})
+        updated_job = await db.jobs.find_one({"_id": real_job_id})
         return {
             "success": True,
             "invoice_id": invoice_id,
@@ -5238,7 +5249,7 @@ async def create_draft_invoice_from_job(job_id: str, payload: dict | None = None
     description = payload.get("description") or payload.get("invoice_description") or job.get("title") or "Job invoice"
     client_id = payload.get("client_id") or job.get("client_id")
     doc = {
-        "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{str(obj_id)[-5:]}",
+        "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{str(real_job_id)[-5:]}",
         "client_id": client_id,
         "customer_name": job.get("client_name") or job.get("customer_name") or "",
         "customer_email": job.get("customer_email") or "",
@@ -5268,9 +5279,10 @@ async def create_draft_invoice_from_job(job_id: str, payload: dict | None = None
 
     result = await db.invoices.insert_one(doc)
     invoice_id = str(result.inserted_id)
+    print("SMART HUB DRAFT INVOICE created invoice id", invoice_id)
     await _mark_job_billed(invoice_id)
     created_invoice = await db.invoices.find_one({"_id": result.inserted_id})
-    updated_job = await db.jobs.find_one({"_id": obj_id})
+    updated_job = await db.jobs.find_one({"_id": real_job_id})
 
     message = "Draft invoice created"
     if invoice_mode == "myob_external":
