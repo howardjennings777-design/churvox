@@ -102,7 +102,7 @@ export default function SmartHubBrainPage() {
     setLoading(true); setError("");
     const safe = async (path) => { try { return await get(path); } catch { return []; } };
     try {
-      const [jobs, clients, quotes, invoices, workers, approvals] = await Promise.all([safe("/jobs"), safe("/clients"), safe("/quotes"), safe("/invoices"), safe("/team/workers"), canSeeOwnerControls ? safe("/ai/control/actions") : Promise.resolve([])]);
+      const [jobs, clients, quotes, invoices, workers, approvals] = await Promise.all([safe("/jobs"), safe("/clients"), safe("/quotes"), safe("/invoices"), safe("/team/workers"), canSeeOwnerControls ? safe("/ai/operator/actions") : Promise.resolve([])]);
       setData({ jobs: listFrom(jobs, ["jobs"]), clients: listFrom(clients, ["clients"]), quotes: listFrom(quotes, ["quotes"]), invoices: listFrom(invoices, ["invoices"]), workers: listFrom(workers, ["workers"]), approvals: listFrom(approvals, ["approval_items"]).filter((a) => APPROVAL_ACTION_TYPES.has(String(a.action_type || "").toLowerCase()) || !a.action_type) });
     } catch {
       setError("Failed to load Smart Hub data");
@@ -198,7 +198,7 @@ export default function SmartHubBrainPage() {
         if (!draftJobId) throw new Error("Cannot approve draft invoice: missing job id.");
         await post(`/jobs/${draftJobId}/create-draft-invoice`);
       } else {
-        await post(`/ai/control/actions/${actionId}/approve`, {});
+        await post(`/ai/operator/actions/${actionId}/approve`, {});
       }
       markActionCompleted(action, actionType === "create_invoice_draft" ? "Approved — draft invoice created" : "Approved");
       toast.success(actionType === "create_invoice_draft" ? "Approved — draft invoice created" : "Action approved.");
@@ -219,7 +219,7 @@ export default function SmartHubBrainPage() {
         await refreshSmartHubAfterAction();
         return;
       }
-      await post(`/ai/control/actions/${actionId}/dismiss`, {});
+      await post(`/ai/operator/actions/${actionId}/reject`, {});
       setLocalActionState((s) => ({ ...s, [actionId]: "rejected" }));
       toast.success("Action rejected.");
       await refreshSmartHubAfterAction();
