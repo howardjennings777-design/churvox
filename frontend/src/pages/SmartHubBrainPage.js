@@ -535,6 +535,29 @@ export default function SmartHubBrainPage() {
     }
   };
 
+
+  const approveApprovalItem = async (item) => {
+    try {
+      await post(`/ai-operator/actions/${item.id}/approve`, {});
+      await load();
+      setToast({ kind: "success", message: "Action approved." });
+    } catch {
+      setToast({ kind: "error", message: "Approve failed." });
+    }
+  };
+
+  const rejectApprovalItem = async (item) => {
+    try {
+      await post(`/ai-operator/actions/${item.id}/reject`, {});
+      await load();
+      setToast({ kind: "success", message: "Action rejected." });
+    } catch {
+      setToast({ kind: "error", message: "Reject failed." });
+    }
+  };
+
+  const editApprovalItem = async (item, payload) => patch(`/ai-operator/actions/${item.id}`, payload);
+
   const draftInvoices = useMemo(() => invoices.filter((inv) => statusOf(inv?.status) === "draft"), [invoices]);
 
   const approveDraft = useCallback(
@@ -993,9 +1016,9 @@ export default function SmartHubBrainPage() {
                       {item.type === "invoice_reminder" ? <><div className="mt-2 flex gap-1 text-[11px]"><span className="rounded bg-slate-100 px-2 py-0.5">Email</span><span className="rounded bg-slate-100 px-2 py-0.5">SMS</span></div><p className="mt-2 rounded bg-slate-50 p-2 text-xs text-slate-700">{reminderDrafts[item.relatedId] || buildInvoiceReminderMessage({ client: findByIds(clients, [item.invoice?.client_id, item.invoice?.clientId]), invoice: item.invoice, business: user, channel: "email" })}</p></> : null}
                       {item.type === "quote_follow_up" ? <><div className="mt-2 flex gap-1 text-[11px]"><span className="rounded bg-slate-100 px-2 py-0.5">Email</span><span className="rounded bg-slate-100 px-2 py-0.5">SMS</span></div><p className="mt-2 rounded bg-slate-50 p-2 text-xs text-slate-700">{quoteDrafts[item.relatedId] || buildQuoteFollowUpMessage({ client: findByIds(clients, [item.quote?.client_id, item.quote?.clientId]), quote: item.quote, business: user, channel: "email" })}</p></> : null}
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <button type="button" onClick={async ()=>{ try { await post(`/ai/operator/approval-items/${item.id}/approve`, {}); await load(); setToast({kind:"success", message:"Action approved."}); } catch { setToast({kind:"error", message:"Approve failed."}); } }} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">Approve</button>
+                        <button type="button" onClick={() => approveApprovalItem(item)} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">Approve</button>
                         <button type="button" onClick={()=>setApprovalDetail(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Edit</button>
-                        <button type="button" onClick={async ()=>{ await post(`/ai/operator/approval-items/${item.id}/reject`, {}); await load(); setToast({kind:"success", message:"Action rejected."}); }} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Reject</button>
+                        <button type="button" onClick={() => rejectApprovalItem(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Reject</button>
                         <button type="button" onClick={()=>setApprovalDetail(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Details</button>
                       </div>
                     </article>
