@@ -157,28 +157,27 @@ def _safe_text(value):
 
 def _format_invoice_description_from_job(job: dict, client_name: str = "") -> str:
     if not isinstance(job, dict):
-        return f"Service completed for {client_name}." if client_name else "Service completed."
+        return f"Service work completed for {client_name}. Job marked complete and ready for billing." if client_name else "Service work completed. Job marked complete and ready for billing."
 
-    title = _safe_text(job.get("title") or job.get("name"))
-    resolved_client = _safe_text(
-        client_name
-        or job.get("client_name")
-        or job.get("customer_name")
-        or (job.get("client") if isinstance(job.get("client"), str) else "")
-    )
+    for key in ["ai_invoice_description", "invoice_description_draft", "completion_notes", "worker_completion_notes", "worker_notes", "job_notes", "notes", "description"]:
+        value = _safe_text(job.get(key))
+        if value:
+            return value
+
+    title = _safe_text(job.get("title") or job.get("name") or job.get("service_type") or job.get("job_type") or "Service work")
+    resolved_client = _safe_text(client_name or job.get("client_name") or job.get("customer_name") or (job.get("client") if isinstance(job.get("client"), str) else "")) or "the client"
     address = _safe_text(job.get("address") or job.get("job_address") or job.get("service_address"))
-
-    if title and resolved_client and address:
-        return f"{title} completed for {resolved_client} at {address}."
-    if title and resolved_client:
-        return f"{title} completed for {resolved_client}."
-    if title:
-        return f"{title} completed."
-    if resolved_client and address:
-        return f"Service completed for {resolved_client} at {address}."
-    if resolved_client:
-        return f"Service completed for {resolved_client}."
-    return "Service completed."
+    included_work = _safe_text(job.get("included_work") or job.get("scope_of_work"))
+    materials = _safe_text(job.get("materials") or job.get("extras_summary"))
+    pricing_type = _safe_text(job.get("pricing_type") or job.get("price_type"))
+    location = f" at {address}" if address else ""
+    details = f", including {included_work}" if included_work else ""
+    summary = f"{title} completed for {resolved_client}{location}{details}. Job marked complete and ready for billing."
+    if materials:
+        summary = f"{summary} Materials/extras: {materials}."
+    if pricing_type:
+        summary = f"{summary} Pricing basis: {pricing_type}."
+    return summary
 
 
 ROOT_DIR = Path(__file__).parent
