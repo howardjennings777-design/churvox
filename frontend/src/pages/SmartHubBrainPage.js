@@ -27,6 +27,35 @@ const money = (value) => {
   return num.toLocaleString(undefined, { style: "currency", currency: "AUD" });
 };
 
+const REMINDER_ELIGIBLE = ["open", "sent", "unpaid", "overdue", "pending_payment"];
+const REMINDER_EXCLUDED = ["paid", "cancelled", "canceled"];
+
+const invoiceBalance = (inv) => {
+  const candidates = [inv?.balance_due, inv?.amount_due, inv?.total_due, inv?.total, inv?.amount];
+  const picked = candidates.map((v) => Number(v)).find((v) => Number.isFinite(v));
+  return Number.isFinite(picked) ? picked : NaN;
+};
+
+const daysOverdue = (inv) => {
+  const explicit = Number(inv?.overdue_days ?? inv?.days_overdue);
+  if (Number.isFinite(explicit) && explicit >= 0) return explicit;
+  const dueDate = inv?.due_date || inv?.dueDate;
+  if (!dueDate) return null;
+  const ms = Date.now() - new Date(dueDate).getTime();
+  if (!Number.isFinite(ms) || ms <= 0) return 0;
+  return Math.floor(ms / (1000 * 60 * 60 * 24));
+};
+
+const reminderText = ({ clientName, invoiceNo, amount, overdue }) => {
+  if (overdue > 0) {
+    return `Hi ${clientName}, this is a friendly follow-up on overdue invoice ${invoiceNo || ""} for ${amount}. Please let us know if payment has already been made or if you need the payment link resent.`.replace("invoice  for", "your invoice for");
+  }
+  if (!invoiceNo) {
+    return `Hi ${clientName}, just a friendly reminder that your invoice for ${amount} is still outstanding. Please let us know if you need anything from us.`;
+  }
+  return `Hi ${clientName}, just a friendly reminder that invoice ${invoiceNo} for ${amount} is still outstanding. Please let us know if you need anything from us.`;
+};
+
 const textOr = (value, fallback = "Not available") => {
   const text = String(value || "").trim();
   return text || fallback;
@@ -77,6 +106,11 @@ export default function SmartHubBrainPage() {
   const [savingJobId, setSavingJobId] = useState("");
   const [toast, setToast] = useState({ kind: "", message: "" });
   const [data, setData] = useState({ jobs: [], clients: [], quotes: [], invoices: [], workers: [] });
+  const [reminderDrafts, setReminderDrafts] = useState({});
+  const [editingDraft, setEditingDraft] = useState({});
+  const [selectedReminderIds, setSelectedReminderIds] = useState([]);
+  const [approvedReminderIds, setApprovedReminderIds] = useState({});
+  const [activity, setActivity] = useState([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -144,6 +178,35 @@ export default function SmartHubBrainPage() {
     [invoices]
   );
 
+  const reminderInvoices = useMemo(() => {
+    return invoices.filter((inv) => {
+      const st = statusOf(inv?.status);
+      if (REMINDER_EXCLUDED.includes(st)) return false;
+      if (st === "draft" && !inv?.sent_at && !inv?.sentAt) return false;
+      if (!REMINDER_ELIGIBLE.includes(st)) return false;
+      const paidFlag = [inv?.paid, inv?.is_paid, inv?.payment_status].some((v) => [true, "paid"].includes(v));
+      if (paidFlag) return false;
+      const balance = invoiceBalance(inv);
+      return !Number.isFinite(balance) || balance > 0;
+    });
+  }, [invoices]);
+
+  useEffect(() => {
+    setReminderDrafts((prev) => {
+      const next = { ...prev };
+      reminderInvoices.forEach((inv) => {
+        const id = String(inv?.id || inv?._id || inv?.invoice_id || "");
+        if (!id || next[id]) return;
+        const client = findByIds(clients, [inv?.client_id, inv?.clientId], ["id", "_id", "client_id"]);
+        const clientName = textOr(client?.name || inv?.client_name || inv?.customer_name, "there");
+        const invoiceNo = textOr(inv?.invoice_number || inv?.number || inv?.title || "", "");
+        const overdue = daysOverdue(inv);
+        next[id] = reminderText({ clientName, invoiceNo, amount: money(invoiceBalance(inv)), overdue });
+      });
+      return next;
+    });
+  }, [reminderInvoices, clients]);
+
   const waitingQuotes = useMemo(
     () => quotes.filter((q) => ["sent", "pending", "waiting"].includes(statusOf(q?.status))),
     [quotes]
@@ -194,7 +257,6 @@ export default function SmartHubBrainPage() {
         gst_amount: gstAmount,
         total,
       });
-      setSavingJobId("");
       if (!res?.success) {
         setToast({ kind: "error", message: res?.error || "Failed to create draft invoice." });
         return;
@@ -269,6 +331,71 @@ export default function SmartHubBrainPage() {
       );
     }
 
+    if (drawer === "Payment Reminders") {
+      const draftCount = Object.values(approvedReminderIds).filter(Boolean).length;
+      const overdueCount = reminderInvoices.filter((inv) => (daysOverdue(inv) || 0) > 0 || statusOf(inv?.status) === "overdue").length;
+      const missingContactCount = reminderInvoices.filter((inv) => {
+        const client = findByIds(clients, [inv?.client_id, inv?.clientId], ["id", "_id", "client_id"]);
+        return !(client?.email || inv?.client_email || client?.phone || inv?.client_phone);
+      }).length;
+
+      const approveOne = async (inv) => {
+        const id = String(inv?.id || inv?._id || inv?.invoice_id || "");
+        if (!id) return;
+        const client = findByIds(clients, [inv?.client_id, inv?.clientId], ["id", "_id", "client_id"]);
+        const payload = {
+          invoice_id: id,
+          client_id: client?.id || client?._id || inv?.client_id || null,
+          business_id: user?.business_id || user?.businessId || null,
+          message: reminderDrafts[id] || "",
+          channel: client?.email || inv?.client_email ? "email" : "sms",
+          status: "draft",
+          source: "smart_hub_ai",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        try { await post("/communications/messages", payload); } catch {}
+        setApprovedReminderIds((prev) => ({ ...prev, [id]: true }));
+        setActivity((prev) => [{ id: `${id}-${Date.now()}`, text: `Reminder draft approved for invoice ${textOr(inv?.invoice_number || inv?.number, id)}.` }, ...prev].slice(0, 12));
+        setToast({ kind: "success", message: "Reminder draft approved." });
+      };
+
+      const toggleSelected = (id) => setSelectedReminderIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+      const approveMany = async (ids) => {
+        for (const id of ids) {
+          const inv = reminderInvoices.find((item) => String(item?.id || item?._id || item?.invoice_id || "") === id);
+          if (inv) await approveOne(inv);
+        }
+      };
+
+      return (
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">Payment Reminders</h3>
+            <p className="text-sm text-slate-600">Review AI-prepared reminder drafts for unpaid invoices.</p>
+          </div>
+          <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[['Open invoices', reminderInvoices.length], ['Overdue invoices', overdueCount], ['Draft reminders', draftCount], ['Missing contact details', missingContactCount]].map(([label, value]) => <article key={label} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"><p className="text-xs uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 text-xl font-semibold text-slate-900">{value}</p></article>)}
+          </section>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => approveMany(selectedReminderIds)} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">Approve selected reminders</button>
+            <button type="button" onClick={() => approveMany(reminderInvoices.map((inv) => String(inv?.id || inv?._id || inv?.invoice_id || "")).filter(Boolean))} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">Approve all ready reminders</button>
+            <button type="button" onClick={() => setSelectedReminderIds([])} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">Reject selected</button>
+          </div>
+          {!reminderInvoices.length ? <p className="text-sm text-slate-600">No unpaid invoices need reminders right now.</p> : reminderInvoices.map((inv) => {
+            const id = String(inv?.id || inv?._id || inv?.invoice_id || "");
+            const client = findByIds(clients, [inv?.client_id, inv?.clientId], ["id", "_id", "client_id"]);
+            const contactEmail = client?.email || inv?.client_email;
+            const contactPhone = client?.phone || inv?.client_phone;
+            const missingContact = !(contactEmail || contactPhone);
+            const isEditing = !!editingDraft[id];
+            const due = inv?.due_date || inv?.dueDate;
+            return <article key={id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex items-start justify-between gap-3"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedReminderIds.includes(id)} onChange={() => toggleSelected(id)} />Select</label><p className="text-xs font-medium uppercase tracking-wide text-slate-500">{approvedReminderIds[id] ? "Approved draft" : "Pending approval"}</p></div><p className="mt-2 font-semibold text-slate-900">{textOr(client?.name || inv?.client_name || inv?.customer_name, "Unknown client")}</p><p className="text-sm text-slate-600">Invoice: {textOr(inv?.invoice_number || inv?.number || inv?.title, "Untitled invoice")}</p><p className="text-sm text-slate-600">Amount due: {money(invoiceBalance(inv))}</p><p className="text-sm text-slate-600">Due date: {textOr(due, "No due date")}</p><p className="text-sm text-slate-600">Status: {textOr(inv?.status, "unknown")}</p><p className="text-sm text-slate-600">Overdue days: {daysOverdue(inv) ?? "—"}</p><p className="text-sm text-slate-600">Contact: {contactEmail || "—"} {contactPhone ? ` / ${contactPhone}` : ""}</p>{missingContact ? <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">Warning: missing client contact details. You can save/approve this draft, but it is not ready to send.</p> : null}{isEditing ? <textarea className="mt-3 w-full rounded-lg border border-slate-300 p-2 text-sm" rows={4} value={reminderDrafts[id] || ""} onChange={(e) => setReminderDrafts((prev) => ({ ...prev, [id]: e.target.value }))} /> : <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-800">{reminderDrafts[id]}</p>}<div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => setEditingDraft((prev) => ({ ...prev, [id]: true }))} className="rounded border border-slate-300 px-3 py-1 text-sm">Edit message</button><button type="button" onClick={() => setEditingDraft((prev) => ({ ...prev, [id]: false }))} className="rounded border border-slate-300 px-3 py-1 text-sm">Save message</button><button type="button" onClick={() => { setEditingDraft((prev) => ({ ...prev, [id]: false })); setReminderDrafts((prev) => ({ ...prev, [id]: reminderText({ clientName: textOr(client?.name || inv?.client_name || inv?.customer_name, "there"), invoiceNo: textOr(inv?.invoice_number || inv?.number || inv?.title || "", ""), amount: money(invoiceBalance(inv)), overdue: daysOverdue(inv) }) })); }} className="rounded border border-slate-300 px-3 py-1 text-sm">Cancel</button><button type="button" onClick={() => approveOne(inv)} className="rounded bg-teal-700 px-3 py-1 text-sm text-white">Approve reminder draft</button><button type="button" onClick={() => navigate(`/invoices/${id}`)} className="rounded border border-slate-300 px-3 py-1 text-sm">Open full invoice page</button></div></article>;
+          })}
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-3">
         <h3 className="text-lg font-semibold text-slate-900">{drawer} Workspace</h3>
@@ -327,7 +454,12 @@ export default function SmartHubBrainPage() {
                   {name}
                 </button>
               ))}
+              <button type="button" onClick={() => setDrawer("Payment Reminders")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Prepare reminders</button>
             </div>
+          </section>
+          <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Recent Smart Hub activity</h3>
+            {!activity.length ? <p className="mt-2 text-sm text-slate-500">No reminder approvals yet in this session.</p> : <ul className="mt-2 space-y-1 text-sm text-slate-700">{activity.map((a) => <li key={a.id}>• {a.text}</li>)}</ul>}
           </section>
         </div>
 
