@@ -524,7 +524,7 @@ export default function SmartHubBrainPage() {
     const res = await post(`/jobs/${apiJobId}/create-draft-invoice`, payload);
     console.info("[SmartHub] approve draft invoice:response", res);
     const returnedInvoice = res?.invoice || null;
-    const returnedJob = res?.job || null;
+    const returnedJob = res?.updated_job || res?.job || null;
     const invoiceId = String(res?.invoice_id || returnedInvoice?.id || returnedInvoice?._id || "");
     console.info("[SmartHub] approve draft invoice:created", { invoiceId });
     setLocallyBilledJobIds((s) => ({ ...s, [row.jobId]: true }));

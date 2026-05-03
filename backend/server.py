@@ -555,6 +555,9 @@ def _serialize_invoice(invoice: dict) -> dict:
     return {
         "id": str(invoice.get("_id") or invoice.get("id") or ""),
         "invoice_number": invoice.get("invoice_number") or f"INV-{str(invoice.get('_id') or '')[-6:]}",
+        "job_id": str(invoice.get("job_id") or ""),
+        "source_job_id": str(invoice.get("source_job_id") or ""),
+        "linked_job_id": str(invoice.get("linked_job_id") or ""),
         "client_id": invoice.get("client_id"),
         "customer_name": invoice.get("customer_name") or "",
         "customer_email": invoice.get("customer_email") or "",
@@ -4628,6 +4631,13 @@ async def get_jobs(current_user: dict = Depends(get_current_user)):
                 "notes": job.get("notes") or "",
                 "assigned_worker_id": job.get("assigned_worker_id"),
                 "status": job.get("status") or "assigned",
+                "invoice_id": str(job.get("invoice_id") or ""),
+                "draft_invoice_id": str(job.get("draft_invoice_id") or ""),
+                "invoice_created": bool(job.get("invoice_created") or False),
+                "invoiced": bool(job.get("invoiced") or False),
+                "invoice_status": job.get("invoice_status") or "",
+                "ai_invoice_description": job.get("ai_invoice_description") or "",
+                "invoice_description_draft": job.get("invoice_description_draft") or "",
                 "is_recurring": bool(job.get("is_recurring") or False),
                 "recurring_frequency": job.get("recurring_frequency"),
                 "custom_repeat_days": job.get("custom_repeat_days"),
@@ -5162,7 +5172,7 @@ async def create_draft_invoice_from_job(job_id: str, payload: dict | None = None
     business_id = _resolve_business_id(current_user)
     owner_id = _resolve_owner_id(current_user)
 
-    print("SMART HUB DRAFT INVOICE job_id", str(job_id))
+    logger.info("SMART HUB DRAFT INVOICE job_id=%s business_id=%s", str(job_id), str(business_id))
     job_id_filters = [{"_id": str(job_id)}]
     try:
         obj_id = ObjectId(job_id)
@@ -5205,9 +5215,10 @@ async def create_draft_invoice_from_job(job_id: str, payload: dict | None = None
         ]
     })
 
-    print("SMART HUB DRAFT INVOICE existing invoice found", "yes" if existing_invoice else "no")
+    linked_invoice_id = str((existing_invoice or {}).get("_id") or (existing_invoice or {}).get("id") or "")
+    logger.info("SMART HUB DRAFT INVOICE existing=%s invoice_id=%s", bool(existing_invoice), linked_invoice_id)
 
-    async def _mark_job_billed(invoice_id: str):
+    async def _mark_job_billed(invoice_id: str, draft_description: str | None = None):
         update_fields = {
             "invoice_id": invoice_id,
             "draft_invoice_id": invoice_id,
@@ -5216,22 +5227,30 @@ async def create_draft_invoice_from_job(job_id: str, payload: dict | None = None
             "invoice_status": "draft",
             "updated_at": now,
         }
+        if draft_description:
+            update_fields["ai_invoice_description"] = draft_description
+            update_fields["invoice_description_draft"] = draft_description
         await db.jobs.update_one(
             {"_id": real_job_id},
             {"$set": update_fields}
         )
-        print("SMART HUB DRAFT INVOICE updated job id", str(real_job_id))
-        print("SMART HUB DRAFT INVOICE updated job invoice fields", update_fields)
+        logger.info("SMART HUB DRAFT INVOICE updated job invoice fields")
 
     if existing_invoice:
         invoice_id = str(existing_invoice.get("_id") or existing_invoice.get("id") or "")
-        await _mark_job_billed(invoice_id)
+        existing_description = _safe_text(
+            existing_invoice.get("description")
+            or job.get("ai_invoice_description")
+            or job.get("invoice_description_draft")
+        )
+        await _mark_job_billed(invoice_id, existing_description)
         updated_job = await db.jobs.find_one({"_id": real_job_id})
         return {
             "success": True,
             "invoice_id": invoice_id,
             "invoice": serialize_document(existing_invoice),
             "job": serialize_document(updated_job),
+            "updated_job": serialize_document(updated_job),
             "message": "Invoice already linked",
         }
 
@@ -5282,7 +5301,7 @@ async def create_draft_invoice_from_job(job_id: str, payload: dict | None = None
         "hours_worked": float(job.get("time_spent_minutes") or 0) / 60,
         "extras": job.get("extras") or [],
         "myob_sync_status": "not_synced" if invoice_mode == "myob_sync" else "not_synced",
-        "source": "churvox_internal_draft" if invoice_mode == "myob_external" else "invoice",
+        "source": "smart_hub_ai",
         "official_invoice_source": "myob" if invoice_mode == "myob_external" else "churvox",
         "business_id": business_id,
         "owner_id": owner_id,
@@ -5292,13 +5311,8 @@ async def create_draft_invoice_from_job(job_id: str, payload: dict | None = None
 
     result = await db.invoices.insert_one(doc)
     invoice_id = str(result.inserted_id)
-    print("SMART HUB DRAFT INVOICE created invoice id", invoice_id)
-    await _mark_job_billed(invoice_id)
+    await _mark_job_billed(invoice_id, description)
     created_invoice = await db.invoices.find_one({"_id": result.inserted_id})
-    await db.jobs.update_one(
-        {"_id": real_job_id},
-        {"$set": {"ai_invoice_description": description, "invoice_description_draft": description, "updated_at": now}}
-    )
     updated_job = await db.jobs.find_one({"_id": real_job_id})
 
     message = "Draft invoice created"
@@ -5309,6 +5323,7 @@ async def create_draft_invoice_from_job(job_id: str, payload: dict | None = None
         "invoice_id": invoice_id,
         "invoice": serialize_document(created_invoice),
         "job": serialize_document(updated_job),
+        "updated_job": serialize_document(updated_job),
         "message": message,
         "invoice_mode": invoice_mode,
     }
