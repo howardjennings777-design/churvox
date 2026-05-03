@@ -403,18 +403,29 @@ export default function SmartHubBrainPage() {
   };
 
   const clientsById = useMemo(() => new Map(safeArray(data.clients).map((c) => [String(c?.id || c?._id || c?.client_id || ""), c])), [data.clients]);
+  const generateInvoiceDescription = useCallback((job, clientName = "") => {
+    const jobTitle = firstText(job?.title, job?.name, "Service");
+    const resolvedClient = firstText(clientName, job?.client_name, job?.customer_name, "");
+    const address = firstText(job?.address, job?.job_address, job?.service_address, "");
+    if (jobTitle && resolvedClient && address) return `${jobTitle} completed for ${resolvedClient} at ${address}.`;
+    if (jobTitle && resolvedClient) return `${jobTitle} completed for ${resolvedClient}.`;
+    if (jobTitle) return `${jobTitle} completed.`;
+    if (resolvedClient && address) return `Service completed for ${resolvedClient} at ${address}.`;
+    if (resolvedClient) return `Service completed for ${resolvedClient}.`;
+    return "";
+  }, []);
   const invoiceDraftRows = useMemo(() => safeArray(completedReadyToBill).map((job) => {
     const jobId = asId(job);
     const clientId = String(job.client_id || job.clientId || job.customer_id || job.client?.id || job.client?._id || "");
     const client = clientsById.get(clientId) || job.client || null;
     const clientName = firstText(client?.name, job.client_name, job.customer_name, "No client linked");
-    const description = firstText(job.ai_invoice_description, job.invoice_description_draft, job.worker_completion_notes, job.completion_notes, job.notes, `${job.title || job.name || "Service work"} at ${job.address || "site"} for ${clientName}.`, `Service work completed for ${clientName}.`);
+    const description = firstText(job.ai_invoice_description, job.invoice_description_draft, job.completion_notes, job.worker_notes, job.notes, job.description, generateInvoiceDescription(job, clientName));
     const subtotal = Number(job.subtotal ?? job.price ?? job.total_ex_gst);
     const gst = Number(job.gst ?? job.tax ?? (Number.isFinite(subtotal) ? subtotal * 0.1 : NaN));
     const total = Number(job.total ?? (Number.isFinite(subtotal) && Number.isFinite(gst) ? subtotal + gst : NaN));
     const missingPrice = !Number.isFinite(total) || total <= 0;
     return { job, jobId, clientName, description, subtotal, gst, total, missingPrice };
-  }), [completedReadyToBill, clientsById]);
+  }), [completedReadyToBill, clientsById, generateInvoiceDescription]);
   useEffect(() => {
     const next = {};
     const selected = {};
@@ -441,7 +452,7 @@ export default function SmartHubBrainPage() {
       pricing_type: row.job.pricing_type || row.job.price_type || "",
       subtotal: Number.isFinite(row.subtotal) ? row.subtotal : "",
       gst: Number.isFinite(row.gst) ? row.gst : "",
-      invoice_description_draft: draftDescriptions[row.jobId] || row.description || "",
+      invoice_description_draft: draftDescriptions[row.jobId] || row.description || generateInvoiceDescription(row.job, row.clientName) || "",
       notes: row.job.notes || row.job.description || "",
       completion_notes: row.job.completion_notes || row.job.worker_completion_notes || "",
     });
@@ -594,7 +605,7 @@ export default function SmartHubBrainPage() {
         </div> : null}
         {activeSmartHubSection === "jobs" ? <div className="flex flex-wrap gap-2"><button onClick={() => setWorkspaceFilter("all")} className="rounded-full border px-3 py-1 text-xs">All</button><button onClick={() => setWorkspaceFilter("today")} className="rounded-full border px-3 py-1 text-xs">Today</button><button onClick={() => setWorkspaceFilter("unassigned")} className="rounded-full border px-3 py-1 text-xs">Unassigned</button><button onClick={() => setWorkspaceFilter("completed")} className="rounded-full border px-3 py-1 text-xs">Completed</button><button onClick={() => setWorkspaceFilter("ready_to_bill")} className="rounded-full border px-3 py-1 text-xs">Ready to bill</button></div> : null}
         {activeSmartHubSection === "invoices" ? <div className="space-y-3">
-          <div className="rounded-2xl border border-slate-200 bg-[#fdfaf4] p-4"><p className="text-sm font-semibold text-slate-900">Ready-to-bill jobs</p><div className="mt-3 space-y-3">{invoiceDraftRows.length ? invoiceDraftRows.map((row)=><div key={row.jobId} className="rounded-xl border bg-white p-3"><div className="flex justify-between gap-2"><p className="font-semibold">{row.job?.title || row.job?.name || "Completed job"}</p><label className="text-xs flex items-center gap-1"><input type="checkbox" checked={Boolean(selectedDrafts?.[row.jobId])} onChange={(e)=>setSelectedDrafts((s)=>({...s,[row.jobId]:e.target.checked}))}/>Select</label></div><p className="text-xs text-slate-600">{safeText(row.clientName, "No client linked")} · {row.job?.address || row.job?.job_address || "No address saved"}</p><p className="text-xs text-slate-500">Completed {fmtDateTime(row.job?.completed_at || row.job?.completed_date || row.job?.updated_at)}</p><p className="mt-1 text-xs text-slate-700">{draftDescriptions?.[row.jobId] || "No invoice description saved"}</p><p className="text-xs text-slate-600">Subtotal {fmtMoney(row.subtotal)} · GST {fmtMoney(row.gst)} · Total {fmtMoney(row.total)}</p>{row.missingPrice ? <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-800">No price saved — update before approval.</div> : null}<div className="mt-2 flex flex-wrap gap-2"><button disabled={row.missingPrice} onClick={async()=>{await approveDraftInvoice(row);await load();}} className="rounded-full bg-teal-700 px-3 py-1 text-xs text-white disabled:opacity-50">Approve draft</button><button onClick={()=>openReviewJobEdit(row)} className="rounded-full border px-3 py-1 text-xs">Edit price</button><button onClick={()=>openReviewJobDetail(row)} className="rounded-full border px-3 py-1 text-xs">Open job</button></div></div>) : <p className="text-xs text-slate-600">No completed jobs ready to bill.</p>}</div></div>
+          <div className="rounded-2xl border border-slate-200 bg-[#fdfaf4] p-4"><p className="text-sm font-semibold text-slate-900">Ready-to-bill jobs</p><div className="mt-3 space-y-3">{invoiceDraftRows.length ? invoiceDraftRows.map((row)=><div key={row.jobId} className="rounded-xl border bg-white p-3"><div className="flex justify-between gap-2"><p className="font-semibold">{row.job?.title || row.job?.name || "Completed job"}</p><label className="text-xs flex items-center gap-1"><input type="checkbox" checked={Boolean(selectedDrafts?.[row.jobId])} onChange={(e)=>setSelectedDrafts((s)=>({...s,[row.jobId]:e.target.checked}))}/>Select</label></div><p className="text-xs text-slate-600">{safeText(row.clientName, "No client linked")} · {row.job?.address || row.job?.job_address || "No address saved"}</p><p className="text-xs text-slate-500">Completed {fmtDateTime(row.job?.completed_at || row.job?.completed_date || row.job?.updated_at)}</p><label className="mt-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">AI description</label><textarea rows={3} className="mt-1 w-full rounded-lg border p-2 text-xs text-slate-700" value={draftDescriptions?.[row.jobId] || row.description || generateInvoiceDescription(row.job, row.clientName) || ""} onChange={(e)=>setDraftDescriptions((s)=>({...s,[row.jobId]:e.target.value}))} placeholder="No invoice description saved" /><p className="text-xs text-slate-600">Subtotal {fmtMoney(row.subtotal)} · GST {fmtMoney(row.gst)} · Total {fmtMoney(row.total)}</p>{row.missingPrice ? <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-800">No price saved — update before approval.</div> : null}<div className="mt-2 flex flex-wrap gap-2"><button disabled={row.missingPrice} onClick={async()=>{await approveDraftInvoice(row);await load();}} className="rounded-full bg-teal-700 px-3 py-1 text-xs text-white disabled:opacity-50">Approve draft</button><button onClick={()=>openReviewJobEdit(row)} className="rounded-full border px-3 py-1 text-xs">Edit description</button><button onClick={()=>openReviewJobDetail(row)} className="rounded-full border px-3 py-1 text-xs">Open job</button></div></div>) : <p className="text-xs text-slate-600">No completed jobs ready to bill.</p>}</div></div>
           <div className="rounded-2xl border border-slate-200 bg-[#fdfaf4] p-4"><p className="text-sm font-semibold text-slate-900">Draft invoices</p><div className="mt-3 space-y-2">{safeArray(data.invoices).filter((i)=>String(i?.status||"").toLowerCase()==="draft").map((inv,idx)=><div key={asId(inv)||idx} className="rounded-xl border bg-white p-3"><p className="font-medium">{inv?.number || inv?.title || "No invoice number saved"}</p><p className="text-xs text-slate-600">{clientsById.get(String(inv?.client_id || inv?.customer_id || ""))?.name || "No client linked"} · Job {inv?.job_id || "No job linked"}</p><p className="text-xs text-slate-600">{textOr(inv?.description,"No description")} · {fmtMoney(inv?.total || inv?.amount || 0)} · {textOr(inv?.status,"draft")}</p><div className="mt-2 flex gap-2"><button onClick={()=>{setWorkspaceMode("detail");setWorkspaceRecord(inv);}} className="rounded-full border px-3 py-1 text-xs">View</button><button onClick={()=>{setWorkspaceMode("edit");setWorkspaceRecord(inv);}} className="rounded-full border px-3 py-1 text-xs">Edit</button></div></div>)}</div></div>
         </div> : null}
         <div className="grid gap-3 md:grid-cols-2">
