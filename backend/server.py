@@ -151,6 +151,53 @@ async def resolve_job_sms_phone(job):
     return None
 
 
+def _safe_text(value):
+    return str(value or "").strip()
+
+
+def _format_invoice_description_from_job(job: dict, client_name: str = "") -> str:
+    if not isinstance(job, dict):
+        return f"Service work completed for {client_name}." if client_name else "Service work completed for this client."
+
+    title = _safe_text(job.get("title"))
+    job_type = _safe_text(job.get("job_type") or job.get("service_type"))
+    address = _safe_text(job.get("address"))
+    job_notes = _safe_text(job.get("notes"))
+    worker_notes = _safe_text(job.get("worker_notes"))
+    pricing_type = _safe_text(job.get("pricing_type"))
+    price = job.get("price")
+    completed_at = job.get("completed_at")
+
+    parts = []
+    if title:
+        parts.append(f"Completed job: {title}.")
+    elif client_name:
+        parts.append(f"Service work completed for {client_name}.")
+    else:
+        parts.append("Service work completed for this client.")
+
+    detail_bits = [x for x in [job_type, address] if x]
+    if detail_bits:
+        parts.append(f"Details: {' · '.join(detail_bits)}.")
+    if job_notes:
+        parts.append(f"Job notes: {job_notes}")
+    if worker_notes:
+        parts.append(f"Completion notes: {worker_notes}")
+    if completed_at:
+        parts.append(f"Completion status: completed on {completed_at}.")
+    else:
+        parts.append("Completion status: completed.")
+    if price not in (None, ""):
+        try:
+            amount = float(price)
+            pricing_label = "Hourly" if pricing_type == "hourly" else "Fixed"
+            parts.append(f"Pricing context: {pricing_label} service, ${amount:.2f}.")
+        except Exception:
+            pass
+
+    return "\n".join(parts).strip()
+
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -1728,7 +1775,7 @@ async def _run_control_scan(current_user: dict):
         items.append({"type":"assign_worker","priority":"high","risk_level":"medium","related_entity_type":"job","related_entity_id":str(job.get("id") or job.get("_id")),"title":"Assign worker to job","reason":"Job has no worker assigned.","recommendation":"Assign recommended worker.","owner_facing_explanation":"High priority because job is unassigned.","draft_payload":{"job_id":str(job.get("id") or job.get("_id")),"suggested_worker_id":str(sw.get('id') or sw.get('_id')) if sw else None},"can_execute_after_approval":True,"blocked_reason":None if sw else "Needs manual selection"})
     completed=[j for j in jobs if str(j.get("status") or "").lower()=="completed"]
     for job in completed[:10]:
-        items.append({"type":"create_invoice_draft","priority":"high","risk_level":"medium","related_entity_type":"job","related_entity_id":str(job.get("id") or job.get("_id")),"title":"Create draft invoice from completed job","reason":"Completed job is ready to invoice.","recommendation":"Create draft invoice only.","owner_facing_explanation":"High priority because completed jobs should be billed quickly.","draft_payload":{"job_id":str(job.get("id") or job.get("_id")),"client_id":str(job.get("client_id") or ""),"line_items":[{"description":job.get("title") or "Service","amount":float(job.get("price") or 0)}]},"can_execute_after_approval":True})
+        items.append({"type":"create_invoice_draft","priority":"high","risk_level":"medium","related_entity_type":"job","related_entity_id":str(job.get("id") or job.get("_id")),"title":"AI prepared an invoice description from the completed job.","reason":"Completed job is ready to invoice.","recommendation":"Create draft invoice only.","owner_facing_explanation":"High priority because completed jobs should be billed quickly.","draft_payload":{"job_id":str(job.get("id") or job.get("_id")),"client_id":str(job.get("client_id") or ""),"line_items":[{"description":job.get("title") or "Service","amount":float(job.get("price") or 0)}]},"can_execute_after_approval":True})
     waiting_quotes=[q for q in quotes if str(q.get("status") or "").lower() in {"waiting","pending","sent"}]
     for q in waiting_quotes[:8]:
         items.append({"type":"quote_follow_up","priority":"medium","risk_level":"high","related_entity_type":"quote","related_entity_id":str(q.get("id") or q.get("_id")),"title":"Draft quote follow-up","reason":"Quote is waiting for response.","recommendation":"Review and save follow-up draft.","owner_facing_explanation":"Medium priority to improve conversion.","generated_message":f"Hi, following up on quote {q.get('number') or q.get('id')}.","can_execute_after_approval":False})
@@ -1875,7 +1922,7 @@ async def ai_operator_run_daily_check(current_user: dict = Depends(get_current_u
         amount = float(job.get("price") or job.get("total_price") or 0)
         items.append({
             "business_id": business_id, "type": "invoice_draft", "related_entity_type": "job", "related_entity_id": str(job.get("id") or job.get("_id")),
-            "title": f"Create draft invoice for {job.get('title') or 'completed job'}",
+            "title": "AI prepared an invoice description from the completed job.",
             "summary": "Ready to create draft",
             "recommendation": "Create a draft invoice for review before sending.",
             "draft_payload": {"job_id": str(job.get("id") or job.get("_id")), "line_items": [{"description": job.get("title") or "Service", "amount": amount}], "amount": amount},
@@ -2403,6 +2450,29 @@ async def get_invoices(current_user: dict = Depends(get_current_user)):
     except Exception as e:
         print("INVOICES_ROUTE_ERROR", str(e), current_user)
         return []
+
+
+@api_router.get("/invoices/description-draft")
+async def get_invoice_description_draft(client_id: str = Query(...), current_user: dict = Depends(get_current_user)):
+    business_id = _resolve_business_id(current_user)
+    client = await db.clients.find_one({"_id": ObjectId(client_id), "business_id": business_id})
+    if not client:
+        client = await db.clients.find_one({"id": str(client_id), "business_id": business_id})
+    client_name = _safe_text((client or {}).get("name") or (client or {}).get("client_name"))
+
+    job = await db.jobs.find_one(
+        {"business_id": business_id, "client_id": str(client_id), "status": "completed"},
+        sort=[("completed_at", -1), ("updated_at", -1), ("created_at", -1)],
+    )
+    if not job:
+        return {"success": True, "description": (f"Service work completed for {client_name}." if client_name else "Service work completed for this client."), "source": "fallback"}
+
+    saved_draft = _safe_text(job.get("invoice_description_draft") or job.get("ai_invoice_description"))
+    if saved_draft:
+        return {"success": True, "description": saved_draft, "source": "saved_job_draft", "job_id": str(job.get("_id") or "")}
+    if _safe_text(job.get("worker_notes")):
+        return {"success": True, "description": _format_invoice_description_from_job(job, client_name), "source": "worker_notes", "job_id": str(job.get("_id") or "")}
+    return {"success": True, "description": _format_invoice_description_from_job(job, client_name), "source": "job_context", "job_id": str(job.get("_id") or "")}
 
 
 @api_router.post("/invoices")
@@ -4878,6 +4948,10 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
                 update_fields["started_at"] = now
             elif new_status == "completed":
                 update_fields["completed_at"] = now
+                client_name = _safe_text(existing.get("client_name") or existing.get("customer_name"))
+                draft_description = _format_invoice_description_from_job({**existing, **update_fields}, client_name)
+                update_fields["invoice_description_draft"] = draft_description
+                update_fields["ai_invoice_description"] = draft_description
         if worker_notes is not None:
             update_fields["worker_notes"] = str(worker_notes).strip()
         if new_photos is not None:
