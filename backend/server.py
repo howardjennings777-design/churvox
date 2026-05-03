@@ -6283,6 +6283,126 @@ async def send_sms_hard_fix_v1(payload: dict, current_user: dict = Depends(get_c
     """Legacy alias kept for backward compatibility — forwards to the real pipeline."""
     return await _send_sms_real(payload, current_user)
 
+
+def _normalize_phone_for_sms(phone: str) -> str:
+    raw = str(phone or "").strip()
+    if not raw:
+        return ""
+    try:
+        return format_phone_au_nz(raw)
+    except Exception:
+        return raw
+
+
+@api_router.post("/communications/drafts")
+async def create_communication_draft(payload: dict, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str(current_user.get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    client_id = str((payload or {}).get("client_id") or "")
+    client = None
+    if client_id:
+        client = await db.clients.find_one({"business_id": business_id, "$or": [{"id": client_id}] + ([{"_id": ObjectId(client_id)}] if ObjectId.is_valid(client_id) else [])})
+        if not client:
+            raise HTTPException(status_code=404, detail="Client not found")
+    doc = {
+        "business_id": business_id,
+        "client_id": client_id,
+        "job_id": str((payload or {}).get("job_id") or ""),
+        "invoice_id": str((payload or {}).get("invoice_id") or ""),
+        "quote_id": str((payload or {}).get("quote_id") or ""),
+        "worker_id": str((payload or {}).get("worker_id") or ""),
+        "channel": str((payload or {}).get("channel") or "sms"),
+        "direction": "outbound",
+        "status": "draft",
+        "message_type": str((payload or {}).get("message_type") or "custom"),
+        "subject": str((payload or {}).get("subject") or ""),
+        "body": str((payload or {}).get("body") or ""),
+        "to_email": str((payload or {}).get("to_email") or (client or {}).get("email") or ""),
+        "to_phone": str((payload or {}).get("to_phone") or get_phone_from_dict(client or {}) or ""),
+        "provider_message_id": None,
+        "error_message": None,
+        "source": "ai_operator",
+        "requires_owner_approval": bool((payload or {}).get("requires_owner_approval", True)),
+        "approved_by_user_id": None,
+        "approved_by_name": None,
+        "approved_at": None,
+        "scheduled_for": (payload or {}).get("scheduled_for"),
+        "sent_at": None,
+        "created_at": now,
+        "updated_at": now,
+    }
+    res = await db.communications.insert_one(doc)
+    saved = await db.communications.find_one({"_id": res.inserted_id})
+    return {"success": True, "communication": serialize_doc(saved)}
+
+
+@api_router.post("/communications/{communication_id}/approve")
+async def approve_communication(communication_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    if not ObjectId.is_valid(communication_id):
+        raise HTTPException(status_code=400, detail="Invalid communication id")
+    row = await db.communications.find_one({"_id": ObjectId(communication_id), "business_id": business_id})
+    if not row:
+        raise HTTPException(status_code=404, detail="Communication not found")
+    now = datetime.now(timezone.utc)
+    await db.communications.update_one({"_id": row["_id"]}, {"$set": {"status": "approved", "approved_by_user_id": str(current_user.get("id") or ""), "approved_by_name": str(current_user.get("name") or ""), "approved_at": now, "updated_at": now}})
+    return {"success": True}
+
+
+@api_router.post("/communications/{communication_id}/send")
+async def send_communication(communication_id: str, current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    if not ObjectId.is_valid(communication_id):
+        raise HTTPException(status_code=400, detail="Invalid communication id")
+    row = await db.communications.find_one({"_id": ObjectId(communication_id), "business_id": business_id})
+    if not row:
+        raise HTTPException(status_code=404, detail="Communication not found")
+    if str(row.get("status") or "") == "sent":
+        raise HTTPException(status_code=409, detail="Communication already sent")
+    now = datetime.now(timezone.utc)
+    try:
+        if str(row.get("channel") or "").lower() == "email":
+            if not str(row.get("to_email") or "").strip():
+                raise HTTPException(status_code=400, detail="No email saved")
+            if not os.getenv("RESEND_API_KEY") and not os.getenv("POSTMARK_API_KEY"):
+                raise HTTPException(status_code=400, detail="Email provider is not configured.")
+            email_result = await send_email(
+                to=str(row.get("to_email") or "").strip(),
+                subject=str(row.get("subject") or "Message from Churvox"),
+                html=str(row.get("body") or ""),
+                text=str(row.get("body") or ""),
+            )
+            if not bool(getattr(email_result, "success", False)):
+                raise HTTPException(status_code=502, detail=str(getattr(email_result, "error", None) or "Email send failed"))
+            provider_message_id = getattr(email_result, "email_id", None)
+        else:
+            to_phone = _normalize_phone_for_sms(row.get("to_phone"))
+            if not to_phone:
+                raise HTTPException(status_code=400, detail="No phone saved")
+            sms_res = await _send_sms_real({"phone": to_phone, "message": str(row.get("body") or ""), "type": str(row.get("message_type") or "custom"), "job_id": row.get("job_id"), "client_id": row.get("client_id"), "source": "ai_operator"}, current_user)
+            provider_message_id = (((sms_res or {}).get("data") or {}).get("provider_message_id"))
+    except HTTPException as e:
+        msg = "SMS is not configured or enabled." if str(row.get("channel") or "").lower() == "sms" and e.status_code in {402, 500, 502} else str(e.detail)
+        await db.communications.update_one({"_id": row["_id"]}, {"$set": {"status": "failed", "error_message": msg, "updated_at": now}})
+        raise HTTPException(status_code=e.status_code, detail=msg)
+    await db.communications.update_one({"_id": row["_id"]}, {"$set": {"status": "sent", "provider_message_id": provider_message_id, "error_message": None, "sent_at": now, "updated_at": now}})
+    await log_smart_hub_activity(current_user, {"action_type": "communication_sent", "title": f"{str(row.get('channel') or '').upper()} reminder sent", "message": f"{str(row.get('channel') or '').upper()} reminder sent to {str(row.get('to_phone') or row.get('to_email') or 'client')}", "related_type": "communication", "related_id": communication_id, "related_client_id": row.get("client_id"), "related_job_id": row.get("job_id"), "related_invoice_id": row.get("invoice_id"), "related_quote_id": row.get("quote_id"), "status": "completed"})
+    return {"success": True}
+
+
+@api_router.post("/communications/{communication_id}/approve-and-send")
+async def approve_and_send_communication(communication_id: str, current_user: dict = Depends(get_current_user)):
+    await approve_communication(communication_id, current_user)
+    return await send_communication(communication_id, current_user)
+
+
+@api_router.get("/communications")
+async def list_communications(current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    rows = [serialize_doc(r) async for r in db.communications.find({"business_id": business_id}).sort("created_at", -1).limit(300)]
+    return {"success": True, "communications": rows}
+
 @api_router.get("/dev/owner-login")
 async def dev_owner_login(response: Response):
     email = (os.environ.get("PLATFORM_OWNER_EMAILS", "hello@churvox.com").split(",")[0].strip())
