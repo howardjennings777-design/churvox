@@ -38,6 +38,9 @@ export default function SmartHubBrainPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({ jobs: [], clients: [], quotes: [], invoices: [], workers: [], approvals: [] });
   const [modal, setModal] = useState(null);
+  const [activeWorkspace, setActiveWorkspace] = useState("today");
+  const [selectedContext, setSelectedContext] = useState(null);
+  const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const [askQuery, setAskQuery] = useState("What should I do next?");
   const [askResponse, setAskResponse] = useState("");
   const [busy, setBusy] = useState({ run: false, prepare: false, ask: false, saving: false });
@@ -97,7 +100,7 @@ export default function SmartHubBrainPage() {
   }, [data]);
 
   const runDailyCheck = async () => { setBusy((s) => ({ ...s, run: true })); try { await post("/ai/operator/run-daily-check", {}); } catch {} await load(); setBusy((s) => ({ ...s, run: false })); };
-  const prepareToday = async () => { setBusy((s) => ({ ...s, prepare: true })); try { await post("/ai/operator/prepare-today", {}); } catch {} await load(); setBusy((s) => ({ ...s, prepare: false })); setModal("prepare"); };
+  const prepareToday = async () => { setBusy((s) => ({ ...s, prepare: true })); try { await post("/ai/operator/prepare-today", {}); } catch {} await load(); setBusy((s) => ({ ...s, prepare: false })); setActiveWorkspace("ai_plan"); };
 
   const askAi = async () => {
     setBusy((s) => ({ ...s, ask: true }));
@@ -116,6 +119,7 @@ export default function SmartHubBrainPage() {
     if (modal === "invoice") return <InvoiceCreateForm onCancel={() => setModal(null)} onSuccess={() => { setModal(null); load(); }} submitLabel="Create invoice" />;
     if (modal === "client") return <ClientCreateForm onCancel={() => setModal(null)} onSuccess={() => { setModal(null); load(); }} submitLabel="Add client" />;
     if (["dispatch", "assign_worker"].includes(modal)) return <SmartHubDispatchPanel canManageDispatch={canSeeOwnerControls} onAssigned={() => load()} />;
+    if (modal === "invite_worker") return <div className="text-sm text-slate-600">Invite worker from Team page backup view.</div>;
     if (modal === "prepare") return <div className="space-y-2 text-sm">{aiPlan.map((p) => <div key={p.label} className="rounded-lg border p-2">{p.label}</div>)}</div>;
     if (modal === "ask") return <div className="space-y-3"><div className="flex flex-wrap gap-2">{["What should I do next?", "Jobs needing attention", "Invoice follow-up", "Quote follow-up", "Crew workload"].map((chip) => <button key={chip} onClick={() => setAskQuery(chip)} className="text-xs rounded-full border px-3 py-1">{chip}</button>)}</div><textarea value={askQuery} onChange={(e) => setAskQuery(e.target.value)} className="w-full rounded-lg border p-2" rows={3} /><button onClick={askAi} disabled={busy.ask} className="rounded-full bg-[#155EEF] text-white px-4 py-2 text-sm">{busy.ask ? "Generating…" : "Generate"}</button><div className="rounded-lg border p-3 text-sm min-h-16">{askResponse || "Response will appear here."}</div></div>;
     return <div className="text-sm text-slate-600">Action centre ready.</div>;
@@ -123,48 +127,62 @@ export default function SmartHubBrainPage() {
 
   if (loading) return <Layout><div className="p-6">Loading Smart Hub Brain…</div></Layout>;
 
-  const metricCards = [["Jobs today", stats.jobsToday, "Focus run sheet", () => document.getElementById("run-sheet")?.scrollIntoView({ behavior: "smooth" }), CalendarClock], ["Unassigned jobs", stats.unassigned, "Assign worker", () => setModal("assign_worker"), ClipboardList], ["Active jobs", stats.activeJobs, "Open jobs", () => navigate("/jobs"), Briefcase], ["Quotes waiting", stats.quotesWaiting, "Quote follow-up", () => setModal("quote_followup"), FileText], ["Open invoices", stats.openInvoices, "Invoice follow-up", () => setModal("invoice_reminder"), Receipt], ["Ready to invoice", stats.readyToInvoice, "Create drafts", () => setModal("invoice_draft"), PlusCircle], ["Overdue invoices", stats.overdueInvoices, "Send reminders", () => setModal("invoice_reminder"), AlertTriangle], ["Crew active", stats.crewActive, "Focus crew panel", () => document.getElementById("crew-panel")?.scrollIntoView({ behavior: "smooth" }), Users]];
+  const workspaceMap = {
+    today: { title: "Today", subtitle: "Run sheet and next actions." },
+    dispatch: { title: "Dispatch", subtitle: "Assign unassigned jobs." },
+    jobs: { title: "Jobs", subtitle: "Track active and completed jobs." },
+    quotes: { title: "Quotes", subtitle: "Follow up quotes waiting response." },
+    invoices: { title: "Invoices", subtitle: "Open and overdue invoice follow-up." },
+    clients: { title: "Clients", subtitle: "Search clients and fix details." },
+    crew: { title: "Crew", subtitle: "Availability and workload." },
+    approvals: { title: "Approvals", subtitle: "Review AI prepared items." },
+    ai_plan: { title: "AI Plan", subtitle: "Detect → Prepare → Approve → Execute → Log." },
+  };
 
-  return <Layout><div className="min-h-screen p-3 sm:p-5" style={{ background: "radial-gradient(circle at top left, rgba(21,94,239,0.10), transparent 30%), radial-gradient(circle at top right, rgba(109,93,246,0.08), transparent 26%), linear-gradient(rgba(18,185,129,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(21,94,239,0.04) 1px, transparent 1px), linear-gradient(180deg, rgba(15,23,42,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(18,185,129,0.02) 0, rgba(18,185,129,0.02) 1px, transparent 1px, transparent 100%), #F4F7FB", backgroundSize: "auto,auto,28px 28px,28px 28px,56px 56px,6px 6px,auto" }}><div className="mx-auto max-w-7xl space-y-4 relative z-10">
-    <section className="bg-white/95 rounded-2xl border border-[#DCE6F3] p-4 sm:p-5 shadow-sm">
-      <div className="flex flex-wrap justify-between gap-4 items-start">
-        <div className="space-y-1.5">
-          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#EAF1FF] text-[#155EEF] border border-[#BFD3FF] inline-flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-[#12B981]" />AI Command Centre</span>
-          <h1 className="mt-2 text-2xl font-semibold text-[#0F172A]">Welcome back, {user?.name || "Random az"}</h1>
-          <p className="text-sm text-[#64748B]">{now.toLocaleDateString()} • Status: Live sync active</p>
-          <p className="text-sm text-[#334155] mt-1">Live operations: {stats.jobsToday} jobs, {stats.unassigned} unassigned, {stats.openInvoices} open invoices, {stats.crewActive} crew active.</p>
-        </div>
-        <div className="flex flex-wrap gap-2 justify-end">{[["New job", "job", true], ["New quote", "quote"], ["New invoice", "invoice"], ["Add client", "client"], ["Dispatch board", "dispatch"]].map(([label, key, primary]) => <button key={key} onClick={() => setModal(key)} className={primary ? "rounded-full bg-[#155EEF] hover:bg-[#0F46C8] text-white px-4 py-2.5 text-sm font-medium" : "rounded-full border border-[#E2E8F0] bg-white text-[#334155] hover:bg-[#F8FAFC] px-4 py-2.5 text-sm font-medium"}>{label}</button>)}
-          <button onClick={runDailyCheck} className="rounded-full px-4 py-2.5 text-sm font-medium text-white" style={{ background: "linear-gradient(135deg, #155EEF 0%, #6D5DF6 55%, #0EA5E9 100%)" }} disabled={busy.run}>{busy.run ? "Checking…" : "Run AI check"}</button>
-        </div>
+  const metricCards = [
+    ["Jobs today", stats.jobsToday, "today", CalendarClock],
+    ["Unassigned jobs", stats.unassigned, "dispatch", ClipboardList],
+    ["Quotes waiting", stats.quotesWaiting, "quotes", FileText],
+    ["Open invoices", stats.openInvoices, "invoices", Receipt],
+    ["Ready to invoice", stats.readyToInvoice, "invoices", PlusCircle],
+    ["Crew active", stats.crewActive, "crew", Users],
+  ];
+
+  const queueItems = [
+    { title: "Assign worker", reason: `${stats.unassigned} jobs are unassigned.`, risk: stats.unassigned ? "High" : "Low", action: "dispatch" },
+    { title: "Draft invoice", reason: `${stats.readyToInvoice} completed jobs are ready to bill.`, risk: "Medium", action: "invoices" },
+    { title: "Follow up quote", reason: `${stats.quotesWaiting} quotes are waiting for response.`, risk: "Medium", action: "quotes" },
+    { title: "Send invoice reminder", reason: `${stats.overdueInvoices} invoices are overdue.`, risk: stats.overdueInvoices ? "High" : "Low", action: "invoices" },
+    { title: "Review schedule conflict", reason: "Check timing overlap and worker capacity.", risk: "Medium", action: "dispatch" },
+    { title: "Fix client details", reason: "Missing contact details block approvals.", risk: "Low", action: "clients" },
+  ];
+  const renderWorkspace = () => {
+    if (activeWorkspace === "dispatch") return <SmartHubDispatchPanel canManageDispatch={canSeeOwnerControls} onAssigned={() => load()} />;
+    if (activeWorkspace === "quotes") return <div className="space-y-2">{data.quotes.slice(0, 6).map((q, i) => <div key={q.id || i} className="rounded-xl border p-3 bg-[#F8FAFC]"><p className="font-medium">{q.title || "Quote"}</p></div>)}</div>;
+    if (activeWorkspace === "invoices") return <div className="space-y-2">{data.invoices.slice(0, 6).map((i, idx) => <div key={i.id || idx} className="rounded-xl border p-3 bg-[#F8FAFC]"><p className="font-medium">{i.invoice_number || "Invoice"}</p></div>)}</div>;
+    if (activeWorkspace === "clients") return <div className="space-y-2">{data.clients.slice(0, 6).map((c, i) => <div key={c.id || i} className="rounded-xl border p-3 bg-[#F8FAFC]"><p className="font-medium">{c.name || c.business_name || "Client"}</p></div>)}</div>;
+    if (activeWorkspace === "crew") return <div className="space-y-2">{workers.slice(0, 6).map((w, i) => <div key={w.id || i} className="rounded-xl border p-3 bg-[#F8FAFC]"><p className="font-medium">{w.name || "Crew member"}</p></div>)}</div>;
+    if (activeWorkspace === "approvals") return <div className="space-y-2">{data.approvals.slice(0, 6).map((a, i) => <div key={a.id || i} className="rounded-xl border p-3 bg-[#F8FAFC]"><p className="font-medium">{a.title || "Approval"}</p></div>)}</div>;
+    if (activeWorkspace === "ai_plan") return <div className="space-y-2">{aiPlan.map((p) => <div key={p.label} className="rounded-xl border p-3 bg-[#F8FAFC]"><p className="font-medium">{p.label}</p><p className="text-xs">{p.reason}</p></div>)}</div>;
+    return <div className="space-y-2">{data.jobs.slice(0, 8).map((j, i) => <div key={j.id || i} className="rounded-xl border p-3 bg-[#F8FAFC]"><p className="font-medium">{j.title || "Job"}</p></div>)}</div>;
+  };
+
+  return <Layout><div className="min-h-screen p-4" style={{ background: "#F4F7FB" }}><div className="mx-auto max-w-7xl space-y-4">
+    <section className="bg-white rounded-2xl border p-4">
+      <div className="flex flex-wrap justify-between gap-3 items-center">
+        <div><span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#EAF1FF] text-[#155EEF] inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-green-500"/>AI Command Centre</span><p className="mt-2 text-sm text-slate-600">Business pulse: {stats.jobsToday} jobs today • {stats.unassigned} unassigned</p></div>
+        {canSeeOwnerControls ? <div className="flex gap-2"><input value={askQuery} onChange={(e)=>setAskQuery(e.target.value)} placeholder="Ask AI or search your business…" className="rounded-full border px-4 py-2 w-72"/><button onClick={runDailyCheck} className="rounded-full bg-[#155EEF] text-white px-3 py-2 text-sm">Run brain scan</button><button onClick={()=>setCreateMenuOpen((s)=>!s)} className="rounded-full border px-3 py-2 text-sm">Create</button><button onClick={()=>setActiveWorkspace('approvals')} className="rounded-full border px-3 py-2 text-sm">Review approvals</button></div> : null}
       </div>
     </section>
-
-    {canSeeOwnerControls ? <section className="bg-white rounded-2xl border border-[#BFD3FF] p-4 sm:p-5 shadow-sm relative overflow-hidden">
-      <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-[#155EEF] via-[#6D5DF6] to-[#0EA5E9]" />
-      <div className="flex flex-wrap justify-between gap-3">
-        <div className="space-y-2">
-          <h2 className="font-semibold flex items-center gap-2 text-[#0F172A]"><span className="p-1.5 rounded-lg" style={{ background: "linear-gradient(135deg, rgba(21,94,239,0.15) 0%, rgba(109,93,246,0.12) 55%, rgba(14,165,233,0.15) 100%)" }}><Bot className="h-4 w-4 text-[#155EEF]" /></span>AI Operator</h2>
-          <p className="text-sm text-[#334155]">Live business scan. I prepare the admin. You approve the next move.</p>
-          <div className="flex items-center gap-2 text-xs"><span className="rounded-full bg-[#DCFCE7] text-[#16A34A] px-2.5 py-1 font-medium inline-flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-[#12B981]" />{data.approvals.length > 2 ? "Needs attention" : data.approvals.length ? "Live" : "Ready"}</span><span className="text-[#64748B]">Pending approvals: {data.approvals.length}</span></div>
-        </div>
-        <div className="flex flex-wrap gap-2 items-start"><button onClick={runDailyCheck} className="rounded-full bg-[#155EEF] hover:bg-[#0F46C8] text-white px-3.5 py-2 text-xs font-medium">Run daily check</button><button onClick={() => setModal("approvals")} className="rounded-full border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] px-3.5 py-2 text-xs font-medium text-[#334155]">Review approvals</button><button onClick={prepareToday} disabled={busy.prepare} className="rounded-full border border-[#BFD3FF] bg-[#EAF1FF] hover:bg-[#dfe9ff] px-3.5 py-2 text-xs font-medium text-[#155EEF]">{busy.prepare ? "Preparing…" : "Prepare today"}</button><button onClick={() => setModal("ask")} className="rounded-full border border-[#E2E8F0] bg-white hover:bg-[#F8FAFC] px-3.5 py-2 text-xs font-medium text-[#334155]">Ask AI</button></div>
-      </div>
-      <div className="mt-3">{data.approvals.length ? <div className="space-y-2">{data.approvals.slice(0, 3).map((a, i) => <div key={a.id || i} className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3"><p className="text-sm font-semibold text-[#0F172A]">{a.title || "Approval needed"}</p><p className="text-xs text-[#64748B] mt-1">{a.reason || "Prepared by AI"}</p></div>)}</div> : <p className="text-sm text-[#64748B] rounded-xl bg-[#EEF2FF] px-3 py-2">No approvals pending. Run daily check to prepare actions.</p>}</div>
-    </section> : null}
-
-    <section className="bg-white rounded-2xl border border-[#DCE6F3] p-4 shadow-sm"><div className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-[#6D5DF6]" /><h3 className="font-semibold text-[#0F172A]">Today’s AI Plan</h3></div><p className="text-xs text-[#64748B] mt-1">Priority actions prepared for this shift.</p><div className="mt-3 grid gap-2">{aiPlan.length ? aiPlan.map((item) => <div key={item.label} className="rounded-xl border border-[#DCE6F3] bg-[#F8FAFC] p-3 flex items-center justify-between gap-3"><div className="flex items-start gap-3"><span className="rounded-lg p-2 bg-[#EAF1FF]"><item.icon className="h-4 w-4 text-[#155EEF]" /></span><div><p className="text-sm font-medium text-[#0F172A]">{item.label}</p><p className="text-xs text-[#64748B]">{item.reason}</p></div></div><div className="flex items-center gap-2"><span className="text-[10px] rounded-full bg-[#ECFEF4] px-2 py-1 text-[#047857]">{item.chip}</span><button className="rounded-full bg-[#155EEF] hover:bg-[#0F46C8] text-white px-3 py-1.5 text-xs" onClick={() => setModal(item.action)}>{item.button}</button></div></div>) : <p className="text-sm text-[#64748B]">No priority actions right now.</p>}</div></section>
-
-    <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">{metricCards.map(([label, count, hint, action, Icon]) => <button key={label} onClick={action} className="bg-white rounded-2xl border border-[#DCE6F3] p-3.5 shadow-sm text-left hover:-translate-y-0.5 hover:shadow-md transition"><div className="h-0.5 w-full rounded bg-gradient-to-r from-[#155EEF] via-[#0EA5E9] to-transparent mb-2" /><div className="flex justify-between items-start"><p className="text-2xl font-semibold text-[#0F172A]">{count}</p><span className="h-8 w-8 rounded-full bg-[#EAF1FF] inline-flex items-center justify-center"><Icon className="h-4 w-4 text-[#155EEF]" /></span></div><p className="text-sm font-medium mt-2 text-[#334155]">{label}</p><p className="text-xs text-[#64748B] mt-0.5">{hint}</p></button>)}</section>
-
-    <section className="grid lg:grid-cols-2 gap-4">
-      <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-sm"><div className="flex justify-between"><h3 className="font-semibold text-[#0F172A]">Priority Queue</h3>{priority.length >= 6 ? <button className="text-sm text-[#155EEF]">View all actions</button> : null}</div><div className="mt-3 space-y-2">{priority.length ? priority.map((item, i) => <div key={`${item.title}-${i}`} className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 flex justify-between gap-2"><div><p className="text-sm font-medium text-[#0F172A]">{item.title}</p><p className="text-xs text-[#64748B]">{item.reason}</p></div><div className="flex items-center gap-2"><span className="text-[10px] rounded-full bg-[#F1F5F9] px-2 py-1 text-[#475569]">{item.chip}</span><button className="rounded-full bg-[#155EEF] text-white px-3 py-1.5 text-xs" onClick={() => setModal(item.action)}>{item.button}</button></div></div>) : <p className="text-sm text-[#64748B]">No urgent items right now.</p>}</div></div>
-
-      <div className="space-y-4">
-        <div id="run-sheet" className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-sm"><h3 className="font-semibold text-[#0F172A]">Today’s Run Sheet</h3>{stats.jobsToday ? <p className="text-sm text-[#64748B] mt-2">{stats.jobsToday} jobs scheduled today. Open Jobs to review route and timings.</p> : <div className="mt-3 rounded-xl border border-dashed border-[#BFD3FF] bg-[#F8FAFC] p-4"><p className="text-sm text-[#64748B]">No jobs in today’s run sheet.</p><div className="mt-3 flex flex-wrap gap-2"><button onClick={() => setModal("job")} className="rounded-full bg-[#155EEF] text-white px-3 py-1.5 text-xs">New job</button><button onClick={() => setModal("dispatch")} className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs">Open dispatch</button></div></div>}</div>
-        <div id="crew-panel" className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-sm"><div className="flex items-center justify-between"><h3 className="font-semibold text-[#0F172A]">Crew + Dispatch</h3><button onClick={() => setModal("assign_worker")} className="rounded-full bg-[#155EEF] text-white px-3 py-1.5 text-xs">Assign now</button></div><p className="text-xs text-[#64748B] mt-1">Unassigned jobs: {stats.unassigned}</p><div className="mt-3 space-y-2">{workers.slice(0, 5).map((w, i) => <div key={w.id || w._id || i} className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 flex justify-between"><p className="text-sm text-[#334155]">{w.name || w.email || "Crew member"}</p><span className="text-[10px] rounded-full px-2 py-1 bg-[#EAF1FF] text-[#155EEF]">{w.status || "available"}</span></div>)}{!workers.length ? <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-sm text-[#64748B]">No crew profiles yet.</div> : null}</div></div>
-      </div>
+    <section className="grid grid-cols-2 lg:grid-cols-6 gap-2">{metricCards.map(([l,c,w,Icon]) => <button key={l} onClick={()=>setActiveWorkspace(w)} className="bg-white rounded-xl border p-3 text-left"><p className="text-lg font-semibold">{c}</p><p className="text-xs">{l}</p></button>)}</section>
+    <section className="grid lg:grid-cols-12 gap-4">
+      <aside className="lg:col-span-3 bg-white rounded-2xl border p-3 space-y-2"><h3 className="font-semibold">AI Priority Queue</h3>{queueItems.map((q)=><button key={q.title} onClick={()=>{setActiveWorkspace(q.action); setSelectedContext(q);}} className="w-full text-left rounded-xl border p-3 bg-[#F8FAFC]"><p className="text-sm font-medium">{q.title}</p><p className="text-xs text-slate-500">{q.reason}</p><span className="text-[10px] px-2 py-1 rounded-full bg-white border">{q.risk} risk</span></button>)}</aside>
+      <main className="lg:col-span-6 bg-white rounded-2xl border p-4"><div className="flex gap-2 flex-wrap mb-3">{Object.entries(workspaceMap).map(([k,v]) => <button key={k} onClick={()=>setActiveWorkspace(k)} className={`px-3 py-1 rounded-full text-xs border ${activeWorkspace===k? 'bg-[#155EEF] text-white border-[#155EEF]':'bg-white'}`}>{v.title}</button>)}</div><h3 className="font-semibold">{workspaceMap[activeWorkspace].title}</h3><p className="text-xs text-slate-500 mb-3">{workspaceMap[activeWorkspace].subtitle}</p>{renderWorkspace()}</main>
+      <aside className="lg:col-span-3 bg-white rounded-2xl border p-4"><h3 className="font-semibold">Context / Approval</h3><p className="text-xs text-slate-500 mt-1">{selectedContext?.reason || "Select a priority item."}</p><div className="mt-3 rounded-xl border p-3 bg-[#F8FAFC]"><p className="text-sm">AI recommendation: {selectedContext?.title || "No item selected"}</p><p className="text-xs mt-2">Draft preview is prepared here before execution.</p></div>{canSeeOwnerControls ? <div className="mt-3 flex flex-wrap gap-2"><button className="rounded-full bg-[#155EEF] text-white px-3 py-1 text-xs">Approve</button><button className="rounded-full border px-3 py-1 text-xs">Edit</button><button className="rounded-full border px-3 py-1 text-xs">Dismiss</button><button onClick={()=>navigate('/jobs')} className="rounded-full border px-3 py-1 text-xs">Open full record</button></div> : null}</aside>
     </section>
+  </div></div>
+  <SmartModal open={createMenuOpen} title="Create" onClose={() => setCreateMenuOpen(false)}><div className="grid gap-2">{[["New job","job"],["New quote","quote"],["New invoice","invoice"],["Add client","client"],["Invite worker","invite_worker"]].map(([l,k]) => <button key={k} onClick={()=>{setCreateMenuOpen(false);setModal(k);}} className="rounded-lg border p-2 text-left">{l}</button>)}</div></SmartModal>
+  <SmartModal open={Boolean(modal)} title="Command Action" onClose={() => setModal(null)}>{renderModalBody()}</SmartModal>
+  </Layout>;
 
-  </div></div><SmartModal open={Boolean(modal)} title="Command Action" onClose={() => setModal(null)}>{renderModalBody()}</SmartModal></Layout>;
 }
