@@ -369,6 +369,7 @@ ALLOWED_ORIGINS = [
     "https://churvox.com",
     "https://grassley-frontend.onrender.com",
     "http://localhost:3000",
+    "http://localhost:3001",
     "http://127.0.0.1:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -5166,180 +5167,187 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
 async def create_draft_invoice_from_job(job_id: str, payload: dict | None = None, current_user: dict = Depends(get_current_user)):
     from datetime import datetime, timezone
 
-    if current_user.get("role") not in BUSINESS_ROLES:
-        raise HTTPException(status_code=403, detail="Not authorized")
-
-    business_id = _resolve_business_id(current_user)
-    owner_id = _resolve_owner_id(current_user)
-
-    logger.info("SMART HUB DRAFT INVOICE job_id=%s business_id=%s", str(job_id), str(business_id))
-    job_id_filters = [{"_id": str(job_id)}]
     try:
-        obj_id = ObjectId(job_id)
-        job_id_filters.append({"_id": obj_id})
-    except Exception:
-        obj_id = None
+        if current_user.get("role") not in BUSINESS_ROLES:
+            raise HTTPException(status_code=403, detail="Not authorized")
 
-    job = await db.jobs.find_one({
-        "$and": [
-            {"$or": job_id_filters},
-            {"$or": [
-                {"business_id": business_id},
-                {"business_id": str(business_id)},
-                {"owner_id": owner_id},
-            ]},
-        ]
-    })
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
+        business_id = _resolve_business_id(current_user)
+        owner_id = _resolve_owner_id(current_user)
 
-    now = datetime.now(timezone.utc)
-    payload = payload or {}
-    real_job_id = job.get("_id")
-    job_id_str = str(real_job_id)
+        logger.info("SMART HUB CREATE DRAFT INVOICE job_id=%s business_id=%s", str(job_id), str(business_id))
+        job_id_filters = [{"_id": str(job_id)}]
+        try:
+            obj_id = ObjectId(job_id)
+            job_id_filters.append({"_id": obj_id})
+        except Exception:
+            obj_id = None
 
-    business_filters = [business_id, str(business_id)]
-    owner_filters = [owner_id, str(owner_id)]
-    job_link_values = [job_id_str]
-    if obj_id is not None:
-        job_link_values.append(obj_id)
+        job = await db.jobs.find_one({
+            "$and": [
+                {"$or": job_id_filters},
+                {"$or": [
+                    {"business_id": business_id},
+                    {"business_id": str(business_id)},
+                    {"owner_id": owner_id},
+                ]},
+            ]
+        })
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
 
-    existing_invoice = await db.invoices.find_one({
-        "$and": [
-            {"$or": [{"business_id": v} for v in business_filters] + [{"owner_id": v} for v in owner_filters]},
-            {"$or": (
-                [{"job_id": v} for v in job_link_values]
-                + [{"linked_job_id": v} for v in job_link_values]
-                + [{"source_job_id": v} for v in job_link_values]
-            )},
-        ]
-    })
+        now = datetime.now(timezone.utc)
+        payload = payload or {}
+        real_job_id = job.get("_id")
+        job_id_str = str(real_job_id)
 
-    linked_invoice_id = str((existing_invoice or {}).get("_id") or (existing_invoice or {}).get("id") or "")
-    if not existing_invoice:
-        linked_invoice_id = str(job.get("draft_invoice_id") or job.get("invoice_id") or "")
-        if linked_invoice_id:
-            linked_obj = normalize_object_id(linked_invoice_id)
-            if linked_obj is not None:
-                existing_invoice = await db.invoices.find_one({"_id": linked_obj})
-            if not existing_invoice:
-                existing_invoice = await db.invoices.find_one({
-                    "$or": [
-                        {"id": linked_invoice_id},
-                        {"invoice_number": linked_invoice_id},
-                    ]
-                })
-    logger.info("SMART HUB DRAFT INVOICE existing=%s invoice_id=%s", bool(existing_invoice), linked_invoice_id)
+        business_filters = [business_id, str(business_id)]
+        owner_filters = [owner_id, str(owner_id)]
+        job_link_values = [job_id_str]
+        if obj_id is not None:
+            job_link_values.append(obj_id)
 
-    async def _mark_job_billed(invoice_id: str, draft_description: str | None = None):
-        update_fields = {
-            "invoice_id": invoice_id,
-            "draft_invoice_id": invoice_id,
-            "invoice_created": True,
-            "invoiced": True,
-            "invoice_status": "draft",
-            "updated_at": now,
-        }
-        if draft_description:
-            update_fields["ai_invoice_description"] = draft_description
-            update_fields["invoice_description_draft"] = draft_description
-        await db.jobs.update_one(
-            {"_id": real_job_id},
-            {"$set": update_fields}
-        )
-        logger.info("SMART HUB DRAFT INVOICE updated job invoice fields")
+        existing_invoice = await db.invoices.find_one({
+            "$and": [
+                {"$or": [{"business_id": v} for v in business_filters] + [{"owner_id": v} for v in owner_filters]},
+                {"$or": (
+                    [{"job_id": v} for v in job_link_values]
+                    + [{"linked_job_id": v} for v in job_link_values]
+                    + [{"source_job_id": v} for v in job_link_values]
+                )},
+            ]
+        })
 
-    if existing_invoice:
-        invoice_id = str(existing_invoice.get("_id") or existing_invoice.get("id") or "")
-        existing_description = _safe_text(
-            existing_invoice.get("description")
+        linked_invoice_id = str((existing_invoice or {}).get("_id") or (existing_invoice or {}).get("id") or "")
+        if not existing_invoice:
+            linked_invoice_id = str(job.get("draft_invoice_id") or job.get("invoice_id") or "")
+            if linked_invoice_id:
+                linked_obj = normalize_object_id(linked_invoice_id)
+                if linked_obj is not None:
+                    existing_invoice = await db.invoices.find_one({"_id": linked_obj})
+                if not existing_invoice:
+                    existing_invoice = await db.invoices.find_one({
+                        "$or": [
+                            {"id": linked_invoice_id},
+                            {"invoice_number": linked_invoice_id},
+                        ]
+                    })
+        logger.info("SMART HUB CREATE DRAFT INVOICE existing=%s invoice_id=%s", bool(existing_invoice), linked_invoice_id)
+
+        async def _mark_job_billed(invoice_id: str, draft_description: str | None = None):
+            update_fields = {
+                "invoice_id": invoice_id,
+                "draft_invoice_id": invoice_id,
+                "invoice_created": True,
+                "invoiced": True,
+                "invoice_status": "draft",
+                "updated_at": now,
+            }
+            if draft_description:
+                update_fields["ai_invoice_description"] = draft_description
+                update_fields["invoice_description_draft"] = draft_description
+            await db.jobs.update_one(
+                {"_id": real_job_id},
+                {"$set": update_fields}
+            )
+            logger.info("SMART HUB CREATE DRAFT INVOICE updated job invoice fields")
+
+        if existing_invoice:
+            invoice_id = str(existing_invoice.get("_id") or existing_invoice.get("id") or "")
+            existing_description = _safe_text(
+                existing_invoice.get("description")
+                or job.get("ai_invoice_description")
+                or job.get("invoice_description_draft")
+            )
+            await _mark_job_billed(invoice_id, existing_description)
+            updated_job = await db.jobs.find_one({"_id": real_job_id})
+            return {
+                "success": True,
+                "invoice_id": invoice_id,
+                "invoice": serialize_document(existing_invoice),
+                "job": serialize_document(updated_job),
+                "updated_job": serialize_document(updated_job),
+                "message": "Invoice already linked",
+                "existing": True,
+            }
+
+        subtotal = float(payload.get("subtotal") if payload.get("subtotal") is not None else (job.get("price") or 0))
+        gst_rate = float(payload.get("gst_rate") if payload.get("gst_rate") is not None else (current_user.get("gst_rate") or 15))
+        gst_amount = float(payload.get("gst") if payload.get("gst") is not None else subtotal * (gst_rate / 100))
+        total = float(payload.get("total") if payload.get("total") is not None else subtotal + gst_amount)
+        accounting = await db.accounting_settings.find_one({"business_id": business_id}) if hasattr(db, "accounting_settings") else None
+        invoice_mode = str((accounting or {}).get("invoice_mode") or "churvox_only").strip().lower()
+        if invoice_mode not in INVOICE_MODES:
+            invoice_mode = "churvox_only"
+
+        description = _safe_text(
+            payload.get("description")
+            or payload.get("invoice_description")
             or job.get("ai_invoice_description")
             or job.get("invoice_description_draft")
+            or job.get("completion_notes")
+            or job.get("worker_notes")
+            or job.get("notes")
+            or job.get("description")
         )
-        await _mark_job_billed(invoice_id, existing_description)
+        if not description:
+            client_name = _safe_text(job.get("client_name") or job.get("customer_name"))
+            if not client_name:
+                linked_client = await db.clients.find_one({"$or": [{"_id": normalize_object_id(job.get("client_id"))}, {"id": str(job.get("client_id") or "")}]})
+                client_name = _safe_text((linked_client or {}).get("name") or (linked_client or {}).get("client_name"))
+            description = _format_invoice_description_from_job(job, client_name)
+        client_id = payload.get("client_id") or job.get("client_id")
+        doc = {
+            "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{str(real_job_id)[-5:]}",
+            "client_id": client_id,
+            "customer_name": job.get("client_name") or job.get("customer_name") or "",
+            "customer_email": job.get("customer_email") or "",
+            "address": job.get("address") or "",
+            "description": description,
+            "subtotal": subtotal,
+            "gst_rate": gst_rate,
+            "gst_amount": gst_amount,
+            "gst": gst_amount,
+            "total": total,
+            "status": "draft",
+            "job_id": job_id_str,
+            "linked_job_id": job_id_str,
+            "source_job_id": job_id_str,
+            "pricing_type": job.get("pricing_type") or "fixed",
+            "hourly_rate": float(job.get("hourly_rate") or 0),
+            "hours_worked": float(job.get("time_spent_minutes") or 0) / 60,
+            "extras": job.get("extras") or [],
+            "myob_sync_status": "not_synced" if invoice_mode == "myob_sync" else "not_synced",
+            "source": "smart_hub_ai",
+            "official_invoice_source": "myob" if invoice_mode == "myob_external" else "churvox",
+            "business_id": business_id,
+            "owner_id": owner_id,
+            "created_at": now,
+            "updated_at": now,
+        }
+
+        result = await db.invoices.insert_one(doc)
+        invoice_id = str(result.inserted_id)
+        await _mark_job_billed(invoice_id, description)
+        created_invoice = await db.invoices.find_one({"_id": result.inserted_id})
         updated_job = await db.jobs.find_one({"_id": real_job_id})
+
+        message = "Draft invoice created"
+        if invoice_mode == "myob_external":
+            message = "Billing draft prepared. Create the official invoice in MYOB."
         return {
             "success": True,
             "invoice_id": invoice_id,
-            "invoice": serialize_document(existing_invoice),
+            "invoice": serialize_document(created_invoice),
             "job": serialize_document(updated_job),
             "updated_job": serialize_document(updated_job),
-            "message": "Invoice already linked",
+            "message": message,
+            "invoice_mode": invoice_mode,
         }
-
-    subtotal = float(payload.get("subtotal") if payload.get("subtotal") is not None else (job.get("price") or 0))
-    gst_rate = float(payload.get("gst_rate") if payload.get("gst_rate") is not None else (current_user.get("gst_rate") or 15))
-    gst_amount = float(payload.get("gst") if payload.get("gst") is not None else subtotal * (gst_rate / 100))
-    total = float(payload.get("total") if payload.get("total") is not None else subtotal + gst_amount)
-    accounting = await db.accounting_settings.find_one({"business_id": business_id}) if hasattr(db, "accounting_settings") else None
-    invoice_mode = str((accounting or {}).get("invoice_mode") or "churvox_only").strip().lower()
-    if invoice_mode not in INVOICE_MODES:
-        invoice_mode = "churvox_only"
-
-    description = _safe_text(
-        payload.get("description")
-        or payload.get("invoice_description")
-        or job.get("ai_invoice_description")
-        or job.get("invoice_description_draft")
-        or job.get("completion_notes")
-        or job.get("worker_notes")
-        or job.get("notes")
-        or job.get("description")
-    )
-    if not description:
-        client_name = _safe_text(job.get("client_name") or job.get("customer_name"))
-        if not client_name:
-            linked_client = await db.clients.find_one({"$or": [{"_id": normalize_object_id(job.get("client_id"))}, {"id": str(job.get("client_id") or "")}]})
-            client_name = _safe_text((linked_client or {}).get("name") or (linked_client or {}).get("client_name"))
-        description = _format_invoice_description_from_job(job, client_name)
-    client_id = payload.get("client_id") or job.get("client_id")
-    doc = {
-        "invoice_number": f"INV-{datetime.now().strftime('%Y%m%d')}-{str(real_job_id)[-5:]}",
-        "client_id": client_id,
-        "customer_name": job.get("client_name") or job.get("customer_name") or "",
-        "customer_email": job.get("customer_email") or "",
-        "address": job.get("address") or "",
-        "description": description,
-        "subtotal": subtotal,
-        "gst_rate": gst_rate,
-        "gst_amount": gst_amount,
-        "gst": gst_amount,
-        "total": total,
-        "status": "draft",
-        "job_id": job_id_str,
-        "linked_job_id": job_id_str,
-        "source_job_id": job_id_str,
-        "pricing_type": job.get("pricing_type") or "fixed",
-        "hourly_rate": float(job.get("hourly_rate") or 0),
-        "hours_worked": float(job.get("time_spent_minutes") or 0) / 60,
-        "extras": job.get("extras") or [],
-        "myob_sync_status": "not_synced" if invoice_mode == "myob_sync" else "not_synced",
-        "source": "smart_hub_ai",
-        "official_invoice_source": "myob" if invoice_mode == "myob_external" else "churvox",
-        "business_id": business_id,
-        "owner_id": owner_id,
-        "created_at": now,
-        "updated_at": now,
-    }
-
-    result = await db.invoices.insert_one(doc)
-    invoice_id = str(result.inserted_id)
-    await _mark_job_billed(invoice_id, description)
-    created_invoice = await db.invoices.find_one({"_id": result.inserted_id})
-    updated_job = await db.jobs.find_one({"_id": real_job_id})
-
-    message = "Draft invoice created"
-    if invoice_mode == "myob_external":
-        message = "Billing draft prepared. Create the official invoice in MYOB."
-    return {
-        "success": True,
-        "invoice_id": invoice_id,
-        "invoice": serialize_document(created_invoice),
-        "job": serialize_document(updated_job),
-        "updated_job": serialize_document(updated_job),
-        "message": message,
-        "invoice_mode": invoice_mode,
-    }
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("SMART HUB CREATE DRAFT INVOICE failed")
+        raise HTTPException(status_code=500, detail="Failed to create draft invoice")
 
 @api_router.post("/jobs/{job_id}/assign")
 async def assign_job_worker(job_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
