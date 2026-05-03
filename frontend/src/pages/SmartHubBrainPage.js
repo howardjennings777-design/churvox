@@ -345,18 +345,34 @@ export default function SmartHubBrainPage() {
 
   const bestNextMove = useMemo(() => {
     if (readyToBillJobs.length) {
-      return { label: `Create invoices for ${readyToBillJobs.length} ready-to-bill job${readyToBillJobs.length === 1 ? "" : "s"}.`, target: "Invoices" };
+      return {
+        label: `Create invoices for ${readyToBillJobs.length} ready-to-bill job${readyToBillJobs.length === 1 ? "" : "s"}.`,
+        drawer: "Invoices",
+        mode: "readyToBill",
+      };
     }
     if (unassignedJobs.length) {
-      return { label: `Assign crew to ${unassignedJobs.length} unassigned job${unassignedJobs.length === 1 ? "" : "s"}.`, target: "Crew" };
+      return {
+        label: `Assign crew to ${unassignedJobs.length} unassigned job${unassignedJobs.length === 1 ? "" : "s"}.`,
+        drawer: "AI Dispatch",
+        mode: "assign",
+      };
     }
     if (openInvoices.length) {
-      return { label: `Follow up ${openInvoices.length} open invoice${openInvoices.length === 1 ? "" : "s"}.`, target: "Invoices" };
+      return {
+        label: `Follow up ${openInvoices.length} open invoice${openInvoices.length === 1 ? "" : "s"}.`,
+        drawer: "Payment Reminders",
+        mode: "reminders",
+      };
     }
     if (waitingQuotes.length) {
-      return { label: `Review ${waitingQuotes.length} waiting quote${waitingQuotes.length === 1 ? "" : "s"}.`, target: "Quotes" };
+      return {
+        label: `Review ${waitingQuotes.length} waiting quote${waitingQuotes.length === 1 ? "" : "s"}.`,
+        drawer: "Quote Follow-ups",
+        mode: "followUps",
+      };
     }
-    return { label: "All clear — no urgent actions in Smart Hub.", target: "Dashboard" };
+    return { label: "All clear — no urgent actions in Smart Hub.", drawer: "Dashboard", mode: "list" };
   }, [readyToBillJobs.length, unassignedJobs.length, openInvoices.length, waitingQuotes.length]);
 
   const workspaceButtons = ["Jobs", "Clients", "Invoices", "Quotes", "Crew", "Payroll", "Approvals", "AI Dispatch"];
@@ -679,31 +695,11 @@ export default function SmartHubBrainPage() {
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" onClick={runScanNow} className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700">Run scan</button>
-              <button type="button" onClick={() => openWorkspace(bestNextMove.target, bestNextMove.target === "Quotes" ? "followUps" : "list")} className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800">Review now</button>
+              <button type="button" onClick={() => openWorkspace(bestNextMove.drawer, bestNextMove.mode)} className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800">Review now</button>
             </div>
           </section>
 
           {error ? <p className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
-
-          <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Workspace Dock</h2>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              {workspaceButtons.map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => openWorkspace(name) }
-                  className="rounded-lg bg-teal-700 px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-teal-800"
-                >
-                  <span className="block">{name}</span>
-                  <span className="block text-xs text-teal-100">{workspaceMeta[name] || "Open workspace"}</span>
-                </button>
-              ))}
-              <button type="button" onClick={() => openWorkspace("Payment Reminders", "reminders")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Prepare reminders</button>
-              <button type="button" onClick={() => openWorkspace("Quote Follow-ups", "followUps")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Review follow-ups</button>
-              <button type="button" onClick={() => openWorkspace("AI Dispatch", "list")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Assign workers</button>
-            </div>
-          </section>
 
           <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
@@ -767,6 +763,26 @@ export default function SmartHubBrainPage() {
                 ))}
               </div>
             </article>
+          </section>
+
+          <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Workspace Dock</h2>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              {workspaceButtons.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => openWorkspace(name)}
+                  className="rounded-lg bg-teal-700 px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-teal-800"
+                >
+                  <span className="block">{name}</span>
+                  <span className="block text-xs text-teal-100">{workspaceMeta[name] || "Open workspace"}</span>
+                </button>
+              ))}
+              <button type="button" onClick={() => openWorkspace("Payment Reminders", "reminders")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Prepare reminders</button>
+              <button type="button" onClick={() => openWorkspace("Quote Follow-ups", "followUps")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Review follow-ups</button>
+              <button type="button" onClick={() => openWorkspace("AI Dispatch", "assign")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Assign workers</button>
+            </div>
           </section>
 
           <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
