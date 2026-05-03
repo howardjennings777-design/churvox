@@ -2,16 +2,14 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useApi } from "@/hooks/useApi";
-import { Loader2, Building2, RefreshCw, Lock, FileText, Trash2, Settings as SettingsIcon, ShieldCheck, ArrowUpRight, AlertTriangle, LogOut, Sparkles } from "lucide-react";
+import { Loader2, Building2, RefreshCw, Lock, FileText, Trash2, Settings as SettingsIcon, ShieldCheck, ArrowUpRight, AlertTriangle, LogOut, Sparkles, UserCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { TRADE_TYPES } from "@/lib/utils";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 import NotificationsBell from "@/components/NotificationsBell";
-import {
-  PremiumPage, PremiumHero, PremiumCard, PremiumButton, PremiumBadge, PremiumFormSection,
-} from "@/components/premium";
+import { PremiumPage, PremiumCard, PremiumButton, PremiumBadge, PremiumFormSection } from "@/components/premium";
 
 export default function SettingsPage() {
   const { user, updateUser, logout } = useAuth();
@@ -94,7 +92,7 @@ export default function SettingsPage() {
 
   return (
     <Layout smartHubMode>
-      <PremiumPage>
+      <PremiumPage className="bg-[#f6f3ea]">
         <header className="mb-6 rounded-3xl border border-[#d8e2db] bg-[#2a3430] px-4 py-3 shadow-[0_16px_40px_rgba(15,23,42,0.14)] sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-4 text-white">
@@ -112,18 +110,27 @@ export default function SettingsPage() {
               <Link to="/dashboard" className="inline-flex items-center gap-1 rounded-full border border-[#90a597] bg-[#5a7568] px-3 py-2 text-xs font-semibold text-white hover:bg-[#4f695d]">
                 <Sparkles className="h-3.5 w-3.5" /> Ask AI
               </Link>
+              <button className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20">
+                <UserCircle2 className="h-3.5 w-3.5" /> {(user?.name || "Profile").split(" ")[0]}
+              </button>
               <button onClick={handleLogout} className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20">
                 <LogOut className="h-3.5 w-3.5" /> Logout
               </button>
             </div>
           </div>
         </header>
-        <PremiumHero
-          icon={<SettingsIcon className="h-7 w-7" />}
-          eyebrow={<><SettingsIcon className="h-3 w-3" /> Configuration</>}
-          title="Settings"
-          subtitle="Configure your trade workspace, business profile, accounting and account security."
-        />
+        <section className="mb-6 rounded-3xl border border-[#46564f] bg-gradient-to-br from-[#2a3430] via-[#34423b] to-[#1f2824] p-5 text-white shadow-[0_18px_38px_rgba(15,23,42,0.2)] sm:p-7">
+          <p className="text-xs uppercase tracking-[0.2em] text-[#aac0b3]">AI Command Centre</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">Settings</h1>
+          <p className="mt-2 max-w-3xl text-sm text-[#d3ddd7]">Manage your business profile, tax setup, integrations and account controls.</p>
+          <p className="mt-2 text-xs text-[#b7c8be]">AI uses these settings to prepare accurate jobs, invoices and approvals.</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <PremiumBadge tone="green">Plan: {user?.plan ? user.plan[0].toUpperCase() + user.plan.slice(1) : "Enterprise"}</PremiumBadge>
+            <PremiumBadge tone="slate">Role: {user?.role === "owner" ? "Employer/Owner" : (user?.role || "Owner")}</PremiumBadge>
+            <PremiumBadge tone="slate">GST: {gstRate || 15}%</PremiumBadge>
+            <PremiumBadge tone="slate">Trade: {TRADE_TYPES.find((x) => x.value === tradeType)?.label || "Other"}</PremiumBadge>
+          </div>
+        </section>
 
         {/* Account Info */}
         <PremiumCard
@@ -133,24 +140,24 @@ export default function SettingsPage() {
           actions={trialBadge}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-[#e6eef9] bg-[#f6faff] px-4 py-3">
+            <div className="rounded-2xl border border-[#d7ded8] bg-[#fcfaf5] px-4 py-3 shadow-sm">
               <p className="text-[11px] font-bold uppercase tracking-wide text-[#7d8ba3]">Name</p>
               <p className="text-[14px] text-[#0d1b34] font-semibold mt-1">{user?.name}</p>
             </div>
-            <div className="rounded-2xl border border-[#e6eef9] bg-[#f6faff] px-4 py-3">
+            <div className="rounded-2xl border border-[#d7ded8] bg-[#fcfaf5] px-4 py-3 shadow-sm">
               <p className="text-[11px] font-bold uppercase tracking-wide text-[#7d8ba3]">Email</p>
               <p className="text-[14px] text-[#0d1b34] font-semibold mt-1">{user?.email}</p>
             </div>
-            <div className="rounded-2xl border border-[#e6eef9] bg-[#f6faff] px-4 py-3">
+            <div className="rounded-2xl border border-[#d7ded8] bg-[#fcfaf5] px-4 py-3 shadow-sm">
               <p className="text-[11px] font-bold uppercase tracking-wide text-[#7d8ba3]">Business name</p>
               <p className="text-[14px] text-[#0d1b34] font-semibold mt-1">{user?.business_name || "Not set"}</p>
             </div>
-            <div className="rounded-2xl border border-[#e6eef9] bg-[#f6faff] px-4 py-3">
+            <div className="rounded-2xl border border-[#d7ded8] bg-[#fcfaf5] px-4 py-3 shadow-sm">
               <p className="text-[11px] font-bold uppercase tracking-wide text-[#7d8ba3]">Plan</p>
               <p className="text-[14px] text-[#0d1b34] font-semibold mt-1 capitalize">{user?.plan || "No plan"}</p>
               {!user?.plan && <Link to="/plans" className="px-link text-[12px]">Choose a plan →</Link>}
             </div>
-            <div className="rounded-2xl border border-[#e6eef9] bg-[#f6faff] px-4 py-3">
+            <div className="rounded-2xl border border-[#d7ded8] bg-[#fcfaf5] px-4 py-3 shadow-sm">
               <p className="text-[11px] font-bold uppercase tracking-wide text-[#7d8ba3]">Role</p>
               <p className="text-[14px] text-[#0d1b34] font-semibold mt-1 capitalize">{user?.role || "Owner"}</p>
             </div>
@@ -158,14 +165,14 @@ export default function SettingsPage() {
         </PremiumCard>
 
         {/* Trade type */}
-        <PremiumFormSection title="Trade type" subtitle="Helps customise job types and quote/invoice templates.">
+        <PremiumFormSection title="Business setup" subtitle="Helps customise job types and quote/invoice templates.">
           <select value={tradeType} onChange={(e) => handleUpdateTrade(e.target.value)} className="px-select max-w-md" data-testid="trade-type-select">
             {TRADE_TYPES.map((trade) => (<option key={trade.value} value={trade.value}>{trade.label}</option>))}
           </select>
         </PremiumFormSection>
 
         {/* GST */}
-        <PremiumFormSection title="Tax settings" subtitle="Default GST rate applied to new invoices. NZ standard is 15%.">
+        <PremiumFormSection title="Tax and invoices" subtitle="Default GST rate applied to new invoices. NZ standard is 15%.">
           <form onSubmit={handleUpdateGST} className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
             <div className="flex-1 max-w-[200px]">
               <label className="px-field__label">Default GST rate (%)</label>
@@ -175,6 +182,7 @@ export default function SettingsPage() {
               {loading ? <><Loader2 className="h-4 w-4 animate-spin" /><span>Saving…</span></> : "Save"}
             </PremiumButton>
           </form>
+          <p className="mt-2 text-xs text-slate-500">Used when AI prepares invoice drafts.</p>
         </PremiumFormSection>
 
         {/* MYOB */}
