@@ -21,6 +21,12 @@ const listFrom = (value, keys = []) => {
 };
 
 const statusOf = (value) => String(value || "").toLowerCase().trim();
+const ACTIVE_ACTION_STATUSES = ["pending", "ready", "draft", "drafts", "watching", "needs_decision"];
+const DONE_ACTION_STATUSES = ["completed", "approved", "rejected", "dismissed", "resolved", "archived"];
+const isActiveApproval = (item = {}) => {
+  const status = statusOf(item?.status);
+  return ACTIVE_ACTION_STATUSES.includes(status) && !DONE_ACTION_STATUSES.includes(status);
+};
 const norm = (value) => String(value || "").toLowerCase().trim();
 const asDate = (value) => {
   if (!value) return null;
@@ -101,7 +107,11 @@ const getApprovalGroup = (action = {}) => {
   return "needs_decision";
 };
 const normalizeApprovalAction = (action = {}) => ({ ...action, id: String(action.id || action._id || ""), group: getApprovalGroup(action) });
-const getFilteredApprovalActions = (actions = [], activeTab = "all") => safeArray(actions).filter((a) => (activeTab === "all" ? true : a.group === activeTab));
+const getFilteredApprovalActions = (actions = [], activeTab = "all") => safeArray(actions).filter((a) => {
+  if (activeTab === "all") return isActiveApproval(a);
+  if (activeTab === "completed") return DONE_ACTION_STATUSES.includes(statusOf(a?.status));
+  return isActiveApproval(a) && a.group === activeTab;
+});
 const approvalDedupKey = (action = {}) => {
   const actionKey = String(action.action_key || action.actionKey || "").trim();
   if (actionKey) return actionKey;
@@ -421,14 +431,14 @@ export default function SmartHubBrainPage() {
     };
     return [...approvalItems].sort((a,b)=>rank(a)-rank(b));
   }, [approvalItems]);
-  const approvalCounts = useMemo(
-    () =>
-      APPROVAL_GROUPS.reduce((acc, group) => {
-        if (group === "all") return { ...acc, all: approvalItems.length };
-        return { ...acc, [group]: approvalItems.filter((item) => item.group === group).length };
-      }, {}),
-    [approvalItems]
-  );
+  const approvalCounts = useMemo(() => {
+    const active = approvalItems.filter((item) => isActiveApproval(item));
+    return APPROVAL_GROUPS.reduce((acc, group) => {
+      if (group === "all") return { ...acc, all: active.length };
+      if (group === "completed") return { ...acc, completed: approvalItems.filter((item) => DONE_ACTION_STATUSES.includes(statusOf(item?.status))).length };
+      return { ...acc, [group]: active.filter((item) => item.group === group).length };
+    }, {});
+  }, [approvalItems]);
   const approvalBadgeTone = approvalCounts.needs_decision ? "amber" : approvalCounts.all ? "green" : "slate";
   const openApprovalCentre = useCallback(({ tab = "all", actionId = "" } = {}) => {
     setApprovalFilter(tab);
@@ -458,7 +468,7 @@ export default function SmartHubBrainPage() {
     const validIds = new Set(sortedApprovalItems.map((item) => String(item.id)));
     setSelectedApprovalIds((prev) => prev.filter((id) => validIds.has(String(id))));
   }, [sortedApprovalItems]);
-  const priorityItems = sortedApprovalItems.slice(0, 3);
+  const priorityItems = sortedApprovalItems.filter((item) => isActiveApproval(item)).slice(0, 3);
   const toggleApprovalSelection = (id) => setSelectedApprovalIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   const toggleSelectAllVisible = () => {
     const visible = filteredApprovalItems.map((i) => String(i.id));
@@ -524,7 +534,8 @@ export default function SmartHubBrainPage() {
 
   const runScanNow = async () => {
     try {
-      await post("/smart-hub/scan", {});
+      const scanRes = await post("/smart-hub/scan", {});
+      console.info("smart_hub_scan_result", scanRes);
       try {
         await post("/smart-hub/process-due-communications", {});
       } catch {}
@@ -538,11 +549,14 @@ export default function SmartHubBrainPage() {
 
   const approveApprovalItem = async (item) => {
     try {
-      await post(`/ai-operator/actions/${item.id}/approve`, {});
+      const res = await post(`/ai-operator/actions/${item.id}/approve`, {});
+      console.info("ai_action_approved", { id: item?.id, type: item?.type, result: res?.result });
       await load();
+      clearApprovalSelection();
       setToast({ kind: "success", message: "Action approved." });
-    } catch {
-      setToast({ kind: "error", message: "Approve failed." });
+    } catch (err) {
+      const msg = err?.response?.data?.detail || err?.message || "Approve failed.";
+      setToast({ kind: "error", message: msg });
     }
   };
 
@@ -551,8 +565,10 @@ export default function SmartHubBrainPage() {
       await post(`/ai-operator/actions/${item.id}/reject`, {});
       await load();
       setToast({ kind: "success", message: "Action rejected." });
-    } catch {
-      setToast({ kind: "error", message: "Reject failed." });
+      clearApprovalSelection();
+    } catch (err) {
+      const msg = err?.response?.data?.detail || err?.message || "Reject failed.";
+      setToast({ kind: "error", message: msg });
     }
   };
 

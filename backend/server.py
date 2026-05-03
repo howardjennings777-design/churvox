@@ -2024,20 +2024,30 @@ async def ai_operator_approve(item_id: str, current_user: dict = Depends(get_cur
         raise HTTPException(status_code=404, detail="Approval item not found")
 
     now = datetime.now(timezone.utc)
-    payload = item.get("draft_payload") or {}
+    payload = item.get("payload") or item.get("draft_payload") or {}
     item_type = str(item.get("type") or "")
     result = {"action": "none"}
 
     completed = False
     if item_type == "assign_worker":
-        job_id = str(payload.get("job_id") or item.get("related_entity_id") or "")
-        assigned_worker_id = str(payload.get("assigned_worker_id") or "")
-        if job_id and assigned_worker_id:
-            await db.jobs.update_one({"id": job_id, "business_id": business_id}, {"$set": {"assigned_worker_id": assigned_worker_id, "updated_at": now}})
-            result = {"action": "assigned_worker", "job_id": job_id, "assigned_worker_id": assigned_worker_id}
-            completed = True
-        else:
-            result = {"action": "needs_manual_assignment"}
+        job_id = str(payload.get("job_id") or item.get("job_id") or item.get("related_entity_id") or "")
+        worker_id = str(payload.get("worker_id") or payload.get("recommended_worker_id") or item.get("worker_id") or "")
+        if not job_id or not worker_id:
+            raise HTTPException(status_code=400, detail="Missing job_id or worker_id")
+        job = await db.jobs.find_one({"business_id": business_id, "$or": [{"id": job_id}, {"_id": ObjectId(job_id)}] if ObjectId.is_valid(job_id) else [{"id": job_id}]})
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        worker = await db.business_users.find_one({"business_id": business_id, "$or": [{"id": worker_id}, {"_id": ObjectId(worker_id)}] if ObjectId.is_valid(worker_id) else [{"id": worker_id}]})
+        if not worker:
+            raise HTTPException(status_code=404, detail="Worker not found")
+        next_status = str(job.get("status") or "").lower()
+        patch = {"assigned_worker_id": worker_id, "worker_id": worker_id, "assigned_worker_name": str(worker.get("name") or ""), "updated_at": now}
+        if next_status in {"new", "unassigned", "pending"}:
+            patch["status"] = "assigned"
+        await db.jobs.update_one({"_id": job["_id"]}, {"$set": patch})
+        result = {"action": "assigned_worker", "job_id": str(job.get("id") or job.get("_id")), "assigned_worker_id": worker_id, "worker_name": patch["assigned_worker_name"]}
+        await db.smart_hub_activity.insert_one({"business_id": business_id, "action_type": "assign_worker", "title": "Worker assigned", "message": f"{patch['assigned_worker_name'] or 'Worker'} assigned to {job.get('title') or 'job'}", "related_type": "job", "related_id": str(job.get("id") or job.get("_id")), "status": "completed", "created_at": now, "updated_at": now})
+        completed = True
     elif item_type in {"create_invoice_draft", "invoice_draft"}:
         job_id = str(payload.get("job_id") or item.get("job_id") or item.get("related_entity_id") or "")
         client_id = str(payload.get("client_id") or item.get("client_id") or "")
@@ -2045,19 +2055,27 @@ async def ai_operator_approve(item_id: str, current_user: dict = Depends(get_cur
         gst_rate = float(payload.get("gst_rate") or 0.1)
         gst_amount = round(subtotal * gst_rate, 2)
         total = round(subtotal + gst_amount, 2)
-        invoice_doc = {"business_id": business_id, "job_id": job_id, "client_id": client_id, "status": "draft", "subtotal": subtotal, "gst_rate": gst_rate, "gst_amount": gst_amount, "total": total, "description": str(payload.get("description") or ""), "created_at": now, "updated_at": now}
-        invoice_res = await db.invoices.insert_one(invoice_doc)
-        invoice_id = str(invoice_res.inserted_id)
-        job_filter = {"business_id": business_id, "id": job_id}
-        if ObjectId.is_valid(job_id):
-            job_filter = {"business_id": business_id, "$or": [{"id": job_id}, {"_id": ObjectId(job_id)}]}
-        await db.jobs.update_one(job_filter, {"$set": {"invoice_id": invoice_id, "draft_invoice_id": invoice_id, "invoice_created": True, "invoiced": False, "invoice_status": "draft", "updated_at": now}})
-        result = {"action": "invoice_draft_created", "invoice_id": invoice_id}
+        job = await db.jobs.find_one({"business_id": business_id, "$or": [{"id": job_id}, {"_id": ObjectId(job_id)}] if ObjectId.is_valid(job_id) else [{"id": job_id}]})
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        existing_invoice = await db.invoices.find_one({"business_id": business_id, "$or": [{"job_id": job_id}, {"source_job_id": job_id}, {"linked_job_id": job_id}]})
+        invoice_status = str(job.get("invoice_status") or "").lower()
+        if job.get("invoice_id") or job.get("draft_invoice_id") or job.get("invoice_created") or job.get("invoiced") or invoice_status in {"draft", "sent", "open", "paid", "overdue"} or existing_invoice:
+            existing_invoice_id = str((existing_invoice or {}).get("id") or (existing_invoice or {}).get("_id") or job.get("invoice_id") or job.get("draft_invoice_id") or "")
+            result = {"action": "duplicate_prevented_existing_invoice", "invoice_id": existing_invoice_id, "job_id": job_id}
+            await db.smart_hub_activity.insert_one({"business_id": business_id, "action_type": "create_invoice_draft", "title": "Invoice already exists", "message": f"Invoice already exists for {job.get('title') or 'job'}. AI action completed.", "related_type": "job", "related_id": job_id, "status": "completed", "created_at": now, "updated_at": now})
+        else:
+            invoice_doc = {"business_id": business_id, "job_id": job_id, "source_job_id": job_id, "linked_job_id": job_id, "client_id": client_id or str(job.get("client_id") or ""), "customer_name": str(job.get("client_name") or ""), "customer_email": str(job.get("client_email") or ""), "address": str(job.get("address") or job.get("location") or ""), "description": str(payload.get("description") or ""), "subtotal": subtotal, "gst_rate": gst_rate, "gst_amount": gst_amount, "total": total, "status": "draft", "source": "ai_operator", "created_at": now, "updated_at": now}
+            invoice_res = await db.invoices.insert_one(invoice_doc)
+            invoice_id = str(invoice_res.inserted_id)
+            await db.jobs.update_one({"_id": job["_id"]}, {"$set": {"invoice_id": invoice_id, "draft_invoice_id": invoice_id, "invoice_created": True, "invoiced": False, "invoice_status": "draft", "updated_at": now}})
+            result = {"action": "invoice_draft_created", "invoice_id": invoice_id, "job_id": job_id}
+            await db.smart_hub_activity.insert_one({"business_id": business_id, "action_type": "create_invoice_draft", "title": "Draft invoice created", "message": f"Draft invoice created for {job.get('title') or job.get('client_name') or 'job'}", "related_type": "invoice", "related_id": invoice_id, "status": "completed", "created_at": now, "updated_at": now})
         completed = True
     elif item_type in {"invoice_reminder", "quote_follow_up", "job_instruction", "customer_update", "client_cleanup", "schedule_conflict", "crew_workload", "job_to_quote_or_invoice"}:
         result = {"action": "prepared_for_review", "status": "draft_only"}
 
-    await db.ai_operator_actions.update_one({"_id": ObjectId(item_id)}, {"$set": {"status": "completed" if completed else "approved", "group": "completed" if completed else item.get("group"), "approved_at": now, "completed_at": now if completed else None, "approved_by_user_id": str(current_user.get("id") or ""), "approved_by_name": str(current_user.get("name") or ""), "approved_by": str(current_user.get("id") or ""), "result": result, "updated_at": now}})
+    await db.ai_operator_actions.update_one({"_id": ObjectId(item_id), "business_id": business_id}, {"$set": {"status": "completed" if completed else "approved", "group": "completed", "approved_at": now, "completed_at": now if completed else None, "approved_by_user_id": str(current_user.get("id") or ""), "approved_by_name": str(current_user.get("name") or ""), "approved_by": str(current_user.get("id") or ""), "result": result, "updated_at": now}})
     await db.ai_operator_logs.insert_one({"business_id": business_id, "action_id": item_id, "event_type": "completed" if completed else "approved", "message": f"Action {item_type} approved", "user_id": str(current_user.get("id") or ""), "created_at": now})
     return {"success": True, "result": result}
 
@@ -2070,7 +2088,7 @@ async def ai_operator_reject(item_id: str, current_user: dict = Depends(get_curr
     if not ObjectId.is_valid(item_id):
         raise HTTPException(status_code=400, detail="Invalid approval item id")
     now = datetime.now(timezone.utc)
-    result = await db.ai_operator_actions.update_one({"_id": ObjectId(item_id), "business_id": business_id}, {"$set": {"status": "dismissed", "dismissed_at": now, "updated_at": now}})
+    result = await db.ai_operator_actions.update_one({"_id": ObjectId(item_id), "business_id": business_id}, {"$set": {"status": "rejected", "group": "completed", "rejected_at": now, "result": {"action": "rejected"}, "updated_at": now}})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Approval item not found")
     await db.ai_operator_logs.insert_one({"business_id": business_id, "action_id": item_id, "event_type": "dismissed", "message": "Action dismissed", "user_id": str(current_user.get("id") or ""), "created_at": now})
@@ -2318,6 +2336,9 @@ async def smart_hub_scan(current_user: dict = Depends(get_current_user)):
         active_keys.add(action_key)
         group = _operator_group_for_type(action_type)
         existing = await db.ai_operator_actions.find_one({"business_id": business_id, "action_key": action_key})
+        existing_status = str((existing or {}).get("status") or "").lower()
+        if existing and existing_status in {"completed", "approved", "rejected", "dismissed", "resolved", "archived"}:
+            return
         doc = {"business_id": business_id, "created_by": "ai_operator", "action_key": action_key, "action_type": action_type, "status": "pending", "group": group, "title": title, "reason": reason, "data_used": data_used, "what_happens": what_happens, "risk": _operator_risk_for_type(action_type), "related_type": related_type, "related_id": related_id, "job_id": job_id, "client_id": client_id, "invoice_id": invoice_id, "quote_id": quote_id, "worker_id": worker_id, "payload": payload or {}, "editable_fields": editable_fields or [], "updated_at": now}
         if existing:
             await db.ai_operator_actions.update_one({"_id": existing["_id"]}, {"$set": doc, "$setOnInsert": {"created_at": now}})
@@ -2332,14 +2353,17 @@ async def smart_hub_scan(current_user: dict = Depends(get_current_user)):
             continue
         st = str(job.get("status") or "").lower()
         client = client_by_id.get(str(job.get("client_id") or ""))
-        if st in {"completed", "complete"} and not (job.get("invoice_id") or job.get("draft_invoice_id") or jid in invoice_job_ids):
+        has_invoice_link = bool(job.get("invoice_id") or job.get("draft_invoice_id") or job.get("invoice_created") or job.get("invoiced"))
+        invoice_status = str(job.get("invoice_status") or "").lower()
+        existing_job_invoice = next((inv for inv in invoices if str(inv.get("job_id") or inv.get("source_job_id") or inv.get("linked_job_id") or "") == jid), None)
+        if st in {"completed", "complete"} and not has_invoice_link and invoice_status not in {"draft", "sent", "open", "paid", "overdue"} and not (jid in invoice_job_ids) and not existing_job_invoice:
             subtotal = float(job.get("subtotal") or job.get("price") or 0)
             if subtotal <= 0:
                 await _upsert_action(f"missing_price:{jid}", "missing_price", f"Add price before invoicing {job.get('title') or 'job'}", "Completed job is missing price/subtotal.", {"job_id": jid}, "job", jid, jid, str(job.get("client_id") or ""), what_happens="Owner needs to add price before AI can prepare an invoice.", editable_fields=["payload.subtotal", "payload.gst_rate"])
             else:
                 invoice_desc = str(job.get("ai_invoice_description") or job.get("invoice_description_draft") or job.get("completion_notes") or job.get("worker_completion_notes") or job.get("worker_notes") or job.get("job_notes") or job.get("notes") or job.get("description") or f"{job.get('title') or 'Service'} completed and ready for billing.")
                 await _upsert_action(f"create_invoice_draft:{jid}", "create_invoice_draft", f"Create draft invoice for {job.get('title') or (client or {}).get('name') or 'job'}", "Completed job is ready to bill.", {"job_id": jid, "client_id": str(job.get("client_id") or ""), "subtotal": subtotal, "description": invoice_desc}, "job", jid, jid, str(job.get("client_id") or ""), what_happens="Churvox creates an editable draft invoice. Nothing is sent to the customer.", editable_fields=["payload.description", "payload.subtotal", "payload.gst_rate"])
-        if st not in {"completed", "complete", "cancelled", "canceled", "archived"} and not (job.get("assigned_worker_id") or job.get("worker_id")):
+        if st not in {"completed", "complete", "cancelled", "canceled", "archived", "assigned", "acknowledged", "in_progress"} and not (job.get("assigned_worker_id") or job.get("worker_id") or job.get("assigned_worker") or job.get("assigned_worker_name")):
             rec = next((w for w in workers if str(w.get("role") or "").lower() == "worker"), None)
             wid = str((rec or {}).get("id") or (rec or {}).get("_id") or "")
             await _upsert_action(f"assign_worker:{jid}", "assign_worker", f"Assign worker to {job.get('title') or 'job'}", "Job has no assigned worker.", {"job_id": jid, "recommended_worker_id": wid, "worker_name": (rec or {}).get("name") or "", "reasoning": "Available active worker selected."}, "job", jid, jid, str(job.get("client_id") or ""), worker_id=wid, what_happens="Churvox assigns the worker and updates the job to assigned.", editable_fields=["payload.recommended_worker_id"])
