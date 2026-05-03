@@ -55,6 +55,26 @@ const reminderText = ({ clientName, invoiceNo, amount, overdue }) => {
   }
   return `Hi ${clientName}, just a friendly reminder that invoice ${invoiceNo} for ${amount} is still outstanding. Please let us know if you need anything from us.`;
 };
+const QUOTE_FOLLOW_UP_ELIGIBLE = ["sent", "pending", "waiting", "awaiting_response", "viewed"];
+const QUOTE_FOLLOW_UP_EXCLUDED = ["accepted", "declined", "rejected", "converted", "invoiced", "cancelled", "canceled", "draft"];
+
+const quoteAgeDays = (quote) => {
+  const source = quote?.sent_at || quote?.sentAt || quote?.created_at || quote?.createdAt || quote?.date;
+  if (!source) return null;
+  const ms = Date.now() - new Date(source).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return null;
+  return Math.floor(ms / (1000 * 60 * 60 * 24));
+};
+
+const quoteFollowUpText = ({ clientName, quoteNo, amountText, title, ageDays }) => {
+  if (Number.isFinite(ageDays) && ageDays >= 21) {
+    return `Hi ${clientName}, just checking whether you'd still like to proceed with quote ${quoteNo || title || "this quote"}. Happy to help with any changes before we book the work in.`;
+  }
+  if (quoteNo && amountText && amountText !== "—") {
+    return `Hi ${clientName}, just following up on quote ${quoteNo} for ${amountText}. Let us know if you'd like to go ahead or if you have any questions.`;
+  }
+  return `Hi ${clientName}, just checking in on the quote for ${title || "your requested work"}. Happy to answer any questions or adjust anything if needed.`;
+};
 
 const textOr = (value, fallback = "Not available") => {
   const text = String(value || "").trim();
@@ -110,6 +130,11 @@ export default function SmartHubBrainPage() {
   const [editingDraft, setEditingDraft] = useState({});
   const [selectedReminderIds, setSelectedReminderIds] = useState([]);
   const [approvedReminderIds, setApprovedReminderIds] = useState({});
+  const [quoteDrafts, setQuoteDrafts] = useState({});
+  const [quoteDraftOriginals, setQuoteDraftOriginals] = useState({});
+  const [editingQuoteDraft, setEditingQuoteDraft] = useState({});
+  const [selectedQuoteIds, setSelectedQuoteIds] = useState([]);
+  const [approvedQuoteIds, setApprovedQuoteIds] = useState({});
   const [activity, setActivity] = useState([]);
 
   const load = useCallback(async () => {
@@ -208,9 +233,35 @@ export default function SmartHubBrainPage() {
   }, [reminderInvoices, clients]);
 
   const waitingQuotes = useMemo(
-    () => quotes.filter((q) => ["sent", "pending", "waiting"].includes(statusOf(q?.status))),
+    () =>
+      quotes.filter((q) => {
+        const st = statusOf(q?.status);
+        if (QUOTE_FOLLOW_UP_EXCLUDED.includes(st)) return false;
+        return QUOTE_FOLLOW_UP_ELIGIBLE.includes(st);
+      }),
     [quotes]
   );
+
+  useEffect(() => {
+    const originals = {};
+    setQuoteDrafts((prev) => {
+      const next = { ...prev };
+      waitingQuotes.forEach((quote) => {
+        const id = String(quote?.id || quote?._id || quote?.quote_id || "");
+        if (!id) return;
+        const client = findByIds(clients, [quote?.client_id, quote?.clientId], ["id", "_id", "client_id"]);
+        const clientName = textOr(client?.name || quote?.client_name || quote?.customer_name, "there");
+        const quoteNo = textOr(quote?.quote_number || quote?.number || quote?.reference || "", "");
+        const title = textOr(quote?.title || quote?.name || quote?.description || "", "your requested work");
+        const amountText = money(Number(quote?.total ?? quote?.amount ?? quote?.price));
+        const message = quoteFollowUpText({ clientName, quoteNo, amountText, title, ageDays: quoteAgeDays(quote) });
+        originals[id] = message;
+        if (!next[id]) next[id] = message;
+      });
+      return next;
+    });
+    setQuoteDraftOriginals((prev) => ({ ...prev, ...originals }));
+  }, [waitingQuotes, clients]);
 
   const crewAvailable = useMemo(
     () => workers.filter((w) => w?.available !== false && !["inactive", "offboarded"].includes(statusOf(w?.status))).length,
@@ -396,6 +447,45 @@ export default function SmartHubBrainPage() {
       );
     }
 
+    if (drawer === "Quotes" || drawer === "Quote Follow-ups") {
+      const preparedCount = Object.values(approvedQuoteIds).filter(Boolean).length;
+      const missingContactCount = waitingQuotes.filter((q) => {
+        const client = findByIds(clients, [q?.client_id, q?.clientId], ["id", "_id", "client_id"]);
+        return !(client?.email || q?.client_email || client?.phone || q?.client_phone);
+      }).length;
+      const oldestWaiting = waitingQuotes.reduce((max, q) => Math.max(max, quoteAgeDays(q) ?? 0), 0);
+      const toggleSelected = (id) => setSelectedQuoteIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+      const approveOne = async (quote) => {
+        const id = String(quote?.id || quote?._id || quote?.quote_id || "");
+        if (!id) return;
+        const client = findByIds(clients, [quote?.client_id, quote?.clientId], ["id", "_id", "client_id"]);
+        const hasContact = !!(client?.email || quote?.client_email || client?.phone || quote?.client_phone);
+        const payload = { quote_id: id, client_id: client?.id || client?._id || quote?.client_id || null, business_id: user?.business_id || user?.businessId || null, message: quoteDrafts[id] || "", channel: client?.email || quote?.client_email ? "email" : "sms", status: "draft", source: "smart_hub_ai", created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+        try { await post("/communications/messages", payload); } catch {}
+        setApprovedQuoteIds((prev) => ({ ...prev, [id]: hasContact ? true : "missing_contact" }));
+        setActivity((prev) => [{ id: `quote-${id}-${Date.now()}`, text: `Quote follow-up draft approved for ${textOr(quote?.quote_number || quote?.number || quote?.title, id)}.` }, ...prev].slice(0, 12));
+        setToast({ kind: "success", message: "Quote follow-up draft approved." });
+      };
+      const approveMany = async (ids) => { for (const id of ids) { const quote = waitingQuotes.find((q) => String(q?.id || q?._id || q?.quote_id || "") === id); if (quote) await approveOne(quote); } };
+      return (
+        <div className="space-y-4">
+          <div><h3 className="text-lg font-semibold text-slate-900">Quote Follow-ups</h3><p className="text-sm text-slate-600">Review AI-prepared quote follow-up drafts before anything is sent.</p></div>
+          <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">{[["Quotes waiting", waitingQuotes.length], ["Follow-ups prepared", preparedCount], ["Missing contact details", missingContactCount], ["Oldest waiting quote", oldestWaiting ? `${oldestWaiting}d` : "—"]].map(([label, value]) => <article key={label} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"><p className="text-xs uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 text-xl font-semibold text-slate-900">{value}</p></article>)}</section>
+          <div className="flex flex-wrap gap-2"><button type="button" onClick={() => approveMany(selectedQuoteIds)} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">Approve selected follow-ups</button><button type="button" onClick={() => approveMany(waitingQuotes.map((q) => String(q?.id || q?._id || q?.quote_id || "")).filter(Boolean))} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">Approve all ready follow-ups</button><button type="button" onClick={() => setSelectedQuoteIds([])} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">Reject selected</button></div>
+          {!waitingQuotes.length ? <p className="text-sm text-slate-600">No quotes are waiting for follow-up right now.</p> : waitingQuotes.map((quote) => {
+            const id = String(quote?.id || quote?._id || quote?.quote_id || "");
+            const client = findByIds(clients, [quote?.client_id, quote?.clientId], ["id", "_id", "client_id"]);
+            const contactEmail = client?.email || quote?.client_email;
+            const contactPhone = client?.phone || quote?.client_phone;
+            const missingContact = !(contactEmail || contactPhone);
+            const age = quoteAgeDays(quote);
+            const displayDate = quote?.sent_at || quote?.sentAt || quote?.created_at || quote?.createdAt || quote?.date;
+            return <article key={id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex items-start justify-between gap-3"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedQuoteIds.includes(id)} onChange={() => toggleSelected(id)} />Select</label><p className="text-xs font-medium uppercase tracking-wide text-slate-500">{approvedQuoteIds[id] ? "Approved draft" : "Pending approval"}</p></div><p className="mt-2 font-semibold text-slate-900">{textOr(client?.name || quote?.client_name || quote?.customer_name, "Unknown client")}</p><p className="text-sm text-slate-600">Quote: {textOr(quote?.quote_number || quote?.number || quote?.title, "Untitled quote")}</p><p className="text-sm text-slate-600">Amount: {money(Number(quote?.total ?? quote?.amount ?? quote?.price))}</p><p className="text-sm text-slate-600">Status: {textOr(quote?.status, "unknown")}</p><p className="text-sm text-slate-600">Created/Sent: {textOr(displayDate, "Unknown date")}</p><p className="text-sm text-slate-600">Age: {age ?? "—"} days</p><p className="text-sm text-slate-600">Contact: {contactEmail || "—"} {contactPhone ? ` / ${contactPhone}` : ""}</p>{missingContact ? <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">Warning: missing client contact details. You can save this draft, but it is not ready to send.</p> : null}{editingQuoteDraft[id] ? <textarea className="mt-3 w-full rounded-lg border border-slate-300 p-2 text-sm" rows={4} value={quoteDrafts[id] || ""} onChange={(e) => setQuoteDrafts((prev) => ({ ...prev, [id]: e.target.value }))} /> : <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-800">{quoteDrafts[id]}</p>}<div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => setEditingQuoteDraft((prev) => ({ ...prev, [id]: true }))} className="rounded border border-slate-300 px-3 py-1 text-sm">Edit message</button><button type="button" onClick={() => setEditingQuoteDraft((prev) => ({ ...prev, [id]: false }))} className="rounded border border-slate-300 px-3 py-1 text-sm">Save message</button><button type="button" onClick={() => { setQuoteDrafts((prev) => ({ ...prev, [id]: quoteDraftOriginals[id] || prev[id] })); setEditingQuoteDraft((prev) => ({ ...prev, [id]: false })); }} className="rounded border border-slate-300 px-3 py-1 text-sm">Cancel</button><button type="button" onClick={() => approveOne(quote)} className="rounded bg-teal-700 px-3 py-1 text-sm text-white">Approve follow-up draft</button><button type="button" onClick={() => navigate(`/quotes/${id}`)} className="rounded border border-slate-300 px-3 py-1 text-sm">Open full quote page</button></div></article>;
+          })}
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-3">
         <h3 className="text-lg font-semibold text-slate-900">{drawer} Workspace</h3>
@@ -436,7 +526,9 @@ export default function SmartHubBrainPage() {
             ].map(([label, value]) => (
               <article key={label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-                <p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p>
+                <button type="button" onClick={() => label === "Quotes waiting" && setDrawer("Quote Follow-ups")} className="mt-2 text-2xl font-semibold text-slate-900">
+                  {value}
+                </button>
               </article>
             ))}
           </section>
@@ -455,6 +547,7 @@ export default function SmartHubBrainPage() {
                 </button>
               ))}
               <button type="button" onClick={() => setDrawer("Payment Reminders")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Prepare reminders</button>
+              <button type="button" onClick={() => setDrawer("Quote Follow-ups")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Review follow-ups</button>
             </div>
           </section>
           <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
