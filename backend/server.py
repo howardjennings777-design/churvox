@@ -5446,11 +5446,77 @@ async def assign_job_worker_alias(job_id: str, payload: dict, current_user: dict
     now = datetime.utcnow()
     await db.jobs.update_one({"_id": job["_id"]}, {"$set": {"assigned_worker_id": worker_ref, "worker_id": worker_ref, "assigned_worker_name": worker_name, "status": next_status, "updated_at": now}})
     updated = await db.jobs.find_one({"_id": job["_id"]})
-    try:
-        await db.smart_hub_activity.insert_one({"id": str(uuid.uuid4()), "business_id": business_id, "type": "job_assignment", "message": f"Assigned {worker_name} to {str(job.get('title') or 'job')}", "job_id": str(job.get('id') or job.get('_id')), "worker_id": worker_ref, "created_at": now})
-    except Exception:
-        pass
+    await log_smart_hub_activity(current_user, {
+        "action_type": "worker_assigned",
+        "title": "Worker assigned",
+        "message": f"{worker_name} assigned to {str(job.get('title') or 'job')}",
+        "related_type": "job",
+        "related_id": str(job.get('id') or job.get('_id')),
+        "related_job_id": str(job.get('id') or job.get('_id')),
+        "status": "completed",
+    })
     return {"success": True, "message": "Worker assigned", "job": serialize_document(updated)}
+
+
+
+
+
+def _smart_hub_actor_name(current_user: dict) -> str:
+    return str(current_user.get("name") or current_user.get("full_name") or current_user.get("email") or "Unknown")
+
+
+async def log_smart_hub_activity(current_user: dict, payload: dict):
+    business_id = str(current_user.get("business_id") or current_user.get("businessId") or current_user.get("id") or "").strip()
+    if not business_id:
+        return
+    now = datetime.utcnow()
+    user_id = str(current_user.get("_id") or current_user.get("id") or current_user.get("user_id") or "").strip()
+    activity = {
+        "id": str(uuid.uuid4()),
+        "business_id": business_id,
+        "user_id": user_id or None,
+        "approved_by_user_id": user_id or None,
+        "approved_by_name": _smart_hub_actor_name(current_user),
+        "action_type": str(payload.get("action_type") or "unknown"),
+        "title": str(payload.get("title") or "Smart Hub activity"),
+        "message": str(payload.get("message") or ""),
+        "related_type": str(payload.get("related_type") or ""),
+        "related_id": str(payload.get("related_id") or ""),
+        "related_client_id": payload.get("related_client_id"),
+        "related_job_id": payload.get("related_job_id"),
+        "related_invoice_id": payload.get("related_invoice_id"),
+        "related_quote_id": payload.get("related_quote_id"),
+        "status": str(payload.get("status") or "completed"),
+        "source": "smart_hub_ai",
+        "created_at": now,
+    }
+    await db.smart_hub_activity.insert_one(activity)
+
+
+@api_router.get("/smart-hub/activity")
+async def get_smart_hub_activity(limit: int = 25, current_user: dict = Depends(get_current_user)):
+    business_id = str(current_user.get("business_id") or current_user.get("businessId") or current_user.get("id") or "").strip()
+    if not business_id:
+        return {"activities": []}
+    role = str(current_user.get("role") or "").lower()
+    q = {"business_id": business_id, "source": "smart_hub_ai"}
+    if role in {"worker", "employee", "field_worker"}:
+        q["action_type"] = {"$in": ["worker_assigned", "payroll"]}
+    if role == "payroll":
+        q["action_type"] = {"$in": ["payroll", "invoice_draft_created", "reminder_draft_approved"]}
+    safe_limit = max(1, min(int(limit or 25), 100))
+    items = await db.smart_hub_activity.find(q).sort("created_at", -1).limit(safe_limit).to_list(safe_limit)
+    return {"activities": [serialize_document(i) for i in items]}
+
+
+@api_router.post("/smart-hub/activity")
+async def create_smart_hub_activity(payload: dict, current_user: dict = Depends(get_current_user)):
+    required = ["action_type", "title", "message", "related_type", "related_id", "status"]
+    for f in required:
+        if not str((payload or {}).get(f) or "").strip():
+            raise HTTPException(status_code=400, detail=f"{f} is required")
+    await log_smart_hub_activity(current_user, payload or {})
+    return {"success": True}
 
 
 @api_router.post("/jobs/{job_id}/acknowledge")

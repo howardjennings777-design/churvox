@@ -147,6 +147,7 @@ export default function SmartHubBrainPage() {
   const [selectedQuoteIds, setSelectedQuoteIds] = useState([]);
   const [approvedQuoteIds, setApprovedQuoteIds] = useState({});
   const [activity, setActivity] = useState([]);
+  const [activityFilter, setActivityFilter] = useState("all");
   const [dispatchOverrides, setDispatchOverrides] = useState({});
   const [rejectedDispatchIds, setRejectedDispatchIds] = useState({});
 
@@ -162,12 +163,13 @@ export default function SmartHubBrainPage() {
     };
 
     try {
-      const [jobsRes, clientsRes, quotesRes, invoicesRes, workersRes] = await Promise.all([
+      const [jobsRes, clientsRes, quotesRes, invoicesRes, workersRes, activityRes] = await Promise.all([
         safeGet("/jobs"),
         safeGet("/clients"),
         safeGet("/quotes"),
         safeGet("/invoices"),
         safeGet("/team/workers"),
+        safeGet("/smart-hub/activity"),
       ]);
 
       setData({
@@ -177,6 +179,7 @@ export default function SmartHubBrainPage() {
         invoices: listFrom(invoicesRes, ["invoices"]),
         workers: listFrom(workersRes, ["workers"]),
       });
+      setActivity(listFrom(activityRes, ["activities"]));
     } catch {
       setError("Failed to load Smart Hub data.");
     } finally {
@@ -378,10 +381,20 @@ export default function SmartHubBrainPage() {
         return;
       }
       setToast({ kind: "success", message: "Draft invoice created and linked to this job." });
+      const targetName = textOr(client?.name || job?.title || job?.name, "client");
+      await logActivity({ action_type: "invoice_draft_created", title: "Draft invoice created", message: `Draft invoice created for ${targetName}`, related_type: "invoice", related_id: String(res?.invoice?.id || res?.invoice?._id || jobId), status: "completed" });
       await load();
     },
     [clients, load]
   );
+
+  const logActivity = useCallback(async (payload) => {
+    try {
+      await post("/smart-hub/activity", payload);
+      const refreshed = await get("/smart-hub/activity");
+      setActivity(listFrom(refreshed, ["activities"]));
+    } catch {}
+  }, []);
 
   const renderDrawerContent = () => {
     if (!workspaceDrawer) return null;
@@ -497,7 +510,7 @@ export default function SmartHubBrainPage() {
         };
         try { await post("/communications/messages", payload); } catch {}
         setApprovedReminderIds((prev) => ({ ...prev, [id]: true }));
-        setActivity((prev) => [{ id: `${id}-${Date.now()}`, text: `Reminder draft approved for invoice ${textOr(inv?.invoice_number || inv?.number, id)}.` }, ...prev].slice(0, 12));
+        await logActivity({ action_type: "reminder_draft_approved", title: "Reminder draft approved", message: `Payment reminder draft approved for ${textOr(client?.name || inv?.client_name || inv?.invoice_number, "client")}`, related_type: "invoice", related_id: id, status: "completed" });
         setToast({ kind: "success", message: "Reminder draft approved." });
       };
 
@@ -553,7 +566,7 @@ export default function SmartHubBrainPage() {
         const payload = { quote_id: id, client_id: client?.id || client?._id || quote?.client_id || null, business_id: user?.business_id || user?.businessId || null, message: quoteDrafts[id] || "", channel: client?.email || quote?.client_email ? "email" : "sms", status: "draft", source: "smart_hub_ai", created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
         try { await post("/communications/messages", payload); } catch {}
         setApprovedQuoteIds((prev) => ({ ...prev, [id]: hasContact ? true : "missing_contact" }));
-        setActivity((prev) => [{ id: `quote-${id}-${Date.now()}`, text: `Quote follow-up draft approved for ${textOr(quote?.quote_number || quote?.number || quote?.title, id)}.` }, ...prev].slice(0, 12));
+        await logActivity({ action_type: "quote_followup_approved", title: "Quote follow-up approved", message: `Quote follow-up draft approved for ${textOr(client?.name || quote?.quote_number || quote?.title, "client")}`, related_type: "quote", related_id: id, status: "completed" });
         setToast({ kind: "success", message: "Quote follow-up draft approved." });
       };
       const approveMany = async (ids) => { for (const id of ids) { const quote = waitingQuotes.find((q) => String(q?.id || q?._id || q?.quote_id || "") === id); if (quote) await approveOne(quote); } };
@@ -585,7 +598,7 @@ export default function SmartHubBrainPage() {
           setToast({ kind: "error", message: res?.error || "Failed to assign worker." });
         } else {
           setToast({ kind: "success", message: "Worker assignment approved and saved." });
-          setActivity((prev) => [{ id: `assign-${jobId}-${Date.now()}`, text: `Assigned ${res?.job?.assigned_worker_name || "worker"} to ${textOr(job?.title, "job")}.` }, ...prev].slice(0, 12));
+          await logActivity({ action_type: "worker_assigned", title: "Worker assigned", message: `${res?.job?.assigned_worker_name || "Worker"} assigned to ${textOr(job?.title, "job")}`, related_type: "job", related_id: jobId, status: "completed" });
           await load();
         }
         setSavingJobId("");
@@ -600,7 +613,7 @@ export default function SmartHubBrainPage() {
         const reasoning = recommendation ? `AI recommends ${textOr(selected?.name || recommendation?.worker?.name, "this worker")} because ${recommendation.regionMatch ? "they are in the same region, " : ""}${recommendation.skillMatch ? "their skills match, " : ""}and they currently have ${st.today} jobs today (${st.active} active).${recommendation.conflict ? " Possible schedule conflict detected." : " No schedule conflict was detected."}` : "No perfect worker was found. Choose a worker manually.";
         return <article key={jobId} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p className="font-semibold">{textOr(job?.title, "Untitled job")}</p><p className="text-sm text-slate-600">Client: {textOr(job?.client_name || job?.customer_name, "Unknown")}</p><p className="text-sm text-slate-600">Address: {textOr(job?.address || job?.location, "No address")}</p><p className="text-sm text-slate-600">Scheduled: {textOr(job?.scheduled_date || job?.date || job?.scheduled_at, "Unscheduled")}</p><p className="text-sm text-slate-600">Priority/Status: {textOr(job?.priority, "normal")} / {textOr(job?.status, "new")}</p><p className="mt-2 text-sm text-slate-700">{reasoning}</p>{recommendation?.conflict ? <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">Possible schedule conflict: this worker already has another job scheduled that day.</p> : null}
         <div className="mt-3"><select className="w-full rounded border p-2 text-sm" value={selectedWorkerId} onChange={(e) => setDispatchOverrides((prev) => ({ ...prev, [jobId]: e.target.value }))}><option value="">Choose different worker</option>{workers.filter((w) => !["inactive","deleted","offboarded"].includes(norm(w?.status))).map((w) => <option key={String(w?.id || w?._id)} value={String(w?.id || w?._id)}>{textOr(w?.name, "Worker")} · {textOr(w?.region || w?.area || w?.zone, "No region")}</option>)}</select></div>
-        <div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={!selectedWorkerId || savingJobId===jobId} onClick={() => applyAssign(job, selectedWorkerId)} className="rounded bg-teal-700 px-3 py-1 text-sm text-white">Approve assignment</button><button type="button" onClick={() => navigate(`/jobs/${jobId}`)} className="rounded border px-3 py-1 text-sm">Open full job page</button><button type="button" onClick={() => setRejectedDispatchIds((prev) => ({ ...prev, [jobId]: true }))} className="rounded border px-3 py-1 text-sm">Reject recommendation</button></div></article>;
+        <div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={!selectedWorkerId || savingJobId===jobId} onClick={() => applyAssign(job, selectedWorkerId)} className="rounded bg-teal-700 px-3 py-1 text-sm text-white">Approve assignment</button><button type="button" onClick={() => navigate(`/jobs/${jobId}`)} className="rounded border px-3 py-1 text-sm">Open full job page</button><button type="button" onClick={async () => { setRejectedDispatchIds((prev) => ({ ...prev, [jobId]: true })); await logActivity({ action_type: "recommendation_rejected", title: "Recommendation rejected", message: `AI recommendation rejected: ${textOr(job?.title, "Job")}`, related_type: "job", related_id: jobId, status: "rejected" }); }} className="rounded border px-3 py-1 text-sm">Reject recommendation</button></div></article>;
       })}</div>;
     }
 
@@ -671,7 +684,7 @@ export default function SmartHubBrainPage() {
           </section>
           <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Recent Smart Hub activity</h3>
-            {!activity.length ? <p className="mt-2 text-sm text-slate-500">No reminder approvals yet in this session.</p> : <ul className="mt-2 space-y-1 text-sm text-slate-700">{activity.map((a) => <li key={a.id}>• {a.text}</li>)}</ul>}
+            <div className="mt-2 flex gap-2">{[["all","All"],["completed","Completed"],["rejected","Rejected"],["draft_prepared","Drafts"]].map(([k,l]) => <button key={k} type="button" onClick={() => setActivityFilter(k)} className={`rounded px-2 py-1 text-xs ${activityFilter===k?"bg-slate-800 text-white":"bg-slate-100 text-slate-700"}`}>{l}</button>)}</div>{!activity.length ? <p className="mt-2 text-sm text-slate-500">No AI actions approved yet. Approved work will appear here.</p> : <ul className="mt-3 space-y-2 text-sm text-slate-700">{activity.filter((a)=>activityFilter==="all"?true:String(a?.status||"")===activityFilter).map((a) => <li key={String(a?.id||a?._id)} className="rounded-lg border border-slate-200 p-2"><p>{a?.message || a?.title}</p><p className="text-xs text-slate-500">{textOr(a?.status, "completed")} · {a?.approved_by_name ? `${a.approved_by_name} · ` : ""}{new Date(a?.created_at || Date.now()).toLocaleString()}</p></li>)}</ul>}
           </section>
         </div>
 
