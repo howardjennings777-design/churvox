@@ -2315,6 +2315,33 @@ async def get_ai_operator_actions(current_user: dict = Depends(get_current_user)
     rows.sort(key=_sort_key)
     return {"success": True, "actions": rows}
 
+@api_router.get("/api/ai-operator/settings")
+async def get_ai_operator_settings(current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str(current_user.get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    defaults = {"ai_operator_enabled": True, "auto_arrival_sms_enabled": False, "arrival_sms_mode": "approval_required", "arrival_sms_minutes_before": 30, "invoice_reminder_mode": "draft_only", "quote_followup_mode": "draft_only", "worker_assignment_mode": "approval_required", "accounting_changes_locked": True, "payroll_changes_locked": True}
+    doc = await db.ai_operator_settings.find_one({"business_id": business_id}) if hasattr(db, "ai_operator_settings") else None
+    return {**defaults, **(doc or {}), "accounting_changes_locked": True, "payroll_changes_locked": True}
+
+@api_router.patch("/api/ai-operator/settings")
+async def patch_ai_operator_settings(payload: dict, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str(current_user.get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    allowed = {"ai_operator_enabled", "auto_arrival_sms_enabled", "arrival_sms_mode", "arrival_sms_minutes_before", "invoice_reminder_mode", "quote_followup_mode", "worker_assignment_mode"}
+    update = {k: payload.get(k) for k in allowed if k in payload}
+    if "arrival_sms_mode" in update and update["arrival_sms_mode"] not in {"approval_required", "auto_send"}:
+        update["arrival_sms_mode"] = "approval_required"
+    if "arrival_sms_minutes_before" in update:
+        update["arrival_sms_minutes_before"] = max(20, min(35, int(update["arrival_sms_minutes_before"] or 30)))
+    update["accounting_changes_locked"] = True
+    update["payroll_changes_locked"] = True
+    now = datetime.now(timezone.utc)
+    await db.ai_operator_settings.update_one({"business_id": business_id}, {"$set": {**update, "business_id": business_id, "updated_at": now}, "$setOnInsert": {"created_at": now}}, upsert=True)
+    row = await db.ai_operator_settings.find_one({"business_id": business_id}) or {}
+    row["accounting_changes_locked"] = True
+    row["payroll_changes_locked"] = True
+    return {"success": True, "settings": row}
+
 
 @api_router.post("/smart-hub/scan")
 async def smart_hub_scan(current_user: dict = Depends(get_current_user)):
@@ -2390,6 +2417,63 @@ async def smart_hub_process_due_communications(current_user: dict = Depends(get_
     _owner_roles_only(str(current_user.get("role") or "").lower())
     business_id = await get_user_business_id(current_user)
     now = datetime.now(timezone.utc)
+
+    settings = await db.ai_operator_settings.find_one({"business_id": business_id}) if hasattr(db, "ai_operator_settings") else {}
+    ai_settings = {
+        "ai_operator_enabled": True,
+        "auto_arrival_sms_enabled": False,
+        "arrival_sms_mode": "approval_required",
+        "arrival_sms_minutes_before": 30,
+    }
+    ai_settings.update(settings or {})
+    if ai_settings.get("ai_operator_enabled") and ai_settings.get("auto_arrival_sms_enabled"):
+        jobs = [serialize_doc(j) async for j in db.jobs.find({"business_id": business_id}).limit(400)]
+        clients = [serialize_doc(c) async for c in db.clients.find({"business_id": business_id}).limit(400)]
+        client_by_id = {str(c.get("id") or c.get("_id")): c for c in clients}
+        now_ts = datetime.now(timezone.utc)
+        for job in jobs:
+            st = str(job.get("status") or "").lower()
+            if st not in {"assigned", "scheduled", "acknowledged"}:
+                continue
+            job_id = str(job.get("id") or job.get("_id") or "")
+            if not job_id:
+                continue
+            sched_raw = job.get("scheduled_at") or job.get("scheduled_date") or job.get("date")
+            sched = None
+            if sched_raw:
+                try:
+                    sched = datetime.fromisoformat(str(sched_raw).replace("Z", "+00:00"))
+                except Exception:
+                    sched = None
+            if not sched:
+                continue
+            if sched.tzinfo is None:
+                sched = sched.replace(tzinfo=timezone.utc)
+            mins = int(ai_settings.get("arrival_sms_minutes_before") or 30)
+            diff = (sched - now_ts).total_seconds() / 60
+            if diff > (mins + 5) or diff < (mins - 10):
+                continue
+            worker_id = str(job.get("assigned_worker_id") or job.get("worker_id") or "")
+            if not worker_id:
+                continue
+            client = client_by_id.get(str(job.get("client_id") or ""))
+            to_phone = (client or {}).get("phone") or job.get("client_phone")
+            if not to_phone:
+                continue
+            if bool((client or {}).get("sms_opt_out") or (client or {}).get("opt_out_sms")):
+                continue
+            exists = await db.communications.find_one({"business_id": business_id, "action_type": "job_arrival_sms", "job_id": job_id, "status": {"$in": ["approved", "scheduled", "sent", "pending"]}})
+            if exists:
+                continue
+            msg = f"Hi {(client or {}).get('name') or 'there'}, our worker is expected to arrive in about {mins} minutes for {job.get('title') or 'your job'}."
+            if ai_settings.get("arrival_sms_mode") == "auto_send":
+                await db.communications.insert_one({"business_id": business_id, "client_id": str((client or {}).get("id") or (client or {}).get("_id") or ""), "job_id": job_id, "action_type": "job_arrival_sms", "channel": "sms", "to_phone": to_phone, "message": msg, "status": "approved", "created_at": now_ts, "updated_at": now_ts})
+            else:
+                await db.ai_operator_actions.update_one(
+                    {"business_id": business_id, "action_key": f"job_arrival_sms:{job_id}"},
+                    {"$set": {"business_id": business_id, "created_by": "ai_operator", "action_key": f"job_arrival_sms:{job_id}", "action_type": "job_arrival_sms", "status": "pending", "group": "drafts", "title": f"Send arrival SMS to {(client or {}).get('name') or 'client'}", "reason": "Arrival notice is due soon.", "what_happens": "Client receives a 30-minute arrival SMS.", "risk": "low", "related_type": "job", "related_id": job_id, "job_id": job_id, "client_id": str((client or {}).get("id") or (client or {}).get("_id") or ""), "worker_id": worker_id, "payload": {"message": msg, "job_id": job_id, "client_id": str((client or {}).get("id") or (client or {}).get("_id") or ""), "worker_id": worker_id, "to_phone": to_phone}, "updated_at": now_ts}, "$setOnInsert": {"created_at": now_ts}},
+                    upsert=True,
+                )
 
     q = {
         "business_id": business_id,
