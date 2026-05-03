@@ -91,6 +91,7 @@ export default function SmartHubBrainPage() {
   const [actionError, setActionError] = useState("");
   const [editedWorkerId, setEditedWorkerId] = useState("");
   const [localActionState, setLocalActionState] = useState({});
+  const [completedActionState, setCompletedActionState] = useState({});
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -108,8 +109,11 @@ export default function SmartHubBrainPage() {
   const today = new Date().toISOString().slice(0, 10);
   const workers = useMemo(() => [...new Map(data.workers.map((w) => [String(w.id || w._id || w.email || w.name), w])).values()], [data.workers]);
   const jobsToday = useMemo(() => data.jobs.filter((j) => String(j.scheduled_date || j.date || "").slice(0, 10) === today), [data.jobs, today]);
-  const unassignedJobs = useMemo(() => data.jobs.filter((j) => !j.assigned_worker_id && !j.worker_id), [data.jobs]);
-  const completedReadyToBill = useMemo(() => data.jobs.filter((j) => String(j.status || "").toLowerCase() === "completed" && !j.invoice_id), [data.jobs]);
+  const isAssignedJob = (j) => Boolean(j?.assigned_worker_id || j?.assigned_worker || j?.worker_id || j?.assignee || ["assigned", "in_progress", "completed"].includes(String(j?.status || "").toLowerCase()));
+  const hasInvoiceForJob = (job) => data.invoices.some((inv) => sameId(inv?.job_id || inv?.related_job_id, asId(job)));
+  const hasDraftOrInvoice = (j) => Boolean(j?.invoice_id || j?.invoice_created || j?.draft_invoice_id || ["created", "draft", "sent"].includes(String(j?.invoice_status || "").toLowerCase()) || hasInvoiceForJob(j));
+  const unassignedJobs = useMemo(() => data.jobs.filter((j) => !isAssignedJob(j)), [data.jobs]);
+  const completedReadyToBill = useMemo(() => data.jobs.filter((j) => String(j.status || "").toLowerCase() === "completed" && !hasDraftOrInvoice(j)), [data.jobs, data.invoices]);
   const waitingQuotes = useMemo(() => data.quotes.filter((q) => ["sent", "pending"].includes(String(q.status || "").toLowerCase())), [data.quotes]);
   const openInvoices = useMemo(() => data.invoices.filter((i) => ["open", "overdue", "sent"].includes(String(i.status || "").toLowerCase())), [data.invoices]);
   const overdueInvoices = useMemo(() => openInvoices.filter((i) => String(i.status || "").toLowerCase() === "overdue"), [openInvoices]);
@@ -136,16 +140,32 @@ export default function SmartHubBrainPage() {
     const recommended = rankedWorkers[0]?.w;
     const list = [];
     if (targetJob && recommended) list.push({ id: `assign-worker-${getAnyId(targetJob)}-${getAnyId(recommended)}`, type: "assign_worker", action_type: "assign_worker", job_id: getAnyId(targetJob), worker_id: getAnyId(recommended), client_id: targetJob.client_id || "", job: targetJob, worker: recommended, priority: "urgent", kind: "assign_worker", title: `Assign ${recommended?.name || "worker"} to ${targetJob?.title || "job"}`, reason: `AI recommends this assignment based on availability, workload, area match, and schedule checks.`, dataUsed: `Job: ${targetJob?.title || getAnyId(targetJob)} · Worker load today: ${rankedWorkers[0]?.load ?? 0} · Unassigned jobs: ${unassignedJobs.length}`, risk: "high", primary: "Approve assignment", nav: "/dispatch", source: "frontend_recommendation" });
-    if (completedReadyToBill.length) list.push({ priority: "ready", kind: "create_invoice_draft", title: `Create ${completedReadyToBill.length} draft invoice${completedReadyToBill.length > 1 ? "s" : ""}`, reason: "AI prepared invoice drafts for completed jobs with pricing not yet billed.", dataUsed: `Completed not invoiced: ${completedReadyToBill.length}`, risk: "medium", primary: "Approve draft", nav: "/invoices" });
-    if (waitingQuotes.length) list.push({ priority: "draft", kind: "quote_follow_up", title: `Follow up ${waitingQuotes.length} quote${waitingQuotes.length > 1 ? "s" : ""}`, reason: "AI prepared follow-up drafts for quotes waiting response.", dataUsed: `Waiting quotes: ${waitingQuotes.length}`, risk: "low", primary: "Approve draft", nav: "/quotes" });
-    if (openInvoices.length) list.push({ priority: "draft", kind: "invoice_reminder", title: `Prepare reminders for ${openInvoices.length} open invoice${openInvoices.length > 1 ? "s" : ""}`, reason: "AI prepared reminders for unpaid invoices.", dataUsed: `Overdue: ${overdueInvoices.length} · Open: ${openInvoices.length}`, risk: overdueInvoices.length ? "high" : "medium", primary: "Approve draft", nav: "/invoices" });
+    if (completedReadyToBill.length) list.push({ id: `draft-invoice-${getAnyId(completedReadyToBill[0])}`, priority: "ready", kind: "create_invoice_draft", action_type: "create_invoice_draft", job_id: getAnyId(completedReadyToBill[0]), title: `Create ${completedReadyToBill.length} draft invoice${completedReadyToBill.length > 1 ? "s" : ""}`, reason: "AI prepared invoice drafts for completed jobs with pricing not yet billed.", dataUsed: `Completed not invoiced: ${completedReadyToBill.length}`, risk: "medium", primary: "Approve draft", nav: "/invoices" });
+    if (waitingQuotes.length) list.push({ id: `quote-followup-${getAnyId(waitingQuotes[0])}`, priority: "draft", kind: "quote_follow_up", action_type: "quote_follow_up", quote_id: getAnyId(waitingQuotes[0]), title: `Follow up ${waitingQuotes.length} quote${waitingQuotes.length > 1 ? "s" : ""}`, reason: "AI prepared follow-up drafts for quotes waiting response.", dataUsed: `Waiting quotes: ${waitingQuotes.length}`, risk: "low", primary: "Approve draft", nav: "/quotes" });
+    if (openInvoices.length) list.push({ id: `invoice-reminder-${getAnyId(openInvoices[0])}`, priority: "draft", kind: "invoice_reminder", action_type: "invoice_reminder", invoice_id: getAnyId(openInvoices[0]), title: `Prepare reminders for ${openInvoices.length} open invoice${openInvoices.length > 1 ? "s" : ""}`, reason: "AI prepared reminders for unpaid invoices.", dataUsed: `Overdue: ${overdueInvoices.length} · Open: ${openInvoices.length}`, risk: overdueInvoices.length ? "high" : "medium", primary: "Approve draft", nav: "/invoices" });
     if (workers.length) list.push({ priority: "watching", kind: "crew_load", title: "Check worker workload balance", reason: "AI detected workers with low and high load today.", dataUsed: `Crew active: ${crewActive}/${workers.length}`, risk: "low", primary: "Open dispatch", nav: "/dispatch" });
     return list;
   }, [workers, jobsToday, unassignedJobs, completedReadyToBill, waitingQuotes, openInvoices, overdueInvoices, crewActive]);
 
   const actionCards = approvals.length ? approvals.map((a) => ({ ...a, priority: "ready", title: a.title || "AI prepared action", reason: a.reason || "AI recommends owner approval.", dataUsed: a.summary || "AI prepared from jobs, crew, quotes and invoices.", risk: a.risk_level || "medium", primary: "Approve", nav: "/dashboard" })) : derivedActions;
-  const visibleActionCards = useMemo(() => actionCards.filter((a) => localActionState[String(a.id || a._id || a.title || "")] !== "rejected"), [actionCards, localActionState]);
+  const visibleActionCards = useMemo(() => actionCards.filter((a) => !["rejected","approved"].includes(localActionState[String(a.id || a._id || a.title || "")])), [actionCards, localActionState]);
   const grouped = useMemo(() => ({ urgent: visibleActionCards.filter((a) => a.priority === "urgent" || a.risk === "high"), ready: visibleActionCards.filter((a) => a.priority === "ready"), draft: visibleActionCards.filter((a) => a.priority === "draft"), watching: visibleActionCards.filter((a) => a.priority === "watching" || a.risk === "low") }), [visibleActionCards]);
+
+
+  const refreshSmartHubAfterAction = useCallback(async () => {
+    await load();
+    setSelectedSmartHubAction(null);
+    setSelectedAction(null);
+    setIsActionModalOpen(false);
+    setActiveSmartHubSection((prev) => prev);
+  }, [load]);
+
+  const markActionCompleted = (action, message) => {
+    const key = String(action?.id || action?._id || action?.title || "");
+    if (!key) return;
+    setCompletedActionState((s) => ({ ...s, [key]: message || "Approved" }));
+    setLocalActionState((s) => ({ ...s, [key]: "approved" }));
+  };
 
   const handleReviewAction = (action) => { setSelectedAction(action); setSelectedSmartHubAction(action); setActionError(""); setIsActionModalOpen(true); };
   const handleApproveAction = async (action) => {
@@ -159,18 +179,25 @@ export default function SmartHubBrainPage() {
         const jobId = action?.job_id || action?.related_job_id;
         if (!jobId || !workerId) throw new Error("Cannot approve assignment: missing job or worker id.");
         await post(`/jobs/${jobId}/assign-worker`, { worker_id: workerId, workerId });
-        toast.success("Worker assigned from AI recommendation.");
-        setIsActionModalOpen(false); setSelectedAction(null); setEditedWorkerId("");
-        await load();
+        markActionCompleted(action, "Approved — worker assigned");
+        setData((prev) => ({ ...prev, jobs: prev.jobs.map((j) => sameId(asId(j), jobId) ? { ...j, assigned_worker_id: workerId, status: ["assigned","in_progress","completed"].includes(String(j.status||"").toLowerCase()) ? j.status : "assigned" } : j) }));
+        toast.success("Approved — worker assigned");
+        setEditedWorkerId("");
+        await refreshSmartHubAfterAction();
         return;
       }
       if (!actionId) throw new Error("Cannot approve yet: missing action id.");
       if (!APPROVAL_ACTION_TYPES.has(actionType)) throw new Error(`Cannot approve yet: unsupported action type '${actionType || "unknown"}'.`);
-      await post(`/ai/control/actions/${actionId}/approve`, {});
-      toast.success("Action approved.");
-      setIsActionModalOpen(false);
-      setSelectedAction(null);
-      await load();
+      if (actionType === "create_invoice_draft") {
+        const draftJobId = action?.job_id || completedReadyToBill?.[0]?.id || completedReadyToBill?.[0]?._id;
+        if (!draftJobId) throw new Error("Cannot approve draft invoice: missing job id.");
+        await post(`/jobs/${draftJobId}/create-draft-invoice`);
+      } else {
+        await post(`/ai/control/actions/${actionId}/approve`, {});
+      }
+      markActionCompleted(action, actionType === "create_invoice_draft" ? "Approved — draft invoice created" : "Approved");
+      toast.success(actionType === "create_invoice_draft" ? "Approved — draft invoice created" : "Action approved.");
+      await refreshSmartHubAfterAction();
     } catch (e) {
       const msg = e?.response?.data?.detail || e?.message || "Approve failed.";
       setActionError(msg);
@@ -184,14 +211,13 @@ export default function SmartHubBrainPage() {
         const localId = String(action?.id || action?.title || Math.random());
         setLocalActionState((s) => ({ ...s, [localId]: "rejected" }));
         toast.success("Recommendation rejected.");
-        setIsActionModalOpen(false);
+        await refreshSmartHubAfterAction();
         return;
       }
       await post(`/ai/control/actions/${actionId}/dismiss`, {});
+      setLocalActionState((s) => ({ ...s, [actionId]: "rejected" }));
       toast.success("Action rejected.");
-      setIsActionModalOpen(false);
-      setSelectedAction(null);
-      await load();
+      await refreshSmartHubAfterAction();
     } catch (e) {
       const msg = e?.response?.data?.detail || e?.message || "Reject failed.";
       setActionError(msg);
@@ -228,7 +254,7 @@ export default function SmartHubBrainPage() {
     <section className="rounded-2xl border bg-white p-4 shadow-sm"><div className="flex gap-2 overflow-x-auto">{workspaces.map((k) => <button key={k} onClick={() => { setActiveWorkspace(k); setActiveSmartHubSection(k); setSelectedSmartHubAction(null); }} className={`whitespace-nowrap rounded-full px-3 py-1.5 text-sm capitalize ${activeWorkspace === k ? "bg-blue-600 text-white" : "border text-slate-700"}`}>{k}</button>)}</div></section>
 
     <section className="grid gap-4 lg:grid-cols-[2fr_1fr]"><div className="space-y-4"><div className="rounded-2xl border bg-white p-4 shadow-sm"><h3 className="text-lg font-semibold">AI Summary</h3><p className="text-sm text-slate-700 mt-2">AI found {unassignedJobs.length} unassigned jobs, {completedReadyToBill.length} completed jobs ready to bill, and {waitingQuotes.length} quotes waiting. The best first move is approving worker assignments, then invoice drafts.</p><p className="mt-2 font-semibold">Most important next move: Approve {unassignedJobs.length} worker assignment{unassignedJobs.length===1?"":"s"}</p></div>
-      {[["Urgent", grouped.urgent],["Ready to approve", grouped.ready],["Drafts prepared", grouped.draft],["Watching", grouped.watching]].map(([g, items]) => <div key={g} className="rounded-2xl border bg-white p-4 shadow-sm"><h3 className="text-lg font-semibold">{g}</h3><div className="mt-3 space-y-3">{items.length ? items.map((a, i) => <div key={a.id || a._id || i} className="rounded-xl border p-3"><p className="font-semibold">{a.title}</p><p className="text-sm text-slate-600 mt-1">AI recommends: {a.reason}</p><p className="text-xs text-slate-500 mt-1">Data AI used: {a.dataUsed}</p><div className="mt-2 flex flex-wrap gap-2"><span className="text-xs border rounded-full px-2 py-1">Risk: {a.risk || "medium"}</span><button onClick={() => handleApproveAction(a)} className="rounded-full bg-blue-600 text-white px-3 py-1.5 text-xs">{approvingActionId === String(a.id || a._id || a.title) ? "Approving…" : (a.primary || "Approve")}</button><button onClick={() => handleEditAction(a)} className="rounded-full border px-3 py-1.5 text-xs">Edit</button><button onClick={() => handleRejectAction(a)} className="rounded-full border px-3 py-1.5 text-xs">Reject</button><button onClick={() => handleReviewAction(a)} className="rounded-full border px-3 py-1.5 text-xs">View details</button></div></div>) : <p className="text-sm text-slate-500">No actions in this group.</p>}</div></div>)}
+      {[["Urgent", grouped.urgent],["Ready to approve", grouped.ready],["Drafts prepared", grouped.draft],["Watching", grouped.watching]].map(([g, items]) => <div key={g} className="rounded-2xl border bg-white p-4 shadow-sm"><h3 className="text-lg font-semibold">{g}</h3><div className="mt-3 space-y-3">{items.length ? items.map((a, i) => <div key={a.id || a._id || i} className="rounded-xl border p-3"><p className="font-semibold">{a.title}</p>{completedActionState[String(a.id || a._id || a.title || "")] ? <p className="text-xs text-emerald-700 mt-1">{completedActionState[String(a.id || a._id || a.title || "")]}</p> : null}<p className="text-sm text-slate-600 mt-1">AI recommends: {a.reason}</p><p className="text-xs text-slate-500 mt-1">Data AI used: {a.dataUsed}</p><div className="mt-2 flex flex-wrap gap-2"><span className="text-xs border rounded-full px-2 py-1">Risk: {a.risk || "medium"}</span><button onClick={() => handleApproveAction(a)} className="rounded-full bg-blue-600 text-white px-3 py-1.5 text-xs">{approvingActionId === String(a.id || a._id || a.title) ? "Approving…" : (a.primary || "Approve")}</button><button onClick={() => handleEditAction(a)} className="rounded-full border px-3 py-1.5 text-xs">Edit</button><button onClick={() => handleRejectAction(a)} className="rounded-full border px-3 py-1.5 text-xs">Reject</button><button onClick={() => handleReviewAction(a)} className="rounded-full border px-3 py-1.5 text-xs">View details</button></div></div>) : <p className="text-sm text-slate-500">No actions in this group.</p>}</div></div>)}
     </div>
     <aside className="space-y-4"><div className="rounded-2xl border bg-white p-4 shadow-sm"><h3 className="text-lg font-semibold">Business Intelligence</h3><div className="mt-3 space-y-2 text-sm"><p>Today’s risk summary: {overdueInvoices.length ? "Urgent receivables risk" : "Stable"}</p><p>Worker availability: {workers.length - crewActive} available / {workers.length} total</p><p>Jobs needing attention: {unassignedJobs.length}</p><p>Money waiting: {openInvoices.length} invoices</p><p>Quotes waiting: {waitingQuotes.length}</p><p>Schedule conflicts: {Math.max(unassignedJobs.length - (workers.length - crewActive), 0)}</p></div><div className="mt-3 grid gap-2"><button onClick={() => navigate('/dispatch')} className="rounded-lg border p-2 text-left">Open dispatch</button><button onClick={() => navigate('/jobs')} className="rounded-lg border p-2 text-left">View jobs</button><button onClick={() => navigate('/quotes')} className="rounded-lg border p-2 text-left">View quotes</button><button onClick={() => navigate('/invoices')} className="rounded-lg border p-2 text-left">View invoices</button></div></div>{error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}</aside></section>
 
