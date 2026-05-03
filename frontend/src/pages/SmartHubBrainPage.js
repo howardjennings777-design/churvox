@@ -354,6 +354,22 @@ export default function SmartHubBrainPage() {
 
   const workspaceButtons = ["Jobs", "Clients", "Invoices", "Quotes", "Crew", "Payroll", "Approvals", "AI Dispatch"];
 
+  const openWorkspace = (name, mode = "list") => {
+    setWorkspaceDrawer(name);
+    setWorkspaceMode(mode);
+    setWorkspaceRecord(null);
+  };
+
+  const runScanNow = async () => {
+    try {
+      await post("/smart-hub/scan", {});
+      await load();
+      setToast({ kind: "success", message: "Smart Hub scan complete." });
+    } catch {
+      setToast({ kind: "error", message: "Scan failed. Please try again." });
+    }
+  };
+
   const draftInvoices = useMemo(() => invoices.filter((inv) => statusOf(inv?.status) === "draft"), [invoices]);
 
   const approveDraft = useCallback(
@@ -644,6 +660,10 @@ export default function SmartHubBrainPage() {
               <p className="text-xs uppercase tracking-wide text-teal-200">Best Next Move</p>
               <p className="mt-1 text-base text-slate-100">{bestNextMove.label}</p>
             </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button type="button" onClick={runScanNow} className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700">Run scan</button>
+              <button type="button" onClick={() => openWorkspace(bestNextMove.target, bestNextMove.target === "Quotes" ? "followUps" : "list")} className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800">Review now</button>
+            </div>
           </section>
 
           {error ? <p className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
@@ -657,7 +677,7 @@ export default function SmartHubBrainPage() {
             ].map(([label, value]) => (
               <article key={label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-                <button type="button" onClick={() => (label === "Unassigned jobs" || label === "Crew available") ? setWorkspaceDrawer("AI Dispatch") : null} className="mt-2 text-2xl font-semibold text-slate-900">
+                <button type="button" onClick={() => ({"Ready to bill":"Invoices","Unassigned jobs":"AI Dispatch","Open invoices":"Payment Reminders","Crew available":"AI Dispatch"}[label] ? openWorkspace({"Ready to bill":"Invoices","Unassigned jobs":"AI Dispatch","Open invoices":"Payment Reminders","Crew available":"AI Dispatch"}[label], {"Open invoices":"reminders"}[label] || "list") : null)} className="mt-2 text-2xl font-semibold text-slate-900">
                   {value}
                 </button>
               </article>
@@ -671,15 +691,15 @@ export default function SmartHubBrainPage() {
                 <button
                   key={name}
                   type="button"
-                  onClick={() => { setWorkspaceDrawer(name); setWorkspaceMode("list"); setWorkspaceRecord(null); }}
+                  onClick={() => openWorkspace(name) }
                   className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800"
                 >
                   {name}
                 </button>
               ))}
-              <button type="button" onClick={() => { setWorkspaceDrawer("Payment Reminders"); setWorkspaceMode("reminders"); setWorkspaceRecord(null); }} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Prepare reminders</button>
-              <button type="button" onClick={() => { setWorkspaceDrawer("Quote Follow-ups"); setWorkspaceMode("followUps"); setWorkspaceRecord(null); }} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Review follow-ups</button>
-              <button type="button" onClick={() => { setWorkspaceDrawer("AI Dispatch"); setWorkspaceMode("list"); setWorkspaceRecord(null); }} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Assign workers</button>
+              <button type="button" onClick={() => openWorkspace("Payment Reminders", "reminders")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Prepare reminders</button>
+              <button type="button" onClick={() => openWorkspace("Quote Follow-ups", "followUps")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Review follow-ups</button>
+              <button type="button" onClick={() => openWorkspace("AI Dispatch", "list")} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-teal-800">Assign workers</button>
             </div>
           </section>
           <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
