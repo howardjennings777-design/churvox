@@ -4,6 +4,7 @@ import { AlertTriangle, Bot, CalendarClock, CheckCircle2, ClipboardList, FileTex
 import Layout from "../components/Layout";
 import { get, post } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import { toast } from "react-hot-toast";
 import JobCreateForm from "../components/forms/JobCreateForm";
 import QuoteCreateForm from "../components/forms/QuoteCreateForm";
 import InvoiceCreateForm from "../components/forms/InvoiceCreateForm";
@@ -44,6 +45,10 @@ export default function SmartHubBrainPage() {
   const [askQuery, setAskQuery] = useState("What should I approve first today?");
   const [askResponse, setAskResponse] = useState("");
   const [busy, setBusy] = useState({ run: false, prepare: false, ask: false, saving: false });
+  const [selectedAction, setSelectedAction] = useState(null);
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [approvingActionId, setApprovingActionId] = useState("");
+  const [actionError, setActionError] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -81,19 +86,45 @@ export default function SmartHubBrainPage() {
     return list;
   }, [workers, jobsToday, unassignedJobs, completedReadyToBill, waitingQuotes, openInvoices, overdueInvoices, crewActive]);
 
-  const actionCards = approvals.length ? approvals.map((a) => ({ ...a, priority: "ready", title: a.title || "AI prepared action", reason: a.reason || "AI recommends owner approval.", dataUsed: a.summary || "AI prepared from jobs, crew, quotes and invoices.", risk: "medium", primary: "Approve", nav: "/dashboard" })) : derivedActions;
+  const actionCards = approvals.length ? approvals.map((a) => ({ ...a, priority: "ready", title: a.title || "AI prepared action", reason: a.reason || "AI recommends owner approval.", dataUsed: a.summary || "AI prepared from jobs, crew, quotes and invoices.", risk: a.risk_level || "medium", primary: "Approve", nav: "/dashboard" })) : derivedActions;
   const grouped = useMemo(() => ({ urgent: actionCards.filter((a) => a.priority === "urgent" || a.risk === "high"), ready: actionCards.filter((a) => a.priority === "ready"), draft: actionCards.filter((a) => a.priority === "draft"), watching: actionCards.filter((a) => a.priority === "watching" || a.risk === "low") }), [actionCards]);
 
-  const approveAction = async (a) => {
-    setBusy((v) => ({ ...v, saving: true }));
-    try { if (a?.id || a?._id) await post(`/ai/control/actions/${a.id || a._id}/approve`, {}); else setAskResponse("Draft approval saved locally. Backend endpoint not available for this derived action yet."); await load(); } catch {};
-    setBusy((v) => ({ ...v, saving: false }));
+  const handleReviewAction = (action) => { setSelectedAction(action); setActionError(""); setIsActionModalOpen(true); };
+  const handleApproveAction = async (action) => {
+    const actionId = String(action?.id || action?._id || "");
+    const actionType = String(action?.action_type || action?.kind || "").toLowerCase();
+    setApprovingActionId(actionId || action?.title || "local");
+    setActionError("");
+    try {
+      if (!actionId) throw new Error("Cannot approve yet: this recommendation is local-only and has no backend action id.");
+      if (!APPROVAL_ACTION_TYPES.has(actionType)) throw new Error(`Cannot approve yet: unsupported action type '${actionType || "unknown"}'.`);
+      await post(`/ai/control/actions/${actionId}/approve`, {});
+      toast.success("Action approved.");
+      setIsActionModalOpen(false);
+      setSelectedAction(null);
+      await load();
+    } catch (e) {
+      const msg = e?.response?.data?.detail || e?.message || "Approve failed.";
+      setActionError(msg);
+      toast.error(msg);
+    } finally { setApprovingActionId(""); }
   };
-  const rejectAction = async (a) => {
-    setBusy((v) => ({ ...v, saving: true }));
-    try { if (a?.id || a?._id) await post(`/ai/control/actions/${a.id || a._id}/dismiss`, {}); else setAskResponse("Draft action rejected locally."); await load(); } catch {};
-    setBusy((v) => ({ ...v, saving: false }));
+  const handleRejectAction = async (action) => {
+    const actionId = String(action?.id || action?._id || "");
+    try {
+      if (!actionId) throw new Error("Cannot reject yet: this recommendation is local-only and has no backend action id.");
+      await post(`/ai/control/actions/${actionId}/dismiss`, {});
+      toast.success("Action rejected.");
+      setIsActionModalOpen(false);
+      setSelectedAction(null);
+      await load();
+    } catch (e) {
+      const msg = e?.response?.data?.detail || e?.message || "Reject failed.";
+      setActionError(msg);
+      toast.error(msg);
+    }
   };
+  const handleEditAction = (action) => { setSelectedAction(action); toast("Inline edit is limited. Use Open full page for full edit."); };
 
   const runDailyCheck = async () => { setBusy((s) => ({ ...s, run: true })); try { await post("/ai/control/run-scan", {}); } catch {} await load(); setBusy((s) => ({ ...s, run: false })); };
   const prepareToday = async () => { setBusy((s) => ({ ...s, prepare: true })); try { await post("/ai/control/prepare-today", {}); } catch {} await load(); setBusy((s) => ({ ...s, prepare: false })); };
@@ -109,11 +140,15 @@ export default function SmartHubBrainPage() {
     <section className="rounded-2xl border bg-white p-4 shadow-sm"><div className="flex flex-wrap gap-2">{workspaces.map((k) => <button key={k} onClick={() => setActiveWorkspace(k)} className={`rounded-full px-3 py-1.5 text-sm capitalize ${activeWorkspace === k ? "bg-blue-600 text-white" : "border text-slate-700"}`}>{k}</button>)}</div></section>
 
     <section className="grid gap-4 lg:grid-cols-[2fr_1fr]"><div className="space-y-4"><div className="rounded-2xl border bg-white p-4 shadow-sm"><h3 className="text-lg font-semibold">AI Summary</h3><p className="text-sm text-slate-700 mt-2">AI found {unassignedJobs.length} unassigned jobs, {completedReadyToBill.length} completed jobs ready to bill, and {waitingQuotes.length} quotes waiting. The best first move is approving worker assignments, then invoice drafts.</p><p className="mt-2 font-semibold">Most important next move: Approve {unassignedJobs.length} worker assignment{unassignedJobs.length===1?"":"s"}</p></div>
-      {[["Urgent", grouped.urgent],["Ready to approve", grouped.ready],["Drafts prepared", grouped.draft],["Watching", grouped.watching]].map(([g, items]) => <div key={g} className="rounded-2xl border bg-white p-4 shadow-sm"><h3 className="text-lg font-semibold">{g}</h3><div className="mt-3 space-y-3">{items.length ? items.map((a, i) => <div key={a.id || a._id || i} className="rounded-xl border p-3"><p className="font-semibold">{a.title}</p><p className="text-sm text-slate-600 mt-1">AI recommends: {a.reason}</p><p className="text-xs text-slate-500 mt-1">Data AI used: {a.dataUsed}</p><div className="mt-2 flex flex-wrap gap-2"><span className="text-xs border rounded-full px-2 py-1">Risk: {a.risk || "medium"}</span><button onClick={() => approveAction(a)} className="rounded-full bg-blue-600 text-white px-3 py-1.5 text-xs">{a.primary || "Approve"}</button><button onClick={() => setModal("ask")} className="rounded-full border px-3 py-1.5 text-xs">Edit</button><button onClick={() => rejectAction(a)} className="rounded-full border px-3 py-1.5 text-xs">Reject</button><button onClick={() => navigate(a.nav || "/dashboard")} className="rounded-full border px-3 py-1.5 text-xs">View details</button></div></div>) : <p className="text-sm text-slate-500">No actions in this group.</p>}</div></div>)}
+      {[["Urgent", grouped.urgent],["Ready to approve", grouped.ready],["Drafts prepared", grouped.draft],["Watching", grouped.watching]].map(([g, items]) => <div key={g} className="rounded-2xl border bg-white p-4 shadow-sm"><h3 className="text-lg font-semibold">{g}</h3><div className="mt-3 space-y-3">{items.length ? items.map((a, i) => <div key={a.id || a._id || i} className="rounded-xl border p-3"><p className="font-semibold">{a.title}</p><p className="text-sm text-slate-600 mt-1">AI recommends: {a.reason}</p><p className="text-xs text-slate-500 mt-1">Data AI used: {a.dataUsed}</p><div className="mt-2 flex flex-wrap gap-2"><span className="text-xs border rounded-full px-2 py-1">Risk: {a.risk || "medium"}</span><button onClick={() => handleApproveAction(a)} className="rounded-full bg-blue-600 text-white px-3 py-1.5 text-xs">{approvingActionId === String(a.id || a._id || a.title) ? "Approving…" : (a.primary || "Approve")}</button><button onClick={() => handleEditAction(a)} className="rounded-full border px-3 py-1.5 text-xs">Edit</button><button onClick={() => handleRejectAction(a)} className="rounded-full border px-3 py-1.5 text-xs">Reject</button><button onClick={() => handleReviewAction(a)} className="rounded-full border px-3 py-1.5 text-xs">View details</button></div></div>) : <p className="text-sm text-slate-500">No actions in this group.</p>}</div></div>)}
     </div>
     <aside className="space-y-4"><div className="rounded-2xl border bg-white p-4 shadow-sm"><h3 className="text-lg font-semibold">Business Intelligence</h3><div className="mt-3 space-y-2 text-sm"><p>Today’s risk summary: {overdueInvoices.length ? "Urgent receivables risk" : "Stable"}</p><p>Worker availability: {workers.length - crewActive} available / {workers.length} total</p><p>Jobs needing attention: {unassignedJobs.length}</p><p>Money waiting: {openInvoices.length} invoices</p><p>Quotes waiting: {waitingQuotes.length}</p><p>Schedule conflicts: {Math.max(unassignedJobs.length - (workers.length - crewActive), 0)}</p></div><div className="mt-3 grid gap-2"><button onClick={() => navigate('/dispatch')} className="rounded-lg border p-2 text-left">Open dispatch</button><button onClick={() => navigate('/jobs')} className="rounded-lg border p-2 text-left">View jobs</button><button onClick={() => navigate('/quotes')} className="rounded-lg border p-2 text-left">View quotes</button><button onClick={() => navigate('/invoices')} className="rounded-lg border p-2 text-left">View invoices</button></div></div>{error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}</aside></section>
   </div></div>
   <SmartModal open={createMenuOpen} title="Create" onClose={() => setCreateMenuOpen(false)}><div className="grid gap-2">{[["New job", "job"], ["New quote", "quote"], ["New invoice", "invoice"], ["Add client", "client"], ["Open dispatch", "dispatch"]].map(([l, k]) => <button key={k} onClick={() => { setCreateMenuOpen(false); setModal(k); }} className="rounded-lg border p-2 text-left">{l}</button>)}</div></SmartModal>
   <SmartModal open={Boolean(modal)} title="Command Action" onClose={() => setModal(null)}>{modal === "job" ? <JobCreateForm onCancel={() => setModal(null)} onSuccess={() => { setModal(null); load(); }} submitLabel="Create job" /> : null}{modal === "quote" ? <QuoteCreateForm onCancel={() => setModal(null)} onSuccess={() => { setModal(null); load(); }} submitLabel="Create quote" /> : null}{modal === "invoice" ? <InvoiceCreateForm onCancel={() => setModal(null)} onSuccess={() => { setModal(null); load(); }} submitLabel="Create invoice" /> : null}{modal === "client" ? <ClientCreateForm onCancel={() => setModal(null)} onSuccess={() => { setModal(null); load(); }} submitLabel="Add client" /> : null}{modal === "dispatch" ? <SmartHubDispatchPanel canManageDispatch={canSeeOwnerControls} onAssigned={() => load()} /> : null}{modal === "ask" ? <div className="space-y-3"><textarea value={askQuery} onChange={(e) => setAskQuery(e.target.value)} className="w-full rounded-xl border p-3" rows={3} /><button onClick={askAi} disabled={busy.ask} className="rounded-full bg-blue-600 text-white px-4 py-2 text-sm">{busy.ask ? "Generating…" : "Ask AI"}</button><div className="rounded-xl border p-3 text-sm min-h-16">{askResponse || "AI response will appear here."}</div></div> : null}</SmartModal>
+
+  <SmartModal open={isActionModalOpen} title={selectedAction?.title || "Action details"} onClose={() => setIsActionModalOpen(false)}>
+    {selectedAction ? <div className="space-y-3 text-sm"><p><span className="font-semibold">AI recommended action:</span> {selectedAction.title}</p><p><span className="font-semibold">Reason:</span> {selectedAction.reason || "AI recommends owner review."}</p><p><span className="font-semibold">AI used this data:</span> {selectedAction.dataUsed || selectedAction.summary || "Jobs, clients, quotes, invoices, and worker data."}</p><p><span className="font-semibold">Risk level:</span> {selectedAction.risk || selectedAction.risk_level || "medium"}</p><p><span className="font-semibold">Related info:</span> job #{selectedAction.job_id || selectedAction.related_job_id || "-"} · client #{selectedAction.client_id || selectedAction.related_client_id || "-"} · worker #{selectedAction.worker_id || selectedAction.assigned_worker_id || "-"} · invoice #{selectedAction.invoice_id || "-"} · quote #{selectedAction.quote_id || "-"}</p><p><span className="font-semibold">Current status:</span> {selectedAction.status || "pending"}</p>{actionError ? <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700">{actionError}</div> : null}<div className="flex flex-wrap gap-2 pt-2"><button onClick={() => handleApproveAction(selectedAction)} className="rounded-full bg-blue-600 text-white px-3 py-1.5">Approve</button><button onClick={() => handleEditAction(selectedAction)} className="rounded-full border px-3 py-1.5">Edit</button><button onClick={() => handleRejectAction(selectedAction)} className="rounded-full border px-3 py-1.5">Reject</button><button onClick={() => setIsActionModalOpen(false)} className="rounded-full border px-3 py-1.5">Close</button><button onClick={() => navigate(selectedAction.nav || "/dashboard")} className="rounded-full border px-3 py-1.5">Open full page</button></div></div> : null}
+  </SmartModal>
   </Layout>;
 }
