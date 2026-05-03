@@ -165,6 +165,8 @@ export default function SmartHubBrainPage() {
   const [approvalCentreOpen, setApprovalCentreOpen] = useState(false);
   const [operatorActions, setOperatorActions] = useState([]);
   const [selectedApprovalIds, setSelectedApprovalIds] = useState([]);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [readNotificationIds, setReadNotificationIds] = useState({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -409,6 +411,24 @@ export default function SmartHubBrainPage() {
     [approvalItems]
   );
   const approvalBadgeTone = approvalCounts.needs_decision ? "amber" : approvalCounts.all ? "green" : "slate";
+  const notificationItems = useMemo(() => {
+    const aiApprovals = sortedApprovalItems.filter((item) => item.status !== "completed").slice(0, 6).map((item) => ({
+      id: `approval-${item.id}`,
+      section: "AI approvals",
+      title: item.title || "Approval ready",
+      subtitle: item.reason || "Ready for review.",
+      time: new Date().toLocaleTimeString(),
+      action: () => openApprovalCentre({ tab: item.group || "all", actionId: item.id }),
+    }));
+    const recent = safeArray(activity).slice(0, 5).map((a) => ({
+      id: `activity-${a?.id || a?._id}`, section: "Recent AI activity", title: textOr(a?.title, "AI activity"), subtitle: textOr(a?.message, "Recorded in Smart Hub."), time: new Date(a?.created_at || Date.now()).toLocaleString(), action: () => openApprovalCentre({ tab: "all" }),
+    }));
+    const errors = safeArray(activity).filter((a) => ["failed", "error", "missing_contact"].includes(statusOf(a?.status))).slice(0, 5).map((a) => ({
+      id: `error-${a?.id || a?._id}`, section: "Alerts/errors", title: textOr(a?.title, "Action failed"), subtitle: textOr(a?.message, "Needs attention."), time: new Date(a?.created_at || Date.now()).toLocaleString(), action: () => openApprovalCentre({ tab: "needs_decision" }),
+    }));
+    return [...aiApprovals, ...recent, ...errors];
+  }, [sortedApprovalItems, activity, openApprovalCentre]);
+  const unreadNotificationCount = notificationItems.filter((item) => !readNotificationIds[item.id]).length;
   const filteredApprovalItems = useMemo(() => getFilteredApprovalActions(sortedApprovalItems, approvalFilter), [sortedApprovalItems, approvalFilter]);
   useEffect(() => {
     const validIds = new Set(sortedApprovalItems.map((item) => String(item.id)));
@@ -791,6 +811,14 @@ export default function SmartHubBrainPage() {
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" onClick={runScanNow} className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700">Run scan</button>
               <button type="button" onClick={() => { openApprovalCentre({ tab: "all" }); }} className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800">Review now</button>
+              <button type="button" onClick={() => openApprovalCentre({ tab: approvalCounts.needs_decision ? "needs_decision" : "all" })} className={`rounded-full px-3 py-2 text-xs font-semibold ${approvalBadgeTone === "amber" ? "bg-amber-100 text-amber-900" : approvalBadgeTone === "green" ? "bg-emerald-100 text-emerald-900" : "bg-slate-200 text-slate-700"}`}>{approvalCounts.all ? `${approvalCounts.all} approvals` : "All clear"}</button>
+              <div className="relative">
+                <button type="button" onClick={() => setNotificationOpen((v) => !v)} className="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-100 hover:bg-slate-800">🔔 {unreadNotificationCount}</button>
+                {notificationOpen ? <div className="absolute right-0 z-20 mt-2 w-[340px] rounded-xl border border-slate-200 bg-white p-3 text-slate-900 shadow-xl">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Notifications</p>
+                  {notificationItems.slice(0, 10).map((item) => <button key={item.id} type="button" onClick={() => { setReadNotificationIds((prev) => ({ ...prev, [item.id]: true })); setNotificationOpen(false); item.action?.(); }} className="mt-2 w-full rounded-lg border border-slate-100 p-2 text-left hover:bg-slate-50"><p className="text-[11px] font-semibold uppercase text-slate-500">{item.section}</p><p className="text-sm font-medium">{item.title}</p><p className="text-xs text-slate-600">{item.subtitle}</p><p className="text-[11px] text-slate-400">{item.time}</p></button>)}
+                </div> : null}
+              </div>
             </div>
           </section>
 
@@ -918,6 +946,8 @@ export default function SmartHubBrainPage() {
                     <article key={item.id} className="rounded-xl border border-slate-200 bg-[#fdfcf8] p-4 shadow-sm">
                       <div className="flex items-start justify-between"><label className="text-xs"><input type="checkbox" checked={selectedApprovalIds.includes(String(item.id))} onChange={() => toggleApprovalSelection(String(item.id))} className="mr-2" />Select</label><span className="text-xs uppercase">{meta.status}</span></div>
                       <p className="font-semibold text-slate-900">{meta.title}</p><p className="mt-1 text-sm text-slate-600">{meta.subtitle}</p><p className="mt-1 text-sm text-slate-700">{meta.reason}</p><p className="mt-1 text-xs text-slate-500">Risk: {meta.risk}</p>
+                      {item.type === "invoice_reminder" ? <><div className="mt-2 flex gap-1 text-[11px]"><span className="rounded bg-slate-100 px-2 py-0.5">Email</span><span className="rounded bg-slate-100 px-2 py-0.5">SMS</span></div><p className="mt-2 rounded bg-slate-50 p-2 text-xs text-slate-700">{reminderDrafts[item.relatedId] || buildInvoiceReminderMessage({ client: findByIds(clients, [item.invoice?.client_id, item.invoice?.clientId]), invoice: item.invoice, business: user, channel: "email" })}</p></> : null}
+                      {item.type === "quote_follow_up" ? <><div className="mt-2 flex gap-1 text-[11px]"><span className="rounded bg-slate-100 px-2 py-0.5">Email</span><span className="rounded bg-slate-100 px-2 py-0.5">SMS</span></div><p className="mt-2 rounded bg-slate-50 p-2 text-xs text-slate-700">{quoteDrafts[item.relatedId] || buildQuoteFollowUpMessage({ client: findByIds(clients, [item.quote?.client_id, item.quote?.clientId]), quote: item.quote, business: user, channel: "email" })}</p></> : null}
                       <div className="mt-3 flex flex-wrap gap-2">
                         <button type="button" onClick={async ()=>{ if (item.type === "create_invoice_draft") await approveDraft(item.job); else if (item.type === "assign_worker") openWorkspace("AI Dispatch", "assign"); else if (item.type === "invoice_reminder") openWorkspace("Payment Reminders", "reminders"); else if (item.type === "quote_follow_up") openWorkspace("Quote Follow-ups", "followUps"); else setApprovalDetail(item); }} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">Approve</button>
                         <button type="button" onClick={()=>setApprovalDetail(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Edit</button>
