@@ -280,6 +280,7 @@ export default function SmartHubBrainPage() {
   };
 
   const handleReviewAction = (action, mode = "list") => openSmartHubAction(action, mode);
+
   const handleApproveAction = async (action) => {
     const actionId = String(action?.id || action?._id || "");
     const actionType = String(action?.action_type || action?.kind || "").toLowerCase();
