@@ -78,13 +78,12 @@ export default function Layout({ children, smartHubMode = false }) {
     .join("")
     .toUpperCase();
 
-  const isSmartHubRoute = location.pathname === "/dashboard";
+  const isSmartHubRoute = location.pathname === "/dashboard" || location.pathname.startsWith("/dashboard/");
   const isSmartHubLayout = smartHubMode || isSmartHubRoute;
-  const showSidebar = !isSmartHubLayout;
   return (
     <div className="px-app tap-safe-root cx-app-shell" data-testid="layout-container">
       {/* Desktop Sidebar — Premium light */}
-      <aside className={`px-sidebar hidden md:flex ${showSidebar ? "" : "md:hidden"}`} data-testid="desktop-sidebar">
+      {!isSmartHubLayout && <aside className="px-sidebar hidden md:flex" data-testid="desktop-sidebar">
         <div className="px-sidebar__brand">
           <ChurvoxLogo size="lg" dataTestId="sidebar-logo" />
           <NotificationsBell />
@@ -126,7 +125,7 @@ export default function Layout({ children, smartHubMode = false }) {
             Log out
           </button>
         </div>
-      </aside>
+      </aside>}
 
       {/* Main */}
       <div className={`px-main ${isSmartHubLayout ? "px-main--full" : ""}`} data-testid="main-content-area">
