@@ -4,10 +4,10 @@ import { AlertTriangle, Bot, Briefcase, CalendarClock, CheckCircle2, ClipboardLi
 import Layout from "../components/Layout";
 import { get, post } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
-import JobCreateForm from "../components/jobs/JobCreateForm";
-import QuoteCreateForm from "../components/quotes/QuoteCreateForm";
-import InvoiceCreateForm from "../components/invoices/InvoiceCreateForm";
-import ClientCreateForm from "../components/clients/ClientCreateForm";
+import JobCreateForm from "../components/forms/JobCreateForm";
+import QuoteCreateForm from "../components/forms/QuoteCreateForm";
+import InvoiceCreateForm from "../components/forms/InvoiceCreateForm";
+import ClientCreateForm from "../components/forms/ClientCreateForm";
 import SmartHubDispatchPanel from "../components/SmartHubDispatchPanel";
 
 const OWNER_ROLES = ["owner", "admin", "manager", "office_admin", "platform_owner"];
