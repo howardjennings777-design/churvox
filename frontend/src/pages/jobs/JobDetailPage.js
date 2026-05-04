@@ -271,7 +271,7 @@ export default function JobDetailPage() {
             <Button variant="outline" onClick={() => navigate("/jobs")}>
               Back to Jobs
             </Button>
-            <Button onClick={loadPage} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Button onClick={loadPage} className="bg-churvox-accent hover:bg-churvox-accent/90 text-white">
               Retry
             </Button>
           </div>
@@ -320,7 +320,7 @@ export default function JobDetailPage() {
                   Edit Job
                 </Button>
                 {currentStatus === "completed" && !job?.invoice_id && (
-                  <Button onClick={handleCreateDraftInvoice} className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Button onClick={handleCreateDraftInvoice} className="bg-churvox-accent hover:bg-churvox-accent/90 text-white">
                     {invoiceMode === "myob_external" ? "Prepare billing draft for MYOB" : "Create Draft Invoice"}
                   </Button>
                 )}
@@ -375,7 +375,7 @@ export default function JobDetailPage() {
                 <div className="flex items-center justify-between mb-1">
                   <div className="text-xs uppercase tracking-wide text-slate-500 inline-flex items-center gap-1"><StickyNote size={12} /> Site notes</div>
                   <Button size="sm" variant="ghost" onClick={handleSaveEmployerNotes} disabled={savingEmployerNotes}
-                    className="text-xs text-blue-600" data-testid="save-employer-notes-btn">
+                    className="text-xs text-churvox-accent" data-testid="save-employer-notes-btn">
                     {savingEmployerNotes ? "Saving..." : "Save"}
                   </Button>
                 </div>
@@ -434,7 +434,7 @@ export default function JobDetailPage() {
                   <div className="text-xs uppercase tracking-wide text-slate-500">Quote</div>
                   <div className="text-slate-900">
                     {job?.quote_id ? (
-                      <Link to={`/quotes/${job.quote_id}`} className="text-blue-600 hover:underline">
+                      <Link to={`/quotes/${job.quote_id}`} className="text-churvox-accent hover:underline">
                         Open Quote
                       </Link>
                     ) : "-"}
@@ -444,7 +444,7 @@ export default function JobDetailPage() {
                   <div className="text-xs uppercase tracking-wide text-slate-500">Invoice</div>
                   <div className="text-slate-900">
                     {job?.invoice_id ? (
-                      <Link to={`/invoices/${job.invoice_id}`} className="text-blue-600 hover:underline">
+                      <Link to={`/invoices/${job.invoice_id}`} className="text-churvox-accent hover:underline">
                         Open Invoice
                       </Link>
                     ) : "-"}
@@ -496,7 +496,7 @@ export default function JobDetailPage() {
               <Button
                 onClick={handleAssign}
                 disabled={saving || !selectedWorker || filteredWorkerList.length === 0}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-churvox-accent hover:bg-churvox-accent/90 text-white"
                 data-testid="confirm-assign-worker"
               >
                 {saving ? "Saving..." : "Assign Worker"}
@@ -512,7 +512,7 @@ export default function JobDetailPage() {
               <Button
                 onClick={handleAcknowledge}
                 disabled={saving}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-churvox-accent hover:bg-churvox-accent/90 text-white"
               >
                 {saving ? "Saving..." : "Accept Job"}
               </Button>
@@ -532,7 +532,7 @@ export default function JobDetailPage() {
                     variant={currentStatus === status ? "default" : "outline"}
                     onClick={() => handleStatusChange(status)}
                     disabled={saving}
-                    className={currentStatus === status ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}
+                    className={currentStatus === status ? "bg-churvox-accent hover:bg-churvox-accent/90 text-white" : ""}
                     data-testid={`status-btn-${status}`}
                   >
                     {niceStatus(status)}
@@ -551,7 +551,7 @@ export default function JobDetailPage() {
                 <Button
                   onClick={handleSaveWorkerNotes}
                   disabled={savingNotes}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-churvox-accent hover:bg-churvox-accent/90 text-white"
                   data-testid="save-worker-notes-button"
                 >
                   {savingNotes ? "Saving..." : "Save Notes"}
@@ -604,7 +604,7 @@ export default function JobDetailPage() {
                 <div className="text-sm text-slate-600">
                   Coords: {Number(job.start_lat).toFixed(5)}, {Number(job.start_lng).toFixed(5)}
                   {" · "}
-                  <a className="text-blue-600 hover:underline" href={`https://www.google.com/maps?q=${job.start_lat},${job.start_lng}`} target="_blank" rel="noreferrer">open in Google Maps</a>
+                  <a className="text-churvox-accent hover:underline" href={`https://www.google.com/maps?q=${job.start_lat},${job.start_lng}`} target="_blank" rel="noreferrer">open in Google Maps</a>
                 </div>
               )}
               {job.location_captured_at && (
