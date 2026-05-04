@@ -10149,3 +10149,115 @@ async def ai_operator_run_daily_plan(current_user: dict = Depends(get_current_us
     await db.ai_operator_daily_plans.update_one({"business_id": business_id, "date": today}, {"$set": plan, "$setOnInsert": {"created_at": datetime.now(timezone.utc)}}, upsert=True)
     saved = await db.ai_operator_daily_plans.find_one({"business_id": business_id, "date": today}) or plan
     return {"success": True, "plan": serialize_doc(saved), "actions": actions}
+
+
+PROOF_PACK_ALLOWED_ROLES = {"owner", "employer", "admin", "manager", "office_admin", "platform_owner"}
+
+def _proof_pack_guard(role: str):
+    if str(role or "").lower() not in PROOF_PACK_ALLOWED_ROLES:
+        raise HTTPException(status_code=403, detail="Proof-to-Paid is restricted to owner/admin roles")
+
+def _proof_pack_query_by_id(proof_pack_id: str, business_id: str):
+    queries = [{"id": proof_pack_id, "business_id": business_id}]
+    if ObjectId.is_valid(proof_pack_id):
+        queries.append({"_id": ObjectId(proof_pack_id), "business_id": business_id})
+    return {"$or": queries}
+
+@api_router.get("/proof-packs")
+async def proof_packs_list(status: str | None = None, job_id: str | None = None, client_id: str | None = None, current_user: dict = Depends(get_current_user)):
+    _proof_pack_guard(current_user.get("role"))
+    business_id = await get_user_business_id(current_user)
+    q = {"business_id": business_id}
+    if status: q["status"] = status
+    if job_id: q["job_id"] = job_id
+    if client_id: q["client_id"] = client_id
+    packs = [serialize_doc(p) async for p in db.job_proof_packs.find(q).sort("updated_at", -1).limit(200)]
+    completed_jobs = [serialize_doc(j) async for j in db.jobs.find({"business_id": business_id, "status": "completed"}).sort("updated_at", -1).limit(200)]
+    job_ids_with_pack = {str(p.get("job_id") or "") for p in packs}
+    jobs_without_pack = [j for j in completed_jobs if str(j.get("id") or j.get("_id") or "") not in job_ids_with_pack]
+    return {"success": True, "data": packs, "completed_jobs_without_pack": jobs_without_pack}
+
+@api_router.get("/proof-packs/{proof_pack_id}")
+async def proof_pack_get(proof_pack_id: str, current_user: dict = Depends(get_current_user)):
+    _proof_pack_guard(current_user.get("role"))
+    business_id = await get_user_business_id(current_user)
+    pack = await db.job_proof_packs.find_one(_proof_pack_query_by_id(proof_pack_id, business_id))
+    if not pack:
+        raise HTTPException(status_code=404, detail="Proof pack not found")
+    return {"success": True, "data": serialize_doc(pack)}
+
+@api_router.post("/proof-packs/prepare-for-job/{job_id}")
+async def proof_pack_prepare(job_id: str, current_user: dict = Depends(get_current_user)):
+    _proof_pack_guard(current_user.get("role"))
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    job = await db.jobs.find_one({"business_id": business_id, "$or": [{"id": job_id}, {"_id": ObjectId(job_id)}] if ObjectId.is_valid(job_id) else [{"id": job_id}]})
+    if not job: raise HTTPException(status_code=404, detail="Job not found")
+    client_id = str(job.get("client_id") or "")
+    client = await db.clients.find_one({"business_id": business_id, "$or": [{"id": client_id}, {"_id": ObjectId(client_id)}] if ObjectId.is_valid(client_id) else [{"id": client_id}]}) if client_id else None
+    photos = job.get("photos") or job.get("completion_photos") or []
+    timeline = [{"label": "Assigned", "at": job.get("assigned_at")}, {"label": "Started", "at": job.get("started_at")}, {"label": "Completed", "at": job.get("completed_at")}]
+    timeline = [t for t in timeline if t.get("at")]
+    worker_name = job.get("assigned_worker_name") or job.get("worker_name") or "the assigned team"
+    time_summary = job.get("total_time_on_site_label") or "tracked job time"
+    ai_summary = f"Work has been completed for {client.get('name') if client else 'the client'} at {job.get('address') or 'the job site'}. {worker_name} completed {job.get('title') or 'the requested service'}, uploaded {len(photos)} completion photo(s), and recorded {time_summary}. The proof pack is ready for owner review."
+    existing = await db.job_proof_packs.find_one({"business_id": business_id, "job_id": str(job.get('id') or job.get('_id'))})
+    payload = {"business_id": business_id, "job_id": str(job.get("id") or job.get("_id")), "client_id": client_id or None, "invoice_id": job.get("invoice_id"), "quote_id": job.get("quote_id"), "status": "ready_for_owner_review", "ai_summary": ai_summary, "owner_message": "", "work_summary": job.get("notes") or "", "photos": photos, "timeline": timeline, "updated_at": now, "created_by": str(current_user.get("id") or "")}
+    if existing:
+        await db.job_proof_packs.update_one({"_id": existing["_id"]}, {"$set": payload})
+    else:
+        payload.update({"id": secrets.token_urlsafe(10), "created_at": now})
+        await db.job_proof_packs.insert_one(payload)
+    pack = await db.job_proof_packs.find_one({"business_id": business_id, "job_id": payload["job_id"]})
+    return {"success": True, "data": serialize_doc(pack)}
+
+@api_router.post("/proof-packs/{proof_pack_id}/approve")
+async def proof_pack_approve(proof_pack_id: str, current_user: dict = Depends(get_current_user)):
+    _proof_pack_guard(current_user.get("role"))
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    pack = await db.job_proof_packs.find_one(_proof_pack_query_by_id(proof_pack_id, business_id))
+    if not pack: raise HTTPException(status_code=404, detail="Proof pack not found")
+    token = pack.get("public_token") or secrets.token_urlsafe(32)
+    await db.job_proof_packs.update_one({"_id": pack["_id"]}, {"$set": {"status": "approved", "public_token": token, "approved_at": now, "approved_by": str(current_user.get("id") or ""), "updated_at": now}})
+    return {"success": True, "public_url_path": f"/client-portal/{token}"}
+
+@api_router.post("/proof-packs/{proof_pack_id}/mark-sent")
+async def proof_pack_mark_sent(proof_pack_id: str, current_user: dict = Depends(get_current_user)):
+    _proof_pack_guard(current_user.get("role"))
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    pack = await db.job_proof_packs.find_one(_proof_pack_query_by_id(proof_pack_id, business_id))
+    if not pack: raise HTTPException(status_code=404, detail="Proof pack not found")
+    await db.job_proof_packs.update_one({"_id": pack["_id"]}, {"$set": {"status": "sent", "sent_at": now, "updated_at": now}})
+    return {"success": True}
+
+@api_router.post("/proof-packs/{proof_pack_id}/archive")
+async def proof_pack_archive(proof_pack_id: str, current_user: dict = Depends(get_current_user)):
+    _proof_pack_guard(current_user.get("role"))
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    pack = await db.job_proof_packs.find_one(_proof_pack_query_by_id(proof_pack_id, business_id))
+    if not pack: raise HTTPException(status_code=404, detail="Proof pack not found")
+    await db.job_proof_packs.update_one({"_id": pack["_id"]}, {"$set": {"status": "archived", "updated_at": now}})
+    return {"success": True}
+
+@api_router.get("/public/client-portal/{token}")
+async def public_client_portal(token: str):
+    now = datetime.now(timezone.utc)
+    pack = await db.job_proof_packs.find_one({"public_token": token})
+    if not pack: raise HTTPException(status_code=404, detail="Portal not found")
+    if pack.get("status") in {"approved", "sent"}:
+        await db.job_proof_packs.update_one({"_id": pack["_id"]}, {"$set": {"status": "client_viewed", "client_viewed_at": now, "updated_at": now}})
+        pack["status"] = "client_viewed"
+    business = await db.businesses.find_one({"_id": ObjectId(pack["business_id"])}) if ObjectId.is_valid(str(pack.get("business_id"))) else None
+    return {"success": True, "data": {"business_name": (business or {}).get("business_name") or (business or {}).get("name") or "Churvox Business", "job_title": pack.get("job_title") or "", "completed_at": pack.get("completed_at"), "ai_summary": pack.get("ai_summary"), "owner_message": pack.get("owner_message"), "photos": pack.get("photos") or [], "timeline": pack.get("timeline") or [], "invoice_id": pack.get("invoice_id"), "quote_id": pack.get("quote_id"), "status": pack.get("status")}}
+
+@api_router.post("/public/client-portal/{token}/approve-work")
+async def public_client_portal_approve(token: str):
+    now = datetime.now(timezone.utc)
+    pack = await db.job_proof_packs.find_one({"public_token": token})
+    if not pack: raise HTTPException(status_code=404, detail="Portal not found")
+    next_status = "paid" if pack.get("status") == "paid" else "client_approved"
+    await db.job_proof_packs.update_one({"_id": pack["_id"]}, {"$set": {"status": next_status, "client_approved_at": now, "updated_at": now}})
+    return {"success": True}
