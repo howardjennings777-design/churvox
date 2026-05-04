@@ -1,74 +1,169 @@
 /*
   Churvox modal workspace upgrader.
-  Some older Smart Hub/workspace popups are custom overlays instead of Radix dialogs,
-  so CSS-only dialog rules do not catch them. This upgrades any popup that offers
-  an "open full page" escape action into a full-page in-place workspace and hides
-  that redundant action.
+  Older Smart Hub/workspace popups sometimes render as custom fixed panels instead
+  of Radix dialogs. This makes those popups behave like full-page workspaces and
+  removes every redundant "Open full page" escape action from the UI.
 */
 
-const OPEN_FULL_PAGE_TEXT = /(open|view)\s+(the\s+)?(full\s+)?page|open\s+full\s+(page|view|workspace)|full\s+page/i;
+const OPEN_FULL_PAGE_TEXT = /(open|view|go\s+to|launch)\s+(the\s+)?(full\s+)?(page|workspace|view)|full\s+(page|workspace|view)/i;
+const WORKSPACE_HINT_TEXT = /workspace|drawer|details|review|approval|invoice|quote|client|job|worker|crew|dispatch|settings|automation|payroll|report|sms|notification/i;
+
 const OVERLAY_SELECTOR = [
   '[role="dialog"]',
+  '[aria-modal="true"]',
   '[data-radix-dialog-content]',
   '[data-radix-alert-dialog-content]',
   '[data-vaul-drawer]',
+  '[data-state="open"]',
   '[class*="fixed"][class*="inset-0"]',
   '[class*="fixed"][class*="right-0"]',
   '[class*="fixed"][class*="bottom-0"]',
   '[class*="fixed"][class*="inset-y-0"]',
+  '[class*="fixed"][class*="z-"]',
+].join(',');
+
+const CLICKABLE_SELECTOR = [
+  'button',
+  'a',
+  '[role="button"]',
+  '[tabindex]',
+  '.cursor-pointer',
+  '[onclick]',
 ].join(',');
 
 function textOf(node) {
   return String(node?.textContent || '').replace(/\s+/g, ' ').trim();
 }
 
+function isVisible(node) {
+  if (!node || !(node instanceof HTMLElement)) return false;
+  const style = window.getComputedStyle(node);
+  if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+  const rect = node.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0;
+}
+
+function isSmallActionElement(node) {
+  if (!node || !(node instanceof HTMLElement)) return false;
+  const rect = node.getBoundingClientRect();
+  const tag = node.tagName.toLowerCase();
+  return ['button', 'a'].includes(tag) || node.getAttribute('role') === 'button' || rect.width < 340 || rect.height < 90;
+}
+
+function markHiddenOpenFullPageAction(node) {
+  if (!node || !(node instanceof HTMLElement)) return;
+  node.setAttribute('data-churvox-open-full-page-hidden', 'true');
+  node.setAttribute('aria-hidden', 'true');
+  node.setAttribute('tabindex', '-1');
+  node.style.setProperty('display', 'none', 'important');
+  node.style.setProperty('visibility', 'hidden', 'important');
+  node.style.setProperty('pointer-events', 'none', 'important');
+}
+
+function findPanelInside(container) {
+  if (!container || !(container instanceof HTMLElement)) return null;
+  const candidates = Array.from(container.querySelectorAll([
+    '[role="dialog"]',
+    '[data-radix-dialog-content]',
+    '[data-vaul-drawer]',
+    '[class*="rounded-3xl"]',
+    '[class*="rounded-2xl"]',
+    '[class*="max-w"]',
+    '[class*="w-full"]',
+    '.cx-card',
+    '.surface-card',
+  ].join(','))).filter((el) => el instanceof HTMLElement && isVisible(el));
+
+  return candidates.sort((a, b) => {
+    const ar = a.getBoundingClientRect();
+    const br = b.getBoundingClientRect();
+    return (br.width * br.height) - (ar.width * ar.height);
+  })[0] || null;
+}
+
 function markFullPageWorkspace(container) {
-  if (!container || container === document.body || container === document.documentElement) return;
+  if (!container || !(container instanceof HTMLElement)) return;
+  if (container === document.body || container === document.documentElement) return;
+
   container.setAttribute('data-churvox-fullpage-workspace', 'true');
 
-  const likelyPanel = container.querySelector(
-    '[role="dialog"], [data-radix-dialog-content], [class*="rounded-3xl"], [class*="rounded-2xl"], [class*="max-w"], [class*="w-full"]'
-  );
-
+  const likelyPanel = findPanelInside(container);
   if (likelyPanel && likelyPanel !== container) {
     likelyPanel.setAttribute('data-churvox-fullpage-workspace-panel', 'true');
   }
 }
 
-function upgradeFullPageModalWorkspaces() {
-  if (typeof document === 'undefined') return;
+function findNearestOverlay(node) {
+  if (!node || !(node instanceof HTMLElement)) return null;
+  const closest = node.closest(OVERLAY_SELECTOR);
+  if (closest && closest !== document.body && closest !== document.documentElement) return closest;
 
-  const buttonsAndLinks = Array.from(document.querySelectorAll('button, a'));
+  let current = node.parentElement;
+  while (current && current !== document.body && current !== document.documentElement) {
+    const style = window.getComputedStyle(current);
+    const rect = current.getBoundingClientRect();
+    const isFixedOrAbsolute = style.position === 'fixed' || style.position === 'absolute';
+    const isLargePanel = rect.width > Math.min(420, window.innerWidth * 0.5) && rect.height > Math.min(260, window.innerHeight * 0.35);
+    const isLayered = Number(style.zIndex || 0) >= 20;
+    if ((isFixedOrAbsolute && isLargePanel) || (isLayered && isLargePanel)) return current;
+    current = current.parentElement;
+  }
+  return null;
+}
 
-  buttonsAndLinks.forEach((el) => {
+function hideOpenFullPageActions() {
+  const elements = Array.from(document.querySelectorAll(`${CLICKABLE_SELECTOR}, span, div`));
+
+  elements.forEach((el) => {
+    if (!(el instanceof HTMLElement) || !isVisible(el)) return;
+
     const label = textOf(el);
-    if (!OPEN_FULL_PAGE_TEXT.test(label)) return;
+    if (!label || !OPEN_FULL_PAGE_TEXT.test(label)) return;
 
-    const overlay = el.closest(OVERLAY_SELECTOR);
-    if (overlay) {
-      markFullPageWorkspace(overlay);
-    }
+    const directAction = el.closest(CLICKABLE_SELECTOR);
+    const actionToHide = directAction && isSmallActionElement(directAction) ? directAction : el;
+    const overlay = findNearestOverlay(actionToHide);
 
-    el.setAttribute('data-churvox-open-full-page-hidden', 'true');
-    el.setAttribute('aria-hidden', 'true');
-    el.style.display = 'none';
+    if (overlay) markFullPageWorkspace(overlay);
+    markHiddenOpenFullPageAction(actionToHide);
   });
+}
 
-  const customOverlays = Array.from(document.querySelectorAll(OVERLAY_SELECTOR));
-  customOverlays.forEach((overlay) => {
+function upgradeCustomOverlays() {
+  const overlays = Array.from(document.querySelectorAll(OVERLAY_SELECTOR));
+
+  overlays.forEach((overlay) => {
+    if (!(overlay instanceof HTMLElement) || !isVisible(overlay)) return;
+
     const text = textOf(overlay);
-    const hasWorkspaceHint = /workspace|drawer|details|review|approval|invoice|quote|client|job|worker|crew|dispatch|settings/i.test(text);
-    const hasFormOrList = overlay.querySelector('input, textarea, select, table, [role="list"], [data-smart-hub-card="true"], .cx-card, .surface-card');
+    const rect = overlay.getBoundingClientRect();
+    const hasWorkspaceHint = WORKSPACE_HINT_TEXT.test(text);
+    const hasFormOrList = overlay.querySelector('input, textarea, select, table, [role="list"], [data-smart-hub-card="true"], .cx-card, .surface-card, form');
     const hasOpenFullPage = OPEN_FULL_PAGE_TEXT.test(text);
+    const isUsefulSize = rect.width > 260 && rect.height > 180;
 
-    if (hasOpenFullPage || (hasWorkspaceHint && hasFormOrList && text.length > 80)) {
+    if (hasOpenFullPage || (hasWorkspaceHint && hasFormOrList && isUsefulSize)) {
       markFullPageWorkspace(overlay);
     }
   });
 }
 
+function upgradeFullPageModalWorkspaces() {
+  if (typeof document === 'undefined' || typeof window === 'undefined') return;
+  hideOpenFullPageActions();
+  upgradeCustomOverlays();
+}
+
 if (typeof window !== 'undefined') {
-  const run = () => window.requestAnimationFrame(upgradeFullPageModalWorkspaces);
+  let queued = false;
+  const run = () => {
+    if (queued) return;
+    queued = true;
+    window.requestAnimationFrame(() => {
+      queued = false;
+      upgradeFullPageModalWorkspaces();
+    });
+  };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', run, { once: true });
@@ -76,10 +171,15 @@ if (typeof window !== 'undefined') {
     run();
   }
 
+  window.addEventListener('click', () => setTimeout(run, 0), true);
+  window.addEventListener('keyup', run, true);
+
   const observer = new MutationObserver(run);
   observer.observe(document.documentElement, {
     childList: true,
     subtree: true,
     characterData: true,
+    attributes: true,
+    attributeFilter: ['class', 'style', 'data-state', 'aria-hidden'],
   });
 }
