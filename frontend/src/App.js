@@ -49,6 +49,8 @@ import ReportsPage from "./pages/ReportsPage";
 import IntegrationsPage from "./pages/IntegrationsPage";
 import PublicQuotePage from "./pages/public/PublicQuotePage";
 import PublicInvoicePage from "./pages/public/PublicInvoicePage";
+import PublicClientPortalPage from "./pages/public/PublicClientPortalPage";
+import ProofToPaidPage from "./pages/ProofToPaidPage";
 import QAAuditorPage from "./pages/admin/QAAuditorPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
@@ -231,12 +233,14 @@ function App() {
           <Route path="/invite/setup/:token" element={<InviteSetupPage />} />
           <Route path="/public/quote/:token" element={<PublicQuotePage />} />
           <Route path="/public/invoice/:token" element={<PublicInvoicePage />} />
+          <Route path="/client-portal/:token" element={<PublicClientPortalPage />} />
 
           {/* Legacy redirects */}
           <Route path="/owner-login" element={<Navigate to="/login" replace />} />
           <Route path="/admin/login" element={<Navigate to="/login" replace />} />
           <Route path="/owner" element={<Navigate to="/admin" replace />} />
           <Route path="/owner/login" element={<Navigate to="/login" replace />} />
+          <Route path="/proof-to-paid" element={<BusinessRoute><ProofToPaidPage /></BusinessRoute>} />
 
           {/* Platform admin */}
           <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />

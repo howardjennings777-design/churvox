@@ -92,6 +92,7 @@ export default function JobDetailPage() {
   const [savingNotes, setSavingNotes] = useState(false);
   const [employerNotes, setEmployerNotes] = useState("");
   const [savingEmployerNotes, setSavingEmployerNotes] = useState(false);
+  const [proofPack, setProofPack] = useState(null);
 
   const loadPage = useCallback(async () => {
     setPageLoading(true);
@@ -125,6 +126,8 @@ export default function JobDetailPage() {
         setWorkers([]);
       }
       if (accountingRes?.success) setAccounting(accountingRes.data || null);
+      const packRes = await get(`/proof-packs?job_id=${id}`);
+      if (packRes?.success && Array.isArray(packRes.data)) setProofPack(packRes.data[0] || null);
     } catch {
       setError("Failed to load job");
       setJob(null);
@@ -236,6 +239,10 @@ export default function JobDetailPage() {
     } finally {
       setSaving(false);
     }
+  };
+  const handlePrepareProofPack = async () => {
+    await post(`/proof-packs/prepare-for-job/${id}`, {});
+    await loadPage();
   };
 
   const handleSaveEmployerNotes = async () => {
@@ -355,6 +362,11 @@ export default function JobDetailPage() {
                 {job?.invoice_id && (
                   <Button variant="outline" onClick={() => navigate(`/invoices/${job.invoice_id}`)}>
                     View Invoice
+                  </Button>
+                )}
+                {currentStatus === "completed" && (
+                  <Button variant="outline" onClick={handlePrepareProofPack}>
+                    {proofPack ? "Refresh Proof-to-Paid" : "Prepare Proof-to-Paid"}
                   </Button>
                 )}
               </>
