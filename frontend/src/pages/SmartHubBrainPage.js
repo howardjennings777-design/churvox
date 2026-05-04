@@ -81,7 +81,8 @@ export default function SmartHubBrainPage() {
   const [rejectedDispatchIds, setRejectedDispatchIds] = useState({});
   const [approvalFilter, setApprovalFilter] = useState("all");
   const [approvalDetail, setApprovalDetail] = useState(null);
-  const [approvalCentreOpen, setApprovalCentreOpen] = useState(false);
+  const [commandCentreOpen, setCommandCentreOpen] = useState(false);
+  const [commandCentreTab, setCommandCentreTab] = useState("approvals");
   const [operatorActions, setOperatorActions] = useState([]);
   const [selectedApprovalIds, setSelectedApprovalIds] = useState([]);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -130,13 +131,13 @@ export default function SmartHubBrainPage() {
   }, [load]);
 
   useEffect(() => {
-    if (!approvalCentreOpen) return undefined;
+    if (!aiSettingsOpen) return undefined;
     const { overflow } = document.body.style;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = overflow;
     };
-  }, [approvalCentreOpen]);
+  }, [aiSettingsOpen]);
 
   const jobs = safeArray(data?.jobs);
   const clients = safeArray(data?.clients);
@@ -330,11 +331,15 @@ export default function SmartHubBrainPage() {
     }, {});
   }, [approvalItems]);
   const approvalBadgeTone = approvalCounts.needs_decision ? "amber" : approvalCounts.all ? "green" : "slate";
+  const openCommandCentre = useCallback((tab = "approvals") => {
+    setCommandCentreTab(tab);
+    setCommandCentreOpen(true);
+  }, []);
   const openApprovalCentre = useCallback(({ tab = "all", actionId = "" } = {}) => {
     setApprovalFilter(tab);
     setApprovalDetail(actionId ? { actionId } : null);
-    setApprovalCentreOpen(true);
-  }, []);
+    openCommandCentre("approvals");
+  }, [openCommandCentre]);
   const notificationItems = useMemo(() => {
     const aiApprovals = sortedApprovalItems.filter((item) => isActiveApproval(item)).slice(0, 6).map((item) => ({
       id: `approval-${item.id}`,
@@ -868,7 +873,7 @@ export default function SmartHubBrainPage() {
             <h2 className="text-sm font-semibold uppercase tracking-wide text-[#3f3931]">AI Operator Settings</h2>
             <p className="mt-1 text-sm text-[#5f646b]">Control what AI can prepare, approve, and send.</p>
             <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">{[["AI Operator", aiSettings.ai_operator_enabled ? "On" : "Off"],["Arrival SMS", !aiSettings.auto_arrival_sms_enabled ? "Off" : (aiSettings.arrival_sms_mode === "auto_send" ? "Auto-send" : "Approval required")],["Arrival timing", `${aiSettings.arrival_sms_minutes_before} min before`],["Invoice reminders", aiSettings.invoice_reminder_mode === "approval_send" ? "Send after approval" : "Draft only"],["Quote follow-ups", aiSettings.quote_followup_mode === "approval_send" ? "Send after approval" : "Draft only"],["Worker assignment", "Approval required"],["Accounting", "Locked"],["Payroll", "Locked"]].map(([label, value]) => <div key={label} className="flex items-center justify-between rounded-lg border border-[#8c8274] bg-[#b8afa1] px-3 py-2"><span className="text-[#1f1a15]">{label}</span><span className="rounded-md bg-[#111317] px-2 py-1 text-xs font-medium text-white">{value}</span></div>)}</div>
-            <button type="button" onClick={() => setAiSettingsOpen(true)} className="mt-3 rounded-lg border border-[#ff8a3d]/40 bg-[#d94f17] px-3 py-2 text-sm text-white hover:bg-[#b93f10]">Open AI Settings</button>
+            <button type="button" onClick={() => openCommandCentre("ai_settings")} className="mt-3 rounded-lg border border-[#ff8a3d]/40 bg-[#d94f17] px-3 py-2 text-sm text-white hover:bg-[#b93f10]">Open AI Settings</button>
           </section>
 
           <RecentActivityPanel activity={activity} activityFilter={activityFilter} setActivityFilter={setActivityFilter} />
@@ -888,9 +893,8 @@ export default function SmartHubBrainPage() {
           </div>
         ) : null}
 
-        <AiOperatorSettingsPanel aiSettings={aiSettings} setAiSettings={setAiSettings} open={aiSettingsOpen} onClose={() => setAiSettingsOpen(false)} onSave={async () => { try { const res = await patch('/ai-operator/settings', aiSettings); setAiSettings((p)=>({...p,...(res?.settings||{})})); setToast({kind:'success',message:'AI settings saved.'}); setAiSettingsOpen(false);} catch { localStorage.setItem("smart_hub_ai_settings_local", JSON.stringify(aiSettings)); setToast({kind:'success',message:'Saved locally until backend setting is added.'}); setAiSettingsOpen(false); } }} />
 
-        {approvalCentreOpen ? (
+        {commandCentreOpen ? (
           <div className="fixed inset-0 z-[80] overflow-hidden bg-[#0d0f12]/75 backdrop-blur-sm">
             <div className="mx-auto flex h-[100dvh] w-full max-w-6xl flex-col overflow-hidden bg-[#c8bfb1] sm:my-4 sm:h-[94vh] sm:rounded-2xl">
               <div className="flex-none border-b border-[#8c8274] bg-[#d7d0c4] px-5 py-4">
@@ -900,13 +904,13 @@ export default function SmartHubBrainPage() {
                       <div className="inline-flex items-center justify-center rounded-xl border border-[#d0c6b8] bg-[#ede8df] p-2">
                         <ChurvoxLogo className="h-8 w-auto object-contain" />
                       </div>
-                      <h2 className="text-xl font-semibold text-[#0f1115]">AI Approval Centre</h2>
+                      <h2 className="text-xl font-semibold text-[#0f1115]">AI Operator Command Centre</h2>
                     </div>
                     <p className="mt-1 text-sm text-[#5f646b]">Review, edit or approve everything AI prepared.</p>
                   </div>
-                  <button type="button" onClick={() => setApprovalCentreOpen(false)} className="rounded-xl bg-[#d94f17] px-3 py-2 text-sm font-semibold text-white hover:bg-[#b93f10]">Close</button>
+                  <button type="button" onClick={() => setCommandCentreOpen(false)} className="rounded-xl bg-[#d94f17] px-3 py-2 text-sm font-semibold text-white hover:bg-[#b93f10]">Close</button>
                 </div>
-                <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{APPROVAL_GROUPS.map((g)=><button key={g} type="button" onClick={()=>setApprovalFilter(g)} className={`shrink-0 rounded px-3 py-1 text-xs ${approvalFilter===g?"bg-[#d94f17] text-white":"bg-[#c8bfb1] text-[#111317]"}`}>{g === "all" ? "All" : g.replace("_"," ")} ({approvalCounts[g] || 0})</button>)}</div>
+                <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{[["approvals","Approvals"],["dispatch","Dispatch"],["invoices","Invoices"],["quotes","Quotes"],["jobs_at_risk","Jobs at risk"],["crew_workload","Crew workload"],["ai_settings","AI Settings"],["activity","Activity"]].map(([k,l])=><button key={k} type="button" onClick={()=>setCommandCentreTab(k)} className={`shrink-0 rounded px-3 py-1 text-xs ${commandCentreTab===k?"bg-[#d94f17] text-white":"bg-[#c8bfb1] text-[#111317]"}`}>{l}</button>)}</div>{commandCentreTab==="approvals" ? <>
                 <div className="mt-2 text-xs text-[#5f646b]">Pending approvals: {approvalCounts.needs_decision || 0} · Selected: {selectedApprovalIds.length}</div>
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4 pb-24">
@@ -931,6 +935,15 @@ export default function SmartHubBrainPage() {
                   {!filteredApprovalItems.length ? <article className="rounded-xl border border-[#8c8274] bg-[#d7d0c4] p-4 shadow-[0_14px_35px_rgba(15,17,21,0.20)]"><p className="font-semibold text-[#0f1115]">No actions in this section.</p><div className="mt-3 flex gap-2"><button type="button" onClick={runScanNow} className="rounded-lg bg-[#d94f17] px-3 py-2 text-sm text-white">Run today's AI plan</button></div></article> : null}
                 </div>
               </div>
+              </> : <div className="flex-1 overflow-y-auto px-5 py-4 text-sm text-[#1f1a15]"><p className="mb-3">Review this section inside Command Centre without leaving Smart Hub.</p><div className="grid gap-2 sm:grid-cols-2">
+                {commandCentreTab==="dispatch" ? <><button type="button" className="rounded border border-[#8c8274] px-3 py-2 text-left" onClick={()=>openWorkspace("AI Dispatch","list")}>Open dispatch approvals</button></> : null}
+                {commandCentreTab==="invoices" ? <button type="button" className="rounded border border-[#8c8274] px-3 py-2 text-left" onClick={()=>setApprovalFilter("drafts")}>Invoice drafts & reminders are approval-first.</button> : null}
+                {commandCentreTab==="quotes" ? <button type="button" className="rounded border border-[#8c8274] px-3 py-2 text-left" onClick={()=>setApprovalFilter("drafts")}>Quote follow-ups stay as drafts until approved.</button> : null}
+                {commandCentreTab==="jobs_at_risk" ? <div className="rounded border border-[#8c8274] px-3 py-2">Unassigned jobs: {unassignedJobs.length} · Needs decision: {approvalCounts.needs_decision||0}</div> : null}
+                {commandCentreTab==="crew_workload" ? <div className="rounded border border-[#8c8274] px-3 py-2">Available crew: {crewAvailable} · Dispatch recs: {dispatchRecs.length}</div> : null}
+                {commandCentreTab==="ai_settings" ? <button type="button" className="rounded border border-[#8c8274] px-3 py-2 text-left" onClick={()=>setAiSettingsOpen(true)}>Edit AI settings (approval-first defaults)</button> : null}
+                {commandCentreTab==="activity" ? <div className="rounded border border-[#8c8274] px-3 py-2">Recent activity items: {activity.length}</div> : null}
+              </div></div>}
             </div>
           </div>
         ) : null}
