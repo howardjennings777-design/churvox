@@ -33,10 +33,10 @@
   width: 100%;
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: minmax(120px, 170px) minmax(0, 1fr) minmax(230px, 290px);
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 320px);
   align-items: center;
-  gap: clamp(18px, 3vw, 34px);
-  padding: clamp(26px, 4vw, 46px);
+  gap: clamp(20px, 4vw, 46px);
+  padding: clamp(30px, 5vw, 58px);
   border-radius: 34px;
   color: #ffffff;
   background:
@@ -51,16 +51,17 @@
 }
 
 .cr-room-hero h1 {
-  margin: 14px 0 10px;
-  font-size: clamp(46px, 6vw, 86px);
-  line-height: 0.92;
-  letter-spacing: -0.075em;
+  max-width: 720px;
+  margin: 26px 0 12px;
+  font-size: clamp(58px, 7.2vw, 102px);
+  line-height: 0.88;
+  letter-spacing: -0.08em;
   font-weight: 950;
 }
 
 .cr-room-hero p {
-  max-width: 760px;
-  color: rgba(255, 255, 255, 0.78);
+  max-width: 680px;
+  color: rgba(255, 255, 255, 0.80);
   font-weight: 750;
   line-height: 1.45;
 }
@@ -86,6 +87,8 @@
 }
 
 .cr-room-score {
+  justify-self: end;
+  width: min(100%, 320px);
   min-width: 0;
   border-radius: 24px;
   padding: 20px;
@@ -384,6 +387,10 @@
 @media (max-width: 920px) {
   .cr-room-hero {
     grid-template-columns: 1fr;
+  }
+  .cr-room-score {
+    justify-self: stretch;
+    width: 100%;
   }
 }
 
