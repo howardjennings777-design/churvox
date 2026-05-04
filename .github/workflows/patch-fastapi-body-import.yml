@@ -1,0 +1,60 @@
+name: Patch FastAPI Body import
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-body-import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Patch backend/server.py FastAPI Body import
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path("backend/server.py")
+          text = path.read_text(encoding="utf-8", errors="ignore")
+
+          exact_old = "from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile, Query"
+          exact_new = "from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile, Query, Body"
+
+          if exact_new in text:
+              print("Body already imported")
+          elif exact_old in text:
+              text = text.replace(exact_old, exact_new, 1)
+              path.write_text(text, encoding="utf-8")
+              print("Patched exact FastAPI import")
+          else:
+              lines = text.splitlines()
+              patched = False
+              for i, line in enumerate(lines):
+                  if line.startswith("from fastapi import ") and "Body" not in line:
+                      lines[i] = line.rstrip() + ", Body"
+                      patched = True
+                      print(f"Patched FastAPI import on line {i + 1}")
+                      break
+              if not patched:
+                  raise SystemExit("Could not find FastAPI import to patch")
+              path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+
+      - name: Commit patch if needed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git add backend/server.py
+            git commit -m "Import FastAPI Body in backend server"
+            git push
+          fi
