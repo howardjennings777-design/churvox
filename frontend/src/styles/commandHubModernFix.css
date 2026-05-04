@@ -1,0 +1,179 @@
+/* Modern AI Control Room fix: no black workspace blocks, no blur, cleaner hierarchy */
+.smart-command-system {
+  background: radial-gradient(circle at top left, rgba(249, 115, 22, .12), transparent 34%), linear-gradient(180deg, #fffaf3 0%, #f8fbff 48%, #ffffff 100%) !important;
+}
+
+.command-real-shell {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 18px !important;
+}
+
+.command-real-shell > .command-hero { order: 1 !important; }
+.command-real-shell > .command-notice,
+.command-real-shell > .command-error { order: 2 !important; }
+.command-real-shell > .command-operator-card { order: 3 !important; }
+.command-real-shell > .command-next-grid { order: 4 !important; }
+.command-real-shell > .command-panel:nth-of-type(1) { order: 5 !important; }
+.command-real-shell > .command-control-grid { order: 6 !important; }
+.command-real-shell > .command-panel:nth-of-type(2) { order: 7 !important; }
+.command-real-shell > .command-panel:nth-of-type(3) { order: 8 !important; }
+
+.command-panel,
+.command-operator-card,
+.command-control-card,
+.command-action-card,
+.command-mini-metric,
+.command-run-list article,
+.command-preview-row,
+.command-editor-card {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(30, 58, 138, .10) !important;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, .08) !important;
+}
+
+.command-panel,
+.command-operator-card {
+  border-radius: 28px !important;
+}
+
+.command-section-head h2,
+.command-panel h2,
+.command-operator-card h2,
+.command-control-card h3,
+.command-action-card h3 {
+  color: #0f172a !important;
+  letter-spacing: -0.035em !important;
+}
+
+.command-section-head p,
+.command-panel p,
+.command-operator-card p,
+.command-control-card p,
+.command-action-card p {
+  color: #475569 !important;
+}
+
+.command-workspace-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.command-workspace-btn,
+.command-filter-grid button {
+  background: linear-gradient(180deg, #ffffff, #fffaf3) !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(245, 132, 38, .24) !important;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .06) !important;
+  text-align: left !important;
+}
+
+.command-workspace-btn:hover,
+.command-filter-grid button:hover {
+  transform: translateY(-1px) !important;
+  border-color: rgba(245, 132, 38, .48) !important;
+  box-shadow: 0 18px 38px rgba(245, 132, 38, .12) !important;
+}
+
+.command-workspace-btn strong,
+.command-filter-grid button,
+.command-run-list b,
+.command-preview-row b {
+  color: #0f172a !important;
+}
+
+.command-workspace-btn span,
+.command-filter-grid span,
+.command-run-list span,
+.command-preview-row span {
+  color: #64748b !important;
+}
+
+.command-filter-grid button.active {
+  background: linear-gradient(180deg, #fff7ed, #ffffff) !important;
+  border-color: rgba(245, 132, 38, .50) !important;
+}
+
+.command-control-card {
+  background: linear-gradient(180deg, #ffffff, #f8fbff) !important;
+  color: #0f172a !important;
+}
+
+.command-control-card.active {
+  border-color: rgba(37, 99, 235, .20) !important;
+}
+
+.command-control-card button,
+.command-run-list button,
+.command-preview-row button {
+  background: #f97316 !important;
+  color: #ffffff !important;
+  border: 0 !important;
+}
+
+.command-action-card {
+  border-left: 6px solid #f97316 !important;
+}
+
+.command-card-top span,
+.command-priority,
+.command-pill {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.command-drawer {
+  background: #fffdf8 !important;
+  color: #0f172a !important;
+  border-left: 1px solid rgba(15, 23, 42, .10) !important;
+  box-shadow: -24px 0 70px rgba(15, 23, 42, .18) !important;
+  width: min(760px, 94vw) !important;
+}
+
+.command-drawer-head {
+  background: linear-gradient(135deg, #fff7ed, #ffffff) !important;
+  border: 1px solid rgba(245, 132, 38, .18) !important;
+  border-radius: 22px !important;
+  padding: 18px !important;
+}
+
+.command-drawer-stack label,
+.command-drawer-stack textarea,
+.command-drawer-stack input,
+.command-drawer-stack select {
+  color: #0f172a !important;
+}
+
+.command-drawer-stack input,
+.command-drawer-stack select,
+.command-drawer-stack textarea {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, .14) !important;
+  border-radius: 14px !important;
+  padding: 11px 12px !important;
+}
+
+.command-editor-card {
+  border-color: rgba(245, 132, 38, .22) !important;
+}
+
+.command-operator-card::before,
+.command-panel::before,
+.command-control-card::before,
+.command-workspace-btn::before,
+.command-filter-grid button::before {
+  filter: none !important;
+  opacity: 0 !important;
+}
+
+@media (max-width: 900px) {
+  .command-workspace-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+
+@media (max-width: 680px) {
+  .command-workspace-grid { grid-template-columns: 1fr !important; }
+}
