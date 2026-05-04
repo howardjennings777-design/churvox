@@ -202,6 +202,7 @@ export default function SmartHubBrainPage() {
   const [workspaceMode, setWorkspaceMode] = useState("list");
   const [workspaceRecord, setWorkspaceRecord] = useState(null);
   const [workspaceEditForm, setWorkspaceEditForm] = useState({});
+  const [clientSearch, setClientSearch] = useState("");
   const [savingJobId, setSavingJobId] = useState("");
   const [toast, setToast] = useState({ kind: "", message: "" });
   const [data, setData] = useState({ jobs: [], clients: [], quotes: [], invoices: [], workers: [] });
@@ -540,6 +541,7 @@ export default function SmartHubBrainPage() {
     setWorkspaceDrawer(name);
     setWorkspaceMode(mode);
     setWorkspaceRecord(null);
+    if (name === "Clients") setClientSearch("");
   };
 
   const runScanNow = async () => {
@@ -652,6 +654,52 @@ export default function SmartHubBrainPage() {
       if (!workspaceRecord) return <p className="text-sm text-slate-700">Record details could not load.</p>;
       if (workspaceMode === "edit") return <div className="space-y-2"><input className="w-full rounded border p-2" value={workspaceEditForm.title || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, title: e.target.value }))} placeholder="Job title" /><input className="w-full rounded border p-2" value={workspaceEditForm.address || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, address: e.target.value }))} placeholder="Address" /><input className="w-full rounded border p-2" value={workspaceEditForm.status || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, status: e.target.value }))} placeholder="Status" /><textarea className="w-full rounded border p-2" value={workspaceEditForm.notes || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Notes" /><div className="flex gap-2"><button type="button" className="rounded bg-[#3f6212] px-3 py-1 text-white" onClick={() => saveRecord(`/jobs/${recordId}`, { title: workspaceEditForm.title, address: workspaceEditForm.address, status: workspaceEditForm.status, notes: workspaceEditForm.notes }, "jobs")}>Save</button><button type="button" className="rounded border px-3 py-1" onClick={() => setWorkspaceMode("detail")}>Back</button></div></div>;
       return <div className="space-y-2"><p className="font-semibold">{safeText(workspaceRecord?.title || workspaceRecord?.name, "Untitled job")}</p><p>Client: {safeText(findByIds(clients, [workspaceRecord?.client_id, workspaceRecord?.clientId], ["id","_id","client_id"])?.name || workspaceRecord?.client_name)}</p><p>Address: {safeText(workspaceRecord?.address || workspaceRecord?.location)}</p><p>Status: {safeText(workspaceRecord?.status)}</p><p>Assigned worker: {safeText(workspaceRecord?.assigned_worker || workspaceRecord?.assigned_worker_name)}</p><p>Scheduled date: {safeText(workspaceRecord?.scheduled_date || workspaceRecord?.date)}</p><p>Completed date: {safeText(workspaceRecord?.completed_at)}</p><p>Service type: {safeText(workspaceRecord?.service_type || workspaceRecord?.job_type)}</p><p>Notes: {safeText(workspaceRecord?.notes)}</p><div className="flex flex-wrap gap-2"><button type="button" className="rounded border px-3 py-1" onClick={() => startEdit(workspaceRecord)}>Edit job details</button><button type="button" className="rounded border px-3 py-1" onClick={() => setWorkspaceMode("list")}>Back</button><button type="button" className="rounded border px-3 py-1" onClick={() => navigate(`/jobs/${recordId}`)}>Open full job page</button></div></div>;
+    }
+
+    if (workspaceDrawer === "Clients") {
+      const filteredClients = clients.filter((client) => {
+        const haystack = `${client?.name || ""} ${client?.email || ""} ${client?.phone || ""} ${client?.address || ""}`.toLowerCase();
+        return haystack.includes(clientSearch.toLowerCase());
+      });
+      const selectedClientId = String(workspaceRecord?.id || workspaceRecord?._id || "");
+      const selectedClientJobs = jobs.filter((job) => String(job?.client_id || job?.clientId || "") === selectedClientId);
+      const selectedClientInvoices = invoices.filter((inv) => String(inv?.client_id || inv?.clientId || "") === selectedClientId);
+      const selectedClientQuotes = quotes.filter((quote) => String(quote?.client_id || quote?.clientId || "") === selectedClientId);
+
+      const makeClientCounts = (client) => {
+        const id = String(client?.id || client?._id || "");
+        const clientJobs = jobs.filter((job) => String(job?.client_id || job?.clientId || "") === id);
+        const clientInvoices = invoices.filter((inv) => String(inv?.client_id || inv?.clientId || "") === id);
+        const clientQuotes = quotes.filter((quote) => String(quote?.client_id || quote?.clientId || "") === id);
+        return {
+          activeJobs: clientJobs.filter((job) => !["completed", "complete", "cancelled", "canceled"].includes(statusOf(job?.status))).length,
+          openInvoices: clientInvoices.filter((inv) => !["paid", "cancelled", "canceled"].includes(statusOf(inv?.status))).length,
+          quotesCount: clientQuotes.length,
+        };
+      };
+
+      const addClient = async () => {
+        const payload = {
+          name: workspaceEditForm?.name || "",
+          email: workspaceEditForm?.email || "",
+          phone: workspaceEditForm?.phone || "",
+          address: workspaceEditForm?.address || "",
+          notes: workspaceEditForm?.notes || "",
+        };
+        const res = await post("/clients", payload);
+        if (!res?.success) return setToast({ kind: "error", message: res?.error || "Could not add client." });
+        setToast({ kind: "success", message: "Client added." });
+        await load();
+        const created = res?.client || payload;
+        setWorkspaceRecord(created);
+        setWorkspaceMode("detail");
+      };
+
+      if (workspaceMode === "add") return <div className="space-y-2"><h3 className="text-lg font-semibold text-[#171717]">Add client</h3><input className="w-full rounded border p-2" value={workspaceEditForm.name || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, name: e.target.value }))} placeholder="Client name" /><input className="w-full rounded border p-2" value={workspaceEditForm.email || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, email: e.target.value }))} placeholder="Email" /><input className="w-full rounded border p-2" value={workspaceEditForm.phone || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" /><input className="w-full rounded border p-2" value={workspaceEditForm.address || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, address: e.target.value }))} placeholder="Address" /><textarea className="w-full rounded border p-2" value={workspaceEditForm.notes || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Notes" /><div className="flex flex-wrap gap-2"><button type="button" className="rounded bg-[#3f6212] px-3 py-1 text-white" onClick={addClient}>Save client</button><button type="button" className="rounded border px-3 py-1" onClick={() => setWorkspaceMode("list")}>Cancel</button></div></div>;
+      if (workspaceMode === "edit" && workspaceRecord) return <div className="space-y-2"><h3 className="text-lg font-semibold text-[#171717]">Edit client</h3><input className="w-full rounded border p-2" value={workspaceEditForm.name || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, name: e.target.value }))} placeholder="Client name" /><input className="w-full rounded border p-2" value={workspaceEditForm.email || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, email: e.target.value }))} placeholder="Email" /><input className="w-full rounded border p-2" value={workspaceEditForm.phone || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" /><input className="w-full rounded border p-2" value={workspaceEditForm.address || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, address: e.target.value }))} placeholder="Address" /><textarea className="w-full rounded border p-2" value={workspaceEditForm.notes || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Notes" /><div className="flex flex-wrap gap-2"><button type="button" className="rounded bg-[#3f6212] px-3 py-1 text-white" onClick={() => saveRecord(`/clients/${selectedClientId}`, { name: workspaceEditForm.name, email: workspaceEditForm.email, phone: workspaceEditForm.phone, address: workspaceEditForm.address, notes: workspaceEditForm.notes }, "clients")}>Save client</button><button type="button" className="rounded border px-3 py-1" onClick={() => setWorkspaceMode("detail")}>Cancel</button></div></div>;
+      if (workspaceMode === "detail" && workspaceRecord) return <div className="space-y-2"><h3 className="text-lg font-semibold text-[#171717]">{safeText(workspaceRecord?.name, "Client details")}</h3><p>Email: {safeText(workspaceRecord?.email)}</p><p>Phone: {safeText(workspaceRecord?.phone)}</p><p>Address: {safeText(workspaceRecord?.address)}</p><p>Notes: {safeText(workspaceRecord?.notes)}</p><p>Recent jobs: {selectedClientJobs.slice(0, 3).map((job) => textOr(job?.title || job?.name, "Job")).join(", ") || "None"}</p><p>Open invoices: {selectedClientInvoices.filter((inv) => !["paid", "cancelled", "canceled"].includes(statusOf(inv?.status))).length}</p><p>Quotes: {selectedClientQuotes.length}</p><div className="flex flex-wrap gap-2"><button type="button" className="rounded border px-3 py-1" onClick={() => startEdit(workspaceRecord)}>Edit client</button><button type="button" className="rounded border px-3 py-1" onClick={() => navigate(`/jobs/new?client_id=${selectedClientId}`)}>New job (open full page)</button><button type="button" className="rounded border px-3 py-1" onClick={() => navigate(`/quotes/new?client_id=${selectedClientId}`)}>New quote (open full page)</button><button type="button" className="rounded border px-3 py-1" onClick={() => setWorkspaceMode("list")}>Back to clients</button><button type="button" className="rounded border px-3 py-1" onClick={() => navigate(`/clients/${selectedClientId}`)}>Open full client page</button></div></div>;
+
+      return <div className="space-y-4"><div><h3 className="text-lg font-semibold text-[#171717]">Clients Workspace</h3><p className="text-sm text-[#555b56]">Search, review and update clients without leaving Smart Hub.</p></div><div className="flex flex-wrap gap-2"><input className="min-w-[220px] flex-1 rounded border p-2" value={clientSearch} onChange={(e) => setClientSearch(e.target.value)} placeholder="Search clients" /><button type="button" className="rounded bg-[#3f6212] px-3 py-2 text-sm text-white" onClick={() => { setWorkspaceEditForm({}); setWorkspaceMode("add"); }}>Add client</button><button type="button" className="rounded border px-3 py-2 text-sm" onClick={() => navigate("/clients")}>Open full clients page</button></div>{!filteredClients.length ? <p className="text-sm text-[#555b56]">No clients found.</p> : filteredClients.map((client) => { const id = String(client?.id || client?._id || ""); const counts = makeClientCounts(client); return <article key={id} className="rounded-xl border border-[#737a74] tradie-panel p-4"><p className="font-semibold text-[#171717]">{safeText(client?.name, "Unknown client")}</p><p className="text-sm text-[#555b56]">{safeText(client?.email)}</p><p className="text-sm text-[#555b56]">{safeText(client?.phone)}</p><p className="text-sm text-[#555b56]">{safeText(client?.address)}</p><p className="mt-1 text-xs text-[#555b56]">Active/open jobs: {counts.activeJobs} · Open invoices: {counts.openInvoices} · Quotes: {counts.quotesCount}</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => openDetail(client)}>View details</button><button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => startEdit(client)}>Edit</button><button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => navigate(`/jobs/new?client_id=${id}`)}>New job (open full page)</button><button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => navigate(`/quotes/new?client_id=${id}`)}>New quote (open full page)</button><button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => navigate(`/clients/${id}`)}>Open full client page</button></div></article>; })}</div>;
     }
 
     if (workspaceDrawer === "Invoices") {
