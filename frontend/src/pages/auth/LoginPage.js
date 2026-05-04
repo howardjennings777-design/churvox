@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Mail, Lock, AlertCircle, Loader2, Sparkles, ShieldCheck, Briefcase, Calendar, Receipt, Users } from "lucide-react";
+import { Mail, Lock, AlertCircle, Loader2, Sparkles, ShieldCheck, Briefcase, Receipt, Users } from "lucide-react";
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 import { normalizeRole, getDefaultRoute } from "@/lib/roles";
 import { PremiumButton } from "@/components/premium";
+import "@/styles/loginControlRoomTheme.css";
 
 const getPostLoginPath = (payload = {}) => {
   const user = payload?.user || payload || {};
@@ -44,16 +45,15 @@ export default function LoginPage() {
 
   return (
     <div className="px-auth">
-      {/* Form panel */}
       <div className="px-auth__panel">
         <div className="px-auth__card">
           <div className="flex flex-col items-center text-center mb-7">
             <div className="mb-3"><ChurvoxLogo size="lg" /></div>
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#dbe7ff] text-[#1d4ed8] text-[11px] font-bold uppercase tracking-wider">
-              <Sparkles className="h-3 w-3" /> Premium tradie platform
+              <Sparkles className="h-3 w-3" /> AI Control Room
             </span>
             <h1 className="font-heading text-[28px] font-bold text-[#0d1b34] mt-4 leading-tight tracking-tight">Welcome back</h1>
-            <p className="text-[14px] text-[#5b6c87] mt-2">Sign in to manage jobs, clients, quotes, invoices and your crew.</p>
+            <p className="text-[14px] text-[#5b6c87] mt-2">Sign in to run jobs, clients, quotes, invoices and crew from one command hub.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="px-login-form" data-testid="login-form">
@@ -114,7 +114,7 @@ export default function LoginPage() {
           </form>
 
           <p className="text-center text-[13px] text-[#5b6c87] mt-7">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link to="/signup" className="font-semibold text-[#1d4ed8] hover:underline" data-testid="signup-link">Sign up</Link>
           </p>
 
@@ -125,15 +125,12 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Brand panel */}
       <div className="px-auth__brand">
         <div className="px-auth__brand-inner">
           <div className="inline-flex items-center justify-center"><ChurvoxLogo size="xl" /></div>
-          <h2 className="px-auth__brand-title">Run your trade<br/>business smarter</h2>
+          <h2 className="px-auth__brand-title">Run your business from one AI Control Room</h2>
           <p className="px-auth__brand-sub">
-            Jobs, quotes, invoices, dispatch, payroll and your crew —
-            unified in one premium command platform with an AI assistant
-            that drafts customer messages for you to approve.
+            Churvox prepares dispatch, proof, invoices, reminders, recurring work and customer updates. You approve. Churvox executes safely.
           </p>
 
           <div className="grid grid-cols-2 gap-3 mt-8 max-w-md mx-auto">
@@ -145,17 +142,17 @@ export default function LoginPage() {
             <div className="rounded-2xl bg-white/70 border border-[#d8e3f3] p-4 backdrop-blur shadow-sm text-left">
               <div className="h-9 w-9 rounded-xl bg-[#ccfbf1] text-[#0d9488] inline-flex items-center justify-center"><Receipt className="h-4 w-4" /></div>
               <p className="text-[13px] font-bold text-[#0d1b34] mt-2">Quotes & Invoices</p>
-              <p className="text-[12px] text-[#5b6c87] mt-1">Public links, accept & pay</p>
+              <p className="text-[12px] text-[#5b6c87] mt-1">Draft, approve and get paid</p>
             </div>
             <div className="rounded-2xl bg-white/70 border border-[#d8e3f3] p-4 backdrop-blur shadow-sm text-left">
               <div className="h-9 w-9 rounded-xl bg-[#ede4ff] text-[#7c3aed] inline-flex items-center justify-center"><Sparkles className="h-4 w-4" /></div>
-              <p className="text-[13px] font-bold text-[#0d1b34] mt-2">AI Assistant</p>
-              <p className="text-[12px] text-[#5b6c87] mt-1">Approval-first drafts</p>
+              <p className="text-[13px] font-bold text-[#0d1b34] mt-2">AI Operator</p>
+              <p className="text-[12px] text-[#5b6c87] mt-1">Approval-first actions</p>
             </div>
             <div className="rounded-2xl bg-white/70 border border-[#d8e3f3] p-4 backdrop-blur shadow-sm text-left">
               <div className="h-9 w-9 rounded-xl bg-[#fff1d6] text-[#d97706] inline-flex items-center justify-center"><Users className="h-4 w-4" /></div>
               <p className="text-[13px] font-bold text-[#0d1b34] mt-2">Crew & Payroll</p>
-              <p className="text-[12px] text-[#5b6c87] mt-1">Roles, timesheets, exports</p>
+              <p className="text-[12px] text-[#5b6c87] mt-1">Roles, time and exports</p>
             </div>
           </div>
 
