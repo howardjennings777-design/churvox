@@ -51,7 +51,6 @@ import PublicQuotePage from "./pages/public/PublicQuotePage";
 import PublicInvoicePage from "./pages/public/PublicInvoicePage";
 import PublicClientPortalPage from "./pages/public/PublicClientPortalPage";
 import ProofToPaidPage from "./pages/ProofToPaidPage";
-import SmartHubBrainPage from "./pages/SmartHubBrainPage";
 import QAAuditorPage from "./pages/admin/QAAuditorPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
@@ -242,7 +241,7 @@ function App() {
           <Route path="/owner" element={<Navigate to="/admin" replace />} />
           <Route path="/owner/login" element={<Navigate to="/login" replace />} />
           <Route path="/proof-to-paid" element={<BusinessRoute><ProofToPaidPage /></BusinessRoute>} />
-          <Route path="/ai-operator" element={<BusinessRoute><SmartHubBrainPage /></BusinessRoute>} />
+          <Route path="/ai-operator" element={<Navigate to="/dashboard" replace />} />
 
           {/* Platform admin */}
           <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
