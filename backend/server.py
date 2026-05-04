@@ -2237,6 +2237,22 @@ async def ai_operator_actions_bulk_complete(payload: dict, current_user: dict = 
     return await _ai_operator_bulk_action((payload or {}).get("action_ids") or [], current_user, "complete")
 
 
+
+@api_router.post("/ai-operator/actions/{action_id}/dismiss")
+async def ai_operator_actions_dismiss_v2(action_id: str, current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or "").lower()
+    _owner_roles_only(role)
+    business_id = await get_user_business_id(current_user)
+    if not ObjectId.is_valid(action_id):
+        raise HTTPException(status_code=400, detail="Invalid action id")
+    now = datetime.now(timezone.utc)
+    row = await db.ai_operator_actions.find_one({"_id": ObjectId(action_id), "business_id": business_id})
+    if not row:
+        raise HTTPException(status_code=404, detail="Action not found")
+    await db.ai_operator_actions.update_one({"_id": row["_id"]}, {"$set": {"status": "dismissed", "group": "completed", "dismissed_at": now, "updated_at": now}})
+    await db.smart_hub_activity.insert_one({"business_id": business_id, "action_type": str(row.get("action_type") or "dismiss"), "title": "Action dismissed", "message": f"{row.get('title') or 'AI action'} dismissed", "related_type": str(row.get("related_type") or "action"), "related_id": str(row.get("related_id") or action_id), "status": "completed", "created_at": now, "updated_at": now})
+    return {"success": True}
+
 @api_router.post("/ai/operator/actions/{action_id}/dismiss")
 async def ai_operator_actions_dismiss(action_id: str, current_user: dict = Depends(get_current_user)):
     return await ai_operator_actions_reject(action_id, current_user)

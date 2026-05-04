@@ -229,6 +229,9 @@ export default function SmartHubBrainPage() {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [readNotificationIds, setReadNotificationIds] = useState({});
   const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
+  const [testCheckOpen, setTestCheckOpen] = useState(false);
+  const [testChecks, setTestChecks] = useState([]);
+  const [runningChecks, setRunningChecks] = useState(false);
   const defaultAiSettings = { ai_operator_enabled: true, auto_arrival_sms_enabled: false, arrival_sms_mode: "approval_required", arrival_sms_minutes_before: 30, invoice_reminder_mode: "draft_only", quote_followup_mode: "draft_only", worker_assignment_mode: "approval_required", accounting_changes_locked: true, payroll_changes_locked: true };
   const [aiSettings, setAiSettings] = useState(defaultAiSettings);
 
@@ -524,6 +527,39 @@ export default function SmartHubBrainPage() {
   };
   const clearApprovalSelection = () => setSelectedApprovalIds([]);
   const runBulkAction = async (path, ids) => post(path, { action_ids: ids });
+
+
+  const runAiOperatorTestChecks = async () => {
+    setRunningChecks(true);
+    const checks = [];
+    const push = (name, status, detail) => checks.push({ name, status, detail });
+    try {
+      const actionsRes = await safeGet('/ai-operator/actions');
+      const actions = Array.isArray(actionsRes?.actions) ? actionsRes.actions : [];
+      push('Backend actions endpoint reachable', 'pass', `Loaded ${actions.length} actions.`);
+      push('Pending actions returned', actions.some((a) => String(a?.status) === 'pending') ? 'pass' : 'warning', actions.length ? 'Actions available.' : 'No actions yet.');
+      const keys = actions.map((a) => String(a?.action_key || '')).filter(Boolean);
+      push('Duplicate prevention active', new Set(keys).size === keys.length ? 'pass' : 'fail', new Set(keys).size === keys.length ? 'No duplicate action keys in current result.' : 'Duplicate action keys detected.');
+    } catch (e) {
+      push('Backend actions endpoint reachable', 'fail', e?.message || 'Failed');
+    }
+    try { await post('/smart-hub/scan', { dry_run: true }); push('Scan endpoint reachable', 'pass', 'Scan endpoint accepted request.'); }
+    catch { push('Scan endpoint reachable', 'warning', 'Dry run unavailable or scan blocked. Manual verification needed.'); }
+    try { await post(`/ai-operator/actions/${(approvalItems[0]||{}).id || '000000000000000000000000'}/approve`, { dry_run: true }); push('Invoice approval endpoint available', 'pass', 'Approve endpoint reachable.'); }
+    catch { push('Invoice approval endpoint available', 'warning', 'Endpoint could not be safely probed without a live action.'); }
+    try { await safeGet('/communications'); push('Communication draft endpoint available', 'pass', 'Communications endpoint reachable.'); }
+    catch (e) { push('Communication draft endpoint available', 'fail', e?.message || 'Failed'); }
+    try { await safeGet('/ai-operator/settings'); push('AI settings endpoint available', 'pass', 'Settings endpoint reachable.'); }
+    catch (e) { push('AI settings endpoint available', 'fail', e?.message || 'Failed'); }
+    try { await safeGet('/smart-hub/activity'); push('Activity endpoint reachable', 'pass', 'Activity endpoint reachable.'); }
+    catch (e) { push('Activity endpoint reachable', 'fail', e?.message || 'Failed'); }
+    push('Email provider configured', 'not tested', 'Verify with a real send test.');
+    push('SMS provider configured', 'not tested', 'Verify with a real send test.');
+    push('Worker assignment approval endpoint available', 'warning', 'Verify with a real assign_worker action.');
+    push('Refresh persistence ready', 'warning', 'Validate by approving an action and refreshing.');
+    setTestChecks(checks);
+    setRunningChecks(false);
+  };
   const handleBulkApprove = async () => { await runBulkAction("/ai-operator/actions/bulk-approve", selectedApprovalIds); await load(); clearApprovalSelection(); };
   const handleBulkReject = async () => { await runBulkAction("/ai-operator/actions/bulk-reject", selectedApprovalIds); await load(); clearApprovalSelection(); };
   const handleBulkDelete = async () => { await runBulkAction("/ai-operator/actions/bulk-delete", selectedApprovalIds); await load(); clearApprovalSelection(); };
