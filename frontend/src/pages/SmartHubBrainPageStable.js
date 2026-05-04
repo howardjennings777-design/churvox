@@ -3,53 +3,232 @@ import Layout from "../components/Layout";
 import { ChurvoxLogo } from "../components/ChurvoxLogo";
 import { get, post } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
-import "../styles/smartHubHardTrade.css";
+import "../styles/smartCommandSystem.css";
 
-const arr = (v, keys = []) => {
-  if (Array.isArray(v)) return v;
-  if (!v || typeof v !== "object") return [];
-  for (const k of keys) if (Array.isArray(v[k])) return v[k];
-  return Array.isArray(v.data) ? v.data : [];
+const toList = (value, keys = []) => {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== "object") return [];
+  for (const key of keys) if (Array.isArray(value[key])) return value[key];
+  return Array.isArray(value.data) ? value.data : [];
 };
-const st = (v) => String(v || "").toLowerCase();
-const nz = (v) => new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(Number(v || 0));
+
+const norm = (value) => String(value || "").toLowerCase().trim();
+const money = (value) => new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD" }).format(Number(value || 0));
 const safeGet = async (path) => { try { return await get(path); } catch { return []; } };
 
-function Card({ label, value, text, onClick }) {
-  return <button type="button" onClick={onClick} className="rounded-3xl border border-[#c7bba9] bg-[#f7f0e6] p-5 text-left shadow-[0_18px_40px_rgba(15,17,21,.16)]"><p className="text-[11px] font-black uppercase tracking-[.22em] text-[#5a5146]">{label}</p><p className="mt-3 text-4xl font-black text-[#101318]">{value}</p><p className="mt-2 text-sm font-semibold text-[#6f6558]">{text}</p></button>;
+function MetricCard({ label, value, help, onClick }) {
+  return (
+    <button type="button" className="smart-command-card" onClick={onClick}>
+      <p className="smart-command-label">{label}</p>
+      <p className="smart-command-number">{value}</p>
+      <p className="smart-command-help">{help}</p>
+    </button>
+  );
 }
-function Mini({ label, value }) {
-  return <div className="rounded-2xl border border-[#d6cbbc] bg-[#fff8ee] p-4"><p className="text-[10px] font-black uppercase tracking-[.18em] text-[#5a5146]">{label}</p><p className="mt-2 text-3xl font-black text-[#101318]">{value}</p></div>;
+
+function MiniStat({ label, value }) {
+  return <div className="smart-command-mini"><p className="smart-command-label">{label}</p><b>{value}</b></div>;
 }
-function List({ title, items, empty }) {
-  return <div className="rounded-3xl border border-[#c7bba9] bg-[#f7f0e6] p-5 shadow-[0_18px_40px_rgba(15,17,21,.16)]"><h3 className="text-2xl font-black text-[#101318]">{title}</h3><div className="mt-5 grid gap-3 md:grid-cols-2">{items.length ? items.map((i, n) => <article key={n} className="rounded-2xl border border-[#d6cbbc] bg-[#fff8ee] p-4"><p className="font-black text-[#101318]">{i.title}</p><p className="mt-1 text-sm font-semibold text-[#6f6558]">{i.text}</p></article>) : <p className="text-sm font-semibold text-[#6f6558]">{empty}</p>}</div></div>;
+
+function ListPanel({ title, items, empty }) {
+  return (
+    <section className="smart-command-panel">
+      <p className="smart-command-label">Command workspace</p>
+      <h2>{title}</h2>
+      <div className="smart-command-list" style={{ marginTop: 18 }}>
+        {items.length ? items.map((item, index) => (
+          <article className="smart-command-row" key={`${item.title}-${index}`}>
+            <p className="smart-command-row-title">{item.title}</p>
+            <p className="smart-command-row-text">{item.text}</p>
+          </article>
+        )) : <p className="smart-command-help">{empty}</p>}
+      </div>
+    </section>
+  );
 }
 
 function CommandCentre({ open, tab, setTab, close, counts, approvals, data }) {
   if (!open) return null;
-  const tabs = [["approvals","Approvals"],["dispatch","Dispatch"],["invoices","Invoices"],["quotes","Quotes"],["jobs","Jobs"],["crew","Crew"],["activity","Activity"],["settings","AI Settings"]];
+  const tabs = [
+    ["approvals", "Approvals"], ["dispatch", "Dispatch"], ["invoices", "Invoices"], ["quotes", "Quotes"],
+    ["jobs", "Jobs"], ["clients", "Clients"], ["crew", "Crew"], ["activity", "Activity"], ["settings", "AI Settings"],
+  ];
   const lists = {
-    dispatch: data.jobs.filter(j => !j.assigned_worker_id && !j.worker_id).map(j => ({ title: j.title || j.name || "Unassigned job", text: j.address || j.location || "No address saved" })),
-    invoices: data.invoices.map(i => ({ title: i.invoice_number || i.number || "Invoice", text: `${st(i.status) || "open"} • ${nz(i.balance || i.total || i.amount)}` })),
-    quotes: data.quotes.map(q => ({ title: q.quote_number || q.number || q.title || "Quote", text: st(q.status) || "waiting" })),
-    jobs: data.jobs.map(j => ({ title: j.title || j.name || "Job", text: `${st(j.status) || "new"} • ${j.address || j.location || "No address"}` })),
+    dispatch: data.jobs.filter(j => !j.assigned_worker_id && !j.worker_id && !j.assigned_worker).map(j => ({ title: j.title || j.name || "Unassigned job", text: j.address || j.location || "No address saved" })),
+    invoices: data.invoices.map(i => ({ title: i.invoice_number || i.number || "Invoice", text: `${norm(i.status) || "open"} • ${money(i.balance || i.total || i.amount)}` })),
+    quotes: data.quotes.map(q => ({ title: q.quote_number || q.number || q.title || "Quote", text: norm(q.status) || "waiting" })),
+    jobs: data.jobs.map(j => ({ title: j.title || j.name || "Job", text: `${norm(j.status) || "new"} • ${j.address || j.location || "No address"}` })),
+    clients: data.clients.map(c => ({ title: c.name || c.company_name || "Client", text: c.email || c.phone || c.address || "No contact detail" })),
     crew: data.workers.map(w => ({ title: w.name || w.email || "Worker", text: `${w.role || "worker"} • ${w.region || w.area || "No region"}` })),
     activity: data.activity.map(a => ({ title: a.title || "AI activity", text: a.message || a.status || "Recorded by Smart Hub" })),
+    settings: ["Invoice reminders: draft only", "Quote follow-ups: draft only", "Worker assignment: approval required", "Accounting: locked", "Payroll: locked", "SMS: approval first"].map(x => ({ title: x, text: "Launch-safe owner approval setting" })),
   };
-  return <div className="fixed inset-0 z-[90] bg-[#050607]/75 p-3 backdrop-blur-sm md:p-5"><section className="mx-auto flex h-full max-w-7xl flex-col overflow-hidden rounded-[2rem] border border-[#c7bba9] bg-[#b4aa9b] shadow-[0_34px_90px_rgba(0,0,0,.45)]"><header className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 bg-[#080b10] px-5 py-5 text-white md:px-8"><div><div className="mb-4 max-w-[260px]"><ChurvoxLogo size="xl" /></div><p className="text-[11px] font-black uppercase tracking-[.24em] text-[#ff9a5c]">AI Operator Command Centre</p><h2 className="mt-2 text-3xl font-black tracking-tight md:text-5xl">Review, decide, approve.</h2><p className="mt-2 text-sm font-semibold text-white/70 md:text-base">Full-page control room for approvals, dispatch, invoices, quotes and AI activity.</p></div><button type="button" onClick={close} className="rounded-2xl bg-[#ff5a1f] px-5 py-3 text-sm font-black text-white">Back to Smart Hub</button></header><nav className="flex gap-2 overflow-x-auto border-b border-[#c7bba9] bg-[#ebe2d6] px-4 py-3 md:px-8">{tabs.map(([k,l]) => <button key={k} type="button" onClick={() => setTab(k)} className={`shrink-0 rounded-2xl px-4 py-2 text-sm font-black ${tab === k ? "bg-[#101318] text-white" : "bg-[#f7f0e6] text-[#5a5146]"}`}>{l}</button>)}</nav><main className="flex-1 overflow-y-auto p-4 md:p-8">{tab === "approvals" ? <div className="space-y-4"><div className="grid gap-3 sm:grid-cols-4"><Card label="Need decision" value={counts.needDecision} text="Owner choice needed" /><Card label="Ready" value={counts.ready} text="Ready to approve" /><Card label="Drafts" value={counts.drafts} text="Prepared drafts" /><Card label="Watching" value={counts.watching} text="AI monitoring" /></div><List title="Priority queue" items={approvals} empty="No approvals waiting." /></div> : tab === "settings" ? <List title="AI settings" items={["Invoice reminders: draft only","Quote follow-ups: draft only","Worker assignment: approval required","Accounting: locked","Payroll: locked","SMS: approval first"].map(x=>({title:x,text:"Launch-safe approval-first default"}))} empty="" /> : <List title={tabs.find(([k])=>k===tab)?.[1] || "Workspace"} items={lists[tab] || []} empty="Nothing here yet." />}</main></section></div>;
+  return (
+    <div className="smart-command-modal">
+      <section className="smart-command-modal-shell">
+        <header className="smart-command-modal-head">
+          <div>
+            <ChurvoxLogo size="xl" />
+            <p className="smart-command-kicker" style={{ marginTop: 18 }}>AI Operator Command Centre</p>
+            <h2>Full control room.</h2>
+            <p className="smart-command-subtitle">Review approvals, dispatch work, chase invoices, follow up quotes, and manage the AI operator in one full-page workspace.</p>
+          </div>
+          <button type="button" className="smart-command-btn primary" onClick={close}>Back to Smart Hub</button>
+        </header>
+        <nav className="smart-command-tabs">
+          {tabs.map(([key, label]) => <button key={key} type="button" className={tab === key ? "active" : ""} onClick={() => setTab(key)}>{label}</button>)}
+        </nav>
+        <main className="smart-command-modal-body">
+          {tab === "approvals" ? (
+            <div className="smart-command-shell">
+              <section className="smart-command-metrics">
+                <MetricCard label="Need decision" value={counts.needDecision} help="Owner choice needed" />
+                <MetricCard label="Ready" value={counts.ready} help="Ready to approve" />
+                <MetricCard label="Drafts" value={counts.drafts} help="Prepared but not sent" />
+                <MetricCard label="Watching" value={counts.watching} help="AI monitoring" />
+              </section>
+              <ListPanel title="Priority approval queue" items={approvals} empty="No approvals waiting right now." />
+            </div>
+          ) : <ListPanel title={tabs.find(([key]) => key === tab)?.[1] || "Workspace"} items={lists[tab] || []} empty="Nothing here yet." />}
+        </main>
+      </section>
+    </div>
+  );
 }
 
 export default function SmartHubBrainPageStable() {
   const { user } = useAuth();
+  const [data, setData] = useState({ jobs: [], clients: [], invoices: [], quotes: [], workers: [], activity: [], actions: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [commandOpen, setCommandOpen] = useState(false);
   const [commandTab, setCommandTab] = useState("approvals");
-  const [data, setData] = useState({ jobs: [], clients: [], invoices: [], quotes: [], workers: [], activity: [], actions: [] });
-  useEffect(() => { (async () => { try { const [jobs, clients, invoices, quotes, workers, activity, actions] = await Promise.all([safeGet("/jobs"),safeGet("/clients"),safeGet("/invoices"),safeGet("/quotes"),safeGet("/team/workers"),safeGet("/smart-hub/activity"),safeGet("/ai-operator/actions")]); setData({ jobs: arr(jobs,["jobs"]), clients: arr(clients,["clients"]), invoices: arr(invoices,["invoices"]), quotes: arr(quotes,["quotes"]), workers: arr(workers,["workers"]), activity: arr(activity,["activities"]), actions: arr(actions,["actions"]) }); } catch { setError("Smart Hub could not load everything yet."); } finally { setLoading(false); } })(); }, []);
-  const counts = useMemo(() => { const readyToBill = data.jobs.filter(j => ["completed","complete"].includes(st(j.status)) && !j.invoice_id).length; const unassigned = data.jobs.filter(j => !["completed","complete","cancelled","canceled"].includes(st(j.status)) && !j.assigned_worker_id && !j.worker_id && !j.assigned_worker).length; const openInvoices = data.invoices.filter(i => !["paid","cancelled","canceled"].includes(st(i.status))).length; const crew = data.workers.filter(w => w.available !== false && !["inactive","offboarded"].includes(st(w.status))).length; const waitingQuotes = data.quotes.filter(q => !["accepted","declined","converted","invoiced","cancelled","canceled"].includes(st(q.status))).length; const active = data.actions.filter(a => !["done","completed","cancelled","rejected"].includes(st(a.status))); return { readyToBill, unassigned, openInvoices, crew, waitingQuotes, needDecision: active.filter(a => /decision|missing|conflict/i.test(`${a.group||""} ${a.type||""} ${a.action_type||""}`)).length, ready: active.filter(a => /ready|assign|invoice/i.test(`${a.group||""} ${a.type||""} ${a.action_type||""}`)).length, drafts: active.filter(a => /draft|reminder|follow/i.test(`${a.group||""} ${a.type||""} ${a.action_type||""}`)).length, watching: active.length }; }, [data]);
-  const approvals = useMemo(() => data.actions.length ? data.actions.map(a => ({ title: a.title || a.name || a.action_type || "AI action ready", text: a.reason || a.message || a.what_happens || "Prepared for owner review." })) : data.invoices.slice(0,4).map(i => ({ title: `Prepare reminder for ${i.client_name || "invoice"}`, text: `${i.invoice_number || i.number || "Invoice"} • ${nz(i.balance || i.total || i.amount)} outstanding` })), [data]);
+
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [jobs, clients, invoices, quotes, workers, activity, actions] = await Promise.all([
+        safeGet("/jobs"), safeGet("/clients"), safeGet("/invoices"), safeGet("/quotes"), safeGet("/team/workers"), safeGet("/smart-hub/activity"), safeGet("/ai-operator/actions"),
+      ]);
+      setData({
+        jobs: toList(jobs, ["jobs"]), clients: toList(clients, ["clients"]), invoices: toList(invoices, ["invoices"]), quotes: toList(quotes, ["quotes"]),
+        workers: toList(workers, ["workers"]), activity: toList(activity, ["activities"]), actions: toList(actions, ["actions"]),
+      });
+    } catch {
+      setError("Smart Hub could not load everything yet.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const counts = useMemo(() => {
+    const readyToBill = data.jobs.filter(j => ["completed", "complete"].includes(norm(j.status)) && !j.invoice_id && !j.draft_invoice_id).length;
+    const unassigned = data.jobs.filter(j => !["completed", "complete", "cancelled", "canceled"].includes(norm(j.status)) && !j.assigned_worker_id && !j.worker_id && !j.assigned_worker).length;
+    const openInvoices = data.invoices.filter(i => !["paid", "cancelled", "canceled"].includes(norm(i.status))).length;
+    const crew = data.workers.filter(w => w.available !== false && !["inactive", "offboarded"].includes(norm(w.status))).length;
+    const waitingQuotes = data.quotes.filter(q => !["accepted", "declined", "converted", "invoiced", "cancelled", "canceled"].includes(norm(q.status))).length;
+    const activeActions = data.actions.filter(a => !["done", "completed", "cancelled", "rejected"].includes(norm(a.status)));
+    return {
+      readyToBill, unassigned, openInvoices, crew, waitingQuotes,
+      needDecision: activeActions.filter(a => /decision|missing|conflict/i.test(`${a.group || ""} ${a.type || ""} ${a.action_type || ""}`)).length,
+      ready: activeActions.filter(a => /ready|assign|invoice/i.test(`${a.group || ""} ${a.type || ""} ${a.action_type || ""}`)).length,
+      drafts: activeActions.filter(a => /draft|reminder|follow/i.test(`${a.group || ""} ${a.type || ""} ${a.action_type || ""}`)).length,
+      watching: activeActions.length,
+    };
+  }, [data]);
+
+  const approvals = useMemo(() => {
+    if (data.actions.length) return data.actions.map(a => ({ title: a.title || a.name || a.action_type || "AI action ready", text: a.reason || a.message || a.what_happens || "Prepared for owner review." }));
+    return data.invoices.slice(0, 4).map(i => ({ title: `Prepare reminder for ${i.client_name || "invoice"}`, text: `${i.invoice_number || i.number || "Invoice"} • ${money(i.balance || i.total || i.amount)} outstanding` }));
+  }, [data]);
+
   const bestMove = counts.unassigned ? `Assign crew to ${counts.unassigned} unassigned jobs.` : counts.readyToBill ? `Create ${counts.readyToBill} draft invoices.` : counts.openInvoices ? `Review ${counts.openInvoices} open invoices.` : "Business is clear right now.";
-  const runPlan = async () => { try { await post("/ai-operator/run-daily-plan", {}); } catch {} };
-  return <Layout smartHubMode><main className="smart-hub-hard-trade-v4 min-h-screen px-4 py-6 md:px-8 md:py-10"><section className="mx-auto max-w-7xl space-y-6"><section className="rounded-[2.2rem] border border-white/10 bg-[#070b12] p-6 text-white shadow-[0_30px_80px_rgba(0,0,0,.36)] md:p-10"><div className="grid gap-8 lg:grid-cols-[.9fr_1.4fr] lg:items-center"><ChurvoxLogo size="hero" /><div><p className="text-[11px] font-black uppercase tracking-[.24em] text-[#ff9a5c]">Smart Hub</p><h1 className="mt-3 text-4xl font-black tracking-tight md:text-6xl">AI Operator Command Dashboard</h1><p className="mt-3 max-w-2xl text-base font-semibold text-white/72">Welcome back, {user?.name || "owner"}. Churvox prepares the admin. You stay in control.</p></div></div><div className="mt-8 rounded-3xl border border-white/10 bg-white/[.035] p-5"><p className="text-[11px] font-black uppercase tracking-[.2em] text-[#ff9a5c]">Best next move</p><p className="mt-2 text-2xl font-black">{bestMove}</p><div className="mt-5 flex flex-wrap gap-3"><button type="button" onClick={() => setCommandOpen(true)} className="rounded-2xl bg-[#ff5a1f] px-5 py-3 text-sm font-black text-white">Open Command Centre</button><button type="button" onClick={runPlan} className="rounded-2xl border border-white/20 px-5 py-3 text-sm font-black text-white">Run today&apos;s AI plan</button><button type="button" onClick={() => { setCommandTab("approvals"); setCommandOpen(true); }} className="rounded-2xl bg-[#0f8a35] px-5 py-3 text-sm font-black text-white">{approvals.length} approvals</button></div></div></section>{error ? <div className="rounded-2xl border border-[#ff5a1f]/40 bg-[#fff8ee] p-4 text-sm font-bold text-[#101318]">{error}</div> : null}{loading ? <div className="rounded-2xl border border-[#c7bba9] bg-[#f7f0e6] p-5 text-sm font-bold text-[#5a5146]">Loading Smart Hub...</div> : null}<section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"><Card label="Ready to bill" value={counts.readyToBill} text="Completed work waiting for invoice" onClick={() => { setCommandTab("invoices"); setCommandOpen(true); }} /><Card label="Unassigned jobs" value={counts.unassigned} text="Jobs AI can help place with crew" onClick={() => { setCommandTab("dispatch"); setCommandOpen(true); }} /><Card label="Open invoices" value={counts.openInvoices} text="Money still waiting to come in" onClick={() => { setCommandTab("invoices"); setCommandOpen(true); }} /><Card label="Crew available" value={counts.crew} text="Workers ready for dispatch" onClick={() => { setCommandTab("crew"); setCommandOpen(true); }} /></section><section className="grid gap-6 xl:grid-cols-[1.3fr_.9fr]"><div className="rounded-3xl border border-[#c7bba9] border-l-4 border-l-[#ff5a1f] bg-[#f7f0e6] p-5 shadow-[0_18px_40px_rgba(15,17,21,.16)]"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[11px] font-black uppercase tracking-[.22em] text-[#5a5146]">AI Approval Centre</p><h2 className="mt-2 text-2xl font-black text-[#101318]">Owner approval queue</h2><p className="mt-1 text-sm font-semibold text-[#6f6558]">AI prepares the work. You approve what happens next.</p></div><button type="button" onClick={() => { setCommandTab("approvals"); setCommandOpen(true); }} className="rounded-2xl bg-[#101318] px-4 py-2 text-sm font-black text-white">Open queue</button></div><div className="mt-5 grid gap-3 sm:grid-cols-4"><Mini label="Need decision" value={counts.needDecision} /><Mini label="Ready" value={counts.ready} /><Mini label="Drafts" value={counts.drafts} /><Mini label="Watching" value={counts.watching} /></div><div className="mt-5 space-y-3">{approvals.slice(0,4).map((i,n) => <article key={n} className="rounded-2xl border border-[#d6cbbc] bg-[#fff8ee] p-4"><p className="font-black text-[#101318]">{i.title}</p><p className="mt-1 text-sm font-semibold text-[#6f6558]">{i.text}</p></article>)}</div></div><div className="rounded-3xl border border-[#c7bba9] bg-[#f7f0e6] p-5 shadow-[0_18px_40px_rgba(15,17,21,.16)]"><p className="text-[11px] font-black uppercase tracking-[.22em] text-[#5a5146]">Business Pulse</p><h2 className="mt-2 text-2xl font-black text-[#101318]">Today&apos;s snapshot</h2><div className="mt-5 grid gap-3"><Mini label="Quotes waiting" value={counts.waitingQuotes} /><Mini label="Dispatch pressure" value={counts.unassigned} /><Mini label="Clients" value={data.clients.length} /><Mini label="AI actions" value={data.actions.length} /></div></div></section></section><CommandCentre open={commandOpen} tab={commandTab} setTab={setCommandTab} close={() => setCommandOpen(false)} counts={counts} approvals={approvals} data={data} /></main></Layout>;
+  const runPlan = async () => { try { await post("/ai-operator/run-daily-plan", {}); await load(); } catch {} };
+  const openCommand = (tab = "approvals") => { setCommandTab(tab); setCommandOpen(true); };
+
+  return (
+    <Layout smartHubMode>
+      <main className="smart-command-system">
+        <div className="smart-command-shell">
+          <section className="smart-command-hero">
+            <div className="smart-command-hero-grid">
+              <div className="smart-command-logo-wrap"><ChurvoxLogo size="hero" /></div>
+              <div>
+                <p className="smart-command-kicker">Smart Hub</p>
+                <h1 className="smart-command-title">AI Operator Command Dashboard</h1>
+                <p className="smart-command-subtitle">Welcome back, {user?.name || "owner"}. Churvox prepares the admin, dispatch, reminders and billing work. You approve what happens next.</p>
+              </div>
+              <div className="smart-command-next-card">
+                <p className="smart-command-kicker">Best next move</p>
+                <strong>{bestMove}</strong>
+                <div className="smart-command-actions">
+                  <button type="button" className="smart-command-btn primary" onClick={() => openCommand("approvals")}>Open Command Centre</button>
+                  <button type="button" className="smart-command-btn dark" onClick={runPlan}>Run AI plan</button>
+                  <button type="button" className="smart-command-btn green" onClick={() => openCommand("approvals")}>{approvals.length} approvals</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {error ? <div className="smart-command-panel"><p>{error}</p></div> : null}
+          {loading ? <div className="smart-command-panel"><p>Loading Smart Hub...</p></div> : null}
+
+          <section className="smart-command-metrics">
+            <MetricCard label="Ready to bill" value={counts.readyToBill} help="Completed work waiting for invoice" onClick={() => openCommand("invoices")} />
+            <MetricCard label="Unassigned jobs" value={counts.unassigned} help="Jobs AI can help place with crew" onClick={() => openCommand("dispatch")} />
+            <MetricCard label="Open invoices" value={counts.openInvoices} help="Money still waiting to come in" onClick={() => openCommand("invoices")} />
+            <MetricCard label="Crew available" value={counts.crew} help="Workers ready for dispatch" onClick={() => openCommand("crew")} />
+          </section>
+
+          <section className="smart-command-main">
+            <section className="smart-command-panel accent">
+              <div className="smart-command-panel-head">
+                <div>
+                  <p className="smart-command-label">AI approval centre</p>
+                  <h2>Owner approval queue</h2>
+                  <p>AI prepares the work. You approve what happens next.</p>
+                </div>
+                <button type="button" className="smart-command-btn light" onClick={() => openCommand("approvals")}>Open queue</button>
+              </div>
+              <div className="smart-command-mini-grid">
+                <MiniStat label="Need decision" value={counts.needDecision} />
+                <MiniStat label="Ready" value={counts.ready} />
+                <MiniStat label="Drafts" value={counts.drafts} />
+                <MiniStat label="Watching" value={counts.watching} />
+              </div>
+              <div className="smart-command-list">
+                {approvals.slice(0, 4).map((item, index) => <article className="smart-command-row" key={index}><p className="smart-command-row-title">{item.title}</p><p className="smart-command-row-text">{item.text}</p></article>)}
+              </div>
+            </section>
+
+            <section className="smart-command-panel">
+              <p className="smart-command-label">Business pulse</p>
+              <h2>Today&apos;s snapshot</h2>
+              <div className="smart-command-mini-grid" style={{ gridTemplateColumns: "1fr" }}>
+                <MiniStat label="Quotes waiting" value={counts.waitingQuotes} />
+                <MiniStat label="Dispatch pressure" value={counts.unassigned} />
+                <MiniStat label="Clients" value={data.clients.length} />
+                <MiniStat label="AI actions" value={data.actions.length} />
+              </div>
+            </section>
+          </section>
+
+          <section className="smart-command-panel">
+            <div className="smart-command-panel-head">
+              <div><p className="smart-command-label">Workspace dock</p><h2>Open a command workspace</h2></div>
+            </div>
+            <div className="smart-command-dock">
+              {[["Jobs", "jobs"], ["Clients", "clients"], ["Invoices", "invoices"], ["Quotes", "quotes"], ["Crew", "crew"], ["Dispatch", "dispatch"], ["Approvals", "approvals"], ["AI Settings", "settings"]].map(([name, tab]) => (
+                <button key={name} type="button" onClick={() => openCommand(tab)}>{name}<span>Open full workspace</span></button>
+              ))}
+            </div>
+          </section>
+        </div>
+        <CommandCentre open={commandOpen} tab={commandTab} setTab={setCommandTab} close={() => setCommandOpen(false)} counts={counts} approvals={approvals} data={data} />
+      </main>
+    </Layout>
+  );
 }
