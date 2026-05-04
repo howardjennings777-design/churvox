@@ -250,24 +250,34 @@ function PreviewItem({ item, drawer, onJob, onExecute }) {
 
 export default function CommandHubRealPage() {
   const { user } = useAuth();
-  const [data, setData] = useState({ jobs: [], clients: [], invoices: [], quotes: [], workers: [], proofPacks: [], receptionist: [], recurring: [], customerUpdates: [], quoteDrafts: [], memory: [], health: {} });
+  const [data, setData] = useState({ jobs: [], clients: [], invoices: [], quotes: [], workers: [], proofPacks: [], receptionist: [], recurring: [], customerUpdates: [], quoteDrafts: [], memory: [], health: {}, backendActions: [], backendPlan: null });
   const [hidden, setHidden] = useState({});
   const [drawer, setDrawer] = useState(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [backendOffline, setBackendOffline] = useState(false);
 
   const load = async () => {
     setLoading(true); setError("");
     try {
-      const [jobs, clients, invoices, quotes, workers, proofPacks, receptionist, recurring, customerUpdates, quoteDrafts, memory, health] = await Promise.all([safeGet("/jobs"), safeGet("/clients"), safeGet("/invoices"), safeGet("/quotes"), safeGet("/team/workers"), safeGet("/proof-packs"), safeGet("/api/ai/receptionist/enquiries"), safeGet("/api/ai/recurring"), safeGet("/api/ai/customer-updates"), safeGet("/api/ai/quotes/drafts"), safeGet("/api/ai/client-memory"), safeGet("/api/ai/operator/business-health")]);
-      setData({ jobs: listFrom(jobs, ["jobs"]), clients: listFrom(clients, ["clients"]), invoices: listFrom(invoices, ["invoices"]), quotes: listFrom(quotes, ["quotes"]), workers: listFrom(workers, ["workers", "items"]), proofPacks: listFrom(proofPacks, ["proof_packs", "items"]), receptionist: listFrom(receptionist, ["enquiries", "items"]), recurring: listFrom(recurring, ["rules", "items"]), customerUpdates: listFrom(customerUpdates, ["updates", "items"]), quoteDrafts: listFrom(quoteDrafts, ["drafts", "items"]), memory: listFrom(memory, ["items", "actions"]), health: unwrap(health) || {} });
+      const [jobs, clients, invoices, quotes, workers, proofPacks, receptionist, recurring, customerUpdates, quoteDrafts, memory, health, todayPlan, commandActions] = await Promise.all([safeGet("/jobs"), safeGet("/clients"), safeGet("/invoices"), safeGet("/quotes"), safeGet("/team/workers"), safeGet("/proof-packs"), safeGet("/ai/receptionist/enquiries"), safeGet("/ai/recurring"), safeGet("/ai/customer-updates"), safeGet("/ai/quotes/drafts"), safeGet("/ai/client-memory"), safeGet("/ai/operator/business-health"), safeGet("/ai/operator/today-plan"), safeGet("/command-hub/actions")]);
+      const planObj = unwrap(todayPlan) || {};
+      const actionObj = unwrap(commandActions) || {};
+      const backendPlanActions = listFrom(planObj, ["actions"]);
+      const backendQueueActions = listFrom(actionObj, ["actions", "items"]);
+      const mergedBackendActions = backendQueueActions.length ? backendQueueActions : backendPlanActions;
+      setBackendOffline(!planObj?.success);
+      setData({ jobs: listFrom(jobs, ["jobs"]), clients: listFrom(clients, ["clients"]), invoices: listFrom(invoices, ["invoices"]), quotes: listFrom(quotes, ["quotes"]), workers: listFrom(workers, ["workers", "items"]), proofPacks: listFrom(proofPacks, ["proof_packs", "items"]), receptionist: listFrom(receptionist, ["enquiries", "items"]), recurring: listFrom(recurring, ["rules", "items"]), customerUpdates: listFrom(customerUpdates, ["updates", "items"]), quoteDrafts: listFrom(quoteDrafts, ["drafts", "items"]), memory: listFrom(memory, ["items", "actions"]), health: unwrap(health) || {}, backendPlan: planObj, backendActions: mergedBackendActions });
     } catch { setError("Command could not load business data yet."); }
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
-  const actions = useMemo(() => buildCommandActions(data, hidden), [data, hidden]);
+  const actions = useMemo(() => {
+    const backend = (data.backendActions || []).filter((a) => a?.id && !hidden[a.id]);
+    return backend.length ? backend : buildCommandActions(data, hidden);
+  }, [data, hidden]);
   const groups = useMemo(() => ({ dispatch: actions.filter(a => a.type === "dispatch"), revenue: actions.filter(a => ["invoice", "pricing"].includes(a.type)), proof: actions.filter(a => a.type === "proof"), follow: actions.filter(a => a.type === "follow"), reception: actions.filter(a => a.type === "reception"), recurring: actions.filter(a => a.type === "recurring"), update: actions.filter(a => a.type === "update"), quote_builder: actions.filter(a => a.type === "quote_builder"), memory: actions.filter(a => a.type === "memory") }), [actions]);
   const activeJobs = data.jobs.filter(j => !isClosedJob(j));
   const todayJobs = data.jobs.filter(j => String(j.scheduled_date || j.date || j.start_date || j.due_date || "").startsWith(todayKey())).slice(0, 5);
@@ -277,7 +287,7 @@ export default function CommandHubRealPage() {
 
   const openActionDrawer = (title, subtitle, items) => setDrawer({ type: "actions", title, subtitle, items });
   const openWorkspace = (workspace) => setDrawer({ type: "workspace", ...workspace });
-  const openAskAi = () => setDrawer({ type: "ask", title: "Ask AI Operator", subtitle: "Live Command summary. No fake external AI response yet." });
+  const openAskAi = () => setDrawer({ type: "ask", title: "Ask AI Operator", subtitle: "Uses backend AI plan first with safe local fallback." });
   const openJobEditor = (jobId) => {
     const job = data.jobs.find((j) => idOf(j) === String(jobId));
     if (job) setDrawer({ type: "job", title: cleanJobTitle(job, data.clients), subtitle: `${clientNameFor(job, data.clients)} · ${job.status || "open"}`, job });
@@ -304,6 +314,17 @@ export default function CommandHubRealPage() {
     } catch { setError("Job save failed. The drawer stayed open so you do not lose context."); }
   };
   const dismissAction = (action) => setHidden((h) => ({ ...h, [action.id]: true }));
+  const askAiOperator = async (question) => {
+    setNotice(""); setError("");
+    try {
+      const res = await post("/ai/operator/ask", { question });
+      const answer = unwrap(res)?.answer;
+      setNotice(answer || "AI Operator answered using today's plan.");
+    } catch {
+      setNotice(`Fallback: ${best ? `${best.title}. ${best.reason}` : "No urgent action found from local rules."}`);
+    }
+  };
+
 
   if (!canUseCommand(user?.role)) return <Layout><main className="smart-command-system"><section className="command-panel"><h2>Command Hub is owner/admin only.</h2></section></main></Layout>;
 
@@ -313,7 +334,7 @@ export default function CommandHubRealPage() {
 
   return <Layout smartHubMode><main className="smart-command-system"><div className="command-real-shell">
     <section className="command-hero"><div className="command-hero-brand"><ChurvoxLogo size="hero" /></div><div className="command-hero-copy"><p className="smart-command-kicker">Smart Hub</p><h1>AI Control Room</h1><p>Churvox watches the business, prepares the admin, and lets the owner approve and work from one page.</p><div className="command-hero-actions"><button className="command-btn orange" onClick={runAiPlan}>Run AI plan</button><button className="command-btn light" onClick={openAskAi}>Ask AI Operator</button><button className="command-btn dark" onClick={() => openActionDrawer("Approval Queue", "Review and execute the work Command prepared.", actions)}>Open queue</button></div></div><aside className="command-hero-score"><span>Today</span><strong>{actions.length} actions</strong><strong>{data.workers.length} workers active</strong><strong>{money(moneyWaiting)} waiting</strong></aside></section>
-    {notice ? <section className="command-notice">{notice}</section> : null}{error ? <section className="command-error">{error}</section> : null}{loading ? <section className="command-notice">Loading Command...</section> : null}
+    {notice ? <section className="command-notice">{notice}</section> : null}{error ? <section className="command-error">{error}</section> : null}{loading ? <section className="command-notice">Loading Command...</section> : null}<section className="command-notice">{backendOffline ? "backend AI offline / local rules fallback" : "backend AI plan active"}</section><section className="command-notice">No auto-send · No auto-charge · No MYOB write · No payroll changes · No deletion without owner approval.</section>
 
     <section className="command-operator-card"><div><p className="smart-command-kicker">Zone 1 · AI Today Plan</p><h2>AI Operator: today’s business plan</h2><p>{best ? `Start with: ${best.title}. ${best.reason}` : "No urgent work is blocking the business right now."}</p></div><div className="command-metric-row"><Metric label="Need crew" value={groups.dispatch.length} text="dispatch pressure" /><Metric label="Follow-ups" value={groups.follow.length} text="quotes/invoices" /><Metric label="Revenue work" value={groups.revenue.length} text="pricing/invoice" /><Metric label="Proof needed" value={groups.proof.length} text="proof-to-paid" /></div><div className="command-card-actions"><button className="command-btn orange" onClick={() => openActionDrawer("Today’s Plan", "AI grouped the work that matters most first.", actions)}>Work the plan</button><button className="command-btn light" onClick={openAskAi}>Ask what to do first</button></div></section>
 
@@ -330,7 +351,7 @@ export default function CommandHubRealPage() {
     <section className="command-panel"><div className="command-section-head"><div><p className="smart-command-kicker">AI Approval Queue</p><h2>Grouped AI work</h2><p>Open a group and work inside the drawer.</p></div><span className="command-pill">{actions.length} ready</span></div><div className="command-filter-grid">{[["Approvals", actions], ["Dispatch", groups.dispatch], ["Revenue", groups.revenue], ["Follow-Ups", groups.follow], ["Proof", groups.proof], ["Reception", groups.reception], ["Recurring", groups.recurring], ["Updates", groups.update], ["Quote Builder", groups.quote_builder], ["Client Memory", groups.memory]].map(([label, items]) => <button key={label} className={items.length ? "active" : ""} onClick={() => openActionDrawer(label, `Focused ${label.toLowerCase()} work.`, items)}>{label}<span>{items.length} items</span></button>)}</div></section>
 
     <Drawer drawer={drawer} onClose={() => setDrawer(null)}>
-      {drawer?.type === "ask" ? <div className="command-drawer-stack"><p><b>What I’d do first:</b> {best ? `${best.title}. ${best.reason}` : "Nothing urgent is blocking the business right now."}</p><div className="command-prompt-grid">{["What needs doing today?", "Which jobs need crew?", "What invoices need chasing?", "What should I do first?", "What proof packs are missing?"].map(q => <button key={q} onClick={() => setNotice(`${q} — Command is using live business counts for now.`)}>{q}</button>)}</div></div> : null}
+      {drawer?.type === "ask" ? <div className="command-drawer-stack"><p><b>What I’d do first:</b> {best ? `${best.title}. ${best.reason}` : "Nothing urgent is blocking the business right now."}</p><div className="command-prompt-grid">{["What should I do first?", "Who should I assign first?", "What money is waiting?", "What customers need updates?", "What proof packs are missing?", "What recurring work is due?"].map(q => <button key={q} onClick={() => askAiOperator(q)}>{q}</button>)}</div></div> : null}
       {drawer?.type === "actions" ? <div className="command-action-list">{drawer.items?.length ? drawer.items.map(action => <ActionCard key={`drawer-${action.id}`} action={action} onDismiss={dismissAction} onExecute={executeCommandAction} onOpenJobEditor={openJobEditor} />) : <div className="command-empty"><p>No work in this section right now.</p></div>}</div> : null}
       {drawer?.type === "workspace" ? <div className="command-drawer-stack">{drawer.items?.length ? drawer.items.map((item, idx) => <PreviewItem key={idOf(item) || idx} item={item} drawer={drawer} onJob={openJobEditor} onExecute={executeCommandAction} />) : <AccountWorkspace drawer={drawer} user={user} data={data} setNotice={setNotice} />}</div> : null}
       {drawer?.type === "runsheet" ? <div className="command-run-list">{drawer.items?.map(job => <article key={`drawer-job-${idOf(job)}`}><b>{cleanJobTitle(job, data.clients)}</b><span>{clientNameFor(job, data.clients)} · {job.status || "open"}</span><button onClick={() => openJobEditor(idOf(job))}>Edit here</button></article>)}</div> : null}
