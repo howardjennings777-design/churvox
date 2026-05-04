@@ -6,42 +6,16 @@ import { get, patch, post } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { buildArrivalSmsMessage, buildInvoiceDescription, buildInvoiceReminderMessage, buildJobUpdateMessage, buildQuoteFollowUpMessage } from "../lib/aiMessageBuilders";
 import "../styles/smartHubHardTrade.css";
+import { safeArray, listFrom, statusOf, norm, asDate, money, safeText, textOr, findByIds } from "./smart-hub/utils/smartHubSafety";
+import { hasInvoiceForJob } from "./smart-hub/utils/smartHubCounts";
+import { dedupeApprovalActions } from "./smart-hub/utils/actionDisplay";
 
-const safeArray = (value) => (Array.isArray(value) ? value : []);
-
-const listFrom = (value, keys = []) => {
-  if (Array.isArray(value)) return value;
-  const src = value?.data ?? value;
-  if (Array.isArray(src)) return src;
-  if (src && typeof src === "object") {
-    for (const key of keys) {
-      if (Array.isArray(src?.[key])) return src[key];
-    }
-    if (Array.isArray(src?.items)) return src.items;
-  }
-  return [];
-};
-
-const statusOf = (value) => String(value || "").toLowerCase().trim();
 const ACTIVE_ACTION_STATUSES = ["pending", "ready", "draft", "drafts", "watching", "needs_decision"];
 const DONE_ACTION_STATUSES = ["completed", "approved", "rejected", "dismissed", "resolved", "archived"];
 const isActiveApproval = (item = {}) => {
   const status = statusOf(item?.status);
   return ACTIVE_ACTION_STATUSES.includes(status) && !DONE_ACTION_STATUSES.includes(status);
 };
-const norm = (value) => String(value || "").toLowerCase().trim();
-const asDate = (value) => {
-  if (!value) return null;
-  const d = new Date(value);
-  return Number.isFinite(d.getTime()) ? d : null;
-};
-
-const money = (value) => {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return "—";
-  return num.toLocaleString(undefined, { style: "currency", currency: "AUD" });
-};
-
 const REMINDER_ELIGIBLE = ["open", "sent", "unpaid", "overdue", "pending_payment"];
 const REMINDER_EXCLUDED = ["paid", "cancelled", "canceled"];
 
@@ -72,31 +46,6 @@ const quoteAgeDays = (quote) => {
   return Math.floor(ms / (1000 * 60 * 60 * 24));
 };
 
-
-const safeText = (value, fallback = "Not available") => {
-  const text = String(value || "").trim();
-  return text || fallback;
-};
-
-const textOr = safeText;
-
-const findByIds = (list, ids, keys = ["id", "_id"]) => {
-  const wanted = safeArray(ids).map((v) => String(v || "")).filter(Boolean);
-  if (!wanted.length) return null;
-  return safeArray(list).find((item) => keys.some((key) => wanted.includes(String(item?.[key] || "")))) || null;
-};
-
-const hasInvoiceForJob = (job, invoices) => {
-  const jobIds = [job?.id, job?._id, job?.job_id].map((id) => String(id || "")).filter(Boolean);
-  if (!jobIds.length) return false;
-  return safeArray(invoices).some((inv) => {
-    const linked = [inv?.job_id, inv?.jobId, inv?.linked_job_id, inv?.source_job_id].map((id) => String(id || "")).filter(Boolean);
-    return linked.some((id) => jobIds.includes(id));
-  });
-};
-
-
-
 const APPROVAL_GROUPS = ["all", "needs_decision", "ready", "drafts", "watching", "completed"];
 const getApprovalGroup = (action = {}) => {
   const group = String(action.group || "").toLowerCase();
@@ -114,25 +63,6 @@ const getFilteredApprovalActions = (actions = [], activeTab = "all") => safeArra
   if (activeTab === "completed") return DONE_ACTION_STATUSES.includes(statusOf(a?.status));
   return isActiveApproval(a) && a.group === activeTab;
 });
-const approvalDedupKey = (action = {}) => {
-  const actionKey = String(action.action_key || action.actionKey || "").trim();
-  if (actionKey) return actionKey;
-  const type = String(action.type || "unknown");
-  const rel = String(action.relatedId || action.related_id || action.related_entity_id || action.invoice_id || action.job_id || action.quote_id || action.client_id || "");
-  return `${type}:${rel}`;
-};
-
-const dedupeApprovalActions = (actions = []) => {
-  const map = new Map();
-  safeArray(actions).forEach((item) => {
-    const key = approvalDedupKey(item);
-    if (!key) return;
-    if (!map.has(key)) { map.set(key, item); return; }
-    const prev = map.get(key);
-    if (statusOf(prev?.status) === 'completed' && statusOf(item?.status) !== 'completed') map.set(key, item);
-  });
-  return Array.from(map.values());
-};
 const getBestNextMove = ({ readyToBillCount = 0, unassignedJobsCount = 0, openInvoicesCount = 0, quotesWaitingCount = 0, pendingApprovalActions = [] } = {}) => {
   const pending = safeArray(pendingApprovalActions).filter((item) => isActiveApproval(item));
   const highRiskDecisionCount = pending.filter((item) => item.group === "needs_decision" && String(item?.risk || "").toLowerCase() === "high").length;
