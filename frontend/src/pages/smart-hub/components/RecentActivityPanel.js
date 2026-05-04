@@ -1,5 +1,6 @@
 import React from 'react';
+import { textOr } from '../utils/smartHubSafety';
 
-export function RecentActivityPanel(props) {
-  return props.children || null;
+export function RecentActivityPanel({ activity = [], activityFilter, setActivityFilter }) {
+  return <section className="mt-4 rounded-2xl border border-[#746c60] bg-[#c8bfb1] p-4 shadow-[0_14px_35px_rgba(15,17,21,0.20)]"><h3 className="text-sm font-bold uppercase tracking-[0.16em] text-[#3f3931]">Recent Smart Hub activity</h3><div className="mt-2 flex gap-2">{[['all','All'],['completed','Completed'],['rejected','Rejected'],['draft_prepared','Drafts']].map(([k,l]) => <button key={k} type="button" onClick={() => setActivityFilter(k)} className={`rounded px-2 py-1 text-xs ${activityFilter===k?'bg-[#20242a] text-white':'bg-[#c8bfb1] text-[#111317]'}`}>{l}</button>)}</div>{!activity.length ? <p className="mt-2 text-sm text-[#5f646b]">No AI actions approved yet.</p> : <ul className="mt-3 space-y-2 text-sm text-[#111317]">{activity.filter((a)=>activityFilter==='all'?true:String(a?.status||'')===activityFilter).map((a) => <li key={String(a?.id||a?._id)} className="rounded-lg border border-[#8c8274] p-2"><p>{a?.message || a?.title}</p><p className="text-xs text-[#5f646b]">{textOr(a?.status, 'completed')} · {a?.approved_by_name ? `${a.approved_by_name} · ` : ''}{new Date(a?.created_at || Date.now()).toLocaleString()}</p></li>)}</ul>}</section>;
 }
