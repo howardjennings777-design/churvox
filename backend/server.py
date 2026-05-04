@@ -2504,6 +2504,7 @@ async def smart_hub_scan(current_user: dict = Depends(get_current_user)):
     clients = [serialize_doc(c) async for c in db.clients.find({"business_id": business_id}).limit(300)]
     workers = [serialize_doc(w) async for w in db.business_users.find({"business_id": business_id}).limit(300)]
     client_by_id = {str(c.get("id") or c.get("_id")): c for c in clients}
+    quote_by_id = {str(q.get("id") or q.get("_id")): q for q in quotes}
     invoice_job_ids = {str(i.get("job_id") or i.get("jobId") or "") for i in invoices}
     active_keys = set()
     created = 0
@@ -2536,16 +2537,50 @@ async def smart_hub_scan(current_user: dict = Depends(get_current_user)):
         invoice_status = str(job.get("invoice_status") or "").lower()
         existing_job_invoice = next((inv for inv in invoices if str(inv.get("job_id") or inv.get("source_job_id") or inv.get("linked_job_id") or "") == jid), None)
         if st in {"completed", "complete"} and not has_invoice_link and invoice_status not in {"draft", "sent", "open", "paid", "overdue"} and not (jid in invoice_job_ids) and not existing_job_invoice:
-            subtotal = float(job.get("subtotal") or job.get("price") or 0)
+            amount_source = "pricing_needed"
+            subtotal = 0.0
+            if float(job.get("fixed_price") or 0) > 0:
+                subtotal = float(job.get("fixed_price") or 0)
+                amount_source = "job_fixed_price"
+            elif float(job.get("subtotal") or job.get("amount") or job.get("price") or 0) > 0:
+                subtotal = float(job.get("subtotal") or job.get("amount") or job.get("price") or 0)
+                amount_source = "job_subtotal_amount"
+            elif str(job.get("quote_id") or "") and float((quote_by_id.get(str(job.get("quote_id") or "")) or {}).get("amount") or (quote_by_id.get(str(job.get("quote_id") or "")) or {}).get("total") or 0) > 0:
+                linked_quote = quote_by_id.get(str(job.get("quote_id") or "")) or {}
+                subtotal = float(linked_quote.get("amount") or linked_quote.get("total") or 0)
+                amount_source = "linked_quote_amount"
+            elif float(job.get("hourly_rate") or 0) > 0 and float(job.get("tracked_hours") or job.get("hours") or 0) > 0:
+                subtotal = round(float(job.get("hourly_rate") or 0) * float(job.get("tracked_hours") or job.get("hours") or 0), 2)
+                amount_source = "hourly_rate_x_tracked_time"
             if subtotal <= 0:
-                await _upsert_action(f"missing_price:{jid}", "missing_price", f"Add price before invoicing {job.get('title') or 'job'}", "Completed job is missing price/subtotal.", {"job_id": jid}, "job", jid, jid, str(job.get("client_id") or ""), what_happens="Owner needs to add price before AI can prepare an invoice.", editable_fields=["payload.subtotal", "payload.gst_rate"])
+                await _upsert_action(f"missing_price:{jid}", "missing_price", f"Add pricing before invoicing {job.get('title') or 'job'}", "Completed job has no fixed price, subtotal, linked quote amount, or hourly tracked total.", {"job_id": jid, "amount_source": amount_source}, "job", jid, jid, str(job.get("client_id") or ""), what_happens="Owner needs to add pricing before AI can prepare a draft invoice.", editable_fields=["payload.subtotal", "payload.gst_rate"])
             else:
                 invoice_desc = str(job.get("ai_invoice_description") or job.get("invoice_description_draft") or job.get("completion_notes") or job.get("worker_completion_notes") or job.get("worker_notes") or job.get("job_notes") or job.get("notes") or job.get("description") or f"{job.get('title') or 'Service'} completed and ready for billing.")
-                await _upsert_action(f"create_invoice_draft:{jid}", "create_invoice_draft", f"Create draft invoice for {job.get('title') or (client or {}).get('name') or 'job'}", "Completed job is ready to bill.", {"job_id": jid, "client_id": str(job.get("client_id") or ""), "subtotal": subtotal, "description": invoice_desc}, "job", jid, jid, str(job.get("client_id") or ""), what_happens="Churvox creates an editable draft invoice. Nothing is sent to the customer.", editable_fields=["payload.description", "payload.subtotal", "payload.gst_rate"])
+                await _upsert_action(f"create_invoice_draft:{jid}", "create_invoice_draft", f"Create draft invoice for {job.get('title') or (client or {}).get('name') or 'job'}", "Completed job is ready to bill.", {"job_id": jid, "client_id": str(job.get("client_id") or ""), "subtotal": subtotal, "description": invoice_desc, "amount_source": amount_source, "proof_summary": str(job.get("proof_summary") or job.get("completion_photos_summary") or job.get("completion_notes") or job.get("worker_completion_notes") or "")}, "job", jid, jid, str(job.get("client_id") or ""), what_happens="Churvox creates an editable draft invoice. Nothing is sent to the customer.", editable_fields=["payload.description", "payload.subtotal", "payload.gst_rate"])
         if st not in {"completed", "complete", "cancelled", "canceled", "archived", "assigned", "acknowledged", "in_progress"} and not (job.get("assigned_worker_id") or job.get("worker_id") or job.get("assigned_worker") or job.get("assigned_worker_name")):
-            rec = next((w for w in workers if str(w.get("role") or "").lower() == "worker"), None)
-            wid = str((rec or {}).get("id") or (rec or {}).get("_id") or "")
-            await _upsert_action(f"assign_worker:{jid}", "assign_worker", f"Assign worker to {job.get('title') or 'job'}", "Job has no assigned worker.", {"job_id": jid, "recommended_worker_id": wid, "worker_name": (rec or {}).get("name") or "", "reasoning": "Available active worker selected."}, "job", jid, jid, str(job.get("client_id") or ""), worker_id=wid, what_happens="Churvox assigns the worker and updates the job to assigned.", editable_fields=["payload.recommended_worker_id"])
+            best = None
+            for w in workers:
+                role = str(w.get("role") or "").lower()
+                if role not in {"worker", "employee", "field_worker"}:
+                    continue
+                if w.get("available") is False or str(w.get("status") or "").lower() in {"inactive", "offboarded", "deleted"}:
+                    continue
+                wid = str(w.get("id") or w.get("_id") or "")
+                assigned = [j for j in jobs if str(j.get("assigned_worker_id") or j.get("worker_id") or "") == wid]
+                scheduled_today = len([j for j in assigned if str(j.get("scheduled_date") or j.get("date") or "") == str(job.get("scheduled_date") or job.get("date") or "")])
+                active_count = len([j for j in assigned if str(j.get("status") or "").lower() not in {"completed", "complete", "cancelled", "canceled", "archived"}])
+                job_region = str(job.get("region") or job.get("suburb") or job.get("area") or "").strip().lower()
+                worker_region = str(w.get("region") or w.get("suburb") or w.get("area") or "").strip().lower()
+                region_match = bool(job_region and worker_region and job_region == worker_region)
+                conflict = scheduled_today > 0
+                score = 40 + (20 if region_match else 0) + max(0, 20 - (active_count * 4)) + max(0, 10 - (scheduled_today * 5)) - (25 if conflict else 0)
+                candidate = {"worker": w, "wid": wid, "score": score, "region_match": region_match, "active_count": active_count, "scheduled_today": scheduled_today, "conflict": conflict}
+                if not best or candidate["score"] > best["score"]:
+                    best = candidate
+            wid = str((best or {}).get("wid") or "")
+            worker_name = str(((best or {}).get("worker") or {}).get("name") or "")
+            reasoning = f"Best score based on role/active status, workload ({(best or {}).get('active_count', 0)} active), scheduled today ({(best or {}).get('scheduled_today', 0)}), region match ({'yes' if (best or {}).get('region_match') else 'no'}), and conflict check ({'conflict' if (best or {}).get('conflict') else 'none'})."
+            await _upsert_action(f"assign_worker:{jid}", "assign_worker", f"Assign worker to {job.get('title') or 'job'}", "Job has no assigned worker.", {"job_id": jid, "recommended_worker_id": wid, "worker_name": worker_name, "reasoning": reasoning, "conflict_warning": bool((best or {}).get("conflict"))}, "job", jid, jid, str(job.get("client_id") or ""), worker_id=wid, what_happens="Churvox assigns the worker and updates the job to assigned.", editable_fields=["payload.recommended_worker_id"])
     for inv in invoices:
         iid = str(inv.get("id") or inv.get("_id") or "")
         if not iid:
