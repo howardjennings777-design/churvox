@@ -1,0 +1,124 @@
+/* Force-visible AI Control Room V4 polish. Imported from DashboardPage so it cannot be missed. */
+.cr-room-page {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(249, 115, 22, 0.20), transparent 30%),
+    radial-gradient(circle at 86% 8%, rgba(37, 99, 235, 0.16), transparent 32%),
+    linear-gradient(180deg, #fff8f0 0%, #f6f9ff 48%, #ffffff 100%) !important;
+}
+
+.cr-room-hero {
+  position: relative !important;
+  min-height: 330px !important;
+  padding: clamp(34px, 5vw, 62px) !important;
+  border-radius: 38px !important;
+  background:
+    radial-gradient(circle at 82% 30%, rgba(249, 115, 22, 0.34), transparent 22%),
+    radial-gradient(circle at 45% 18%, rgba(37, 99, 235, 0.18), transparent 34%),
+    linear-gradient(135deg, #07111f 0%, #101b33 48%, #29160f 100%) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+}
+
+.cr-room-hero::after {
+  content: "AI CONTROL ROOM V4";
+  position: absolute;
+  top: 22px;
+  right: 24px;
+  background: rgba(249, 115, 22, 0.16);
+  border: 1px solid rgba(249, 115, 22, 0.45);
+  color: #fed7aa;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .16em;
+}
+
+.cr-room-hero h1 {
+  max-width: 820px !important;
+  font-size: clamp(64px, 8vw, 112px) !important;
+  line-height: .86 !important;
+  letter-spacing: -.08em !important;
+  text-shadow: 0 20px 44px rgba(0,0,0,.25) !important;
+}
+
+.cr-room-score {
+  background: linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.07)) !important;
+  border-color: rgba(255,255,255,.18) !important;
+  box-shadow: 0 24px 55px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.12) !important;
+}
+
+.cr-room-zone {
+  border-radius: 32px !important;
+  border: 1px solid rgba(15, 23, 42, .08) !important;
+  box-shadow: 0 22px 60px rgba(15, 23, 42, .08) !important;
+}
+
+.cr-room-plan {
+  background:
+    linear-gradient(90deg, rgba(37,99,235,.08), transparent 40%),
+    linear-gradient(180deg, #ffffff, #fffaf3) !important;
+  border-left: 6px solid #2563eb !important;
+}
+
+.cr-room-zone-label {
+  color: #2563eb !important;
+}
+
+.cr-room-metric {
+  border-radius: 22px !important;
+  background: linear-gradient(180deg, #ffffff, #f8fbff) !important;
+  border: 1px solid rgba(37, 99, 235, .16) !important;
+}
+
+.cr-room-metric:nth-child(1) { border-left: 5px solid #f97316 !important; }
+.cr-room-metric:nth-child(2) { border-left: 5px solid #16a34a !important; }
+.cr-room-metric:nth-child(3) { border-left: 5px solid #2563eb !important; }
+.cr-room-metric:nth-child(4) { border-left: 5px solid #7c3aed !important; }
+
+.cr-room-grid3 > .cr-room-card {
+  min-height: 190px !important;
+  border-radius: 28px !important;
+  padding: 24px !important;
+}
+
+.cr-room-approval,
+.cr-room-workspace {
+  min-height: 120px !important;
+  border-radius: 22px !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+  border: 1px solid rgba(37,99,235,.12) !important;
+  box-shadow: 0 14px 34px rgba(15,23,42,.06) !important;
+}
+
+.cr-room-approval:hover,
+.cr-room-workspace:hover {
+  background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%) !important;
+  border-color: rgba(249,115,22,.42) !important;
+  transform: translateY(-2px) !important;
+}
+
+.cr-room-approval em,
+.cr-room-workspace em {
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border-color: rgba(37,99,235,.20) !important;
+}
+
+.cr-room-list-row {
+  border-radius: 20px !important;
+  border-left: 5px solid rgba(249,115,22,.7) !important;
+}
+
+.cr-room-list-row button,
+.cr-room-row button {
+  background: linear-gradient(135deg, #f97316, #ea580c) !important;
+}
+
+@media (max-width: 920px) {
+  .cr-room-hero::after {
+    position: static;
+    display: inline-flex;
+    width: max-content;
+    margin-top: 14px;
+  }
+}
