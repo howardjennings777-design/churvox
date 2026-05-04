@@ -888,7 +888,7 @@ export default function SmartHubBrainPage() {
           </div>
         ) : null}
 
-        <AiOperatorSettingsPanel aiSettings={aiSettings} setAiSettings={setAiSettings} open={aiSettingsOpen} onClose={() => setAiSettingsOpen(false)} onSave={async () => { try { const res = await patch('/ai-operator/settings', aiSettings); setAiSettings((p)=>({...p,...(res?.settings||{})})); setToast({kind:'success',message:'AI settings saved.'}); setAiSettingsOpen(false);} catch { localStorage.setItem(\"smart_hub_ai_settings_local\", JSON.stringify(aiSettings)); setToast({kind:'success',message:'Saved locally until backend setting is added.'}); setAiSettingsOpen(false); } }} />
+        <AiOperatorSettingsPanel aiSettings={aiSettings} setAiSettings={setAiSettings} open={aiSettingsOpen} onClose={() => setAiSettingsOpen(false)} onSave={async () => { try { const res = await patch('/ai-operator/settings', aiSettings); setAiSettings((p)=>({...p,...(res?.settings||{})})); setToast({kind:'success',message:'AI settings saved.'}); setAiSettingsOpen(false);} catch { localStorage.setItem("smart_hub_ai_settings_local", JSON.stringify(aiSettings)); setToast({kind:'success',message:'Saved locally until backend setting is added.'}); setAiSettingsOpen(false); } }} />
 
         {approvalCentreOpen ? (
           <div className="fixed inset-0 z-[80] overflow-hidden bg-[#0d0f12]/75 backdrop-blur-sm">
