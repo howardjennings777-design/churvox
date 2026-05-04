@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import "../styles/smartCommandSystem.css";
 
 const norm = (v) => String(v || "").toLowerCase().trim();
+const idOf = (obj) => String(obj?.id || obj?._id || obj?.uuid || "");
 const toList = (value, keys = []) => {
   if (Array.isArray(value)) return value;
   if (!value || typeof value !== "object") return [];
@@ -14,6 +15,8 @@ const toList = (value, keys = []) => {
 };
 const safeGet = async (path) => { try { return await get(path); } catch { return []; } };
 const roleAllowed = (role) => ["owner", "employer", "admin", "manager", "office_admin", "business_owner", "platform_owner"].includes(norm(role));
+const moneyText = (n) => (Number.isFinite(Number(n)) ? `$${Number(n).toFixed(2)}` : "Amount unknown");
+const isDone = (a) => ["completed", "dismissed", "rejected", "done", "failed"].includes(norm(a?.status));
 
 const typeMap = {
   assign_worker: "dispatch", create_invoice_draft: "invoice_assistant", invoice_draft: "invoice_assistant", proof_pack_send: "proof_to_paid", invoice_reminder: "follow_up", quote_follow_up: "follow_up", enquiry_follow_up: "receptionist", worker_ack_follow_up: "follow_up", recurring_run: "recurring", customer_update: "customer_update", quote_draft: "quote_builder", client_memory: "client_memory", missing_price: "missing_pricing",
@@ -34,13 +37,89 @@ const normalizeAction = (a) => ({
   job_id: String(a?.job_id || a?.payload?.job_id || ""),
   quote_id: String(a?.quote_id || a?.payload?.quote_id || ""),
   invoice_id: String(a?.invoice_id || a?.payload?.invoice_id || ""),
-  worker_id: String(a?.worker_id || a?.payload?.worker_id || a?.payload?.recommended_worker_id || ""),
   payload: a?.payload || {},
-  source: a?.source || "ai-operator",
+  source: "backend",
 });
 
+const clientNameForJob = (job, clients) => {
+  const cid = String(job?.client_id || job?.customer_id || "");
+  const c = clients.find((x) => idOf(x) === cid);
+  return c?.name || c?.full_name || c?.company_name || job?.client_name || "Client";
+};
+
+const relatedPath = (a) => {
+  if (a?.job_id) return `/jobs/${a.job_id}`;
+  if (a?.invoice_id) return `/invoices/${a.invoice_id}`;
+  if (a?.quote_id) return `/quotes/${a.quote_id}`;
+  if (a?.client_id) return `/clients/${a.client_id}`;
+  if (a?.related_type && a?.related_id) return `/${a.related_type}/${a.related_id}`;
+  return "/smart-hub/brain";
+};
+
+const tabMatches = (tab, a) => {
+  if (tab === "approvals") return !isDone(a);
+  if (tab === "dispatch") return a.type === "dispatch" && !isDone(a);
+  if (tab === "invoices") return ["invoice_assistant", "missing_pricing"].includes(a.type) && !isDone(a);
+  if (tab === "proof") return a.type === "proof_to_paid" && !isDone(a);
+  if (tab === "follow") return a.type === "follow_up" && !isDone(a);
+  if (tab === "reception") return a.type === "receptionist" && !isDone(a);
+  if (tab === "recurring") return a.type === "recurring" && !isDone(a);
+  if (tab === "updates") return a.type === "customer_update" && !isDone(a);
+  if (tab === "quotes") return a.type === "quote_builder" && !isDone(a);
+  if (tab === "memory") return a.type === "client_memory" && !isDone(a);
+  if (tab === "activity") return isDone(a);
+  return true;
+};
+
+const buildGeneratedActions = (data) => {
+  const actions = [];
+  const invoicesByJob = new Set(data.invoices.map((i) => String(i?.job_id || "")).filter(Boolean));
+  const proofByJob = new Set(data.proofPacks.map((p) => String(p?.job_id || p?.related_job_id || "")).filter(Boolean));
+
+  data.jobs.forEach((j) => {
+    const jid = idOf(j);
+    if (!jid) return;
+    const status = norm(j.status);
+    const active = !["completed", "complete", "cancelled", "canceled"].includes(status);
+    const completed = ["completed", "complete"].includes(status);
+    const hasWorker = j.assigned_worker_id || j.worker_id || j.assigned_to;
+    if (active && !hasWorker) actions.push({ id: `gen-dispatch-${jid}`, type: "dispatch", title: `Assign crew to ${clientNameForJob(j, data.clients)}`, summary: j?.title || j?.address || "Job is active and unassigned.", reason: "Job has no worker assigned.", what_happens_if_approved: "This action is prepared from live data. Open the related record to review and approve safely.", priority: "high", status: "pending", source: "generated", job_id: jid, related_type: "jobs", related_id: jid });
+    if (completed && !invoicesByJob.has(jid)) {
+      const amount = Number(j?.price_total ?? j?.total_price ?? j?.amount ?? 0);
+      if (amount > 0) actions.push({ id: `gen-invoice-${jid}`, type: "invoice_assistant", title: `Prepare invoice for ${clientNameForJob(j, data.clients)}`, summary: `Completed job with pricing (${moneyText(amount)}).`, reason: "Completed job has no invoice yet.", what_happens_if_approved: "This action is prepared from live data. Open the related record to review and approve safely.", priority: "high", status: "pending", source: "generated", job_id: jid, related_type: "jobs", related_id: jid });
+      else actions.push({ id: `gen-missing-pricing-${jid}`, type: "missing_pricing", title: `Add pricing before invoicing ${clientNameForJob(j, data.clients)}`, summary: "Completed job has no usable price.", reason: "Cannot create invoice until pricing is set.", what_happens_if_approved: "This action is prepared from live data. Open the related record to review and approve safely.", priority: "high", status: "pending", source: "generated", job_id: jid, related_type: "jobs", related_id: jid });
+    }
+    if (completed && !proofByJob.has(jid)) actions.push({ id: `gen-proof-${jid}`, type: "proof_to_paid", title: `Prepare proof pack for ${clientNameForJob(j, data.clients)}`, summary: "Completed job missing proof pack.", reason: "Proof-to-Paid flow needs proof assets.", what_happens_if_approved: "Attempts proof pack preparation for this job if endpoint is available.", priority: "medium", status: "pending", source: "generated", job_id: jid, related_type: "jobs", related_id: jid });
+  });
+
+  data.invoices.forEach((i) => {
+    const status = norm(i.status);
+    if (!["open", "sent", "overdue", "unpaid", "pending"].includes(status)) return;
+    const iid = idOf(i);
+    if (!iid) return;
+    const due = i.balance_due ?? i.amount_due ?? i.outstanding ?? i.total;
+    actions.push({ id: `gen-invoice-follow-${iid}`, type: "follow_up", title: "Prepare reminder for invoice", summary: `Invoice ${i?.number || iid} outstanding: ${moneyText(due)}.`, reason: "Invoice is awaiting payment.", what_happens_if_approved: "This action is prepared from live data. Open the related record to review and approve safely.", priority: "medium", status: "pending", source: "generated", invoice_id: iid, related_type: "invoices", related_id: iid });
+  });
+
+  data.quotes.forEach((q) => {
+    const status = norm(q.status);
+    if (!["sent", "pending", "waiting", "viewed"].includes(status)) return;
+    const qid = idOf(q);
+    if (!qid) return;
+    actions.push({ id: `gen-quote-follow-${qid}`, type: "follow_up", title: "Follow up quote", summary: `Quote ${q?.number || qid} is waiting for response.`, reason: "Quote is pending customer action.", what_happens_if_approved: "This action is prepared from live data. Open the related record to review and approve safely.", priority: "medium", status: "pending", source: "generated", quote_id: qid, related_type: "quotes", related_id: qid });
+  });
+
+  data.receptionist.forEach((e) => actions.push({ id: `gen-reception-${idOf(e) || Math.random()}`, type: "receptionist", title: "Receptionist enquiry needs review", summary: String(e?.message || e?.summary || "New enquiry"), reason: "Receptionist queue contains unresolved enquiry.", what_happens_if_approved: "Open the related client or enquiry and confirm next action.", priority: "medium", status: "pending", source: "generated", client_id: String(e?.client_id || "") }));
+  data.recurring.forEach((r) => actions.push({ id: `gen-recurring-${idOf(r) || Math.random()}`, type: "recurring", title: "Recurring work due", summary: String(r?.name || r?.title || "Recurring rule due"), reason: "Recurring schedule indicates a due run.", what_happens_if_approved: "Open recurring rule and run safely.", priority: "medium", status: "pending", source: "generated" }));
+  data.customerUpdates.forEach((u) => actions.push({ id: `gen-update-${idOf(u) || Math.random()}`, type: "customer_update", title: "Customer update draft", summary: String(u?.summary || u?.message || "Prepared customer update"), reason: "Customer update queue contains pending item.", what_happens_if_approved: "Review and send update without exposing private location data.", priority: "low", status: "pending", source: "generated", client_id: String(u?.client_id || "") }));
+  data.quoteDrafts.forEach((d) => actions.push({ id: `gen-qdraft-${idOf(d) || Math.random()}`, type: "quote_builder", title: "Quote draft ready", summary: String(d?.title || d?.summary || "Quote draft requires review"), reason: "Quote builder has a draft item.", what_happens_if_approved: "Open quote draft and finalize.", priority: "medium", status: "pending", source: "generated", quote_id: String(d?.quote_id || idOf(d) || "") }));
+  data.memory.forEach((m) => actions.push({ id: `gen-memory-${idOf(m) || Math.random()}`, type: "client_memory", title: "Client memory insight", summary: String(m?.summary || m?.note || "Client context available"), reason: "Client memory produced actionable context.", what_happens_if_approved: "Open client record and apply this context.", priority: "low", status: "pending", source: "generated", client_id: String(m?.client_id || "") }));
+
+  return actions;
+};
+
 function ActionRow({ item, buttons = [] }) {
-  return <article className="smart-command-row"><p className="smart-command-row-title">{item.title}</p><p className="smart-command-row-text">{item.reason || item.summary}</p><p className="smart-command-row-text"><b>Priority:</b> {item.priority} · <b>Type:</b> {item.type}</p><div className="smart-command-actions">{buttons.map((b) => <button key={b.label} type="button" className={`smart-command-btn ${b.variant || "light"}`} onClick={b.onClick}>{b.label}</button>)}</div></article>;
+  return <article className="smart-command-row"><p className="smart-command-row-title">{item.title}</p><p className="smart-command-row-text">{item.summary}</p><p className="smart-command-row-text"><b>Reason:</b> {item.reason || "-"}</p><p className="smart-command-row-text"><b>If approved:</b> {item.what_happens_if_approved}</p><p className="smart-command-row-text"><b>Priority:</b> {item.priority} · <b>Type:</b> {item.type}</p><div className="smart-command-actions">{buttons.map((b) => <button key={b.label} type="button" className={`smart-command-btn ${b.variant || "light"}`} onClick={b.onClick}>{b.label}</button>)}</div></article>;
 }
 
 export default function SmartHubBrainPageStable() {
@@ -49,6 +128,7 @@ export default function SmartHubBrainPageStable() {
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [dismissedGenerated, setDismissedGenerated] = useState({});
   const [data, setData] = useState({ actions: [], jobs: [], invoices: [], quotes: [], proofPacks: [], followUps: [], recurring: [], receptionist: [], customerUpdates: [], quoteDrafts: [], health: {}, clients: [], workers: [], memory: [] });
 
   const load = async () => {
@@ -66,31 +146,58 @@ export default function SmartHubBrainPageStable() {
   };
   useEffect(() => { load(); }, []);
 
-  const pending = useMemo(() => data.actions.filter((a) => !["completed", "dismissed", "rejected", "done"].includes(norm(a.status))), [data.actions]);
+  const mergedActions = useMemo(() => {
+    const generated = buildGeneratedActions(data);
+    const key = (a) => `${a.type}|${a.job_id || ""}|${a.invoice_id || ""}|${a.quote_id || ""}|${a.client_id || ""}|${a.related_id || ""}`;
+    const existing = new Set(data.actions.map(key));
+    const filteredGenerated = generated.filter((g) => !existing.has(key(g)) && !dismissedGenerated[g.id]);
+    return [...data.actions, ...filteredGenerated];
+  }, [data, dismissedGenerated]);
+
+  const pending = useMemo(() => mergedActions.filter((a) => !isDone(a)), [mergedActions]);
   const counts = {
     aiActions: pending.length,
-    unassigned: data.jobs.filter((j) => !j.assigned_worker_id && !j.worker_id && !["completed", "cancelled", "canceled"].includes(norm(j.status))).length,
-    readyInvoice: data.jobs.filter((j) => ["completed", "complete"].includes(norm(j.status)) && !j.invoice_id).length,
-    unpaidInvoices: data.invoices.filter((i) => ["sent", "overdue", "open"].includes(norm(i.status))).length,
-    quotesWaiting: data.quotes.filter((q) => ["sent", "draft"].includes(norm(q.status))).length,
-    recurringDue: data.recurring.length,
+    approvalQueue: pending.length,
+    dispatch: pending.filter((a) => a.type === "dispatch").length,
+    readyInvoice: pending.filter((a) => a.type === "invoice_assistant").length,
+    invoiceReminders: pending.filter((a) => a.type === "follow_up" && a.invoice_id).length,
+    quoteFollowUps: pending.filter((a) => a.type === "follow_up" && a.quote_id).length,
+    recurringDue: pending.filter((a) => a.type === "recurring").length,
   };
   const runAction = async (fn, success) => {
     setError(""); setNotice("");
     try { await fn(); setNotice(success); await load(); } catch (e) { setError(String(e?.message || "Action failed.")); }
   };
-  const approve = (a) => runAction(() => post(`/ai-operator/actions/${a.id}/approve`, {}), "Action approved and executed.");
-  const dismiss = (a) => runAction(() => post(`/ai-operator/actions/${a.id}/dismiss`, {}), "Action dismissed.");
+  const approve = async (a) => {
+    if (a.source === "backend") return runAction(() => post(`/ai-operator/actions/${a.id}/approve`, {}), "Action approved and executed.");
+    if (a.type === "proof_to_paid" && a.job_id) {
+      try {
+        await post(`/proof-packs/prepare-for-job/${a.job_id}`, {});
+        setNotice("Proof pack preparation requested.");
+        await load();
+      } catch {
+        window.location.assign(relatedPath(a));
+      }
+      return;
+    }
+    setNotice("This action is prepared from live data. Open the related record to review and approve safely.");
+  };
+  const dismiss = (a) => {
+    if (a.source === "backend") return runAction(() => post(`/ai-operator/actions/${a.id}/dismiss`, {}), "Action dismissed.");
+    setDismissedGenerated((prev) => ({ ...prev, [a.id]: true }));
+    setNotice("Generated action dismissed for this session.");
+    return Promise.resolve();
+  };
   if (!roleAllowed(user?.role)) return <Layout><main className="smart-command-system"><section className="smart-command-panel"><h2>AI Operator dashboard is owner/manager/office admin only.</h2></section></main></Layout>;
 
   const tabs = [["Today", "today"], ["Approvals", "approvals"], ["Dispatch", "dispatch"], ["Invoices", "invoices"], ["Proof-to-Paid", "proof"], ["Follow-Ups", "follow"], ["Receptionist", "reception"], ["Recurring", "recurring"], ["Customer Updates", "updates"], ["Quote Builder", "quotes"], ["Client Memory", "memory"], ["Activity", "activity"]];
-  return <Layout smartHubMode><main className="smart-command-system"><div className="smart-command-shell"><section className="smart-command-hero"><div className="smart-command-hero-grid"><div className="smart-command-logo-wrap"><ChurvoxLogo size="hero" /></div><div><p className="smart-command-kicker">Smart Hub</p><h1 className="smart-command-title">AI Operator Command Dashboard</h1><p className="smart-command-subtitle">AI scans, owner approves, Churvox executes.</p></div><div className="smart-command-next-card"><p className="smart-command-kicker">Today</p><strong>AI Actions: {counts.aiActions}</strong><strong>Approval queue: {pending.length}</strong><div className="smart-command-actions"><button className="smart-command-btn dark" onClick={() => runAction(() => post("/smart-hub/scan", {}), "AI scan completed.")}>Run AI plan</button><button className="smart-command-btn light" onClick={() => setTab("approvals")}>Open queue</button></div></div></div></section>
+  const shown = mergedActions.filter((a) => tabMatches(tab, a));
+  return <Layout smartHubMode><main className="smart-command-system"><div className="smart-command-shell"><section className="smart-command-hero"><div className="smart-command-hero-grid"><div className="smart-command-logo-wrap"><ChurvoxLogo size="hero" /></div><div><p className="smart-command-kicker">Smart Hub</p><h1 className="smart-command-title">AI Operator Command Dashboard</h1><p className="smart-command-subtitle">AI scans, owner approves, Churvox executes.</p></div><div className="smart-command-next-card"><p className="smart-command-kicker">Today</p><strong>AI Actions: {counts.aiActions}</strong><strong>Approval queue: {counts.approvalQueue}</strong><div className="smart-command-actions"><button className="smart-command-btn dark" onClick={() => runAction(() => post("/smart-hub/scan", {}), "AI scan completed.")}>Run AI plan</button><button className="smart-command-btn light" onClick={() => setTab("approvals")}>Open queue</button></div></div></div></section>
 {notice ? <section className="smart-command-panel"><p>{notice}</p></section> : null}
 {error ? <section className="smart-command-panel"><p>{error}</p></section> : null}
 {loading ? <section className="smart-command-panel"><p>Loading Smart Hub...</p></section> : null}
 <section className="smart-command-panel"><div className="smart-command-dock">{tabs.map(([n, k]) => <button key={k} onClick={() => setTab(k)}>{n}<span>{tab === k ? "Open" : "View"}</span></button>)}</div></section>
-{tab === "today" ? <section className="smart-command-panel"><h2>Today</h2><div className="smart-command-mini-grid"><div className="smart-command-mini"><p className="smart-command-label">Business health score</p><b>{data.health.score || 0}</b></div><div className="smart-command-mini"><p className="smart-command-label">Ready to invoice</p><b>{counts.readyInvoice}</b></div><div className="smart-command-mini"><p className="smart-command-label">Unassigned jobs</p><b>{counts.unassigned}</b></div><div className="smart-command-mini"><p className="smart-command-label">Unpaid invoices</p><b>{counts.unpaidInvoices}</b></div><div className="smart-command-mini"><p className="smart-command-label">Quotes waiting</p><b>{counts.quotesWaiting}</b></div><div className="smart-command-mini"><p className="smart-command-label">Recurring due</p><b>{counts.recurringDue}</b></div></div></section> : null}
-{["approvals", "dispatch", "invoices", "proof", "follow", "reception", "recurring", "updates", "quotes", "memory"].includes(tab) ? <section className="smart-command-panel"><h2>{tabs.find((t) => t[1] === tab)?.[0]}</h2>{pending.filter((a) => tab === "approvals" ? true : (tab === "proof" ? a.type === "proof_to_paid" : tab === "dispatch" ? a.type === "dispatch" : tab === "invoices" ? ["invoice_assistant", "missing_pricing"].includes(a.type) : tab === "follow" ? a.type === "follow_up" : tab === "reception" ? a.type === "receptionist" : tab === "recurring" ? a.type === "recurring" : tab === "updates" ? a.type === "customer_update" : tab === "quotes" ? a.type === "quote_builder" : a.type === "client_memory")).map((a) => <ActionRow key={a.id} item={a} buttons={[{ label: "Approve", variant: "green", onClick: () => approve(a) }, { label: "Review/Edit", onClick: () => window.location.assign(`/dashboard?action=${a.id}`) }, { label: "Dismiss", onClick: () => dismiss(a) }, { label: "Open related", onClick: () => window.location.assign(`/${a.related_type || "jobs"}/${a.related_id || ""}`) }]} />)}{!pending.length ? <p>No pending actions.</p> : null}</section> : null}
-{tab === "activity" ? <section className="smart-command-panel"><h2>Activity</h2>{data.actions.filter((a) => ["completed", "dismissed", "rejected", "done", "failed"].includes(norm(a.status))).map((a) => <ActionRow key={a.id} item={a} />)}</section> : null}
+{tab === "today" ? <section className="smart-command-panel"><h2>Today</h2><div className="smart-command-mini-grid"><div className="smart-command-mini"><p className="smart-command-label">Business health score</p><b>{data.health.score || 0}</b></div><div className="smart-command-mini"><p className="smart-command-label">Dispatch</p><b>{counts.dispatch}</b></div><div className="smart-command-mini"><p className="smart-command-label">Ready to invoice</p><b>{counts.readyInvoice}</b></div><div className="smart-command-mini"><p className="smart-command-label">Invoice reminders</p><b>{counts.invoiceReminders}</b></div><div className="smart-command-mini"><p className="smart-command-label">Quote follow-ups</p><b>{counts.quoteFollowUps}</b></div><div className="smart-command-mini"><p className="smart-command-label">Recurring due</p><b>{counts.recurringDue}</b></div></div></section> : null}
+{["approvals", "dispatch", "invoices", "proof", "follow", "reception", "recurring", "updates", "quotes", "memory", "activity"].includes(tab) ? <section className="smart-command-panel"><h2>{tabs.find((t) => t[1] === tab)?.[0]}</h2>{shown.map((a) => <ActionRow key={a.id} item={a} buttons={isDone(a) ? [] : [{ label: "Approve", variant: "green", onClick: () => approve(a) }, { label: "Review/Open", onClick: () => window.location.assign(relatedPath(a)) }, { label: "Dismiss", onClick: () => dismiss(a) }]} />)}{!shown.length ? <p>No actions in this section.</p> : null}</section> : null}
 </div></main></Layout>;
 }
