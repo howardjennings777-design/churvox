@@ -115,7 +115,7 @@ export default function ClientFormPage() {
   return (
     <Layout>
       <PremiumPage maxWidth={780}>
-        <button onClick={() => navigate("/clients")} className="flex items-center gap-2 text-[#5b6c87] hover:text-[#0d1b34] text-sm font-semibold" data-testid="back-button">
+        <button onClick={() => navigate("/clients")} className="flex items-center gap-2 text-[#5f584f] hover:text-[#1f2329] text-sm font-semibold" data-testid="back-button">
           <ArrowLeft size={16} /> Back to clients
         </button>
 
@@ -129,21 +129,21 @@ export default function ClientFormPage() {
         <PremiumCard title="Client details" icon={<UserPlus2 className="h-5 w-5" />}>
           <form onSubmit={handleSubmit} className="space-y-4" data-testid="client-form-page">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-[#0d1b34] font-semibold">Name *</Label>
+              <Label htmlFor="name" className="text-[#1f2329] font-semibold">Name *</Label>
               <Input
                 id="name"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="John Smith"
-                className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34] focus-visible:ring-[#2563eb]"
+                className="bg-[#d7d0c4] border-[#746c60] text-[#1f2329] focus-visible:ring-[#d94f17]"
                 required
                 data-testid="client-name-input"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-[#0d1b34] font-semibold">Email</Label>
+              <Label htmlFor="email" className="text-[#1f2329] font-semibold">Email</Label>
               <Input
                 id="email"
                 name="email"
@@ -151,46 +151,46 @@ export default function ClientFormPage() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="john@example.com"
-                className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]"
+                className="bg-[#d7d0c4] border-[#746c60] text-[#1f2329]"
                 data-testid="client-email-input"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-[#0d1b34] font-semibold">Phone</Label>
+              <Label htmlFor="phone" className="text-[#1f2329] font-semibold">Phone</Label>
               <Input
                 id="phone"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="021 123 4567"
-                className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]"
+                className="bg-[#d7d0c4] border-[#746c60] text-[#1f2329]"
                 data-testid="client-phone-input"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address" className="text-[#0d1b34] font-semibold">Address</Label>
+              <Label htmlFor="address" className="text-[#1f2329] font-semibold">Address</Label>
               <Input
                 id="address"
                 name="address"
                 value={formData.address}
                 onChange={handleChange}
                 placeholder="123 Main Street, Auckland"
-                className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]"
+                className="bg-[#d7d0c4] border-[#746c60] text-[#1f2329]"
                 data-testid="client-address-input"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes" className="text-[#0d1b34] font-semibold">Notes</Label>
+              <Label htmlFor="notes" className="text-[#1f2329] font-semibold">Notes</Label>
               <Textarea
                 id="notes"
                 name="notes"
                 value={formData.notes}
                 onChange={handleChange}
                 placeholder="Any additional notes about this client..."
-                className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34] min-h-[120px]"
+                className="bg-[#d7d0c4] border-[#746c60] text-[#1f2329] min-h-[120px]"
                 data-testid="client-notes-input"
               />
             </div>
@@ -199,7 +199,7 @@ export default function ClientFormPage() {
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1 min-w-[140px] border-[#d8e3f3] text-[#1a2c4d] hover:bg-[#eff4ff]"
+                className="flex-1 min-w-[140px] border-[#746c60] text-[#2f343b] hover:bg-[#cfc7ba]"
                 onClick={() => navigate("/clients")}
                 data-testid="cancel-button"
               >

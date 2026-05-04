@@ -41,7 +41,10 @@ export default function ClientsPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResults, setImportResults] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [showAuditClients, setShowAuditClients] = useState(false);
   const fileInputRef = useRef(null);
+  const isOwnerOrAdmin = ["owner", "admin"].includes(String(user?.role || "").toLowerCase());
 
   const [form, setForm] = useState({
     client_name: "", contact_name: "", email: "", phone: "", address: "", notes: "",
@@ -65,15 +68,37 @@ export default function ClientsPage() {
     fetchClients();
   }, [user?.token, fetchClients]);
 
+  const isGeneratedAuditClient = useCallback((client) => {
+    const haystack = [
+      client?.client_name, client?.name, client?.contact_name, client?.email, client?.address, client?.notes, client?.description,
+    ].filter(Boolean).join(" ").toLowerCase();
+    return haystack.startsWith("deep audit")
+      || haystack.includes("deep-audit@example.com")
+      || haystack.includes("created by automated churvox true launch certification audit")
+      || haystack.includes("deep audit street")
+      || String(client?.contact_name || "").toLowerCase().includes("deep audit");
+  }, []);
+
   const filteredClients = useMemo(() => {
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
     const query = searchTerm.trim().toLowerCase();
-    if (!query) return clients;
     return clients.filter((c) => {
+      const isAudit = isGeneratedAuditClient(c);
+      if (!showAuditClients && isAudit) return false;
+      if (statusFilter === "active" && !(c.email || c.phone || normalizeDate(c.updated_at || c.last_activity_at))) return false;
+      if (statusFilter === "with_invoices" && !(Number(c.invoices_count ?? c.invoice_count ?? c.total_invoices ?? 0) > 0)) return false;
+      if (statusFilter === "added_month") {
+        const d = normalizeDate(c.created_at || c.createdAt || c.added_at);
+        if (!d || d < monthStart) return false;
+      }
+      if (!query) return true;
       const pool = [c.client_name, c.name, c.contact_name, c.email, c.phone, c.address]
         .filter(Boolean).join(" ").toLowerCase();
       return pool.includes(query);
     });
-  }, [clients, searchTerm]);
+  }, [clients, searchTerm, showAuditClients, statusFilter, isGeneratedAuditClient]);
 
   const metrics = useMemo(() => {
     const total = clients.length;
@@ -208,14 +233,14 @@ export default function ClientsPage() {
           <PremiumStatCard label="Total clients" value={metrics.total} icon={<Users className="h-4 w-4" />} onClick={() => {}} />
           <PremiumStatCard label="Active" value={metrics.active} icon={<Sparkles className="h-4 w-4" />} tone="teal" onClick={() => {}} />
           <PremiumStatCard label="With invoices" value={metrics.withInvoices} icon={<Receipt className="h-4 w-4" />} tone="amber" onClick={() => navigate("/invoices")} />
-          <PremiumStatCard label="Added this month" value={metrics.recent} icon={<CalendarClock className="h-4 w-4" />} tone="sky" onClick={() => {}} />
+          <PremiumStatCard label="Added this month" value={metrics.recent} icon={<CalendarClock className="h-4 w-4" />} tone="amber" onClick={() => {}} />
         </div>
 
         {/* Search */}
         <PremiumCard noBody>
           <div className="px-card__body">
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8ba3]" />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#746c60]" />
               <input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -224,6 +249,29 @@ export default function ClientsPage() {
                 data-testid="clients-search-input"
               />
             </div>
+          </div>
+          <div className="px-card__body pt-0 flex flex-wrap items-center gap-2">
+            {[
+              ["all", "All clients"], ["active", "Active"], ["with_invoices", "With invoices"], ["added_month", "Added this month"],
+            ].map(([value, label]) => (
+              <button key={value} type="button" onClick={() => setStatusFilter(value)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                  statusFilter === value ? "bg-[#d94f17] border-[#b93f10] text-white" : "bg-[#d7d0c4] border-[#746c60] text-[#2f343b]"
+                }`}>
+                {label}
+              </button>
+            ))}
+            {isOwnerOrAdmin && (
+              <>
+                <button type="button" onClick={() => setShowAuditClients(false)} className="px-3 py-1.5 rounded-lg text-xs font-semibold border bg-[#111317] border-[#242932] text-white">
+                  Hide test audit clients
+                </button>
+                <label className="ml-1 inline-flex items-center gap-2 text-xs font-semibold text-[#2f343b]">
+                  <input type="checkbox" checked={showAuditClients} onChange={(e) => setShowAuditClients(e.target.checked)} />
+                  Show test/audit clients
+                </label>
+              </>
+            )}
           </div>
         </PremiumCard>
 
@@ -308,26 +356,31 @@ export default function ClientsPage() {
                       <Link to={`/clients/${cid}`} className="min-w-0 flex-1 group">
                         <div className="flex items-start gap-3">
                           <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white font-bold text-[15px]"
-                                style={{ background: 'linear-gradient(135deg, #2563eb, #7c3aed)' }}>
+                                style={{ background: "linear-gradient(135deg, #d94f17, #b93f10)" }}>
                             {avatarLetter}
                           </span>
                           <div className="min-w-0">
-                            <p className="text-[15.5px] font-bold text-[#0d1b34] truncate group-hover:text-[#1d4ed8] transition">{clientName}</p>
+                            <p className="text-[15.5px] font-bold text-[#1f2329] truncate group-hover:text-[#d94f17] transition">{clientName}</p>
                             {client.contact_name && (
-                              <p className="text-[12.5px] text-[#5b6c87] mt-0.5 truncate">Contact: {client.contact_name}</p>
+                              <p className="text-[12.5px] text-[#5f584f] mt-0.5 truncate">Contact: {client.contact_name}</p>
                             )}
                           </div>
                         </div>
 
-                        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-y-1.5 gap-x-4 text-[12.5px] text-[#5b6c87]">
+                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4 text-[12.5px] text-[#5f584f]">
                           <p className="flex items-center gap-1.5 min-w-0"><Mail size={13} className="shrink-0" /><span className="truncate">{safeText(client.email)}</span></p>
                           <p className="flex items-center gap-1.5 min-w-0"><Phone size={13} className="shrink-0" /><span className="truncate">{safeText(client.phone)}</span></p>
                           <p className="flex items-center gap-1.5 min-w-0 sm:col-span-2"><MapPin size={13} className="shrink-0" /><span className="truncate">{safeText(client.address)}</span></p>
                         </div>
 
                         {client.notes && (
-                          <p className="mt-3 rounded-xl bg-[#f6faff] border border-[#e6eef9] p-3 text-[12.5px] text-[#5b6c87] line-clamp-2">{client.notes}</p>
+                          <p className="mt-2 rounded-xl bg-[#cfc7ba] border border-[#746c60] p-2.5 text-[12.5px] text-[#49443d] line-clamp-2">{client.notes}</p>
                         )}
+                        <div className="mt-2 flex flex-wrap gap-2 text-[11.5px] text-[#49443d]">
+                          <span>Open jobs: {Number(client.open_jobs_count ?? client.jobs_open_count ?? 0)}</span>
+                          <span>Open invoices: {Number(client.open_invoices_count ?? client.invoices_count ?? 0)}</span>
+                          <span>Quotes: {Number(client.quote_count ?? client.quotes_count ?? 0)}</span>
+                        </div>
                       </Link>
 
                       <div className="flex flex-wrap items-center gap-2 md:flex-col md:items-end" onClick={(e) => e.stopPropagation()}>
@@ -355,4 +408,3 @@ export default function ClientsPage() {
     </Layout>
   );
 }
-
