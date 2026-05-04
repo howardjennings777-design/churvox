@@ -246,8 +246,14 @@ async def _build_ai_plan(db, business_id):
         "revenue": len([a for a in actions if a["type"] in {"invoice", "pricing"}]),
         "proof": len([a for a in actions if a["type"] == "proof"]),
         "follow_up": len([a for a in actions if a["type"] == "follow"]),
+        "reception": len([a for a in actions if a["type"] == "reception"]),
+        "recurring": len([a for a in actions if a["type"] == "recurring"]),
+        "updates": len([a for a in actions if a["type"] == "update"]),
+        "memory": len([a for a in actions if a["type"] == "memory"]),
         "workers": len(snap["workers"]),
         "clients": len(snap["clients"]),
+        "invoices": len(invoices),
+        "quotes": len(quotes),
     }
     best = actions[0] if actions else None
     return {"success": True, "business_id": str(business_id), "generated_at": _now().isoformat(), "summary": counts, "best_next_move": best, "actions": actions, "snapshot": {"jobs": len(jobs), "invoices": len(invoices), "quotes": len(quotes), "clients": len(snap["clients"]), "workers": len(snap["workers"])}}
@@ -347,7 +353,7 @@ def register_command_hub_routes(api_router, db, get_current_user, get_user_busin
         business_id = await _ensure_owner(current_user)
         plan = await _build_ai_plan(db, business_id)
         await _store_plan_actions(db, business_id, plan.get("actions") or [])
-        return {"success": True, "message": "AI Operator scan complete.", "plan": plan}
+        return {"success": True, "message": "AI Operator scan complete.", "plan": plan, "action_count": len(plan.get("actions") or [])}
 
     @api_router.get("/command-hub/actions")
     async def list_command_hub_actions(current_user: dict = Depends(get_current_user)):
@@ -469,4 +475,10 @@ def register_command_hub_routes(api_router, db, get_current_user, get_user_busin
                 await db.ai_approval_actions.update_one({"business_id": str(business_id), "id": f"quote-follow-{quote_id}"}, {"$set": {"status": "prepared", "updated_at": _now()}})
             return {"success": True, "message": "Follow-up prepared. Nothing was sent automatically.", "follow_up_id": str(result.inserted_id), "draft_message": message}
 
-        raise HTTPException(status_code=400, detail="Unsupported Command action type")
+        if action_type in {"reception", "recurring", "update", "quote_builder", "memory"}:
+            draft = {"business_id": str(business_id), "type": action_type, "status": "prepared", "source": "command_hub", "created_at": _now(), "updated_at": _now(), "payload": dict(payload or {})}
+            collection_map = {"reception": db.ai_enquiries, "recurring": db.recurring_jobs, "update": db.customer_updates, "quote_builder": db.ai_quote_drafts, "memory": db.client_memory}
+            result = await collection_map[action_type].insert_one(draft)
+            return {"success": True, "message": f"{action_type} draft prepared for owner approval.", "draft_id": str(result.inserted_id)}
+
+        raise HTTPException(status_code=400, detail="Unsupported Command action type. Supported: dispatch, invoice, proof, follow, reception, recurring, update, quote_builder, memory")
