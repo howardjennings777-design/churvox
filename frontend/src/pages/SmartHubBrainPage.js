@@ -557,13 +557,10 @@ export default function SmartHubBrainPage() {
 
   const runScanNow = async () => {
     try {
-      const scanRes = await post("/smart-hub/scan", {});
-      console.info("smart_hub_scan_result", scanRes);
-      try {
-        await post("/smart-hub/process-due-communications", {});
-      } catch {}
+      const scanRes = await post("/api/ai-operator/run-daily-plan", {});
+      console.info("ai_operator_daily_plan", scanRes);
       await load();
-      setToast({ kind: "success", message: "Smart Hub scan complete." });
+      setToast({ kind: "success", message: "Today's AI plan is ready." });
     } catch {
       setToast({ kind: "error", message: "Scan failed. Please try again." });
     }

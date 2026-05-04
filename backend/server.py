@@ -1684,6 +1684,67 @@ def _operator_risk_for_type(action_type: str) -> str:
     }.get(str(action_type or ""), "medium")
 
 
+
+
+def _ai_operator_priority(action: dict) -> tuple[int, str]:
+    t = str(action.get("action_type") or action.get("type") or "")
+    payload = action.get("payload") or {}
+    risk = str(action.get("risk") or "medium")
+    score = 20
+    reasons = []
+    if risk == "high":
+        score += 45; reasons.append("High-risk owner decision required")
+    if t == "assign_worker":
+        score += 35; reasons.append("Unassigned job needs crew")
+    if t == "create_invoice_draft":
+        score += 30; reasons.append("Money waiting for invoice")
+    if t == "invoice_reminder":
+        score += 25; reasons.append("Overdue/open invoice follow-up")
+    if t == "quote_follow_up":
+        score += 20; reasons.append("Quote follow-up can unlock revenue")
+    if t in {"missing_price", "missing_contact"}:
+        score += 18; reasons.append("Missing required data blocks progress")
+    if t in {"schedule_conflict", "crew_workload"}:
+        score += 22; reasons.append("Schedule or crew pressure")
+    if payload.get("due_today"):
+        score += 20; reasons.append("Due today")
+    return min(100, score), "; ".join(reasons[:2]) or "General AI operator priority"
+
+
+async def execute_ai_operator_action(action: dict, current_user: dict):
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    payload = action.get("payload") or action.get("draft_payload") or {}
+    item_type = str(action.get("action_type") or action.get("type") or "")
+    result = {"action": "none"}
+    completed = False
+    if item_type == "assign_worker":
+        job_id = str(payload.get("job_id") or action.get("job_id") or action.get("related_id") or action.get("related_entity_id") or "")
+        worker_id = str(payload.get("worker_id") or payload.get("recommended_worker_id") or action.get("worker_id") or "")
+        if not job_id or not worker_id: raise HTTPException(status_code=400, detail="Missing job_id or worker_id")
+        job = await db.jobs.find_one({"business_id": business_id, "$or": [{"id": job_id}, {"_id": ObjectId(job_id)}] if ObjectId.is_valid(job_id) else [{"id": job_id}]})
+        worker = await db.business_users.find_one({"business_id": business_id, "$or": [{"id": worker_id}, {"_id": ObjectId(worker_id)}] if ObjectId.is_valid(worker_id) else [{"id": worker_id}]})
+        if not job or not worker: raise HTTPException(status_code=404, detail="Job or worker not found")
+        patch={"assigned_worker_id": worker_id, "worker_id": worker_id, "assigned_worker_name": str(worker.get("name") or ""), "updated_at": now}
+        if str(job.get("status") or "").lower() in {"new","unassigned","pending"}: patch["status"]="assigned"
+        await db.jobs.update_one({"_id": job["_id"]},{"$set": patch}); completed=True; result={"action":"assigned_worker","job_id":job_id,"assigned_worker_id":worker_id}
+    elif item_type in {"create_invoice_draft", "invoice_draft"}:
+        job_id = str(payload.get("job_id") or action.get("job_id") or action.get("related_id") or "")
+        job = await db.jobs.find_one({"business_id": business_id, "$or": [{"id": job_id}, {"_id": ObjectId(job_id)}] if ObjectId.is_valid(job_id) else [{"id": job_id}]})
+        if not job: raise HTTPException(status_code=404, detail="Job not found")
+        subtotal=float(payload.get("subtotal") or job.get("subtotal") or job.get("price") or 0)
+        if subtotal<=0: raise HTTPException(status_code=400, detail="Invoice was not created because job has no price.")
+        existing = await db.invoices.find_one({"business_id": business_id, "$or": [{"job_id": job_id},{"source_job_id":job_id},{"linked_job_id":job_id}]})
+        if existing: result={"action":"duplicate_prevented_existing_invoice","invoice_id":str(existing.get("_id"))}; completed=True
+        else:
+            gst_rate=float(payload.get("gst_rate") or 0.1); gst_amount=round(subtotal*gst_rate,2); total=round(subtotal+gst_amount,2)
+            inv={"business_id":business_id,"job_id":job_id,"source_job_id":job_id,"linked_job_id":job_id,"client_id":str(payload.get("client_id") or job.get("client_id") or ""),"description":str(payload.get("description") or ""),"subtotal":subtotal,"gst_rate":gst_rate,"gst_amount":gst_amount,"total":total,"status":"draft","source":"ai_operator","created_at":now,"updated_at":now}
+            ins=await db.invoices.insert_one(inv); iid=str(ins.inserted_id)
+            await db.jobs.update_one({"_id":job["_id"]},{"$set":{"invoice_id":iid,"draft_invoice_id":iid,"invoice_created":True,"invoice_status":"draft","updated_at":now}})
+            result={"action":"invoice_draft_created","invoice_id":iid,"job_id":job_id}; completed=True
+    else:
+        result={"action":"prepared_for_review","status":"draft_only"}
+    return completed, result
 def _safe_action_doc(business_id: str, item: dict, now: datetime) -> dict:
     return {
         "business_id": business_id,
@@ -2024,12 +2085,16 @@ async def ai_operator_approve(item_id: str, current_user: dict = Depends(get_cur
         raise HTTPException(status_code=404, detail="Approval item not found")
 
     now = datetime.now(timezone.utc)
-    payload = item.get("payload") or item.get("draft_payload") or {}
-    item_type = str(item.get("type") or "")
-    result = {"action": "none"}
-
+    item_type = str(item.get("action_type") or item.get("type") or "")
     completed = False
-    if item_type == "assign_worker":
+    try:
+        completed, result = await execute_ai_operator_action(item, current_user)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    if False and item_type == "assign_worker":
         job_id = str(payload.get("job_id") or item.get("job_id") or item.get("related_entity_id") or "")
         worker_id = str(payload.get("worker_id") or payload.get("recommended_worker_id") or item.get("worker_id") or "")
         if not job_id or not worker_id:
@@ -2312,7 +2377,7 @@ async def get_ai_operator_actions(current_user: dict = Depends(get_current_user)
         risk = risk_rank.get(str(row.get("risk") or row.get("risk_level") or "medium"), 1)
         created = row.get("created_at") or datetime.fromtimestamp(0, tz=timezone.utc)
         return (pending_rank, risk, -created.timestamp() if hasattr(created, "timestamp") else 0)
-    rows.sort(key=_sort_key)
+    rows.sort(key=lambda r: (0 if str(r.get("status") or "") == "pending" else 1, -(r.get("priority_score") or 0), _sort_key(r)))
     return {"success": True, "actions": rows}
 
 @api_router.get("/api/ai-operator/settings")
@@ -2366,7 +2431,9 @@ async def smart_hub_scan(current_user: dict = Depends(get_current_user)):
         existing_status = str((existing or {}).get("status") or "").lower()
         if existing and existing_status in {"completed", "approved", "rejected", "dismissed", "resolved", "archived"}:
             return
-        doc = {"business_id": business_id, "created_by": "ai_operator", "action_key": action_key, "action_type": action_type, "status": "pending", "group": group, "title": title, "reason": reason, "data_used": data_used, "what_happens": what_happens, "risk": _operator_risk_for_type(action_type), "related_type": related_type, "related_id": related_id, "job_id": job_id, "client_id": client_id, "invoice_id": invoice_id, "quote_id": quote_id, "worker_id": worker_id, "payload": payload or {}, "editable_fields": editable_fields or [], "updated_at": now}
+        base = {"business_id": business_id, "created_by": "ai_operator", "action_key": action_key, "action_type": action_type, "status": "pending", "group": group, "title": title, "reason": reason, "data_used": data_used, "what_happens": what_happens, "risk": _operator_risk_for_type(action_type), "related_type": related_type, "related_id": related_id, "job_id": job_id, "client_id": client_id, "invoice_id": invoice_id, "quote_id": quote_id, "worker_id": worker_id, "payload": payload or {}, "editable_fields": editable_fields or [], "updated_at": now}
+        priority_score, priority_reason = _ai_operator_priority(base)
+        doc = {**base, "priority_score": priority_score, "priority_reason": priority_reason, "subtitle": reason, "result": None, "error_message": None, "approved_at": None, "approved_by_user_id": None, "rejected_at": None, "rejected_by_user_id": None, "completed_at": None, "communication_id": None}
         if existing:
             await db.ai_operator_actions.update_one({"_id": existing["_id"]}, {"$set": doc, "$setOnInsert": {"created_at": now}})
             updated += 1
@@ -9910,3 +9977,19 @@ async def _platform_stats_impl(current_user: dict):
 @api_router.post("/ai/operator/approval-items/{item_id}/dismiss")
 async def ai_operator_dismiss(item_id: str, current_user: dict = Depends(get_current_user)):
     return await ai_operator_reject(item_id, current_user)
+
+
+@api_router.post("/api/ai-operator/run-daily-plan")
+async def ai_operator_run_daily_plan(current_user: dict = Depends(get_current_user)):
+    await smart_hub_process_due_communications(current_user)
+    scan = await smart_hub_scan(current_user)
+    business_id = await get_user_business_id(current_user)
+    today = datetime.now(timezone.utc).date().isoformat()
+    actions = [a for a in (scan.get("actions") or []) if str(a.get("status") or "") == "pending"]
+    actions = sorted(actions, key=lambda a: -(a.get("priority_score") or 0))
+    best = actions[0]["title"] if actions else "No urgent actions"
+    counts = {"pending": len(actions), "high_risk": len([a for a in actions if str(a.get("risk") or "") == "high"])}
+    plan = {"business_id": business_id, "date": today, "summary": f"{len(actions)} pending actions prepared.", "best_next_move": best, "counts": counts, "risks": [a.get("title") for a in actions[:3] if str(a.get("risk") or "") == "high"], "action_ids": [str(a.get("id") or a.get("_id") or "") for a in actions], "updated_at": datetime.now(timezone.utc)}
+    await db.ai_operator_daily_plans.update_one({"business_id": business_id, "date": today}, {"$set": plan, "$setOnInsert": {"created_at": datetime.now(timezone.utc)}}, upsert=True)
+    saved = await db.ai_operator_daily_plans.find_one({"business_id": business_id, "date": today}) or plan
+    return {"success": True, "plan": serialize_doc(saved), "actions": actions}
