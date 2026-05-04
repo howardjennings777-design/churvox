@@ -15,7 +15,9 @@
 body [role="dialog"][data-state="open"],
 body [data-radix-dialog-content],
 body [data-radix-alert-dialog-content],
-body [data-vaul-drawer][data-state="open"] {
+body [data-vaul-drawer][data-state="open"],
+body [data-churvox-fullpage-workspace="true"],
+body [data-churvox-fullpage-workspace-panel="true"] {
   position: fixed !important;
   inset: 16px !important;
   left: 16px !important;
@@ -41,9 +43,15 @@ body [data-vaul-drawer][data-state="open"] {
     var(--cx-modal-bg) !important;
   color: #101318 !important;
   box-shadow: 0 34px 90px rgba(0, 0, 0, 0.42) !important;
+  z-index: 9999 !important;
 }
 
-/* Make modal contents scroll like a real page. */
+body [data-churvox-fullpage-workspace="true"] {
+  display: block !important;
+}
+
+body [data-churvox-fullpage-workspace="true"] > *,
+body [data-churvox-fullpage-workspace-panel="true"] > *,
 body [role="dialog"][data-state="open"] > *,
 body [data-radix-dialog-content] > *,
 body [data-radix-alert-dialog-content] > *,
@@ -54,25 +62,19 @@ body [data-vaul-drawer][data-state="open"] > * {
 body [role="dialog"][data-state="open"],
 body [data-radix-dialog-content],
 body [data-radix-alert-dialog-content],
-body [data-vaul-drawer][data-state="open"] {
+body [data-vaul-drawer][data-state="open"],
+body [data-churvox-fullpage-workspace="true"],
+body [data-churvox-fullpage-workspace-panel="true"] {
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important;
-}
-
-/* Any title/header inside a full-page modal should match the Churvox dark header theme. */
-body [role="dialog"][data-state="open"] h1,
-body [role="dialog"][data-state="open"] h2,
-body [data-radix-dialog-content] h1,
-body [data-radix-dialog-content] h2,
-body [data-radix-alert-dialog-content] h1,
-body [data-radix-alert-dialog-content] h2 {
-  color: #101318 !important;
 }
 
 body [role="dialog"][data-state="open"] header,
 body [data-radix-dialog-content] header,
 body [data-radix-alert-dialog-content] header,
 body [data-vaul-drawer][data-state="open"] header,
+body [data-churvox-fullpage-workspace="true"] header,
+body [data-churvox-fullpage-workspace-panel="true"] header,
 body [role="dialog"][data-state="open"] [class*="DialogHeader"],
 body [data-radix-dialog-content] [class*="DialogHeader"] {
   position: sticky !important;
@@ -81,7 +83,6 @@ body [data-radix-dialog-content] [class*="DialogHeader"] {
   border-radius: 22px !important;
 }
 
-/* Full-page modal panels/cards keep the same premium Churvox styling as normal pages. */
 body [role="dialog"][data-state="open"] .cx-card,
 body [role="dialog"][data-state="open"] .cx-panel,
 body [role="dialog"][data-state="open"] .surface-card,
@@ -90,13 +91,18 @@ body [data-radix-dialog-content] .cx-panel,
 body [data-radix-dialog-content] .surface-card,
 body [data-vaul-drawer][data-state="open"] .cx-card,
 body [data-vaul-drawer][data-state="open"] .cx-panel,
-body [data-vaul-drawer][data-state="open"] .surface-card {
+body [data-vaul-drawer][data-state="open"] .surface-card,
+body [data-churvox-fullpage-workspace="true"] .cx-card,
+body [data-churvox-fullpage-workspace="true"] .cx-panel,
+body [data-churvox-fullpage-workspace="true"] .surface-card,
+body [data-churvox-fullpage-workspace-panel="true"] .cx-card,
+body [data-churvox-fullpage-workspace-panel="true"] .cx-panel,
+body [data-churvox-fullpage-workspace-panel="true"] .surface-card {
   background: linear-gradient(180deg, var(--cx-modal-card) 0%, var(--cx-modal-card-soft) 100%) !important;
   border-color: var(--cx-modal-border) !important;
   box-shadow: 0 14px 32px rgba(15, 17, 21, 0.14) !important;
 }
 
-/* Orange remains the one primary action colour inside modal workspaces. */
 body [role="dialog"][data-state="open"] .cx-button-primary,
 body [role="dialog"][data-state="open"] button.bg-blue-600,
 body [role="dialog"][data-state="open"] button.bg-blue-700,
@@ -105,33 +111,41 @@ body [data-radix-dialog-content] button.bg-blue-600,
 body [data-radix-dialog-content] button.bg-blue-700,
 body [data-vaul-drawer][data-state="open"] .cx-button-primary,
 body [data-vaul-drawer][data-state="open"] button.bg-blue-600,
-body [data-vaul-drawer][data-state="open"] button.bg-blue-700 {
+body [data-vaul-drawer][data-state="open"] button.bg-blue-700,
+body [data-churvox-fullpage-workspace="true"] .cx-button-primary,
+body [data-churvox-fullpage-workspace="true"] button.bg-blue-600,
+body [data-churvox-fullpage-workspace="true"] button.bg-blue-700,
+body [data-churvox-fullpage-workspace-panel="true"] .cx-button-primary,
+body [data-churvox-fullpage-workspace-panel="true"] button.bg-blue-600,
+body [data-churvox-fullpage-workspace-panel="true"] button.bg-blue-700 {
   background: var(--cx-modal-orange) !important;
   color: #fff !important;
   border-color: #e94a14 !important;
 }
 
-/* Make old narrow drawer/sheet classes stop fighting the full-page modal. */
 body [role="dialog"][data-state="open"][class*="max-w"],
 body [role="dialog"][data-state="open"][class*="w-"],
 body [data-radix-dialog-content][class*="max-w"],
-body [data-radix-dialog-content][class*="w-"] {
+body [data-radix-dialog-content][class*="w-"],
+body [data-churvox-fullpage-workspace="true"][class*="max-w"],
+body [data-churvox-fullpage-workspace="true"][class*="w-"],
+body [data-churvox-fullpage-workspace-panel="true"][class*="max-w"],
+body [data-churvox-fullpage-workspace-panel="true"][class*="w-"] {
   max-width: none !important;
   width: calc(100vw - 32px) !important;
 }
 
-/* If an old popup still shows an "open full page" action, keep it secondary because the modal already is full-page. */
-body [role="dialog"][data-state="open"] a[href],
-body [data-radix-dialog-content] a[href],
-body [data-vaul-drawer][data-state="open"] a[href] {
-  border-radius: 14px !important;
+body [data-churvox-open-full-page-hidden="true"] {
+  display: none !important;
 }
 
 @media (max-width: 768px) {
   body [role="dialog"][data-state="open"],
   body [data-radix-dialog-content],
   body [data-radix-alert-dialog-content],
-  body [data-vaul-drawer][data-state="open"] {
+  body [data-vaul-drawer][data-state="open"],
+  body [data-churvox-fullpage-workspace="true"],
+  body [data-churvox-fullpage-workspace-panel="true"] {
     inset: 0 !important;
     left: 0 !important;
     top: 0 !important;
