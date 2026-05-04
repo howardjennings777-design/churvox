@@ -1,0 +1,271 @@
+/* Churvox unified premium trade theme.
+   Loaded last so older page layouts inherit the same visual language. */
+:root {
+  --cx-force-bg: #b4aa9b;
+  --cx-force-bg-soft: #c8beb0;
+  --cx-force-dark: #050607;
+  --cx-force-dark-2: #101318;
+  --cx-force-dark-3: #161b24;
+  --cx-force-card: #f4eee4;
+  --cx-force-card-2: #fff8ee;
+  --cx-force-panel: #ebe2d6;
+  --cx-force-border: #c7bba9;
+  --cx-force-border-dark: #2b3038;
+  --cx-force-text: #101318;
+  --cx-force-muted: #5a5146;
+  --cx-force-orange: #ff5a1f;
+  --cx-force-orange-dark: #e94a14;
+  --cx-force-blue: #1d63ff;
+  --cx-force-green: #0f8a35;
+}
+
+body,
+#root,
+.cx-app-shell,
+.app-shell,
+.px-main,
+.px-main main {
+  background:
+    radial-gradient(circle at top left, rgba(255, 90, 31, 0.10), transparent 25%),
+    linear-gradient(135deg, rgba(11, 13, 16, 0.065) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(11, 13, 16, 0.05) 25%, transparent 25%),
+    var(--cx-force-bg) !important;
+  color: var(--cx-force-text) !important;
+}
+
+.px-main {
+  min-height: 100vh !important;
+}
+
+.cx-page,
+.page-wrap,
+[class*="Page"] .page-wrap,
+[class*="page-wrap"] {
+  max-width: 1500px !important;
+}
+
+.cx-page-hero,
+.page-hero,
+[class*="page-hero"],
+[class*="PageHeader"],
+[class*="page-header"] {
+  background: linear-gradient(135deg, var(--cx-force-dark) 0%, var(--cx-force-dark-2) 48%, var(--cx-force-dark-3) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: white !important;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.30) !important;
+}
+
+.cx-page-hero h1,
+.cx-page-hero h2,
+.cx-page-hero h3,
+.page-hero h1,
+.page-hero h2,
+.page-hero h3,
+[class*="page-hero"] h1,
+[class*="page-hero"] h2,
+[class*="page-hero"] h3,
+[class*="PageHeader"] h1,
+[class*="PageHeader"] h2,
+[class*="PageHeader"] h3,
+[class*="page-header"] h1,
+[class*="page-header"] h2,
+[class*="page-header"] h3 {
+  color: white !important;
+}
+
+.cx-page-hero p,
+.page-hero p,
+[class*="page-hero"] p,
+[class*="PageHeader"] p,
+[class*="page-header"] p,
+.cx-page-subtitle {
+  color: rgba(255, 255, 255, 0.78) !important;
+}
+
+.cx-card,
+.cx-panel,
+.cx-command-card,
+.cx-document-card,
+.cx-invoice-card,
+.cx-list-card,
+.cx-stat-card,
+.cx-client-card,
+.surface-card,
+.tradie-panel,
+[class*="rounded-2xl"][class*="bg-white"],
+[class*="rounded-3xl"][class*="bg-white"],
+[class*="border-slate"].bg-white,
+[class*="border-gray"].bg-white {
+  background: linear-gradient(180deg, var(--cx-force-card) 0%, var(--cx-force-card-2) 100%) !important;
+  border-color: var(--cx-force-border) !important;
+  color: var(--cx-force-text) !important;
+  box-shadow: 0 14px 32px rgba(15, 17, 21, 0.14) !important;
+}
+
+.bg-white,
+.bg-slate-50,
+.bg-gray-50,
+.bg-zinc-50,
+.bg-neutral-50,
+.bg-blue-50 {
+  background-color: var(--cx-force-card) !important;
+}
+
+.text-slate-900,
+.text-gray-900,
+.text-zinc-900,
+.text-neutral-900,
+.cx-page-title,
+.page-title {
+  color: var(--cx-force-text) !important;
+}
+
+.text-slate-600,
+.text-slate-500,
+.text-gray-600,
+.text-gray-500,
+.text-zinc-600,
+.text-neutral-600,
+.page-subtitle {
+  color: var(--cx-force-muted) !important;
+}
+
+.border-slate-100,
+.border-slate-200,
+.border-gray-100,
+.border-gray-200,
+.border-zinc-100,
+.border-zinc-200,
+.border-blue-100,
+.border-blue-200 {
+  border-color: var(--cx-force-border) !important;
+}
+
+.cx-button-primary,
+button.bg-blue-600,
+button.bg-blue-700,
+a.bg-blue-600,
+a.bg-blue-700,
+.bg-primary,
+[class*="bg-[#2563eb]"],
+[class*="bg-[#1d63ff]"] {
+  background: var(--cx-force-orange) !important;
+  border-color: var(--cx-force-orange-dark) !important;
+  color: white !important;
+  box-shadow: 0 10px 24px rgba(255, 90, 31, 0.28) !important;
+}
+
+.cx-button-primary:hover,
+button.bg-blue-600:hover,
+button.bg-blue-700:hover,
+a.bg-blue-600:hover,
+a.bg-blue-700:hover,
+[class*="bg-[#2563eb]"]:hover,
+[class*="bg-[#1d63ff]"]:hover {
+  background: var(--cx-force-orange-dark) !important;
+}
+
+.cx-button-secondary,
+button.border,
+a.border,
+button.bg-white,
+a.bg-white {
+  border-color: var(--cx-force-border) !important;
+}
+
+.cx-toolbar button:not(.cx-button-primary),
+.cx-toolbar a:not(.cx-button-primary),
+.cx-button-secondary,
+.cx-button-ghost {
+  border-radius: 14px !important;
+}
+
+input,
+select,
+textarea,
+.cx-input,
+[role="combobox"] {
+  background: #fffaf2 !important;
+  border-color: var(--cx-force-border) !important;
+  color: var(--cx-force-text) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(90, 81, 70, 0.65) !important;
+}
+
+table,
+thead,
+tbody,
+tr,
+th,
+td {
+  border-color: var(--cx-force-border) !important;
+}
+
+thead,
+[class*="bg-slate-100"],
+[class*="bg-gray-100"] {
+  background: var(--cx-force-panel) !important;
+}
+
+.px-sidebar,
+.px-mobile-header,
+.px-mobile-bottom {
+  background: rgba(244, 238, 228, 0.96) !important;
+  border-color: var(--cx-force-border) !important;
+}
+
+.px-nav-item.is-active,
+.px-mobile-tab.is-active {
+  background: var(--cx-force-dark-2) !important;
+  color: white !important;
+}
+
+.px-nav-item:not(.is-active),
+.px-mobile-tab:not(.is-active) {
+  color: var(--cx-force-muted) !important;
+}
+
+.status-in-progress,
+.status-sent,
+.cx-status-badge--blue {
+  background: rgba(29, 99, 255, 0.12) !important;
+  color: #124bcf !important;
+  border-color: rgba(29, 99, 255, 0.28) !important;
+}
+
+.status-completed,
+.status-paid,
+.status-accepted,
+.cx-status-badge--green {
+  background: rgba(15, 138, 53, 0.12) !important;
+  color: #0f6b2d !important;
+  border-color: rgba(15, 138, 53, 0.28) !important;
+}
+
+.status-paused,
+.status-pending,
+.status-unpaid,
+.cx-status-badge--amber {
+  background: rgba(255, 90, 31, 0.12) !important;
+  color: #b43b0e !important;
+  border-color: rgba(255, 90, 31, 0.28) !important;
+}
+
+@media (max-width: 768px) {
+  .cx-page,
+  .page-wrap {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .cx-page-hero,
+  .page-hero,
+  [class*="page-hero"],
+  [class*="PageHeader"],
+  [class*="page-header"] {
+    border-radius: 24px !important;
+  }
+}
