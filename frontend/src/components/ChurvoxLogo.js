@@ -38,6 +38,21 @@ const SMART_HUB_LOGO_FIX_CSS = `
     padding: 8px 10px !important;
   }
 
+  .smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] h1,
+  .smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] h2,
+  .smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] h3,
+  .smart-hub-hard-trade-v4 .operator-hero h1,
+  .smart-hub-hard-trade-v4 .operator-hero h2,
+  .smart-hub-hard-trade-v4 .operator-hero h3,
+  .smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] .text-3xl,
+  .smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] .text-4xl,
+  .smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] .text-5xl,
+  .smart-hub-hard-trade-v4 .operator-hero .text-3xl,
+  .smart-hub-hard-trade-v4 .operator-hero .text-4xl,
+  .smart-hub-hard-trade-v4 .operator-hero .text-5xl {
+    display: none !important;
+  }
+
   @media (max-width: 768px) {
     img[data-testid="churvox-logo"][data-logo-size="hero"] {
       height: clamp(72px, 17vw, 106px) !important;
