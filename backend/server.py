@@ -2599,6 +2599,121 @@ async def smart_hub_scan(current_user: dict = Depends(get_current_user)):
     return {"success": True, "actions_created": created, "actions_updated": updated, "pending_count": pending_count, "actions": actions}
 
 
+
+
+def _client_memory_payment_pattern(invoices: list) -> str:
+    if not invoices:
+        return "No invoice history yet"
+    paid = [i for i in invoices if str(i.get("status") or "").lower() == "paid"]
+    overdue = [i for i in invoices if str(i.get("status") or "").lower() == "overdue"]
+    open_rows = [i for i in invoices if str(i.get("status") or "").lower() in {"open", "sent", "unpaid", "pending_payment"}]
+    if overdue:
+        return "Some overdue invoices"
+    if paid and not open_rows:
+        return "Usually pays on time"
+    if paid and open_rows:
+        return "Mixed: paid history with current outstanding invoices"
+    return "Outstanding invoices present"
+
+
+async def _build_client_memory(business_id: str, client_id: str) -> dict:
+    jobs = [serialize_doc(j) async for j in db.jobs.find({"business_id": business_id, "client_id": client_id}).limit(300)]
+    quotes = [serialize_doc(q) async for q in db.quotes.find({"business_id": business_id, "client_id": client_id}).limit(200)]
+    invoices = [serialize_doc(i) async for i in db.invoices.find({"business_id": business_id, "client_id": client_id}).limit(200)]
+    workers = [serialize_doc(w) async for w in db.business_users.find({"business_id": business_id}).limit(300)]
+    notes_text = " ".join([str(j.get("notes") or j.get("worker_notes") or "") for j in jobs if (j.get("notes") or j.get("worker_notes"))]).strip()
+    completed_jobs = [j for j in jobs if str(j.get("status") or "").lower() in {"completed", "complete"}]
+    sorted_jobs = sorted(jobs, key=lambda j: str(j.get("scheduled_date") or j.get("completed_at") or j.get("updated_at") or ""), reverse=True)
+    last_job = sorted_jobs[0] if sorted_jobs else None
+    service_counts = {}
+    durations = []
+    worker_counts = {}
+    photo_count = 0
+    for j in jobs:
+        svc = str(j.get("job_type") or j.get("service_type") or j.get("title") or "General service").strip()
+        service_counts[svc] = service_counts.get(svc, 0) + 1
+        dur = j.get("actual_duration_minutes") or j.get("duration_minutes") or j.get("actual_duration")
+        try:
+            if dur is not None:
+                durations.append(float(dur))
+        except Exception:
+            pass
+        wid = str(j.get("assigned_worker_id") or j.get("worker_id") or "")
+        if wid:
+            worker_counts[wid] = worker_counts.get(wid, 0) + 1
+        photo_count += int(j.get("photo_count") or 0)
+        if isinstance(j.get("photos"), list):
+            photo_count += len(j.get("photos"))
+    common_service = max(service_counts.items(), key=lambda kv: kv[1])[0] if service_counts else "Unknown"
+    avg_duration = round(sum(durations) / len(durations), 1) if durations else None
+    preferred_worker_id = max(worker_counts.items(), key=lambda kv: kv[1])[0] if worker_counts else ""
+    worker_by_id = {str(w.get("id") or w.get("_id")): w for w in workers}
+    preferred_worker_name = (worker_by_id.get(preferred_worker_id) or {}).get("name") if preferred_worker_id else ""
+    recurring = any(bool(j.get("recurring") or j.get("recurring_job_id") or j.get("recurrence_rule")) for j in jobs)
+    payment_pattern = _client_memory_payment_pattern(invoices)
+    suggested_next_action = "Schedule next visit" if recurring else ("Prepare follow-up on latest quote" if any(str(q.get("status") or "").lower() in {"sent","pending","viewed","waiting"} for q in quotes) else "Review completed jobs and outstanding invoices")
+    summary = f"This property usually has {common_service.lower()} work. "
+    if avg_duration is not None:
+        summary += f"Average job duration is about {avg_duration} minutes. "
+    if completed_jobs:
+        summary += "Recent jobs show completed service history. "
+    if notes_text:
+        summary += f"Latest notes: {notes_text[:140]}. "
+    summary += f"Suggested next step: {suggested_next_action.lower()}."
+    return {
+        "client_id": client_id,
+        "last_job": {"id": str((last_job or {}).get("id") or (last_job or {}).get("_id") or ""), "title": (last_job or {}).get("title") or "", "status": (last_job or {}).get("status") or ""} if last_job else None,
+        "last_service_date": (last_job or {}).get("completed_at") or (last_job or {}).get("scheduled_date") if last_job else None,
+        "common_service_type": common_service,
+        "average_job_duration": avg_duration,
+        "preferred_worker": {"id": preferred_worker_id, "name": preferred_worker_name} if preferred_worker_id else None,
+        "recent_photos_count": photo_count,
+        "payment_pattern": payment_pattern,
+        "recurring_schedule": "Recurring" if recurring else "One-off / ad-hoc",
+        "property_notes": notes_text[:600],
+        "ai_summary": summary,
+        "suggested_next_action": suggested_next_action,
+    }
+
+
+@api_router.get("/api/ai/follow-ups")
+async def ai_follow_ups(current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str(current_user.get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    actions = [serialize_doc(a) async for a in db.ai_operator_actions.find({"business_id": business_id, "status": "pending", "action_type": {"$in": ["quote_follow_up", "invoice_reminder", "create_invoice_draft", "proof_pack_send", "enquiry_follow_up", "worker_ack_follow_up"]}}).sort("priority_score", -1).limit(250)]
+    return {"success": True, "actions": actions}
+
+
+@api_router.post("/api/ai/follow-ups/generate")
+async def ai_follow_ups_generate(current_user: dict = Depends(get_current_user)):
+    return await smart_hub_scan(current_user)
+
+
+@api_router.post("/api/ai/follow-ups/{action_id}/approve")
+async def ai_follow_up_approve(action_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    payload = await request.json() if request else {}
+    return await ai_operator_approve(action_id, current_user)
+
+
+@api_router.post("/api/ai/follow-ups/{action_id}/dismiss")
+async def ai_follow_up_dismiss(action_id: str, current_user: dict = Depends(get_current_user)):
+    return await ai_operator_reject(action_id, current_user)
+
+
+@api_router.get("/api/ai/client-memory/{client_id}")
+async def get_client_memory(client_id: str, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str(current_user.get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    memory = await _build_client_memory(str(business_id), str(client_id))
+    return {"success": True, "data": memory}
+
+
+@api_router.post("/api/ai/client-memory/{client_id}/refresh")
+async def refresh_client_memory(client_id: str, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str(current_user.get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    memory = await _build_client_memory(str(business_id), str(client_id))
+    return {"success": True, "data": memory, "refreshed": True}
 @api_router.post("/smart-hub/process-due-communications")
 async def smart_hub_process_due_communications(current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str(current_user.get("role") or "").lower())

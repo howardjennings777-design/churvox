@@ -10,22 +10,36 @@ import { PremiumPage, PremiumHero, PremiumCard, PremiumButton, PremiumEmptyState
 export default function ClientDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { get, del } = useApi();
+  const { get, post, del } = useApi();
   const [client, setClient] = useState(null);
   const [jobs, setJobs] = useState([]);
+  const [clientMemory, setClientMemory] = useState(null);
 
   const fetchData = useCallback(async () => {
-    const [clientRes, jobsRes] = await Promise.all([
+    const [clientRes, jobsRes, memoryRes] = await Promise.all([
       get(`/clients/${id}`),
       get(`/clients/${id}/jobs`),
+      get(`/api/ai/client-memory/${id}`),
     ]);
     if (clientRes.success) setClient(clientRes.data);
     else navigate("/clients");
     if (jobsRes.success) setJobs(jobsRes.data);
+    if (memoryRes.success) setClientMemory(memoryRes.data);
   }, [get, id, navigate]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+
+
+  const refreshClientMemory = async () => {
+    const res = await post(`/api/ai/client-memory/${id}/refresh`, {});
+    if (res.success) {
+      setClientMemory(res.data);
+      toast.success("Client memory refreshed");
+    } else {
+      toast.error("Unable to refresh client memory");
+    }
+  };
   const handleDelete = async () => {
     const confirmed = window.confirm("Delete this client? This cannot be undone.");
     if (!confirmed) return;
@@ -90,6 +104,26 @@ export default function ClientDetailPage() {
           )}
         </PremiumCard>
 
+
+
+        <PremiumCard title="Client Memory" icon={<Clock className="h-5 w-5" />} data-testid="client-memory-card">
+          {!clientMemory ? <p className="text-sm text-[#5f584f]">No memory available yet.</p> : <div className="space-y-2 text-sm text-[#2f343b]">
+            <p><span className="font-semibold">Last job:</span> {clientMemory?.last_job?.title || "—"}</p>
+            <p><span className="font-semibold">Last service date:</span> {formatDate(clientMemory?.last_service_date) || "—"}</p>
+            <p><span className="font-semibold">Common service:</span> {clientMemory?.common_service_type || "—"}</p>
+            <p><span className="font-semibold">Avg duration:</span> {clientMemory?.average_job_duration ? `${clientMemory.average_job_duration} min` : "—"}</p>
+            <p><span className="font-semibold">Preferred worker:</span> {clientMemory?.preferred_worker?.name || "—"}</p>
+            <p><span className="font-semibold">Recent photos:</span> {clientMemory?.recent_photos_count ?? 0}</p>
+            <p><span className="font-semibold">Payment pattern:</span> {clientMemory?.payment_pattern || "—"}</p>
+            <p><span className="font-semibold">Recurring:</span> {clientMemory?.recurring_schedule || "—"}</p>
+            <p><span className="font-semibold">Property notes:</span> {clientMemory?.property_notes || "—"}</p>
+            <p className="rounded-lg bg-[#f4eee3] border border-[#b7ad9e] p-3"><span className="font-semibold">AI summary:</span> {clientMemory?.ai_summary || "—"}</p>
+            <p><span className="font-semibold">Suggested next action:</span> {clientMemory?.suggested_next_action || "—"}</p>
+          </div>}
+          <div className="mt-3">
+            <PremiumButton size="sm" variant="secondary" onClick={refreshClientMemory}>Refresh memory</PremiumButton>
+          </div>
+        </PremiumCard>
         <PremiumCard title={`Job history (${jobs.length})`} icon={<FileText className="h-5 w-5" />} data-testid="client-job-history">
           {jobs.length === 0 ? (
             <PremiumEmptyState
