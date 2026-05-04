@@ -1725,6 +1725,40 @@ def _owner_roles_only(role: str):
         raise HTTPException(status_code=403, detail="AI Operator is restricted to owner/manager roles")
 
 
+AI_CUSTOMER_UPDATE_TYPES = {"job_scheduled", "worker_on_way", "job_started", "job_paused", "job_resumed", "job_completed", "proof_ready", "invoice_ready"}
+
+
+async def _prepare_customer_update_for_job(job: dict, business_id: str, event_type: str, preferred_channel: str = "copy"):
+    et = str(event_type or "").strip().lower()
+    if et not in AI_CUSTOMER_UPDATE_TYPES:
+        return None
+    job_id = str(job.get("id") or job.get("_id") or "")
+    if not job_id:
+        return None
+    now = datetime.now(timezone.utc)
+    action_key = f"customer_update:{job_id}:{et}"
+    existing = await db.customer_update_events.find_one({"business_id": business_id, "job_id": job_id, "type": et, "status": {"$in": ["draft", "approved", "sent"]}})
+    if existing:
+        return serialize_doc(existing)
+    client_name = str(job.get("client_name") or job.get("customer_name") or "there").strip() or "there"
+    address = str(job.get("address") or "").strip()
+    when = str(job.get("scheduled_time") or job.get("scheduled_date") or "").strip()
+    templates = {
+        "job_scheduled": f"Hi {client_name}, your job has been scheduled{f' for {when}' if when else ''}. We'll keep you updated.",
+        "worker_on_way": f"Hi {client_name}, your worker is on the way to {address or 'your property'}.",
+        "job_started": f"Hi {client_name}, your job has now started at {address or 'your property'}.",
+        "job_paused": f"Hi {client_name}, your job is currently paused. We'll update you once it resumes.",
+        "job_resumed": f"Hi {client_name}, your job has resumed.",
+        "job_completed": f"Hi {client_name}, your job has been completed. We'll share proof and invoice updates shortly.",
+        "proof_ready": f"Hi {client_name}, your job proof is ready to review.",
+        "invoice_ready": f"Hi {client_name}, your invoice is now ready.",
+    }
+    doc = {"business_id": business_id, "job_id": job_id, "client_id": str(job.get("client_id") or ""), "type": et, "message": templates.get(et, ""), "channel": preferred_channel if preferred_channel in {"email", "sms", "copy"} else "copy", "status": "draft", "public_token": secrets.token_urlsafe(16), "error": None, "created_at": now, "updated_at": now}
+    ins = await db.customer_update_events.insert_one(doc)
+    await upsert_ai_operator_action(business_id, action_key, "customer_update_approval", f"Customer update ready: {et.replace('_', ' ')}", "Review and approve customer-safe update draft.", f"Type: {et}", "Approving marks this message ready to send/copy. No auto-send by default.", "job", job_id, payload={"update_event_id": str(ins.inserted_id), "job_id": job_id, "type": et, "message": doc["message"]}, client_id=doc["client_id"], editable_fields=["message", "channel"])
+    return {"id": str(ins.inserted_id), **doc}
+
+
 def _operator_group_for_type(action_type: str) -> str:
     return {
         "missing_price": "needs_decision",
@@ -2709,6 +2743,138 @@ async def ai_follow_ups(current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
     actions = [serialize_doc(a) async for a in db.ai_operator_actions.find({"business_id": business_id, "status": "pending", "action_type": {"$in": ["quote_follow_up", "invoice_reminder", "create_invoice_draft", "proof_pack_send", "enquiry_follow_up", "worker_ack_follow_up"]}}).sort("priority_score", -1).limit(250)]
     return {"success": True, "actions": actions}
+
+
+@api_router.get("/api/ai/customer-updates")
+async def get_customer_updates(job_id: str = Query(default=""), current_user: dict = Depends(get_current_user)):
+    role = str((current_user or {}).get("role") or "").lower()
+    _owner_roles_only(role)
+    business_id = await get_user_business_id(current_user)
+    q = {"business_id": business_id}
+    if str(job_id).strip():
+        q["job_id"] = str(job_id).strip()
+    rows = [serialize_doc(r) async for r in db.customer_update_events.find(q).sort("created_at", -1).limit(250)]
+    return {"success": True, "updates": rows}
+
+
+@api_router.post("/api/ai/customer-updates/prepare-for-job/{job_id}")
+async def prepare_customer_updates_for_job(job_id: str, current_user: dict = Depends(get_current_user)):
+    role = str((current_user or {}).get("role") or "").lower()
+    _owner_roles_only(role)
+    business_id = await get_user_business_id(current_user)
+    job = await db.jobs.find_one({"_id": ObjectId(job_id), "business_id": business_id})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    created = []
+    for et in ["job_scheduled", "job_started", "job_completed", "proof_ready", "invoice_ready"]:
+        row = await _prepare_customer_update_for_job(job, business_id, et)
+        if row:
+            created.append(row)
+    return {"success": True, "updates": created}
+
+
+@api_router.post("/api/ai/customer-updates/{update_id}/approve")
+async def approve_customer_update(update_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    role = str((current_user or {}).get("role") or "").lower()
+    _owner_roles_only(role)
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    patch = {"status": "approved", "approved_at": now, "updated_at": now}
+    if isinstance(payload, dict) and payload.get("message"):
+        patch["message"] = str(payload.get("message"))[:1200]
+    if isinstance(payload, dict) and payload.get("channel") in {"email", "sms", "copy"}:
+        patch["channel"] = payload.get("channel")
+    await db.customer_update_events.update_one({"_id": ObjectId(update_id), "business_id": business_id}, {"$set": patch})
+    row = await db.customer_update_events.find_one({"_id": ObjectId(update_id), "business_id": business_id})
+    if not row:
+        raise HTTPException(status_code=404, detail="Update not found")
+    return {"success": True, "update": serialize_doc(row), "sent": False}
+
+
+@api_router.post("/api/ai/customer-updates/{update_id}/skip")
+async def skip_customer_update(update_id: str, current_user: dict = Depends(get_current_user)):
+    role = str((current_user or {}).get("role") or "").lower()
+    _owner_roles_only(role)
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    await db.customer_update_events.update_one({"_id": ObjectId(update_id), "business_id": business_id}, {"$set": {"status": "skipped", "skipped_at": now, "updated_at": now}})
+    return {"success": True}
+
+
+def _build_quote_from_photo_inputs(payload: dict, client: dict | None = None, history_jobs: list | None = None):
+    service = str((payload or {}).get("service_type") or "").strip()
+    desc = str((payload or {}).get("description") or "").strip()
+    photos = (payload or {}).get("photos") if isinstance((payload or {}).get("photos"), list) else []
+    jobs = history_jobs or []
+    avg = None
+    amounts = [float(j.get("price")) for j in jobs if isinstance(j.get("price"), (int, float))]
+    if amounts:
+        avg = sum(amounts) / len(amounts)
+    line_items = [{"name": service or "Service work", "description": desc or "Work as requested", "qty": 1, "unit_price": round(avg, 2) if avg else None}]
+    price_range = f"${round(avg*0.9,2)}-${round(avg*1.15,2)}" if avg and len(amounts) >= 2 else "Manual pricing needed"
+    summary = f"Drafted from {len(photos)} photo(s), service '{service or 'unspecified'}', and notes. No visual inspection performed."
+    if client and client.get("name"):
+        summary += f" Client history considered for {client.get('name')}."
+    return {"ai_scope_summary": summary, "suggested_line_items": line_items, "suggested_price_range": price_range, "suggested_terms": "Final price subject to on-site confirmation and exclusions listed in quote."}
+
+
+@api_router.post("/api/ai/quotes/from-photos")
+async def ai_quote_from_photos(payload: dict, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    client_id = str((payload or {}).get("client_id") or "")
+    client = await db.clients.find_one({"_id": ObjectId(client_id), "business_id": business_id}) if ObjectId.is_valid(client_id) else None
+    history = [j async for j in db.jobs.find({"business_id": business_id, "client_id": client_id}).sort("created_at", -1).limit(20)] if client_id else []
+    built = _build_quote_from_photo_inputs(payload or {}, client=client, history_jobs=history)
+    doc = {"business_id": business_id, "enquiry_id": str((payload or {}).get("enquiry_id") or ""), "client_id": client_id, "job_id": str((payload or {}).get("job_id") or ""), "photos": (payload or {}).get("photos") if isinstance((payload or {}).get("photos"), list) else [], "service_type": str((payload or {}).get("service_type") or ""), "description": str((payload or {}).get("description") or ""), **built, "status": "ready_for_review", "created_at": now, "updated_at": now, "approved_at": None, "converted_quote_id": None}
+    ins = await db.ai_quote_drafts.insert_one(doc)
+    return {"success": True, "draft": {"id": str(ins.inserted_id), **doc}}
+
+@api_router.get("/api/ai/quotes/drafts")
+async def ai_quote_drafts(current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    rows = [serialize_doc(r) async for r in db.ai_quote_drafts.find({"business_id": business_id}).sort("created_at", -1).limit(200)]
+    return {"success": True, "drafts": rows}
+
+@api_router.get("/api/ai/quotes/drafts/{draft_id}")
+async def ai_quote_draft_detail(draft_id: str, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    row = await db.ai_quote_drafts.find_one({"_id": ObjectId(draft_id), "business_id": business_id})
+    if not row:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    return {"success": True, "draft": serialize_doc(row)}
+
+@api_router.post("/api/ai/quotes/drafts/{draft_id}/approve")
+async def ai_quote_draft_approve(draft_id: str, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    await db.ai_quote_drafts.update_one({"_id": ObjectId(draft_id), "business_id": business_id}, {"$set": {"status": "approved", "approved_at": now, "updated_at": now}})
+    return {"success": True}
+
+@api_router.post("/api/ai/quotes/drafts/{draft_id}/convert-to-quote")
+async def ai_quote_draft_convert(draft_id: str, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    row = await db.ai_quote_drafts.find_one({"_id": ObjectId(draft_id), "business_id": business_id})
+    if not row:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    quote = {"business_id": business_id, "client_id": row.get("client_id"), "title": f"{row.get('service_type') or 'Service'} quote", "description": row.get("description") or row.get("ai_scope_summary") or "", "line_items": row.get("suggested_line_items") or [], "status": "draft", "created_at": now, "updated_at": now, "source": "ai_quote_draft"}
+    ins = await db.quotes.insert_one(quote)
+    await db.ai_quote_drafts.update_one({"_id": row["_id"]}, {"$set": {"status": "converted_to_quote", "converted_quote_id": str(ins.inserted_id), "updated_at": now}})
+    return {"success": True, "quote_id": str(ins.inserted_id)}
+
+@api_router.post("/api/ai/quotes/drafts/{draft_id}/dismiss")
+async def ai_quote_draft_dismiss(draft_id: str, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    await db.ai_quote_drafts.update_one({"_id": ObjectId(draft_id), "business_id": business_id}, {"$set": {"status": "dismissed", "updated_at": now}})
+    return {"success": True}
 
 
 @api_router.post("/api/ai/follow-ups/generate")
@@ -5808,6 +5974,12 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
                 await auto.emit_event(db, "job_paused", base)
             elif new_status == "completed":
                 await auto.emit_event(db, "job_completed", base)
+            if new_status == "in_progress":
+                await _prepare_customer_update_for_job({**existing, **update_fields, "_id": obj_id}, str(existing.get("business_id") or business_id), "job_started")
+            elif new_status == "paused":
+                await _prepare_customer_update_for_job({**existing, **update_fields, "_id": obj_id}, str(existing.get("business_id") or business_id), "job_paused")
+            elif new_status == "completed":
+                await _prepare_customer_update_for_job({**existing, **update_fields, "_id": obj_id}, str(existing.get("business_id") or business_id), "job_completed")
             if worker_notes is not None and str(worker_notes).strip():
                 _note_text = str(worker_notes)[:400]
                 await auto.emit_event(db, "worker_note_added", {**base, "note": {"text": _note_text}})
@@ -5866,6 +6038,16 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
         update_doc["completed_at"] = now
 
     await db.jobs.update_one({"_id": obj_id}, {"$set": update_doc})
+    try:
+        if new_status and new_status != existing.get("status"):
+            if new_status in {"scheduled", "assigned"}:
+                await _prepare_customer_update_for_job({**existing, **update_doc, "_id": obj_id}, str(existing.get("business_id") or business_id), "job_scheduled")
+            elif new_status == "in_progress":
+                await _prepare_customer_update_for_job({**existing, **update_doc, "_id": obj_id}, str(existing.get("business_id") or business_id), "job_started")
+            elif new_status == "completed":
+                await _prepare_customer_update_for_job({**existing, **update_doc, "_id": obj_id}, str(existing.get("business_id") or business_id), "job_completed")
+    except Exception as e:
+        print("CUSTOMER_UPDATE_PREPARE_ERR", repr(e))
 
     # Owner-side notifications: notify worker on (re)assignment + employer note change
     try:
