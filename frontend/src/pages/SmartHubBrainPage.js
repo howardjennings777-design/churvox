@@ -251,7 +251,7 @@ export default function SmartHubBrainPage() {
         safeGet("/team/workers"),
         safeGet("/smart-hub/activity"),
         safeGet("/ai-operator/actions"),
-        safeGet("/api/ai-operator/settings"),
+        safeGet("/ai-operator/settings"),
       ]);
 
       setData({
@@ -557,7 +557,7 @@ export default function SmartHubBrainPage() {
 
   const runScanNow = async () => {
     try {
-      const scanRes = await post("/api/ai-operator/run-daily-plan", {});
+      const scanRes = await post("/ai-operator/run-daily-plan", {});
       console.info("ai_operator_daily_plan", scanRes);
       await load();
       setToast({ kind: "success", message: "Today's AI plan is ready." });
@@ -925,7 +925,7 @@ export default function SmartHubBrainPage() {
             style={{ background: "linear-gradient(135deg, #07090b 0%, #111317 45%, #242932 100%)", borderColor: "rgba(255,255,255,0.14)" }}
           >
             <p className="text-xs uppercase tracking-[0.2em] text-[#fdba74]">AI Operator Control Centre</p>
-            <span className="mt-2 inline-flex rounded-full border border-[#ff8a3d]/40 bg-[#d94f17] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">HARD TRADE THEME v4</span>
+            
             <h1 className="mt-2 text-3xl font-black">AI Operator Control Centre</h1>
             <p className="mt-2 text-sm text-white/80">Welcome back, {textOr(user?.name || user?.email, "team")}. Keep operations flowing with one clear next move.</p>
             <div className="mt-4 rounded-xl border border-white/10 bg-black/25 p-4">
@@ -1098,7 +1098,7 @@ export default function SmartHubBrainPage() {
                 <label className="block">Accounting changes<input disabled value="Locked" className="mt-1 w-full rounded border p-2 bg-slate-100" /></label>
                 <label className="block">Payroll changes<input disabled value="Locked" className="mt-1 w-full rounded border p-2 bg-slate-100" /></label>
               </div>
-              <div className="mt-4 flex gap-2"><button type="button" className="rounded bg-[#d94f17] px-3 py-2 text-white" onClick={async ()=>{ try { const res = await patch('/api/ai-operator/settings', aiSettings); setAiSettings((p)=>({...p,...(res?.settings||{})})); setToast({kind:'success',message:'AI settings saved.'}); setAiSettingsOpen(false);} catch { localStorage.setItem("smart_hub_ai_settings_local", JSON.stringify(aiSettings)); setToast({kind:'success',message:'Saved locally until backend setting is added.'}); setAiSettingsOpen(false); } }}>Save</button><button type="button" className="rounded border px-3 py-2" onClick={()=>setAiSettingsOpen(false)}>Close</button></div>
+              <div className="mt-4 flex gap-2"><button type="button" className="rounded bg-[#d94f17] px-3 py-2 text-white" onClick={async ()=>{ try { const res = await patch('/ai-operator/settings', aiSettings); setAiSettings((p)=>({...p,...(res?.settings||{})})); setToast({kind:'success',message:'AI settings saved.'}); setAiSettingsOpen(false);} catch { localStorage.setItem("smart_hub_ai_settings_local", JSON.stringify(aiSettings)); setToast({kind:'success',message:'Saved locally until backend setting is added.'}); setAiSettingsOpen(false); } }}>Save</button><button type="button" className="rounded border px-3 py-2" onClick={()=>setAiSettingsOpen(false)}>Close</button></div>
             </div>
           </div>
         ) : null}
