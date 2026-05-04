@@ -16,163 +16,86 @@ const listFrom = (value, keys = []) => {
   if (Array.isArray(value.items)) return value.items;
   return [];
 };
-const safeGet = async (path) => {
-  try { return await get(path); } catch { return []; }
-};
+const safeGet = async (path) => { try { return await get(path); } catch { return []; } };
 const ownerRoles = ["owner", "employer", "admin", "manager", "office_admin", "business_owner", "platform_owner"];
-const canUseCommand = (role) => ownerRoles.includes(norm(role));
-const money = (value) => Number.isFinite(Number(value)) ? `$${Number(value).toFixed(2)}` : "amount unknown";
-const todayKey = () => new Date().toISOString().slice(0, 10);
-const routeTo = (path) => { window.location.assign(path); };
 
-function clientNameFor(job, clients) {
-  const clientId = String(job?.client_id || job?.clientId || job?.customer_id || "");
-  const client = clients.find((c) => [c?.id, c?._id, c?.client_id].map(String).includes(clientId));
-  return client?.name || client?.business_name || client?.company_name || job?.client_name || job?.customer_name || "Client";
-}
-function cleanJobTitle(job, clients) {
-  const title = String(job?.title || job?.name || job?.service_type || "").trim();
-  if (title && !title.match(/^[a-f0-9-]{10,}$/i)) return title;
-  return clientNameFor(job, clients) || "Job";
-}
-function actionPath(action) {
-  if (action.job_id) return `/jobs/${action.job_id}`;
-  if (action.invoice_id) return `/invoices/${action.invoice_id}`;
-  if (action.quote_id) return `/quotes/${action.quote_id}`;
-  if (action.client_id) return `/clients/${action.client_id}`;
-  return "/dashboard";
-}
-
-function buildCommandActions(data, hidden) {
-  const actions = [];
-  const jobs = data.jobs || [];
-  const clients = data.clients || [];
-  const invoices = data.invoices || [];
-  const quotes = data.quotes || [];
-  const proofPacks = data.proofPacks || [];
-  const invoiceJobIds = new Set(invoices.map((i) => String(i.job_id || i.jobId || "")).filter(Boolean));
-
-  jobs.forEach((job) => {
-    const jobId = idOf(job);
-    if (!jobId) return;
-    const status = norm(job.status);
-    const closed = ["completed", "complete", "cancelled", "canceled", "archived"].includes(status);
-    const assigned = job.assigned_worker_id || job.worker_id || job.assigned_worker;
-    const label = cleanJobTitle(job, clients);
-    const client = clientNameFor(job, clients);
-
-    if (!assigned && !closed) {
-      actions.push({ id: `dispatch-${jobId}`, type: "dispatch", priority: "high", title: `Assign crew to ${label}`, summary: `${client} has a job with no worker assigned.`, reason: "Unassigned jobs block the day and stop work moving.", next: "Open the job or Dispatch and assign the right worker.", job_id: jobId, executable: false });
-    }
-
-    if (["completed", "complete"].includes(status) && !job.invoice_id && !job.draft_invoice_id && !invoiceJobIds.has(jobId)) {
-      const amount = job.fixed_price ?? job.price ?? job.subtotal ?? job.amount;
-      const priced = Number.isFinite(Number(amount)) && Number(amount) > 0;
-      actions.push({ id: `invoice-${jobId}`, type: priced ? "invoice" : "pricing", priority: priced ? "medium" : "high", title: priced ? `Draft invoice for ${label}` : `Add pricing for ${label}`, summary: priced ? `Suggested amount: ${money(amount)}.` : "Completed job needs a safe price before invoicing.", reason: priced ? "Completed work is ready to become a draft invoice." : "Churvox must not create a $0 invoice.", next: priced ? "Open and create a draft invoice. Do not send or sync MYOB automatically." : "Open the job and add pricing first.", job_id: jobId, executable: false });
-      const hasProof = job.proof_pack_id || job.proof_pack_ready || proofPacks.some((p) => String(p.job_id || p.jobId || "") === jobId);
-      if (!hasProof) actions.push({ id: `proof-${jobId}`, type: "proof", priority: "medium", title: `Prepare proof pack for ${label}`, summary: "Completed work needs proof before payment follow-up.", reason: "Proof-to-Paid needs customer-ready proof assets.", next: "Prepare a proof pack for owner review.", job_id: jobId, executable: true });
-    }
-  });
-
-  invoices.forEach((invoice) => {
-    const invoiceId = idOf(invoice);
-    if (!invoiceId) return;
-    const status = norm(invoice.status);
-    if (["sent", "open", "overdue", "unpaid", "pending_payment"].includes(status)) {
-      actions.push({ id: `invoice-follow-${invoiceId}`, type: "follow", priority: status === "overdue" ? "high" : "medium", title: `Invoice reminder ${invoice.invoice_number || invoice.number || invoiceId.slice(-6)}`, summary: `${money(invoice.balance_due ?? invoice.balance ?? invoice.amount_due ?? invoice.total ?? invoice.amount)} outstanding.`, reason: "Money is waiting to come in.", next: "Prepare or copy a reminder. Do not fake-send messages.", invoice_id: invoiceId, executable: false });
-    }
-  });
-
-  quotes.forEach((quote) => {
-    const quoteId = idOf(quote);
-    if (!quoteId) return;
-    if (["sent", "pending", "waiting", "viewed", "draft"].includes(norm(quote.status))) {
-      actions.push({ id: `quote-follow-${quoteId}`, type: "follow", priority: "medium", title: `Follow up quote ${quote.quote_number || quote.number || quoteId.slice(-6)}`, summary: "Quote is waiting for a customer decision.", reason: "Follow-up can help convert quoted work into booked work.", next: "Prepare or copy a follow-up. Do not auto-send.", quote_id: quoteId, executable: false });
-    }
-  });
-
-  const simple = [
-    [data.receptionist || [], "reception", "Review new enquiry"],
-    [data.recurring || [], "recurring", "Recurring work due"],
-    [data.customerUpdates || [], "update", "Customer update ready"],
-    [data.quoteDrafts || [], "quote_builder", "Quote draft ready"],
-    [data.memory || [], "memory", "Client memory suggestion"],
-  ];
-  simple.forEach(([items, type, fallback]) => items.forEach((item, index) => actions.push({ id: `${type}-${idOf(item) || index}`, type, priority: "medium", title: item.title || item.customer_name || fallback, summary: item.message || item.summary || item.description || item.ai_summary || "Needs review.", reason: "Command found this in your business data.", next: "Open and review safely before anything is sent or changed.", client_id: item.client_id || item.suggested_client_id, job_id: item.job_id, quote_id: item.quote_id, invoice_id: item.invoice_id, executable: false })));
-
-  return actions.filter((a) => !hidden[a.id]);
-}
-
-function ActionCard({ action, onDismiss, onProof }) {
-  const canPrepareProof = action.type === "proof" && action.executable && action.job_id;
-  return <article className="command-action-card">
-    <div className="command-card-top"><span className={`command-priority ${action.priority}`}>{action.priority}</span><span>{action.type}</span></div>
-    <h3>{action.title}</h3>
-    <p>{action.summary}</p>
-    <p><b>Why:</b> {action.reason}</p>
-    <p><b>Next:</b> {action.next}</p>
-    <div className="command-card-actions">
-      {canPrepareProof ? <button className="command-btn green" onClick={() => onProof(action)}>Prepare proof</button> : <button className="command-btn dark" onClick={() => routeTo(actionPath(action))}>Review</button>}
-      <button className="command-btn light" onClick={() => routeTo(actionPath(action))}>Open</button>
-      <button className="command-btn light" onClick={() => onDismiss(action)}>Dismiss</button>
-    </div>
-  </article>;
-}
-
-function WorkspaceButton({ label, to, text }) {
-  return <button type="button" className="command-workspace-btn" onClick={() => routeTo(to)}><strong>{label}</strong><span>{text}</span></button>;
-}
-function ControlCard({ title, count, text, onClick, active }) {
-  return <article className={`command-control-card ${active ? "active" : "quiet"}`}><div><h3>{title}</h3><p>{text}</p></div><strong>{count}</strong><button type="button" onClick={onClick}>Open</button></article>;
-}
+const drawerMap = {
+  ask: "Ask AI Operator", plan: "Today's Plan", dispatch: "Dispatch Plan", revenue: "Revenue Plan", follow: "Follow-Ups",
+  proof: "Proof-to-Paid", runsheet: "Today's Run Sheet", approvals: "Approval Queue", action: "Action Details",
+  jobs: "Jobs workspace", clients: "Clients workspace", quotes: "Quotes workspace", invoices: "Invoices workspace", team: "Team workspace", account: "Account & Plan", settings: "Settings"
+};
 
 export default function CommandHubRealPage() {
   const { user } = useAuth();
   const [data, setData] = useState({ jobs: [], clients: [], invoices: [], quotes: [], workers: [], proofPacks: [], receptionist: [], recurring: [], customerUpdates: [], quoteDrafts: [], memory: [], health: {} });
-  const [hidden, setHidden] = useState({});
-  const [tab, setTab] = useState("today");
-  const [queueOpen, setQueueOpen] = useState(false);
+  const [actions, setActions] = useState([]);
+  const [activeDrawer, setActiveDrawer] = useState("");
+  const [drawerItems, setDrawerItems] = useState([]);
+  const [selectedAction, setSelectedAction] = useState(null);
+  const [selectedWorkspace, setSelectedWorkspace] = useState("");
   const [notice, setNotice] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
+
+  const canUseCommand = ownerRoles.includes(norm(user?.role));
 
   const load = async () => {
-    setLoading(true); setError("");
-    try {
-      const [jobs, clients, invoices, quotes, workers, proofPacks, receptionist, recurring, customerUpdates, quoteDrafts, memory, health] = await Promise.all([
-        safeGet("/jobs"), safeGet("/clients"), safeGet("/invoices"), safeGet("/quotes"), safeGet("/team/workers"), safeGet("/proof-packs"), safeGet("/api/ai/receptionist/enquiries"), safeGet("/api/ai/recurring"), safeGet("/api/ai/customer-updates"), safeGet("/api/ai/quotes/drafts"), safeGet("/api/ai/client-memory"), safeGet("/api/ai/operator/business-health")
-      ]);
-      setData({ jobs: listFrom(jobs, ["jobs"]), clients: listFrom(clients, ["clients"]), invoices: listFrom(invoices, ["invoices"]), quotes: listFrom(quotes, ["quotes"]), workers: listFrom(workers, ["workers", "items"]), proofPacks: listFrom(proofPacks, ["proof_packs", "items"]), receptionist: listFrom(receptionist, ["enquiries", "items"]), recurring: listFrom(recurring, ["rules", "items"]), customerUpdates: listFrom(customerUpdates, ["updates", "items"]), quoteDrafts: listFrom(quoteDrafts, ["drafts", "items"]), memory: listFrom(memory, ["items", "actions"]), health: health || {} });
-    } catch { setError("Command could not load business data yet."); }
-    finally { setLoading(false); }
+    const [jobs, clients, invoices, quotes, workers, proofPacks, receptionist, recurring, customerUpdates, quoteDrafts, memory, health] = await Promise.all([
+      safeGet("/jobs"), safeGet("/clients"), safeGet("/invoices"), safeGet("/quotes"), safeGet("/team/workers"), safeGet("/proof-packs"), safeGet("/api/ai/receptionist/enquiries"), safeGet("/api/ai/recurring"), safeGet("/api/ai/customer-updates"), safeGet("/api/ai/quotes/drafts"), safeGet("/api/ai/client-memory"), safeGet("/api/ai/operator/business-health")
+    ]);
+    setData({ jobs: listFrom(jobs, ["jobs"]), clients: listFrom(clients, ["clients"]), invoices: listFrom(invoices, ["invoices"]), quotes: listFrom(quotes, ["quotes"]), workers: listFrom(workers, ["workers", "items"]), proofPacks: listFrom(proofPacks, ["proof_packs", "items"]), receptionist: listFrom(receptionist, ["enquiries", "items"]), recurring: listFrom(recurring, ["rules", "items"]), customerUpdates: listFrom(customerUpdates, ["updates", "items"]), quoteDrafts: listFrom(quoteDrafts, ["drafts", "items"]), memory: listFrom(memory, ["items", "actions"]), health: health || {} });
   };
+
   useEffect(() => { load(); }, []);
 
-  const actions = useMemo(() => buildCommandActions(data, hidden), [data, hidden]);
-  const groups = useMemo(() => ({ dispatch: actions.filter(a => a.type === "dispatch"), revenue: actions.filter(a => ["invoice", "pricing"].includes(a.type)), proof: actions.filter(a => a.type === "proof"), follow: actions.filter(a => a.type === "follow"), reception: actions.filter(a => a.type === "reception"), recurring: actions.filter(a => a.type === "recurring"), update: actions.filter(a => a.type === "update"), quote_builder: actions.filter(a => a.type === "quote_builder"), memory: actions.filter(a => a.type === "memory") }), [actions]);
-  const activeJobs = data.jobs.filter(j => !["completed", "complete", "cancelled", "canceled", "archived"].includes(norm(j.status)));
-  const todayJobs = data.jobs.filter(j => String(j.scheduled_date || j.date || j.start_date || j.due_date || "").startsWith(todayKey())).slice(0, 4);
-  const runSheet = todayJobs.length ? todayJobs : activeJobs.slice(0, 4);
-  const best = groups.dispatch[0] || groups.revenue[0] || groups.follow[0] || groups.proof[0] || actions[0];
-  const selected = tab === "approvals" ? actions : (groups[tab] || []);
+  useEffect(() => {
+    const built = [];
+    data.jobs.forEach((j) => {
+      const s = norm(j.status); const jid = idOf(j); if (!jid) return;
+      if (!["completed", "complete", "cancelled", "canceled", "archived"].includes(s) && !(j.assigned_worker_id || j.worker_id)) built.push({ id: `d-${jid}`, type: "dispatch", title: `Assign crew to ${j.title || "job"}`, executable: true, job_id: jid, why: "Job has no worker" });
+      if (["completed", "complete"].includes(s)) {
+        const amount = Number(j.fixed_price ?? j.price ?? 0);
+        built.push({ id: `i-${jid}`, type: amount > 0 ? "invoice" : "pricing", title: amount > 0 ? `Draft invoice for ${j.title || "job"}` : `Price ${j.title || "job"}`, executable: amount > 0, job_id: jid, why: amount > 0 ? "Completed and priced" : "No safe price" });
+        const hasProof = j.proof_pack_id || data.proofPacks.some((p) => String(p.job_id) === jid);
+        if (!hasProof) built.push({ id: `p-${jid}`, type: "proof", title: `Prepare proof pack for ${j.title || "job"}`, executable: true, job_id: jid, why: "Missing proof pack" });
+      }
+    });
+    data.invoices.forEach((i) => ["open", "overdue", "unpaid", "sent"].includes(norm(i.status)) && built.push({ id: `f-${idOf(i)}`, type: "follow", title: `Follow up invoice ${i.invoice_number || idOf(i)}`, executable: false, invoice_id: idOf(i), why: "Money waiting" }));
+    data.quotes.forEach((q) => ["sent", "pending", "waiting", "viewed"].includes(norm(q.status)) && built.push({ id: `q-${idOf(q)}`, type: "follow", title: `Follow up quote ${q.quote_number || idOf(q)}`, executable: false, quote_id: idOf(q), why: "Quote not converted" }));
+    setActions(built);
+  }, [data]);
 
-  const runAiPlan = async () => { setNotice(""); setError(""); try { await post("/smart-hub/scan", {}); setNotice("AI plan ran. Command refreshed."); await load(); } catch { setError("AI plan could not run yet."); } };
-  const prepareProof = async (action) => { try { await post(`/proof-packs/prepare-for-job/${action.job_id}`, {}); setNotice("Proof pack preparation started."); await load(); } catch { setError("Proof pack action could not run yet."); } };
+  const groups = useMemo(() => ({
+    dispatch: actions.filter((a) => a.type === "dispatch"), revenue: actions.filter((a) => ["invoice", "pricing"].includes(a.type)), follow: actions.filter((a) => a.type === "follow"), proof: actions.filter((a) => a.type === "proof")
+  }), [actions]);
 
-  if (!canUseCommand(user?.role)) return <Layout><main className="smart-command-system"><section className="smart-command-panel"><h2>Command Hub is owner/admin only.</h2></section></main></Layout>;
+  const runSheet = useMemo(() => data.jobs.slice(0, 8), [data.jobs]);
+  const moneyWaiting = data.invoices.filter((i) => ["open", "overdue", "unpaid", "sent"].includes(norm(i.status))).reduce((sum, i) => sum + Number(i.balance_due || i.amount_due || i.total || 0), 0);
+  const healthScore = Number(data.health?.score || 82);
 
-  const workspaces = [["Jobs", "/jobs", "Create, schedule, assign"], ["Clients", "/clients", "Customers and properties"], ["Quotes", "/quotes", "Prepare and follow up"], ["Invoices", "/invoices", "Drafts and reminders"], ["Team", "/team", "Crew and roles"], ["Dispatch", "/dispatch", "Schedule and allocate"], ["Proof-to-Paid", "/proof-to-paid", "Proof and payment flow"], ["Account & Plan", "/plans", "Billing and limits"], ["Settings", "/settings", "Business setup"]];
-  const filters = [["Approvals", "approvals", actions.length], ["Dispatch", "dispatch", groups.dispatch.length], ["Revenue", "revenue", groups.revenue.length], ["Follow-Ups", "follow", groups.follow.length], ["Proof", "proof", groups.proof.length], ["Reception", "reception", groups.reception.length], ["Recurring", "recurring", groups.recurring.length], ["Updates", "update", groups.update.length], ["Quote Builder", "quote_builder", groups.quote_builder.length], ["Client Memory", "memory", groups.memory.length]];
+  const openDrawer = (key, items = [], workspace = "") => { setActiveDrawer(key); setDrawerItems(items); setSelectedWorkspace(workspace); };
+  const executeAction = async (a) => {
+    if (!a.executable) return;
+    try { await post("/api/command-hub/actions/execute", { action: a.type, job_id: a.job_id, invoice_id: a.invoice_id, quote_id: a.quote_id }); setNotice("Action executed and queue refreshed."); await load(); }
+    catch { setNotice("Action requires review in full workspace."); }
+  };
+
+  if (!canUseCommand) return <Layout><main className="smart-command-system"><section className="smart-command-panel"><h2>Command Hub is owner/admin only.</h2></section></main></Layout>;
 
   return <Layout smartHubMode><main className="smart-command-system"><div className="command-real-shell">
-    <section className="command-hero"><div><ChurvoxLogo size="hero" /></div><div><p className="smart-command-kicker">Smart Hub</p><div className="command-title-logo"><ChurvoxLogo size="hero" /><h1>Command Hub</h1></div><p>Control jobs, clients, quotes, invoices, team, dispatch, Proof-to-Paid, and account operations.</p></div><aside><span>Today</span><strong>Actions to review: {actions.length}</strong><strong>Workers active: {data.workers.length}</strong><div><button onClick={runAiPlan}>Run AI plan</button><button onClick={() => { setQueueOpen(true); setTab("approvals"); }}>Open queue</button></div></aside></section>
-    {notice ? <section className="command-notice">{notice}</section> : null}{error ? <section className="command-error">{error}</section> : null}{loading ? <section className="command-notice">Loading Command...</section> : null}
-    <section className="command-panel"><p className="smart-command-kicker">Main Hub</p><h2>Run the whole business from here</h2><p>Use these when you know where to go. Use Command when you want AI to guide the next move.</p><div className="command-workspace-grid">{workspaces.map(([label, to, text]) => <WorkspaceButton key={label} label={label} to={to} text={text} />)}</div></section>
-    <section className="command-top-grid"><article className="command-panel command-accent"><p className="smart-command-kicker">Business Engine Summary</p><h2>Command found {actions.length} things to handle today.</h2><ul><li>{groups.dispatch.length} jobs need crew</li><li>{groups.revenue.length} revenue items need review</li><li>{groups.follow.length} follow-ups are ready</li><li>{groups.proof.length} proof packs need preparing</li><li>{data.workers.length} workers active</li></ul></article><article className="command-panel"><p className="smart-command-kicker">Best next move</p><h2>{best ? best.title : "Business is clear"}</h2><p>{best ? best.reason : "No urgent Command actions found."}</p><button className="command-btn orange" onClick={() => setTab(best?.type === "dispatch" ? "dispatch" : best?.type === "follow" ? "follow" : best?.type === "proof" ? "proof" : "approvals")}>Open recommended section</button></article></section>
-    <section className="command-control-grid"><ControlCard title="Dispatch Command" count={groups.dispatch.length} text="Crew assignment and dispatch balancing." active={groups.dispatch.length > 0} onClick={() => setTab("dispatch")} /><ControlCard title="Revenue Command" count={groups.revenue.length} text="Invoices, pricing, and cashflow follow-through." active={groups.revenue.length > 0} onClick={() => setTab("revenue")} /><ControlCard title="Proof-to-Paid Command" count={groups.proof.length} text="Proof packs required before payment chase." active={groups.proof.length > 0} onClick={() => setTab("proof")} /><ControlCard title="Follow-Up Command" count={groups.follow.length} text="Quote and invoice follow-up preparation." active={groups.follow.length > 0} onClick={() => setTab("follow")} /><ControlCard title="Team/Crew" count={data.workers.length} text="Team capacity and worker availability." active={data.workers.length > 0} onClick={() => routeTo("/team")} /><ControlCard title="Account Health" count={data.health?.warnings?.length || 0} text="Plan, billing, and account risk warnings." active={Boolean(data.health?.warnings?.length)} onClick={() => routeTo("/plans")} /></section>
-    <section className="command-panel"><div className="command-section-head"><div><p className="smart-command-kicker">Today’s run sheet</p><h2>Work moving today</h2></div><button className="command-btn light" onClick={() => routeTo("/jobs")}>Open Jobs</button></div>{runSheet.length ? <div className="command-run-list">{runSheet.map(job => <article key={idOf(job)}><b>{cleanJobTitle(job, data.clients)}</b><span>{clientNameFor(job, data.clients)} · {job.status || "open"}</span><button onClick={() => routeTo(`/jobs/${idOf(job)}`)}>Open</button></article>)}</div> : <div className="command-empty"><p>No jobs scheduled for today yet.</p><button onClick={() => routeTo("/jobs/new")}>Create Job</button><button onClick={() => routeTo("/jobs")}>Open Jobs</button></div>}</section>
-    <section className="command-panel"><div className="command-section-head"><div><p className="smart-command-kicker">Priority actions</p><h2>Command Work Queue</h2><p>Collapsed by default so the hub stays clean.</p></div><span className="command-pill">{actions.length} ready</span></div><button className="command-btn orange" onClick={() => { setQueueOpen(!queueOpen); setTab("approvals"); }}>{queueOpen ? "Collapse queue" : "Open Command Work Queue"}</button>{queueOpen ? <div className="command-action-list">{actions.slice(0, 5).map(action => <ActionCard key={action.id} action={action} onDismiss={(a) => setHidden(h => ({ ...h, [a.id]: true }))} onProof={prepareProof} />)}</div> : null}</section>
-    <section className="command-panel"><p className="smart-command-kicker">Command filters</p><h2>Open a focused view of the work Command found</h2><div className="command-filter-grid">{filters.map(([label, key, count]) => <button key={key} className={count ? "active" : ""} onClick={() => { setTab(key); setQueueOpen(false); }}>{label}<span>{count} items</span></button>)}</div></section>
-    {tab !== "today" ? <section className="command-panel"><div className="command-section-head"><h2>{filters.find(f => f[1] === tab)?.[0] || "Approvals"}</h2><button className="command-btn light" onClick={() => setTab("today")}>Close section</button></div>{selected.length ? <div className="command-action-list">{selected.map(action => <ActionCard key={`selected-${action.id}`} action={action} onDismiss={(a) => setHidden(h => ({ ...h, [a.id]: true }))} onProof={prepareProof} />)}</div> : <div className="command-empty"><p>No work in this section right now. Command will surface items here when they appear.</p></div>}</section> : null}
+    <section className="command-hero"><div><div className="command-title-logo"><ChurvoxLogo size="hero" /><h1>Churvox Command Hub</h1></div><p>AI scans your business, prepares the work, and waits for owner approval.</p><div className="hero-buttons"><button onClick={() => openDrawer("plan", actions)}>Run AI Plan</button><button onClick={() => openDrawer("approvals", actions)}>Open Approval Queue</button><button onClick={() => openDrawer("ask")}>Ask AI Operator</button></div></div><aside><strong>Actions waiting: {actions.length}</strong><strong>Workers active: {data.workers.length}</strong><strong>Jobs needing crew: {groups.dispatch.length}</strong><strong>Follow-ups ready: {groups.follow.length}</strong><strong>Money waiting: ${moneyWaiting.toFixed(2)}</strong></aside></section>
+
+    <section className="command-panel main-plan"><h2>AI Operator: Today’s Business Plan</h2><p>I found {actions.length} things that need attention today. Start with dispatch: {groups.dispatch.length} jobs have no crew. Then review {groups.follow.length} follow-ups.</p><div className="hero-buttons"><button onClick={() => openDrawer("plan", actions)}>Approve today’s plan</button><button onClick={() => openDrawer("approvals", actions)}>Review actions</button><button onClick={() => openDrawer("plan", actions)}>Edit plan</button><button onClick={() => setActions(actions.filter((a) => a.type !== "follow"))}>Dismiss low priority</button></div></section>
+
+    <section className="command-control-grid"><article className="command-panel"><h3>Assign crew</h3><p>{groups.dispatch.length} jobs need workers</p><button onClick={() => openDrawer("dispatch", groups.dispatch)}>Review dispatch plan</button></article><article className="command-panel"><h3>Chase money</h3><p>{groups.revenue.length + groups.follow.length} follow-ups/revenue actions</p><button onClick={() => openDrawer("revenue", [...groups.revenue, ...groups.follow])}>Review revenue plan</button></article><article className="command-panel"><h3>Keep work moving</h3><p>{runSheet.length} jobs in today’s run sheet</p><button onClick={() => openDrawer("runsheet", runSheet)}>Open run sheet</button></article></section>
+
+    <section className="command-panel"><h2>Today’s Run Sheet</h2><div className="command-run-list">{runSheet.length ? runSheet.map((job) => <article key={idOf(job)}><b>{job.title || "Job"}</b><span>{job.client_name || "Client"} · {job.status || "open"}</span><div className="mini-actions"><button onClick={() => openDrawer("action", [{ title: "View job", detail: job.title }])}>View</button><button onClick={() => openDrawer("action", [{ title: "Assign crew", detail: job.title }])}>Assign</button><button onClick={() => openDrawer("action", [{ title: "Invoice", detail: job.title }])}>Invoice</button><button onClick={() => openDrawer("action", [{ title: "Proof pack", detail: job.title }])}>Proof pack</button><button onClick={() => openDrawer("action", [{ title: "Message client", detail: job.title }])}>Message client</button></div></article>) : <div className="command-empty"><p>No jobs scheduled for today yet.</p></div>}</div></section>
+
+    <section className="command-panel"><h2>Command Workspaces</h2><div className="command-workspace-grid">{[["jobs", "Jobs"], ["clients", "Clients"], ["quotes", "Quotes"], ["invoices", "Invoices"], ["team", "Team"], ["dispatch", "Dispatch"], ["proof", "Proof-to-Paid"], ["follow", "Follow-Ups"], ["approvals", "AI Approvals"], ["account", "Account & Plan"], ["settings", "Settings"]].map(([k, label]) => <button key={k} className="command-workspace-btn" onClick={() => openDrawer(k, [], k)}>{label}</button>)}</div></section>
+
+    <section className="command-panel"><h2>Business Health: {healthScore}/100</h2><ul><li>Dispatch pressure: {groups.dispatch.length}</li><li>Unpaid money: ${moneyWaiting.toFixed(2)}</li><li>Worker gaps: {groups.dispatch.length}</li><li>Missing pricing: {groups.revenue.filter((a) => a.type === "pricing").length}</li><li>Jobs without proof: {groups.proof.length}</li><li>Plan/account warnings: {data.health?.warnings?.length || 0}</li></ul></section>
+
+    <section className="command-panel"><h2>AI Approval Queue</h2><div className="command-filter-grid">{[["Dispatch", groups.dispatch], ["Revenue", groups.revenue], ["Follow-Ups", groups.follow], ["Proof-to-Paid", groups.proof], ["Receptionist", data.receptionist], ["Recurring", data.recurring], ["Customer Updates", data.customerUpdates], ["Quote Builder", data.quoteDrafts], ["Client Memory", data.memory], ["Account Health", data.health?.warnings || []]].map(([title, list]) => <button key={title} onClick={() => openDrawer("approvals", list)}>{title}<span>{list.length} items</span></button>)}</div></section>
+    {notice ? <section className="command-notice">{notice}</section> : null}
+
+    {activeDrawer ? <div className="command-drawer-backdrop" onClick={() => setActiveDrawer("")}><aside className="command-drawer" onClick={(e) => e.stopPropagation()}><div className="drawer-head"><h3>{drawerMap[activeDrawer] || "Workspace"}</h3><button onClick={() => setActiveDrawer("")}>Close</button></div>{activeDrawer === "ask" ? <div><p><b>Command summary:</b> {groups.dispatch.length} jobs need crew, {groups.follow.length} follow-ups ready, {groups.revenue.length} revenue actions waiting.</p><ul><li>What needs doing today?</li><li>Who should I assign this job to?</li><li>What invoices need chasing?</li><li>What jobs are ready to invoice?</li></ul></div> : <div className="drawer-items">{drawerItems.length ? drawerItems.map((item, idx) => <article key={item.id || idx} className="command-action-card"><h4>{item.title || item.name || `Item ${idx + 1}`}</h4><p>{item.why || item.detail || item.summary || "Review this in Command."}</p><div className="command-card-actions"><button onClick={() => { setSelectedAction(item); executeAction(item); }}>{item.executable ? "Approve" : "Review"}</button><button onClick={() => setSelectedAction(item)}>Edit</button><button onClick={() => setDrawerItems(drawerItems.filter((x) => x !== item))}>Dismiss</button><button onClick={() => window.location.assign(selectedWorkspace ? `/${selectedWorkspace}` : "/dashboard")}>Open full workspace</button></div></article>) : <p>Quick controls for this area appear here first.</p>}</div>}</aside></div> : null}
   </div></main></Layout>;
 }
