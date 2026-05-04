@@ -812,8 +812,8 @@ export default function SmartHubBrainPage() {
             style={{ background: "linear-gradient(135deg, #07090b 0%, #111317 45%, #242932 100%)", borderColor: "rgba(255,255,255,0.14)" }}
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <div className="inline-flex w-fit items-center justify-center rounded-2xl border border-white/10 bg-[#ede8df] p-2 sm:p-3">
-                <ChurvoxLogo className="h-12 w-auto object-contain sm:h-16" />
+              <div className="inline-flex w-fit items-center justify-center rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                <ChurvoxLogo size="hero" className="w-auto object-contain" />
               </div>
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-[#fdba74]">AI Operator Control Centre</p>
