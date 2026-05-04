@@ -258,7 +258,7 @@ def _build_visit_summary(job):
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile, Query
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile, Query, Body
 from app.plan_rules import normalize_plan, get_plan_features, can_use_feature, get_max_clients
 from owner_bootstrap import ensure_owner_account
 from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
