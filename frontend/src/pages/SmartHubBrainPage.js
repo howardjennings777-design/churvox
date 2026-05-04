@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
+import { ChurvoxLogo } from "../components/ChurvoxLogo";
 import { get, patch, post } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { buildArrivalSmsMessage, buildInvoiceDescription, buildInvoiceReminderMessage, buildJobUpdateMessage, buildQuoteFollowUpMessage } from "../lib/aiMessageBuilders";
@@ -924,10 +925,16 @@ export default function SmartHubBrainPage() {
             className="relative overflow-hidden rounded-2xl border p-6 text-white shadow-[0_24px_60px_rgba(0,0,0,0.45)]"
             style={{ background: "linear-gradient(135deg, #07090b 0%, #111317 45%, #242932 100%)", borderColor: "rgba(255,255,255,0.14)" }}
           >
-            <p className="text-xs uppercase tracking-[0.2em] text-[#fdba74]">AI Operator Control Centre</p>
-            
-            <h1 className="mt-2 text-3xl font-black">AI Operator Control Centre</h1>
-            <p className="mt-2 text-sm text-white/80">Welcome back, {textOr(user?.name || user?.email, "team")}. Keep operations flowing with one clear next move.</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <div className="inline-flex w-fit items-center justify-center rounded-2xl border border-white/10 bg-[#ede8df] p-2 sm:p-3">
+                <ChurvoxLogo className="h-12 w-auto object-contain sm:h-16" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-[#fdba74]">AI Operator Control Centre</p>
+                <h1 className="mt-2 text-3xl font-black">AI Operator Control Centre</h1>
+                <p className="mt-2 text-sm text-white/80">Welcome back, {textOr(user?.name || user?.email, "team")}. Keep operations flowing with one clear next move.</p>
+              </div>
+            </div>
             <div className="mt-4 rounded-xl border border-white/10 bg-black/25 p-4">
               <p className="text-xs uppercase tracking-wide text-[#fdba74]">Best Next Move</p>
               <p className="mt-1 text-base text-slate-100">{bestNextMove.label}</p>
@@ -1109,7 +1116,12 @@ export default function SmartHubBrainPage() {
               <div className="flex-none border-b border-[#8c8274] bg-[#d7d0c4] px-5 py-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <h2 className="text-xl font-semibold text-[#0f1115]">AI Approval Centre</h2>
+                    <div className="flex items-center gap-3">
+                      <div className="inline-flex items-center justify-center rounded-xl border border-[#d0c6b8] bg-[#ede8df] p-2">
+                        <ChurvoxLogo className="h-8 w-auto object-contain" />
+                      </div>
+                      <h2 className="text-xl font-semibold text-[#0f1115]">AI Approval Centre</h2>
+                    </div>
                     <p className="mt-1 text-sm text-[#5f646b]">Review, edit or approve everything AI prepared.</p>
                   </div>
                   <button type="button" onClick={() => setApprovalCentreOpen(false)} className="rounded-xl bg-[#d94f17] px-3 py-2 text-sm font-semibold text-white hover:bg-[#b93f10]">Close</button>
