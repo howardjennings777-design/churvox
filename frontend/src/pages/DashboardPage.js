@@ -1,8 +1,8 @@
 import React from "react";
-import CommandHubRealPage from "./CommandHubRealPage";
+import CommandHubTopPlayerPage from "./CommandHubTopPlayerPage";
 import SmartHubErrorBoundary from "../components/SmartHubErrorBoundary";
 import "../styles/smartHubStableFix.css";
 
 export default function DashboardPage() {
-  return <SmartHubErrorBoundary><CommandHubRealPage /></SmartHubErrorBoundary>;
+  return <SmartHubErrorBoundary><CommandHubTopPlayerPage /></SmartHubErrorBoundary>;
 }
