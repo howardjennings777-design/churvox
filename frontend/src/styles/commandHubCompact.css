@@ -1,0 +1,205 @@
+/* Compact premium density pass for AI Control Room */
+@media (min-width: 900px) {
+  .smart-command-system {
+    padding-top: 22px !important;
+  }
+
+  .command-real-shell {
+    gap: 18px !important;
+  }
+
+  .command-hero {
+    padding: 34px 42px !important;
+    min-height: 245px !important;
+    grid-template-columns: 150px 1fr 300px !important;
+    border-radius: 34px !important;
+  }
+
+  .command-hero:before {
+    inset: 14px !important;
+    border-radius: 26px !important;
+  }
+
+  .command-hero h1 {
+    font-size: clamp(48px, 5vw, 78px) !important;
+  }
+
+  .command-hero p {
+    margin-top: 6px !important;
+    margin-bottom: 0 !important;
+    max-width: 660px !important;
+  }
+
+  .command-hero-score {
+    padding: 18px !important;
+    gap: 7px !important;
+    border-radius: 24px !important;
+  }
+
+  .command-hero-score strong {
+    font-size: 19px !important;
+  }
+
+  .command-hero-actions {
+    margin-top: 14px !important;
+  }
+
+  .command-operator-card,
+  .command-panel,
+  .command-control-card {
+    padding: 20px !important;
+    border-radius: 24px !important;
+  }
+
+  .command-operator-card {
+    gap: 14px !important;
+  }
+
+  .command-panel h2,
+  .command-operator-card h2 {
+    font-size: clamp(24px, 2.1vw, 32px) !important;
+    margin-bottom: 6px !important;
+  }
+
+  .command-metric-row {
+    gap: 10px !important;
+  }
+
+  .command-mini-metric {
+    padding: 13px 14px !important;
+    border-radius: 18px !important;
+  }
+
+  .command-mini-metric strong {
+    font-size: 28px !important;
+  }
+
+  .command-next-grid {
+    gap: 12px !important;
+  }
+
+  .command-next-move {
+    min-height: 132px !important;
+    padding: 20px !important;
+    border-radius: 24px !important;
+  }
+
+  .command-next-move strong {
+    font-size: 44px !important;
+    margin: 8px 0 !important;
+  }
+
+  .command-workspace-grid {
+    gap: 10px !important;
+  }
+
+  .command-workspace-btn {
+    min-height: 64px !important;
+    padding: 13px 15px !important;
+    border-radius: 16px !important;
+  }
+
+  .command-workspace-btn strong {
+    font-size: 14px !important;
+  }
+
+  .command-workspace-btn span {
+    margin-top: 4px !important;
+    font-size: 11px !important;
+  }
+
+  .command-control-grid {
+    gap: 12px !important;
+  }
+
+  .command-control-card {
+    min-height: 145px !important;
+    border-radius: 22px !important;
+    padding: 18px !important;
+  }
+
+  .command-control-card h3 {
+    font-size: 18px !important;
+  }
+
+  .command-control-card strong {
+    font-size: 42px !important;
+    margin: 10px 0 8px !important;
+  }
+
+  .command-control-card button {
+    padding: 9px 13px !important;
+    border-radius: 12px !important;
+  }
+
+  .command-run-list {
+    gap: 9px !important;
+  }
+
+  .command-run-list article,
+  .command-preview-row {
+    min-height: 58px !important;
+    padding: 12px 14px !important;
+    border-radius: 16px !important;
+    grid-template-columns: 1.15fr 1fr auto !important;
+  }
+
+  .command-run-list b,
+  .command-preview-row b {
+    font-size: 14px !important;
+  }
+
+  .command-run-list span,
+  .command-preview-row span {
+    font-size: 12px !important;
+  }
+
+  .command-run-list button,
+  .command-preview-row button {
+    padding: 8px 12px !important;
+    border-radius: 12px !important;
+    font-size: 12px !important;
+  }
+
+  .command-filter-grid {
+    gap: 9px !important;
+  }
+
+  .command-filter-grid button {
+    min-height: 56px !important;
+    padding: 12px 14px !important;
+    border-radius: 15px !important;
+  }
+
+  .command-filter-grid span {
+    margin-top: 3px !important;
+    font-size: 11px !important;
+  }
+
+  .command-pill {
+    min-width: 58px !important;
+    min-height: 58px !important;
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 680px) {
+  .command-hero {
+    padding: 22px !important;
+  }
+
+  .command-operator-card,
+  .command-panel,
+  .command-control-card {
+    padding: 18px !important;
+  }
+
+  .command-next-move {
+    min-height: 126px !important;
+  }
+
+  .command-workspace-btn,
+  .command-filter-grid button {
+    min-height: 62px !important;
+  }
+}
