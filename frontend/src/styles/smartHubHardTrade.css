@@ -149,3 +149,17 @@
   background: #0f8a35 !important;
   border-color: #0f8a35 !important;
 }
+
+/* Remove the duplicate white hero title. The orange header label and logo carry the brand line. */
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] h1,
+.smart-hub-hard-trade-v4 .operator-hero h1 {
+  display: none !important;
+}
+
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] p:not([class*="uppercase"]),
+.smart-hub-hard-trade-v4 .operator-hero p:not([class*="uppercase"]) {
+  max-width: 760px !important;
+  font-size: clamp(1rem, 1.35vw, 1.32rem) !important;
+  line-height: 1.4 !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+}
