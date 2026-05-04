@@ -1,0 +1,48 @@
+name: Register Command Hub routes
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  register-command-routes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Register command_hub_routes in backend/server.py
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path('backend/server.py')
+          text = path.read_text(encoding='utf-8', errors='ignore')
+          if 'register_command_hub_routes(api_router, db, get_current_user, get_user_business_id)' in text:
+              print('Command Hub routes already registered')
+          else:
+              target = 'app.include_router(api_router)'
+              if target not in text:
+                  raise SystemExit('Could not find app.include_router(api_router)')
+              insert = 'from command_hub_routes import register_command_hub_routes\nregister_command_hub_routes(api_router, db, get_current_user, get_user_business_id)\n\n'
+              text = text.replace(target, insert + target, 1)
+              path.write_text(text, encoding='utf-8')
+              print('Registered Command Hub routes')
+          PY
+
+      - name: Commit patch if needed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git add backend/server.py
+            git commit -m "Register Command Hub execution routes"
+            git push
+          fi
