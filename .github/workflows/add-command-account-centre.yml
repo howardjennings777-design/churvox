@@ -1,0 +1,121 @@
+name: Add Command Hub account centre
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  add-account-centre:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add account centre to Command Hub
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path('frontend/src/pages/CommandHubRealPage.js')
+          text = path.read_text(encoding='utf-8', errors='ignore')
+
+          if 'commandHubCompact.css' not in text:
+              text = text.replace('import "../styles/commandHubReal.css";', 'import "../styles/commandHubReal.css";\nimport "../styles/commandHubCompact.css";')
+
+          old = ' { label: "Plans", to: "/plans", text: "Choose or change plan", items: [] }, { label: "Settings", to: "/settings", text: "Business setup", items: [] }, { label: "Contact Us", to: "/contact", text: "Help and support", items: [] }, { label: "Privacy", to: "/privacy", text: "Privacy policy", items: [] }, { label: "Terms", to: "/terms", text: "Terms of use", items: [] },'
+          new = ' { label: "Account & Plan", to: "/plans", text: "Plan, billing, limits", items: [] }, { label: "Plans / Billing", to: "/plans", text: "Choose or change plan", items: [] }, { label: "Settings", to: "/settings", text: "Business setup", items: [] }, { label: "Contact Us", to: "/contact", text: "Help and support", items: [] }, { label: "Notifications", to: "/notifications", text: "Alerts and updates", items: [] }, { label: "Integrations", to: "/integrations", text: "MYOB and connected tools", items: [] }, { label: "Privacy", to: "/privacy", text: "Privacy policy", items: [] }, { label: "Terms", to: "/terms", text: "Terms of use", items: [] }, { label: "Account Deletion", to: "/account-deletion", text: "Delete account info", items: [] },'
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif 'Account Deletion' not in text:
+              print('Workspace exact match not found; appending account links after Terms fallback')
+              text = text.replace('{ label: "Terms", to: "/terms", text: "Terms of use", items: [] },', '{ label: "Terms", to: "/terms", text: "Terms of use", items: [] }, { label: "Account & Plan", to: "/plans", text: "Plan, billing, limits", items: [] }, { label: "Notifications", to: "/notifications", text: "Alerts and updates", items: [] }, { label: "Integrations", to: "/integrations", text: "MYOB and connected tools", items: [] }, { label: "Account Deletion", to: "/account-deletion", text: "Delete account info", items: [] },', 1)
+
+          marker = '<p className="smart-command-kicker">Owner Account Centre</p>'
+          if marker not in text:
+              insert_after = '</section>\n\n    <section className="command-control-grid">'
+              account_section = '''</section>
+
+    <section className="command-panel command-account-centre">
+      <div className="command-section-head"><div><p className="smart-command-kicker">Owner Account Centre</p><h2>Account, plan, settings and support</h2><p>Everything the owner needs for billing, settings, help, legal, notifications, and integrations from one place.</p></div></div>
+      <div className="command-account-grid">
+        <button onClick={() => openWorkspace({ title: "Account & Plan", subtitle: "Plan, billing, limits and account health.", to: "/plans", items: [] })}><strong>Account & Plan</strong><span>Plan, billing, usage and limits</span></button>
+        <button onClick={() => openWorkspace({ title: "Plans / Billing", subtitle: "Change plan or review billing.", to: "/plans", items: [] })}><strong>Plans / Billing</strong><span>Choose or change plan</span></button>
+        <button onClick={() => openWorkspace({ title: "Settings", subtitle: "Business setup and app settings.", to: "/settings", items: [] })}><strong>Settings</strong><span>Business setup</span></button>
+        <button onClick={() => openWorkspace({ title: "Contact Us", subtitle: "Get help from Churvox support.", to: "/contact", items: [] })}><strong>Contact Us</strong><span>Help and support</span></button>
+        <button onClick={() => openWorkspace({ title: "Notifications", subtitle: "Alerts and updates.", to: "/notifications", items: [] })}><strong>Notifications</strong><span>Alerts and updates</span></button>
+        <button onClick={() => openWorkspace({ title: "Integrations", subtitle: "MYOB and connected tools.", to: "/integrations", items: [] })}><strong>Integrations</strong><span>MYOB and tools</span></button>
+        <button onClick={() => openWorkspace({ title: "Privacy", subtitle: "Privacy policy.", to: "/privacy", items: [] })}><strong>Privacy</strong><span>Privacy policy</span></button>
+        <button onClick={() => openWorkspace({ title: "Terms", subtitle: "Terms of use.", to: "/terms", items: [] })}><strong>Terms</strong><span>Terms of use</span></button>
+        <button onClick={() => openWorkspace({ title: "Account Deletion", subtitle: "Account deletion information.", to: "/account-deletion", items: [] })}><strong>Account Deletion</strong><span>Delete account info</span></button>
+      </div>
+    </section>
+
+    <section className="command-control-grid">'''
+              if insert_after in text:
+                  text = text.replace(insert_after, account_section, 1)
+              else:
+                  print('Could not find insertion point for account centre')
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Add account centre CSS
+        run: |
+          cat >> frontend/src/styles/commandHubCompact.css <<'CSS'
+
+/* owner account centre */
+.command-account-centre {
+  border-left: 7px solid var(--cmd-blue) !important;
+}
+.command-account-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.command-account-grid button {
+  border: 1px solid rgba(17,24,39,.72);
+  background: linear-gradient(135deg,#111827,#1e293b);
+  color: #fff;
+  border-radius: 16px;
+  padding: 14px 15px;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 14px 28px rgba(17,24,39,.14);
+}
+.command-account-grid button strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 950;
+}
+.command-account-grid button span {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: rgba(255,255,255,.72);
+  font-weight: 800;
+}
+@media (max-width: 900px) {
+  .command-account-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 680px) {
+  .command-account-grid { grid-template-columns: 1fr; }
+}
+CSS
+
+      - name: Commit account centre patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git add frontend/src/pages/CommandHubRealPage.js frontend/src/styles/commandHubCompact.css
+            git commit -m "Add owner account centre to Command Hub"
+            git push
+          fi
