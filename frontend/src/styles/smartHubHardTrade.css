@@ -12,8 +12,7 @@
 
 .smart-hub-hard-trade-v4 .operator-hero,
 .smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] {
-  background:
-    linear-gradient(135deg, #050607 0%, #0b0f16 48%, #161b24 100%) !important;
+  background: linear-gradient(135deg, #050607 0%, #0b0f16 48%, #161b24 100%) !important;
   border: 1px solid rgba(255,255,255,0.12) !important;
   box-shadow: 0 28px 70px rgba(0,0,0,0.42) !important;
   color: #fff !important;
@@ -83,7 +82,6 @@
   border-left: 5px solid var(--smart-hub-orange) !important;
 }
 
-/* Final Smart Hub hero polish: one orange, cleaner header, no separate logo box. */
 .smart-hub-hard-trade-v4 .operator-hero [class*="text-orange"],
 .smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] [class*="text-orange"] {
   color: #ff9a5c !important;
@@ -103,11 +101,6 @@
   border-color: var(--smart-hub-orange-dark) !important;
 }
 
-.smart-hub-hard-trade-v4 .operator-hero [class*="Best Next Move"],
-.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] [class*="Best Next Move"] {
-  display: none !important;
-}
-
 .smart-hub-hard-trade-v4 .operator-hero img[data-testid="churvox-logo"][data-logo-size="hero"],
 .smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] img[data-testid="churvox-logo"][data-logo-size="hero"] {
   filter: drop-shadow(0 14px 30px rgba(29, 99, 255, 0.30)) !important;
@@ -121,45 +114,64 @@
   box-shadow: none !important;
 }
 
-/* Hero redesign override: remove label clutter and make the header feel like one clean card. */
-.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] p[class*="uppercase"][class*="tracking"],
-.smart-hub-hard-trade-v4 .operator-hero p[class*="uppercase"][class*="tracking"],
-.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] span[class*="uppercase"][class*="tracking"],
-.smart-hub-hard-trade-v4 .operator-hero span[class*="uppercase"][class*="tracking"] {
+/* Hard Smart Hub hero redesign. Hide repeated hero heading/details and leave logo + actions clean. */
+.smart-hub-hard-trade-v4 .operator-hero > *:first-child > *:not(:first-child),
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] > *:first-child > *:not(:first-child) {
   display: none !important;
 }
 
+.smart-hub-hard-trade-v4 .operator-hero > *:nth-child(2),
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] > *:nth-child(2) {
+  display: none !important;
+}
+
+.smart-hub-hard-trade-v4 .operator-hero,
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 28px !important;
+  padding: clamp(26px, 4vw, 48px) !important;
+}
+
+.smart-hub-hard-trade-v4 .operator-hero > *:first-child,
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] > *:first-child {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  min-height: 120px !important;
+}
+
+.smart-hub-hard-trade-v4 .operator-hero > *:last-child,
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] > *:last-child {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding-top: 8px !important;
+  border-top: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+.smart-hub-hard-trade-v4 .operator-hero [class*="uppercase"],
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] [class*="uppercase"] {
+  display: none !important;
+}
+
+.smart-hub-hard-trade-v4 .operator-hero h1,
+.smart-hub-hard-trade-v4 .operator-hero h2,
+.smart-hub-hard-trade-v4 .operator-hero h3,
 .smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] h1,
-.smart-hub-hard-trade-v4 .operator-hero h1 {
-  letter-spacing: -0.045em !important;
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] h2,
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] h3 {
+  display: none !important;
 }
 
-.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] > div,
-.smart-hub-hard-trade-v4 .operator-hero > div {
-  background-color: transparent !important;
-}
-
-.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] button,
-.smart-hub-hard-trade-v4 .operator-hero button {
-  border-radius: 16px !important;
+.smart-hub-hard-trade-v4 .operator-hero button,
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] button {
+  border-radius: 18px !important;
 }
 
 .smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] button[class*="green"],
 .smart-hub-hard-trade-v4 .operator-hero button[class*="green"] {
   background: #0f8a35 !important;
   border-color: #0f8a35 !important;
-}
-
-/* Remove the duplicate white hero title. The orange header label and logo carry the brand line. */
-.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] h1,
-.smart-hub-hard-trade-v4 .operator-hero h1 {
-  display: none !important;
-}
-
-.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] p:not([class*="uppercase"]),
-.smart-hub-hard-trade-v4 .operator-hero p:not([class*="uppercase"]) {
-  max-width: 760px !important;
-  font-size: clamp(1rem, 1.35vw, 1.32rem) !important;
-  line-height: 1.4 !important;
-  color: rgba(255, 255, 255, 0.82) !important;
 }
