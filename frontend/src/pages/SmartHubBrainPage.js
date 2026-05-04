@@ -13,6 +13,10 @@ import { APPROVAL_GROUPS, dedupeApprovalActions, DONE_ACTION_STATUSES, getAction
 import { KpiCounters } from "./smart-hub/components/KpiCounters";
 import { WorkspaceDock } from "./smart-hub/components/WorkspaceDock";
 import { RecentActivityPanel } from "./smart-hub/components/RecentActivityPanel";
+import { TodayPlanPanel } from "./smart-hub/components/TodayPlanPanel";
+import { BusinessPulsePanel } from "./smart-hub/components/BusinessPulsePanel";
+import { ApprovalCentreSummary } from "./smart-hub/components/ApprovalCentreSummary";
+import { AiOperatorSettingsPanel } from "./smart-hub/components/AiOperatorSettingsPanel";
 
 const REMINDER_ELIGIBLE = ["open", "sent", "unpaid", "overdue", "pending_payment"];
 const REMINDER_EXCLUDED = ["paid", "cancelled", "canceled"];
@@ -848,75 +852,11 @@ export default function SmartHubBrainPage() {
             onCrew={() => openWorkspace("Crew", "list")}
           />
 
-          <section className="mt-6 rounded-2xl border border-[#746c60] border-l-4 border-l-[#d94f17] bg-[#c8bfb1] p-4 shadow-[0_14px_35px_rgba(15,17,21,0.20)]">
-            <div className="flex items-center justify-between rounded-xl bg-[#15181d] px-3 py-2 text-white">
-              <h2 className="text-xs font-semibold uppercase tracking-[0.16em]">AI Approval Centre</h2>
-              <span className="text-xs text-white/70">{approvalCounts.all || 0} approvals</span>
-            </div>
-            <div className="mt-3 max-h-44 space-y-2 overflow-hidden">
-              {!!priorityItems.length ? priorityItems.slice(0, 3).map((item) => <button key={item.id} type="button" onClick={() => { openApprovalCentre({ tab: bestNextMove.approvalTab || "all" }); }} className="w-full rounded-xl bg-[#111317] px-3 py-2 text-left text-white"><p className="text-sm font-medium">{item.meta?.title || item.title}</p>{item.meta?.subtitle ? <p className="text-xs text-white/65">{item.meta.subtitle}</p> : null}</button>) : <div className="rounded-xl bg-[#111317] px-3 py-2 text-sm text-white">No approvals waiting right now.</div>}
-            </div>
-            <p className="mt-3 text-xs text-[#3f3931]">{approvalCounts.needs_decision || 0} need decision · {approvalCounts.ready || 0} ready · {approvalCounts.drafts || 0} drafts · {approvalCounts.watching || 0} watching</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" onClick={() => { openApprovalCentre({ tab: "all" }); }} className="rounded-xl bg-[#d94f17] px-3 py-2 text-sm font-semibold text-white">Open Approval Centre</button>
-              <button type="button" onClick={runScanNow} className="rounded-xl bg-[#111317] px-3 py-2 text-sm font-semibold text-white">Run today's AI plan</button>
-            </div>
-          </section>
+          <ApprovalCentreSummary approvalCounts={approvalCounts} priorityItems={priorityItems} bestNextMove={bestNextMove} onOpen={(tab) => openApprovalCentre({ tab })} onRunPlan={runScanNow} />
 
           <section className="mt-6 grid gap-4 lg:grid-cols-2">
-            <article className="rounded-2xl border border-[#746c60] bg-[#c8bfb1] p-4 shadow-[0_14px_35px_rgba(15,17,21,0.20)] border-l-4 border-l-[#d94f17] operator-hero" data-smart-hub-hero="true">
-              <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-[#3f3931]">Today&apos;s Plan</h2>
-              <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                {[["Jobs today", jobsToday], ["Unassigned jobs", unassignedJobs.length], ["Ready to bill", readyToBillJobs.length], ["Open invoices", openInvoices.length], ["Quotes waiting", waitingQuotes.length], ["Crew available", crewAvailable]].map(([label, value]) => (
-                  <button
-                    type="button"
-                    key={label}
-                    onClick={() =>
-                      ({
-                        "Jobs today": () => openWorkspace("Jobs", "list"),
-                        "Unassigned jobs": () => openWorkspace("AI Dispatch", "assign"),
-                        "Ready to bill": () => openApprovalCentre({ tab: "ready" }),
-                        "Open invoices": () => openApprovalCentre({ tab: "drafts" }),
-                        "Quotes waiting": () => openApprovalCentre({ tab: "drafts" }),
-                        "Crew available": () => openWorkspace("Crew", "list"),
-                      }[label]?.())
-                    }
-                    className="rounded-lg border border-[#2a2f36] bg-[#111317] px-3 py-2 text-left text-white operator-inner" data-smart-hub-inner="true"
-                  >
-                    <p className="text-xs uppercase tracking-wide text-white/55">{label}</p>
-                    <p className="text-lg font-semibold text-white">{value}</p>
-                  </button>
-                ))}
-              </div>
-              <p className="mt-4 rounded-lg bg-[#c8bfb1] px-3 py-2 text-sm text-[#111317]">
-                AI found {readyToBillJobs.length} {readyToBillJobs.length === 1 ? "job" : "jobs"} ready to bill, {unassignedJobs.length} unassigned {unassignedJobs.length === 1 ? "job" : "jobs"}, {openInvoices.length} open {openInvoices.length === 1 ? "invoice" : "invoices"} and {waitingQuotes.length} {waitingQuotes.length === 1 ? "quote" : "quotes"} waiting. Best next move: {bestNextMove.label}
-              </p>
-            </article>
-
-            <article className="rounded-2xl border border-[#746c60] bg-[#c8bfb1] p-4 shadow-[0_14px_35px_rgba(15,17,21,0.20)] border-l-4 border-l-[#d94f17] operator-panel operator-card operator-accent-left" data-smart-hub-card="true">
-              <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-[#3f3931]">Business Pulse</h2>
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                {[["Money waiting", openInvoices.length], ["Billing ready", readyToBillJobs.length], ["Dispatch pressure", unassignedJobs.length], ["Pipeline", waitingQuotes.length], ["Crew", crewAvailable]].map(([label, value]) => (
-                  <button
-                    type="button"
-                    key={label}
-                    onClick={() =>
-                      ({
-                        "Money waiting": () => openWorkspace("Payment Reminders", "reminders"),
-                        "Billing ready": () => openApprovalCentre({ tab: "ready" }),
-                        "Dispatch pressure": () => openWorkspace("AI Dispatch", "assign"),
-                        Pipeline: () => openApprovalCentre({ tab: "drafts" }),
-                        Crew: () => openWorkspace("Crew", "list"),
-                      }[label]?.())
-                    }
-                    className="rounded-xl border border-[#2a2f36] bg-[#111317] p-3 text-left text-white"
-                  >
-                    <p className="text-xs uppercase tracking-wide text-white/55">{label}</p>
-                    <p className="mt-1 text-xl font-semibold text-white">{value}</p>
-                  </button>
-                ))}
-              </div>
-            </article>
+            <TodayPlanPanel jobsTodayCount={jobsToday} unassignedJobsCount={unassignedJobs.length} readyToBillCount={readyToBillJobs.length} openInvoicesCount={openInvoices.length} quotesWaitingCount={waitingQuotes.length} availableCrewCount={crewAvailable} bestNextMove={bestNextMove} onJobsToday={() => openWorkspace("Jobs", "list")} onUnassignedJobs={() => openWorkspace("AI Dispatch", "assign")} onReadyToBill={() => openApprovalCentre({ tab: "ready" })} onOpenInvoices={() => openApprovalCentre({ tab: "drafts" })} onQuotesWaiting={() => openApprovalCentre({ tab: "drafts" })} onCrew={() => openWorkspace("Crew", "list")} />
+            <BusinessPulsePanel openInvoicesCount={openInvoices.length} readyToBillCount={readyToBillJobs.length} unassignedJobsCount={unassignedJobs.length} quotesWaitingCount={waitingQuotes.length} crewCount={crewAvailable} onMoneyWaiting={() => openWorkspace("Payment Reminders", "reminders")} onBillingReady={() => openApprovalCentre({ tab: "ready" })} onDispatchPressure={() => openWorkspace("AI Dispatch", "assign")} onPipeline={() => openApprovalCentre({ tab: "drafts" })} onCrew={() => openWorkspace("Crew", "list")} />
           </section>
 
           <WorkspaceDock workspaceButtons={workspaceButtons} workspaceMeta={workspaceMeta} onOpenWorkspace={openWorkspace} />
@@ -948,25 +888,7 @@ export default function SmartHubBrainPage() {
           </div>
         ) : null}
 
-        {aiSettingsOpen ? (
-          <div className="fixed inset-0 z-[70] bg-[#171717]/70 p-4">
-            <div className="mx-auto mt-10 max-w-xl rounded-2xl bg-[#d7d0c4] p-4">
-              <h3 className="text-lg font-semibold">AI Operator Settings</h3>
-              <div className="mt-3 space-y-2 text-sm">
-                <label className="block"><input type="checkbox" checked={!!aiSettings.ai_operator_enabled} onChange={(e)=>setAiSettings((p)=>({...p,ai_operator_enabled:e.target.checked}))} className="mr-2"/>AI Operator: On/Off</label>
-                <label className="block"><input type="checkbox" checked={!!aiSettings.auto_arrival_sms_enabled} onChange={(e)=>setAiSettings((p)=>({...p,auto_arrival_sms_enabled:e.target.checked}))} className="mr-2"/>Auto arrival SMS: On/Off</label>
-                <label className="block">Arrival SMS timing (minutes before)<input type="number" min="30" max="30" value={30} disabled className="mt-1 w-full rounded border p-2 bg-slate-100" /></label>
-                <label className="block">Arrival SMS mode<select value={aiSettings.arrival_sms_mode} onChange={(e)=>setAiSettings((p)=>({...p,arrival_sms_mode:e.target.value}))} className="mt-1 w-full rounded border p-2"><option value="approval_required">Approval required</option><option value="auto_send">Auto send</option></select></label>
-                <label className="block">Invoice reminders<select value={aiSettings.invoice_reminder_mode} onChange={(e)=>setAiSettings((p)=>({...p,invoice_reminder_mode:e.target.value}))} className="mt-1 w-full rounded border p-2"><option value="draft_only">Draft only</option><option value="approval_send">Send after approval</option></select></label>
-                <label className="block">Quote follow-ups<select value={aiSettings.quote_followup_mode} onChange={(e)=>setAiSettings((p)=>({...p,quote_followup_mode:e.target.value}))} className="mt-1 w-full rounded border p-2"><option value="draft_only">Draft only</option><option value="approval_send">Send after approval</option></select></label>
-                <label className="block">Worker assignment<input disabled value="Approval required" className="mt-1 w-full rounded border p-2 bg-slate-100" /></label>
-                <label className="block">Accounting changes<input disabled value="Locked" className="mt-1 w-full rounded border p-2 bg-slate-100" /></label>
-                <label className="block">Payroll changes<input disabled value="Locked" className="mt-1 w-full rounded border p-2 bg-slate-100" /></label>
-              </div>
-              <div className="mt-4 flex gap-2"><button type="button" className="rounded bg-[#d94f17] px-3 py-2 text-white" onClick={async ()=>{ try { const res = await patch('/ai-operator/settings', aiSettings); setAiSettings((p)=>({...p,...(res?.settings||{})})); setToast({kind:'success',message:'AI settings saved.'}); setAiSettingsOpen(false);} catch { localStorage.setItem("smart_hub_ai_settings_local", JSON.stringify(aiSettings)); setToast({kind:'success',message:'Saved locally until backend setting is added.'}); setAiSettingsOpen(false); } }}>Save</button><button type="button" className="rounded border px-3 py-2" onClick={()=>setAiSettingsOpen(false)}>Close</button></div>
-            </div>
-          </div>
-        ) : null}
+        <AiOperatorSettingsPanel aiSettings={aiSettings} setAiSettings={setAiSettings} open={aiSettingsOpen} onClose={() => setAiSettingsOpen(false)} onSave={async () => { try { const res = await patch('/ai-operator/settings', aiSettings); setAiSettings((p)=>({...p,...(res?.settings||{})})); setToast({kind:'success',message:'AI settings saved.'}); setAiSettingsOpen(false);} catch { localStorage.setItem(\"smart_hub_ai_settings_local\", JSON.stringify(aiSettings)); setToast({kind:'success',message:'Saved locally until backend setting is added.'}); setAiSettingsOpen(false); } }} />
 
         {approvalCentreOpen ? (
           <div className="fixed inset-0 z-[80] overflow-hidden bg-[#0d0f12]/75 backdrop-blur-sm">

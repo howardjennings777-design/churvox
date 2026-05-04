@@ -1,5 +1,6 @@
 import React from 'react';
 
-export function BusinessPulsePanel(props) {
-  return props.children || null;
+export function BusinessPulsePanel({ openInvoicesCount, readyToBillCount, unassignedJobsCount, quotesWaitingCount, crewCount, onMoneyWaiting, onBillingReady, onDispatchPressure, onPipeline, onCrew }) {
+  const items = [["Money waiting", openInvoicesCount, onMoneyWaiting],["Billing ready", readyToBillCount, onBillingReady],["Dispatch pressure", unassignedJobsCount, onDispatchPressure],["Pipeline", quotesWaitingCount, onPipeline],["Crew", crewCount, onCrew]];
+  return <article className="rounded-2xl border border-[#746c60] bg-[#c8bfb1] p-4 shadow-[0_14px_35px_rgba(15,17,21,0.20)] border-l-4 border-l-[#d94f17] operator-panel operator-card operator-accent-left" data-smart-hub-card="true"><h2 className="text-sm font-bold uppercase tracking-[0.16em] text-[#3f3931]">Business Pulse</h2><div className="mt-3 grid grid-cols-2 gap-3">{items.map(([label, value, onClick]) => <button type="button" key={label} onClick={onClick} className="rounded-xl border border-[#2a2f36] bg-[#111317] p-3 text-left text-white"><p className="text-xs uppercase tracking-wide text-white/55">{label}</p><p className="mt-1 text-xl font-semibold text-white">{value}</p></button>)}</div></article>;
 }
