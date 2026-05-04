@@ -1,0 +1,62 @@
+name: Register AI Command Hub router
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  register-ai-command-router:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Append safe Command Hub router registration
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path('backend/server.py')
+          text = path.read_text(encoding='utf-8', errors='ignore')
+          marker = 'COMMAND_HUB_AI_OPERATOR_ROUTER_REGISTERED'
+          if marker in text:
+              print('Command Hub AI router already registered')
+          else:
+              block = r'''
+
+# COMMAND_HUB_AI_OPERATOR_ROUTER_REGISTERED
+# Register the AI Command Hub routes on their own router so existing API routes stay untouched.
+try:
+    from command_hub_routes import register_command_hub_routes as _register_command_hub_routes
+    _command_hub_router = APIRouter(prefix="/api")
+    _register_command_hub_routes(_command_hub_router, db, get_current_user, get_user_business_id)
+    app.include_router(_command_hub_router)
+    logger.info("AI Command Hub routes registered")
+except Exception as exc:
+    logger.exception("AI Command Hub route registration failed: %s", exc)
+'''
+              path.write_text(text.rstrip() + block + '\n', encoding='utf-8')
+              print('Appended Command Hub AI router registration')
+          PY
+
+      - name: Syntax check backend files
+        run: |
+          python3 -m py_compile backend/command_hub_routes.py
+          python3 -m py_compile backend/server.py
+
+      - name: Commit registration patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git add backend/server.py
+            git commit -m "Register AI Command Hub routes"
+            git push
+          fi
