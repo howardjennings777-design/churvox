@@ -9,15 +9,16 @@
   gap: 18px !important;
 }
 
+/* Correct business-flow order: Hero, Zone 1, Zone 2, Zone 3, Approval Queue, Workspaces */
 .command-real-shell > .command-hero { order: 1 !important; }
 .command-real-shell > .command-notice,
 .command-real-shell > .command-error { order: 2 !important; }
 .command-real-shell > .command-operator-card { order: 3 !important; }
 .command-real-shell > .command-next-grid { order: 4 !important; }
 .command-real-shell > .command-panel:nth-of-type(1) { order: 5 !important; }
-.command-real-shell > .command-control-grid { order: 6 !important; }
-.command-real-shell > .command-panel:nth-of-type(2) { order: 7 !important; }
-.command-real-shell > .command-panel:nth-of-type(3) { order: 8 !important; }
+.command-real-shell > .command-panel:nth-of-type(3) { order: 6 !important; }
+.command-real-shell > .command-control-grid { order: 7 !important; }
+.command-real-shell > .command-panel:nth-of-type(2) { order: 8 !important; }
 
 .command-panel,
 .command-operator-card,
@@ -33,7 +34,7 @@
   background: #ffffff !important;
   color: #0f172a !important;
   border: 1px solid rgba(30, 58, 138, .10) !important;
-  box-shadow: 0 18px 44px rgba(15, 23, 42, .08) !important;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .07) !important;
 }
 
 .command-panel,
@@ -58,6 +59,7 @@
   color: #475569 !important;
 }
 
+/* Zone 4/workspace/account cards: sharp white premium, no black, no blur */
 .command-workspace-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: 12px !important;
@@ -65,18 +67,21 @@
 
 .command-workspace-btn,
 .command-filter-grid button {
-  background: linear-gradient(180deg, #ffffff, #fffaf3) !important;
+  background: linear-gradient(180deg, #ffffff 0%, #fffaf3 100%) !important;
   color: #0f172a !important;
   border: 1px solid rgba(245, 132, 38, .24) !important;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, .06) !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, .055) !important;
   text-align: left !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .command-workspace-btn:hover,
 .command-filter-grid button:hover {
   transform: translateY(-1px) !important;
   border-color: rgba(245, 132, 38, .48) !important;
-  box-shadow: 0 18px 38px rgba(245, 132, 38, .12) !important;
+  box-shadow: 0 16px 34px rgba(245, 132, 38, .12) !important;
 }
 
 .command-workspace-btn strong,
@@ -94,7 +99,7 @@
 }
 
 .command-filter-grid button.active {
-  background: linear-gradient(180deg, #fff7ed, #ffffff) !important;
+  background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%) !important;
   border-color: rgba(245, 132, 38, .50) !important;
 }
 
@@ -117,6 +122,7 @@
 
 .command-action-card {
   border-left: 6px solid #f97316 !important;
+  background: linear-gradient(180deg, #ffffff, #fffaf3) !important;
 }
 
 .command-card-top span,
@@ -126,12 +132,14 @@
   -webkit-backdrop-filter: none !important;
 }
 
+/* Make the drawer feel like a real work panel */
 .command-drawer {
   background: #fffdf8 !important;
   color: #0f172a !important;
   border-left: 1px solid rgba(15, 23, 42, .10) !important;
   box-shadow: -24px 0 70px rgba(15, 23, 42, .18) !important;
-  width: min(760px, 94vw) !important;
+  width: min(860px, 96vw) !important;
+  padding: 18px !important;
 }
 
 .command-drawer-head {
@@ -139,26 +147,51 @@
   border: 1px solid rgba(245, 132, 38, .18) !important;
   border-radius: 22px !important;
   padding: 18px !important;
+  margin-bottom: 14px !important;
 }
 
-.command-drawer-stack label,
+.command-drawer-stack {
+  gap: 14px !important;
+}
+
+.command-drawer-stack label {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, .08) !important;
+  border-radius: 16px !important;
+  padding: 12px !important;
+  color: #0f172a !important;
+  font-weight: 900 !important;
+}
+
 .command-drawer-stack textarea,
 .command-drawer-stack input,
 .command-drawer-stack select {
   color: #0f172a !important;
-}
-
-.command-drawer-stack input,
-.command-drawer-stack select,
-.command-drawer-stack textarea {
   background: #ffffff !important;
   border: 1px solid rgba(15, 23, 42, .14) !important;
   border-radius: 14px !important;
   padding: 11px 12px !important;
+  margin-top: 7px !important;
 }
 
 .command-editor-card {
   border-color: rgba(245, 132, 38, .22) !important;
+  background: linear-gradient(180deg, #ffffff, #fffaf3) !important;
+}
+
+.command-action-list .command-action-card {
+  min-height: 0 !important;
+  padding: 18px !important;
+}
+
+.command-card-actions {
+  gap: 9px !important;
+  flex-wrap: wrap !important;
+}
+
+.command-card-actions .command-btn,
+.command-hero-actions .command-btn {
+  border-radius: 13px !important;
 }
 
 .command-operator-card::before,
@@ -176,4 +209,5 @@
 
 @media (max-width: 680px) {
   .command-workspace-grid { grid-template-columns: 1fr !important; }
+  .command-drawer { width: 100vw !important; padding: 14px !important; }
 }
