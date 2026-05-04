@@ -10149,3 +10149,57 @@ async def ai_operator_run_daily_plan(current_user: dict = Depends(get_current_us
     await db.ai_operator_daily_plans.update_one({"business_id": business_id, "date": today}, {"$set": plan, "$setOnInsert": {"created_at": datetime.now(timezone.utc)}}, upsert=True)
     saved = await db.ai_operator_daily_plans.find_one({"business_id": business_id, "date": today}) or plan
     return {"success": True, "plan": serialize_doc(saved), "actions": actions}
+
+
+# AI Operator Suite V1 aliases + approval-first workflows
+
+def _is_ai_operator_role(user: dict) -> bool:
+    role = str((user or {}).get("role") or "").lower().strip()
+    return role in {"owner", "manager", "office_admin", "admin", "employer"}
+
+async def _require_ai_operator_user(current_user: dict):
+    if not _is_ai_operator_role(current_user):
+        raise HTTPException(status_code=403, detail="AI Operator access denied")
+    return await get_user_business_id(current_user)
+
+@api_router.get('/api/ai/operator/actions')
+async def ai_operator_actions_v1(status: Optional[str] = None, type: Optional[str] = None, limit: int = 100, current_user: dict = Depends(get_current_user)):
+    business_id = await _require_ai_operator_user(current_user)
+    q = {"business_id": business_id}
+    if status: q["status"] = status
+    if type: q["type"] = type
+    cursor = db.ai_operator_actions.find(q).sort("updated_at", -1).limit(max(1, min(limit, 200)))
+    items = [serialize_doc(x) async for x in cursor]
+    return {"actions": items}
+
+@api_router.post('/api/ai/operator/actions/{action_id}/approve')
+async def ai_operator_approve_v1(action_id: str, current_user: dict = Depends(get_current_user)):
+    await _require_ai_operator_user(current_user)
+    return await ai_operator_approve(action_id, current_user)
+
+@api_router.post('/api/ai/operator/actions/{action_id}/dismiss')
+async def ai_operator_dismiss_v1(action_id: str, current_user: dict = Depends(get_current_user)):
+    await _require_ai_operator_user(current_user)
+    return await ai_operator_reject(action_id, current_user)
+
+@api_router.post('/api/ai/operator/run-daily-check')
+async def ai_operator_run_daily_check_v1(current_user: dict = Depends(get_current_user)):
+    await _require_ai_operator_user(current_user)
+    return await ai_operator_run_daily_plan(current_user)
+
+@api_router.post('/api/ai/operator/prepare-today')
+async def ai_operator_prepare_today_v1(current_user: dict = Depends(get_current_user)):
+    await _require_ai_operator_user(current_user)
+    return await ai_operator_run_daily_plan(current_user)
+
+@api_router.get('/api/ai/operator/business-health')
+async def ai_operator_business_health_v1(current_user: dict = Depends(get_current_user)):
+    bid = await _require_ai_operator_user(current_user)
+    jobs = await db.jobs.count_documents({"business_id": bid})
+    unassigned = await db.jobs.count_documents({"business_id": bid, "$or": [{"worker_id": None}, {"worker_id": ""}]})
+    overdue = await db.invoices.count_documents({"business_id": bid, "status": "overdue"})
+    pending = await db.ai_operator_actions.count_documents({"business_id": bid, "status": "pending"})
+    score = max(0, 100 - min(40, overdue*7) - min(25, unassigned*4) - min(20, pending*2))
+    label = "Strong" if score >= 80 else ("Needs attention" if score >= 55 else "At risk")
+    risks = [f"{overdue} overdue invoices", f"{unassigned} unassigned jobs", f"{pending} pending AI approvals"]
+    return {"score": score, "label": label, "highlights": [f"{jobs} total jobs tracked"], "risks": risks, "recommended_actions": ["Run Daily Check", "Review AI approvals"]}

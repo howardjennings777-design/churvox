@@ -49,6 +49,8 @@ const ROUTE_ACCESS = {
   worker_settings: ["worker"],
   // Payroll
   payroll:    ["owner", "manager", "payroll"],
+  ai_operator:["owner", "manager", "office_admin"],
+  proof_to_paid:["owner", "manager", "office_admin"],
 };
 
 export function canAccess(role, route) {
@@ -88,3 +90,8 @@ export const INVITE_ROLES = [
   { value: "worker", label: "Worker" },
   { value: "payroll", label: "Payroll" },
 ];
+
+
+export function canUseAIOperator(role){ return canAccess(role, "ai_operator"); }
+export function canUseProofToPaid(role){ return canAccess(role, "proof_to_paid"); }
+export function canSeeOwnerFinancials(role){ return ["owner","manager","office_admin"].includes(normalizeRole(role)); }

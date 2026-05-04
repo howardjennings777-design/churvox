@@ -50,6 +50,9 @@ import IntegrationsPage from "./pages/IntegrationsPage";
 import PublicQuotePage from "./pages/public/PublicQuotePage";
 import PublicInvoicePage from "./pages/public/PublicInvoicePage";
 import QAAuditorPage from "./pages/admin/QAAuditorPage";
+import AIOperatorPage from "./pages/AIOperatorPage";
+import ProofToPaidPage from "./pages/ProofToPaidPage";
+import ClientPortalPage from "./pages/public/ClientPortalPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const Spinner = () => (
@@ -231,6 +234,7 @@ function App() {
           <Route path="/invite/setup/:token" element={<InviteSetupPage />} />
           <Route path="/public/quote/:token" element={<PublicQuotePage />} />
           <Route path="/public/invoice/:token" element={<PublicInvoicePage />} />
+          <Route path="/client-portal/:token" element={<ClientPortalPage />} />
 
           {/* Legacy redirects */}
           <Route path="/owner-login" element={<Navigate to="/login" replace />} />
@@ -255,6 +259,8 @@ function App() {
           <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
           <Route path="/jobs/:id" element={<BusinessRoute><JobDetailPage /></BusinessRoute>} />
           <Route path="/jobs/:id/edit" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
+          <Route path="/ai-operator" element={<BusinessRoute><AIOperatorPage /></BusinessRoute>} />
+          <Route path="/proof-to-paid" element={<BusinessRoute><ProofToPaidPage /></BusinessRoute>} />
           <Route path="/dispatch" element={<BusinessRoute><CalendarPage /></BusinessRoute>} />
           <Route path="/calendar" element={<Navigate to="/dispatch" replace />} />
           <Route path="/clients" element={<BusinessRoute><ClientsPage /></BusinessRoute>} />

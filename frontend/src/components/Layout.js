@@ -8,7 +8,7 @@ import { canAccess } from "../lib/roles";
 import {
   LayoutDashboard, Briefcase, Calendar, Users, MoreHorizontal, LogOut,
   Settings, FileText, Receipt, CreditCard, UserPlus, MessageSquare, DollarSign, Zap,
-  Sparkles, Plug,
+  Sparkles, Plug, Bot, ShieldCheck,
 } from "lucide-react";
 import NotificationsBell from "./NotificationsBell";
 
@@ -34,6 +34,8 @@ export default function Layout({ children, smartHubMode = false }) {
         canAccess(role, "jobs") && { path: "/jobs", label: "All Jobs", icon: Briefcase },
         canAccess(role, "calendar") && { path: "/dispatch", label: "Dispatch Board", icon: Calendar },
         canAccess(role, "clients") && { path: "/clients", label: "Client List", icon: Users },
+        canAccess(role, "ai_operator") && { path: "/ai-operator", label: "AI Operator", icon: Bot },
+        canAccess(role, "proof_to_paid") && { path: "/proof-to-paid", label: "Proof-to-Paid", icon: ShieldCheck },
       ].filter(Boolean),
     },
     {
