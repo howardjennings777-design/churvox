@@ -788,15 +788,13 @@ export default function SmartHubBrainPage() {
         const payload = {
           invoice_id: id,
           client_id: client?.id || client?._id || inv?.client_id || null,
-          business_id: user?.business_id || user?.businessId || null,
-          message: reminderDrafts[id] || "",
+          body: reminderDrafts[id] || "",
+          message_type: "invoice_reminder",
           channel: client?.email || inv?.client_email ? "email" : "sms",
           status: "draft",
-          source: "smart_hub_ai",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          source: "ai_operator",
         };
-        try { await post("/communications/messages", payload); } catch {}
+        try { await post("/communications/drafts", payload); } catch {}
         setApprovedReminderIds((prev) => ({ ...prev, [id]: true }));
         await logActivity({ action_type: "reminder_draft_approved", title: "Reminder draft approved", message: `Payment reminder draft approved for ${textOr(client?.name || inv?.client_name || inv?.invoice_number, "client")}`, related_type: "invoice", related_id: id, status: "completed" });
         setToast({ kind: "success", message: "Reminder draft approved." });
@@ -851,8 +849,8 @@ export default function SmartHubBrainPage() {
         if (!id) return;
         const client = findByIds(clients, [quote?.client_id, quote?.clientId], ["id", "_id", "client_id"]);
         const hasContact = !!(client?.email || quote?.client_email || client?.phone || quote?.client_phone);
-        const payload = { quote_id: id, client_id: client?.id || client?._id || quote?.client_id || null, business_id: user?.business_id || user?.businessId || null, message: quoteDrafts[id] || "", channel: client?.email || quote?.client_email ? "email" : "sms", status: "draft", source: "smart_hub_ai", created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
-        try { await post("/communications/messages", payload); } catch {}
+        const payload = { quote_id: id, client_id: client?.id || client?._id || quote?.client_id || null, body: quoteDrafts[id] || "", message_type: "quote_follow_up", channel: client?.email || quote?.client_email ? "email" : "sms", status: "draft", source: "ai_operator" };
+        try { await post("/communications/drafts", payload); } catch {}
         setApprovedQuoteIds((prev) => ({ ...prev, [id]: hasContact ? true : "missing_contact" }));
         await logActivity({ action_type: "quote_followup_approved", title: "Quote follow-up approved", message: `Quote follow-up draft approved for ${textOr(client?.name || quote?.quote_number || quote?.title, "client")}`, related_type: "quote", related_id: id, status: "completed" });
         setToast({ kind: "success", message: "Quote follow-up draft approved." });
