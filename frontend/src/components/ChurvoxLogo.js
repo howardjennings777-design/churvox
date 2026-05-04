@@ -9,7 +9,7 @@ const SIZE_MAP = {
   md: "h-10",
   lg: "h-12",
   xl: "h-16",
-  hero: "h-11 sm:h-12",
+  hero: "h-24 sm:h-28 lg:h-32",
 };
 
 export function ChurvoxLogo({ size = "md", className = "", dataTestId = "churvox-logo" }) {
@@ -20,6 +20,7 @@ export function ChurvoxLogo({ size = "md", className = "", dataTestId = "churvox
       <span
         className={`inline-flex items-center font-semibold tracking-wide text-current ${SIZE_MAP[size] || SIZE_MAP.md} ${className}`}
         data-testid={dataTestId}
+        data-logo-size={size}
       >
         Churvox
       </span>
@@ -32,6 +33,7 @@ export function ChurvoxLogo({ size = "md", className = "", dataTestId = "churvox
       alt="Churvox"
       className={`w-auto max-w-full object-contain ${SIZE_MAP[size] || SIZE_MAP.md} ${className}`}
       data-testid={dataTestId}
+      data-logo-size={size}
       onError={() => setLoadFailed(true)}
       loading="eager"
       decoding="async"
