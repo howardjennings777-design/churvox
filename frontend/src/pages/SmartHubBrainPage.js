@@ -6,174 +6,25 @@ import { get, patch, post } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { buildArrivalSmsMessage, buildInvoiceDescription, buildInvoiceReminderMessage, buildJobUpdateMessage, buildQuoteFollowUpMessage } from "../lib/aiMessageBuilders";
 import "../styles/smartHubHardTrade.css";
-
-const safeArray = (value) => (Array.isArray(value) ? value : []);
-
-const listFrom = (value, keys = []) => {
-  if (Array.isArray(value)) return value;
-  const src = value?.data ?? value;
-  if (Array.isArray(src)) return src;
-  if (src && typeof src === "object") {
-    for (const key of keys) {
-      if (Array.isArray(src?.[key])) return src[key];
-    }
-    if (Array.isArray(src?.items)) return src.items;
-  }
-  return [];
-};
-
-const statusOf = (value) => String(value || "").toLowerCase().trim();
-const ACTIVE_ACTION_STATUSES = ["pending", "ready", "draft", "drafts", "watching", "needs_decision"];
-const DONE_ACTION_STATUSES = ["completed", "approved", "rejected", "dismissed", "resolved", "archived"];
-const isActiveApproval = (item = {}) => {
-  const status = statusOf(item?.status);
-  return ACTIVE_ACTION_STATUSES.includes(status) && !DONE_ACTION_STATUSES.includes(status);
-};
-const norm = (value) => String(value || "").toLowerCase().trim();
-const asDate = (value) => {
-  if (!value) return null;
-  const d = new Date(value);
-  return Number.isFinite(d.getTime()) ? d : null;
-};
-
-const money = (value) => {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return "—";
-  return num.toLocaleString(undefined, { style: "currency", currency: "AUD" });
-};
+import { listFrom } from "./smart-hub/utils/smartHubFilters";
+import { asDate, findByIds, money, norm, safeArray, safeText, statusOf, textOr } from "./smart-hub/utils/smartHubSafety";
+import { daysOverdue, hasInvoiceForJob, invoiceBalance, quoteAgeDays } from "./smart-hub/utils/smartHubCounts";
+import { APPROVAL_GROUPS, dedupeApprovalActions, DONE_ACTION_STATUSES, getActionDisplayMeta, getApprovalGroup, getBestNextMove, getFilteredApprovalActions, isActiveApproval } from "./smart-hub/utils/actionDisplay";
 
 const REMINDER_ELIGIBLE = ["open", "sent", "unpaid", "overdue", "pending_payment"];
 const REMINDER_EXCLUDED = ["paid", "cancelled", "canceled"];
-
-const invoiceBalance = (inv) => {
-  const candidates = [inv?.balance_due, inv?.amount_due, inv?.total_due, inv?.total, inv?.amount];
-  const picked = candidates.map((v) => Number(v)).find((v) => Number.isFinite(v));
-  return Number.isFinite(picked) ? picked : NaN;
-};
-
-const daysOverdue = (inv) => {
-  const explicit = Number(inv?.overdue_days ?? inv?.days_overdue);
-  if (Number.isFinite(explicit) && explicit >= 0) return explicit;
-  const dueDate = inv?.due_date || inv?.dueDate;
-  if (!dueDate) return null;
-  const ms = Date.now() - new Date(dueDate).getTime();
-  if (!Number.isFinite(ms) || ms <= 0) return 0;
-  return Math.floor(ms / (1000 * 60 * 60 * 24));
-};
-
 const QUOTE_FOLLOW_UP_ELIGIBLE = ["sent", "pending", "waiting", "awaiting_response", "viewed"];
 const QUOTE_FOLLOW_UP_EXCLUDED = ["accepted", "declined", "rejected", "converted", "invoiced", "cancelled", "canceled", "draft"];
 
-const quoteAgeDays = (quote) => {
-  const source = quote?.sent_at || quote?.sentAt || quote?.created_at || quote?.createdAt || quote?.date;
-  if (!source) return null;
-  const ms = Date.now() - new Date(source).getTime();
-  if (!Number.isFinite(ms) || ms < 0) return null;
-  return Math.floor(ms / (1000 * 60 * 60 * 24));
-};
-
-
-const safeText = (value, fallback = "Not available") => {
-  const text = String(value || "").trim();
-  return text || fallback;
-};
-
-const textOr = safeText;
-
-const findByIds = (list, ids, keys = ["id", "_id"]) => {
-  const wanted = safeArray(ids).map((v) => String(v || "")).filter(Boolean);
-  if (!wanted.length) return null;
-  return safeArray(list).find((item) => keys.some((key) => wanted.includes(String(item?.[key] || "")))) || null;
-};
-
-const hasInvoiceForJob = (job, invoices) => {
-  const jobIds = [job?.id, job?._id, job?.job_id].map((id) => String(id || "")).filter(Boolean);
-  if (!jobIds.length) return false;
-  return safeArray(invoices).some((inv) => {
-    const linked = [inv?.job_id, inv?.jobId, inv?.linked_job_id, inv?.source_job_id].map((id) => String(id || "")).filter(Boolean);
-    return linked.some((id) => jobIds.includes(id));
-  });
-};
-
-
-
-const APPROVAL_GROUPS = ["all", "needs_decision", "ready", "drafts", "watching", "completed"];
-const getApprovalGroup = (action = {}) => {
-  const group = String(action.group || "").toLowerCase();
-  if (APPROVAL_GROUPS.includes(group) && group !== "all") return group;
-  const status = String(action.status || "").toLowerCase();
-  if (["completed", "approved", "done"].includes(status)) return "completed";
-  if (["draft", "edited"].includes(status)) return "drafts";
-  if (status === "ready") return "ready";
-  if (status === "watching") return "watching";
-  return "needs_decision";
-};
 const normalizeApprovalAction = (action = {}) => ({ ...action, id: String(action.id || action._id || ""), group: getApprovalGroup(action) });
-const getFilteredApprovalActions = (actions = [], activeTab = "all") => safeArray(actions).filter((a) => {
-  if (activeTab === "all") return isActiveApproval(a);
-  if (activeTab === "completed") return DONE_ACTION_STATUSES.includes(statusOf(a?.status));
-  return isActiveApproval(a) && a.group === activeTab;
-});
-const approvalDedupKey = (action = {}) => {
-  const actionKey = String(action.action_key || action.actionKey || "").trim();
-  if (actionKey) return actionKey;
-  const type = String(action.type || "unknown");
-  const rel = String(action.relatedId || action.related_id || action.related_entity_id || action.invoice_id || action.job_id || action.quote_id || action.client_id || "");
-  return `${type}:${rel}`;
-};
 
-const dedupeApprovalActions = (actions = []) => {
-  const map = new Map();
-  safeArray(actions).forEach((item) => {
-    const key = approvalDedupKey(item);
-    if (!key) return;
-    if (!map.has(key)) { map.set(key, item); return; }
-    const prev = map.get(key);
-    if (statusOf(prev?.status) === 'completed' && statusOf(item?.status) !== 'completed') map.set(key, item);
-  });
-  return Array.from(map.values());
+const safeGet = async (path) => {
+  try {
+    return await get(path);
+  } catch {
+    return [];
+  }
 };
-const getBestNextMove = ({ readyToBillCount = 0, unassignedJobsCount = 0, openInvoicesCount = 0, quotesWaitingCount = 0, pendingApprovalActions = [] } = {}) => {
-  const pending = safeArray(pendingApprovalActions).filter((item) => isActiveApproval(item));
-  const highRiskDecisionCount = pending.filter((item) => item.group === "needs_decision" && String(item?.risk || "").toLowerCase() === "high").length;
-  if (highRiskDecisionCount > 0) return { key: "needs_decision", label: `Review ${highRiskDecisionCount} high-risk approval${highRiskDecisionCount === 1 ? "" : "s"} now.`, approvalTab: "needs_decision" };
-  if (unassignedJobsCount > 0) return { key: "assign_workers", label: `Assign crew to ${unassignedJobsCount} unassigned job${unassignedJobsCount === 1 ? "" : "s"}.`, drawer: "AI Dispatch", mode: "assign", approvalTab: "ready" };
-  if (readyToBillCount > 0) return { key: "invoice_drafts", label: `Create draft invoices for ${readyToBillCount} ready-to-bill job${readyToBillCount === 1 ? "" : "s"}.`, drawer: "Invoices", mode: "readyToBill", approvalTab: "ready" };
-  if (openInvoicesCount > 0) return { key: "invoice_reminders", label: `Prepare reminders for ${openInvoicesCount} open invoice${openInvoicesCount === 1 ? "" : "s"}.`, drawer: "Payment Reminders", mode: "reminders", approvalTab: "drafts" };
-  if (quotesWaitingCount > 0) return { key: "quote_followups", label: `Review follow-ups for ${quotesWaitingCount} waiting quote${quotesWaitingCount === 1 ? "" : "s"}.`, drawer: "Quote Follow-ups", mode: "followUps", approvalTab: "drafts" };
-  return { key: "all_clear", label: "All clear — no urgent actions in Smart Hub.", drawer: "Dashboard", mode: "list", approvalTab: "all" };
-};
-const getActionDisplayMeta = (item = {}, { jobs = [], clients = [], invoices = [], quotes = [], workers = [] } = {}) => {
-  const payload = item?.actionPayload || {};
-  const relatedId = String(item?.relatedId || item?.related_id || item?.related_entity_id || "");
-  const actionType = String(item?.type || item?.action_type || "").toLowerCase();
-  const invoice = item?.invoice || findByIds(invoices, [item?.invoice_id, payload?.invoice_id, relatedId], ["id", "_id", "invoice_id"]);
-  const quote = item?.quote || findByIds(quotes, [item?.quote_id, payload?.quote_id, relatedId], ["id", "_id", "quote_id"]);
-  const job = item?.job || findByIds(jobs, [item?.job_id, payload?.job_id, relatedId], ["id", "_id", "job_id"]);
-  const worker = item?.worker || findByIds(workers, [item?.worker_id, payload?.worker_id, payload?.recommended_worker_id, job?.assigned_worker_id], ["id", "_id", "worker_id"]);
-  const client = item?.client || findByIds(clients, [item?.client_id, payload?.client_id, invoice?.client_id, quote?.client_id, job?.client_id], ["id", "_id", "client_id"]);
-  const clientName = textOr(client?.name || invoice?.client_name || quote?.client_name || job?.client_name, "No client linked");
-  if (actionType === "invoice_reminder") {
-    const hasClient = !!String(client?.name || invoice?.client_name || "").trim();
-    const invoiceLabel = textOr(invoice?.invoice_number || invoice?.number, "Open invoice");
-    const subtitle = `${hasClient ? `Invoice ${invoiceLabel}` : "Open invoice"} · ${money(invoiceBalance(invoice))} outstanding`;
-    return { title: hasClient ? `Prepare reminder for ${clientName}` : "Prepare reminder for invoice with missing client", subtitle, reason: item.reason || "Invoice is unpaid and ready for reminder review.", dataUsed: item.dataUsed || `Due: ${textOr(invoice?.due_date || invoice?.dueDate, "No due date")} · Phone: ${client?.phone || invoice?.client_phone ? "saved" : "No phone saved"} · Email: ${client?.email || invoice?.client_email ? "saved" : "No email saved"}`, whatHappens: item.whatHappens || "Approval sends the reminder via selected channel.", risk: item.risk || "medium", status: item.status || "pending", contactSummary: `Phone: ${client?.phone || invoice?.client_phone || "No phone saved"} · Email: ${client?.email || invoice?.client_email || "No email saved"}` };
-  }
-  if (actionType === "quote_follow_up") {
-    return { title: `Follow up quote with ${clientName}`, subtitle: `Quote ${textOr(quote?.quote_number || quote?.number || quote?.title, "No quote number")} · ${money(quote?.total ?? quote?.amount)} · ${textOr(quote?.status, "unknown")}`, reason: item.reason || "Quote is waiting for a client response.", dataUsed: item.dataUsed || `Phone: ${client?.phone ? "saved" : "No phone saved"} · Email: ${client?.email ? "saved" : "No email saved"}`, whatHappens: item.whatHappens || "Approval saves and/or sends the follow-up draft.", risk: item.risk || "low", status: item.status || "pending" };
-  }
-  if (actionType === "create_invoice_draft") {
-    return { title: `Create draft invoice for ${textOr(job?.title || clientName, "No client linked")}`, subtitle: `${clientName} · ${textOr(job?.address || job?.location, "No address saved")} · Total ${money(job?.total ?? payload?.subtotal ?? job?.subtotal)}`, reason: item.reason || "Completed work is ready for billing.", dataUsed: item.dataUsed || `Time on site: ${textOr(job?.total_time_on_site_label, "not recorded")} • Visit status: ${textOr(job?.end_location_status || job?.start_location_status, "not verified")} • Photos: ${safeArray(job?.photos).length} • Notes: ${textOr(job?.worker_notes || job?.notes, "none")}`, whatHappens: item.whatHappens || "Creates draft invoice only.", risk: item.risk || "medium", status: item.status || "pending" };
-  }
-  if (actionType === "assign_worker") {
-    return { title: `Assign ${textOr(worker?.name, "No worker selected")} to ${textOr(job?.title, "job")}`, subtitle: `${clientName} · ${textOr(job?.address || job?.location, "No address saved")} · Workload ${payload?.jobsToday ?? 0} jobs today`, reason: item.reason || "Worker assignment needs approval.", dataUsed: item.dataUsed || "Recommendation uses worker load and availability.", whatHappens: item.whatHappens || "Updates job assignment.", risk: item.risk || "medium", status: item.status || "pending" };
-  }
-  if (actionType === "job_arrival_sms") {
-    return { title: `Send arrival SMS to ${clientName}`, subtitle: `${textOr(job?.title, "job")} · ${textOr(job?.scheduled_date || job?.scheduled_at, "No scheduled time")} · Worker ${textOr(worker?.name, "No worker selected")}`, reason: item.reason || "Arrival notification is due.", dataUsed: item.dataUsed || `Phone: ${client?.phone || payload?.to_phone || "No phone saved"}`, whatHappens: item.whatHappens || "Sends a 30-minute arrival SMS.", risk: item.risk || "low", status: item.status || "pending", contactSummary: `SMS to ${client?.phone || payload?.to_phone || "No phone saved"}` };
-  }
-  return { title: item.title || "Approval action", subtitle: item.dataUsed || "", reason: item.reason || "Review this action.", dataUsed: item.dataUsed || "", whatHappens: item.whatHappens || "No further change.", risk: item.risk || "medium", status: item.status || "pending" };
-};
-
 const buildSmartHubApprovalItems = ({ jobs, clients, invoices, quotes, workers, activity, dispatchRecs, reminderDrafts, quoteDrafts }) => {
   const items = [];
   safeArray(jobs).forEach((job) => {
@@ -238,14 +89,6 @@ export default function SmartHubBrainPage() {
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
-    const safeGet = async (path) => {
-      try {
-        return await get(path);
-      } catch {
-        return [];
-      }
-    };
-
     try {
       const [jobsRes, clientsRes, quotesRes, invoicesRes, workersRes, activityRes, actionsRes, settingsRes] = await Promise.all([
         safeGet("/jobs"),
