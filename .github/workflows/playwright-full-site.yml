@@ -14,9 +14,9 @@ on:
 
 jobs:
   playwright:
-    name: Playwright live smoke + authenticated route audit
+    name: Playwright live smoke + deep launch audit
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
 
     defaults:
       run:
@@ -44,15 +44,15 @@ jobs:
       - name: Build frontend
         run: CI=false npm run build
 
-      - name: Install Playwright browser
+      - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
       - name: Wait briefly for live deploy to settle
         if: github.event_name == 'push'
-        run: sleep 60
+        run: sleep 90
 
-      - name: Run Playwright full-site checks
-        run: npx playwright test tests/e2e/full-site.spec.js --project=chromium
+      - name: Run Playwright full-site and deep launch checks
+        run: npx playwright test tests/e2e/full-site.spec.js tests/e2e/deep-launch-audit.spec.js
 
       - name: Upload Playwright report
         if: always()
