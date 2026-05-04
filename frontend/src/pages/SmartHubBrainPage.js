@@ -866,11 +866,11 @@ export default function SmartHubBrainPage() {
     <Layout title="Smart Hub">
       <div className="min-h-screen tradie-page-bg">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-          <section className="rounded-3xl tradie-diamond p-6 text-slate-100 shadow-2xl border border-[#555b56]">
+          <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-zinc-950 p-6 text-slate-100 shadow-2xl">
             <p className="text-xs uppercase tracking-[0.2em] text-amber-300">AI Operator Control Centre</p>
             <h1 className="mt-2 text-2xl font-semibold">AI Operator Control Centre</h1>
             <p className="mt-2 text-sm text-slate-300">Welcome back, {textOr(user?.name || user?.email, "team")}. Keep operations flowing with one clear next move.</p>
-            <div className="mt-4 rounded-xl bg-slate-800/70 p-4">
+            <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
               <p className="text-xs uppercase tracking-wide text-amber-300">Best Next Move</p>
               <p className="mt-1 text-base text-slate-100">{bestNextMove.label}</p>
             </div>
