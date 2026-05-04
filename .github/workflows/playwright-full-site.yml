@@ -23,7 +23,6 @@ jobs:
         working-directory: frontend
 
     env:
-      CI: true
       PLAYWRIGHT_BASE_URL: ${{ github.event.inputs.base_url || vars.PLAYWRIGHT_BASE_URL || 'https://www.churvox.com' }}
       E2E_EMAIL: ${{ secrets.CHURVOX_E2E_EMAIL }}
       E2E_PASSWORD: ${{ secrets.CHURVOX_E2E_PASSWORD }}
@@ -43,7 +42,7 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Build frontend
-        run: npm run build
+        run: CI=false npm run build
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
