@@ -1,0 +1,252 @@
+name: Compact Command Hub layout
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  compact-command-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tighten Command Hub layout density
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path('frontend/src/styles/commandHubReal.css')
+          text = path.read_text(encoding='utf-8', errors='ignore')
+          marker = '/* command-hub compact density pass */'
+          if marker in text:
+              print('Compact density rules already present')
+          else:
+              text += r'''
+
+/* command-hub compact density pass */
+@media (min-width: 900px) {
+  .smart-command-system {
+    padding-top: 22px;
+  }
+
+  .command-real-shell {
+    gap: 18px;
+  }
+
+  .command-hero {
+    padding: 34px 42px;
+    min-height: 250px;
+    grid-template-columns: 150px 1fr 300px;
+    border-radius: 34px;
+  }
+
+  .command-hero:before {
+    inset: 14px;
+    border-radius: 26px;
+  }
+
+  .command-hero h1 {
+    font-size: clamp(48px, 5vw, 78px);
+  }
+
+  .command-hero p {
+    margin-top: 6px;
+    margin-bottom: 0;
+    max-width: 660px;
+  }
+
+  .command-hero-score {
+    padding: 18px;
+    gap: 7px;
+    border-radius: 24px;
+  }
+
+  .command-hero-score strong {
+    font-size: 19px;
+  }
+
+  .command-hero-actions {
+    margin-top: 14px;
+  }
+
+  .command-operator-card,
+  .command-panel,
+  .command-control-card {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .command-operator-card {
+    gap: 14px;
+  }
+
+  .command-panel h2,
+  .command-operator-card h2 {
+    font-size: clamp(24px, 2.1vw, 32px);
+    margin-bottom: 6px;
+  }
+
+  .command-metric-row {
+    gap: 10px;
+  }
+
+  .command-mini-metric {
+    padding: 13px 14px;
+    border-radius: 18px;
+  }
+
+  .command-mini-metric strong {
+    font-size: 28px;
+  }
+
+  .command-next-grid {
+    gap: 12px;
+  }
+
+  .command-next-move {
+    min-height: 135px;
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .command-next-move strong {
+    font-size: 44px;
+    margin: 8px 0;
+  }
+
+  .command-workspace-grid {
+    gap: 10px;
+  }
+
+  .command-workspace-btn {
+    min-height: 64px;
+    padding: 13px 15px;
+    border-radius: 16px;
+  }
+
+  .command-workspace-btn strong {
+    font-size: 14px;
+  }
+
+  .command-workspace-btn span {
+    margin-top: 4px;
+    font-size: 11px;
+  }
+
+  .command-control-grid {
+    gap: 12px;
+  }
+
+  .command-control-card {
+    min-height: 150px;
+    border-radius: 22px;
+    padding: 18px;
+  }
+
+  .command-control-card h3 {
+    font-size: 18px;
+  }
+
+  .command-control-card strong {
+    font-size: 42px;
+    margin: 10px 0 8px;
+  }
+
+  .command-control-card button {
+    padding: 9px 13px;
+    border-radius: 12px;
+  }
+
+  .command-run-list {
+    gap: 9px;
+  }
+
+  .command-run-list article,
+  .command-preview-row {
+    min-height: 58px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    grid-template-columns: 1.15fr 1fr auto;
+  }
+
+  .command-run-list b,
+  .command-preview-row b {
+    font-size: 14px;
+  }
+
+  .command-run-list span,
+  .command-preview-row span {
+    font-size: 12px;
+  }
+
+  .command-run-list button,
+  .command-preview-row button {
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+  }
+
+  .command-filter-grid {
+    gap: 9px;
+  }
+
+  .command-filter-grid button {
+    min-height: 56px;
+    padding: 12px 14px;
+    border-radius: 15px;
+  }
+
+  .command-filter-grid span {
+    margin-top: 3px;
+    font-size: 11px;
+  }
+
+  .command-pill {
+    min-width: 58px;
+    min-height: 58px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 680px) {
+  .command-hero {
+    padding: 22px;
+  }
+
+  .command-operator-card,
+  .command-panel,
+  .command-control-card {
+    padding: 18px;
+  }
+
+  .command-next-move {
+    min-height: 126px;
+  }
+
+  .command-workspace-btn,
+  .command-filter-grid button {
+    min-height: 62px;
+  }
+}
+'''
+              path.write_text(text, encoding='utf-8')
+              print('Added compact density rules')
+          PY
+
+      - name: Commit compact layout patch if needed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git add frontend/src/styles/commandHubReal.css
+            git commit -m "Tighten Command Hub layout density"
+            git push
+          fi
