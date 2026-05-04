@@ -1,0 +1,146 @@
+/* Churvox full-page workspace modal override.
+   Any popup/sheet that opens inside the app should feel like the full page,
+   so users are not bounced around by separate "open full page" flows. */
+:root {
+  --cx-modal-bg: #b4aa9b;
+  --cx-modal-card: #f4eee4;
+  --cx-modal-card-soft: #fff8ee;
+  --cx-modal-border: #c7bba9;
+  --cx-modal-dark: #050607;
+  --cx-modal-dark-2: #101318;
+  --cx-modal-orange: #ff5a1f;
+}
+
+/* Radix/shadcn dialogs, sheets, drawers, and most custom role=dialog popups. */
+body [role="dialog"][data-state="open"],
+body [data-radix-dialog-content],
+body [data-radix-alert-dialog-content],
+body [data-vaul-drawer][data-state="open"] {
+  position: fixed !important;
+  inset: 16px !important;
+  left: 16px !important;
+  top: 16px !important;
+  right: 16px !important;
+  bottom: 16px !important;
+  width: calc(100vw - 32px) !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  height: calc(100dvh - 32px) !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  transform: none !important;
+  translate: none !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  border-radius: 28px !important;
+  border: 1px solid var(--cx-modal-border) !important;
+  background:
+    radial-gradient(circle at top left, rgba(255, 90, 31, 0.10), transparent 28%),
+    linear-gradient(135deg, rgba(11, 13, 16, 0.065) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(11, 13, 16, 0.05) 25%, transparent 25%),
+    var(--cx-modal-bg) !important;
+  color: #101318 !important;
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.42) !important;
+}
+
+/* Make modal contents scroll like a real page. */
+body [role="dialog"][data-state="open"] > *,
+body [data-radix-dialog-content] > *,
+body [data-radix-alert-dialog-content] > *,
+body [data-vaul-drawer][data-state="open"] > * {
+  max-width: 1500px !important;
+}
+
+body [role="dialog"][data-state="open"],
+body [data-radix-dialog-content],
+body [data-radix-alert-dialog-content],
+body [data-vaul-drawer][data-state="open"] {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* Any title/header inside a full-page modal should match the Churvox dark header theme. */
+body [role="dialog"][data-state="open"] h1,
+body [role="dialog"][data-state="open"] h2,
+body [data-radix-dialog-content] h1,
+body [data-radix-dialog-content] h2,
+body [data-radix-alert-dialog-content] h1,
+body [data-radix-alert-dialog-content] h2 {
+  color: #101318 !important;
+}
+
+body [role="dialog"][data-state="open"] header,
+body [data-radix-dialog-content] header,
+body [data-radix-alert-dialog-content] header,
+body [data-vaul-drawer][data-state="open"] header,
+body [role="dialog"][data-state="open"] [class*="DialogHeader"],
+body [data-radix-dialog-content] [class*="DialogHeader"] {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 5 !important;
+  border-radius: 22px !important;
+}
+
+/* Full-page modal panels/cards keep the same premium Churvox styling as normal pages. */
+body [role="dialog"][data-state="open"] .cx-card,
+body [role="dialog"][data-state="open"] .cx-panel,
+body [role="dialog"][data-state="open"] .surface-card,
+body [data-radix-dialog-content] .cx-card,
+body [data-radix-dialog-content] .cx-panel,
+body [data-radix-dialog-content] .surface-card,
+body [data-vaul-drawer][data-state="open"] .cx-card,
+body [data-vaul-drawer][data-state="open"] .cx-panel,
+body [data-vaul-drawer][data-state="open"] .surface-card {
+  background: linear-gradient(180deg, var(--cx-modal-card) 0%, var(--cx-modal-card-soft) 100%) !important;
+  border-color: var(--cx-modal-border) !important;
+  box-shadow: 0 14px 32px rgba(15, 17, 21, 0.14) !important;
+}
+
+/* Orange remains the one primary action colour inside modal workspaces. */
+body [role="dialog"][data-state="open"] .cx-button-primary,
+body [role="dialog"][data-state="open"] button.bg-blue-600,
+body [role="dialog"][data-state="open"] button.bg-blue-700,
+body [data-radix-dialog-content] .cx-button-primary,
+body [data-radix-dialog-content] button.bg-blue-600,
+body [data-radix-dialog-content] button.bg-blue-700,
+body [data-vaul-drawer][data-state="open"] .cx-button-primary,
+body [data-vaul-drawer][data-state="open"] button.bg-blue-600,
+body [data-vaul-drawer][data-state="open"] button.bg-blue-700 {
+  background: var(--cx-modal-orange) !important;
+  color: #fff !important;
+  border-color: #e94a14 !important;
+}
+
+/* Make old narrow drawer/sheet classes stop fighting the full-page modal. */
+body [role="dialog"][data-state="open"][class*="max-w"],
+body [role="dialog"][data-state="open"][class*="w-"],
+body [data-radix-dialog-content][class*="max-w"],
+body [data-radix-dialog-content][class*="w-"] {
+  max-width: none !important;
+  width: calc(100vw - 32px) !important;
+}
+
+/* If an old popup still shows an "open full page" action, keep it secondary because the modal already is full-page. */
+body [role="dialog"][data-state="open"] a[href],
+body [data-radix-dialog-content] a[href],
+body [data-vaul-drawer][data-state="open"] a[href] {
+  border-radius: 14px !important;
+}
+
+@media (max-width: 768px) {
+  body [role="dialog"][data-state="open"],
+  body [data-radix-dialog-content],
+  body [data-radix-alert-dialog-content],
+  body [data-vaul-drawer][data-state="open"] {
+    inset: 0 !important;
+    left: 0 !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    border-radius: 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+  }
+}
