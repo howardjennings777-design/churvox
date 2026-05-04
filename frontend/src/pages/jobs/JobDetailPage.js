@@ -40,6 +40,12 @@ function formatMinutes(totalMinutes) {
   if (hours > 0) return `${hours}h`;
   return `${minutes}m`;
 }
+function formatMeters(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) return "Distance unavailable";
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}km from job address`;
+  return `${Math.round(n)}m from job address`;
+}
 
 function hasValue(value) {
   return String(value ?? "").trim() !== "";
@@ -176,7 +182,29 @@ export default function JobDetailPage() {
 
     setSaving(true);
     try {
-      const res = await patch(`/jobs/${id}`, { status: nextStatus });
+      let locationPayload = {};
+      if (isWorker && (nextStatus === "in_progress" || nextStatus === "completed") && navigator?.geolocation) {
+        const locationKey = nextStatus === "in_progress" ? "start" : "end";
+        const geo = await new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ ok: true, pos }),
+            (err) => resolve({ ok: false, err }),
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 12000 }
+          );
+        });
+        if (geo.ok) {
+          locationPayload = {
+            [`${locationKey}_lat`]: geo.pos.coords.latitude,
+            [`${locationKey}_lng`]: geo.pos.coords.longitude,
+            [`${locationKey}_accuracy_meters`]: geo.pos.coords.accuracy,
+          };
+        } else {
+          const denied = geo?.err?.code === 1;
+          locationPayload = { location_status: denied ? "location_denied" : "location_error" };
+          toast.warning("Location could not be verified, but start time was saved.");
+        }
+      }
+      const res = await patch(`/jobs/${id}`, { status: nextStatus, ...locationPayload });
       if (res?.success) {
         toast.success("Job updated");
         await loadPage();
@@ -431,6 +459,10 @@ export default function JobDetailPage() {
                   <div className="text-slate-900">{formatMinutes(job?.time_spent_minutes)}</div>
                 </div>
                 <div>
+                  <div className="text-xs uppercase tracking-wide text-slate-500">Total Time On Site</div>
+                  <div className="text-slate-900">{job?.total_time_on_site_label || "-"}</div>
+                </div>
+                <div>
                   <div className="text-xs uppercase tracking-wide text-slate-500">Quote</div>
                   <div className="text-slate-900">
                     {job?.quote_id ? (
@@ -450,6 +482,32 @@ export default function JobDetailPage() {
                     ) : "-"}
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {isOwnerView && (
+          <Card className="cx-command-card">
+            <CardContent className="p-5 space-y-4">
+              <div className="text-slate-900 font-semibold">Visit Timeline</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="rounded border border-slate-200 p-3">
+                  <div className="text-sm font-semibold text-slate-900">Arrived / started</div>
+                  <div className="text-sm text-slate-700">{safeDate(job?.started_at)}</div>
+                  <div className="text-xs text-slate-500">{formatMeters(job?.start_distance_from_site_meters)} · {niceStatus(job?.start_location_status)}</div>
+                  {job?.start_location_lat && job?.start_location_lng && <a className="text-xs text-churvox-accent hover:underline" href={`https://maps.google.com/?q=${job.start_location_lat},${job.start_location_lng}`} target="_blank" rel="noreferrer">Open start map</a>}
+                </div>
+                <div className="rounded border border-slate-200 p-3">
+                  <div className="text-sm font-semibold text-slate-900">Completed / left</div>
+                  <div className="text-sm text-slate-700">{safeDate(job?.completed_at)}</div>
+                  <div className="text-xs text-slate-500">{formatMeters(job?.end_distance_from_site_meters)} · {niceStatus(job?.end_location_status)}</div>
+                  {job?.end_location_lat && job?.end_location_lng && <a className="text-xs text-churvox-accent hover:underline" href={`https://maps.google.com/?q=${job.end_location_lat},${job.end_location_lng}`} target="_blank" rel="noreferrer">Open finish map</a>}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide text-slate-500">AI Visit Summary</div>
+                <div className="text-sm text-slate-800">{job?.ai_visit_summary || "Visit summary will appear when the job is completed."}</div>
               </div>
             </CardContent>
           </Card>
@@ -524,6 +582,9 @@ export default function JobDetailPage() {
           <Card className="bg-white border-slate-200 shadow-sm">
             <CardContent className="p-5 space-y-4">
               <div className="text-slate-900 font-semibold">Update Status</div>
+              <div className="text-sm text-slate-600">
+                Started at {safeDate(job?.started_at)} · Completed at {safeDate(job?.completed_at)} · Total time {job?.total_time_on_site_label || "-"}
+              </div>
 
               <div className="flex gap-2 flex-wrap">
                 {STATUS_OPTIONS.map((status) => (

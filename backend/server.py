@@ -188,6 +188,73 @@ def _format_invoice_description_from_job(job: dict, client_name: str = "") -> st
     return summary
 
 
+def _haversine_meters(lat1, lng1, lat2, lng2):
+    try:
+        from math import radians, sin, cos, sqrt, atan2
+        r = 6371000.0
+        dlat = radians(float(lat2) - float(lat1))
+        dlng = radians(float(lng2) - float(lng1))
+        a = sin(dlat / 2) ** 2 + cos(radians(float(lat1))) * cos(radians(float(lat2))) * sin(dlng / 2) ** 2
+        return round(r * (2 * atan2(sqrt(a), sqrt(1 - a))), 1)
+    except Exception:
+        return None
+
+
+def _visit_status_for_distance(distance_meters):
+    if distance_meters is None:
+        return "job_location_missing"
+    if distance_meters <= 100:
+        return "on_site"
+    if distance_meters <= 500:
+        return "nearby"
+    return "away_from_site"
+
+
+def _duration_label(seconds):
+    try:
+        s = max(0, int(seconds or 0))
+    except Exception:
+        return "0 minutes"
+    mins = round(s / 60)
+    if mins < 60:
+        return f"{mins} minute" + ("" if mins == 1 else "s")
+    h = mins // 60
+    m = mins % 60
+    if m == 0:
+        return f"{h} hour" + ("" if h == 1 else "s")
+    return f"{h} hour" + ("" if h == 1 else "s") + f" {m} minutes"
+
+
+def _build_visit_summary(job):
+    worker_name = _safe_text(job.get("assigned_worker_name") or job.get("worker_name")) or "Worker"
+    address = _safe_text(job.get("address")) or "the job address"
+    started_at = job.get("started_at")
+    completed_at = job.get("completed_at")
+    start_status = _safe_text(job.get("start_location_status"))
+    end_status = _safe_text(job.get("end_location_status"))
+    total_label = _safe_text(job.get("total_time_on_site_label")) or "0 minutes"
+    try:
+        start_text = started_at.astimezone().strftime("%-I:%M %p") if hasattr(started_at, "astimezone") else str(started_at)
+    except Exception:
+        start_text = str(started_at or "unknown time")
+    try:
+        end_text = completed_at.astimezone().strftime("%-I:%M %p") if hasattr(completed_at, "astimezone") else str(completed_at)
+    except Exception:
+        end_text = str(completed_at or "unknown time")
+    if start_status in {"location_denied", "location_error", "job_location_missing"} or end_status in {"location_denied", "location_error", "job_location_missing"}:
+        return f"{worker_name} started at {address} at {start_text} and completed at {end_text}. Start and finish times were recorded, but location could not be verified."
+    if start_status == "away_from_site":
+        km = None
+        try:
+            d = float(job.get("start_distance_from_site_meters") or 0)
+            km = round(d / 1000, 1)
+        except Exception:
+            pass
+        suffix = f" ({km}km away)" if km is not None else ""
+        return f"{worker_name} arrived for {address} at {start_text} and completed at {end_text}. Worker started away from the saved job address{suffix}. Owner review recommended."
+    return f"{worker_name} arrived at {address} at {start_text} and completed the job at {end_text}. Location was verified near the job address at start and finish. Total time on site was {total_label}. The job is ready for owner review and invoice preparation."
+
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -5393,6 +5460,10 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
         new_photos = payload.get("photos")
         start_lat = payload.get("start_lat")
         start_lng = payload.get("start_lng")
+        start_accuracy = payload.get("start_accuracy_meters")
+        end_lat = payload.get("end_lat")
+        end_lng = payload.get("end_lng")
+        end_accuracy = payload.get("end_accuracy_meters")
         location_status = payload.get("location_status")
 
         if (
@@ -5441,16 +5512,61 @@ async def update_job(job_id: str, request: Request, current_user: dict = Depends
                     )
                 validated_photos.append(p)
             update_fields["photos"] = validated_photos
-        if start_lat is not None and start_lng is not None:
-            try:
-                update_fields["start_lat"] = float(start_lat)
-                update_fields["start_lng"] = float(start_lng)
-                update_fields["location_status"] = str(location_status or "captured").strip().lower()[:32]
-                update_fields["location_captured_at"] = now
-            except Exception:
-                pass
-        elif location_status is not None:
-            update_fields["location_status"] = str(location_status).strip().lower()[:32]
+        timeline = list(existing.get("job_visit_timeline") or [])
+        if new_status == "paused":
+            timeline.append({"type": "paused", "label": "Worker paused job", "timestamp": now})
+        if new_status == "in_progress" and str(existing.get("status") or "").lower() == "paused":
+            timeline.append({"type": "resumed", "label": "Worker resumed job", "timestamp": now})
+
+        if new_status == "in_progress":
+            if start_lat is not None and start_lng is not None:
+                try:
+                    slat, slng = float(start_lat), float(start_lng)
+                    update_fields["start_location_lat"] = slat
+                    update_fields["start_location_lng"] = slng
+                    update_fields["start_location_accuracy_meters"] = float(start_accuracy) if start_accuracy is not None else None
+                    update_fields["job_location_lat"] = existing.get("job_location_lat")
+                    update_fields["job_location_lng"] = existing.get("job_location_lng")
+                    distance = _haversine_meters(slat, slng, existing.get("job_location_lat"), existing.get("job_location_lng")) if existing.get("job_location_lat") is not None and existing.get("job_location_lng") is not None else None
+                    start_status = _visit_status_for_distance(distance)
+                    update_fields["start_distance_from_site_meters"] = distance
+                    update_fields["start_location_status"] = start_status
+                    timeline.append({"type": "arrived_started", "label": "Worker started job", "timestamp": now, "location_status": start_status, "distance_from_site_meters": distance, "lat": slat, "lng": slng})
+                except Exception:
+                    update_fields["start_location_status"] = "location_error"
+            else:
+                update_fields["start_location_status"] = str(location_status or "location_denied").strip().lower()[:32]
+                timeline.append({"type": "arrived_started", "label": "Worker started job", "timestamp": now, "location_status": update_fields["start_location_status"]})
+
+        if new_status == "completed":
+            if end_lat is not None and end_lng is not None:
+                try:
+                    elat, elng = float(end_lat), float(end_lng)
+                    update_fields["end_location_lat"] = elat
+                    update_fields["end_location_lng"] = elng
+                    update_fields["end_location_accuracy_meters"] = float(end_accuracy) if end_accuracy is not None else None
+                    distance_end = _haversine_meters(elat, elng, existing.get("job_location_lat"), existing.get("job_location_lng")) if existing.get("job_location_lat") is not None and existing.get("job_location_lng") is not None else None
+                    end_status = _visit_status_for_distance(distance_end)
+                    update_fields["end_distance_from_site_meters"] = distance_end
+                    update_fields["end_location_status"] = end_status
+                    timeline.append({"type": "completed_left", "label": "Worker completed job", "timestamp": now, "location_status": end_status, "distance_from_site_meters": distance_end, "lat": elat, "lng": elng})
+                except Exception:
+                    update_fields["end_location_status"] = "location_error"
+            else:
+                update_fields["end_location_status"] = str(location_status or "location_denied").strip().lower()[:32]
+                timeline.append({"type": "completed_left", "label": "Worker completed job", "timestamp": now, "location_status": update_fields["end_location_status"]})
+            started_dt = existing.get("started_at") or update_fields.get("started_at")
+            if started_dt:
+                try:
+                    seconds = int((now - started_dt).total_seconds())
+                except Exception:
+                    seconds = 0
+                update_fields["total_time_on_site_seconds"] = seconds
+                update_fields["total_time_on_site_label"] = _duration_label(seconds)
+            update_fields["ai_visit_summary"] = _build_visit_summary({**existing, **update_fields, "completed_at": now})
+
+        if timeline:
+            update_fields["job_visit_timeline"] = timeline
 
         await db.jobs.update_one({"_id": obj_id}, {"$set": update_fields})
 
