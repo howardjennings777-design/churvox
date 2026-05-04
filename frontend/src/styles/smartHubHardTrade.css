@@ -1,10 +1,10 @@
 .smart-hub-hard-trade-v4 {
   min-height: 100vh !important;
-  color: #0b0d10 !important;
+  color: #101318 !important;
   background:
-    radial-gradient(circle at top left, rgba(249, 115, 22, 0.16), transparent 26%),
-    linear-gradient(135deg, rgba(11, 13, 16, 0.08) 25%, transparent 25%),
-    linear-gradient(225deg, rgba(11, 13, 16, 0.06) 25%, transparent 25%),
+    radial-gradient(circle at top left, rgba(249, 115, 22, 0.13), transparent 26%),
+    linear-gradient(135deg, rgba(11, 13, 16, 0.07) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(11, 13, 16, 0.05) 25%, transparent 25%),
     #b4aa9b !important;
 }
 
@@ -20,16 +20,17 @@
 .smart-hub-hard-trade-v4 .operator-panel,
 .smart-hub-hard-trade-v4 .operator-card,
 .smart-hub-hard-trade-v4 [data-smart-hub-card="true"] {
-  background: #d2c8b9 !important;
-  border: 1px solid #756c5f !important;
-  color: #0b0d10 !important;
-  box-shadow: 0 14px 34px rgba(11,13,16,0.18) !important;
+  background: #f4eee4 !important;
+  border: 1px solid #c7bba9 !important;
+  color: #101318 !important;
+  box-shadow: 0 14px 32px rgba(15,17,21,0.14) !important;
 }
 
 .smart-hub-hard-trade-v4 .operator-inner,
 .smart-hub-hard-trade-v4 [data-smart-hub-inner="true"] {
-  background: #bfb4a4 !important;
-  border: 1px solid #83796b !important;
+  background: #ebe2d6 !important;
+  border: 1px solid #c9bba8 !important;
+  color: #101318 !important;
 }
 
 .smart-hub-hard-trade-v4 .operator-primary,
@@ -37,6 +38,7 @@
   background: #f97316 !important;
   color: #fff !important;
   border-color: #ea580c !important;
+  box-shadow: 0 10px 24px rgba(249, 115, 22, 0.28) !important;
 }
 
 .smart-hub-hard-trade-v4 .operator-primary:hover,
@@ -56,7 +58,7 @@
   background: #111317 !important;
   color: #fff !important;
   border: 1px solid #2b3038 !important;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.24) !important;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.20) !important;
 }
 
 .smart-hub-hard-trade-v4 .operator-command-key:hover,
@@ -66,11 +68,12 @@
 }
 
 .smart-hub-hard-trade-v4 .operator-label {
-  color: #3a4048 !important;
+  color: #5a5146 !important;
+  font-weight: 800 !important;
 }
 
 .smart-hub-hard-trade-v4 .operator-number {
-  color: #050607 !important;
+  color: #101318 !important;
   font-weight: 900 !important;
 }
 
