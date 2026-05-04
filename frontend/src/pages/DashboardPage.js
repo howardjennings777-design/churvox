@@ -1,7 +1,7 @@
 import React from "react";
-import SmartHubBrainPage from "./SmartHubBrainPage";
+import SmartHubBrainPageStable from "./SmartHubBrainPageStable";
 import SmartHubErrorBoundary from "../components/SmartHubErrorBoundary";
 
 export default function DashboardPage() {
-  return <SmartHubErrorBoundary><SmartHubBrainPage /></SmartHubErrorBoundary>;
+  return <SmartHubErrorBoundary><SmartHubBrainPageStable /></SmartHubErrorBoundary>;
 }
