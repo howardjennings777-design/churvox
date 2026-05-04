@@ -10095,6 +10095,9 @@ async def automation_test_rule(rule_id: str, current_user: dict = Depends(get_cu
     return {"success": True, "run": _automation_clean_doc(run)}
 
 
+from command_hub_routes import register_command_hub_routes
+register_command_hub_routes(api_router, db, get_current_user, get_user_business_id)
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
