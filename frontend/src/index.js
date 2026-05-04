@@ -5,7 +5,6 @@ import "./index.css";
 import "./styles/premium.css";
 import "./styles/churvoxUnifiedTheme.css";
 import "./styles/churvoxFullPageModals.css";
-import "./utils/fullPageModalWorkspaces";
 
 // Register service worker for PWA installability (iPhone Add to Home Screen + Chrome install)
 // Network-first SW — no aggressive caching, new deploys always picked up
