@@ -1,0 +1,74 @@
+name: Churvox Playwright Full Site Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Live site URL to test"
+        required: false
+        default: "https://www.churvox.com"
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  playwright:
+    name: Playwright live smoke + authenticated route audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    env:
+      CI: true
+      PLAYWRIGHT_BASE_URL: ${{ github.event.inputs.base_url || vars.PLAYWRIGHT_BASE_URL || 'https://www.churvox.com' }}
+      E2E_EMAIL: ${{ secrets.CHURVOX_E2E_EMAIL }}
+      E2E_PASSWORD: ${{ secrets.CHURVOX_E2E_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Wait briefly for live deploy to settle
+        if: github.event_name == 'push'
+        run: sleep 60
+
+      - name: Run Playwright full-site checks
+        run: npx playwright test tests/e2e/full-site.spec.js --project=chromium
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload Playwright test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: frontend/test-results
+          if-no-files-found: ignore
+          retention-days: 7
