@@ -1,0 +1,47 @@
+name: Patch Command Hub access links
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Add owner access links to Command Hub
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path('frontend/src/pages/CommandHubRealPage.js')
+          text = path.read_text(encoding='utf-8', errors='ignore')
+          old = 'const workspaces = [["Jobs", "/jobs", "Create, schedule, assign"], ["Clients", "/clients", "Customers and properties"], ["Quotes", "/quotes", "Prepare and follow up"], ["Invoices", "/invoices", "Drafts and reminders"], ["Team", "/team", "Crew and roles"], ["Dispatch", "/dispatch", "Schedule and allocate"], ["Proof-to-Paid", "/proof-to-paid", "Proof and payment flow"], ["Account & Plan", "/plans", "Billing and limits"], ["Settings", "/settings", "Business setup"]];'
+          new = 'const workspaces = [["Jobs", "/jobs", "Create, schedule, assign"], ["Clients", "/clients", "Customers and properties"], ["Quotes", "/quotes", "Prepare and follow up"], ["Invoices", "/invoices", "Drafts and reminders"], ["Team", "/team", "Crew and roles"], ["Dispatch", "/dispatch", "Schedule and allocate"], ["Proof-to-Paid", "/proof-to-paid", "Proof and payment flow"], ["Plans", "/plans", "Choose or change plan"], ["Account & Plan", "/plans", "Billing, limits, add-ons"], ["Settings", "/settings", "Business setup"], ["Contact Us", "/contact", "Help and support"], ["Privacy", "/privacy", "Privacy policy"], ["Terms", "/terms", "Terms of use"]];'
+          if old not in text:
+              if 'Contact Us", "/contact"' in text:
+                  print('Contact links already present')
+              else:
+                  raise SystemExit('Workspace line not found')
+          else:
+              text = text.replace(old, new, 1)
+              path.write_text(text, encoding='utf-8')
+              print('Patched workspace links')
+          PY
+      - name: Commit patch if needed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git add frontend/src/pages/CommandHubRealPage.js
+            git commit -m "Add plans settings contact links to Command Hub"
+            git push
+          fi
