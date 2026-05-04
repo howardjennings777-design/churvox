@@ -2380,6 +2380,7 @@ async def get_ai_operator_actions(current_user: dict = Depends(get_current_user)
     rows.sort(key=lambda r: (0 if str(r.get("status") or "") == "pending" else 1, -(r.get("priority_score") or 0), _sort_key(r)))
     return {"success": True, "actions": rows}
 
+@api_router.get("/ai-operator/settings")
 @api_router.get("/api/ai-operator/settings")
 async def get_ai_operator_settings(current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str(current_user.get("role") or "").lower())
@@ -2388,6 +2389,7 @@ async def get_ai_operator_settings(current_user: dict = Depends(get_current_user
     doc = await db.ai_operator_settings.find_one({"business_id": business_id}) if hasattr(db, "ai_operator_settings") else None
     return {**defaults, **(doc or {}), "accounting_changes_locked": True, "payroll_changes_locked": True}
 
+@api_router.patch("/ai-operator/settings")
 @api_router.patch("/api/ai-operator/settings")
 async def patch_ai_operator_settings(payload: dict, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str(current_user.get("role") or "").lower())
@@ -9979,6 +9981,7 @@ async def ai_operator_dismiss(item_id: str, current_user: dict = Depends(get_cur
     return await ai_operator_reject(item_id, current_user)
 
 
+@api_router.post("/ai-operator/run-daily-plan")
 @api_router.post("/api/ai-operator/run-daily-plan")
 async def ai_operator_run_daily_plan(current_user: dict = Depends(get_current_user)):
     await smart_hub_process_due_communications(current_user)
