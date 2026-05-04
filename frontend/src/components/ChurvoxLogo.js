@@ -14,35 +14,35 @@ const SIZE_MAP = {
 
 const SMART_HUB_LOGO_FIX_CSS = `
   img[data-testid="churvox-logo"][data-logo-size="hero"] {
-    height: clamp(86px, 8.5vw, 138px) !important;
+    height: clamp(82px, 8vw, 132px) !important;
     width: auto !important;
-    min-width: clamp(230px, 22vw, 380px) !important;
+    min-width: clamp(220px, 21vw, 360px) !important;
     max-width: none !important;
     object-fit: contain !important;
     display: block !important;
-    transform: scale(1.18) !important;
+    transform: scale(1.12) !important;
     transform-origin: center !important;
     filter: drop-shadow(0 16px 34px rgba(37, 99, 235, 0.28)) !important;
   }
 
   div:has(> img[data-testid="churvox-logo"][data-logo-size="hero"]),
   a:has(> img[data-testid="churvox-logo"][data-logo-size="hero"]) {
-    background: #070b14 !important;
-    background-image: linear-gradient(135deg, #070b14 0%, #0b1220 100%) !important;
-    border-color: rgba(255, 255, 255, 0.08) !important;
+    background: transparent !important;
+    background-image: none !important;
+    border-color: transparent !important;
     box-shadow: none !important;
     overflow: visible !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    padding: 16px 22px !important;
+    padding: 8px 10px !important;
   }
 
   @media (max-width: 768px) {
     img[data-testid="churvox-logo"][data-logo-size="hero"] {
-      height: clamp(74px, 18vw, 110px) !important;
-      min-width: clamp(190px, 56vw, 300px) !important;
-      transform: scale(1.08) !important;
+      height: clamp(72px, 17vw, 106px) !important;
+      min-width: clamp(190px, 54vw, 290px) !important;
+      transform: scale(1.04) !important;
     }
   }
 `;
