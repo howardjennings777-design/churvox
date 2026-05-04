@@ -176,3 +176,19 @@
 @media (max-width: 768px) {
   .mobile-nav { padding-bottom: env(safe-area-inset-bottom); }
 }
+
+/* Smart Hub tradie industrial theme */
+.tradie-page-bg { background: linear-gradient(135deg, #f3efe6 0%, #ebe5d8 45%, #f7f3ea 100%); }
+.tradie-diamond {
+  background-color: #1f2422;
+  background-image:
+    linear-gradient(45deg, rgba(255,255,255,0.045) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255,255,255,0.04) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.035) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.03) 75%);
+  background-size: 22px 22px;
+  background-position: 0 0, 0 11px, 11px -11px, -11px 0px;
+}
+.tradie-panel { border: 1px solid #737a74; background: #f7f3ea; box-shadow: 0 8px 24px rgba(23,23,23,0.08); border-radius: 1rem; }
+.tradie-header { background: #252a27; color: #f8fafc; border: 1px solid #555b56; }
+.tradie-chip { border: 1px solid #555b56; background: #252a27; color: #d6d3d1; }
