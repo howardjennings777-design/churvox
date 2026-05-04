@@ -1,9 +1,11 @@
 import React from "react";
-import CommandHubTopPlayerPage from "./CommandHubTopPlayerPage";
+import AIControlRoomPage from "./AIControlRoomPage";
 import SmartHubErrorBoundary from "../components/SmartHubErrorBoundary";
-import "../styles/smartHubStableFix.css";
-import "../styles/commandHubModernFix.css";
 
 export default function DashboardPage() {
-  return <SmartHubErrorBoundary><CommandHubTopPlayerPage /></SmartHubErrorBoundary>;
+  return (
+    <SmartHubErrorBoundary>
+      <AIControlRoomPage />
+    </SmartHubErrorBoundary>
+  );
 }
