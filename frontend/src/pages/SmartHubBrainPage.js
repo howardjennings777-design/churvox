@@ -650,9 +650,9 @@ export default function SmartHubBrainPage() {
     };
 
     if (workspaceDrawer === "Jobs") {
-      if (workspaceMode === "list") return <div className="space-y-3">{jobs.map((j) => <button key={String(j?.id || j?._id)} type="button" onClick={() => openDetail(j)} className="block w-full rounded border bg-white p-3 text-left"><p className="font-semibold">{safeText(j?.title || j?.name, "Untitled job")}</p><p className="text-sm text-[#555b56]">{safeText(j?.status, "Unknown")} · {safeText(j?.address || j?.location, "No address")}</p></button>)}</div>;
-      if (!workspaceRecord) return <p className="text-sm text-slate-700">Record details could not load.</p>;
-      if (workspaceMode === "edit") return <div className="space-y-2"><input className="w-full rounded border p-2" value={workspaceEditForm.title || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, title: e.target.value }))} placeholder="Job title" /><input className="w-full rounded border p-2" value={workspaceEditForm.address || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, address: e.target.value }))} placeholder="Address" /><input className="w-full rounded border p-2" value={workspaceEditForm.status || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, status: e.target.value }))} placeholder="Status" /><textarea className="w-full rounded border p-2" value={workspaceEditForm.notes || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Notes" /><div className="flex gap-2"><button type="button" className="rounded bg-[#3f6212] px-3 py-1 text-white" onClick={() => saveRecord(`/jobs/${recordId}`, { title: workspaceEditForm.title, address: workspaceEditForm.address, status: workspaceEditForm.status, notes: workspaceEditForm.notes }, "jobs")}>Save</button><button type="button" className="rounded border px-3 py-1" onClick={() => setWorkspaceMode("detail")}>Back</button></div></div>;
+      if (workspaceMode === "list") return <div className="space-y-3">{jobs.map((j) => <button key={String(j?.id || j?._id)} type="button" onClick={() => openDetail(j)} className="block w-full rounded border bg-[#f9f7f2] p-3 text-left"><p className="font-semibold">{safeText(j?.title || j?.name, "Untitled job")}</p><p className="text-sm text-[#5f646b]">{safeText(j?.status, "Unknown")} · {safeText(j?.address || j?.location, "No address")}</p></button>)}</div>;
+      if (!workspaceRecord) return <p className="text-sm text-[#24272c]">Record details could not load.</p>;
+      if (workspaceMode === "edit") return <div className="space-y-2"><input className="w-full rounded border p-2" value={workspaceEditForm.title || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, title: e.target.value }))} placeholder="Job title" /><input className="w-full rounded border p-2" value={workspaceEditForm.address || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, address: e.target.value }))} placeholder="Address" /><input className="w-full rounded border p-2" value={workspaceEditForm.status || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, status: e.target.value }))} placeholder="Status" /><textarea className="w-full rounded border p-2" value={workspaceEditForm.notes || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Notes" /><div className="flex gap-2"><button type="button" className="rounded bg-[#0f6b57] px-3 py-1 text-white" onClick={() => saveRecord(`/jobs/${recordId}`, { title: workspaceEditForm.title, address: workspaceEditForm.address, status: workspaceEditForm.status, notes: workspaceEditForm.notes }, "jobs")}>Save</button><button type="button" className="rounded border px-3 py-1" onClick={() => setWorkspaceMode("detail")}>Back</button></div></div>;
       return <div className="space-y-2"><p className="font-semibold">{safeText(workspaceRecord?.title || workspaceRecord?.name, "Untitled job")}</p><p>Client: {safeText(findByIds(clients, [workspaceRecord?.client_id, workspaceRecord?.clientId], ["id","_id","client_id"])?.name || workspaceRecord?.client_name)}</p><p>Address: {safeText(workspaceRecord?.address || workspaceRecord?.location)}</p><p>Status: {safeText(workspaceRecord?.status)}</p><p>Assigned worker: {safeText(workspaceRecord?.assigned_worker || workspaceRecord?.assigned_worker_name)}</p><p>Scheduled date: {safeText(workspaceRecord?.scheduled_date || workspaceRecord?.date)}</p><p>Completed date: {safeText(workspaceRecord?.completed_at)}</p><p>Service type: {safeText(workspaceRecord?.service_type || workspaceRecord?.job_type)}</p><p>Notes: {safeText(workspaceRecord?.notes)}</p><div className="flex flex-wrap gap-2"><button type="button" className="rounded border px-3 py-1" onClick={() => startEdit(workspaceRecord)}>Edit job details</button><button type="button" className="rounded border px-3 py-1" onClick={() => setWorkspaceMode("list")}>Back</button><button type="button" className="rounded border px-3 py-1" onClick={() => navigate(`/jobs/${recordId}`)}>Open full job page</button></div></div>;
     }
 
@@ -695,19 +695,19 @@ export default function SmartHubBrainPage() {
         setWorkspaceMode("detail");
       };
 
-      if (workspaceMode === "add") return <div className="space-y-2"><h3 className="text-lg font-semibold text-[#171717]">Add client</h3><input className="w-full rounded border p-2" value={workspaceEditForm.name || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, name: e.target.value }))} placeholder="Client name" /><input className="w-full rounded border p-2" value={workspaceEditForm.email || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, email: e.target.value }))} placeholder="Email" /><input className="w-full rounded border p-2" value={workspaceEditForm.phone || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" /><input className="w-full rounded border p-2" value={workspaceEditForm.address || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, address: e.target.value }))} placeholder="Address" /><textarea className="w-full rounded border p-2" value={workspaceEditForm.notes || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Notes" /><div className="flex flex-wrap gap-2"><button type="button" className="rounded bg-[#3f6212] px-3 py-1 text-white" onClick={addClient}>Save client</button><button type="button" className="rounded border px-3 py-1" onClick={() => setWorkspaceMode("list")}>Cancel</button></div></div>;
-      if (workspaceMode === "edit" && workspaceRecord) return <div className="space-y-2"><h3 className="text-lg font-semibold text-[#171717]">Edit client</h3><input className="w-full rounded border p-2" value={workspaceEditForm.name || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, name: e.target.value }))} placeholder="Client name" /><input className="w-full rounded border p-2" value={workspaceEditForm.email || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, email: e.target.value }))} placeholder="Email" /><input className="w-full rounded border p-2" value={workspaceEditForm.phone || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" /><input className="w-full rounded border p-2" value={workspaceEditForm.address || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, address: e.target.value }))} placeholder="Address" /><textarea className="w-full rounded border p-2" value={workspaceEditForm.notes || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Notes" /><div className="flex flex-wrap gap-2"><button type="button" className="rounded bg-[#3f6212] px-3 py-1 text-white" onClick={() => saveRecord(`/clients/${selectedClientId}`, { name: workspaceEditForm.name, email: workspaceEditForm.email, phone: workspaceEditForm.phone, address: workspaceEditForm.address, notes: workspaceEditForm.notes }, "clients")}>Save client</button><button type="button" className="rounded border px-3 py-1" onClick={() => setWorkspaceMode("detail")}>Cancel</button></div></div>;
-      if (workspaceMode === "detail" && workspaceRecord) return <div className="space-y-2"><h3 className="text-lg font-semibold text-[#171717]">{safeText(workspaceRecord?.name, "Client details")}</h3><p>Email: {safeText(workspaceRecord?.email)}</p><p>Phone: {safeText(workspaceRecord?.phone)}</p><p>Address: {safeText(workspaceRecord?.address)}</p><p>Notes: {safeText(workspaceRecord?.notes)}</p><p>Recent jobs: {selectedClientJobs.slice(0, 3).map((job) => textOr(job?.title || job?.name, "Job")).join(", ") || "None"}</p><p>Open invoices: {selectedClientInvoices.filter((inv) => !["paid", "cancelled", "canceled"].includes(statusOf(inv?.status))).length}</p><p>Quotes: {selectedClientQuotes.length}</p><div className="flex flex-wrap gap-2"><button type="button" className="rounded border px-3 py-1" onClick={() => startEdit(workspaceRecord)}>Edit client</button><button type="button" className="rounded border px-3 py-1" onClick={() => navigate(`/jobs/new?client_id=${selectedClientId}`)}>New job (open full page)</button><button type="button" className="rounded border px-3 py-1" onClick={() => navigate(`/quotes/new?client_id=${selectedClientId}`)}>New quote (open full page)</button><button type="button" className="rounded border px-3 py-1" onClick={() => setWorkspaceMode("list")}>Back to clients</button><button type="button" className="rounded border px-3 py-1" onClick={() => navigate(`/clients/${selectedClientId}`)}>Open full client page</button></div></div>;
+      if (workspaceMode === "add") return <div className="space-y-2"><h3 className="text-lg font-semibold text-[#121417]">Add client</h3><input className="w-full rounded border p-2" value={workspaceEditForm.name || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, name: e.target.value }))} placeholder="Client name" /><input className="w-full rounded border p-2" value={workspaceEditForm.email || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, email: e.target.value }))} placeholder="Email" /><input className="w-full rounded border p-2" value={workspaceEditForm.phone || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" /><input className="w-full rounded border p-2" value={workspaceEditForm.address || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, address: e.target.value }))} placeholder="Address" /><textarea className="w-full rounded border p-2" value={workspaceEditForm.notes || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Notes" /><div className="flex flex-wrap gap-2"><button type="button" className="rounded bg-[#0f6b57] px-3 py-1 text-white" onClick={addClient}>Save client</button><button type="button" className="rounded border px-3 py-1" onClick={() => setWorkspaceMode("list")}>Cancel</button></div></div>;
+      if (workspaceMode === "edit" && workspaceRecord) return <div className="space-y-2"><h3 className="text-lg font-semibold text-[#121417]">Edit client</h3><input className="w-full rounded border p-2" value={workspaceEditForm.name || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, name: e.target.value }))} placeholder="Client name" /><input className="w-full rounded border p-2" value={workspaceEditForm.email || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, email: e.target.value }))} placeholder="Email" /><input className="w-full rounded border p-2" value={workspaceEditForm.phone || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone" /><input className="w-full rounded border p-2" value={workspaceEditForm.address || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, address: e.target.value }))} placeholder="Address" /><textarea className="w-full rounded border p-2" value={workspaceEditForm.notes || ""} onChange={(e) => setWorkspaceEditForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Notes" /><div className="flex flex-wrap gap-2"><button type="button" className="rounded bg-[#0f6b57] px-3 py-1 text-white" onClick={() => saveRecord(`/clients/${selectedClientId}`, { name: workspaceEditForm.name, email: workspaceEditForm.email, phone: workspaceEditForm.phone, address: workspaceEditForm.address, notes: workspaceEditForm.notes }, "clients")}>Save client</button><button type="button" className="rounded border px-3 py-1" onClick={() => setWorkspaceMode("detail")}>Cancel</button></div></div>;
+      if (workspaceMode === "detail" && workspaceRecord) return <div className="space-y-2"><h3 className="text-lg font-semibold text-[#121417]">{safeText(workspaceRecord?.name, "Client details")}</h3><p>Email: {safeText(workspaceRecord?.email)}</p><p>Phone: {safeText(workspaceRecord?.phone)}</p><p>Address: {safeText(workspaceRecord?.address)}</p><p>Notes: {safeText(workspaceRecord?.notes)}</p><p>Recent jobs: {selectedClientJobs.slice(0, 3).map((job) => textOr(job?.title || job?.name, "Job")).join(", ") || "None"}</p><p>Open invoices: {selectedClientInvoices.filter((inv) => !["paid", "cancelled", "canceled"].includes(statusOf(inv?.status))).length}</p><p>Quotes: {selectedClientQuotes.length}</p><div className="flex flex-wrap gap-2"><button type="button" className="rounded border px-3 py-1" onClick={() => startEdit(workspaceRecord)}>Edit client</button><button type="button" className="rounded border px-3 py-1" onClick={() => navigate(`/jobs/new?client_id=${selectedClientId}`)}>New job (open full page)</button><button type="button" className="rounded border px-3 py-1" onClick={() => navigate(`/quotes/new?client_id=${selectedClientId}`)}>New quote (open full page)</button><button type="button" className="rounded border px-3 py-1" onClick={() => setWorkspaceMode("list")}>Back to clients</button><button type="button" className="rounded border px-3 py-1" onClick={() => navigate(`/clients/${selectedClientId}`)}>Open full client page</button></div></div>;
 
-      return <div className="space-y-4"><div><h3 className="text-lg font-semibold text-[#171717]">Clients Workspace</h3><p className="text-sm text-[#555b56]">Search, review and update clients without leaving Smart Hub.</p></div><div className="flex flex-wrap gap-2"><input className="min-w-[220px] flex-1 rounded border p-2" value={clientSearch} onChange={(e) => setClientSearch(e.target.value)} placeholder="Search clients" /><button type="button" className="rounded bg-[#3f6212] px-3 py-2 text-sm text-white" onClick={() => { setWorkspaceEditForm({}); setWorkspaceMode("add"); }}>Add client</button><button type="button" className="rounded border px-3 py-2 text-sm" onClick={() => navigate("/clients")}>Open full clients page</button></div>{!filteredClients.length ? <p className="text-sm text-[#555b56]">No clients found.</p> : filteredClients.map((client) => { const id = String(client?.id || client?._id || ""); const counts = makeClientCounts(client); return <article key={id} className="rounded-xl border border-[#737a74] tradie-panel p-4"><p className="font-semibold text-[#171717]">{safeText(client?.name, "Unknown client")}</p><p className="text-sm text-[#555b56]">{safeText(client?.email)}</p><p className="text-sm text-[#555b56]">{safeText(client?.phone)}</p><p className="text-sm text-[#555b56]">{safeText(client?.address)}</p><p className="mt-1 text-xs text-[#555b56]">Active/open jobs: {counts.activeJobs} · Open invoices: {counts.openInvoices} · Quotes: {counts.quotesCount}</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => openDetail(client)}>View details</button><button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => startEdit(client)}>Edit</button><button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => navigate(`/jobs/new?client_id=${id}`)}>New job (open full page)</button><button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => navigate(`/quotes/new?client_id=${id}`)}>New quote (open full page)</button><button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => navigate(`/clients/${id}`)}>Open full client page</button></div></article>; })}</div>;
+      return <div className="space-y-4"><div><h3 className="text-lg font-semibold text-[#121417]">Clients Workspace</h3><p className="text-sm text-[#5f646b]">Search, review and update clients without leaving Smart Hub.</p></div><div className="flex flex-wrap gap-2"><input className="min-w-[220px] flex-1 rounded border p-2" value={clientSearch} onChange={(e) => setClientSearch(e.target.value)} placeholder="Search clients" /><button type="button" className="rounded bg-[#0f6b57] px-3 py-2 text-sm text-white" onClick={() => { setWorkspaceEditForm({}); setWorkspaceMode("add"); }}>Add client</button><button type="button" className="rounded border px-3 py-2 text-sm" onClick={() => navigate("/clients")}>Open full clients page</button></div>{!filteredClients.length ? <p className="text-sm text-[#5f646b]">No clients found.</p> : filteredClients.map((client) => { const id = String(client?.id || client?._id || ""); const counts = makeClientCounts(client); return <article key={id} className="rounded-xl border border-[#c8c0b2] tradie-panel p-4"><p className="font-semibold text-[#121417]">{safeText(client?.name, "Unknown client")}</p><p className="text-sm text-[#5f646b]">{safeText(client?.email)}</p><p className="text-sm text-[#5f646b]">{safeText(client?.phone)}</p><p className="text-sm text-[#5f646b]">{safeText(client?.address)}</p><p className="mt-1 text-xs text-[#5f646b]">Active/open jobs: {counts.activeJobs} · Open invoices: {counts.openInvoices} · Quotes: {counts.quotesCount}</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => openDetail(client)}>View details</button><button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => startEdit(client)}>Edit</button><button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => navigate(`/jobs/new?client_id=${id}`)}>New job (open full page)</button><button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => navigate(`/quotes/new?client_id=${id}`)}>New quote (open full page)</button><button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => navigate(`/clients/${id}`)}>Open full client page</button></div></article>; })}</div>;
     }
 
     if (workspaceDrawer === "Invoices") {
       return (
         <div className="space-y-4">
           <div>
-            <h3 className="text-lg font-semibold text-[#171717]">Invoices Workspace</h3>
-            <p className="text-sm text-[#555b56]">Review ready-to-bill jobs, draft invoices and payment reminders.</p>
+            <h3 className="text-lg font-semibold text-[#121417]">Invoices Workspace</h3>
+            <p className="text-sm text-[#5f646b]">Review ready-to-bill jobs, draft invoices and payment reminders.</p>
           </div>
           <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
@@ -716,14 +716,14 @@ export default function SmartHubBrainPage() {
               ["Draft invoices", draftInvoices.length],
               ["Quotes waiting", waitingQuotes.length],
             ].map(([label, value]) => (
-              <article key={label} className="rounded-xl border border-[#737a74] tradie-panel p-3">
-                <p className="text-xs uppercase tracking-wide text-[#737a74]">{label}</p>
-                <p className="mt-1 text-xl font-semibold text-[#171717]">{value}</p>
+              <article key={label} className="rounded-xl border border-[#c8c0b2] tradie-panel p-3">
+                <p className="text-xs uppercase tracking-wide text-[#5f646b]">{label}</p>
+                <p className="mt-1 text-xl font-semibold text-[#121417]">{value}</p>
               </article>
             ))}
           </section>
           {!readyToBillJobs.length ? (
-            <p className="text-sm text-[#555b56]">No ready-to-bill jobs right now.</p>
+            <p className="text-sm text-[#5f646b]">No ready-to-bill jobs right now.</p>
           ) : (
             readyToBillJobs.map((job) => {
               const client = findByIds(clients, [job?.client_id, job?.clientId], ["id", "_id", "client_id"]);
@@ -732,14 +732,14 @@ export default function SmartHubBrainPage() {
               const total = Number(job?.total ?? (Number.isFinite(subtotal) && Number.isFinite(gst) ? subtotal + gst : NaN));
 
               return (
-                <div key={String(job?.id || job?._id || job?.job_id || Math.random())} className="rounded-xl border border-[#737a74] tradie-panel p-4">
-                  <p className="font-semibold text-[#171717]">{textOr(job?.title || job?.name, "Untitled job")}</p>
-                  <p className="text-sm text-[#555b56]">Client: {textOr(client?.name, "Unknown client")}</p>
-                  <p className="text-sm text-[#555b56]">Address: {textOr(job?.address || job?.location, "No address saved")}</p>
-                  <p className="text-sm text-[#555b56]">Completed: {textOr(job?.completed_at || job?.updated_at, "Unknown date")}</p>
-                  <p className="mt-2 text-sm text-slate-700">{buildInvoiceDescription({ job, client })}</p>
+                <div key={String(job?.id || job?._id || job?.job_id || Math.random())} className="rounded-xl border border-[#c8c0b2] tradie-panel p-4">
+                  <p className="font-semibold text-[#121417]">{textOr(job?.title || job?.name, "Untitled job")}</p>
+                  <p className="text-sm text-[#5f646b]">Client: {textOr(client?.name, "Unknown client")}</p>
+                  <p className="text-sm text-[#5f646b]">Address: {textOr(job?.address || job?.location, "No address saved")}</p>
+                  <p className="text-sm text-[#5f646b]">Completed: {textOr(job?.completed_at || job?.updated_at, "Unknown date")}</p>
+                  <p className="mt-2 text-sm text-[#24272c]">{buildInvoiceDescription({ job, client })}</p>
                   {Number.isFinite(subtotal) ? (
-                    <div className="mt-3 grid grid-cols-1 gap-1 text-sm text-slate-700 sm:grid-cols-3">
+                    <div className="mt-3 grid grid-cols-1 gap-1 text-sm text-[#24272c] sm:grid-cols-3">
                       <p>Subtotal: {money(subtotal)}</p>
                       <p>GST: {money(gst)}</p>
                       <p>Total: {money(total)}</p>
@@ -751,7 +751,7 @@ export default function SmartHubBrainPage() {
                     type="button"
                     onClick={() => approveDraft(job)}
                     disabled={savingJobId === String(job?.id || job?._id || "")}
-                    className="mt-4 rounded-lg bg-[#3f6212] px-4 py-2 text-sm font-medium text-white hover:bg-[#365314] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-4 rounded-lg bg-[#0f6b57] px-4 py-2 text-sm font-medium text-white hover:bg-[#0b4f42] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {savingJobId === String(job?.id || job?._id || "") ? "Approving..." : "Approve draft"}
                   </button>
@@ -803,18 +803,18 @@ export default function SmartHubBrainPage() {
       return (
         <div className="space-y-4">
           <div>
-            <h3 className="text-lg font-semibold text-[#171717]">Payment Reminders</h3>
-            <p className="text-sm text-[#555b56]">Review AI-prepared reminder drafts for unpaid invoices.</p>
+            <h3 className="text-lg font-semibold text-[#121417]">Payment Reminders</h3>
+            <p className="text-sm text-[#5f646b]">Review AI-prepared reminder drafts for unpaid invoices.</p>
           </div>
           <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[['Open invoices', reminderInvoices.length], ['Overdue invoices', overdueCount], ['Draft reminders', draftCount], ['Missing contact details', missingContactCount]].map(([label, value]) => <article key={label} className="rounded-xl border border-[#737a74] tradie-panel p-3"><p className="text-xs uppercase tracking-wide text-[#737a74]">{label}</p><p className="mt-1 text-xl font-semibold text-[#171717]">{value}</p></article>)}
+            {[['Open invoices', reminderInvoices.length], ['Overdue invoices', overdueCount], ['Draft reminders', draftCount], ['Missing contact details', missingContactCount]].map(([label, value]) => <article key={label} className="rounded-xl border border-[#c8c0b2] tradie-panel p-3"><p className="text-xs uppercase tracking-wide text-[#5f646b]">{label}</p><p className="mt-1 text-xl font-semibold text-[#121417]">{value}</p></article>)}
           </section>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => approveMany(selectedReminderIds)} className="rounded-lg bg-[#3f6212] px-3 py-2 text-sm font-medium text-white">Approve selected reminders</button>
-            <button type="button" onClick={() => approveMany(reminderInvoices.map((inv) => String(inv?.id || inv?._id || inv?.invoice_id || "")).filter(Boolean))} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">Approve all ready reminders</button>
-            <button type="button" onClick={() => setSelectedReminderIds([])} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">Reject selected</button>
+            <button type="button" onClick={() => approveMany(selectedReminderIds)} className="rounded-full bg-[#0f6b57] px-3 py-2 text-sm font-medium text-white hover:bg-[#0b4f42]">Approve selected reminders</button>
+            <button type="button" onClick={() => approveMany(reminderInvoices.map((inv) => String(inv?.id || inv?._id || inv?.invoice_id || "")).filter(Boolean))} className="rounded-lg border border-[#c8c0b2] px-3 py-2 text-sm font-medium text-[#24272c]">Approve all ready reminders</button>
+            <button type="button" onClick={() => setSelectedReminderIds([])} className="rounded-lg border border-[#c8c0b2] px-3 py-2 text-sm font-medium text-[#24272c]">Reject selected</button>
           </div>
-          {!reminderInvoices.length ? <p className="text-sm text-[#555b56]">No unpaid invoices need reminders right now.</p> : reminderInvoices.map((inv) => {
+          {!reminderInvoices.length ? <p className="text-sm text-[#5f646b]">No unpaid invoices need reminders right now.</p> : reminderInvoices.map((inv) => {
             const id = String(inv?.id || inv?._id || inv?.invoice_id || "");
             const client = findByIds(clients, [inv?.client_id, inv?.clientId], ["id", "_id", "client_id"]);
             const contactEmail = client?.email || inv?.client_email;
@@ -822,7 +822,7 @@ export default function SmartHubBrainPage() {
             const missingContact = !(contactEmail || contactPhone);
             const isEditing = !!editingDraft[id];
             const due = inv?.due_date || inv?.dueDate;
-            return <article key={id} className="rounded-xl border border-[#737a74] tradie-panel p-4"><div className="flex items-start justify-between gap-3"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedReminderIds.includes(id)} onChange={() => toggleSelected(id)} />Select</label><p className="text-xs font-medium uppercase tracking-wide text-[#737a74]">{approvedReminderIds[id] ? "Approved draft" : "Pending approval"}</p></div><p className="mt-2 font-semibold text-[#171717]">{textOr(client?.name || inv?.client_name || inv?.customer_name, "Unknown client")}</p><p className="text-sm text-[#555b56]">Invoice: {textOr(inv?.invoice_number || inv?.number || inv?.title, "Untitled invoice")}</p><p className="text-sm text-[#555b56]">Amount due: {money(invoiceBalance(inv))}</p><p className="text-sm text-[#555b56]">Due date: {textOr(due, "No due date")}</p><p className="text-sm text-[#555b56]">Status: {textOr(inv?.status, "unknown")}</p><p className="text-sm text-[#555b56]">Overdue days: {daysOverdue(inv) ?? "—"}</p><p className="text-sm text-[#555b56]">Contact: {contactEmail || "—"} {contactPhone ? ` / ${contactPhone}` : ""}</p>{missingContact ? <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">Warning: missing client contact details. You can save/approve this draft, but it is not ready to send.</p> : null}{isEditing ? <textarea className="mt-3 w-full rounded-lg border border-slate-300 p-2 text-sm" rows={4} value={reminderDrafts[id] || ""} onChange={(e) => setReminderDrafts((prev) => ({ ...prev, [id]: e.target.value }))} /> : <p className="mt-3 rounded-lg bg-[#ebe5d8] p-3 text-sm text-slate-800">{reminderDrafts[id]}</p>}<div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => setEditingDraft((prev) => ({ ...prev, [id]: true }))} className="rounded border border-slate-300 px-3 py-1 text-sm">Edit message</button><button type="button" onClick={() => setEditingDraft((prev) => ({ ...prev, [id]: false }))} className="rounded border border-slate-300 px-3 py-1 text-sm">Save message</button><button type="button" onClick={() => { setEditingDraft((prev) => ({ ...prev, [id]: false })); setReminderDrafts((prev) => ({ ...prev, [id]: buildInvoiceReminderMessage({ client, invoice: inv, business: user, channel: "email" }) })); }} className="rounded border border-slate-300 px-3 py-1 text-sm">Cancel</button><button type="button" onClick={() => approveOne(inv)} className="rounded bg-[#3f6212] px-3 py-1 text-sm text-white">Approve reminder draft</button><button type="button" onClick={() => navigate(`/invoices/${id}`)} className="rounded border border-slate-300 px-3 py-1 text-sm">Open full invoice page</button></div></article>;
+            return <article key={id} className="rounded-xl border border-[#c8c0b2] tradie-panel p-4"><div className="flex items-start justify-between gap-3"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedReminderIds.includes(id)} onChange={() => toggleSelected(id)} />Select</label><p className="text-xs font-medium uppercase tracking-wide text-[#5f646b]">{approvedReminderIds[id] ? "Approved draft" : "Pending approval"}</p></div><p className="mt-2 font-semibold text-[#121417]">{textOr(client?.name || inv?.client_name || inv?.customer_name, "Unknown client")}</p><p className="text-sm text-[#5f646b]">Invoice: {textOr(inv?.invoice_number || inv?.number || inv?.title, "Untitled invoice")}</p><p className="text-sm text-[#5f646b]">Amount due: {money(invoiceBalance(inv))}</p><p className="text-sm text-[#5f646b]">Due date: {textOr(due, "No due date")}</p><p className="text-sm text-[#5f646b]">Status: {textOr(inv?.status, "unknown")}</p><p className="text-sm text-[#5f646b]">Overdue days: {daysOverdue(inv) ?? "—"}</p><p className="text-sm text-[#5f646b]">Contact: {contactEmail || "—"} {contactPhone ? ` / ${contactPhone}` : ""}</p>{missingContact ? <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">Warning: missing client contact details. You can save/approve this draft, but it is not ready to send.</p> : null}{isEditing ? <textarea className="mt-3 w-full rounded-lg border border-[#c8c0b2] p-2 text-sm" rows={4} value={reminderDrafts[id] || ""} onChange={(e) => setReminderDrafts((prev) => ({ ...prev, [id]: e.target.value }))} /> : <p className="mt-3 rounded-lg bg-[#efede8] p-3 text-sm text-[#24272c]">{reminderDrafts[id]}</p>}<div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => setEditingDraft((prev) => ({ ...prev, [id]: true }))} className="rounded border border-[#c8c0b2] px-3 py-1 text-sm">Edit message</button><button type="button" onClick={() => setEditingDraft((prev) => ({ ...prev, [id]: false }))} className="rounded border border-[#c8c0b2] px-3 py-1 text-sm">Save message</button><button type="button" onClick={() => { setEditingDraft((prev) => ({ ...prev, [id]: false })); setReminderDrafts((prev) => ({ ...prev, [id]: buildInvoiceReminderMessage({ client, invoice: inv, business: user, channel: "email" }) })); }} className="rounded border border-[#c8c0b2] px-3 py-1 text-sm">Cancel</button><button type="button" onClick={() => approveOne(inv)} className="rounded bg-[#0f6b57] px-3 py-1 text-sm text-white">Approve reminder draft</button><button type="button" onClick={() => navigate(`/invoices/${id}`)} className="rounded border border-[#c8c0b2] px-3 py-1 text-sm">Open full invoice page</button></div></article>;
           })}
         </div>
       );
@@ -850,10 +850,10 @@ export default function SmartHubBrainPage() {
       const approveMany = async (ids) => { for (const id of ids) { const quote = waitingQuotes.find((q) => String(q?.id || q?._id || q?.quote_id || "") === id); if (quote) await approveOne(quote); } };
       return (
         <div className="space-y-4">
-          <div><h3 className="text-lg font-semibold text-[#171717]">Quote Follow-ups</h3><p className="text-sm text-[#555b56]">Review AI-prepared quote follow-up drafts before anything is sent.</p></div>
-          <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">{[["Quotes waiting", waitingQuotes.length], ["Follow-ups prepared", preparedCount], ["Missing contact details", missingContactCount], ["Oldest waiting quote", oldestWaiting ? `${oldestWaiting}d` : "—"]].map(([label, value]) => <article key={label} className="rounded-xl border border-[#737a74] tradie-panel p-3"><p className="text-xs uppercase tracking-wide text-[#737a74]">{label}</p><p className="mt-1 text-xl font-semibold text-[#171717]">{value}</p></article>)}</section>
-          <div className="flex flex-wrap gap-2"><button type="button" onClick={() => approveMany(selectedQuoteIds)} className="rounded-lg bg-[#3f6212] px-3 py-2 text-sm font-medium text-white">Approve selected follow-ups</button><button type="button" onClick={() => approveMany(waitingQuotes.map((q) => String(q?.id || q?._id || q?.quote_id || "")).filter(Boolean))} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">Approve all ready follow-ups</button><button type="button" onClick={() => setSelectedQuoteIds([])} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">Reject selected</button></div>
-          {!waitingQuotes.length ? <p className="text-sm text-[#555b56]">No quotes are waiting for follow-up right now.</p> : waitingQuotes.map((quote) => {
+          <div><h3 className="text-lg font-semibold text-[#121417]">Quote Follow-ups</h3><p className="text-sm text-[#5f646b]">Review AI-prepared quote follow-up drafts before anything is sent.</p></div>
+          <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">{[["Quotes waiting", waitingQuotes.length], ["Follow-ups prepared", preparedCount], ["Missing contact details", missingContactCount], ["Oldest waiting quote", oldestWaiting ? `${oldestWaiting}d` : "—"]].map(([label, value]) => <article key={label} className="rounded-xl border border-[#c8c0b2] tradie-panel p-3"><p className="text-xs uppercase tracking-wide text-[#5f646b]">{label}</p><p className="mt-1 text-xl font-semibold text-[#121417]">{value}</p></article>)}</section>
+          <div className="flex flex-wrap gap-2"><button type="button" onClick={() => approveMany(selectedQuoteIds)} className="rounded-full bg-[#0f6b57] px-3 py-2 text-sm font-medium text-white hover:bg-[#0b4f42]">Approve selected follow-ups</button><button type="button" onClick={() => approveMany(waitingQuotes.map((q) => String(q?.id || q?._id || q?.quote_id || "")).filter(Boolean))} className="rounded-lg border border-[#c8c0b2] px-3 py-2 text-sm font-medium text-[#24272c]">Approve all ready follow-ups</button><button type="button" onClick={() => setSelectedQuoteIds([])} className="rounded-lg border border-[#c8c0b2] px-3 py-2 text-sm font-medium text-[#24272c]">Reject selected</button></div>
+          {!waitingQuotes.length ? <p className="text-sm text-[#5f646b]">No quotes are waiting for follow-up right now.</p> : waitingQuotes.map((quote) => {
             const id = String(quote?.id || quote?._id || quote?.quote_id || "");
             const client = findByIds(clients, [quote?.client_id, quote?.clientId], ["id", "_id", "client_id"]);
             const contactEmail = client?.email || quote?.client_email;
@@ -861,7 +861,7 @@ export default function SmartHubBrainPage() {
             const missingContact = !(contactEmail || contactPhone);
             const age = quoteAgeDays(quote);
             const displayDate = quote?.sent_at || quote?.sentAt || quote?.created_at || quote?.createdAt || quote?.date;
-            return <article key={id} className="rounded-xl border border-[#737a74] tradie-panel p-4"><div className="flex items-start justify-between gap-3"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedQuoteIds.includes(id)} onChange={() => toggleSelected(id)} />Select</label><p className="text-xs font-medium uppercase tracking-wide text-[#737a74]">{approvedQuoteIds[id] ? "Approved draft" : "Pending approval"}</p></div><p className="mt-2 font-semibold text-[#171717]">{textOr(client?.name || quote?.client_name || quote?.customer_name, "Unknown client")}</p><p className="text-sm text-[#555b56]">Quote: {textOr(quote?.quote_number || quote?.number || quote?.title, "Untitled quote")}</p><p className="text-sm text-[#555b56]">Amount: {money(Number(quote?.total ?? quote?.amount ?? quote?.price))}</p><p className="text-sm text-[#555b56]">Status: {textOr(quote?.status, "unknown")}</p><p className="text-sm text-[#555b56]">Created/Sent: {textOr(displayDate, "Unknown date")}</p><p className="text-sm text-[#555b56]">Age: {age ?? "—"} days</p><p className="text-sm text-[#555b56]">Contact: {contactEmail || "—"} {contactPhone ? ` / ${contactPhone}` : ""}</p>{missingContact ? <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">Warning: missing client contact details. You can save this draft, but it is not ready to send.</p> : null}{editingQuoteDraft[id] ? <textarea className="mt-3 w-full rounded-lg border border-slate-300 p-2 text-sm" rows={4} value={quoteDrafts[id] || ""} onChange={(e) => setQuoteDrafts((prev) => ({ ...prev, [id]: e.target.value }))} /> : <p className="mt-3 rounded-lg bg-[#ebe5d8] p-3 text-sm text-slate-800">{quoteDrafts[id]}</p>}<div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => setEditingQuoteDraft((prev) => ({ ...prev, [id]: true }))} className="rounded border border-slate-300 px-3 py-1 text-sm">Edit message</button><button type="button" onClick={() => setEditingQuoteDraft((prev) => ({ ...prev, [id]: false }))} className="rounded border border-slate-300 px-3 py-1 text-sm">Save message</button><button type="button" onClick={() => { setQuoteDrafts((prev) => ({ ...prev, [id]: quoteDraftOriginals[id] || prev[id] })); setEditingQuoteDraft((prev) => ({ ...prev, [id]: false })); }} className="rounded border border-slate-300 px-3 py-1 text-sm">Cancel</button><button type="button" onClick={() => approveOne(quote)} className="rounded bg-[#3f6212] px-3 py-1 text-sm text-white">Approve follow-up draft</button><button type="button" onClick={() => navigate(`/quotes/${id}`)} className="rounded border border-slate-300 px-3 py-1 text-sm">Open full quote page</button></div></article>;
+            return <article key={id} className="rounded-xl border border-[#c8c0b2] tradie-panel p-4"><div className="flex items-start justify-between gap-3"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedQuoteIds.includes(id)} onChange={() => toggleSelected(id)} />Select</label><p className="text-xs font-medium uppercase tracking-wide text-[#5f646b]">{approvedQuoteIds[id] ? "Approved draft" : "Pending approval"}</p></div><p className="mt-2 font-semibold text-[#121417]">{textOr(client?.name || quote?.client_name || quote?.customer_name, "Unknown client")}</p><p className="text-sm text-[#5f646b]">Quote: {textOr(quote?.quote_number || quote?.number || quote?.title, "Untitled quote")}</p><p className="text-sm text-[#5f646b]">Amount: {money(Number(quote?.total ?? quote?.amount ?? quote?.price))}</p><p className="text-sm text-[#5f646b]">Status: {textOr(quote?.status, "unknown")}</p><p className="text-sm text-[#5f646b]">Created/Sent: {textOr(displayDate, "Unknown date")}</p><p className="text-sm text-[#5f646b]">Age: {age ?? "—"} days</p><p className="text-sm text-[#5f646b]">Contact: {contactEmail || "—"} {contactPhone ? ` / ${contactPhone}` : ""}</p>{missingContact ? <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">Warning: missing client contact details. You can save this draft, but it is not ready to send.</p> : null}{editingQuoteDraft[id] ? <textarea className="mt-3 w-full rounded-lg border border-[#c8c0b2] p-2 text-sm" rows={4} value={quoteDrafts[id] || ""} onChange={(e) => setQuoteDrafts((prev) => ({ ...prev, [id]: e.target.value }))} /> : <p className="mt-3 rounded-lg bg-[#efede8] p-3 text-sm text-[#24272c]">{quoteDrafts[id]}</p>}<div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => setEditingQuoteDraft((prev) => ({ ...prev, [id]: true }))} className="rounded border border-[#c8c0b2] px-3 py-1 text-sm">Edit message</button><button type="button" onClick={() => setEditingQuoteDraft((prev) => ({ ...prev, [id]: false }))} className="rounded border border-[#c8c0b2] px-3 py-1 text-sm">Save message</button><button type="button" onClick={() => { setQuoteDrafts((prev) => ({ ...prev, [id]: quoteDraftOriginals[id] || prev[id] })); setEditingQuoteDraft((prev) => ({ ...prev, [id]: false })); }} className="rounded border border-[#c8c0b2] px-3 py-1 text-sm">Cancel</button><button type="button" onClick={() => approveOne(quote)} className="rounded bg-[#0f6b57] px-3 py-1 text-sm text-white">Approve follow-up draft</button><button type="button" onClick={() => navigate(`/quotes/${id}`)} className="rounded border border-[#c8c0b2] px-3 py-1 text-sm">Open full quote page</button></div></article>;
           })}
         </div>
       );
@@ -883,26 +883,26 @@ export default function SmartHubBrainPage() {
       };
       const conflicts = dispatchRecs.filter((r) => r?.recommendation?.conflict).length;
       const missingData = dispatchRecs.filter((r) => !(r?.recommendation?.regionMatch && r?.recommendation?.skillMatch)).length;
-      return <div className="space-y-4"><div><h3 className="text-lg font-semibold text-[#171717]">AI Dispatch</h3><p className="text-sm text-[#555b56]">Review recommended worker assignments before jobs are updated.</p></div>
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">{[["Unassigned jobs", dispatchRecs.length],["Crew available", crewAvailable],["Schedule conflicts", conflicts],["Missing job details", missingData]].map(([l,v])=><article key={l} className="rounded-xl border border-[#737a74] tradie-panel p-3"><p className="text-xs uppercase tracking-wide text-[#737a74]">{l}</p><p className="mt-1 text-xl font-semibold text-[#171717]">{v}</p></article>)}</section>
-      {!dispatchRecs.length ? <p className="text-sm text-[#555b56]">No unassigned jobs require approval right now.</p> : dispatchRecs.map(({ job, jobId, recommendation, selectedWorkerId }) => {
+      return <div className="space-y-4"><div><h3 className="text-lg font-semibold text-[#121417]">AI Dispatch</h3><p className="text-sm text-[#5f646b]">Review recommended worker assignments before jobs are updated.</p></div>
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">{[["Unassigned jobs", dispatchRecs.length],["Crew available", crewAvailable],["Schedule conflicts", conflicts],["Missing job details", missingData]].map(([l,v])=><article key={l} className="rounded-xl border border-[#c8c0b2] tradie-panel p-3"><p className="text-xs uppercase tracking-wide text-[#5f646b]">{l}</p><p className="mt-1 text-xl font-semibold text-[#121417]">{v}</p></article>)}</section>
+      {!dispatchRecs.length ? <p className="text-sm text-[#5f646b]">No unassigned jobs require approval right now.</p> : dispatchRecs.map(({ job, jobId, recommendation, selectedWorkerId }) => {
         const selected = workers.find((w) => String(w?.id || w?._id || "") === String(selectedWorkerId));
         const st = recommendation?.stats || { today: 0, active: 0 };
         const reasoning = recommendation ? `AI recommends ${textOr(selected?.name || recommendation?.worker?.name, "this worker")} because ${recommendation.regionMatch ? "they are in the same region, " : ""}${recommendation.skillMatch ? "their skills match, " : ""}and they currently have ${st.today} jobs today (${st.active} active).${recommendation.conflict ? " Possible schedule conflict detected." : " No schedule conflict was detected."}` : "No perfect worker was found. Choose a worker manually.";
-        return <article key={jobId} className="rounded-xl border border-[#737a74] tradie-panel p-4"><p className="font-semibold">{textOr(job?.title, "Untitled job")}</p><p className="text-sm text-[#555b56]">Client: {textOr(job?.client_name || job?.customer_name, "Unknown")}</p><p className="text-sm text-[#555b56]">Address: {textOr(job?.address || job?.location, "No address")}</p><p className="text-sm text-[#555b56]">Scheduled: {textOr(job?.scheduled_date || job?.date || job?.scheduled_at, "Unscheduled")}</p><p className="text-sm text-[#555b56]">Priority/Status: {textOr(job?.priority, "normal")} / {textOr(job?.status, "new")}</p><p className="mt-2 text-sm text-slate-700">{reasoning}</p>{recommendation?.conflict ? <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">Possible schedule conflict: this worker already has another job scheduled that day.</p> : null}
+        return <article key={jobId} className="rounded-xl border border-[#c8c0b2] tradie-panel p-4"><p className="font-semibold">{textOr(job?.title, "Untitled job")}</p><p className="text-sm text-[#5f646b]">Client: {textOr(job?.client_name || job?.customer_name, "Unknown")}</p><p className="text-sm text-[#5f646b]">Address: {textOr(job?.address || job?.location, "No address")}</p><p className="text-sm text-[#5f646b]">Scheduled: {textOr(job?.scheduled_date || job?.date || job?.scheduled_at, "Unscheduled")}</p><p className="text-sm text-[#5f646b]">Priority/Status: {textOr(job?.priority, "normal")} / {textOr(job?.status, "new")}</p><p className="mt-2 text-sm text-[#24272c]">{reasoning}</p>{recommendation?.conflict ? <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-700">Possible schedule conflict: this worker already has another job scheduled that day.</p> : null}
         <div className="mt-3"><select className="w-full rounded border p-2 text-sm" value={selectedWorkerId} onChange={(e) => setDispatchOverrides((prev) => ({ ...prev, [jobId]: e.target.value }))}><option value="">Choose different worker</option>{workers.filter((w) => !["inactive","deleted","offboarded"].includes(norm(w?.status))).map((w) => <option key={String(w?.id || w?._id)} value={String(w?.id || w?._id)}>{textOr(w?.name, "Worker")} · {textOr(w?.region || w?.area || w?.zone, "No region")}</option>)}</select></div>
-        <div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={!selectedWorkerId || savingJobId===jobId} onClick={() => applyAssign(job, selectedWorkerId)} className="rounded bg-[#3f6212] px-3 py-1 text-sm text-white">Approve assignment</button><button type="button" onClick={() => navigate(`/jobs/${jobId}`)} className="rounded border px-3 py-1 text-sm">Open full job page</button><button type="button" onClick={async () => { setRejectedDispatchIds((prev) => ({ ...prev, [jobId]: true })); await logActivity({ action_type: "recommendation_rejected", title: "Recommendation rejected", message: `AI recommendation rejected: ${textOr(job?.title, "Job")}`, related_type: "job", related_id: jobId, status: "rejected" }); }} className="rounded border px-3 py-1 text-sm">Reject recommendation</button></div></article>;
+        <div className="mt-3 flex flex-wrap gap-2"><button type="button" disabled={!selectedWorkerId || savingJobId===jobId} onClick={() => applyAssign(job, selectedWorkerId)} className="rounded bg-[#0f6b57] px-3 py-1 text-sm text-white">Approve assignment</button><button type="button" onClick={() => navigate(`/jobs/${jobId}`)} className="rounded border px-3 py-1 text-sm">Open full job page</button><button type="button" onClick={async () => { setRejectedDispatchIds((prev) => ({ ...prev, [jobId]: true })); await logActivity({ action_type: "recommendation_rejected", title: "Recommendation rejected", message: `AI recommendation rejected: ${textOr(job?.title, "Job")}`, related_type: "job", related_id: jobId, status: "rejected" }); }} className="rounded border px-3 py-1 text-sm">Reject recommendation</button></div></article>;
       })}</div>;
     }
 
     return (
       <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-[#171717]">{workspaceDrawer} Workspace</h3>
-        <p className="text-sm text-[#555b56]">Nothing needs attention here.</p>
+        <h3 className="text-lg font-semibold text-[#121417]">{workspaceDrawer} Workspace</h3>
+        <p className="text-sm text-[#5f646b]">Nothing needs attention here.</p>
         <button
           type="button"
           onClick={() => navigate(`/${workspaceDrawer.toLowerCase()}`)}
-          className="rounded-lg bg-[#3f6212] px-4 py-2 text-sm font-medium text-white hover:bg-[#365314]"
+          className="rounded-lg bg-[#0f6b57] px-4 py-2 text-sm font-medium text-white hover:bg-[#0b4f42]"
         >
           Open full page
         </button>
@@ -912,25 +912,25 @@ export default function SmartHubBrainPage() {
 
   return (
     <Layout title="Smart Hub">
-      <div className="min-h-screen tradie-page-bg">
+      <div className="min-h-screen bg-[#efede8] text-[#121417] tradie-page-bg">
         <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-          <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-zinc-950 p-6 text-slate-100 shadow-2xl">
+          <section className="rounded-3xl border border-white/10 bg-[linear-gradient(135deg,#111317_0%,#171a1f_55%,#20242a_100%)] border border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.35)] p-6 text-slate-100 shadow-2xl">
             <p className="text-xs uppercase tracking-[0.2em] text-amber-300">AI Operator Control Centre</p>
             <h1 className="mt-2 text-2xl font-semibold">AI Operator Control Centre</h1>
             <p className="mt-2 text-sm text-slate-300">Welcome back, {textOr(user?.name || user?.email, "team")}. Keep operations flowing with one clear next move.</p>
-            <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
+            <div className="mt-4 rounded-xl border border-white/10 bg-[#f9f7f2]/5 p-4">
               <p className="text-xs uppercase tracking-wide text-amber-300">Best Next Move</p>
               <p className="mt-1 text-base text-slate-100">{bestNextMove.label}</p>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" onClick={runScanNow} className="rounded-lg bg-amber-600 text-[#171717] px-4 py-2 text-sm font-medium text-white hover:bg-[#3f6212]">Run today's AI plan</button>
+              <button type="button" onClick={runScanNow} className="rounded-lg bg-amber-600 text-[#121417] px-4 py-2 text-sm font-medium text-white hover:bg-[#0f6b57]">Run today's AI plan</button>
               <button type="button" onClick={() => { openApprovalCentre({ tab: "all" }); }} className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-100 hover:bg-slate-800">Open Command Queue</button>
-              <button type="button" onClick={() => openApprovalCentre({ tab: approvalCounts.needs_decision ? "needs_decision" : "all" })} className={`rounded-full px-3 py-2 text-xs font-semibold ${approvalBadgeTone === "amber" ? "bg-amber-100 text-amber-900" : approvalBadgeTone === "green" ? "bg-emerald-100 text-emerald-900" : "bg-slate-200 text-slate-700"}`}>{approvalCounts.all ? `${approvalCounts.all} approvals` : "All clear"}</button>
+              <button type="button" onClick={() => openApprovalCentre({ tab: approvalCounts.needs_decision ? "needs_decision" : "all" })} className={`rounded-full px-3 py-2 text-xs font-semibold ${approvalBadgeTone === "amber" ? "bg-[#f59e0b]/15 text-[#ffb15c]" : approvalBadgeTone === "green" ? "bg-[#d8f3e8] text-[#0b4f42]" : "bg-[#efede8] text-[#5f646b]"}`}>{approvalCounts.all ? `${approvalCounts.all} approvals` : "All clear"}</button>
               <div className="relative">
                 <button type="button" onClick={() => setNotificationOpen((v) => !v)} className="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-100 hover:bg-slate-800">🔔 {unreadNotificationCount}</button>
-                {notificationOpen ? <div className="absolute right-0 z-20 mt-2 w-[340px] rounded-xl border border-[#737a74] bg-white p-3 text-[#171717] shadow-xl">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#737a74]">Notifications</p>
-                  {notificationItems.slice(0, 10).map((item) => <button key={item.id} type="button" onClick={() => { setReadNotificationIds((prev) => ({ ...prev, [item.id]: true })); setNotificationOpen(false); item.action?.(); }} className="mt-2 w-full rounded-lg border border-slate-100 p-2 text-left hover:bg-[#ebe5d8]"><p className="text-[11px] font-semibold uppercase text-[#737a74]">{item.section}</p><p className="text-sm font-medium">{item.title}</p><p className="text-xs text-[#555b56]">{item.subtitle}</p><p className="text-[11px] text-slate-400">{item.time}</p></button>)}
+                {notificationOpen ? <div className="absolute right-0 z-20 mt-2 w-[340px] rounded-xl border border-[#c8c0b2] bg-[#f9f7f2] p-3 text-[#121417] shadow-xl">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#5f646b]">Notifications</p>
+                  {notificationItems.slice(0, 10).map((item) => <button key={item.id} type="button" onClick={() => { setReadNotificationIds((prev) => ({ ...prev, [item.id]: true })); setNotificationOpen(false); item.action?.(); }} className="mt-2 w-full rounded-lg border border-slate-100 p-2 text-left hover:bg-[#efede8]"><p className="text-[11px] font-semibold uppercase text-[#5f646b]">{item.section}</p><p className="text-sm font-medium">{item.title}</p><p className="text-xs text-[#5f646b]">{item.subtitle}</p><p className="text-[11px] text-slate-400">{item.time}</p></button>)}
                 </div> : null}
               </div>
             </div>
@@ -945,33 +945,33 @@ export default function SmartHubBrainPage() {
               ["Open invoices", openInvoices.length],
               ["Crew available", crewAvailable],
             ].map(([label, value]) => (
-              <article key={label} className="rounded-xl border border-[#737a74] tradie-panel p-4">
-                <p className="text-xs uppercase tracking-wide text-[#737a74]">{label}</p>
-                <button type="button" onClick={() => ({"Ready to bill":"Invoices","Unassigned jobs":"AI Dispatch","Open invoices":"Payment Reminders","Crew available":"Crew"}[label] ? openWorkspace({"Ready to bill":"Invoices","Unassigned jobs":"AI Dispatch","Open invoices":"Payment Reminders","Crew available":"Crew"}[label], {"Open invoices":"reminders"}[label] || "list") : null)} className="mt-2 text-2xl font-semibold text-[#171717]">
+              <article key={label} className="rounded-xl border border-[#c8c0b2] tradie-panel p-4">
+                <p className="text-xs uppercase tracking-wide text-[#5f646b]">{label}</p>
+                <button type="button" onClick={() => ({"Ready to bill":"Invoices","Unassigned jobs":"AI Dispatch","Open invoices":"Payment Reminders","Crew available":"Crew"}[label] ? openWorkspace({"Ready to bill":"Invoices","Unassigned jobs":"AI Dispatch","Open invoices":"Payment Reminders","Crew available":"Crew"}[label], {"Open invoices":"reminders"}[label] || "list") : null)} className="mt-2 text-2xl font-semibold text-[#121417]">
                   {value}
                 </button>
               </article>
             ))}
           </section>
 
-          <section className="mt-6 rounded-2xl border border-[#737a74] tradie-panel p-5">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-[#555b56]">AI Approval Centre</h2>
-            <p className="mt-1 text-sm text-[#555b56]">AI has prepared today&apos;s admin. Review everything before anything changes.</p>
+          <section className="mt-6 rounded-2xl border border-[#c8c0b2] tradie-panel p-5">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-[#5f646b]">AI Approval Centre</h2>
+            <p className="mt-1 text-sm text-[#5f646b]">AI has prepared today&apos;s admin. Review everything before anything changes.</p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => openApprovalCentre({ tab: "all" })} className={`rounded-full px-3 py-1 text-xs font-medium ${approvalBadgeTone === "amber" ? "bg-amber-100 text-amber-800" : approvalBadgeTone === "green" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"}`}>{approvalCounts.all ? `${approvalCounts.all} approvals` : "All clear"}</button>
-              <p className="text-sm text-slate-700">{approvalCounts.all ? `${approvalCounts.all} approvals waiting` : "AI has checked today’s jobs, invoices, quotes and crew."}</p>
+              <button type="button" onClick={() => openApprovalCentre({ tab: "all" })} className={`rounded-full px-3 py-1 text-xs font-medium ${approvalBadgeTone === "amber" ? "bg-[#f59e0b]/15 text-[#ffb15c]" : approvalBadgeTone === "green" ? "bg-[#d8f3e8] text-[#0b4f42]" : "bg-[#efede8] text-[#5f646b]"}`}>{approvalCounts.all ? `${approvalCounts.all} approvals` : "All clear"}</button>
+              <p className="text-sm text-[#24272c]">{approvalCounts.all ? `${approvalCounts.all} approvals waiting` : "AI has checked today’s jobs, invoices, quotes and crew."}</p>
             </div>
-            <p className="mt-2 text-sm text-[#555b56]">{approvalCounts.needs_decision || 0} need decision · {approvalCounts.ready || 0} ready · {approvalCounts.drafts || 0} drafts · {approvalCounts.watching || 0} watching</p>
-            {!!priorityItems.length && <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-slate-700">{priorityItems.map((item) => <li key={item.id}><button type="button" onClick={() => { openApprovalCentre({ tab: bestNextMove.approvalTab || "all" }); }} className="text-left hover:text-[#171717]">{item.title}</button></li>)}</ol>}
+            <p className="mt-2 text-sm text-[#5f646b]">{approvalCounts.needs_decision || 0} need decision · {approvalCounts.ready || 0} ready · {approvalCounts.drafts || 0} drafts · {approvalCounts.watching || 0} watching</p>
+            {!!priorityItems.length && <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-[#24272c]">{priorityItems.map((item) => <li key={item.id}><button type="button" onClick={() => { openApprovalCentre({ tab: bestNextMove.approvalTab || "all" }); }} className="text-left hover:text-[#121417]">{item.title}</button></li>)}</ol>}
             <div className="mt-4 flex flex-wrap gap-2">
-              <button type="button" onClick={() => { openApprovalCentre({ tab: "all" }); }} className="rounded-lg bg-[#3f6212] px-3 py-2 text-sm font-medium text-white">Open Approval Centre</button>
-              <button type="button" onClick={runScanNow} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Run today's AI plan</button>
+              <button type="button" onClick={() => { openApprovalCentre({ tab: "all" }); }} className="rounded-full bg-[#0f6b57] px-3 py-2 text-sm font-medium text-white hover:bg-[#0b4f42]">Open Approval Centre</button>
+              <button type="button" onClick={runScanNow} className="rounded-lg border border-[#c8c0b2] px-3 py-2 text-sm">Run today's AI plan</button>
             </div>
           </section>
 
           <section className="mt-6 grid gap-4 lg:grid-cols-2">
-            <article className="rounded-2xl border border-[#737a74] tradie-panel p-5">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-[#555b56]">Today&apos;s Plan</h2>
+            <article className="rounded-2xl border border-[#c8c0b2] tradie-panel p-5">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-[#5f646b]">Today&apos;s Plan</h2>
               <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                 {[["Jobs today", jobsToday], ["Unassigned jobs", unassignedJobs.length], ["Ready to bill", readyToBillJobs.length], ["Open invoices", openInvoices.length], ["Quotes waiting", waitingQuotes.length], ["Crew available", crewAvailable]].map(([label, value]) => (
                   <button
@@ -989,18 +989,18 @@ export default function SmartHubBrainPage() {
                     }
                     className="rounded-lg bg-[#f6f4ef] px-3 py-2 text-left"
                   >
-                    <p className="text-xs uppercase tracking-wide text-[#737a74]">{label}</p>
-                    <p className="text-lg font-semibold text-[#171717]">{value}</p>
+                    <p className="text-xs uppercase tracking-wide text-[#5f646b]">{label}</p>
+                    <p className="text-lg font-semibold text-[#121417]">{value}</p>
                   </button>
                 ))}
               </div>
-              <p className="mt-4 rounded-lg bg-[#ebe5d8] px-3 py-2 text-sm text-slate-700">
+              <p className="mt-4 rounded-lg bg-[#efede8] px-3 py-2 text-sm text-[#24272c]">
                 AI found {readyToBillJobs.length} {readyToBillJobs.length === 1 ? "job" : "jobs"} ready to bill, {unassignedJobs.length} unassigned {unassignedJobs.length === 1 ? "job" : "jobs"}, {openInvoices.length} open {openInvoices.length === 1 ? "invoice" : "invoices"} and {waitingQuotes.length} {waitingQuotes.length === 1 ? "quote" : "quotes"} waiting. Best next move: {bestNextMove.label}
               </p>
             </article>
 
-            <article className="rounded-2xl border border-[#737a74] tradie-panel p-5">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-[#555b56]">Business Pulse</h2>
+            <article className="rounded-2xl border border-[#c8c0b2] tradie-panel p-5">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-[#5f646b]">Business Pulse</h2>
               <div className="mt-3 grid grid-cols-2 gap-3">
                 {[["Money waiting", openInvoices.length], ["Billing ready", readyToBillJobs.length], ["Dispatch pressure", unassignedJobs.length], ["Pipeline", waitingQuotes.length], ["Crew", crewAvailable]].map(([label, value]) => (
                   <button
@@ -1015,18 +1015,18 @@ export default function SmartHubBrainPage() {
                         Crew: () => openWorkspace("Crew", "list"),
                       }[label]?.())
                     }
-                    className="rounded-xl border border-[#737a74] bg-[#f7f3ea] p-3 text-left"
+                    className="rounded-xl border border-[#c8c0b2] bg-[#f9f7f2] p-3 text-left"
                   >
-                    <p className="text-xs uppercase tracking-wide text-[#737a74]">{label}</p>
-                    <p className="mt-1 text-xl font-semibold text-[#171717]">{value}</p>
+                    <p className="text-xs uppercase tracking-wide text-[#5f646b]">{label}</p>
+                    <p className="mt-1 text-xl font-semibold text-[#121417]">{value}</p>
                   </button>
                 ))}
               </div>
             </article>
           </section>
 
-          <section className="mt-6 rounded-2xl border border-[#737a74] tradie-panel p-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-[#555b56]">Workspace Dock</h2>
+          <section className="mt-6 rounded-2xl border border-[#c8c0b2] tradie-panel p-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-[#5f646b]">Workspace Dock</h2>
             <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               {workspaceButtons.map((name) => (
                 <button
@@ -1039,17 +1039,17 @@ export default function SmartHubBrainPage() {
                   <span className="block text-xs text-[#3f5a4d]">{workspaceMeta[name] || "Open workspace"}</span>
                 </button>
               ))}
-              <button type="button" onClick={() => openWorkspace("Payment Reminders", "reminders")} className="rounded-lg bg-[#315a44] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#284c3a]">Prepare reminders</button>
-              <button type="button" onClick={() => openWorkspace("Quote Follow-ups", "followUps")} className="rounded-lg bg-[#315a44] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#284c3a]">Review follow-ups</button>
-              <button type="button" onClick={() => openWorkspace("AI Dispatch", "assign")} className="rounded-lg bg-[#315a44] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#284c3a]">Assign workers</button>
+              <button type="button" onClick={() => openWorkspace("Payment Reminders", "reminders")} className="rounded-lg bg-[#0f6b57] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#0b4f42]">Prepare reminders</button>
+              <button type="button" onClick={() => openWorkspace("Quote Follow-ups", "followUps")} className="rounded-lg bg-[#0f6b57] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#0b4f42]">Review follow-ups</button>
+              <button type="button" onClick={() => openWorkspace("AI Dispatch", "assign")} className="rounded-lg bg-[#0f6b57] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#0b4f42]">Assign workers</button>
             </div>
           </section>
 
 
-          <section className="mt-6 rounded-2xl border border-[#737a74] tradie-panel p-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-[#555b56]">AI Operator Settings</h2>
-            <p className="mt-1 text-sm text-[#555b56]">Control what AI can prepare, approve, and send.</p>
-            <div className="mt-2 text-sm text-slate-700 space-y-1">
+          <section className="mt-6 rounded-2xl border border-[#c8c0b2] tradie-panel p-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-[#5f646b]">AI Operator Settings</h2>
+            <p className="mt-1 text-sm text-[#5f646b]">Control what AI can prepare, approve, and send.</p>
+            <div className="mt-2 text-sm text-[#24272c] space-y-1">
               <p>AI Operator: {aiSettings.ai_operator_enabled ? "On" : "Off"}</p>
               <p>Arrival SMS: {!aiSettings.auto_arrival_sms_enabled ? "Off" : (aiSettings.arrival_sms_mode === "auto_send" ? "Auto-send" : "Approval required")}</p>
               <p>Arrival timing: {aiSettings.arrival_sms_minutes_before} minutes before</p>
@@ -1057,21 +1057,21 @@ export default function SmartHubBrainPage() {
               <p>Quote follow-ups: {aiSettings.quote_followup_mode === "approval_send" ? "Send after approval" : "Draft only"}</p>
               <p>Worker assignment: Approval required</p><p>Accounting changes: Locked</p><p>Payroll changes: Locked</p>
             </div>
-            <button type="button" onClick={() => setAiSettingsOpen(true)} className="mt-3 rounded-lg bg-[#3f6212] px-3 py-2 text-sm text-white">Open AI Settings</button>
+            <button type="button" onClick={() => setAiSettingsOpen(true)} className="mt-3 rounded-lg bg-[#0f6b57] px-3 py-2 text-sm text-white">Open AI Settings</button>
           </section>
 
-          <section className="mt-4 rounded-2xl border border-[#737a74] tradie-panel p-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-[#555b56]">Recent Smart Hub activity</h3>
-            <div className="mt-2 flex gap-2">{[["all","All"],["completed","Completed"],["rejected","Rejected"],["draft_prepared","Drafts"]].map(([k,l]) => <button key={k} type="button" onClick={() => setActivityFilter(k)} className={`rounded px-2 py-1 text-xs ${activityFilter===k?"bg-slate-800 text-white":"bg-[#ebe5d8] text-slate-700"}`}>{l}</button>)}</div>{!activity.length ? <p className="mt-2 text-sm text-[#737a74]">No AI actions approved yet. Approved work will appear here.</p> : <ul className="mt-3 space-y-2 text-sm text-slate-700">{activity.filter((a)=>activityFilter==="all"?true:String(a?.status||"")===activityFilter).map((a) => <li key={String(a?.id||a?._id)} className="rounded-lg border border-[#737a74] p-2"><p>{a?.message || a?.title}</p><p className="text-xs text-[#737a74]">{textOr(a?.status, "completed")} · {a?.approved_by_name ? `${a.approved_by_name} · ` : ""}{new Date(a?.created_at || Date.now()).toLocaleString()}</p></li>)}</ul>}
+          <section className="mt-4 rounded-2xl border border-[#c8c0b2] tradie-panel p-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-[#5f646b]">Recent Smart Hub activity</h3>
+            <div className="mt-2 flex gap-2">{[["all","All"],["completed","Completed"],["rejected","Rejected"],["draft_prepared","Drafts"]].map(([k,l]) => <button key={k} type="button" onClick={() => setActivityFilter(k)} className={`rounded px-2 py-1 text-xs ${activityFilter===k?"bg-[#20242a] text-white":"bg-[#efede8] text-[#24272c]"}`}>{l}</button>)}</div>{!activity.length ? <p className="mt-2 text-sm text-[#5f646b]">No AI actions approved yet. Approved work will appear here.</p> : <ul className="mt-3 space-y-2 text-sm text-[#24272c]">{activity.filter((a)=>activityFilter==="all"?true:String(a?.status||"")===activityFilter).map((a) => <li key={String(a?.id||a?._id)} className="rounded-lg border border-[#c8c0b2] p-2"><p>{a?.message || a?.title}</p><p className="text-xs text-[#5f646b]">{textOr(a?.status, "completed")} · {a?.approved_by_name ? `${a.approved_by_name} · ` : ""}{new Date(a?.created_at || Date.now()).toLocaleString()}</p></li>)}</ul>}
           </section>
         </div>
 
         {workspaceDrawer ? (
           <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#171717]/60 p-0 sm:items-center sm:p-6">
-            <div className="h-[86vh] w-full max-w-3xl rounded-t-2xl bg-[#f7f3ea] sm:h-auto sm:rounded-2xl">
-              <div className="flex items-center justify-between border-b border-[#737a74] px-4 py-3">
-                <h2 className="font-semibold text-[#171717]">{workspaceDrawer}</h2>
-                <button type="button" onClick={() => { setWorkspaceDrawer(""); setWorkspaceMode("list"); setWorkspaceRecord(null); }} className="rounded-md border border-slate-300 px-3 py-1 text-sm text-slate-700">
+            <div className="h-[86vh] w-full max-w-3xl rounded-t-2xl bg-[#f9f7f2] sm:h-auto sm:rounded-2xl">
+              <div className="flex items-center justify-between border-b border-[#c8c0b2] px-4 py-3">
+                <h2 className="font-semibold text-[#121417]">{workspaceDrawer}</h2>
+                <button type="button" onClick={() => { setWorkspaceDrawer(""); setWorkspaceMode("list"); setWorkspaceRecord(null); }} className="rounded-md border border-[#c8c0b2] px-3 py-1 text-sm text-[#24272c]">
                   Close
                 </button>
               </div>
@@ -1082,7 +1082,7 @@ export default function SmartHubBrainPage() {
 
         {aiSettingsOpen ? (
           <div className="fixed inset-0 z-[70] bg-[#171717]/70 p-4">
-            <div className="mx-auto mt-10 max-w-xl rounded-2xl bg-white p-4">
+            <div className="mx-auto mt-10 max-w-xl rounded-2xl bg-[#f9f7f2] p-4">
               <h3 className="text-lg font-semibold">AI Operator Settings</h3>
               <div className="mt-3 space-y-2 text-sm">
                 <label className="block"><input type="checkbox" checked={!!aiSettings.ai_operator_enabled} onChange={(e)=>setAiSettings((p)=>({...p,ai_operator_enabled:e.target.checked}))} className="mr-2"/>AI Operator: On/Off</label>
@@ -1095,7 +1095,7 @@ export default function SmartHubBrainPage() {
                 <label className="block">Accounting changes<input disabled value="Locked" className="mt-1 w-full rounded border p-2 bg-slate-100" /></label>
                 <label className="block">Payroll changes<input disabled value="Locked" className="mt-1 w-full rounded border p-2 bg-slate-100" /></label>
               </div>
-              <div className="mt-4 flex gap-2"><button type="button" className="rounded bg-[#3f6212] px-3 py-2 text-white" onClick={async ()=>{ try { const res = await patch('/api/ai-operator/settings', aiSettings); setAiSettings((p)=>({...p,...(res?.settings||{})})); setToast({kind:'success',message:'AI settings saved.'}); setAiSettingsOpen(false);} catch { localStorage.setItem("smart_hub_ai_settings_local", JSON.stringify(aiSettings)); setToast({kind:'success',message:'Saved locally until backend setting is added.'}); setAiSettingsOpen(false); } }}>Save</button><button type="button" className="rounded border px-3 py-2" onClick={()=>setAiSettingsOpen(false)}>Close</button></div>
+              <div className="mt-4 flex gap-2"><button type="button" className="rounded bg-[#0f6b57] px-3 py-2 text-white" onClick={async ()=>{ try { const res = await patch('/api/ai-operator/settings', aiSettings); setAiSettings((p)=>({...p,...(res?.settings||{})})); setToast({kind:'success',message:'AI settings saved.'}); setAiSettingsOpen(false);} catch { localStorage.setItem("smart_hub_ai_settings_local", JSON.stringify(aiSettings)); setToast({kind:'success',message:'Saved locally until backend setting is added.'}); setAiSettingsOpen(false); } }}>Save</button><button type="button" className="rounded border px-3 py-2" onClick={()=>setAiSettingsOpen(false)}>Close</button></div>
             </div>
           </div>
         ) : null}
@@ -1103,37 +1103,37 @@ export default function SmartHubBrainPage() {
         {approvalCentreOpen ? (
           <div className="fixed inset-0 z-[80] overflow-hidden bg-[#171717]/75">
             <div className="mx-auto flex h-[100dvh] w-full max-w-6xl flex-col overflow-hidden bg-stone-50 sm:my-4 sm:h-[94vh] sm:rounded-3xl">
-              <div className="flex-none border-b border-[#737a74] bg-white px-5 py-4">
+              <div className="flex-none border-b border-[#c8c0b2] bg-[#f9f7f2] px-5 py-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <h2 className="text-xl font-semibold text-[#171717]">AI Approval Centre</h2>
-                    <p className="mt-1 text-sm text-[#555b56]">Review, edit or approve everything AI prepared.</p>
+                    <h2 className="text-xl font-semibold text-[#121417]">AI Approval Centre</h2>
+                    <p className="mt-1 text-sm text-[#5f646b]">Review, edit or approve everything AI prepared.</p>
                   </div>
-                  <button type="button" onClick={() => setApprovalCentreOpen(false)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Close</button>
+                  <button type="button" onClick={() => setApprovalCentreOpen(false)} className="rounded-lg border border-[#c8c0b2] px-3 py-2 text-sm">Close</button>
                 </div>
-                <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{APPROVAL_GROUPS.map((g)=><button key={g} type="button" onClick={()=>setApprovalFilter(g)} className={`shrink-0 rounded px-3 py-1 text-xs ${approvalFilter===g?"bg-slate-900 text-white ring-2 ring-slate-500":"bg-[#ebe5d8] text-slate-700"}`}>{g === "all" ? "All" : g.replace("_"," ")} ({approvalCounts[g] || 0})</button>)}</div>
-                <div className="mt-2 text-xs text-[#555b56]">Pending approvals: {approvalCounts.needs_decision || 0} · Selected: {selectedApprovalIds.length}</div>
+                <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{APPROVAL_GROUPS.map((g)=><button key={g} type="button" onClick={()=>setApprovalFilter(g)} className={`shrink-0 rounded px-3 py-1 text-xs ${approvalFilter===g?"bg-slate-900 text-white ring-2 ring-slate-500":"bg-[#efede8] text-[#24272c]"}`}>{g === "all" ? "All" : g.replace("_"," ")} ({approvalCounts[g] || 0})</button>)}</div>
+                <div className="mt-2 text-xs text-[#5f646b]">Pending approvals: {approvalCounts.needs_decision || 0} · Selected: {selectedApprovalIds.length}</div>
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 py-4 pb-24">
-                {!!sortedApprovalItems.length && <div className="sticky top-0 z-10 mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-[#737a74] bg-white p-2 text-xs"><span>Visible: {filteredApprovalItems.length}</span><span>Selected: {selectedApprovalIds.length}</span><button type="button" onClick={toggleSelectAllVisible} className="rounded border px-2 py-1">Select all visible</button><button type="button" onClick={clearApprovalSelection} className="rounded border px-2 py-1">Clear</button><button type="button" onClick={handleBulkApprove} className="rounded bg-[#3f6212] px-2 py-1 text-white">Approve selected</button><button type="button" onClick={handleBulkReject} className="rounded border px-2 py-1">Reject selected</button><button type="button" onClick={handleBulkDelete} className="rounded border px-2 py-1">Archive selected</button><button type="button" onClick={handleBulkMarkCompleted} className="rounded border px-2 py-1">Mark completed</button><button type="button" onClick={() => runBulkAction("/ai-operator/actions/bulk-approve", filteredApprovalItems.map((i) => i.id))} className="rounded border px-2 py-1">Approve all visible</button><button type="button" onClick={() => runBulkAction("/ai-operator/actions/bulk-reject", filteredApprovalItems.map((i) => i.id))} className="rounded border px-2 py-1">Reject all visible</button></div>}
+                {!!sortedApprovalItems.length && <div className="sticky top-0 z-10 mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-[#c8c0b2] bg-[#f9f7f2] p-2 text-xs"><span>Visible: {filteredApprovalItems.length}</span><span>Selected: {selectedApprovalIds.length}</span><button type="button" onClick={toggleSelectAllVisible} className="rounded border px-2 py-1">Select all visible</button><button type="button" onClick={clearApprovalSelection} className="rounded border px-2 py-1">Clear</button><button type="button" onClick={handleBulkApprove} className="rounded bg-[#0f6b57] px-2 py-1 text-white">Approve selected</button><button type="button" onClick={handleBulkReject} className="rounded border px-2 py-1">Reject selected</button><button type="button" onClick={handleBulkDelete} className="rounded border px-2 py-1">Archive selected</button><button type="button" onClick={handleBulkMarkCompleted} className="rounded border px-2 py-1">Mark completed</button><button type="button" onClick={() => runBulkAction("/ai-operator/actions/bulk-approve", filteredApprovalItems.map((i) => i.id))} className="rounded border px-2 py-1">Approve all visible</button><button type="button" onClick={() => runBulkAction("/ai-operator/actions/bulk-reject", filteredApprovalItems.map((i) => i.id))} className="rounded border px-2 py-1">Reject all visible</button></div>}
                 <div className="grid gap-3 md:grid-cols-2">
                   {filteredApprovalItems.map((item) => {
                     const meta = getActionDisplayMeta(item, { jobs, clients, invoices, quotes, workers });
                     return (
-                    <article key={item.id} className="rounded-xl border border-[#737a74] bg-[#f7f3ea] p-4 shadow-sm">
+                    <article key={item.id} className="rounded-xl border border-[#c8c0b2] bg-[#f9f7f2] p-4 shadow-sm">
                       <div className="flex items-start justify-between"><label className="text-xs"><input type="checkbox" checked={selectedApprovalIds.includes(String(item.id))} onChange={() => toggleApprovalSelection(String(item.id))} className="mr-2" />Select</label><span className="text-xs uppercase">{meta.status}</span></div>
-                      <p className="font-semibold text-[#171717]">{meta.title}</p><p className="mt-1 text-sm text-[#555b56]">{meta.subtitle}</p><p className="mt-1 text-sm text-slate-700">{meta.reason}</p><p className="mt-1 text-xs text-[#737a74]">{meta.dataUsed}</p><p className="mt-1 text-xs text-[#737a74]">{meta.whatHappens}</p><p className="mt-1 text-xs text-[#737a74]">Risk: {meta.risk}</p>{meta.contactSummary ? <p className="mt-1 text-xs text-[#737a74]">{meta.contactSummary}</p> : null}
-                      {item.type === "invoice_reminder" ? <><div className="mt-2 flex gap-1 text-[11px]"><span className="rounded bg-[#ebe5d8] px-2 py-0.5">Email</span><span className="rounded bg-[#ebe5d8] px-2 py-0.5">SMS</span></div><p className="mt-2 rounded bg-[#ebe5d8] p-2 text-xs text-slate-700">{reminderDrafts[item.relatedId] || buildInvoiceReminderMessage({ client: findByIds(clients, [item.invoice?.client_id, item.invoice?.clientId]), invoice: item.invoice, business: user, channel: "email" })}</p></> : null}
-                      {item.type === "quote_follow_up" ? <><div className="mt-2 flex gap-1 text-[11px]"><span className="rounded bg-[#ebe5d8] px-2 py-0.5">Email</span><span className="rounded bg-[#ebe5d8] px-2 py-0.5">SMS</span></div><p className="mt-2 rounded bg-[#ebe5d8] p-2 text-xs text-slate-700">{quoteDrafts[item.relatedId] || buildQuoteFollowUpMessage({ client: findByIds(clients, [item.quote?.client_id, item.quote?.clientId]), quote: item.quote, business: user, channel: "email" })}</p></> : null}
+                      <p className="font-semibold text-[#121417]">{meta.title}</p><p className="mt-1 text-sm text-[#5f646b]">{meta.subtitle}</p><p className="mt-1 text-sm text-[#24272c]">{meta.reason}</p><p className="mt-1 text-xs text-[#5f646b]">{meta.dataUsed}</p><p className="mt-1 text-xs text-[#5f646b]">{meta.whatHappens}</p><p className="mt-1 text-xs text-[#5f646b]">Risk: {meta.risk}</p>{meta.contactSummary ? <p className="mt-1 text-xs text-[#5f646b]">{meta.contactSummary}</p> : null}
+                      {item.type === "invoice_reminder" ? <><div className="mt-2 flex gap-1 text-[11px]"><span className="rounded bg-[#efede8] px-2 py-0.5">Email</span><span className="rounded bg-[#efede8] px-2 py-0.5">SMS</span></div><p className="mt-2 rounded bg-[#efede8] p-2 text-xs text-[#24272c]">{reminderDrafts[item.relatedId] || buildInvoiceReminderMessage({ client: findByIds(clients, [item.invoice?.client_id, item.invoice?.clientId]), invoice: item.invoice, business: user, channel: "email" })}</p></> : null}
+                      {item.type === "quote_follow_up" ? <><div className="mt-2 flex gap-1 text-[11px]"><span className="rounded bg-[#efede8] px-2 py-0.5">Email</span><span className="rounded bg-[#efede8] px-2 py-0.5">SMS</span></div><p className="mt-2 rounded bg-[#efede8] p-2 text-xs text-[#24272c]">{quoteDrafts[item.relatedId] || buildQuoteFollowUpMessage({ client: findByIds(clients, [item.quote?.client_id, item.quote?.clientId]), quote: item.quote, business: user, channel: "email" })}</p></> : null}
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <button type="button" onClick={() => approveApprovalItem(item)} className="rounded-lg bg-[#3f6212] px-3 py-2 text-sm font-medium text-white">Approve</button>
-                        <button type="button" onClick={()=>setApprovalDetail(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Edit</button>
-                        <button type="button" onClick={() => rejectApprovalItem(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Reject</button>
-                        <button type="button" onClick={()=>setApprovalDetail(item)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Details</button>
+                        <button type="button" onClick={() => approveApprovalItem(item)} className="rounded-full bg-[#0f6b57] px-3 py-2 text-sm font-medium text-white hover:bg-[#0b4f42]">Approve</button>
+                        <button type="button" onClick={()=>setApprovalDetail(item)} className="rounded-lg border border-[#c8c0b2] px-3 py-2 text-sm">Edit</button>
+                        <button type="button" onClick={() => rejectApprovalItem(item)} className="rounded-lg border border-[#c8c0b2] px-3 py-2 text-sm">Reject</button>
+                        <button type="button" onClick={()=>setApprovalDetail(item)} className="rounded-lg border border-[#c8c0b2] px-3 py-2 text-sm">Details</button>
                       </div>
                     </article>
                   );})}
-                  {!filteredApprovalItems.length ? <article className="rounded-xl border border-[#737a74] bg-[#f7f3ea] p-4 shadow-sm"><p className="font-semibold text-[#171717]">No actions in this section.</p><div className="mt-3 flex gap-2"><button type="button" onClick={runScanNow} className="rounded-lg bg-[#3f6212] px-3 py-2 text-sm text-white">Run today's AI plan</button></div></article> : null}
+                  {!filteredApprovalItems.length ? <article className="rounded-xl border border-[#c8c0b2] bg-[#f9f7f2] p-4 shadow-sm"><p className="font-semibold text-[#121417]">No actions in this section.</p><div className="mt-3 flex gap-2"><button type="button" onClick={runScanNow} className="rounded-lg bg-[#0f6b57] px-3 py-2 text-sm text-white">Run today's AI plan</button></div></article> : null}
                 </div>
               </div>
             </div>
@@ -1145,7 +1145,7 @@ export default function SmartHubBrainPage() {
           </div>
         ) : null}
 
-        {loading ? <p className="mx-auto max-w-6xl px-4 pb-6 text-sm text-[#737a74] sm:px-6 lg:px-8">Loading Smart Hub...</p> : null}
+        {loading ? <p className="mx-auto max-w-6xl px-4 pb-6 text-sm text-[#5f646b] sm:px-6 lg:px-8">Loading Smart Hub...</p> : null}
       </div>
     </Layout>
   );
