@@ -2,11 +2,11 @@
   Churvox modal workspace upgrader.
   Older Smart Hub/workspace popups sometimes render as custom fixed panels instead
   of Radix dialogs. This makes those popups behave like full-page workspaces and
-  removes every redundant "Open full page" escape action from the UI.
+  removes every redundant "Open full page" / "Open full clients page" escape action.
 */
 
-const OPEN_FULL_PAGE_TEXT = /(open|view|go\s+to|launch)\s+(the\s+)?(full\s+)?(page|workspace|view)|full\s+(page|workspace|view)/i;
-const WORKSPACE_HINT_TEXT = /workspace|drawer|details|review|approval|invoice|quote|client|job|worker|crew|dispatch|settings|automation|payroll|report|sms|notification/i;
+const OPEN_FULL_PAGE_TEXT = /\b(open|view|go\s+to|launch)\b[\s\S]{0,60}\b(full|whole|main)\b[\s\S]{0,80}\b(page|workspace|view|screen)\b|\b(full|whole|main)\b[\s\S]{0,60}\b(page|workspace|view|screen)\b/i;
+const WORKSPACE_HINT_TEXT = /workspace|drawer|details|review|approval|invoice|quote|client|clients|job|jobs|worker|workers|crew|dispatch|settings|automation|payroll|report|sms|notification/i;
 
 const OVERLAY_SELECTOR = [
   '[role="dialog"]',
@@ -32,7 +32,7 @@ const CLICKABLE_SELECTOR = [
 ].join(',');
 
 function textOf(node) {
-  return String(node?.textContent || '').replace(/\s+/g, ' ').trim();
+  return String(node?.innerText || node?.textContent || '').replace(/\s+/g, ' ').trim();
 }
 
 function isVisible(node) {
@@ -47,7 +47,7 @@ function isSmallActionElement(node) {
   if (!node || !(node instanceof HTMLElement)) return false;
   const rect = node.getBoundingClientRect();
   const tag = node.tagName.toLowerCase();
-  return ['button', 'a'].includes(tag) || node.getAttribute('role') === 'button' || rect.width < 340 || rect.height < 90;
+  return ['button', 'a'].includes(tag) || node.getAttribute('role') === 'button' || (rect.width < 380 && rect.height < 110);
 }
 
 function markHiddenOpenFullPageAction(node) {
@@ -58,6 +58,11 @@ function markHiddenOpenFullPageAction(node) {
   node.style.setProperty('display', 'none', 'important');
   node.style.setProperty('visibility', 'hidden', 'important');
   node.style.setProperty('pointer-events', 'none', 'important');
+  node.style.setProperty('width', '0', 'important');
+  node.style.setProperty('height', '0', 'important');
+  node.style.setProperty('padding', '0', 'important');
+  node.style.setProperty('margin', '0', 'important');
+  node.style.setProperty('border', '0', 'important');
 }
 
 function findPanelInside(container) {
@@ -173,6 +178,10 @@ if (typeof window !== 'undefined') {
 
   window.addEventListener('click', () => setTimeout(run, 0), true);
   window.addEventListener('keyup', run, true);
+  window.addEventListener('focusin', run, true);
+
+  const interval = window.setInterval(run, 750);
+  window.addEventListener('beforeunload', () => window.clearInterval(interval), { once: true });
 
   const observer = new MutationObserver(run);
   observer.observe(document.documentElement, {
