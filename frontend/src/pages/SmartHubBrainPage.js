@@ -10,6 +10,9 @@ import { listFrom } from "./smart-hub/utils/smartHubFilters";
 import { asDate, findByIds, money, norm, safeArray, safeText, statusOf, textOr } from "./smart-hub/utils/smartHubSafety";
 import { daysOverdue, hasInvoiceForJob, invoiceBalance, quoteAgeDays } from "./smart-hub/utils/smartHubCounts";
 import { APPROVAL_GROUPS, dedupeApprovalActions, DONE_ACTION_STATUSES, getActionDisplayMeta, getApprovalGroup, getBestNextMove, getFilteredApprovalActions, isActiveApproval } from "./smart-hub/utils/actionDisplay";
+import { KpiCounters } from "./smart-hub/components/KpiCounters";
+import { WorkspaceDock } from "./smart-hub/components/WorkspaceDock";
+import { RecentActivityPanel } from "./smart-hub/components/RecentActivityPanel";
 
 const REMINDER_ELIGIBLE = ["open", "sent", "unpaid", "overdue", "pending_payment"];
 const REMINDER_EXCLUDED = ["paid", "cancelled", "canceled"];
@@ -834,21 +837,16 @@ export default function SmartHubBrainPage() {
 
           {error ? <p className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
 
-          <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              ["Ready to bill", readyToBillJobs.length],
-              ["Unassigned jobs", unassignedJobs.length],
-              ["Open invoices", openInvoices.length],
-              ["Crew available", crewAvailable],
-            ].map(([label, value]) => (
-              <article key={label} className="rounded-2xl border border-[#2a2f36] bg-[#111317] p-4 shadow-[0_14px_35px_rgba(15,17,21,0.20)] transition hover:border-[#d94f17] operator-panel operator-card" data-smart-hub-card="true">
-                <p className="text-xs uppercase tracking-wide text-white/55">{label}</p>
-                <button type="button" onClick={() => ({"Ready to bill":"Invoices","Unassigned jobs":"AI Dispatch","Open invoices":"Payment Reminders","Crew available":"Crew"}[label] ? openWorkspace({"Ready to bill":"Invoices","Unassigned jobs":"AI Dispatch","Open invoices":"Payment Reminders","Crew available":"Crew"}[label], {"Open invoices":"reminders"}[label] || "list") : null)} className="mt-2 text-3xl font-black text-white">
-                  {value}
-                </button>
-              </article>
-            ))}
-          </section>
+          <KpiCounters
+            readyToBillCount={readyToBillJobs.length}
+            unassignedJobsCount={unassignedJobs.length}
+            openInvoicesCount={openInvoices.length}
+            availableCrewCount={crewAvailable}
+            onReadyToBill={() => openWorkspace("Invoices", "list")}
+            onUnassignedJobs={() => openWorkspace("AI Dispatch", "list")}
+            onOpenInvoices={() => openWorkspace("Payment Reminders", "reminders")}
+            onCrew={() => openWorkspace("Crew", "list")}
+          />
 
           <section className="mt-6 rounded-2xl border border-[#746c60] border-l-4 border-l-[#d94f17] bg-[#c8bfb1] p-4 shadow-[0_14px_35px_rgba(15,17,21,0.20)]">
             <div className="flex items-center justify-between rounded-xl bg-[#15181d] px-3 py-2 text-white">
@@ -921,25 +919,9 @@ export default function SmartHubBrainPage() {
             </article>
           </section>
 
-          <section className="mt-6 rounded-2xl border border-[#7f7668] bg-[#d7d0c4] p-4 shadow-[0_14px_35px_rgba(15,17,21,0.20)] operator-panel operator-card" data-smart-hub-card="true">
-            <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-[#3f3931]">Workspace Dock</h2>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              {workspaceButtons.map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => openWorkspace(name)}
-                  className="rounded-2xl border border-[#2a2f36] bg-[#1f242b] px-4 py-3 text-left text-sm font-medium text-white shadow transition hover:bg-[#0d0f12] operator-command-key" data-workspace-key="true"
-                >
-                  <span className="block">{name}</span>
-                  <span className="block text-xs text-white/70">{workspaceMeta[name] || "Open workspace"}</span>
-                </button>
-              ))}
-              <button type="button" onClick={() => openWorkspace("Payment Reminders", "reminders")} className="rounded-lg border border-[#ff8a3d]/40 bg-[#d94f17] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#b93f10] operator-primary" data-operator-primary="true">Prepare reminders</button>
-              <button type="button" onClick={() => openWorkspace("Quote Follow-ups", "followUps")} className="rounded-lg border border-[#ff8a3d]/40 bg-[#d94f17] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#b93f10] operator-primary" data-operator-primary="true">Review follow-ups</button>
-              <button type="button" onClick={() => openWorkspace("AI Dispatch", "assign")} className="rounded-lg border border-[#ff8a3d]/40 bg-[#d94f17] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#b93f10] operator-primary" data-operator-primary="true">Assign workers</button>
-            </div>
-          </section>
+          <WorkspaceDock workspaceButtons={workspaceButtons} workspaceMeta={workspaceMeta} onOpenWorkspace={openWorkspace} />
+
+
 
 
           <section className="mt-6 rounded-2xl border border-[#746c60] bg-[#c8bfb1] p-4 shadow-[0_14px_35px_rgba(15,17,21,0.20)] operator-panel operator-card" data-smart-hub-card="true">
@@ -949,10 +931,7 @@ export default function SmartHubBrainPage() {
             <button type="button" onClick={() => setAiSettingsOpen(true)} className="mt-3 rounded-lg border border-[#ff8a3d]/40 bg-[#d94f17] px-3 py-2 text-sm text-white hover:bg-[#b93f10]">Open AI Settings</button>
           </section>
 
-          <section className="mt-4 rounded-2xl border border-[#746c60] bg-[#c8bfb1] p-4 shadow-[0_14px_35px_rgba(15,17,21,0.20)]">
-            <h3 className="text-sm font-bold uppercase tracking-[0.16em] text-[#3f3931]">Recent Smart Hub activity</h3>
-            <div className="mt-2 flex gap-2">{[["all","All"],["completed","Completed"],["rejected","Rejected"],["draft_prepared","Drafts"]].map(([k,l]) => <button key={k} type="button" onClick={() => setActivityFilter(k)} className={`rounded px-2 py-1 text-xs ${activityFilter===k?"bg-[#20242a] text-white":"bg-[#c8bfb1] text-[#111317]"}`}>{l}</button>)}</div>{!activity.length ? <p className="mt-2 text-sm text-[#5f646b]">No AI actions approved yet.</p> : <ul className="mt-3 space-y-2 text-sm text-[#111317]">{activity.filter((a)=>activityFilter==="all"?true:String(a?.status||"")===activityFilter).map((a) => <li key={String(a?.id||a?._id)} className="rounded-lg border border-[#8c8274] p-2"><p>{a?.message || a?.title}</p><p className="text-xs text-[#5f646b]">{textOr(a?.status, "completed")} · {a?.approved_by_name ? `${a.approved_by_name} · ` : ""}{new Date(a?.created_at || Date.now()).toLocaleString()}</p></li>)}</ul>}
-          </section>
+          <RecentActivityPanel activity={activity} activityFilter={activityFilter} setActivityFilter={setActivityFilter} />
         </div>
 
         {workspaceDrawer ? (
