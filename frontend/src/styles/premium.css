@@ -7,31 +7,31 @@
 
 :root {
   /* Brand */
-  --px-bg:            #F4F7FB;
+  --px-bg:            #b4aa9b;
   --px-bg-2:          #f4f8ff;
   --px-bg-3:          #e6f0fb;
-  --px-surface:       #ffffff;
-  --px-surface-soft:  #F8FAFC;
+  --px-surface:       #d2c8b9;
+  --px-surface-soft:  #bfb4a4;
   --px-glass:         rgba(255,255,255,0.78);
 
-  --px-border:        #DCE6F3;
-  --px-border-soft:   #e6eef9;
-  --px-border-strong: #b8c8de;
+  --px-border:        #756c5f;
+  --px-border-soft:   #8c8376;
+  --px-border-strong: #5f574c;
 
   --px-text:          #0F172A;
   --px-text-2:        #334155;
   --px-muted:         #64748B;
   --px-muted-2:       #7d8ba3;
 
-  --px-primary:       #155EEF;
-  --px-primary-2:     #0F46C8;
-  --px-primary-soft:  #EAF1FF;
-  --px-primary-50:    #EAF1FF;
+  --px-primary:       #f97316;
+  --px-primary-2:     #ea580c;
+  --px-primary-soft:  #2b3038;
+  --px-primary-50:    #2b3038;
 
   --px-sky:           #38bdf8;
   --px-sky-soft:      #e0f3ff;
 
-  --px-teal:          #12B981;
+  --px-teal:          #166534;
   --px-teal-soft:     rgba(18,185,129,0.08);
 
   --px-amber:         #F59E0B;
@@ -884,3 +884,42 @@ html, body { overflow-x: hidden; }
   border-right-color: var(--px-border) !important;
   color: var(--px-text) !important;
 }
+
+
+/* Hard-tradie workspace override for legacy/full pages */
+.px-app, .cx-app-shell {
+  background: radial-gradient(circle at top left, rgba(249,115,22,0.14), transparent 24%), #b4aa9b !important;
+}
+.px-main {
+  background: linear-gradient(135deg, rgba(11,13,16,0.08) 25%, transparent 25%), linear-gradient(225deg, rgba(11,13,16,0.06) 25%, transparent 25%), #b4aa9b !important;
+  background-size: 22px 22px, 22px 22px, auto !important;
+}
+.px-sidebar, .px-sidebar__brand, .px-sidebar__foot, .px-mobile-header, .px-mobile-bottom {
+  background: #1a1d22 !important;
+  color: #f5f5f5 !important;
+  border-color: #3b414a !important;
+}
+.px-nav-item { color:#d5dae3 !important; border:1px solid #2b3038 !important; border-radius:10px !important; }
+.px-nav-item:hover { background:#111317 !important; color:#fff !important; border-color:#f97316 !important; }
+.px-nav-item.is-active { background:#f97316 !important; border-color:#ea580c !important; box-shadow:none !important; }
+.px-nav-group,.px-user-card__sub,.px-logout { color:#aab2c0 !important; }
+.px-user-card{ background:#111317 !important; border-color:#2b3038 !important;}
+.px-user-card__avatar{ background:#2b3038 !important; }
+.px-logout:hover{ background:#111317 !important; color:#fff !important; border-color:#f97316 !important; }
+
+.cx-page-hero, .px-hero {
+  background: linear-gradient(135deg,#050607 0%,#101318 42%,#2b3038 100%) !important;
+  color:#fff !important;
+  border:1px solid rgba(255,255,255,0.18) !important;
+  border-radius: 14px !important;
+}
+.cx-card, .cx-panel, .cx-command-card, .cx-document-card, .cx-invoice-card, .cx-stat-card, .surface-card, .px-card, .px-table-wrap {
+  background:#d2c8b9 !important; border:1px solid #756c5f !important; box-shadow:0 10px 22px rgba(0,0,0,0.18) !important; border-radius:12px !important;
+}
+.cx-button-primary, .px-btn-primary, .px-login-submit {
+  background:#f97316 !important; border-color:#ea580c !important; box-shadow:none !important;
+}
+.cx-button-primary:hover, .px-btn-primary:hover { background:#ea580c !important; }
+button[class*="green"], .cx-status-badge--green { background:#166534 !important; color:#fff !important; border-color:#14532d !important; }
+.cx-button-secondary, .px-btn-secondary { background:#111317 !important; color:#fff !important; border:1px solid #2b3038 !important; }
+.cx-button-secondary:hover, .px-btn-secondary:hover { border-color:#f97316 !important; }
