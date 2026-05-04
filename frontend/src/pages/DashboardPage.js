@@ -1,8 +1,8 @@
 import React from "react";
-import AIControlRoomWiredPage from "./AIControlRoomWiredPage";
+import AIControlRoomCompletePage from "./AIControlRoomCompletePage";
 import SmartHubErrorBoundary from "../components/SmartHubErrorBoundary";
 import "../styles/aiControlRoomForceV4.css";
 
 export default function DashboardPage() {
-  return <SmartHubErrorBoundary><AIControlRoomWiredPage /></SmartHubErrorBoundary>;
+  return <SmartHubErrorBoundary><AIControlRoomCompletePage /></SmartHubErrorBoundary>;
 }
