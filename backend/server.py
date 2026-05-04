@@ -2464,6 +2464,33 @@ async def get_ai_operator_actions(current_user: dict = Depends(get_current_user)
     return {"success": True, "actions": rows}
 
 @api_router.get("/ai-operator/settings")
+
+
+async def _ensure_ai_receptionist_collections():
+    try:
+        await db.ai_enquiries.create_index([("business_id", 1), ("status", 1), ("created_at", -1)])
+        await db.recurring_work_rules.create_index([("business_id", 1), ("active", 1), ("next_due_date", 1)])
+    except Exception:
+        pass
+
+
+def _receptionist_prepare_payload(enquiry: dict, clients: list, workers: list) -> dict:
+    msg = str(enquiry.get("message") or "")
+    name = str(enquiry.get("customer_name") or "")
+    email = str(enquiry.get("customer_email") or "")
+    phone = str(enquiry.get("customer_phone") or "")
+    suggested_client = next((c for c in clients if (email and str(c.get("email") or "").lower() == email.lower()) or (phone and str(c.get("phone") or "") == phone)), None)
+    suggested_worker = workers[0] if workers else None
+    suggested_job = {"title": f"Service enquiry: {name or 'New client'}", "address": enquiry.get("address") or "", "description": msg[:600], "status": "new"}
+    suggested_quote = {"title": f"Quote for {name or 'new client'}", "line_items": [{"description": "Service visit", "qty": 1, "unit_price": 0}], "notes": "AI draft only - owner approval required"}
+    draft_reply = f"Hi {name or 'there'}, thanks for your enquiry. We've reviewed your request and can prepare a draft job or quote for approval."
+    return {"suggested_client_id": str((suggested_client or {}).get("id") or (suggested_client or {}).get("_id") or ""),
+            "suggested_worker_id": str((suggested_worker or {}).get("id") or (suggested_worker or {}).get("_id") or ""),
+            "suggested_job": suggested_job,
+            "suggested_quote": suggested_quote,
+            "ai_summary": f"Enquiry from {name or 'unknown customer'} at {enquiry.get('address') or 'no address provided'}.",
+            "draft_reply": draft_reply}
+
 @api_router.get("/api/ai-operator/settings")
 async def get_ai_operator_settings(current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str(current_user.get("role") or "").lower())
@@ -10170,6 +10197,144 @@ async def ai_operator_dismiss(item_id: str, current_user: dict = Depends(get_cur
 
 
 @api_router.post("/ai-operator/run-daily-plan")
+
+
+@api_router.get("/api/ai/receptionist/enquiries")
+async def ai_receptionist_enquiries(current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or ""))
+    business_id = await get_user_business_id(current_user)
+    await _ensure_ai_receptionist_collections()
+    items = [serialize_doc(d) async for d in db.ai_enquiries.find({"business_id": business_id}).sort("created_at", -1).limit(200)]
+    return {"success": True, "enquiries": items}
+
+@api_router.post("/api/ai/receptionist/enquiries")
+async def ai_receptionist_create_enquiry(payload: dict, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or ""))
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    source = str(payload.get("source") or "manual")
+    doc = {"business_id": business_id, "source": source, "customer_name": str(payload.get("customer_name") or ""), "customer_phone": str(payload.get("customer_phone") or ""), "customer_email": str(payload.get("customer_email") or ""), "address": str(payload.get("address") or ""), "suburb": str(payload.get("suburb") or ""), "message": str(payload.get("message") or ""), "photos": payload.get("photos") if isinstance(payload.get("photos"), list) else [], "preferred_date": payload.get("preferred_date"), "status": "new", "created_at": now, "updated_at": now}
+    ins = await db.ai_enquiries.insert_one(doc)
+    return {"success": True, "enquiry": serialize_doc({**doc, "_id": ins.inserted_id})}
+
+@api_router.post("/api/ai/receptionist/enquiries/{enquiry_id}/prepare")
+async def ai_receptionist_prepare(enquiry_id: str, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or ""))
+    business_id = await get_user_business_id(current_user)
+    q = {"business_id": business_id, "$or": [{"_id": ObjectId(enquiry_id)}] if ObjectId.is_valid(enquiry_id) else [{"id": enquiry_id}]}
+    enquiry = await db.ai_enquiries.find_one(q)
+    if not enquiry: raise HTTPException(status_code=404, detail="Enquiry not found")
+    clients = [c async for c in db.clients.find({"business_id": business_id}).limit(200)]
+    workers = [w async for w in db.business_users.find({"business_id": business_id, "role": {"$in": ["worker", "employee", "field_worker"]}}).limit(50)]
+    prep = _receptionist_prepare_payload(enquiry, clients, workers)
+    await db.ai_enquiries.update_one({"_id": enquiry["_id"]}, {"$set": {**prep, "status": "needs_review", "updated_at": datetime.now(timezone.utc)}})
+    enquiry.update(prep); enquiry["status"] = "needs_review"
+    return {"success": True, "enquiry": serialize_doc(enquiry)}
+
+@api_router.post("/api/ai/receptionist/enquiries/{enquiry_id}/convert-to-job")
+async def ai_receptionist_convert_to_job(enquiry_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or ""))
+    business_id = await get_user_business_id(current_user)
+    enquiry = await db.ai_enquiries.find_one({"business_id": business_id, "$or": [{"_id": ObjectId(enquiry_id)}] if ObjectId.is_valid(enquiry_id) else [{"id": enquiry_id}]})
+    if not enquiry: raise HTTPException(status_code=404, detail="Enquiry not found")
+    now = datetime.now(timezone.utc)
+    client_id = str(enquiry.get("suggested_client_id") or "")
+    if not client_id:
+        cdoc = {"business_id": business_id, "name": enquiry.get("customer_name") or "New client", "phone": enquiry.get("customer_phone") or "", "email": enquiry.get("customer_email") or "", "address": enquiry.get("address") or "", "created_at": now, "updated_at": now}
+        cins = await db.clients.insert_one(cdoc); client_id = str(cins.inserted_id)
+    job = {"business_id": business_id, "client_id": client_id, "title": str((enquiry.get("suggested_job") or {}).get("title") or "New job from enquiry"), "address": enquiry.get("address") or "", "status": "new", "notes": enquiry.get("message") or "", "assigned_worker_id": str(enquiry.get("suggested_worker_id") or ""), "created_at": now, "updated_at": now}
+    jins = await db.jobs.insert_one(job)
+    await db.ai_enquiries.update_one({"_id": enquiry["_id"]}, {"$set": {"status": "converted_to_job", "suggested_client_id": client_id, "updated_at": now}})
+    return {"success": True, "job_id": str(jins.inserted_id), "client_id": client_id}
+
+@api_router.post("/api/ai/receptionist/enquiries/{enquiry_id}/convert-to-quote")
+async def ai_receptionist_convert_to_quote(enquiry_id: str, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or ""))
+    business_id = await get_user_business_id(current_user)
+    enquiry = await db.ai_enquiries.find_one({"business_id": business_id, "$or": [{"_id": ObjectId(enquiry_id)}] if ObjectId.is_valid(enquiry_id) else [{"id": enquiry_id}]})
+    if not enquiry: raise HTTPException(status_code=404, detail="Enquiry not found")
+    now = datetime.now(timezone.utc)
+    quote = {"business_id": business_id, "client_id": str(enquiry.get("suggested_client_id") or ""), "title": str((enquiry.get("suggested_quote") or {}).get("title") or "Draft quote from enquiry"), "status": "draft", "notes": enquiry.get("message") or "", "created_at": now, "updated_at": now}
+    qins = await db.quotes.insert_one(quote)
+    await db.ai_enquiries.update_one({"_id": enquiry["_id"]}, {"$set": {"status": "converted_to_quote", "updated_at": now}})
+    return {"success": True, "quote_id": str(qins.inserted_id)}
+
+@api_router.post("/api/ai/receptionist/enquiries/{enquiry_id}/dismiss")
+async def ai_receptionist_dismiss(enquiry_id: str, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or ""))
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    res = await db.ai_enquiries.update_one({"business_id": business_id, "$or": [{"_id": ObjectId(enquiry_id)}] if ObjectId.is_valid(enquiry_id) else [{"id": enquiry_id}]}, {"$set": {"status": "dismissed", "updated_at": now}})
+    if res.matched_count == 0: raise HTTPException(status_code=404, detail="Enquiry not found")
+    return {"success": True}
+
+def _parse_due_date(value):
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, str) and value:
+        try: return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
+        except Exception: return None
+    return None
+
+@api_router.get("/api/ai/recurring")
+async def ai_recurring_get(current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or ""))
+    business_id = await get_user_business_id(current_user)
+    rules = [serialize_doc(r) async for r in db.recurring_work_rules.find({"business_id": business_id}).sort("next_due_date", 1)]
+    return {"success": True, "rules": rules}
+
+@api_router.post("/api/ai/recurring/rules")
+async def ai_recurring_create_rule(payload: dict, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or ""))
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    doc = {"business_id": business_id, "client_id": str(payload.get("client_id") or ""), "title": str(payload.get("title") or "Recurring work"), "service_type": str(payload.get("service_type") or ""), "frequency": str(payload.get("frequency") or "weekly"), "interval_days": int(payload.get("interval_days") or 7), "preferred_worker_id": str(payload.get("preferred_worker_id") or ""), "preferred_day": payload.get("preferred_day"), "next_due_date": payload.get("next_due_date"), "last_created_job_id": "", "active": bool(payload.get("active", True)), "created_at": now, "updated_at": now}
+    ins = await db.recurring_work_rules.insert_one(doc)
+    return {"success": True, "rule": serialize_doc({**doc, "_id": ins.inserted_id})}
+
+@api_router.patch("/api/ai/recurring/rules/{rule_id}")
+async def ai_recurring_patch_rule(rule_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or ""))
+    business_id = await get_user_business_id(current_user)
+    patch = {k: v for k, v in payload.items() if k in {"title", "service_type", "frequency", "interval_days", "preferred_worker_id", "preferred_day", "next_due_date", "active", "client_id"}}
+    patch["updated_at"] = datetime.now(timezone.utc)
+    res = await db.recurring_work_rules.update_one({"business_id": business_id, "$or": [{"_id": ObjectId(rule_id)}] if ObjectId.is_valid(rule_id) else [{"id": rule_id}]}, {"$set": patch})
+    if res.matched_count == 0: raise HTTPException(status_code=404, detail="Rule not found")
+    return {"success": True}
+
+@api_router.post("/api/ai/recurring/prepare-next-run")
+async def ai_recurring_prepare_next_run(current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or ""))
+    business_id = await get_user_business_id(current_user)
+    today = datetime.now(timezone.utc).date()
+    horizon = today + timedelta(days=14)
+    rules = [serialize_doc(r) async for r in db.recurring_work_rules.find({"business_id": business_id, "active": {"$ne": False}})]
+    due = [r for r in rules if (_parse_due_date(r.get("next_due_date")) or today) <= horizon]
+    grouped = {}
+    for r in due:
+        key = str(r.get("suburb") or r.get("region") or "Unspecified")
+        grouped.setdefault(key, []).append(r)
+    return {"success": True, "due_rules": due, "grouped_by_area": grouped}
+
+@api_router.post("/api/ai/recurring/approve-run")
+async def ai_recurring_approve_run(payload: dict, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or ""))
+    business_id = await get_user_business_id(current_user)
+    rule_ids = payload.get("rule_ids") or []
+    now = datetime.now(timezone.utc)
+    created = []
+    for rid in rule_ids:
+        rule = await db.recurring_work_rules.find_one({"business_id": business_id, "$or": [{"_id": ObjectId(rid)}] if ObjectId.is_valid(str(rid)) else [{"id": str(rid)}]})
+        if not rule or rule.get("active") is False: continue
+        existing = await db.jobs.find_one({"business_id": business_id, "recurring_rule_id": str(rule.get("_id")), "scheduled_date": rule.get("next_due_date")})
+        if existing: continue
+        job = {"business_id": business_id, "client_id": str(rule.get("client_id") or ""), "title": rule.get("title") or "Recurring work", "service_type": rule.get("service_type") or "", "assigned_worker_id": str(rule.get("preferred_worker_id") or ""), "scheduled_date": rule.get("next_due_date"), "status": "new", "recurring_rule_id": str(rule.get("_id")), "created_at": now, "updated_at": now}
+        ins = await db.jobs.insert_one(job)
+        next_due = (_parse_due_date(rule.get("next_due_date")) or now.date()) + timedelta(days=int(rule.get("interval_days") or 7))
+        await db.recurring_work_rules.update_one({"_id": rule["_id"]}, {"$set": {"last_created_job_id": str(ins.inserted_id), "next_due_date": next_due.isoformat(), "updated_at": now}})
+        created.append(str(ins.inserted_id))
+    return {"success": True, "created_job_ids": created}
+
 @api_router.post("/api/ai-operator/run-daily-plan")
 async def ai_operator_run_daily_plan(current_user: dict = Depends(get_current_user)):
     await smart_hub_process_due_communications(current_user)

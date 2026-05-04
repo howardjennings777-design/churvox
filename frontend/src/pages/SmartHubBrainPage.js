@@ -99,12 +99,14 @@ export default function SmartHubBrainPage() {
   const [runningChecks, setRunningChecks] = useState(false);
   const defaultAiSettings = { ai_operator_enabled: true, auto_arrival_sms_enabled: false, arrival_sms_mode: "approval_required", arrival_sms_minutes_before: 30, invoice_reminder_mode: "draft_only", quote_followup_mode: "draft_only", worker_assignment_mode: "approval_required", accounting_changes_locked: true, payroll_changes_locked: true };
   const [aiSettings, setAiSettings] = useState(defaultAiSettings);
+  const [receptionistEnquiries, setReceptionistEnquiries] = useState([]);
+  const [recurringRules, setRecurringRules] = useState([]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [jobsRes, clientsRes, quotesRes, invoicesRes, workersRes, activityRes, actionsRes, settingsRes] = await Promise.all([
+      const [jobsRes, clientsRes, quotesRes, invoicesRes, workersRes, activityRes, actionsRes, settingsRes, enquiriesRes, recurringRes] = await Promise.all([
         safeGet("/jobs"),
         safeGet("/clients"),
         safeGet("/quotes"),
@@ -113,6 +115,8 @@ export default function SmartHubBrainPage() {
         safeGet("/smart-hub/activity"),
         safeGet("/ai-operator/actions"),
         safeGet("/ai-operator/settings"),
+        safeGet("/api/ai/receptionist/enquiries"),
+        safeGet("/api/ai/recurring"),
       ]);
 
       setData({
@@ -124,6 +128,8 @@ export default function SmartHubBrainPage() {
       });
       setActivity(listFrom(activityRes, ["activities"]));
       setOperatorActions(listFrom(actionsRes, ["actions"]));
+      setReceptionistEnquiries(listFrom(enquiriesRes, ["enquiries"]));
+      setRecurringRules(listFrom(recurringRes, ["rules"]));
       if (settingsRes && typeof settingsRes === "object") setAiSettings((prev) => ({ ...prev, ...settingsRes }));
     } catch {
       setError("Failed to load Smart Hub data.");
@@ -868,6 +874,36 @@ export default function SmartHubBrainPage() {
           <section className="mt-6 grid gap-4 lg:grid-cols-2">
             <TodayPlanPanel jobsTodayCount={jobsToday} unassignedJobsCount={unassignedJobs.length} readyToBillCount={readyToBillJobs.length} openInvoicesCount={openInvoices.length} quotesWaitingCount={waitingQuotes.length} availableCrewCount={crewAvailable} bestNextMove={bestNextMove} onJobsToday={() => openWorkspace("Jobs", "list")} onUnassignedJobs={() => openWorkspace("AI Dispatch", "assign")} onReadyToBill={() => openApprovalCentre({ tab: "ready" })} onOpenInvoices={() => openApprovalCentre({ tab: "drafts" })} onQuotesWaiting={() => openApprovalCentre({ tab: "drafts" })} onCrew={() => openWorkspace("Crew", "list")} />
             <BusinessPulsePanel openInvoicesCount={openInvoices.length} readyToBillCount={readyToBillJobs.length} unassignedJobsCount={unassignedJobs.length} quotesWaitingCount={waitingQuotes.length} crewCount={crewAvailable} onMoneyWaiting={() => openWorkspace("Payment Reminders", "reminders")} onBillingReady={() => openApprovalCentre({ tab: "ready" })} onDispatchPressure={() => openWorkspace("AI Dispatch", "assign")} onPipeline={() => openApprovalCentre({ tab: "drafts" })} onCrew={() => openWorkspace("Crew", "list")} />
+          </section>
+          <section className="mt-6 grid gap-4 lg:grid-cols-2">
+            <article className="rounded-2xl border border-[#746c60] bg-white p-4 shadow-sm">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-[#3f3931]">AI Receptionist</h3>
+              <p className="text-xs text-[#5f646b]">New enquiries requiring review and conversion.</p>
+              {receptionistEnquiries.slice(0, 3).map((e) => <div key={String(e?.id || e?._id)} className="mt-3 rounded-lg border p-3">
+                <p className="font-semibold">{textOr(e?.customer_name, "New enquiry")} <span className="text-xs text-[#5f646b]">({textOr(e?.status, "new")})</span></p>
+                <p className="text-xs text-[#5f646b]">{textOr(e?.customer_phone)} {e?.customer_email ? `· ${e.customer_email}` : ""}</p>
+                <p className="text-xs text-[#5f646b]">{textOr(e?.address)} {e?.suburb ? `· ${e.suburb}` : ""}</p>
+                <p className="mt-1 text-sm">{textOr(e?.message, "No message provided.")}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button type="button" className="rounded bg-[#111317] px-2 py-1 text-xs text-white" onClick={async () => { await post(`/api/ai/receptionist/enquiries/${e.id || e._id}/prepare`, {}); await load(); }}>Prepare</button>
+                  <button type="button" className="rounded bg-[#14532d] px-2 py-1 text-xs text-white" onClick={async () => { await post(`/api/ai/receptionist/enquiries/${e.id || e._id}/convert-to-job`, {}); await load(); }}>Approve job</button>
+                  <button type="button" className="rounded bg-[#0f766e] px-2 py-1 text-xs text-white" onClick={async () => { await post(`/api/ai/receptionist/enquiries/${e.id || e._id}/convert-to-quote`, {}); await load(); }}>Approve quote</button>
+                  <button type="button" className="rounded border px-2 py-1 text-xs" onClick={async () => { await post(`/api/ai/receptionist/enquiries/${e.id || e._id}/dismiss`, {}); await load(); }}>Dismiss</button>
+                </div>
+              </div>)}
+            </article>
+            <article className="rounded-2xl border border-[#746c60] bg-white p-4 shadow-sm">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-[#3f3931]">Recurring Autopilot</h3>
+              <p className="text-xs text-[#5f646b]">Recurring work due soon, grouped for approval.</p>
+              {recurringRules.slice(0, 4).map((r) => <div key={String(r?.id || r?._id)} className="mt-3 rounded-lg border p-3">
+                <p className="font-semibold">{textOr(r?.title, "Recurring rule")} <span className="text-xs text-[#5f646b]">{textOr(r?.service_type)}</span></p>
+                <p className="text-xs text-[#5f646b]">Due: {textOr(r?.next_due_date, "Not set")} · Frequency: {textOr(r?.frequency, "weekly")}</p>
+              </div>)}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button type="button" className="rounded bg-[#111317] px-2 py-1 text-xs text-white" onClick={async () => { await post("/api/ai/recurring/prepare-next-run", {}); await load(); }}>Prepare run</button>
+                <button type="button" className="rounded bg-[#14532d] px-2 py-1 text-xs text-white" onClick={async () => { await post("/api/ai/recurring/approve-run", { rule_ids: recurringRules.slice(0, 10).map((r) => String(r?.id || r?._id)) }); await load(); }}>Approve run</button>
+              </div>
+            </article>
           </section>
 
           <WorkspaceDock workspaceButtons={workspaceButtons} workspaceMeta={workspaceMeta} onOpenWorkspace={openWorkspace} />
