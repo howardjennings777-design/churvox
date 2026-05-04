@@ -41,6 +41,7 @@ const ROUTE_ACCESS = {
   reports:    ["owner", "manager", "office_admin", "payroll"],
   integrations:["owner", "manager", "office_admin"],
   proof_to_paid:["owner", "manager", "office_admin"],
+  ai_operator:["owner", "manager", "office_admin"],
   // Owner-only
   plans:      ["owner"],
   settings:   ["owner", "manager", "office_admin"],
