@@ -358,7 +358,7 @@ export default function TeamPage() {
                     }
                     setShowAdd((prev) => !prev);
                   }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-churvox-accent hover:bg-churvox-accent/90 text-white"
                   data-testid="add-worker-button"
                 >
                   <UserPlus size={16} className="mr-2" />
@@ -433,7 +433,7 @@ export default function TeamPage() {
                         id="worker-role-inline"
                         value={form.invite_role || "worker"}
                         onChange={(e) => setForm({ ...form, invite_role: e.target.value })}
-                        className="w-full h-10 min-h-[40px] rounded-md border border-slate-300 bg-white px-3 pr-8 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full h-10 min-h-[40px] rounded-md border border-slate-300 bg-white px-3 pr-8 text-slate-900 focus:outline-none focus:ring-2 focus:ring-churvox-accent focus:border-churvox-accent"
                         data-testid="invite-role-select"
                       >
                         <option value="manager">Manager</option>
@@ -449,7 +449,7 @@ export default function TeamPage() {
                         id="worker-country-inline"
                         value={form.country || "New Zealand"}
                         onChange={(e) => setForm({ ...form, country: e.target.value, region: "" })}
-                        className="w-full h-10 min-h-[40px] rounded-md border border-slate-300 bg-white px-3 pr-8 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full h-10 min-h-[40px] rounded-md border border-slate-300 bg-white px-3 pr-8 text-slate-900 focus:outline-none focus:ring-2 focus:ring-churvox-accent focus:border-churvox-accent"
                         data-testid="invite-country-select"
                       >
                         {COUNTRY_OPTIONS.map((option) => (
@@ -466,7 +466,7 @@ export default function TeamPage() {
                         id="worker-region-inline"
                         value={form.region}
                         onChange={(e) => setForm({ ...form, region: e.target.value })}
-                        className="w-full h-10 min-h-[40px] rounded-md border border-slate-300 bg-white px-3 pr-8 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full h-10 min-h-[40px] rounded-md border border-slate-300 bg-white px-3 pr-8 text-slate-900 focus:outline-none focus:ring-2 focus:ring-churvox-accent focus:border-churvox-accent"
                         data-testid="invite-region-select"
                       >
                         <option value="">Select region / state</option>
@@ -489,7 +489,7 @@ export default function TeamPage() {
                       >
                         Cancel
                       </Button>
-                      <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
+                      <Button type="submit" className="bg-churvox-accent hover:bg-churvox-accent/90 text-white">
                         Send Invite
                       </Button>
                     </div>
@@ -500,12 +500,12 @@ export default function TeamPage() {
 
             {selectedWorker && (
               <Card className="bg-white border-slate-200 shadow-lg shadow-black/20 overflow-hidden">
-                <div className="h-1 w-full bg-blue-600/80" />
+                <div className="h-1 w-full bg-churvox-accent/80" />
                 <CardContent className="p-6 space-y-5 text-slate-900">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <div className="h-10 w-10 rounded-full bg-blue-600/15 border border-blue-600/30 flex items-center justify-center text-sm font-bold text-blue-600">
+                        <div className="h-10 w-10 rounded-full bg-churvox-accent/15 border border-churvox-accent/30 flex items-center justify-center text-sm font-bold text-churvox-accent">
                           {String(selectedWorker?.name || "W").trim().charAt(0).toUpperCase()}
                         </div>
                         <div>
@@ -555,7 +555,7 @@ export default function TeamPage() {
                       <select
                         value={selectedWorker?.country || "New Zealand"}
                         onChange={(e) => setSelectedWorker((prev) => prev ? { ...prev, country: e.target.value, region: "" } : prev)}
-                        className="w-full h-10 min-h-[40px] rounded-md border border-slate-300 bg-white px-3 pr-8 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full h-10 min-h-[40px] rounded-md border border-slate-300 bg-white px-3 pr-8 text-slate-900 focus:outline-none focus:ring-2 focus:ring-churvox-accent focus:border-churvox-accent"
                       >
                         {COUNTRY_OPTIONS.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -570,7 +570,7 @@ export default function TeamPage() {
                       <select
                         value={selectedWorker?.region || ""}
                         onChange={(e) => setSelectedWorker((prev) => prev ? { ...prev, region: e.target.value } : prev)}
-                        className="w-full h-10 min-h-[40px] rounded-md border border-slate-300 bg-white px-3 pr-8 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full h-10 min-h-[40px] rounded-md border border-slate-300 bg-white px-3 pr-8 text-slate-900 focus:outline-none focus:ring-2 focus:ring-churvox-accent focus:border-churvox-accent"
                       >
                         <option value="">Select region / state</option>
                         {getRegionOptions(selectedWorker?.country || "New Zealand").map((region) => (
@@ -584,7 +584,7 @@ export default function TeamPage() {
                         type="button"
                         onClick={saveWorkerGeo}
                         disabled={savingWorkerGeo}
-                        className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white"
+                        className="mt-3 w-full bg-churvox-accent hover:bg-churvox-accent/90 text-white"
                       >
                         {savingWorkerGeo ? "Saving..." : "Save Location"}
                       </Button>
@@ -601,7 +601,7 @@ export default function TeamPage() {
                         type="button"
                         onClick={saveWorkerNotes}
                         disabled={savingNotes}
-                        className="bg-blue-600 hover:bg-blue-700 text-slate-900 min-w-[120px]"
+                        className="bg-churvox-accent hover:bg-churvox-accent/90 text-white min-w-[120px]"
                       >
                         {savingNotes ? "Saving..." : "Save Notes"}
                       </Button>
@@ -625,7 +625,7 @@ export default function TeamPage() {
                       <Button
                         type="button"
                         onClick={() => navigate(`/jobs/new?workerId=${selectedWorker.id || selectedWorker._id}`)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        className="bg-churvox-accent hover:bg-churvox-accent/90 text-white"
                       >
                         Add / Assign Job
                       </Button>
@@ -695,7 +695,7 @@ export default function TeamPage() {
 
             {loading && workers.length === 0 ? (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-churvox-accent" />
               </div>
             ) : workers.length === 0 && !loading ? (
               <Card className="bg-white border-slate-200 shadow-sm">
@@ -708,7 +708,7 @@ export default function TeamPage() {
                   <Button
                     onClick={() => setShowAdd(true)}
                     size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="bg-churvox-accent hover:bg-churvox-accent/90 text-white"
                     data-testid="add-first-worker"
                   >
                     <UserPlus size={14} className="mr-1" />
@@ -723,7 +723,7 @@ export default function TeamPage() {
                   return (
                     <Card
                       key={workerId}
-                      className="bg-white border-slate-200 hover:border-blue-600/40 transition-colors shadow-sm shadow-black/10"
+                      className="bg-white border-slate-200 hover:border-churvox-accent/40 transition-colors shadow-sm shadow-black/10"
                       data-testid={`worker-card-${workerId}`}
                     >
                       <CardContent className="p-4">
@@ -734,7 +734,7 @@ export default function TeamPage() {
                             onClick={() => openWorkerPanel(worker)}
                           >
                             <div className="flex items-start gap-3">
-                              <div className="h-11 w-11 rounded-full bg-blue-600/15 border border-blue-600/30 flex items-center justify-center text-sm font-bold text-blue-600 shrink-0">
+                              <div className="h-11 w-11 rounded-full bg-churvox-accent/15 border border-churvox-accent/30 flex items-center justify-center text-sm font-bold text-churvox-accent shrink-0">
                                 {String(worker.name || "W").trim().charAt(0).toUpperCase()}
                               </div>
 
@@ -743,7 +743,7 @@ export default function TeamPage() {
                                   <div className="text-slate-900 font-semibold">
                                     {worker.name || "Unnamed Worker"}
                                   </div>
-                                  <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700">
+                                  <span className="inline-flex items-center rounded-full border border-[#c97333]/40 bg-[#f6e4d6] px-2.5 py-0.5 text-[11px] font-semibold text-[#8a3b12]">
                                     {roleLabelMap[String(worker.role || "worker").toLowerCase()] || "Worker"}
                                   </span>
                                   {worker.status && (
