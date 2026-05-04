@@ -25,7 +25,6 @@ function clientName(job, clients) {
   const c = clients.find((x) => [x.id, x._id, x.client_id].map(String).includes(cid));
   return c?.name || c?.business_name || c?.company_name || job?.client_name || job?.customer_name || job?.title || "Client";
 }
-
 function titleForJob(job, clients) {
   const raw = String(job?.title || job?.name || job?.service_type || "").trim();
   const clean = raw && !raw.match(/^[a-f0-9-]{12,}$/i) ? raw : "Unassigned job";
@@ -127,12 +126,20 @@ function ActionCard({ action, onApprove, onDismiss }) {
   </article>;
 }
 
+function CompactQueue({ actions, onOpen }) {
+  return <section className="smart-command-panel smart-command-collapsed-queue">
+    <div className="smart-command-panel-head"><div><p className="smart-command-kicker">Priority Actions</p><h2>Command Work Queue</h2><p>The work queue is collapsed so the hub stays clean. Open it when you want to work through approvals.</p></div><span className="smart-command-queue-count">{actions.length} ready</span></div>
+    <div className="smart-command-actions"><button className="smart-command-btn primary" onClick={onOpen}>Open Command Work Queue</button></div>
+  </section>;
+}
+
 export default function CommandHubPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
-  const [tab, setTab] = useState("approvals");
+  const [tab, setTab] = useState("today");
+  const [queueOpen, setQueueOpen] = useState(false);
   const [dismissed, setDismissed] = useState({});
   const [data, setData] = useState({ jobs: [], clients: [], invoices: [], quotes: [], proofPacks: [], recurring: [], receptionist: [], customerUpdates: [], quoteDrafts: [], memory: [], health: {} });
 
@@ -145,48 +152,33 @@ export default function CommandHubPage() {
       setData({
         jobs: listFrom(jobs, ["jobs"]), clients: listFrom(clients, ["clients"]), invoices: listFrom(invoices, ["invoices"]), quotes: listFrom(quotes, ["quotes"]), proofPacks: listFrom(proofPacks, ["proof_packs", "items"]), recurring: listFrom(recurring, ["rules", "items"]), receptionist: listFrom(receptionist, ["enquiries", "items"]), customerUpdates: listFrom(customerUpdates, ["updates", "items"]), quoteDrafts: listFrom(quoteDrafts, ["drafts", "items"]), memory: listFrom(memory, ["items", "actions"]), health: health || {}
       });
-    } catch (e) { setError("Command could not load business data yet."); }
+    } catch { setError("Command could not load business data yet."); }
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
   const actions = useMemo(() => buildActions(data, dismissed), [data, dismissed]);
-  const groups = useMemo(() => ({
-    dispatch: actions.filter((a) => a.type === "dispatch"),
-    revenue: actions.filter((a) => ["invoice", "pricing"].includes(a.type)),
-    proof: actions.filter((a) => a.type === "proof"),
-    follow: actions.filter((a) => a.type === "follow"),
-    reception: actions.filter((a) => a.type === "reception"),
-    recurring: actions.filter((a) => a.type === "recurring"),
-    update: actions.filter((a) => a.type === "update"),
-    quote_builder: actions.filter((a) => a.type === "quote_builder"),
-    memory: actions.filter((a) => a.type === "memory"),
-  }), [actions]);
+  const groups = useMemo(() => ({ dispatch: actions.filter((a) => a.type === "dispatch"), revenue: actions.filter((a) => ["invoice", "pricing"].includes(a.type)), proof: actions.filter((a) => a.type === "proof"), follow: actions.filter((a) => a.type === "follow"), reception: actions.filter((a) => a.type === "reception"), recurring: actions.filter((a) => a.type === "recurring"), update: actions.filter((a) => a.type === "update"), quote_builder: actions.filter((a) => a.type === "quote_builder"), memory: actions.filter((a) => a.type === "memory") }), [actions]);
   const best = groups.dispatch[0] || groups.revenue[0] || groups.proof[0] || groups.follow[0] || actions[0];
 
   const runAction = async (fn, success) => { setNotice(""); setError(""); try { await fn(); setNotice(success); await load(); } catch (e) { setError(String(e?.message || "Action failed.")); } };
-  const approve = (a) => {
-    if (a.source === "backend") return runAction(() => post(`/ai-operator/actions/${a.id}/approve`, {}), "Action approved.");
-    if (a.type === "proof" && a.job_id) return runAction(() => post(`/proof-packs/prepare-for-job/${a.job_id}`, {}), "Proof pack preparation started.");
-    window.location.assign(openPath(a));
-  };
+  const approve = (a) => { if (a.source === "backend") return runAction(() => post(`/ai-operator/actions/${a.id}/approve`, {}), "Action approved."); if (a.type === "proof" && a.job_id) return runAction(() => post(`/proof-packs/prepare-for-job/${a.job_id}`, {}), "Proof pack preparation started."); window.location.assign(openPath(a)); };
   const dismiss = (a) => a.source === "backend" ? runAction(() => post(`/ai-operator/actions/${a.id}/dismiss`, {}), "Action dismissed.") : setDismissed((p) => ({ ...p, [a.id]: true }));
   const runAiPlan = () => runAction(() => post("/smart-hub/scan", {}), "AI plan ran. Command refreshed.");
 
   if (!canSeeCommand(user?.role)) return <Layout><main className="smart-command-system"><section className="smart-command-panel"><h2>Command is owner/manager/office admin only.</h2></section></main></Layout>;
 
-  const sectionTiles = [
-    ["Approvals", "approvals", actions.length], ["Dispatch", "dispatch", groups.dispatch.length], ["Revenue", "revenue", groups.revenue.length], ["Proof-to-Paid", "proof", groups.proof.length], ["Follow-Ups", "follow", groups.follow.length], ["Reception", "reception", groups.reception.length], ["Recurring", "recurring", groups.recurring.length], ["Updates", "update", groups.update.length], ["Quote Builder", "quote_builder", groups.quote_builder.length], ["Client Memory", "memory", groups.memory.length]
-  ];
+  const sectionTiles = [["Approvals", "approvals", actions.length], ["Dispatch", "dispatch", groups.dispatch.length], ["Revenue", "revenue", groups.revenue.length], ["Proof-to-Paid", "proof", groups.proof.length], ["Follow-Ups", "follow", groups.follow.length], ["Reception", "reception", groups.reception.length], ["Recurring", "recurring", groups.recurring.length], ["Updates", "update", groups.update.length], ["Quote Builder", "quote_builder", groups.quote_builder.length], ["Client Memory", "memory", groups.memory.length]];
   const activeList = tab === "approvals" ? actions : (groups[tab] || []);
 
   return <Layout smartHubMode><main className="smart-command-system"><div className="smart-command-shell">
-    <section className="smart-command-hero"><div className="smart-command-hero-grid"><div className="smart-command-logo-wrap"><ChurvoxLogo size="hero" /></div><div><p className="smart-command-kicker">Smart Hub</p><h1 className="smart-command-title">AI Operator Command Dashboard</h1><p className="smart-command-subtitle">AI scans your business, prepares the work, and waits for owner approval.</p></div><div className="smart-command-next-card"><p className="smart-command-kicker">Today</p><strong>AI Actions: {actions.length}</strong><strong>Approval queue: {actions.length}</strong><div className="smart-command-actions"><button className="smart-command-btn dark" onClick={runAiPlan}>Run AI plan</button><button className="smart-command-btn light" onClick={() => setTab("approvals")}>Open queue</button></div></div></div></section>
+    <section className="smart-command-hero"><div className="smart-command-hero-grid"><div className="smart-command-logo-wrap"><ChurvoxLogo size="hero" /></div><div><p className="smart-command-kicker">Smart Hub</p><h1 className="smart-command-title">AI Operator Command Dashboard</h1><p className="smart-command-subtitle">AI scans your business, prepares the work, and waits for owner approval.</p></div><div className="smart-command-next-card"><p className="smart-command-kicker">Today</p><strong>AI Actions: {actions.length}</strong><strong>Approval queue: {actions.length}</strong><div className="smart-command-actions"><button className="smart-command-btn dark" onClick={runAiPlan}>Run AI plan</button><button className="smart-command-btn light" onClick={() => { setTab("approvals"); setQueueOpen(true); }}>Open queue</button></div></div></div></section>
     {notice ? <section className="smart-command-panel"><p>{notice}</p></section> : null}{error ? <section className="smart-command-panel"><p>{error}</p></section> : null}{loading ? <section className="smart-command-panel"><p>Loading Command...</p></section> : null}
-    <section className="smart-command-dual-grid"><article className="smart-command-panel accent"><p className="smart-command-kicker">Business Engine Summary</p><h2>Command found {actions.length} things to handle today.</h2><ul className="smart-command-summary-list"><li>{groups.dispatch.length} jobs need crew</li><li>{groups.revenue.length} revenue items need review</li><li>{groups.follow.length} follow-ups are ready</li><li>{groups.proof.length} proof packs need preparing</li><li>{groups.recurring.length} recurring items are due</li></ul><p>Owner approval is required before Churvox executes.</p></article><article className="smart-command-panel smart-command-priority"><p className="smart-command-kicker">Best next move</p><h2>{best ? best.title : "Business is clear"}</h2><p>{best ? best.reason : "No urgent Command actions found."}</p><button className="smart-command-btn primary" onClick={() => setTab(best?.type === "dispatch" ? "dispatch" : best?.type === "follow" ? "follow" : best?.type === "proof" ? "proof" : "approvals")}>Open Command Queue</button></article></section>
+    <section className="smart-command-dual-grid"><article className="smart-command-panel accent"><p className="smart-command-kicker">Business Engine Summary</p><h2>Command found {actions.length} things to handle today.</h2><ul className="smart-command-summary-list"><li>{groups.dispatch.length} jobs need crew</li><li>{groups.revenue.length} revenue items need review</li><li>{groups.follow.length} follow-ups are ready</li><li>{groups.proof.length} proof packs need preparing</li><li>{groups.recurring.length} recurring items are due</li></ul><p>Owner approval is required before Churvox executes.</p></article><article className="smart-command-panel smart-command-priority"><p className="smart-command-kicker">Best next move</p><h2>{best ? best.title : "Business is clear"}</h2><p>{best ? best.reason : "No urgent Command actions found."}</p><button className="smart-command-btn primary" onClick={() => setTab(best?.type === "dispatch" ? "dispatch" : best?.type === "follow" ? "follow" : best?.type === "proof" ? "proof" : "approvals")}>Open recommended section</button></article></section>
     <section className="smart-command-control-grid">{[["Dispatch Command", groups.dispatch.length, "Jobs needing crew", "dispatch"], ["Revenue Command", groups.revenue.length, "Invoices, pricing, and money waiting", "revenue"], ["Proof-to-Paid Command", groups.proof.length, "Completed work needing proof", "proof"], ["Follow-Up Command", groups.follow.length, "Quotes and invoice reminders", "follow"], ["Team/Crew", data.workers?.length || 0, "Workers and workload", "dispatch"], ["Account Health", data.health?.warnings?.length || 0, "Plan and account warnings", "account"]].map(([name, count, text, key]) => <article key={name} className={`smart-command-panel smart-command-control ${count ? "" : "muted"}`}><h3>{name}</h3><p className="smart-command-big-count">{count}</p><p>{text}</p><button className="smart-command-btn light" onClick={() => key === "account" ? window.location.assign("/plans") : setTab(key)}>Open</button></article>)}</section>
-    <section className="smart-command-panel"><div className="smart-command-panel-head"><div><p className="smart-command-kicker">Priority Actions</p><h2>Command Work Queue</h2><p>Top urgent actions are always visible.</p></div><span className="smart-command-queue-count">{Math.min(5, actions.length)} live</span></div><div className="smart-command-list">{actions.slice(0, 5).map((a) => <ActionCard key={a.id} action={a} onApprove={approve} onDismiss={dismiss} />)}{!actions.length ? <p>No Command actions right now.</p> : null}</div></section>
-    <section className="smart-command-panel"><p className="smart-command-kicker">Command Sections</p><h2>Business Workspaces</h2><div className="smart-command-dock">{sectionTiles.map(([name, key, count]) => <button key={key} type="button" onClick={() => setTab(key)}>{name}<span>{count} items</span></button>)}</div></section>
-    <section className="smart-command-panel"><h2>{sectionTiles.find((s) => s[1] === tab)?.[0] || "Approvals"}</h2><div className="smart-command-list">{activeList.map((a) => <ActionCard key={`section-${a.id}`} action={a} onApprove={approve} onDismiss={dismiss} />)}{!activeList.length ? <div className="smart-command-empty"><p>No work in this section. Command is focused on the active sections above.</p><div className="smart-command-actions"><button className="smart-command-btn light" onClick={() => setTab("approvals")}>Open Approvals</button><button className="smart-command-btn light" onClick={runAiPlan}>Run AI Plan</button></div></div> : null}</div></section>
+    <CompactQueue actions={actions} onOpen={() => { setTab("approvals"); setQueueOpen(true); }} />
+    {queueOpen ? <section className="smart-command-panel"><div className="smart-command-panel-head"><div><p className="smart-command-kicker">Priority Actions</p><h2>Command Work Queue</h2><p>Review actions one by one. Green Approve only appears when the action can safely execute.</p></div><button className="smart-command-btn light" onClick={() => setQueueOpen(false)}>Collapse queue</button></div><div className="smart-command-list">{actions.slice(0, 5).map((a) => <ActionCard key={a.id} action={a} onApprove={approve} onDismiss={dismiss} />)}{!actions.length ? <p>No Command actions right now.</p> : null}</div></section> : null}
+    <section className="smart-command-panel"><p className="smart-command-kicker">Command Sections</p><h2>Business Workspaces</h2><div className="smart-command-dock">{sectionTiles.map(([name, key, count]) => <button key={key} type="button" onClick={() => { setTab(key); setQueueOpen(false); }}>{name}<span>{count} items</span></button>)}</div></section>
+    {tab !== "today" ? <section className="smart-command-panel"><h2>{sectionTiles.find((s) => s[1] === tab)?.[0] || "Approvals"}</h2><div className="smart-command-list">{activeList.map((a) => <ActionCard key={`section-${a.id}`} action={a} onApprove={approve} onDismiss={dismiss} />)}{!activeList.length ? <div className="smart-command-empty"><p>No work in this section. Command is focused on the active sections above.</p><div className="smart-command-actions"><button className="smart-command-btn light" onClick={() => { setTab("approvals"); setQueueOpen(true); }}>Open Approvals</button><button className="smart-command-btn light" onClick={runAiPlan}>Run AI Plan</button></div></div> : null}</div></section> : null}
   </div></main></Layout>;
 }
