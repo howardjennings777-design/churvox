@@ -6079,6 +6079,27 @@ async def log_smart_hub_activity(current_user: dict, payload: dict):
     await db.smart_hub_activity.insert_one(activity)
 
 
+@api_router.post("/clients/hide-audit-test")
+async def hide_audit_test_clients(current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str(current_user.get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    query = {
+        "business_id": business_id,
+        "$or": [
+            {"client_name": {"$regex": r"^Deep Audit", "$options": "i"}},
+            {"name": {"$regex": r"^Deep Audit", "$options": "i"}},
+            {"email": {"$regex": r"deep-audit@example.com", "$options": "i"}},
+            {"notes": {"$regex": r"Created by automated Churvox true launch certification audit", "$options": "i"}},
+            {"contact_name": {"$regex": r"Deep Audit", "$options": "i"}},
+            {"address": {"$regex": r"Deep Audit Street", "$options": "i"}},
+        ],
+    }
+    upd = {"$set": {"hidden_from_clients": True, "archived": True, "updated_at": now}}
+    result = await db.clients.update_many(query, upd)
+    return {"success": True, "hidden_count": int(result.modified_count or 0)}
+
+
 @api_router.get("/smart-hub/activity")
 async def get_smart_hub_activity(limit: int = 25, current_user: dict = Depends(get_current_user)):
     business_id = str(current_user.get("business_id") or current_user.get("businessId") or current_user.get("id") or "").strip()

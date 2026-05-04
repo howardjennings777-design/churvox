@@ -43,6 +43,7 @@ export default function ClientsPage() {
   const [importResults, setImportResults] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [showAuditClients, setShowAuditClients] = useState(false);
+  const [hidingAuditClients, setHidingAuditClients] = useState(false);
   const fileInputRef = useRef(null);
   const isOwnerOrAdmin = ["owner", "admin"].includes(String(user?.role || "").toLowerCase());
 
@@ -99,6 +100,24 @@ export default function ClientsPage() {
       return pool.includes(query);
     });
   }, [clients, searchTerm, showAuditClients, statusFilter, isGeneratedAuditClient]);
+
+
+
+  const hiddenAuditCount = useMemo(() => clients.filter((c) => isGeneratedAuditClient(c)).length, [clients, isGeneratedAuditClient]);
+
+  const hideAuditClientsOnBackend = useCallback(async () => {
+    if (!isOwnerOrAdmin) return;
+    setHidingAuditClients(true);
+    const res = await post('/clients/hide-audit-test', {});
+    if (res?.success) {
+      toast.success(`Hidden ${Number(res.hidden_count || 0)} test/audit clients`);
+      setShowAuditClients(false);
+      await fetchClients();
+    } else {
+      toast.error(res?.error || 'Could not hide test/audit clients');
+    }
+    setHidingAuditClients(false);
+  }, [fetchClients, isOwnerOrAdmin, post]);
 
   const metrics = useMemo(() => {
     const total = clients.length;
@@ -263,14 +282,17 @@ export default function ClientsPage() {
             ))}
             {isOwnerOrAdmin && (
               <>
-                <button type="button" onClick={() => setShowAuditClients(false)} className="px-3 py-1.5 rounded-lg text-xs font-semibold border bg-[#111317] border-[#242932] text-white">
-                  Hide test audit clients
+                <button type="button" onClick={hideAuditClientsOnBackend} disabled={hidingAuditClients} className="px-3 py-1.5 rounded-lg text-xs font-semibold border bg-[#111317] border-[#242932] text-white disabled:opacity-50">
+                  {hidingAuditClients ? "Hiding…" : "Hide test audit clients"}
                 </button>
                 <label className="ml-1 inline-flex items-center gap-2 text-xs font-semibold text-[#2f343b]">
                   <input type="checkbox" checked={showAuditClients} onChange={(e) => setShowAuditClients(e.target.checked)} />
                   Show test/audit clients
                 </label>
               </>
+            )}
+            {hiddenAuditCount > 0 && !showAuditClients && (
+              <span className="ml-auto text-xs text-[#5f584f]">{hiddenAuditCount} test/audit clients hidden</span>
             )}
           </div>
         </PremiumCard>
