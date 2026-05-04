@@ -13,7 +13,7 @@ const toList = (value, keys = []) => {
   return Array.isArray(value.data) ? value.data : [];
 };
 const safeGet = async (path) => { try { return await get(path); } catch { return []; } };
-const roleAllowed = (role) => ["owner", "manager", "office_admin"].includes(norm(role));
+const roleAllowed = (role) => ["owner", "employer", "admin", "manager", "office_admin", "business_owner", "platform_owner"].includes(norm(role));
 
 const typeMap = {
   assign_worker: "dispatch", create_invoice_draft: "invoice_assistant", invoice_draft: "invoice_assistant", proof_pack_send: "proof_to_paid", invoice_reminder: "follow_up", quote_follow_up: "follow_up", enquiry_follow_up: "receptionist", worker_ack_follow_up: "follow_up", recurring_run: "recurring", customer_update: "customer_update", quote_draft: "quote_builder", client_memory: "client_memory", missing_price: "missing_pricing",
