@@ -27,6 +27,7 @@ import InvoicesPage from "./pages/invoices/InvoicesPage";
 import InvoiceFormPage from "./pages/invoices/InvoiceFormPage";
 import InvoiceDetailPage from "./pages/invoices/InvoiceDetailPage";
 import SettingsPage from "./pages/SettingsPage";
+import ContactPage from "./pages/ContactPage";
 import PlansPage from "./pages/PlansPage";
 import CalendarPage from "./pages/CalendarPage";
 import TeamPage from "./pages/TeamPage";
@@ -277,6 +278,7 @@ function App() {
           <Route path="/reports" element={<ReportsRoute><ReportsPage /></ReportsRoute>} />
           <Route path="/integrations" element={<BusinessRoute><IntegrationsPage /></BusinessRoute>} />
           <Route path="/settings" element={<BusinessRoute><SettingsPage /></BusinessRoute>} />
+          <Route path="/contact" element={<PrivateRoute><ContactPage /></PrivateRoute>} />
 
           {/* Owner-only */}
           <Route path="/plans" element={<OwnerRoute><PlansPage /></OwnerRoute>} />
