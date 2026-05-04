@@ -119,7 +119,7 @@ const buildGeneratedActions = (data) => {
 };
 
 function ActionRow({ item, buttons = [] }) {
-  return <article className="smart-command-row"><p className="smart-command-row-title">{item.title}</p><p className="smart-command-row-text">{item.summary}</p><p className="smart-command-row-text"><b>Reason:</b> {item.reason || "-"}</p><p className="smart-command-row-text"><b>If approved:</b> {item.what_happens_if_approved}</p><p className="smart-command-row-text"><b>Priority:</b> {item.priority} · <b>Type:</b> {item.type}</p><div className="smart-command-actions">{buttons.map((b) => <button key={b.label} type="button" className={`smart-command-btn ${b.variant || "light"}`} onClick={b.onClick}>{b.label}</button>)}</div></article>;
+  return <article className="smart-command-row"><div className="smart-command-badges"><span className="smart-command-badge">{item.priority}</span><span className="smart-command-badge type">{item.type}</span></div><p className="smart-command-row-title">{item.title}</p><p className="smart-command-row-text">{item.summary}</p><p className="smart-command-row-text"><b>Why AI picked this:</b> {item.reason || "-"}</p><p className="smart-command-row-text"><b>If approved:</b> {item.what_happens_if_approved}</p><p className="smart-command-row-text"><b>Related:</b> {item.related_label || "Review details in Command"}</p><div className="smart-command-actions">{buttons.map((b) => <button key={b.label} type="button" className={`smart-command-btn ${b.variant || "light"}`} onClick={b.onClick}>{b.label}</button>)}</div></article>;
 }
 
 export default function SmartHubBrainPageStable() {
@@ -151,19 +151,42 @@ export default function SmartHubBrainPageStable() {
     const key = (a) => `${a.type}|${a.job_id || ""}|${a.invoice_id || ""}|${a.quote_id || ""}|${a.client_id || ""}|${a.related_id || ""}`;
     const existing = new Set(data.actions.map(key));
     const filteredGenerated = generated.filter((g) => !existing.has(key(g)) && !dismissedGenerated[g.id]);
-    return [...data.actions, ...filteredGenerated];
+    return [...data.actions, ...filteredGenerated].map((a) => ({
+      ...a,
+      related_label: a.title?.includes(" for ") ? a.title.split(" for ")[1] : (a.payload?.label || a.summary || ""),
+    }));
   }, [data, dismissedGenerated]);
 
   const pending = useMemo(() => mergedActions.filter((a) => !isDone(a)), [mergedActions]);
+  useEffect(() => {
+    setTab((prev) => {
+      if ((prev === "today" || prev === "approvals") && pending.length > 0) return "approvals";
+      if (pending.length === 0) return "today";
+      return prev;
+    });
+  }, [pending.length]);
   const counts = {
     aiActions: pending.length,
     approvalQueue: pending.length,
     dispatch: pending.filter((a) => a.type === "dispatch").length,
+    invoices: pending.filter((a) => ["invoice_assistant", "missing_pricing"].includes(a.type)).length,
+    proof: pending.filter((a) => a.type === "proof_to_paid").length,
+    follow: pending.filter((a) => a.type === "follow_up").length,
+    reception: pending.filter((a) => a.type === "receptionist").length,
+    recurring: pending.filter((a) => a.type === "recurring").length,
+    updates: pending.filter((a) => a.type === "customer_update").length,
+    quotes: pending.filter((a) => a.type === "quote_builder").length,
+    memory: pending.filter((a) => a.type === "client_memory").length,
+    activity: mergedActions.filter((a) => isDone(a)).length,
     readyInvoice: pending.filter((a) => a.type === "invoice_assistant").length,
+    missingPricing: pending.filter((a) => a.type === "missing_pricing").length,
+    proofPacks: pending.filter((a) => a.type === "proof_to_paid").length,
     invoiceReminders: pending.filter((a) => a.type === "follow_up" && a.invoice_id).length,
     quoteFollowUps: pending.filter((a) => a.type === "follow_up" && a.quote_id).length,
     recurringDue: pending.filter((a) => a.type === "recurring").length,
   };
+  const bestNextMove = pending[0]?.title || "Run AI plan to generate today’s work queue.";
+  const topQueue = pending.slice(0, 10);
   const runAction = async (fn, success) => {
     setError(""); setNotice("");
     try { await fn(); setNotice(success); await load(); } catch (e) { setError(String(e?.message || "Action failed.")); }
@@ -190,14 +213,16 @@ export default function SmartHubBrainPageStable() {
   };
   if (!roleAllowed(user?.role)) return <Layout><main className="smart-command-system"><section className="smart-command-panel"><h2>AI Operator dashboard is owner/manager/office admin only.</h2></section></main></Layout>;
 
-  const tabs = [["Today", "today"], ["Approvals", "approvals"], ["Dispatch", "dispatch"], ["Invoices", "invoices"], ["Proof-to-Paid", "proof"], ["Follow-Ups", "follow"], ["Receptionist", "reception"], ["Recurring", "recurring"], ["Customer Updates", "updates"], ["Quote Builder", "quotes"], ["Client Memory", "memory"], ["Activity", "activity"]];
+  const tabs = [["Today", "today", counts.aiActions], ["Approvals", "approvals", counts.approvalQueue], ["Dispatch", "dispatch", counts.dispatch], ["Invoices", "invoices", counts.invoices], ["Proof-to-Paid", "proof", counts.proof], ["Follow-Ups", "follow", counts.follow], ["Receptionist", "reception", counts.reception], ["Recurring", "recurring", counts.recurring], ["Customer Updates", "updates", counts.updates], ["Quote Builder", "quotes", counts.quotes], ["Client Memory", "memory", counts.memory], ["Activity", "activity", counts.activity]];
   const shown = mergedActions.filter((a) => tabMatches(tab, a));
   return <Layout smartHubMode><main className="smart-command-system"><div className="smart-command-shell"><section className="smart-command-hero"><div className="smart-command-hero-grid"><div className="smart-command-logo-wrap"><ChurvoxLogo size="hero" /></div><div><p className="smart-command-kicker">Smart Hub</p><h1 className="smart-command-title">AI Operator Command Dashboard</h1><p className="smart-command-subtitle">AI scans, owner approves, Churvox executes.</p></div><div className="smart-command-next-card"><p className="smart-command-kicker">Today</p><strong>AI Actions: {counts.aiActions}</strong><strong>Approval queue: {counts.approvalQueue}</strong><div className="smart-command-actions"><button className="smart-command-btn dark" onClick={() => runAction(() => post("/smart-hub/scan", {}), "AI scan completed.")}>Run AI plan</button><button className="smart-command-btn light" onClick={() => setTab("approvals")}>Open queue</button></div></div></div></section>
+<section className="smart-command-panel"><h2>Business Engine Summary</h2><p>Command found {counts.aiActions} things to handle:</p><ul className="smart-command-summary-list"><li>{counts.dispatch} jobs need crew</li><li>{counts.invoiceReminders} invoice reminders are ready</li><li>{counts.quoteFollowUps} quotes need follow-up</li><li>{counts.proofPacks} jobs need proof packs</li><li>{counts.missingPricing} jobs need pricing before invoicing</li></ul><p>Owner approval is required before Churvox executes.</p></section>
+<section className="smart-command-panel"><h2>Command Work Queue</h2><p><b>Best next move:</b> {bestNextMove}</p><div className="smart-command-list">{topQueue.slice(0, 10).map((a) => <ActionRow key={`queue-${a.id}`} item={a} buttons={isDone(a) ? [] : [{ label: "Approve", variant: "green", onClick: () => approve(a) }, { label: "Review/Open", onClick: () => window.location.assign(relatedPath(a)) }, { label: "Dismiss", onClick: () => dismiss(a) }]} />)}{!topQueue.length ? <p>No live queue items. Run AI plan to refresh.</p> : null}</div></section>
 {notice ? <section className="smart-command-panel"><p>{notice}</p></section> : null}
 {error ? <section className="smart-command-panel"><p>{error}</p></section> : null}
 {loading ? <section className="smart-command-panel"><p>Loading Smart Hub...</p></section> : null}
-<section className="smart-command-panel"><div className="smart-command-dock">{tabs.map(([n, k]) => <button key={k} onClick={() => setTab(k)}>{n}<span>{tab === k ? "Open" : "View"}</span></button>)}</div></section>
-{tab === "today" ? <section className="smart-command-panel"><h2>Today</h2><div className="smart-command-mini-grid"><div className="smart-command-mini"><p className="smart-command-label">Business health score</p><b>{data.health.score || 0}</b></div><div className="smart-command-mini"><p className="smart-command-label">Dispatch</p><b>{counts.dispatch}</b></div><div className="smart-command-mini"><p className="smart-command-label">Ready to invoice</p><b>{counts.readyInvoice}</b></div><div className="smart-command-mini"><p className="smart-command-label">Invoice reminders</p><b>{counts.invoiceReminders}</b></div><div className="smart-command-mini"><p className="smart-command-label">Quote follow-ups</p><b>{counts.quoteFollowUps}</b></div><div className="smart-command-mini"><p className="smart-command-label">Recurring due</p><b>{counts.recurringDue}</b></div></div></section> : null}
-{["approvals", "dispatch", "invoices", "proof", "follow", "reception", "recurring", "updates", "quotes", "memory", "activity"].includes(tab) ? <section className="smart-command-panel"><h2>{tabs.find((t) => t[1] === tab)?.[0]}</h2>{shown.map((a) => <ActionRow key={a.id} item={a} buttons={isDone(a) ? [] : [{ label: "Approve", variant: "green", onClick: () => approve(a) }, { label: "Review/Open", onClick: () => window.location.assign(relatedPath(a)) }, { label: "Dismiss", onClick: () => dismiss(a) }]} />)}{!shown.length ? <p>No actions in this section.</p> : null}</section> : null}
+<section className="smart-command-panel"><div className="smart-command-dock">{tabs.map(([n, k, c]) => <button key={k} onClick={() => setTab(k)}>{n}<span>{c} {tab === k ? "Open" : "items"}</span></button>)}</div></section>
+{tab === "today" ? <section className="smart-command-panel"><h2>Today</h2><p><b>Best next move:</b> {bestNextMove}</p><div className="smart-command-mini-grid"><div className="smart-command-mini"><p className="smart-command-label">Business health score</p><b>{data.health.score || 0}</b></div><div className="smart-command-mini"><p className="smart-command-label">Dispatch jobs</p><b>{counts.dispatch}</b></div><div className="smart-command-mini"><p className="smart-command-label">Invoice work</p><b>{counts.invoices}</b></div><div className="smart-command-mini"><p className="smart-command-label">Follow-ups</p><b>{counts.follow}</b></div><div className="smart-command-mini"><p className="smart-command-label">Proof packs</p><b>{counts.proofPacks}</b></div><div className="smart-command-mini"><p className="smart-command-label">Quote follow-ups</p><b>{counts.quoteFollowUps}</b></div><div className="smart-command-mini"><p className="smart-command-label">Recurring work</p><b>{counts.recurringDue}</b></div></div><div className="smart-command-list">{topQueue.slice(0, 5).map((a) => <ActionRow key={`today-${a.id}`} item={a} buttons={[{ label: "Approve", variant: "green", onClick: () => approve(a) }, { label: "Review/Open", onClick: () => window.location.assign(relatedPath(a)) }, { label: "Dismiss", onClick: () => dismiss(a) }]} />)}</div></section> : null}
+{["approvals", "dispatch", "invoices", "proof", "follow", "reception", "recurring", "updates", "quotes", "memory", "activity"].includes(tab) ? <section className="smart-command-panel"><h2>{tabs.find((t) => t[1] === tab)?.[0]}</h2>{shown.map((a) => <ActionRow key={a.id} item={a} buttons={isDone(a) ? [] : [{ label: "Approve", variant: "green", onClick: () => approve(a) }, { label: "Review/Open", onClick: () => window.location.assign(relatedPath(a)) }, { label: "Dismiss", onClick: () => dismiss(a) }]} />)}{!shown.length ? <div><p>No {tabs.find((t) => t[1] === tab)?.[0]} actions right now. Your next work is in Dispatch and Follow-Ups.</p><div className="smart-command-actions"><button className="smart-command-btn light" onClick={() => setTab("approvals")}>Open Approvals</button>{counts.dispatch > 0 ? <button className="smart-command-btn light" onClick={() => setTab("dispatch")}>Open Dispatch</button> : null}{counts.follow > 0 ? <button className="smart-command-btn light" onClick={() => setTab("follow")}>Open Follow-Ups</button> : null}<button className="smart-command-btn dark" onClick={() => runAction(() => post("/smart-hub/scan", {}), "AI scan completed.")}>Run AI plan</button></div></div> : null}</section> : null}
 </div></main></Layout>;
 }
