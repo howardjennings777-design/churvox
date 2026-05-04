@@ -1,8 +1,10 @@
 .smart-hub-hard-trade-v4 {
   min-height: 100vh !important;
   color: #101318 !important;
+  --smart-hub-orange: #ff5a1f;
+  --smart-hub-orange-dark: #e94a14;
   background:
-    radial-gradient(circle at top left, rgba(249, 115, 22, 0.13), transparent 26%),
+    radial-gradient(circle at top left, rgba(255, 90, 31, 0.11), transparent 26%),
     linear-gradient(135deg, rgba(11, 13, 16, 0.07) 25%, transparent 25%),
     linear-gradient(225deg, rgba(11, 13, 16, 0.05) 25%, transparent 25%),
     #b4aa9b !important;
@@ -11,8 +13,8 @@
 .smart-hub-hard-trade-v4 .operator-hero,
 .smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] {
   background:
-    linear-gradient(135deg, #050607 0%, #101318 42%, #2b3038 100%) !important;
-  border: 1px solid rgba(255,255,255,0.16) !important;
+    linear-gradient(135deg, #050607 0%, #0b0f16 48%, #161b24 100%) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
   box-shadow: 0 28px 70px rgba(0,0,0,0.42) !important;
   color: #fff !important;
 }
@@ -35,15 +37,15 @@
 
 .smart-hub-hard-trade-v4 .operator-primary,
 .smart-hub-hard-trade-v4 button[data-operator-primary="true"] {
-  background: #f97316 !important;
+  background: var(--smart-hub-orange) !important;
   color: #fff !important;
-  border-color: #ea580c !important;
-  box-shadow: 0 10px 24px rgba(249, 115, 22, 0.28) !important;
+  border-color: var(--smart-hub-orange-dark) !important;
+  box-shadow: 0 10px 24px rgba(255, 90, 31, 0.28) !important;
 }
 
 .smart-hub-hard-trade-v4 .operator-primary:hover,
 .smart-hub-hard-trade-v4 button[data-operator-primary="true"]:hover {
-  background: #ea580c !important;
+  background: var(--smart-hub-orange-dark) !important;
 }
 
 .smart-hub-hard-trade-v4 .operator-approve,
@@ -64,7 +66,7 @@
 .smart-hub-hard-trade-v4 .operator-command-key:hover,
 .smart-hub-hard-trade-v4 [data-workspace-key="true"]:hover {
   background: #050607 !important;
-  border-color: #f97316 !important;
+  border-color: var(--smart-hub-orange) !important;
 }
 
 .smart-hub-hard-trade-v4 .operator-label {
@@ -78,5 +80,43 @@
 }
 
 .smart-hub-hard-trade-v4 .operator-accent-left {
-  border-left: 5px solid #f97316 !important;
+  border-left: 5px solid var(--smart-hub-orange) !important;
+}
+
+/* Final Smart Hub hero polish: one orange, cleaner header, no separate logo box. */
+.smart-hub-hard-trade-v4 .operator-hero [class*="text-orange"],
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] [class*="text-orange"] {
+  color: #ff9a5c !important;
+}
+
+.smart-hub-hard-trade-v4 .operator-hero [class*="bg-orange"],
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] [class*="bg-orange"],
+.smart-hub-hard-trade-v4 .operator-hero [class*="from-orange"],
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] [class*="from-orange"] {
+  background: var(--smart-hub-orange) !important;
+  background-image: none !important;
+}
+
+.smart-hub-hard-trade-v4 .operator-hero button:first-of-type,
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] button:first-of-type {
+  background: var(--smart-hub-orange) !important;
+  border-color: var(--smart-hub-orange-dark) !important;
+}
+
+.smart-hub-hard-trade-v4 .operator-hero [class*="Best Next Move"],
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] [class*="Best Next Move"] {
+  display: none !important;
+}
+
+.smart-hub-hard-trade-v4 .operator-hero img[data-testid="churvox-logo"][data-logo-size="hero"],
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] img[data-testid="churvox-logo"][data-logo-size="hero"] {
+  filter: drop-shadow(0 14px 30px rgba(29, 99, 255, 0.30)) !important;
+}
+
+.smart-hub-hard-trade-v4 .operator-hero div:has(> img[data-testid="churvox-logo"][data-logo-size="hero"]),
+.smart-hub-hard-trade-v4 [data-smart-hub-hero="true"] div:has(> img[data-testid="churvox-logo"][data-logo-size="hero"]) {
+  background: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
 }
