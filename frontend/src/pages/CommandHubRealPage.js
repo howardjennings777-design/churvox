@@ -5,6 +5,7 @@ import { get, post, patch } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import "../styles/smartCommandSystem.css";
 import "../styles/commandHubReal.css";
+import "../styles/commandHubCompact.css";
 
 const norm = (value) => String(value || "").toLowerCase().trim();
 const idOf = (item) => String(item?.id || item?._id || item?.uuid || "");
@@ -40,19 +41,19 @@ function cleanJobTitle(job, clients) {
   if (title && !title.match(/^[a-f0-9-]{10,}$/i)) return title;
   return clientNameFor(job, clients) || "Job";
 }
-function actionPath(action) {
-  if (action.job_id) return `/jobs/${action.job_id}`;
-  if (action.invoice_id) return `/invoices/${action.invoice_id}`;
-  if (action.quote_id) return `/quotes/${action.quote_id}`;
-  if (action.client_id) return `/clients/${action.client_id}`;
-  return "/dashboard";
-}
 function actionButtonLabel(action) {
   if (action.type === "dispatch") return "Assign worker";
   if (action.type === "invoice") return "Create draft invoice";
   if (action.type === "proof") return "Prepare proof pack";
   if (action.type === "follow") return "Prepare follow-up";
   return "Review";
+}
+function actionPath(action) {
+  if (action.job_id) return `/jobs/${action.job_id}`;
+  if (action.invoice_id) return `/invoices/${action.invoice_id}`;
+  if (action.quote_id) return `/quotes/${action.quote_id}`;
+  if (action.client_id) return `/clients/${action.client_id}`;
+  return "/dashboard";
 }
 
 function buildCommandActions(data, hidden) {
@@ -72,13 +73,13 @@ function buildCommandActions(data, hidden) {
     const client = clientNameFor(job, clients);
 
     if (!assigned && !isClosedJob(job)) {
-      actions.push({ id: `dispatch-${jobId}`, type: "dispatch", priority: "high", executable: true, title: `Assign crew to ${label}`, summary: `${client} has a job with no worker assigned.`, reason: "Unassigned jobs block the day and stop work moving.", next: "Command can assign the first safe worker, or you can choose a worker in the drawer.", job_id: jobId });
+      actions.push({ id: `dispatch-${jobId}`, type: "dispatch", priority: "high", executable: true, title: `Assign crew to ${label}`, summary: `${client} has a job with no worker assigned.`, reason: "Unassigned jobs block the day and stop work moving.", next: "Choose a worker in the drawer or let Command use the first safe option.", job_id: jobId });
     }
 
     if (["completed", "complete"].includes(norm(job.status)) && !job.invoice_id && !job.draft_invoice_id && !invoiceJobIds.has(jobId)) {
       const amount = job.fixed_price ?? job.price ?? job.subtotal ?? job.amount;
       const priced = Number.isFinite(Number(amount)) && Number(amount) > 0;
-      actions.push({ id: `invoice-${jobId}`, type: priced ? "invoice" : "pricing", priority: priced ? "medium" : "high", executable: priced, title: priced ? `Create draft invoice for ${label}` : `Add pricing for ${label}`, summary: priced ? `Suggested amount: ${money(amount)}.` : "Completed job needs a safe price before invoicing.", reason: priced ? "Completed work is ready to become a draft invoice." : "Churvox must not create a $0 invoice.", next: priced ? "Create draft invoice only. No sending, charging, or MYOB sync." : "Add pricing in the drawer first, then create the draft.", job_id: jobId });
+      actions.push({ id: `invoice-${jobId}`, type: priced ? "invoice" : "pricing", priority: priced ? "medium" : "high", executable: priced, title: priced ? `Create draft invoice for ${label}` : `Add pricing for ${label}`, summary: priced ? `Suggested amount: ${money(amount)}.` : "Completed job needs a safe price before invoicing.", reason: priced ? "Completed work is ready to become a draft invoice." : "Churvox must not create a $0 invoice.", next: priced ? "Create a draft invoice only. No send, charge, or MYOB sync." : "Add pricing inside the drawer first.", job_id: jobId });
       const hasProof = job.proof_pack_id || job.proof_pack_ready || proofPacks.some((p) => String(p.job_id || p.jobId || "") === jobId);
       if (!hasProof) actions.push({ id: `proof-${jobId}`, type: "proof", priority: "medium", executable: true, title: `Prepare proof pack for ${label}`, summary: "Completed work needs proof before payment follow-up.", reason: "Proof-to-Paid needs customer-ready proof assets.", next: "Prepare a proof pack for owner review.", job_id: jobId });
     }
@@ -89,7 +90,7 @@ function buildCommandActions(data, hidden) {
     if (!invoiceId) return;
     const status = norm(invoice.status);
     if (["sent", "open", "overdue", "unpaid", "pending_payment"].includes(status)) {
-      actions.push({ id: `invoice-follow-${invoiceId}`, type: "follow", priority: status === "overdue" ? "high" : "medium", executable: true, title: `Prepare reminder for invoice ${invoice.invoice_number || invoice.number || invoiceId.slice(-6)}`, summary: `${money(invoice.balance_due ?? invoice.balance ?? invoice.amount_due ?? invoice.total ?? invoice.amount)} outstanding.`, reason: "Money is waiting to come in.", next: "Prepare a reminder draft only. Nothing is sent automatically.", invoice_id: invoiceId });
+      actions.push({ id: `invoice-follow-${invoiceId}`, type: "follow", priority: status === "overdue" ? "high" : "medium", executable: true, title: `Prepare reminder for invoice ${invoice.invoice_number || invoice.number || invoiceId.slice(-6)}`, summary: `${money(invoice.balance_due ?? invoice.balance ?? invoice.amount_due ?? invoice.total ?? invoice.amount)} outstanding.`, reason: "Money is waiting to come in.", next: "Prepare a reminder draft only. Nothing sends automatically.", invoice_id: invoiceId });
     }
   });
 
@@ -97,7 +98,7 @@ function buildCommandActions(data, hidden) {
     const quoteId = idOf(quote);
     if (!quoteId) return;
     if (["sent", "pending", "waiting", "viewed", "draft"].includes(norm(quote.status))) {
-      actions.push({ id: `quote-follow-${quoteId}`, type: "follow", priority: "medium", executable: true, title: `Prepare quote follow-up ${quote.quote_number || quote.number || quoteId.slice(-6)}`, summary: "Quote is waiting for a customer decision.", reason: "Follow-up can help convert quoted work into booked work.", next: "Prepare a follow-up draft only. Nothing is sent automatically.", quote_id: quoteId });
+      actions.push({ id: `quote-follow-${quoteId}`, type: "follow", priority: "medium", executable: true, title: `Prepare quote follow-up ${quote.quote_number || quote.number || quoteId.slice(-6)}`, summary: "Quote is waiting for a customer decision.", reason: "Follow-up can help convert quoted work into booked work.", next: "Prepare a follow-up draft only. Nothing sends automatically.", quote_id: quoteId });
     }
   });
 
@@ -138,6 +139,7 @@ function ActionCard({ action, onDismiss, onExecute, onOpenJobEditor }) {
     <div className="command-card-actions">
       {canExecute ? <button className="command-btn green" onClick={() => onExecute(action)}>{actionButtonLabel(action)}</button> : null}
       {action.job_id ? <button className="command-btn dark" onClick={() => onOpenJobEditor(action.job_id)}>Edit in drawer</button> : null}
+      <button className="command-btn light" onClick={() => routeTo(actionPath(action))}>Open full page</button>
       <button className="command-btn ghost" onClick={() => onDismiss(action)}>Dismiss</button>
     </div>
   </article>;
@@ -162,6 +164,82 @@ function JobEditor({ job, clients, workers, onSave, onExecute, onClose }) {
     <label>Notes<textarea value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} /></label>
     <div className="command-card-actions"><button className="command-btn green" onClick={() => onSave(jobId, draft)}>Save job</button><button className="command-btn orange" onClick={() => onExecute({ type: "dispatch", job_id: jobId, executable: true })}>Assign safely</button><button className="command-btn dark" onClick={() => onExecute({ type: "invoice", job_id: jobId, executable: true })}>Create draft invoice</button><button className="command-btn light" onClick={() => onExecute({ type: "proof", job_id: jobId, executable: true })}>Prepare proof</button><button className="command-btn ghost" onClick={onClose}>Done</button></div>
   </div>;
+}
+
+function MiniTile({ title, text, action, tone = "dark" }) {
+  return <button className={`command-mini-tile ${tone}`} onClick={action}><strong>{title}</strong><span>{text}</span></button>;
+}
+function SmallFallback({ to }) {
+  return <div className="command-drawer-fallback"><button className="command-btn ghost" onClick={() => routeTo(to)}>Open full page if needed</button></div>;
+}
+function AccountWorkspace({ drawer, user, data, setNotice }) {
+  const title = norm(drawer.title);
+  const plan = user?.plan || user?.subscription_plan || user?.plan_name || "Not selected";
+  const status = user?.plan_status || user?.subscription_status || user?.status || "unknown";
+  const email = user?.email || "No email loaded";
+
+  if (title.includes("plan") || title.includes("billing") || title.includes("account")) {
+    return <div className="command-drawer-stack">
+      <div className="command-editor-card"><p className="smart-command-kicker">Owner account</p><h3>{plan}</h3><p>Status: {status} · {email}</p></div>
+      <div className="command-account-grid drawer-grid">
+        <MiniTile title="Change plan" text="Review Solo, Team, Pro, Enterprise" action={() => routeTo("/plans")} tone="orange" />
+        <MiniTile title="Billing status" text="Check subscription and trial" action={() => setNotice("Billing status is shown from your loaded account. Open Plans for Stripe changes.")} />
+        <MiniTile title="Usage limits" text="Clients, team, MYOB/SMS access" action={() => setNotice(`Clients loaded: ${data.clients.length}. Workers loaded: ${data.workers.length}.`)} />
+        <MiniTile title="MYOB access" text="Pro add-on / Enterprise included" action={() => routeTo("/integrations")} />
+      </div>
+      <SmallFallback to="/plans" />
+    </div>;
+  }
+
+  if (title.includes("setting")) {
+    return <div className="command-drawer-stack">
+      <div className="command-editor-card"><p className="smart-command-kicker">Business settings</p><h3>Quick setup</h3><p>Update the core business details owners need often.</p></div>
+      <label>Business name<input defaultValue={user?.business_name || user?.company_name || ""} placeholder="Business name" /></label>
+      <label>Industry<input defaultValue={user?.industry || ""} placeholder="Lawn Care, Cleaning, Handyman..." /></label>
+      <label>Business email<input defaultValue={email} placeholder="Email" /></label>
+      <label>Phone<input defaultValue={user?.phone || ""} placeholder="Phone" /></label>
+      <div className="command-card-actions"><button className="command-btn orange" onClick={() => setNotice("Settings quick edit is ready visually. Use full Settings page to save until the settings save endpoint is confirmed.")}>Save settings</button><button className="command-btn light" onClick={() => routeTo("/settings")}>Open full settings</button></div>
+    </div>;
+  }
+
+  if (title.includes("contact")) {
+    return <div className="command-drawer-stack">
+      <div className="command-editor-card"><p className="smart-command-kicker">Support</p><h3>Contact Churvox</h3><p>Get help with setup, billing, plans, integrations, or Command Hub.</p></div>
+      <div className="command-account-grid drawer-grid"><MiniTile title="Email support" text="hello@churvox.com" action={() => window.location.href = "mailto:hello@churvox.com?subject=Churvox%20support%20request"} tone="orange" /><MiniTile title="Plan help" text="Billing and subscription support" action={() => routeTo("/plans")} /><MiniTile title="Setup help" text="Business settings and onboarding" action={() => routeTo("/settings")} /></div>
+      <label>Message<textarea placeholder="Write what you need help with..." /></label>
+      <button className="command-btn orange" onClick={() => window.location.href = "mailto:hello@churvox.com?subject=Churvox%20support%20request"}>Send by email</button>
+    </div>;
+  }
+
+  if (title.includes("notification")) {
+    return <div className="command-drawer-stack">
+      <div className="command-editor-card"><p className="smart-command-kicker">Notifications</p><h3>Alerts and updates</h3><p>Control the alerts that keep the owner on top of the business.</p></div>
+      <div className="command-account-grid drawer-grid"><MiniTile title="Job updates" text="Assigned, started, completed" action={() => setNotice("Job notification controls are staged in Command.")} /><MiniTile title="Money alerts" text="Invoices and quote follow-ups" action={() => setNotice("Money notification controls are staged in Command.")} /><MiniTile title="Team alerts" text="Worker actions and schedule changes" action={() => setNotice("Team notification controls are staged in Command.")} /></div>
+      <SmallFallback to="/notifications" />
+    </div>;
+  }
+
+  if (title.includes("integration")) {
+    return <div className="command-drawer-stack">
+      <div className="command-editor-card"><p className="smart-command-kicker">Integrations</p><h3>Connected tools</h3><p>Manage MYOB, SMS, and future trade/business integrations.</p></div>
+      <div className="command-account-grid drawer-grid"><MiniTile title="MYOB" text="Invoice/payment sync setup" action={() => routeTo("/integrations")} tone="orange" /><MiniTile title="SMS" text="Credits and reminders" action={() => routeTo("/sms")} /><MiniTile title="Future tools" text="Connect more systems later" action={() => setNotice("More integrations are planned after launch-critical flows are stable.")} /></div>
+      <SmallFallback to="/integrations" />
+    </div>;
+  }
+
+  if (title.includes("privacy")) {
+    return <div className="command-drawer-stack"><div className="command-editor-card"><p className="smart-command-kicker">Legal</p><h3>Privacy</h3><p>Churvox should protect customer, job, worker, invoice, and account data. Open the full policy when you need the complete legal text.</p></div><SmallFallback to="/privacy" /></div>;
+  }
+
+  if (title.includes("terms")) {
+    return <div className="command-drawer-stack"><div className="command-editor-card"><p className="smart-command-kicker">Legal</p><h3>Terms</h3><p>Review the rules for using Churvox, subscriptions, acceptable use, and platform responsibilities.</p></div><SmallFallback to="/terms" /></div>;
+  }
+
+  if (title.includes("deletion")) {
+    return <div className="command-drawer-stack"><div className="command-editor-card"><p className="smart-command-kicker">Account deletion</p><h3>Delete account information</h3><p>Use this area to request account deletion or review the process before removing data.</p></div><div className="command-card-actions"><button className="command-btn orange" onClick={() => window.location.href = "mailto:hello@churvox.com?subject=Account%20deletion%20request"}>Request deletion</button><button className="command-btn light" onClick={() => routeTo("/account-deletion")}>Open deletion page</button></div></div>;
+  }
+
+  return null;
 }
 function PreviewItem({ item, drawer, onJob, onExecute }) {
   const id = idOf(item);
@@ -230,7 +308,7 @@ export default function CommandHubRealPage() {
   if (!canUseCommand(user?.role)) return <Layout><main className="smart-command-system"><section className="command-panel"><h2>Command Hub is owner/admin only.</h2></section></main></Layout>;
 
   const workspaceItems = [
-    { label: "Jobs", to: "/jobs", text: "Create, schedule, assign", items: runSheet }, { label: "Clients", to: "/clients", text: `${data.clients.length} customers/properties`, items: data.clients.slice(0, 8) }, { label: "Quotes", to: "/quotes", text: `${data.quotes.length} quotes loaded`, items: data.quotes.slice(0, 8) }, { label: "Invoices", to: "/invoices", text: `${groups.follow.length} reminders ready`, items: data.invoices.slice(0, 8) }, { label: "Team", to: "/team", text: `${data.workers.length} workers active`, items: data.workers.slice(0, 8) }, { label: "Dispatch", to: "/dispatch", text: `${groups.dispatch.length} jobs need crew`, items: groups.dispatch }, { label: "Proof-to-Paid", to: "/proof-to-paid", text: `${groups.proof.length} proof packs needed`, items: groups.proof }, { label: "Plans", to: "/plans", text: "Choose or change plan", items: [] }, { label: "Settings", to: "/settings", text: "Business setup", items: [] }, { label: "Contact Us", to: "/contact", text: "Help and support", items: [] }, { label: "Privacy", to: "/privacy", text: "Privacy policy", items: [] }, { label: "Terms", to: "/terms", text: "Terms of use", items: [] },
+    { label: "Jobs", to: "/jobs", text: "Create, schedule, assign", items: runSheet }, { label: "Clients", to: "/clients", text: `${data.clients.length} customers/properties`, items: data.clients.slice(0, 8) }, { label: "Quotes", to: "/quotes", text: `${data.quotes.length} quotes loaded`, items: data.quotes.slice(0, 8) }, { label: "Invoices", to: "/invoices", text: `${groups.follow.length} reminders ready`, items: data.invoices.slice(0, 8) }, { label: "Team", to: "/team", text: `${data.workers.length} workers active`, items: data.workers.slice(0, 8) }, { label: "Dispatch", to: "/dispatch", text: `${groups.dispatch.length} jobs need crew`, items: groups.dispatch }, { label: "Proof-to-Paid", to: "/proof-to-paid", text: `${groups.proof.length} proof packs needed`, items: groups.proof }, { label: "Account & Plan", to: "/plans", text: "Plan, billing, limits", items: [] }, { label: "Plans / Billing", to: "/plans", text: "Choose or change plan", items: [] }, { label: "Settings", to: "/settings", text: "Business setup", items: [] }, { label: "Contact Us", to: "/contact", text: "Help and support", items: [] }, { label: "Notifications", to: "/notifications", text: "Alerts and updates", items: [] }, { label: "Integrations", to: "/integrations", text: "MYOB and connected tools", items: [] }, { label: "Privacy", to: "/privacy", text: "Privacy policy", items: [] }, { label: "Terms", to: "/terms", text: "Terms of use", items: [] }, { label: "Account Deletion", to: "/account-deletion", text: "Delete account info", items: [] },
   ];
 
   return <Layout smartHubMode><main className="smart-command-system"><div className="command-real-shell">
@@ -245,6 +323,8 @@ export default function CommandHubRealPage() {
 
     <section className="command-control-grid"><ControlCard title="Dispatch Command" count={groups.dispatch.length} text="Crew assignment and dispatch balancing." active={groups.dispatch.length > 0} onClick={() => openActionDrawer("Dispatch Command", "Assign or review unassigned jobs.", groups.dispatch)} /><ControlCard title="Revenue Command" count={groups.revenue.length} text="Invoices, pricing, and cashflow follow-through." active={groups.revenue.length > 0} onClick={() => openActionDrawer("Revenue Command", "Completed work ready for pricing or draft invoices.", groups.revenue)} /><ControlCard title="Proof-to-Paid" count={groups.proof.length} text="Proof packs required before payment chase." active={groups.proof.length > 0} onClick={() => openActionDrawer("Proof-to-Paid Command", "Completed jobs missing proof assets.", groups.proof)} /><ControlCard title="Follow-Up Command" count={groups.follow.length} text="Quote and invoice follow-up preparation." active={groups.follow.length > 0} onClick={() => openActionDrawer("Follow-Up Command", "Prepared invoice and quote follow-up work.", groups.follow)} /><ControlCard title="Team/Crew" count={data.workers.length} text="Team capacity and worker availability." active={data.workers.length > 0} onClick={() => openWorkspace({ title: "Team", subtitle: "Workers loaded from your business.", to: "/team", items: data.workers.slice(0, 8) })} /><ControlCard title="Account Health" count={data.health?.warnings?.length || 0} text="Plan, billing, and account risk warnings." active={Boolean(data.health?.warnings?.length)} onClick={() => openWorkspace({ title: "Account & Plan", subtitle: "Plans, billing, support, and legal access.", to: "/plans", items: [] })} /></section>
 
+    <section className="command-panel command-account-centre"><div className="command-section-head"><div><p className="smart-command-kicker">Owner Account Centre</p><h2>Account, plan, settings and support</h2><p>Everything the owner needs for billing, settings, help, legal, notifications, and integrations from one place.</p></div></div><div className="command-account-grid"><MiniTile title="Account & Plan" text="Plan, billing, usage and limits" action={() => openWorkspace({ title: "Account & Plan", subtitle: "Plan, billing, limits and account health.", to: "/plans", items: [] })} /><MiniTile title="Plans / Billing" text="Choose or change plan" action={() => openWorkspace({ title: "Plans / Billing", subtitle: "Change plan or review billing.", to: "/plans", items: [] })} /><MiniTile title="Settings" text="Business setup" action={() => openWorkspace({ title: "Settings", subtitle: "Business setup and app settings.", to: "/settings", items: [] })} /><MiniTile title="Contact Us" text="Help and support" action={() => openWorkspace({ title: "Contact Us", subtitle: "Get help from Churvox support.", to: "/contact", items: [] })} /><MiniTile title="Notifications" text="Alerts and updates" action={() => openWorkspace({ title: "Notifications", subtitle: "Alerts and updates.", to: "/notifications", items: [] })} /><MiniTile title="Integrations" text="MYOB and tools" action={() => openWorkspace({ title: "Integrations", subtitle: "MYOB and connected tools.", to: "/integrations", items: [] })} /><MiniTile title="Privacy" text="Privacy policy" action={() => openWorkspace({ title: "Privacy", subtitle: "Privacy policy.", to: "/privacy", items: [] })} /><MiniTile title="Terms" text="Terms of use" action={() => openWorkspace({ title: "Terms", subtitle: "Terms of use.", to: "/terms", items: [] })} /><MiniTile title="Account Deletion" text="Delete account info" action={() => openWorkspace({ title: "Account Deletion", subtitle: "Account deletion information.", to: "/account-deletion", items: [] })} /></div></section>
+
     <section className="command-panel"><div className="command-section-head"><div><p className="smart-command-kicker">Zone 3 · Today’s run sheet</p><h2>Work moving today</h2></div></div>{runSheet.length ? <div className="command-run-list">{runSheet.map(job => <article key={idOf(job)}><b>{cleanJobTitle(job, data.clients)}</b><span>{clientNameFor(job, data.clients)} · {job.status || "open"}</span><button onClick={() => openJobEditor(idOf(job))}>Edit here</button></article>)}</div> : <div className="command-empty"><p>No jobs scheduled for today yet.</p><button onClick={() => routeTo("/jobs/new")}>Create Job</button></div>}</section>
 
     <section className="command-panel"><div className="command-section-head"><div><p className="smart-command-kicker">AI Approval Queue</p><h2>Grouped AI work</h2><p>Open a group and work inside the drawer.</p></div><span className="command-pill">{actions.length} ready</span></div><div className="command-filter-grid">{[["Approvals", actions], ["Dispatch", groups.dispatch], ["Revenue", groups.revenue], ["Follow-Ups", groups.follow], ["Proof", groups.proof], ["Reception", groups.reception], ["Recurring", groups.recurring], ["Updates", groups.update], ["Quote Builder", groups.quote_builder], ["Client Memory", groups.memory]].map(([label, items]) => <button key={label} className={items.length ? "active" : ""} onClick={() => openActionDrawer(label, `Focused ${label.toLowerCase()} work.`, items)}>{label}<span>{items.length} items</span></button>)}</div></section>
@@ -252,7 +332,7 @@ export default function CommandHubRealPage() {
     <Drawer drawer={drawer} onClose={() => setDrawer(null)}>
       {drawer?.type === "ask" ? <div className="command-drawer-stack"><p><b>What I’d do first:</b> {best ? `${best.title}. ${best.reason}` : "Nothing urgent is blocking the business right now."}</p><div className="command-prompt-grid">{["What needs doing today?", "Which jobs need crew?", "What invoices need chasing?", "What should I do first?", "What proof packs are missing?"].map(q => <button key={q} onClick={() => setNotice(`${q} — Command is using live business counts for now.`)}>{q}</button>)}</div></div> : null}
       {drawer?.type === "actions" ? <div className="command-action-list">{drawer.items?.length ? drawer.items.map(action => <ActionCard key={`drawer-${action.id}`} action={action} onDismiss={dismissAction} onExecute={executeCommandAction} onOpenJobEditor={openJobEditor} />) : <div className="command-empty"><p>No work in this section right now.</p></div>}</div> : null}
-      {drawer?.type === "workspace" ? <div className="command-drawer-stack"><div className="command-drawer-toolbar"><button className="command-btn ghost" onClick={() => routeTo(drawer.to)}>Open full page only if needed</button></div>{drawer.items?.length ? drawer.items.map((item, idx) => <PreviewItem key={idOf(item) || idx} item={item} drawer={drawer} onJob={openJobEditor} onExecute={executeCommandAction} />) : <div className="command-empty"><p>No preview items loaded. Use the action buttons here or open the full page only if needed.</p><button onClick={() => routeTo(drawer.to)}>Open full page</button></div>}</div> : null}
+      {drawer?.type === "workspace" ? <div className="command-drawer-stack">{drawer.items?.length ? drawer.items.map((item, idx) => <PreviewItem key={idOf(item) || idx} item={item} drawer={drawer} onJob={openJobEditor} onExecute={executeCommandAction} />) : <AccountWorkspace drawer={drawer} user={user} data={data} setNotice={setNotice} />}</div> : null}
       {drawer?.type === "runsheet" ? <div className="command-run-list">{drawer.items?.map(job => <article key={`drawer-job-${idOf(job)}`}><b>{cleanJobTitle(job, data.clients)}</b><span>{clientNameFor(job, data.clients)} · {job.status || "open"}</span><button onClick={() => openJobEditor(idOf(job))}>Edit here</button></article>)}</div> : null}
       {drawer?.type === "job" ? <JobEditor job={drawer.job} clients={data.clients} workers={data.workers} onSave={saveJobFromDrawer} onExecute={executeCommandAction} onClose={() => setDrawer(null)} /> : null}
     </Drawer>
