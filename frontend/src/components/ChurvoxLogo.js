@@ -1,23 +1,40 @@
-import React from "react";
+import React, { useState } from "react";
 
 // Single source of truth for the Churvox logo.
 // To swap the logo, replace /public/churvox-logo.png
 const LOGO_PATH = "/churvox-logo.png";
 
 const SIZE_MAP = {
-  sm: "h-10",
-  md: "h-16",
-  lg: "h-24",
-  xl: "h-32",
+  sm: "h-8",
+  md: "h-10",
+  lg: "h-12",
+  xl: "h-16",
+  hero: "h-11 sm:h-12",
 };
 
 export function ChurvoxLogo({ size = "md", className = "", dataTestId = "churvox-logo" }) {
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  if (loadFailed) {
+    return (
+      <span
+        className={`inline-flex items-center font-semibold tracking-wide text-current ${SIZE_MAP[size] || SIZE_MAP.md} ${className}`}
+        data-testid={dataTestId}
+      >
+        Churvox
+      </span>
+    );
+  }
+
   return (
     <img
       src={LOGO_PATH}
       alt="Churvox"
-      className={`w-auto object-contain ${SIZE_MAP[size] || SIZE_MAP.md} ${className}`}
+      className={`w-auto max-w-full object-contain ${SIZE_MAP[size] || SIZE_MAP.md} ${className}`}
       data-testid={dataTestId}
+      onError={() => setLoadFailed(true)}
+      loading="eager"
+      decoding="async"
     />
   );
 }

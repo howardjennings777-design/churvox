@@ -85,7 +85,7 @@ export default function Layout({ children, smartHubMode = false }) {
       {/* Desktop Sidebar — Premium light */}
       {!isSmartHubLayout && <aside className="px-sidebar hidden md:flex" data-testid="desktop-sidebar">
         <div className="px-sidebar__brand">
-          <ChurvoxLogo size="lg" dataTestId="sidebar-logo" />
+          <ChurvoxLogo size="md" dataTestId="sidebar-logo" />
           <NotificationsBell />
         </div>
 
