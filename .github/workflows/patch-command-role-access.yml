@@ -1,0 +1,48 @@
+name: Patch Command Dashboard role access
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-command-role-access:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Allow owner/employer roles into Command Dashboard
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path('frontend/src/pages/SmartHubBrainPageStable.js')
+          text = path.read_text(encoding='utf-8', errors='ignore')
+          old = 'const roleAllowed = (role) => ["owner", "manager", "office_admin"].includes(norm(role));'
+          new = 'const roleAllowed = (role) => ["owner", "employer", "admin", "manager", "office_admin", "business_owner", "platform_owner"].includes(norm(role));'
+          if old not in text and new in text:
+              print('Command role access already patched')
+          elif old in text:
+              text = text.replace(old, new, 1)
+              path.write_text(text, encoding='utf-8')
+              print('Patched Command Dashboard role access')
+          else:
+              raise SystemExit('Could not find roleAllowed line to patch')
+          PY
+
+      - name: Commit patch if needed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git add frontend/src/pages/SmartHubBrainPageStable.js
+            git commit -m "Restore Command Dashboard access for owner roles"
+            git push
+          fi
