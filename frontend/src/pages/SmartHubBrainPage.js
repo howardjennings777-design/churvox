@@ -131,6 +131,16 @@ const dedupeApprovalActions = (actions = []) => {
   });
   return Array.from(map.values());
 };
+const getBestNextMove = ({ readyToBillCount = 0, unassignedJobsCount = 0, openInvoicesCount = 0, quotesWaitingCount = 0, pendingApprovalActions = [] } = {}) => {
+  const pending = safeArray(pendingApprovalActions).filter((item) => isActiveApproval(item));
+  const highRiskDecisionCount = pending.filter((item) => item.group === "needs_decision" && String(item?.risk || "").toLowerCase() === "high").length;
+  if (highRiskDecisionCount > 0) return { key: "needs_decision", label: `Review ${highRiskDecisionCount} high-risk approval${highRiskDecisionCount === 1 ? "" : "s"} now.`, approvalTab: "needs_decision" };
+  if (unassignedJobsCount > 0) return { key: "assign_workers", label: `Assign crew to ${unassignedJobsCount} unassigned job${unassignedJobsCount === 1 ? "" : "s"}.`, drawer: "AI Dispatch", mode: "assign", approvalTab: "ready" };
+  if (readyToBillCount > 0) return { key: "invoice_drafts", label: `Create draft invoices for ${readyToBillCount} ready-to-bill job${readyToBillCount === 1 ? "" : "s"}.`, drawer: "Invoices", mode: "readyToBill", approvalTab: "ready" };
+  if (openInvoicesCount > 0) return { key: "invoice_reminders", label: `Prepare reminders for ${openInvoicesCount} open invoice${openInvoicesCount === 1 ? "" : "s"}.`, drawer: "Payment Reminders", mode: "reminders", approvalTab: "drafts" };
+  if (quotesWaitingCount > 0) return { key: "quote_followups", label: `Review follow-ups for ${quotesWaitingCount} waiting quote${quotesWaitingCount === 1 ? "" : "s"}.`, drawer: "Quote Follow-ups", mode: "followUps", approvalTab: "drafts" };
+  return { key: "all_clear", label: "All clear — no urgent actions in Smart Hub.", drawer: "Dashboard", mode: "list", approvalTab: "all" };
+};
 const getActionDisplayMeta = (item = {}, { jobs = [], clients = [], invoices = [], quotes = [], workers = [] } = {}) => {
   const payload = item?.actionPayload || {};
   const relatedId = String(item?.relatedId || item?.related_id || item?.related_entity_id || "");
@@ -142,7 +152,10 @@ const getActionDisplayMeta = (item = {}, { jobs = [], clients = [], invoices = [
   const client = item?.client || findByIds(clients, [item?.client_id, payload?.client_id, invoice?.client_id, quote?.client_id, job?.client_id], ["id", "_id", "client_id"]);
   const clientName = textOr(client?.name || invoice?.client_name || quote?.client_name || job?.client_name, "No client linked");
   if (actionType === "invoice_reminder") {
-    return { title: `Send payment reminder to ${clientName}`, subtitle: `Invoice ${textOr(invoice?.invoice_number || invoice?.number, "No invoice number")} · ${money(invoiceBalance(invoice))} outstanding · ${textOr(invoice?.status, "unknown")}`, reason: item.reason || "Invoice is unpaid and ready for reminder review.", dataUsed: item.dataUsed || `Due: ${textOr(invoice?.due_date || invoice?.dueDate, "No due date")} · Phone: ${client?.phone || invoice?.client_phone ? "saved" : "No phone saved"} · Email: ${client?.email || invoice?.client_email ? "saved" : "No email saved"}`, whatHappens: item.whatHappens || "Approval sends the reminder via selected channel.", risk: item.risk || "medium", status: item.status || "pending", contactSummary: `Phone: ${client?.phone || invoice?.client_phone || "No phone saved"} · Email: ${client?.email || invoice?.client_email || "No email saved"}` };
+    const hasClient = !!String(client?.name || invoice?.client_name || "").trim();
+    const invoiceLabel = textOr(invoice?.invoice_number || invoice?.number, "Open invoice");
+    const subtitle = `${hasClient ? `Invoice ${invoiceLabel}` : "Open invoice"} · ${money(invoiceBalance(invoice))} outstanding`;
+    return { title: hasClient ? `Prepare reminder for ${clientName}` : "Prepare reminder for invoice with missing client", subtitle, reason: item.reason || "Invoice is unpaid and ready for reminder review.", dataUsed: item.dataUsed || `Due: ${textOr(invoice?.due_date || invoice?.dueDate, "No due date")} · Phone: ${client?.phone || invoice?.client_phone ? "saved" : "No phone saved"} · Email: ${client?.email || invoice?.client_email ? "saved" : "No email saved"}`, whatHappens: item.whatHappens || "Approval sends the reminder via selected channel.", risk: item.risk || "medium", status: item.status || "pending", contactSummary: `Phone: ${client?.phone || invoice?.client_phone || "No phone saved"} · Email: ${client?.email || invoice?.client_email || "No email saved"}` };
   }
   if (actionType === "quote_follow_up") {
     return { title: `Follow up quote with ${clientName}`, subtitle: `Quote ${textOr(quote?.quote_number || quote?.number || quote?.title, "No quote number")} · ${money(quote?.total ?? quote?.amount)} · ${textOr(quote?.status, "unknown")}`, reason: item.reason || "Quote is waiting for a client response.", dataUsed: item.dataUsed || `Phone: ${client?.phone ? "saved" : "No phone saved"} · Email: ${client?.email ? "saved" : "No email saved"}`, whatHappens: item.whatHappens || "Approval saves and/or sends the follow-up draft.", risk: item.risk || "low", status: item.status || "pending" };
@@ -174,7 +187,7 @@ const buildSmartHubApprovalItems = ({ jobs, clients, invoices, quotes, workers, 
     if (!jobId) return;
     items.push({ id: `assign-${jobId}`, type: rec?.recommendation?.conflict ? "schedule_conflict" : "assign_worker", group: rec?.recommendation?.conflict ? "needs_decision" : "ready", title: `Assign ${textOr(rec?.recommendation?.worker?.name, "worker")} to ${textOr(rec?.job?.title, "job")}`, reason: rec?.recommendation?.conflict ? "Possible schedule conflict detected." : "Recommended worker is available and best fit.", dataUsed: `Worker load today: ${rec?.recommendation?.stats?.today ?? 0} • Region match: ${rec?.recommendation?.regionMatch ? "yes" : "no"} • Conflict: ${rec?.recommendation?.conflict ? "yes" : "none"}` , whatHappens: "Churvox assigns the worker and updates the job to assigned.", risk: rec?.recommendation?.conflict ? "high" : "low", status: "pending", relatedType: "job", relatedId: jobId, job: rec?.job, worker: rec?.recommendation?.worker, actionPayload: { job_id: jobId, worker_id: rec?.selectedWorkerId } });
   });
-  safeArray(invoices).filter((inv)=>REMINDER_ELIGIBLE.includes(statusOf(inv?.status)) && !REMINDER_EXCLUDED.includes(statusOf(inv?.status))).forEach((inv)=>{ const id=String(inv?.id||inv?._id||""); items.push({id:`reminder-${id}`,type:"invoice_reminder",group:"drafts",title:`Prepare reminder draft for invoice ${textOr(inv?.invoice_number||inv?.number,id)}`,reason:"Invoice is open/unpaid.",dataUsed:`Status: ${textOr(inv?.status)} • Amount due: ${money(invoiceBalance(inv))}`,whatHappens:"Saves a reminder draft only. No message is sent.",risk:"low",status:"pending",relatedType:"invoice",relatedId:id,invoice:inv,actionPayload:{invoice_id:id,message:reminderDrafts?.[id]||""}}) });
+  safeArray(invoices).filter((inv)=>REMINDER_ELIGIBLE.includes(statusOf(inv?.status)) && !REMINDER_EXCLUDED.includes(statusOf(inv?.status))).forEach((inv)=>{ const id=String(inv?.id||inv?._id||""); const client=findByIds(clients,[inv?.client_id,inv?.clientId],["id","_id","client_id"]); const clientName=textOr(client?.name||inv?.client_name,"No client linked"); const invoiceLabel=textOr(inv?.invoice_number||inv?.number,"Open invoice"); const hasClient=!!String(client?.name||inv?.client_name||"").trim(); items.push({id:`reminder-${id}`,type:"invoice_reminder",group:"drafts",title:hasClient?`Prepare reminder for ${clientName}`:"Prepare reminder for invoice with missing client",reason:"Invoice is open/unpaid.",dataUsed:`Invoice ${invoiceLabel} • Amount due: ${money(invoiceBalance(inv))} • Status: ${textOr(inv?.status)}`,whatHappens:"Saves a reminder draft only. No message is sent.",risk:"low",status:"pending",relatedType:"invoice",relatedId:id,invoice:inv,client,actionPayload:{invoice_id:id,message:reminderDrafts?.[id]||""}}) });
   safeArray(quotes).filter((q)=>QUOTE_FOLLOW_UP_ELIGIBLE.includes(statusOf(q?.status))).forEach((q)=>{ const id=String(q?.id||q?._id||""); items.push({id:`quote-${id}`,type:"quote_follow_up",group:"drafts",title:`Prepare quote follow-up for ${textOr(q?.quote_number||q?.title,id)}`,reason:"Quote is waiting for response.",dataUsed:`Status: ${textOr(q?.status)} • Age: ${quoteAgeDays(q) ?? "—"} days`,whatHappens:"Saves a follow-up draft only. No message is sent.",risk:"low",status:"pending",relatedType:"quote",relatedId:id,quote:q,actionPayload:{quote_id:id,message:quoteDrafts?.[id]||""}}) });
   safeArray(activity).filter((a)=>statusOf(a?.status)==='completed').slice(0,5).forEach((a)=>items.push({id:`activity-${a?.id||a?._id}`,type:"info",group:"completed",title:textOr(a?.title,"Completed action"),reason:textOr(a?.message,"Completed in Smart Hub."),dataUsed:"Recorded in Smart Hub activity",whatHappens:"No further action.",risk:"low",status:"completed",relatedType:a?.related_type,relatedId:String(a?.related_id||"")}));
   return items;
@@ -503,37 +516,13 @@ export default function SmartHubBrainPage() {
   const handleBulkDelete = async () => { await runBulkAction("/ai-operator/actions/bulk-delete", selectedApprovalIds); await load(); clearApprovalSelection(); };
   const handleBulkMarkCompleted = async () => { await runBulkAction("/ai-operator/actions/bulk-complete", selectedApprovalIds); await load(); clearApprovalSelection(); };
 
-  const bestNextMove = useMemo(() => {
-    if (readyToBillJobs.length) {
-      return {
-        label: sortedApprovalItems[0]?.title || `Create invoices for ${readyToBillJobs.length} ready-to-bill job${readyToBillJobs.length === 1 ? "" : "s"}.`,
-        drawer: "Invoices",
-        mode: "readyToBill",
-      };
-    }
-    if (unassignedJobs.length) {
-      return {
-        label: `Assign crew to ${unassignedJobs.length} unassigned job${unassignedJobs.length === 1 ? "" : "s"}.`,
-        drawer: "AI Dispatch",
-        mode: "assign",
-      };
-    }
-    if (openInvoices.length) {
-      return {
-        label: `Follow up ${openInvoices.length} open invoice${openInvoices.length === 1 ? "" : "s"}.`,
-        drawer: "Payment Reminders",
-        mode: "reminders",
-      };
-    }
-    if (waitingQuotes.length) {
-      return {
-        label: `Review ${waitingQuotes.length} waiting quote${waitingQuotes.length === 1 ? "" : "s"}.`,
-        drawer: "Quote Follow-ups",
-        mode: "followUps",
-      };
-    }
-    return { label: "All clear — no urgent actions in Smart Hub.", drawer: "Dashboard", mode: "list" };
-  }, [readyToBillJobs.length, unassignedJobs.length, openInvoices.length, waitingQuotes.length]);
+  const bestNextMove = useMemo(() => getBestNextMove({
+    readyToBillCount: readyToBillJobs.length,
+    unassignedJobsCount: unassignedJobs.length,
+    openInvoicesCount: openInvoices.length,
+    quotesWaitingCount: waitingQuotes.length,
+    pendingApprovalActions: sortedApprovalItems,
+  }), [readyToBillJobs.length, unassignedJobs.length, openInvoices.length, waitingQuotes.length, sortedApprovalItems]);
 
   const workspaceButtons = ["Jobs", "Clients", "Invoices", "Quotes", "Crew", "Payroll", "Approvals", "AI Dispatch"];
   const workspaceMeta = {
@@ -925,7 +914,7 @@ export default function SmartHubBrainPage() {
               <p className="text-sm text-slate-700">{approvalCounts.all ? `${approvalCounts.all} approvals waiting` : "AI has checked today’s jobs, invoices, quotes and crew."}</p>
             </div>
             <p className="mt-2 text-sm text-[#555b56]">{approvalCounts.needs_decision || 0} need decision · {approvalCounts.ready || 0} ready · {approvalCounts.drafts || 0} drafts · {approvalCounts.watching || 0} watching</p>
-            {!!priorityItems.length && <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-slate-700">{priorityItems.map((item) => <li key={item.id}><button type="button" onClick={() => { openApprovalCentre({ tab: "all" }); }} className="text-left hover:text-[#171717]">{item.title}</button></li>)}</ol>}
+            {!!priorityItems.length && <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-slate-700">{priorityItems.map((item) => <li key={item.id}><button type="button" onClick={() => { openApprovalCentre({ tab: bestNextMove.approvalTab || "all" }); }} className="text-left hover:text-[#171717]">{item.title}</button></li>)}</ol>}
             <div className="mt-4 flex flex-wrap gap-2">
               <button type="button" onClick={() => { openApprovalCentre({ tab: "all" }); }} className="rounded-lg bg-[#3f6212] px-3 py-2 text-sm font-medium text-white">Open Approval Centre</button>
               <button type="button" onClick={runScanNow} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">Run today's AI plan</button>
@@ -958,7 +947,7 @@ export default function SmartHubBrainPage() {
                 ))}
               </div>
               <p className="mt-4 rounded-lg bg-[#ebe5d8] px-3 py-2 text-sm text-slate-700">
-                AI found {readyToBillJobs.length} {readyToBillJobs.length === 1 ? "job" : "jobs"} ready to bill, {unassignedJobs.length} unassigned {unassignedJobs.length === 1 ? "job" : "jobs"}, {openInvoices.length} open {openInvoices.length === 1 ? "invoice" : "invoices"} and {waitingQuotes.length} {waitingQuotes.length === 1 ? "quote" : "quotes"} waiting. Best next move: create invoice drafts.
+                AI found {readyToBillJobs.length} {readyToBillJobs.length === 1 ? "job" : "jobs"} ready to bill, {unassignedJobs.length} unassigned {unassignedJobs.length === 1 ? "job" : "jobs"}, {openInvoices.length} open {openInvoices.length === 1 ? "invoice" : "invoices"} and {waitingQuotes.length} {waitingQuotes.length === 1 ? "quote" : "quotes"} waiting. Best next move: {bestNextMove.label}
               </p>
             </article>
 
@@ -996,15 +985,15 @@ export default function SmartHubBrainPage() {
                   key={name}
                   type="button"
                   onClick={() => openWorkspace(name)}
-                  className="rounded-lg bg-[#3f6212] px-4 py-3 text-left text-sm font-medium text-white transition hover:bg-[#365314]"
+                  className="rounded-lg border border-emerald-200 bg-[#dce8de] px-4 py-3 text-left text-sm font-medium text-[#1f3b2f] transition hover:bg-[#cfdfd2]"
                 >
                   <span className="block">{name}</span>
-                  <span className="block text-xs text-lime-200">{workspaceMeta[name] || "Open workspace"}</span>
+                  <span className="block text-xs text-[#3f5a4d]">{workspaceMeta[name] || "Open workspace"}</span>
                 </button>
               ))}
-              <button type="button" onClick={() => openWorkspace("Payment Reminders", "reminders")} className="rounded-lg bg-[#3f6212] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#365314]">Prepare reminders</button>
-              <button type="button" onClick={() => openWorkspace("Quote Follow-ups", "followUps")} className="rounded-lg bg-[#3f6212] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#365314]">Review follow-ups</button>
-              <button type="button" onClick={() => openWorkspace("AI Dispatch", "assign")} className="rounded-lg bg-[#3f6212] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#365314]">Assign workers</button>
+              <button type="button" onClick={() => openWorkspace("Payment Reminders", "reminders")} className="rounded-lg bg-[#315a44] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#284c3a]">Prepare reminders</button>
+              <button type="button" onClick={() => openWorkspace("Quote Follow-ups", "followUps")} className="rounded-lg bg-[#315a44] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#284c3a]">Review follow-ups</button>
+              <button type="button" onClick={() => openWorkspace("AI Dispatch", "assign")} className="rounded-lg bg-[#315a44] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#284c3a]">Assign workers</button>
             </div>
           </section>
 
@@ -1048,12 +1037,17 @@ export default function SmartHubBrainPage() {
             <div className="mx-auto mt-10 max-w-xl rounded-2xl bg-white p-4">
               <h3 className="text-lg font-semibold">AI Operator Settings</h3>
               <div className="mt-3 space-y-2 text-sm">
-                <label className="block"><input type="checkbox" checked={!!aiSettings.ai_operator_enabled} onChange={(e)=>setAiSettings((p)=>({...p,ai_operator_enabled:e.target.checked}))} className="mr-2"/>AI Operator enabled</label>
-                <label className="block"><input type="checkbox" checked={!!aiSettings.auto_arrival_sms_enabled} onChange={(e)=>setAiSettings((p)=>({...p,auto_arrival_sms_enabled:e.target.checked}))} className="mr-2"/>Auto arrival SMS enabled</label>
-                <select value={aiSettings.arrival_sms_mode} onChange={(e)=>setAiSettings((p)=>({...p,arrival_sms_mode:e.target.value}))} className="w-full rounded border p-2"><option value="approval_required">Approval required</option><option value="auto_send">Auto-send</option></select>
-                <input type="number" min="20" max="35" value={aiSettings.arrival_sms_minutes_before} onChange={(e)=>setAiSettings((p)=>({...p,arrival_sms_minutes_before:Number(e.target.value)||30}))} className="w-full rounded border p-2" />
+                <label className="block"><input type="checkbox" checked={!!aiSettings.ai_operator_enabled} onChange={(e)=>setAiSettings((p)=>({...p,ai_operator_enabled:e.target.checked}))} className="mr-2"/>AI Operator: On/Off</label>
+                <label className="block"><input type="checkbox" checked={!!aiSettings.auto_arrival_sms_enabled} onChange={(e)=>setAiSettings((p)=>({...p,auto_arrival_sms_enabled:e.target.checked}))} className="mr-2"/>Auto arrival SMS: On/Off</label>
+                <label className="block">Arrival SMS timing (minutes before)<input type="number" min="30" max="30" value={30} disabled className="mt-1 w-full rounded border p-2 bg-slate-100" /></label>
+                <label className="block">Arrival SMS mode<select value={aiSettings.arrival_sms_mode} onChange={(e)=>setAiSettings((p)=>({...p,arrival_sms_mode:e.target.value}))} className="mt-1 w-full rounded border p-2"><option value="approval_required">Approval required</option><option value="auto_send">Auto send</option></select></label>
+                <label className="block">Invoice reminders<select value={aiSettings.invoice_reminder_mode} onChange={(e)=>setAiSettings((p)=>({...p,invoice_reminder_mode:e.target.value}))} className="mt-1 w-full rounded border p-2"><option value="draft_only">Draft only</option><option value="approval_send">Send after approval</option></select></label>
+                <label className="block">Quote follow-ups<select value={aiSettings.quote_followup_mode} onChange={(e)=>setAiSettings((p)=>({...p,quote_followup_mode:e.target.value}))} className="mt-1 w-full rounded border p-2"><option value="draft_only">Draft only</option><option value="approval_send">Send after approval</option></select></label>
+                <label className="block">Worker assignment<input disabled value="Approval required" className="mt-1 w-full rounded border p-2 bg-slate-100" /></label>
+                <label className="block">Accounting changes<input disabled value="Locked" className="mt-1 w-full rounded border p-2 bg-slate-100" /></label>
+                <label className="block">Payroll changes<input disabled value="Locked" className="mt-1 w-full rounded border p-2 bg-slate-100" /></label>
               </div>
-              <div className="mt-4 flex gap-2"><button type="button" className="rounded bg-[#3f6212] px-3 py-2 text-white" onClick={async ()=>{ try { const res = await patch('/api/ai-operator/settings', aiSettings); setAiSettings((p)=>({...p,...(res?.settings||{})})); setToast({kind:'success',message:'AI settings saved.'}); setAiSettingsOpen(false);} catch { setToast({kind:'error',message:'Failed to save AI settings.'}); } }}>Save</button><button type="button" className="rounded border px-3 py-2" onClick={()=>setAiSettingsOpen(false)}>Close</button></div>
+              <div className="mt-4 flex gap-2"><button type="button" className="rounded bg-[#3f6212] px-3 py-2 text-white" onClick={async ()=>{ try { const res = await patch('/api/ai-operator/settings', aiSettings); setAiSettings((p)=>({...p,...(res?.settings||{})})); setToast({kind:'success',message:'AI settings saved.'}); setAiSettingsOpen(false);} catch { localStorage.setItem("smart_hub_ai_settings_local", JSON.stringify(aiSettings)); setToast({kind:'success',message:'Saved locally until backend setting is added.'}); setAiSettingsOpen(false); } }}>Save</button><button type="button" className="rounded border px-3 py-2" onClick={()=>setAiSettingsOpen(false)}>Close</button></div>
             </div>
           </div>
         ) : null}
