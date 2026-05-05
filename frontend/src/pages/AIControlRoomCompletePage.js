@@ -479,12 +479,12 @@ const s = {
     padding: "10px 14px 22px",
   },
   hero: {
-    minHeight: 220,
+    minHeight: 245,
     display: "grid",
     gridTemplateColumns: "minmax(0, 1fr) minmax(420px, 680px)",
     alignItems: "center",
     gap: 22,
-    padding: "22px 30px 22px 34px",
+    padding: "24px 32px 24px 36px",
     borderRadius: 20,
     background:
       "radial-gradient(circle at 44% 44%, rgba(0,98,255,0.64), transparent 13%), radial-gradient(circle at 88% 59%, rgba(255,91,15,0.9), transparent 15%), linear-gradient(130deg, #020917 0%, #071426 48%, #161018 100%)",
@@ -504,7 +504,7 @@ const s = {
   heroTitle: {
     margin: 0,
     color: "#ffffff",
-    fontSize: "clamp(42px, 4.3vw, 66px)",
+    fontSize: "clamp(46px, 4.6vw, 72px)",
     lineHeight: 0.92,
     letterSpacing: "-0.065em",
     fontWeight: 900,
@@ -520,13 +520,13 @@ const s = {
   },
   heroButtons: {
     display: "flex",
-    gap: 26,
+    gap: 20,
     flexWrap: "wrap",
     marginTop: 20,
   },
   heroButton: {
-    height: 46,
-    minWidth: 170,
+    height: 50,
+    minWidth: 180,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
@@ -599,7 +599,7 @@ const s = {
     gridTemplateColumns: "42px 1fr",
     alignItems: "center",
     gap: 18,
-    padding: "18px 22px",
+    padding: "14px 18px",
     borderRadius: 9,
     background: "rgba(15,28,49,0.72)",
     border: "1px solid rgba(255,255,255,0.14)",
@@ -624,7 +624,7 @@ const s = {
   liveLabel: {
     display: "block",
     color: "rgba(255,255,255,0.9)",
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: 650,
   },
   liveValue:
@@ -632,7 +632,7 @@ const s = {
     display: "block",
     marginTop: 5,
     color: "#ffffff",
-    fontSize: 23,
+    fontSize: 24,
     lineHeight: 1,
     letterSpacing: "-0.04em",
     fontWeight: 900,
