@@ -168,12 +168,10 @@ export default function AIControlRoomCompletePage() {
     else navigate("/jobs");
   };
 
-  const shouldScaleLayout = typeof window !== "undefined" && window.innerWidth >= 1280;
-
   return (
     <Layout smartHubMode>
       <main style={s.page}>
-        <div style={{ ...s.shell, ...(shouldScaleLayout ? s.shellScaled : {}) }}>
+        <div style={s.shell}>
           <section style={s.hero}>
             <div style={s.heroLeft}>
               <div style={s.logoRow}>
@@ -457,21 +455,17 @@ const s = {
   },
   shell: {
     width: "100%",
-    maxWidth: 1880,
+    maxWidth: 1780,
     margin: "0 auto",
     padding: "10px 14px 22px",
   },
-  shellScaled: {
-    transform: "scale(0.9)",
-    transformOrigin: "top center",
-  },
   hero: {
-    minHeight: 300,
+    minHeight: 270,
     display: "grid",
     gridTemplateColumns: "minmax(0, 1fr) minmax(420px, 680px)",
     alignItems: "center",
-    gap: 28,
-    padding: "28px 38px 28px 44px",
+    gap: 26,
+    padding: "26px 34px 26px 38px",
     borderRadius: 20,
     background:
       "radial-gradient(circle at 44% 44%, rgba(0,98,255,0.64), transparent 13%), radial-gradient(circle at 88% 59%, rgba(255,91,15,0.9), transparent 15%), linear-gradient(130deg, #020917 0%, #071426 48%, #161018 100%)",
@@ -491,7 +485,7 @@ const s = {
   heroTitle: {
     margin: 0,
     color: "#ffffff",
-    fontSize: "clamp(48px, 5vw, 78px)",
+    fontSize: "clamp(46px, 4.8vw, 72px)",
     lineHeight: 0.92,
     letterSpacing: "-0.065em",
     fontWeight: 900,
@@ -500,20 +494,20 @@ const s = {
   heroText: {
     margin: "18px 0 0",
     color: "rgba(255,255,255,0.92)",
-    fontSize: 19,
+    fontSize: 16,
     lineHeight: 1.35,
     fontWeight: 650,
     maxWidth: 720,
   },
   heroButtons: {
     display: "flex",
-    gap: 28,
+    gap: 26,
     flexWrap: "wrap",
-    marginTop: 22,
+    marginTop: 18,
   },
   heroButton: {
-    height: 60,
-    minWidth: 230,
+    height: 50,
+    minWidth: 185,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
@@ -540,8 +534,8 @@ const s = {
   },
   livePanel: {
     width: "100%",
-    minHeight: 264,
-    padding: "26px 30px",
+    minHeight: 220,
+    padding: "20px 24px",
     borderRadius: 30,
     background: "linear-gradient(135deg, rgba(15,31,55,0.88), rgba(49,25,23,0.74))",
     border: "1px solid rgba(255,255,255,0.25)",
@@ -581,9 +575,9 @@ const s = {
     gap: 12,
   },
   liveStat: {
-    minHeight: 100,
+    minHeight: 78,
     display: "grid",
-    gridTemplateColumns: "58px 1fr",
+    gridTemplateColumns: "46px 1fr",
     alignItems: "center",
     gap: 18,
     padding: "18px 22px",
@@ -592,13 +586,13 @@ const s = {
     border: "1px solid rgba(255,255,255,0.14)",
   },
   liveIcon: {
-    width: 58,
-    height: 58,
+    width: 46,
+    height: 46,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 999,
-    fontSize: 30,
+    fontSize: 22,
     fontWeight: 900,
     color: "#10b8ff",
     background: "radial-gradient(circle, #123d91 0%, #0a2a62 100%)",
@@ -614,11 +608,12 @@ const s = {
     fontSize: 15,
     fontWeight: 650,
   },
-  liveValue: {
+  liveValue:
+  {
     display: "block",
     marginTop: 5,
     color: "#ffffff",
-    fontSize: 31,
+    fontSize: 25,
     lineHeight: 1,
     letterSpacing: "-0.04em",
     fontWeight: 900,
@@ -663,7 +658,7 @@ const s = {
     borderRadius: 14,
     boxShadow: "0 10px 28px rgba(15,23,42,0.065)",
     padding: "18px 24px 16px",
-    minHeight: 272,
+    minHeight: 245,
   },
   title: {
     display: "flex",
@@ -671,7 +666,7 @@ const s = {
     gap: 13,
     margin: 0,
     color: "#0c1526",
-    fontSize: 25,
+    fontSize: 22,
     lineHeight: 1,
     letterSpacing: "-0.04em",
     fontWeight: 900,
@@ -686,7 +681,7 @@ const s = {
     fontSize: 22,
   },
   bestMove: {
-    height: 40,
+    height: 34,
     display: "flex",
     alignItems: "center",
     gap: 12,
@@ -706,7 +701,7 @@ const s = {
     marginTop: 14,
   },
   mini: {
-    minHeight: 112,
+    minHeight: 88,
     display: "grid",
     gridTemplateColumns: "43px 1fr",
     gap: 12,
@@ -736,7 +731,7 @@ const s = {
     display: "block",
     marginTop: 3,
     color: "#0c1526",
-    fontSize: 31,
+    fontSize: 25,
     lineHeight: 1,
     fontWeight: 900,
     letterSpacing: "-0.04em",
@@ -798,7 +793,7 @@ const s = {
     marginTop: 16,
   },
   move: {
-    minHeight: 178,
+    minHeight: 165,
     textAlign: "left",
     padding: "22px 24px",
     borderRadius: 10,
@@ -827,13 +822,13 @@ const s = {
     maxWidth: 205,
     margin: "12px 0 0",
     color: "#516071",
-    fontSize: 16,
+    fontSize: 14,
     lineHeight: 1.45,
     fontWeight: 650,
   },
   moveBadge: {
     display: "inline-flex",
-    marginTop: 22,
+    marginTop: 18,
     padding: "7px 11px",
     borderRadius: 8,
     fontSize: 14,
@@ -858,7 +853,7 @@ const s = {
     fontWeight: 900,
   },
   td: {
-    padding: "9px 0",
+    padding: "7px 0",
     borderTop: "1px solid #e5e9f1",
     fontSize: 14,
     fontWeight: 650,
@@ -952,16 +947,16 @@ const s = {
   },
   workspaceGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(145px, 1fr))",
     gap: 12,
   },
   workspaceTile: {
-    minHeight: 54,
+    minHeight: 48,
     display: "grid",
     gridTemplateColumns: "38px 1fr 18px",
     alignItems: "center",
     gap: 13,
-    padding: "8px 12px",
+    padding: "7px 10px",
     borderRadius: 8,
     background: "#ffffff",
     border: "1px solid #e1e7f0",
