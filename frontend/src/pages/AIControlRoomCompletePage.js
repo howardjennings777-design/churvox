@@ -137,7 +137,7 @@ export default function AIControlRoomCompletePage() {
   }, [data]);
 
   const rows = useMemo(() => {
-    const realRows = data.jobs.slice(0, 6).map((job) => {
+    const realRows = data.jobs.slice(0, 6).map((job, index) => {
       const assignment =
         job.assigned_worker_name ||
         job.worker_name ||
@@ -154,7 +154,7 @@ export default function AIControlRoomCompletePage() {
 
       return [
         job.id || job._id || `job-${job.title}`,
-        cleanJobTitle(job.title || job.service || job.name || "Untitled job", job.id || job._id, realRows.length),
+        cleanJobTitle(job.title || job.service || job.name || "Untitled job", job.id || job._id, index),
         job.client_name || job.customer_name || job.client || "Client",
         assignment,
         status,
