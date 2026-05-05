@@ -168,10 +168,12 @@ export default function AIControlRoomCompletePage() {
     else navigate("/jobs");
   };
 
+  const shouldScaleLayout = typeof window !== "undefined" && window.innerWidth >= 1280;
+
   return (
     <Layout smartHubMode>
       <main style={s.page}>
-        <div style={s.shell}>
+        <div style={{ ...s.shell, ...(shouldScaleLayout ? s.shellScaled : {}) }}>
           <section style={s.hero}>
             <div style={s.heroLeft}>
               <div style={s.logoRow}>
@@ -455,17 +457,21 @@ const s = {
   },
   shell: {
     width: "100%",
-    maxWidth: 1920,
+    maxWidth: 1880,
     margin: "0 auto",
-    padding: "14px 18px 28px",
+    padding: "10px 14px 22px",
+  },
+  shellScaled: {
+    transform: "scale(0.9)",
+    transformOrigin: "top center",
   },
   hero: {
-    minHeight: 338,
+    minHeight: 300,
     display: "grid",
     gridTemplateColumns: "minmax(0, 1fr) minmax(420px, 680px)",
     alignItems: "center",
-    gap: 34,
-    padding: "34px 44px 34px 50px",
+    gap: 28,
+    padding: "28px 38px 28px 44px",
     borderRadius: 20,
     background:
       "radial-gradient(circle at 44% 44%, rgba(0,98,255,0.64), transparent 13%), radial-gradient(circle at 88% 59%, rgba(255,91,15,0.9), transparent 15%), linear-gradient(130deg, #020917 0%, #071426 48%, #161018 100%)",
@@ -479,13 +485,13 @@ const s = {
     height: 36,
     display: "flex",
     alignItems: "center",
-    marginBottom: 30,
+    marginBottom: 24,
     filter: "drop-shadow(0 8px 18px rgba(0,0,0,0.35))",
   },
   heroTitle: {
     margin: 0,
     color: "#ffffff",
-    fontSize: "clamp(54px, 5.8vw, 90px)",
+    fontSize: "clamp(48px, 5vw, 78px)",
     lineHeight: 0.92,
     letterSpacing: "-0.065em",
     fontWeight: 900,
@@ -503,7 +509,7 @@ const s = {
     display: "flex",
     gap: 28,
     flexWrap: "wrap",
-    marginTop: 28,
+    marginTop: 22,
   },
   heroButton: {
     height: 60,
@@ -545,7 +551,7 @@ const s = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 22,
+    marginBottom: 16,
   },
   liveTitle: {
     margin: 0,
@@ -623,7 +629,7 @@ const s = {
     alignItems: "center",
     gap: 18,
     flexWrap: "wrap",
-    margin: "10px 0",
+    margin: "8px 0",
     padding: "11px 24px",
     borderRadius: 14,
     background: "#ffffff",
@@ -648,16 +654,16 @@ const s = {
   twoCol: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(520px, 1fr))",
-    gap: 10,
-    marginBottom: 10,
+    gap: 8,
+    marginBottom: 8,
   },
   card: {
     background: "#ffffff",
     border: "1px solid #e4e7ed",
     borderRadius: 14,
     boxShadow: "0 10px 28px rgba(15,23,42,0.065)",
-    padding: "22px 30px 20px",
-    minHeight: 292,
+    padding: "18px 24px 16px",
+    minHeight: 272,
   },
   title: {
     display: "flex",
@@ -788,13 +794,13 @@ const s = {
   moveGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
-    gap: 25,
-    marginTop: 23,
+    gap: 16,
+    marginTop: 16,
   },
   move: {
-    minHeight: 200,
+    minHeight: 178,
     textAlign: "left",
-    padding: "30px 32px",
+    padding: "22px 24px",
     borderRadius: 10,
     background: "#ffffff",
     border: "2px solid #d9e0ed",
@@ -827,7 +833,7 @@ const s = {
   },
   moveBadge: {
     display: "inline-flex",
-    marginTop: 28,
+    marginTop: 22,
     padding: "7px 11px",
     borderRadius: 8,
     fontSize: 14,
@@ -898,7 +904,7 @@ const s = {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(105px, 1fr))",
     gap: 18,
-    marginTop: 26,
+    marginTop: 18,
   },
   approvalTile: {
     minHeight: 92,
@@ -933,7 +939,7 @@ const s = {
     fontWeight: 900,
   },
   workspaceCard: {
-    marginTop: 10,
+    marginTop: 8,
     minHeight: 0,
     padding: "19px 30px 25px",
   },
@@ -941,13 +947,13 @@ const s = {
     display: "flex",
     alignItems: "center",
     gap: 28,
-    marginBottom: 22,
+    marginBottom: 16,
     flexWrap: "wrap",
   },
   workspaceGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-    gap: 17,
+    gap: 12,
   },
   workspaceTile: {
     minHeight: 54,
