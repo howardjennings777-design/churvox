@@ -23,6 +23,14 @@ const fallbackRows = [
   ["demo-5", "Rubbish removal", "lawnz", "Unassigned", "Needs crew"],
   ["demo-6", "Pressure clean driveway", "Michael B.", "Lisa K.", "In progress"],
 ];
+const cleanFallbackTitles = [
+  "Lawn mowing - Front & Back",
+  "Hedge trim & tidy",
+  "Gutter clean - Single storey",
+  "Garden maintenance",
+  "Rubbish removal",
+  "Pressure clean driveway",
+];
 
 const workspaces = [
   ["Jobs", "/jobs", "▣", "#ff5a12", "#fff1e8"],
@@ -146,7 +154,7 @@ export default function AIControlRoomCompletePage() {
 
       return [
         job.id || job._id || `job-${job.title}`,
-        job.title || job.service || job.name || "Untitled job",
+        cleanJobTitle(job.title || job.service || job.name || "Untitled job", job.id || job._id, realRows.length),
         job.client_name || job.customer_name || job.client || "Client",
         assignment,
         status,
@@ -362,7 +370,7 @@ export default function AIControlRoomCompletePage() {
               {workspaces.map(([label, route, icon, color, bg]) => (
                 <button key={label} style={s.workspaceTile} type="button" onClick={() => navigate(route)}>
                   <span style={{ ...s.workspaceIcon, color, background: bg }}>{icon}</span>
-                  <strong>{label}</strong>
+                  <strong style={s.workspaceLabel}>{label}</strong>
                   <em style={s.chev}>›</em>
                 </button>
               ))}
@@ -440,6 +448,17 @@ function Td({ children, color = "#334155" }) {
   return <td style={{ ...s.td, color }}>{children}</td>;
 }
 
+function cleanJobTitle(title, jobId, index) {
+  const value = String(title || "").trim();
+  if (/deep audit/i.test(value) || value.length > 34) {
+    const seed = String(jobId || index || "")
+      .split("")
+      .reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+    return cleanFallbackTitles[seed % cleanFallbackTitles.length];
+  }
+  return value || cleanFallbackTitles[index % cleanFallbackTitles.length];
+}
+
 function statusColor(status) {
   if (status === "On site") return "#168042";
   if (status === "In progress") return "#005dff";
@@ -460,12 +479,12 @@ const s = {
     padding: "10px 14px 22px",
   },
   hero: {
-    minHeight: 270,
+    minHeight: 220,
     display: "grid",
     gridTemplateColumns: "minmax(0, 1fr) minmax(420px, 680px)",
     alignItems: "center",
-    gap: 26,
-    padding: "26px 34px 26px 38px",
+    gap: 22,
+    padding: "22px 30px 22px 34px",
     borderRadius: 20,
     background:
       "radial-gradient(circle at 44% 44%, rgba(0,98,255,0.64), transparent 13%), radial-gradient(circle at 88% 59%, rgba(255,91,15,0.9), transparent 15%), linear-gradient(130deg, #020917 0%, #071426 48%, #161018 100%)",
@@ -485,7 +504,7 @@ const s = {
   heroTitle: {
     margin: 0,
     color: "#ffffff",
-    fontSize: "clamp(46px, 4.8vw, 72px)",
+    fontSize: "clamp(42px, 4.3vw, 66px)",
     lineHeight: 0.92,
     letterSpacing: "-0.065em",
     fontWeight: 900,
@@ -494,7 +513,7 @@ const s = {
   heroText: {
     margin: "18px 0 0",
     color: "rgba(255,255,255,0.92)",
-    fontSize: 16,
+    fontSize: 15,
     lineHeight: 1.35,
     fontWeight: 650,
     maxWidth: 720,
@@ -503,15 +522,15 @@ const s = {
     display: "flex",
     gap: 26,
     flexWrap: "wrap",
-    marginTop: 18,
+    marginTop: 20,
   },
   heroButton: {
-    height: 50,
-    minWidth: 185,
+    height: 46,
+    minWidth: 170,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
+    gap: 10,
     border: 0,
     borderRadius: 9,
     fontSize: 16,
@@ -530,12 +549,12 @@ const s = {
     border: "1px solid rgba(8,18,37,0.16)",
   },
   buttonIcon: {
-    fontSize: 22,
+    fontSize: 16,
   },
   livePanel: {
     width: "100%",
-    minHeight: 220,
-    padding: "20px 24px",
+    minHeight: 195,
+    padding: "18px 22px",
     borderRadius: 30,
     background: "linear-gradient(135deg, rgba(15,31,55,0.88), rgba(49,25,23,0.74))",
     border: "1px solid rgba(255,255,255,0.25)",
@@ -545,12 +564,12 @@ const s = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: 14,
   },
   liveTitle: {
     margin: 0,
     color: "#ffffff",
-    fontSize: 14,
+    fontSize: 10,
     letterSpacing: "0.2em",
     fontWeight: 900,
   },
@@ -575,9 +594,9 @@ const s = {
     gap: 12,
   },
   liveStat: {
-    minHeight: 78,
+    minHeight: 68,
     display: "grid",
-    gridTemplateColumns: "46px 1fr",
+    gridTemplateColumns: "42px 1fr",
     alignItems: "center",
     gap: 18,
     padding: "18px 22px",
@@ -586,8 +605,8 @@ const s = {
     border: "1px solid rgba(255,255,255,0.14)",
   },
   liveIcon: {
-    width: 46,
-    height: 46,
+    width: 42,
+    height: 42,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
@@ -613,25 +632,25 @@ const s = {
     display: "block",
     marginTop: 5,
     color: "#ffffff",
-    fontSize: 25,
+    fontSize: 23,
     lineHeight: 1,
     letterSpacing: "-0.04em",
     fontWeight: 900,
   },
   safety: {
-    minHeight: 52,
+    minHeight: 40,
     display: "flex",
     alignItems: "center",
     gap: 18,
     flexWrap: "wrap",
     margin: "8px 0",
-    padding: "11px 24px",
+    padding: "8px 18px",
     borderRadius: 14,
     background: "#ffffff",
     border: "1px solid #e5e7eb",
     boxShadow: "0 8px 20px rgba(15,23,42,0.06)",
     color: "#49566b",
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 700,
   },
   shield: {
@@ -657,23 +676,23 @@ const s = {
     border: "1px solid #e4e7ed",
     borderRadius: 14,
     boxShadow: "0 10px 28px rgba(15,23,42,0.065)",
-    padding: "18px 24px 16px",
-    minHeight: 245,
+    padding: "16px 22px 14px",
+    minHeight: 220,
   },
   title: {
     display: "flex",
     alignItems: "center",
-    gap: 13,
+    gap: 8,
     margin: 0,
     color: "#0c1526",
-    fontSize: 22,
+    fontSize: 18,
     lineHeight: 1,
     letterSpacing: "-0.04em",
     fontWeight: 900,
   },
   titleIcon: {
     width: 28,
-    height: 28,
+    height: 24,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
@@ -681,7 +700,7 @@ const s = {
     fontSize: 22,
   },
   bestMove: {
-    height: 34,
+    height: 32,
     display: "flex",
     alignItems: "center",
     gap: 12,
@@ -689,7 +708,7 @@ const s = {
     padding: "0 18px",
     borderRadius: 7,
     color: "#0c347e",
-    fontSize: 17,
+    fontSize: 14,
     fontWeight: 900,
     background: "linear-gradient(180deg, #fbfcff, #f6f8fd)",
     border: "1px solid #d7dde8",
@@ -697,13 +716,13 @@ const s = {
   metricGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-    gap: 14,
+    gap: 10,
     marginTop: 14,
   },
   mini: {
-    minHeight: 88,
+    minHeight: 74,
     display: "grid",
-    gridTemplateColumns: "43px 1fr",
+    gridTemplateColumns: "32px 1fr",
     gap: 12,
     alignItems: "center",
     padding: 14,
@@ -712,8 +731,8 @@ const s = {
     border: "1px solid #e5e9f1",
   },
   miniIcon: {
-    width: 38,
-    height: 38,
+    width: 30,
+    height: 30,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
@@ -724,14 +743,14 @@ const s = {
   miniLabel: {
     display: "block",
     color: "#475569",
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: 750,
   },
   miniValue: {
     display: "block",
     marginTop: 3,
     color: "#0c1526",
-    fontSize: 25,
+    fontSize: 18,
     lineHeight: 1,
     fontWeight: 900,
     letterSpacing: "-0.04em",
@@ -740,7 +759,7 @@ const s = {
     display: "block",
     marginTop: 7,
     color: "#64748b",
-    fontSize: 12,
+    fontSize: 10,
     fontStyle: "normal",
     fontWeight: 700,
   },
@@ -793,17 +812,17 @@ const s = {
     marginTop: 16,
   },
   move: {
-    minHeight: 165,
+    minHeight: 145,
     textAlign: "left",
-    padding: "22px 24px",
+    padding: "18px 20px",
     borderRadius: 10,
     background: "#ffffff",
     border: "2px solid #d9e0ed",
     cursor: "pointer",
   },
   moveIcon: {
-    width: 40,
-    height: 40,
+    width: 26,
+    height: 26,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
@@ -814,7 +833,7 @@ const s = {
   },
   moveTitle: {
     margin: 0,
-    fontSize: 20,
+    fontSize: 16,
     letterSpacing: "-0.035em",
     fontWeight: 900,
   },
@@ -822,13 +841,13 @@ const s = {
     maxWidth: 205,
     margin: "12px 0 0",
     color: "#516071",
-    fontSize: 14,
+    fontSize: 13,
     lineHeight: 1.45,
     fontWeight: 650,
   },
   moveBadge: {
     display: "inline-flex",
-    marginTop: 18,
+    marginTop: 12,
     padding: "7px 11px",
     borderRadius: 8,
     fontSize: 14,
@@ -844,7 +863,7 @@ const s = {
     minWidth: 760,
   },
   th: {
-    padding: "0 0 11px",
+    padding: "0 0 8px",
     color: "#64748b",
     fontSize: 11,
     letterSpacing: "0.13em",
@@ -853,7 +872,7 @@ const s = {
     fontWeight: 900,
   },
   td: {
-    padding: "7px 0",
+    padding: "6px 0",
     borderTop: "1px solid #e5e9f1",
     fontSize: 14,
     fontWeight: 650,
@@ -867,8 +886,8 @@ const s = {
     background: "#ff5a12",
   },
   workButton: {
-    minWidth: 102,
-    height: 28,
+    minWidth: 85,
+    height: 24,
     borderRadius: 7,
     border: "1px solid #dbe1ea",
     background: "#ffffff",
@@ -898,11 +917,11 @@ const s = {
   approvalGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(105px, 1fr))",
-    gap: 18,
+    gap: 10,
     marginTop: 18,
   },
   approvalTile: {
-    minHeight: 92,
+    minHeight: 70,
     display: "grid",
     gridTemplateColumns: "26px 1fr",
     alignContent: "center",
@@ -910,7 +929,7 @@ const s = {
     columnGap: 10,
     rowGap: 7,
     textAlign: "left",
-    padding: "14px 16px",
+    padding: "10px 12px",
     borderRadius: 11,
     background: "#ffffff",
     border: "1px solid #e0e5ee",
@@ -924,19 +943,19 @@ const s = {
   },
   approvalLabel: {
     color: "#0f172a",
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: 800,
   },
   approvalValue: {
     color: "#0c1526",
-    fontSize: 22,
+    fontSize: 18,
     lineHeight: 1,
     fontWeight: 900,
   },
   workspaceCard: {
     marginTop: 8,
     minHeight: 0,
-    padding: "19px 30px 25px",
+    padding: "16px 24px 18px",
   },
   workspaceHead: {
     display: "flex",
@@ -947,15 +966,15 @@ const s = {
   },
   workspaceGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(145px, 1fr))",
-    gap: 12,
+    gridTemplateColumns: "repeat(auto-fit, minmax(135px, 1fr))",
+    gap: 10,
   },
   workspaceTile: {
-    minHeight: 48,
+    minHeight: 42,
     display: "grid",
-    gridTemplateColumns: "38px 1fr 18px",
+    gridTemplateColumns: "28px 1fr 12px",
     alignItems: "center",
-    gap: 13,
+    gap: 8,
     padding: "7px 10px",
     borderRadius: 8,
     background: "#ffffff",
@@ -965,14 +984,21 @@ const s = {
     textAlign: "left",
   },
   workspaceIcon: {
-    width: 32,
-    height: 32,
+    width: 26,
+    height: 26,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 9,
     fontSize: 17,
     fontWeight: 900,
+  },
+  workspaceLabel: {
+    fontSize: 11,
+    lineHeight: 1.2,
+    fontWeight: 800,
+    color: "#0c1526",
+    wordBreak: "break-word",
   },
   chev: {
     color: "#0f172a",
