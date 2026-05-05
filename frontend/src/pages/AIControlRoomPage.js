@@ -14,44 +14,44 @@ const ASK_PROMPTS = [
 ];
 
 const APPROVALS = [
-  { key: "all", label: "All approvals", desc: "Everything AI prepared" },
-  { key: "dispatch", label: "Dispatch", desc: "Assign crew and keep jobs moving" },
-  { key: "revenue", label: "Revenue", desc: "Pricing and draft invoices" },
-  { key: "follow_ups", label: "Follow-ups", desc: "Invoice and quote reminders" },
-  { key: "proof", label: "Proof", desc: "Proof packs before payment" },
-  { key: "receptionist", label: "Receptionist", desc: "New enquiries to triage" },
-  { key: "recurring", label: "Recurring", desc: "Repeat work due next" },
-  { key: "customer_updates", label: "Customer updates", desc: "Draft messages to approve" },
-  { key: "quote_builder", label: "Quote builder", desc: "Prepared quote drafts" },
-  { key: "client_memory", label: "Client memory", desc: "Notes and next actions" },
+  { key: "all", label: "All", desc: "All AI-prepared actions", icon: "⌘" },
+  { key: "dispatch", label: "Dispatch", desc: "Assign crew", icon: "▦" },
+  { key: "revenue", label: "Revenue", desc: "Pricing and invoices", icon: "$" },
+  { key: "follow_ups", label: "Follow-ups", desc: "Quotes and invoices", icon: "✉" },
+  { key: "proof", label: "Proof", desc: "Proof packs", icon: "◇" },
+  { key: "receptionist", label: "Receptionist", desc: "New enquiries", icon: "☏" },
+  { key: "recurring", label: "Recurring", desc: "Repeat work", icon: "↻" },
+  { key: "customer_updates", label: "Customer Updates", desc: "Client messages", icon: "▣" },
+  { key: "quote_builder", label: "Quote Builder", desc: "Quote drafts", icon: "□" },
+  { key: "client_memory", label: "Client Memory", desc: "Notes and history", icon: "◌" },
 ];
 
 const WORKSPACES = [
-  { key: "jobs", label: "Jobs", desc: "Create, edit, assign, price" },
-  { key: "clients", label: "Clients", desc: "Customers, properties, notes" },
-  { key: "quotes", label: "Quotes", desc: "Draft, follow up, convert" },
-  { key: "invoices", label: "Invoices", desc: "Drafts, reminders, payment chase" },
-  { key: "team", label: "Team", desc: "Workers, roles, workload" },
-  { key: "dispatch", label: "Dispatch", desc: "AI crew recommendations" },
-  { key: "proof_to_paid", label: "Proof-to-Paid", desc: "Proof, updates, payment flow" },
-  { key: "receptionist", label: "Receptionist", desc: "Enquiries into work drafts" },
-  { key: "recurring", label: "Recurring", desc: "Scheduled repeat work" },
-  { key: "customer_updates", label: "Customer Updates", desc: "Approval-first messages" },
-  { key: "quote_builder", label: "Quote Builder", desc: "Build quotes with AI" },
-  { key: "client_memory", label: "Client Memory", desc: "History and property notes" },
-  { key: "plans_billing", label: "Plans / Billing", desc: "Plan, limits, usage" },
-  { key: "account_centre", label: "Account Centre", desc: "Owner account health" },
-  { key: "settings", label: "Settings", desc: "Business setup" },
-  { key: "contact", label: "Contact Us", desc: "Support request draft" },
-  { key: "notifications", label: "Notifications", desc: "Owner alert controls" },
-  { key: "integrations", label: "Integrations", desc: "MYOB, SMS, payments" },
-  { key: "privacy", label: "Privacy", desc: "Policy and privacy notes" },
-  { key: "terms", label: "Terms", desc: "Terms and owner notes" },
-  { key: "account_removal", label: "Account Removal", desc: "Manual owner-only action" },
+  { key: "jobs", label: "Jobs", icon: "▣" },
+  { key: "clients", label: "Clients", icon: "◎" },
+  { key: "quotes", label: "Quotes", icon: "□" },
+  { key: "invoices", label: "Invoices", icon: "$" },
+  { key: "team", label: "Team", icon: "◉" },
+  { key: "dispatch", label: "Dispatch", icon: "▦" },
+  { key: "proof_to_paid", label: "Proof to Paid", icon: "◇" },
+  { key: "receptionist", label: "Receptionist", icon: "☏" },
+  { key: "recurring", label: "Recurring", icon: "↻" },
+  { key: "customer_updates", label: "Customer Updates", icon: "✉" },
+  { key: "quote_builder", label: "Quote Builder", icon: "✦" },
+  { key: "client_memory", label: "Client Memory", icon: "◌" },
+  { key: "plans_billing", label: "Plans & Billing", icon: "▤" },
+  { key: "account_centre", label: "Account Centre", icon: "●" },
+  { key: "settings", label: "Settings", icon: "⚙" },
+  { key: "contact", label: "Contact", icon: "☎" },
+  { key: "notifications", label: "Notifications", icon: "◍" },
+  { key: "integrations", label: "Integrations", icon: "✣" },
+  { key: "privacy", label: "Privacy", icon: "◇" },
+  { key: "terms", label: "Terms", icon: "▥" },
+  { key: "account_removal", label: "Account Removal", icon: "!" },
 ];
 
 const idOf = (x) => String(x?.id || x?._id || x?.uuid || "");
-const safeArray = (v) => Array.isArray(v) ? v : Array.isArray(v?.data) ? v.data : Array.isArray(v?.items) ? v.items : Array.isArray(v?.jobs) ? v.jobs : Array.isArray(v?.clients) ? v.clients : Array.isArray(v?.invoices) ? v.invoices : Array.isArray(v?.quotes) ? v.quotes : Array.isArray(v?.workers) ? v.workers : [];
+const safeArray = (v) => Array.isArray(v) ? v : Array.isArray(v?.data) ? v.data : Array.isArray(v?.items) ? v.items : Array.isArray(v?.actions) ? v.actions : Array.isArray(v?.jobs) ? v.jobs : Array.isArray(v?.clients) ? v.clients : Array.isArray(v?.invoices) ? v.invoices : Array.isArray(v?.quotes) ? v.quotes : Array.isArray(v?.workers) ? v.workers : [];
 const money = (v) => `$${Number(v || 0).toFixed(2)}`;
 const norm = (v) => String(v || "").toLowerCase();
 const titleOf = (x, fallback = "Item") => x?.title || x?.name || x?.business_name || x?.company_name || x?.invoice_number || x?.quote_number || x?.email || fallback;
@@ -86,7 +86,7 @@ export default function AIControlRoomPage() {
   useEffect(() => { loadAll(); }, [loadAll]);
 
   const moneyWaiting = useMemo(() => (data.invoices || []).filter(i => ["open", "sent", "overdue", "unpaid", "pending_payment"].includes(norm(i.status))).reduce((sum, i) => sum + Number(i.balance_due ?? i.balance ?? i.amount_due ?? i.amount ?? i.total ?? 0), 0), [data.invoices]);
-  const activeJobs = useMemo(() => (data.jobs || []).filter((j) => !["closed", "complete", "completed", "cancelled", "canceled"].includes(norm(j.status))).slice(0, 8), [data.jobs]);
+  const activeJobs = useMemo(() => (data.jobs || []).filter((j) => !["closed", "complete", "completed", "cancelled", "canceled"].includes(norm(j.status))).slice(0, 6), [data.jobs]);
   const counts = useMemo(() => ({ dispatch: actions.filter(a => norm(a.type).includes("dispatch")).length, revenue: actions.filter(a => ["revenue", "invoice", "pricing"].some(t => norm(a.type).includes(t))).length, follow_ups: actions.filter(a => norm(a.type).includes("follow")).length, proof: actions.filter(a => norm(a.type).includes("proof")).length, receptionist: actions.filter(a => norm(a.type).includes("reception")).length, recurring: actions.filter(a => norm(a.type).includes("recurring")).length, customer_updates: actions.filter(a => norm(a.type).includes("customer")).length, quote_builder: actions.filter(a => norm(a.type).includes("quote_builder")).length, client_memory: actions.filter(a => norm(a.type).includes("memory")).length }), [actions]);
   const best = todayPlan?.best_next_action || actions[0]?.title || "Review today’s dispatch plan";
 
@@ -94,40 +94,41 @@ export default function AIControlRoomPage() {
   const openJob = (job) => { setSelectedJob(job); setJobDraft({ title: job.title || job.name || "", status: job.status || "", worker_id: job.worker_id || job.assigned_worker_id || "", price: job.price || job.fixed_price || 0, notes: job.notes || "" }); openDrawer("job", "Edit job inside Command"); };
   const executeAction = async (payload) => { try { await post("/command-hub/actions/execute", payload); setNotice("Action prepared successfully."); await loadAll(); } catch (e) { setNotice(e?.message || "Action failed."); } };
   const askAi = async (prompt) => { const p = prompt || askText; try { const r = await post("/ai/operator/ask", { question: p, prompt: p }); setAskResponse(r?.data?.answer || r?.data?.response || r?.answer || "AI answered."); } catch { setAskResponse(actions[0]?.next || actions[0]?.summary || "Fallback: start with the highest priority action."); } };
+  const runAiScan = async () => { try { await post("/smart-hub/scan", {}); setNotice("AI scan complete. Control room refreshed."); await loadAll(); } catch { setNotice("AI scan could not run yet. Safe fallback is still active."); } };
   const saveJob = async () => { const id = idOf(selectedJob); if (!id) return; await patch(`/jobs/${id}`, jobDraft); setNotice("Job saved."); await loadAll(); };
 
   return <Layout><div className="cr-room-page">
     <section className="cr-room-hero">
-      <div>
+      <div className="cr-room-hero-copy">
         <ChurvoxLogo size="hero" />
-        <p className="cr-room-kicker">AI Operator</p>
         <h1>AI Control Room</h1>
-        <p>AI prepares the admin, dispatch, proof, invoices, follow-ups and customer work. Owner edits and approves inside drawers. Churvox executes safely.</p>
-        <div className="cr-room-row"><button onClick={() => post("/smart-hub/scan", {}).catch(() => null)}>Run AI scan</button><button onClick={() => openDrawer("ask_ai", "Ask AI operator")}>Ask AI</button><button onClick={() => openDrawer("approvals", "Review by category")}>Open approvals</button></div>
+        <p>AI prepares the admin, dispatch, follow-ups and approvals. You review, edit and approve from one place.</p>
+        <div className="cr-room-row"><button onClick={runAiScan}><span>▷</span> Run AI Plan</button><button className="cr-room-light" onClick={() => openDrawer("ask_ai", "Ask AI operator")}><span>✦</span> Ask AI Operator</button><button className="cr-room-light" onClick={() => openDrawer("approvals", "Review by category")}><span>☷</span> Open Queue</button></div>
       </div>
-      <aside className="cr-room-score"><h3>Live score</h3><p>Approvals: {actions.length}</p><p>Workers active: {(data.workers || []).length}</p><p>Money waiting: {money(moneyWaiting)}</p><p>Status: {backendFallback ? "backend AI fallback mode" : "live backend AI"}</p></aside>
+      <aside className="cr-room-score"><div className="cr-room-score-head"><h3>Live Control Centre</h3><span>● Live</span></div><div className="cr-room-score-grid"><ScoreTile icon="✓" label="Approvals" value={actions.length} /><ScoreTile icon="◎" label="Workers active" value={(data.workers || []).length} /><ScoreTile icon="$" label="Money waiting" value={money(moneyWaiting)} tone="orange" /><ScoreTile icon="✉" label="Follow-ups" value={counts.follow_ups} /></div></aside>
     </section>
 
-    <section className="cr-room-safety">No auto-send · No auto-charge · No MYOB write · No payroll changes · No deletion without owner approval.</section>
+    <section className="cr-room-safety">◇ No auto-send <span>·</span> No auto-charge <span>·</span> No MYOB write <span>·</span> No payroll changes <span>·</span> No deletion without owner approval.</section>
 
-    <section className="cr-room-zone cr-room-plan"><p className="cr-room-zone-label">Zone 1 · AI Today Plan</p><h2>{best}</h2><p>{todayPlan?.reason || actions[0]?.reason || "AI is using your live business data and safe local fallback rules."}</p><div className="cr-room-grid4"><Metric label="Need crew" value={counts.dispatch} /><Metric label="Revenue" value={`$${moneyWaiting.toFixed(0)}`} /><Metric label="Follow-ups" value={counts.follow_ups} /><Metric label="Proof" value={counts.proof} /></div><div className="cr-room-row"><button onClick={() => openDrawer("work_plan", "Prepared actions")}>Work plan</button><button onClick={() => openDrawer("ask_ai", "Explain plan")}>Explain plan</button></div></section>
+    <section className="cr-room-dashboard-grid">
+      <div className="cr-room-zone cr-room-mission"><div className="cr-room-section-title"><span className="cr-room-icon">◎</span><h2>Today’s AI Mission</h2></div><div className="cr-room-best"><span>✦</span> Best next move: {best}</div><div className="cr-room-grid4"><Metric icon="◉" label="Need Crew" value={counts.dispatch} helper="Jobs need staff" /><Metric icon="$" label="Revenue" value={`$${moneyWaiting.toFixed(0)}`} helper="Up next to collect" /><Metric icon="✉" label="Follow-ups" value={counts.follow_ups} helper="Awaiting replies" /><Metric icon="◇" label="Proof" value={counts.proof} helper="Ready for review" /></div><div className="cr-room-row"><button onClick={() => openDrawer("work_plan", "Prepared actions")}>Work the plan →</button><button className="cr-room-light" onClick={() => openDrawer("ask_ai", "Explain plan")}>Explain plan ⓘ</button></div></div>
+      <div className="cr-room-zone cr-room-next"><div className="cr-room-section-title cr-room-between"><div><span className="cr-room-icon">◌</span><h2>Next Best Moves</h2></div><button className="cr-room-link" onClick={() => openDrawer("approvals", "all")}>Open Queue →</button></div><div className="cr-room-grid3"><MoveCard title="Dispatch the day" value={`${counts.dispatch} jobs`} text="Assign crews and get jobs moving." onClick={() => openDrawer("dispatch")} accent="orange" /><MoveCard title="Move money" value={money(moneyWaiting)} text="Follow up payments and collect faster." onClick={() => openDrawer("invoices")} accent="blue" /><MoveCard title="Proof & updates" value={`${counts.proof} ready`} text="Review proof and send updates to clients." onClick={() => openDrawer("proof_to_paid")} accent="dark" /></div></div>
+      <div className="cr-room-zone cr-room-board"><div className="cr-room-section-title"><span className="cr-room-icon">☷</span><h2>Active Work Board</h2></div><div className="cr-room-table"><div className="cr-room-table-head"><span>Job</span><span>Client</span><span>Assignment</span><span>Status</span><span></span></div>{activeJobs.map(j => <div key={idOf(j)} className="cr-room-table-row"><span className="cr-room-job"><i></i>{titleOf(j, `Job #${idOf(j)}`)}</span><span>{j.client_name || "Client"}</span><span className={!j.worker_name && !j.assigned_worker_name ? "risk" : ""}>{j.worker_name || j.assigned_worker_name || "Unassigned"}</span><span className={`status ${statusClass(j.status)}`}>{j.status || "Needs crew"}</span><button onClick={() => openJob(j)}>Work here</button></div>)}</div><button className="cr-room-link" onClick={() => openDrawer("jobs", "View all jobs")}>View all jobs →</button></div>
+      <div className="cr-room-zone cr-room-approvals"><div className="cr-room-section-title cr-room-between"><div><span className="cr-room-icon">◇</span><h2>AI Approval Control</h2><p>Review, edit and approve AI-prepared actions.</p></div><em>{actions.length} ready</em></div><div className="cr-room-approval-grid">{APPROVALS.map(cat => <button key={cat.key} className={`cr-room-approval ${cat.key === "all" ? "active" : ""}`} onClick={() => openDrawer("approvals", cat.key)}><span>{cat.icon}</span><strong>{cat.label}</strong><b>{cat.key === "all" ? actions.length : counts[cat.key] || 0}</b></button>)}</div><button className="cr-room-link" onClick={() => openDrawer("approvals", "all")}>Open approvals queue →</button></div>
+    </section>
 
-    <section className="cr-room-zone"><p className="cr-room-zone-label">Zone 2 · Next Best Moves</p><h2>Choose the next business move</h2><div className="cr-room-grid3"><MoveCard title="Dispatch the day" value={counts.dispatch} text="Assign workers and unblock today’s jobs" onClick={() => openDrawer("dispatch")} /><MoveCard title="Move money" value={counts.revenue + counts.follow_ups} text="Draft invoices and follow-ups" onClick={() => openDrawer("invoices")} /><MoveCard title="Proof & updates" value={counts.proof + counts.customer_updates} text="Prepare proof packs and customer updates" onClick={() => openDrawer("proof_to_paid")} /></div></section>
-
-    <section className="cr-room-zone"><p className="cr-room-zone-label">Zone 3 · Active Work Board</p><h2>Jobs moving now</h2><div className="cr-room-list">{activeJobs.map(j => <div key={idOf(j)} className="cr-room-list-row"><div><strong>{titleOf(j, `Job #${idOf(j)}`)}</strong><p>{j.client_name || "Client"} · {j.status || "status"} · {j.worker_name || j.assigned_worker_name || "Unassigned"}</p></div><button onClick={() => openJob(j)}>Work here</button></div>)}</div></section>
-
-    <section className="cr-room-zone"><p className="cr-room-zone-label">Zone 4 · AI Approval Control</p><h2>Approve what AI prepared</h2><div className="cr-room-grid5">{APPROVALS.map(cat => <button key={cat.key} className="cr-room-approval" onClick={() => openDrawer("approvals", cat.key)}><strong>{cat.label}</strong><span>{cat.desc}</span><em>{cat.key === "all" ? actions.length : counts[cat.key] || 0} ready</em></button>)}</div></section>
-
-    <section className="cr-room-zone"><p className="cr-room-zone-label">Zone 5 · Owner Workspaces</p><h2>Run every area from one hub</h2><div className="cr-room-grid5">{WORKSPACES.map(ws => <button key={ws.key} className="cr-room-workspace" onClick={() => openDrawer(ws.key, ws.desc)}><strong>{ws.label}</strong><span>{ws.desc}</span><em>{workspaceCount(data, ws.key)}</em></button>)}</div></section>
+    <section className="cr-room-zone cr-room-workspaces"><div className="cr-room-section-title"><span className="cr-room-icon">▦</span><h2>Owner Workspaces</h2><p>Everything you need, in one command centre.</p></div><div className="cr-room-workspace-grid">{WORKSPACES.map(ws => <button key={ws.key} className="cr-room-workspace" onClick={() => openDrawer(ws.key, workspaceCount(data, ws.key))}><span>{ws.icon}</span><strong>{ws.label}</strong><i>›</i></button>)}</div></section>
 
     {notice ? <div className="cr-room-notice">{notice}</div> : null}
     {drawer ? <Drawer drawer={drawer} close={() => setDrawer(null)} data={data} actions={actions} counts={counts} askText={askText} setAskText={setAskText} askResponse={askResponse} askAi={askAi} selectedJob={selectedJob} setJobDraft={setJobDraft} jobDraft={jobDraft} saveJob={saveJob} executeAction={executeAction} openJob={openJob} /> : null}
   </div></Layout>;
 }
 
-function Metric({ label, value }) { return <div className="cr-room-metric"><span>{label}</span><strong>{value}</strong></div>; }
-function MoveCard({ title, value, text, onClick }) { return <button className="cr-room-card" onClick={onClick}><small>Next move</small><h3>{title}</h3><b>{value}</b><p>{text}</p></button>; }
+function ScoreTile({ icon, label, value, tone = "blue" }) { return <div className="cr-room-score-tile"><span className={tone}>{icon}</span><div><small>{label}</small><strong>{value}</strong></div></div>; }
+function Metric({ icon, label, value, helper }) { return <div className="cr-room-metric"><span className="cr-room-metric-icon">{icon}</span><small>{label}</small><strong>{value}</strong><em>{helper}</em></div>; }
+function MoveCard({ title, value, text, onClick, accent }) { return <button className={`cr-room-move ${accent}`} onClick={onClick}><span>{accent === "orange" ? "▣" : accent === "blue" ? "$" : "◇"}</span><h3>{title}</h3><p>{text}</p><em>{value}</em></button>; }
 function workspaceCount(data, key) { const items = collectionFor(data, key); if (items.length) return `${items.length} loaded`; if (["plans_billing", "account_centre", "settings", "contact", "notifications", "integrations", "privacy", "terms", "account_removal"].includes(key)) return "ready"; return "0 loaded"; }
+function statusClass(v) { const s = norm(v); if (s.includes("progress")) return "blue"; if (s.includes("site") || s.includes("complete")) return "green"; if (s.includes("crew") || s.includes("assigned")) return "orange"; return "orange"; }
 
 function Drawer({ drawer, close, data, actions, counts, askText, setAskText, askResponse, askAi, selectedJob, jobDraft, setJobDraft, saveJob, executeAction, openJob }) {
   const filteredActions = drawer.kind === "approvals" && drawer.subtitle && drawer.subtitle !== "all" ? actions.filter(a => String(a.type || "").includes(drawer.subtitle) || (drawer.subtitle === "revenue" && ["invoice", "pricing"].some(t => String(a.type || "").includes(t)))) : actions;
