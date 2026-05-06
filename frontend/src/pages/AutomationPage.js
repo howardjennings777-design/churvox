@@ -190,7 +190,7 @@ function AutomationPage() {
 
         <PremiumAIBox
           title="AI Automation Assistant"
-          subtitle="Purpose: prepares practical rule ideas from real workflow data with trigger, action, and safe approval flow"
+          subtitle="AI checked live data and prepares practical rule ideas from real workflow data with trigger, action, and safe approval flow"
           chip="Approval-first"
           notice="AI never makes payroll, legal, tax or compliance decisions. Customer messages are drafts you approve before they’re sent."
           suggestions={aiSuggestions}

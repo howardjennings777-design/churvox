@@ -91,11 +91,11 @@ export default function SettingsPage() {
   };
 
   return (
-    <Layout smartHubMode>
-      <PremiumPage className="bg-[#f6f3ea]">
-        <header className="mb-6 rounded-3xl border border-[#d8e2db] bg-[#2a3430] px-4 py-3 shadow-[0_16px_40px_rgba(15,23,42,0.14)] sm:px-6">
+    <Layout>
+      <PremiumPage className="">
+        <header className="mb-6 rounded-3xl border border-[#d8e2db] bg-white px-4 py-3 shadow-[0_16px_40px_rgba(15,23,42,0.14)] sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-4 text-white">
+            <div className="flex items-center gap-4 text-slate-900">
               <ChurvoxLogo size="sm" />
               <div className="h-6 w-px bg-white/20" />
               <div>
@@ -104,22 +104,22 @@ export default function SettingsPage() {
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="rounded-full border border-white/15 bg-white/10 p-1.5 text-white">
+              <div className="rounded-full border border-white/15 bg-white/10 p-1.5 text-slate-900">
                 <NotificationsBell />
               </div>
-              <Link to="/dashboard" className="inline-flex items-center gap-1 rounded-full border border-[#90a597] bg-[#5a7568] px-3 py-2 text-xs font-semibold text-white hover:bg-[#4f695d]">
+              <Link to="/dashboard" className="inline-flex items-center gap-1 rounded-full border border-[#90a597] bg-[#5a7568] px-3 py-2 text-xs font-semibold text-slate-900 hover:bg-[#4f695d]">
                 <Sparkles className="h-3.5 w-3.5" /> Ask AI
               </Link>
-              <button className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20">
+              <button className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-900 hover:bg-white/20">
                 <UserCircle2 className="h-3.5 w-3.5" /> {(user?.name || "Profile").split(" ")[0]}
               </button>
-              <button onClick={handleLogout} className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20">
+              <button onClick={handleLogout} className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-900 hover:bg-white/20">
                 <LogOut className="h-3.5 w-3.5" /> Logout
               </button>
             </div>
           </div>
         </header>
-        <section className="mb-6 rounded-3xl border border-[#46564f] bg-gradient-to-br from-[#2a3430] via-[#34423b] to-[#1f2824] p-5 text-white shadow-[0_18px_38px_rgba(15,23,42,0.2)] sm:p-7">
+        <section className="mb-6 rounded-3xl border border-[#46564f] bg-gradient-to-br from-[#2a3430] via-[#34423b] to-[#1f2824] p-5 text-slate-900 shadow-[0_18px_38px_rgba(15,23,42,0.2)] sm:p-7">
           <p className="text-xs uppercase tracking-[0.2em] text-[#aac0b3]">AI Command Centre</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">Settings</h1>
           <p className="mt-2 max-w-3xl text-sm text-[#d3ddd7]">Manage your business profile, tax setup, integrations and account controls.</p>

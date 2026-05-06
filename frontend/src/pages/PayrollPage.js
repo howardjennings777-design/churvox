@@ -282,7 +282,7 @@ export default function PayrollPage() {
 
         <PremiumAIBox
           title="AI Payroll Summary"
-          subtitle="Purpose: checks approved vs unapproved hours and pay-run readiness; never changes payroll automatically"
+          subtitle="AI checked live data and checks approved vs unapproved hours and pay-run readiness; never changes payroll automatically"
           chip="Read-only summary"
           notice="AI never approves timesheets, files tax, or pays workers. Payroll runs are explicitly created, locked and exported by you."
           suggestions={[

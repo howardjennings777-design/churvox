@@ -143,7 +143,7 @@ export default function QuotesPage() {
 
         <PremiumAIBox
           title="AI Quote Assistant"
-          subtitle="Purpose: checks draft, sent, and accepted quotes then prepares the best conversion or follow-up action"
+          subtitle="AI checked live data and checks draft, sent, and accepted quotes then prepares the best conversion or follow-up action"
           chip="Approval-first"
           suggestions={aiSuggestions}
         >
