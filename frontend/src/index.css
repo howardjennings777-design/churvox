@@ -156,6 +156,42 @@
 .cx-status-badge--amber { color: #b45309; background: #fef3c7; border-color: #fde68a; }
 .cx-status-badge--red { color: #b91c1c; background: #fee2e2; border-color: #fecaca; }
 
+/* Launch readability guard for dark premium hero pages */
+.proof-to-paid-hero,
+.proof-to-paid-hero.px-hero {
+  background:
+    radial-gradient(circle at 14% 18%, rgba(255, 107, 21, 0.25), transparent 32%),
+    linear-gradient(135deg, #070b14 0%, #111827 58%, #0b1220 100%) !important;
+  border-color: rgba(148, 163, 184, 0.28) !important;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24) !important;
+}
+
+.proof-to-paid-hero .px-hero__title,
+.proof-to-paid-hero h1 {
+  color: #ffffff !important;
+  opacity: 1 !important;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.42) !important;
+}
+
+.proof-to-paid-hero .px-hero__sub,
+.proof-to-paid-hero p {
+  color: #dbeafe !important;
+  opacity: 1 !important;
+}
+
+.proof-to-paid-hero .px-hero__eyebrow {
+  color: #ff6b15 !important;
+  background: rgba(255, 255, 255, 0.10) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+.proof-to-paid-hero .px-hero__actions,
+.proof-to-paid-hero button,
+.proof-to-paid-hero a {
+  position: relative;
+  z-index: 2;
+}
+
 @layer utilities {
   .animate-in { animation: animateIn 0.25s ease-out; }
   @keyframes animateIn {
