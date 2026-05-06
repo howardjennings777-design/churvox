@@ -313,6 +313,7 @@ export default function ProofToPaidPage() {
     <Layout>
       <PremiumPage>
         <PremiumHero
+          className="proof-to-paid-hero"
           icon={<FileCheck2 className="h-7 w-7" />}
           eyebrow={<><ShieldCheck className="h-3 w-3" /> Proof-to-Paid</>}
           title="Proof-to-Paid"
