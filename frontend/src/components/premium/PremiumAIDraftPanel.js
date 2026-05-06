@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Sparkles, ShieldCheck, Copy, Trash2, RefreshCw } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import useAiDraft from '@/hooks/useAiDraft';
 import PremiumButton from './PremiumButton';
 
@@ -15,6 +15,7 @@ export default function PremiumAIDraftPanel({
   subtitle,
   surface = 'smart_hub',
   defaultPrompt = 'Give a concise response unless I ask for more detail.',
+  showPrompt = false,
   context = {},
   quickActions = [],
   loadingLabel = 'AI is preparing drafts…',
@@ -89,11 +90,11 @@ export default function PremiumAIDraftPanel({
         <div className="flex-1 min-w-0">
           <h3 className="text-[16px] font-semibold text-[#0d1b34]">{title}</h3>
           {subtitle ? <p className="text-[12.5px] text-[#5b6c87] mt-0.5">{subtitle}</p> : null}
-          <div className="mt-2 text-[11.5px] text-[#5b6c87]">Auto-check: <span className="font-semibold text-[#1a2c4d]">ON</span> · Last prepared: <span className="font-semibold text-[#1a2c4d]">{lastPreparedAt ? 'Just now' : '—'}</span> · Drafts ready: <span className="font-semibold text-[#1a2c4d]">{draftsReady}</span></div>
+          <div className="mt-2 text-[11.5px] text-[#5b6c87]">AI checked: <span className="font-semibold text-[#1a2c4d]">ON</span> · Last prepared: <span className="font-semibold text-[#1a2c4d]">{lastPreparedAt ? 'Just now' : '—'}</span> · AI prepared: <span className="font-semibold text-[#1a2c4d]">{draftsReady}</span></div>
         </div>
       </div>
 
-      <textarea className="px-input min-h-[88px]" value={prompt} onChange={(e) => setPrompt(e.target.value)} />
+      {showPrompt ? <textarea className="px-input min-h-[88px]" value={prompt} onChange={(e) => setPrompt(e.target.value)} /> : null}
       <div className="mt-2 flex flex-wrap gap-2">
         {quickActions.map((q) => (
           <PremiumButton key={q.label} size="sm" variant={activeLabel === q.label ? 'primary' : 'secondary'} onClick={() => setActiveLabel(q.label)}>{q.label}</PremiumButton>
@@ -102,7 +103,7 @@ export default function PremiumAIDraftPanel({
       <div className="mt-3 flex flex-wrap gap-2">
         <PremiumButton size="sm" variant="secondary" iconLeft={<RefreshCw className="h-4 w-4" />} disabled={loading} onClick={() => prepareDrafts()}>{loading ? 'Refreshing…' : 'Refresh drafts'}</PremiumButton>
       </div>
-      {!llmAvailable ? <p className="mt-2 text-[11.5px] text-[#b45309]">Fallback draft is active because live AI is unavailable.</p> : null}
+      {!llmAvailable ? <p className="mt-2 text-[11.5px] text-[#b45309]">AI checked local fallback because live AI is unavailable.</p> : null}
       {error ? <p className="mt-2 text-[12px] text-rose-700">{error}</p> : null}
       {loading ? <p className="mt-3 text-[13px] text-[#5b6c87]">{loadingLabel}</p> : null}
       {!loading && cleanedDraft ? (
@@ -112,7 +113,7 @@ export default function PremiumAIDraftPanel({
       ) : null}
       {!loading && !cleanedDraft && !error ? <p className="mt-3 text-[13px] text-[#5b6c87]">{emptyLabel}</p> : null}
       {cleanedDraft ? <div className="mt-2 flex flex-wrap gap-2"><PremiumButton size="sm" variant="secondary" iconLeft={<Copy className="h-4 w-4" />} onClick={() => navigator.clipboard?.writeText(cleanedDraft)}>Copy draft</PremiumButton><PremiumButton size="sm" variant="ghost" iconLeft={<Trash2 className="h-4 w-4" />} onClick={() => setDraft('')}>Clear</PremiumButton></div> : null}
-      <p className="text-[11.5px] text-[#5b6c87] mt-3 inline-flex items-center gap-1"><ShieldCheck className="h-3 w-3" />Approval-first: review before sending. AI never auto-sends and never provides legal, tax, or payroll decisions.</p>
+      <p className="text-[11.5px] text-[#5b6c87] mt-3 inline-flex items-center gap-1"><ShieldCheck className="h-3 w-3" />AI prepared this draft for approval. It never auto-charges, edits payroll, changes pricing, or syncs MYOB without approval.</p>
     </div>
   );
 }
