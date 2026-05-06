@@ -13,7 +13,7 @@ async function compressImage(file, { maxWidth = 1600, quality = 0.78 } = {}) { c
 
 export default function WorkerJobDetailPage() {
   const { id } = useParams();
-  const { get, patch } = useApi();
+  const { get, post, patch } = useApi();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -36,9 +36,20 @@ export default function WorkerJobDetailPage() {
 
   useEffect(() => { loadJob(); }, [loadJob]);
 
+  const getGeo = () => new Promise((resolve) => {
+    if (!navigator?.geolocation) return resolve(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy }),
+      () => resolve(null),
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 120000 },
+    );
+  });
+
   const handleStatus = async (status) => {
     setSaving(true);
-    const res = await patch(`/jobs/${id}`, { status });
+    const geo = ["in_progress", "completed"].includes(status) ? await getGeo() : null;
+    if (!geo && ["in_progress", "completed"].includes(status)) toast.warning("Location unavailable. Status was still saved.");
+    const res = await patch(`/jobs/${id}`, { status, worker_geo: geo });
     if (res?.success) { toast.success(`Job ${status.replace(/_/g, " ")}`); await loadJob(); }
     else toast.error(safeText(res?.error, "Failed to update"));
     setSaving(false);
@@ -46,7 +57,7 @@ export default function WorkerJobDetailPage() {
 
   const handleAcknowledge = async () => {
     setSaving(true);
-    const res = await get(`/jobs/${id}/acknowledge`, { method: "POST" });
+    const res = await post(`/jobs/${id}/acknowledge`, {});
     if (res?.success) { toast.success("Job acknowledged"); await loadJob(); }
     else {
       const patchRes = await patch(`/jobs/${id}`, { status: "acknowledged" });
