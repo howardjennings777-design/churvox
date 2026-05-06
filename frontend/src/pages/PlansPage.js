@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
 import { detectCountryHint } from "../lib/country";
-import { CheckCircle2, Sparkles, ShieldCheck, CreditCard, Zap } from "lucide-react";
+import { CheckCircle2, Sparkles, ShieldCheck, CreditCard, Zap, UsersRound, PlusCircle } from "lucide-react";
 import { ChurvoxLogo } from "../components/ChurvoxLogo";
 import { PremiumButton, PremiumBadge } from "../components/premium";
 
@@ -18,7 +18,7 @@ const fallbackPlans = [
     limits: ["Up to 40 clients", "Up to 10 users", "Advanced workflow tools", "Priority-ready setup"] },
   { key: "enterprise", name: "Enterprise", price: "$240", period: "/month",
     blurb: "For larger teams with heavier usage.", badge: "",
-    limits: ["Includes 50 users", "Extra 50 users = $100", "MYOB-ready billing flow", "Best for larger operations"] },
+    limits: ["Includes 50 users", "Buy extra 50-user blocks", "$100 per extra 50 users", "MYOB included by default"] },
 ];
 
 export default function PlansPage() {
@@ -27,6 +27,7 @@ export default function PlansPage() {
   const [billing, setBilling] = useState(null);
   const [currentPlan, setCurrentPlan] = useState("none");
   const [busyPlan, setBusyPlan] = useState("");
+  const [busyAddon, setBusyAddon] = useState(false);
   const [loading, setLoading] = useState(true);
   const [checkoutNotice, setCheckoutNotice] = useState(null);
   const [currencyInfo, setCurrencyInfo] = useState(null);
@@ -61,21 +62,27 @@ export default function PlansPage() {
       const params = new URLSearchParams(window.location.search);
       const checkout = params.get("checkout");
       const plan = (params.get("plan") || "").toLowerCase();
+      const addon = (params.get("addon") || "").toLowerCase();
       const sessionId = params.get("session_id") || "";
       if (checkout === "success") {
         try {
-          if (plan && sessionId) {
+          if (plan && sessionId && !addon) {
             await api.post("/billing/confirm-checkout", { session_id: sessionId });
             window.dispatchEvent(new Event("churvox-auth-refresh"));
             setCurrentPlan(plan);
           }
-          setCheckoutNotice({ type: "success", title: "Plan updated", text: `Your ${plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : ""} plan is now active.` });
+          if (addon === "extra_user_block_50") {
+            window.dispatchEvent(new Event("churvox-auth-refresh"));
+            setCheckoutNotice({ type: "success", title: "50-user block added", text: "Your extra Enterprise 50-user block checkout completed. Refresh Team if the new capacity is not visible yet." });
+          } else {
+            setCheckoutNotice({ type: "success", title: "Plan updated", text: `Your ${plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : ""} plan is now active.` });
+          }
         } catch (err) {
           console.error("Failed to confirm checkout:", err);
           setCheckoutNotice({ type: "warning", title: "Checkout completed, but plan refresh failed", text: "Refresh the page once. If it still shows the old plan, try the upgrade again once." });
         }
       } else if (checkout === "cancelled") {
-        setCheckoutNotice({ type: "warning", title: "Checkout cancelled", text: "No changes were made to your plan." });
+        setCheckoutNotice({ type: "warning", title: "Checkout cancelled", text: "No changes were made to your plan or user blocks." });
       }
       if (checkout) window.history.replaceState({}, document.title, window.location.pathname);
     };
@@ -121,6 +128,8 @@ export default function PlansPage() {
   const isActiveTrial = billing?.trial_active === true;
   const isPaid = billing?.has_paid_subscription === true;
   const isNewUser = currentPlan === "none" || !currentPlan;
+  const isEnterprise = currentPlan === "enterprise";
+  const canBuyExtraUserBlock = isEnterprise && !isTrialExpired && (isPaid || isActiveTrial);
 
   const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
 
@@ -165,6 +174,38 @@ export default function PlansPage() {
     } catch (err) {
       toast.error(err?.response?.data?.detail || err?.data?.detail || err?.message || "Failed to start checkout");
     } finally { setBusyPlan(""); }
+  };
+
+  const handleBuyExtraUserBlock = async () => {
+    if (busyAddon) return;
+    if (!isEnterprise) {
+      toast.error("Extra 50-user blocks are only available on Enterprise.");
+      return;
+    }
+    if (isTrialExpired) {
+      toast.error("Reactivate Enterprise before buying extra user blocks.");
+      return;
+    }
+
+    try {
+      setBusyAddon(true);
+      const res = await api.post("/stripe/create-checkout-session", {
+        plan_type: "enterprise",
+        addon_type: "extra_user_block_50",
+        extra_user_blocks: 1,
+        quantity: 1,
+        country: currencyInfo?.country || detectCountryHint() || "",
+      });
+      if (res?.success === false) throw new Error(res.error || "Failed to start checkout");
+      const data = getPayload(res) || {};
+      const url = data?.checkout_url || data?.url;
+      if (!url) throw new Error("No checkout URL returned by server for the extra 50-user block");
+      window.location.assign(url);
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || err?.data?.detail || err?.message || "Could not open extra 50-user block checkout yet.");
+    } finally {
+      setBusyAddon(false);
+    }
   };
 
   if (loading) {
@@ -286,7 +327,7 @@ export default function PlansPage() {
                   ))}
                 </ul>
 
-                <div className="mt-7">
+                <div className="mt-7 space-y-2">
                   <PremiumButton
                     size="lg"
                     className="w-full"
@@ -298,10 +339,57 @@ export default function PlansPage() {
                   >
                     {btnState.label}
                   </PremiumButton>
+
+                  {plan.key === "enterprise" && isCurrent && !isTrialExpired && (
+                    <button
+                      type="button"
+                      onClick={handleBuyExtraUserBlock}
+                      disabled={!canBuyExtraUserBlock || busyAddon}
+                      className="w-full rounded-xl border border-[#cbd5e1] bg-white px-4 py-2.5 text-sm font-bold text-[#0f172a] shadow-sm hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-60"
+                      data-testid="buy-extra-user-block-button"
+                    >
+                      {busyAddon ? "Opening block checkout…" : "Buy extra 50-user block — $100"}
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })}
+        </div>
+
+        <div className="mx-auto mt-8 max-w-4xl rounded-3xl border border-[#d8e3f3] bg-white p-5 shadow-[0_10px_30px_rgba(13,27,52,0.08)]" data-testid="enterprise-user-block-panel">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eff6ff] text-[#1d4ed8]">
+                <UsersRound className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-heading text-xl font-bold text-[#0d1b34]">Enterprise extra 50-user block</h2>
+                  <PremiumBadge tone="soft">$100 / month</PremiumBadge>
+                </div>
+                <p className="mt-1 text-[13px] text-[#5b6c87]">
+                  Enterprise includes 50 users. Add another 50 users whenever the team grows.
+                </p>
+                {!isEnterprise && (
+                  <p className="mt-2 text-[12px] font-semibold text-[#b45309]">Upgrade to Enterprise first to buy extra user blocks.</p>
+                )}
+              </div>
+            </div>
+
+            <PremiumButton
+              size="lg"
+              variant={canBuyExtraUserBlock ? "primary" : "secondary"}
+              onClick={canBuyExtraUserBlock ? handleBuyExtraUserBlock : () => handleSelectPlan("enterprise")}
+              disabled={busyAddon || busyPlan === "enterprise"}
+              dataTestId="enterprise-extra-user-block-cta"
+              iconLeft={<PlusCircle className="h-4 w-4" />}
+            >
+              {canBuyExtraUserBlock
+                ? (busyAddon ? "Opening checkout…" : "Buy 50-user block")
+                : (busyPlan === "enterprise" ? "Opening Enterprise…" : "Choose Enterprise")}
+            </PremiumButton>
+          </div>
         </div>
 
         <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-3 max-w-4xl mx-auto">
