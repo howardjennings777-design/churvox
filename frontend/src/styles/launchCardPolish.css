@@ -257,6 +257,39 @@
   font-size: 12px !important;
 }
 
+/* Make the old AI Control Room SMS tile impossible to miss.
+   In the old dashboard, Customer Updates is the 10th Owner Workspaces tile and opens /sms. */
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(10),
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(10) {
+  position: relative !important;
+  border: 2px solid #ff5a12 !important;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffffff 54%, #eff6ff 100%) !important;
+  box-shadow: 0 14px 34px rgba(255, 90, 18, 0.20) !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(10)::before,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(10)::before {
+  content: "BUY SMS CREDITS";
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  border-radius: 999px;
+  background: #ff5a12;
+  color: #ffffff;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  box-shadow: 0 8px 18px rgba(255, 90, 18, 0.26);
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(10) strong::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(10) strong::after {
+  content: " / Buy Credits";
+  color: #ff5a12;
+  font-weight: 900;
+}
+
 @media (max-width: 768px) {
   [data-testid="team-page"] {
     padding-left: 12px !important;
