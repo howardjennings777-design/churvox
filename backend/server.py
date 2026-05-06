@@ -8424,6 +8424,27 @@ def _serialize_run(r: dict) -> dict:
     }
 
 
+
+
+AUTOMATION_TRIGGER_ALIASES = {"job.completed": "job_completed", "job.created": "job_created", "quote.sent": "quote_sent", "invoice.overdue": "invoice_overdue"}
+AUTOMATION_ACTION_ALIASES = {"notification.create": "create_notification", "timeline.create": "create_internal_activity_log", "invoice.create_draft": "create_invoice_stub", "email.send": "send_email", "sms.send": "send_sms"}
+
+def _normalize_automation_trigger(trigger: str) -> str:
+    t = str(trigger or "").strip()
+    return AUTOMATION_TRIGGER_ALIASES.get(t, t.replace('.', '_'))
+
+def _normalize_automation_actions(actions):
+    out = []
+    for a in list(actions or []):
+        if isinstance(a, str):
+            out.append({"type": AUTOMATION_ACTION_ALIASES.get(a, a.replace('.', '_'))})
+            continue
+        if isinstance(a, dict):
+            x = dict(a)
+            at = str(x.get("type") or x.get("action") or "").strip()
+            x["type"] = AUTOMATION_ACTION_ALIASES.get(at, at.replace('.', '_'))
+            out.append(x)
+    return out
 @api_router.get("/automation/health")
 async def automation_health():
     return {"ok": True, "engine": "v1", "triggers": len(auto.TRIGGERS), "actions": len(auto.ACTIONS)}
@@ -8458,7 +8479,7 @@ async def create_automation_rule(payload: dict, current_user: dict = Depends(get
     _require_auto_admin(current_user)
     bid = _business_scope(current_user)
     now = datetime.now(timezone.utc)
-    trigger = str((payload or {}).get("trigger") or "").strip()
+    trigger = _normalize_automation_trigger((payload or {}).get("trigger"))
     if trigger not in auto.TRIGGERS:
         raise HTTPException(status_code=400, detail=f"Unknown trigger: {trigger}")
     doc = {
@@ -8469,7 +8490,7 @@ async def create_automation_rule(payload: dict, current_user: dict = Depends(get
         "enabled": bool((payload or {}).get("enabled", True)),
         "condition_mode": (payload or {}).get("condition_mode") or "all",
         "conditions": (payload or {}).get("conditions") or [],
-        "actions": (payload or {}).get("actions") or [],
+        "actions": _normalize_automation_actions((payload or {}).get("actions") or []),
         "created_at": now,
         "updated_at": now,
         "created_by_user_id": _me_id(current_user),
@@ -8500,6 +8521,10 @@ async def update_automation_rule(rule_id: str, payload: dict, current_user: dict
     for k in ("name", "description", "trigger", "enabled", "condition_mode", "conditions", "actions"):
         if k in (payload or {}):
             update[k] = payload[k]
+    if update.get("trigger"):
+        update["trigger"] = _normalize_automation_trigger(update.get("trigger"))
+    if "actions" in update:
+        update["actions"] = _normalize_automation_actions(update.get("actions") or [])
     if update.get("trigger") and update["trigger"] not in auto.TRIGGERS:
         raise HTTPException(400, f"Unknown trigger: {update['trigger']}")
     r = await db.automation_rules.find_one_and_update(
@@ -8577,7 +8602,7 @@ async def list_automation_runs(
 async def automation_emit(payload: dict, current_user: dict = Depends(get_current_user)):
     _require_auto_admin(current_user)
     bid = _business_scope(current_user)
-    trigger = str((payload or {}).get("trigger") or "").strip()
+    trigger = _normalize_automation_trigger((payload or {}).get("trigger"))
     evt = dict((payload or {}).get("payload") or {})
     evt.setdefault("business_id", bid)
     evt.setdefault("actor", {"id": _me_id(current_user), "role": current_user.get("role"), "email": current_user.get("email")})
