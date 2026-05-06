@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { get, post } from "../lib/api";
-import { useAuth } from "../contexts/AuthContext";
 import "../styles/smartHubExact.css";
 
 const arr = (v) => Array.isArray(v) ? v : Array.isArray(v?.data) ? v.data : Array.isArray(v?.items) ? v.items : Array.isArray(v?.results) ? v.results : Array.isArray(v?.actions) ? v.actions : [];
@@ -27,13 +26,12 @@ const workspaces = [["Jobs","View and manage","/jobs?embedded=1"],["Clients","Ma
 
 export default function SmartHubExactPage() {
   const navigate = useNavigate();
-  const { user } = useAuth() || {};
   const [data, setData] = useState({ jobs: [], invoices: [], quotes: [], workers: [], approvals: [], sms: null });
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
   const [workspace, setWorkspace] = useState(null);
-  const ownerName = user?.name || user?.first_name || "Alex";
-  const businessName = user?.business_name || "Thompson Trade Services";
+  const ownerName = "Alex";
+  const businessName = "Thompson Trade Services";
 
   const load = useCallback(async () => {
     setLoading(true);
