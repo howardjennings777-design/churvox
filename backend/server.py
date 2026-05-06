@@ -1726,6 +1726,26 @@ def _owner_roles_only(role: str):
 
 
 AI_CUSTOMER_UPDATE_TYPES = {"job_scheduled", "worker_on_way", "job_started", "job_paused", "job_resumed", "job_completed", "proof_ready", "invoice_ready"}
+AI_AUTO_SEND_DEFAULTS = {
+    "ai_auto_send_enabled": False,
+    "job_reminder_auto_send": False,
+    "on_the_way_auto_send": False,
+    "job_completed_update_auto_send": False,
+    "quote_followup_auto_send": False,
+    "invoice_reminder_auto_send": False,
+    "booking_confirmation_auto_send": False,
+    "internal_team_notification_auto_send": False,
+}
+AI_MESSAGE_TYPE_TO_TOGGLE = {
+    "job_reminder": "job_reminder_auto_send",
+    "on_the_way": "on_the_way_auto_send",
+    "job_completed_update": "job_completed_update_auto_send",
+    "quote_followup": "quote_followup_auto_send",
+    "invoice_reminder": "invoice_reminder_auto_send",
+    "booking_confirmation": "booking_confirmation_auto_send",
+    "internal_team_notification": "internal_team_notification_auto_send",
+}
+AI_BLOCKED_MESSAGE_TYPES = {"legal_advice", "tax_advice", "payroll_decision", "myob_write", "payment_charge", "price_change", "delete_record", "cancellation_notice"}
 
 
 async def _prepare_customer_update_for_job(job: dict, business_id: str, event_type: str, preferred_channel: str = "copy"):
@@ -2757,6 +2777,73 @@ async def get_customer_updates(job_id: str = Query(default=""), current_user: di
     return {"success": True, "updates": rows}
 
 
+async def _get_ai_auto_send_settings_for_business(business_id: str) -> dict:
+    doc = await db.ai_auto_send_settings.find_one({"business_id": business_id}) if hasattr(db, "ai_auto_send_settings") else None
+    return {**AI_AUTO_SEND_DEFAULTS, **(doc or {})}
+
+
+def _ai_message_safety_reason(message: dict, settings: dict) -> str | None:
+    if not settings.get("ai_auto_send_enabled"):
+        return "business_auto_send_disabled"
+    mt = str(message.get("message_type") or "")
+    if mt in AI_BLOCKED_MESSAGE_TYPES:
+        return "message_type_blocked"
+    toggle = AI_MESSAGE_TYPE_TO_TOGGLE.get(mt)
+    if not toggle or not settings.get(toggle):
+        return "message_type_disabled"
+    if not str(message.get("message") or "").strip():
+        return "message_empty"
+    if not str(message.get("source_id") or "").strip():
+        return "missing_source_data"
+    if not str(message.get("recipient_phone") or "").strip() and not str(message.get("recipient_email") or "").strip():
+        return "missing_customer_contact"
+    if not str(message.get("channel") or "").strip() in {"sms", "email", "internal"}:
+        return "invalid_channel"
+    return None
+
+
+@api_router.get("/api/ai-auto-send/settings")
+async def get_ai_auto_send_settings(current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str(current_user.get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    return {"success": True, "settings": await _get_ai_auto_send_settings_for_business(business_id)}
+
+
+@api_router.patch("/api/ai-auto-send/settings")
+async def patch_ai_auto_send_settings(payload: dict, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str(current_user.get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    allowed = set(AI_AUTO_SEND_DEFAULTS.keys())
+    update = {k: bool(payload.get(k)) for k in allowed if k in (payload or {})}
+    now = datetime.now(timezone.utc)
+    await db.ai_auto_send_settings.update_one(
+        {"business_id": business_id},
+        {"$set": {**update, "business_id": business_id, "updated_at": now}, "$setOnInsert": {"created_at": now}},
+        upsert=True,
+    )
+    return {"success": True, "settings": await _get_ai_auto_send_settings_for_business(business_id)}
+
+
+@api_router.get("/api/ai-messages")
+async def list_ai_messages(current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    rows = [serialize_doc(r) async for r in db.ai_messages.find({"business_id": business_id}).sort("created_at", -1).limit(300)]
+    return {"success": True, "messages": rows}
+
+
+@api_router.post("/api/ai-messages/{message_id}/dismiss")
+async def dismiss_ai_message(message_id: str, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    await db.ai_messages.update_one({"_id": ObjectId(message_id), "business_id": business_id}, {"$set": {"status": "dismissed", "updated_at": now}})
+    row = await db.ai_messages.find_one({"_id": ObjectId(message_id), "business_id": business_id})
+    if not row:
+        raise HTTPException(status_code=404, detail="Message not found")
+    return {"success": True, "message": serialize_doc(row)}
+
+
 @api_router.post("/api/ai/customer-updates/prepare-for-job/{job_id}")
 async def prepare_customer_updates_for_job(job_id: str, current_user: dict = Depends(get_current_user)):
     role = str((current_user or {}).get("role") or "").lower()
@@ -2799,6 +2886,60 @@ async def skip_customer_update(update_id: str, current_user: dict = Depends(get_
     now = datetime.now(timezone.utc)
     await db.customer_update_events.update_one({"_id": ObjectId(update_id), "business_id": business_id}, {"$set": {"status": "skipped", "skipped_at": now, "updated_at": now}})
     return {"success": True}
+
+
+@api_router.post("/api/ai-messages/prepare")
+async def prepare_ai_message(payload: dict, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    doc = {
+        "business_id": business_id,
+        "source_type": str((payload or {}).get("source_type") or ""),
+        "source_id": str((payload or {}).get("source_id") or ""),
+        "message_type": str((payload or {}).get("message_type") or ""),
+        "channel": str((payload or {}).get("channel") or "sms"),
+        "recipient_name": str((payload or {}).get("recipient_name") or ""),
+        "recipient_phone": str((payload or {}).get("recipient_phone") or ""),
+        "recipient_email": str((payload or {}).get("recipient_email") or ""),
+        "message": str((payload or {}).get("message") or "")[:2000],
+        "status": "draft",
+        "auto_send": False,
+        "reason": "draft_ready_review_before_sending",
+        "provider_message_id": None,
+        "error": None,
+        "sent_at": None,
+        "created_at": now,
+        "updated_at": now,
+    }
+    dup = await db.ai_messages.find_one({"business_id": business_id, "source_type": doc["source_type"], "source_id": doc["source_id"], "message_type": doc["message_type"], "status": {"$in": ["auto_sent", "sent"]}})
+    if dup:
+        return {"success": True, "duplicate": True, "message": serialize_doc(dup)}
+    settings = await _get_ai_auto_send_settings_for_business(business_id)
+    reason = _ai_message_safety_reason(doc, settings)
+    if reason is None:
+        doc["status"] = "auto_sent"
+        doc["auto_send"] = True
+        doc["reason"] = "auto_send_enabled"
+        doc["sent_at"] = now
+    else:
+        doc["status"] = "skipped" if settings.get("ai_auto_send_enabled") else "draft"
+        doc["reason"] = reason
+    ins = await db.ai_messages.insert_one(doc)
+    return {"success": True, "message": {"id": str(ins.inserted_id), **doc}}
+
+
+@api_router.post("/api/ai-messages/{message_id}/send")
+async def send_ai_message(message_id: str, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str((current_user or {}).get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    row = await db.ai_messages.find_one({"_id": ObjectId(message_id), "business_id": business_id})
+    if not row:
+        raise HTTPException(status_code=404, detail="Message not found")
+    now = datetime.now(timezone.utc)
+    await db.ai_messages.update_one({"_id": row["_id"]}, {"$set": {"status": "sent", "sent_at": now, "updated_at": now, "reason": "manual_send"}})
+    row = await db.ai_messages.find_one({"_id": row["_id"]})
+    return {"success": True, "message": serialize_doc(row)}
 
 
 def _build_quote_from_photo_inputs(payload: dict, client: dict | None = None, history_jobs: list | None = None):
