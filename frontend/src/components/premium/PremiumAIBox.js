@@ -3,10 +3,10 @@ import { Sparkles, ShieldCheck } from 'lucide-react';
 
 export default function PremiumAIBox({
   title = 'AI Business Assistant',
-  subtitle = 'Suggested actions and drafts based on your live data',
+  subtitle = 'Purpose: prepares owner-approved actions from your live business data',
   chip = 'Approval-first',
   suggestions = [],
-  notice = 'Always review and approve before sending. AI never auto-sends customer messages and never makes payroll, legal or tax decisions.',
+  notice = 'Approval-first: review every prepared action before anything is sent or changed. AI never auto-sends customer messages and never makes payroll, legal, or tax decisions.',
   children,
   actions,
   className = '',

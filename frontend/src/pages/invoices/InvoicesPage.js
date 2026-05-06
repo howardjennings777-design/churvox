@@ -179,7 +179,7 @@ export default function InvoicesPage() {
 
         <PremiumAIBox
           title="AI Invoice Assistant"
-          subtitle="Open invoice summary and draft polite payment reminders for your review"
+          subtitle="Purpose: checks unpaid, overdue, draft quality, and sync readiness before you approve reminders or send"
           chip="Approval-first"
           suggestions={aiSuggestions}
         />
@@ -347,4 +347,3 @@ export default function InvoicesPage() {
     </Layout>
   );
 }
-
