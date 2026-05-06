@@ -1,28 +1,47 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useApi } from "@/hooks/useApi";
-import { Loader2, Building2, RefreshCw, Lock, FileText, Trash2, Settings as SettingsIcon, ShieldCheck, ArrowUpRight, AlertTriangle, LogOut, Sparkles, UserCircle2 } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowUpRight,
+  Building2,
+  FileText,
+  Loader2,
+  Lock,
+  LogOut,
+  RefreshCw,
+  Settings as SettingsIcon,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+  UserCircle2,
+} from "lucide-react";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
 import { TRADE_TYPES } from "@/lib/utils";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
-import { ChurvoxLogo } from "@/components/ChurvoxLogo";
-import NotificationsBell from "@/components/NotificationsBell";
-import { PremiumPage, PremiumCard, PremiumButton, PremiumBadge, PremiumFormSection } from "@/components/premium";
+import {
+  PremiumPage,
+  PremiumHero,
+  PremiumCard,
+  PremiumButton,
+  PremiumBadge,
+  PremiumFormSection,
+  PremiumAIBox,
+} from "@/components/premium";
+
+const titleCase = (value) => {
+  const text = String(value || "").replaceAll("_", " ").trim();
+  if (!text) return "Not set";
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
 
 export default function SettingsPage() {
   const { user, updateUser, logout } = useAuth();
   const { patch, get, post, loading } = useApi();
   const navigate = useNavigate();
   const planLimits = usePlanLimits(user?.plan);
-
-  const isFeatureEnabled = (key) => {
-    const features = planLimits?.features || {};
-    const k = String(key || "").trim().toLowerCase();
-    if (k === "myob" || k === "myob_sync") return !!features.myobSync;
-    return !!features[key];
-  };
 
   const [gstRate, setGstRate] = useState(user?.gst_rate?.toString() || "15");
   const [tradeType, setTradeType] = useState(user?.trade_type || "other");
@@ -32,224 +51,405 @@ export default function SettingsPage() {
   const [myobConnected, setMyobConnected] = useState(false);
   const [myobLoading, setMyobLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
-      const res = await get("/myob/settings");
-      if (res.success) {
-        setMyobConnected(res.data.connected);
-        setMyobFileId(res.data.company_file_id || "");
-        setMyobFileName(res.data.company_file_name || "");
-      }
-      setMyobLoading(false);
-    })();
+  const features = useMemo(() => planLimits?.features || {}, [planLimits?.features]);
+
+  const isFeatureEnabled = useCallback(
+    (key) => {
+      const k = String(key || "").trim().toLowerCase();
+      if (k === "myob" || k === "myob_sync") return Boolean(features.myobSync);
+      return Boolean(features[key]);
+    },
+    [features]
+  );
+
+  const loadMyobSettings = useCallback(async () => {
+    setMyobLoading(true);
+    const res = await get("/myob/settings");
+    if (res.success) {
+      setMyobConnected(Boolean(res.data?.connected));
+      setMyobFileId(res.data?.company_file_id || "");
+      setMyobFileName(res.data?.company_file_name || "");
+    }
+    setMyobLoading(false);
   }, [get]);
+
+  useEffect(() => {
+    loadMyobSettings();
+  }, [loadMyobSettings]);
 
   const handleUpdateGST = async (e) => {
     e.preventDefault();
     const rate = Number(gstRate);
-    if (isNaN(rate) || rate < 0 || rate > 100) { toast.error("Please enter a valid GST rate between 0 and 100"); return; }
+    if (Number.isNaN(rate) || rate < 0 || rate > 100) {
+      toast.error("Please enter a valid GST rate between 0 and 100");
+      return;
+    }
+
     const result = await patch("/user/gst", { gst_rate: rate });
-    if (result.success) { updateUser({ gst_rate: rate }); toast.success("GST rate updated"); }
-    else toast.error(result.error);
+    if (result.success) {
+      updateUser({ gst_rate: rate });
+      toast.success("GST rate updated");
+    } else {
+      toast.error(result.error || "Could not update GST rate");
+    }
   };
 
   const handleUpdateTrade = async (value) => {
     setTradeType(value);
     const result = await patch("/user/trade", { trade_type: value });
-    if (result.success) { updateUser({ trade_type: value }); toast.success("Trade type updated"); }
-    else toast.error(result.error);
+    if (result.success) {
+      updateUser({ trade_type: value });
+      toast.success("Trade type updated");
+    } else {
+      toast.error(result.error || "Could not update trade type");
+    }
   };
 
   const handleSaveMyob = async (e) => {
     e.preventDefault();
-    if (!myobKey) { toast.error("Please enter your MYOB API key"); return; }
+    if (!myobKey) {
+      toast.error("Please enter your MYOB API key");
+      return;
+    }
+
     const payload = { api_key: myobKey };
     if (myobFileId) payload.company_file_id = myobFileId;
     if (myobFileName) payload.company_file_name = myobFileName;
-    const res = await post("/myob/settings", payload);
-    if (res.success) { toast.success("MYOB settings saved"); setMyobConnected(true); setMyobKey(""); }
-    else toast.error(res.error || "Failed to save MYOB settings");
-  };
 
-  const trialBadge = (() => {
-    if (user?.plan_status === "trialing" && user?.trial_ends_at) {
-      try {
-        const ended = new Date(user.trial_ends_at) < new Date();
-        if (ended) return <PremiumBadge tone="amber" icon={<AlertTriangle className="h-3 w-3" />}>Trial ended</PremiumBadge>;
-        const days = Math.max(0, Math.ceil((new Date(user.trial_ends_at) - new Date()) / 86400000));
-        return <PremiumBadge tone="sky">Trial · {days} day{days !== 1 ? "s" : ""} left</PremiumBadge>;
-      } catch { return null; }
+    const res = await post("/myob/settings", payload);
+    if (res.success) {
+      toast.success("MYOB settings saved");
+      setMyobConnected(true);
+      setMyobKey("");
+    } else {
+      toast.error(res.error || "Failed to save MYOB settings");
     }
-    if (user?.plan_status === "paid") return <PremiumBadge tone="green" icon={<ShieldCheck className="h-3 w-3" />}>Paid</PremiumBadge>;
-    if (!user?.plan) return <PremiumBadge tone="amber">No plan</PremiumBadge>;
-    return null;
-  })();
+  };
 
   const handleLogout = async () => {
     await logout();
     navigate("/login");
   };
 
+  const trialBadge = useMemo(() => {
+    if (user?.plan_status === "trialing" && user?.trial_ends_at) {
+      try {
+        const ended = new Date(user.trial_ends_at) < new Date();
+        if (ended) {
+          return (
+            <PremiumBadge tone="amber" icon={<AlertTriangle className="h-3 w-3" />}>
+              Trial ended
+            </PremiumBadge>
+          );
+        }
+
+        const days = Math.max(0, Math.ceil((new Date(user.trial_ends_at) - new Date()) / 86400000));
+        return (
+          <PremiumBadge tone="sky">
+            Trial · {days} day{days !== 1 ? "s" : ""} left
+          </PremiumBadge>
+        );
+      } catch {
+        return null;
+      }
+    }
+
+    if (user?.plan_status === "paid") {
+      return (
+        <PremiumBadge tone="teal" icon={<ShieldCheck className="h-3 w-3" />}>
+          Paid
+        </PremiumBadge>
+      );
+    }
+
+    if (!user?.plan) return <PremiumBadge tone="amber">No plan</PremiumBadge>;
+    return null;
+  }, [user?.plan, user?.plan_status, user?.trial_ends_at]);
+
+  const selectedTrade = TRADE_TYPES.find((x) => x.value === tradeType)?.label || "Other";
+  const myobAllowed = isFeatureEnabled("myob");
+  const missingBusinessName = !String(user?.business_name || "").trim();
+  const missingTrade = !tradeType || tradeType === "other";
+  const missingGst = gstRate === "" || Number.isNaN(Number(gstRate));
+  const setupIssues = [missingBusinessName, missingTrade, missingGst, myobAllowed && !myobConnected].filter(Boolean).length;
+
+  const aiSuggestions = useMemo(() => {
+    const suggestions = [
+      {
+        icon: <Sparkles className="h-4 w-4" />,
+        title: setupIssues
+          ? `AI found ${setupIssues} setup item${setupIssues === 1 ? "" : "s"} to review`
+          : "AI checked settings and found no urgent setup gaps",
+        description: setupIssues
+          ? "Complete these fields so AI can prepare cleaner jobs, invoices, quotes and reminders."
+          : "Your core business settings are ready for AI-prepared admin.",
+      },
+    ];
+
+    if (missingBusinessName) {
+      suggestions.push({
+        icon: <Building2 className="h-4 w-4" />,
+        title: "Business name is missing",
+        description: "Add this so quotes, invoices and customer messages look complete.",
+      });
+    }
+
+    if (missingTrade) {
+      suggestions.push({
+        icon: <SettingsIcon className="h-4 w-4" />,
+        title: "Trade type can be improved",
+        description: "Choose your trade so Churvox can tailor job and quote wording.",
+      });
+    }
+
+    if (myobAllowed && !myobConnected) {
+      suggestions.push({
+        icon: <RefreshCw className="h-4 w-4" />,
+        title: "MYOB is available but not connected",
+        description: "Connect it when ready. Sync actions still require approval.",
+      });
+    }
+
+    return suggestions.slice(0, 4);
+  }, [missingBusinessName, missingTrade, myobAllowed, myobConnected, setupIssues]);
+
   return (
     <Layout>
-      <PremiumPage className="">
-        <header className="mb-6 rounded-3xl border border-[#d8e2db] bg-white px-4 py-3 shadow-[0_16px_40px_rgba(15,23,42,0.14)] sm:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-4 text-slate-900">
-              <ChurvoxLogo size="sm" />
-              <div className="h-6 w-px bg-white/20" />
-              <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-[#b7c8be]">Settings</p>
-                <p className="text-sm font-semibold">Owner Workspace</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="rounded-full border border-white/15 bg-white/10 p-1.5 text-slate-900">
-                <NotificationsBell />
-              </div>
-              <Link to="/dashboard" className="inline-flex items-center gap-1 rounded-full border border-[#90a597] bg-[#5a7568] px-3 py-2 text-xs font-semibold text-slate-900 hover:bg-[#4f695d]">
-                <Sparkles className="h-3.5 w-3.5" /> Ask AI
-              </Link>
-              <button className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-900 hover:bg-white/20">
-                <UserCircle2 className="h-3.5 w-3.5" /> {(user?.name || "Profile").split(" ")[0]}
-              </button>
-              <button onClick={handleLogout} className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-900 hover:bg-white/20">
-                <LogOut className="h-3.5 w-3.5" /> Logout
-              </button>
-            </div>
-          </div>
-        </header>
-        <section className="mb-6 rounded-3xl border border-[#46564f] bg-gradient-to-br from-[#2a3430] via-[#34423b] to-[#1f2824] p-5 text-slate-900 shadow-[0_18px_38px_rgba(15,23,42,0.2)] sm:p-7">
-          <p className="text-xs uppercase tracking-[0.2em] text-[#aac0b3]">AI Command Centre</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">Settings</h1>
-          <p className="mt-2 max-w-3xl text-sm text-[#d3ddd7]">Manage your business profile, tax setup, integrations and account controls.</p>
-          <p className="mt-2 text-xs text-[#b7c8be]">AI uses these settings to prepare accurate jobs, invoices and approvals.</p>
+      <PremiumPage>
+        <PremiumHero
+          icon={<SettingsIcon className="h-7 w-7" />}
+          eyebrow={
+            <>
+              <ShieldCheck className="h-3 w-3" /> Business setup
+            </>
+          }
+          title="Settings"
+          subtitle="Manage your business profile, GST, MYOB, legal links and account controls in one clean workspace."
+          actions={
+            <>
+              <PremiumButton variant="secondary" onClick={() => navigate("/dashboard")} iconLeft={<Sparkles className="h-4 w-4" />}>
+                Smart Hub
+              </PremiumButton>
+              <PremiumButton variant="secondary" onClick={handleLogout} iconLeft={<LogOut className="h-4 w-4" />}>
+                Log out
+              </PremiumButton>
+            </>
+          }
+        >
           <div className="mt-4 flex flex-wrap gap-2">
-            <PremiumBadge tone="green">Plan: {user?.plan ? user.plan[0].toUpperCase() + user.plan.slice(1) : "Enterprise"}</PremiumBadge>
-            <PremiumBadge tone="slate">Role: {user?.role === "owner" ? "Employer/Owner" : (user?.role || "Owner")}</PremiumBadge>
+            <PremiumBadge tone="sky">Plan: {titleCase(user?.plan || "No plan")}</PremiumBadge>
+            <PremiumBadge tone="slate">Role: {titleCase(user?.role || "Owner")}</PremiumBadge>
             <PremiumBadge tone="slate">GST: {gstRate || 15}%</PremiumBadge>
-            <PremiumBadge tone="slate">Trade: {TRADE_TYPES.find((x) => x.value === tradeType)?.label || "Other"}</PremiumBadge>
+            <PremiumBadge tone="slate">Trade: {selectedTrade}</PremiumBadge>
+            {trialBadge}
           </div>
-        </section>
+        </PremiumHero>
 
-        {/* Account Info */}
+        <PremiumAIBox
+          title="AI Setup Assistant"
+          subtitle="AI checked your setup and prepared the next items to complete before launch."
+          chip="Auto-check ON"
+          suggestions={aiSuggestions}
+        />
+
         <PremiumCard
-          icon={<Building2 className="h-4 w-4" />}
+          icon={<UserCircle2 className="h-4 w-4" />}
           title="Account information"
-          subtitle="Your account details and subscription"
+          subtitle="Your profile, business details and current access."
           actions={trialBadge}
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-[#d7ded8] bg-[#fcfaf5] px-4 py-3 shadow-sm">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-[#7d8ba3]">Name</p>
-              <p className="text-[14px] text-[#0d1b34] font-semibold mt-1">{user?.name}</p>
-            </div>
-            <div className="rounded-2xl border border-[#d7ded8] bg-[#fcfaf5] px-4 py-3 shadow-sm">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-[#7d8ba3]">Email</p>
-              <p className="text-[14px] text-[#0d1b34] font-semibold mt-1">{user?.email}</p>
-            </div>
-            <div className="rounded-2xl border border-[#d7ded8] bg-[#fcfaf5] px-4 py-3 shadow-sm">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-[#7d8ba3]">Business name</p>
-              <p className="text-[14px] text-[#0d1b34] font-semibold mt-1">{user?.business_name || "Not set"}</p>
-            </div>
-            <div className="rounded-2xl border border-[#d7ded8] bg-[#fcfaf5] px-4 py-3 shadow-sm">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-[#7d8ba3]">Plan</p>
-              <p className="text-[14px] text-[#0d1b34] font-semibold mt-1 capitalize">{user?.plan || "No plan"}</p>
-              {!user?.plan && <Link to="/plans" className="px-link text-[12px]">Choose a plan →</Link>}
-            </div>
-            <div className="rounded-2xl border border-[#d7ded8] bg-[#fcfaf5] px-4 py-3 shadow-sm">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-[#7d8ba3]">Role</p>
-              <p className="text-[14px] text-[#0d1b34] font-semibold mt-1 capitalize">{user?.role || "Owner"}</p>
-            </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {[
+              ["Name", user?.name || "Not set"],
+              ["Email", user?.email || "Not set"],
+              ["Business name", user?.business_name || "Not set"],
+              ["Plan", user?.plan || "No plan"],
+              ["Role", titleCase(user?.role || "Owner")],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-2xl border border-[#d8e3f3] bg-white px-4 py-3 shadow-sm">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-[#64748b]">{label}</p>
+                <p className="mt-1 break-words text-[14px] font-semibold text-[#0d1b34]">{value}</p>
+                {label === "Plan" && !user?.plan ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/plans")}
+                    className="mt-1 text-[12px] font-semibold text-[#1d4ed8] hover:text-[#1e40af]"
+                  >
+                    Choose a plan →
+                  </button>
+                ) : null}
+              </div>
+            ))}
           </div>
         </PremiumCard>
 
-        {/* Trade type */}
-        <PremiumFormSection title="Business setup" subtitle="Helps customise job types and quote/invoice templates.">
-          <select value={tradeType} onChange={(e) => handleUpdateTrade(e.target.value)} className="px-select max-w-md" data-testid="trade-type-select">
-            {TRADE_TYPES.map((trade) => (<option key={trade.value} value={trade.value}>{trade.label}</option>))}
-          </select>
+        <PremiumFormSection title="Business setup" subtitle="This helps AI tailor job types, quote wording and invoice descriptions.">
+          <div className="max-w-md">
+            <label className="px-field__label">Trade type</label>
+            <select value={tradeType} onChange={(e) => handleUpdateTrade(e.target.value)} className="px-select" data-testid="trade-type-select">
+              {TRADE_TYPES.map((trade) => (
+                <option key={trade.value} value={trade.value}>
+                  {trade.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </PremiumFormSection>
 
-        {/* GST */}
         <PremiumFormSection title="Tax and invoices" subtitle="Default GST rate applied to new invoices. NZ standard is 15%.">
-          <form onSubmit={handleUpdateGST} className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
-            <div className="flex-1 max-w-[200px]">
+          <form onSubmit={handleUpdateGST} className="flex flex-col items-start gap-3 sm:flex-row sm:items-end">
+            <div className="w-full max-w-[220px]">
               <label className="px-field__label">Default GST rate (%)</label>
-              <input type="number" value={gstRate} onChange={(e) => setGstRate(e.target.value)} min="0" max="100" step="0.5" className="px-input" data-testid="gst-rate-input" />
+              <input
+                type="number"
+                value={gstRate}
+                onChange={(e) => setGstRate(e.target.value)}
+                min="0"
+                max="100"
+                step="0.5"
+                className="px-input"
+                data-testid="gst-rate-input"
+              />
             </div>
             <PremiumButton type="submit" disabled={loading} dataTestId="save-gst-button">
-              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /><span>Saving…</span></> : "Save"}
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Saving…</span>
+                </>
+              ) : (
+                "Save GST"
+              )}
             </PremiumButton>
           </form>
-          <p className="mt-2 text-xs text-slate-500">Used when AI prepares invoice drafts.</p>
+          <p className="mt-2 text-xs text-[#64748b]">Used when AI prepares invoice drafts and customer-facing totals.</p>
         </PremiumFormSection>
 
-        {/* MYOB */}
-        {isFeatureEnabled("myob") ? (
+        {myobAllowed ? (
           <PremiumCard
             icon={<RefreshCw className="h-4 w-4" />}
             title="MYOB integration"
-            subtitle="Sync invoices and payment status with MYOB to keep records aligned."
-            actions={myobConnected ? <PremiumBadge tone="green" icon={<ShieldCheck className="h-3 w-3" />}>Connected</PremiumBadge> : <PremiumBadge tone="slate">Not connected</PremiumBadge>}
+            subtitle="Sync approved invoices and payment status with MYOB. Sync actions remain controlled."
+            actions={
+              myobConnected ? (
+                <PremiumBadge tone="teal" icon={<ShieldCheck className="h-3 w-3" />}>
+                  Connected
+                </PremiumBadge>
+              ) : (
+                <PremiumBadge tone="slate">Not connected</PremiumBadge>
+              )
+            }
           >
             {myobLoading ? (
-              <div className="flex items-center justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-[#1d4ed8]" /></div>
+              <div className="flex items-center justify-center py-5">
+                <Loader2 className="h-5 w-5 animate-spin text-[#1d4ed8]" />
+              </div>
             ) : (
-              <form onSubmit={handleSaveMyob} className="space-y-4 max-w-lg">
+              <form onSubmit={handleSaveMyob} className="max-w-lg space-y-4">
                 <div>
                   <label className="px-field__label">MYOB API key</label>
-                  <input type="password" value={myobKey} onChange={(e) => setMyobKey(e.target.value)} placeholder={myobConnected ? "••••••••" : "Enter MYOB API key"} className="px-input" data-testid="myob-api-key-input" />
+                  <input
+                    type="password"
+                    value={myobKey}
+                    onChange={(e) => setMyobKey(e.target.value)}
+                    placeholder={myobConnected ? "••••••••" : "Enter MYOB API key"}
+                    className="px-input"
+                    data-testid="myob-api-key-input"
+                  />
                 </div>
                 <div>
                   <label className="px-field__label">Company file name (optional)</label>
-                  <input value={myobFileName} onChange={(e) => setMyobFileName(e.target.value)} placeholder="e.g. My Business Pty Ltd" className="px-input" data-testid="myob-company-name-input" />
+                  <input
+                    value={myobFileName}
+                    onChange={(e) => setMyobFileName(e.target.value)}
+                    placeholder="e.g. My Business Ltd"
+                    className="px-input"
+                    data-testid="myob-company-name-input"
+                  />
                 </div>
                 <div>
                   <label className="px-field__label">Company file ID (optional)</label>
-                  <input value={myobFileId} onChange={(e) => setMyobFileId(e.target.value)} placeholder="e.g. cf-12345" className="px-input" data-testid="myob-file-id-input" />
+                  <input
+                    value={myobFileId}
+                    onChange={(e) => setMyobFileId(e.target.value)}
+                    placeholder="e.g. cf-12345"
+                    className="px-input"
+                    data-testid="myob-file-id-input"
+                  />
                 </div>
                 <PremiumButton type="submit" disabled={loading} dataTestId="save-myob-button">
-                  {loading ? <><Loader2 className="h-4 w-4 animate-spin" /><span>Saving…</span></> : myobConnected ? "Update connection" : "Connect MYOB"}
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Saving…</span>
+                    </>
+                  ) : myobConnected ? (
+                    "Update MYOB"
+                  ) : (
+                    "Connect MYOB"
+                  )}
                 </PremiumButton>
-                <p className="text-[11.5px] text-[#7d8ba3]">Once connected, invoices can be synced from the invoice detail page.</p>
+                <p className="text-[11.5px] text-[#64748b]">
+                  Churvox should only sync approved accounting actions. AI never writes to MYOB without the allowed workflow.
+                </p>
               </form>
             )}
           </PremiumCard>
         ) : (
-          <PremiumCard icon={<Lock className="h-4 w-4" />} title="MYOB integration" subtitle="Available on Pro add-on and Enterprise" actions={<PremiumBadge tone="amber">Upgrade required</PremiumBadge>}>
-            <PremiumButton variant="secondary" iconLeft={<ArrowUpRight className="h-4 w-4" />}>
-              <Link to="/plans" data-testid="myob-upgrade-link">View plans</Link>
+          <PremiumCard
+            icon={<Lock className="h-4 w-4" />}
+            title="MYOB integration"
+            subtitle="MYOB is available as a Pro add-on and included on Enterprise."
+            actions={<PremiumBadge tone="amber">Upgrade required</PremiumBadge>}
+          >
+            <PremiumButton variant="secondary" iconLeft={<ArrowUpRight className="h-4 w-4" />} onClick={() => navigate("/plans")}>
+              View plans
             </PremiumButton>
           </PremiumCard>
         )}
 
-        {/* Security / account */}
-        <PremiumCard icon={<ShieldCheck className="h-4 w-4" />} title="Security & account" subtitle="Session, legal docs, and account controls." data-testid="help-legal-card">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-            <Link to="/privacy" className="px-row" data-testid="settings-privacy-link"><FileText className="h-4 w-4 text-[#5b6c87]" /><div className="px-row__main"><div className="px-row__title">Privacy policy</div></div></Link>
-            <Link to="/terms" className="px-row" data-testid="settings-terms-link"><FileText className="h-4 w-4 text-[#5b6c87]" /><div className="px-row__main"><div className="px-row__title">Terms</div></div></Link>
-            <Link to="/account-deletion" className="px-row" data-testid="settings-account-deletion-link"><FileText className="h-4 w-4 text-[#5b6c87]" /><div className="px-row__main"><div className="px-row__title">Account deletion</div></div></Link>
+        <PremiumCard icon={<ShieldCheck className="h-4 w-4" />} title="Security & account" subtitle="Legal links, session controls and account settings." data-testid="help-legal-card">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+            <Link to="/privacy" className="px-row" data-testid="settings-privacy-link">
+              <FileText className="h-4 w-4 text-[#1d4ed8]" />
+              <div className="px-row__main">
+                <div className="px-row__title">Privacy policy</div>
+              </div>
+            </Link>
+            <Link to="/terms" className="px-row" data-testid="settings-terms-link">
+              <FileText className="h-4 w-4 text-[#1d4ed8]" />
+              <div className="px-row__main">
+                <div className="px-row__title">Terms</div>
+              </div>
+            </Link>
+            <Link to="/account-deletion" className="px-row" data-testid="settings-account-deletion-link">
+              <FileText className="h-4 w-4 text-[#1d4ed8]" />
+              <div className="px-row__main">
+                <div className="px-row__title">Account deletion</div>
+              </div>
+            </Link>
           </div>
+
           <div className="mt-4">
-            <PremiumButton variant="secondary" iconLeft={<LogOut className="h-4 w-4" />} onClick={handleLogout}>Log out</PremiumButton>
+            <PremiumButton variant="secondary" iconLeft={<LogOut className="h-4 w-4" />} onClick={handleLogout}>
+              Log out
+            </PremiumButton>
           </div>
         </PremiumCard>
 
-        {/* Danger Zone */}
         <PremiumCard
           icon={<Trash2 className="h-4 w-4" />}
           title="Danger zone"
-          subtitle="Permanent actions you can’t undo"
+          subtitle="Permanent actions you cannot undo."
           className="!border-[#fecaca]"
           data-testid="delete-account-card"
         >
-          <p className="text-[13px] text-[#5b6c87] mb-4">
+          <p className="mb-4 text-[13px] text-[#64748b]">
             This permanently deletes your account, jobs, clients, invoices, quotes, team and associated data.
           </p>
-          <Link to="/account-deletion">
-            <PremiumButton variant="danger" iconLeft={<Trash2 className="h-4 w-4" />} dataTestId="delete-account-button">Delete account</PremiumButton>
-          </Link>
+          <PremiumButton variant="danger" iconLeft={<Trash2 className="h-4 w-4" />} onClick={() => navigate("/account-deletion")} dataTestId="delete-account-button">
+            Delete account
+          </PremiumButton>
         </PremiumCard>
       </PremiumPage>
     </Layout>
