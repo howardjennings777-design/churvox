@@ -32,21 +32,21 @@ const workspaces = [
   ["Invoices", "/invoices?embedded=1", "▤", "#1165ff", "#edf4ff"],
   ["Team", "/team?embedded=1", "♙", "#059669", "#ecfdf5"],
   ["Dispatch", "/dispatch?embedded=1", "♙", "#1165ff", "#edf4ff"],
-  ["Proof to Paid", "/proof-to-paid", "C", "#059669", "#ecfdf5"],
-  ["Receptionist", "/contact", "♙", "#7c3aed", "#f4efff"],
+  ["Proof to Paid", "/proof-to-paid?embedded=1", "C", "#059669", "#ecfdf5"],
+  ["Receptionist", "/contact?embedded=1", "♙", "#7c3aed", "#f4efff"],
   ["Recurring", "/automation?embedded=1", "↻", "#65a30d", "#f7fee7"],
-  ["Customer Updates", "/sms", "▣", "#ff5a12", "#fff1e8"],
-  ["Quote Builder", "/quotes/new", "▧", "#ff5a12", "#fff1e8"],
-  ["Client Memory", "/clients", "▣", "#7c3aed", "#f4efff"],
+  ["Customer Updates", "/sms?embedded=1", "▣", "#ff5a12", "#fff1e8"],
+  ["Quote Builder", "/quotes/new?embedded=1", "▧", "#ff5a12", "#fff1e8"],
+  ["Client Memory", "/clients?embedded=1", "▣", "#7c3aed", "#f4efff"],
   ["Plans & Billing", "/plans?embedded=1", "⌂", "#7c3aed", "#f4efff"],
   ["Account Centre", "/settings?embedded=1", "♙", "#1165ff", "#edf4ff"],
   ["Settings", "/settings?embedded=1", "⚙", "#0f172a", "#f1f5f9"],
-  ["Contact", "/contact", "☎", "#1165ff", "#edf4ff"],
-  ["Notifications", "/notifications", "◔", "#1165ff", "#edf4ff"],
+  ["Contact", "/contact?embedded=1", "☎", "#1165ff", "#edf4ff"],
+  ["Notifications", "/notifications?embedded=1", "◔", "#1165ff", "#edf4ff"],
   ["Integrations", "/integrations?embedded=1", "⌁", "#1165ff", "#edf4ff"],
-  ["Privacy", "/privacy", "◇", "#1165ff", "#edf4ff"],
-  ["Terms", "/terms", "▤", "#7c3aed", "#f4efff"],
-  ["Account Removal", "/account-deletion", "♢", "#ef4444", "#fff1f2"],
+  ["Privacy", "/privacy?embedded=1", "◇", "#1165ff", "#edf4ff"],
+  ["Terms", "/terms?embedded=1", "▤", "#7c3aed", "#f4efff"],
+  ["Account Removal", "/account-deletion?embedded=1", "♢", "#ef4444", "#fff1f2"],
 ];
 
 export default function AIControlRoomCompletePage() {
@@ -360,13 +360,13 @@ export default function AIControlRoomCompletePage() {
               </div>
 
               <div style={s.approvalGrid}>
-                <Approval label="All" value={String(stats.approvals || 0)} icon="☷" active onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "All", value: 15 }); }} />
-                <Approval label="Dispatch" value="6" icon="▣" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Dispatch", value: 6 }); }} />
-                <Approval label="Revenue" value="3" icon="$" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Revenue", value: 3 }); }} />
-                <Approval label="Follow-ups" value="2" icon="▤" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Follow-ups", value: 2 }); }} />
-                <Approval label="Proof" value="1" icon="◇" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Proof", value: 1 }); }} />
-                <Approval label="Receptionist" value="2" icon="♙" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Receptionist", value: 2 }); }} />
-                <Approval label="Recurring" value="1" icon="↻" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Recurring", value: 1 }); }} />
+                <Approval label="All" value={String(stats.approvals || 0)} icon="☷" active onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "All", value: stats.approvals || 0 }); }} />
+                <Approval label="Dispatch" value={String(stats.needCrew || 0)} icon="▣" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Dispatch", value: stats.needCrew || 0 }); }} />
+                <Approval label="Revenue" value={String(stats.followUps || 0)} icon="$" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Revenue", value: stats.followUps || 0 }); }} />
+                <Approval label="Follow-ups" value={String(stats.followUps || 0)} icon="▤" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Follow-ups", value: stats.followUps || 0 }); }} />
+                <Approval label="Proof" value={String(stats.proof || 0)} icon="◇" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Proof", value: stats.proof || 0 }); }} />
+                <Approval label="Receptionist" value="0" icon="♙" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Receptionist", value: 0 }); }} />
+                <Approval label="Recurring" value="0" icon="↻" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Recurring", value: 0 }); }} />
                 <Approval label="Customer Updates" value="0" icon="☵" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Customer Updates", value: 0 }); }} />
                 <Approval label="Quote Builder" value="0" icon="☵" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Quote Builder", value: 0 }); }} />
                 <Approval label="Client Memory" value="0" icon="▤" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Client Memory", value: 0 }); }} />

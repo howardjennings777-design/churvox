@@ -267,7 +267,7 @@ export default function JobsPage() {
           open={Boolean(activeJob)}
           onClose={() => setActiveJob(null)}
           title={activeJob ? `Job details · ${activeJob.title || activeJob.id}` : "Job details"}
-          item={activeJob}
+          entityType="job" item={activeJob}
           actions={<div className="flex justify-end"><PremiumButton variant="secondary" onClick={() => setActiveJob(null)}>Close</PremiumButton></div>}
         />
       </PremiumPage>

@@ -21,7 +21,7 @@ const formatDate = (v) => (v ? new Date(v).toLocaleDateString() : "—");
 
 function inferType(item = {}) {
   if (item.invoice_number || item.payment_link || item.amount_due !== undefined) return "invoice";
-  if (item.quote_number || item.valid_until || item.pricing_type || item.extras) return "quote";
+  if (item.quote_number || item.valid_until) return "quote";
   if (item.job_type || item.assigned_worker_name || item.schedule || item.service_type) return "job";
   if (item.role || item.region || item.invite_status || item.worker_name) return "worker";
   if (item.phone || item.client_name || item.unpaid_balance !== undefined) return "client";
@@ -31,8 +31,8 @@ function inferType(item = {}) {
 function Section({ title, children }) { return <section className="rounded-xl border border-slate-200 bg-white p-4"><h4 className="text-sm font-semibold text-slate-900">{title}</h4><div className="mt-2 space-y-2 text-sm text-slate-700">{children}</div></section>; }
 function Row({ k, v }) { return <p><span className="font-medium text-slate-900">{k}: </span>{v}</p>; }
 
-function GenericActions({ labels = [], onClose }) {
-  return <div className="flex flex-wrap gap-2">{labels.map((label) => <button key={label} type="button" className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">{label}</button>)}<button type="button" onClick={onClose} className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white">Close</button></div>;
+function GenericActions({ onClose }) {
+  return <div className="flex flex-wrap gap-2"><button type="button" onClick={onClose} className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white">Close</button></div>;
 }
 
 function FallbackBody({ item }) {
@@ -61,7 +61,7 @@ export default function EntityDetailModal({ open, onClose, title, item, actions,
         {type === "worker" ? <><Section title="Worker"><Row k="Name" v={clean(item.worker_name || item.name)} /><Row k="Contact" v={clean(item.phone || item.email)} /><Row k="Role" v={clean(item.role)} /><Row k="Status" v={status} /><Row k="Region" v={clean(item.region)} /><Row k="Assigned jobs" v={clean(item.assigned_jobs_count ?? item.assigned_jobs ?? "—")} /><Row k="Invite" v={clean(item.invite_status || "active")} /></Section><Section title="AI Worker Recommendation"><p>AI checked this worker profile.</p><p>AI found availability and role fit.</p><p>AI prepared assignment recommendation.</p><p>Approval needed before sending.</p></Section></> : null}
         {type === "unknown" ? <FallbackBody item={Object.fromEntries(Object.entries(item).filter(([k, v]) => !HIDDEN_KEYS.has(k) && typeof v !== "object" && v !== "" && v !== null && v !== undefined))} /> : null}
       </div></div>
-      <div className="border-t border-slate-200 bg-white px-4 py-3 md:px-6">{actions || <GenericActions onClose={onClose} labels={type === "quote" ? ["Edit quote", "Copy follow-up draft", "Convert to job", "Create draft invoice", "Open public quote link"] : type === "invoice" ? ["Copy payment link", "Copy reminder", "Send after approval", "Sync MYOB after approval", "Mark/review payment"] : type === "job" ? ["Assign worker", "Edit job", "Create draft invoice", "Prepare proof pack", "Copy customer update"] : type === "client" ? ["Create job", "Prepare quote", "Follow up invoice/quote"] : type === "worker" ? ["Resend invite", "Update role/region", "Assign job", "Remove worker"] : ["Open full details"]} />}</div>
+      <div className="border-t border-slate-200 bg-white px-4 py-3 md:px-6">{actions || <GenericActions onClose={onClose} />}</div>
     </div>
   </div>;
 }

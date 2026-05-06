@@ -427,7 +427,7 @@ export default function ClientsPage() {
             })}
           </div>
         )}
-      <EntityDetailModal open={Boolean(activeClient)} onClose={() => setActiveClient(null)} title={activeClient ? `Client details · ${activeClient.client_name || activeClient.name || activeClient.id}` : "Client details"} item={activeClient} />
+      <EntityDetailModal open={Boolean(activeClient)} onClose={() => setActiveClient(null)} title={activeClient ? `Client details · ${activeClient.client_name || activeClient.name || activeClient.id}` : "Client details"} entityType="client" item={activeClient} />
       </PremiumPage>
     </Layout>
   );

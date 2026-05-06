@@ -342,7 +342,7 @@ export default function InvoicesPage() {
             </div>
           </div>
         )}
-      <EntityDetailModal open={Boolean(activeInvoice)} onClose={() => setActiveInvoice(null)} title={activeInvoice ? `Invoice details · ${activeInvoice.invoice_number || activeInvoice.id}` : "Invoice details"} item={activeInvoice} />
+      <EntityDetailModal open={Boolean(activeInvoice)} onClose={() => setActiveInvoice(null)} title={activeInvoice ? `Invoice details · ${activeInvoice.invoice_number || activeInvoice.id}` : "Invoice details"} entityType="invoice" item={activeInvoice} />
       </PremiumPage>
     </Layout>
   );
