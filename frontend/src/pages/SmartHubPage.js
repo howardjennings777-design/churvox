@@ -1,3 +1,3 @@
-import AIControlRoomTopPlayerPage from "./AIControlRoomTopPlayerPage";
+import SmartHubExactPage from "./SmartHubExactPage";
 
-export default AIControlRoomTopPlayerPage;
+export default SmartHubExactPage;
