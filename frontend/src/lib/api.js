@@ -1,11 +1,14 @@
 const RAW_BACKEND_URL =
-  (typeof process !== "undefined" && process?.env?.REACT_APP_BACKEND_URL) ||
-  "https://grassley-backend.onrender.com";
+  (
+    (typeof process !== "undefined" && process?.env?.REACT_APP_BACKEND_URL) ||
+    ""
+  ).replace(/\/$/, "");
 
 const trimTrailingSlash = (value = "") => String(value).replace(/\/+$/, "");
 
 const withApiSuffix = (base) => {
   const clean = trimTrailingSlash(base);
+  if (!clean) return "/api";
   return clean.endsWith("/api") ? clean : `${clean}/api`;
 };
 
