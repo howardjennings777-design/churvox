@@ -2517,7 +2517,155 @@ async def get_ai_operator_actions(current_user: dict = Depends(get_current_user)
     rows.sort(key=lambda r: (0 if str(r.get("status") or "") == "pending" else 1, -(r.get("priority_score") or 0), _sort_key(r)))
     return {"success": True, "actions": rows}
 
-@api_router.get("/ai-operator/settings")
+
+@api_router.get("/ai-operator/audit-log")
+async def get_ai_operator_audit_log(limit: int = 200, current_user: dict = Depends(get_current_user)):
+    _owner_roles_only(str(current_user.get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    safe_limit = max(1, min(500, int(limit or 200)))
+    rows = [serialize_doc(r) async for r in db.ai_operator_logs.find({"business_id": business_id}).sort("created_at", -1).limit(safe_limit)]
+    return {"success": True, "logs": rows}
+
+
+@api_router.get("/ai-operator/setup-status")
+async def get_ai_operator_setup_status(current_user: dict = Depends(get_current_user)):
+    """Returns credential / setup readiness for SMS, MYOB, Email and AI."""
+    _owner_roles_only(str(current_user.get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    # SMS: needs Clicksend API key in env
+    clicksend_key = os.environ.get("CLICKSEND_API_KEY", "").strip()
+    sms_test_mode = str(os.environ.get("SMS_TEST_MODE", "false")).lower() in {"1", "true", "yes"}
+    sms_ready = bool(clicksend_key) and not sms_test_mode
+    sms_test_only = sms_test_mode or not clicksend_key
+    # SMS credits on this business
+    sms_balance_doc = await db.sms_balance.find_one({"business_id": business_id}) if hasattr(db, "sms_balance") else None
+    sms_credits = int((sms_balance_doc or {}).get("balance") or 0)
+    # MYOB
+    myob_doc = await db.myob_settings.find_one({"business_id": business_id}) if hasattr(db, "myob_settings") else None
+    myob_connected = bool((myob_doc or {}).get("connected") is True)
+    myob_client_id_env = os.environ.get("MYOB_CLIENT_ID", "").strip()
+    myob_credentials_present = bool(myob_client_id_env)
+    # AI
+    emergent_key = os.environ.get("EMERGENT_LLM_KEY", "").strip()
+    openai_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    ai_ready = bool(emergent_key or openai_key)
+    return {
+        "success": True,
+        "sms": {
+            "ready": sms_ready,
+            "test_only": sms_test_only,
+            "credits": sms_credits,
+            "provider": "clicksend",
+            "blocked_reason": None if sms_ready else "Clicksend API key not configured. Real send disabled.",
+        },
+        "myob": {
+            "ready": myob_connected,
+            "credentials_present": myob_credentials_present,
+            "connected": myob_connected,
+            "blocked_reason": None if myob_connected else (
+                "MYOB credentials not configured." if not myob_credentials_present
+                else "MYOB not yet connected. Open Settings → Integrations to connect."
+            ),
+        },
+        "ai": {
+            "ready": ai_ready,
+            "blocked_reason": None if ai_ready else "LLM key not configured.",
+        },
+    }
+
+
+@api_router.get("/ai-operator/command-snapshot")
+async def get_ai_operator_command_snapshot(current_user: dict = Depends(get_current_user)):
+    """Single combined snapshot for the Smart Hub command centre.
+    Returns pending actions grouped by category with real counts, urgent
+    alerts (overdue invoices, unassigned jobs, completed-no-invoice, low SMS
+    credits, MYOB sync, payroll review), and a 'next best move' summary.
+    """
+    _owner_roles_only(str(current_user.get("role") or "").lower())
+    business_id = await get_user_business_id(current_user)
+    now = datetime.now(timezone.utc)
+
+    actions = [serialize_doc(r) async for r in db.ai_operator_actions.find({"business_id": business_id, "status": "pending"}).limit(200)]
+    by_group: dict = {}
+    by_type: dict = {}
+    for a in actions:
+        g = str(a.get("group") or "general")
+        by_group[g] = by_group.get(g, 0) + 1
+        t = str(a.get("action_type") or "general")
+        by_type[t] = by_type.get(t, 0) + 1
+
+    # Real urgent counts
+    jobs = [serialize_doc(j) async for j in db.jobs.find({"business_id": business_id}).limit(500)]
+    invoices = [serialize_doc(i) async for i in db.invoices.find({"business_id": business_id}).limit(500)]
+    quotes = [serialize_doc(q) async for q in db.quotes.find({"business_id": business_id}).limit(500)]
+    workers = [serialize_doc(w) async for w in db.business_users.find({"business_id": business_id, "role": "worker"}).limit(200)] if hasattr(db, "business_users") else []
+
+    today_iso = now.date().isoformat()
+    unassigned = [j for j in jobs if not (j.get("assigned_worker_id") or j.get("worker_id")) and str(j.get("status") or "").lower() not in {"completed", "cancelled", "closed", "done"}]
+    overdue_invoices = []
+    open_invoices_total = 0.0
+    for inv in invoices:
+        st = str(inv.get("status") or "").lower()
+        if st in {"sent", "open", "overdue", "unpaid", "pending", "pending_payment"}:
+            open_invoices_total += float(inv.get("balance_due") or inv.get("balance") or inv.get("total") or inv.get("amount") or 0)
+            due = str(inv.get("due_date") or "")[:10]
+            if due and due < today_iso:
+                overdue_invoices.append(inv)
+    completed_no_invoice = []
+    for j in jobs:
+        st = str(j.get("status") or "").lower()
+        if st in {"completed", "complete", "done"} and not (j.get("invoice_id") or j.get("draft_invoice_id") or j.get("invoiced")):
+            completed_no_invoice.append(j)
+    overdue_quotes = [q for q in quotes if str(q.get("status") or "").lower() in {"sent", "pending"}]
+
+    # SMS credit
+    sms_balance_doc = await db.sms_balance.find_one({"business_id": business_id}) if hasattr(db, "sms_balance") else None
+    sms_credits = int((sms_balance_doc or {}).get("balance") or 0)
+    # MYOB
+    myob_doc = await db.myob_settings.find_one({"business_id": business_id}) if hasattr(db, "myob_settings") else None
+    myob_connected = bool((myob_doc or {}).get("connected") is True)
+
+    # Payroll review
+    pending_timesheets = await db.timesheets.count_documents({"business_id": business_id, "status": {"$in": ["pending", "submitted"]}}) if hasattr(db, "timesheets") else 0
+
+    # Next best move (simple deterministic rule)
+    if len(actions) > 0:
+        next_best = f"You have {len(actions)} AI-prepared actions waiting for approval."
+    elif len(unassigned) > 0:
+        next_best = f"{len(unassigned)} unassigned job{'s' if len(unassigned) != 1 else ''} need a crew."
+    elif len(completed_no_invoice) > 0:
+        next_best = f"{len(completed_no_invoice)} completed job{'s' if len(completed_no_invoice) != 1 else ''} ready to invoice."
+    elif len(overdue_invoices) > 0:
+        next_best = f"{len(overdue_invoices)} overdue invoice{'s' if len(overdue_invoices) != 1 else ''} need follow-up."
+    elif len(overdue_quotes) > 0:
+        next_best = f"{len(overdue_quotes)} open quote{'s' if len(overdue_quotes) != 1 else ''} could use a follow-up."
+    else:
+        next_best = "All clear. Run AI Plan to scan for new actions."
+
+    return {
+        "success": True,
+        "approvals": {
+            "total_pending": len(actions),
+            "by_group": by_group,
+            "by_type": by_type,
+            "items": actions[:8],
+        },
+        "urgent": {
+            "unassigned_jobs": len(unassigned),
+            "completed_no_invoice": len(completed_no_invoice),
+            "overdue_invoices": len(overdue_invoices),
+            "open_invoices_total": round(open_invoices_total, 2),
+            "open_quotes": len(overdue_quotes),
+            "pending_timesheets": pending_timesheets,
+            "low_sms_credits": sms_credits < 25,
+            "sms_credits": sms_credits,
+            "myob_connected": myob_connected,
+            "active_workers": len([w for w in workers if str(w.get("status") or "active") != "inactive"]),
+            "active_jobs": len([j for j in jobs if str(j.get("status") or "").lower() not in {"completed", "cancelled", "closed", "done"}]),
+        },
+        "next_best_move": next_best,
+        "scanned_at": now.isoformat(),
+    }
 
 
 async def _ensure_ai_receptionist_collections():
@@ -2545,30 +2693,72 @@ def _receptionist_prepare_payload(enquiry: dict, clients: list, workers: list) -
             "ai_summary": f"Enquiry from {name or 'unknown customer'} at {enquiry.get('address') or 'no address provided'}.",
             "draft_reply": draft_reply}
 
-@api_router.get("/api/ai-operator/settings")
+@api_router.get("/ai-operator/settings")
 async def get_ai_operator_settings(current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str(current_user.get("role") or "").lower())
     business_id = await get_user_business_id(current_user)
-    defaults = {"ai_operator_enabled": True, "auto_arrival_sms_enabled": False, "arrival_sms_mode": "approval_required", "arrival_sms_minutes_before": 30, "invoice_reminder_mode": "draft_only", "quote_followup_mode": "draft_only", "worker_assignment_mode": "approval_required", "accounting_changes_locked": True, "payroll_changes_locked": True}
+    defaults = {
+        "ai_operator_enabled": True,
+        "operator_mode": "approval_first",  # approval_first | auto_safe | auto_send
+        "auto_arrival_sms_enabled": False,
+        "arrival_sms_mode": "approval_required",
+        "arrival_sms_minutes_before": 30,
+        "invoice_reminder_mode": "draft_only",
+        "quote_followup_mode": "draft_only",
+        "worker_assignment_mode": "approval_required",
+        "quiet_hours_enabled": True,
+        "quiet_hours_start": "20:00",
+        "quiet_hours_end": "07:30",
+        "max_messages_per_client_per_day": 2,
+        "require_approval_for_first_message": True,
+        "approval_confidence_threshold": 0.85,
+        "owner_notify_on_action": True,
+        "accounting_changes_locked": True,
+        "payroll_changes_locked": True,
+    }
     doc = await db.ai_operator_settings.find_one({"business_id": business_id}) if hasattr(db, "ai_operator_settings") else None
-    return {**defaults, **(doc or {}), "accounting_changes_locked": True, "payroll_changes_locked": True}
+    merged = {**defaults, **(doc or {})}
+    merged["accounting_changes_locked"] = True
+    merged["payroll_changes_locked"] = True
+    return {"success": True, "settings": merged}
 
 @api_router.patch("/ai-operator/settings")
-@api_router.patch("/api/ai-operator/settings")
 async def patch_ai_operator_settings(payload: dict, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str(current_user.get("role") or "").lower())
     business_id = await get_user_business_id(current_user)
-    allowed = {"ai_operator_enabled", "auto_arrival_sms_enabled", "arrival_sms_mode", "arrival_sms_minutes_before", "invoice_reminder_mode", "quote_followup_mode", "worker_assignment_mode"}
-    update = {k: payload.get(k) for k in allowed if k in payload}
+    allowed = {
+        "ai_operator_enabled", "operator_mode",
+        "auto_arrival_sms_enabled", "arrival_sms_mode", "arrival_sms_minutes_before",
+        "invoice_reminder_mode", "quote_followup_mode", "worker_assignment_mode",
+        "quiet_hours_enabled", "quiet_hours_start", "quiet_hours_end",
+        "max_messages_per_client_per_day", "require_approval_for_first_message",
+        "approval_confidence_threshold", "owner_notify_on_action",
+    }
+    update = {k: payload.get(k) for k in allowed if k in (payload or {})}
+    if "operator_mode" in update and update["operator_mode"] not in {"approval_first", "auto_safe", "auto_send"}:
+        update["operator_mode"] = "approval_first"
     if "arrival_sms_mode" in update and update["arrival_sms_mode"] not in {"approval_required", "auto_send"}:
         update["arrival_sms_mode"] = "approval_required"
     if "arrival_sms_minutes_before" in update:
         update["arrival_sms_minutes_before"] = max(20, min(35, int(update["arrival_sms_minutes_before"] or 30)))
+    if "max_messages_per_client_per_day" in update:
+        try:
+            update["max_messages_per_client_per_day"] = max(0, min(10, int(update["max_messages_per_client_per_day"] or 0)))
+        except Exception:
+            update["max_messages_per_client_per_day"] = 2
+    if "approval_confidence_threshold" in update:
+        try:
+            v = float(update["approval_confidence_threshold"])
+            update["approval_confidence_threshold"] = max(0.0, min(1.0, v))
+        except Exception:
+            update["approval_confidence_threshold"] = 0.85
     update["accounting_changes_locked"] = True
     update["payroll_changes_locked"] = True
     now = datetime.now(timezone.utc)
     await db.ai_operator_settings.update_one({"business_id": business_id}, {"$set": {**update, "business_id": business_id, "updated_at": now}, "$setOnInsert": {"created_at": now}}, upsert=True)
     row = await db.ai_operator_settings.find_one({"business_id": business_id}) or {}
+    if row and "_id" in row:
+        row = serialize_doc(row)
     row["accounting_changes_locked"] = True
     row["payroll_changes_locked"] = True
     return {"success": True, "settings": row}
@@ -2779,6 +2969,8 @@ async def get_customer_updates(job_id: str = Query(default=""), current_user: di
 
 async def _get_ai_auto_send_settings_for_business(business_id: str) -> dict:
     doc = await db.ai_auto_send_settings.find_one({"business_id": business_id}) if hasattr(db, "ai_auto_send_settings") else None
+    if doc and "_id" in doc:
+        doc = serialize_doc(doc)
     return {**AI_AUTO_SEND_DEFAULTS, **(doc or {})}
 
 
@@ -2802,14 +2994,14 @@ def _ai_message_safety_reason(message: dict, settings: dict) -> str | None:
     return None
 
 
-@api_router.get("/api/ai-auto-send/settings")
+@api_router.get("/ai-auto-send/settings")
 async def get_ai_auto_send_settings(current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str(current_user.get("role") or "").lower())
     business_id = await get_user_business_id(current_user)
     return {"success": True, "settings": await _get_ai_auto_send_settings_for_business(business_id)}
 
 
-@api_router.patch("/api/ai-auto-send/settings")
+@api_router.patch("/ai-auto-send/settings")
 async def patch_ai_auto_send_settings(payload: dict, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str(current_user.get("role") or "").lower())
     business_id = await get_user_business_id(current_user)

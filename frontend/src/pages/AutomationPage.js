@@ -5,6 +5,7 @@ import {
   PremiumBadge, PremiumAIDraftPanel, PremiumEmptyState, PremiumFormSection
 } from "../components/premium";
 import { Zap, Sparkles, RefreshCw, Plus, Pencil, Trash2, Power, PlayCircle, ListChecks, ShieldCheck, AlertTriangle, BellRing } from "lucide-react";
+import { confirmDialog } from "../lib/confirmDialog";
 
 const API_BASE = (process.env.REACT_APP_BACKEND_URL || "https://grassley-backend.onrender.com").replace(/\/$/, "");
 
@@ -134,7 +135,12 @@ function AutomationPage() {
   };
 
   const deleteRule = async (rule) => {
-    const confirmed = window.confirm(`Delete automation rule "${rule.name}"?`);
+    const confirmed = await confirmDialog({
+      title: `Delete automation rule "${rule.name}"?`,
+      message: "This rule will stop running immediately. This cannot be undone.",
+      danger: true,
+      confirmLabel: "Delete rule",
+    });
     if (!confirmed) return;
     setDeletingId(rule.id); setError(""); setNotice("");
     try {

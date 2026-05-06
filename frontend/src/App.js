@@ -54,6 +54,8 @@ import PublicClientPortalPage from "./pages/public/PublicClientPortalPage";
 import ProofToPaidPage from "./pages/ProofToPaidPage";
 import QAAuditorPage from "./pages/admin/QAAuditorPage";
 import AIControlRoomPage from "./pages/AIControlRoomPage";
+import AIOperatorApprovalsPage from "./pages/AIOperatorApprovalsPage";
+import AIOperatorSettingsPage from "./pages/AIOperatorSettingsPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const Spinner = () => (
@@ -244,6 +246,8 @@ function App() {
           <Route path="/owner/login" element={<Navigate to="/login" replace />} />
           <Route path="/proof-to-paid" element={<BusinessRoute><ProofToPaidPage /></BusinessRoute>} />
           <Route path="/ai-operator" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><AIControlRoomPage /></ErrorBoundary></BusinessRoute>} />
+          <Route path="/ai-operator/approvals" element={<BusinessRoute><AIOperatorApprovalsPage /></BusinessRoute>} />
+          <Route path="/ai-operator/settings" element={<BusinessRoute><AIOperatorSettingsPage /></BusinessRoute>} />
 
           {/* Platform admin */}
           <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />

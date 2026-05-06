@@ -1,12 +1,19 @@
 import React, { useState } from "react";
+import { confirmDialog } from "../../lib/confirmDialog";
 
 export default function AccountDeletionPage() {
 
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
 
   const handlePermanentDelete = async () => {
-    const confirmed = window.confirm("Are you sure you want to permanently delete your account? This cannot be undone.");
+    const confirmed = await confirmDialog({
+      title: "Permanently delete your account?",
+      message: "This cannot be undone. All your business data will be removed.",
+      danger: true,
+      confirmLabel: "Delete account",
+    });
     if (!confirmed) return;
 
     setDeleteLoading(true);
@@ -56,8 +63,8 @@ export default function AccountDeletionPage() {
       try { localStorage.clear(); } catch (_) {}
       try { sessionStorage.clear(); } catch (_) {}
 
-      alert("Your account has been deleted.");
-      window.location.href = "/login";
+      setDeleteSuccess(true);
+      setTimeout(() => { window.location.href = "/login"; }, 1200);
     } catch (err) {
       setDeleteError(err?.message || "Could not delete account");
     } finally {
@@ -117,6 +124,12 @@ export default function AccountDeletionPage() {
           {deleteError ? (
             <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
               {deleteError}
+            </div>
+          ) : null}
+
+          {deleteSuccess ? (
+            <div className="mt-6 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-700">
+              Your account has been deleted. Redirecting to login…
             </div>
           ) : null}
 

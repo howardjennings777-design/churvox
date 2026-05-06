@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
 import { detectCountryHint } from "../lib/country";
 import { CheckCircle2, Sparkles, ShieldCheck, CreditCard, Zap } from "lucide-react";
@@ -147,7 +148,7 @@ export default function PlansPage() {
           setCheckoutNotice({ type: "success", title: "Trial started!", text: `Your 14-day free trial on the ${cap(planKey)} plan is now active. No card required.` });
           setTimeout(() => { window.location.href = "/dashboard"; }, 1500);
         } else { throw new Error(data.detail || data.error || "Failed to start trial"); }
-      } catch (err) { alert(err?.response?.data?.detail || err?.message || "Failed to start trial"); }
+      } catch (err) { toast.error(err?.response?.data?.detail || err?.message || "Failed to start trial"); }
       finally { setBusyPlan(""); }
       return;
     }
@@ -162,7 +163,7 @@ export default function PlansPage() {
       if (!url) throw new Error("No checkout URL returned by server");
       window.location.assign(url);
     } catch (err) {
-      alert(err?.response?.data?.detail || err?.data?.detail || err?.message || "Failed to start checkout");
+      toast.error(err?.response?.data?.detail || err?.data?.detail || err?.message || "Failed to start checkout");
     } finally { setBusyPlan(""); }
   };
 

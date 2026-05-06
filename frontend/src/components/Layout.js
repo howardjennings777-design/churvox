@@ -35,6 +35,7 @@ export default function Layout({ children, smartHubMode = false }) {
         canAccess(role, "calendar") && { path: "/dispatch", label: "Dispatch Board", icon: Calendar },
         canAccess(role, "clients") && { path: "/clients", label: "Client List", icon: Users },
         canAccess(role, "ai_operator") && { path: "/ai-operator", label: "AI Operator", icon: Sparkles },
+        canAccess(role, "ai_operator") && { path: "/ai-operator/approvals", label: "AI Approvals", icon: Sparkles },
         canAccess(role, "proof_to_paid") && { path: "/proof-to-paid", label: "Proof-to-Paid", icon: Sparkles },
       ].filter(Boolean),
     },

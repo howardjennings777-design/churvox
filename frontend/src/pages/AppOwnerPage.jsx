@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { toast } from "sonner";
+import { confirmDialog } from "../lib/confirmDialog";
 import {
   Users,
   Building2,
@@ -412,7 +414,12 @@ export default function AppOwnerPage() {
 
   const handleDeleteUser = async (userId) => {
     if (!userId) return;
-    const confirmed = window.confirm("Delete this user account? This cannot be undone. The user will no longer be able to log in.");
+    const confirmed = await confirmDialog({
+      title: "Delete this user account?",
+      message: "This cannot be undone. The user will no longer be able to log in.",
+      danger: true,
+      confirmLabel: "Delete user",
+    });
     if (!confirmed) return;
 
     setDeleting(userId);
@@ -427,13 +434,14 @@ export default function AppOwnerPage() {
         },
       });
       if (res.ok) {
+        toast.success("User deleted");
         await loadDashboard(true);
       } else {
         const data = await res.json().catch(() => ({}));
-        alert(data?.detail || "Failed to delete user");
+        toast.error(data?.detail || "Failed to delete user");
       }
     } catch {
-      alert("Failed to delete user");
+      toast.error("Failed to delete user");
     } finally {
       setDeleting("");
     }
