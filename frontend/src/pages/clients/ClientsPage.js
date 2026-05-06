@@ -5,15 +5,14 @@ import { useAuth } from "../../context/AuthContext";
 import { useApi } from "../../hooks/useApi";
 import {
   Users, UserPlus, Trash2, Upload, Mail, Phone, MapPin, Pencil, Search,
-  CalendarClock, Receipt, Sparkles, Briefcase, FileText, Plus, MessageSquare,
+  CalendarClock, Receipt, Sparkles, Briefcase, FileText, Plus, MessageSquare
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 import API_BASE from "../../lib/apiBase";
 import {
-  PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton,
-  PremiumAIBox, PremiumAIDraftPanel, PremiumEmptyState, PremiumLoadingState, PremiumErrorState,
-  PremiumFormSection,
+  PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton, PremiumAIDraftPanel, PremiumEmptyState, PremiumLoadingState, PremiumErrorState,
+  PremiumFormSection
 } from "../../components/premium";
 import EntityDetailModal from "../../components/EntityDetailModal";
 
@@ -132,34 +131,6 @@ export default function ClientsPage() {
     }).length;
     return { total, active, withInvoices, recent };
   }, [clients]);
-
-  const aiSuggestions = useMemo(() => {
-    const noEmail = clients.filter((c) => !c.email && !c.phone);
-    const out = [];
-    if (clients.length === 0) {
-      out.push({ icon: <Users className="h-4 w-4" />, title: "Add your first client", description: "Or import a CSV with names, emails, phones, addresses." });
-    } else {
-      out.push({
-        icon: <Sparkles className="h-4 w-4" />,
-        title: "Activity summary ready",
-        description: "AI checked clients and prepared follow-up actions.",
-      });
-      if (noEmail.length > 0) {
-        out.push({
-          icon: <Mail className="h-4 w-4" />,
-          title: `${noEmail.length} client${noEmail.length === 1 ? "" : "s"} missing contact info`,
-          description: "Add email or phone so reminders, quotes and invoices can be delivered.",
-        });
-      }
-      out.push({
-        icon: <MessageSquare className="h-4 w-4" />,
-        title: "Draft a polite check-in for inactive clients",
-        description: "AI checked and can prepare wording — you approve before sending.",
-      });
-    }
-    return out.slice(0, 4);
-  }, [clients]);
-
   const handleAdd = async (e) => {
     e.preventDefault();
     const payload = {
@@ -241,13 +212,6 @@ export default function ClientsPage() {
               </>
             ) : null
           }
-        />
-
-        <PremiumAIBox
-          title="AI Client Assistant"
-          subtitle="AI checked live data and checks follow-up, open work, and unpaid risk so every client card has a clear next step"
-          chip="Approval-first"
-          suggestions={aiSuggestions}
         />
 
         <div className="px-grid px-grid--4">

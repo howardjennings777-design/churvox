@@ -2,7 +2,7 @@ import React from "react";
 import Layout from "../components/Layout";
 import { MessageSquare, Clock3, ShieldCheck, Mail, Bell, Sparkles } from "lucide-react";
 import {
-  PremiumPage, PremiumHero, PremiumCard, PremiumBadge, PremiumAIBox, PremiumActionCard,
+  PremiumPage, PremiumHero, PremiumCard, PremiumBadge, PremiumActionCard
 } from "../components/premium";
 import { useNavigate } from "react-router-dom";
 
@@ -16,18 +16,6 @@ export default function SMSPage() {
           eyebrow={<><Bell className="h-3 w-3" /> Communications</>}
           title="Communications"
           subtitle="Email reminders and in-app notifications are running. SMS reminders are coming soon — we’re polishing the provider, message history and audit log."
-        />
-
-        <PremiumAIBox
-          title="AI Communication Assistant"
-          subtitle="Drafts polite reminders for invoices, quotes and job updates — review and approve before sending"
-          chip="Approval-first"
-          notice="Auto-send is OFF. AI prepared this for review."
-          suggestions={[
-            { icon: <Mail className="h-4 w-4" />, title: "Email reminders are live", description: "Use Invoices and Quotes to draft polite reminders." },
-            { icon: <Bell className="h-4 w-4" />, title: "In-app notifications", description: "Workers and admins get instant alerts on assigned jobs." },
-            { icon: <MessageSquare className="h-4 w-4" />, title: "SMS reminders — coming soon", description: "We’re finalising provider billing and message history." },
-          ]}
         />
 
         <div className="px-grid px-grid--3">

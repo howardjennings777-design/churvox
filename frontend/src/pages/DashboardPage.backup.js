@@ -9,13 +9,13 @@ import useAiDraft from "../hooks/useAiDraft";
 import {
   Briefcase, Calendar, CheckCircle, FileText, Users, Plus,
   AlertTriangle, Receipt, Clock3, BellRing,
-  Radio, Bot, ListChecks,
+  Radio, Bot, ListChecks
 } from "lucide-react";
 import { safeArray, safeNumber, safeText } from "../utils/safeRender";
 import {
   PremiumPage, PremiumCard, PremiumStatCard,
   PremiumButton, PremiumBadge,
-  PremiumLoadingState, PremiumErrorState, PremiumEmptyState,
+  PremiumLoadingState, PremiumErrorState, PremiumEmptyState
 } from "../components/premium";
 import PremiumStatusBadge from "../components/premium/PremiumStatusBadge";
 import JobCreateForm from "../components/forms/JobCreateForm";

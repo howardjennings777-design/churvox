@@ -367,22 +367,6 @@ export default function TeamPage() {
               </div>
             </div>
 
-            <PremiumAIBox
-              title="AI Team Assistant"
-              subtitle="AI checked live data and checks crew coverage, invite status, role safety, and assignment gaps before you approve actions"
-              chip="Approval-first"
-              notice="AI never makes payroll, tax or compliance decisions. Worker invites are always actioned by you."
-              suggestions={[
-                workers.length === 0
-                  ? { icon: <UserPlus className="h-4 w-4" />, title: "Invite your first worker", description: "Send a CSV of crew members or invite individually." }
-                  : { icon: <Sparkles className="h-4 w-4" />, title: `${workers.length} active crew member${workers.length === 1 ? "" : "s"}`, description: "AI checked and can suggest assignments based on region, trade and availability." },
-                { icon: <ShieldCheck className="h-4 w-4" />, title: "Role-based access is on", description: "Workers don’t see pricing, owner-only reports or admin pages." },
-                planData?.max_workers >= 0 && workers.length >= (planData.max_workers - 1)
-                  ? { icon: <AlertTriangle className="h-4 w-4" />, title: "Approaching team limit", description: "Upgrade your plan to add more workers." }
-                  : null,
-              ].filter(Boolean)}
-            />
-
             {showAdd && (
               <Card className="bg-white border-slate-200 shadow-lg shadow-black/20">
                 <CardContent className="p-6 space-y-4 text-slate-900">

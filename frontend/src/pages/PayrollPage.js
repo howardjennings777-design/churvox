@@ -16,7 +16,7 @@ import {
   Unlock,
   UserCircle2,
   UsersRound,
-  X,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
 import { useApi } from "../hooks/useApi";
@@ -279,18 +279,6 @@ export default function PayrollPage() {
             <button className="cx-button-secondary" onClick={() => setShowSettings(true)}><Settings size={14} className="mr-2" />Payroll settings</button>
           </div>
         </section>
-
-        <PremiumAIBox
-          title="AI Payroll Summary"
-          subtitle="AI checked live data and checks approved vs unapproved hours and pay-run readiness; never changes payroll automatically"
-          chip="Read-only summary"
-          notice="AI never approves timesheets, files tax, or pays workers. Payroll runs are explicitly created, locked and exported by you."
-          suggestions={[
-            { icon: <ClipboardCheck className="h-4 w-4" />, title: `${(timesheets || []).length} timesheet${(timesheets || []).length === 1 ? "" : "s"} for review`, description: "Review approved hours, then lock the pay run before export." },
-            { icon: <CircleDollarSign className="h-4 w-4" />, title: `Estimated gross: ${formatCurrency(summary?.totals?.gross || 0)}`, description: "AI suggestions are informational only — exports remain manual." },
-            { icon: <ShieldCheck className="h-4 w-4" />, title: "Locked pay runs are immutable", description: "Once locked, AI cannot edit pay run figures." },
-          ]}
-        />
 
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {statCards.map((card) => {

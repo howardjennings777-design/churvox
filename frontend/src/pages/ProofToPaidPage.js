@@ -9,7 +9,7 @@ import {
   ReceiptText,
   ShieldCheck,
   Sparkles,
-  X,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
 import Layout from "../components/Layout";
@@ -21,9 +21,8 @@ import {
   PremiumStatCard,
   PremiumButton,
   PremiumBadge,
-  PremiumAIBox,
   PremiumEmptyState,
-  PremiumLoadingState,
+  PremiumLoadingState
 } from "../components/premium";
 
 const safeArray = (value) => (Array.isArray(value) ? value : []);
@@ -265,45 +264,6 @@ export default function ProofToPaidPage() {
       ),
     [packs]
   );
-
-  const aiSuggestions = useMemo(() => {
-    const out = [];
-
-    if (jobsWithoutPack.length) {
-      out.push({
-        icon: <BriefcaseBusiness className="h-4 w-4" />,
-        title: `${jobsWithoutPack.length} completed job${jobsWithoutPack.length === 1 ? "" : "s"} need proof packs`,
-        description: "AI checked completed work and prepared proof-to-paid actions.",
-      });
-    }
-
-    if (reviewPacks.length) {
-      out.push({
-        icon: <ClipboardCheck className="h-4 w-4" />,
-        title: `${reviewPacks.length} proof pack${reviewPacks.length === 1 ? "" : "s"} need owner review`,
-        description: "Review proof before invoicing so the customer update is accurate.",
-      });
-    }
-
-    if (approvedPacks.length) {
-      out.push({
-        icon: <ReceiptText className="h-4 w-4" />,
-        title: `${approvedPacks.length} proof pack${approvedPacks.length === 1 ? "" : "s"} invoice-ready`,
-        description: "Approved proof can support draft invoices and customer updates.",
-      });
-    }
-
-    if (!out.length) {
-      out.push({
-        icon: <Sparkles className="h-4 w-4" />,
-        title: "Proof pipeline is clear",
-        description: "AI checked proof packs and found no urgent review work.",
-      });
-    }
-
-    return out;
-  }, [jobsWithoutPack.length, reviewPacks.length, approvedPacks.length]);
-
   const renderCard = (item, type) => {
     const status = type === "job" ? "needs proof pack" : proofStatus(item).replaceAll("_", " ");
     const actionLabel = type === "job" ? "Prepare proof pack" : "Approve proof";
@@ -362,13 +322,6 @@ export default function ProofToPaidPage() {
               Refresh proof queue
             </PremiumButton>
           }
-        />
-
-        <PremiumAIBox
-          title="AI Proof Assistant"
-          subtitle="AI checked completed jobs and prepared proof-to-paid actions for owner review."
-          chip="Proof review"
-          suggestions={aiSuggestions}
         />
 
         <div className="px-grid px-grid--4">

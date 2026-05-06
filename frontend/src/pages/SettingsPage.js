@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   Sparkles,
   Trash2,
-  UserCircle2,
+  UserCircle2
 } from "lucide-react";
 import { toast } from "sonner";
 import Layout from "@/components/Layout";
@@ -27,8 +27,7 @@ import {
   PremiumCard,
   PremiumButton,
   PremiumBadge,
-  PremiumFormSection,
-  PremiumAIBox,
+  PremiumFormSection
 } from "@/components/premium";
 
 const titleCase = (value) => {
@@ -172,47 +171,6 @@ export default function SettingsPage() {
   const missingTrade = !tradeType || tradeType === "other";
   const missingGst = gstRate === "" || Number.isNaN(Number(gstRate));
   const setupIssues = [missingBusinessName, missingTrade, missingGst, myobAllowed && !myobConnected].filter(Boolean).length;
-
-  const aiSuggestions = useMemo(() => {
-    const suggestions = [
-      {
-        icon: <Sparkles className="h-4 w-4" />,
-        title: setupIssues
-          ? `AI found ${setupIssues} setup item${setupIssues === 1 ? "" : "s"} to review`
-          : "AI checked settings and found no urgent setup gaps",
-        description: setupIssues
-          ? "Complete these fields so AI can prepare cleaner jobs, invoices, quotes and reminders."
-          : "Your core business settings are ready for AI-prepared admin.",
-      },
-    ];
-
-    if (missingBusinessName) {
-      suggestions.push({
-        icon: <Building2 className="h-4 w-4" />,
-        title: "Business name is missing",
-        description: "Add this so quotes, invoices and customer messages look complete.",
-      });
-    }
-
-    if (missingTrade) {
-      suggestions.push({
-        icon: <SettingsIcon className="h-4 w-4" />,
-        title: "Trade type can be improved",
-        description: "Choose your trade so Churvox can tailor job and quote wording.",
-      });
-    }
-
-    if (myobAllowed && !myobConnected) {
-      suggestions.push({
-        icon: <RefreshCw className="h-4 w-4" />,
-        title: "MYOB is available but not connected",
-        description: "Connect it when ready. Sync actions still require approval.",
-      });
-    }
-
-    return suggestions.slice(0, 4);
-  }, [missingBusinessName, missingTrade, myobAllowed, myobConnected, setupIssues]);
-
   return (
     <Layout>
       <PremiumPage>
@@ -244,13 +202,6 @@ export default function SettingsPage() {
             {trialBadge}
           </div>
         </PremiumHero>
-
-        <PremiumAIBox
-          title="AI Setup Assistant"
-          subtitle="AI checked your setup and prepared the next items to complete before launch."
-          chip="Auto-check ON"
-          suggestions={aiSuggestions}
-        />
 
         <PremiumCard
           icon={<UserCircle2 className="h-4 w-4" />}

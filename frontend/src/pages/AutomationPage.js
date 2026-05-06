@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
 import {
   PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton,
-  PremiumBadge, PremiumAIBox, PremiumAIDraftPanel, PremiumEmptyState, PremiumFormSection,
+  PremiumBadge, PremiumAIDraftPanel, PremiumEmptyState, PremiumFormSection
 } from "../components/premium";
 import { Zap, Sparkles, RefreshCw, Plus, Pencil, Trash2, Power, PlayCircle, ListChecks, ShieldCheck, AlertTriangle, BellRing } from "lucide-react";
 
@@ -155,18 +155,6 @@ function AutomationPage() {
     } catch (err) { setError(err.message || "Automation test could not run."); }
     finally { setTestingId(null); }
   };
-
-  const aiSuggestions = useMemo(() => {
-    const out = [];
-    out.push({ icon: <BellRing className="h-4 w-4" />, title: "Notify office admin when a job is completed", description: "Save admin time by alerting the team automatically." });
-    out.push({ icon: <ListChecks className="h-4 w-4" />, title: "Flag payroll review on time entry approval", description: "Keep payroll runs accurate without chasing." });
-    out.push({ icon: <Sparkles className="h-4 w-4" />, title: "Create invoice draft when a job is completed", description: "Speed up cashflow — admin reviews and sends." });
-    if (rules.length === 0) {
-      out.push({ icon: <Zap className="h-4 w-4" />, title: "Start with a quick template", description: "Pick a template on the right to launch your first automation." });
-    }
-    return out.slice(0, 4);
-  }, [rules]);
-
   const activeRules = rules.filter((r) => r.enabled !== false).length;
   const disabledRules = rules.length - activeRules;
   const successRuns = runs.filter((r) => r.status === "success").length;
@@ -186,14 +174,6 @@ function AutomationPage() {
               {editingRule && <PremiumButton onClick={resetForm} variant="ghost">Cancel edit</PremiumButton>}
             </>
           }
-        />
-
-        <PremiumAIBox
-          title="AI Automation Assistant"
-          subtitle="AI checked live data and prepares practical rule ideas from real workflow data with trigger, action, and safe approval flow"
-          chip="Approval-first"
-          notice="AI never makes payroll, legal, tax or compliance decisions. Customer messages are drafts you approve before they’re sent."
-          suggestions={aiSuggestions}
         />
 
         <div className="px-grid px-grid--4">

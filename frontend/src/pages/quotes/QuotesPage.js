@@ -4,14 +4,13 @@ import { useApi } from "@/hooks/useApi";
 import {
   Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, FileText, Send,
   CheckCircle2, Clock3, CircleDashed, XCircle, Wallet, ArrowRight, Briefcase,
-  ClipboardCheck, Sparkles, FileSignature, Filter, SlidersHorizontal,
+  ClipboardCheck, Sparkles, FileSignature, Filter, SlidersHorizontal
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import Layout from "@/components/Layout";
 import {
-  PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton,
-  PremiumAIBox, PremiumAIDraftPanel, PremiumEmptyState, PremiumStatusBadge,
+  PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton, PremiumAIDraftPanel, PremiumEmptyState, PremiumStatusBadge
 } from "@/components/premium";
 import EntityDetailModal from "@/components/EntityDetailModal";
 
@@ -87,42 +86,6 @@ export default function QuotesPage() {
         return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
       });
   }, [quotes, searchTerm, statusFilter, sortBy]);
-
-  const aiSuggestions = useMemo(() => {
-    const out = [];
-    const stale = quotes.filter((q) => {
-      const status = String(q.status || "").toLowerCase();
-      if (!["sent", "pending"].includes(status)) return false;
-      const created = new Date(q.created_at || q.sent_at || 0).getTime();
-      return created && (Date.now() - created) > 5 * 24 * 60 * 60 * 1000;
-    });
-    if (stale.length > 0) {
-      out.push({
-        icon: <Clock3 className="h-4 w-4" />,
-        title: `${stale.length} quote${stale.length === 1 ? "" : "s"} sent over 5 days ago`,
-        description: "Draft a polite follow-up message — review before sending.",
-      });
-    }
-    if (quoteMetrics.accepted > 0) {
-      out.push({
-        icon: <Briefcase className="h-4 w-4" />,
-        title: `${quoteMetrics.accepted} accepted quote${quoteMetrics.accepted === 1 ? "" : "s"} ready to convert`,
-        description: "Convert accepted quotes into scheduled jobs for the crew.",
-      });
-    }
-    if (quoteMetrics.drafts > 0) {
-      out.push({
-        icon: <FileSignature className="h-4 w-4" />,
-        title: `${quoteMetrics.drafts} draft quote${quoteMetrics.drafts === 1 ? "" : "s"} unsent`,
-        description: "Finalise and send drafts so customers can accept online.",
-      });
-    }
-    if (out.length === 0) {
-      out.push({ icon: <Sparkles className="h-4 w-4" />, title: "No urgent quote follow-ups", description: "AI checked and will surface stale quotes and accepted ones here." });
-    }
-    return out.slice(0, 4);
-  }, [quotes, quoteMetrics]);
-
   return (
     <Layout>
       <PremiumPage>
@@ -138,17 +101,6 @@ export default function QuotesPage() {
             </>
           }
         />
-
-        <PremiumAIBox
-          title="AI Quote Assistant"
-          subtitle="AI checked quotes and prepared follow-ups and conversion actions."
-          chip="Approval-first"
-          suggestions={aiSuggestions}
-        >
-          
-        </PremiumAIBox>
-
-        <PremiumAIDraftPanel title="AI Quote Drafts" subtitle="Follow-ups and pending quote summaries." surface="quotes" context={{ quotes: filteredQuotes?.slice?.(0,12)?.map?.((q)=>({title:q.title,status:q.status,client:q.client_name})) }} quickActions={[{ label: "Quote follow-up", prompt: "Draft a concise quote follow-up." },{ label: "Owner summary", prompt: "Summarise pending quotes and suggested actions." }]} />
 
         <div className="px-grid px-grid--4">
           <PremiumStatCard label="Total quotes" value={quoteMetrics.total} icon={<FileText className="h-4 w-4" />} onClick={() => setStatusFilter("all")} />

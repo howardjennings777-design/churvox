@@ -5,14 +5,13 @@ import { useAuth } from "../../context/AuthContext";
 import { useApi } from "../../hooks/useApi";
 import {
   Plus, Search, MapPin, Trash2, Briefcase, ClipboardList, CalendarDays,
-  UserCheck, Sparkles, ListChecks, AlertTriangle, Filter,
+  UserCheck, Sparkles, ListChecks, AlertTriangle, Filter
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, JOB_STATUSES } from "../../lib/utils";
 import EntityDetailModal from "../../components/EntityDetailModal";
 import {
-  PremiumPage, PremiumHero, PremiumCard, PremiumButton, PremiumBadge,
-  PremiumAIBox, PremiumAIDraftPanel, PremiumEmptyState, PremiumLoadingState, PremiumStatusBadge,
+  PremiumPage, PremiumHero, PremiumCard, PremiumButton, PremiumBadge, PremiumAIDraftPanel, PremiumEmptyState, PremiumLoadingState, PremiumStatusBadge
 } from "../../components/premium";
 
 export default function JobsPage() {
@@ -59,48 +58,6 @@ export default function JobsPage() {
   }, [jobs, search]);
 
   // AI insights
-  const aiSuggestions = useMemo(() => {
-    const out = [];
-    const unassigned = jobs.filter((j) => !j.assigned_worker_id && j.status !== "completed");
-    const inProgress = jobs.filter((j) => j.status === "in_progress");
-    const paused = jobs.filter((j) => j.status === "paused");
-    const completedNoInvoice = jobs.filter((j) => j.status === "completed");
-
-    if (unassigned.length > 0) {
-      out.push({
-        icon: <UserCheck className="h-4 w-4" />,
-        title: `${unassigned.length} unassigned job${unassigned.length === 1 ? "" : "s"}`,
-        description: "Open the dispatch board to assign workers.",
-        action: <PremiumButton size="sm" variant="secondary" onClick={() => navigate("/dispatch")}>Dispatch</PremiumButton>,
-      });
-    }
-    if (paused.length > 0) {
-      out.push({
-        icon: <AlertTriangle className="h-4 w-4" />,
-        title: `${paused.length} paused job${paused.length === 1 ? "" : "s"} — draft a status update`,
-        description: "AI checked and can summarise progress and prepare a customer message — review before sending.",
-      });
-    }
-    if (inProgress.length > 0) {
-      out.push({
-        icon: <ListChecks className="h-4 w-4" />,
-        title: `${inProgress.length} jobs currently in progress`,
-        description: "AI checked and can summarise notes, photos and timer activity for any job in seconds.",
-      });
-    }
-    if (completedNoInvoice.length > 0) {
-      out.push({
-        icon: <Sparkles className="h-4 w-4" />,
-        title: `${completedNoInvoice.length} completed job${completedNoInvoice.length === 1 ? "" : "s"} ready to invoice`,
-        description: "Convert finished work into invoices and follow up with the customer.",
-      });
-    }
-    if (out.length === 0) {
-      out.push({ icon: <Sparkles className="h-4 w-4" />, title: "All clear", description: "No urgent job actions right now." });
-    }
-    return out.slice(0, 4);
-  }, [jobs, navigate]);
-
   return (
     <Layout>
       <PremiumPage>
@@ -122,12 +79,6 @@ export default function JobsPage() {
         {/* AI Assistant — only for non-workers (workers don't see pricing/global summary) */}
         {!isWorker && (
           <>
-            <PremiumAIBox
-              title="AI Job Assistant"
-              subtitle="AI checked live data and checks assignment, delays, proof, and invoice readiness so each job has one clear next action"
-              chip="Approval-first"
-              suggestions={aiSuggestions}
-            />
             <PremiumAIDraftPanel
               title="AI Job Drafts"
               subtitle="AI checked your jobs and prepared summaries, customer updates, and next actions."

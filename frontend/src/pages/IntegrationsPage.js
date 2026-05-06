@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Plug, Database, ShieldCheck, AlertTriangle, CheckCircle2, ArrowUpRight, RefreshCw, Sparkles } from "lucide-react";
 import {
-  PremiumPage, PremiumHero, PremiumCard, PremiumButton, PremiumBadge, PremiumAIBox,
+  PremiumPage, PremiumHero, PremiumCard, PremiumButton, PremiumBadge
 } from "../components/premium";
 
 const INVOICE_MODES = [
@@ -58,21 +58,6 @@ export default function IntegrationsPage() {
           eyebrow={<><Database className="h-3 w-3" /> Integrations</>}
           title="MYOB & Integrations"
           subtitle="Accounting sync setup, sync health and plan-based access — keep Churvox and your financial books in step."
-        />
-
-        <PremiumAIBox
-          title="AI Integration Assistant"
-          subtitle="AI checked live data and checks connection state, sync queue health, and failures so you can approve the right fix"
-          chip="Read-only suggestions"
-          notice="AI suggestions are informational only. Always review and approve before retrying or changing accounting settings."
-          suggestions={[
-            isConnected
-              ? { icon: <CheckCircle2 className="h-4 w-4" />, title: "MYOB connection healthy", description: "Sync is active for new invoices and status updates." }
-              : isUpgrade
-                ? { icon: <AlertTriangle className="h-4 w-4" />, title: "MYOB needs an upgrade", description: "MYOB sync is available on the Pro add-on and Enterprise plans." }
-                : { icon: <RefreshCw className="h-4 w-4" />, title: "Connect MYOB to enable sync", description: "Choose how invoices flow between Churvox and MYOB below." },
-            { icon: <ShieldCheck className="h-4 w-4" />, title: "We never auto-change your books", description: "Mode changes are explicit, and AI never edits invoices for you." },
-          ]}
         />
 
         <PremiumCard title="Account & plan" icon={<ShieldCheck className="h-4 w-4" />}>

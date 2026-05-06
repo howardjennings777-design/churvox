@@ -4,7 +4,7 @@ import { useApi } from "../hooks/useApi";
 import { formatCurrency } from "../lib/utils";
 import { safeArray, safeNumber, safeText } from "../utils/safeRender";
 import {
-  PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton, PremiumAIBox, PremiumBadge,
+  PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton, PremiumBadge
 } from "../components/premium";
 import { BarChart3, TrendingUp, Briefcase, Receipt, AlertTriangle, Users, Calendar, FileText, Sparkles, Clock3 } from "lucide-react";
 
@@ -36,18 +36,6 @@ export default function ReportsPage() {
               <button className={`px-3 py-1.5 text-[13px] rounded-xl font-semibold ${range === "last_month" ? "bg-[#1d4ed8] text-white" : "text-[#5b6c87]"}`} onClick={() => setRange("last_month")}>Last month</button>
             </div>
           }
-        />
-
-        <PremiumAIBox
-          title="AI Report Assistant"
-          subtitle="AI checked live data and checks revenue, workload, and job risk trends and prepares owner actions to improve weak areas"
-          chip="Read-only summary"
-          notice="AI summaries are informational only. Always cross-check before sharing with accountants, the ATO or HMRC."
-          suggestions={[
-            { icon: <TrendingUp className="h-4 w-4" />, title: `Revenue this period: ${formatCurrency(summary?.revenue_this_month)}`, description: `Outstanding: ${formatCurrency(summary?.outstanding_invoices)} · Overdue invoices: ${safeNumber(summary?.overdue_invoices, 0)}` },
-            { icon: <Briefcase className="h-4 w-4" />, title: `Completed jobs: ${safeNumber(summary?.completed_jobs, 0)}`, description: `Active: ${safeNumber(summary?.active_jobs, 0)} · Worker hours: ${safeNumber(summary?.worker_hours, 0)}` },
-            { icon: <FileText className="h-4 w-4" />, title: `Quote win rate: ${Math.round(safeNumber(summary?.quote_win_rate, 0) * 100)}%`, description: "AI checked and can highlight quotes most likely to convert next." },
-          ]}
         />
 
         <div className="px-grid px-grid--4">

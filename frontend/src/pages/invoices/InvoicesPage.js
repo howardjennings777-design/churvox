@@ -4,14 +4,13 @@ import { useApi } from "@/hooks/useApi";
 import {
   Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, DollarSign, Send,
   Filter, CheckCircle, ReceiptText, Clock3, SlidersHorizontal, FileCheck2,
-  AlertTriangle, Link2, Sparkles, MessageSquare, Receipt,
+  AlertTriangle, Link2, Sparkles, MessageSquare, Receipt
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, INVOICE_STATUSES, MYOB_SYNC_STATUSES } from "@/lib/utils";
 import Layout from "@/components/Layout";
 import {
-  PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton,
-  PremiumAIBox, PremiumAIDraftPanel, PremiumEmptyState, PremiumStatusBadge, PremiumBadge,
+  PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton, PremiumAIDraftPanel, PremiumEmptyState, PremiumStatusBadge, PremiumBadge
 } from "@/components/premium";
 import EntityDetailModal from "@/components/EntityDetailModal";
 
@@ -117,43 +116,6 @@ export default function InvoicesPage() {
         return new Date(b.created_at || 0) - new Date(a.created_at || 0);
       });
   }, [invoices, searchTerm, statusFilter, sortBy]);
-
-  const aiSuggestions = useMemo(() => {
-    const out = [];
-    if (m.overdue > 0) {
-      out.push({
-        icon: <AlertTriangle className="h-4 w-4" />,
-        title: `${m.overdue} overdue invoice${m.overdue === 1 ? "" : "s"}`,
-        description: "Draft a polite payment reminder — review before sending. Auto-send is OFF. AI prepared this for review.",
-      });
-    }
-    if (m.sentUnpaid > 0) {
-      out.push({
-        icon: <Clock3 className="h-4 w-4" />,
-        title: `${m.sentUnpaid} invoice${m.sentUnpaid === 1 ? "" : "s"} awaiting payment`,
-        description: `Total outstanding: ${formatCurrency(m.outstanding)}. AI checked and can summarise and prepare a friendly nudge.`,
-      });
-    }
-    if (m.draft > 0) {
-      out.push({
-        icon: <ReceiptText className="h-4 w-4" />,
-        title: `${m.draft} draft invoice${m.draft === 1 ? "" : "s"} not sent`,
-        description: "Review drafts and send them out — public Pay Now links work instantly.",
-      });
-    }
-    if (m.myobIssues > 0) {
-      out.push({
-        icon: <AlertTriangle className="h-4 w-4" />,
-        title: `${m.myobIssues} MYOB sync issue${m.myobIssues === 1 ? "" : "s"}`,
-        description: "Open invoice and retry the sync, or reconnect MYOB in Integrations.",
-      });
-    }
-    if (out.length === 0) {
-      out.push({ icon: <Sparkles className="h-4 w-4" />, title: "Open invoice book is healthy", description: "AI checked and will surface overdue and unpaid invoices here." });
-    }
-    return out.slice(0, 4);
-  }, [m]);
-
   const mode = accounting?.invoice_mode || "churvox_only";
   const myobConnected = Boolean(accounting?.myob_connected);
 
@@ -175,13 +137,6 @@ export default function InvoicesPage() {
               <PremiumButton variant="secondary" onClick={() => setStatusFilter("overdue")} iconLeft={<AlertTriangle className="h-4 w-4" />}>View overdue</PremiumButton>
             </>
           }
-        />
-
-        <PremiumAIBox
-          title="AI Invoice Assistant"
-          subtitle="AI checked live data and checks unpaid, overdue, draft quality, and sync readiness before you approve reminders or send"
-          chip="Approval-first"
-          suggestions={aiSuggestions}
         />
 
         <div className="px-grid px-grid--4">
