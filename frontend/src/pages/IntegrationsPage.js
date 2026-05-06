@@ -62,7 +62,7 @@ export default function IntegrationsPage() {
 
         <PremiumAIBox
           title="AI Integration Assistant"
-          subtitle="Watches sync health and suggests fixes — never makes accounting decisions for you"
+          subtitle="Purpose: checks connection state, sync queue health, and failures so you can approve the right fix"
           chip="Read-only suggestions"
           notice="AI suggestions are informational only. Always review and approve before retrying or changing accounting settings."
           suggestions={[

@@ -142,8 +142,8 @@ export default function QuotesPage() {
         />
 
         <PremiumAIBox
-          title="AI Quote Follow-up"
-          subtitle="Highlights quotes needing attention and drafts polite follow-ups for your review"
+          title="AI Quote Assistant"
+          subtitle="Purpose: checks draft, sent, and accepted quotes then prepares the best conversion or follow-up action"
           chip="Approval-first"
           suggestions={aiSuggestions}
         >
@@ -305,4 +305,3 @@ export default function QuotesPage() {
     </Layout>
   );
 }
-

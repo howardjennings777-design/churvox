@@ -244,7 +244,7 @@ export default function ClientsPage() {
 
         <PremiumAIBox
           title="AI Client Assistant"
-          subtitle="Activity summaries and follow-up drafts — review before sending"
+          subtitle="Purpose: checks follow-up, open work, and unpaid risk so every client card has a clear next step"
           chip="Approval-first"
           suggestions={aiSuggestions}
         />

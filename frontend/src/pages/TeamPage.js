@@ -369,7 +369,7 @@ export default function TeamPage() {
 
             <PremiumAIBox
               title="AI Team Assistant"
-              subtitle="Crew insights, role suggestions and onboarding drafts — review before sending"
+              subtitle="Purpose: checks crew coverage, invite status, role safety, and assignment gaps before you approve actions"
               chip="Approval-first"
               notice="AI never makes payroll, tax or compliance decisions. Worker invites are always actioned by you."
               suggestions={[
