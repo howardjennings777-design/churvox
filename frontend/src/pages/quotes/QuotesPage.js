@@ -300,7 +300,7 @@ export default function QuotesPage() {
             </div>
           </div>
         )}
-      <EntityDetailModal open={Boolean(activeQuote)} onClose={() => setActiveQuote(null)} title={activeQuote ? `Quote details · ${activeQuote.title || activeQuote.id}` : "Quote details"} item={activeQuote} />
+      <EntityDetailModal open={Boolean(activeQuote)} onClose={() => setActiveQuote(null)} title={activeQuote ? `Quote details · ${activeQuote.title || activeQuote.id}` : "Quote details"} entityType="quote" item={activeQuote} />
       </PremiumPage>
     </Layout>
   );
