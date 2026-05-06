@@ -2717,7 +2717,8 @@ async def get_ai_operator_settings(current_user: dict = Depends(get_current_user
         "payroll_changes_locked": True,
     }
     doc = await db.ai_operator_settings.find_one({"business_id": business_id}) if hasattr(db, "ai_operator_settings") else None
-    merged = {**defaults, **(doc or {})}
+    doc_serialized = serialize_doc(doc) if doc else {}
+    merged = {**defaults, **doc_serialized}
     merged["accounting_changes_locked"] = True
     merged["payroll_changes_locked"] = True
     return {"success": True, "settings": merged}
