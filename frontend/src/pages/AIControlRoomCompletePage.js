@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { ChurvoxLogo } from "../components/ChurvoxLogo";
-import { get, patch, post, put } from "../lib/api";
+import { get, post } from "../lib/api";
 
 const toArray = (value) => {
   if (Array.isArray(value)) return value;
@@ -61,9 +61,9 @@ export default function AIControlRoomCompletePage() {
 
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
-  const [activeModal, setActiveModal] = useState(null);
-  const [modalDraft, setModalDraft] = useState({});
-  const [savingModal, setSavingModal] = useState(false);
+  const [activePanel, setActivePanel] = useState(null);
+  const [panelDraft, setPanelDraft] = useState({});
+  const [panelNotice, setPanelNotice] = useState("");
   const [data, setData] = useState({
     jobs: [],
     invoices: [],
@@ -173,54 +173,23 @@ export default function AIControlRoomCompletePage() {
     setNotice("AI Plan run complete. Queue refreshed safely.");
     load();
   };
-  const openModal = (modal) => {
-    const nextModal = modal || null;
-    setActiveModal(nextModal);
-    setModalDraft(nextModal?.draft || {});
-  };
-  const closeModal = () => {
-    setActiveModal(null);
-    setSavingModal(false);
+  const openPanel = (panel) => {
+    setActivePanel(panel || null);
+    setPanelDraft(panel?.draft || {});
+    setPanelNotice("");
   };
 
-  const updateDraft = (field, value) => {
-    setModalDraft((prev) => ({ ...prev, [field]: value }));
+  const closePanel = () => {
+    setActivePanel(null);
+    setPanelNotice("");
   };
 
-  const saveModalDraft = async () => {
-    if (!activeModal) return;
-    setSavingModal(true);
-    try {
-      if (activeModal.type === "job" && activeModal.job?.id && !String(activeModal.job.id).startsWith("demo-")) {
-        const payload = {
-          title: modalDraft.title,
-          assignment: modalDraft.assignment,
-          status: modalDraft.status,
-          internal_note: modalDraft.internalNote,
-        };
-        const response = await patch(`/jobs/${activeModal.job.id}`, payload);
-        if (!response?.success) {
-          const fallback = await put(`/jobs/${activeModal.job.id}`, payload);
-          if (!fallback?.success) {
-            setModalDraft((prev) => ({ ...prev, saveMessage: "Prepared changes — open job to save." }));
-            return;
-          }
-        }
-        setModalDraft((prev) => ({ ...prev, saveMessage: "Job updated successfully." }));
-        await load();
-      } else {
-        setModalDraft((prev) => ({ ...prev, saveMessage: "Saved locally in AI Control Room." }));
-      }
-    } catch {
-      setModalDraft((prev) => ({ ...prev, saveMessage: "Prepared changes — open full page to save." }));
-    } finally {
-      setSavingModal(false);
-    }
+  const updatePanelDraft = (field, value) => {
+    setPanelDraft((prev) => ({ ...prev, [field]: value }));
   };
 
-  const openJob = (id) => {
-    if (id && !String(id).startsWith("demo-")) navigate(`/jobs/${id}`);
-    else navigate("/jobs");
+  const savePanelDraft = () => {
+    setPanelNotice("Draft saved in panel.");
   };
 
   return (
@@ -265,10 +234,10 @@ export default function AIControlRoomCompletePage() {
               </div>
 
               <div style={s.liveGrid}>
-                <LiveStat icon="✓" label="Approvals" value={stats.approvals} onClick={() => openModal({ key: "approvals" })} />
-                <LiveStat icon="♙" label="Workers active" value={stats.workers} onClick={() => openModal({ key: "workersActive" })} />
-                <LiveStat icon="$" label="Money waiting" value={cash(stats.moneyWaiting)} orange onClick={() => openModal({ key: "moneyWaiting" })} />
-                <LiveStat icon="☵" label="Follow-ups" value={stats.followUps} onClick={() => openModal({ key: "followUps" })} />
+                <LiveStat icon="✓" label="Approvals" value={stats.approvals} onClick={() => openPanel({ key: "approvals" })} />
+                <LiveStat icon="♙" label="Workers active" value={stats.workers} onClick={() => openPanel({ key: "workersActive" })} />
+                <LiveStat icon="$" label="Money waiting" value={cash(stats.moneyWaiting)} orange onClick={() => openPanel({ key: "moneyWaiting" })} />
+                <LiveStat icon="☵" label="Follow-ups" value={stats.followUps} onClick={() => openPanel({ key: "followUps" })} />
               </div>
             </aside>
           </section>
@@ -287,7 +256,7 @@ export default function AIControlRoomCompletePage() {
           </section>
 
           <section style={s.twoCol}>
-            <article style={s.card} onClick={() => openModal({ key: "todayMission" })}>
+            <article style={s.card} onClick={() => openPanel({ key: "todayMission" })}>
               <Title icon="◎">Today’s AI Mission</Title>
 
               <div style={s.bestMove}>
@@ -295,21 +264,21 @@ export default function AIControlRoomCompletePage() {
               </div>
 
               <div style={s.metricGrid}>
-                <Mini icon="♙" label="Need Crew" value={stats.needCrew} sub="Jobs need staff" color="#ff5a12" bg="#fff1e8" onClick={(event) => { event.stopPropagation(); openModal({ key: "needCrew" }); }} />
-                <Mini icon="$" label="Revenue" value={`$${Math.round(stats.moneyWaiting)}`} sub="Up next to collect" color="#1165ff" bg="#edf4ff" onClick={(event) => { event.stopPropagation(); openModal({ key: "revenue" }); }} />
-                <Mini icon="☵" label="Follow-ups" value={stats.followUps} sub="Awaiting replies" color="#069bd7" bg="#ecfaff" onClick={(event) => { event.stopPropagation(); openModal({ key: "followUps" }); }} />
-                <Mini icon="◇" label="Proof" value={stats.proof} sub="Ready for review" color="#0f172a" bg="#f1f5f9" onClick={(event) => { event.stopPropagation(); openModal({ key: "proof" }); }} />
+                <Mini icon="♙" label="Need Crew" value={stats.needCrew} sub="Jobs need staff" color="#ff5a12" bg="#fff1e8" onClick={(event) => { event.stopPropagation(); openPanel({ key: "needCrew" }); }} />
+                <Mini icon="$" label="Revenue" value={`$${Math.round(stats.moneyWaiting)}`} sub="Up next to collect" color="#1165ff" bg="#edf4ff" onClick={(event) => { event.stopPropagation(); openPanel({ key: "revenue" }); }} />
+                <Mini icon="☵" label="Follow-ups" value={stats.followUps} sub="Awaiting replies" color="#069bd7" bg="#ecfaff" onClick={(event) => { event.stopPropagation(); openPanel({ key: "followUps" }); }} />
+                <Mini icon="◇" label="Proof" value={stats.proof} sub="Ready for review" color="#0f172a" bg="#f1f5f9" onClick={(event) => { event.stopPropagation(); openPanel({ key: "proof" }); }} />
               </div>
 
               <div style={s.smallActions}>
-                <button style={s.orangeSmall} type="button" onClick={(event) => { event.stopPropagation(); openModal({ key: "workThePlan" }); }}>
+                <button style={s.orangeSmall} type="button" onClick={(event) => { event.stopPropagation(); openPanel({ key: "workThePlan" }); }}>
                   Work the plan <span>→</span>
                 </button>
 
                 <button
                   style={s.whiteSmall}
                   type="button"
-                  onClick={(event) => { event.stopPropagation(); openModal({ key: "explainPlan" }); }}
+                  onClick={(event) => { event.stopPropagation(); openPanel({ key: "explainPlan" }); }}
                 >
                   Explain plan <span>ⓘ</span>
                 </button>
@@ -325,15 +294,15 @@ export default function AIControlRoomCompletePage() {
               </div>
 
               <div style={s.moveGrid}>
-                <Move title="Dispatch the day" body="Assign crews and get jobs moving." badge={`${stats.needCrew} jobs`} color="#ff5a12" icon="▣" onClick={() => openModal({ key: "dispatchDay" })} />
-                <Move title="Move money" body="Follow up payments and collect faster." badge={cash(stats.moneyWaiting)} color="#1165ff" icon="$" onClick={() => openModal({ key: "moveMoney" })} />
-                <Move title="Proof & updates" body="Review proof and send updates to clients." badge={`${stats.proof} ready`} color="#0f2747" icon="◇" onClick={() => openModal({ key: "proofUpdates" })} />
+                <Move title="Dispatch the day" body="Assign crews and get jobs moving." badge={`${stats.needCrew} jobs`} color="#ff5a12" icon="▣" onClick={() => openPanel({ key: "dispatchDay" })} />
+                <Move title="Move money" body="Follow up payments and collect faster." badge={cash(stats.moneyWaiting)} color="#1165ff" icon="$" onClick={() => openPanel({ key: "moveMoney" })} />
+                <Move title="Proof & updates" body="Review proof and send updates to clients." badge={`${stats.proof} ready`} color="#0f2747" icon="◇" onClick={() => openPanel({ key: "proofUpdates" })} />
               </div>
             </article>
           </section>
 
           <section style={s.twoCol}>
-            <article style={s.card} onClick={() => openModal({ key: "activeWorkBoard" })}>
+            <article style={s.card} onClick={() => openPanel({ key: "activeWorkBoard" })}>
               <Title icon="☷">Active Work Board</Title>
 
               <div style={s.tableWrap}>
@@ -350,7 +319,7 @@ export default function AIControlRoomCompletePage() {
 
                   <tbody>
                     {rows.map(([id, title, client, assignment, status]) => (
-                      <tr key={`${id}-${title}`} style={s.rowClickable} onClick={() => openModal({ type: "job", key: "jobRow", job: { id, title, client, assignment, status }, title })}>
+                      <tr key={`${id}-${title}`} style={s.rowClickable} onClick={() => openPanel({ type: "job", key: "jobRow", job: { id, title, client, assignment, status }, title })}>
                         <Td>
                           <span style={s.jobDot} />
                           <strong>{title}</strong>
@@ -363,7 +332,7 @@ export default function AIControlRoomCompletePage() {
                           <strong>{status}</strong>
                         </Td>
                         <Td>
-                          <button style={s.workButton} type="button" onClick={(event) => { event.stopPropagation(); openModal({ type: "job", key: "jobWork", job: { id, title, client, assignment, status }, title: `Work panel: ${title}` }); }}>
+                          <button style={s.workButton} type="button" onClick={(event) => { event.stopPropagation(); openPanel({ type: "job", key: "jobWork", job: { id, title, client, assignment, status }, title: `Work panel: ${title}` }); }}>
                             Work here
                           </button>
                         </Td>
@@ -373,12 +342,12 @@ export default function AIControlRoomCompletePage() {
                 </table>
               </div>
 
-              <button style={s.linkButton} type="button" onClick={(event) => { event.stopPropagation(); openModal({ key: "allJobs" }); }}>
+              <button style={s.linkButton} type="button" onClick={(event) => { event.stopPropagation(); openPanel({ key: "allJobs" }); }}>
                 View all jobs <span>→</span>
               </button>
             </article>
 
-            <article style={s.card} onClick={() => openModal({ key: "approvalControl" })}>
+            <article style={s.card} onClick={() => openPanel({ key: "approvalControl" })}>
               <div style={s.cardHead}>
                 <div>
                   <Title icon="◇">AI Approval Control</Title>
@@ -389,19 +358,19 @@ export default function AIControlRoomCompletePage() {
               </div>
 
               <div style={s.approvalGrid}>
-                <Approval label="All" value="15" icon="☷" active onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "All", value: 15 }); }} />
-                <Approval label="Dispatch" value="6" icon="▣" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Dispatch", value: 6 }); }} />
-                <Approval label="Revenue" value="3" icon="$" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Revenue", value: 3 }); }} />
-                <Approval label="Follow-ups" value="2" icon="▤" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Follow-ups", value: 2 }); }} />
-                <Approval label="Proof" value="1" icon="◇" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Proof", value: 1 }); }} />
-                <Approval label="Receptionist" value="2" icon="♙" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Receptionist", value: 2 }); }} />
-                <Approval label="Recurring" value="1" icon="↻" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Recurring", value: 1 }); }} />
-                <Approval label="Customer Updates" value="0" icon="☵" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Customer Updates", value: 0 }); }} />
-                <Approval label="Quote Builder" value="0" icon="☵" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Quote Builder", value: 0 }); }} />
-                <Approval label="Client Memory" value="0" icon="▤" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Client Memory", value: 0 }); }} />
+                <Approval label="All" value="15" icon="☷" active onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "All", value: 15 }); }} />
+                <Approval label="Dispatch" value="6" icon="▣" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Dispatch", value: 6 }); }} />
+                <Approval label="Revenue" value="3" icon="$" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Revenue", value: 3 }); }} />
+                <Approval label="Follow-ups" value="2" icon="▤" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Follow-ups", value: 2 }); }} />
+                <Approval label="Proof" value="1" icon="◇" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Proof", value: 1 }); }} />
+                <Approval label="Receptionist" value="2" icon="♙" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Receptionist", value: 2 }); }} />
+                <Approval label="Recurring" value="1" icon="↻" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Recurring", value: 1 }); }} />
+                <Approval label="Customer Updates" value="0" icon="☵" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Customer Updates", value: 0 }); }} />
+                <Approval label="Quote Builder" value="0" icon="☵" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Quote Builder", value: 0 }); }} />
+                <Approval label="Client Memory" value="0" icon="▤" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Client Memory", value: 0 }); }} />
               </div>
 
-              <button style={s.linkButton} type="button" onClick={(event) => { event.stopPropagation(); openModal({ key: "openApprovals" }); }}>
+              <button style={s.linkButton} type="button" onClick={(event) => { event.stopPropagation(); openPanel({ key: "openApprovals" }); }}>
                 Open approvals queue <span>→</span>
               </button>
             </article>
@@ -415,7 +384,7 @@ export default function AIControlRoomCompletePage() {
 
             <div style={s.workspaceGrid}>
               {workspaces.map(([label, route, icon, color, bg]) => (
-                <button key={label} style={s.workspaceTile} type="button" onClick={() => openModal({ key: "workspace", label, route })}>
+                <button key={label} style={s.workspaceTile} type="button" onClick={() => openPanel({ key: label.toLowerCase(), title: label, route, type: ({"Jobs":"jobs","Clients":"clients","Quotes":"quotes","Invoices":"invoices","Team":"team","Dispatch":"dispatch","Proof to Paid":"proof","Receptionist":"receptionist","Recurring":"recurring","Customer Updates":"followups","Quote Builder":"quotes","Client Memory":"clients","Plans & Billing":"plans","Account Centre":"settings","Settings":"settings","Notifications":"followups","Integrations":"integrations","Privacy":"legal","Terms":"legal","Account Removal":"legal"}[label] || "settings") })}>
                   <span style={{ ...s.workspaceIcon, color, background: bg }}>{icon}</span>
                   <strong style={s.workspaceLabel}>{label}</strong>
                   <em style={s.chev}>›</em>
@@ -426,7 +395,7 @@ export default function AIControlRoomCompletePage() {
 
           {loading ? <div style={s.toast}>Loading live Churvox data…</div> : null}
           {notice ? <div style={{ ...s.toast, background: "#0b5f36" }}>{notice}</div> : null}
-          <ControlRoomModal modal={activeModal} draft={modalDraft} setDraft={setModalDraft} onClose={closeModal} onSave={saveModalDraft} updateDraft={updateDraft} savingModal={savingModal} navigate={navigate} stats={stats} data={data} runAiPlan={runAiPlan} openJob={openJob} />
+          <ControlRoomPanel panel={activePanel} draft={panelDraft} setDraft={setPanelDraft} onClose={closePanel} onSave={savePanelDraft} updateDraft={updatePanelDraft} navigate={navigate} stats={stats} data={data} notice={panelNotice} setNotice={setPanelNotice} rows={rows} />
         </div>
       </main>
     </Layout>
@@ -488,52 +457,52 @@ function Approval({ icon, label, value, active = false, onClick }) {
   );
 }
 
-function ControlRoomModal({ modal, draft, setDraft, onClose, onSave, updateDraft, savingModal, navigate, stats, data, openJob }) {
+function ControlRoomPanel({ panel, draft, setDraft, onClose, onSave, updateDraft, navigate, stats, data, notice, setNotice, rows }) {
   useEffect(() => {
-    if (!modal) return undefined;
+    if (!panel) return undefined;
     const onKeyDown = (event) => {
       if (event.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [modal, onClose]);
+  }, [panel, onClose]);
 
-  if (!modal) return null;
-  const modalType = modal.type || modal.key || "default";
-  const unassignedJobs = (data?.jobs || []).filter((job) => !job?.assigned_worker && !job?.assigned_worker_name && !job?.worker_id).slice(0, 6);
-  const openInvoices = (data?.invoices || []).filter((invoice) => ["open", "sent", "overdue", "unpaid", "pending"].includes(low(invoice?.status))).slice(0, 6);
-  const quickChecklist = draft.checklist || { step1: false, step2: false, step3: false };
+  if (!panel) return null;
+  const panelType = panel.type || ({
+    approvals:"approvals", approvalControl:"approvals", approvalTile:"approvals", openApprovals:"approvals",
+    followUps:"followups", explainPlan:"followups",
+    jobs:"jobs", activeWorkBoard:"jobs", allJobs:"jobs", jobRow:"jobs", jobWork:"jobs", workThePlan:"jobs",
+    clients:"clients",
+    quotes:"quotes",
+    invoices:"invoices", moneyWaiting:"invoices", revenue:"invoices", moveMoney:"invoices",
+    team:"team", workersActive:"team", needCrew:"team",
+    dispatch:"dispatch", dispatchDay:"dispatch",
+    proof:"proof", proofUpdates:"proof",
+    receptionist:"receptionist", recurring:"recurring", integrations:"integrations", plans:"plans", legal:"legal", notifications:"followups"
+  }[panel.key] || "settings");
+  const jobs = (data.jobs?.length ? data.jobs : rows.map(([id, title, client, assignment, status]) => ({ id, title, client_name: client, assignment, status })));
+  const unassigned = jobs.filter((j) => !(j.assigned_worker || j.assigned_worker_name || j.worker_id || j.assignment) || low(j.assignment) === "unassigned");
+  const clients = Array.from(new Set([...jobs.map((j) => j.client_name || j.client || ""), ...data.invoices.map((i) => i.customer_name || ""), ...data.quotes.map((q) => q.customer_name || "")].filter(Boolean)));
 
-  const saveLocal = () => {
-    setDraft((prev) => ({ ...prev, saveMessage: "Saved locally in AI Control Room." }));
+  const list = (items, render) => <div style={s.panelList}>{(items || []).slice(0, 8).map(render)}</div>;
+  const secondary = panel.route ? <button style={s.modalGhost} type="button" onClick={() => navigate(panel.route)}>Open full page</button> : null;
+
+  const content = {
+    jobs: <><input style={s.modalInput} placeholder="Search jobs" value={draft.jobSearch || ""} onChange={(e)=>updateDraft("jobSearch", e.target.value)} />{list(jobs.filter((j)=>low(j.title||j.service||j.name).includes(low(draft.jobSearch))), (j)=><div key={j.id||j._id} style={s.panelRow}><strong>{j.title||j.service||j.name||"Untitled job"}</strong><span>{j.client_name||j.client||"Client"}</span></div>)}<label style={s.modalLabel}>Job title</label><input style={s.modalInput} value={draft.title||""} onChange={(e)=>updateDraft("title",e.target.value)} /><label style={s.modalLabel}>Client</label><input style={s.modalInput} value={draft.client||""} onChange={(e)=>updateDraft("client",e.target.value)} /><label style={s.modalLabel}>Assignment</label><input style={s.modalInput} value={draft.assignment||""} onChange={(e)=>updateDraft("assignment",e.target.value)} /><label style={s.modalLabel}>Status</label><select style={s.modalInput} value={draft.status||"Needs crew"} onChange={(e)=>updateDraft("status",e.target.value)}><option>Needs crew</option><option>In progress</option><option>On site</option><option>Completed</option></select><label style={s.modalLabel}>Internal note</label><textarea style={s.modalTextarea} value={draft.internalNote||""} onChange={(e)=>updateDraft("internalNote",e.target.value)} /></>,
+    clients: <><input style={s.modalInput} placeholder="Search clients" value={draft.clientSearch||""} onChange={(e)=>updateDraft("clientSearch", e.target.value)} />{list(clients.filter((c)=>low(c).includes(low(draft.clientSearch))), (c)=><div key={c} style={s.panelRow}><strong>{c}</strong></div>)}<label style={s.modalLabel}>Client note</label><textarea style={s.modalTextarea} value={draft.clientNote||""} onChange={(e)=>updateDraft("clientNote",e.target.value)} /><label style={s.modalLabel}>Preferred update tone</label><select style={s.modalInput} value={draft.tone||"Warm"} onChange={(e)=>updateDraft("tone",e.target.value)}><option>Warm</option><option>Professional</option><option>Direct</option></select><label style={s.modalLabel}>Follow-up instruction</label><textarea style={s.modalTextarea} value={draft.followupInstruction||""} onChange={(e)=>updateDraft("followupInstruction",e.target.value)} /></>,
+    quotes: <><p style={s.modalLine}>Quotes in queue: {data.quotes.length}</p>{list(data.quotes,(q)=><div key={q.id||q._id} style={s.panelRow}><strong>{q.title||q.service||"Quote"}</strong><span>{q.status||"draft"}</span></div>)}<label style={s.modalLabel}>Quote follow-up draft</label><textarea style={s.modalTextarea} value={draft.followup||""} onChange={(e)=>updateDraft("followup",e.target.value)} /><label style={s.modalLabel}>Quote builder note</label><textarea style={s.modalTextarea} value={draft.builderNote||""} onChange={(e)=>updateDraft("builderNote",e.target.value)} /></>,
+    invoices: <><p style={s.modalLine}>Total money waiting: {cash(stats.moneyWaiting)}</p>{list(data.invoices,(i)=><div key={i.id||i._id} style={s.panelRow}><strong>{i.customer_name||"Client"}</strong><span>{cash(i.balance_due||i.total||0)}</span></div>)}<label style={s.modalLabel}>Invoice follow-up message</label><textarea style={s.modalTextarea} value={draft.invoiceFollowup||""} onChange={(e)=>updateDraft("invoiceFollowup",e.target.value)} /><label style={s.modalLabel}>Reminder tone</label><select style={s.modalInput} value={draft.reminderTone||"Professional"} onChange={(e)=>updateDraft("reminderTone",e.target.value)}><option>Professional</option><option>Friendly</option><option>Urgent</option></select></>,
+    team: <><p style={s.modalLine}>Unassigned jobs: {unassigned.length}</p>{list(data.workers,(w)=><div key={w.id||w._id} style={s.panelRow}><strong>{w.name||w.full_name||"Worker"}</strong><span>{w.status||"active"}</span></div>)}<label style={s.modalLabel}>Dispatch instruction</label><textarea style={s.modalTextarea} value={draft.dispatchInstruction||""} onChange={(e)=>updateDraft("dispatchInstruction",e.target.value)} /><label style={s.modalLabel}>Assignment suggestion</label><textarea style={s.modalTextarea} value={draft.assignmentSuggestion||""} onChange={(e)=>updateDraft("assignmentSuggestion",e.target.value)} /></>,
+    dispatch: <><p style={s.modalLine}>Worker availability summary: {stats.workers} active</p>{list(unassigned,(j)=><div key={j.id||j._id} style={s.panelRow}><strong>{j.title||j.service}</strong><span>{j.client_name||j.client}</span></div>)}<label style={s.modalLabel}>Dispatch plan</label><textarea style={s.modalTextarea} value={draft.dispatchPlan||""} onChange={(e)=>updateDraft("dispatchPlan",e.target.value)} /><label style={s.modalLabel}>Priority</label><select style={s.modalInput} value={draft.priority||"Normal"} onChange={(e)=>updateDraft("priority",e.target.value)}><option>Low</option><option>Normal</option><option>High</option></select></>,
+    proof: <><p style={s.modalLine}>Proof-ready count: {stats.proof}</p>{list(jobs,(j)=><div key={j.id||j._id} style={s.panelRow}><strong>{j.title||j.service}</strong><span>{j.status||"Pending"}</span></div>)}<label style={s.modalLabel}>Customer update draft</label><textarea style={s.modalTextarea} value={draft.customerUpdate||""} onChange={(e)=>updateDraft("customerUpdate",e.target.value)} /><label style={s.modalLabel}>Proof note</label><textarea style={s.modalTextarea} value={draft.proofNote||""} onChange={(e)=>updateDraft("proofNote",e.target.value)} /></>,
+    approvals: <><p style={s.modalLine}>Category: {panel.label || "All"} • Count: {panel.value || stats.approvals}</p>{list(data.approvals,(a)=><div key={a.id||a._id||a.title} style={s.panelRow}><strong>{a.title||a.action||"Approval item"}</strong></div>)}<label style={s.modalLabel}>Owner decision note</label><textarea style={s.modalTextarea} value={draft.ownerDecision||""} onChange={(e)=>updateDraft("ownerDecision",e.target.value)} /><label style={s.modalLabel}>Decision</label><select style={s.modalInput} value={draft.decision||"Review later"} onChange={(e)=>updateDraft("decision",e.target.value)}><option>Review later</option><option>Approve draft</option><option>Needs edits</option></select></>,
+    followups: <><p style={s.modalLine}>Follow-up count: {stats.followUps}</p><label style={s.modalLabel}>Suggested follow-up draft</label><textarea style={s.modalTextarea} value={draft.followupDraft||""} onChange={(e)=>updateDraft("followupDraft",e.target.value)} /><label style={s.modalLabel}>Tone</label><select style={s.modalInput} value={draft.followupTone||"Warm"} onChange={(e)=>updateDraft("followupTone",e.target.value)}><option>Warm</option><option>Professional</option><option>Direct</option></select><label style={s.modalLabel}>Customer update note</label><textarea style={s.modalTextarea} value={draft.customerNote||""} onChange={(e)=>updateDraft("customerNote",e.target.value)} /></>,
+    receptionist: <><label style={s.modalLabel}>Name</label><input style={s.modalInput} value={draft.name||""} onChange={(e)=>updateDraft("name",e.target.value)} /><label style={s.modalLabel}>Phone/email</label><input style={s.modalInput} value={draft.contact||""} onChange={(e)=>updateDraft("contact",e.target.value)} /><label style={s.modalLabel}>Job request</label><textarea style={s.modalTextarea} value={draft.jobRequest||""} onChange={(e)=>updateDraft("jobRequest",e.target.value)} /><label style={s.modalLabel}>Address</label><input style={s.modalInput} value={draft.address||""} onChange={(e)=>updateDraft("address",e.target.value)} /><label style={s.modalLabel}>Urgency</label><select style={s.modalInput} value={draft.urgency||"Standard"} onChange={(e)=>updateDraft("urgency",e.target.value)}><option>Low</option><option>Standard</option><option>High</option></select></>,
+    recurring: <><label style={s.modalLabel}>Service name</label><input style={s.modalInput} value={draft.serviceName||""} onChange={(e)=>updateDraft("serviceName",e.target.value)} /><label style={s.modalLabel}>Client</label><input style={s.modalInput} value={draft.client||""} onChange={(e)=>updateDraft("client",e.target.value)} /><label style={s.modalLabel}>Frequency</label><select style={s.modalInput} value={draft.frequency||"Weekly"} onChange={(e)=>updateDraft("frequency",e.target.value)}><option>Weekly</option><option>Fortnightly</option><option>Monthly</option></select><label style={s.modalLabel}>Start date</label><input type="date" style={s.modalInput} value={draft.startDate||""} onChange={(e)=>updateDraft("startDate",e.target.value)} /><label style={s.modalLabel}>Notes</label><textarea style={s.modalTextarea} value={draft.notes||""} onChange={(e)=>updateDraft("notes",e.target.value)} /></>,
+    settings: <><p style={s.modalLine}>Workspace: {panel.title}</p><label style={s.modalLabel}>Owner note</label><textarea style={s.modalTextarea} value={draft.ownerNote||""} onChange={(e)=>updateDraft("ownerNote",e.target.value)} /></>,
   };
 
-  const renderBody = () => {
-    if (modalType === "job" || modalType === "jobRow" || modalType === "jobWork") {
-      const job = modal.job || {};
-      return <>
-        <p style={s.modalLine}>Client: {job.client || "Client"} • Suggested AI action: assign and confirm timing.</p>
-        <label style={s.modalLabel}>Job title</label><input style={s.modalInput} value={draft.title ?? job.title ?? ""} onChange={(e)=>updateDraft("title",e.target.value)} />
-        <label style={s.modalLabel}>Assignment</label><input style={s.modalInput} value={draft.assignment ?? job.assignment ?? ""} onChange={(e)=>updateDraft("assignment",e.target.value)} />
-        <label style={s.modalLabel}>Status</label><select style={s.modalInput} value={draft.status ?? job.status ?? "Needs crew"} onChange={(e)=>updateDraft("status",e.target.value)}><option>Needs crew</option><option>In progress</option><option>On site</option><option>Completed</option></select>
-        <label style={s.modalLabel}>Internal note</label><textarea style={s.modalTextarea} value={draft.internalNote ?? ""} onChange={(e)=>updateDraft("internalNote",e.target.value)} />
-      </>;
-    }
-    return <>
-      <p style={s.modalLine}>What AI found: {modal.insight || "Priority tasks are queued for owner review."}</p>
-      <p style={s.modalLine}>Why it matters: {modal.why || "Fast approvals improve dispatch speed and cashflow."}</p>
-      <label style={s.modalLabel}>Owner instruction</label><textarea style={s.modalTextarea} value={draft.ownerInstruction ?? ""} onChange={(e)=>updateDraft("ownerInstruction",e.target.value)} />
-      <label style={s.modalLabel}>Priority / decision</label><select style={s.modalInput} value={draft.priority ?? "Normal"} onChange={(e)=>updateDraft("priority",e.target.value)}><option>Low</option><option>Normal</option><option>High</option><option>Urgent</option><option>Review later</option><option>Approve draft</option><option>Needs edits</option></select>
-      <div style={s.modalChecklist}>
-        {["Review details","Prepare draft","Ready for approval"].map((item, idx)=><label key={item} style={s.modalCheckLabel}><input type="checkbox" checked={Boolean(quickChecklist[`step${idx+1}`])} onChange={(e)=>setDraft((prev)=>({ ...prev, checklist: { ...quickChecklist, [`step${idx+1}`]: e.target.checked } }))} /> {item}</label>)}
-      </div>
-      {modalType === "needCrew" ? <><p style={s.modalLine}>Unassigned jobs: {stats.needCrew}</p><ul style={s.modalList}>{unassignedJobs.map((job)=><li key={job.id || job._id}>{job.title || job.service || "Untitled job"}</li>)}</ul></> : null}
-      {modalType === "revenue" || modalType === "moneyWaiting" ? <><p style={s.modalLine}>Money waiting: {cash(stats.moneyWaiting)}</p><ul style={s.modalList}>{openInvoices.map((invoice)=><li key={invoice.id || invoice._id}>{invoice.customer_name || "Client"} — {cash(invoice.balance_due || invoice.total || 0)}</li>)}</ul></> : null}
-    </>;
-  };
-
-  const title = modal.title || modal.label || modal.job?.title || "AI Operator Panel";
-  return <div style={s.modalBackdrop} onClick={onClose}><div style={s.modalCard} onClick={(e)=>e.stopPropagation()}><button style={s.modalClose} type="button" onClick={onClose}>×</button><h3 style={s.modalTitle}>{title}</h3><p style={s.modalDesc}>Review details, edit safely, then open full page if needed.</p><div style={s.modalBody}>{renderBody()}</div>{draft.saveMessage ? <p style={s.modalNotice}>{draft.saveMessage}</p> : null}<div style={s.modalActions}><button style={s.modalPrimary} type="button" onClick={onSave} disabled={savingModal}>{savingModal ? "Saving..." : "Save changes"}</button><button style={s.modalGhost} type="button" onClick={saveLocal}>Save draft</button>{modal.job ? <button style={s.modalGhost} type="button" onClick={() => openJob(modal.job?.id)}>Open job</button> : null}<button style={s.modalGhost} type="button" onClick={() => navigate(modal.route || (modalType.includes("approval") ? "/dashboard" : modalType.includes("proof") ? "/proof-to-paid" : modalType.includes("revenue") || modalType.includes("money") ? "/invoices" : modalType.includes("crew") || modalType.includes("dispatch") ? "/dispatch" : modalType.includes("follow") ? "/sms" : "/jobs"))}>Open full page</button><button style={s.modalGhost} type="button" onClick={onClose}>Close</button></div></div></div>;
+  return <div style={s.modalBackdrop} onClick={onClose}><div style={s.modalCard} onClick={(e)=>e.stopPropagation()}><div style={s.panelHeader}><div><h3 style={s.modalTitle}>{panel.title || "Control Room Panel"}</h3><p style={s.modalDesc}>{panel.description || "Edit and prepare this workspace without leaving the dashboard."}</p></div><button style={s.modalClose} type="button" onClick={onClose}>×</button></div><div style={s.modalBody}>{content[panelType] || content.settings}</div>{notice ? <p style={s.modalNotice}>{notice}</p> : null}<div style={s.modalActions}><button style={s.modalPrimary} type="button" onClick={onSave}>Save draft</button><button style={s.modalGhost} type="button" onClick={()=>setNotice("Prepared action in panel. No auto-send was performed.")}>Prepare action</button>{secondary}<button style={s.modalGhost} type="button" onClick={onClose}>Close</button></div></div></div>;
 }
 
 function Th({ children }) {
@@ -1003,6 +972,9 @@ const s = {
   rowClickable: {
     cursor: "pointer",
   },
+  panelHeader: { position: "sticky", top: 0, zIndex: 2, background: "#fff", borderBottom: "1px solid #e2e8f0", paddingBottom: 8, marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
+  panelList: { display: "grid", gap: 8, margin: "8px 0 14px" },
+  panelRow: { border: "1px solid #e2e8f0", borderRadius: 10, padding: "8px 10px", display: "flex", justifyContent: "space-between", gap: 10, background: "#fff" },
   modalBackdrop: {
     position: "fixed",
     inset: 0,
@@ -1027,7 +999,7 @@ const s = {
   modalClose: { position: "absolute", top: 10, right: 12, border: 0, background: "transparent", fontSize: 28, cursor: "pointer" },
   modalTitle: { margin: "0 0 8px", fontSize: 28, color: "#0f172a" },
   modalDesc: { margin: "0 0 12px", color: "#334155", fontSize: 15 },
-  modalBody: { border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, background: "#f8fafc" },
+  modalBody: { border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, background: "#f8fafc", overflowY: "auto", maxHeight: "calc(82vh - 220px)" },
   modalLine: { margin: "4px 0", color: "#0f172a" },
   modalActions: { marginTop: 16, display: "flex", flexWrap: "wrap", gap: 10 },
   modalNotice: { margin: "10px 2px 0", color: "#0f4fcf", fontSize: 13, fontWeight: 700 },
