@@ -1,0 +1,154 @@
+/* Smart Hub visual repair
+   Keep the editable/action popups, but remove the ugly duplicate helper text from older clarity CSS. */
+
+/* Stop older clarity layers from injecting duplicate text/badges into the new Smart Hub workspace tiles. */
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5)::before,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5)::before,
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button::after,
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button::before,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button::before,
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button strong::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button strong::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Clean premium owner workspace panel. */
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5),
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) {
+  padding: 22px !important;
+  border-radius: 28px !important;
+  background: rgba(255,255,255,0.92) !important;
+  border: 1px solid rgba(148,163,184,0.42) !important;
+  box-shadow: 0 16px 44px rgba(15,23,42,0.12) !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) > h2,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) > h2 {
+  margin: 0 !important;
+  font-size: 20px !important;
+  line-height: 1.15 !important;
+  color: #0f172a !important;
+  font-weight: 900 !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) > p,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) > p {
+  margin: 6px 0 16px !important;
+  color: #475569 !important;
+  font-size: 13px !important;
+  font-weight: 650 !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) > div:last-child,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) > div:last-child {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(205px, 1fr)) !important;
+  gap: 14px !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+  min-height: 126px !important;
+  padding: 16px !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(203,213,225,0.95) !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
+  box-shadow: 0 10px 24px rgba(15,23,42,0.08) !important;
+  color: #0f172a !important;
+  text-align: left !important;
+  line-height: 1.25 !important;
+  transform: none !important;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:hover,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:hover {
+  transform: translateY(-2px) !important;
+  border-color: #155eef !important;
+  box-shadow: 0 16px 36px rgba(15,23,42,0.13) !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button strong,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button strong {
+  display: block !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  color: #0f172a !important;
+  margin: 0 !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button small,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button small {
+  display: block !important;
+  color: #475569 !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  line-height: 1.35 !important;
+  margin: 0 !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button b,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button b {
+  display: inline-flex !important;
+  align-items: center !important;
+  color: #155eef !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  margin-top: auto !important;
+}
+
+/* SMS tile: one clean badge only, not duplicated. */
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(9),
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(9) {
+  border: 2px solid #ff5a12 !important;
+  background: linear-gradient(145deg, #fff7ed 0%, #ffffff 56%, #eff6ff 100%) !important;
+  box-shadow: 0 14px 32px rgba(255,90,18,0.18) !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(9) span,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(9) span {
+  display: inline-flex !important;
+  align-items: center !important;
+  align-self: flex-start !important;
+  position: static !important;
+  border-radius: 999px !important;
+  background: #ff5a12 !important;
+  color: #ffffff !important;
+  padding: 4px 8px !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: .04em !important;
+  box-shadow: none !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(9) strong,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(9) strong {
+  color: #c2410c !important;
+}
+
+/* Tighten the top metric cards without changing their functionality. */
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(3) > button,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(3) > button {
+  min-height: 128px !important;
+  border-radius: 22px !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
+}
+
+@media (max-width: 768px) {
+  .px-main main[style*="rgb(180, 170, 155)"],
+  .px-main main[style*="#b4aa9b"] {
+    padding: 14px !important;
+  }
+
+  .px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) > div:last-child,
+  .px-main main[style*="#b4aa9b"] > section:nth-of-type(5) > div:last-child {
+    grid-template-columns: 1fr !important;
+  }
+}
