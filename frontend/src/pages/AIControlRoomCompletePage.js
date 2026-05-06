@@ -61,6 +61,7 @@ export default function AIControlRoomCompletePage() {
 
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
+  const [activeModal, setActiveModal] = useState(null);
   const [data, setData] = useState({
     jobs: [],
     invoices: [],
@@ -170,6 +171,8 @@ export default function AIControlRoomCompletePage() {
     setNotice("AI Plan run complete. Queue refreshed safely.");
     load();
   };
+  const openModal = (modal) => setActiveModal(modal || null);
+  const closeModal = () => setActiveModal(null);
 
   const openJob = (id) => {
     if (id && !String(id).startsWith("demo-")) navigate(`/jobs/${id}`);
@@ -218,10 +221,10 @@ export default function AIControlRoomCompletePage() {
               </div>
 
               <div style={s.liveGrid}>
-                <LiveStat icon="✓" label="Approvals" value={stats.approvals} />
-                <LiveStat icon="♙" label="Workers active" value={stats.workers} />
-                <LiveStat icon="$" label="Money waiting" value={cash(stats.moneyWaiting)} orange />
-                <LiveStat icon="☵" label="Follow-ups" value={stats.followUps} />
+                <LiveStat icon="✓" label="Approvals" value={stats.approvals} onClick={() => openModal({ key: "approvals" })} />
+                <LiveStat icon="♙" label="Workers active" value={stats.workers} onClick={() => openModal({ key: "workersActive" })} />
+                <LiveStat icon="$" label="Money waiting" value={cash(stats.moneyWaiting)} orange onClick={() => openModal({ key: "moneyWaiting" })} />
+                <LiveStat icon="☵" label="Follow-ups" value={stats.followUps} onClick={() => openModal({ key: "followUps" })} />
               </div>
             </aside>
           </section>
@@ -240,7 +243,7 @@ export default function AIControlRoomCompletePage() {
           </section>
 
           <section style={s.twoCol}>
-            <article style={s.card}>
+            <article style={s.card} onClick={() => openModal({ key: "todayMission" })}>
               <Title icon="◎">Today’s AI Mission</Title>
 
               <div style={s.bestMove}>
@@ -248,21 +251,21 @@ export default function AIControlRoomCompletePage() {
               </div>
 
               <div style={s.metricGrid}>
-                <Mini icon="♙" label="Need Crew" value={stats.needCrew} sub="Jobs need staff" color="#ff5a12" bg="#fff1e8" />
-                <Mini icon="$" label="Revenue" value={`$${Math.round(stats.moneyWaiting)}`} sub="Up next to collect" color="#1165ff" bg="#edf4ff" />
-                <Mini icon="☵" label="Follow-ups" value={stats.followUps} sub="Awaiting replies" color="#069bd7" bg="#ecfaff" />
-                <Mini icon="◇" label="Proof" value={stats.proof} sub="Ready for review" color="#0f172a" bg="#f1f5f9" />
+                <Mini icon="♙" label="Need Crew" value={stats.needCrew} sub="Jobs need staff" color="#ff5a12" bg="#fff1e8" onClick={(event) => { event.stopPropagation(); openModal({ key: "needCrew" }); }} />
+                <Mini icon="$" label="Revenue" value={`$${Math.round(stats.moneyWaiting)}`} sub="Up next to collect" color="#1165ff" bg="#edf4ff" onClick={(event) => { event.stopPropagation(); openModal({ key: "revenue" }); }} />
+                <Mini icon="☵" label="Follow-ups" value={stats.followUps} sub="Awaiting replies" color="#069bd7" bg="#ecfaff" onClick={(event) => { event.stopPropagation(); openModal({ key: "followUps" }); }} />
+                <Mini icon="◇" label="Proof" value={stats.proof} sub="Ready for review" color="#0f172a" bg="#f1f5f9" onClick={(event) => { event.stopPropagation(); openModal({ key: "proof" }); }} />
               </div>
 
               <div style={s.smallActions}>
-                <button style={s.orangeSmall} type="button" onClick={runAiPlan}>
+                <button style={s.orangeSmall} type="button" onClick={(event) => { event.stopPropagation(); openModal({ key: "workThePlan" }); }}>
                   Work the plan <span>→</span>
                 </button>
 
                 <button
                   style={s.whiteSmall}
                   type="button"
-                  onClick={() => setNotice("AI explains the safest next action before anything is sent or changed.")}
+                  onClick={(event) => { event.stopPropagation(); openModal({ key: "explainPlan" }); }}
                 >
                   Explain plan <span>ⓘ</span>
                 </button>
@@ -278,15 +281,15 @@ export default function AIControlRoomCompletePage() {
               </div>
 
               <div style={s.moveGrid}>
-                <Move title="Dispatch the day" body="Assign crews and get jobs moving." badge={`${stats.needCrew} jobs`} color="#ff5a12" icon="▣" />
-                <Move title="Move money" body="Follow up payments and collect faster." badge={cash(stats.moneyWaiting)} color="#1165ff" icon="$" />
-                <Move title="Proof & updates" body="Review proof and send updates to clients." badge={`${stats.proof} ready`} color="#0f2747" icon="◇" />
+                <Move title="Dispatch the day" body="Assign crews and get jobs moving." badge={`${stats.needCrew} jobs`} color="#ff5a12" icon="▣" onClick={() => openModal({ key: "dispatchDay" })} />
+                <Move title="Move money" body="Follow up payments and collect faster." badge={cash(stats.moneyWaiting)} color="#1165ff" icon="$" onClick={() => openModal({ key: "moveMoney" })} />
+                <Move title="Proof & updates" body="Review proof and send updates to clients." badge={`${stats.proof} ready`} color="#0f2747" icon="◇" onClick={() => openModal({ key: "proofUpdates" })} />
               </div>
             </article>
           </section>
 
           <section style={s.twoCol}>
-            <article style={s.card}>
+            <article style={s.card} onClick={() => openModal({ key: "activeWorkBoard" })}>
               <Title icon="☷">Active Work Board</Title>
 
               <div style={s.tableWrap}>
@@ -303,7 +306,7 @@ export default function AIControlRoomCompletePage() {
 
                   <tbody>
                     {rows.map(([id, title, client, assignment, status]) => (
-                      <tr key={`${id}-${title}`}>
+                      <tr key={`${id}-${title}`} style={s.rowClickable} onClick={() => openModal({ key: "jobRow", job: { id, title, client, assignment, status } })}>
                         <Td>
                           <span style={s.jobDot} />
                           <strong>{title}</strong>
@@ -316,7 +319,7 @@ export default function AIControlRoomCompletePage() {
                           <strong>{status}</strong>
                         </Td>
                         <Td>
-                          <button style={s.workButton} type="button" onClick={() => openJob(id)}>
+                          <button style={s.workButton} type="button" onClick={(event) => { event.stopPropagation(); openModal({ key: "jobWork", job: { id, title, client, assignment, status } }); }}>
                             Work here
                           </button>
                         </Td>
@@ -326,12 +329,12 @@ export default function AIControlRoomCompletePage() {
                 </table>
               </div>
 
-              <button style={s.linkButton} type="button" onClick={() => navigate("/jobs")}>
+              <button style={s.linkButton} type="button" onClick={(event) => { event.stopPropagation(); openModal({ key: "allJobs" }); }}>
                 View all jobs <span>→</span>
               </button>
             </article>
 
-            <article style={s.card}>
+            <article style={s.card} onClick={() => openModal({ key: "approvalControl" })}>
               <div style={s.cardHead}>
                 <div>
                   <Title icon="◇">AI Approval Control</Title>
@@ -342,19 +345,19 @@ export default function AIControlRoomCompletePage() {
               </div>
 
               <div style={s.approvalGrid}>
-                <Approval label="All" value="15" icon="☷" active />
-                <Approval label="Dispatch" value="6" icon="▣" />
-                <Approval label="Revenue" value="3" icon="$" />
-                <Approval label="Follow-ups" value="2" icon="▤" />
-                <Approval label="Proof" value="1" icon="◇" />
-                <Approval label="Receptionist" value="2" icon="♙" />
-                <Approval label="Recurring" value="1" icon="↻" />
-                <Approval label="Customer Updates" value="0" icon="☵" />
-                <Approval label="Quote Builder" value="0" icon="☵" />
-                <Approval label="Client Memory" value="0" icon="▤" />
+                <Approval label="All" value="15" icon="☷" active onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "All", value: 15 }); }} />
+                <Approval label="Dispatch" value="6" icon="▣" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Dispatch", value: 6 }); }} />
+                <Approval label="Revenue" value="3" icon="$" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Revenue", value: 3 }); }} />
+                <Approval label="Follow-ups" value="2" icon="▤" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Follow-ups", value: 2 }); }} />
+                <Approval label="Proof" value="1" icon="◇" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Proof", value: 1 }); }} />
+                <Approval label="Receptionist" value="2" icon="♙" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Receptionist", value: 2 }); }} />
+                <Approval label="Recurring" value="1" icon="↻" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Recurring", value: 1 }); }} />
+                <Approval label="Customer Updates" value="0" icon="☵" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Customer Updates", value: 0 }); }} />
+                <Approval label="Quote Builder" value="0" icon="☵" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Quote Builder", value: 0 }); }} />
+                <Approval label="Client Memory" value="0" icon="▤" onClick={(event) => { event.stopPropagation(); openModal({ key: "approvalTile", label: "Client Memory", value: 0 }); }} />
               </div>
 
-              <button style={s.linkButton} type="button" onClick={() => navigate("/dashboard")}>
+              <button style={s.linkButton} type="button" onClick={(event) => { event.stopPropagation(); openModal({ key: "openApprovals" }); }}>
                 Open approvals queue <span>→</span>
               </button>
             </article>
@@ -368,7 +371,7 @@ export default function AIControlRoomCompletePage() {
 
             <div style={s.workspaceGrid}>
               {workspaces.map(([label, route, icon, color, bg]) => (
-                <button key={label} style={s.workspaceTile} type="button" onClick={() => navigate(route)}>
+                <button key={label} style={s.workspaceTile} type="button" onClick={() => openModal({ key: "workspace", label, route })}>
                   <span style={{ ...s.workspaceIcon, color, background: bg }}>{icon}</span>
                   <strong style={s.workspaceLabel}>{label}</strong>
                   <em style={s.chev}>›</em>
@@ -379,6 +382,7 @@ export default function AIControlRoomCompletePage() {
 
           {loading ? <div style={s.toast}>Loading live Churvox data…</div> : null}
           {notice ? <div style={{ ...s.toast, background: "#0b5f36" }}>{notice}</div> : null}
+          <ControlModal modal={activeModal} onClose={closeModal} navigate={navigate} stats={stats} runAiPlan={runAiPlan} openJob={openJob} />
         </div>
       </main>
     </Layout>
@@ -394,34 +398,34 @@ function Title({ icon, children }) {
   );
 }
 
-function LiveStat({ icon, label, value, orange = false }) {
+function LiveStat({ icon, label, value, orange = false, onClick }) {
   return (
-    <div style={s.liveStat}>
+    <button style={s.liveStatButton} type="button" onClick={onClick}>
       <span style={{ ...s.liveIcon, ...(orange ? s.liveIconOrange : {}) }}>{icon}</span>
       <div>
         <small style={s.liveLabel}>{label}</small>
         <strong style={s.liveValue}>{value}</strong>
       </div>
-    </div>
+    </button>
   );
 }
 
-function Mini({ icon, label, value, sub, color, bg }) {
+function Mini({ icon, label, value, sub, color, bg, onClick }) {
   return (
-    <div style={s.mini}>
+    <button style={s.miniButton} type="button" onClick={onClick}>
       <span style={{ ...s.miniIcon, color, background: bg }}>{icon}</span>
       <div>
         <small style={s.miniLabel}>{label}</small>
         <strong style={s.miniValue}>{value}</strong>
         <em style={s.miniSub}>{sub}</em>
       </div>
-    </div>
+    </button>
   );
 }
 
-function Move({ title, body, badge, color, icon }) {
+function Move({ title, body, badge, color, icon, onClick }) {
   return (
-    <button style={{ ...s.move, borderColor: color }} type="button">
+    <button style={{ ...s.move, borderColor: color }} type="button" onClick={onClick}>
       <span style={{ ...s.moveIcon, color, background: color === "#ff5a12" ? "#fff1e8" : "#edf4ff" }}>{icon}</span>
       <h3 style={{ ...s.moveTitle, color: color === "#1165ff" ? "#005dff" : "#0c1526" }}>{title}</h3>
       <p style={s.moveBody}>{body}</p>
@@ -430,13 +434,56 @@ function Move({ title, body, badge, color, icon }) {
   );
 }
 
-function Approval({ icon, label, value, active = false }) {
+function Approval({ icon, label, value, active = false, onClick }) {
   return (
-    <button style={{ ...s.approvalTile, borderColor: active ? "#ff6b15" : "#e0e5ee" }} type="button">
+    <button style={{ ...s.approvalTile, borderColor: active ? "#ff6b15" : "#e0e5ee" }} type="button" onClick={onClick}>
       <span style={s.approvalIcon}>{icon}</span>
       <small style={s.approvalLabel}>{label}</small>
       <strong style={s.approvalValue}>{value}</strong>
     </button>
+  );
+}
+
+function ControlModal({ modal, onClose, navigate, stats, runAiPlan, openJob }) {
+  useEffect(() => {
+    if (!modal) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [modal, onClose]);
+  if (!modal) return null;
+  const title = modal.label || modal.job?.title || "AI Control Room";
+  const description = modal.key === "workersActive" ? "Workers currently available or active in your business." : "Open this workspace to review details and continue.";
+  const routeAction = modal.route ? () => navigate(modal.route) : null;
+  return (
+    <div style={s.modalBackdrop} onClick={onClose}>
+      <div style={s.modalCard} onClick={(event) => event.stopPropagation()}>
+        <button style={s.modalClose} type="button" onClick={onClose}>×</button>
+        <h3 style={s.modalTitle}>{title}</h3>
+        <p style={s.modalDesc}>{description}</p>
+        <div style={s.modalBody}>
+          <p style={s.modalLine}>Approvals: {stats?.approvals || 0}</p>
+          <p style={s.modalLine}>Workers active: {stats?.workers || 0}</p>
+          {modal.job ? <p style={s.modalLine}>Client: {modal.job.client || "Client"} · Status: {modal.job.status || "Pending"}</p> : null}
+        </div>
+        <div style={s.modalActions}>
+          {modal.key === "approvals" || modal.key === "openApprovals" || modal.key === "approvalControl" || modal.key === "approvalTile" ? <button style={s.modalPrimary} type="button" onClick={() => navigate("/dashboard")}>Open approvals queue</button> : null}
+          {modal.key === "workersActive" ? <button style={s.modalPrimary} type="button" onClick={() => navigate("/team")}>Open Team</button> : null}
+          {modal.key === "moneyWaiting" || modal.key === "moveMoney" || modal.key === "revenue" ? <button style={s.modalPrimary} type="button" onClick={() => navigate("/invoices")}>Open Invoices</button> : null}
+          {modal.key === "dispatchDay" || modal.key === "needCrew" ? <button style={s.modalPrimary} type="button" onClick={() => navigate("/dispatch")}>Open Dispatch</button> : null}
+          {modal.key === "proofUpdates" || modal.key === "proof" ? <button style={s.modalPrimary} type="button" onClick={() => navigate("/proof-to-paid")}>Open Proof to Paid</button> : null}
+          {modal.key === "followUps" ? <button style={s.modalPrimary} type="button" onClick={() => navigate("/sms")}>Open follow-ups</button> : null}
+          {modal.key === "allJobs" || modal.key === "activeWorkBoard" ? <button style={s.modalPrimary} type="button" onClick={() => navigate("/jobs")}>Open Jobs</button> : null}
+          {modal.key === "jobRow" || modal.key === "jobWork" ? <button style={s.modalPrimary} type="button" onClick={() => openJob(modal.job?.id)}>Open job</button> : null}
+          {modal.key === "workThePlan" ? <button style={s.modalPrimary} type="button" onClick={runAiPlan}>Run AI Plan</button> : null}
+          {modal.key === "explainPlan" ? <button style={s.modalPrimary} type="button" onClick={onClose}>Got it</button> : null}
+          {routeAction ? <button style={s.modalPrimary} type="button" onClick={routeAction}>Open {modal.label}</button> : null}
+          <button style={s.modalGhost} type="button" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -604,6 +651,20 @@ const s = {
     background: "rgba(15,28,49,0.72)",
     border: "1px solid rgba(255,255,255,0.14)",
   },
+  liveStatButton: {
+    minHeight: 68,
+    display: "grid",
+    gridTemplateColumns: "42px 1fr",
+    alignItems: "center",
+    gap: 18,
+    padding: "14px 18px",
+    borderRadius: 9,
+    background: "rgba(15,28,49,0.72)",
+    border: "1px solid rgba(255,255,255,0.14)",
+    width: "100%",
+    textAlign: "left",
+    cursor: "pointer",
+  },
   liveIcon: {
     width: 42,
     height: 42,
@@ -729,6 +790,19 @@ const s = {
     borderRadius: 10,
     background: "#ffffff",
     border: "1px solid #e5e9f1",
+  },
+  miniButton: {
+    display: "grid",
+    gridTemplateColumns: "46px 1fr",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: 12,
+    border: "1px solid #e2e8f0",
+    background: "#ffffff",
+    padding: "12px 14px",
+    width: "100%",
+    textAlign: "left",
+    cursor: "pointer",
   },
   miniIcon: {
     width: 30,
@@ -877,6 +951,38 @@ const s = {
     fontSize: 14,
     fontWeight: 650,
   },
+  rowClickable: {
+    cursor: "pointer",
+  },
+  modalBackdrop: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(15,23,42,0.58)",
+    backdropFilter: "blur(6px)",
+    zIndex: 99,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+  },
+  modalCard: {
+    width: "min(680px, 100%)",
+    maxHeight: "90vh",
+    overflowY: "auto",
+    background: "#fff",
+    borderRadius: 16,
+    padding: "20px 20px 18px",
+    boxShadow: "0 24px 58px rgba(2,6,23,0.25)",
+    position: "relative",
+  },
+  modalClose: { position: "absolute", top: 10, right: 12, border: 0, background: "transparent", fontSize: 28, cursor: "pointer" },
+  modalTitle: { margin: "0 0 8px", fontSize: 28, color: "#0f172a" },
+  modalDesc: { margin: "0 0 12px", color: "#334155", fontSize: 15 },
+  modalBody: { border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, background: "#f8fafc" },
+  modalLine: { margin: "4px 0", color: "#0f172a" },
+  modalActions: { marginTop: 16, display: "flex", flexWrap: "wrap", gap: 10 },
+  modalPrimary: { border: 0, background: "#1165ff", color: "#fff", borderRadius: 10, padding: "10px 14px", cursor: "pointer", fontWeight: 700 },
+  modalGhost: { border: "1px solid #cbd5e1", background: "#fff", color: "#0f172a", borderRadius: 10, padding: "10px 14px", cursor: "pointer", fontWeight: 700 },
   jobDot: {
     width: 9,
     height: 9,
