@@ -1,5 +1,8 @@
 const RAW_BACKEND_URL =
   (
+    (typeof import.meta !== "undefined" &&
+      import.meta.env &&
+      import.meta.env.VITE_BACKEND_URL) ||
     (typeof process !== "undefined" && process?.env?.REACT_APP_BACKEND_URL) ||
     ""
   ).replace(/\/$/, "");
