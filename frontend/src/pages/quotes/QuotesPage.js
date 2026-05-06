@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "@/hooks/useApi";
 import useAiDraft from "@/hooks/useAiDraft";
 import {
@@ -266,7 +266,7 @@ export default function QuotesPage() {
                               <>
                                 <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} />
                                 <div className="absolute right-0 mt-1 w-44 bg-white border border-[#d8e3f3] rounded-xl shadow-lg z-20 overflow-hidden">
-                                  <Link className="block px-3 py-2 text-[13px] text-[#0d1b34] hover:bg-[#eff4ff]" onClick={() => { setOpenMenu(null); setActiveQuote(quote); }}>View details</button>
+                                  <button type="button" className="block w-full text-left px-3 py-2 text-[13px] text-[#0d1b34] hover:bg-[#eff4ff]" onClick={() => { setOpenMenu(null); setActiveQuote(quote); }}>View details</button>
                                   <Link to={`/quotes/${quote.id}/edit`} className="block px-3 py-2 text-[13px] text-[#0d1b34] hover:bg-[#eff4ff]" data-testid={`edit-quote-${quote.id}`}>
                                     <Pencil className="h-3.5 w-3.5 inline mr-1.5" />Edit
                                   </Link>
