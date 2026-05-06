@@ -130,7 +130,7 @@ export default function JobsPage() {
             />
             <PremiumAIDraftPanel
               title="AI Job Drafts"
-              subtitle="Generate concise job summaries, customer updates, and next actions."
+              subtitle="AI checked your jobs and prepared summaries, customer updates, and next actions."
               surface="jobs"
               context={{
                 role: normalizedRole,
@@ -142,6 +142,8 @@ export default function JobsPage() {
                   customer_name: j.customer_name,
                 })),
               }}
+              loadingLabel="AI is preparing job drafts…"
+              emptyLabel="No job drafts needed right now."
               quickActions={[
                 { label: "Job action list", prompt: "Generate a concise job action list for today." },
                 { label: "Customer message", prompt: "Draft a concise customer update for active jobs." },
