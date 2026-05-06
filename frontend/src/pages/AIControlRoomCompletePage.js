@@ -57,6 +57,7 @@ export default function AIControlRoomCompletePage() {
   const [activePanel, setActivePanel] = useState(null);
   const [panelDraft, setPanelDraft] = useState({});
   const [panelNotice, setPanelNotice] = useState("");
+  const [workspaceModal, setWorkspaceModal] = useState(null);
   const [data, setData] = useState({
     jobs: [],
     invoices: [],
@@ -183,6 +184,14 @@ export default function AIControlRoomCompletePage() {
 
   const savePanelDraft = () => {
     setPanelNotice("Draft saved in panel.");
+  };
+
+  const openWorkspaceModal = (title, route) => {
+    setWorkspaceModal({ title, route });
+  };
+
+  const closeWorkspaceModal = () => {
+    setWorkspaceModal(null);
   };
 
   return (
@@ -377,7 +386,7 @@ export default function AIControlRoomCompletePage() {
 
             <div style={s.workspaceGrid}>
               {workspaces.map(([label, route, icon, color, bg]) => (
-                <button key={label} style={s.workspaceTile} type="button" onClick={() => openPanel({ key: label.toLowerCase(), title: label, route, type: ({"Jobs":"jobs","Clients":"clients","Quotes":"quotes","Invoices":"invoices","Team":"team","Dispatch":"dispatch","Proof to Paid":"proof","Receptionist":"receptionist","Recurring":"recurring","Customer Updates":"followups","Quote Builder":"quotes","Client Memory":"clients","Plans & Billing":"plans","Account Centre":"settings","Settings":"settings","Notifications":"followups","Integrations":"integrations","Privacy":"legal","Terms":"legal","Account Removal":"legal"}[label] || "settings") })}>
+                <button key={label} style={s.workspaceTile} type="button" onClick={() => openWorkspaceModal(label, route)}>
                   <span style={{ ...s.workspaceIcon, color, background: bg }}>{icon}</span>
                   <strong style={s.workspaceLabel}>{label}</strong>
                   <em style={s.chev}>›</em>
@@ -389,6 +398,12 @@ export default function AIControlRoomCompletePage() {
           {loading ? <div style={s.toast}>Loading live Churvox data…</div> : null}
           {notice ? <div style={{ ...s.toast, background: "#0b5f36" }}>{notice}</div> : null}
           <ControlRoomPanel panel={activePanel} draft={panelDraft} setDraft={setPanelDraft} onClose={closePanel} onSave={savePanelDraft} updateDraft={updatePanelDraft} navigate={navigate} stats={stats} data={data} notice={panelNotice} setNotice={setPanelNotice} rows={rows} />
+          <WorkspacePageModal
+            open={Boolean(workspaceModal)}
+            title={workspaceModal?.title}
+            route={workspaceModal?.route}
+            onClose={closeWorkspaceModal}
+          />
         </div>
       </main>
     </Layout>
@@ -447,6 +462,34 @@ function Approval({ icon, label, value, active = false, onClick }) {
       <small style={s.approvalLabel}>{label}</small>
       <strong style={s.approvalValue}>{value}</strong>
     </button>
+  );
+}
+
+
+function WorkspacePageModal({ open, title, route, onClose }) {
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
+
+  if (!open || !route) return null;
+
+  return (
+    <div style={s.workspaceModalBackdrop} onClick={onClose}>
+      <div style={s.workspaceModalCard} onClick={(event) => event.stopPropagation()}>
+        <div style={s.workspaceModalHeader}>
+          <h3 style={s.workspaceModalTitle}>{title || "Workspace"}</h3>
+          <button style={s.workspaceModalClose} type="button" onClick={onClose} aria-label="Close workspace">×</button>
+        </div>
+        <div style={s.workspaceModalFrameWrap}>
+          <iframe title={`${title || "Workspace"} page`} src={route} style={s.workspaceModalFrame} />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1004,6 +1047,13 @@ const s = {
   modalList: { margin: "6px 0 0", paddingLeft: 18, color: "#334155", fontSize: 13 },
   modalPrimary: { border: 0, background: "#1165ff", color: "#fff", borderRadius: 10, padding: "10px 14px", cursor: "pointer", fontWeight: 700 },
   modalGhost: { border: "1px solid #cbd5e1", background: "#fff", color: "#0f172a", borderRadius: 10, padding: "10px 14px", cursor: "pointer", fontWeight: 700 },
+  workspaceModalBackdrop: { position: "fixed", inset: 0, background: "rgba(2,6,23,0.52)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "stretch", justifyContent: "center", padding: "10px" },
+  workspaceModalCard: { width: "100%", height: "100%", maxWidth: "min(1800px, calc(100vw - 20px))", maxHeight: "calc(100vh - 20px)", background: "#fff", borderRadius: 18, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 24px 60px rgba(2,6,23,0.35)" },
+  workspaceModalHeader: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "12px 16px", borderBottom: "1px solid #e2e8f0", background: "#fff" },
+  workspaceModalTitle: { margin: 0, color: "#0f172a", fontSize: 18, fontWeight: 700 },
+  workspaceModalClose: { border: "1px solid #dbe5f2", background: "#fff", color: "#0f172a", width: 38, height: 38, borderRadius: 12, cursor: "pointer", fontSize: 24, lineHeight: 1 },
+  workspaceModalFrameWrap: { flex: 1, minHeight: 0, background: "#f8fafc" },
+  workspaceModalFrame: { width: "100%", height: "100%", border: 0, background: "#fff" },
   jobDot: {
     width: 9,
     height: 9,
