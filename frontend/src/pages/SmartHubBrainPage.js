@@ -5,9 +5,10 @@ const API_ROOT = (() => {
     process.env.REACT_APP_BACKEND_URL ||
     process.env.REACT_APP_API_URL ||
     process.env.VITE_BACKEND_URL ||
-    "https://grassley-backend.onrender.com";
+    "";
 
   const clean = String(raw).replace(/\/+$/, "");
+  if (!clean) return "/api";
   return clean.endsWith("/api") ? clean : `${clean}/api`;
 })();
 
