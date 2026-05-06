@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useApi } from "@/hooks/useApi";
 import {
   Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, DollarSign, Send,
@@ -13,6 +13,7 @@ import {
   PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton,
   PremiumAIBox, PremiumAIDraftPanel, PremiumEmptyState, PremiumStatusBadge, PremiumBadge,
 } from "@/components/premium";
+import EntityDetailModal from "@/components/EntityDetailModal";
 
 const safeArray = (v) => (Array.isArray(v) ? v : []);
 const safeNumber = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
@@ -37,6 +38,7 @@ export default function InvoicesPage() {
   const [sortBy, setSortBy] = useState("newest");
   const [deleteId, setDeleteId] = useState(null);
   const [openMenu, setOpenMenu] = useState(null);
+  const [activeInvoice, setActiveInvoice] = useState(null);
 
   useEffect(() => { loadInvoices(); }, []);
 
@@ -280,7 +282,7 @@ export default function InvoicesPage() {
                       <div className="flex flex-col sm:items-end gap-2">
                         <span className="text-[24px] font-heading font-bold text-[#0d1b34]">{formatCurrency(invoice.total)}</span>
                         <div className="flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                          <PremiumButton size="sm" variant="secondary" onClick={() => navigate(`/invoices/${invoice.id}`)}>Open</PremiumButton>
+                          <PremiumButton size="sm" variant="secondary" onClick={() => setActiveInvoice(invoice)}>Open</PremiumButton>
                           {invoice.status === "draft" && (
                             <PremiumButton size="sm" onClick={() => handleSendInvoice(invoice.id)} iconLeft={<Send className="h-3.5 w-3.5" />} dataTestId={`send-invoice-${invoice.id}`}>Send</PremiumButton>
                           )}
@@ -306,7 +308,7 @@ export default function InvoicesPage() {
                               <>
                                 <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} />
                                 <div className="absolute right-0 mt-1 w-44 bg-white border border-[#d8e3f3] rounded-xl shadow-lg z-20 overflow-hidden">
-                                  <Link to={`/invoices/${invoice.id}`} className="block px-3 py-2 text-[13px] text-[#0d1b34] hover:bg-[#eff4ff]">View details</Link>
+                                  <button className="block w-full text-left px-3 py-2 text-[13px] text-[#0d1b34] hover:bg-[#eff4ff]" onClick={() => { setOpenMenu(null); setActiveInvoice(invoice); }}>View details</button>
                                   <Link to={`/invoices/${invoice.id}/edit`} className="block px-3 py-2 text-[13px] text-[#0d1b34] hover:bg-[#eff4ff]" data-testid={`edit-invoice-${invoice.id}`}>
                                     <Pencil className="h-3.5 w-3.5 inline mr-1.5" />Edit
                                   </Link>
@@ -340,6 +342,7 @@ export default function InvoicesPage() {
             </div>
           </div>
         )}
+      <EntityDetailModal open={Boolean(activeInvoice)} onClose={() => setActiveInvoice(null)} title={activeInvoice ? `Invoice details · ${activeInvoice.invoice_number || activeInvoice.id}` : "Invoice details"} item={activeInvoice} />
       </PremiumPage>
     </Layout>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Layout from "../../components/Layout";
 import { useAuth } from "../../context/AuthContext";
 import { useApi } from "../../hooks/useApi";
@@ -41,6 +41,7 @@ export default function ClientsPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResults, setImportResults] = useState(null);
+  const [activeClient, setActiveClient] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [showAuditClients, setShowAuditClients] = useState(false);
   const [hidingAuditClients, setHidingAuditClients] = useState(false);
@@ -375,7 +376,7 @@ export default function ClientsPage() {
                 <div key={cid} className="px-card px-card--hover" data-testid={`client-card-${cid}`}>
                   <div className="px-card__body">
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                      <Link to={`/clients/${cid}`} className="min-w-0 flex-1 group">
+                      <button type="button" onClick={() => setActiveClient(client)} className="min-w-0 flex-1 group text-left">
                         <div className="flex items-start gap-3">
                           <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white font-bold text-[15px]"
                                 style={{ background: "linear-gradient(135deg, #d94f17, #b93f10)" }}>
@@ -403,7 +404,7 @@ export default function ClientsPage() {
                           <span>Open invoices: {Number(client.open_invoices_count ?? client.invoices_count ?? 0)}</span>
                           <span>Quotes: {Number(client.quote_count ?? client.quotes_count ?? 0)}</span>
                         </div>
-                      </Link>
+                      </button>
 
                       <div className="flex flex-wrap items-center gap-2 md:flex-col md:items-end" onClick={(e) => e.stopPropagation()}>
                         <PremiumButton size="sm" variant="secondary" onClick={() => navigate(`/jobs/new?client=${cid}`)} iconLeft={<Briefcase size={13} />}>New job</PremiumButton>
@@ -426,6 +427,7 @@ export default function ClientsPage() {
             })}
           </div>
         )}
+      <EntityDetailModal open={Boolean(activeClient)} onClose={() => setActiveClient(null)} title={activeClient ? `Client details · ${activeClient.client_name || activeClient.name || activeClient.id}` : "Client details"} item={activeClient} />
       </PremiumPage>
     </Layout>
   );

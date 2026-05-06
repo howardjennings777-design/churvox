@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, JOB_STATUSES } from "../../lib/utils";
+import EntityDetailModal from "../../components/EntityDetailModal";
 import {
   PremiumPage, PremiumHero, PremiumCard, PremiumButton, PremiumBadge,
   PremiumAIBox, PremiumAIDraftPanel, PremiumEmptyState, PremiumLoadingState, PremiumStatusBadge,
@@ -23,6 +24,7 @@ export default function JobsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteId, setDeleteId] = useState(null);
+  const [activeJob, setActiveJob] = useState(null);
 
   const isWorker = normalizedRole === "worker";
 
@@ -197,7 +199,7 @@ export default function JobsPage() {
               <div
                 key={job.id}
                 className="px-card px-card--hover cursor-pointer"
-                onClick={() => navigate(`/jobs/${job.id}`)}
+                onClick={() => setActiveJob(job)}
                 data-testid={`job-card-${job.id}`}
               >
                 <div className="px-card__body">
@@ -259,6 +261,13 @@ export default function JobsPage() {
             </div>
           </div>
         )}
+        <EntityDetailModal
+          open={Boolean(activeJob)}
+          onClose={() => setActiveJob(null)}
+          title={activeJob ? `Job details · ${activeJob.title || activeJob.id}` : "Job details"}
+          item={activeJob}
+          actions={<div className="flex justify-end"><PremiumButton variant="secondary" onClick={() => setActiveJob(null)}>Close</PremiumButton></div>}
+        />
       </PremiumPage>
     </Layout>
   );
