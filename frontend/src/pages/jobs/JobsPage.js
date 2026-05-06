@@ -124,7 +124,7 @@ export default function JobsPage() {
           <>
             <PremiumAIBox
               title="AI Job Assistant"
-              subtitle="Purpose: checks assignment, delays, proof, and invoice readiness so each job has one clear next action"
+              subtitle="AI checked live data and checks assignment, delays, proof, and invoice readiness so each job has one clear next action"
               chip="Approval-first"
               suggestions={aiSuggestions}
             />

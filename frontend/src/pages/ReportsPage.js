@@ -40,7 +40,7 @@ export default function ReportsPage() {
 
         <PremiumAIBox
           title="AI Report Assistant"
-          subtitle="Purpose: checks revenue, workload, and job risk trends and prepares owner actions to improve weak areas"
+          subtitle="AI checked live data and checks revenue, workload, and job risk trends and prepares owner actions to improve weak areas"
           chip="Read-only summary"
           notice="AI summaries are informational only. Always cross-check before sharing with accountants, the ATO or HMRC."
           suggestions={[

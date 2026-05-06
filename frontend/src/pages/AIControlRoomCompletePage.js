@@ -246,7 +246,7 @@ export default function AIControlRoomCompletePage() {
 
           <section style={s.safety}>
             <span style={s.shield}>◇</span>
-            <span>No auto-send</span>
+            <span>Auto-send is OFF. AI prepares drafts for review.</span>
             <span>•</span>
             <span>No auto-charge</span>
             <span>•</span>
@@ -553,7 +553,7 @@ function ControlRoomPanel({ panel, draft, setDraft, onClose, onSave, updateDraft
     settings: <><p style={s.modalLine}>Workspace: {panel.title}</p><label style={s.modalLabel}>Owner note</label><textarea style={s.modalTextarea} value={draft.ownerNote||""} onChange={(e)=>updateDraft("ownerNote",e.target.value)} /></>,
   };
 
-  return <div style={s.modalBackdrop} onClick={onClose}><div style={s.modalCard} onClick={(e)=>e.stopPropagation()}><div style={s.panelHeader}><div><h3 style={s.modalTitle}>{panel.title || "Control Room Panel"}</h3><p style={s.modalDesc}>{panel.description || "Edit and prepare this workspace without leaving the dashboard."}</p></div><button style={s.modalClose} type="button" onClick={onClose}>×</button></div><div style={s.modalBody}>{content[panelType] || content.settings}</div>{notice ? <p style={s.modalNotice}>{notice}</p> : null}<div style={s.modalActions}><button style={s.modalPrimary} type="button" onClick={onSave}>Save draft</button><button style={s.modalGhost} type="button" onClick={()=>setNotice("Prepared action in panel. No auto-send was performed.")}>Prepare action</button>{secondary}<button style={s.modalGhost} type="button" onClick={onClose}>Close</button></div></div></div>;
+  return <div style={s.modalBackdrop} onClick={onClose}><div style={s.modalCard} onClick={(e)=>e.stopPropagation()}><div style={s.panelHeader}><div><h3 style={s.modalTitle}>{panel.title || "Control Room Panel"}</h3><p style={s.modalDesc}>{panel.description || "Edit and prepare this workspace without leaving the dashboard."}</p></div><button style={s.modalClose} type="button" onClick={onClose}>×</button></div><div style={s.modalBody}>{content[panelType] || content.settings}</div>{notice ? <p style={s.modalNotice}>{notice}</p> : null}<div style={s.modalActions}><button style={s.modalPrimary} type="button" onClick={onSave}>Save draft</button><button style={s.modalGhost} type="button" onClick={()=>setNotice("Prepared action in panel. Auto-send is OFF. AI prepares drafts for review. was performed.")}>Prepare action</button>{secondary}<button style={s.modalGhost} type="button" onClick={onClose}>Close</button></div></div></div>;
 }
 
 function Th({ children }) {

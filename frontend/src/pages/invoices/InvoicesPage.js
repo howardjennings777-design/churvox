@@ -124,7 +124,7 @@ export default function InvoicesPage() {
       out.push({
         icon: <AlertTriangle className="h-4 w-4" />,
         title: `${m.overdue} overdue invoice${m.overdue === 1 ? "" : "s"}`,
-        description: "Draft a polite payment reminder — review before sending. AI never auto-sends.",
+        description: "Draft a polite payment reminder — review before sending. Auto-send is OFF. AI prepares drafts for review..",
       });
     }
     if (m.sentUnpaid > 0) {
@@ -179,7 +179,7 @@ export default function InvoicesPage() {
 
         <PremiumAIBox
           title="AI Invoice Assistant"
-          subtitle="Purpose: checks unpaid, overdue, draft quality, and sync readiness before you approve reminders or send"
+          subtitle="AI checked live data and checks unpaid, overdue, draft quality, and sync readiness before you approve reminders or send"
           chip="Approval-first"
           suggestions={aiSuggestions}
         />
