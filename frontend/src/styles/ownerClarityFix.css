@@ -1,0 +1,140 @@
+/* Owner clarity layer: make navigation obvious for business owners. */
+
+/* Smart Hub / AI Control Room old dashboard owner workspace grid */
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5),
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) {
+  position: relative !important;
+  padding-top: 22px !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5)::before,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5)::before {
+  content: "Owner shortcuts — tap one card to open that workspace";
+  display: block;
+  margin: 0 0 14px 0;
+  border-radius: 16px;
+  background: #0f172a;
+  color: #dbeafe;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: .01em;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) > div:last-child,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) > div:last-child {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button {
+  position: relative !important;
+  min-height: 96px !important;
+  padding: 14px 38px 14px 14px !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(148, 163, 184, 0.45) !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .08) !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:hover,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:hover {
+  transform: translateY(-1px);
+  border-color: #155eef !important;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, .13) !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button strong,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button strong {
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  color: #0f172a !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button::after {
+  display: block;
+  grid-column: 2 / 3;
+  margin-top: 3px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+/* Clear descriptions for each old Owner Workspace tile. */
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(1)::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(1)::after { content: "Create jobs, view job details, assign work"; }
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(2)::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(2)::after { content: "Add clients and see client history"; }
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(3)::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(3)::after { content: "Create, review and follow up quotes"; }
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(4)::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(4)::after { content: "Create invoices and chase payments"; }
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(5)::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(5)::after { content: "Invite workers and manage roles"; }
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(6)::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(6)::after { content: "Assign jobs and plan the day"; }
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(7)::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(7)::after { content: "Review photos/proof before billing"; }
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(8)::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(8)::after { content: "Customer contact and enquiry area"; }
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(9)::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(9)::after { content: "Set repeating work and automation"; }
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(10)::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(10)::after { content: "Buy SMS credits and send customer updates"; color: #c2410c; }
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(11)::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(11)::after { content: "Quickly build a new quote"; }
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(13)::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(13)::after { content: "Plan, trial, billing and user blocks"; }
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(15)::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(15)::after { content: "Business profile, GST, MYOB, legal links"; }
+
+/* Highlight the most important owner tasks. */
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(1),
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(1),
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(4),
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(4),
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(10),
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(10),
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(13),
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(13) {
+  border-width: 2px !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(10),
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(10) {
+  border-color: #ff5a12 !important;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffffff 50%, #eff6ff 100%) !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(10) strong,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(10) strong {
+  color: #c2410c !important;
+}
+
+/* Plans page: make the extra user block visible as a billing action. */
+[data-testid="enterprise-user-block-panel"] {
+  border-width: 2px !important;
+  border-color: #155eef !important;
+}
+
+/* SMS page: make the buy panel unmistakable. */
+[data-testid="buy-sms-credits-panel"] {
+  border-width: 3px !important;
+  border-color: #ff5a12 !important;
+}
+
+@media (max-width: 768px) {
+  .px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5)::before,
+  .px-main main[style*="#b4aa9b"] > section:nth-of-type(5)::before {
+    font-size: 12px;
+  }
+
+  .px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) > div:last-child,
+  .px-main main[style*="#b4aa9b"] > section:nth-of-type(5) > div:last-child {
+    grid-template-columns: 1fr !important;
+  }
+}
