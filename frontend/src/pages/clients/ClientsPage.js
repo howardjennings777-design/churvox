@@ -15,6 +15,7 @@ import {
   PremiumAIBox, PremiumAIDraftPanel, PremiumEmptyState, PremiumLoadingState, PremiumErrorState,
   PremiumFormSection,
 } from "../../components/premium";
+import EntityDetailModal from "../../components/EntityDetailModal";
 
 axios.defaults.withCredentials = true;
 
@@ -141,7 +142,7 @@ export default function ClientsPage() {
       out.push({
         icon: <Sparkles className="h-4 w-4" />,
         title: "Activity summary ready",
-        description: "AI checked and can summarise jobs, quotes and invoices per client — open any client to draft a follow-up.",
+        description: "AI checked clients and prepared follow-up actions.",
       });
       if (noEmail.length > 0) {
         out.push({
@@ -250,10 +251,10 @@ export default function ClientsPage() {
         />
 
         <div className="px-grid px-grid--4">
-          <PremiumStatCard label="Total clients" value={metrics.total} icon={<Users className="h-4 w-4" />} onClick={() => {}} />
-          <PremiumStatCard label="Active" value={metrics.active} icon={<Sparkles className="h-4 w-4" />} tone="teal" onClick={() => {}} />
+          <PremiumStatCard label="Total clients" value={metrics.total} icon={<Users className="h-4 w-4" />} onClick={() => setStatusFilter("all")} />
+          <PremiumStatCard label="Active" value={metrics.active} icon={<Sparkles className="h-4 w-4" />} tone="teal" onClick={() => setStatusFilter("active")} />
           <PremiumStatCard label="With invoices" value={metrics.withInvoices} icon={<Receipt className="h-4 w-4" />} tone="amber" onClick={() => navigate("/invoices")} />
-          <PremiumStatCard label="Added this month" value={metrics.recent} icon={<CalendarClock className="h-4 w-4" />} tone="amber" onClick={() => {}} />
+          <PremiumStatCard label="Added this month" value={metrics.recent} icon={<CalendarClock className="h-4 w-4" />} tone="amber" onClick={() => setStatusFilter("added_month")} />
         </div>
 
         {/* Search */}
@@ -276,24 +277,24 @@ export default function ClientsPage() {
             ].map(([value, label]) => (
               <button key={value} type="button" onClick={() => setStatusFilter(value)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
-                  statusFilter === value ? "bg-[#d94f17] border-[#b93f10] text-white" : "bg-[#d7d0c4] border-[#746c60] text-[#2f343b]"
+                  statusFilter === value ? "bg-[#1d4ed8] border-[#1e40af] text-white" : "bg-white border-[#c7d7ef] text-[#1a2c4d]"
                 }`}>
                 {label}
               </button>
             ))}
             {isOwnerOrAdmin && (
               <>
-                <button type="button" onClick={hideAuditClientsOnBackend} disabled={hidingAuditClients} className="px-3 py-1.5 rounded-lg text-xs font-semibold border bg-[#111317] border-[#242932] text-white disabled:opacity-50">
+                <button type="button" onClick={hideAuditClientsOnBackend} disabled={hidingAuditClients} className="px-3 py-1.5 rounded-lg text-xs font-semibold border bg-white border-[#c7d7ef] text-[#1a2c4d] disabled:opacity-50">
                   {hidingAuditClients ? "Hiding…" : "Hide test audit clients"}
                 </button>
-                <label className="ml-1 inline-flex items-center gap-2 text-xs font-semibold text-[#2f343b]">
+                <label className="ml-1 inline-flex items-center gap-2 text-xs font-semibold text-[#1a2c4d]">
                   <input type="checkbox" checked={showAuditClients} onChange={(e) => setShowAuditClients(e.target.checked)} />
                   Show test/audit clients
                 </label>
               </>
             )}
             {hiddenAuditCount > 0 && !showAuditClients && (
-              <span className="ml-auto text-xs text-[#5f584f]">{hiddenAuditCount} test/audit clients hidden</span>
+              <span className="ml-auto text-xs text-[#5b6c87]">{hiddenAuditCount} test/audit clients hidden</span>
             )}
           </div>
         </PremiumCard>
@@ -385,19 +386,19 @@ export default function ClientsPage() {
                           <div className="min-w-0">
                             <p className="text-[15.5px] font-bold text-[#1f2329] truncate group-hover:text-[#d94f17] transition">{clientName}</p>
                             {client.contact_name && (
-                              <p className="text-[12.5px] text-[#5f584f] mt-0.5 truncate">Contact: {client.contact_name}</p>
+                              <p className="text-[12.5px] text-[#5b6c87] mt-0.5 truncate">Contact: {client.contact_name}</p>
                             )}
                           </div>
                         </div>
 
-                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4 text-[12.5px] text-[#5f584f]">
+                        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4 text-[12.5px] text-[#5b6c87]">
                           <p className="flex items-center gap-1.5 min-w-0"><Mail size={13} className="shrink-0" /><span className="truncate">{safeText(client.email)}</span></p>
                           <p className="flex items-center gap-1.5 min-w-0"><Phone size={13} className="shrink-0" /><span className="truncate">{safeText(client.phone)}</span></p>
                           <p className="flex items-center gap-1.5 min-w-0 sm:col-span-2"><MapPin size={13} className="shrink-0" /><span className="truncate">{safeText(client.address)}</span></p>
                         </div>
 
                         {client.notes && (
-                          <p className="mt-2 rounded-xl bg-[#cfc7ba] border border-[#746c60] p-2.5 text-[12.5px] text-[#49443d] line-clamp-2">{client.notes}</p>
+                          <p className="mt-2 rounded-xl bg-[#f6faff] border border-[#d8e3f3] p-2.5 text-[12.5px] text-[#1a2c4d] line-clamp-2">{client.notes}</p>
                         )}
                         <div className="mt-2 flex flex-wrap gap-2 text-[11.5px] text-[#49443d]">
                           <span>Open jobs: {Number(client.open_jobs_count ?? client.jobs_open_count ?? 0)}</span>

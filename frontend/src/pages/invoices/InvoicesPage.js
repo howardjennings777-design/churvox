@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "@/hooks/useApi";
 import {
   Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, DollarSign, Send,
@@ -259,7 +259,7 @@ export default function InvoicesPage() {
                 <div key={invoice.id} className="px-card px-card--hover" data-testid={`invoice-card-${invoice.id}`}>
                   <div className="px-card__body">
                     <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
-                      <Link to={`/invoices/${invoice.id}`} className="flex-1 min-w-0 group">
+                      <button type="button" onClick={() => setActiveInvoice(invoice)} className="flex-1 min-w-0 group text-left">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="text-[15.5px] font-bold text-[#0d1b34] group-hover:text-[#1d4ed8] transition" data-testid={`invoice-number-${invoice.id}`}>
                             {safeText(invoice.invoice_number, "Draft invoice")}
@@ -277,7 +277,7 @@ export default function InvoicesPage() {
                           {invoice.myob_last_synced_at && <span>MYOB sync {formatDate(invoice.myob_last_synced_at)}</span>}
                         </div>
                         {invoice.myob_error && (mode === "myob_sync" || mode === "myob_external") && <p className="text-[11.5px] text-[#b91c1c] mt-2">{safeText(invoice.myob_error)}</p>}
-                      </Link>
+                      </button>
 
                       <div className="flex flex-col sm:items-end gap-2">
                         <span className="text-[24px] font-heading font-bold text-[#0d1b34]">{formatCurrency(invoice.total)}</span>
