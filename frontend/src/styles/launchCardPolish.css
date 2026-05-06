@@ -129,6 +129,134 @@
   z-index: 2;
 }
 
+/* AI Control Room launch-page readability repair.
+   The page uses inline styles, so these rules target the unique sand background and
+   force every tile to stack text cleanly instead of running words together. */
+.px-main main[style*="rgb(180, 170, 155)"],
+.px-main main[style*="#b4aa9b"] {
+  overflow-x: hidden !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(3),
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(3) {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+  gap: 16px !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(3) > button,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(3) > button {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 7px !important;
+  min-height: 142px !important;
+  line-height: 1.25 !important;
+  white-space: normal !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(3) > button span,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(3) > button span {
+  flex: 0 0 auto !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(3) > button small,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(3) > button small {
+  display: block !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  color: #64748b !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(3) > button strong,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(3) > button strong {
+  display: block !important;
+  width: 100% !important;
+  font-size: 24px !important;
+  line-height: 1.05 !important;
+  color: #0f172a !important;
+  overflow-wrap: anywhere !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(3) > button em,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(3) > button em {
+  display: block !important;
+  width: 100% !important;
+  font-style: normal !important;
+  font-size: 13px !important;
+  color: #475569 !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(3) > button b,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(3) > button b {
+  display: block !important;
+  margin-top: auto !important;
+  color: #155eef !important;
+  font-size: 13px !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(4) button,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(4) button {
+  white-space: normal !important;
+  line-height: 1.35 !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(4) article:first-child button,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(4) article:first-child button {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 6px !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(4) article:first-child button strong,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(4) article:first-child button strong,
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(4) article:first-child button span,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(4) article:first-child button span,
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(4) article:first-child button b,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(4) article:first-child button b {
+  display: block !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) > div:last-child,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) > div:last-child {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)) !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button {
+  display: grid !important;
+  grid-template-columns: 34px 1fr !important;
+  grid-template-areas: "icon title" "icon sub" !important;
+  align-items: center !important;
+  column-gap: 10px !important;
+  row-gap: 2px !important;
+  min-height: 86px !important;
+  line-height: 1.25 !important;
+  white-space: normal !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button span,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button span {
+  grid-area: icon !important;
+  margin-bottom: 0 !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button strong,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button strong {
+  grid-area: title !important;
+  color: #0f172a !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button small,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button small {
+  grid-area: sub !important;
+  display: block !important;
+  color: #475569 !important;
+  font-size: 12px !important;
+}
+
 @media (max-width: 768px) {
   [data-testid="team-page"] {
     padding-left: 12px !important;
@@ -141,5 +269,10 @@
 
   [data-testid="team-page"] [data-testid^="worker-card-"] {
     border-radius: 20px !important;
+  }
+
+  .px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(3),
+  .px-main main[style*="#b4aa9b"] > section:nth-of-type(3) {
+    grid-template-columns: 1fr !important;
   }
 }
