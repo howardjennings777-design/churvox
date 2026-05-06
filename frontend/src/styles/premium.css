@@ -923,3 +923,18 @@ html, body { overflow-x: hidden; }
 button[class*="green"], .cx-status-badge--green { background:#166534 !important; color:#fff !important; border-color:#14532d !important; }
 .cx-button-secondary, .px-btn-secondary { background:#111317 !important; color:#fff !important; border:1px solid #2b3038 !important; }
 .cx-button-secondary:hover, .px-btn-secondary:hover { border-color:#f97316 !important; }
+
+/* Embedded workspace mode (Smart Hub modal iframe) */
+.px-app--embedded {
+  background: #fff !important;
+  min-height: 100%;
+}
+.px-main--embedded {
+  margin-left: 0 !important;
+  min-height: 100%;
+  background: #fff !important;
+  padding: 0 !important;
+}
+.px-main--embedded > main {
+  min-height: 100%;
+}

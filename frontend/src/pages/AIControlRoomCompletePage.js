@@ -26,24 +26,24 @@ const cleanFallbackTitles = [
 ];
 
 const workspaces = [
-  ["Jobs", "/jobs", "▣", "#ff5a12", "#fff1e8"],
-  ["Clients", "/clients", "♙", "#1165ff", "#edf4ff"],
-  ["Quotes", "/quotes", "▤", "#1165ff", "#edf4ff"],
-  ["Invoices", "/invoices", "▤", "#1165ff", "#edf4ff"],
-  ["Team", "/team", "♙", "#059669", "#ecfdf5"],
-  ["Dispatch", "/dispatch", "♙", "#1165ff", "#edf4ff"],
+  ["Jobs", "/jobs?embedded=1", "▣", "#ff5a12", "#fff1e8"],
+  ["Clients", "/clients?embedded=1", "♙", "#1165ff", "#edf4ff"],
+  ["Quotes", "/quotes?embedded=1", "▤", "#1165ff", "#edf4ff"],
+  ["Invoices", "/invoices?embedded=1", "▤", "#1165ff", "#edf4ff"],
+  ["Team", "/team?embedded=1", "♙", "#059669", "#ecfdf5"],
+  ["Dispatch", "/dispatch?embedded=1", "♙", "#1165ff", "#edf4ff"],
   ["Proof to Paid", "/proof-to-paid", "C", "#059669", "#ecfdf5"],
   ["Receptionist", "/contact", "♙", "#7c3aed", "#f4efff"],
-  ["Recurring", "/automation", "↻", "#65a30d", "#f7fee7"],
+  ["Recurring", "/automation?embedded=1", "↻", "#65a30d", "#f7fee7"],
   ["Customer Updates", "/sms", "▣", "#ff5a12", "#fff1e8"],
   ["Quote Builder", "/quotes/new", "▧", "#ff5a12", "#fff1e8"],
   ["Client Memory", "/clients", "▣", "#7c3aed", "#f4efff"],
-  ["Plans & Billing", "/plans", "⌂", "#7c3aed", "#f4efff"],
-  ["Account Centre", "/settings", "♙", "#1165ff", "#edf4ff"],
-  ["Settings", "/settings", "⚙", "#0f172a", "#f1f5f9"],
+  ["Plans & Billing", "/plans?embedded=1", "⌂", "#7c3aed", "#f4efff"],
+  ["Account Centre", "/settings?embedded=1", "♙", "#1165ff", "#edf4ff"],
+  ["Settings", "/settings?embedded=1", "⚙", "#0f172a", "#f1f5f9"],
   ["Contact", "/contact", "☎", "#1165ff", "#edf4ff"],
   ["Notifications", "/notifications", "◔", "#1165ff", "#edf4ff"],
-  ["Integrations", "/integrations", "⌁", "#1165ff", "#edf4ff"],
+  ["Integrations", "/integrations?embedded=1", "⌁", "#1165ff", "#edf4ff"],
   ["Privacy", "/privacy", "◇", "#1165ff", "#edf4ff"],
   ["Terms", "/terms", "▤", "#7c3aed", "#f4efff"],
   ["Account Removal", "/account-deletion", "♢", "#ef4444", "#fff1f2"],
@@ -466,6 +466,19 @@ function Approval({ icon, label, value, active = false, onClick }) {
 }
 
 
+function expandWorkspaceRoute(route) {
+  if (!route) return route;
+  try {
+    const url = new URL(route, window.location.origin);
+    if (!url.searchParams.get("embedded")) url.searchParams.set("embedded", "1");
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch (_error) {
+    const joiner = route.includes("?") ? "&" : "?";
+    return route.includes("embedded=") ? route : `${route}${joiner}embedded=1`;
+  }
+}
+
+
 function WorkspacePageModal({ open, title, route, onClose }) {
   useEffect(() => {
     if (!open) return undefined;
@@ -478,6 +491,8 @@ function WorkspacePageModal({ open, title, route, onClose }) {
 
   if (!open || !route) return null;
 
+  const expandedRoute = expandWorkspaceRoute(route);
+
   return (
     <div style={s.workspaceModalBackdrop} onClick={onClose}>
       <div style={s.workspaceModalCard} onClick={(event) => event.stopPropagation()}>
@@ -486,7 +501,7 @@ function WorkspacePageModal({ open, title, route, onClose }) {
           <button style={s.workspaceModalClose} type="button" onClick={onClose} aria-label="Close workspace">×</button>
         </div>
         <div style={s.workspaceModalFrameWrap}>
-          <iframe title={`${title || "Workspace"} page`} src={route} style={s.workspaceModalFrame} />
+          <iframe title={`${title || "Workspace"} page`} src={expandedRoute} style={s.workspaceModalFrame} />
         </div>
       </div>
     </div>
@@ -1047,12 +1062,12 @@ const s = {
   modalList: { margin: "6px 0 0", paddingLeft: 18, color: "#334155", fontSize: 13 },
   modalPrimary: { border: 0, background: "#1165ff", color: "#fff", borderRadius: 10, padding: "10px 14px", cursor: "pointer", fontWeight: 700 },
   modalGhost: { border: "1px solid #cbd5e1", background: "#fff", color: "#0f172a", borderRadius: 10, padding: "10px 14px", cursor: "pointer", fontWeight: 700 },
-  workspaceModalBackdrop: { position: "fixed", inset: 0, background: "rgba(2,6,23,0.52)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "stretch", justifyContent: "center", padding: "10px" },
-  workspaceModalCard: { width: "100%", height: "100%", maxWidth: "min(1800px, calc(100vw - 20px))", maxHeight: "calc(100vh - 20px)", background: "#fff", borderRadius: 18, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 24px 60px rgba(2,6,23,0.35)" },
-  workspaceModalHeader: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "12px 16px", borderBottom: "1px solid #e2e8f0", background: "#fff" },
+  workspaceModalBackdrop: { position: "fixed", inset: 0, background: "rgba(2,6,23,0.52)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "stretch", justifyContent: "center", padding: "12px", overscrollBehavior: "contain" },
+  workspaceModalCard: { width: "100%", height: "100%", maxWidth: "min(1900px, calc(100vw - 24px))", maxHeight: "calc(100vh - 24px)", background: "#fff", borderRadius: 18, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 24px 60px rgba(2,6,23,0.35)" },
+  workspaceModalHeader: { position: "sticky", top: 0, zIndex: 2, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "12px 16px", borderBottom: "1px solid #e2e8f0", background: "#fff", flexShrink: 0 },
   workspaceModalTitle: { margin: 0, color: "#0f172a", fontSize: 18, fontWeight: 700 },
   workspaceModalClose: { border: "1px solid #dbe5f2", background: "#fff", color: "#0f172a", width: 38, height: 38, borderRadius: 12, cursor: "pointer", fontSize: 24, lineHeight: 1 },
-  workspaceModalFrameWrap: { flex: 1, minHeight: 0, background: "#f8fafc" },
+  workspaceModalFrameWrap: { flex: 1, minHeight: 0, background: "#fff", overflow: "hidden" },
   workspaceModalFrame: { width: "100%", height: "100%", border: 0, background: "#fff" },
   jobDot: {
     width: 9,

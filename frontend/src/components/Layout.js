@@ -81,11 +81,17 @@ export default function Layout({ children, smartHubMode = false }) {
     .toUpperCase();
 
   const isSmartHubRoute = location.pathname === "/dashboard" || location.pathname.startsWith("/dashboard/");
+  const embedded = (() => {
+    if (typeof window === "undefined") return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get("embedded") === "1" || window.self !== window.top;
+  })();
   const isSmartHubLayout = smartHubMode || isSmartHubRoute;
+  const hideChrome = isSmartHubLayout || embedded;
   return (
-    <div className="px-app tap-safe-root cx-app-shell" data-testid="layout-container">
+    <div className={`px-app tap-safe-root cx-app-shell ${embedded ? "px-app--embedded" : ""}`} data-testid="layout-container">
       {/* Desktop Sidebar — Premium light */}
-      {!isSmartHubLayout && <aside className="px-sidebar hidden md:flex" data-testid="desktop-sidebar">
+      {!hideChrome && <aside className="px-sidebar hidden md:flex" data-testid="desktop-sidebar">
         <div className="px-sidebar__brand">
           <ChurvoxLogo size="md" dataTestId="sidebar-logo" />
           <NotificationsBell />
@@ -130,9 +136,9 @@ export default function Layout({ children, smartHubMode = false }) {
       </aside>}
 
       {/* Main */}
-      <div className={`px-main ${isSmartHubLayout ? "px-main--full" : ""}`} data-testid="main-content-area">
+      <div className={`px-main ${hideChrome ? "px-main--full" : ""} ${embedded ? "px-main--embedded" : ""}`} data-testid="main-content-area">
         {/* Mobile header */}
-        {!isSmartHubLayout && <header className="md:hidden px-mobile-header" data-testid="mobile-header">
+        {!hideChrome && <header className="md:hidden px-mobile-header" data-testid="mobile-header">
           <ChurvoxLogo size="sm" dataTestId="mobile-logo" />
           <div className="flex items-center gap-2">
             <NotificationsBell />
@@ -143,7 +149,7 @@ export default function Layout({ children, smartHubMode = false }) {
         <main className="flex-1">{children}</main>
 
         {/* Mobile bottom nav */}
-        {!isSmartHubLayout && <nav className="md:hidden px-mobile-bottom" data-testid="mobile-bottom-nav">
+        {!hideChrome && <nav className="md:hidden px-mobile-bottom" data-testid="mobile-bottom-nav">
           <div className="flex items-center justify-around px-2 py-1">
             {mainNav.map((item) => {
               const active = isActive(item.path);
@@ -207,7 +213,7 @@ export default function Layout({ children, smartHubMode = false }) {
         </nav>}
       </div>
 
-      <InstallPrompt />
+      {!embedded && <InstallPrompt />}
     </div>
   );
 }
