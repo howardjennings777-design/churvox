@@ -46,7 +46,7 @@ export default function ReportsPage() {
           suggestions={[
             { icon: <TrendingUp className="h-4 w-4" />, title: `Revenue this period: ${formatCurrency(summary?.revenue_this_month)}`, description: `Outstanding: ${formatCurrency(summary?.outstanding_invoices)} · Overdue invoices: ${safeNumber(summary?.overdue_invoices, 0)}` },
             { icon: <Briefcase className="h-4 w-4" />, title: `Completed jobs: ${safeNumber(summary?.completed_jobs, 0)}`, description: `Active: ${safeNumber(summary?.active_jobs, 0)} · Worker hours: ${safeNumber(summary?.worker_hours, 0)}` },
-            { icon: <FileText className="h-4 w-4" />, title: `Quote win rate: ${Math.round(safeNumber(summary?.quote_win_rate, 0) * 100)}%`, description: "AI can highlight quotes most likely to convert next." },
+            { icon: <FileText className="h-4 w-4" />, title: `Quote win rate: ${Math.round(safeNumber(summary?.quote_win_rate, 0) * 100)}%`, description: "AI checked and can highlight quotes most likely to convert next." },
           ]}
         />
 
