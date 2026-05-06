@@ -35,7 +35,7 @@ PLAN_FEATURES = {
         "csv_team_import": True,
         "csv_client_import": True,
         "recurring_jobs": True,
-        "myob_sync": True,
+        "myob_sync": False,
         "enterprise_user_blocks": False,
         "included_users": 15,
     },
