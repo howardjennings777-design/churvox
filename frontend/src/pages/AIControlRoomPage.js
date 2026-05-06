@@ -1,5 +1,5 @@
-import AIControlRoomLaunchPage from "./AIControlRoomLaunchPage";
+import AIControlRoomTopPlayerPage from "./AIControlRoomTopPlayerPage";
 
 export default function AIControlRoomPage() {
-  return <AIControlRoomLaunchPage />;
+  return <AIControlRoomTopPlayerPage />;
 }
