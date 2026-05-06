@@ -141,7 +141,7 @@ export default function ClientsPage() {
       out.push({
         icon: <Sparkles className="h-4 w-4" />,
         title: "Activity summary ready",
-        description: "AI can summarise jobs, quotes and invoices per client — open any client to draft a follow-up.",
+        description: "AI checked and can summarise jobs, quotes and invoices per client — open any client to draft a follow-up.",
       });
       if (noEmail.length > 0) {
         out.push({
@@ -153,7 +153,7 @@ export default function ClientsPage() {
       out.push({
         icon: <MessageSquare className="h-4 w-4" />,
         title: "Draft a polite check-in for inactive clients",
-        description: "AI can prepare wording — you approve before sending.",
+        description: "AI checked and can prepare wording — you approve before sending.",
       });
     }
     return out.slice(0, 4);

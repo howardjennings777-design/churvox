@@ -3,7 +3,7 @@ import React from 'react';
 export function KpiCounters({ readyToBillCount, unassignedJobsCount, openInvoicesCount, availableCrewCount, onReadyToBill, onUnassignedJobs, onOpenInvoices, onCrew }) {
   const items = [
     ['Ready to bill', readyToBillCount, onReadyToBill, 'Completed work waiting for an invoice'],
-    ['Unassigned jobs', unassignedJobsCount, onUnassignedJobs, 'Jobs AI can help place with crew'],
+    ['Unassigned jobs', unassignedJobsCount, onUnassignedJobs, 'Jobs AI checked and can help place with crew'],
     ['Open invoices', openInvoicesCount, onOpenInvoices, 'Money still waiting to come in'],
     ['Crew available', availableCrewCount, onCrew, 'Workers ready for dispatch'],
   ];

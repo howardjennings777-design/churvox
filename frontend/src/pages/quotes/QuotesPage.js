@@ -120,7 +120,7 @@ export default function QuotesPage() {
       });
     }
     if (out.length === 0) {
-      out.push({ icon: <Sparkles className="h-4 w-4" />, title: "No urgent quote follow-ups", description: "AI will surface stale quotes and accepted ones here." });
+      out.push({ icon: <Sparkles className="h-4 w-4" />, title: "No urgent quote follow-ups", description: "AI checked and will surface stale quotes and accepted ones here." });
     }
     return out.slice(0, 4);
   }, [quotes, quoteMetrics]);

@@ -131,7 +131,7 @@ export default function InvoicesPage() {
       out.push({
         icon: <Clock3 className="h-4 w-4" />,
         title: `${m.sentUnpaid} invoice${m.sentUnpaid === 1 ? "" : "s"} awaiting payment`,
-        description: `Total outstanding: ${formatCurrency(m.outstanding)}. AI can summarise and prepare a friendly nudge.`,
+        description: `Total outstanding: ${formatCurrency(m.outstanding)}. AI checked and can summarise and prepare a friendly nudge.`,
       });
     }
     if (m.draft > 0) {
@@ -149,7 +149,7 @@ export default function InvoicesPage() {
       });
     }
     if (out.length === 0) {
-      out.push({ icon: <Sparkles className="h-4 w-4" />, title: "Open invoice book is healthy", description: "AI will surface overdue and unpaid invoices here." });
+      out.push({ icon: <Sparkles className="h-4 w-4" />, title: "Open invoice book is healthy", description: "AI checked and will surface overdue and unpaid invoices here." });
     }
     return out.slice(0, 4);
   }, [m]);

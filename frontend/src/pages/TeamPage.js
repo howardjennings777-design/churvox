@@ -375,7 +375,7 @@ export default function TeamPage() {
               suggestions={[
                 workers.length === 0
                   ? { icon: <UserPlus className="h-4 w-4" />, title: "Invite your first worker", description: "Send a CSV of crew members or invite individually." }
-                  : { icon: <Sparkles className="h-4 w-4" />, title: `${workers.length} active crew member${workers.length === 1 ? "" : "s"}`, description: "AI can suggest assignments based on region, trade and availability." },
+                  : { icon: <Sparkles className="h-4 w-4" />, title: `${workers.length} active crew member${workers.length === 1 ? "" : "s"}`, description: "AI checked and can suggest assignments based on region, trade and availability." },
                 { icon: <ShieldCheck className="h-4 w-4" />, title: "Role-based access is on", description: "Workers don’t see pricing, owner-only reports or admin pages." },
                 planData?.max_workers >= 0 && workers.length >= (planData.max_workers - 1)
                   ? { icon: <AlertTriangle className="h-4 w-4" />, title: "Approaching team limit", description: "Upgrade your plan to add more workers." }

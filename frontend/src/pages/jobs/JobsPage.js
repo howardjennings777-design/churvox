@@ -78,14 +78,14 @@ export default function JobsPage() {
       out.push({
         icon: <AlertTriangle className="h-4 w-4" />,
         title: `${paused.length} paused job${paused.length === 1 ? "" : "s"} — draft a status update`,
-        description: "AI can summarise progress and prepare a customer message — review before sending.",
+        description: "AI checked and can summarise progress and prepare a customer message — review before sending.",
       });
     }
     if (inProgress.length > 0) {
       out.push({
         icon: <ListChecks className="h-4 w-4" />,
         title: `${inProgress.length} jobs currently in progress`,
-        description: "AI can summarise notes, photos and timer activity for any job in seconds.",
+        description: "AI checked and can summarise notes, photos and timer activity for any job in seconds.",
       });
     }
     if (completedNoInvoice.length > 0) {

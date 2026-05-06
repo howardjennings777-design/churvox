@@ -12,7 +12,7 @@ export function AiOperatorSettingsPanel({ aiSettings, setAiSettings, onSave, ope
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#5a5146]">AI Operator Settings</p>
             <h3 className="mt-1 text-2xl font-black text-[#101318]">Approval-first automation</h3>
-            <p className="mt-1 text-sm font-semibold text-[#6f6558]">Control what AI can prepare, draft, and queue for owner approval.</p>
+            <p className="mt-1 text-sm font-semibold text-[#6f6558]">Control what AI checked and can prepare, draft, and queue for owner approval.</p>
           </div>
           <button type="button" onClick={onClose} className="rounded-full border border-[#c9bba8] bg-[#ebe2d6] px-4 py-2 text-sm font-black text-[#5a5146] transition hover:bg-[#fff8ee]">Close</button>
         </div>
