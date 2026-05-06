@@ -7,6 +7,7 @@ import "./styles/churvoxUnifiedTheme.css";
 import "./styles/churvoxFullPageModals.css";
 import "./styles/launchCardPolish.css";
 import "./styles/ownerClarityFix.css";
+import "./styles/settingsClarityFix.css";
 
 // Register service worker for PWA installability (iPhone Add to Home Screen + Chrome install)
 // Network-first SW — no aggressive caching, new deploys always picked up
