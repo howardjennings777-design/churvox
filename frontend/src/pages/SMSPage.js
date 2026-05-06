@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Layout from "../components/Layout";
-import { MessageSquare, ShieldCheck, Mail, Bell, Sparkles, AlertTriangle, RefreshCw, Inbox, BadgeDollarSign, Settings as SettingsIcon } from "lucide-react";
+import { MessageSquare, ShieldCheck, Mail, Bell, Sparkles, AlertTriangle, RefreshCw, Inbox, BadgeDollarSign, Settings as SettingsIcon, ShoppingCart } from "lucide-react";
 import {
   PremiumPage, PremiumHero, PremiumCard, PremiumBadge, PremiumActionCard
 } from "../components/premium";
@@ -11,9 +11,9 @@ import { toast } from "sonner";
 const safeArray = (v) => (Array.isArray(v) ? v : []);
 
 const SMS_PRICING = [
-  { credits: 100, price: "$10", per: "$0.10/msg" },
-  { credits: 500, price: "$45", per: "$0.09/msg" },
-  { credits: 1000, price: "$80", per: "$0.08/msg" },
+  { credits: 100, price: "$10", per: "$0.10/msg", label: "Starter" },
+  { credits: 500, price: "$45", per: "$0.09/msg", label: "Best value" },
+  { credits: 1000, price: "$80", per: "$0.08/msg", label: "High volume" },
 ];
 
 export default function SMSPage() {
@@ -22,6 +22,7 @@ export default function SMSPage() {
   const [setup, setSetup] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [busyPack, setBusyPack] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -40,14 +41,31 @@ export default function SMSPage() {
   const ready = !!sms.ready;
   const credits = sms.credits ?? 0;
 
+  const scrollToBuyCredits = () => {
+    const target = document.getElementById("buy-sms-credits");
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const buyCredits = async (pack) => {
-    const res = await post("/sms/buy-credits", { credits: pack.credits });
-    if (res.success && res.data?.checkout_url) {
-      window.location.assign(res.data.checkout_url);
-    } else if (res.success) {
-      toast.success(`${pack.credits} credits requested.`);
-    } else {
-      toast.error(res.error || "Top-up unavailable yet.");
+    const packKey = String(pack.credits);
+    setBusyPack(packKey);
+    try {
+      const res = await post("/sms/buy-credits", {
+        pack: packKey,
+        credits: pack.credits,
+      });
+      if (res.success && res.data?.checkout_url) {
+        window.location.assign(res.data.checkout_url);
+      } else if (res.success && res.data?.url) {
+        window.location.assign(res.data.url);
+      } else if (res.success) {
+        toast.success(`${pack.credits} SMS credits requested.`);
+        await load();
+      } else {
+        toast.error(res.error || "SMS credit top-up unavailable yet.");
+      }
+    } finally {
+      setBusyPack("");
     }
   };
 
@@ -56,18 +74,75 @@ export default function SMSPage() {
       <PremiumPage>
         <PremiumHero
           icon={<MessageSquare className="h-7 w-7" />}
-          eyebrow={<><Bell className="h-3 w-3" /> Communications</>}
-          title="Communications"
-          subtitle="Email and in-app notifications are live. SMS provider (Clicksend) shown below — real send is disabled until your API key is configured."
+          eyebrow={<><Bell className="h-3 w-3" /> SMS Credits</>}
+          title="Buy SMS Credits"
+          subtitle="Top up credits for customer reminders, invoice follow-ups and owner-approved SMS messages. Pick a pack below."
           actions={
-            <Link
-              to="/ai-operator/settings"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-sm font-semibold text-[#475569] hover:bg-slate-50"
-            >
-              <SettingsIcon className="h-4 w-4" /> Operator settings
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={scrollToBuyCredits}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#ff5a12] px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#e94f0f]"
+                data-testid="hero-buy-sms-credits"
+              >
+                <ShoppingCart className="h-4 w-4" /> Buy SMS credits
+              </button>
+              <Link
+                to="/ai-operator/settings"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-sm font-semibold text-[#475569] hover:bg-slate-50"
+              >
+                <SettingsIcon className="h-4 w-4" /> SMS settings
+              </Link>
+            </div>
           }
         />
+
+        <div
+          id="buy-sms-credits"
+          className="mt-3 scroll-mt-6 rounded-3xl border border-[#ffb086] bg-gradient-to-br from-[#fff7ed] via-white to-[#eff6ff] p-5 shadow-[0_18px_48px_rgba(15,23,42,0.12)]"
+          data-testid="buy-sms-credits-panel"
+        >
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#ffedd5] px-3 py-1 text-[11px] font-black uppercase tracking-wider text-[#c2410c]">
+                <ShoppingCart className="h-3.5 w-3.5" /> Buy SMS Credits Here
+              </div>
+              <h2 className="mt-3 font-heading text-2xl font-bold text-[#0d1b34]">Choose a top-up pack</h2>
+              <p className="mt-1 text-sm text-[#5b6c87]">Your current balance is <span className="font-bold text-[#0d1b34]">{loading ? "loading…" : `${credits} credits`}</span>.</p>
+            </div>
+            <button onClick={load} className="inline-flex items-center justify-center gap-1 rounded-xl border border-[#d8e3f3] bg-white px-4 py-2 text-sm font-bold text-[#155EEF] hover:bg-[#eff6ff]">
+              <RefreshCw className="h-4 w-4" /> Refresh balance
+            </button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {SMS_PRICING.map((p) => {
+              const packKey = String(p.credits);
+              return (
+                <button
+                  key={p.credits}
+                  type="button"
+                  onClick={() => buyCredits(p)}
+                  disabled={busyPack === packKey}
+                  className="text-left rounded-2xl border-2 border-[#dde6f3] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#ff5a12] hover:bg-[#fff7ed] disabled:cursor-not-allowed disabled:opacity-70"
+                  data-testid={`buy-sms-pack-${p.credits}`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-black uppercase tracking-wide text-[#ff5a12]">{p.label}</p>
+                    <ShoppingCart className="h-4 w-4 text-[#155EEF]" />
+                  </div>
+                  <p className="mt-2 text-3xl font-black text-[#0d1b34]">{p.credits}</p>
+                  <p className="text-sm font-bold text-[#475569]">SMS credits</p>
+                  <p className="mt-3 text-2xl font-black text-[#0d1b34]">{p.price}</p>
+                  <p className="mt-0.5 text-[12px] text-[#5b6c87]">{p.per}</p>
+                  <span className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-[#155EEF] px-3 py-2 text-sm font-bold text-white">
+                    {busyPack === packKey ? "Opening checkout…" : `Buy ${p.credits} credits`}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Status & credits row */}
         <div className="px-grid px-grid--3">
@@ -93,7 +168,7 @@ export default function SMSPage() {
           </PremiumCard>
 
           <PremiumCard
-            title="SMS credits"
+            title="SMS credits balance"
             icon={<BadgeDollarSign className="h-4 w-4" />}
             subtitle={loading ? "Loading…" : `${credits} available`}
             actions={
@@ -103,8 +178,8 @@ export default function SMSPage() {
             }
           >
             <p className="text-[13px] text-[#5b6c87]">Credits are spent only when AI or owner-approved messages actually send to customers.</p>
-            <button onClick={load} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#155EEF] hover:underline">
-              <RefreshCw className="h-3 w-3" /> Refresh
+            <button onClick={scrollToBuyCredits} className="mt-2 inline-flex items-center gap-1 rounded-lg bg-[#ff5a12] px-3 py-2 text-xs font-bold text-white hover:bg-[#e94f0f]">
+              <ShoppingCart className="h-3 w-3" /> Buy more credits
             </button>
           </PremiumCard>
 
@@ -115,30 +190,6 @@ export default function SMSPage() {
             actions={<PremiumBadge tone="green" icon={<ShieldCheck className="h-3 w-3" />}>Active</PremiumBadge>}
           >
             <p className="text-[13px] text-[#5b6c87]">Send payment reminders, quote follow-ups and job confirmations from invoice and quote pages.</p>
-          </PremiumCard>
-        </div>
-
-        {/* Buy credits */}
-        <div className="mt-3">
-          <PremiumCard
-            title="Top up credits"
-            icon={<Sparkles className="h-4 w-4" />}
-            subtitle="Pay only for what you send"
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {SMS_PRICING.map((p) => (
-                <button
-                  key={p.credits}
-                  type="button"
-                  onClick={() => buyCredits(p)}
-                  className="text-left rounded-xl border border-[#dde6f3] bg-white p-3 hover:border-[#155EEF] hover:bg-[#eff6ff] transition"
-                >
-                  <p className="text-xs uppercase tracking-wide text-[#94a3b8]">{p.credits} credits</p>
-                  <p className="mt-1 text-2xl font-bold text-[#0d1b34]">{p.price}</p>
-                  <p className="mt-0.5 text-[11px] text-[#5b6c87]">{p.per}</p>
-                </button>
-              ))}
-            </div>
           </PremiumCard>
         </div>
 
