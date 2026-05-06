@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { ChurvoxLogo } from "../components/ChurvoxLogo";
-import { get, post } from "../lib/api";
+import { get, patch, post, put } from "../lib/api";
 
 const toArray = (value) => {
   if (Array.isArray(value)) return value;
@@ -62,6 +62,8 @@ export default function AIControlRoomCompletePage() {
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
   const [activeModal, setActiveModal] = useState(null);
+  const [modalDraft, setModalDraft] = useState({});
+  const [savingModal, setSavingModal] = useState(false);
   const [data, setData] = useState({
     jobs: [],
     invoices: [],
@@ -171,8 +173,50 @@ export default function AIControlRoomCompletePage() {
     setNotice("AI Plan run complete. Queue refreshed safely.");
     load();
   };
-  const openModal = (modal) => setActiveModal(modal || null);
-  const closeModal = () => setActiveModal(null);
+  const openModal = (modal) => {
+    const nextModal = modal || null;
+    setActiveModal(nextModal);
+    setModalDraft(nextModal?.draft || {});
+  };
+  const closeModal = () => {
+    setActiveModal(null);
+    setSavingModal(false);
+  };
+
+  const updateDraft = (field, value) => {
+    setModalDraft((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const saveModalDraft = async () => {
+    if (!activeModal) return;
+    setSavingModal(true);
+    try {
+      if (activeModal.type === "job" && activeModal.job?.id && !String(activeModal.job.id).startsWith("demo-")) {
+        const payload = {
+          title: modalDraft.title,
+          assignment: modalDraft.assignment,
+          status: modalDraft.status,
+          internal_note: modalDraft.internalNote,
+        };
+        const response = await patch(`/jobs/${activeModal.job.id}`, payload);
+        if (!response?.success) {
+          const fallback = await put(`/jobs/${activeModal.job.id}`, payload);
+          if (!fallback?.success) {
+            setModalDraft((prev) => ({ ...prev, saveMessage: "Prepared changes — open job to save." }));
+            return;
+          }
+        }
+        setModalDraft((prev) => ({ ...prev, saveMessage: "Job updated successfully." }));
+        await load();
+      } else {
+        setModalDraft((prev) => ({ ...prev, saveMessage: "Saved locally in AI Control Room." }));
+      }
+    } catch {
+      setModalDraft((prev) => ({ ...prev, saveMessage: "Prepared changes — open full page to save." }));
+    } finally {
+      setSavingModal(false);
+    }
+  };
 
   const openJob = (id) => {
     if (id && !String(id).startsWith("demo-")) navigate(`/jobs/${id}`);
@@ -306,7 +350,7 @@ export default function AIControlRoomCompletePage() {
 
                   <tbody>
                     {rows.map(([id, title, client, assignment, status]) => (
-                      <tr key={`${id}-${title}`} style={s.rowClickable} onClick={() => openModal({ key: "jobRow", job: { id, title, client, assignment, status } })}>
+                      <tr key={`${id}-${title}`} style={s.rowClickable} onClick={() => openModal({ type: "job", key: "jobRow", job: { id, title, client, assignment, status }, title })}>
                         <Td>
                           <span style={s.jobDot} />
                           <strong>{title}</strong>
@@ -319,7 +363,7 @@ export default function AIControlRoomCompletePage() {
                           <strong>{status}</strong>
                         </Td>
                         <Td>
-                          <button style={s.workButton} type="button" onClick={(event) => { event.stopPropagation(); openModal({ key: "jobWork", job: { id, title, client, assignment, status } }); }}>
+                          <button style={s.workButton} type="button" onClick={(event) => { event.stopPropagation(); openModal({ type: "job", key: "jobWork", job: { id, title, client, assignment, status }, title: `Work panel: ${title}` }); }}>
                             Work here
                           </button>
                         </Td>
@@ -382,7 +426,7 @@ export default function AIControlRoomCompletePage() {
 
           {loading ? <div style={s.toast}>Loading live Churvox data…</div> : null}
           {notice ? <div style={{ ...s.toast, background: "#0b5f36" }}>{notice}</div> : null}
-          <ControlModal modal={activeModal} onClose={closeModal} navigate={navigate} stats={stats} runAiPlan={runAiPlan} openJob={openJob} />
+          <ControlRoomModal modal={activeModal} draft={modalDraft} setDraft={setModalDraft} onClose={closeModal} onSave={saveModalDraft} updateDraft={updateDraft} savingModal={savingModal} navigate={navigate} stats={stats} data={data} runAiPlan={runAiPlan} openJob={openJob} />
         </div>
       </main>
     </Layout>
@@ -444,7 +488,7 @@ function Approval({ icon, label, value, active = false, onClick }) {
   );
 }
 
-function ControlModal({ modal, onClose, navigate, stats, runAiPlan, openJob }) {
+function ControlRoomModal({ modal, draft, setDraft, onClose, onSave, updateDraft, savingModal, navigate, stats, data, openJob }) {
   useEffect(() => {
     if (!modal) return undefined;
     const onKeyDown = (event) => {
@@ -453,38 +497,43 @@ function ControlModal({ modal, onClose, navigate, stats, runAiPlan, openJob }) {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [modal, onClose]);
+
   if (!modal) return null;
-  const title = modal.label || modal.job?.title || "AI Control Room";
-  const description = modal.key === "workersActive" ? "Workers currently available or active in your business." : "Open this workspace to review details and continue.";
-  const routeAction = modal.route ? () => navigate(modal.route) : null;
-  return (
-    <div style={s.modalBackdrop} onClick={onClose}>
-      <div style={s.modalCard} onClick={(event) => event.stopPropagation()}>
-        <button style={s.modalClose} type="button" onClick={onClose}>×</button>
-        <h3 style={s.modalTitle}>{title}</h3>
-        <p style={s.modalDesc}>{description}</p>
-        <div style={s.modalBody}>
-          <p style={s.modalLine}>Approvals: {stats?.approvals || 0}</p>
-          <p style={s.modalLine}>Workers active: {stats?.workers || 0}</p>
-          {modal.job ? <p style={s.modalLine}>Client: {modal.job.client || "Client"} · Status: {modal.job.status || "Pending"}</p> : null}
-        </div>
-        <div style={s.modalActions}>
-          {modal.key === "approvals" || modal.key === "openApprovals" || modal.key === "approvalControl" || modal.key === "approvalTile" ? <button style={s.modalPrimary} type="button" onClick={() => navigate("/dashboard")}>Open approvals queue</button> : null}
-          {modal.key === "workersActive" ? <button style={s.modalPrimary} type="button" onClick={() => navigate("/team")}>Open Team</button> : null}
-          {modal.key === "moneyWaiting" || modal.key === "moveMoney" || modal.key === "revenue" ? <button style={s.modalPrimary} type="button" onClick={() => navigate("/invoices")}>Open Invoices</button> : null}
-          {modal.key === "dispatchDay" || modal.key === "needCrew" ? <button style={s.modalPrimary} type="button" onClick={() => navigate("/dispatch")}>Open Dispatch</button> : null}
-          {modal.key === "proofUpdates" || modal.key === "proof" ? <button style={s.modalPrimary} type="button" onClick={() => navigate("/proof-to-paid")}>Open Proof to Paid</button> : null}
-          {modal.key === "followUps" ? <button style={s.modalPrimary} type="button" onClick={() => navigate("/sms")}>Open follow-ups</button> : null}
-          {modal.key === "allJobs" || modal.key === "activeWorkBoard" ? <button style={s.modalPrimary} type="button" onClick={() => navigate("/jobs")}>Open Jobs</button> : null}
-          {modal.key === "jobRow" || modal.key === "jobWork" ? <button style={s.modalPrimary} type="button" onClick={() => openJob(modal.job?.id)}>Open job</button> : null}
-          {modal.key === "workThePlan" ? <button style={s.modalPrimary} type="button" onClick={runAiPlan}>Run AI Plan</button> : null}
-          {modal.key === "explainPlan" ? <button style={s.modalPrimary} type="button" onClick={onClose}>Got it</button> : null}
-          {routeAction ? <button style={s.modalPrimary} type="button" onClick={routeAction}>Open {modal.label}</button> : null}
-          <button style={s.modalGhost} type="button" onClick={onClose}>Close</button>
-        </div>
+  const modalType = modal.type || modal.key || "default";
+  const unassignedJobs = (data?.jobs || []).filter((job) => !job?.assigned_worker && !job?.assigned_worker_name && !job?.worker_id).slice(0, 6);
+  const openInvoices = (data?.invoices || []).filter((invoice) => ["open", "sent", "overdue", "unpaid", "pending"].includes(low(invoice?.status))).slice(0, 6);
+  const quickChecklist = draft.checklist || { step1: false, step2: false, step3: false };
+
+  const saveLocal = () => {
+    setDraft((prev) => ({ ...prev, saveMessage: "Saved locally in AI Control Room." }));
+  };
+
+  const renderBody = () => {
+    if (modalType === "job" || modalType === "jobRow" || modalType === "jobWork") {
+      const job = modal.job || {};
+      return <>
+        <p style={s.modalLine}>Client: {job.client || "Client"} • Suggested AI action: assign and confirm timing.</p>
+        <label style={s.modalLabel}>Job title</label><input style={s.modalInput} value={draft.title ?? job.title ?? ""} onChange={(e)=>updateDraft("title",e.target.value)} />
+        <label style={s.modalLabel}>Assignment</label><input style={s.modalInput} value={draft.assignment ?? job.assignment ?? ""} onChange={(e)=>updateDraft("assignment",e.target.value)} />
+        <label style={s.modalLabel}>Status</label><select style={s.modalInput} value={draft.status ?? job.status ?? "Needs crew"} onChange={(e)=>updateDraft("status",e.target.value)}><option>Needs crew</option><option>In progress</option><option>On site</option><option>Completed</option></select>
+        <label style={s.modalLabel}>Internal note</label><textarea style={s.modalTextarea} value={draft.internalNote ?? ""} onChange={(e)=>updateDraft("internalNote",e.target.value)} />
+      </>;
+    }
+    return <>
+      <p style={s.modalLine}>What AI found: {modal.insight || "Priority tasks are queued for owner review."}</p>
+      <p style={s.modalLine}>Why it matters: {modal.why || "Fast approvals improve dispatch speed and cashflow."}</p>
+      <label style={s.modalLabel}>Owner instruction</label><textarea style={s.modalTextarea} value={draft.ownerInstruction ?? ""} onChange={(e)=>updateDraft("ownerInstruction",e.target.value)} />
+      <label style={s.modalLabel}>Priority / decision</label><select style={s.modalInput} value={draft.priority ?? "Normal"} onChange={(e)=>updateDraft("priority",e.target.value)}><option>Low</option><option>Normal</option><option>High</option><option>Urgent</option><option>Review later</option><option>Approve draft</option><option>Needs edits</option></select>
+      <div style={s.modalChecklist}>
+        {["Review details","Prepare draft","Ready for approval"].map((item, idx)=><label key={item} style={s.modalCheckLabel}><input type="checkbox" checked={Boolean(quickChecklist[`step${idx+1}`])} onChange={(e)=>setDraft((prev)=>({ ...prev, checklist: { ...quickChecklist, [`step${idx+1}`]: e.target.checked } }))} /> {item}</label>)}
       </div>
-    </div>
-  );
+      {modalType === "needCrew" ? <><p style={s.modalLine}>Unassigned jobs: {stats.needCrew}</p><ul style={s.modalList}>{unassignedJobs.map((job)=><li key={job.id || job._id}>{job.title || job.service || "Untitled job"}</li>)}</ul></> : null}
+      {modalType === "revenue" || modalType === "moneyWaiting" ? <><p style={s.modalLine}>Money waiting: {cash(stats.moneyWaiting)}</p><ul style={s.modalList}>{openInvoices.map((invoice)=><li key={invoice.id || invoice._id}>{invoice.customer_name || "Client"} — {cash(invoice.balance_due || invoice.total || 0)}</li>)}</ul></> : null}
+    </>;
+  };
+
+  const title = modal.title || modal.label || modal.job?.title || "AI Operator Panel";
+  return <div style={s.modalBackdrop} onClick={onClose}><div style={s.modalCard} onClick={(e)=>e.stopPropagation()}><button style={s.modalClose} type="button" onClick={onClose}>×</button><h3 style={s.modalTitle}>{title}</h3><p style={s.modalDesc}>Review details, edit safely, then open full page if needed.</p><div style={s.modalBody}>{renderBody()}</div>{draft.saveMessage ? <p style={s.modalNotice}>{draft.saveMessage}</p> : null}<div style={s.modalActions}><button style={s.modalPrimary} type="button" onClick={onSave} disabled={savingModal}>{savingModal ? "Saving..." : "Save changes"}</button><button style={s.modalGhost} type="button" onClick={saveLocal}>Save draft</button>{modal.job ? <button style={s.modalGhost} type="button" onClick={() => openJob(modal.job?.id)}>Open job</button> : null}<button style={s.modalGhost} type="button" onClick={() => navigate(modal.route || (modalType.includes("approval") ? "/dashboard" : modalType.includes("proof") ? "/proof-to-paid" : modalType.includes("revenue") || modalType.includes("money") ? "/invoices" : modalType.includes("crew") || modalType.includes("dispatch") ? "/dispatch" : modalType.includes("follow") ? "/sms" : "/jobs"))}>Open full page</button><button style={s.modalGhost} type="button" onClick={onClose}>Close</button></div></div></div>;
 }
 
 function Th({ children }) {
@@ -981,6 +1030,13 @@ const s = {
   modalBody: { border: "1px solid #e2e8f0", borderRadius: 12, padding: 12, background: "#f8fafc" },
   modalLine: { margin: "4px 0", color: "#0f172a" },
   modalActions: { marginTop: 16, display: "flex", flexWrap: "wrap", gap: 10 },
+  modalNotice: { margin: "10px 2px 0", color: "#0f4fcf", fontSize: 13, fontWeight: 700 },
+  modalLabel: { display: "block", margin: "10px 0 6px", color: "#0f172a", fontSize: 13, fontWeight: 700 },
+  modalInput: { width: "100%", minHeight: 38, borderRadius: 8, border: "1px solid #cbd5e1", padding: "8px 10px", fontSize: 14, color: "#0f172a", background: "#fff" },
+  modalTextarea: { width: "100%", minHeight: 90, borderRadius: 8, border: "1px solid #cbd5e1", padding: "10px", fontSize: 14, color: "#0f172a", resize: "vertical", background: "#fff" },
+  modalChecklist: { marginTop: 10, display: "grid", gap: 6 },
+  modalCheckLabel: { color: "#1e293b", fontSize: 13, fontWeight: 600 },
+  modalList: { margin: "6px 0 0", paddingLeft: 18, color: "#334155", fontSize: 13 },
   modalPrimary: { border: 0, background: "#1165ff", color: "#fff", borderRadius: 10, padding: "10px 14px", cursor: "pointer", fontWeight: 700 },
   modalGhost: { border: "1px solid #cbd5e1", background: "#fff", color: "#0f172a", borderRadius: 10, padding: "10px 14px", cursor: "pointer", fontWeight: 700 },
   jobDot: {
