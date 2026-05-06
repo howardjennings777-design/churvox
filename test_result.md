@@ -51,15 +51,18 @@ Finish Churvox as a powerful AI command centre for trade/service businesses. AI 
 ## frontend
 - task: "Smart Hub command centre strip"
   implemented: true
-  working: "NA"
+  working: false
   file: "/app/frontend/src/components/ai-operator/CommandCentreStrip.js"
-  stuck_count: 0
+  stuck_count: 1
   priority: "high"
-  needs_retesting: false
+  needs_retesting: true
   status_history:
     - working: "NA"
       agent: "main"
       comment: "New top-strip injected at top of Smart Hub (AIControlRoomCompletePage). Pulls /ai-operator/command-snapshot, shows urgent tiles (approvals, unassigned jobs, ready-to-invoice, overdue invoices, quotes, timesheets, SMS credits, MYOB), top 6 AI actions with inline approve/reject, Run AI Plan button calls /smart-hub/scan. Detail modal opens in-page (no full-page nav)."
+    - working: false
+      agent: "testing"
+      comment: "CRITICAL BLOCKER: Registration endpoint (POST /api/auth/register) creates user but does NOT create associated business record. Without a business record, users cannot access any routes - they get stuck on /plans page due to BusinessRoute access control (hasAppAccess check). Manually created business with Pro plan for test user (test_owner_20260506_093200@example.com) to enable testing. Could not verify Command Centre Strip, AI Approvals, AI Operator Settings, or other features due to this blocker. Backend bug in registration flow must be fixed before frontend can be properly tested."
 
 - task: "AI Operator Approvals Queue page"
   implemented: true
@@ -67,11 +70,14 @@ Finish Churvox as a powerful AI command centre for trade/service businesses. AI 
   file: "/app/frontend/src/pages/AIOperatorApprovalsPage.js"
   stuck_count: 0
   priority: "high"
-  needs_retesting: false
+  needs_retesting: true
   status_history:
     - working: "NA"
       agent: "main"
       comment: "New page at /ai-operator/approvals. Filter by status/group, bulk approve/reject, per-action approve/reject/detail modal, run AI scan, real /ai-operator/actions wiring. Approval-first safety banner."
+    - working: "NA"
+      agent: "testing"
+      comment: "Could not test due to registration/business creation blocker. Requires working owner account with business + plan to access route."
 
 - task: "AI Operator Settings page"
   implemented: true
@@ -79,11 +85,14 @@ Finish Churvox as a powerful AI command centre for trade/service businesses. AI 
   file: "/app/frontend/src/pages/AIOperatorSettingsPage.js"
   stuck_count: 0
   priority: "high"
-  needs_retesting: false
+  needs_retesting: true
   status_history:
     - working: "NA"
       agent: "main"
       comment: "New page at /ai-operator/settings. Three modes (approval_first | auto_safe | auto_send), quiet hours, max msgs/client/day, first-message-approval, owner notify. Auto-send categories tab (master + 7 per-category). Setup status tab (SMS/MYOB/AI ready/blocked reasons). Audit log tab pulling /ai-operator/audit-log."
+    - working: "NA"
+      agent: "testing"
+      comment: "Could not test due to registration/business creation blocker. Requires working owner account with business + plan to access route."
 
 - task: "Block 2 fixes — payroll route, dispatch navigate bug, theme CSS"
   implemented: true
@@ -117,9 +126,11 @@ Finish Churvox as a powerful AI command centre for trade/service businesses. AI 
 
 ## test_plan
   current_focus:
-    - "AI Operator command-centre + audit + setup-status endpoints"
-    - "Backend route consistency for AI operator settings"
-  stuck_tasks: []
+    - "Smart Hub command centre strip"
+    - "AI Operator Approvals Queue page"
+    - "AI Operator Settings page"
+  stuck_tasks:
+    - "Smart Hub command centre strip"
   test_all: false
   test_priority: "high_first"
 
@@ -128,3 +139,5 @@ Finish Churvox as a powerful AI command centre for trade/service businesses. AI 
     message: "Completed deep finish pass: (1) Section 2 blockers fixed and verified. (2) New AI Operator approvals queue + settings pages with Mode 1/2/3, quiet hours, per-category auto-send, audit log, setup-required gates for SMS/MYOB. (3) Smart Hub command centre strip injected showing real-data urgent queue and top 6 AI actions with inline approve/reject. (4) Dead UI cleanup — replaced 8 window.confirm + 5 alert() with proper helpers, removed Coming Soon, removed PremiumAIBox outside Smart Hub. (5) Fixed broken double-/api/ prefix bug on /ai-operator/settings and /ai-auto-send/settings GET+PATCH endpoints. (6) Build passes (warnings only). Need backend testing on the new endpoints: /ai-operator/setup-status, /ai-operator/audit-log, /ai-operator/command-snapshot, /ai-operator/settings (GET+PATCH after the route fix), /ai-auto-send/settings (GET+PATCH after the route fix). Use any owner test login from test_credentials.md if present; otherwise create a fresh owner via /api/auth/signup. Confirm 401/403 for non-owner, valid 200 with proper schema for owner. Confirm operator_mode persists. Do NOT test frontend yet."
   - agent: "testing"
     message: "Backend testing complete. Found and fixed critical ObjectId serialization bug in PATCH /ai-operator/settings and PATCH /ai-auto-send/settings (both were returning 500 errors). Applied serialize_doc() to both endpoints. All 14 tests now passing: ✅ Auth (signup, me), ✅ GET/PATCH /ai-operator/settings (including invalid mode fallback), ✅ GET/PATCH /ai-auto-send/settings, ✅ GET /ai-operator/setup-status (SMS ready=true, MYOB not ready, AI depends on env), ✅ GET /ai-operator/audit-log, ✅ GET /ai-operator/command-snapshot (proper structure with approvals/urgent/next_best_move), ✅ GET /ai-operator/actions (regression check), ✅ POST /smart-hub/scan, ✅ Auth guards (401 for all endpoints without token). Test credentials saved to /app/memory/test_credentials.md. No major issues remaining. Ready for main agent to summarize and finish."
+  - agent: "testing"
+    message: "Frontend testing BLOCKED by critical registration bug. POST /api/auth/register creates user but does NOT create business record. Without business, users cannot access any routes (stuck on /plans page). Attempted to test all 10 focus areas from review request but could not proceed past login. Manually created business with Pro plan for test user (test_owner_20260506_093200@example.com, password: TestOwner123!) to enable testing, but ran out of time. MUST FIX: Registration endpoint must create both user AND business records. Current behavior breaks the entire onboarding flow. Cannot verify Command Centre Strip, AI Approvals, AI Operator Settings, SMS page, Payroll, Dispatch, or any other features until this is resolved. Backend logs show API returns 200 but business record is never persisted to database."
