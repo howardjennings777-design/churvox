@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useApi } from "@/hooks/useApi";
 import useAiDraft from "@/hooks/useAiDraft";
 import {
@@ -14,6 +14,7 @@ import {
   PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton,
   PremiumAIBox, PremiumAIDraftPanel, PremiumEmptyState, PremiumStatusBadge,
 } from "@/components/premium";
+import EntityDetailModal from "@/components/EntityDetailModal";
 
 const safeArray = (v) => (Array.isArray(v) ? v : []);
 const safeText = (v, f = "—") => { if (v == null) return f; const t = String(v).trim(); return t || f; };
@@ -28,6 +29,7 @@ export default function QuotesPage() {
   const [sortBy, setSortBy] = useState("newest");
   const [deleteId, setDeleteId] = useState(null);
   const [openMenu, setOpenMenu] = useState(null);
+  const [activeQuote, setActiveQuote] = useState(null);
   const { loading: aiLoading, draft, llmAvailable, setDraft, generate } = useAiDraft("quotes");
 
   useEffect(() => { loadQuotes(); }, []);
@@ -229,7 +231,7 @@ export default function QuotesPage() {
                 <div key={quote.id} className="px-card px-card--hover" data-testid={`quote-card-${quote.id}`}>
                   <div className="px-card__body">
                     <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
-                      <Link to={`/quotes/${quote.id}`} className="flex-1 min-w-0 group">
+                      <button type="button" onClick={() => setActiveQuote(quote)} className="flex-1 min-w-0 group text-left">
                         <div className="flex flex-wrap items-center gap-2 mb-1">
                           <span className="text-[15.5px] font-bold text-[#0d1b34] group-hover:text-[#1d4ed8] transition" data-testid={`quote-number-${quote.id}`}>
                             {safeText(quote.title || quote.quote_number, "Untitled quote")}
@@ -244,12 +246,12 @@ export default function QuotesPage() {
                           {(quote.sent_at || quote.updated_at) && <span>Sent {formatDate(quote.sent_at || quote.updated_at)}</span>}
                           {quote.expires_at && <span>Expires {formatDate(quote.expires_at)}</span>}
                         </div>
-                      </Link>
+                      </button>
 
                       <div className="flex flex-col sm:items-end gap-2">
                         <span className="text-[24px] font-heading font-bold text-[#0d1b34]">{formatCurrency(quote.price ?? quote.total)}</span>
                         <div className="flex flex-wrap items-center gap-2">
-                          <PremiumButton size="sm" variant="secondary" onClick={() => navigate(`/quotes/${quote.id}`)}>Open</PremiumButton>
+                          <PremiumButton size="sm" variant="secondary" onClick={() => setActiveQuote(quote)}>Open</PremiumButton>
                           {status === "draft" && (
                             <PremiumButton size="sm" onClick={() => handleSendQuote(quote.id)} iconLeft={<Send className="h-3.5 w-3.5" />} dataTestId={`send-quote-${quote.id}`}>Send</PremiumButton>
                           )}
@@ -264,7 +266,7 @@ export default function QuotesPage() {
                               <>
                                 <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} />
                                 <div className="absolute right-0 mt-1 w-44 bg-white border border-[#d8e3f3] rounded-xl shadow-lg z-20 overflow-hidden">
-                                  <Link to={`/quotes/${quote.id}`} className="block px-3 py-2 text-[13px] text-[#0d1b34] hover:bg-[#eff4ff]">View details</Link>
+                                  <Link className="block px-3 py-2 text-[13px] text-[#0d1b34] hover:bg-[#eff4ff]" onClick={() => { setOpenMenu(null); setActiveQuote(quote); }}>View details</button>
                                   <Link to={`/quotes/${quote.id}/edit`} className="block px-3 py-2 text-[13px] text-[#0d1b34] hover:bg-[#eff4ff]" data-testid={`edit-quote-${quote.id}`}>
                                     <Pencil className="h-3.5 w-3.5 inline mr-1.5" />Edit
                                   </Link>
@@ -298,6 +300,7 @@ export default function QuotesPage() {
             </div>
           </div>
         )}
+      <EntityDetailModal open={Boolean(activeQuote)} onClose={() => setActiveQuote(null)} title={activeQuote ? `Quote details · ${activeQuote.title || activeQuote.id}` : "Quote details"} item={activeQuote} />
       </PremiumPage>
     </Layout>
   );
