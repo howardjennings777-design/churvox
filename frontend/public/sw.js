@@ -1,7 +1,7 @@
 // Churvox Service Worker — lightweight, network-first, hard refresh friendly
 // Keeps PWA installability while avoiding stale dashboard JS/CSS after deploys.
 
-const CACHE_NAME = "churvox-ai-control-room-v3";
+const CACHE_NAME = "churvox-ai-control-room-v4-force-top-player";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
