@@ -32,7 +32,7 @@ import PlansPage from "./pages/PlansPage";
 import CalendarPage from "./pages/CalendarPage";
 import TeamPage from "./pages/TeamPage";
 import SMSPage from "./pages/SMSPage";
-import PayrollPage from "./pages/PayrollPage";
+import PayrollPage from "./pages/PayrollPageClean";
 import WorkerJobsPage from "./pages/worker/WorkerJobsPage";
 import WorkerJobDetailPage from "./pages/worker/WorkerJobDetailPage";
 import OnboardingPage from "./pages/OnboardingPage";
