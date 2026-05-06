@@ -15,14 +15,7 @@ const toArray = (value) => {
 const low = (value) => String(value || "").toLowerCase();
 const cash = (value) => `$${Number(value || 0).toFixed(2)}`;
 
-const fallbackRows = [
-  ["demo-1", "Lawn mowing - Front & Back", "lawnz", "Unassigned", "Needs crew"],
-  ["demo-2", "Hedge trim & tidy", "Greenview Homes", "Jake M.", "In progress"],
-  ["demo-3", "Gutter clean - Single storey", "Sarah P.", "Unassigned", "Needs crew"],
-  ["demo-4", "Garden maintenance", "Maple Ave Office", "Tom R.", "On site"],
-  ["demo-5", "Rubbish removal", "lawnz", "Unassigned", "Needs crew"],
-  ["demo-6", "Pressure clean driveway", "Michael B.", "Lisa K.", "In progress"],
-];
+const fallbackRows = [];
 const cleanFallbackTitles = [
   "Lawn mowing - Front & Back",
   "Hedge trim & tidy",
@@ -130,12 +123,12 @@ export default function AIControlRoomCompletePage() {
       data.quotes.filter((quote) => ["sent", "pending"].includes(low(quote.status))).length;
 
     return {
-      approvals: data.approvals.length || 35,
+      approvals: data.approvals.length,
       workers: data.workers.filter((worker) => low(worker.status) !== "inactive").length || 3,
-      moneyWaiting: moneyWaitingReal || 403.5,
-      followUps: followUpsReal || 8,
-      needCrew: needCrewReal || 17,
-      proof: 5,
+      moneyWaiting: moneyWaitingReal,
+      followUps: followUpsReal,
+      needCrew: needCrewReal,
+      proof: data.jobs.filter((job) => ["completed","done"].includes(low(job.status))).length,
     };
   }, [data]);
 
@@ -164,7 +157,7 @@ export default function AIControlRoomCompletePage() {
       ];
     });
 
-    return realRows.length ? realRows : fallbackRows;
+    return realRows.length ? realRows : [];
   }, [data.jobs]);
 
   const runAiPlan = async () => {
@@ -260,7 +253,7 @@ export default function AIControlRoomCompletePage() {
               <Title icon="◎">Today’s AI Mission</Title>
 
               <div style={s.bestMove}>
-                <span style={{ color: "#1155e8" }}>✧</span> Best next move: Assign worker to lawnz
+                <span style={{ color: "#1155e8" }}>✧</span> Best next move: Review unassigned jobs and pending approvals
               </div>
 
               <div style={s.metricGrid}>
@@ -296,7 +289,7 @@ export default function AIControlRoomCompletePage() {
               <div style={s.moveGrid}>
                 <Move title="Dispatch the day" body="Assign crews and get jobs moving." badge={`${stats.needCrew} jobs`} color="#ff5a12" icon="▣" onClick={() => openPanel({ key: "dispatchDay" })} />
                 <Move title="Move money" body="Follow up payments and collect faster." badge={cash(stats.moneyWaiting)} color="#1165ff" icon="$" onClick={() => openPanel({ key: "moveMoney" })} />
-                <Move title="Proof & updates" body="Review proof and send updates to clients." badge={`${stats.proof} ready`} color="#0f2747" icon="◇" onClick={() => openPanel({ key: "proofUpdates" })} />
+                <Move title="Proof & updates" body="Review proof and send updates to clients." badge={stats.proof ? `${stats.proof} ready` : "No proof packs ready"} color="#0f2747" icon="◇" onClick={() => openPanel({ key: "proofUpdates" })} />
               </div>
             </article>
           </section>
@@ -318,7 +311,7 @@ export default function AIControlRoomCompletePage() {
                   </thead>
 
                   <tbody>
-                    {rows.map(([id, title, client, assignment, status]) => (
+                    {rows.length ? rows.map(([id, title, client, assignment, status]) => (
                       <tr key={`${id}-${title}`} style={s.rowClickable} onClick={() => openPanel({ type: "job", key: "jobRow", job: { id, title, client, assignment, status }, title })}>
                         <Td>
                           <span style={s.jobDot} />
@@ -337,7 +330,7 @@ export default function AIControlRoomCompletePage() {
                           </button>
                         </Td>
                       </tr>
-                    ))}
+                    )) : (<tr><td colSpan="5" style={s.emptyCell}>No active jobs right now.</td></tr>)}
                   </tbody>
                 </table>
               </div>
@@ -354,11 +347,11 @@ export default function AIControlRoomCompletePage() {
                   <p style={s.subText}>Review, edit and approve AI-prepared actions.</p>
                 </div>
 
-                <span style={s.readyPill}>15 ready</span>
+                <span style={s.readyPill}>{stats.approvals ? `${stats.approvals} ready` : "No approvals ready"}</span>
               </div>
 
               <div style={s.approvalGrid}>
-                <Approval label="All" value="15" icon="☷" active onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "All", value: 15 }); }} />
+                <Approval label="All" value={String(stats.approvals || 0)} icon="☷" active onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "All", value: 15 }); }} />
                 <Approval label="Dispatch" value="6" icon="▣" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Dispatch", value: 6 }); }} />
                 <Approval label="Revenue" value="3" icon="$" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Revenue", value: 3 }); }} />
                 <Approval label="Follow-ups" value="2" icon="▤" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Follow-ups", value: 2 }); }} />
@@ -480,7 +473,7 @@ function ControlRoomPanel({ panel, draft, setDraft, onClose, onSave, updateDraft
     proof:"proof", proofUpdates:"proof",
     receptionist:"receptionist", recurring:"recurring", integrations:"integrations", plans:"plans", legal:"legal", notifications:"followups"
   }[panel.key] || "settings");
-  const jobs = (data.jobs?.length ? data.jobs : rows.map(([id, title, client, assignment, status]) => ({ id, title, client_name: client, assignment, status })));
+  const jobs = data.jobs || [];
   const unassigned = jobs.filter((j) => !(j.assigned_worker || j.assigned_worker_name || j.worker_id || j.assignment) || low(j.assignment) === "unassigned");
   const clients = Array.from(new Set([...jobs.map((j) => j.client_name || j.client || ""), ...data.invoices.map((i) => i.customer_name || ""), ...data.quotes.map((q) => q.customer_name || "")].filter(Boolean)));
 
