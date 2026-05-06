@@ -51,7 +51,7 @@ export const PLAN_FEATURES = {
     csvTeamImport: true,
     csvClientImport: true,
     recurringJobs: true,
-    myobSync: true,
+    myobSync: false,
     enterpriseUserBlocks: false,
     includedUsers: 15,
   },
