@@ -7,7 +7,7 @@ import requests
 import os
 from bson import ObjectId
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://ai-assistant-hub-375.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://smart-operator-3.preview.emergentagent.com').rstrip('/')
 
 # Test credentials from test_credentials.md
 PLATFORM_OWNER = {"email": "hello@churvox.com", "password": "TempPass123!"}

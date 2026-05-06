@@ -1,368 +1,602 @@
 #!/usr/bin/env python3
 """
-Churvox Phase 1 Backend API Testing
-Tests all core contractor app functionality
+Backend API Testing for Churvox AI Operator Endpoints
+Tests all AI Operator endpoints with proper auth and validation
 """
 
 import requests
-import sys
 import json
-from datetime import datetime, timedelta
-from typing import Dict, Any, Optional
+import os
+from datetime import datetime
 
-class ChurvoxAPITester:
-    def __init__(self, base_url="https://ai-assistant-hub-375.preview.emergentagent.com"):
-        self.base_url = base_url
-        self.token = None
-        self.user_id = None
-        self.tests_run = 0
-        self.tests_passed = 0
-        self.session = requests.Session()
+# Load backend URL from frontend .env
+BACKEND_URL = "https://smart-operator-3.preview.emergentagent.com/api"
+
+class Colors:
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    YELLOW = '\033[93m'
+    BLUE = '\033[94m'
+    RESET = '\033[0m'
+
+def log_success(msg):
+    print(f"{Colors.GREEN}✓ {msg}{Colors.RESET}")
+
+def log_error(msg):
+    print(f"{Colors.RED}✗ {msg}{Colors.RESET}")
+
+def log_info(msg):
+    print(f"{Colors.BLUE}ℹ {msg}{Colors.RESET}")
+
+def log_warning(msg):
+    print(f"{Colors.YELLOW}⚠ {msg}{Colors.RESET}")
+
+class TestResults:
+    def __init__(self):
+        self.passed = []
+        self.failed = []
+        self.warnings = []
+    
+    def add_pass(self, test_name, details=""):
+        self.passed.append((test_name, details))
+        log_success(f"{test_name}: PASS {details}")
+    
+    def add_fail(self, test_name, details=""):
+        self.failed.append((test_name, details))
+        log_error(f"{test_name}: FAIL {details}")
+    
+    def add_warning(self, test_name, details=""):
+        self.warnings.append((test_name, details))
+        log_warning(f"{test_name}: WARNING {details}")
+    
+    def summary(self):
+        print("\n" + "="*80)
+        print(f"TEST SUMMARY: {len(self.passed)} passed, {len(self.failed)} failed, {len(self.warnings)} warnings")
+        print("="*80)
         
-        # Test data storage
-        self.client_id = None
-        self.job_id = None
-        self.quote_id = None
-        self.invoice_id = None
-
-    def log_test(self, name: str, success: bool, details: str = ""):
-        """Log test result"""
-        self.tests_run += 1
-        if success:
-            self.tests_passed += 1
-            print(f"✅ {name}")
-        else:
-            print(f"❌ {name} - {details}")
-
-    def make_request(self, method: str, endpoint: str, data: Optional[Dict] = None, 
-                    expected_status: int = 200, auth_required: bool = True) -> tuple[bool, Dict]:
-        """Make API request with error handling"""
-        url = f"{self.base_url}/api/{endpoint}"
-        headers = {'Content-Type': 'application/json'}
+        if self.failed:
+            print(f"\n{Colors.RED}FAILED TESTS:{Colors.RESET}")
+            for name, details in self.failed:
+                print(f"  ✗ {name}: {details}")
         
-        if auth_required and self.token:
-            headers['Authorization'] = f'Bearer {self.token}'
-
-        try:
-            if method == 'GET':
-                response = self.session.get(url, headers=headers)
-            elif method == 'POST':
-                response = self.session.post(url, json=data, headers=headers)
-            elif method == 'PATCH':
-                response = self.session.patch(url, json=data, headers=headers)
-            elif method == 'DELETE':
-                response = self.session.delete(url, headers=headers)
-            else:
-                return False, {"error": f"Unsupported method: {method}"}
-
-            success = response.status_code == expected_status
-            try:
-                response_data = response.json()
-            except:
-                response_data = {"status_code": response.status_code, "text": response.text}
-
-            if not success:
-                print(f"   Status: {response.status_code}, Expected: {expected_status}")
-                if response_data:
-                    print(f"   Response: {response_data}")
-
-            return success, response_data
-
-        except Exception as e:
-            print(f"   Request failed: {str(e)}")
-            return False, {"error": str(e)}
-
-    def test_auth_login(self):
-        """Test admin login"""
-        success, response = self.make_request(
-            'POST', 'auth/login',
-            data={"email": "admin@churvox.com", "password": "Admin123!"},
-            auth_required=False
-        )
+        if self.warnings:
+            print(f"\n{Colors.YELLOW}WARNINGS:{Colors.RESET}")
+            for name, details in self.warnings:
+                print(f"  ⚠ {name}: {details}")
         
-        if success and 'token' in response:
-            self.token = response['token']
-            self.user_id = response.get('id')
-            self.log_test("Admin Login", True)
-            return True
-        else:
-            self.log_test("Admin Login", False, f"Login failed: {response}")
-            return False
+        if self.passed:
+            print(f"\n{Colors.GREEN}PASSED TESTS:{Colors.RESET}")
+            for name, details in self.passed:
+                print(f"  ✓ {name}")
+        
+        return len(self.failed) == 0
 
-    def test_auth_me(self):
-        """Test get current user"""
-        success, response = self.make_request('GET', 'auth/me')
-        
-        if success and response.get('email') == 'admin@churvox.com':
-            self.log_test("Get Current User", True)
-            return True
-        else:
-            self.log_test("Get Current User", False, f"Failed: {response}")
-            return False
+results = TestResults()
 
-    def test_dashboard_stats(self):
-        """Test dashboard stats endpoint"""
-        success, response = self.make_request('GET', 'dashboard/stats')
+def test_auth_signup():
+    """Create a fresh owner account"""
+    log_info("Creating fresh owner account...")
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    email = f"test_owner_{timestamp}@example.com"
+    password = "TestOwner123!"
+    
+    payload = {
+        "email": email,
+        "password": password,
+        "name": "Test Owner",
+        "business_name": "Test Business"
+    }
+    
+    try:
+        response = requests.post(f"{BACKEND_URL}/auth/register", json=payload, timeout=10)
         
-        expected_fields = ['jobs_today', 'jobs_this_week', 'completed_this_month', 
-                          'revenue_this_month', 'pending_invoices', 'active_clients']
-        
-        if success and all(field in response for field in expected_fields):
-            self.log_test("Dashboard Stats", True)
-            return True
-        else:
-            self.log_test("Dashboard Stats", False, f"Missing fields: {response}")
-            return False
-
-    def test_create_client(self):
-        """Test client creation"""
-        client_data = {
-            "name": "Test Client",
-            "email": "testclient@example.com",
-            "phone": "+64 21 123 4567",
-            "address": "123 Test Street, Auckland",
-            "notes": "Test client for API testing"
-        }
-        
-        success, response = self.make_request('POST', 'clients', data=client_data, expected_status=200)
-        
-        if success and 'id' in response:
-            self.client_id = response['id']
-            self.log_test("Create Client", True)
-            return True
-        else:
-            self.log_test("Create Client", False, f"Failed: {response}")
-            return False
-
-    def test_get_clients(self):
-        """Test get clients list"""
-        success, response = self.make_request('GET', 'clients')
-        
-        if success and isinstance(response, list):
-            self.log_test("Get Clients", True)
-            return True
-        else:
-            self.log_test("Get Clients", False, f"Failed: {response}")
-            return False
-
-    def test_create_job(self):
-        """Test job creation"""
-        if not self.client_id:
-            self.log_test("Create Job", False, "No client_id available")
-            return False
+        if response.status_code == 200:
+            data = response.json()
+            token = data.get("token") or data.get("access_token")
+            user = data.get("user", {})
+            role = user.get("role", "")
             
-        job_data = {
-            "title": "Lawn Mowing Service",
-            "job_type": "lawn_mowing",
-            "client_id": self.client_id,
-            "customer_name": "Test Client",
-            "address": "123 Test Street, Auckland",
-            "scheduled_date": (datetime.now() + timedelta(days=1)).isoformat(),
-            "scheduled_time": "09:00",
-            "estimated_duration": 60,
-            "price": 150.0,
-            "notes": "Regular lawn mowing service",
-            "is_recurring": False
-        }
+            if not token:
+                results.add_fail("Auth Signup", "No token in response")
+                return None, None, None
+            
+            # Save credentials
+            with open("/app/memory/test_credentials.md", "w") as f:
+                f.write("# Test credentials — Churvox\n\n")
+                f.write(f"## Owner Account (created {timestamp})\n")
+                f.write(f"- Email: {email}\n")
+                f.write(f"- Password: {password}\n")
+                f.write(f"- Role: {role}\n")
+                f.write(f"- Token: {token[:20]}...\n")
+            
+            results.add_pass("Auth Signup", f"Created owner account with role={role}")
+            return email, password, token
+        else:
+            results.add_fail("Auth Signup", f"Status {response.status_code}: {response.text[:200]}")
+            return None, None, None
+    except Exception as e:
+        results.add_fail("Auth Signup", f"Exception: {str(e)}")
+        return None, None, None
+
+def test_auth_me(token):
+    """Verify token and get user info"""
+    log_info("Testing /auth/me endpoint...")
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    try:
+        response = requests.get(f"{BACKEND_URL}/auth/me", headers=headers, timeout=10)
         
-        success, response = self.make_request('POST', 'jobs', data=job_data, expected_status=200)
-        
-        if success and 'id' in response:
-            self.job_id = response['id']
-            self.log_test("Create Job", True)
+        if response.status_code == 200:
+            data = response.json()
+            user = data.get("user", {})
+            role = user.get("role", "")
+            email = user.get("email", "")
+            
+            results.add_pass("Auth Me", f"Verified user: {email}, role={role}")
             return True
         else:
-            self.log_test("Create Job", False, f"Failed: {response}")
+            results.add_fail("Auth Me", f"Status {response.status_code}: {response.text[:200]}")
             return False
+    except Exception as e:
+        results.add_fail("Auth Me", f"Exception: {str(e)}")
+        return False
 
-    def test_start_job(self):
-        """Test starting a job"""
-        if not self.job_id:
-            self.log_test("Start Job", False, "No job_id available")
-            return False
-            
-        success, response = self.make_request('POST', f'jobs/{self.job_id}/start')
+def test_ai_operator_settings_get(token):
+    """Test GET /ai-operator/settings"""
+    log_info("Testing GET /ai-operator/settings...")
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    try:
+        response = requests.get(f"{BACKEND_URL}/ai-operator/settings", headers=headers, timeout=10)
         
-        if success and response.get('status') == 'in_progress':
-            self.log_test("Start Job", True)
-            return True
-        else:
-            self.log_test("Start Job", False, f"Failed: {response}")
-            return False
-
-    def test_complete_job(self):
-        """Test completing a job (should auto-create invoice)"""
-        if not self.job_id:
-            self.log_test("Complete Job", False, "No job_id available")
-            return False
+        if response.status_code == 200:
+            data = response.json()
             
-        success, response = self.make_request('POST', f'jobs/{self.job_id}/complete')
-        
-        if success and response.get('status') == 'completed':
-            self.log_test("Complete Job", True)
-            return True
-        else:
-            self.log_test("Complete Job", False, f"Failed: {response}")
-            return False
-
-    def test_verify_auto_invoice(self):
-        """Test that invoice was auto-created with 15% GST"""
-        success, response = self.make_request('GET', 'invoices')
-        
-        if success and isinstance(response, list) and len(response) > 0:
-            # Find invoice for our job
-            job_invoice = None
-            for invoice in response:
-                if invoice.get('job_id') == self.job_id:
-                    job_invoice = invoice
-                    self.invoice_id = invoice['id']
-                    break
-            
-            if job_invoice:
-                gst_rate = job_invoice.get('gst_rate', 0)
-                subtotal = job_invoice.get('subtotal', 0)
-                gst_amount = job_invoice.get('gst_amount', 0)
-                total = job_invoice.get('total', 0)
-                
-                # Verify 15% GST calculation
-                expected_gst = subtotal * 0.15
-                expected_total = subtotal + expected_gst
-                
-                if (gst_rate == 15.0 and 
-                    abs(gst_amount - expected_gst) < 0.01 and 
-                    abs(total - expected_total) < 0.01):
-                    self.log_test("Auto-Invoice with 15% GST", True)
-                    return True
-                else:
-                    self.log_test("Auto-Invoice with 15% GST", False, 
-                                f"GST calculation incorrect: rate={gst_rate}, gst_amount={gst_amount}, expected={expected_gst}")
-                    return False
-            else:
-                self.log_test("Auto-Invoice with 15% GST", False, "No invoice found for completed job")
+            if not data.get("success"):
+                results.add_fail("GET /ai-operator/settings", "success=false in response")
                 return False
-        else:
-            self.log_test("Auto-Invoice with 15% GST", False, f"Failed to get invoices: {response}")
-            return False
-
-    def test_create_quote(self):
-        """Test quote creation"""
-        quote_data = {
-            "customer_name": "Potential Client",
-            "customer_email": "potential@example.com",
-            "address": "456 Quote Street, Wellington",
-            "job_description": "Garden maintenance and landscaping",
-            "price": 500.0,
-            "notes": "Includes hedge trimming and lawn care",
-            "valid_until": (datetime.now() + timedelta(days=30)).isoformat()
-        }
-        
-        success, response = self.make_request('POST', 'quotes', data=quote_data, expected_status=200)
-        
-        if success and 'id' in response:
-            self.quote_id = response['id']
-            self.log_test("Create Quote", True)
-            return True
-        else:
-            self.log_test("Create Quote", False, f"Failed: {response}")
-            return False
-
-    def test_send_quote(self):
-        """Test marking quote as sent"""
-        if not self.quote_id:
-            self.log_test("Send Quote", False, "No quote_id available")
-            return False
             
-        success, response = self.make_request('POST', f'quotes/{self.quote_id}/send')
-        
-        if success and response.get('status') == 'sent':
-            self.log_test("Send Quote", True)
-            return True
-        else:
-            self.log_test("Send Quote", False, f"Failed: {response}")
-            return False
-
-    def test_get_jobs_today(self):
-        """Test get jobs today endpoint"""
-        success, response = self.make_request('GET', 'jobs/today')
-        
-        if success and isinstance(response, list):
-            self.log_test("Get Jobs Today", True)
-            return True
-        else:
-            self.log_test("Get Jobs Today", False, f"Failed: {response}")
-            return False
-
-    def test_get_jobs_week(self):
-        """Test get jobs this week endpoint"""
-        success, response = self.make_request('GET', 'jobs/week')
-        
-        if success and isinstance(response, list):
-            self.log_test("Get Jobs This Week", True)
-            return True
-        else:
-            self.log_test("Get Jobs This Week", False, f"Failed: {response}")
-            return False
-
-    def test_auth_logout(self):
-        """Test logout"""
-        success, response = self.make_request('POST', 'auth/logout')
-        
-        if success:
-            self.log_test("Logout", True)
-            return True
-        else:
-            self.log_test("Logout", False, f"Failed: {response}")
-            return False
-
-    def run_all_tests(self):
-        """Run all backend tests"""
-        print("🚀 Starting Churvox Phase 1 Backend API Tests")
-        print("=" * 60)
-        
-        # Authentication tests
-        if not self.test_auth_login():
-            print("❌ Login failed - stopping tests")
-            return False
+            settings = data.get("settings", {})
             
-        self.test_auth_me()
+            # Check required fields
+            required_fields = [
+                "operator_mode", "accounting_changes_locked", "payroll_changes_locked",
+                "quiet_hours_enabled", "quiet_hours_start", "quiet_hours_end",
+                "max_messages_per_client_per_day", "owner_notify_on_action"
+            ]
+            
+            missing = [f for f in required_fields if f not in settings]
+            if missing:
+                results.add_fail("GET /ai-operator/settings", f"Missing fields: {missing}")
+                return False
+            
+            # Verify locked fields
+            if settings.get("accounting_changes_locked") != True:
+                results.add_fail("GET /ai-operator/settings", "accounting_changes_locked should be True")
+                return False
+            
+            if settings.get("payroll_changes_locked") != True:
+                results.add_fail("GET /ai-operator/settings", "payroll_changes_locked should be True")
+                return False
+            
+            # Verify default operator_mode
+            if settings.get("operator_mode") not in ["approval_first", "auto_safe", "auto_send"]:
+                results.add_warning("GET /ai-operator/settings", f"Unexpected operator_mode: {settings.get('operator_mode')}")
+            
+            results.add_pass("GET /ai-operator/settings", f"operator_mode={settings.get('operator_mode')}, locked fields verified")
+            return True
+        else:
+            results.add_fail("GET /ai-operator/settings", f"Status {response.status_code}: {response.text[:200]}")
+            return False
+    except Exception as e:
+        results.add_fail("GET /ai-operator/settings", f"Exception: {str(e)}")
+        return False
+
+def test_ai_operator_settings_patch(token):
+    """Test PATCH /ai-operator/settings"""
+    log_info("Testing PATCH /ai-operator/settings...")
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    # Test 1: Valid update
+    payload = {
+        "operator_mode": "auto_send",
+        "quiet_hours_enabled": True,
+        "quiet_hours_start": "21:00",
+        "quiet_hours_end": "06:30",
+        "max_messages_per_client_per_day": 3,
+        "require_approval_for_first_message": True,
+        "owner_notify_on_action": True
+    }
+    
+    try:
+        response = requests.patch(f"{BACKEND_URL}/ai-operator/settings", json=payload, headers=headers, timeout=10)
         
-        # Dashboard tests
-        self.test_dashboard_stats()
+        if response.status_code == 200:
+            data = response.json()
+            settings = data.get("settings", {})
+            
+            # Verify persisted values
+            if settings.get("operator_mode") != "auto_send":
+                results.add_fail("PATCH /ai-operator/settings", f"operator_mode not persisted: {settings.get('operator_mode')}")
+                return False
+            
+            if settings.get("quiet_hours_start") != "21:00":
+                results.add_fail("PATCH /ai-operator/settings", f"quiet_hours_start not persisted: {settings.get('quiet_hours_start')}")
+                return False
+            
+            if settings.get("max_messages_per_client_per_day") != 3:
+                results.add_fail("PATCH /ai-operator/settings", f"max_messages_per_client_per_day not persisted: {settings.get('max_messages_per_client_per_day')}")
+                return False
+            
+            # Verify locked fields remain true
+            if settings.get("accounting_changes_locked") != True or settings.get("payroll_changes_locked") != True:
+                results.add_fail("PATCH /ai-operator/settings", "Locked fields should remain True after PATCH")
+                return False
+            
+            results.add_pass("PATCH /ai-operator/settings (valid)", "Settings persisted correctly")
+        else:
+            results.add_fail("PATCH /ai-operator/settings (valid)", f"Status {response.status_code}: {response.text[:200]}")
+            return False
+    except Exception as e:
+        results.add_fail("PATCH /ai-operator/settings (valid)", f"Exception: {str(e)}")
+        return False
+    
+    # Test 2: Invalid operator_mode should fallback to approval_first
+    log_info("Testing PATCH with invalid operator_mode...")
+    payload_invalid = {"operator_mode": "yolo"}
+    
+    try:
+        response = requests.patch(f"{BACKEND_URL}/ai-operator/settings", json=payload_invalid, headers=headers, timeout=10)
         
-        # Client tests
-        self.test_create_client()
-        self.test_get_clients()
+        if response.status_code == 200:
+            data = response.json()
+            settings = data.get("settings", {})
+            
+            if settings.get("operator_mode") == "approval_first":
+                results.add_pass("PATCH /ai-operator/settings (invalid mode)", "Invalid mode correctly fell back to approval_first")
+            else:
+                results.add_warning("PATCH /ai-operator/settings (invalid mode)", f"Expected fallback to approval_first, got {settings.get('operator_mode')}")
+        else:
+            results.add_fail("PATCH /ai-operator/settings (invalid mode)", f"Status {response.status_code}")
+    except Exception as e:
+        results.add_fail("PATCH /ai-operator/settings (invalid mode)", f"Exception: {str(e)}")
+    
+    return True
+
+def test_ai_auto_send_settings(token):
+    """Test GET and PATCH /ai-auto-send/settings"""
+    log_info("Testing GET /ai-auto-send/settings...")
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    # Test GET
+    try:
+        response = requests.get(f"{BACKEND_URL}/ai-auto-send/settings", headers=headers, timeout=10)
         
-        # Job workflow tests
-        self.test_create_job()
-        self.test_start_job()
-        self.test_complete_job()
-        self.test_verify_auto_invoice()
+        if response.status_code == 200:
+            data = response.json()
+            
+            if not data.get("success"):
+                results.add_fail("GET /ai-auto-send/settings", "success=false in response")
+                return False
+            
+            settings = data.get("settings", {})
+            results.add_pass("GET /ai-auto-send/settings", f"Retrieved settings with {len(settings)} fields")
+        else:
+            results.add_fail("GET /ai-auto-send/settings", f"Status {response.status_code}: {response.text[:200]}")
+            return False
+    except Exception as e:
+        results.add_fail("GET /ai-auto-send/settings", f"Exception: {str(e)}")
+        return False
+    
+    # Test PATCH
+    log_info("Testing PATCH /ai-auto-send/settings...")
+    payload = {
+        "ai_auto_send_enabled": True,
+        "quote_followup_auto_send": True,
+        "invoice_reminder_auto_send": True
+    }
+    
+    try:
+        response = requests.patch(f"{BACKEND_URL}/ai-auto-send/settings", json=payload, headers=headers, timeout=10)
         
-        # Quote tests
-        self.test_create_quote()
-        self.test_send_quote()
+        if response.status_code == 200:
+            data = response.json()
+            settings = data.get("settings", {})
+            
+            # Verify persisted
+            if settings.get("ai_auto_send_enabled") != True:
+                results.add_fail("PATCH /ai-auto-send/settings", "ai_auto_send_enabled not persisted")
+                return False
+            
+            if settings.get("quote_followup_auto_send") != True:
+                results.add_fail("PATCH /ai-auto-send/settings", "quote_followup_auto_send not persisted")
+                return False
+            
+            results.add_pass("PATCH /ai-auto-send/settings", "Settings persisted correctly")
+            return True
+        else:
+            results.add_fail("PATCH /ai-auto-send/settings", f"Status {response.status_code}: {response.text[:200]}")
+            return False
+    except Exception as e:
+        results.add_fail("PATCH /ai-auto-send/settings", f"Exception: {str(e)}")
+        return False
+
+def test_ai_operator_setup_status(token):
+    """Test GET /ai-operator/setup-status"""
+    log_info("Testing GET /ai-operator/setup-status...")
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    try:
+        response = requests.get(f"{BACKEND_URL}/ai-operator/setup-status", headers=headers, timeout=10)
         
-        # Additional endpoint tests
-        self.test_get_jobs_today()
-        self.test_get_jobs_week()
+        if response.status_code == 200:
+            data = response.json()
+            
+            if not data.get("success"):
+                results.add_fail("GET /ai-operator/setup-status", "success=false in response")
+                return False
+            
+            # Check structure
+            sms = data.get("sms", {})
+            myob = data.get("myob", {})
+            ai = data.get("ai", {})
+            
+            # Verify SMS structure
+            required_sms_fields = ["ready", "test_only", "credits", "provider", "blocked_reason"]
+            missing_sms = [f for f in required_sms_fields if f not in sms]
+            if missing_sms:
+                results.add_fail("GET /ai-operator/setup-status", f"SMS missing fields: {missing_sms}")
+                return False
+            
+            # Verify MYOB structure
+            required_myob_fields = ["ready", "credentials_present", "connected", "blocked_reason"]
+            missing_myob = [f for f in required_myob_fields if f not in myob]
+            if missing_myob:
+                results.add_fail("GET /ai-operator/setup-status", f"MYOB missing fields: {missing_myob}")
+                return False
+            
+            # Verify AI structure
+            required_ai_fields = ["ready", "blocked_reason"]
+            missing_ai = [f for f in required_ai_fields if f not in ai]
+            if missing_ai:
+                results.add_fail("GET /ai-operator/setup-status", f"AI missing fields: {missing_ai}")
+                return False
+            
+            # Check SMS readiness (CLICKSEND_API_KEY is set in .env)
+            if sms.get("ready") == True:
+                results.add_pass("GET /ai-operator/setup-status", f"SMS ready={sms.get('ready')}, credits={sms.get('credits')}")
+            else:
+                results.add_warning("GET /ai-operator/setup-status", f"SMS not ready: {sms.get('blocked_reason')}")
+            
+            # Check MYOB (should be not ready for fresh business)
+            if myob.get("ready") == False:
+                results.add_pass("GET /ai-operator/setup-status (MYOB)", f"MYOB correctly not ready: {myob.get('blocked_reason')}")
+            else:
+                results.add_warning("GET /ai-operator/setup-status (MYOB)", "MYOB unexpectedly ready for fresh business")
+            
+            # Check AI
+            if ai.get("ready") == True:
+                results.add_pass("GET /ai-operator/setup-status (AI)", "AI ready")
+            else:
+                results.add_warning("GET /ai-operator/setup-status (AI)", f"AI not ready: {ai.get('blocked_reason')}")
+            
+            return True
+        else:
+            results.add_fail("GET /ai-operator/setup-status", f"Status {response.status_code}: {response.text[:200]}")
+            return False
+    except Exception as e:
+        results.add_fail("GET /ai-operator/setup-status", f"Exception: {str(e)}")
+        return False
+
+def test_ai_operator_audit_log(token):
+    """Test GET /ai-operator/audit-log"""
+    log_info("Testing GET /ai-operator/audit-log...")
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    try:
+        response = requests.get(f"{BACKEND_URL}/ai-operator/audit-log?limit=50", headers=headers, timeout=10)
         
-        # Cleanup
-        self.test_auth_logout()
+        if response.status_code == 200:
+            data = response.json()
+            
+            if not data.get("success"):
+                results.add_fail("GET /ai-operator/audit-log", "success=false in response")
+                return False
+            
+            logs = data.get("logs", [])
+            results.add_pass("GET /ai-operator/audit-log", f"Retrieved {len(logs)} logs (empty is OK for fresh business)")
+            return True
+        else:
+            results.add_fail("GET /ai-operator/audit-log", f"Status {response.status_code}: {response.text[:200]}")
+            return False
+    except Exception as e:
+        results.add_fail("GET /ai-operator/audit-log", f"Exception: {str(e)}")
+        return False
+
+def test_ai_operator_command_snapshot(token):
+    """Test GET /ai-operator/command-snapshot"""
+    log_info("Testing GET /ai-operator/command-snapshot...")
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    try:
+        response = requests.get(f"{BACKEND_URL}/ai-operator/command-snapshot", headers=headers, timeout=10)
         
-        # Results
-        print("\n" + "=" * 60)
-        print(f"📊 Backend Tests Complete: {self.tests_passed}/{self.tests_run} passed")
-        success_rate = (self.tests_passed / self.tests_run * 100) if self.tests_run > 0 else 0
-        print(f"📈 Success Rate: {success_rate:.1f}%")
+        if response.status_code == 200:
+            data = response.json()
+            
+            if not data.get("success"):
+                results.add_fail("GET /ai-operator/command-snapshot", "success=false in response")
+                return False
+            
+            # Check structure
+            approvals = data.get("approvals", {})
+            urgent = data.get("urgent", {})
+            next_best_move = data.get("next_best_move", "")
+            scanned_at = data.get("scanned_at", "")
+            
+            # Verify approvals structure
+            if "total_pending" not in approvals:
+                results.add_fail("GET /ai-operator/command-snapshot", "Missing approvals.total_pending")
+                return False
+            
+            if "by_group" not in approvals:
+                results.add_fail("GET /ai-operator/command-snapshot", "Missing approvals.by_group")
+                return False
+            
+            if "by_type" not in approvals:
+                results.add_fail("GET /ai-operator/command-snapshot", "Missing approvals.by_type")
+                return False
+            
+            if "items" not in approvals:
+                results.add_fail("GET /ai-operator/command-snapshot", "Missing approvals.items")
+                return False
+            
+            # Verify urgent structure
+            required_urgent_fields = [
+                "unassigned_jobs", "completed_no_invoice", "overdue_invoices",
+                "open_invoices_total", "open_quotes", "pending_timesheets",
+                "low_sms_credits", "sms_credits", "myob_connected",
+                "active_workers", "active_jobs"
+            ]
+            missing_urgent = [f for f in required_urgent_fields if f not in urgent]
+            if missing_urgent:
+                results.add_fail("GET /ai-operator/command-snapshot", f"Urgent missing fields: {missing_urgent}")
+                return False
+            
+            # Verify next_best_move is a string
+            if not isinstance(next_best_move, str):
+                results.add_fail("GET /ai-operator/command-snapshot", "next_best_move should be a string")
+                return False
+            
+            results.add_pass("GET /ai-operator/command-snapshot", f"next_best_move='{next_best_move[:50]}...', pending={approvals.get('total_pending')}")
+            return True
+        else:
+            results.add_fail("GET /ai-operator/command-snapshot", f"Status {response.status_code}: {response.text[:200]}")
+            return False
+    except Exception as e:
+        results.add_fail("GET /ai-operator/command-snapshot", f"Exception: {str(e)}")
+        return False
+
+def test_ai_operator_actions(token):
+    """Test GET /ai-operator/actions (regression check)"""
+    log_info("Testing GET /ai-operator/actions (regression check)...")
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    try:
+        response = requests.get(f"{BACKEND_URL}/ai-operator/actions", headers=headers, timeout=10)
         
-        return self.tests_passed == self.tests_run
+        if response.status_code == 200:
+            data = response.json()
+            
+            if not data.get("success"):
+                results.add_fail("GET /ai-operator/actions", "success=false in response")
+                return False
+            
+            actions = data.get("actions", [])
+            results.add_pass("GET /ai-operator/actions", f"Retrieved {len(actions)} actions (regression check passed)")
+            return True
+        else:
+            results.add_fail("GET /ai-operator/actions", f"Status {response.status_code}: {response.text[:200]}")
+            return False
+    except Exception as e:
+        results.add_fail("GET /ai-operator/actions", f"Exception: {str(e)}")
+        return False
+
+def test_smart_hub_scan(token):
+    """Test POST /smart-hub/scan"""
+    log_info("Testing POST /smart-hub/scan...")
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    try:
+        response = requests.post(f"{BACKEND_URL}/smart-hub/scan", json={}, headers=headers, timeout=15)
+        
+        if response.status_code == 200:
+            data = response.json()
+            results.add_pass("POST /smart-hub/scan", f"Scan completed (count not asserted)")
+            return True
+        else:
+            results.add_fail("POST /smart-hub/scan", f"Status {response.status_code}: {response.text[:200]}")
+            return False
+    except Exception as e:
+        results.add_fail("POST /smart-hub/scan", f"Exception: {str(e)}")
+        return False
+
+def test_auth_guards():
+    """Test 401 for unauthenticated requests"""
+    log_info("Testing auth guards (401 for no auth)...")
+    
+    endpoints = [
+        "/ai-operator/settings",
+        "/ai-operator/setup-status",
+        "/ai-operator/audit-log",
+        "/ai-operator/command-snapshot",
+        "/ai-operator/actions",
+        "/ai-auto-send/settings"
+    ]
+    
+    all_passed = True
+    for endpoint in endpoints:
+        try:
+            response = requests.get(f"{BACKEND_URL}{endpoint}", timeout=10)
+            
+            if response.status_code == 401:
+                log_success(f"  {endpoint}: 401 (correct)")
+            else:
+                results.add_fail(f"Auth guard {endpoint}", f"Expected 401, got {response.status_code}")
+                all_passed = False
+        except Exception as e:
+            results.add_fail(f"Auth guard {endpoint}", f"Exception: {str(e)}")
+            all_passed = False
+    
+    if all_passed:
+        results.add_pass("Auth guards (401)", "All endpoints correctly return 401 without auth")
+    
+    return all_passed
 
 def main():
-    """Main test runner"""
-    tester = ChurvoxAPITester()
-    success = tester.run_all_tests()
+    print("\n" + "="*80)
+    print("CHURVOX AI OPERATOR BACKEND API TESTS")
+    print("="*80 + "\n")
+    
+    log_info(f"Backend URL: {BACKEND_URL}")
+    
+    # Step 1: Create owner account
+    email, password, token = test_auth_signup()
+    if not token:
+        log_error("Cannot proceed without valid token")
+        results.summary()
+        return 1
+    
+    # Step 2: Verify token
+    test_auth_me(token)
+    
+    # Step 3: Test AI Operator endpoints
+    test_ai_operator_settings_get(token)
+    test_ai_operator_settings_patch(token)
+    test_ai_auto_send_settings(token)
+    test_ai_operator_setup_status(token)
+    test_ai_operator_audit_log(token)
+    test_ai_operator_command_snapshot(token)
+    test_ai_operator_actions(token)
+    test_smart_hub_scan(token)
+    
+    # Step 4: Test auth guards
+    test_auth_guards()
+    
+    # Summary
+    success = results.summary()
+    
     return 0 if success else 1
 
 if __name__ == "__main__":
-    sys.exit(main())
+    exit(main())

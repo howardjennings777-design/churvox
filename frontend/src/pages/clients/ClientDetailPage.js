@@ -5,6 +5,7 @@ import { useApi } from "../../hooks/useApi";
 import { ArrowLeft, Edit, Trash2, Phone, Mail, MapPin, FileText, Clock, DollarSign, UserCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, JOB_STATUS_MAP } from "../../lib/utils";
+import { confirmDialog } from "../../lib/confirmDialog";
 import { PremiumPage, PremiumHero, PremiumCard, PremiumButton, PremiumEmptyState } from "../../components/premium";
 
 export default function ClientDetailPage() {
@@ -41,7 +42,12 @@ export default function ClientDetailPage() {
     }
   };
   const handleDelete = async () => {
-    const confirmed = window.confirm("Delete this client? This cannot be undone.");
+    const confirmed = await confirmDialog({
+      title: "Delete this client?",
+      message: "This cannot be undone. Linked jobs/quotes/invoices stay but the client record is removed.",
+      danger: true,
+      confirmLabel: "Delete",
+    });
     if (!confirmed) return;
     const res = await del(`/clients/${id}`);
     if (res.success) {

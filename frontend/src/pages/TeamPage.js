@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { usePlanLimits } from "../hooks/usePlanLimits";
 import { hasPlanAccess, normalizePlan } from "../utils/planRules";
 import { UpgradePrompt } from "../components/UpgradePrompt";
-import { PremiumAIBox } from "../components/premium";
+import { confirmDialog } from "../lib/confirmDialog";
 import axios from "axios"
 import API_BASE from "../lib/apiBase";
 
@@ -169,7 +169,12 @@ export default function TeamPage() {
     const workerId = worker?.id || worker?._id;
     if (!workerId) return;
 
-    const confirmed = window.confirm(`Remove ${worker?.name || "this worker"}?`);
+    const confirmed = await confirmDialog({
+      title: `Remove ${worker?.name || "this worker"}?`,
+      message: "They'll lose access to the worker app. You can re-invite them later.",
+      danger: true,
+      confirmLabel: "Remove",
+    });
     if (!confirmed) return;
 
     const res = await del(`/team/workers/${workerId}`);

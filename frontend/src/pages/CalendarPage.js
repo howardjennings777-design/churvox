@@ -406,7 +406,14 @@ export default function CalendarPage() {
                       <p className="text-xs text-[#667085]">{safeText(conflictJob.customer_name || conflictJob.client_name, "No client")}</p>
                     </div>
                     {conflictJob?.id ? (
-                      <button type="button" className="text-xs font-semibold text-[#155EEF] hover:underline" onClick={() => navigate(`/jobs/${conflictJob.id}`)}>
+                      <button
+                        type="button"
+                        className="text-xs font-semibold text-[#155EEF] hover:underline"
+                        onClick={() => {
+                          setActiveJob(conflictJob);
+                          setSelectedConflict(null);
+                        }}
+                      >
                         Open pop-up
                       </button>
                     ) : (

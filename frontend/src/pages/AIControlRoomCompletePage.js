@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { ChurvoxLogo } from "../components/ChurvoxLogo";
 import { get, post } from "../lib/api";
+import CommandCentreStrip from "../components/ai-operator/CommandCentreStrip";
 
 const toArray = (value) => {
   if (Array.isArray(value)) return value;
@@ -198,6 +199,9 @@ export default function AIControlRoomCompletePage() {
     <Layout smartHubMode>
       <main style={s.page}>
         <div style={s.shell}>
+          <div style={{ marginBottom: 18 }}>
+            <CommandCentreStrip />
+          </div>
           <section style={s.hero}>
             <div style={s.heroLeft}>
               <div style={s.logoRow}>

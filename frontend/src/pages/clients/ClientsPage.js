@@ -15,6 +15,7 @@ import {
   PremiumFormSection
 } from "../../components/premium";
 import EntityDetailModal from "../../components/EntityDetailModal";
+import { confirmDialog } from "../../lib/confirmDialog";
 
 axios.defaults.withCredentials = true;
 
@@ -155,7 +156,12 @@ export default function ClientsPage() {
   const handleDelete = async (client) => {
     const clientId = client?.id || client?._id;
     if (!clientId) { toast.error("Client ID missing"); return; }
-    const ok = window.confirm("Delete this client?");
+    const ok = await confirmDialog({
+      title: "Delete this client?",
+      message: "Their jobs, quotes and invoices remain but the client record will be removed.",
+      danger: true,
+      confirmLabel: "Delete client",
+    });
     if (!ok) return;
     const res = await del(`/clients/${clientId}`);
     if (res.success) {

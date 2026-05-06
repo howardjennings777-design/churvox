@@ -4,5 +4,9 @@ import SmartHubErrorBoundary from "../components/SmartHubErrorBoundary";
 import "../styles/aiControlRoomForceV4.css";
 
 export default function DashboardPage() {
-  return <SmartHubErrorBoundary><AIControlRoomCompletePage /></SmartHubErrorBoundary>;
+  return (
+    <SmartHubErrorBoundary>
+      <AIControlRoomCompletePage />
+    </SmartHubErrorBoundary>
+  );
 }

@@ -6,6 +6,7 @@ import { useApi } from "../../hooks/useApi";
 import { ArrowLeft, Trash2, Send, CheckCircle, MapPin, Mail, Briefcase, Clock, MessageSquare, RefreshCw, Link2, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, INVOICE_STATUSES, MYOB_SYNC_STATUSES } from "../../lib/utils";
+import { confirmDialog } from "../../lib/confirmDialog";
 import { PremiumPage, PremiumHero, PremiumCard, PremiumButton } from "../../components/premium";
 
 export default function InvoiceDetailPage() {
@@ -43,7 +44,12 @@ export default function InvoiceDetailPage() {
   };
 
   const handleDelete = async () => {
-    const confirmed = window.confirm("Delete this invoice? This cannot be undone.");
+    const confirmed = await confirmDialog({
+      title: "Delete this invoice?",
+      message: "This cannot be undone. If the invoice was sent or synced to MYOB, you may need to handle that separately.",
+      danger: true,
+      confirmLabel: "Delete invoice",
+    });
     if (!confirmed) return;
     const res = await del(`/invoices/${id}`);
     if (res.success) { toast.success("Invoice deleted"); navigate("/invoices"); }

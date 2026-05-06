@@ -7,6 +7,7 @@ import { ArrowLeft, Edit, Trash2, MapPin, Mail, DollarSign, Send, Briefcase, Lin
 import { toast } from "sonner";
 import { formatDate, formatCurrency, QUOTE_STATUSES } from "../../lib/utils";
 import { safeText } from "../../utils/safeRender";
+import { confirmDialog } from "../../lib/confirmDialog";
 import { PremiumPage, PremiumHero, PremiumCard, PremiumButton } from "../../components/premium";
 
 export default function QuoteDetailPage() {
@@ -45,7 +46,12 @@ export default function QuoteDetailPage() {
   };
 
   const handleDelete = async () => {
-    const confirmed = window.confirm("Delete this quote? This cannot be undone.");
+    const confirmed = await confirmDialog({
+      title: "Delete this quote?",
+      message: "This cannot be undone.",
+      danger: true,
+      confirmLabel: "Delete",
+    });
     if (!confirmed) return;
     const res = await del(`/quotes/${id}`);
     if (res.success) { toast.success("Quote deleted"); navigate("/quotes"); }
