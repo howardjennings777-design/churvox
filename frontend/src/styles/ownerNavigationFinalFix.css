@@ -1,0 +1,109 @@
+/* Final owner navigation clarity overrides.
+   Fixes the SMS buy-credit label landing on Settings after rollback/old dashboard order changes. */
+
+/* Current visible Owner Workspace order in Smart Hub:
+   1 Jobs, 2 Clients, 3 Quotes, 4 Invoices, 5 Team, 6 Dispatch,
+   7 Proof-to-Paid, 8 Automation, 9 SMS, 10 Settings.
+*/
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(9),
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(9) {
+  position: relative !important;
+  border: 3px solid #ff5a12 !important;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffffff 52%, #eff6ff 100%) !important;
+  box-shadow: 0 16px 38px rgba(255, 90, 18, 0.22) !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(9)::before,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(9)::before {
+  content: "BUY SMS CREDITS" !important;
+  position: absolute !important;
+  top: -10px !important;
+  right: 10px !important;
+  z-index: 3 !important;
+  border-radius: 999px !important;
+  background: #ff5a12 !important;
+  color: #ffffff !important;
+  padding: 4px 8px !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: .04em !important;
+  box-shadow: 0 8px 18px rgba(255, 90, 18, 0.26) !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(9)::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(9)::after {
+  content: "Buy SMS credits and send customer updates" !important;
+  color: #c2410c !important;
+  font-weight: 800 !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(9) strong,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(9) strong {
+  color: #c2410c !important;
+}
+
+/* Reset Settings tile so it does NOT look like SMS credits. */
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(10),
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(10) {
+  border: 1px solid rgba(148, 163, 184, 0.45) !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .08) !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(10)::before,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(10)::before {
+  content: none !important;
+  display: none !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(10)::after,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(10)::after {
+  content: "Business setup, GST, MYOB and legal links" !important;
+  color: #475569 !important;
+  font-weight: 700 !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(10) strong,
+.px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(10) strong {
+  color: #0f172a !important;
+}
+
+/* Fix cramped live control centre stat text in the dark hero. */
+.px-main main[style*="rgb(180, 170, 155)"] section:first-of-type aside button,
+.px-main main[style*="#b4aa9b"] section:first-of-type aside button {
+  display: grid !important;
+  grid-template-columns: 34px 1fr !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-height: 70px !important;
+  white-space: normal !important;
+  line-height: 1.25 !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] section:first-of-type aside button small,
+.px-main main[style*="#b4aa9b"] section:first-of-type aside button small {
+  display: block !important;
+  color: #cbd5e1 !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .04em !important;
+}
+
+.px-main main[style*="rgb(180, 170, 155)"] section:first-of-type aside button strong,
+.px-main main[style*="#b4aa9b"] section:first-of-type aside button strong {
+  display: block !important;
+  color: #ffffff !important;
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  overflow-wrap: anywhere !important;
+}
+
+@media (max-width: 768px) {
+  .px-main main[style*="rgb(180, 170, 155)"] > section:nth-of-type(5) button:nth-child(9)::before,
+  .px-main main[style*="#b4aa9b"] > section:nth-of-type(5) button:nth-child(9)::before {
+    top: 8px !important;
+    right: 8px !important;
+  }
+}
