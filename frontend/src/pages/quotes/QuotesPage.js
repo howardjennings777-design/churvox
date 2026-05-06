@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "@/hooks/useApi";
-import useAiDraft from "@/hooks/useAiDraft";
 import {
   Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, FileText, Send,
   CheckCircle2, Clock3, CircleDashed, XCircle, Wallet, ArrowRight, Briefcase,
@@ -30,7 +29,6 @@ export default function QuotesPage() {
   const [deleteId, setDeleteId] = useState(null);
   const [openMenu, setOpenMenu] = useState(null);
   const [activeQuote, setActiveQuote] = useState(null);
-  const { loading: aiLoading, draft, llmAvailable, setDraft, generate } = useAiDraft("quotes");
 
   useEffect(() => { loadQuotes(); }, []);
 
@@ -143,17 +141,11 @@ export default function QuotesPage() {
 
         <PremiumAIBox
           title="AI Quote Assistant"
-          subtitle="AI checked live data and checks draft, sent, and accepted quotes then prepares the best conversion or follow-up action"
+          subtitle="AI checked quotes and prepared follow-ups and conversion actions."
           chip="Approval-first"
           suggestions={aiSuggestions}
         >
-          <div className="mt-2 flex gap-2 flex-wrap">
-            <PremiumButton size="sm" onClick={() => generate("Generate quote follow-up draft")} disabled={aiLoading}>Generate quote follow-up</PremiumButton>
-            {draft ? <PremiumButton size="sm" variant="secondary" onClick={() => navigator.clipboard?.writeText(draft)}>Copy draft</PremiumButton> : null}
-            {draft ? <PremiumButton size="sm" variant="ghost" onClick={() => setDraft("")}>Clear</PremiumButton> : null}
-          </div>
-          {draft ? <div className="mt-2 rounded-xl border border-[#d8e3f3] bg-[#f6faff] p-3 whitespace-pre-wrap text-[13px]">{draft}</div> : null}
-          {!llmAvailable ? <p className="mt-2 text-[11.5px] text-[#b45309]">Fallback draft — connect AI key for live AI.</p> : null}
+          
         </PremiumAIBox>
 
         <PremiumAIDraftPanel title="AI Quote Drafts" subtitle="Follow-ups and pending quote summaries." surface="quotes" context={{ quotes: filteredQuotes?.slice?.(0,12)?.map?.((q)=>({title:q.title,status:q.status,client:q.client_name})) }} quickActions={[{ label: "Quote follow-up", prompt: "Draft a concise quote follow-up." },{ label: "Owner summary", prompt: "Summarise pending quotes and suggested actions." }]} />
