@@ -1,5 +1,5 @@
-import SmartHubExactPage from "./SmartHubExactPage";
+import SmartHubTopPlayerFinal from "./SmartHubTopPlayerFinal";
 
 export default function AIControlRoomPage() {
-  return <SmartHubExactPage />;
+  return <SmartHubTopPlayerFinal />;
 }
