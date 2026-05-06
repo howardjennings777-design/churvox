@@ -124,7 +124,7 @@ export default function InvoicesPage() {
       out.push({
         icon: <AlertTriangle className="h-4 w-4" />,
         title: `${m.overdue} overdue invoice${m.overdue === 1 ? "" : "s"}`,
-        description: "Draft a polite payment reminder — review before sending. Auto-send is OFF. AI prepares drafts for review..",
+        description: "Draft a polite payment reminder — review before sending. Auto-send is OFF. AI prepared this for review.",
       });
     }
     if (m.sentUnpaid > 0) {

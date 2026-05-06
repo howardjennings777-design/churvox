@@ -22,7 +22,7 @@ export default function SMSPage() {
           title="AI Communication Assistant"
           subtitle="Drafts polite reminders for invoices, quotes and job updates — review and approve before sending"
           chip="Approval-first"
-          notice="Auto-send is OFF. AI prepares drafts for review. messages. Drafts always appear here for you to review and approve."
+          notice="Auto-send is OFF. AI prepared this for review."
           suggestions={[
             { icon: <Mail className="h-4 w-4" />, title: "Email reminders are live", description: "Use Invoices and Quotes to draft polite reminders." },
             { icon: <Bell className="h-4 w-4" />, title: "In-app notifications", description: "Workers and admins get instant alerts on assigned jobs." },
