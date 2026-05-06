@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useApi } from "../hooks/useApi";
 import { useAuth } from "../context/AuthContext";
 import { AlertTriangle, CalendarClock, ClipboardList, UserPlus2, Users, BriefcaseBusiness, Plus, Eye, X } from "lucide-react";
@@ -15,7 +15,6 @@ const FILTERS = {
 };
 
 export default function CalendarPage() {
-  const navigate = useNavigate();
   const { get, post } = useApi();
   const { isEmployer } = useAuth();
   const [jobs, setJobs] = useState([]);
@@ -24,6 +23,7 @@ export default function CalendarPage() {
   const [dragJobId, setDragJobId] = useState("");
   const [activeFilter, setActiveFilter] = useState(FILTERS.ALL);
   const [selectedConflict, setSelectedConflict] = useState(null);
+  const [activeJob, setActiveJob] = useState(null);
   const workerColumnsRef = useRef(null);
   const unassignedColumnRef = useRef(null);
 
@@ -154,17 +154,24 @@ export default function CalendarPage() {
     return "cx-status-badge--amber";
   };
 
-  const handleCardActivate = (jobId) => {
-    if (!jobId) return;
-    navigate(`/jobs/${jobId}`);
+  const handleCardActivate = (job) => {
+    if (!job) return;
+    setActiveJob(job);
   };
 
-  const onCardKeyDown = (event, jobId) => {
+  const onCardKeyDown = (event, job) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      handleCardActivate(jobId);
+      handleCardActivate(job);
     }
   };
+
+  const workerNameForJob = (job) => {
+    if (!job?.assigned_worker_id) return "Unassigned";
+    return safeText(workers.find((w) => String(w.id) === String(job.assigned_worker_id))?.name, "Unassigned");
+  };
+
+  const closeJobPopup = () => setActiveJob(null);
 
   const statCardBaseClass = "cx-stat-card cursor-pointer transition-all duration-150 hover:shadow-md hover:-translate-y-[1px] active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#155EEF]";
 
@@ -174,8 +181,8 @@ export default function CalendarPage() {
       onDragStart={() => setDragJobId(String(job.id))}
       role="button"
       tabIndex={0}
-      onClick={() => handleCardActivate(job.id)}
-      onKeyDown={(event) => onCardKeyDown(event, job.id)}
+      onClick={() => handleCardActivate(job)}
+      onKeyDown={(event) => onCardKeyDown(event, job)}
       aria-label={`Open job ${safeText(job.title, "job")}`}
       className="cx-job-card border-l-4 border-l-[#155EEF] cursor-pointer transition-all duration-150 hover:shadow-md hover:-translate-y-[1px] active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#155EEF]"
       data-testid={`dispatch-job-${job.id}`}
@@ -190,7 +197,7 @@ export default function CalendarPage() {
       </div>
       <div className="mt-2 text-xs font-semibold text-[#155EEF] inline-flex items-center gap-1">
         <Eye className="h-3.5 w-3.5" />
-        Open job
+        Open pop-up
       </div>
       <div className="md:hidden mt-2" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
         <select
@@ -400,7 +407,7 @@ export default function CalendarPage() {
                     </div>
                     {conflictJob?.id ? (
                       <button type="button" className="text-xs font-semibold text-[#155EEF] hover:underline" onClick={() => navigate(`/jobs/${conflictJob.id}`)}>
-                        Open job
+                        Open pop-up
                       </button>
                     ) : (
                       <span className="text-xs text-[#98a2b3]">No job link</span>
@@ -418,16 +425,72 @@ export default function CalendarPage() {
                     onClick={() => {
                       const firstJob = safeArray(selectedConflict?.jobs).find((job) => job?.id);
                       if (!firstJob?.id) return;
-                      navigate(`/jobs/${firstJob.id}`);
+                      setActiveJob(firstJob);
+                      setSelectedConflict(null);
                     }}
                   >
-                    Open jobs
+                    Open pop-ups
                   </button>
                 )}
               </div>
             </div>
           </div>
         )}
+
+        {activeJob && (
+          <div className="fixed inset-0 z-[120] flex items-end justify-center bg-slate-950/45 p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Job detail pop-up">
+            <div className="h-[92vh] w-full overflow-hidden rounded-t-3xl border border-[#d8e3f3] bg-white shadow-2xl sm:h-auto sm:max-h-[88vh] sm:max-w-3xl sm:rounded-3xl">
+              <div className="flex items-start justify-between gap-3 border-b border-[#d8e3f3] bg-[#f7faff] px-4 py-4 sm:px-6">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`cx-status-badge ${badgeClass(activeJob.status)}`}>{safeText(activeJob.status, "scheduled")}</span>
+                    <span className="rounded-full border border-[#d8e3f3] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#5b6c87]">
+                      {activeJob.assigned_worker_id ? "Assigned" : "Unassigned"}
+                    </span>
+                  </div>
+                  <h2 className="mt-2 text-xl font-bold text-[#0d1b34]">{safeText(activeJob.title, "Untitled job")}</h2>
+                  <p className="mt-1 text-sm text-[#5b6c87]">{safeText(activeJob.customer_name || activeJob.client_name, "No client")}</p>
+                </div>
+                <button type="button" onClick={closeJobPopup} className="rounded-xl p-2 text-[#5b6c87] hover:bg-white hover:text-[#0d1b34]" aria-label="Close job pop-up">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="max-h-[calc(92vh-160px)] space-y-4 overflow-y-auto px-4 py-4 sm:max-h-[65vh] sm:px-6">
+                <section className="rounded-2xl border border-[#d8e3f3] bg-white p-4">
+                  <h3 className="text-sm font-bold text-[#0d1b34]">Job details</h3>
+                  <div className="mt-3 grid gap-2 text-sm text-[#1a2c4d] sm:grid-cols-2">
+                    <p><span className="font-semibold">Address:</span> {safeText(activeJob.address, "No address")}</p>
+                    <p><span className="font-semibold">Date:</span> {String(activeJob.scheduled_date || "").slice(0, 10) || "Not scheduled"}</p>
+                    <p><span className="font-semibold">Time:</span> {safeText(activeJob.scheduled_time, "No time")}</p>
+                    <p><span className="font-semibold">Worker:</span> {workerNameForJob(activeJob)}</p>
+                    <p className="sm:col-span-2"><span className="font-semibold">Description:</span> {safeText(activeJob.description || activeJob.notes, "No job description recorded")}</p>
+                  </div>
+                </section>
+
+                {isEmployer ? (
+                  <section className="rounded-2xl border border-[#d8e3f3] bg-[#f7faff] p-4">
+                    <h3 className="text-sm font-bold text-[#0d1b34]">Assign worker</h3>
+                    <select
+                      className="mt-3 w-full rounded-xl border border-[#d8e3f3] bg-white px-3 py-3 text-sm text-[#0d1b34]"
+                      value={activeJob.assigned_worker_id || ""}
+                      onChange={(e) => assignJob(activeJob.id, e.target.value)}
+                    >
+                      <option value="">Unassigned</option>
+                      {workers.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                    </select>
+                  </section>
+                ) : null}
+              </div>
+
+              <div className="flex flex-col-reverse gap-2 border-t border-[#d8e3f3] bg-white px-4 py-3 sm:flex-row sm:justify-end sm:px-6">
+                <button type="button" className="cx-button-secondary" onClick={closeJobPopup}>Close</button>
+                <Link to={`/jobs/${activeJob.id}/edit`} className="cx-button-secondary">Edit job</Link>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </Layout>
   );
