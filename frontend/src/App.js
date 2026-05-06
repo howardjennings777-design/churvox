@@ -13,7 +13,6 @@ import SignupPage from "./pages/auth/SignupPage";
 import InviteSetupPage from "./pages/auth/InviteSetupPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
-import DashboardPage from "./pages/DashboardPage";
 import JobsPage from "./pages/jobs/JobsPage";
 import JobFormPage from "./pages/jobs/JobFormPage";
 import JobDetailPage from "./pages/jobs/JobDetailPage";
@@ -53,7 +52,7 @@ import PublicInvoicePage from "./pages/public/PublicInvoicePage";
 import PublicClientPortalPage from "./pages/public/PublicClientPortalPage";
 import ProofToPaidPage from "./pages/ProofToPaidPage";
 import QAAuditorPage from "./pages/admin/QAAuditorPage";
-import AIControlRoomPage from "./pages/AIControlRoomPage";
+import SmartHubTopPlayerFinal from "./pages/SmartHubTopPlayerFinal";
 import AIOperatorApprovalsPage from "./pages/AIOperatorApprovalsPage";
 import AIOperatorSettingsPage from "./pages/AIOperatorSettingsPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -80,7 +79,6 @@ function PublicRoute({ children }) {
   return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
 }
 
-// Business routes: owner, manager, office_admin — with plan check
 function BusinessRoute({ children }) {
   const { user, loading, isWorker, isPayroll, hasAppAccess } = useAuth();
   if (loading) return <Spinner />;
@@ -91,7 +89,6 @@ function BusinessRoute({ children }) {
   return children;
 }
 
-// Owner-only routes (plans, billing)
 function OwnerRoute({ children }) {
   const { user, loading, isOwnerUser, isWorker, isPayroll, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
@@ -102,7 +99,6 @@ function OwnerRoute({ children }) {
   return children;
 }
 
-// Team routes: owner + manager only
 function TeamRoute({ children }) {
   const { user, loading, isWorker, isPayroll, hasAppAccess, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
@@ -114,7 +110,6 @@ function TeamRoute({ children }) {
   return children;
 }
 
-// Worker-only routes
 function WorkerRoute({ children }) {
   const { user, loading, isWorker } = useAuth();
   if (loading) return <Spinner />;
@@ -123,7 +118,6 @@ function WorkerRoute({ children }) {
   return children;
 }
 
-// Payroll-allowed routes
 function PayrollRoute({ children }) {
   const { user, loading, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
@@ -134,7 +128,6 @@ function PayrollRoute({ children }) {
   return children;
 }
 
-
 function ReportsRoute({ children }) {
   const { user, loading, normalizedRole } = useAuth();
   if (loading) return <Spinner />;
@@ -144,8 +137,6 @@ function ReportsRoute({ children }) {
   }
   return children;
 }
-
-// Catch-all redirect based on role
 
 function QaAuditorRoute({ children }) {
   const { user, loading, normalizedRole, isPayroll, isWorker } = useAuth();
@@ -168,10 +159,16 @@ function RoleRedirect() {
   return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
 }
 
+const SmartHubRoute = () => (
+  <BusinessRoute>
+    <ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login">
+      <SmartHubTopPlayerFinal />
+    </ErrorBoundary>
+  </BusinessRoute>
+);
+
 function App() {
   React.useEffect(() => {
-    // Global post-Stripe-checkout handler — runs once on mount.
-    // Works regardless of which page Stripe returned the user to.
     const handleCheckoutReturn = async () => {
       try {
         const params = new URLSearchParams(window.location.search);
@@ -179,14 +176,8 @@ function App() {
         const sessionId = params.get("session_id") || "";
         const plan = (params.get("plan") || "").toLowerCase();
         if (!checkout && !sessionId) return;
-
         const token = localStorage.getItem("token");
         const backendUrl = ((typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_BACKEND_URL) || process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
-
-        // 1) Idempotent confirm — the backend already saved the plan on its
-        //    /api/stripe/checkout-success handler, but calling this again is safe
-        //    and guarantees the frontend sees the latest plan even if the user
-        //    refreshed mid-flight or landed via direct link.
         if (sessionId && token && backendUrl) {
           try {
             await fetch(`${backendUrl}/api/billing/confirm-checkout`, {
@@ -195,26 +186,14 @@ function App() {
               credentials: "include",
               body: JSON.stringify({ session_id: sessionId }),
             });
-          } catch (err) {
-            console.warn("confirm-checkout failed (non-fatal):", err);
-          }
+          } catch (err) { console.warn("confirm-checkout failed (non-fatal):", err); }
         }
-
-        // 2) User feedback
         if (checkout === "success") {
-          toast.success(
-            plan
-              ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is now active`
-              : "Plan updated"
-          );
+          toast.success(plan ? `Your ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan is now active` : "Plan updated");
         } else if (checkout === "cancelled") {
           toast.info("Checkout cancelled — no changes to your plan");
         }
-
-        // 3) Refresh auth so the UI shows the new plan immediately
         window.dispatchEvent(new Event("churvox-auth-refresh"));
-
-        // 4) Clean query params from the URL without leaving the current page
         const cleaned = new URL(window.location.href);
         ["checkout", "session_id", "plan"].forEach((k) => cleaned.searchParams.delete(k));
         window.history.replaceState({}, document.title, cleaned.toString());
@@ -229,7 +208,6 @@ function App() {
         <ErrorBoundary>
         <Toaster position="top-right" richColors />
         <Routes>
-          {/* Public */}
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
@@ -238,18 +216,14 @@ function App() {
           <Route path="/public/quote/:token" element={<PublicQuotePage />} />
           <Route path="/public/invoice/:token" element={<PublicInvoicePage />} />
           <Route path="/client-portal/:token" element={<PublicClientPortalPage />} />
-
-          {/* Legacy redirects */}
           <Route path="/owner-login" element={<Navigate to="/login" replace />} />
           <Route path="/admin/login" element={<Navigate to="/login" replace />} />
           <Route path="/owner" element={<Navigate to="/admin" replace />} />
           <Route path="/owner/login" element={<Navigate to="/login" replace />} />
           <Route path="/proof-to-paid" element={<BusinessRoute><ProofToPaidPage /></BusinessRoute>} />
-          <Route path="/ai-operator" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><AIControlRoomPage /></ErrorBoundary></BusinessRoute>} />
+          <Route path="/ai-operator" element={<SmartHubRoute />} />
           <Route path="/ai-operator/approvals" element={<BusinessRoute><AIOperatorApprovalsPage /></BusinessRoute>} />
           <Route path="/ai-operator/settings" element={<BusinessRoute><AIOperatorSettingsPage /></BusinessRoute>} />
-
-          {/* Platform admin */}
           <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
           <Route path="/owner/dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
           <Route path="/platform-dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
@@ -257,10 +231,8 @@ function App() {
           <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
           <Route path="/owner/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
           <Route path="/admin/qa-auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
-
-          {/* Business routes (owner, manager, office_admin) */}
-          <Route path="/dashboard" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><DashboardPage /></ErrorBoundary></BusinessRoute>} />
-          <Route path="/overview" element={<BusinessRoute><ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login"><DashboardPage /></ErrorBoundary></BusinessRoute>} />
+          <Route path="/dashboard" element={<SmartHubRoute />} />
+          <Route path="/overview" element={<SmartHubRoute />} />
           <Route path="/onboarding" element={<BusinessRoute><OnboardingPage /></BusinessRoute>} />
           <Route path="/jobs" element={<BusinessRoute><JobsPage /></BusinessRoute>} />
           <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
@@ -284,37 +256,21 @@ function App() {
           <Route path="/integrations" element={<BusinessRoute><IntegrationsPage /></BusinessRoute>} />
           <Route path="/settings" element={<BusinessRoute><SettingsPage /></BusinessRoute>} />
           <Route path="/contact" element={<PrivateRoute><ContactPage /></PrivateRoute>} />
-
-          {/* Owner-only */}
           <Route path="/plans" element={<OwnerRoute><PlansPage /></OwnerRoute>} />
-
-          {/* Team: owner + manager */}
           <Route path="/team" element={<TeamRoute><TeamPage /></TeamRoute>} />
-
-          {/* Notifications: any authenticated user */}
           <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
-
-          {/* Automation: owner + manager */}
           <Route path="/automation" element={<TeamRoute><AutomationPage /></TeamRoute>} />
           <Route path="/automation/runs" element={<TeamRoute><AutomationRunsPage /></TeamRoute>} />
-
-          {/* Payroll */}
           <Route path="/payroll" element={<PayrollRoute><PayrollPage /></PayrollRoute>} />
-
-          {/* Worker routes */}
           <Route path="/worker/jobs" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
           <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
           <Route path="/worker/settings" element={<WorkerRoute><WorkerSettingsPage /></WorkerRoute>} />
-
-          {/* Legal (public) */}
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           <Route path="/account-deletion" element={<AccountDeletionPage />} />
           <Route path="/platform-unlock" element={<PlatformUnlock />} />
-
-          {/* Catch-all */}
           <Route path="/" element={<RoleRedirect />} />
           <Route path="*" element={<RoleRedirect />} />
         </Routes>
