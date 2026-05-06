@@ -61,7 +61,7 @@ export default function AIPageAssistant({
           </div>
         </div>
 
-        <p className="text-xs text-[#5b6c87] flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5" /> {safetyNote || "Auto-send is OFF. AI prepares drafts for review., no auto-charge, no payroll changes, and no MYOB writes without owner approval."}</p>
+        <p className="text-xs text-[#5b6c87] flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5" /> {safetyNote || "Auto-send is OFF. AI prepared this for review. No auto-charge, payroll changes, or MYOB writes without owner approval."}</p>
       </div>
     </section>
   );
