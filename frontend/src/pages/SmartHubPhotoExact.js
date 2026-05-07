@@ -1,6 +1,5 @@
 import React from "react";
-import "../styles/smartHubTopPlayerFinal.css";
-import "../styles/smartHubPhotoMatch.css";
+import "../styles/smartHubPhotoExact.css";
 
 const nav = ["AI Control Room", "Jobs", "Clients", "Quotes", "Invoices", "Dispatch", "Team", "Automation", "Settings"];
 const jobs = [
