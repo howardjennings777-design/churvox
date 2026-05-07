@@ -10,18 +10,32 @@ import "./styles/ownerClarityFix.css";
 import "./styles/settingsClarityFix.css";
 import "./styles/ownerNavigationFinalFix.css";
 
-// Register service worker for PWA installability (iPhone Add to Home Screen + Chrome install)
-// Network-first SW — no aggressive caching, new deploys always picked up
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").then((reg) => {
-      // Check for SW updates on each page load
-      reg.update().catch(() => {});
-    }).catch((err) => {
-      console.warn("SW registration failed:", err);
-    });
-  });
+const BUILD_CACHE_KEY = "churvox_build_cache_reset_20260508_ai_control_room";
+
+async function clearOldPwaShell() {
+  if (typeof window === "undefined") return;
+
+  try {
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+    }
+
+    if (window.caches && typeof window.caches.keys === "function") {
+      const keys = await window.caches.keys();
+      await Promise.all(keys.map((key) => window.caches.delete(key)));
+    }
+
+    if (window.localStorage && window.localStorage.getItem(BUILD_CACHE_KEY) !== "done") {
+      window.localStorage.setItem(BUILD_CACHE_KEY, "done");
+      window.location.reload();
+    }
+  } catch (err) {
+    console.warn("Churvox cache reset skipped:", err);
+  }
 }
+
+clearOldPwaShell();
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
