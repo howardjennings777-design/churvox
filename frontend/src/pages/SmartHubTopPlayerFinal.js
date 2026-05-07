@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { get, post } from "../lib/api";
 import "../styles/smartHubTopPlayerFinal.css";
+import "../styles/smartHubPhotoMatch.css";
 
 const arr = (v) => Array.isArray(v) ? v : Array.isArray(v?.data) ? v.data : Array.isArray(v?.items) ? v.items : Array.isArray(v?.results) ? v.results : Array.isArray(v?.actions) ? v.actions : [];
 const low = (v) => String(v || "").toLowerCase();
