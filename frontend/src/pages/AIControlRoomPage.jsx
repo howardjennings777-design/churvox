@@ -1,5 +1,5 @@
-import SmartHubTopPlayerFinal from "./SmartHubTopPlayerFinal";
+import SmartHubHardReset from "./SmartHubHardReset";
 
 export default function AIControlRoomPage() {
-  return <SmartHubTopPlayerFinal />;
+  return <SmartHubHardReset />;
 }
