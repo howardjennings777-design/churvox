@@ -53,6 +53,7 @@ import PublicClientPortalPage from "./pages/public/PublicClientPortalPage";
 import ProofToPaidPage from "./pages/ProofToPaidPage";
 import QAAuditorPage from "./pages/admin/QAAuditorPage";
 import SmartHubTopPlayerFinal from "./pages/SmartHubTopPlayerFinal";
+import AIControlRoomPage from "./pages/AIControlRoomPage";
 import AIOperatorApprovalsPage from "./pages/AIOperatorApprovalsPage";
 import AIOperatorSettingsPage from "./pages/AIOperatorSettingsPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -167,6 +168,14 @@ const SmartHubRoute = () => (
   </BusinessRoute>
 );
 
+const AIControlRoomRoute = () => (
+  <BusinessRoute>
+    <ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login">
+      <AIControlRoomPage />
+    </ErrorBoundary>
+  </BusinessRoute>
+);
+
 function App() {
   React.useEffect(() => {
     const handleCheckoutReturn = async () => {
@@ -221,6 +230,7 @@ function App() {
           <Route path="/owner" element={<Navigate to="/admin" replace />} />
           <Route path="/owner/login" element={<Navigate to="/login" replace />} />
           <Route path="/proof-to-paid" element={<BusinessRoute><ProofToPaidPage /></BusinessRoute>} />
+          <Route path="/ai-control-room" element={<AIControlRoomRoute />} />
           <Route path="/ai-operator" element={<SmartHubRoute />} />
           <Route path="/ai-operator/approvals" element={<BusinessRoute><AIOperatorApprovalsPage /></BusinessRoute>} />
           <Route path="/ai-operator/settings" element={<BusinessRoute><AIOperatorSettingsPage /></BusinessRoute>} />
