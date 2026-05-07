@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import "./styles/deployProofMarker.css";
 import "./styles/premium.css";
 import "./styles/churvoxUnifiedTheme.css";
 import "./styles/churvoxFullPageModals.css";
