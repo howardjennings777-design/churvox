@@ -1,3 +1,3 @@
-import SmartHubPhotoExact from "./SmartHubPhotoExact";
+import SmartHubHardReset from "./SmartHubHardReset";
 
-export default SmartHubPhotoExact;
+export default SmartHubHardReset;
