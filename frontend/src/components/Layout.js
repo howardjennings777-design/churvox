@@ -66,7 +66,7 @@ export default function Layout({ children, smartHubMode = false }) {
     navigate("/login");
   };
 
-  // Group navigation for clarity
+  // Main navigation stays business-first. AI runs in the background and only appears through the global queue notice.
   const groups = [
     {
       label: "Workspace",
@@ -75,8 +75,6 @@ export default function Layout({ children, smartHubMode = false }) {
         canAccess(role, "jobs") && { path: "/jobs", label: "Jobs", icon: Briefcase },
         canAccess(role, "calendar") && { path: "/dispatch", label: "Dispatch", icon: Calendar },
         canAccess(role, "clients") && { path: "/clients", label: "Clients", icon: Users },
-        canAccess(role, "ai_operator") && { path: "/ai-operator", label: "AI Operator", icon: Sparkles },
-        canAccess(role, "ai_operator") && { path: "/ai-operator/approvals", label: "Approval Queue", icon: Sparkles, badge: aiQueueCount },
         canAccess(role, "proof_to_paid") && { path: "/proof-to-paid", label: "Job Proofs", icon: Sparkles },
       ].filter(Boolean),
     },
@@ -125,7 +123,7 @@ export default function Layout({ children, smartHubMode = false }) {
   const openAiQueue = () => navigate("/ai-operator/approvals");
 
   return (
-    <div className={`px-app tap-safe-root cx-app-shell ${embedded ? "px-app--embedded" : ""}`} data-testid="layout-container">
+    <div className={`px-app tap-safe-root cx-app-shell ${embedded ? "px-app--embedded" : ""}`} data-testid="layout-container" data-route={location.pathname}>
       {/* Desktop Sidebar — Premium light */}
       {!hideChrome && <aside className="px-sidebar hidden md:flex" data-testid="desktop-sidebar">
         <div className="px-sidebar__brand">
