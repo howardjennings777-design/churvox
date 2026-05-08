@@ -239,7 +239,7 @@ function App() {
           <Route path="/admin/login" element={<Navigate to="/login" replace />} />
           <Route path="/owner" element={<Navigate to="/admin" replace />} />
           <Route path="/owner/login" element={<Navigate to="/login" replace />} />
-          <Route path="/proof-to-paid" element={<BusinessRoute><V3WorkspacePage type="proof" /></BusinessRoute>} />
+          <Route path="/proof-to-paid" element={<Navigate to="/v3/proof" replace />} />
           <Route path="/ai-control-room" element={<AIControlRoomRoute />} />
           <Route path="/ai-operator" element={<SmartHubRoute />} />
           <Route path="/ai-operator/approvals" element={<AIOperatorStagingRoute />} />
@@ -255,34 +255,34 @@ function App() {
           <Route path="/dashboard" element={<SmartHubRoute />} />
           <Route path="/overview" element={<SmartHubRoute />} />
           <Route path="/onboarding" element={<BusinessRoute><OnboardingPage /></BusinessRoute>} />
-          <Route path="/jobs" element={<BusinessRoute><V3WorkspacePage type="jobs" /></BusinessRoute>} />
-          <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
-          <Route path="/jobs/:id" element={<BusinessRoute><JobDetailPage /></BusinessRoute>} />
-          <Route path="/jobs/:id/edit" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
-          <Route path="/dispatch" element={<BusinessRoute><V3WorkspacePage type="jobs" /></BusinessRoute>} />
-          <Route path="/calendar" element={<Navigate to="/dispatch" replace />} />
-          <Route path="/clients" element={<BusinessRoute><V3WorkspacePage type="clients" /></BusinessRoute>} />
-          <Route path="/clients/new" element={<BusinessRoute><ClientFormPage /></BusinessRoute>} />
-          <Route path="/clients/:id" element={<BusinessRoute><ClientDetailPage /></BusinessRoute>} />
-          <Route path="/clients/:id/edit" element={<BusinessRoute><ClientFormPage /></BusinessRoute>} />
-          <Route path="/quotes" element={<BusinessRoute><V3WorkspacePage type="quotes" /></BusinessRoute>} />
-          <Route path="/quotes/new" element={<BusinessRoute><QuoteFormPage /></BusinessRoute>} />
-          <Route path="/quotes/:id" element={<BusinessRoute><QuoteDetailPage /></BusinessRoute>} />
-          <Route path="/quotes/:id/edit" element={<BusinessRoute><QuoteFormPage /></BusinessRoute>} />
-          <Route path="/invoices" element={<BusinessRoute><V3WorkspacePage type="invoices" /></BusinessRoute>} />
-          <Route path="/invoices/new" element={<BusinessRoute><InvoiceFormPage /></BusinessRoute>} />
-          <Route path="/invoices/:id" element={<BusinessRoute><InvoiceDetailPage /></BusinessRoute>} />
-          <Route path="/sms" element={<BusinessRoute><V3WorkspacePage type="sms" /></BusinessRoute>} />
-          <Route path="/reports" element={<ReportsRoute><V3WorkspacePage type="reports" /></ReportsRoute>} />
-          <Route path="/integrations" element={<BusinessRoute><V3WorkspacePage type="integrations" /></BusinessRoute>} />
-          <Route path="/settings" element={<BusinessRoute><V3WorkspacePage type="settings" /></BusinessRoute>} />
+          <Route path="/jobs" element={<Navigate to="/v3/jobs" replace />} />
+          <Route path="/jobs/new" element={<Navigate to="/v3/jobs" replace />} />
+          <Route path="/jobs/:id" element={<Navigate to="/v3/jobs" replace />} />
+          <Route path="/jobs/:id/edit" element={<Navigate to="/v3/jobs" replace />} />
+          <Route path="/dispatch" element={<Navigate to="/v3/dispatch" replace />} />
+          <Route path="/calendar" element={<Navigate to="/v3/dispatch" replace />} />
+          <Route path="/clients" element={<Navigate to="/v3/clients" replace />} />
+          <Route path="/clients/new" element={<Navigate to="/v3/clients" replace />} />
+          <Route path="/clients/:id" element={<Navigate to="/v3/clients" replace />} />
+          <Route path="/clients/:id/edit" element={<Navigate to="/v3/clients" replace />} />
+          <Route path="/quotes" element={<Navigate to="/v3/quotes" replace />} />
+          <Route path="/quotes/new" element={<Navigate to="/v3/quotes" replace />} />
+          <Route path="/quotes/:id" element={<Navigate to="/v3/quotes" replace />} />
+          <Route path="/quotes/:id/edit" element={<Navigate to="/v3/quotes" replace />} />
+          <Route path="/invoices" element={<Navigate to="/v3/invoices" replace />} />
+          <Route path="/invoices/new" element={<Navigate to="/v3/invoices" replace />} />
+          <Route path="/invoices/:id" element={<Navigate to="/v3/invoices" replace />} />
+          <Route path="/sms" element={<Navigate to="/v3/messages" replace />} />
+          <Route path="/reports" element={<Navigate to="/v3/reports" replace />} />
+          <Route path="/integrations" element={<Navigate to="/v3/integrations" replace />} />
+          <Route path="/settings" element={<Navigate to="/v3/settings" replace />} />
           <Route path="/contact" element={<PrivateRoute><ContactPage /></PrivateRoute>} />
-          <Route path="/plans" element={<OwnerRoute><V3WorkspacePage type="plans" /></OwnerRoute>} />
-          <Route path="/team" element={<TeamRoute><V3WorkspacePage type="team" /></TeamRoute>} />
+          <Route path="/plans" element={<Navigate to="/v3/plans" replace />} />
+          <Route path="/team" element={<Navigate to="/v3/team" replace />} />
           <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
-          <Route path="/automation" element={<TeamRoute><V3WorkspacePage type="automation" /></TeamRoute>} />
+          <Route path="/automation" element={<Navigate to="/v3/rules" replace />} />
           <Route path="/automation/runs" element={<TeamRoute><AutomationRunsPage /></TeamRoute>} />
-          <Route path="/payroll" element={<PayrollRoute><V3WorkspacePage type="payroll" /></PayrollRoute>} />
+          <Route path="/payroll" element={<Navigate to="/v3/payroll" replace />} />
           <Route path="/worker/jobs" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
           <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
           <Route path="/worker/settings" element={<WorkerRoute><WorkerSettingsPage /></WorkerRoute>} />

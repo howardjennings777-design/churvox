@@ -1,6 +1,22 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { BarChart3, Briefcase, Calendar, CreditCard, DollarSign, FileText, LogOut, MessageSquare, Plug, Receipt, Settings, ShieldCheck, UserPlus, Users, Zap } from "lucide-react";
+import {
+  BarChart3,
+  Briefcase,
+  Calendar,
+  CreditCard,
+  DollarSign,
+  FileText,
+  LogOut,
+  MessageSquare,
+  Plug,
+  Receipt,
+  Settings,
+  ShieldCheck,
+  UserPlus,
+  Users,
+  Zap
+} from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import V3Brand from "./V3Brand";
 import "../styles/v3.css";
@@ -14,12 +30,12 @@ const navItems = [
   ["Invoices", "/v3/invoices", Receipt],
   ["Team", "/v3/team", UserPlus],
   ["Payroll", "/v3/payroll", DollarSign],
-  ["Rules", "/automation", Zap],
+  ["Rules", "/v3/rules", Zap],
   ["Reports", "/v3/reports", BarChart3],
-  ["Messages", "/sms", MessageSquare],
-  ["Sync", "/integrations", Plug],
-  ["Billing", "/plans", CreditCard],
-  ["Settings", "/settings", Settings],
+  ["Messages", "/v3/messages", MessageSquare],
+  ["Sync", "/v3/integrations", Plug],
+  ["Billing", "/v3/plans", CreditCard],
+  ["Settings", "/v3/settings", Settings],
 ];
 
 function initials(user) {

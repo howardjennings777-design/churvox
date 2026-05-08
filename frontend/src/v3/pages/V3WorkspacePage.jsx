@@ -12,20 +12,40 @@ const AREAS = {
   team: ["Team", "Crew control", "Workers, invites, roles, availability, and job ownership."],
   payroll: ["Payroll", "Pay run", "Pay periods, approved hours, worker summaries, and payroll exports."],
   rules: ["Rules", "Automation engine", "AI checks, approval-first actions, active rules, and recent runs."],
+  automation: ["Rules", "Automation engine", "AI checks, approval-first actions, active rules, and recent runs."],
   reports: ["Reports", "Owner numbers", "Revenue, completed jobs, crew time, and outstanding money."],
-  messages: ["Messages", "Customer comms", "Draft replies, reminders, follow-ups, and message history."]
+  messages: ["Messages", "Customer comms", "Draft replies, reminders, follow-ups, and message history."],
+  sms: ["Messages", "Customer comms", "Draft replies, reminders, follow-ups, and message history."],
+  integrations: ["Sync", "MYOB and integrations", "MYOB sync, connected services, data checks, and integration status."],
+  plans: ["Billing", "Plan and billing", "Plan status, limits, billing checks, and account controls."],
+  settings: ["Settings", "Business setup", "Business profile, user settings, preferences, and workspace controls."],
+  proof: ["Job Proof Packs", "Proof to paid", "Photos, job proof, completion evidence, and invoice-ready packs."]
 };
 
-const ORDER = Object.keys(AREAS);
+const ORDER = [
+  "jobs",
+  "dispatch",
+  "clients",
+  "quotes",
+  "invoices",
+  "team",
+  "payroll",
+  "rules",
+  "reports",
+  "messages",
+  "integrations",
+  "plans",
+  "settings"
+];
 
-export default function V3WorkspacePage() {
+export default function V3WorkspacePage({ type }) {
   const navigate = useNavigate();
   const { section } = useParams();
 
   const key = useMemo(() => {
-    const clean = String(section || "jobs").toLowerCase().replace(/[^a-z]/g, "");
+    const clean = String(section || type || "jobs").toLowerCase().replace(/[^a-z]/g, "");
     return AREAS[clean] ? clean : "jobs";
-  }, [section]);
+  }, [section, type]);
 
   const [title, kicker, intro] = AREAS[key];
 
