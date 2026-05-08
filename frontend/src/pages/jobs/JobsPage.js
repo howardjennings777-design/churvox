@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { formatDate, formatCurrency, JOB_STATUSES } from "../../lib/utils";
 import EntityDetailModal from "../../components/EntityDetailModal";
 import {
-  PremiumPage, PremiumHero, PremiumCard, PremiumButton, PremiumBadge, PremiumEmptyState,
+  PremiumPage, PremiumCard, PremiumButton, PremiumBadge, PremiumEmptyState,
   PremiumLoadingState, PremiumStatusBadge, PremiumStatCard
 } from "../../components/premium";
 
@@ -130,26 +130,11 @@ export default function JobsPage() {
   return (
     <Layout>
       <PremiumPage>
-        <div className="jobs-v5">
-          <PremiumHero
-            icon={<Briefcase className="h-7 w-7" />}
-            eyebrow={<><Briefcase className="h-3 w-3" /> Work orders</>}
-            title="Jobs"
-            subtitle="A clean workspace for today’s jobs, crew coverage, completed work and invoice handoff."
-            actions={
-              isEmployer ? (
-                <>
-                  <PremiumButton onClick={() => navigate("/jobs/new")} iconLeft={<Plus className="h-4 w-4" />}>New job</PremiumButton>
-                  <PremiumButton variant="secondary" onClick={() => navigate("/dispatch")} iconLeft={<Route className="h-4 w-4" />}>Dispatch board</PremiumButton>
-                </>
-              ) : null
-            }
-          />
-
-          <section className="jobs-v5-command">
-            <article className="jobs-v5-hero-card">
-              <p>Live run sheet</p>
-              <h2>{heroStatus}</h2>
+        <div className="jobs-v5 jobs-v5--run-sheet-header">
+          <section className="jobs-v5-command jobs-v5-command--header">
+            <article className="jobs-v5-hero-card jobs-v5-hero-card--header">
+              <p><Briefcase size={13} /> Live run sheet</p>
+              <h1>{heroStatus}</h1>
               <span>
                 {metrics.unassigned
                   ? `${metrics.unassigned} job${metrics.unassigned === 1 ? "" : "s"} still need crew.`
@@ -158,8 +143,9 @@ export default function JobsPage() {
                     : "Jobs, crew and completion checks are clear right now."}
               </span>
               <div>
-                <button onClick={() => navigate("/dispatch")}>Open dispatch</button>
-                <button className="secondary" onClick={() => navigate("/invoices")}>Open invoices</button>
+                {isEmployer && <button onClick={() => navigate("/jobs/new")}><Plus size={15} /> New job</button>}
+                <button className="secondary" onClick={() => navigate("/dispatch")}><Route size={15} /> Dispatch board</button>
+                {showMoney && <button className="secondary" onClick={() => navigate("/invoices")}><ReceiptText size={15} /> Open invoices</button>}
               </div>
             </article>
 
