@@ -6,7 +6,7 @@ import { useApi } from "../../hooks/useApi";
 import {
   Plus, Search, MapPin, Trash2, Briefcase, CalendarDays,
   UserCheck, Sparkles, AlertTriangle, Filter, ArrowRight, Clock3, DollarSign,
-  Route, CheckCircle2, Users, ReceiptText
+  Route, CheckCircle2, Users, ReceiptText, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, JOB_STATUSES } from "../../lib/utils";
@@ -34,9 +34,10 @@ const isReadyToInvoice = (job) => ["completed", "done"].includes(jobStatus(job))
 export default function JobsPage() {
   const navigate = useNavigate();
   const { isEmployer, normalizedRole } = useAuth();
-  const { get, del, loading } = useApi();
+  const { get, post, del, loading } = useApi();
   const [jobs, setJobs] = useState([]);
   const [pageLoading, setPageLoading] = useState(true);
+  const [aiBusy, setAiBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deleteId, setDeleteId] = useState(null);
@@ -53,6 +54,46 @@ export default function JobsPage() {
   }, [get, statusFilter]);
 
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
+
+  const runAiJobOperator = async () => {
+    setAiBusy(true);
+    try {
+      const [operatorRes, invoiceRes] = await Promise.all([
+        post("/ai/operator/prepare-today", {}),
+        post("/invoices/automation/create-drafts", {}),
+      ]);
+      const operatorData = operatorRes?.data || operatorRes || {};
+      const invoiceData = invoiceRes?.data || invoiceRes || {};
+      if (operatorRes?.success || operatorRes?.ok || operatorData?.ok) {
+        toast.success(`${operatorData.count || safeArray(operatorData.actions).length || 0} AI job action(s) prepared for approval`);
+      } else {
+        toast.error(operatorRes?.error || operatorData?.message || "AI job operator could not prepare actions");
+      }
+      if (invoiceRes?.success || invoiceRes?.ok || invoiceData?.ok) {
+        const created = invoiceData.created_count ?? invoiceData.drafts_created ?? 0;
+        if (created > 0) toast.success(`${created} completed job(s) moved to draft invoice review`);
+      }
+      await fetchJobs();
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
+  const runInvoiceHandoff = async () => {
+    setAiBusy(true);
+    try {
+      const r = await post("/invoices/automation/run", {});
+      const data = r?.data || r || {};
+      if (r?.success || r?.ok || data?.ok) {
+        toast.success(data.message || "Invoice handoff complete");
+        navigate("/invoices");
+      } else {
+        toast.error(r?.error || data?.message || "Invoice handoff failed");
+      }
+    } finally {
+      setAiBusy(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -130,6 +171,7 @@ export default function JobsPage() {
             isEmployer ? (
               <>
                 <PremiumButton onClick={() => navigate("/jobs/new")} iconLeft={<Plus className="h-4 w-4" />}>New job</PremiumButton>
+                <PremiumButton onClick={runAiJobOperator} disabled={aiBusy} iconLeft={aiBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}>Run AI job plan</PremiumButton>
                 <PremiumButton variant="secondary" onClick={() => navigate("/dispatch")} iconLeft={<Route className="h-4 w-4" />}>Dispatch board</PremiumButton>
               </>
             ) : null
@@ -143,15 +185,15 @@ export default function JobsPage() {
               <h2>{aiHeadline}</h2>
               <p>
                 {metrics.unassigned > 0
-                  ? `${metrics.unassigned} job${metrics.unassigned === 1 ? "" : "s"} still need crew. Open Dispatch to assign the best worker before the day gets messy.`
+                  ? `${metrics.unassigned} job${metrics.unassigned === 1 ? "" : "s"} still need crew. AI can prepare worker matches for owner approval before the day gets messy.`
                   : metrics.readyToInvoice > 0
                     ? `${metrics.readyToInvoice} completed job${metrics.readyToInvoice === 1 ? "" : "s"} can move into invoice draft review.`
                     : `${metrics.today} job${metrics.today === 1 ? "" : "s"} scheduled today. Keep the board moving from one place.`}
               </p>
             </div>
             <div className="jobs-command-actions">
-              <button onClick={() => navigate("/dispatch")}><Users className="h-4 w-4" /> Assign crew</button>
-              <button onClick={() => navigate("/invoices")}><ReceiptText className="h-4 w-4" /> Review invoice handoff</button>
+              <button onClick={runAiJobOperator} disabled={aiBusy}>{aiBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />} Prepare crew matches</button>
+              <button onClick={runInvoiceHandoff} disabled={aiBusy}><ReceiptText className="h-4 w-4" /> Auto invoice handoff</button>
               <button onClick={() => { setStatusFilter("all"); setSearch(""); fetchJobs(); }}><Clock3 className="h-4 w-4" /> Refresh run sheet</button>
             </div>
             <div className="jobs-priority-stack">
@@ -170,12 +212,12 @@ export default function JobsPage() {
         <div className="px-grid px-grid--4 jobs-stat-grid">
           <PremiumStatCard label="Total jobs" value={metrics.total} icon={<Briefcase className="h-4 w-4" />} onClick={() => setStatusFilter("all")} />
           <PremiumStatCard label="Today" value={metrics.today} icon={<CalendarDays className="h-4 w-4" />} tone="sky" />
-          <PremiumStatCard label="Need crew" value={metrics.unassigned} icon={<Users className="h-4 w-4" />} tone={metrics.unassigned ? "amber" : "blue"} onClick={() => navigate("/dispatch")} />
+          <PremiumStatCard label="Need crew" value={metrics.unassigned} icon={<Users className="h-4 w-4" />} tone={metrics.unassigned ? "amber" : "blue"} onClick={runAiJobOperator} />
           <PremiumStatCard label="In motion" value={metrics.active} icon={<Clock3 className="h-4 w-4" />} tone="teal" />
           <PremiumStatCard label="Completed" value={metrics.completed} icon={<CheckCircle2 className="h-4 w-4" />} tone="green" />
-          <PremiumStatCard label="Ready to invoice" value={metrics.readyToInvoice} icon={<ReceiptText className="h-4 w-4" />} tone="amber" onClick={() => navigate("/invoices")} />
+          <PremiumStatCard label="Ready to invoice" value={metrics.readyToInvoice} icon={<ReceiptText className="h-4 w-4" />} tone="amber" onClick={runInvoiceHandoff} />
           {showMoney ? <PremiumStatCard label="Ready value" value={formatCurrency(metrics.moneyReady)} icon={<DollarSign className="h-4 w-4" />} tone="blue" /> : <PremiumStatCard label="Assigned" value={metrics.total - metrics.unassigned} icon={<UserCheck className="h-4 w-4" />} />}
-          <PremiumStatCard label="Attention" value={metrics.unassigned + metrics.readyToInvoice} icon={<AlertTriangle className="h-4 w-4" />} tone={metrics.unassigned + metrics.readyToInvoice ? "red" : "blue"} />
+          <PremiumStatCard label="Attention" value={metrics.unassigned + metrics.readyToInvoice} icon={<AlertTriangle className="h-4 w-4" />} tone={metrics.unassigned + metrics.readyToInvoice ? "red" : "blue"} onClick={runAiJobOperator} />
         </div>
 
         <PremiumCard noBody>
@@ -256,8 +298,8 @@ export default function JobsPage() {
 
                     <div className="jobclean-actions" onClick={(e) => e.stopPropagation()}>
                       <PremiumButton size="sm" variant="secondary" onClick={() => setActiveJob(job)}>Open</PremiumButton>
-                      {needsCrew && <PremiumButton size="sm" onClick={() => navigate("/dispatch")}>Dispatch</PremiumButton>}
-                      {readyInvoice && <PremiumButton size="sm" onClick={() => navigate("/invoices")}>Invoice</PremiumButton>}
+                      {needsCrew && <PremiumButton size="sm" onClick={runAiJobOperator} disabled={aiBusy}>AI match</PremiumButton>}
+                      {readyInvoice && <PremiumButton size="sm" onClick={runInvoiceHandoff} disabled={aiBusy}>Invoice</PremiumButton>}
                       {isEmployer && (
                         <button
                           onClick={() => setDeleteId(job.id)}
