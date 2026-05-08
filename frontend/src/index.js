@@ -38,6 +38,7 @@ import "./styles/proofToPaidWorkspace.css";
 import "./styles/teamOwnerWorkspace.css";
 import "./styles/payrollOwnerWorkspace.css";
 import "./styles/automationRulesWorkspace.css";
+import "./styles/reportsBusinessInsights.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
