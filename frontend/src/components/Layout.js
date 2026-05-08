@@ -31,19 +31,19 @@ export default function Layout({ children, smartHubMode = false }) {
       label: "Workspace",
       items: [
         canAccess(role, "dashboard") && { path: "/dashboard", label: "Smart Hub", icon: LayoutDashboard },
-        canAccess(role, "jobs") && { path: "/jobs", label: "All Jobs", icon: Briefcase },
-        canAccess(role, "calendar") && { path: "/dispatch", label: "Dispatch Board", icon: Calendar },
-        canAccess(role, "clients") && { path: "/clients", label: "Client List", icon: Users },
+        canAccess(role, "jobs") && { path: "/jobs", label: "Jobs", icon: Briefcase },
+        canAccess(role, "calendar") && { path: "/dispatch", label: "Dispatch", icon: Calendar },
+        canAccess(role, "clients") && { path: "/clients", label: "Clients", icon: Users },
         canAccess(role, "ai_operator") && { path: "/ai-operator", label: "AI Operator", icon: Sparkles },
-        canAccess(role, "ai_operator") && { path: "/ai-operator/approvals", label: "AI Approvals", icon: Sparkles },
-        canAccess(role, "proof_to_paid") && { path: "/proof-to-paid", label: "Proof-to-Paid", icon: Sparkles },
+        canAccess(role, "ai_operator") && { path: "/ai-operator/approvals", label: "Approval Queue", icon: Sparkles },
+        canAccess(role, "proof_to_paid") && { path: "/proof-to-paid", label: "Job Proofs", icon: Sparkles },
       ].filter(Boolean),
     },
     {
       label: "Sales",
       items: [
-        canAccess(role, "quotes") && { path: "/quotes", label: "All Quotes", icon: FileText },
-        canAccess(role, "invoices") && { path: "/invoices", label: "All Invoices", icon: Receipt },
+        canAccess(role, "quotes") && { path: "/quotes", label: "Quotes", icon: FileText },
+        canAccess(role, "invoices") && { path: "/invoices", label: "Invoices", icon: Receipt },
       ].filter(Boolean),
     },
     {
@@ -51,16 +51,16 @@ export default function Layout({ children, smartHubMode = false }) {
       items: [
         canAccess(role, "team") && (isOwnerUser || hasPlanAccess(safePlan, "team")) && { path: "/team", label: "Team", icon: UserPlus },
         canAccess(role, "payroll") && { path: "/payroll", label: "Payroll", icon: DollarSign },
-        (role === "owner" || role === "employer" || role === "manager") && { path: "/automation", label: "Automation", icon: Zap },
+        (role === "owner" || role === "employer" || role === "manager") && { path: "/automation", label: "Automations", icon: Zap },
         canAccess(role, "reports") && { path: "/reports", label: "Reports", icon: FileText },
       ].filter(Boolean),
     },
     {
-      label: "Settings",
+      label: "Admin",
       items: [
-        canAccess(role, "sms") && { path: "/sms", label: "Communications", icon: MessageSquare },
+        canAccess(role, "sms") && { path: "/sms", label: "Messages", icon: MessageSquare },
         canAccess(role, "integrations") && { path: "/integrations", label: "Integrations", icon: Plug },
-        isOwnerUser && { path: "/plans", label: "Plans & Billing", icon: CreditCard },
+        isOwnerUser && { path: "/plans", label: "Billing", icon: CreditCard },
         canAccess(role, "settings") && { path: "/settings", label: "Settings", icon: Settings },
       ].filter(Boolean),
     },
