@@ -52,7 +52,7 @@ import PublicInvoicePage from "./pages/public/PublicInvoicePage";
 import PublicClientPortalPage from "./pages/public/PublicClientPortalPage";
 import ProofToPaidPage from "./pages/ProofToPaidPage";
 import QAAuditorPage from "./pages/admin/QAAuditorPage";
-import SmartHubTopPlayerFinal from "./pages/SmartHubTopPlayerFinal";
+import SmartHubHardReset from "./pages/SmartHubHardReset";
 import AIControlRoomPage from "./pages/AIControlRoomPage";
 import AIOperatorApprovalsPage from "./pages/AIOperatorApprovalsPage";
 import AIOperatorSettingsPage from "./pages/AIOperatorSettingsPage";
@@ -163,7 +163,7 @@ function RoleRedirect() {
 const SmartHubRoute = () => (
   <BusinessRoute>
     <ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login">
-      <SmartHubTopPlayerFinal />
+      <SmartHubHardReset />
     </ErrorBoundary>
   </BusinessRoute>
 );
