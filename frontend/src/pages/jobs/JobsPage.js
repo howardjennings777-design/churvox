@@ -4,7 +4,7 @@ import Layout from "../../components/Layout";
 import { useAuth } from "../../context/AuthContext";
 import { useApi } from "../../hooks/useApi";
 import {
-  Plus, Search, MapPin, Trash2, Briefcase, ClipboardList, CalendarDays,
+  Plus, Search, MapPin, Trash2, Briefcase, CalendarDays,
   UserCheck, Sparkles, AlertTriangle, Filter, ArrowRight, Clock3, DollarSign,
   Route, CheckCircle2, Users, ReceiptText
 } from "lucide-react";
@@ -123,7 +123,7 @@ export default function JobsPage() {
       <PremiumPage>
         <PremiumHero
           icon={<Briefcase className="h-7 w-7" />}
-          eyebrow={<><ClipboardList className="h-3 w-3" /> Work orders</>}
+          eyebrow={<><Briefcase className="h-3 w-3" /> Work orders</>}
           title="Jobs Command Centre"
           subtitle="A cleaner run sheet for today’s work, unassigned jobs, completed jobs ready for invoices, and the next owner decisions."
           actions={
@@ -235,7 +235,6 @@ export default function JobsPage() {
                   <div className="px-card__body jobs-row-layout">
                     <div className="jobs-row-main">
                       <div className="jobs-row-topline">
-                        <PremiumBadge tone="soft" icon={<ClipboardList className="h-3 w-3" />}>Work order</PremiumBadge>
                         <span className="jobs-title">{safeText(job.title, "Untitled job")}</span>
                         <PremiumStatusBadge status={job.status} />
                         {needsCrew && <PremiumBadge tone="amber">Needs crew</PremiumBadge>}
