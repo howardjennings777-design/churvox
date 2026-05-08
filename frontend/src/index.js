@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import SmartHubHardReset from "./pages/SmartHubHardReset";
+import App from "./App";
 import "./index.css";
 import "./styles/aiControlRoomFullscreen.css";
 import "./styles/aiControlRoomFinalFit.css";
@@ -39,6 +39,6 @@ clearOldPwaShell();
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <SmartHubHardReset />
+    <App />
   </React.StrictMode>
 );
