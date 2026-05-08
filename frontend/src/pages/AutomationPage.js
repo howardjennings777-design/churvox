@@ -221,7 +221,7 @@ function AutomationPage() {
             <Clock3 size={18} />
             <div>
               <b>Background engine</b>
-              <span>Rules run quietly behind the app. The owner only sees review items when a decision is needed.</span>
+              <span>Runs quietly in the background. You only see decisions that need review.</span>
             </div>
           </section>
 
