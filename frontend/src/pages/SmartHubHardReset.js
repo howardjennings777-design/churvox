@@ -16,8 +16,7 @@ export default function SmartHubHardReset() {
       <section className="hr-root">
         <aside className="hr-sidebar">
           <div className="hr-brand hr-brand-real">
-            <span className="hr-brand-mark">C</span>
-            <b>CHURVOX</b>
+            <img src="/churvox-logo.png" alt="Churvox" className="hr-brand-logo" />
           </div>
           <nav>{nav.map((n, i) => <button key={n} className={i === 0 ? "on" : ""}><i>{["◎", "◇", "♙", "▤", "▥", "⌘", "♙", "⚡", "⚙"][i]}</i>{n}</button>)}</nav>
           <div className="hr-sms-mini"><div><b>12,540</b><i>▣</i></div><strong>SMS Credits</strong><small>credits remaining</small><em><span /></em><p>78% remaining</p><button>Buy Credits</button></div>
