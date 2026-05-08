@@ -111,7 +111,7 @@ export default function AIOperatorSettingsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     const [opRes, sendRes, setupRes, logsRes] = await Promise.all([
-      get("/ai-operator/settings"),
+      get("/ai/operator/settings"),
       get("/ai-auto-send/settings"),
       get("/ai-operator/setup-status"),
       get("/ai-operator/audit-log?limit=100"),
@@ -136,7 +136,7 @@ export default function AIOperatorSettingsPage() {
   const saveOperator = async () => {
     if (!settings) return;
     setSaving(true);
-    const res = await patch("/ai-operator/settings", settings);
+    const res = await patch("/ai/operator/settings", settings);
     setSaving(false);
     if (res.success) {
       toast.success("Operator settings saved");
@@ -201,7 +201,7 @@ export default function AIOperatorSettingsPage() {
                 <SettingsIcon className="h-6 w-6 text-[#155EEF]" /> AI Operator
               </h1>
               <p className="cx-page-subtitle mt-1">
-                Control how AI runs your business — what it can prepare, what it can auto-run, what stays approval-first.
+                Control how AI runs your business — what it can prepare, when approved work deploys, and what stays approval-first.
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -215,7 +215,6 @@ export default function AIOperatorSettingsPage() {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="mt-4 inline-flex rounded-lg border border-[#dde6f3] bg-white p-0.5 text-sm">
           {[
             { key: "operator", label: "Operator mode" },
@@ -269,6 +268,73 @@ export default function AIOperatorSettingsPage() {
                               <ChevronRight className="h-4 w-4 text-[#94a3b8]" />
                             )}
                           </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Section>
+
+                <Section title="Deploy time for approved AI work" icon={<Clock className="h-5 w-5 text-[#155EEF]" />}>
+                  <div className="rounded-xl border border-[#bfdbfe] bg-[#eff6ff] p-3 text-xs text-[#1e3a8a]">
+                    Approved AI items go into the deploy queue. This time controls when they are released. If nothing is saved, Churvox falls back to <strong>7:00pm Monday–Friday</strong> with a warning notification 1 hour before deploy.
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <label className="block">
+                      <span className="text-xs font-semibold uppercase text-[#94a3b8]">Deploy time</span>
+                      <input
+                        type="time"
+                        className="cx-input mt-1 w-full"
+                        value={settings?.deploy_time || "19:00"}
+                        onChange={(e) => updateSetting("deploy_time", e.target.value)}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-semibold uppercase text-[#94a3b8]">Warning before deploy</span>
+                      <select
+                        className="cx-input mt-1 w-full"
+                        value={settings?.deploy_warning_minutes ?? 60}
+                        onChange={(e) => updateSetting("deploy_warning_minutes", parseInt(e.target.value, 10) || 60)}
+                      >
+                        <option value={30}>30 minutes</option>
+                        <option value={60}>1 hour</option>
+                        <option value={120}>2 hours</option>
+                      </select>
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-semibold uppercase text-[#94a3b8]">Timezone</span>
+                      <select
+                        className="cx-input mt-1 w-full"
+                        value={settings?.deploy_timezone || "Pacific/Auckland"}
+                        onChange={(e) => updateSetting("deploy_timezone", e.target.value)}
+                      >
+                        <option value="Pacific/Auckland">New Zealand</option>
+                        <option value="Australia/Sydney">Sydney</option>
+                        <option value="Australia/Melbourne">Melbourne</option>
+                        <option value="UTC">UTC</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {[
+                      [1, "Mon"],
+                      [2, "Tue"],
+                      [3, "Wed"],
+                      [4, "Thu"],
+                      [5, "Fri"],
+                    ].map(([day, label]) => {
+                      const selected = (settings?.deploy_weekdays || [1, 2, 3, 4, 5]).includes(day);
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => {
+                            const current = settings?.deploy_weekdays || [1, 2, 3, 4, 5];
+                            const next = selected ? current.filter((d) => d !== day) : [...current, day].sort();
+                            updateSetting("deploy_weekdays", next.length ? next : [1, 2, 3, 4, 5]);
+                          }}
+                          className={`rounded-xl border px-3 py-2 text-sm font-semibold ${selected ? "border-[#155EEF] bg-[#eff6ff] text-[#155EEF]" : "border-[#dde6f3] bg-white text-[#64748b]"}`}
+                        >
+                          {label}
                         </button>
                       );
                     })}
