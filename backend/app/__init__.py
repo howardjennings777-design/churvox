@@ -1,28 +1,24 @@
 """Churvox backend app package.
 
-This package also installs a small AI Operator route autowire hook.
+Safe autowire hooks for modular backend routes.
 
-Why this exists:
-- The current backend/server.py file is very large and is the production entrypoint.
-- The AI Operator engine is built as a separate safe module.
-- This hook mounts the AI Operator router when server.py includes the main /api router, without needing to rewrite the huge server.py file.
-
-The hook is defensive. If required server globals are not ready, it does nothing.
+This avoids risky rewrites of the large production `server.py` file while still mounting
+new modular routers when the main `/api` router is included by FastAPI.
 """
 
 
-def _install_ai_operator_autowire():
+def _install_churvox_route_autowire():
     try:
         from fastapi import FastAPI
     except Exception:
         return
 
-    if getattr(FastAPI, "_churvox_ai_operator_autowire_installed", False):
+    if getattr(FastAPI, "_churvox_route_autowire_installed", False):
         return
 
     original_include_router = FastAPI.include_router
 
-    def include_router_with_ai_operator(self, router, *args, **kwargs):
+    def include_router_with_churvox_modules(self, router, *args, **kwargs):
         try:
             import sys
 
@@ -35,32 +31,34 @@ def _install_ai_operator_autowire():
             db = getattr(server_module, "db", None) if server_module else None
             get_current_user = getattr(server_module, "get_current_user", None) if server_module else None
             get_user_business_id = getattr(server_module, "get_user_business_id", None) if server_module else None
-
             prefix = getattr(router, "prefix", "")
-            already_mounted = getattr(router, "_churvox_ai_operator_mounted", False)
 
-            if (
-                prefix == "/api"
-                and not already_mounted
-                and db is not None
-                and get_current_user is not None
-                and get_user_business_id is not None
-            ):
-                from ai_operator_routes import create_ai_operator_router
+            if prefix == "/api" and db is not None and get_current_user is not None and get_user_business_id is not None:
+                if not getattr(router, "_churvox_ai_operator_mounted", False):
+                    try:
+                        from ai_operator_routes import create_ai_operator_router
+                        router.include_router(create_ai_operator_router(db, get_current_user, get_user_business_id))
+                        setattr(router, "_churvox_ai_operator_mounted", True)
+                        print("Churvox AI Operator routes mounted at /api/ai/operator")
+                    except Exception as exc:
+                        print(f"Churvox AI Operator autowire skipped: {exc}")
 
-                router.include_router(
-                    create_ai_operator_router(db, get_current_user, get_user_business_id)
-                )
-                setattr(router, "_churvox_ai_operator_mounted", True)
-                print("Churvox AI Operator routes mounted at /api/ai/operator")
+                if not getattr(router, "_churvox_invoice_automation_mounted", False):
+                    try:
+                        from invoice_automation_routes import create_invoice_automation_router
+                        router.include_router(create_invoice_automation_router(db, get_current_user, get_user_business_id))
+                        setattr(router, "_churvox_invoice_automation_mounted", True)
+                        print("Churvox invoice automation routes mounted at /api/invoices/automation")
+                    except Exception as exc:
+                        print(f"Churvox invoice automation autowire skipped: {exc}")
+
         except Exception as exc:
-            # Never break production startup because of AI Operator autowiring.
-            print(f"Churvox AI Operator autowire skipped: {exc}")
+            print(f"Churvox route autowire skipped: {exc}")
 
         return original_include_router(self, router, *args, **kwargs)
 
-    FastAPI.include_router = include_router_with_ai_operator
-    setattr(FastAPI, "_churvox_ai_operator_autowire_installed", True)
+    FastAPI.include_router = include_router_with_churvox_modules
+    setattr(FastAPI, "_churvox_route_autowire_installed", True)
 
 
-_install_ai_operator_autowire()
+_install_churvox_route_autowire()
