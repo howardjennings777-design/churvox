@@ -24,9 +24,8 @@ export default function SmartHubHardReset() {
         </aside>
 
         <section className="hr-page">
-          <div className="hr-top"><button>♟<b>3</b></button><button>?</button><button>Thompson Trade Services ⌄</button></div>
-
           <section className="hr-hero">
+            <div className="hr-top"><button>♟<b>3</b></button><button>?</button><button>Thompson Trade Services ⌄</button></div>
             <div className="hr-welcome"><p>Good morning, Alex</p><h1>AI Control Room</h1><span>Your AI co-pilot is ready. Here's what needs your attention today.</span><button><i />AI Readiness <b>High</b></button></div>
             <div className="hr-actions"><p>What would you like to do?</p><button className="main"><i>✦</i><b>Run AI Plan</b><span>→</span></button><button><i>▱</i><b>Review approvals</b><em>8</em></button><button><i>⚙</i><b>Operator settings</b><span>→</span></button></div>
             <div className="hr-live"><h3><i />Live Control Centre <span>›</span></h3><small>All systems operational</small><Metric t="Jobs in progress" v="23" c="blue" /><Metric t="Jobs needing crew" v="6" c="orange" /><Metric t="Approvals" v="8" c="blue" /><Metric t="Money waiting" v="$6,820.00" c="green" /></div>
