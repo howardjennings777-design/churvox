@@ -6,10 +6,11 @@ from pydantic import BaseModel
 from typing import Any, Dict, Optional
 from uuid import uuid4
 
+from bson import ObjectId
+
 from ai_operator_engine import (
     answer_business_question,
     get_pending_ai_actions,
-    mark_ai_action,
     persist_ai_actions,
     prepare_ai_actions,
     serialise_record,
@@ -37,6 +38,8 @@ class AiActionUpdateRequest(BaseModel):
 class AiActionScheduleRequest(BaseModel):
     scheduled_for: str
     action: Optional[Dict[str, Any]] = None
+    deploy_window_label: Optional[str] = "7:00pm weeknight deploy"
+    deploy_warning_minutes: Optional[int] = 60
 
 
 def _safe_text(value: Any, fallback: str = "") -> str:
@@ -44,11 +47,43 @@ def _safe_text(value: Any, fallback: str = "") -> str:
     return text or fallback
 
 
+def _model_dump(model: Any) -> Dict[str, Any]:
+    if not model:
+        return {}
+    if hasattr(model, "model_dump"):
+        return model.model_dump(exclude_none=True)
+    if hasattr(model, "dict"):
+        return model.dict(exclude_none=True)
+    return dict(model or {})
+
+
 def _business_query(business_id: str, extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     query = {"business_id": str(business_id)}
     if extra:
         query.update(extra)
     return query
+
+
+def _action_lookup_query(business_id: str, action_id: str) -> Dict[str, Any]:
+    options = [{"id": str(action_id)}]
+    try:
+        options.append({"_id": ObjectId(str(action_id))})
+    except Exception:
+        pass
+    return {"business_id": str(business_id), "$or": options}
+
+
+async def _find_action(db, business_id: str, action_id: str) -> Optional[Dict[str, Any]]:
+    if not action_id:
+        return None
+    return await db.ai_operator_actions.find_one(_action_lookup_query(business_id, action_id))
+
+
+async def _find_action_or_404(db, business_id: str, action_id: str) -> Dict[str, Any]:
+    action = await _find_action(db, business_id, action_id)
+    if not action:
+        raise HTTPException(status_code=404, detail="AI action not found")
+    return action
 
 
 async def _find_record(db, collection_name: str, business_id: str, record_id: str):
@@ -62,7 +97,6 @@ async def _find_record(db, collection_name: str, business_id: str, record_id: st
         {"quote_number": str(record_id)},
     ]
     try:
-        from bson import ObjectId
         candidates.append({"_id": ObjectId(str(record_id))})
     except Exception:
         pass
@@ -82,7 +116,7 @@ async def _write_operator_event(db, business_id: str, actor_id: str, action: Dic
         "business_id": str(business_id),
         "actor_id": actor_id,
         "source": "ai_operator",
-        "action_id": action.get("id"),
+        "action_id": action.get("id") or action.get("_id"),
         "action_type": action.get("action_type"),
         "module": action.get("module"),
         "title": action.get("title"),
@@ -143,17 +177,20 @@ async def _execute_invoice_draft(db, business_id: str, actor_id: str, action: Di
     if not job:
         return {"executed": False, "message": "Completed job not found for invoice draft.", "target": job_id}
 
-    existing = None
-    try:
-        existing = await db.invoices.find_one(_business_query(business_id, {"source_job_id": str(job.get("id") or job.get("_id") or job_id), "status": "draft"}))
-    except Exception:
-        existing = None
+    existing = await db.invoices.find_one({
+        "business_id": str(business_id),
+        "$or": [
+            {"source_job_id": str(job.get("id") or job.get("_id") or job_id)},
+            {"job_id": str(job.get("id") or job.get("_id") or job_id)},
+            {"linked_job_id": str(job.get("id") or job.get("_id") or job_id)},
+        ],
+    })
     if existing:
         return {"executed": True, "message": "Invoice draft already exists.", "invoice": serialise_record(existing)}
 
     customer_name = _safe_text(job.get("customer_name") or job.get("client_name") or payload.get("customer_name"), "Customer")
     customer_email = _safe_text(job.get("customer_email") or job.get("client_email"))
-    subtotal = float(job.get("price") or job.get("subtotal") or job.get("job_price") or 0)
+    subtotal = float(job.get("price") or job.get("subtotal") or job.get("job_price") or job.get("fixed_price") or 0)
     hourly_rate = float(job.get("hourly_rate") or 0)
     hours_worked = float(job.get("hours_worked") or job.get("total_hours") or 0)
     if subtotal <= 0 and hourly_rate > 0 and hours_worked > 0:
@@ -167,6 +204,7 @@ async def _execute_invoice_draft(db, business_id: str, actor_id: str, action: Di
         "source": "ai_operator",
         "source_job_id": str(job.get("id") or job.get("_id") or job_id),
         "job_id": str(job.get("id") or job.get("_id") or job_id),
+        "linked_job_id": str(job.get("id") or job.get("_id") or job_id),
         "customer_name": customer_name,
         "customer_email": customer_email,
         "client_id": job.get("client_id") or job.get("customer_id") or "",
@@ -242,12 +280,6 @@ def create_ai_operator_router(db, get_current_user, get_user_business_id):
         actor_id = str(current_user.get("id") or current_user.get("_id") or current_user.get("email") or "")
         return str(business_id), actor_id
 
-    async def find_action_or_404(business_id: str, action_id: str):
-        action = await db.ai_operator_actions.find_one({"business_id": str(business_id), "id": action_id})
-        if not action:
-            raise HTTPException(status_code=404, detail="AI action not found")
-        return action
-
     @router.get("/board")
     async def ai_operator_board(current_user: dict = Depends(get_current_user)):
         business_id, _actor_id = await business_context(current_user)
@@ -291,34 +323,46 @@ def create_ai_operator_router(db, get_current_user, get_user_business_id):
     @router.post("/actions/{action_id}/update")
     async def update_action(action_id: str, request: AiActionUpdateRequest, current_user: dict = Depends(get_current_user)):
         business_id, actor_id = await business_context(current_user)
-        await find_action_or_404(business_id, action_id)
-        incoming = request.action or request.model_dump(exclude_none=True)
+        existing = await _find_action_or_404(db, business_id, action_id)
+        incoming = request.action or _model_dump(request)
         allowed = {k: incoming.get(k) for k in ["title", "summary", "reason", "preview_text", "suggested_payload"] if k in incoming}
-        allowed.update({"status": "edited", "edited_by": actor_id, "edited_at": utc_now_iso(), "updated_at": utc_now_iso()})
-        await db.ai_operator_actions.update_one({"business_id": str(business_id), "id": action_id}, {"$set": allowed})
-        updated = await find_action_or_404(business_id, action_id)
+        allowed.update({
+            "id": existing.get("id") or action_id,
+            "status": "edited",
+            "edited_by": actor_id,
+            "edited_at": utc_now_iso(),
+            "updated_at": utc_now_iso(),
+        })
+        await db.ai_operator_actions.update_one(_action_lookup_query(business_id, action_id), {"$set": allowed})
+        updated = await _find_action_or_404(db, business_id, action_id)
         return {"ok": True, "status": "edited", "action": serialise_record(updated)}
 
     @router.post("/actions/{action_id}/schedule")
     async def schedule_action(action_id: str, request: AiActionScheduleRequest, current_user: dict = Depends(get_current_user)):
         business_id, actor_id = await business_context(current_user)
-        await find_action_or_404(business_id, action_id)
+        existing = await _find_action_or_404(db, business_id, action_id)
         incoming = request.action or {}
         update = {k: incoming.get(k) for k in ["title", "summary", "reason", "preview_text", "suggested_payload"] if k in incoming}
-        update.update({"status": "scheduled", "scheduled_for": request.scheduled_for, "scheduled_by": actor_id, "scheduled_at": utc_now_iso(), "updated_at": utc_now_iso()})
-        await db.ai_operator_actions.update_one({"business_id": str(business_id), "id": action_id}, {"$set": update})
-        updated = await find_action_or_404(business_id, action_id)
-        await _write_operator_event(db, business_id, actor_id, serialise_record(updated), "AI action scheduled for deploy queue.", {"scheduled_for": request.scheduled_for})
+        update.update({
+            "id": existing.get("id") or action_id,
+            "status": "scheduled",
+            "scheduled_for": request.scheduled_for,
+            "deploy_window_label": request.deploy_window_label or "7:00pm weeknight deploy",
+            "deploy_warning_minutes": request.deploy_warning_minutes or 60,
+            "deploy_warning_sent_at": None,
+            "scheduled_by": actor_id,
+            "scheduled_at": utc_now_iso(),
+            "updated_at": utc_now_iso(),
+        })
+        await db.ai_operator_actions.update_one(_action_lookup_query(business_id, action_id), {"$set": update})
+        updated = await _find_action_or_404(db, business_id, action_id)
+        await _write_operator_event(db, business_id, actor_id, serialise_record(updated), "AI action scheduled for the 7:00pm weeknight deploy queue.", {"scheduled_for": request.scheduled_for})
         return {"ok": True, "status": "scheduled", "action": serialise_record(updated)}
 
     @router.post("/actions/{action_id}/approve")
     async def approve_action(action_id: str, request: AiActionApprovalRequest = None, current_user: dict = Depends(get_current_user)):
         business_id, actor_id = await business_context(current_user)
-        existing = None
-        try:
-            existing = await db.ai_operator_actions.find_one({"business_id": str(business_id), "id": action_id})
-        except Exception:
-            existing = None
+        existing = await _find_action(db, business_id, action_id)
         action = serialise_record(existing) if existing else ((request.action if request else None) or {})
         if request and request.action:
             action.update(request.action)
@@ -327,31 +371,37 @@ def create_ai_operator_router(db, get_current_user, get_user_business_id):
         action["id"] = action.get("id") or action_id
         action["business_id"] = business_id
         execution = await _execute_ai_action(db, business_id, actor_id, action)
-        saved = await mark_ai_action(db, business_id, action["id"], "completed", actor_id)
-        if not saved and not existing:
-            action["status"] = "completed"
-            action["approved_by"] = actor_id
-            action["approved_at"] = utc_now_iso()
-            action["executed_at"] = utc_now_iso()
-            action["execution_result"] = execution
-            try:
-                await db.ai_operator_actions.insert_one(action)
-            except Exception:
-                pass
-            saved = action
+        final_update = {
+            "id": action["id"],
+            "status": "completed",
+            "approved_by": actor_id,
+            "approved_at": utc_now_iso(),
+            "executed_at": utc_now_iso(),
+            "execution_result": execution,
+            "updated_at": utc_now_iso(),
+        }
+        if existing:
+            await db.ai_operator_actions.update_one(_action_lookup_query(business_id, action_id), {"$set": final_update})
+            saved = await _find_action_or_404(db, business_id, action_id)
         else:
-            try:
-                await db.ai_operator_actions.update_one({"business_id": str(business_id), "id": action["id"]}, {"$set": {"execution_result": execution, "executed_at": utc_now_iso()}})
-            except Exception:
-                pass
-        return {"ok": True, "status": "completed", "message": execution.get("message") or "AI action approved and executed.", "action": saved or action, "execution": execution}
+            action.update(final_update)
+            await db.ai_operator_actions.insert_one(action)
+            saved = action
+        return {"ok": True, "status": "completed", "message": execution.get("message") or "AI action approved and executed.", "action": serialise_record(saved), "execution": execution}
 
     @router.post("/actions/{action_id}/reject")
     async def reject_action(action_id: str, current_user: dict = Depends(get_current_user)):
         business_id, actor_id = await business_context(current_user)
-        saved = await mark_ai_action(db, business_id, action_id, "rejected", actor_id)
-        if not saved:
-            raise HTTPException(status_code=404, detail="AI action not found")
-        return {"ok": True, "status": "rejected", "action": saved}
+        await _find_action_or_404(db, business_id, action_id)
+        update = {
+            "id": action_id,
+            "status": "rejected",
+            "rejected_by": actor_id,
+            "rejected_at": utc_now_iso(),
+            "updated_at": utc_now_iso(),
+        }
+        await db.ai_operator_actions.update_one(_action_lookup_query(business_id, action_id), {"$set": update})
+        saved = await _find_action_or_404(db, business_id, action_id)
+        return {"ok": True, "status": "rejected", "action": serialise_record(saved)}
 
     return router
