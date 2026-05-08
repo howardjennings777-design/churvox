@@ -6,6 +6,7 @@ import "./styles/aiControlRoomFullscreen.css";
 import "./styles/aiControlRoomFinalFit.css";
 import "./styles/aiControlRoomLogoFix.css";
 import "./styles/aiControlRoomHeaderReference.css";
+import "./styles/aiControlRoomElite.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
