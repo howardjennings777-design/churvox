@@ -28,7 +28,7 @@ export default function SmartHubHardReset() {
   return (
     <main className="pcx-shell">
       <aside className="pcx-sidebar">
-        <div className="pcx-logo"><img src="/churvox-logo.png" alt="Churvox" /></div>
+        <div className="pcx-logo"><img src="/churvox-logo.svg" alt="Churvox" /></div>
         <nav>{nav.map((item, index) => <button key={item} className={index === 0 ? "active" : ""}><i>{["✦", "◇", "♙", "▤", "▥", "⌘", "♙", "⚡", "▧"][index]}</i>{item}</button>)}</nav>
         <div className="pcx-owner"><i /><div><b>Alex Thompson</b><small>Owner • Online</small></div><span>⌄</span></div>
       </aside>
