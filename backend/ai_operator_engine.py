@@ -81,7 +81,7 @@ async def load_business_state(db: Any, business_id: str) -> Dict[str, List[Dict[
     The queries are intentionally defensive because the current Churvox schema has evolved over time.
     Every query is business-scoped.
     """
-    limit = 80
+    limit = 120
     state: Dict[str, List[Dict[str, Any]]] = {
         "jobs": [],
         "clients": [],
@@ -145,27 +145,113 @@ def quote_needs_followup(quote: Dict[str, Any]) -> bool:
     return status in {"sent", "pending", "viewed"} and not quote.get("accepted_at") and not quote.get("declined_at")
 
 
-def choose_worker_for_job(workers: List[Dict[str, Any]], job: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def _record_id(record: Dict[str, Any]) -> str:
+    return safe_text(record.get("id") or record.get("_id") or record.get("user_id") or record.get("email") or record.get("name"))
+
+
+def _normalise_day(value: Any) -> str:
+    text = safe_text(value)
+    return text[:10] if text else ""
+
+
+def _worker_name(worker: Optional[Dict[str, Any]]) -> str:
+    if not worker:
+        return "best available worker"
+    return safe_text(worker.get("name") or worker.get("full_name") or worker.get("display_name") or worker.get("email"), "best available worker")
+
+
+def _worker_skills(worker: Dict[str, Any]) -> str:
+    raw = worker.get("skills") or worker.get("trades") or worker.get("job_types") or worker.get("experience") or []
+    if isinstance(raw, list):
+        return " ".join(str(x).lower() for x in raw)
+    return str(raw or "").lower()
+
+
+def _assigned_worker_id(job: Dict[str, Any]) -> str:
+    return safe_text(job.get("assigned_worker_id") or job.get("worker_id") or job.get("assigned_to"))
+
+
+def _is_active_job(job: Dict[str, Any]) -> bool:
+    status = safe_text(job.get("status") or job.get("job_status") or job.get("workflow_status")).lower()
+    return status not in {"completed", "done", "cancelled", "paid", "archived"}
+
+
+def score_worker_for_job(worker: Dict[str, Any], job: Dict[str, Any], jobs: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Return a practical dispatch score with explainable factors.
+
+    This is deterministic and approval-first. It prepares the best recommendation, but does not assign until the owner approves.
+    """
+    worker_id = _record_id(worker)
+    job_region = safe_text(job.get("region") or job.get("area") or job.get("suburb") or job.get("city")).lower()
+    job_address = safe_text(job.get("address") or job.get("job_address") or job.get("service_address")).lower()
+    job_type = safe_text(job.get("job_type") or job.get("service_type") or job.get("trade") or job.get("title") or job.get("name")).lower()
+    job_day = _normalise_day(job.get("scheduled_date") or job.get("start_time") or job.get("date"))
+
+    worker_region = safe_text(worker.get("region") or worker.get("area") or worker.get("suburb") or worker.get("city")).lower()
+    worker_status = safe_text(worker.get("status") or worker.get("availability") or worker.get("work_status")).lower()
+    skills = _worker_skills(worker)
+
+    assigned_jobs = [j for j in jobs if _assigned_worker_id(j) == worker_id and _is_active_job(j)]
+    same_day_jobs = [j for j in assigned_jobs if job_day and _normalise_day(j.get("scheduled_date") or j.get("start_time") or j.get("date")) == job_day]
+
+    score = 50
+    reasons: List[str] = []
+    warnings: List[str] = []
+
+    if worker_status in {"active", "available", "online", "ready"}:
+        score += 18
+        reasons.append("worker appears active/available")
+    elif worker_status in {"inactive", "offline", "unavailable", "away"}:
+        score -= 35
+        warnings.append("worker may be unavailable")
+
+    if job_region and worker_region and job_region == worker_region:
+        score += 24
+        reasons.append("same region")
+    elif job_region and worker_region and job_region != worker_region:
+        score -= 7
+        warnings.append("different region")
+    elif job_address and worker_region and worker_region in job_address:
+        score += 16
+        reasons.append("address appears near worker area")
+
+    if job_type and skills and any(part in skills for part in job_type.split() if len(part) >= 4):
+        score += 22
+        reasons.append("job type matches worker skills/history")
+
+    if not assigned_jobs:
+        score += 18
+        reasons.append("no active workload found")
+    elif len(assigned_jobs) <= 2:
+        score += 8
+        reasons.append("light workload")
+    else:
+        score -= min(28, len(assigned_jobs) * 5)
+        warnings.append(f"already has {len(assigned_jobs)} active jobs")
+
+    if same_day_jobs:
+        score -= min(35, len(same_day_jobs) * 15)
+        warnings.append(f"{len(same_day_jobs)} same-day job(s) may conflict")
+    else:
+        reasons.append("no same-day clash found")
+
+    score = max(0, min(100, score))
+    return {
+        "worker": worker,
+        "score": score,
+        "reasons": reasons or ["best available option from current data"],
+        "warnings": warnings,
+        "workload": len(assigned_jobs),
+        "same_day_jobs": len(same_day_jobs),
+    }
+
+
+def choose_worker_for_job(workers: List[Dict[str, Any]], job: Dict[str, Any], jobs: Optional[List[Dict[str, Any]]] = None) -> Optional[Dict[str, Any]]:
     if not workers:
         return None
-    job_region = safe_text(job.get("region") or job.get("area") or job.get("suburb")).lower()
-    job_type = safe_text(job.get("job_type") or job.get("service_type") or job.get("trade")).lower()
-
-    def score(worker: Dict[str, Any]) -> int:
-        score_value = 0
-        worker_region = safe_text(worker.get("region") or worker.get("area") or worker.get("suburb")).lower()
-        skills = " ".join(str(x).lower() for x in (worker.get("skills") or worker.get("trades") or []))
-        if job_region and worker_region and job_region == worker_region:
-            score_value += 35
-        if job_type and job_type in skills:
-            score_value += 35
-        if safe_text(worker.get("status")).lower() in {"active", "available", "online"}:
-            score_value += 15
-        if not worker.get("current_job_id"):
-            score_value += 15
-        return score_value
-
-    return sorted(workers, key=score, reverse=True)[0]
+    scored = [score_worker_for_job(worker, job, jobs or []) for worker in workers]
+    scored.sort(key=lambda item: item["score"], reverse=True)
+    return scored[0]
 
 
 async def prepare_ai_actions(db: Any, business_id: str) -> List[Dict[str, Any]]:
@@ -178,22 +264,36 @@ async def prepare_ai_actions(db: Any, business_id: str) -> List[Dict[str, Any]]:
         client = safe_text(job.get("client_name") or job.get("customer_name") or job.get("customer") or job.get("client"), "client")
 
         if job_is_unassigned(job):
-            worker = choose_worker_for_job(state["workers"], job)
-            worker_name = safe_text(worker.get("name") if worker else "", "best available worker")
-            worker_id = safe_text(worker.get("id") if worker else "")
+            match = choose_worker_for_job(state["workers"], job, state["jobs"])
+            worker = match.get("worker") if match else None
+            worker_name = _worker_name(worker)
+            worker_id = _record_id(worker or {})
+            match_score = int(match.get("score", 68)) if match else 68
+            reasons = match.get("reasons", []) if match else []
+            warnings = match.get("warnings", []) if match else []
+            reason_text = "; ".join(reasons + warnings) if (reasons or warnings) else "AI checked availability, workload, region and job context before preparing this assignment."
             actions.append(build_ai_action(
                 business_id=business_id,
                 action_type="assign_worker_to_job",
                 module="dispatch",
                 title=f"Assign {worker_name} to {client}",
                 summary=f"{title} is unassigned. AI found {worker_name} as the strongest match.",
-                reason="AI checked availability, role fit, region/area, existing workload and job context before preparing this assignment.",
+                reason=reason_text,
                 target_record_type="job",
                 target_record_id=str(job_id),
-                suggested_payload={"job_id": str(job.get("id") or job.get("_id") or job_id), "worker_id": worker_id, "worker_name": worker_name},
+                suggested_payload={
+                    "job_id": str(job.get("id") or job.get("_id") or job_id),
+                    "worker_id": worker_id,
+                    "worker_name": worker_name,
+                    "match_score": match_score,
+                    "match_reasons": reasons,
+                    "match_warnings": warnings,
+                    "workload": match.get("workload", 0) if match else 0,
+                    "same_day_jobs": match.get("same_day_jobs", 0) if match else 0,
+                },
                 preview_text=f"Assign {worker_name} to {title} and notify the worker.",
-                confidence=90 if worker else 68,
-                risk_level="low" if worker else "medium",
+                confidence=match_score,
+                risk_level="low" if match_score >= 75 and not warnings else "medium",
                 deep_link=f"/dispatch?job={job_id}",
             ))
 
