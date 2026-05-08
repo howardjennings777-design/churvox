@@ -1,5 +1,4 @@
 import React from "react";
-import { ChurvoxLogo } from "../components/ChurvoxLogo";
 
 const nav = ["AI Control Room", "Jobs", "Clients", "Quotes", "Invoices", "Dispatch", "Team", "Automation", "Settings"];
 const jobs = [
@@ -16,7 +15,10 @@ export default function SmartHubHardReset() {
     <main className="hr-shell">
       <section className="hr-root">
         <aside className="hr-sidebar">
-          <div className="hr-brand"><ChurvoxLogo size="lg" className="hr-logo-img" /></div>
+          <div className="hr-brand hr-brand-real">
+            <img src="/churvox-logo.png" alt="Churvox" className="hr-brand-logo" />
+            <b>CHURVOX</b>
+          </div>
           <nav>{nav.map((n, i) => <button key={n} className={i === 0 ? "on" : ""}><i>{["◎", "◇", "♙", "▤", "▥", "⌘", "♙", "⚡", "⚙"][i]}</i>{n}</button>)}</nav>
           <div className="hr-sms-mini"><div><b>12,540</b><i>▣</i></div><strong>SMS Credits</strong><small>credits remaining</small><em><span /></em><p>78% remaining</p><button>Buy Credits</button></div>
           <div className="hr-owner"><i /> <div><b>Alex Thompson</b><span>Owner</span><small>● Online</small></div><p>⌄</p></div>
