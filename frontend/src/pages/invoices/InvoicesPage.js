@@ -4,13 +4,13 @@ import { useApi } from "@/hooks/useApi";
 import {
   Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, DollarSign, Send,
   Filter, CheckCircle, ReceiptText, Clock3, SlidersHorizontal, FileCheck2,
-  AlertTriangle, Link2, Sparkles, MessageSquare, Receipt
+  AlertTriangle, Link2, Sparkles, MessageSquare, Receipt, Zap, ArrowRight
 } from "lucide-react";
 import { toast } from "sonner";
-import { formatDate, formatCurrency, INVOICE_STATUSES, MYOB_SYNC_STATUSES } from "@/lib/utils";
+import { formatDate, formatCurrency, MYOB_SYNC_STATUSES } from "@/lib/utils";
 import Layout from "@/components/Layout";
 import {
-  PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton, PremiumAIDraftPanel, PremiumEmptyState, PremiumStatusBadge, PremiumBadge
+  PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton, PremiumEmptyState, PremiumStatusBadge, PremiumBadge
 } from "@/components/premium";
 import EntityDetailModal from "@/components/EntityDetailModal";
 
@@ -26,6 +26,8 @@ const getPaymentLabel = (invoice) => {
   if (status === "draft") return "Draft (not sent)";
   return safeText(status, "Pending");
 };
+
+const isCollectable = (invoice) => ["sent", "unpaid", "pending", "overdue"].includes(String(invoice.status || "").toLowerCase());
 
 export default function InvoicesPage() {
   const navigate = useNavigate();
@@ -75,14 +77,16 @@ export default function InvoicesPage() {
   const m = useMemo(() => {
     const arr = safeArray(invoices);
     const now = new Date();
+    const outstandingList = arr.filter(isCollectable);
+    const draftList = arr.filter((i) => String(i.status || "").toLowerCase() === "draft");
     return {
       total: arr.length,
-      draft: arr.filter((i) => String(i.status || "").toLowerCase() === "draft").length,
+      draft: draftList.length,
       sentUnpaid: arr.filter((i) => ["sent", "unpaid", "pending"].includes(String(i.status || "").toLowerCase())).length,
       paid: arr.filter((i) => String(i.status || "").toLowerCase() === "paid").length,
       overdue: arr.filter((i) => String(i.status || "").toLowerCase() === "overdue").length,
-      outstanding: arr.filter((i) => ["sent", "unpaid", "pending", "overdue"].includes(String(i.status || "").toLowerCase()))
-        .reduce((s, i) => s + safeNumber(i.total), 0),
+      outstanding: outstandingList.reduce((s, i) => s + safeNumber(i.total), 0),
+      draftValue: draftList.reduce((s, i) => s + safeNumber(i.total), 0),
       paidThisMonth: arr.filter((i) => {
         if (String(i.status || "").toLowerCase() !== "paid") return false;
         const d = new Date(i.paid_at || i.updated_at || i.created_at || 0);
@@ -92,8 +96,18 @@ export default function InvoicesPage() {
         const s = String(i.myob_sync_status || "not_synced").toLowerCase();
         return ["failed", "error", "sync_error"].includes(s) || Boolean(i.myob_error);
       }).length,
+      collectableCount: outstandingList.length,
     };
   }, [invoices]);
+
+  const priorityInvoices = useMemo(() => {
+    return safeArray(invoices)
+      .filter((i) => isCollectable(i) || String(i.status || "").toLowerCase() === "draft")
+      .sort((a, b) => safeNumber(b.total) - safeNumber(a.total))
+      .slice(0, 3);
+  }, [invoices]);
+
+  const collectionHealth = m.collectableCount === 0 ? "Clear" : m.overdue > 0 ? "Needs chase" : "Ready to collect";
 
   const filtered = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
@@ -116,6 +130,7 @@ export default function InvoicesPage() {
         return new Date(b.created_at || 0) - new Date(a.created_at || 0);
       });
   }, [invoices, searchTerm, statusFilter, sortBy]);
+
   const mode = accounting?.invoice_mode || "churvox_only";
   const myobConnected = Boolean(accounting?.myob_connected);
 
@@ -124,9 +139,9 @@ export default function InvoicesPage() {
       <PremiumPage>
         <PremiumHero
           icon={<Receipt className="h-7 w-7" />}
-          eyebrow={<><Receipt className="h-3 w-3" /> Cashflow</>}
-          title="Invoices"
-          subtitle="Premium invoice documents with public Pay Now links, MYOB sync and AI-drafted payment reminders."
+          eyebrow={<><Receipt className="h-3 w-3" /> Cashflow control</>}
+          title="Invoice Command Centre"
+          subtitle="Create, chase, sync and clear invoices from one polished money workspace. AI keeps the owner focused on what gets cash in fastest."
           actions={
             <>
               {mode === "myob_external" ? (
@@ -134,53 +149,61 @@ export default function InvoicesPage() {
               ) : (
                 <PremiumButton onClick={() => navigate("/invoices/new")} iconLeft={<Plus className="h-4 w-4" />} dataTestId="add-invoice-button">New invoice</PremiumButton>
               )}
-              <PremiumButton variant="secondary" onClick={() => setStatusFilter("overdue")} iconLeft={<AlertTriangle className="h-4 w-4" />}>View overdue</PremiumButton>
+              <PremiumButton variant="secondary" onClick={() => { setStatusFilter("overdue"); setSortBy("overdue_first"); }} iconLeft={<AlertTriangle className="h-4 w-4" />}>Chase overdue</PremiumButton>
             </>
           }
         />
 
-        <div className="px-grid px-grid--4">
+        <section className="invoice-command-strip">
+          <div className="invoice-command-main">
+            <span><Sparkles className="h-4 w-4" /> AI money operator</span>
+            <h2>{collectionHealth}</h2>
+            <p>{m.collectableCount ? `${m.collectableCount} invoices can be chased or cleared. ${formatCurrency(m.outstanding)} is waiting.` : "No unpaid invoices need chasing right now."}</p>
+          </div>
+          <div className="invoice-command-actions">
+            <button onClick={() => { setStatusFilter("all"); setSortBy("highest"); }}><DollarSign className="h-4 w-4" /> Prioritise money</button>
+            <button onClick={() => setStatusFilter("draft")}><ReceiptText className="h-4 w-4" /> Review drafts</button>
+            <button onClick={() => navigate("/integrations")}><Zap className="h-4 w-4" /> MYOB status</button>
+          </div>
+          <div className="invoice-priority-stack">
+            <b>Top money moves</b>
+            {priorityInvoices.length ? priorityInvoices.map((invoice) => (
+              <button key={invoice.id} onClick={() => setActiveInvoice(invoice)}>
+                <span>{safeText(invoice.customer_name, "Unknown client")}</span>
+                <strong>{formatCurrency(invoice.total)}</strong>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            )) : <small>No priority invoices found.</small>}
+          </div>
+        </section>
+
+        <div className="px-grid px-grid--4 invoice-stat-grid">
           <PremiumStatCard label="Total" value={m.total} icon={<ReceiptText className="h-4 w-4" />} onClick={() => setStatusFilter("all")} />
           <PremiumStatCard label="Draft" value={m.draft} icon={<Clock3 className="h-4 w-4" />} tone="amber" onClick={() => setStatusFilter("draft")} />
           <PremiumStatCard label="Sent / unpaid" value={m.sentUnpaid} icon={<Send className="h-4 w-4" />} tone="sky" onClick={() => setStatusFilter("sent")} />
           <PremiumStatCard label="Paid" value={m.paid} icon={<FileCheck2 className="h-4 w-4" />} tone="teal" onClick={() => setStatusFilter("paid")} />
           <PremiumStatCard label="Overdue" value={m.overdue} icon={<AlertTriangle className="h-4 w-4" />} tone="red" onClick={() => setStatusFilter("overdue")} />
           <PremiumStatCard label="Outstanding" value={formatCurrency(m.outstanding)} icon={<DollarSign className="h-4 w-4" />} />
-          <PremiumStatCard label="Paid this month" value={formatCurrency(m.paidThisMonth)} icon={<CheckCircle className="h-4 w-4" />} tone="teal" />
+          <PremiumStatCard label="Draft value" value={formatCurrency(m.draftValue)} icon={<ReceiptText className="h-4 w-4" />} tone="amber" />
           <PremiumStatCard label="MYOB issues" value={m.myobIssues} icon={<AlertTriangle className="h-4 w-4" />} tone={m.myobIssues ? "red" : "blue"} onClick={() => navigate("/integrations")} />
         </div>
 
         <PremiumCard noBody>
-          <div className="px-card__body grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="px-card__body grid grid-cols-1 md:grid-cols-3 gap-3 invoice-filter-bar">
             <div className="relative md:col-span-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7d8ba3]" />
-              <input
-                placeholder="Search by number, client, job, status, amount…"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="px-input pl-10"
-                data-testid="invoice-search-input"
-              />
+              <input placeholder="Search invoice, client, job, status, amount…" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="px-input pl-10" data-testid="invoice-search-input" />
             </div>
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7d8ba3] pointer-events-none" />
               <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-select pl-9" data-testid="invoice-status-filter">
-                <option value="all">All status</option>
-                <option value="draft">Draft</option>
-                <option value="sent">Sent</option>
-                <option value="unpaid">Unpaid</option>
-                <option value="pending">Pending</option>
-                <option value="paid">Paid</option>
-                <option value="overdue">Overdue</option>
+                <option value="all">All status</option><option value="draft">Draft</option><option value="sent">Sent</option><option value="unpaid">Unpaid</option><option value="pending">Pending</option><option value="paid">Paid</option><option value="overdue">Overdue</option>
               </select>
             </div>
             <div className="relative">
               <SlidersHorizontal className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#7d8ba3] pointer-events-none" />
               <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="px-select pl-9">
-                <option value="newest">Newest first</option>
-                <option value="oldest">Oldest first</option>
-                <option value="highest">Highest amount</option>
-                <option value="overdue_first">Overdue first</option>
+                <option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="highest">Highest amount</option><option value="overdue_first">Overdue first</option>
               </select>
             </div>
           </div>
@@ -193,16 +216,14 @@ export default function InvoicesPage() {
             icon={<ReceiptText className="h-6 w-6" />}
             title="No invoices match these filters"
             subtitle="Job completed → Draft invoice → Send → Paid. Create your first invoice to start the cycle."
-            action={<div className="flex gap-2 justify-center flex-wrap">
-              <PremiumButton onClick={() => navigate("/invoices/new")} iconLeft={<Plus className="h-4 w-4" />} dataTestId="add-first-invoice-button">New invoice</PremiumButton>
-              <PremiumButton variant="secondary" onClick={() => navigate("/jobs")}>View jobs</PremiumButton>
-            </div>}
+            action={<div className="flex gap-2 justify-center flex-wrap"><PremiumButton onClick={() => navigate("/invoices/new")} iconLeft={<Plus className="h-4 w-4" />} dataTestId="add-first-invoice-button">New invoice</PremiumButton><PremiumButton variant="secondary" onClick={() => navigate("/jobs")}>View jobs</PremiumButton></div>}
           />
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 invoice-record-list">
             {filtered.map((invoice) => {
               const jobTitle = invoice.job_title || invoice.job_name || invoice.job_description;
               const paymentLink = invoice.public_invoice_url || invoice.public_url || invoice.payment_link || invoice.stripe_payment_link;
+              const status = String(invoice.status || "draft").toLowerCase();
               const myobBadge = (() => {
                 if (mode !== "myob_sync" && mode !== "myob_external") return null;
                 const syncKey = mode === "myob_external" ? "external" : String(invoice.myob_sync_status || "not_synced");
@@ -211,69 +232,36 @@ export default function InvoicesPage() {
               })();
 
               return (
-                <div key={invoice.id} className="px-card px-card--hover" data-testid={`invoice-card-${invoice.id}`}>
+                <div key={invoice.id} className={`px-card px-card--hover invoice-row invoice-row--${status}`} data-testid={`invoice-card-${invoice.id}`}>
                   <div className="px-card__body">
-                    <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
-                      <button type="button" onClick={() => setActiveInvoice(invoice)} className="flex-1 min-w-0 group text-left">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="text-[15.5px] font-bold text-[#0d1b34] group-hover:text-[#1d4ed8] transition" data-testid={`invoice-number-${invoice.id}`}>
-                            {safeText(invoice.invoice_number, "Draft invoice")}
-                          </span>
+                    <div className="invoice-row-layout">
+                      <button type="button" onClick={() => setActiveInvoice(invoice)} className="invoice-row-main group text-left">
+                        <div className="invoice-row-topline">
+                          <span className="invoice-number" data-testid={`invoice-number-${invoice.id}`}>{safeText(invoice.invoice_number, "Draft invoice")}</span>
                           <PremiumStatusBadge status={invoice.status} />
                           <PremiumBadge tone="slate">{getPaymentLabel(invoice)}</PremiumBadge>
                           {myobBadge}
-                          {invoice.myob_invoice_number && <span className="text-[11px] text-[#7d8ba3]">#{invoice.myob_invoice_number}</span>}
                         </div>
-                        <p className="text-[13.5px] text-[#1a2c4d] font-semibold">{safeText(invoice.customer_name, "Unknown client")}</p>
-                        {jobTitle && <p className="text-[12.5px] text-[#5b6c87] line-clamp-2 mt-1">{safeText(jobTitle)}</p>}
-                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-[#7d8ba3]">
-                          <span>Created {formatDate(invoice.created_at) || "—"}</span>
-                          <span>Due {formatDate(invoice.due_date) || "—"}</span>
-                          {invoice.myob_last_synced_at && <span>MYOB sync {formatDate(invoice.myob_last_synced_at)}</span>}
-                        </div>
-                        {invoice.myob_error && (mode === "myob_sync" || mode === "myob_external") && <p className="text-[11.5px] text-[#b91c1c] mt-2">{safeText(invoice.myob_error)}</p>}
+                        <p className="invoice-client">{safeText(invoice.customer_name, "Unknown client")}</p>
+                        {jobTitle && <p className="invoice-description">{safeText(jobTitle)}</p>}
+                        <div className="invoice-meta"><span>Created {formatDate(invoice.created_at) || "—"}</span><span>Due {formatDate(invoice.due_date) || "—"}</span>{invoice.myob_invoice_number && <span>MYOB #{invoice.myob_invoice_number}</span>}</div>
+                        {invoice.myob_error && (mode === "myob_sync" || mode === "myob_external") && <p className="invoice-error">{safeText(invoice.myob_error)}</p>}
                       </button>
 
-                      <div className="flex flex-col sm:items-end gap-2">
-                        <span className="text-[24px] font-heading font-bold text-[#0d1b34]">{formatCurrency(invoice.total)}</span>
-                        <div className="flex flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                          <PremiumButton size="sm" variant="secondary" onClick={() => setActiveInvoice(invoice)}>Open</PremiumButton>
-                          {invoice.status === "draft" && (
-                            <PremiumButton size="sm" onClick={() => handleSendInvoice(invoice.id)} iconLeft={<Send className="h-3.5 w-3.5" />} dataTestId={`send-invoice-${invoice.id}`}>Send</PremiumButton>
-                          )}
-                          {invoice.status === "sent" && (
-                            <PremiumButton size="sm" variant="success" onClick={() => handleMarkPaid(invoice.id)} iconLeft={<CheckCircle className="h-3.5 w-3.5" />} dataTestId={`mark-paid-${invoice.id}`}>Mark paid</PremiumButton>
-                          )}
-                          {paymentLink && (
-                            <a href={paymentLink} target="_blank" rel="noopener noreferrer" className="px-btn px-btn--secondary px-btn--sm">
-                              <Link2 className="h-3.5 w-3.5" /> Pay link
-                            </a>
-                          )}
-                          {(mode === "myob_sync" || mode === "myob_external") && (
-                            <PremiumButton size="sm" variant="secondary" disabled={!myobConnected}
-                              onClick={() => handleSyncMyob(invoice.id, String(invoice.myob_sync_status) === "failed")}>
-                              {myobConnected ? (String(invoice.myob_sync_status) === "failed" ? "Retry sync" : "Sync to MYOB") : "Setup MYOB"}
-                            </PremiumButton>
-                          )}
-                          <div className="relative">
-                            <button className="px-btn px-btn--ghost px-btn--sm" onClick={() => setOpenMenu(openMenu === invoice.id ? null : invoice.id)} data-testid={`invoice-menu-${invoice.id}`}>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </button>
-                            {openMenu === invoice.id && (
-                              <>
-                                <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} />
-                                <div className="absolute right-0 mt-1 w-44 bg-white border border-[#d8e3f3] rounded-xl shadow-lg z-20 overflow-hidden">
-                                  <button className="block w-full text-left px-3 py-2 text-[13px] text-[#0d1b34] hover:bg-[#eff4ff]" onClick={() => { setOpenMenu(null); setActiveInvoice(invoice); }}>View details</button>
-                                  <Link to={`/invoices/${invoice.id}/edit`} className="block px-3 py-2 text-[13px] text-[#0d1b34] hover:bg-[#eff4ff]" data-testid={`edit-invoice-${invoice.id}`}>
-                                    <Pencil className="h-3.5 w-3.5 inline mr-1.5" />Edit
-                                  </Link>
-                                  <button onClick={() => { setOpenMenu(null); setDeleteId(invoice.id); }} className="block w-full text-left px-3 py-2 text-[13px] text-[#dc2626] hover:bg-[#fff5f5]" data-testid={`delete-invoice-${invoice.id}`}>
-                                    <Trash2 className="h-3.5 w-3.5 inline mr-1.5" />Delete
-                                  </button>
-                                </div>
-                              </>
-                            )}
-                          </div>
+                      <div className="invoice-row-money">
+                        <span>{formatCurrency(invoice.total)}</span>
+                        <small>{getPaymentLabel(invoice)}</small>
+                      </div>
+
+                      <div className="invoice-row-actions" onClick={(e) => e.stopPropagation()}>
+                        <PremiumButton size="sm" variant="secondary" onClick={() => setActiveInvoice(invoice)}>Open</PremiumButton>
+                        {invoice.status === "draft" && <PremiumButton size="sm" onClick={() => handleSendInvoice(invoice.id)} iconLeft={<Send className="h-3.5 w-3.5" />} dataTestId={`send-invoice-${invoice.id}`}>Send</PremiumButton>}
+                        {invoice.status === "sent" && <PremiumButton size="sm" variant="success" onClick={() => handleMarkPaid(invoice.id)} iconLeft={<CheckCircle className="h-3.5 w-3.5" />} dataTestId={`mark-paid-${invoice.id}`}>Mark paid</PremiumButton>}
+                        {paymentLink && <a href={paymentLink} target="_blank" rel="noopener noreferrer" className="px-btn px-btn--secondary px-btn--sm"><Link2 className="h-3.5 w-3.5" /> Pay link</a>}
+                        {(mode === "myob_sync" || mode === "myob_external") && <PremiumButton size="sm" variant="secondary" disabled={!myobConnected} onClick={() => handleSyncMyob(invoice.id, String(invoice.myob_sync_status) === "failed")}>{myobConnected ? (String(invoice.myob_sync_status) === "failed" ? "Retry sync" : "Sync MYOB") : "Setup MYOB"}</PremiumButton>}
+                        <div className="relative">
+                          <button className="px-btn px-btn--ghost px-btn--sm" onClick={() => setOpenMenu(openMenu === invoice.id ? null : invoice.id)} data-testid={`invoice-menu-${invoice.id}`}><MoreHorizontal className="h-4 w-4" /></button>
+                          {openMenu === invoice.id && <><div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} /><div className="absolute right-0 mt-1 w-44 bg-white border border-[#d8e3f3] rounded-xl shadow-lg z-20 overflow-hidden"><button className="block w-full text-left px-3 py-2 text-[13px] text-[#0d1b34] hover:bg-[#eff4ff]" onClick={() => { setOpenMenu(null); setActiveInvoice(invoice); }}>View details</button><Link to={`/invoices/${invoice.id}/edit`} className="block px-3 py-2 text-[13px] text-[#0d1b34] hover:bg-[#eff4ff]" data-testid={`edit-invoice-${invoice.id}`}><Pencil className="h-3.5 w-3.5 inline mr-1.5" />Edit</Link><button onClick={() => { setOpenMenu(null); setDeleteId(invoice.id); }} className="block w-full text-left px-3 py-2 text-[13px] text-[#dc2626] hover:bg-[#fff5f5]" data-testid={`delete-invoice-${invoice.id}`}><Trash2 className="h-3.5 w-3.5 inline mr-1.5" />Delete</button></div></>}
                         </div>
                       </div>
                     </div>
@@ -290,14 +278,11 @@ export default function InvoicesPage() {
             <div className="relative z-10 w-full max-w-md mx-4 rounded-2xl border border-[#d8e3f3] bg-white p-6 shadow-2xl">
               <h2 className="font-heading text-lg font-bold text-[#0d1b34]">Delete invoice</h2>
               <p className="mt-2 text-[13.5px] text-[#5b6c87]">Are you sure you want to delete this invoice? This cannot be undone.</p>
-              <div className="mt-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-                <PremiumButton variant="secondary" onClick={() => setDeleteId(null)}>Cancel</PremiumButton>
-                <PremiumButton variant="danger" onClick={handleDelete} disabled={loading} dataTestId="confirm-delete-invoice">{loading ? "Deleting…" : "Delete"}</PremiumButton>
-              </div>
+              <div className="mt-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-2"><PremiumButton variant="secondary" onClick={() => setDeleteId(null)}>Cancel</PremiumButton><PremiumButton variant="danger" onClick={handleDelete} disabled={loading} dataTestId="confirm-delete-invoice">{loading ? "Deleting…" : "Delete"}</PremiumButton></div>
             </div>
           </div>
         )}
-      <EntityDetailModal open={Boolean(activeInvoice)} onClose={() => setActiveInvoice(null)} title={activeInvoice ? `Invoice details · ${activeInvoice.invoice_number || activeInvoice.id}` : "Invoice details"} entityType="invoice" item={activeInvoice} />
+        <EntityDetailModal open={Boolean(activeInvoice)} onClose={() => setActiveInvoice(null)} title={activeInvoice ? `Invoice details · ${activeInvoice.invoice_number || activeInvoice.id}` : "Invoice details"} entityType="invoice" item={activeInvoice} />
       </PremiumPage>
     </Layout>
   );
