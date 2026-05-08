@@ -33,6 +33,7 @@ import "./styles/smartHubOwnerDashboard.css";
 import "./styles/jobsOwnerWorkspace.css";
 import "./styles/clientsOwnerWorkspace.css";
 import "./styles/clientsFinalEdgeFix.css";
+import "./styles/proofToPaidWorkspace.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
