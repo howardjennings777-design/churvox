@@ -36,6 +36,7 @@ import "./styles/clientsOwnerWorkspace.css";
 import "./styles/clientsFinalEdgeFix.css";
 import "./styles/proofToPaidWorkspace.css";
 import "./styles/teamOwnerWorkspace.css";
+import "./styles/payrollOwnerWorkspace.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
