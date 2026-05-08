@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useApi } from "../hooks/useApi";
 import { ChurvoxLogo } from "./ChurvoxLogo";
 import { hasPlanAccess, normalizePlan } from "../utils/planRules";
 import { InstallPrompt } from "./InstallPrompt";
@@ -12,13 +13,53 @@ import {
 } from "lucide-react";
 import NotificationsBell from "./NotificationsBell";
 
+const safeArray = (value) => (Array.isArray(value) ? value : []);
+const pendingAiActionCount = (data) => {
+  const actions = safeArray(data?.actions);
+  if (actions.length) {
+    return actions.filter((action) => ["pending", "edited", "needs_review"].includes(String(action?.status || "pending").toLowerCase())).length;
+  }
+  const count = Number(data?.count ?? data?.pending_count ?? 0);
+  return Number.isFinite(count) ? count : 0;
+};
+
 export default function Layout({ children, smartHubMode = false }) {
   const { user, logout, normalizedRole, isOwnerUser } = useAuth();
+  const { get } = useApi();
   const location = useLocation();
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [aiQueueCount, setAiQueueCount] = useState(0);
   const safePlan = normalizePlan(user?.plan);
   const role = normalizedRole || "owner";
+
+  const isSmartHubRoute = location.pathname === "/dashboard" || location.pathname.startsWith("/dashboard/");
+  const embedded = (() => {
+    if (typeof window === "undefined") return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get("embedded") === "1" || window.self !== window.top;
+  })();
+  const isSmartHubLayout = smartHubMode || isSmartHubRoute;
+  const hideChrome = isSmartHubLayout || embedded;
+  const canSeeAiQueue = !hideChrome && canAccess(role, "ai_operator");
+
+  const loadAiQueue = useCallback(async () => {
+    if (!canSeeAiQueue) {
+      setAiQueueCount(0);
+      return;
+    }
+    const res = await get("/ai/operator/queue");
+    if (res?.success || res?.ok) {
+      setAiQueueCount(pendingAiActionCount(res.data || res));
+    }
+  }, [canSeeAiQueue, get]);
+
+  useEffect(() => {
+    loadAiQueue();
+    if (!canSeeAiQueue) return undefined;
+    const timer = setInterval(loadAiQueue, 60000);
+    return () => clearInterval(timer);
+  }, [canSeeAiQueue, loadAiQueue, location.pathname]);
 
   const handleLogout = async () => {
     await logout();
@@ -35,7 +76,7 @@ export default function Layout({ children, smartHubMode = false }) {
         canAccess(role, "calendar") && { path: "/dispatch", label: "Dispatch", icon: Calendar },
         canAccess(role, "clients") && { path: "/clients", label: "Clients", icon: Users },
         canAccess(role, "ai_operator") && { path: "/ai-operator", label: "AI Operator", icon: Sparkles },
-        canAccess(role, "ai_operator") && { path: "/ai-operator/approvals", label: "Approval Queue", icon: Sparkles },
+        canAccess(role, "ai_operator") && { path: "/ai-operator/approvals", label: "Approval Queue", icon: Sparkles, badge: aiQueueCount },
         canAccess(role, "proof_to_paid") && { path: "/proof-to-paid", label: "Job Proofs", icon: Sparkles },
       ].filter(Boolean),
     },
@@ -81,14 +122,8 @@ export default function Layout({ children, smartHubMode = false }) {
     .join("")
     .toUpperCase();
 
-  const isSmartHubRoute = location.pathname === "/dashboard" || location.pathname.startsWith("/dashboard/");
-  const embedded = (() => {
-    if (typeof window === "undefined") return false;
-    const params = new URLSearchParams(window.location.search);
-    return params.get("embedded") === "1" || window.self !== window.top;
-  })();
-  const isSmartHubLayout = smartHubMode || isSmartHubRoute;
-  const hideChrome = isSmartHubLayout || embedded;
+  const openAiQueue = () => navigate("/ai-operator/approvals");
+
   return (
     <div className={`px-app tap-safe-root cx-app-shell ${embedded ? "px-app--embedded" : ""}`} data-testid="layout-container">
       {/* Desktop Sidebar — Premium light */}
@@ -98,6 +133,14 @@ export default function Layout({ children, smartHubMode = false }) {
           <NotificationsBell />
         </div>
 
+        {canSeeAiQueue && aiQueueCount > 0 && (
+          <button type="button" onClick={openAiQueue} className="ai-global-queue-card" data-testid="global-ai-approval-queue">
+            <span><Sparkles className="h-4 w-4" /> AI queue</span>
+            <strong>{aiQueueCount} waiting for review</strong>
+            <small>Tap to open approval queue</small>
+          </button>
+        )}
+
         <nav className="px-sidebar__nav">
           {groups.map((g) => (
             <div key={g.label}>
@@ -105,6 +148,7 @@ export default function Layout({ children, smartHubMode = false }) {
               {g.items.map((item) => {
                 const active = isActive(item.path);
                 const Icon = item.icon;
+                const badge = Number(item.badge || 0);
                 return (
                   <Link
                     key={item.path}
@@ -114,6 +158,7 @@ export default function Layout({ children, smartHubMode = false }) {
                   >
                     <Icon className="px-nav-item__icon h-[18px] w-[18px]" />
                     <span>{item.label}</span>
+                    {badge > 0 && <em className="ai-global-queue-badge">{badge}</em>}
                   </Link>
                 );
               })}
@@ -142,6 +187,11 @@ export default function Layout({ children, smartHubMode = false }) {
         {!hideChrome && <header className="md:hidden px-mobile-header" data-testid="mobile-header">
           <ChurvoxLogo size="sm" dataTestId="mobile-logo" />
           <div className="flex items-center gap-2">
+            {canSeeAiQueue && aiQueueCount > 0 && (
+              <button type="button" onClick={openAiQueue} className="ai-mobile-queue-pill" data-testid="mobile-ai-approval-queue">
+                <Sparkles className="h-3.5 w-3.5" /> {aiQueueCount}
+              </button>
+            )}
             <NotificationsBell />
             <span className="text-xs font-semibold text-[#0d1b34]">{(user?.name || "").split(" ")[0]}</span>
           </div>
@@ -155,6 +205,7 @@ export default function Layout({ children, smartHubMode = false }) {
             {mainNav.map((item) => {
               const active = isActive(item.path);
               const Icon = item.icon;
+              const badge = Number(item.badge || 0);
               return (
                 <Link
                   key={item.path}
@@ -162,7 +213,10 @@ export default function Layout({ children, smartHubMode = false }) {
                   className={`px-mobile-tab ${active ? "is-active" : ""}`}
                   data-testid={`mobile-nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
                 >
-                  <Icon className="h-5 w-5" />
+                  <span className="relative inline-flex">
+                    <Icon className="h-5 w-5" />
+                    {badge > 0 && <em className="ai-mobile-tab-dot">{badge}</em>}
+                  </span>
                   <span>{item.label}</span>
                 </Link>
               );
@@ -186,6 +240,7 @@ export default function Layout({ children, smartHubMode = false }) {
               <div className="p-3 space-y-1">
                 {moreNav.map((item) => {
                   const Icon = item.icon;
+                  const badge = Number(item.badge || 0);
                   return (
                     <Link
                       key={item.path}
@@ -198,7 +253,8 @@ export default function Layout({ children, smartHubMode = false }) {
                       }`}
                     >
                       <Icon className="h-5 w-5" />
-                      {item.label}
+                      <span className="flex-1">{item.label}</span>
+                      {badge > 0 && <em className="ai-global-queue-badge">{badge}</em>}
                     </Link>
                   );
                 })}
