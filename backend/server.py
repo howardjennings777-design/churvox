@@ -10457,6 +10457,93 @@ async def automation_test_rule(rule_id: str, current_user: dict = Depends(get_cu
 from command_hub_routes import register_command_hub_routes
 register_command_hub_routes(api_router, db, get_current_user, get_user_business_id)
 
+@api_router.post("/ai/operator/actions/{action_id}/schedule")
+async def schedule_ai_operator_action(action_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    """
+    AI Operator schedule endpoint.
+
+    This is intentionally tolerant because the frontend may call schedule with:
+    - no body
+    - an empty body
+    - scheduled_for
+    - schedule_for
+    - scheduled_at
+    - action wrapper payload
+
+    The old strict validation caused browser 422 errors.
+    """
+    business_id = await get_user_business_id(current_user)
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    if not isinstance(payload, dict):
+        payload = {}
+
+    now = datetime.now(timezone.utc)
+
+    raw_scheduled_for = (
+        payload.get("scheduled_for")
+        or payload.get("schedule_for")
+        or payload.get("scheduled_at")
+        or payload.get("when")
+        or payload.get("run_at")
+    )
+
+    scheduled_for = None
+    if raw_scheduled_for:
+        try:
+            if isinstance(raw_scheduled_for, str):
+                scheduled_for = datetime.fromisoformat(raw_scheduled_for.replace("Z", "+00:00"))
+            elif hasattr(raw_scheduled_for, "isoformat"):
+                scheduled_for = raw_scheduled_for
+        except Exception:
+            scheduled_for = None
+
+    if scheduled_for is None:
+        scheduled_for = now + timedelta(minutes=15)
+
+    action_query_ids = [str(action_id)]
+    try:
+        action_query_ids.append(ObjectId(str(action_id)))
+    except Exception:
+        pass
+
+    query = {
+        "$or": [
+            {"_id": {"$in": action_query_ids}},
+            {"id": str(action_id)},
+            {"action_id": str(action_id)},
+        ],
+        "business_id": str(business_id),
+    }
+
+    update = {
+        "status": "scheduled",
+        "scheduled_for": scheduled_for,
+        "scheduled_at": scheduled_for,
+        "updated_at": now,
+        "scheduled_by": str(current_user.get("id") or current_user.get("_id") or ""),
+        "schedule_payload": make_json_safe(payload),
+    }
+
+    result = await db.ai_operator_actions.update_one(query, {"$set": update})
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="AI action not found")
+
+    return {
+        "ok": True,
+        "message": "AI action scheduled.",
+        "action_id": str(action_id),
+        "scheduled_for": scheduled_for.isoformat(),
+        "status": "scheduled",
+    }
+
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
