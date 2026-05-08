@@ -1,86 +1,161 @@
 import React from "react";
 
-const nav = ["Control Room", "Jobs", "Clients", "Quotes", "Invoices", "Dispatch", "Team", "Automation", "Settings"];
-const controlActions = [
-  ["Run AI Command", "Build today’s plan", "✦"],
-  ["Approve Queue", "8 waiting", "✓"],
-  ["Dispatch Crew", "6 need action", "⌁"],
-  ["Cash Chase", "$6.8k waiting", "$"],
+const nav = ["AI Operator", "Jobs", "Clients", "Quotes", "Invoices", "Dispatch", "Team", "Automation", "Reports"];
+
+const approvalActions = [
+  {
+    title: "Assign Matt to Wilson Plumbing",
+    reason: "Closest available worker, free from 10:30am, plumbing experience, no schedule conflict.",
+    meta: "Job J-1047 • Fremantle",
+    action: "Approve assignment",
+    tone: "blue",
+  },
+  {
+    title: "Create invoice draft for Davis Property",
+    reason: "Job completed, worker photos uploaded, time logged, pricing source found.",
+    meta: "$420 estimated • Ready to review",
+    action: "Create draft",
+    tone: "green",
+  },
+  {
+    title: "Send quote follow-up",
+    reason: "4 quotes over $5,000 have had no response for 48 hours.",
+    meta: "AI message prepared",
+    action: "Review message",
+    tone: "orange",
+  },
 ];
-const commandQueue = [
-  ["Assign crew to J-1047", "Wilson Plumbing needs a technician. Best match: Matt W. — free today 10:30am.", "Approve"],
-  ["Send quote follow-up", "4 high-value quotes are past 48 hours with no reply.", "Review"],
-  ["Create invoice draft", "Job J-1031 is complete with photos and time logged.", "Create"],
-];
-const jobs = [
-  ["J-1056", "Smith Residence", "In Progress", "Install air con unit", "Today 2:30pm"],
-  ["J-1047", "Wilson Plumbing", "Needs Crew", "Assign technician", "Today 11:00am"],
-  ["J-1042", "Taylor Electrical", "Scheduled", "Tomorrow 9:00am", "Tomorrow"],
-  ["J-1038", "Brown Renovation", "In Progress", "Plastering stage", "Today 4:00pm"],
-];
+
 const signals = [
-  ["Jobs live", "23", "blue"],
-  ["Need crew", "6", "orange"],
-  ["Approvals", "8", "purple"],
-  ["Money waiting", "$6,820", "green"],
+  ["Jobs need crew", "6", "orange"],
+  ["Money waiting", "$6.8k", "green"],
+  ["Proofs pending", "3", "purple"],
+  ["Owner approvals", "8", "blue"],
+  ["Schedule gaps", "4", "cyan"],
+  ["Overdue invoices", "5", "red"],
 ];
-const work = ["Jobs", "Clients", "Quotes", "Invoices", "Dispatch", "Team", "Automation", "Reports"];
+
+const runSheet = [
+  ["8:30", "Crew check-in", "23 jobs live, 6 need a decision"],
+  ["10:30", "Best dispatch window", "Matt can take Wilson Plumbing"],
+  ["12:00", "Admin sweep", "AI drafts invoices and quote follow-ups"],
+  ["4:30", "End-of-day closeout", "Review photos, proofs, and completion notes"],
+];
+
+const workspaces = ["Jobs", "Clients", "Quotes", "Invoices", "Dispatch", "Team", "Automation", "Reports"];
 
 export default function SmartHubHardReset() {
   return (
-    <main className="crx-shell">
-      <aside className="crx-sidebar">
-        <div className="crx-logo-wrap"><img src="/churvox-logo.png" alt="Churvox" /></div>
-        <nav>{nav.map((n, i) => <button key={n} className={i === 0 ? "active" : ""}><span>{["✦", "◇", "♙", "▤", "▥", "⌘", "♙", "⚡", "⚙"][i]}</span>{n}</button>)}</nav>
-        <div className="crx-owner"><i /><div><b>Alex Thompson</b><small>Owner • Online</small></div><span>⌄</span></div>
+    <main className="opx-shell">
+      <aside className="opx-sidebar">
+        <div className="opx-logo"><img src="/churvox-logo.png" alt="Churvox" /></div>
+        <nav>
+          {nav.map((item, index) => (
+            <button key={item} className={index === 0 ? "active" : ""}>
+              <span>{["✦", "◇", "♙", "▤", "▥", "⌘", "♙", "⚡", "▧"][index]}</span>
+              {item}
+            </button>
+          ))}
+        </nav>
+        <div className="opx-owner">
+          <i />
+          <div><b>Alex Thompson</b><small>Owner • Online</small></div>
+          <span>⌄</span>
+        </div>
       </aside>
 
-      <section className="crx-main">
-        <header className="crx-command">
-          <div className="crx-topline">
-            <span className="crx-pill"><i /> AI Operator online</span>
-            <div className="crx-tools"><button>🔔<b>3</b></button><button>?</button><button>Thompson Trade Services ⌄</button></div>
+      <section className="opx-main">
+        <header className="opx-hero">
+          <div className="opx-hero-top">
+            <span><i /> AI Business Operator online</span>
+            <div><button>🔔<b>3</b></button><button>?</button><button>Thompson Trade Services ⌄</button></div>
           </div>
-          <section className="crx-command-grid">
-            <div className="crx-title">
+
+          <section className="opx-hero-grid">
+            <div className="opx-title">
               <p>Good morning, Alex</p>
-              <h1>Control Room</h1>
-              <span>AI has scanned today’s jobs, crew, invoices and follow-ups. Approve the plan or drill into any signal.</span>
-              <button>Run full AI plan →</button>
+              <h1>Your business is ready to run.</h1>
+              <span>AI found the urgent work, prepared the admin, and queued the actions that need owner approval.</span>
+              <div>
+                <button className="primary">Approve today’s plan →</button>
+                <button className="secondary">Ask AI anything</button>
+              </div>
             </div>
-            <div className="crx-action-deck">
-              <h2>Operator actions</h2>
-              <div>{controlActions.map(([title, copy, icon]) => <button key={title}><i>{icon}</i><b>{title}</b><small>{copy}</small></button>)}</div>
+
+            <div className="opx-operator-card">
+              <p>AI Operator summary</p>
+              <h2>8 actions prepared</h2>
+              <ul>
+                <li><b>3</b> dispatch decisions</li>
+                <li><b>2</b> invoice drafts</li>
+                <li><b>2</b> follow-up messages</li>
+                <li><b>1</b> proof review</li>
+              </ul>
+              <button>Open approval queue</button>
             </div>
-            <div className="crx-live">
-              <h2><i /> Live control centre</h2>
-              {signals.map(([label, value, color]) => <button key={label}><span>{label}</span><b className={color}>{value}</b><em>›</em></button>)}
+
+            <div className="opx-live-card">
+              <p><i /> Live business signals</p>
+              {signals.slice(0, 4).map(([label, value, tone]) => (
+                <button key={label}><span>{label}</span><b className={tone}>{value}</b><em>›</em></button>
+              ))}
             </div>
           </section>
         </header>
 
-        <section className="crx-board">
-          <article className="crx-ai-panel">
-            <div className="crx-section-head"><div><p>AI command queue</p><h2>Ready for approval</h2></div><b>8</b></div>
-            {commandQueue.map(([title, copy, action]) => <div className="crx-command-card" key={title}><i>✦</i><div><b>{title}</b><small>{copy}</small></div><button>{action}</button></div>)}
-            <button className="crx-link">View all recommendations →</button>
+        <section className="opx-health-strip">
+          {signals.map(([label, value, tone]) => (
+            <button key={label}>
+              <span className={tone}>{value}</span>
+              <b>{label}</b>
+              <small>Open detail</small>
+            </button>
+          ))}
+        </section>
+
+        <section className="opx-control-grid">
+          <article className="opx-approval-panel">
+            <div className="opx-section-head"><div><p>Owner approval queue</p><h2>AI prepared this for you</h2></div><b>8</b></div>
+            <div className="opx-approval-list">
+              {approvalActions.map((item) => (
+                <div className={`opx-approval-card ${item.tone}`} key={item.title}>
+                  <i>✦</i>
+                  <div>
+                    <b>{item.title}</b>
+                    <small>{item.reason}</small>
+                    <em>{item.meta}</em>
+                  </div>
+                  <button>{item.action}</button>
+                </div>
+              ))}
+            </div>
           </article>
 
-          <article className="crx-jobs-panel">
-            <div className="crx-section-head"><div><p>Live jobs board</p><h2>Today’s field state</h2></div><button>Open dispatch →</button></div>
-            <div className="crx-stats"><p><b>23</b>In progress</p><p><b>6</b>Need crew</p><p><b>4</b>Tomorrow</p><p><b>8</b>Done today</p></div>
-            <div className="crx-job-list">{jobs.map(([id, client, status, step, eta]) => <button key={id}><span><b>{id}</b><small>{client}</small></span><mark className={status.replace(" ", "-").toLowerCase()}>{status}</mark><span>{step}</span><em>{eta}</em><strong>•••</strong></button>)}</div>
+          <article className="opx-ai-chat">
+            <div className="opx-section-head"><div><p>Ask your business</p><h2>What should AI handle?</h2></div></div>
+            <div className="opx-chat-box">
+              <p>Try asking:</p>
+              <button>Who should I assign to Wilson Plumbing?</button>
+              <button>Which invoices should I chase first?</button>
+              <button>Draft a message to Sarah Smith</button>
+            </div>
+            <div className="opx-input-row"><span>Ask AI to prepare an action...</span><button>Ask AI →</button></div>
           </article>
 
-          <aside className="crx-right-rail">
-            <div className="crx-money"><p>Cash flow</p><h3>$6,820.00</h3><span>8 invoices to chase</span><button>Chase money →</button></div>
-            <div className="crx-proof"><p>Proofs pending</p><h3>3</h3><span>3 submissions waiting review</span><button>Review proofs →</button></div>
-            <div className="crx-sms"><em>HOT</em><p>SMS Credits</p><h3>12,540</h3><span>credits remaining</span><div><b>78%</b><small>remaining</small></div><button>Buy SMS Credits →</button></div>
+          <aside className="opx-right">
+            <div className="opx-money"><p>Money waiting</p><h3>$6,820</h3><span>8 invoices ready to chase</span><button>Prepare reminders →</button></div>
+            <div className="opx-proof"><p>Proofs pending</p><h3>3</h3><span>Worker submissions waiting review</span><button>Review proofs →</button></div>
+            <div className="opx-risk"><p>Risk watch</p><h3>2</h3><span>Jobs may miss today’s window</span><button>View risks →</button></div>
           </aside>
 
-          <article className="crx-workspaces">
-            <div className="crx-section-head"><div><p>Owner workspaces</p><h2>Jump into command tools</h2></div></div>
-            <div>{work.map(w => <button key={w}><i>▦</i><b>{w}</b><small>{w === "Automation" ? "Rules & alerts" : w === "Reports" ? "Business insights" : "Open workspace"}</small></button>)}</div>
+          <article className="opx-run-sheet">
+            <div className="opx-section-head"><div><p>Today’s run sheet</p><h2>What happens next</h2></div><button>Open dispatch board →</button></div>
+            <div>{runSheet.map(([time, title, detail]) => <button key={time}><b>{time}</b><span>{title}</span><small>{detail}</small></button>)}</div>
+          </article>
+
+          <article className="opx-workspaces">
+            <div className="opx-section-head"><div><p>Command tools</p><h2>Owner workspaces</h2></div></div>
+            <div>{workspaces.map((item) => <button key={item}><i>▦</i><b>{item}</b><small>{item === "Automation" ? "Rules & AI triggers" : item === "Reports" ? "Business insight" : "Open workspace"}</small></button>)}</div>
           </article>
         </section>
       </section>
