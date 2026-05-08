@@ -60,18 +60,22 @@ export default function JobsPage() {
     try {
       const [operatorRes, invoiceRes] = await Promise.all([
         post("/ai/operator/prepare-today", {}),
-        post("/invoices/automation/create-drafts", {}),
+        post("/invoices/automation/run", {}),
       ]);
       const operatorData = operatorRes?.data || operatorRes || {};
       const invoiceData = invoiceRes?.data || invoiceRes || {};
+      const preparedCount = operatorData.count || safeArray(operatorData.actions).length || 0;
+
       if (operatorRes?.success || operatorRes?.ok || operatorData?.ok) {
-        toast.success(`${operatorData.count || safeArray(operatorData.actions).length || 0} AI job action(s) prepared for approval`);
+        toast.success(`${preparedCount} AI approval action(s) prepared`);
       } else {
         toast.error(operatorRes?.error || operatorData?.message || "AI job operator could not prepare actions");
       }
+
       if (invoiceRes?.success || invoiceRes?.ok || invoiceData?.ok) {
-        const created = invoiceData.created_count ?? invoiceData.drafts_created ?? 0;
-        if (created > 0) toast.success(`${created} completed job(s) moved to draft invoice review`);
+        toast.success(invoiceData.message || "Invoice automation ran: drafts and reminders prepared");
+      } else if (invoiceRes?.error || invoiceData?.message) {
+        toast.error(invoiceRes?.error || invoiceData?.message || "Invoice automation failed");
       }
       await fetchJobs();
     } finally {
@@ -171,7 +175,7 @@ export default function JobsPage() {
             isEmployer ? (
               <>
                 <PremiumButton onClick={() => navigate("/jobs/new")} iconLeft={<Plus className="h-4 w-4" />}>New job</PremiumButton>
-                <PremiumButton onClick={runAiJobOperator} disabled={aiBusy} iconLeft={aiBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}>Run AI job plan</PremiumButton>
+                <PremiumButton onClick={runAiJobOperator} disabled={aiBusy} iconLeft={aiBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}>Run AI Autopilot</PremiumButton>
                 <PremiumButton variant="secondary" onClick={() => navigate("/dispatch")} iconLeft={<Route className="h-4 w-4" />}>Dispatch board</PremiumButton>
               </>
             ) : null
@@ -181,18 +185,18 @@ export default function JobsPage() {
         {!isWorker && (
           <section className="jobs-command-strip">
             <div className="jobs-command-main">
-              <span><Sparkles className="h-4 w-4" /> AI job operator</span>
+              <span><Sparkles className="h-4 w-4" /> AI job autopilot</span>
               <h2>{aiHeadline}</h2>
               <p>
                 {metrics.unassigned > 0
-                  ? `${metrics.unassigned} job${metrics.unassigned === 1 ? "" : "s"} still need crew. AI can prepare worker matches for owner approval before the day gets messy.`
+                  ? `${metrics.unassigned} job${metrics.unassigned === 1 ? "" : "s"} still need crew. AI prepares worker matches for owner approval and automatically handles invoice/admin drafts.`
                   : metrics.readyToInvoice > 0
-                    ? `${metrics.readyToInvoice} completed job${metrics.readyToInvoice === 1 ? "" : "s"} can move into invoice draft review.`
-                    : `${metrics.today} job${metrics.today === 1 ? "" : "s"} scheduled today. Keep the board moving from one place.`}
+                    ? `${metrics.readyToInvoice} completed job${metrics.readyToInvoice === 1 ? "" : "s"} can move into invoice draft review automatically.`
+                    : `${metrics.today} job${metrics.today === 1 ? "" : "s"} scheduled today. AI keeps the admin moving while owner approves risky actions.`}
               </p>
             </div>
             <div className="jobs-command-actions">
-              <button onClick={runAiJobOperator} disabled={aiBusy}>{aiBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />} Prepare crew matches</button>
+              <button onClick={runAiJobOperator} disabled={aiBusy}>{aiBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Run AI Autopilot</button>
               <button onClick={runInvoiceHandoff} disabled={aiBusy}><ReceiptText className="h-4 w-4" /> Auto invoice handoff</button>
               <button onClick={() => { setStatusFilter("all"); setSearch(""); fetchJobs(); }}><Clock3 className="h-4 w-4" /> Refresh run sheet</button>
             </div>
