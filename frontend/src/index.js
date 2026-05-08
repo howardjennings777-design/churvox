@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import SmartHubHardReset from "./pages/SmartHubHardReset";
 import "./index.css";
 import "./styles/aiControlRoomFullscreen.css";
+import "./styles/aiControlRoomFinalFit.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
