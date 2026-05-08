@@ -11,14 +11,21 @@ import {
 const nav = [
   ["Smart Hub", "/dashboard"],
   ["Jobs", "/jobs"],
+  ["Dispatch", "/dispatch"],
   ["Clients", "/clients"],
+  ["Job Proofs", "/proof-to-paid"],
   ["Quotes", "/quotes"],
   ["Invoices", "/invoices"],
-  ["Dispatch", "/dispatch"],
   ["Team", "/team"],
+  ["Payroll", "/payroll"],
   ["Automation", "/automation"],
   ["Reports", "/reports"],
+  ["Messages", "/sms"],
+  ["Integrations", "/integrations"],
+  ["Billing", "/plans"],
+  ["Settings", "/settings"],
 ];
+const navIcons = ["✦", "◇", "⌘", "♙", "▣", "▤", "▥", "♙", "$", "⚡", "▧", "◌", "⛓", "◫", "⚙"];
 const workspaces = nav.slice(1);
 
 const formatMoney = (value) => {
@@ -148,7 +155,7 @@ export default function SmartHubHardReset() {
     <main className="pcx-shell">
       <aside className="pcx-sidebar">
         <button className="pcx-logo" onClick={() => goTo("/dashboard")} aria-label="Go to Smart Hub"><img src="/churvox-logo.svg" alt="Churvox" /></button>
-        <nav>{nav.map(([item, path], index) => <button key={item} onClick={() => goTo(path)} className={location.pathname === path || (path === "/dashboard" && location.pathname === "/overview") ? "active" : ""}><i>{["✦", "◇", "♙", "▤", "▥", "⌘", "♙", "⚡", "▧"][index]}</i>{item}</button>)}</nav>
+        <nav>{nav.map(([item, path], index) => <button key={item} onClick={() => goTo(path)} className={location.pathname === path || (path === "/dashboard" && location.pathname === "/overview") ? "active" : ""}><i>{navIcons[index] || "•"}</i>{item}</button>)}</nav>
         <button className="pcx-owner" onClick={() => goTo("/settings")}><i /><div><b>Business owner</b><small>Live workspace</small></div><span>⌄</span></button>
       </aside>
 
