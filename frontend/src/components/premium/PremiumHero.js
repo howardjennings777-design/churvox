@@ -14,7 +14,7 @@ export default function PremiumHero({
     ? {
         color: '#ffffff',
         opacity: 1,
-        textShadow: '0 2px 18px rgba(0, 0, 0, 0.42)',
+        textShadow: '0 2px 18px rgba(0, 0, 0, 0.38)',
       }
     : undefined;
 
@@ -27,21 +27,17 @@ export default function PremiumHero({
 
   const lightEyebrowStyle = forceLightText
     ? {
-        color: '#ff6b15',
-        background: 'rgba(255, 255, 255, 0.10)',
-        borderColor: 'rgba(255, 255, 255, 0.16)',
+        color: '#93c5fd',
+        background: 'rgba(255, 255, 255, 0.08)',
+        borderColor: 'rgba(147, 197, 253, 0.22)',
       }
     : undefined;
 
   return (
     <header className={`px-hero ${className}`}>
-      <div className="flex items-start gap-4 relative z-[1]">
-        {icon && (
-          <div className="hidden md:flex h-14 w-14 rounded-2xl items-center justify-center bg-white border border-[#cfe0fb] text-[#1d4ed8] shadow-md flex-shrink-0">
-            {icon}
-          </div>
-        )}
-        <div className="flex-1 min-w-0">
+      <div className="px-hero__content">
+        {icon && <div className="px-hero__icon">{icon}</div>}
+        <div className="px-hero__text">
           {eyebrow && <span className="px-hero__eyebrow" style={lightEyebrowStyle}>{eyebrow}</span>}
           {title && <h1 className="px-hero__title" style={lightTitleStyle}>{title}</h1>}
           {subtitle && <p className="px-hero__sub" style={lightSubtitleStyle}>{subtitle}</p>}
