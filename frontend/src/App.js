@@ -226,7 +226,7 @@ function App() {
         <ErrorBoundary>
         <Toaster position="top-right" richColors />
         <Routes>
-          <Route path="/v3/:section" element={<V3WorkspacePage />} />
+          <Route path="/v3/:section" element={<BusinessRoute><V3WorkspacePage /></BusinessRoute>} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
