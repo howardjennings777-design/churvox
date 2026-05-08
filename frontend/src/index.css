@@ -156,6 +156,43 @@
 .cx-status-badge--amber { color: #b45309; background: #fef3c7; border-color: #fde68a; }
 .cx-status-badge--red { color: #b91c1c; background: #fee2e2; border-color: #fecaca; }
 
+/* Force toast notifications to stay readable over light/dark Churvox pages */
+[data-sonner-toaster] {
+  z-index: 999999 !important;
+}
+[data-sonner-toast] {
+  background: #071935 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 0 24px 80px rgba(2, 8, 23, 0.34) !important;
+  border-radius: 18px !important;
+  font-weight: 800 !important;
+}
+[data-sonner-toast] [data-title],
+[data-sonner-toast] [data-description],
+[data-sonner-toast] div,
+[data-sonner-toast] span,
+[data-sonner-toast] p {
+  color: #ffffff !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+[data-sonner-toast][data-type="success"] {
+  background: linear-gradient(135deg, #052e16, #14532d) !important;
+  border-color: rgba(134, 239, 172, 0.45) !important;
+}
+[data-sonner-toast][data-type="error"] {
+  background: linear-gradient(135deg, #450a0a, #991b1b) !important;
+  border-color: rgba(252, 165, 165, 0.5) !important;
+}
+[data-sonner-toast][data-type="info"] {
+  background: linear-gradient(135deg, #082f49, #1d4ed8) !important;
+  border-color: rgba(147, 197, 253, 0.5) !important;
+}
+[data-sonner-toast] button {
+  color: #ffffff !important;
+}
+
 /* Launch readability guard for dark premium hero pages */
 .proof-to-paid-hero,
 .proof-to-paid-hero.px-hero {
