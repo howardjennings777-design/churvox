@@ -30,6 +30,7 @@ import "./styles/jobsCommandTopCompact.css";
 import "./styles/aiStagingBoard.css";
 import "./styles/backgroundAiCleanup.css";
 import "./styles/smartHubOwnerDashboard.css";
+import "./styles/jobsOwnerWorkspace.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
