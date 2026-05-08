@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   Edit3,
   History,
-  Rocket,
   Save,
   ShieldCheck,
   Sparkles,
@@ -22,16 +21,7 @@ const actionId = (a) => a?.id || a?._id;
 const statusOf = (a) => safeText(a?.status, "pending").toLowerCase();
 const isPending = (a) => ["pending", "edited"].includes(statusOf(a));
 const isScheduled = (a) => statusOf(a) === "scheduled";
-const isDone = (a) => ["completed", "approved", "rejected", "dismissed"].includes(statusOf(a));
-
-function nextWeeknightSevenPmLocal() {
-  const d = new Date();
-  d.setHours(19, 0, 0, 0);
-  if (new Date() >= d) d.setDate(d.getDate() + 1);
-  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
+const isDone = (a) => ["completed", "approved", "rejected", "dismissed", "failed"].includes(statusOf(a));
 
 function formatDateTime(value) {
   if (!value) return "Not scheduled";
@@ -64,7 +54,7 @@ function parsePayload(text, fallback) {
   }
 }
 
-function StageCard({ action, onOpen, onApprove, onReject, onSchedule }) {
+function StageCard({ action, onOpen, onApprove, onReject }) {
   const status = statusOf(action);
   const risk = safeText(action.risk_level || action.risk, "low").toLowerCase();
   const badgeTone = risk === "high" ? "ai-stage-badge danger" : risk === "medium" ? "ai-stage-badge warn" : "ai-stage-badge good";
@@ -85,27 +75,25 @@ function StageCard({ action, onOpen, onApprove, onReject, onSchedule }) {
         {isPending(action) ? (
           <>
             <button type="button" onClick={() => onOpen(action)}><Edit3 size={14} /> Edit</button>
-            <button type="button" onClick={() => onSchedule(action)}><CalendarClock size={14} /> Schedule</button>
             <button type="button" className="primary" onClick={() => onApprove(action)}><CheckCircle2 size={14} /> Approve</button>
+            <button type="button" className="ghost" onClick={() => onReject(action)}><XCircle size={14} /> Reject</button>
           </>
         ) : isScheduled(action) ? (
           <span className="ai-stage-scheduled"><CalendarClock size={14} /> Deploys {formatDateTime(action.scheduled_for)}</span>
         ) : (
           <span className="ai-stage-scheduled"><History size={14} /> {status}</span>
         )}
-        {isPending(action) ? <button type="button" className="ghost" onClick={() => onReject(action)}><XCircle size={14} /> Reject</button> : null}
       </div>
     </button>
   );
 }
 
-function EditModal({ action, onClose, onSave, onApprove, onReject, onSchedule, busy }) {
+function EditModal({ action, onClose, onSave, onApprove, onReject, busy }) {
   const [title, setTitle] = useState(action?.title || "");
   const [summary, setSummary] = useState(action?.summary || "");
   const [reason, setReason] = useState(action?.reason || "");
   const [previewText, setPreviewText] = useState(action?.preview_text || action?.generated_message || "");
   const [payload, setPayload] = useState(payloadText(action?.suggested_payload));
-  const [scheduledFor, setScheduledFor] = useState("");
 
   useEffect(() => {
     setTitle(action?.title || "");
@@ -113,7 +101,6 @@ function EditModal({ action, onClose, onSave, onApprove, onReject, onSchedule, b
     setReason(action?.reason || "");
     setPreviewText(action?.preview_text || action?.generated_message || "");
     setPayload(payloadText(action?.suggested_payload));
-    setScheduledFor("");
   }, [action]);
 
   if (!action) return null;
@@ -134,7 +121,7 @@ function EditModal({ action, onClose, onSave, onApprove, onReject, onSchedule, b
           <div>
             <span>AI staging item</span>
             <h2>{safeText(action.title, "Review AI action")}</h2>
-            <p>Edit it, schedule it, or leave the time blank so Churvox uses the 7:00pm weeknight fallback.</p>
+            <p>Edit it, then approve it. Approved items use the deploy time from AI Operator Settings.</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Close"><X size={20} /></button>
         </div>
@@ -164,19 +151,9 @@ function EditModal({ action, onClose, onSave, onApprove, onReject, onSchedule, b
           <div className="ai-stage-warning">
             <ShieldCheck size={18} />
             <div>
-              <b>7:00pm weeknight fallback.</b>
-              <span>If no custom time is chosen, Churvox schedules this for the next 7:00pm Monday–Friday deploy window and sends an owner warning notification about 1 hour before deploy.</span>
+              <b>Deploy time lives in settings.</b>
+              <span>Approving sends this item to the deploy queue. Churvox uses the saved AI Operator deploy time, with 7:00pm weeknights as the fallback and a warning notification 1 hour before deploy.</span>
             </div>
-          </div>
-
-          <div className="ai-stage-schedule-box">
-            <label>
-              Optional custom deploy time
-              <input type="datetime-local" value={scheduledFor} onChange={(e) => setScheduledFor(e.target.value)} />
-            </label>
-            <button type="button" disabled={busy} onClick={() => onSchedule(edited, scheduledFor)}>
-              <CalendarClock size={15} /> Add to deploy queue
-            </button>
           </div>
         </div>
 
@@ -184,7 +161,7 @@ function EditModal({ action, onClose, onSave, onApprove, onReject, onSchedule, b
           <button type="button" onClick={onClose}>Close</button>
           <button type="button" disabled={busy} onClick={() => onReject(action)}><XCircle size={15} /> Reject</button>
           <button type="button" disabled={busy} onClick={() => onSave(edited)}><Save size={15} /> Save edits</button>
-          <button type="button" className="primary" disabled={busy} onClick={() => onApprove(edited)}><Rocket size={15} /> Approve now</button>
+          <button type="button" className="primary" disabled={busy} onClick={() => onApprove(edited)}><CheckCircle2 size={15} /> Approve</button>
         </div>
       </div>
     </div>
@@ -256,10 +233,10 @@ export default function AIOperatorApprovalsPage() {
     const id = actionId(action);
     if (!id) return;
     setBusy(true);
-    const res = await post(`/ai/operator/actions/${id}/approve`, { action });
+    const res = await post(`/ai/operator/actions/${id}/schedule`, { action });
     setBusy(false);
     if (res.success) {
-      toast.success("Approved and sent to the right workflow");
+      toast.success("Approved and added to the deploy queue");
       setOpenAction(null);
       load();
     } else {
@@ -282,40 +259,18 @@ export default function AIOperatorApprovalsPage() {
     }
   };
 
-  const schedule = async (action, scheduledFor) => {
-    const id = actionId(action);
-    if (!id) return;
-    const customTime = safeText(scheduledFor);
-    const deployAt = customTime || nextWeeknightSevenPmLocal();
-    setBusy(true);
-    const res = await post(`/ai/operator/actions/${id}/schedule`, {
-      action,
-      scheduled_for: deployAt,
-      deploy_window_label: customTime ? "Custom owner deploy time" : "Fallback 7:00pm weeknight deploy",
-      deploy_warning_minutes: 60,
-    });
-    setBusy(false);
-    if (res.success) {
-      toast.success(customTime ? "Added to custom AI deploy queue" : "Added to next 7:00pm weeknight deploy queue");
-      setOpenAction(null);
-      load();
-    } else {
-      toast.error(res.error || "Could not schedule action");
-    }
-  };
-
   return (
     <Layout>
       <div className="ai-stage-page">
         <section className="ai-stage-hero">
           <div className="ai-stage-hero-copy">
             <span><Sparkles size={15} /> AI Approval & Edit Board</span>
-            <h1>AI prepares the work. 7pm deploys by default.</h1>
-            <p>Every AI-prepared assignment, invoice handoff, message, reminder and follow-up lands here before it affects customers, workers, accounting or payroll. If no custom time is chosen, scheduled work goes out at the next 7:00pm weeknight deploy window with a warning notification 1 hour before.</p>
+            <h1>AI prepares the work. Settings control deploy time.</h1>
+            <p>Every AI-prepared assignment, invoice handoff, message, reminder and follow-up lands here before it affects customers, workers, accounting or payroll. Approved items enter the deploy queue and use the time saved in AI Operator Settings.</p>
           </div>
           <div className="ai-stage-hero-panel">
             <b>Background operator live</b>
-            <p>Render cron prepares admin work every few minutes. Fallback deploy window: 7:00pm Monday–Friday.</p>
+            <p>Render cron prepares admin work every few minutes. Default deploy fallback: 7:00pm Monday–Friday.</p>
             <button type="button" onClick={prepareNow} disabled={busy}><Sparkles size={15} /> Refresh prepared work</button>
           </div>
         </section>
@@ -347,7 +302,6 @@ export default function AIOperatorApprovalsPage() {
                   onOpen={setOpenAction}
                   onApprove={approve}
                   onReject={reject}
-                  onSchedule={schedule}
                 />
               ))}
             </div>
@@ -355,7 +309,7 @@ export default function AIOperatorApprovalsPage() {
             <div className="ai-stage-empty">
               <AlertTriangle size={24} />
               <b>No items in this bucket.</b>
-              <span>When the background AI operator prepares work, it will appear here for edit, approval, scheduling or history.</span>
+              <span>When the background AI operator prepares work, it will appear here for edit, approval, deploy queue or history.</span>
             </div>
           )}
         </section>
@@ -367,7 +321,6 @@ export default function AIOperatorApprovalsPage() {
         onSave={saveEdits}
         onApprove={approve}
         onReject={reject}
-        onSchedule={schedule}
         busy={busy}
       />
     </Layout>
