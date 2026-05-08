@@ -10546,30 +10546,29 @@ async def schedule_ai_operator_action(action_id: str, request: Request, current_
 
 
 # ===== V3 AI OPERATOR LIVE ENGINE START =====
+import re as _ai_re
+
 def _ai_now():
     return datetime.now(timezone.utc)
 
-def _ai_str(value):
+def _ai_text(value):
     return str(value or "").strip()
 
 def _ai_lower(value):
-    return _ai_str(value).lower()
+    return _ai_text(value).lower()
 
-def _ai_safe_id(value):
-    return _ai_str(value).replace("ObjectId(", "").replace(")", "").replace('"', "").replace("'", "")
-
-def _ai_object_id(value):
+def _ai_oid(value):
     try:
         return ObjectId(str(value))
     except Exception:
         return None
 
 def _ai_doc_id(doc):
-    if not doc:
+    if not isinstance(doc, dict):
         return ""
     return str(doc.get("_id") or doc.get("id") or "")
 
-def _ai_scope(business_id: str):
+def _ai_scope(business_id):
     bid = str(business_id)
     return {
         "$or": [
@@ -10580,12 +10579,13 @@ def _ai_scope(business_id: str):
         ]
     }
 
-def _ai_scoped_id_query(business_id: str, record_id: str):
-    oid = _ai_object_id(record_id)
-    id_parts = [{"id": str(record_id)}]
+def _ai_id_query(business_id, record_id):
+    rid = str(record_id)
+    oid = _ai_oid(rid)
+    id_query = [{"id": rid}]
     if oid:
-        id_parts.append({"_id": oid})
-    return {"$and": [_ai_scope(business_id), {"$or": id_parts}]}
+        id_query.append({"_id": oid})
+    return {"$and": [_ai_scope(business_id), {"$or": id_query}]}
 
 def _ai_money(value):
     try:
@@ -10594,23 +10594,45 @@ def _ai_money(value):
         return 0.0
 
 def _ai_action_id(action_type, *parts):
-    raw = "_".join([str(action_type)] + [_ai_safe_id(p) for p in parts if p is not None])
-    return re.sub(r"[^A-Za-z0-9_-]+", "_", raw).strip("_")[:180]
+    raw = "_".join([str(action_type)] + [str(p) for p in parts if p])
+    return _ai_re.sub(r"[^A-Za-z0-9_-]+", "_", raw).strip("_")[:180]
 
-def _ai_public_doc(doc):
-    safe = make_json_safe(safe_doc(doc) if isinstance(doc, dict) else doc)
-    return safe
-
-def _ai_person_name(person):
-    if not isinstance(person, dict):
+def _ai_status(doc):
+    if not isinstance(doc, dict):
         return ""
-    return (
-        person.get("name")
-        or person.get("full_name")
-        or person.get("worker_name")
-        or person.get("email")
-        or "Worker"
+    return _ai_lower(doc.get("status") or doc.get("job_status") or doc.get("workflow_status"))
+
+def _ai_is_completed_job(job):
+    status = _ai_status(job)
+    return status in {"completed", "done", "finished"} or job.get("completed") is True or bool(job.get("completed_at"))
+
+def _ai_has_worker(job):
+    return bool(
+        job.get("assigned_worker_id")
+        or job.get("worker_id")
+        or job.get("assigned_to")
+        or job.get("assigned_worker_name")
+        or job.get("worker_name")
     )
+
+def _ai_has_proof(job):
+    for key in ["photos", "photo_urls", "proof_photos", "job_photos", "completion_photos", "worker_photos"]:
+        value = job.get(key)
+        if isinstance(value, list) and value:
+            return True
+        if isinstance(value, str) and value.strip():
+            return True
+    return False
+
+def _ai_name(doc):
+    if not isinstance(doc, dict):
+        return ""
+    return doc.get("name") or doc.get("full_name") or doc.get("worker_name") or doc.get("email") or "Worker"
+
+def _ai_client_name(doc):
+    if not isinstance(doc, dict):
+        return "client"
+    return doc.get("customer_name") or doc.get("client_name") or doc.get("name") or doc.get("business_name") or "client"
 
 def _ai_job_title(job):
     return (
@@ -10623,16 +10645,10 @@ def _ai_job_title(job):
         or "Job"
     )
 
-def _ai_client_name_from_doc(doc):
-    return (
-        doc.get("customer_name")
-        or doc.get("client_name")
-        or doc.get("name")
-        or doc.get("business_name")
-        or "client"
-    )
+def _ai_public(doc):
+    return make_json_safe(safe_doc(doc) if isinstance(doc, dict) else doc)
 
-async def _ai_load_business_data(current_user: dict):
+async def _ai_load_data(current_user):
     business_id = await get_user_business_id(current_user)
     scope = _ai_scope(business_id)
 
@@ -10665,38 +10681,9 @@ async def _ai_load_business_data(current_user: dict):
 
     return business_id, jobs, quotes, invoices, clients, workers
 
-def _ai_has_worker(job):
-    return bool(
-        job.get("assigned_worker_id")
-        or job.get("worker_id")
-        or job.get("assigned_to")
-        or job.get("assigned_worker_name")
-        or job.get("worker_name")
-    )
-
-def _ai_status(doc):
-    return _ai_lower(doc.get("status") or doc.get("job_status") or doc.get("workflow_status"))
-
-def _ai_is_completed_job(job):
-    status = _ai_status(job)
-    return (
-        status in {"completed", "done", "finished"}
-        or job.get("completed") is True
-        or bool(job.get("completed_at"))
-    )
-
-def _ai_job_has_proof(job):
-    for key in ["photos", "photo_urls", "proof_photos", "job_photos", "completion_photos", "worker_photos"]:
-        value = job.get(key)
-        if isinstance(value, list) and len(value) > 0:
-            return True
-        if isinstance(value, str) and value.strip():
-            return True
-    return False
-
 def _ai_best_worker(job, workers):
     if not workers:
-        return None
+        return None, "No worker records found."
 
     job_region = _ai_lower(job.get("region") or job.get("area") or job.get("suburb"))
     job_type = _ai_lower(job.get("job_type") or job.get("service_type") or job.get("trade_type"))
@@ -10708,43 +10695,45 @@ def _ai_best_worker(job, workers):
             continue
 
         score = 10
-        reason_bits = []
+        reasons = []
 
         worker_region = _ai_lower(worker.get("region") or worker.get("area") or worker.get("suburb"))
         if job_region and worker_region and job_region == worker_region:
             score += 20
-            reason_bits.append("same area")
+            reasons.append("same area")
 
         skills = " ".join([
-            _ai_str(worker.get("skills")),
-            _ai_str(worker.get("trade")),
-            _ai_str(worker.get("trade_type")),
-            _ai_str(worker.get("experience")),
+            _ai_text(worker.get("skills")),
+            _ai_text(worker.get("trade")),
+            _ai_text(worker.get("trade_type")),
+            _ai_text(worker.get("experience")),
         ]).lower()
+
         if job_type and job_type in skills:
             score += 15
-            reason_bits.append("matching job experience")
+            reasons.append("matching job experience")
 
         if worker.get("active") is False or _ai_lower(worker.get("status")) in {"inactive", "disabled"}:
-            score -= 30
+            score -= 50
 
-        scored.append((score, worker, reason_bits))
+        scored.append((score, worker, reasons))
 
     if not scored:
-        return None
+        return None, "No available worker match found."
 
-    scored.sort(key=lambda row: row[0], reverse=True)
-    score, worker, bits = scored[0]
-    worker_name = _ai_person_name(worker)
-    reason = f"{worker_name} is the best available match"
-    if bits:
-        reason += " because they have " + " and ".join(bits)
+    scored.sort(key=lambda item: item[0], reverse=True)
+    score, worker, reasons = scored[0]
+    worker_name = _ai_name(worker)
+
+    if reasons:
+        reason = f"{worker_name} is the best match because they have " + " and ".join(reasons) + "."
     else:
-        reason += " based on current crew availability"
+        reason = f"{worker_name} is the best available crew match based on current worker records."
+
     return worker, reason
 
 async def _ai_invoice_exists_for_job(business_id, job_id):
-    query = {
+    existing = await db.invoices.find_one({
         "$and": [
             _ai_scope(business_id),
             {
@@ -10755,35 +10744,34 @@ async def _ai_invoice_exists_for_job(business_id, job_id):
                 ]
             }
         ]
-    }
-    existing = await db.invoices.find_one(query)
+    })
     return bool(existing)
 
-def _ai_build_invoice_payload(job, business_id, current_user):
-    job_id = _ai_doc_id(job)
+def _ai_invoice_payload(job, business_id, current_user):
     subtotal = (
         _ai_money(job.get("price"))
         or _ai_money(job.get("subtotal"))
         or _ai_money(job.get("amount"))
         or _ai_money(job.get("total"))
-        or 0.0
     )
     gst_rate = _ai_money(job.get("gst_rate")) or DEFAULT_GST_RATE
     gst_amount = round(subtotal * gst_rate / 100.0, 2)
     total = round(subtotal + gst_amount, 2)
-    client_name = _ai_client_name_from_doc(job)
+    job_id = _ai_doc_id(job)
+    customer = _ai_client_name(job)
 
     return {
         "business_id": str(business_id),
         "owner_id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "invoice_number": f"INV-AI-{secrets.token_hex(3).upper()}",
         "job_id": str(job_id),
         "source_job_id": str(job_id),
         "linked_job_id": str(job_id),
         "client_id": job.get("client_id") or job.get("customer_id") or "",
-        "customer_name": client_name,
+        "customer_name": customer,
         "customer_email": job.get("customer_email") or job.get("client_email") or "",
         "address": job.get("address") or job.get("job_address") or job.get("service_address") or "",
-        "description": _format_invoice_description_from_job(job, client_name),
+        "description": _format_invoice_description_from_job(job, customer),
         "subtotal": subtotal,
         "gst_rate": gst_rate,
         "gst_amount": gst_amount,
@@ -10791,30 +10779,25 @@ def _ai_build_invoice_payload(job, business_id, current_user):
         "status": "draft",
         "source": "ai_operator",
         "ai_created": True,
-        "approval_required": False,
         "public_token": secrets.token_urlsafe(18),
         "created_at": _ai_now(),
         "updated_at": _ai_now(),
     }
 
-async def _ai_build_actions(current_user: dict):
-    business_id, jobs, quotes, invoices, clients, workers = await _ai_load_business_data(current_user)
+async def _ai_build_actions(current_user):
+    business_id, jobs, quotes, invoices, clients, workers = await _ai_load_data(current_user)
     actions = []
 
-    # 1) Assign unassigned jobs.
-    for job in jobs[:80]:
-        if _ai_is_completed_job(job):
-            continue
-        if _ai_has_worker(job):
+    for job in jobs[:100]:
+        if _ai_is_completed_job(job) or _ai_has_worker(job):
             continue
 
         job_id = _ai_doc_id(job)
-        worker_pick = _ai_best_worker(job, workers)
+        worker, reason = _ai_best_worker(job, workers)
 
-        if worker_pick:
-            worker, reason = worker_pick
+        if worker:
             worker_id = _ai_doc_id(worker)
-            worker_name = _ai_person_name(worker)
+            worker_name = _ai_name(worker)
             actions.append({
                 "id": _ai_action_id("assign_worker_to_job", job_id, worker_id),
                 "action_type": "assign_worker_to_job",
@@ -10827,8 +10810,7 @@ async def _ai_build_actions(current_user: dict):
                 "job_id": job_id,
                 "worker_id": worker_id,
                 "worker_name": worker_name,
-                "record": _ai_public_doc(job),
-                "prepared_by": "ai_operator_v3",
+                "record": _ai_public(job),
             })
         else:
             actions.append({
@@ -10837,32 +10819,20 @@ async def _ai_build_actions(current_user: dict):
                 "module": "dispatch",
                 "status": "pending",
                 "title": f"Review unassigned job: {_ai_job_title(job)}",
-                "summary": "No available worker match was found. Owner should review this job.",
-                "reason": "No available worker match was found.",
+                "summary": reason,
+                "reason": reason,
                 "risk_level": "medium",
                 "job_id": job_id,
-                "record": _ai_public_doc(job),
-                "prepared_by": "ai_operator_v3",
+                "record": _ai_public(job),
             })
 
-    # 2) Draft invoices from completed jobs.
-    for job in jobs[:120]:
+    for job in jobs[:150]:
         if not _ai_is_completed_job(job):
             continue
 
         job_id = _ai_doc_id(job)
-        if not job_id:
+        if not job_id or await _ai_invoice_exists_for_job(business_id, job_id):
             continue
-
-        if await _ai_invoice_exists_for_job(business_id, job_id):
-            continue
-
-        subtotal = (
-            _ai_money(job.get("price"))
-            or _ai_money(job.get("subtotal"))
-            or _ai_money(job.get("amount"))
-            or _ai_money(job.get("total"))
-        )
 
         actions.append({
             "id": _ai_action_id("create_draft_invoice", job_id),
@@ -10872,20 +10842,13 @@ async def _ai_build_actions(current_user: dict):
             "title": f"Create draft invoice for {_ai_job_title(job)}",
             "summary": "Job is completed and has no linked invoice. AI can create a draft invoice for owner review.",
             "reason": "Completed job has no invoice yet.",
-            "risk_level": "low" if subtotal > 0 else "medium",
+            "risk_level": "low",
             "job_id": job_id,
-            "amount": subtotal,
-            "record": _ai_public_doc(job),
-            "prepared_by": "ai_operator_v3",
+            "record": _ai_public(job),
         })
 
-    # 3) Proof/photo review for completed jobs missing proof.
-    for job in jobs[:120]:
-        if not _ai_is_completed_job(job):
-            continue
-        if _ai_job_has_proof(job):
-            continue
-        if job.get("ai_proof_review_needed") is True:
+    for job in jobs[:150]:
+        if not _ai_is_completed_job(job) or _ai_has_proof(job) or job.get("ai_proof_review_needed") is True:
             continue
 
         job_id = _ai_doc_id(job)
@@ -10895,66 +10858,56 @@ async def _ai_build_actions(current_user: dict):
             "module": "proof",
             "status": "pending",
             "title": f"Check proof photos for {_ai_job_title(job)}",
-            "summary": "Completed job has no proof photos saved. AI can flag it for owner review before invoicing.",
+            "summary": "Completed job has no proof photos saved. AI can flag it before invoicing.",
             "reason": "Completed job appears to be missing proof photos.",
             "risk_level": "medium",
             "job_id": job_id,
-            "record": _ai_public_doc(job),
-            "prepared_by": "ai_operator_v3",
+            "record": _ai_public(job),
         })
 
-    # 4) Quote follow-up drafts.
-    for quote in quotes[:100]:
-        status = _ai_status(quote)
-        if status not in {"sent", "pending", "draft"}:
-            continue
-        if quote.get("ai_follow_up_draft"):
+    for quote in quotes[:120]:
+        if _ai_status(quote) not in {"draft", "sent", "pending"} or quote.get("ai_follow_up_draft"):
             continue
 
         quote_id = _ai_doc_id(quote)
-        customer = _ai_client_name_from_doc(quote)
+        customer = _ai_client_name(quote)
         actions.append({
             "id": _ai_action_id("prepare_quote_follow_up", quote_id),
             "action_type": "prepare_quote_follow_up",
             "module": "quotes",
             "status": "pending",
             "title": f"Prepare quote follow-up for {customer}",
-            "summary": "AI can draft a polite quote follow-up for owner approval. It will not send automatically.",
+            "summary": "AI can draft a quote follow-up. It will not send automatically.",
             "reason": "Quote is still open and may need a follow-up.",
             "risk_level": "low",
             "quote_id": quote_id,
-            "record": _ai_public_doc(quote),
-            "prepared_by": "ai_operator_v3",
+            "record": _ai_public(quote),
         })
 
-    # 5) Invoice reminder drafts.
-    for invoice in invoices[:100]:
-        status = _ai_status(invoice)
-        if status not in {"sent", "overdue", "unpaid", "pending"}:
-            continue
-        if invoice.get("ai_reminder_draft"):
+    for invoice in invoices[:120]:
+        if _ai_status(invoice) not in {"sent", "overdue", "unpaid", "pending"} or invoice.get("ai_reminder_draft"):
             continue
 
         invoice_id = _ai_doc_id(invoice)
-        customer = _ai_client_name_from_doc(invoice)
+        customer = _ai_client_name(invoice)
         actions.append({
             "id": _ai_action_id("prepare_invoice_reminder", invoice_id),
             "action_type": "prepare_invoice_reminder",
             "module": "invoices",
             "status": "pending",
             "title": f"Prepare invoice reminder for {customer}",
-            "summary": "AI can draft a payment reminder for owner approval. It will not send automatically.",
+            "summary": "AI can draft a payment reminder. It will not send automatically.",
             "reason": "Invoice is not marked paid.",
             "risk_level": "low",
             "invoice_id": invoice_id,
-            "record": _ai_public_doc(invoice),
-            "prepared_by": "ai_operator_v3",
+            "record": _ai_public(invoice),
         })
 
-    return actions[:80]
+    return actions[:100]
 
-async def _ai_log_action(business_id, current_user, action, result):
+async def _ai_log(current_user, action, result):
     try:
+        business_id = await get_user_business_id(current_user)
         await db.ai_operator_action_logs.insert_one({
             "business_id": str(business_id),
             "user_id": str(current_user.get("id") or current_user.get("_id") or ""),
@@ -10967,9 +10920,8 @@ async def _ai_log_action(business_id, current_user, action, result):
     except Exception as exc:
         logger.warning(f"AI Operator log failed: {exc}")
 
-async def _ai_execute_action(action_id: str, action: dict, current_user: dict):
+async def _ai_execute(action, current_user):
     business_id = await get_user_business_id(current_user)
-    action = action or {}
     action_type = action.get("action_type") or action.get("type")
 
     if action_type == "assign_worker_to_job":
@@ -10978,25 +10930,18 @@ async def _ai_execute_action(action_id: str, action: dict, current_user: dict):
         if not job_id or not worker_id:
             raise HTTPException(status_code=400, detail="Missing job_id or worker_id")
 
-        job = await db.jobs.find_one(_ai_scoped_id_query(business_id, job_id))
+        job = await db.jobs.find_one(_ai_id_query(business_id, job_id))
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
 
-        worker = None
-        try:
-            worker = await db.users.find_one(_ai_scoped_id_query(business_id, worker_id))
-        except Exception:
-            worker = None
+        worker = await db.users.find_one(_ai_id_query(business_id, worker_id))
         if not worker:
-            try:
-                worker = await db.workers.find_one(_ai_scoped_id_query(business_id, worker_id))
-            except Exception:
-                worker = None
+            worker = await db.workers.find_one(_ai_id_query(business_id, worker_id))
         if not worker:
             raise HTTPException(status_code=404, detail="Worker not found")
 
-        worker_name = _ai_person_name(worker)
-        update = {
+        worker_name = _ai_name(worker)
+        await db.jobs.update_one(_ai_id_query(business_id, job_id), {"$set": {
             "assigned_worker_id": str(worker_id),
             "worker_id": str(worker_id),
             "assigned_worker_name": worker_name,
@@ -11005,8 +10950,7 @@ async def _ai_execute_action(action_id: str, action: dict, current_user: dict):
             "ai_assigned": True,
             "ai_assignment_reason": action.get("reason") or action.get("summary") or "",
             "updated_at": _ai_now(),
-        }
-        await db.jobs.update_one(_ai_scoped_id_query(business_id, job_id), {"$set": update})
+        }})
         return {"ok": True, "message": f"Assigned {worker_name} to job.", "job_id": str(job_id), "worker_id": str(worker_id)}
 
     if action_type == "create_draft_invoice":
@@ -11014,17 +10958,18 @@ async def _ai_execute_action(action_id: str, action: dict, current_user: dict):
         if not job_id:
             raise HTTPException(status_code=400, detail="Missing job_id")
 
-        job = await db.jobs.find_one(_ai_scoped_id_query(business_id, job_id))
+        job = await db.jobs.find_one(_ai_id_query(business_id, job_id))
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
 
         if await _ai_invoice_exists_for_job(business_id, job_id):
             return {"ok": True, "message": "Draft invoice already exists for this job.", "job_id": str(job_id)}
 
-        payload = _ai_build_invoice_payload(job, business_id, current_user)
+        payload = _ai_invoice_payload(job, business_id, current_user)
         inserted = await db.invoices.insert_one(payload)
         invoice_id = str(inserted.inserted_id)
-        await db.jobs.update_one(_ai_scoped_id_query(business_id, job_id), {"$set": {
+
+        await db.jobs.update_one(_ai_id_query(business_id, job_id), {"$set": {
             "ai_invoice_created": True,
             "invoice_id": invoice_id,
             "invoice_description_draft": payload.get("description"),
@@ -11037,7 +10982,7 @@ async def _ai_execute_action(action_id: str, action: dict, current_user: dict):
         if not job_id:
             raise HTTPException(status_code=400, detail="Missing job_id")
 
-        result = await db.jobs.update_one(_ai_scoped_id_query(business_id, job_id), {"$set": {
+        result = await db.jobs.update_one(_ai_id_query(business_id, job_id), {"$set": {
             "ai_proof_review_needed": True,
             "owner_review_needed": True,
             "owner_review_reason": action.get("reason") or "Completed job appears to be missing proof photos.",
@@ -11052,17 +10997,14 @@ async def _ai_execute_action(action_id: str, action: dict, current_user: dict):
         if not quote_id:
             raise HTTPException(status_code=400, detail="Missing quote_id")
 
-        quote = await db.quotes.find_one(_ai_scoped_id_query(business_id, quote_id))
+        quote = await db.quotes.find_one(_ai_id_query(business_id, quote_id))
         if not quote:
             raise HTTPException(status_code=404, detail="Quote not found")
 
-        customer = _ai_client_name_from_doc(quote)
-        draft = (
-            f"Hi {customer}, just checking in on the quote we sent through. "
-            "If you would like to go ahead, reply here and we can lock it in. "
-            "Happy to answer any questions."
-        )
-        await db.quotes.update_one(_ai_scoped_id_query(business_id, quote_id), {"$set": {
+        customer = _ai_client_name(quote)
+        draft = f"Hi {customer}, just checking in on the quote we sent through. If you would like to go ahead, reply here and we can lock it in. Happy to answer any questions."
+
+        await db.quotes.update_one(_ai_id_query(business_id, quote_id), {"$set": {
             "ai_follow_up_draft": draft,
             "ai_follow_up_prepared_at": _ai_now(),
             "updated_at": _ai_now(),
@@ -11074,18 +11016,16 @@ async def _ai_execute_action(action_id: str, action: dict, current_user: dict):
         if not invoice_id:
             raise HTTPException(status_code=400, detail="Missing invoice_id")
 
-        invoice = await db.invoices.find_one(_ai_scoped_id_query(business_id, invoice_id))
+        invoice = await db.invoices.find_one(_ai_id_query(business_id, invoice_id))
         if not invoice:
             raise HTTPException(status_code=404, detail="Invoice not found")
 
-        customer = _ai_client_name_from_doc(invoice)
+        customer = _ai_client_name(invoice)
         total = _ai_money(invoice.get("total") or invoice.get("amount") or invoice.get("subtotal"))
         total_text = f" for ${total:,.2f}" if total else ""
-        draft = (
-            f"Hi {customer}, just a friendly reminder that your Churvox invoice{total_text} is still open. "
-            "Please let us know if you need anything resent. Thank you."
-        )
-        await db.invoices.update_one(_ai_scoped_id_query(business_id, invoice_id), {"$set": {
+        draft = f"Hi {customer}, just a friendly reminder that your Churvox invoice{total_text} is still open. Please let us know if you need anything resent. Thank you."
+
+        await db.invoices.update_one(_ai_id_query(business_id, invoice_id), {"$set": {
             "ai_reminder_draft": draft,
             "ai_reminder_prepared_at": _ai_now(),
             "updated_at": _ai_now(),
@@ -11096,7 +11036,8 @@ async def _ai_execute_action(action_id: str, action: dict, current_user: dict):
         job_id = action.get("job_id")
         if not job_id:
             raise HTTPException(status_code=400, detail="Missing job_id")
-        await db.jobs.update_one(_ai_scoped_id_query(business_id, job_id), {"$set": {
+
+        await db.jobs.update_one(_ai_id_query(business_id, job_id), {"$set": {
             "owner_review_needed": True,
             "owner_review_reason": action.get("reason") or "AI could not find a safe worker match.",
             "updated_at": _ai_now(),
@@ -11113,40 +11054,23 @@ async def ai_operator_v3_queue(current_user: dict = Depends(get_current_user)):
 @api_router.post("/ai/operator/v3/run-daily-check")
 async def ai_operator_v3_run_daily_check(current_user: dict = Depends(get_current_user)):
     actions = await _ai_build_actions(current_user)
-    return {
-        "success": True,
-        "ok": True,
-        "message": "AI checked jobs, dispatch, quotes, invoices, proof and money.",
-        "actions": actions,
-        "count": len(actions),
-    }
+    return {"success": True, "ok": True, "message": "AI checked the business.", "actions": actions, "count": len(actions)}
 
 @api_router.post("/ai/operator/v3/prepare-today")
 async def ai_operator_v3_prepare_today(current_user: dict = Depends(get_current_user)):
     actions = await _ai_build_actions(current_user)
-    return {
-        "success": True,
-        "ok": True,
-        "message": "AI prepared the owner approval queue.",
-        "actions": actions,
-        "count": len(actions),
-    }
+    return {"success": True, "ok": True, "message": "AI prepared the owner approval queue.", "actions": actions, "count": len(actions)}
 
 @api_router.post("/ai/operator/v3/ask")
 async def ai_operator_v3_ask(body: dict = Body(default=None), current_user: dict = Depends(get_current_user)):
     body = body or {}
-    question = _ai_str(body.get("question"))
+    question = _ai_text(body.get("question"))
     actions = await _ai_build_actions(current_user)
-    answer = (
-        f"I found {len(actions)} owner-approved action"
-        + ("" if len(actions) == 1 else "s")
-        + " ready. "
-    )
     if actions:
         first = actions[0]
-        answer += f"Top priority: {first.get('title')}. {first.get('summary')}"
+        answer = f"I found {len(actions)} action(s) ready. Top priority: {first.get('title')}. {first.get('summary')}"
     else:
-        answer += "Nothing urgent is waiting right now."
+        answer = "Nothing urgent is waiting right now."
     return {"success": True, "ok": True, "answer": answer, "question": question, "actions": actions[:5]}
 
 @api_router.post("/ai/operator/v3/actions/{action_id}/approve")
@@ -11155,21 +11079,19 @@ async def ai_operator_v3_approve(action_id: str, body: dict = Body(default=None)
     action = body.get("action") or body
     if not isinstance(action, dict):
         raise HTTPException(status_code=400, detail="Missing action payload")
-    result = await _ai_execute_action(action_id, action, current_user)
-    business_id = await get_user_business_id(current_user)
-    await _ai_log_action(business_id, current_user, action, result)
+    result = await _ai_execute(action, current_user)
+    await _ai_log(current_user, action, result)
     return {"success": True, "ok": True, **result}
 
 @api_router.post("/ai/operator/v3/actions/{action_id}/reject")
 async def ai_operator_v3_reject(action_id: str, body: dict = Body(default=None), current_user: dict = Depends(get_current_user)):
-    business_id = await get_user_business_id(current_user)
-    action = (body or {}).get("action") or body or {}
-    await _ai_log_action(business_id, current_user, action if isinstance(action, dict) else {"id": action_id}, {
-        "ok": True,
-        "message": "Owner rejected AI action.",
-        "rejected": True,
-    })
-    return {"success": True, "ok": True, "message": "AI action rejected.", "action_id": action_id}
+    body = body or {}
+    action = body.get("action") or body or {"id": action_id}
+    if not isinstance(action, dict):
+        action = {"id": action_id}
+    result = {"ok": True, "message": "AI action rejected.", "action_id": action_id}
+    await _ai_log(current_user, action, result)
+    return {"success": True, "ok": True, **result}
 # ===== V3 AI OPERATOR LIVE ENGINE END =====
 
 
