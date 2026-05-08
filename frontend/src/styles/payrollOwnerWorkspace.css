@@ -1,0 +1,204 @@
+/* Payroll workspace premium cleanup */
+.cx-page.space-y-6 {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+.cx-page.space-y-6 *,
+.cx-page.space-y-6 *::before,
+.cx-page.space-y-6 *::after {
+  box-sizing: border-box;
+}
+
+.cx-page.space-y-6 > section:first-child {
+  position: relative;
+  min-height: 245px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 28px !important;
+  border: 1px solid rgba(203, 213, 225, 0.86) !important;
+  border-radius: 30px !important;
+  background:
+    radial-gradient(circle at 12% 15%, rgba(37, 99, 235, 0.24), transparent 34%),
+    linear-gradient(135deg, #071326 0%, #0b1730 60%, #020817 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 22px 55px rgba(15, 23, 42, 0.18) !important;
+  overflow: hidden !important;
+}
+
+.cx-page.space-y-6 > section:first-child::before {
+  content: "PAYROLL WORKSPACE";
+  display: block;
+  margin-bottom: 10px;
+  color: #93c5fd;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+}
+
+.cx-page.space-y-6 > section:first-child .cx-page-title {
+  margin: 0 !important;
+  color: #ffffff !important;
+  font-size: clamp(42px, 5vw, 72px) !important;
+  line-height: 0.92 !important;
+  letter-spacing: -0.075em !important;
+}
+
+.cx-page.space-y-6 > section:first-child .cx-page-subtitle {
+  max-width: 780px;
+  margin-top: 12px !important;
+  color: #dbeafe !important;
+  font-size: 15px !important;
+  font-weight: 780 !important;
+  line-height: 1.42 !important;
+}
+
+.cx-page.space-y-6 > section:first-child .mt-3.inline-flex {
+  width: fit-content;
+  max-width: 100%;
+  border-color: rgba(147, 197, 253, 0.32) !important;
+  background: rgba(255, 255, 255, 0.09) !important;
+  color: #dbeafe !important;
+  font-weight: 850 !important;
+}
+
+.cx-page.space-y-6 > section:first-child .mt-4.flex {
+  gap: 10px !important;
+}
+
+.cx-page.space-y-6 > section:first-child button,
+.cx-page.space-y-6 .cx-button-primary,
+.cx-page.space-y-6 .cx-button-secondary {
+  min-height: 42px;
+  border-radius: 15px !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+}
+
+.cx-page.space-y-6 > section:first-child .cx-button-primary {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 16px 35px rgba(37, 99, 235, 0.28) !important;
+}
+
+.cx-page.space-y-6 > section:first-child .cx-button-secondary {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  color: #dbeafe !important;
+  box-shadow: none !important;
+}
+
+.cx-page.space-y-6 > section:nth-child(2) {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.cx-page.space-y-6 > section:nth-child(2) > div {
+  min-height: 112px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(203, 213, 225, 0.86) !important;
+  border-radius: 24px !important;
+  background: #ffffff !important;
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.07) !important;
+}
+
+.cx-page.space-y-6 > section:nth-child(2) > div::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: #2563eb;
+}
+
+.cx-page.space-y-6 > section:nth-child(2) p.text-xl {
+  color: #0f172a !important;
+  font-size: 24px !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.04em !important;
+}
+
+.cx-page.space-y-6 > section:nth-child(n+3) {
+  border: 1px solid rgba(203, 213, 225, 0.86) !important;
+  border-radius: 26px !important;
+  background: #ffffff !important;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.07) !important;
+  overflow: hidden !important;
+}
+
+.cx-page.space-y-6 > section:nth-child(n+3) h2,
+.cx-page.space-y-6 > section:nth-child(n+3) .text-lg.font-semibold {
+  color: #0f172a !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+  letter-spacing: -0.045em !important;
+}
+
+.cx-page.space-y-6 .rounded-xl.border,
+.cx-page.space-y-6 .rounded-2xl.border {
+  border-color: #e2e8f0 !important;
+}
+
+.cx-page.space-y-6 .bg-slate-50 {
+  background: #f8fafc !important;
+}
+
+.cx-page.space-y-6 .grid.grid-cols-1.gap-3.md\:grid-cols-2 > div,
+.cx-page.space-y-6 .mt-3.space-y-2 > div,
+.cx-page.space-y-6 .mt-3.grid.grid-cols-1.gap-3.lg\:grid-cols-2 > button {
+  border-radius: 20px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #f8fafc !important;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05) !important;
+}
+
+.cx-page.space-y-6 .cx-status-badge,
+.cx-page.space-y-6 span[class*="cx-status-badge"] {
+  border-radius: 999px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.04em !important;
+}
+
+.cx-page.space-y-6 .cx-input,
+.cx-page.space-y-6 input,
+.cx-page.space-y-6 select,
+.cx-page.space-y-6 textarea {
+  border-radius: 14px !important;
+  border-color: #d8e3f3 !important;
+  background: #f8fafc !important;
+}
+
+.cx-page.space-y-6 #export-centre .grid {
+  gap: 10px !important;
+}
+
+.cx-page.space-y-6 #export-centre button {
+  min-height: 44px !important;
+  justify-content: center !important;
+}
+
+.cx-page.space-y-6 .fixed.inset-0 > div.mx-auto,
+.cx-page.space-y-6 .fixed.inset-0 > div {
+  border-radius: 28px !important;
+  box-shadow: 0 30px 90px rgba(15, 23, 42, 0.28) !important;
+}
+
+@media (max-width: 900px) {
+  .cx-page.space-y-6 > section:first-child {
+    min-height: 220px;
+    border-radius: 24px !important;
+    padding: 20px !important;
+  }
+
+  .cx-page.space-y-6 > section:first-child .cx-page-title {
+    font-size: 42px !important;
+  }
+
+  .cx-page.space-y-6 > section:nth-child(2) {
+    grid-template-columns: 1fr !important;
+  }
+}
