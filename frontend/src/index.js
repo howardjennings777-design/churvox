@@ -41,6 +41,7 @@ import "./styles/automationRulesWorkspace.css";
 import "./styles/reportsBusinessInsights.css";
 import "./styles/unifiedSmartHubHeaders.css";
 import "./styles/churvoxFinalDesignSystem.css";
+import "./styles/churvoxVisibleRedesign.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
