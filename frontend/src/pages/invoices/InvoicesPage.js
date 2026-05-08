@@ -4,7 +4,7 @@ import { useApi } from "@/hooks/useApi";
 import {
   Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, DollarSign, Send,
   Filter, CheckCircle, ReceiptText, Clock3, SlidersHorizontal, FileCheck2,
-  AlertTriangle, Link2, Sparkles, MessageSquare, Receipt, Zap, ArrowRight
+  AlertTriangle, Link2, Sparkles, Receipt, Zap, ArrowRight
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate, formatCurrency, MYOB_SYNC_STATUSES } from "@/lib/utils";
@@ -34,6 +34,8 @@ export default function InvoicesPage() {
   const { get, del, post, loading } = useApi();
   const [invoices, setInvoices] = useState([]);
   const [accounting, setAccounting] = useState(null);
+  const [automationStatus, setAutomationStatus] = useState(null);
+  const [automationBusy, setAutomationBusy] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
@@ -44,9 +46,28 @@ export default function InvoicesPage() {
   useEffect(() => { loadInvoices(); }, []);
 
   const loadInvoices = async () => {
-    const [result, accountingRes] = await Promise.all([get("/invoices"), get("/accounting/settings")]);
+    const [result, accountingRes, automationRes] = await Promise.all([
+      get("/invoices"),
+      get("/accounting/settings"),
+      get("/invoices/automation/status"),
+    ]);
     if (result.success) setInvoices(safeArray(result.data));
     if (accountingRes?.success) setAccounting(accountingRes.data || null);
+    if (automationRes?.success || automationRes?.ok) setAutomationStatus(automationRes.data?.status || automationRes.status || automationRes.data || null);
+  };
+
+  const runInvoiceAutomation = async (mode = "run") => {
+    setAutomationBusy(true);
+    const endpoint = mode === "drafts" ? "/invoices/automation/create-drafts" : mode === "reminders" ? "/invoices/automation/prepare-reminders" : "/invoices/automation/run";
+    const r = await post(endpoint, {});
+    if (r.success || r.ok) {
+      const data = r.data || r;
+      toast.success(data.message || "Invoice automation complete");
+      await loadInvoices();
+    } else {
+      toast.error(r.error || r.message || "Invoice automation failed");
+    }
+    setAutomationBusy(false);
   };
 
   const handleDelete = async () => {
@@ -73,6 +94,13 @@ export default function InvoicesPage() {
     r?.success ? toast.success("MYOB sync updated") : toast.error(r?.message || r?.error || "MYOB sync needs setup");
     loadInvoices();
   };
+  const handlePrepareSingleReminder = async (invoice) => {
+    const id = invoice?.id;
+    if (!id) return;
+    const r = await post(`/invoices/automation/${id}/prepare-reminder`, {});
+    if (r.success || r.ok) toast.success(r.data?.message || r.message || "Reminder draft prepared");
+    else toast.error(r.error || r.message || "Could not prepare reminder");
+  };
 
   const m = useMemo(() => {
     const arr = safeArray(invoices);
@@ -94,7 +122,7 @@ export default function InvoicesPage() {
       }).reduce((s, i) => s + safeNumber(i.total), 0),
       myobIssues: arr.filter((i) => {
         const s = String(i.myob_sync_status || "not_synced").toLowerCase();
-        return ["failed", "error", "sync_error"].includes(s) || Boolean(i.myob_error);
+        return ["failed", "error", "sync_error", "sync_failed"].includes(s) || Boolean(i.myob_error);
       }).length,
       collectableCount: outstandingList.length,
     };
@@ -107,7 +135,8 @@ export default function InvoicesPage() {
       .slice(0, 3);
   }, [invoices]);
 
-  const collectionHealth = m.collectableCount === 0 ? "Clear" : m.overdue > 0 ? "Needs chase" : "Ready to collect";
+  const missingJobInvoices = safeNumber(automationStatus?.completed_jobs_missing_invoice);
+  const collectionHealth = missingJobInvoices > 0 ? "Ready to draft" : m.collectableCount === 0 ? "Clear" : m.overdue > 0 ? "Needs chase" : "Ready to collect";
 
   const filtered = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
@@ -141,7 +170,7 @@ export default function InvoicesPage() {
           icon={<Receipt className="h-7 w-7" />}
           eyebrow={<><Receipt className="h-3 w-3" /> Cashflow control</>}
           title="Invoice Command Centre"
-          subtitle="Create, chase, sync and clear invoices from one polished money workspace. AI keeps the owner focused on what gets cash in fastest."
+          subtitle="Job completed → AI draft invoice → owner review → send/share/pay link → reminders → paid/MYOB status. This page is now wired to run the full invoice automation loop."
           actions={
             <>
               {mode === "myob_external" ? (
@@ -149,7 +178,8 @@ export default function InvoicesPage() {
               ) : (
                 <PremiumButton onClick={() => navigate("/invoices/new")} iconLeft={<Plus className="h-4 w-4" />} dataTestId="add-invoice-button">New invoice</PremiumButton>
               )}
-              <PremiumButton variant="secondary" onClick={() => { setStatusFilter("overdue"); setSortBy("overdue_first"); }} iconLeft={<AlertTriangle className="h-4 w-4" />}>Chase overdue</PremiumButton>
+              <PremiumButton onClick={() => runInvoiceAutomation("run")} disabled={automationBusy} iconLeft={automationBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}>Run invoice automation</PremiumButton>
+              <PremiumButton variant="secondary" onClick={() => { setStatusFilter("overdue"); setSortBy("overdue_first"); runInvoiceAutomation("reminders"); }} iconLeft={<AlertTriangle className="h-4 w-4" />}>Chase overdue</PremiumButton>
             </>
           }
         />
@@ -158,11 +188,11 @@ export default function InvoicesPage() {
           <div className="invoice-command-main">
             <span><Sparkles className="h-4 w-4" /> AI money operator</span>
             <h2>{collectionHealth}</h2>
-            <p>{m.collectableCount ? `${m.collectableCount} invoices can be chased or cleared. ${formatCurrency(m.outstanding)} is waiting.` : "No unpaid invoices need chasing right now."}</p>
+            <p>{missingJobInvoices ? `${missingJobInvoices} completed job${missingJobInvoices === 1 ? "" : "s"} can become draft invoices. ${m.collectableCount} invoices can be chased or cleared. ${formatCurrency(m.outstanding)} is waiting.` : m.collectableCount ? `${m.collectableCount} invoices can be chased or cleared. ${formatCurrency(m.outstanding)} is waiting.` : "No unpaid invoices need chasing right now."}</p>
           </div>
           <div className="invoice-command-actions">
-            <button onClick={() => { setStatusFilter("all"); setSortBy("highest"); }}><DollarSign className="h-4 w-4" /> Prioritise money</button>
-            <button onClick={() => setStatusFilter("draft")}><ReceiptText className="h-4 w-4" /> Review drafts</button>
+            <button onClick={() => runInvoiceAutomation("drafts")} disabled={automationBusy}><ReceiptText className="h-4 w-4" /> Create missing drafts</button>
+            <button onClick={() => runInvoiceAutomation("reminders")} disabled={automationBusy}><DollarSign className="h-4 w-4" /> Prepare reminders</button>
             <button onClick={() => navigate("/integrations")}><Zap className="h-4 w-4" /> MYOB status</button>
           </div>
           <div className="invoice-priority-stack">
@@ -184,7 +214,7 @@ export default function InvoicesPage() {
           <PremiumStatCard label="Paid" value={m.paid} icon={<FileCheck2 className="h-4 w-4" />} tone="teal" onClick={() => setStatusFilter("paid")} />
           <PremiumStatCard label="Overdue" value={m.overdue} icon={<AlertTriangle className="h-4 w-4" />} tone="red" onClick={() => setStatusFilter("overdue")} />
           <PremiumStatCard label="Outstanding" value={formatCurrency(m.outstanding)} icon={<DollarSign className="h-4 w-4" />} />
-          <PremiumStatCard label="Draft value" value={formatCurrency(m.draftValue)} icon={<ReceiptText className="h-4 w-4" />} tone="amber" />
+          <PremiumStatCard label="Jobs to invoice" value={missingJobInvoices} icon={<ReceiptText className="h-4 w-4" />} tone="amber" onClick={() => runInvoiceAutomation("drafts")} />
           <PremiumStatCard label="MYOB issues" value={m.myobIssues} icon={<AlertTriangle className="h-4 w-4" />} tone={m.myobIssues ? "red" : "blue"} onClick={() => navigate("/integrations")} />
         </div>
 
@@ -216,7 +246,7 @@ export default function InvoicesPage() {
             icon={<ReceiptText className="h-6 w-6" />}
             title="No invoices match these filters"
             subtitle="Job completed → Draft invoice → Send → Paid. Create your first invoice to start the cycle."
-            action={<div className="flex gap-2 justify-center flex-wrap"><PremiumButton onClick={() => navigate("/invoices/new")} iconLeft={<Plus className="h-4 w-4" />} dataTestId="add-first-invoice-button">New invoice</PremiumButton><PremiumButton variant="secondary" onClick={() => navigate("/jobs")}>View jobs</PremiumButton></div>}
+            action={<div className="flex gap-2 justify-center flex-wrap"><PremiumButton onClick={() => navigate("/invoices/new")} iconLeft={<Plus className="h-4 w-4" />} dataTestId="add-first-invoice-button">New invoice</PremiumButton><PremiumButton variant="secondary" onClick={() => navigate("/jobs")}>View jobs</PremiumButton><PremiumButton onClick={() => runInvoiceAutomation("run")} disabled={automationBusy}>Run automation</PremiumButton></div>}
           />
         ) : (
           <div className="space-y-3 invoice-record-list">
@@ -257,6 +287,7 @@ export default function InvoicesPage() {
                         <PremiumButton size="sm" variant="secondary" onClick={() => setActiveInvoice(invoice)}>Open</PremiumButton>
                         {invoice.status === "draft" && <PremiumButton size="sm" onClick={() => handleSendInvoice(invoice.id)} iconLeft={<Send className="h-3.5 w-3.5" />} dataTestId={`send-invoice-${invoice.id}`}>Send</PremiumButton>}
                         {invoice.status === "sent" && <PremiumButton size="sm" variant="success" onClick={() => handleMarkPaid(invoice.id)} iconLeft={<CheckCircle className="h-3.5 w-3.5" />} dataTestId={`mark-paid-${invoice.id}`}>Mark paid</PremiumButton>}
+                        {isCollectable(invoice) && <PremiumButton size="sm" variant="secondary" onClick={() => handlePrepareSingleReminder(invoice)}>Draft reminder</PremiumButton>}
                         {paymentLink && <a href={paymentLink} target="_blank" rel="noopener noreferrer" className="px-btn px-btn--secondary px-btn--sm"><Link2 className="h-3.5 w-3.5" /> Pay link</a>}
                         {(mode === "myob_sync" || mode === "myob_external") && <PremiumButton size="sm" variant="secondary" disabled={!myobConnected} onClick={() => handleSyncMyob(invoice.id, String(invoice.myob_sync_status) === "failed")}>{myobConnected ? (String(invoice.myob_sync_status) === "failed" ? "Retry sync" : "Sync MYOB") : "Setup MYOB"}</PremiumButton>}
                         <div className="relative">
