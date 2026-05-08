@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   approveAiAction,
   askBusinessAi,
@@ -7,8 +8,18 @@ import {
   runAiDailyCheck,
 } from "../lib/aiOperator";
 
-const nav = ["Smart Hub", "Jobs", "Clients", "Quotes", "Invoices", "Dispatch", "Team", "Automation", "Reports"];
-const workspaces = ["Jobs", "Clients", "Quotes", "Invoices", "Dispatch", "Team", "Automation", "Reports"];
+const nav = [
+  ["Smart Hub", "/dashboard"],
+  ["Jobs", "/jobs"],
+  ["Clients", "/clients"],
+  ["Quotes", "/quotes"],
+  ["Invoices", "/invoices"],
+  ["Dispatch", "/dispatch"],
+  ["Team", "/team"],
+  ["Automation", "/automation"],
+  ["Reports", "/reports"],
+];
+const workspaces = nav.slice(1);
 
 const formatMoney = (value) => {
   const number = Number(value || 0);
@@ -18,6 +29,8 @@ const formatMoney = (value) => {
 };
 
 export default function SmartHubHardReset() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [actions, setActions] = useState([]);
   const [selectedAction, setSelectedAction] = useState(null);
   const [operatorMessage, setOperatorMessage] = useState("AI Operator is loading real business data...");
@@ -27,6 +40,11 @@ export default function SmartHubHardReset() {
   const [askAnswer, setAskAnswer] = useState("");
   const [loading, setLoading] = useState(true);
 
+  const goTo = (path) => {
+    if (!path) return;
+    navigate(path);
+  };
+
   const pendingActions = useMemo(
     () => actions.filter((action) => (action.status || "pending") === "pending"),
     [actions]
@@ -35,7 +53,6 @@ export default function SmartHubHardReset() {
   const metrics = useMemo(() => {
     const pending = pendingActions.length;
     const dispatch = pendingActions.filter((a) => a.module === "dispatch" || a.action_type === "assign_worker_to_job").length;
-    const invoices = pendingActions.filter((a) => a.module === "invoices").length;
     const proofs = pendingActions.filter((a) => String(a.action_type || "").includes("proof")).length;
     const moneyWaiting = pendingActions
       .filter((a) => a.module === "invoices")
@@ -130,14 +147,14 @@ export default function SmartHubHardReset() {
   return (
     <main className="pcx-shell">
       <aside className="pcx-sidebar">
-        <div className="pcx-logo"><img src="/churvox-logo.svg" alt="Churvox" /></div>
-        <nav>{nav.map((item, index) => <button key={item} className={index === 0 ? "active" : ""}><i>{["✦", "◇", "♙", "▤", "▥", "⌘", "♙", "⚡", "▧"][index]}</i>{item}</button>)}</nav>
-        <div className="pcx-owner"><i /><div><b>Business owner</b><small>Live workspace</small></div><span>⌄</span></div>
+        <button className="pcx-logo" onClick={() => goTo("/dashboard")} aria-label="Go to Smart Hub"><img src="/churvox-logo.svg" alt="Churvox" /></button>
+        <nav>{nav.map(([item, path], index) => <button key={item} onClick={() => goTo(path)} className={location.pathname === path || (path === "/dashboard" && location.pathname === "/overview") ? "active" : ""}><i>{["✦", "◇", "♙", "▤", "▥", "⌘", "♙", "⚡", "▧"][index]}</i>{item}</button>)}</nav>
+        <button className="pcx-owner" onClick={() => goTo("/settings")}><i /><div><b>Business owner</b><small>Live workspace</small></div><span>⌄</span></button>
       </aside>
 
       <section className="pcx-main">
         <header className="pcx-header">
-          <div className="pcx-header-top"><span><i /> {operatorMessage}</span><nav><button>Alerts <b>{pendingActions.length}</b></button><button onClick={() => setAskOpen(true)}>Ask AI</button><button>Business workspace ▾</button></nav></div>
+          <div className="pcx-header-top"><span><i /> {operatorMessage}</span><nav><button onClick={() => goTo("/notifications")}>Alerts <b>{pendingActions.length}</b></button><button onClick={() => setAskOpen(true)}>Ask AI</button><button onClick={() => goTo("/settings")}>Business workspace ▾</button></nav></div>
           <section className="pcx-header-grid">
             <div className="pcx-hero-copy"><p>Good morning</p><h1>AI Command Centre</h1><span>Churvox only shows real AI-prepared work from your business data. If there is nothing to approve, it stays clear.</span><div><button onClick={preparePlan}>Prepare today’s real plan →</button><button onClick={() => firstAction && setSelectedAction(firstAction)} disabled={!firstAction}>Open action queue</button></div></div>
             <div className="pcx-radar"><b>{pendingActions.length}</b><span>Real AI actions</span><em>{loading ? "Scanning live business data" : pendingActions.length ? "Ready for owner approval" : "Nothing urgent found"}</em><button onClick={refreshOperator}>Run real scan</button></div>
@@ -153,12 +170,12 @@ export default function SmartHubHardReset() {
             {loading ? <EmptyState title="Scanning business data" copy="AI is checking real jobs, invoices, quotes, workers and dispatch." /> : actions.length ? actions.map((action) => <AiApprovalCard key={action.id} action={action} busy={busyActionId === action.id} onOpen={() => setSelectedAction(action)} onApprove={() => approveAction(action)} />) : <EmptyState title="No real actions yet" copy="There are no AI-prepared owner approvals from your live data right now." />}
           </article>
           <article className="pcx-card pcx-jobs">
-            <Head eyebrow="Live jobs" title="AI dispatch signals" link="Run scan →" />
+            <Head eyebrow="Live jobs" title="AI dispatch signals" link="Open dispatch →" onLink={() => goTo("/dispatch")} />
             {actions.filter((a) => a.module === "dispatch").length ? actions.filter((a) => a.module === "dispatch").map((action) => <button className="pcx-job" key={action.id} onClick={() => setSelectedAction(action)}><b>{action.target_record_id || "Job"}</b><span>{action.title}</span><mark className="needs-crew">AI ready</mark><span>{action.summary}</span><em>Review</em></button>) : <EmptyState title="No dispatch actions" copy="AI has not found unassigned or conflicted jobs that need owner approval." />}
           </article>
-          <aside className="pcx-rail"><Mini title="Cash Flow" value={metrics[1][1]} copy="Real invoice actions from AI scan" action="Review money" onClick={() => invoiceAction && setSelectedAction(invoiceAction)} /><Mini title="Proofs Pending" value={metrics[3][1]} copy="Real proof actions from AI scan" action="Review proofs" onClick={() => proofAction && setSelectedAction(proofAction)} /><div className="pcx-sms"><em>LIVE</em><p>Messages</p><h3>{actions.filter((a) => ["create_quote_followup", "create_invoice_reminder", "prepare_customer_message"].includes(a.action_type)).length}</h3><span>real drafts ready</span><div><b>AI</b><small>approval first</small></div><button onClick={() => askAi("Prepare customer messages from real business data")}>Prepare messages →</button></div></aside>
+          <aside className="pcx-rail"><Mini title="Cash Flow" value={metrics[1][1]} copy="Real invoice actions from AI scan" action="Review money" onClick={() => invoiceAction ? setSelectedAction(invoiceAction) : goTo("/invoices")} /><Mini title="Proofs Pending" value={metrics[3][1]} copy="Real proof actions from AI scan" action="Review proofs" onClick={() => proofAction ? setSelectedAction(proofAction) : goTo("/jobs")} /><div className="pcx-sms"><em>LIVE</em><p>Messages</p><h3>{actions.filter((a) => ["create_quote_followup", "create_invoice_reminder", "prepare_customer_message"].includes(a.action_type)).length}</h3><span>real drafts ready</span><div><b>AI</b><small>approval first</small></div><button onClick={() => askAi("Prepare customer messages from real business data")}>Prepare messages →</button></div></aside>
           <article className="pcx-card pcx-ask"><Head eyebrow="Ask your business" title="Tell AI what to prepare" /><div className="pcx-prompts"><button onClick={() => askAi("Who should I assign next?")}>Who should I assign next?</button><button onClick={() => askAi("Which invoices should I chase first?")}>Which invoices should I chase first?</button><button onClick={() => askAi("Draft customer messages for today")}>Draft customer messages for today</button></div><div className="pcx-input"><input value={askQuestion} onChange={(e) => setAskQuestion(e.target.value)} placeholder="Ask AI to prepare an action..." /><button onClick={() => askAi()}>Ask AI →</button></div></article>
-          <article className="pcx-card pcx-work"><Head eyebrow="Owner workspaces" title="Command tools" /> <div>{workspaces.map(w => <button key={w}><i>▦</i><b>{w}</b><small>{w === "Automation" ? "Rules & AI triggers" : w === "Reports" ? "Business insights" : "Open workspace"}</small></button>)}</div></article>
+          <article className="pcx-card pcx-work"><Head eyebrow="Owner workspaces" title="Command tools" /> <div>{workspaces.map(([w, path]) => <button key={w} onClick={() => goTo(path)}><i>▦</i><b>{w}</b><small>{w === "Automation" ? "Rules & AI triggers" : w === "Reports" ? "Business insights" : "Open workspace"}</small></button>)}</div></article>
         </section>
       </section>
 
@@ -168,7 +185,7 @@ export default function SmartHubHardReset() {
   );
 }
 
-function Head({ eyebrow, title, badge, link }) { return <div className="pcx-head"><div><p>{eyebrow}</p><h2>{title}</h2></div>{badge ? <b>{badge}</b> : link ? <button>{link}</button> : null}</div>; }
+function Head({ eyebrow, title, badge, link, onLink }) { return <div className="pcx-head"><div><p>{eyebrow}</p><h2>{title}</h2></div>{badge ? <b>{badge}</b> : link ? <button onClick={onLink}>{link}</button> : null}</div>; }
 function Mini({ title, value, copy, action, onClick }) { return <div className="pcx-mini"><p>{title}</p><h3>{value}</h3><span>{copy}</span><button onClick={onClick} disabled={!onClick}>{action} →</button></div>; }
 function EmptyState({ title, copy }) { return <div className="pcx-empty"><b>{title}</b><span>{copy}</span></div>; }
 
