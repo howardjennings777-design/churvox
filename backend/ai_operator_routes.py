@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Any, Dict, Optional
@@ -22,6 +22,20 @@ class AskAiRequest(BaseModel):
 
 
 class AiActionApprovalRequest(BaseModel):
+    action: Optional[Dict[str, Any]] = None
+
+
+class AiActionUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    summary: Optional[str] = None
+    reason: Optional[str] = None
+    preview_text: Optional[str] = None
+    suggested_payload: Optional[Dict[str, Any]] = None
+    action: Optional[Dict[str, Any]] = None
+
+
+class AiActionScheduleRequest(BaseModel):
+    scheduled_for: str
     action: Optional[Dict[str, Any]] = None
 
 
@@ -228,6 +242,23 @@ def create_ai_operator_router(db, get_current_user, get_user_business_id):
         actor_id = str(current_user.get("id") or current_user.get("_id") or current_user.get("email") or "")
         return str(business_id), actor_id
 
+    async def find_action_or_404(business_id: str, action_id: str):
+        action = await db.ai_operator_actions.find_one({"business_id": str(business_id), "id": action_id})
+        if not action:
+            raise HTTPException(status_code=404, detail="AI action not found")
+        return action
+
+    @router.get("/board")
+    async def ai_operator_board(current_user: dict = Depends(get_current_user)):
+        business_id, _actor_id = await business_context(current_user)
+        rows = await db.ai_operator_actions.find({"business_id": str(business_id)}).sort("created_at", -1).limit(200).to_list(length=200)
+        if not rows:
+            prepared = await prepare_ai_actions(db, business_id)
+            rows = await persist_ai_actions(db, business_id, prepared)
+        else:
+            rows = [serialise_record(r) for r in rows]
+        return {"ok": True, "actions": rows, "count": len(rows), "generated_at": utc_now_iso()}
+
     @router.get("/queue")
     async def ai_operator_queue(current_user: dict = Depends(get_current_user)):
         business_id, _actor_id = await business_context(current_user)
@@ -235,47 +266,50 @@ def create_ai_operator_router(db, get_current_user, get_user_business_id):
         if not actions:
             prepared = await prepare_ai_actions(db, business_id)
             actions = await persist_ai_actions(db, business_id, prepared)
-        return {
-            "ok": True,
-            "status": "ready",
-            "actions": actions,
-            "count": len(actions),
-            "generated_at": utc_now_iso(),
-        }
+        return {"ok": True, "status": "ready", "actions": actions, "count": len(actions), "generated_at": utc_now_iso()}
 
     @router.post("/run-daily-check")
     async def run_daily_check(current_user: dict = Depends(get_current_user)):
         business_id, _actor_id = await business_context(current_user)
         prepared = await prepare_ai_actions(db, business_id)
         actions = await persist_ai_actions(db, business_id, prepared)
-        return {
-            "ok": True,
-            "status": "daily_check_complete",
-            "message": "AI scanned jobs, workers, quotes and invoices and prepared owner actions.",
-            "actions": actions,
-            "count": len(actions),
-            "generated_at": utc_now_iso(),
-        }
+        return {"ok": True, "status": "daily_check_complete", "message": "AI scanned jobs, workers, quotes and invoices and prepared owner actions.", "actions": actions, "count": len(actions), "generated_at": utc_now_iso()}
 
     @router.post("/prepare-today")
     async def prepare_today(current_user: dict = Depends(get_current_user)):
         business_id, _actor_id = await business_context(current_user)
         prepared = await prepare_ai_actions(db, business_id)
         actions = await persist_ai_actions(db, business_id, prepared)
-        return {
-            "ok": True,
-            "status": "today_prepared",
-            "message": "Today’s AI Operator plan is ready for owner approval.",
-            "actions": actions,
-            "count": len(actions),
-            "generated_at": utc_now_iso(),
-        }
+        return {"ok": True, "status": "today_prepared", "message": "Today’s AI Operator plan is ready for owner approval.", "actions": actions, "count": len(actions), "generated_at": utc_now_iso()}
 
     @router.post("/ask")
     async def ask_ai(request: AskAiRequest, current_user: dict = Depends(get_current_user)):
         business_id, _actor_id = await business_context(current_user)
         result = await answer_business_question(db, business_id, request.question)
         return {"ok": True, **result}
+
+    @router.post("/actions/{action_id}/update")
+    async def update_action(action_id: str, request: AiActionUpdateRequest, current_user: dict = Depends(get_current_user)):
+        business_id, actor_id = await business_context(current_user)
+        await find_action_or_404(business_id, action_id)
+        incoming = request.action or request.model_dump(exclude_none=True)
+        allowed = {k: incoming.get(k) for k in ["title", "summary", "reason", "preview_text", "suggested_payload"] if k in incoming}
+        allowed.update({"status": "edited", "edited_by": actor_id, "edited_at": utc_now_iso(), "updated_at": utc_now_iso()})
+        await db.ai_operator_actions.update_one({"business_id": str(business_id), "id": action_id}, {"$set": allowed})
+        updated = await find_action_or_404(business_id, action_id)
+        return {"ok": True, "status": "edited", "action": serialise_record(updated)}
+
+    @router.post("/actions/{action_id}/schedule")
+    async def schedule_action(action_id: str, request: AiActionScheduleRequest, current_user: dict = Depends(get_current_user)):
+        business_id, actor_id = await business_context(current_user)
+        await find_action_or_404(business_id, action_id)
+        incoming = request.action or {}
+        update = {k: incoming.get(k) for k in ["title", "summary", "reason", "preview_text", "suggested_payload"] if k in incoming}
+        update.update({"status": "scheduled", "scheduled_for": request.scheduled_for, "scheduled_by": actor_id, "scheduled_at": utc_now_iso(), "updated_at": utc_now_iso()})
+        await db.ai_operator_actions.update_one({"business_id": str(business_id), "id": action_id}, {"$set": update})
+        updated = await find_action_or_404(business_id, action_id)
+        await _write_operator_event(db, business_id, actor_id, serialise_record(updated), "AI action scheduled for deploy queue.", {"scheduled_for": request.scheduled_for})
+        return {"ok": True, "status": "scheduled", "action": serialise_record(updated)}
 
     @router.post("/actions/{action_id}/approve")
     async def approve_action(action_id: str, request: AiActionApprovalRequest = None, current_user: dict = Depends(get_current_user)):
@@ -285,11 +319,11 @@ def create_ai_operator_router(db, get_current_user, get_user_business_id):
             existing = await db.ai_operator_actions.find_one({"business_id": str(business_id), "id": action_id})
         except Exception:
             existing = None
-
         action = serialise_record(existing) if existing else ((request.action if request else None) or {})
+        if request and request.action:
+            action.update(request.action)
         if not action:
             raise HTTPException(status_code=404, detail="AI action not found")
-
         action["id"] = action.get("id") or action_id
         action["business_id"] = business_id
         execution = await _execute_ai_action(db, business_id, actor_id, action)
@@ -307,17 +341,10 @@ def create_ai_operator_router(db, get_current_user, get_user_business_id):
             saved = action
         else:
             try:
-                await db.ai_operator_actions.update_one({"business_id": str(business_id), "id": action["id"]}, {"$set": {"execution_result": execution}})
+                await db.ai_operator_actions.update_one({"business_id": str(business_id), "id": action["id"]}, {"$set": {"execution_result": execution, "executed_at": utc_now_iso()}})
             except Exception:
                 pass
-
-        return {
-            "ok": True,
-            "status": "completed",
-            "message": execution.get("message") or "AI action approved and executed.",
-            "action": saved or action,
-            "execution": execution,
-        }
+        return {"ok": True, "status": "completed", "message": execution.get("message") or "AI action approved and executed.", "action": saved or action, "execution": execution}
 
     @router.post("/actions/{action_id}/reject")
     async def reject_action(action_id: str, current_user: dict = Depends(get_current_user)):
