@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, Optional
 from uuid import uuid4
 
 from bson import ObjectId
@@ -68,6 +68,38 @@ async def write_event(db, business_id: str, action: Dict[str, Any], message: str
             await getattr(db, collection_name).insert_one(dict(event))
         except Exception:
             pass
+
+
+async def send_deploy_warning_if_due(db, action: Dict[str, Any], due: datetime, current_time: datetime) -> bool:
+    business_id = safe_text(action.get("business_id"))
+    action_id = safe_text(action.get("id"))
+    if not business_id or not action_id or action.get("deploy_warning_sent_at"):
+        return False
+
+    warning_window = timedelta(minutes=int(action.get("deploy_warning_minutes") or 60))
+    time_until_due = due - current_time
+    if time_until_due <= timedelta(0) or time_until_due > warning_window:
+        return False
+
+    deploy_label = action.get("deploy_window_label") or "7:00pm weeknight deploy"
+    message = f"AI deploy warning: {safe_text(action.get('title'), 'an AI action')} is scheduled to deploy at {due.isoformat()}. You have about 1 hour to edit, reject, or reschedule it."
+    await write_event(
+        db,
+        business_id,
+        action,
+        message,
+        {
+            "warning_type": "one_hour_before_deploy",
+            "scheduled_for": due.isoformat(),
+            "deploy_window_label": deploy_label,
+            "action_id": action_id,
+        },
+    )
+    await db.ai_operator_actions.update_one(
+        {"business_id": business_id, "id": action_id},
+        {"$set": {"deploy_warning_sent_at": now_iso(), "updated_at": now_iso()}},
+    )
+    return True
 
 
 async def find_record(db, collection_name: str, business_id: str, record_id: str) -> Optional[Dict[str, Any]]:
@@ -222,6 +254,7 @@ async def run_due_scheduled_ai_actions(db, limit: int = 50) -> Dict[str, int]:
     deployed = 0
     failed = 0
     skipped = 0
+    warnings_sent = 0
 
     for action in rows:
         checked += 1
@@ -229,7 +262,14 @@ async def run_due_scheduled_ai_actions(db, limit: int = 50) -> Dict[str, int]:
         action_id = safe_text(action.get("id"))
         business_id = safe_text(action.get("business_id"))
         due = parse_due_time(action.get("scheduled_for"))
-        if not due or due > now:
+        if not due:
+            skipped += 1
+            continue
+
+        if due > now:
+            warned = await send_deploy_warning_if_due(db, action, due, now)
+            if warned:
+                warnings_sent += 1
             skipped += 1
             continue
 
@@ -254,4 +294,10 @@ async def run_due_scheduled_ai_actions(db, limit: int = 50) -> Dict[str, int]:
                 {"$set": {"status": "failed", "failure_reason": str(exc), "updated_at": now_iso()}},
             )
 
-    return {"scheduled_checked": checked, "scheduled_deployed": deployed, "scheduled_failed": failed, "scheduled_skipped": skipped}
+    return {
+        "scheduled_checked": checked,
+        "scheduled_deployed": deployed,
+        "scheduled_failed": failed,
+        "scheduled_skipped": skipped,
+        "scheduled_warning_notifications": warnings_sent,
+    }
