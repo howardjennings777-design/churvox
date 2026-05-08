@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   approveAiAction,
-  askBusinessAi,
   loadAiOperatorQueue,
   prepareTodayWithAi,
   runAiDailyCheck,
@@ -25,8 +24,9 @@ const nav = [
   ["Billing", "/plans"],
   ["Settings", "/settings"],
 ];
+
 const navIcons = ["✦", "◇", "⌘", "♙", "▣", "▤", "▥", "♙", "$", "⚡", "▧", "◌", "⛓", "◫", "⚙"];
-const workspaces = nav.slice(1);
+const workspaceLinks = nav.slice(1);
 
 const formatMoney = (value) => {
   const number = Number(value || 0);
@@ -40,51 +40,48 @@ export default function SmartHubHardReset() {
   const location = useLocation();
   const [actions, setActions] = useState([]);
   const [selectedAction, setSelectedAction] = useState(null);
-  const [operatorMessage, setOperatorMessage] = useState("Checking your workspace...");
+  const [statusMessage, setStatusMessage] = useState("Checking your workspace...");
   const [busyActionId, setBusyActionId] = useState("");
-  const [askOpen, setAskOpen] = useState(false);
-  const [askQuestion, setAskQuestion] = useState("");
-  const [askAnswer, setAskAnswer] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const goTo = (path) => {
-    if (!path) return;
-    navigate(path);
-  };
+  const goTo = (path) => path && navigate(path);
 
   const pendingActions = useMemo(
     () => actions.filter((action) => (action.status || "pending") === "pending"),
     [actions]
   );
 
-  const metrics = useMemo(() => {
-    const pending = pendingActions.length;
-    const dispatch = pendingActions.filter((a) => a.module === "dispatch" || a.action_type === "assign_worker_to_job").length;
+  const dashboard = useMemo(() => {
+    const decisions = pendingActions.length;
+    const crew = pendingActions.filter((a) => a.module === "dispatch" || a.action_type === "assign_worker_to_job").length;
     const proofs = pendingActions.filter((a) => String(a.action_type || "").includes("proof")).length;
-    const moneyWaiting = pendingActions
+    const payments = pendingActions
       .filter((a) => a.module === "invoices")
       .reduce((sum, action) => sum + Number(action?.suggested_payload?.total || action?.suggested_payload?.amount || 0), 0);
 
-    return [
-      ["Crew needed", String(dispatch), "orange"],
-      ["Payments to chase", formatMoney(moneyWaiting), "green"],
-      ["Decisions", String(pending), "blue"],
-      ["Job proofs", String(proofs), "purple"],
-    ];
+    return { decisions, crew, proofs, payments };
   }, [pendingActions]);
+
+  const stats = [
+    { label: "Decisions", value: dashboard.decisions, tone: "blue", copy: dashboard.decisions ? "Needs review" : "All clear", path: null },
+    { label: "Crew needed", value: dashboard.crew, tone: "orange", copy: dashboard.crew ? "Dispatch review" : "Covered", path: "/dispatch" },
+    { label: "Payments", value: formatMoney(dashboard.payments), tone: "green", copy: dashboard.payments ? "Ready to chase" : "Clear", path: "/invoices" },
+    { label: "Job proofs", value: dashboard.proofs, tone: "purple", copy: dashboard.proofs ? "Needs review" : "Clear", path: "/proof-to-paid" },
+  ];
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
     loadAiOperatorQueue().then((result) => {
       if (!alive) return;
-      setActions(result.actions || []);
-      setOperatorMessage(
+      const nextActions = result.actions || [];
+      setActions(nextActions);
+      setStatusMessage(
         result.ok
-          ? result.actions?.length
-            ? "Work is ready for review."
+          ? nextActions.length
+            ? "You have work ready to review."
             : "Everything is up to date."
-          : "Workspace check is unavailable. No placeholder data is shown."
+          : "Workspace check is unavailable."
       );
       setLoading(false);
     });
@@ -93,32 +90,34 @@ export default function SmartHubHardReset() {
     };
   }, []);
 
-  const refreshOperator = async () => {
+  const refreshDashboard = async () => {
     setLoading(true);
-    setOperatorMessage("Checking jobs, payments, quotes and dispatch...");
+    setStatusMessage("Refreshing your workspace...");
     const result = await runAiDailyCheck();
-    setActions(result.actions || []);
-    setOperatorMessage(
+    const nextActions = result.actions || [];
+    setActions(nextActions);
+    setStatusMessage(
       result.ok
-        ? result.actions?.length
-          ? "Workspace refreshed. Decisions are ready."
-          : "Workspace refreshed. Everything is clear."
-        : "Refresh failed. No placeholder actions were created."
+        ? nextActions.length
+          ? "Dashboard refreshed. Decisions are ready."
+          : "Dashboard refreshed. Everything is clear."
+        : "Refresh failed. Try again shortly."
     );
     setLoading(false);
   };
 
-  const preparePlan = async () => {
+  const prepareToday = async () => {
     setLoading(true);
-    setOperatorMessage("Updating today’s plan...");
+    setStatusMessage("Updating today’s run sheet...");
     const result = await prepareTodayWithAi();
-    setActions(result.actions || []);
-    setOperatorMessage(
+    const nextActions = result.actions || [];
+    setActions(nextActions);
+    setStatusMessage(
       result.ok
-        ? result.actions?.length
-          ? "Today’s plan is ready for review."
-          : "Today’s plan is clear."
-        : "Could not update today’s plan. No placeholder actions were created."
+        ? nextActions.length
+          ? "Today’s run sheet is ready for review."
+          : "Today’s run sheet is clear."
+        : "Could not update today’s run sheet."
     );
     setLoading(false);
   };
@@ -129,84 +128,163 @@ export default function SmartHubHardReset() {
     const result = await approveAiAction(action);
     if (result.ok) {
       setActions((current) => current.filter((item) => item.id !== action.id));
-      setOperatorMessage(result.data?.message || `${action.title} approved and completed.`);
+      setStatusMessage(result.data?.message || "Action approved and completed.");
     } else {
-      setOperatorMessage(result.message || "Could not complete this action. Nothing was marked complete.");
+      setStatusMessage(result.message || "Could not complete this action.");
     }
     setBusyActionId("");
     setSelectedAction(null);
   };
 
-  const askAi = async (question) => {
-    const finalQuestion = question || askQuestion;
-    if (!finalQuestion) return;
-    setAskOpen(true);
-    setAskQuestion(finalQuestion);
-    setAskAnswer("Checking your business data...");
-    const result = await askBusinessAi(finalQuestion);
-    setAskAnswer(result.answer || "No live answer was returned.");
-  };
-
-  const firstAction = pendingActions[0] || actions[0] || null;
-  const invoiceAction = actions.find((a) => a.module === "invoices") || null;
-  const proofAction = actions.find((a) => String(a.action_type || "").includes("proof")) || null;
+  const firstAction = pendingActions[0] || null;
+  const dispatchActions = pendingActions.filter((a) => a.module === "dispatch" || a.action_type === "assign_worker_to_job");
+  const invoiceActions = pendingActions.filter((a) => a.module === "invoices");
+  const proofActions = pendingActions.filter((a) => String(a.action_type || "").includes("proof"));
 
   return (
-    <main className="pcx-shell">
+    <main className="pcx-shell smart-hub-v5">
       <aside className="pcx-sidebar">
-        <button className="pcx-logo" onClick={() => goTo("/dashboard")} aria-label="Go to Smart Hub"><img src="/churvox-logo.svg" alt="Churvox" /></button>
-        <nav>{nav.map(([item, path], index) => <button key={item} onClick={() => goTo(path)} className={location.pathname === path || (path === "/dashboard" && location.pathname === "/overview") ? "active" : ""}><i>{navIcons[index] || "•"}</i>{item}</button>)}</nav>
-        <button className="pcx-owner" onClick={() => goTo("/settings")}><i /><div><b>Business owner</b><small>Live workspace</small></div><span>⌄</span></button>
+        <button className="pcx-logo" onClick={() => goTo("/dashboard")} aria-label="Go to Smart Hub">
+          <img src="/churvox-logo.svg" alt="Churvox" />
+        </button>
+        <nav>
+          {nav.map(([item, path], index) => (
+            <button
+              key={item}
+              onClick={() => goTo(path)}
+              className={location.pathname === path || (path === "/dashboard" && location.pathname === "/overview") ? "active" : ""}
+            >
+              <i>{navIcons[index] || "•"}</i>{item}
+            </button>
+          ))}
+        </nav>
+        <button className="pcx-owner" onClick={() => goTo("/settings")}>
+          <i /><div><b>Business owner</b><small>Live workspace</small></div><span>⌄</span>
+        </button>
       </aside>
 
-      <section className="pcx-main">
-        <header className="pcx-header">
-          <div className="pcx-header-top"><span><i /> {operatorMessage}</span><nav><button onClick={() => goTo("/notifications")}>Alerts <b>{pendingActions.length}</b></button><button onClick={() => goTo("/settings")}>Business workspace ▾</button></nav></div>
-          <section className="pcx-header-grid">
-            <div className="pcx-hero-copy"><p>Today</p><h1>Smart Hub</h1><span>Churvox checks today’s jobs, payments and customer follow-ups in the background. You only see something here when it needs your decision.</span><div><button onClick={preparePlan}>Refresh dashboard →</button><button onClick={() => firstAction && setSelectedAction(firstAction)} disabled={!firstAction}>Review decisions</button></div></div>
-            <div className="pcx-radar"><b>{pendingActions.length}</b><span>Decisions</span><em>{loading ? "Checking workspace" : pendingActions.length ? "Ready for review" : "All clear"}</em><button onClick={refreshOperator}>Refresh now</button></div>
-            <div className="pcx-live"><p><i /> Business pulse</p>{metrics.map(([label, value, tone]) => <button key={label} onClick={() => firstAction && setSelectedAction(firstAction)}><span>{label}</span><b className={tone}>{value}</b><em>›</em></button>)}</div>
-          </section>
+      <section className="pcx-main sh-main">
+        <header className="sh-topbar">
+          <span className={`sh-live-dot ${dashboard.decisions ? "needs" : "clear"}`}>{statusMessage}</span>
+          <div>
+            <button onClick={() => goTo("/notifications")}>Alerts <b>{dashboard.decisions}</b></button>
+            <button onClick={() => goTo("/settings")}>Settings</button>
+          </div>
         </header>
 
-        <section className="pcx-metrics">{metrics.map(([label, value, tone]) => <button key={label} onClick={() => firstAction && setSelectedAction(firstAction)}><b className={tone}>{value}</b><span>{label}</span><small>{firstAction ? "Open" : "Clear"}</small></button>)}</section>
+        <section className="sh-hero">
+          <div className="sh-hero-copy">
+            <p>Today’s control room</p>
+            <h1>Smart Hub</h1>
+            <span>One clean view of the work that matters today. Jobs, payments, proofs, and owner decisions are checked in the background.</span>
+            <div>
+              <button onClick={prepareToday}>Refresh dashboard</button>
+              <button className="secondary" onClick={() => firstAction && setSelectedAction(firstAction)} disabled={!firstAction}>Review decisions</button>
+            </div>
+          </div>
 
-        <section className="pcx-grid">
-          <article className="pcx-card pcx-approvals">
-            <Head eyebrow="Review queue" title="Needs your decision" badge={String(pendingActions.length)} />
-            {loading ? <EmptyState title="Checking workspace" copy="Churvox is checking jobs, invoices, quotes, workers and dispatch." /> : actions.length ? actions.map((action) => <AiApprovalCard key={action.id} action={action} busy={busyActionId === action.id} onOpen={() => setSelectedAction(action)} onApprove={() => approveAction(action)} />) : <EmptyState title="All clear" copy="No jobs, payments, job proofs, or customer replies need your decision right now." />}
+          <div className="sh-decision-card">
+            <small>Owner decisions</small>
+            <b>{dashboard.decisions}</b>
+            <span>{loading ? "Checking..." : dashboard.decisions ? "Ready for review" : "All clear"}</span>
+            <button onClick={refreshDashboard}>Refresh now</button>
+          </div>
+        </section>
+
+        <section className="sh-stats">
+          {stats.map((stat) => (
+            <button key={stat.label} className={`sh-stat sh-stat--${stat.tone}`} onClick={() => stat.path ? goTo(stat.path) : firstAction && setSelectedAction(firstAction)}>
+              <b>{stat.value}</b>
+              <span>{stat.label}</span>
+              <small>{stat.copy}</small>
+            </button>
+          ))}
+        </section>
+
+        <section className="sh-grid">
+          <DashboardPanel eyebrow="Review queue" title="Needs your decision" count={dashboard.decisions}>
+            {loading ? (
+              <EmptyState title="Checking workspace" copy="Refreshing your jobs, invoices, proofs and customer follow-ups." />
+            ) : pendingActions.length ? (
+              pendingActions.slice(0, 5).map((action) => (
+                <ActionRow key={action.id} action={action} busy={busyActionId === action.id} onOpen={() => setSelectedAction(action)} onApprove={() => approveAction(action)} />
+              ))
+            ) : (
+              <EmptyState title="All clear" copy="Nothing needs your decision right now." />
+            )}
+          </DashboardPanel>
+
+          <DashboardPanel eyebrow="Dispatch" title="Crew and job checks" action="Open dispatch" onAction={() => goTo("/dispatch")}>
+            {dispatchActions.length ? dispatchActions.slice(0, 4).map((action) => (
+              <SignalRow key={action.id} title={action.title} copy={action.summary} status="Review" onClick={() => setSelectedAction(action)} />
+            )) : <EmptyState title="All covered" copy="No unassigned or conflicting jobs need attention." />}
+          </DashboardPanel>
+
+          <div className="sh-side-stack">
+            <Mini title="Payments" value={formatMoney(dashboard.payments)} copy="Invoice follow-ups ready to check" action="Open invoices" onClick={() => invoiceActions[0] ? setSelectedAction(invoiceActions[0]) : goTo("/invoices")} />
+            <Mini title="Job proofs" value={dashboard.proofs} copy="Completion photos and proof packs" action="Open proofs" onClick={() => proofActions[0] ? setSelectedAction(proofActions[0]) : goTo("/proof-to-paid")} />
+          </div>
+
+          <article className="sh-workspaces">
+            <div className="sh-panel-head"><p>Owner workspaces</p><h2>Open what you need</h2></div>
+            <div>
+              {workspaceLinks.map(([name, path]) => (
+                <button key={name} onClick={() => goTo(path)}>
+                  <i>▦</i><b>{name}</b><small>{name === "Automation" ? "Rules & triggers" : name === "Reports" ? "Business insights" : "Open workspace"}</small>
+                </button>
+              ))}
+            </div>
           </article>
-          <article className="pcx-card pcx-jobs">
-            <Head eyebrow="Dispatch" title="Job signals" link="Open dispatch →" onLink={() => goTo("/dispatch")} />
-            {actions.filter((a) => a.module === "dispatch").length ? actions.filter((a) => a.module === "dispatch").map((action) => <button className="pcx-job" key={action.id} onClick={() => setSelectedAction(action)}><b>{action.target_record_id || "Job"}</b><span>{action.title}</span><mark className="needs-crew">Ready</mark><span>{action.summary}</span><em>Review</em></button>) : <EmptyState title="All clear" copy="No unassigned or conflicting jobs need attention right now." />}
-          </article>
-          <aside className="pcx-rail"><Mini title="Payments" value={metrics[1][1]} copy="Invoice follow-ups ready to check" action="Open invoices" onClick={() => invoiceAction ? setSelectedAction(invoiceAction) : goTo("/invoices")} /><Mini title="Job proofs" value={metrics[3][1]} copy="Completion photos and proof packs" action="Open proofs" onClick={() => proofAction ? setSelectedAction(proofAction) : goTo("/proof-to-paid")} /></aside>
-          <article className="pcx-card pcx-work pcx-work--wide"><Head eyebrow="Owner workspaces" title="Workspaces" /> <div>{workspaces.map(([w, path]) => <button key={w} onClick={() => goTo(path)}><i>▦</i><b>{w}</b><small>{w === "Automation" ? "Rules & triggers" : w === "Reports" ? "Business insights" : "Open workspace"}</small></button>)}</div></article>
         </section>
       </section>
 
-      {selectedAction && <AiActionModal action={selectedAction} busy={busyActionId === selectedAction.id} onClose={() => setSelectedAction(null)} onApprove={() => approveAction(selectedAction)} />}
-      {askOpen && <AskAiModal question={askQuestion} answer={askAnswer} onQuestion={setAskQuestion} onAsk={askAi} onClose={() => setAskOpen(false)} />}
+      {selectedAction && <ActionModal action={selectedAction} busy={busyActionId === selectedAction.id} onClose={() => setSelectedAction(null)} onApprove={() => approveAction(selectedAction)} />}
     </main>
   );
 }
 
-function Head({ eyebrow, title, badge, link, onLink }) { return <div className="pcx-head"><div><p>{eyebrow}</p><h2>{title}</h2></div>{badge ? <b>{badge}</b> : link ? <button onClick={onLink}>{link}</button> : null}</div>; }
-function Mini({ title, value, copy, action, onClick }) { return <div className="pcx-mini"><p>{title}</p><h3>{value}</h3><span>{copy}</span><button onClick={onClick} disabled={!onClick}>{action} →</button></div>; }
-function EmptyState({ title, copy }) { return <div className="pcx-empty"><b>{title}</b><span>{copy}</span></div>; }
-
-function AiApprovalCard({ action, busy, onOpen, onApprove }) {
-  const done = action.status === "completed" || action.status === "approved";
+function DashboardPanel({ eyebrow, title, count, action, onAction, children }) {
   return (
-    <div className={`pcx-approval ${done ? "done" : ""}`}>
-      <i>{done ? "✓" : "✦"}</i>
-      <div onClick={onOpen} role="button" tabIndex={0}><b>{action.title}</b><span>{action.summary}</span></div>
-      <button onClick={done ? onOpen : onApprove}>{busy ? "Running..." : done ? "View" : action.action_type === "create_invoice_draft" ? "Draft invoice" : action.action_type === "create_quote_followup" ? "Review" : "Approve"}</button>
+    <article className="sh-panel">
+      <div className="sh-panel-head">
+        <div><p>{eyebrow}</p><h2>{title}</h2></div>
+        {typeof count !== "undefined" ? <b>{count}</b> : action ? <button onClick={onAction}>{action} →</button> : null}
+      </div>
+      {children}
+    </article>
+  );
+}
+
+function ActionRow({ action, busy, onOpen, onApprove }) {
+  return (
+    <div className="sh-action-row">
+      <button onClick={onOpen}><b>{action.title}</b><span>{action.summary}</span></button>
+      <button className="primary" onClick={onApprove}>{busy ? "Running..." : "Approve"}</button>
     </div>
   );
 }
 
-function AiActionModal({ action, busy, onClose, onApprove }) {
+function SignalRow({ title, copy, status, onClick }) {
+  return (
+    <button className="sh-signal-row" onClick={onClick}>
+      <b>{title}</b><span>{copy}</span><em>{status}</em>
+    </button>
+  );
+}
+
+function Mini({ title, value, copy, action, onClick }) {
+  return (
+    <div className="sh-mini">
+      <p>{title}</p><h3>{value}</h3><span>{copy}</span><button onClick={onClick}>{action} →</button>
+    </div>
+  );
+}
+
+function EmptyState({ title, copy }) {
+  return <div className="sh-empty"><b>{title}</b><span>{copy}</span></div>;
+}
+
+function ActionModal({ action, busy, onClose, onApprove }) {
   return (
     <div className="ai-modal-backdrop" onClick={onClose}>
       <section className="ai-modal" onClick={(e) => e.stopPropagation()}>
@@ -218,20 +296,6 @@ function AiActionModal({ action, busy, onClose, onApprove }) {
         <div className="ai-modal-grid"><span><b>{action.confidence || 0}%</b>Confidence</span><span><b>{action.risk_level || "review"}</b>Risk level</span><span><b>{action.target_record_id || "—"}</b>Target</span></div>
         <div className="ai-modal-preview"><b>Preview</b><span>{action.preview_text || "This action is ready for owner review."}</span></div>
         <footer><button onClick={onClose}>Not now</button><button className="primary" onClick={onApprove}>{busy ? "Running..." : "Approve and run"}</button></footer>
-      </section>
-    </div>
-  );
-}
-
-function AskAiModal({ question, answer, onQuestion, onAsk, onClose }) {
-  return (
-    <div className="ai-modal-backdrop" onClick={onClose}>
-      <section className="ai-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="ai-modal-close" onClick={onClose}>×</button>
-        <p className="ai-modal-eyebrow">Ask your business</p>
-        <h2>Ask Churvox</h2>
-        <div className="ai-modal-input"><input value={question} onChange={(e) => onQuestion(e.target.value)} placeholder="Ask what to prepare next..." /><button onClick={() => onAsk(question)}>Ask</button></div>
-        {answer && <div className="ai-modal-preview"><b>Response</b><span>{answer}</span></div>}
       </section>
     </div>
   );
