@@ -1,0 +1,424 @@
+/* Direct redesign for pages that were still looking unchanged.
+   Scoped by Layout data-route so it will not wreck the working shell. */
+
+.px-app[data-route^="/quotes"],
+.px-app[data-route^="/sms"],
+.px-app[data-route^="/integrations"],
+.px-app[data-route^="/plans"],
+.px-app[data-route^="/settings"] {
+  --page-bg: #f4f7fb;
+  --page-card: #ffffff;
+  --page-ink: #071326;
+  --page-text: #152238;
+  --page-muted: #64748b;
+  --page-line: #dbe7f4;
+  --page-blue: #2563eb;
+  --page-green: #059669;
+  --page-amber: #d97706;
+  --page-red: #dc2626;
+}
+
+.px-app[data-route^="/quotes"] .px-main,
+.px-app[data-route^="/sms"] .px-main,
+.px-app[data-route^="/integrations"] .px-main,
+.px-app[data-route^="/plans"] .px-main,
+.px-app[data-route^="/settings"] .px-main {
+  background:
+    radial-gradient(circle at 24% 0%, rgba(37, 99, 235, 0.075), transparent 32%),
+    linear-gradient(180deg, #fbfdff 0%, var(--page-bg) 100%) !important;
+  padding: 24px 30px 48px !important;
+  overflow-x: hidden !important;
+}
+
+.px-app[data-route^="/quotes"] .px-page,
+.px-app[data-route^="/sms"] .px-page,
+.px-app[data-route^="/integrations"] .px-page,
+.px-app[data-route^="/plans"] .px-page,
+.px-app[data-route^="/settings"] .px-page,
+.px-app[data-route^="/quotes"] .cx-page,
+.px-app[data-route^="/sms"] .cx-page,
+.px-app[data-route^="/integrations"] .cx-page,
+.px-app[data-route^="/plans"] .cx-page,
+.px-app[data-route^="/settings"] .cx-page {
+  max-width: 1480px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+/* Big dark premium header on the still-plain pages */
+.px-app[data-route^="/quotes"] .px-hero,
+.px-app[data-route^="/sms"] .px-hero,
+.px-app[data-route^="/integrations"] .px-hero,
+.px-app[data-route^="/plans"] .px-hero,
+.px-app[data-route^="/settings"] .px-hero,
+.px-app[data-route^="/quotes"] .cx-page-hero,
+.px-app[data-route^="/sms"] .cx-page-hero,
+.px-app[data-route^="/integrations"] .cx-page-hero,
+.px-app[data-route^="/plans"] .cx-page-hero,
+.px-app[data-route^="/settings"] .cx-page-hero,
+.px-app[data-route^="/quotes"] .px-page > div:first-child:has(h1),
+.px-app[data-route^="/sms"] .px-page > div:first-child:has(h1),
+.px-app[data-route^="/integrations"] .px-page > div:first-child:has(h1),
+.px-app[data-route^="/plans"] .px-page > div:first-child:has(h1),
+.px-app[data-route^="/settings"] .px-page > div:first-child:has(h1),
+.px-app[data-route^="/quotes"] .cx-page > div:first-child:has(h1),
+.px-app[data-route^="/sms"] .cx-page > div:first-child:has(h1),
+.px-app[data-route^="/integrations"] .cx-page > div:first-child:has(h1),
+.px-app[data-route^="/plans"] .cx-page > div:first-child:has(h1),
+.px-app[data-route^="/settings"] .cx-page > div:first-child:has(h1),
+.px-app[data-route^="/quotes"] .cx-page > section:first-child:has(h1),
+.px-app[data-route^="/sms"] .cx-page > section:first-child:has(h1),
+.px-app[data-route^="/integrations"] .cx-page > section:first-child:has(h1),
+.px-app[data-route^="/plans"] .cx-page > section:first-child:has(h1),
+.px-app[data-route^="/settings"] .cx-page > section:first-child:has(h1) {
+  position: relative !important;
+  min-height: 245px !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  gap: 0 !important;
+  margin: 0 0 2px !important;
+  padding: clamp(26px, 3.2vw, 42px) !important;
+  border-radius: 34px !important;
+  border: 1px solid rgba(147, 197, 253, 0.2) !important;
+  color: #ffffff !important;
+  background:
+    radial-gradient(circle at 10% 18%, rgba(37, 99, 235, 0.38), transparent 34%),
+    radial-gradient(circle at 92% 5%, rgba(14, 165, 233, 0.18), transparent 31%),
+    linear-gradient(135deg, #050b18 0%, #08142b 64%, #020617 100%) !important;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.2) !important;
+  overflow: hidden !important;
+  text-align: left !important;
+}
+
+.px-app[data-route^="/quotes"] .px-hero::before,
+.px-app[data-route^="/sms"] .px-hero::before,
+.px-app[data-route^="/integrations"] .px-hero::before,
+.px-app[data-route^="/plans"] .px-hero::before,
+.px-app[data-route^="/settings"] .px-hero::before,
+.px-app[data-route^="/quotes"] .cx-page-hero::before,
+.px-app[data-route^="/sms"] .cx-page-hero::before,
+.px-app[data-route^="/integrations"] .cx-page-hero::before,
+.px-app[data-route^="/plans"] .cx-page-hero::before,
+.px-app[data-route^="/settings"] .cx-page-hero::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: auto -14% -48% 30% !important;
+  height: 230px !important;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.24), transparent 66%) !important;
+  pointer-events: none !important;
+}
+
+.px-app[data-route^="/quotes"] .px-hero__content,
+.px-app[data-route^="/sms"] .px-hero__content,
+.px-app[data-route^="/integrations"] .px-hero__content,
+.px-app[data-route^="/plans"] .px-hero__content,
+.px-app[data-route^="/settings"] .px-hero__content,
+.px-app[data-route^="/quotes"] .px-hero > *,
+.px-app[data-route^="/sms"] .px-hero > *,
+.px-app[data-route^="/integrations"] .px-hero > *,
+.px-app[data-route^="/plans"] .px-hero > *,
+.px-app[data-route^="/settings"] .px-hero > * {
+  position: relative !important;
+  z-index: 1 !important;
+  max-width: 980px !important;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  text-align: left !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+}
+
+.px-app[data-route^="/quotes"] h1,
+.px-app[data-route^="/sms"] h1,
+.px-app[data-route^="/integrations"] h1,
+.px-app[data-route^="/plans"] h1,
+.px-app[data-route^="/settings"] h1,
+.px-app[data-route^="/quotes"] .px-hero__title,
+.px-app[data-route^="/sms"] .px-hero__title,
+.px-app[data-route^="/integrations"] .px-hero__title,
+.px-app[data-route^="/plans"] .px-hero__title,
+.px-app[data-route^="/settings"] .px-hero__title,
+.px-app[data-route^="/quotes"] .cx-page-title,
+.px-app[data-route^="/sms"] .cx-page-title,
+.px-app[data-route^="/integrations"] .cx-page-title,
+.px-app[data-route^="/plans"] .cx-page-title,
+.px-app[data-route^="/settings"] .cx-page-title {
+  color: #ffffff !important;
+}
+
+.px-app[data-route^="/quotes"] .px-hero h1,
+.px-app[data-route^="/sms"] .px-hero h1,
+.px-app[data-route^="/integrations"] .px-hero h1,
+.px-app[data-route^="/plans"] .px-hero h1,
+.px-app[data-route^="/settings"] .px-hero h1,
+.px-app[data-route^="/quotes"] .px-hero__title,
+.px-app[data-route^="/sms"] .px-hero__title,
+.px-app[data-route^="/integrations"] .px-hero__title,
+.px-app[data-route^="/plans"] .px-hero__title,
+.px-app[data-route^="/settings"] .px-hero__title,
+.px-app[data-route^="/quotes"] .cx-page-hero h1,
+.px-app[data-route^="/sms"] .cx-page-hero h1,
+.px-app[data-route^="/integrations"] .cx-page-hero h1,
+.px-app[data-route^="/plans"] .cx-page-hero h1,
+.px-app[data-route^="/settings"] .cx-page-hero h1,
+.px-app[data-route^="/quotes"] .cx-page-title,
+.px-app[data-route^="/sms"] .cx-page-title,
+.px-app[data-route^="/integrations"] .cx-page-title,
+.px-app[data-route^="/plans"] .cx-page-title,
+.px-app[data-route^="/settings"] .cx-page-title {
+  display: block !important;
+  margin: 0 !important;
+  max-width: 980px !important;
+  font-size: clamp(48px, 5.8vw, 86px) !important;
+  line-height: 0.9 !important;
+  letter-spacing: -0.08em !important;
+  font-weight: 950 !important;
+  text-align: left !important;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.34) !important;
+}
+
+.px-app[data-route^="/quotes"] .px-hero p,
+.px-app[data-route^="/sms"] .px-hero p,
+.px-app[data-route^="/integrations"] .px-hero p,
+.px-app[data-route^="/plans"] .px-hero p,
+.px-app[data-route^="/settings"] .px-hero p,
+.px-app[data-route^="/quotes"] .px-hero__sub,
+.px-app[data-route^="/sms"] .px-hero__sub,
+.px-app[data-route^="/integrations"] .px-hero__sub,
+.px-app[data-route^="/plans"] .px-hero__sub,
+.px-app[data-route^="/settings"] .px-hero__sub,
+.px-app[data-route^="/quotes"] .cx-page-subtitle,
+.px-app[data-route^="/sms"] .cx-page-subtitle,
+.px-app[data-route^="/integrations"] .cx-page-subtitle,
+.px-app[data-route^="/plans"] .cx-page-subtitle,
+.px-app[data-route^="/settings"] .cx-page-subtitle {
+  display: block !important;
+  max-width: 820px !important;
+  margin: 14px 0 0 !important;
+  color: #dbeafe !important;
+  font-size: 15.5px !important;
+  line-height: 1.45 !important;
+  font-weight: 720 !important;
+  text-align: left !important;
+}
+
+/* Make page sections/cards obviously premium */
+.px-app[data-route^="/quotes"] .px-card,
+.px-app[data-route^="/sms"] .px-card,
+.px-app[data-route^="/integrations"] .px-card,
+.px-app[data-route^="/plans"] .px-card,
+.px-app[data-route^="/settings"] .px-card,
+.px-app[data-route^="/quotes"] .bg-white,
+.px-app[data-route^="/sms"] .bg-white,
+.px-app[data-route^="/integrations"] .bg-white,
+.px-app[data-route^="/plans"] .bg-white,
+.px-app[data-route^="/settings"] .bg-white,
+.px-app[data-route^="/quotes"] section:not(:first-child),
+.px-app[data-route^="/sms"] section:not(:first-child),
+.px-app[data-route^="/integrations"] section:not(:first-child),
+.px-app[data-route^="/plans"] section:not(:first-child),
+.px-app[data-route^="/settings"] section:not(:first-child) {
+  border: 1px solid var(--page-line) !important;
+  border-radius: 26px !important;
+  background: rgba(255, 255, 255, 0.97) !important;
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.07) !important;
+  overflow: hidden !important;
+}
+
+.px-app[data-route^="/quotes"] .px-stat,
+.px-app[data-route^="/sms"] .px-stat,
+.px-app[data-route^="/integrations"] .px-stat,
+.px-app[data-route^="/plans"] .px-stat,
+.px-app[data-route^="/settings"] .px-stat {
+  position: relative !important;
+  min-height: 116px !important;
+  border: 1px solid var(--page-line) !important;
+  border-radius: 24px !important;
+  background: #ffffff !important;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06) !important;
+  padding: 18px 18px 18px 22px !important;
+  overflow: hidden !important;
+}
+
+.px-app[data-route^="/quotes"] .px-stat::before,
+.px-app[data-route^="/sms"] .px-stat::before,
+.px-app[data-route^="/integrations"] .px-stat::before,
+.px-app[data-route^="/plans"] .px-stat::before,
+.px-app[data-route^="/settings"] .px-stat::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 auto 0 0 !important;
+  width: 4px !important;
+  background: var(--page-blue) !important;
+}
+
+.px-app[data-route^="/quotes"] .px-stat__value,
+.px-app[data-route^="/sms"] .px-stat__value,
+.px-app[data-route^="/integrations"] .px-stat__value,
+.px-app[data-route^="/plans"] .px-stat__value,
+.px-app[data-route^="/settings"] .px-stat__value {
+  color: var(--page-ink) !important;
+  font-size: 32px !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.05em !important;
+}
+
+.px-app[data-route^="/quotes"] .px-stat__label,
+.px-app[data-route^="/sms"] .px-stat__label,
+.px-app[data-route^="/integrations"] .px-stat__label,
+.px-app[data-route^="/plans"] .px-stat__label,
+.px-app[data-route^="/settings"] .px-stat__label {
+  color: #475569 !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+}
+
+.px-app[data-route^="/quotes"] .px-stat__icon,
+.px-app[data-route^="/sms"] .px-stat__icon,
+.px-app[data-route^="/integrations"] .px-stat__icon,
+.px-app[data-route^="/plans"] .px-stat__icon,
+.px-app[data-route^="/settings"] .px-stat__icon {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  border-radius: 12px !important;
+  background: #eff6ff !important;
+  color: var(--page-blue) !important;
+}
+
+/* Rows/list items */
+.px-app[data-route^="/quotes"] [data-testid^="quote-card-"],
+.px-app[data-route^="/sms"] [data-testid],
+.px-app[data-route^="/integrations"] [data-testid],
+.px-app[data-route^="/plans"] [data-testid],
+.px-app[data-route^="/settings"] [data-testid] {
+  border-radius: 22px !important;
+}
+
+/* Forms + buttons */
+.px-app[data-route^="/quotes"] input,
+.px-app[data-route^="/sms"] input,
+.px-app[data-route^="/integrations"] input,
+.px-app[data-route^="/plans"] input,
+.px-app[data-route^="/settings"] input,
+.px-app[data-route^="/quotes"] select,
+.px-app[data-route^="/sms"] select,
+.px-app[data-route^="/integrations"] select,
+.px-app[data-route^="/plans"] select,
+.px-app[data-route^="/settings"] select,
+.px-app[data-route^="/quotes"] textarea,
+.px-app[data-route^="/sms"] textarea,
+.px-app[data-route^="/integrations"] textarea,
+.px-app[data-route^="/plans"] textarea,
+.px-app[data-route^="/settings"] textarea {
+  border-radius: 15px !important;
+  border-color: #d5e2f1 !important;
+  background: #ffffff !important;
+  min-height: 44px !important;
+}
+
+.px-app[data-route^="/quotes"] button,
+.px-app[data-route^="/sms"] button,
+.px-app[data-route^="/integrations"] button,
+.px-app[data-route^="/plans"] button,
+.px-app[data-route^="/settings"] button {
+  border-radius: 14px !important;
+  font-weight: 850 !important;
+}
+
+.px-app[data-route^="/quotes"] .px-btn,
+.px-app[data-route^="/sms"] .px-btn,
+.px-app[data-route^="/integrations"] .px-btn,
+.px-app[data-route^="/plans"] .px-btn,
+.px-app[data-route^="/settings"] .px-btn,
+.px-app[data-route^="/quotes"] .px-button,
+.px-app[data-route^="/sms"] .px-button,
+.px-app[data-route^="/integrations"] .px-button,
+.px-app[data-route^="/plans"] .px-button,
+.px-app[data-route^="/settings"] .px-button {
+  min-height: 42px !important;
+  border-radius: 14px !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+}
+
+/* Page-specific wording badge added visually */
+.px-app[data-route^="/quotes"] .px-hero::after,
+.px-app[data-route^="/sms"] .px-hero::after,
+.px-app[data-route^="/integrations"] .px-hero::after,
+.px-app[data-route^="/plans"] .px-hero::after,
+.px-app[data-route^="/settings"] .px-hero::after {
+  position: absolute !important;
+  right: 28px !important;
+  top: 28px !important;
+  z-index: 2 !important;
+  width: auto !important;
+  height: auto !important;
+  border: 1px solid rgba(147, 197, 253, 0.22) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #dbeafe !important;
+  padding: 8px 12px !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.px-app[data-route^="/quotes"] .px-hero::after { content: "Sales workspace" !important; }
+.px-app[data-route^="/sms"] .px-hero::after { content: "Customer messages" !important; }
+.px-app[data-route^="/integrations"] .px-hero::after { content: "Connected systems" !important; }
+.px-app[data-route^="/plans"] .px-hero::after { content: "Billing" !important; }
+.px-app[data-route^="/settings"] .px-hero::after { content: "Business setup" !important; }
+
+@media (max-width: 900px) {
+  .px-app[data-route^="/quotes"] .px-main,
+  .px-app[data-route^="/sms"] .px-main,
+  .px-app[data-route^="/integrations"] .px-main,
+  .px-app[data-route^="/plans"] .px-main,
+  .px-app[data-route^="/settings"] .px-main {
+    padding: 14px 12px 86px !important;
+  }
+
+  .px-app[data-route^="/quotes"] .px-hero,
+  .px-app[data-route^="/sms"] .px-hero,
+  .px-app[data-route^="/integrations"] .px-hero,
+  .px-app[data-route^="/plans"] .px-hero,
+  .px-app[data-route^="/settings"] .px-hero,
+  .px-app[data-route^="/quotes"] .cx-page-hero,
+  .px-app[data-route^="/sms"] .cx-page-hero,
+  .px-app[data-route^="/integrations"] .cx-page-hero,
+  .px-app[data-route^="/plans"] .cx-page-hero,
+  .px-app[data-route^="/settings"] .cx-page-hero {
+    min-height: 210px !important;
+    border-radius: 24px !important;
+    padding: 22px !important;
+  }
+
+  .px-app[data-route^="/quotes"] .px-hero h1,
+  .px-app[data-route^="/sms"] .px-hero h1,
+  .px-app[data-route^="/integrations"] .px-hero h1,
+  .px-app[data-route^="/plans"] .px-hero h1,
+  .px-app[data-route^="/settings"] .px-hero h1,
+  .px-app[data-route^="/quotes"] .px-hero__title,
+  .px-app[data-route^="/sms"] .px-hero__title,
+  .px-app[data-route^="/integrations"] .px-hero__title,
+  .px-app[data-route^="/plans"] .px-hero__title,
+  .px-app[data-route^="/settings"] .px-hero__title {
+    font-size: 42px !important;
+  }
+
+  .px-app[data-route^="/quotes"] .px-hero::after,
+  .px-app[data-route^="/sms"] .px-hero::after,
+  .px-app[data-route^="/integrations"] .px-hero::after,
+  .px-app[data-route^="/plans"] .px-hero::after,
+  .px-app[data-route^="/settings"] .px-hero::after {
+    display: none !important;
+  }
+}
