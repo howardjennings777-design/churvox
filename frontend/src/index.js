@@ -21,6 +21,7 @@ import "./styles/invoiceCommandCentre.css";
 import "./styles/invoiceCommandCentreHardFix.css";
 import "./styles/invoiceFinalCleanup.css";
 import "./styles/jobsCommandCentre.css";
+import "./styles/jobsFinalCleanup.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
