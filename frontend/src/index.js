@@ -8,6 +8,7 @@ import "./styles/aiControlRoomLogoFix.css";
 import "./styles/aiControlRoomHeaderReference.css";
 import "./styles/aiControlRoomElite.css";
 import "./styles/aiBusinessOperator.css";
+import "./styles/aiOperatorHQ.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
