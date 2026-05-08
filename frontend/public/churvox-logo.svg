@@ -1,33 +1,33 @@
-<svg width="820" height="220" viewBox="0 0 820 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="900" height="220" viewBox="0 0 900 220" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="churvox-mark" x1="18" y1="26" x2="178" y2="184" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#31D7FF"/>
-      <stop offset="0.52" stop-color="#1767FF"/>
+    <linearGradient id="markBlue" x1="30" y1="32" x2="184" y2="188" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38D9FF"/>
+      <stop offset="0.46" stop-color="#1767FF"/>
       <stop offset="1" stop-color="#071935"/>
     </linearGradient>
-    <linearGradient id="churvox-cut" x1="89" y1="68" x2="157" y2="149" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#E8F5FF"/>
-      <stop offset="1" stop-color="#CDE6FF"/>
+    <linearGradient id="wordGrad" x1="240" y1="54" x2="890" y2="170" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#06162E"/>
+      <stop offset="0.72" stop-color="#071935"/>
+      <stop offset="1" stop-color="#1767FF"/>
     </linearGradient>
-    <filter id="soft-shadow" x="0" y="0" width="220" height="220" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#1767FF" flood-opacity="0.18"/>
+    <filter id="glow" x="0" y="0" width="230" height="220" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#1767FF" flood-opacity="0.22"/>
     </filter>
   </defs>
 
-  <g filter="url(#soft-shadow)">
-    <path d="M115 28C66.9 28 28 64.9 28 110C28 155.1 66.9 192 115 192C140.5 192 163.4 181.6 179.3 165.1L149.6 136.1C141.6 144.8 129.2 150.5 115 150.5C91.7 150.5 72.8 132.4 72.8 110C72.8 87.6 91.7 69.5 115 69.5C129.2 69.5 141.6 75.2 149.6 83.9L179.3 54.9C163.4 38.4 140.5 28 115 28Z" fill="url(#churvox-mark)"/>
-    <path d="M106 88H192L151.5 110L192 132H106C94.2 132 84.5 122.2 84.5 110C84.5 97.8 94.2 88 106 88Z" fill="url(#churvox-cut)"/>
-    <path d="M145 78L197 110L145 142L160 110L145 78Z" fill="#1767FF"/>
+  <g filter="url(#glow)">
+    <rect x="34" y="34" width="152" height="152" rx="44" fill="#F7FBFF"/>
+    <path d="M118 33C70.5 33 34 67.9 34 110C34 152.1 70.5 187 118 187C144.7 187 168.1 175.9 183.2 158.6L151.5 130.4C144 140 132 146 118 146C96.5 146 79.3 130.1 79.3 110C79.3 89.9 96.5 74 118 74C132 74 144 80 151.5 89.6L183.2 61.4C168.1 44.1 144.7 33 118 33Z" fill="url(#markBlue)"/>
+    <path d="M23 88H79.5" stroke="#1767FF" stroke-width="13" stroke-linecap="round"/>
+    <path d="M14 110H78" stroke="#38D9FF" stroke-width="13" stroke-linecap="round"/>
+    <path d="M23 132H79.5" stroke="#071935" stroke-width="13" stroke-linecap="round"/>
+    <path d="M110 83L190 110L110 137L128.8 110L110 83Z" fill="white"/>
+    <path d="M133 96L190 110L133 124L142.4 110L133 96Z" fill="#1767FF"/>
+    <circle cx="48" cy="88" r="6" fill="#38D9FF"/>
+    <circle cx="39" cy="132" r="6" fill="#1767FF"/>
   </g>
 
-  <path d="M270.7 147.9C258 147.9 247.4 143.8 238.9 135.5C230.5 127.1 226.2 116.7 226.2 104.1C226.2 91.5 230.5 81.1 238.9 72.8C247.4 64.4 258 60.3 270.7 60.3C286 60.3 298.8 67.8 305.8 80.2L285.8 91.8C282.9 85.6 277.2 82.2 270.7 82.2C264.3 82.2 259 84.3 254.8 88.5C250.7 92.7 248.7 97.9 248.7 104.1C248.7 110.3 250.7 115.6 254.8 119.8C259 123.9 264.3 126 270.7 126C277.3 126 283.1 122.7 286.2 116.5L306.1 127.9C298.8 140.4 286.1 147.9 270.7 147.9Z" fill="#071935"/>
-  <path d="M367.5 61.9H389.7V146.3H367.5V114.2H338.8V146.3H316.6V61.9H338.8V92.8H367.5V61.9Z" fill="#071935"/>
-  <path d="M435.6 147.9C425.3 147.9 416.8 144.9 410.1 139C403.5 133.1 400.2 124.9 400.2 114.5V61.9H422.4V112.8C422.4 121.5 426.7 126 435.6 126C444.5 126 448.8 121.5 448.8 112.8V61.9H471V114.5C471 124.9 467.7 133.1 461 139C454.4 144.9 445.9 147.9 435.6 147.9Z" fill="#071935"/>
-  <path d="M529.9 146.3L515.7 119.1H507.3V146.3H485.1V61.9H519.1C527.5 61.9 534.6 64.7 540.3 70.2C546 75.7 548.8 82.6 548.8 90.8C548.8 95.7 547.5 100.4 544.8 104.7C542.2 109 538.6 112.4 534 114.9L550.9 146.3H529.9ZM507.3 82.2V99.9H519.1C521.3 99.9 523.1 99.1 524.6 97.4C526.1 95.8 526.8 93.6 526.8 90.8C526.8 88.1 526.1 86 524.6 84.4C523.1 82.9 521.3 82.2 519.1 82.2H507.3Z" fill="#071935"/>
-  <path d="M611.2 61.9H635.5L606.9 146.3H581.5L552.9 61.9H577.2L594.2 120.3L611.2 61.9Z" fill="#071935"/>
-  <path d="M681 147.9C668.6 147.9 658.1 143.7 649.6 135.2C641.1 126.7 636.8 116.4 636.8 104.1C636.8 91.8 641.1 81.5 649.6 73C658.1 64.5 668.6 60.3 681 60.3C693.4 60.3 703.8 64.5 712.4 73C720.9 81.5 725.2 91.8 725.2 104.1C725.2 116.4 720.9 126.7 712.4 135.2C703.8 143.7 693.4 147.9 681 147.9ZM681 126C687.2 126 692.4 123.9 696.6 119.7C700.8 115.5 702.9 110.3 702.9 104.1C702.9 97.9 700.8 92.7 696.6 88.5C692.4 84.3 687.2 82.2 681 82.2C674.8 82.2 669.6 84.3 665.4 88.5C661.2 92.7 659.1 97.9 659.1 104.1C659.1 110.3 661.2 115.5 665.4 119.7C669.6 123.9 674.8 126 681 126Z" fill="#071935"/>
-  <path d="M807.1 146.3H782.1L767.4 122.5L752.7 146.3H727.7L754.8 103.4L728.8 61.9H753.8L767.4 84.2L781 61.9H806L780 103.4L807.1 146.3Z" fill="#071935"/>
-
-  <path d="M230 174H807" stroke="#DCE9F8" stroke-width="3" stroke-linecap="round"/>
-  <path d="M230 186H438" stroke="#1767FF" stroke-width="5" stroke-linecap="round"/>
+  <text x="238" y="133" fill="url(#wordGrad)" font-family="Inter, Arial, Helvetica, sans-serif" font-size="84" font-weight="950" letter-spacing="10">CHURVOX</text>
+  <path d="M242 158H632" stroke="#1767FF" stroke-width="7" stroke-linecap="round"/>
+  <path d="M650 158H872" stroke="#DCE9F8" stroke-width="7" stroke-linecap="round"/>
 </svg>
