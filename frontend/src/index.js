@@ -13,6 +13,7 @@ import "./styles/premiumCommandCentre.css";
 import "./styles/premiumCommandCentrePolish.css";
 import "./styles/newChurvoxLogo.css";
 import "./styles/tenOutOfTenCommandCentre.css";
+import "./styles/aiOperatorModals.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
