@@ -1,12 +1,12 @@
 import { get, post } from "./api";
 
 export const AI_OPERATOR_ENDPOINTS = {
-  queue: "/ai/operator/queue",
-  runDailyCheck: "/ai/operator/run-daily-check",
-  prepareToday: "/ai/operator/prepare-today",
-  ask: "/ai/operator/ask",
-  approve: (id) => `/ai/operator/actions/${id}/approve`,
-  reject: (id) => `/ai/operator/actions/${id}/reject`,
+  queue: "/ai/operator/v3/queue",
+  runDailyCheck: "/ai/operator/v3/run-daily-check",
+  prepareToday: "/ai/operator/v3/prepare-today",
+  ask: "/ai/operator/v3/ask",
+  approve: (id) => `/ai/operator/v3/actions/${id}/approve`,
+  reject: (id) => `/ai/operator/v3/actions/${id}/reject`,
 };
 
 const normalizeActions = (payload) => {
