@@ -32,6 +32,7 @@ import "./styles/backgroundAiCleanup.css";
 import "./styles/smartHubOwnerDashboard.css";
 import "./styles/jobsOwnerWorkspace.css";
 import "./styles/clientsOwnerWorkspace.css";
+import "./styles/clientsFinalEdgeFix.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
