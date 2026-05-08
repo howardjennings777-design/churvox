@@ -8,7 +8,7 @@ import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
 import { getDefaultRoute } from "./lib/roles";
 
-import LoginPage from "./v2/pages/V2LoginPage";
+import LoginPage from "./v3/pages/V3LoginPage";
 import SignupPage from "./pages/auth/SignupPage";
 import InviteSetupPage from "./pages/auth/InviteSetupPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
@@ -43,16 +43,20 @@ import AdminUsagePage from "./pages/AdminUsagePage";
 import PlatformAdminRoute from "./components/admin/PlatformAdminRoute";
 import PlatformUnlock from "./pages/admin/PlatformUnlock";
 import NotificationsPage from "./pages/NotificationsPage";
+import AutomationPage from "./pages/AutomationPage";
 import AutomationRunsPage from "./pages/AutomationRunsPage";
+import ReportsPage from "./pages/ReportsPage";
+import IntegrationsPage from "./pages/IntegrationsPage";
 import PublicQuotePage from "./pages/public/PublicQuotePage";
 import PublicInvoicePage from "./pages/public/PublicInvoicePage";
 import PublicClientPortalPage from "./pages/public/PublicClientPortalPage";
+import ProofToPaidPage from "./pages/ProofToPaidPage";
 import QAAuditorPage from "./pages/admin/QAAuditorPage";
 import SmartHubHardReset from "./pages/SmartHubHardReset";
 import AIControlRoomPage from "./pages/AIControlRoomPage";
 import AIOperatorApprovalsPage from "./pages/AIOperatorApprovalsPage";
 import AIOperatorSettingsPage from "./pages/AIOperatorSettingsPage";
-import V2WorkspacePage from "./v2/pages/V2WorkspacePage";
+import V3WorkspacePage from "./v3/pages/V3WorkspacePage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const Spinner = () => (
@@ -234,7 +238,7 @@ function App() {
           <Route path="/admin/login" element={<Navigate to="/login" replace />} />
           <Route path="/owner" element={<Navigate to="/admin" replace />} />
           <Route path="/owner/login" element={<Navigate to="/login" replace />} />
-          <Route path="/proof-to-paid" element={<BusinessRoute><V2WorkspacePage type="proof" /></BusinessRoute>} />
+          <Route path="/proof-to-paid" element={<BusinessRoute><V3WorkspacePage type="proof" /></BusinessRoute>} />
           <Route path="/ai-control-room" element={<AIControlRoomRoute />} />
           <Route path="/ai-operator" element={<SmartHubRoute />} />
           <Route path="/ai-operator/approvals" element={<AIOperatorStagingRoute />} />
@@ -250,34 +254,34 @@ function App() {
           <Route path="/dashboard" element={<SmartHubRoute />} />
           <Route path="/overview" element={<SmartHubRoute />} />
           <Route path="/onboarding" element={<BusinessRoute><OnboardingPage /></BusinessRoute>} />
-          <Route path="/jobs" element={<BusinessRoute><V2WorkspacePage type="jobs" /></BusinessRoute>} />
+          <Route path="/jobs" element={<BusinessRoute><V3WorkspacePage type="jobs" /></BusinessRoute>} />
           <Route path="/jobs/new" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
           <Route path="/jobs/:id" element={<BusinessRoute><JobDetailPage /></BusinessRoute>} />
           <Route path="/jobs/:id/edit" element={<BusinessRoute><JobFormPage /></BusinessRoute>} />
-          <Route path="/dispatch" element={<BusinessRoute><V2WorkspacePage type="jobs" /></BusinessRoute>} />
+          <Route path="/dispatch" element={<BusinessRoute><V3WorkspacePage type="jobs" /></BusinessRoute>} />
           <Route path="/calendar" element={<Navigate to="/dispatch" replace />} />
-          <Route path="/clients" element={<BusinessRoute><V2WorkspacePage type="clients" /></BusinessRoute>} />
+          <Route path="/clients" element={<BusinessRoute><V3WorkspacePage type="clients" /></BusinessRoute>} />
           <Route path="/clients/new" element={<BusinessRoute><ClientFormPage /></BusinessRoute>} />
           <Route path="/clients/:id" element={<BusinessRoute><ClientDetailPage /></BusinessRoute>} />
           <Route path="/clients/:id/edit" element={<BusinessRoute><ClientFormPage /></BusinessRoute>} />
-          <Route path="/quotes" element={<BusinessRoute><V2WorkspacePage type="quotes" /></BusinessRoute>} />
+          <Route path="/quotes" element={<BusinessRoute><V3WorkspacePage type="quotes" /></BusinessRoute>} />
           <Route path="/quotes/new" element={<BusinessRoute><QuoteFormPage /></BusinessRoute>} />
           <Route path="/quotes/:id" element={<BusinessRoute><QuoteDetailPage /></BusinessRoute>} />
           <Route path="/quotes/:id/edit" element={<BusinessRoute><QuoteFormPage /></BusinessRoute>} />
-          <Route path="/invoices" element={<BusinessRoute><V2WorkspacePage type="invoices" /></BusinessRoute>} />
+          <Route path="/invoices" element={<BusinessRoute><V3WorkspacePage type="invoices" /></BusinessRoute>} />
           <Route path="/invoices/new" element={<BusinessRoute><InvoiceFormPage /></BusinessRoute>} />
           <Route path="/invoices/:id" element={<BusinessRoute><InvoiceDetailPage /></BusinessRoute>} />
-          <Route path="/sms" element={<BusinessRoute><V2WorkspacePage type="sms" /></BusinessRoute>} />
-          <Route path="/reports" element={<ReportsRoute><V2WorkspacePage type="reports" /></ReportsRoute>} />
-          <Route path="/integrations" element={<BusinessRoute><V2WorkspacePage type="integrations" /></BusinessRoute>} />
-          <Route path="/settings" element={<BusinessRoute><V2WorkspacePage type="settings" /></BusinessRoute>} />
+          <Route path="/sms" element={<BusinessRoute><V3WorkspacePage type="sms" /></BusinessRoute>} />
+          <Route path="/reports" element={<ReportsRoute><V3WorkspacePage type="reports" /></ReportsRoute>} />
+          <Route path="/integrations" element={<BusinessRoute><V3WorkspacePage type="integrations" /></BusinessRoute>} />
+          <Route path="/settings" element={<BusinessRoute><V3WorkspacePage type="settings" /></BusinessRoute>} />
           <Route path="/contact" element={<PrivateRoute><ContactPage /></PrivateRoute>} />
-          <Route path="/plans" element={<OwnerRoute><V2WorkspacePage type="plans" /></OwnerRoute>} />
-          <Route path="/team" element={<TeamRoute><V2WorkspacePage type="team" /></TeamRoute>} />
+          <Route path="/plans" element={<OwnerRoute><V3WorkspacePage type="plans" /></OwnerRoute>} />
+          <Route path="/team" element={<TeamRoute><V3WorkspacePage type="team" /></TeamRoute>} />
           <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
-          <Route path="/automation" element={<TeamRoute><V2WorkspacePage type="automation" /></TeamRoute>} />
+          <Route path="/automation" element={<TeamRoute><V3WorkspacePage type="automation" /></TeamRoute>} />
           <Route path="/automation/runs" element={<TeamRoute><AutomationRunsPage /></TeamRoute>} />
-          <Route path="/payroll" element={<PayrollRoute><V2WorkspacePage type="payroll" /></PayrollRoute>} />
+          <Route path="/payroll" element={<PayrollRoute><V3WorkspacePage type="payroll" /></PayrollRoute>} />
           <Route path="/worker/jobs" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
           <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
           <Route path="/worker/settings" element={<WorkerRoute><WorkerSettingsPage /></WorkerRoute>} />

@@ -1,3 +1,3 @@
-import V2SmartHubPage from "../v2/pages/V2SmartHubPage";
+import V3SmartHubPage from "../v3/pages/V3SmartHubPage";
 
-export default V2SmartHubPage;
+export default V3SmartHubPage;
