@@ -17,6 +17,7 @@ import "./styles/aiOperatorModals.css";
 import "./styles/realDataOnlySmartHub.css";
 import "./styles/realAppPremiumShell.css";
 import "./styles/churvoxUtilityBridge.css";
+import "./styles/invoiceCommandCentre.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
