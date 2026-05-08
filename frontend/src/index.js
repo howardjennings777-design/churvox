@@ -24,6 +24,7 @@ import "./styles/jobsCommandCentre.css";
 import "./styles/jobsFinalCleanup.css";
 import "./styles/jobsCompactRowsFinal.css";
 import "./styles/jobsRowsEmergencyFix.css";
+import "./styles/jobsCommandBlankFix.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
