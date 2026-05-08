@@ -4,6 +4,7 @@ import SmartHubHardReset from "./pages/SmartHubHardReset";
 import "./index.css";
 import "./styles/aiControlRoomFullscreen.css";
 import "./styles/aiControlRoomFinalFit.css";
+import "./styles/aiControlRoomLogoFix.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
