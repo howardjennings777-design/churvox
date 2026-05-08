@@ -42,6 +42,7 @@ import "./styles/reportsBusinessInsights.css";
 import "./styles/unifiedSmartHubHeaders.css";
 import "./styles/churvoxFinalDesignSystem.css";
 import "./styles/churvoxVisibleRedesign.css";
+import "./styles/churvoxUntouchedPagesRedesign.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
