@@ -6,15 +6,15 @@ import V3Shell from "../components/V3Shell";
 import "../styles/v3.css";
 
 const workspaces = [
-  ["Jobs", "/jobs", "Live run sheet"],
-  ["Dispatch", "/dispatch", "Crew coverage"],
-  ["Clients", "/clients", "Customer base"],
-  ["Quotes", "/quotes", "Sales desk"],
-  ["Invoices", "/invoices", "Money board"],
-  ["Team", "/team", "Crew control"],
-  ["Payroll", "/payroll", "Pay run"],
+  ["Jobs", "/v3/jobs", "Live run sheet"],
+  ["Dispatch", "/v3/dispatch", "Crew coverage"],
+  ["Clients", "/v3/clients", "Customer base"],
+  ["Quotes", "/v3/quotes", "Sales desk"],
+  ["Invoices", "/v3/invoices", "Money board"],
+  ["Team", "/v3/team", "Crew control"],
+  ["Payroll", "/v3/payroll", "Pay run"],
   ["Rules", "/automation", "Background engine"],
-  ["Reports", "/reports", "Owner numbers"],
+  ["Reports", "/v3/reports", "Owner numbers"],
 ];
 
 function Empty({ title, copy }) {
@@ -108,8 +108,8 @@ export default function V3SmartHubPage() {
 
         <section className="v3-metrics">
           <button className="v3-metric" onClick={() => navigate("/ai-approvals")}><b>{pending.length}</b><span>Decisions</span><small>{pending.length ? "Needs review" : "All clear"}</small></button>
-          <button className="v3-metric" onClick={() => navigate("/dispatch")}><b>{dispatch.length}</b><span>Crew checks</span><small>{dispatch.length ? "Dispatch ready" : "Covered"}</small></button>
-          <button className="v3-metric lime" onClick={() => navigate("/invoices")}><b>{invoices.length}</b><span>Money items</span><small>Drafts and reminders</small></button>
+          <button className="v3-metric" onClick={() => navigate("/v3/dispatch")}><b>{dispatch.length}</b><span>Crew checks</span><small>{dispatch.length ? "Dispatch ready" : "Covered"}</small></button>
+          <button className="v3-metric lime" onClick={() => navigate("/v3/invoices")}><b>{invoices.length}</b><span>Money items</span><small>Drafts and reminders</small></button>
           <button className="v3-metric" onClick={() => navigate("/proof-to-paid")}><b>{proofs.length}</b><span>Proof packs</span><small>Completed work</small></button>
         </section>
 
@@ -128,7 +128,7 @@ export default function V3SmartHubPage() {
 
           <div className="v3-side-stack">
             <article className="v3-card"><div className="v3-card-head"><div><p>Automation</p><h2>Background</h2></div></div><Empty title="Quiet by default" copy="Only real decisions are surfaced to the owner." /></article>
-            <article className="v3-card"><div className="v3-card-head"><div><p>Cashflow</p><h2>Invoices</h2></div></div><button className="v3-button dark" onClick={() => navigate("/invoices")}>Open money board</button></article>
+            <article className="v3-card"><div className="v3-card-head"><div><p>Cashflow</p><h2>Invoices</h2></div></div><button className="v3-button dark" onClick={() => navigate("/v3/invoices")}>Open money board</button></article>
           </div>
 
           <article className="v3-card v3-workspaces">
