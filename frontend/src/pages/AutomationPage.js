@@ -37,14 +37,14 @@ const launchTemplates = [
   {
     id: "job-complete-proof",
     name: "Job completed → review proof",
-    description: "When a worker completes a job, create an internal review item so proof and invoice handoff are checked.",
+    description: "Create an internal review item so proof and invoice handoff are checked.",
     trigger: "job.completed",
     action: "notification.create",
   },
   {
     id: "job-complete-invoice",
     name: "Job completed → draft invoice",
-    description: "Prepare an invoice draft from completed work so the owner can review before sending.",
+    description: "Prepare an invoice draft from completed work for owner review.",
     trigger: "job.completed",
     action: "invoice.create_draft",
   },
@@ -199,10 +199,48 @@ function AutomationPage() {
   const successRuns = runs.filter((r) => r.status === "success").length;
   const failedRuns = runs.filter((r) => r.status && r.status !== "success").length;
 
+  const safeShellStyle = {
+    paddingLeft: "34px",
+    paddingRight: "22px",
+    paddingBottom: "24px",
+    width: "100%",
+    maxWidth: "100%",
+    overflowX: "hidden",
+  };
+
+  const templateButtonStyle = {
+    width: "100%",
+    minWidth: 0,
+    padding: "10px 12px",
+    borderRadius: "14px",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+    textAlign: "left",
+    overflow: "hidden",
+  };
+
+  const templateTitleStyle = {
+    fontSize: "12.5px",
+    lineHeight: 1.2,
+    fontWeight: 800,
+    color: "#0f172a",
+    letterSpacing: "-0.01em",
+    overflowWrap: "anywhere",
+  };
+
+  const templateCopyStyle = {
+    display: "block",
+    marginTop: "4px",
+    fontSize: "11px",
+    lineHeight: 1.25,
+    fontWeight: 600,
+    color: "#64748b",
+  };
+
   return (
     <Layout>
       <PremiumPage>
-        <div className="automation-v5">
+        <div className="automation-v5" style={safeShellStyle}>
           <PremiumHero
             className="automation-v5-hero"
             icon={<Zap className="h-7 w-7" />}
@@ -238,11 +276,11 @@ function AutomationPage() {
           <div className="automation-v5-grid">
             <div className="automation-v5-left">
               <PremiumCard title="Quick templates" icon={<Sparkles className="h-4 w-4" />} subtitle="Safe launch-ready rules">
-                <div className="automation-v5-templates">
+                <div className="automation-v5-templates" style={{ display: "grid", gap: "8px", width: "100%" }}>
                   {availableTemplates.map((template) => (
-                    <button key={template.id || template.name} type="button" onClick={() => applyTemplate(template)}>
-                      <div>{template.name}</div>
-                      <span>{template.description}</span>
+                    <button key={template.id || template.name} type="button" onClick={() => applyTemplate(template)} style={templateButtonStyle}>
+                      <div style={templateTitleStyle}>{template.name}</div>
+                      <span style={templateCopyStyle}>{template.description}</span>
                     </button>
                   ))}
                 </div>
