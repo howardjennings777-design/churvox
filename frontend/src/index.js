@@ -11,6 +11,7 @@ import "./styles/aiBusinessOperator.css";
 import "./styles/aiOperatorHQ.css";
 import "./styles/premiumCommandCentre.css";
 import "./styles/premiumCommandCentrePolish.css";
+import "./styles/newChurvoxLogo.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
