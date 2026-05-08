@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import SmartHubHardReset from "./pages/SmartHubHardReset";
 import "./index.css";
+import "./styles/aiControlRoomFullscreen.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
