@@ -25,6 +25,15 @@ const isPending = (a) => ["pending", "edited"].includes(statusOf(a));
 const isScheduled = (a) => statusOf(a) === "scheduled";
 const isDone = (a) => ["completed", "approved", "rejected", "dismissed"].includes(statusOf(a));
 
+function nextWeeknightSevenPmLocal() {
+  const d = new Date();
+  d.setHours(19, 0, 0, 0);
+  if (new Date() >= d) d.setDate(d.getDate() + 1);
+  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function formatDateTime(value) {
   if (!value) return "Not scheduled";
   try {
@@ -77,7 +86,7 @@ function StageCard({ action, onOpen, onApprove, onReject, onSchedule }) {
         {isPending(action) ? (
           <>
             <button type="button" onClick={() => onOpen(action)}><Edit3 size={14} /> Edit</button>
-            <button type="button" onClick={() => onSchedule(action)}><CalendarClock size={14} /> Schedule</button>
+            <button type="button" onClick={() => onSchedule(action, nextWeeknightSevenPmLocal())}><CalendarClock size={14} /> 7pm weeknight</button>
             <button type="button" className="primary" onClick={() => onApprove(action)}><CheckCircle2 size={14} /> Approve</button>
           </>
         ) : isScheduled(action) ? (
@@ -97,7 +106,7 @@ function EditModal({ action, onClose, onSave, onApprove, onReject, onSchedule, b
   const [reason, setReason] = useState(action?.reason || "");
   const [previewText, setPreviewText] = useState(action?.preview_text || action?.generated_message || "");
   const [payload, setPayload] = useState(payloadText(action?.suggested_payload));
-  const [scheduledFor, setScheduledFor] = useState("");
+  const [scheduledFor, setScheduledFor] = useState(nextWeeknightSevenPmLocal());
 
   useEffect(() => {
     setTitle(action?.title || "");
@@ -105,7 +114,7 @@ function EditModal({ action, onClose, onSave, onApprove, onReject, onSchedule, b
     setReason(action?.reason || "");
     setPreviewText(action?.preview_text || action?.generated_message || "");
     setPayload(payloadText(action?.suggested_payload));
-    setScheduledFor("");
+    setScheduledFor(nextWeeknightSevenPmLocal());
   }, [action]);
 
   if (!action) return null;
@@ -126,7 +135,7 @@ function EditModal({ action, onClose, onSave, onApprove, onReject, onSchedule, b
           <div>
             <span>AI staging item</span>
             <h2>{safeText(action.title, "Review AI action")}</h2>
-            <p>Edit before approval, or schedule it for the deploy queue.</p>
+            <p>Edit before approval, or schedule it for the 7:00pm weeknight deploy queue.</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Close"><X size={20} /></button>
         </div>
@@ -156,8 +165,8 @@ function EditModal({ action, onClose, onSave, onApprove, onReject, onSchedule, b
           <div className="ai-stage-warning">
             <ShieldCheck size={18} />
             <div>
-              <b>Owner controlled release.</b>
-              <span>AI can prepare work automatically. Anything that affects customers, workers, money, MYOB, payroll or deletion should be approved or scheduled here first.</span>
+              <b>7:00pm weeknight release window.</b>
+              <span>AI deploys approved/scheduled items at 7:00pm Monday–Friday. Churvox creates an owner warning notification about 1 hour before deploy so you can edit, reject, or reschedule first.</span>
             </div>
           </div>
 
@@ -167,7 +176,7 @@ function EditModal({ action, onClose, onSave, onApprove, onReject, onSchedule, b
               <input type="datetime-local" value={scheduledFor} onChange={(e) => setScheduledFor(e.target.value)} />
             </label>
             <button type="button" disabled={busy || !scheduledFor} onClick={() => onSchedule(edited, scheduledFor)}>
-              <CalendarClock size={15} /> Add to deploy queue
+              <CalendarClock size={15} /> Add to 7pm deploy queue
             </button>
           </div>
         </div>
@@ -277,12 +286,17 @@ export default function AIOperatorApprovalsPage() {
   const schedule = async (action, scheduledFor) => {
     const id = actionId(action);
     if (!id) return;
-    const deployAt = scheduledFor || new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16);
+    const deployAt = scheduledFor || nextWeeknightSevenPmLocal();
     setBusy(true);
-    const res = await post(`/ai/operator/actions/${id}/schedule`, { action, scheduled_for: deployAt });
+    const res = await post(`/ai/operator/actions/${id}/schedule`, {
+      action,
+      scheduled_for: deployAt,
+      deploy_window_label: "7:00pm weeknight deploy",
+      deploy_warning_minutes: 60,
+    });
     setBusy(false);
     if (res.success) {
-      toast.success("Added to AI deploy queue");
+      toast.success("Added to 7:00pm weeknight AI deploy queue");
       setOpenAction(null);
       load();
     } else {
@@ -296,12 +310,12 @@ export default function AIOperatorApprovalsPage() {
         <section className="ai-stage-hero">
           <div className="ai-stage-hero-copy">
             <span><Sparkles size={15} /> AI Approval & Edit Board</span>
-            <h1>AI prepares the work. You control the release.</h1>
-            <p>Every AI-prepared assignment, invoice handoff, message, reminder and follow-up lands here before it affects customers, workers, accounting or payroll.</p>
+            <h1>AI prepares the work. You control the 7pm release.</h1>
+            <p>Every AI-prepared assignment, invoice handoff, message, reminder and follow-up lands here before it affects customers, workers, accounting or payroll. Scheduled work deploys at 7:00pm on weeknights, with a warning notification 1 hour before.</p>
           </div>
           <div className="ai-stage-hero-panel">
             <b>Background operator live</b>
-            <p>Render cron prepares safe admin work every few minutes. This board is the owner-controlled staging area.</p>
+            <p>Render cron prepares admin work every few minutes. Owner-controlled deploy window: 7:00pm Monday–Friday.</p>
             <button type="button" onClick={prepareNow} disabled={busy}><Sparkles size={15} /> Refresh prepared work</button>
           </div>
         </section>
@@ -309,7 +323,7 @@ export default function AIOperatorApprovalsPage() {
         <section className="ai-stage-stats">
           <button type="button" onClick={() => setTab("staging")} className={tab === "staging" ? "active" : ""}><b>{buckets.staging.length}</b><span>Ready for approval</span></button>
           <button type="button" onClick={() => setTab("needs_edit")} className={tab === "needs_edit" ? "active" : ""}><b>{buckets.needsEdit.length}</b><span>Needs edit/check</span></button>
-          <button type="button" onClick={() => setTab("scheduled")} className={tab === "scheduled" ? "active" : ""}><b>{buckets.scheduled.length}</b><span>Scheduled deploy queue</span></button>
+          <button type="button" onClick={() => setTab("scheduled")} className={tab === "scheduled" ? "active" : ""}><b>{buckets.scheduled.length}</b><span>7pm deploy queue</span></button>
           <button type="button" onClick={() => setTab("history")} className={tab === "history" ? "active" : ""}><b>{buckets.history.length}</b><span>AI history</span></button>
         </section>
 
@@ -317,7 +331,7 @@ export default function AIOperatorApprovalsPage() {
           <div className="ai-stage-board-head">
             <div>
               <span>{tab.replace(/_/g, " ")}</span>
-              <h2>{tab === "scheduled" ? "Scheduled to deploy" : tab === "history" ? "Completed AI work" : tab === "needs_edit" ? "Items that need owner checking" : "Prepared for owner approval"}</h2>
+              <h2>{tab === "scheduled" ? "Scheduled for 7pm deploy" : tab === "history" ? "Completed AI work" : tab === "needs_edit" ? "Items that need owner checking" : "Prepared for owner approval"}</h2>
             </div>
             <p>{visible.length} item{visible.length === 1 ? "" : "s"}</p>
           </div>
