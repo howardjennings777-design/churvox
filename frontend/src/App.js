@@ -242,8 +242,8 @@ function App() {
           <Route path="/proof-to-paid" element={<Navigate to="/v3/proof" replace />} />
           <Route path="/ai-control-room" element={<AIControlRoomRoute />} />
           <Route path="/ai-operator" element={<SmartHubRoute />} />
-          <Route path="/ai-operator/approvals" element={<AIOperatorStagingRoute />} />
-          <Route path="/ai-approvals" element={<AIOperatorStagingRoute />} />
+          <Route path="/ai-operator/approvals" element={<Navigate to="/v3/decisions" replace />} />
+          <Route path="/ai-approvals" element={<Navigate to="/v3/decisions" replace />} />
           <Route path="/ai-operator/settings" element={<BusinessRoute><AIOperatorSettingsPage /></BusinessRoute>} />
           <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
           <Route path="/owner/dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />

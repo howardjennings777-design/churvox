@@ -4,6 +4,7 @@ import V3Shell from "../components/V3Shell";
 import "../styles/v3.css";
 
 const AREAS = {
+  decisions: ["Owner Decisions", "Approval queue", "AI-prepared actions, owner decisions, review items, and approval-first work."],
   jobs: ["Jobs", "Live run sheet", "Unassigned jobs, in-progress work, completed jobs, and proof checks."],
   dispatch: ["Dispatch", "Crew coverage", "Worker availability, schedule gaps, conflicts, and suggested job matches."],
   clients: ["Clients", "Customer base", "Customer records, addresses, notes, imports, and recent work."],
@@ -23,6 +24,7 @@ const AREAS = {
 };
 
 const ORDER = [
+  "decisions",
   "jobs",
   "dispatch",
   "clients",

@@ -13,7 +13,7 @@ const workspaces = [
   ["Invoices", "/v3/invoices", "Money board"],
   ["Team", "/v3/team", "Crew control"],
   ["Payroll", "/v3/payroll", "Pay run"],
-  ["Rules", "/automation", "Background engine"],
+  ["Rules", "/v3/rules", "Background engine"],
   ["Reports", "/v3/reports", "Owner numbers"],
 ];
 
@@ -107,16 +107,16 @@ export default function V3SmartHubPage() {
         </section>
 
         <section className="v3-metrics">
-          <button className="v3-metric" onClick={() => navigate("/ai-approvals")}><b>{pending.length}</b><span>Decisions</span><small>{pending.length ? "Needs review" : "All clear"}</small></button>
+          <button className="v3-metric" onClick={() => navigate("/v3/decisions")}><b>{pending.length}</b><span>Decisions</span><small>{pending.length ? "Needs review" : "All clear"}</small></button>
           <button className="v3-metric" onClick={() => navigate("/v3/dispatch")}><b>{dispatch.length}</b><span>Crew checks</span><small>{dispatch.length ? "Dispatch ready" : "Covered"}</small></button>
           <button className="v3-metric lime" onClick={() => navigate("/v3/invoices")}><b>{invoices.length}</b><span>Money items</span><small>Drafts and reminders</small></button>
-          <button className="v3-metric" onClick={() => navigate("/proof-to-paid")}><b>{proofs.length}</b><span>Proof packs</span><small>Completed work</small></button>
+          <button className="v3-metric" onClick={() => navigate("/v3/proof")}><b>{proofs.length}</b><span>Proof packs</span><small>Completed work</small></button>
         </section>
 
         <section className="v3-board">
           <article className="v3-card">
             <div className="v3-card-head"><div><p>Review queue</p><h2>Needs your call</h2></div><strong>{pending.length}</strong></div>
-            {loading ? <Empty title="Checking the business" copy="Refreshing prepared work and owner decisions." /> : pending.length ? pending.slice(0, 5).map((action) => <ActionRow key={action.id} action={action} busy={busyActionId === action.id} onOpen={() => navigate("/ai-approvals")} onApprove={() => approve(action)} />) : <Empty title="Nothing waiting" copy="Churvox has no owner decisions waiting right now." />}
+            {loading ? <Empty title="Checking the business" copy="Refreshing prepared work and owner decisions." /> : pending.length ? pending.slice(0, 5).map((action) => <ActionRow key={action.id} action={action} busy={busyActionId === action.id} onOpen={() => navigate("/v3/decisions")} onApprove={() => approve(action)} />) : <Empty title="Nothing waiting" copy="Churvox has no owner decisions waiting right now." />}
           </article>
 
           <article className="v3-card">
