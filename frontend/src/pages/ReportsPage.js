@@ -1,115 +1,188 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
 import { useApi } from "../hooks/useApi";
 import { formatCurrency } from "../lib/utils";
 import { safeArray, safeNumber, safeText } from "../utils/safeRender";
 import {
-  PremiumPage, PremiumHero, PremiumCard, PremiumStatCard, PremiumButton, PremiumBadge
+  PremiumPage,
+  PremiumHero,
+  PremiumCard,
+  PremiumStatCard,
+  PremiumButton,
+  PremiumBadge,
+  PremiumEmptyState,
 } from "../components/premium";
-import { BarChart3, TrendingUp, Briefcase, Receipt, AlertTriangle, Users, Calendar, FileText, Sparkles, Clock3 } from "lucide-react";
+import {
+  BarChart3,
+  TrendingUp,
+  Briefcase,
+  Receipt,
+  AlertTriangle,
+  Users,
+  Calendar,
+  FileText,
+  Clock3,
+  RefreshCw,
+  DollarSign,
+} from "lucide-react";
 
 export default function ReportsPage() {
   const { get } = useApi();
   const [summary, setSummary] = useState(null);
   const [accounting, setAccounting] = useState(null);
   const [range, setRange] = useState("this_month");
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const [res, accountingRes] = await Promise.all([get(`/reports/summary?range=${range}`), get("/accounting/settings")]);
+    setLoading(true);
+    const [res, accountingRes] = await Promise.all([
+      get(`/reports/summary?range=${range}`),
+      get("/accounting/settings"),
+    ]);
     setSummary(res?.success ? res.data : {});
     if (accountingRes?.success) setAccounting(accountingRes.data || null);
+    setLoading(false);
   }, [get, range]);
 
   useEffect(() => { load(); }, [load]);
 
+  const stats = useMemo(() => ([
+    { label: "Revenue", value: formatCurrency(summary?.revenue_this_month), icon: <TrendingUp className="h-4 w-4" />, tone: "teal" },
+    { label: "Outstanding", value: formatCurrency(summary?.outstanding_invoices), icon: <Receipt className="h-4 w-4" />, tone: "amber" },
+    { label: "Overdue invoices", value: safeNumber(summary?.overdue_invoices, 0), icon: <AlertTriangle className="h-4 w-4" />, tone: "red" },
+    { label: "Paid invoices", value: safeNumber(summary?.paid_invoices, 0), icon: <Receipt className="h-4 w-4" />, tone: "teal" },
+    { label: "Completed jobs", value: safeNumber(summary?.completed_jobs, 0), icon: <Briefcase className="h-4 w-4" />, tone: "sky" },
+    { label: "Active jobs", value: safeNumber(summary?.active_jobs, 0), icon: <Briefcase className="h-4 w-4" />, tone: "blue" },
+    { label: "Worker hours", value: safeNumber(summary?.worker_hours, 0), icon: <Clock3 className="h-4 w-4" />, tone: "violet" },
+    { label: "Quote win rate", value: `${Math.round(safeNumber(summary?.quote_win_rate, 0) * 100)}%`, icon: <FileText className="h-4 w-4" />, tone: "violet" },
+    { label: "Recurring due", value: safeNumber(summary?.recurring_jobs_due, 0), icon: <Calendar className="h-4 w-4" />, tone: "blue" },
+    { label: "Payroll hours", value: safeNumber(summary?.payroll_hours_summary, 0), icon: <Users className="h-4 w-4" />, tone: "blue" },
+    { label: "MYOB issues", value: safeNumber(summary?.myob_sync_issues, 0), icon: <AlertTriangle className="h-4 w-4" />, tone: safeNumber(summary?.myob_sync_issues, 0) ? "red" : "blue" },
+  ]), [summary]);
+
+  const accountingEnabled = accounting?.invoice_mode === "myob_sync" || accounting?.invoice_mode === "myob_external";
+
   return (
     <Layout>
       <PremiumPage>
-        <PremiumHero
-          icon={<BarChart3 className="h-7 w-7" />}
-          eyebrow={<><TrendingUp className="h-3 w-3" /> Insights</>}
-          title="Reports"
-          subtitle="Track revenue, job performance, invoice risk and team productivity at a glance."
-          actions={
-            <div className="inline-flex rounded-2xl border border-[#d8e3f3] bg-white p-1 shadow-sm">
-              <button className={`px-3 py-1.5 text-[13px] rounded-xl font-semibold ${range === "this_month" ? "bg-[#1d4ed8] text-white" : "text-[#5b6c87]"}`} onClick={() => setRange("this_month")}>This month</button>
-              <button className={`px-3 py-1.5 text-[13px] rounded-xl font-semibold ${range === "last_month" ? "bg-[#1d4ed8] text-white" : "text-[#5b6c87]"}`} onClick={() => setRange("last_month")}>Last month</button>
-            </div>
-          }
-        />
-
-        <div className="px-grid px-grid--4">
-          <PremiumStatCard label="Revenue" value={formatCurrency(summary?.revenue_this_month)} icon={<TrendingUp className="h-4 w-4" />} tone="teal" onClick={() => {}} />
-          <PremiumStatCard label="Outstanding" value={formatCurrency(summary?.outstanding_invoices)} icon={<Receipt className="h-4 w-4" />} tone="amber" onClick={() => {}} />
-          <PremiumStatCard label="Overdue invoices" value={safeNumber(summary?.overdue_invoices, 0)} icon={<AlertTriangle className="h-4 w-4" />} tone="red" onClick={() => {}} />
-          <PremiumStatCard label="Paid invoices" value={safeNumber(summary?.paid_invoices, 0)} icon={<Receipt className="h-4 w-4" />} tone="teal" onClick={() => {}} />
-          <PremiumStatCard label="Completed jobs" value={safeNumber(summary?.completed_jobs, 0)} icon={<Briefcase className="h-4 w-4" />} tone="sky" onClick={() => {}} />
-          <PremiumStatCard label="Active jobs" value={safeNumber(summary?.active_jobs, 0)} icon={<Briefcase className="h-4 w-4" />} onClick={() => {}} />
-          <PremiumStatCard label="Worker hours" value={safeNumber(summary?.worker_hours, 0)} icon={<Clock3 className="h-4 w-4" />} tone="violet" onClick={() => {}} />
-          <PremiumStatCard label="Quote win rate" value={`${Math.round(safeNumber(summary?.quote_win_rate, 0) * 100)}%`} icon={<FileText className="h-4 w-4" />} tone="violet" onClick={() => {}} />
-          <PremiumStatCard label="Recurring jobs due" value={safeNumber(summary?.recurring_jobs_due, 0)} icon={<Calendar className="h-4 w-4" />} onClick={() => {}} />
-          <PremiumStatCard label="Payroll hours" value={safeNumber(summary?.payroll_hours_summary, 0)} icon={<Users className="h-4 w-4" />} onClick={() => {}} />
-          <PremiumStatCard label="MYOB sync issues" value={safeNumber(summary?.myob_sync_issues, 0)} icon={<AlertTriangle className="h-4 w-4" />} tone={safeNumber(summary?.myob_sync_issues, 0) ? "red" : "blue"} onClick={() => {}} />
-          {(accounting?.invoice_mode === "myob_sync" || accounting?.invoice_mode === "myob_external") && (
-            <div className="px-stat" style={{ alignItems: 'flex-start' }}>
-              <span className="px-stat__label">Accounting source</span>
-              <span className="px-stat__value text-[15px]">{accounting?.invoice_mode === "myob_external" ? "MYOB" : "Churvox + MYOB"}</span>
-              <PremiumBadge tone="sky">Sync enabled</PremiumBadge>
-            </div>
-          )}
-        </div>
-
-        <div className="px-grid px-grid--3">
-          <PremiumCard title="Jobs by status" icon={<Briefcase className="h-4 w-4" />}>
-            <div className="space-y-2">
-              {Object.entries(summary?.jobs_by_status || {}).map(([status, count]) => (
-                <div key={status} className="flex justify-between items-center px-3 py-2 rounded-xl bg-[#f6faff] border border-[#e6eef9] text-[13px]">
-                  <span className="capitalize text-[#5b6c87]">{safeText(status, "unknown").replace(/_/g, " ")}</span>
-                  <span className="font-bold text-[#0d1b34]">{safeNumber(count, 0)}</span>
+        <div className="reports-v5">
+          <PremiumHero
+            className="reports-v5-hero"
+            icon={<BarChart3 className="h-7 w-7" />}
+            eyebrow={<><TrendingUp className="h-3 w-3" /> Insights</>}
+            title="Business Insights"
+            subtitle="A simple owner snapshot for revenue, invoices, jobs, payroll hours and customer value. Keep it clean for launch."
+            actions={
+              <div className="reports-v5-hero-actions">
+                <div className="reports-v5-range">
+                  <button className={range === "this_month" ? "active" : ""} onClick={() => setRange("this_month")}>This month</button>
+                  <button className={range === "last_month" ? "active" : ""} onClick={() => setRange("last_month")}>Last month</button>
                 </div>
-              ))}
-              {Object.keys(summary?.jobs_by_status || {}).length === 0 && <p className="text-[13px] text-[#7d8ba3]">No jobs in this period.</p>}
-            </div>
-          </PremiumCard>
-
-          <PremiumCard title="Invoice breakdown" icon={<Receipt className="h-4 w-4" />}>
-            <div className="space-y-2">
-              {Object.entries(summary?.invoice_status_breakdown || {}).map(([status, count]) => (
-                <div key={status} className="flex justify-between items-center px-3 py-2 rounded-xl bg-[#f6faff] border border-[#e6eef9] text-[13px]">
-                  <span className="capitalize text-[#5b6c87]">{safeText(status, "unknown").replace(/_/g, " ")}</span>
-                  <span className="font-bold text-[#0d1b34]">{safeNumber(count, 0)}</span>
-                </div>
-              ))}
-              {Object.keys(summary?.invoice_status_breakdown || {}).length === 0 && <p className="text-[13px] text-[#7d8ba3]">No invoices yet.</p>}
-            </div>
-          </PremiumCard>
-
-          <PremiumCard title="Quote breakdown" icon={<FileText className="h-4 w-4" />}>
-            <div className="space-y-2">
-              {Object.entries(summary?.quote_status_breakdown || {}).map(([status, count]) => (
-                <div key={status} className="flex justify-between items-center px-3 py-2 rounded-xl bg-[#f6faff] border border-[#e6eef9] text-[13px]">
-                  <span className="capitalize text-[#5b6c87]">{safeText(status, "unknown").replace(/_/g, " ")}</span>
-                  <span className="font-bold text-[#0d1b34]">{safeNumber(count, 0)}</span>
-                </div>
-              ))}
-              {Object.keys(summary?.quote_status_breakdown || {}).length === 0 && <p className="text-[13px] text-[#7d8ba3]">No quotes yet.</p>}
-            </div>
-          </PremiumCard>
-        </div>
-
-        <PremiumCard title="Top clients" icon={<Users className="h-4 w-4" />}>
-          <div className="space-y-2">
-            {safeArray(summary?.top_clients).map((c) => (
-              <div key={`${c.client_id}-${c.client_name}`} className="flex items-center justify-between rounded-xl border border-[#e6eef9] bg-white px-4 py-3">
-                <span className="text-[14px] text-[#0d1b34] font-semibold">{safeText(c.client_name, "Unknown client")}</span>
-                <span className="text-[13px] font-bold text-[#1d4ed8]">{formatCurrency(safeNumber(c.revenue, 0))} · {safeNumber(c.jobs, 0)} jobs</span>
+                <PremiumButton variant="secondary" onClick={load} iconLeft={<RefreshCw className="h-4 w-4" />}>Refresh</PremiumButton>
               </div>
+            }
+          />
+
+          <section className="reports-v5-focus">
+            <article>
+              <span><DollarSign className="h-4 w-4" /> Cash position</span>
+              <h2>{formatCurrency(summary?.outstanding_invoices)}</h2>
+              <p>Outstanding invoices waiting to be collected.</p>
+            </article>
+            <article>
+              <span><Briefcase className="h-4 w-4" /> Work completed</span>
+              <h2>{safeNumber(summary?.completed_jobs, 0)}</h2>
+              <p>Completed jobs in the selected period.</p>
+            </article>
+            <article>
+              <span><Users className="h-4 w-4" /> Payroll signal</span>
+              <h2>{safeNumber(summary?.payroll_hours_summary, 0)}h</h2>
+              <p>Approved or payroll-ready worker hours.</p>
+            </article>
+          </section>
+
+          <section className="reports-v5-stats">
+            {stats.map((stat) => (
+              <PremiumStatCard
+                key={stat.label}
+                label={stat.label}
+                value={stat.value}
+                icon={stat.icon}
+                tone={stat.tone}
+                onClick={() => {}}
+              />
             ))}
-            {safeArray(summary?.top_clients).length === 0 && (
-              <p className="text-[13px] text-[#7d8ba3] text-center py-3">Top clients will appear after paid invoices and completed jobs.</p>
+            {accountingEnabled && (
+              <div className="reports-v5-accounting-card">
+                <span>Accounting source</span>
+                <strong>{accounting?.invoice_mode === "myob_external" ? "MYOB" : "Churvox + MYOB"}</strong>
+                <PremiumBadge tone="sky">Sync enabled</PremiumBadge>
+              </div>
             )}
-          </div>
-        </PremiumCard>
+          </section>
+
+          {loading ? (
+            <PremiumEmptyState
+              icon={<RefreshCw className="h-6 w-6" />}
+              title="Loading insights…"
+              subtitle="Checking jobs, invoices, quotes and payroll signals."
+            />
+          ) : null}
+
+          {!loading && (
+            <section className="reports-v5-panels">
+              <PremiumCard title="Jobs by status" icon={<Briefcase className="h-4 w-4" />}>
+                <div className="reports-v5-list">
+                  {Object.entries(summary?.jobs_by_status || {}).map(([status, count]) => (
+                    <div key={status}>
+                      <span>{safeText(status, "unknown").replace(/_/g, " ")}</span>
+                      <b>{safeNumber(count, 0)}</b>
+                    </div>
+                  ))}
+                  {Object.keys(summary?.jobs_by_status || {}).length === 0 && <p>No jobs in this period.</p>}
+                </div>
+              </PremiumCard>
+
+              <PremiumCard title="Invoice breakdown" icon={<Receipt className="h-4 w-4" />}>
+                <div className="reports-v5-list">
+                  {Object.entries(summary?.invoice_status_breakdown || {}).map(([status, count]) => (
+                    <div key={status}>
+                      <span>{safeText(status, "unknown").replace(/_/g, " ")}</span>
+                      <b>{safeNumber(count, 0)}</b>
+                    </div>
+                  ))}
+                  {Object.keys(summary?.invoice_status_breakdown || {}).length === 0 && <p>No invoices yet.</p>}
+                </div>
+              </PremiumCard>
+
+              <PremiumCard title="Quote breakdown" icon={<FileText className="h-4 w-4" />}>
+                <div className="reports-v5-list">
+                  {Object.entries(summary?.quote_status_breakdown || {}).map(([status, count]) => (
+                    <div key={status}>
+                      <span>{safeText(status, "unknown").replace(/_/g, " ")}</span>
+                      <b>{safeNumber(count, 0)}</b>
+                    </div>
+                  ))}
+                  {Object.keys(summary?.quote_status_breakdown || {}).length === 0 && <p>No quotes yet.</p>}
+                </div>
+              </PremiumCard>
+            </section>
+          )}
+
+          <PremiumCard title="Top clients" icon={<Users className="h-4 w-4" />}>
+            <div className="reports-v5-clients">
+              {safeArray(summary?.top_clients).map((client) => (
+                <div key={`${client.client_id}-${client.client_name}`}>
+                  <span>{safeText(client.client_name, "Unknown client")}</span>
+                  <b>{formatCurrency(safeNumber(client.revenue, 0))} · {safeNumber(client.jobs, 0)} jobs</b>
+                </div>
+              ))}
+              {safeArray(summary?.top_clients).length === 0 && (
+                <p>Top clients will appear after paid invoices and completed jobs.</p>
+              )}
+            </div>
+          </PremiumCard>
+        </div>
       </PremiumPage>
     </Layout>
   );
