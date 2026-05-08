@@ -219,7 +219,7 @@ export default function JobsPage() {
             ) : null}
           />
         ) : (
-          <div className="jobs-record-list">
+          <div className="jobclean-list">
             {filtered.map((job) => {
               const status = jobStatus(job);
               const workerName = job.assigned_worker_name || job.worker_name;
@@ -228,40 +228,40 @@ export default function JobsPage() {
               return (
                 <div
                   key={job.id || job._id || job.title}
-                  className={`px-card px-card--hover jobs-row jobs-row--${status} ${needsCrew ? "jobs-row--needs-crew" : ""} ${readyInvoice ? "jobs-row--ready-invoice" : ""}`}
+                  className={`jobclean-row jobclean-row--${status} ${needsCrew ? "jobclean-row--needs-crew" : ""} ${readyInvoice ? "jobclean-row--ready-invoice" : ""}`}
                   onClick={() => setActiveJob(job)}
                   data-testid={`job-card-${job.id}`}
                 >
-                  <div className="px-card__body jobs-row-layout">
-                    <div className="jobs-row-main">
-                      <div className="jobs-row-topline">
-                        <span className="jobs-title">{safeText(job.title, "Untitled job")}</span>
+                  <div className="jobclean-layout">
+                    <div className="jobclean-main">
+                      <div className="jobclean-topline">
+                        <span className="jobclean-title">{safeText(job.title, "Untitled job")}</span>
                         <PremiumStatusBadge status={job.status} />
                         {needsCrew && <PremiumBadge tone="amber">Needs crew</PremiumBadge>}
                         {readyInvoice && <PremiumBadge tone="blue">Ready to invoice</PremiumBadge>}
                       </div>
-                      <p className="jobs-client">{safeText(job.customer_name || job.client_name, "No client")}</p>
-                      <div className="jobs-meta">
+                      <p className="jobclean-client">{safeText(job.customer_name || job.client_name, "No client")}</p>
+                      <div className="jobclean-meta">
                         {job.address && <span><MapPin size={12} />{job.address}</span>}
                         <span><CalendarDays size={12} />{formatDate(job.scheduled_date) || "No date"}</span>
                         {workerName ? <span><UserCheck size={12} />{workerName}</span> : <span><Users size={12} />Unassigned</span>}
-                        {showMoney && safeNumber(job.price || job.job_price || job.fixed_price) > 0 && <span className="jobs-money">{formatCurrency(job.price || job.job_price || job.fixed_price)}</span>}
+                        {showMoney && safeNumber(job.price || job.job_price || job.fixed_price) > 0 && <span className="jobclean-money">{formatCurrency(job.price || job.job_price || job.fixed_price)}</span>}
                       </div>
                     </div>
 
-                    <div className="jobs-next-action">
+                    <div className="jobclean-next">
                       <small>Next action</small>
                       <strong>{needsCrew ? "Assign worker" : readyInvoice ? "Draft invoice" : status === "in_progress" ? "Monitor work" : "Open job"}</strong>
                     </div>
 
-                    <div className="jobs-row-actions" onClick={(e) => e.stopPropagation()}>
+                    <div className="jobclean-actions" onClick={(e) => e.stopPropagation()}>
                       <PremiumButton size="sm" variant="secondary" onClick={() => setActiveJob(job)}>Open</PremiumButton>
                       {needsCrew && <PremiumButton size="sm" onClick={() => navigate("/dispatch")}>Dispatch</PremiumButton>}
                       {readyInvoice && <PremiumButton size="sm" onClick={() => navigate("/invoices")}>Invoice</PremiumButton>}
                       {isEmployer && (
                         <button
                           onClick={() => setDeleteId(job.id)}
-                          className="px-btn px-btn--ghost px-btn--sm text-[#94a3b8] hover:!text-[#dc2626]"
+                          className="jobclean-delete"
                           data-testid={`delete-job-${job.id}`}
                           title="Delete job"
                         >
