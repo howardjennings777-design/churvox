@@ -1,0 +1,672 @@
+/* Churvox visible redesign pass
+   Targets the real shells/classes used by the app. No broad destructive reset. */
+
+:root {
+  --cv2-bg: #f4f7fb;
+  --cv2-card: #ffffff;
+  --cv2-ink: #071326;
+  --cv2-text: #152238;
+  --cv2-muted: #64748b;
+  --cv2-line: #dbe7f4;
+  --cv2-blue: #2563eb;
+  --cv2-navy: #050b18;
+  --cv2-navy2: #08142b;
+  --cv2-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+}
+
+/* Real Smart Hub shell */
+.pcx-shell.smart-hub-v5 {
+  min-height: 100vh !important;
+  display: grid !important;
+  grid-template-columns: 246px minmax(0, 1fr) !important;
+  background: radial-gradient(circle at 24% 0%, rgba(37, 99, 235, 0.08), transparent 32%), linear-gradient(180deg, #fbfdff 0%, var(--cv2-bg) 100%) !important;
+  color: var(--cv2-text) !important;
+  overflow-x: hidden !important;
+}
+
+.pcx-shell.smart-hub-v5 .pcx-sidebar {
+  position: sticky !important;
+  top: 0 !important;
+  height: 100vh !important;
+  width: 246px !important;
+  min-width: 246px !important;
+  padding: 24px 15px !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-right: 1px solid var(--cv2-line) !important;
+  box-shadow: 10px 0 34px rgba(15, 23, 42, 0.045) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.pcx-shell.smart-hub-v5 .pcx-logo {
+  width: 100% !important;
+  min-height: 58px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 0 8px !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.pcx-shell.smart-hub-v5 .pcx-logo img {
+  width: 152px !important;
+  max-width: 152px !important;
+  height: auto !important;
+}
+
+.pcx-shell.smart-hub-v5 .pcx-sidebar nav {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+
+.pcx-shell.smart-hub-v5 .pcx-sidebar nav button {
+  width: 100% !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 11px !important;
+  padding: 0 12px !important;
+  border: 1px solid transparent !important;
+  border-radius: 14px !important;
+  background: transparent !important;
+  color: #26364d !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  letter-spacing: -0.01em !important;
+  text-align: left !important;
+  box-shadow: none !important;
+}
+
+.pcx-shell.smart-hub-v5 .pcx-sidebar nav button i {
+  width: 18px !important;
+  min-width: 18px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #7a8aa0 !important;
+  font-style: normal !important;
+  font-size: 13px !important;
+}
+
+.pcx-shell.smart-hub-v5 .pcx-sidebar nav button:hover {
+  background: #eef6ff !important;
+  color: var(--cv2-blue) !important;
+}
+
+.pcx-shell.smart-hub-v5 .pcx-sidebar nav button.active {
+  background: linear-gradient(135deg, #edf5ff, #ffffff) !important;
+  color: var(--cv2-blue) !important;
+  border-color: #d7e8ff !important;
+  box-shadow: inset 3px 0 0 var(--cv2-blue), 0 12px 28px rgba(37, 99, 235, 0.08) !important;
+}
+
+.pcx-shell.smart-hub-v5 .pcx-owner {
+  margin-top: auto !important;
+  width: 100% !important;
+  min-height: 74px !important;
+  display: grid !important;
+  grid-template-columns: 40px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 12px !important;
+  border: 1px solid var(--cv2-line) !important;
+  border-radius: 20px !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.055) !important;
+  color: var(--cv2-text) !important;
+  text-align: left !important;
+}
+
+.pcx-shell.smart-hub-v5 .pcx-owner i {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 16px !important;
+  background: linear-gradient(135deg, var(--cv2-blue), var(--cv2-ink)) !important;
+}
+
+.pcx-shell.smart-hub-v5 .pcx-owner b {
+  display: block !important;
+  color: var(--cv2-ink) !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+}
+
+.pcx-shell.smart-hub-v5 .pcx-owner small {
+  display: block !important;
+  color: var(--cv2-muted) !important;
+  font-size: 11px !important;
+  font-weight: 760 !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-main {
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: 1520px !important;
+  margin: 0 auto !important;
+  padding: 24px 30px 48px !important;
+  overflow-x: hidden !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-topbar {
+  height: 42px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin-bottom: 14px !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-live-dot {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  border: 1px solid #d8e6f6 !important;
+  border-radius: 999px !important;
+  background: #ffffff !important;
+  color: #26364d !important;
+  padding: 9px 13px !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045) !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-live-dot::before {
+  content: "" !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 999px !important;
+  background: #16a34a !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-topbar > div {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-topbar button {
+  height: 38px !important;
+  border-radius: 13px !important;
+  border: 1px solid var(--cv2-line) !important;
+  background: #ffffff !important;
+  color: #26364d !important;
+  padding: 0 12px !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045) !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-hero {
+  position: relative !important;
+  min-height: 300px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr) !important;
+  gap: 22px !important;
+  align-items: stretch !important;
+  margin: 0 0 18px !important;
+  border-radius: 34px !important;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(37, 99, 235, 0.42), transparent 34%),
+    radial-gradient(circle at 88% 8%, rgba(14, 165, 233, 0.17), transparent 30%),
+    linear-gradient(135deg, #050b18 0%, #08142b 63%, #020617 100%) !important;
+  border: 1px solid rgba(147, 197, 253, 0.2) !important;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.2) !important;
+  overflow: hidden !important;
+  padding: clamp(26px, 3.4vw, 44px) !important;
+  color: #ffffff !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-hero-copy {
+  align-self: center !important;
+  max-width: 880px !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-hero-copy > p {
+  display: inline-flex !important;
+  width: fit-content !important;
+  margin: 0 0 12px !important;
+  padding: 8px 12px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(147, 197, 253, 0.22) !important;
+  background: rgba(255,255,255,0.08) !important;
+  color: #93c5fd !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-hero-copy h1 {
+  margin: 0 !important;
+  color: #ffffff !important;
+  font-size: clamp(56px, 7.2vw, 108px) !important;
+  line-height: 0.88 !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.085em !important;
+  text-shadow: 0 2px 18px rgba(0,0,0,0.36) !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-hero-copy > span {
+  display: block !important;
+  max-width: 740px !important;
+  margin: 18px 0 0 !important;
+  color: #dbeafe !important;
+  font-size: 17px !important;
+  line-height: 1.48 !important;
+  font-weight: 700 !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-hero-copy > div {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  margin-top: 24px !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-hero-copy button,
+.pcx-shell.smart-hub-v5 .sh-decision-card button {
+  min-height: 46px !important;
+  border-radius: 15px !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  background: var(--cv2-blue) !important;
+  color: #ffffff !important;
+  padding: 0 18px !important;
+  font-size: 13px !important;
+  font-weight: 920 !important;
+  box-shadow: 0 16px 36px rgba(37, 99, 235, 0.28) !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-hero-copy button.secondary {
+  background: rgba(255,255,255,0.1) !important;
+  color: #dbeafe !important;
+  box-shadow: none !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-decision-card {
+  align-self: center !important;
+  justify-self: end !important;
+  width: 100% !important;
+  max-width: 360px !important;
+  min-height: 220px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  border-radius: 28px !important;
+  background: rgba(255,255,255,0.06) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08) !important;
+  padding: 24px !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-decision-card small {
+  color: #93c5fd !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-decision-card b {
+  color: #ffffff !important;
+  font-size: 72px !important;
+  line-height: 0.92 !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.06em !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-decision-card span {
+  color: #dbeafe !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-stats {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  margin: 0 0 18px !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-stat {
+  position: relative !important;
+  min-height: 126px !important;
+  border: 1px solid var(--cv2-line) !important;
+  border-radius: 24px !important;
+  background: #ffffff !important;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06) !important;
+  padding: 18px 18px 18px 22px !important;
+  text-align: left !important;
+  overflow: hidden !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-stat::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 auto 0 0 !important;
+  width: 4px !important;
+  background: var(--cv2-blue) !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-stat b {
+  display: block !important;
+  color: var(--cv2-ink) !important;
+  font-size: 34px !important;
+  line-height: 1 !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.05em !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-stat span {
+  display: block !important;
+  margin-top: 10px !important;
+  color: #26364d !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-stat small {
+  display: block !important;
+  margin-top: 4px !important;
+  color: var(--cv2-muted) !important;
+  font-size: 12px !important;
+  font-weight: 760 !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.2fr) 260px !important;
+  gap: 14px !important;
+  align-items: start !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-panel,
+.pcx-shell.smart-hub-v5 .sh-mini,
+.pcx-shell.smart-hub-v5 .sh-workspaces {
+  border: 1px solid var(--cv2-line) !important;
+  border-radius: 26px !important;
+  background: #ffffff !important;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06) !important;
+  padding: 20px !important;
+  overflow: hidden !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-panel-head {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+  margin-bottom: 14px !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-panel-head p {
+  margin: 0 0 5px !important;
+  color: var(--cv2-blue) !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-panel-head h2,
+.pcx-shell.smart-hub-v5 .sh-workspaces h2 {
+  margin: 0 !important;
+  color: var(--cv2-ink) !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.045em !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-empty {
+  min-height: 98px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  border: 1px dashed #cbd8ea !important;
+  border-radius: 18px !important;
+  background: linear-gradient(180deg, #ffffff, #f8fbff) !important;
+  padding: 18px !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-empty b {
+  color: var(--cv2-ink) !important;
+  font-size: 14px !important;
+  font-weight: 950 !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-empty span {
+  color: var(--cv2-muted) !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  font-weight: 720 !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-action-row,
+.pcx-shell.smart-hub-v5 .sh-signal-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 10px !important;
+  align-items: center !important;
+  border: 1px solid #e4edf8 !important;
+  border-radius: 18px !important;
+  background: #f8fbff !important;
+  padding: 12px !important;
+  margin-bottom: 9px !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-action-row button:first-child,
+.pcx-shell.smart-hub-v5 .sh-signal-row {
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  text-align: left !important;
+  box-shadow: none !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-action-row b,
+.pcx-shell.smart-hub-v5 .sh-signal-row b {
+  display: block !important;
+  color: var(--cv2-ink) !important;
+  font-size: 14px !important;
+  font-weight: 950 !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-action-row span,
+.pcx-shell.smart-hub-v5 .sh-signal-row span {
+  display: block !important;
+  color: var(--cv2-muted) !important;
+  font-size: 12px !important;
+  font-weight: 720 !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-action-row .primary {
+  min-height: 36px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: var(--cv2-blue) !important;
+  color: white !important;
+  padding: 0 13px !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-side-stack {
+  display: grid !important;
+  gap: 14px !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-mini p {
+  margin: 0 !important;
+  color: #26364d !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-mini h3 {
+  margin: 8px 0 !important;
+  color: var(--cv2-ink) !important;
+  font-size: 34px !important;
+  line-height: 1 !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.05em !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-mini span {
+  display: block !important;
+  color: var(--cv2-muted) !important;
+  font-size: 12px !important;
+  font-weight: 720 !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-mini button,
+.pcx-shell.smart-hub-v5 .sh-panel-head button {
+  margin-top: 10px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--cv2-blue) !important;
+  padding: 0 !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-workspaces {
+  grid-column: 1 / 3 !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-workspaces > div:last-child {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-workspaces button {
+  min-height: 86px !important;
+  border: 1px solid #e4edf8 !important;
+  border-radius: 18px !important;
+  background: #f8fbff !important;
+  padding: 13px !important;
+  text-align: left !important;
+  box-shadow: none !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-workspaces i {
+  display: block !important;
+  color: var(--cv2-blue) !important;
+  font-style: normal !important;
+  margin-bottom: 8px !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-workspaces b,
+.pcx-shell.smart-hub-v5 .sh-workspaces small {
+  display: block !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-workspaces b {
+  color: var(--cv2-ink) !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+}
+
+.pcx-shell.smart-hub-v5 .sh-workspaces small {
+  color: var(--cv2-muted) !important;
+  font-size: 11px !important;
+  font-weight: 720 !important;
+}
+
+/* Shared app pages: stronger visible polish */
+.px-app:not(.px-app--embedded) .px-main {
+  background: radial-gradient(circle at 20% 0%, rgba(37, 99, 235, 0.06), transparent 30%), linear-gradient(180deg, #fbfdff 0%, #f4f7fb 100%) !important;
+}
+
+.px-hero .px-hero__content,
+.px-hero__content {
+  max-width: 980px !important;
+}
+
+.px-card,
+.px-stat,
+[data-testid^="worker-card-"],
+[data-testid^="job-card-"],
+[data-testid^="client-card-"] {
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease !important;
+}
+
+.px-card:hover,
+.px-stat:hover,
+[data-testid^="worker-card-"]:hover,
+[data-testid^="job-card-"]:hover,
+[data-testid^="client-card-"]:hover {
+  transform: translateY(-1px) !important;
+  border-color: #bdd7ff !important;
+  box-shadow: 0 18px 46px rgba(15, 23, 42, 0.09) !important;
+}
+
+/* Team page real action row */
+.cx-page[data-testid="team-page"] .cx-page-hero > div:last-child {
+  width: fit-content !important;
+  max-width: 720px !important;
+  display: inline-flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  margin: 20px 0 0 !important;
+}
+
+.cx-page[data-testid="team-page"] .cx-page-hero > div:last-child button {
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+}
+
+.cx-page[data-testid="team-page"] .cx-page-hero .w-full.text-xs {
+  flex-basis: 100% !important;
+  width: 100% !important;
+  max-width: 660px !important;
+  color: rgba(219, 234, 254, 0.76) !important;
+}
+
+@media (max-width: 1100px) {
+  .pcx-shell.smart-hub-v5 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .pcx-shell.smart-hub-v5 .pcx-sidebar {
+    display: none !important;
+  }
+
+  .pcx-shell.smart-hub-v5 .sh-main {
+    padding: 16px 12px 80px !important;
+  }
+
+  .pcx-shell.smart-hub-v5 .sh-hero {
+    grid-template-columns: 1fr !important;
+    min-height: auto !important;
+  }
+
+  .pcx-shell.smart-hub-v5 .sh-decision-card {
+    justify-self: stretch !important;
+    max-width: none !important;
+  }
+
+  .pcx-shell.smart-hub-v5 .sh-stats,
+  .pcx-shell.smart-hub-v5 .sh-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .pcx-shell.smart-hub-v5 .sh-workspaces {
+    grid-column: auto !important;
+  }
+
+  .pcx-shell.smart-hub-v5 .sh-hero-copy h1 {
+    font-size: 54px !important;
+  }
+}
