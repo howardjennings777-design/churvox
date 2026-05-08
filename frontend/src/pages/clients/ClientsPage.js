@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useApi } from "../../hooks/useApi";
 import {
   Users, UserPlus, Trash2, Upload, Mail, Phone, MapPin, Pencil, Search,
-  CalendarClock, Receipt, Briefcase, FileText, Plus, Building2, UserRound,
+  CalendarClock, Receipt, Briefcase, FileText, Plus,
   MessageSquare, Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
@@ -213,9 +213,9 @@ export default function ClientsPage() {
   return (
     <Layout>
       <PremiumPage>
-        <div className="clients-v5">
-          <section className="clients-v5-hero">
-            <article className="clients-v5-hero-card">
+        <div className="clients-v5 clients-v5--single-header">
+          <section className="clients-v5-hero clients-v5-hero--single">
+            <article className="clients-v5-hero-card clients-v5-hero-card--single">
               <p><Users size={13} /> Client workspace</p>
               <h1>{metrics.total} client{metrics.total === 1 ? "" : "s"}</h1>
               <span>Keep customer details, sites, jobs, quotes and invoice follow-ups in one clean workspace.</span>
@@ -225,18 +225,11 @@ export default function ClientsPage() {
                 <button className="secondary" onClick={() => navigate("/jobs/new")}><Plus size={15} /> New job</button>
               </div>
             </article>
-
-            <article className="clients-v5-side-card">
-              <p>Needs details</p>
-              <b>{metrics.missingContact}</b>
-              <span>{metrics.missingContact ? "clients missing email or phone" : "all clients have contact details"}</span>
-              <button onClick={() => setSearchTerm("")}>View clients</button>
-            </article>
           </section>
 
           <input ref={fileInputRef} type="file" accept=".csv" onChange={handleCSVImport} className="hidden" />
 
-          <div className="px-grid px-grid--4 clients-v5-stats">
+          <div className="px-grid px-grid--4 clients-v5-stats clients-v5-stats--tight">
             <PremiumStatCard label="Total clients" value={metrics.total} icon={<Users className="h-4 w-4" />} onClick={() => setStatusFilter("all")} />
             <PremiumStatCard label="Active" value={metrics.active} icon={<Sparkles className="h-4 w-4" />} tone="teal" onClick={() => setStatusFilter("active")} />
             <PremiumStatCard label="Open jobs" value={metrics.openJobs} icon={<Briefcase className="h-4 w-4" />} tone="sky" onClick={() => navigate("/jobs")} />
