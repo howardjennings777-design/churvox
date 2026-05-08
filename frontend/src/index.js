@@ -19,6 +19,7 @@ import "./styles/realAppPremiumShell.css";
 import "./styles/churvoxUtilityBridge.css";
 import "./styles/invoiceCommandCentre.css";
 import "./styles/invoiceCommandCentreHardFix.css";
+import "./styles/invoiceFinalCleanup.css";
 
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
