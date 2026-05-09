@@ -379,6 +379,7 @@ export default function V3WorkspacePage({ type }) {
   const [invoices, setInvoices] = useState([]);
   const [clients, setClients] = useState([]);
   const [workers, setWorkers] = useState([]);
+  const [billing, setBilling] = useState(null);
   const [loading, setLoading] = useState(true);
   const [aiRunning, setAiRunning] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -463,6 +464,7 @@ export default function V3WorkspacePage({ type }) {
       get("/invoices"),
       get("/clients"),
       get("/team/workers"),
+      get("/billing/v3/status"),
     ]);
 
     setActions(settledValue(results[0])?.actions || []);

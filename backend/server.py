@@ -11630,6 +11630,293 @@ async def ai_operator_v3_reject(action_id: str, body: dict = Body(default=None),
 # ===== V3 AI OPERATOR LIVE ENGINE END =====
 
 
+
+# ===== V3 SECURE BILLING SMS BLOCKS START =====
+V3_SMS_PACKS = {
+    "100": {"credits": 100, "price_cents": 1000, "label": "100 SMS credits"},
+    "500": {"credits": 500, "price_cents": 4500, "label": "500 SMS credits"},
+    "1000": {"credits": 1000, "price_cents": 8000, "label": "1000 SMS credits"},
+}
+
+V3_EXTRA_50_USER_BLOCK = {
+    "block_size": 50,
+    "price_cents": 10000,
+    "label": "Extra 50-user block",
+}
+
+def _v3_role(user):
+    return str((user or {}).get("role") or "").lower().strip()
+
+def _v3_plan(user):
+    return str((user or {}).get("plan") or "solo").lower().strip()
+
+def _v3_billing_allowed(user):
+    role = _v3_role(user)
+    return role in {"owner", "admin", "employer", "manager"} or is_platform_owner(user)
+
+def _v3_require_billing_admin(user):
+    if not _v3_billing_allowed(user):
+        raise HTTPException(status_code=403, detail="Billing is restricted to owner/admin roles")
+    return True
+
+async def _v3_count_team_users(business_id):
+    scope = _ai_scope(business_id) if "_ai_scope" in globals() else {"business_id": str(business_id)}
+    try:
+        users = await db.users.count_documents({
+            "$and": [
+                scope,
+                {"role": {"$in": ["worker", "manager", "office_admin", "payroll"]}},
+            ]
+        })
+    except Exception:
+        users = 0
+
+    try:
+        workers = await db.workers.count_documents(scope)
+    except Exception:
+        workers = 0
+
+    return max(users, workers)
+
+async def _v3_billing_settings(current_user):
+    business_id = await get_user_business_id(current_user)
+    saved = await db.billing_settings.find_one({"business_id": str(business_id)}) or {}
+
+    extra_blocks = int(saved.get("extra_50_user_blocks") or saved.get("extra_user_blocks") or 0)
+    sms_credits = int(saved.get("sms_credits") or 0)
+
+    plan = _v3_plan(current_user)
+    features = get_plan_features(plan)
+    base_workers = int(features.get("max_workers") or PLAN_LIMITS.get(plan, {}).get("max_workers") or 0)
+    base_clients = int(features.get("max_clients") or PLAN_LIMITS.get(plan, {}).get("max_clients") or 0)
+
+    if plan == "enterprise":
+        max_workers = base_workers + (extra_blocks * V3_EXTRA_50_USER_BLOCK["block_size"])
+        can_buy_blocks = True
+    else:
+        max_workers = base_workers
+        can_buy_blocks = False
+
+    team_count = await _v3_count_team_users(business_id)
+
+    status = {
+        "business_id": str(business_id),
+        "plan": plan,
+        "plan_status": current_user.get("plan_status") or current_user.get("subscription_status") or "active",
+        "base_max_workers": base_workers,
+        "max_workers": max_workers,
+        "base_max_clients": base_clients,
+        "extra_50_user_blocks": extra_blocks,
+        "extra_block_size": V3_EXTRA_50_USER_BLOCK["block_size"],
+        "extra_block_price_cents": V3_EXTRA_50_USER_BLOCK["price_cents"],
+        "team_count": team_count,
+        "team_remaining": max(0, max_workers - team_count),
+        "can_buy_50_user_blocks": can_buy_blocks,
+        "sms_credits": sms_credits,
+        "sms_packs": V3_SMS_PACKS,
+        "sms_enabled": bool(features.get("sms") or PLAN_LIMITS.get(plan, {}).get("sms")),
+        "myob_enabled": bool(features.get("myob") or PLAN_LIMITS.get(plan, {}).get("myob")),
+        "billing_locked": not _v3_billing_allowed(current_user),
+        "updated_at": _ai_now() if "_ai_now" in globals() else datetime.now(timezone.utc),
+    }
+    return status
+
+async def _v3_save_billing_event(current_user, event_type, payload):
+    business_id = await get_user_business_id(current_user)
+    await db.billing_events.insert_one({
+        "business_id": str(business_id),
+        "user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "event_type": str(event_type),
+        "payload": make_json_safe(payload or {}),
+        "created_at": _ai_now() if "_ai_now" in globals() else datetime.now(timezone.utc),
+    })
+
+def _v3_checkout_urls(kind):
+    success_url = f"{FRONTEND_URL}/v3/plans?billing_success={kind}&session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{FRONTEND_URL}/v3/plans?billing_cancelled={kind}"
+    return success_url, cancel_url
+
+async def _v3_create_one_time_checkout(current_user, kind, label, price_cents, metadata):
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="Stripe is not configured")
+
+    success_url, cancel_url = _v3_checkout_urls(kind)
+
+    try:
+        session = stripe.checkout.Session.create(
+            mode="payment",
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": "nzd",
+                    "product_data": {"name": label},
+                    "unit_amount": int(price_cents),
+                },
+                "quantity": 1,
+            }],
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata={k: str(v) for k, v in (metadata or {}).items()},
+        )
+        return {"checkout_url": session.url, "session_id": session.id}
+    except Exception as exc:
+        logger.error(f"Stripe checkout failed: {exc}")
+        raise HTTPException(status_code=500, detail="Could not create checkout session")
+
+@api_router.get("/billing/v3/status")
+async def billing_v3_status(current_user: dict = Depends(get_current_user)):
+    status = await _v3_billing_settings(current_user)
+    return {"success": True, "ok": True, "billing": make_json_safe(status)}
+
+@api_router.post("/billing/v3/sms-pack")
+async def billing_v3_buy_sms_pack(body: dict = Body(default=None), current_user: dict = Depends(get_current_user)):
+    _v3_require_billing_admin(current_user)
+
+    body = body or {}
+    pack = str(body.get("pack") or body.get("pack_id") or "").strip()
+
+    if pack not in V3_SMS_PACKS:
+        raise HTTPException(status_code=400, detail="Invalid SMS credit pack")
+
+    business_id = await get_user_business_id(current_user)
+    pack_data = V3_SMS_PACKS[pack]
+
+    metadata = {
+        "kind": "sms_pack",
+        "business_id": str(business_id),
+        "pack": pack,
+        "credits": pack_data["credits"],
+        "user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+    }
+
+    checkout = await _v3_create_one_time_checkout(
+        current_user,
+        "sms_pack",
+        f"Churvox {pack_data['label']}",
+        pack_data["price_cents"],
+        metadata,
+    )
+
+    await _v3_save_billing_event(current_user, "sms_pack_checkout_created", metadata)
+
+    return {
+        "success": True,
+        "ok": True,
+        "message": "SMS credit checkout created.",
+        "pack": pack_data,
+        **checkout,
+    }
+
+@api_router.post("/billing/v3/extra-50-user-block")
+async def billing_v3_buy_extra_50_user_block(current_user: dict = Depends(get_current_user)):
+    _v3_require_billing_admin(current_user)
+
+    business_id = await get_user_business_id(current_user)
+    plan = _v3_plan(current_user)
+
+    if plan != "enterprise":
+        raise HTTPException(status_code=403, detail="Extra 50-user blocks are only available on Enterprise")
+
+    metadata = {
+        "kind": "extra_50_user_block",
+        "business_id": str(business_id),
+        "block_size": V3_EXTRA_50_USER_BLOCK["block_size"],
+        "user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+    }
+
+    checkout = await _v3_create_one_time_checkout(
+        current_user,
+        "extra_50_user_block",
+        "Churvox extra 50-user block",
+        V3_EXTRA_50_USER_BLOCK["price_cents"],
+        metadata,
+    )
+
+    await _v3_save_billing_event(current_user, "extra_50_user_block_checkout_created", metadata)
+
+    return {
+        "success": True,
+        "ok": True,
+        "message": "50-user block checkout created.",
+        "block": V3_EXTRA_50_USER_BLOCK,
+        **checkout,
+    }
+
+@api_router.post("/billing/v3/confirm-checkout")
+async def billing_v3_confirm_checkout(body: dict = Body(default=None), current_user: dict = Depends(get_current_user)):
+    _v3_require_billing_admin(current_user)
+
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="Stripe is not configured")
+
+    body = body or {}
+    session_id = str(body.get("session_id") or "").strip()
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Missing session_id")
+
+    business_id = await get_user_business_id(current_user)
+
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Could not verify checkout session")
+
+    metadata = dict(getattr(session, "metadata", {}) or {})
+    if str(metadata.get("business_id")) != str(business_id):
+        raise HTTPException(status_code=403, detail="Checkout session does not belong to this business")
+
+    if getattr(session, "payment_status", "") != "paid":
+        return {"success": False, "ok": False, "message": "Checkout is not paid yet"}
+
+    kind = metadata.get("kind")
+    now = _ai_now() if "_ai_now" in globals() else datetime.now(timezone.utc)
+
+    if kind == "sms_pack":
+        credits = int(metadata.get("credits") or 0)
+        if credits <= 0:
+            raise HTTPException(status_code=400, detail="Invalid SMS credits")
+
+        await db.billing_settings.update_one(
+            {"business_id": str(business_id)},
+            {
+                "$inc": {"sms_credits": credits},
+                "$set": {"updated_at": now},
+                "$addToSet": {"confirmed_checkout_sessions": session_id},
+                "$setOnInsert": {"created_at": now, "business_id": str(business_id)},
+            },
+            upsert=True,
+        )
+
+        await _v3_save_billing_event(current_user, "sms_pack_confirmed", {
+            "session_id": session_id,
+            "credits": credits,
+        })
+
+    elif kind == "extra_50_user_block":
+        await db.billing_settings.update_one(
+            {"business_id": str(business_id)},
+            {
+                "$inc": {"extra_50_user_blocks": 1},
+                "$set": {"updated_at": now},
+                "$addToSet": {"confirmed_checkout_sessions": session_id},
+                "$setOnInsert": {"created_at": now, "business_id": str(business_id)},
+            },
+            upsert=True,
+        )
+
+        await _v3_save_billing_event(current_user, "extra_50_user_block_confirmed", {
+            "session_id": session_id,
+            "block_size": 50,
+        })
+
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported checkout type")
+
+    status = await _v3_billing_settings(current_user)
+    return {"success": True, "ok": True, "message": "Checkout confirmed.", "billing": make_json_safe(status)}
+# ===== V3 SECURE BILLING SMS BLOCKS END =====
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
