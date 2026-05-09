@@ -108,6 +108,9 @@ function App() {
     const handleCheckoutReturn = async () => {
       try {
         const params = new URLSearchParams(window.location.search);
+        if (window.location.pathname.startsWith("/v3/plans") && params.get("billing_success")) {
+          return;
+        }
         const checkout = params.get("checkout");
         const sessionId = params.get("session_id") || "";
         const plan = (params.get("plan") || "").toLowerCase();

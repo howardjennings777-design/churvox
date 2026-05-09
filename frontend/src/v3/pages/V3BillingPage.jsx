@@ -4,28 +4,10 @@ import { get, post } from "../../lib/api";
 import V3Shell from "../components/V3Shell";
 import "../styles/v3.css";
 
-const plans = [
-  {
-    id: "team",
-    name: "Team",
-    price: "$70",
-    subtitle: "Small crew",
-    points: ["Up to 5 workers", "Up to 30 clients", "SMS enabled", "No MYOB"],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: "$110",
-    subtitle: "Growing operation",
-    points: ["Up to 20 workers", "Up to 40 clients", "MYOB add-on ready", "AI admin support"],
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    price: "$240",
-    subtitle: "Large crew",
-    points: ["Up to 50 workers", "Up to 50 clients", "MYOB included", "$100 extra 50-user blocks"],
-  },
+const PLANS = [
+  { id: "team", name: "Team", price: "$70", subtitle: "Small crew", points: ["Up to 5 workers", "Up to 30 clients", "SMS enabled", "No MYOB"] },
+  { id: "pro", name: "Pro", price: "$110", subtitle: "Growing operation", points: ["Up to 20 workers", "Up to 40 clients", "MYOB add-on ready", "AI admin support"] },
+  { id: "enterprise", name: "Enterprise", price: "$240", subtitle: "Large crew", points: ["Up to 50 workers", "Up to 50 clients", "MYOB included", "$100 extra 50-user blocks"] },
 ];
 
 export default function V3BillingPage() {
@@ -34,6 +16,7 @@ export default function V3BillingPage() {
   const [busy, setBusy] = useState("");
 
   const currentPlan = String(billing?.plan || "solo").toLowerCase();
+  const locked = !!billing?.billing_locked;
 
   const load = async () => {
     const result = await get("/billing/v3/status");
@@ -43,10 +26,6 @@ export default function V3BillingPage() {
       setNotice(result.message || "Billing status could not load.");
     }
   };
-
-  useEffect(() => {
-    load();
-  }, []);
 
   const confirmCheckout = async () => {
     const params = new URLSearchParams(window.location.search);
@@ -59,7 +38,7 @@ export default function V3BillingPage() {
 
     if (result.ok) {
       setBilling(result.data?.billing || {});
-      setNotice(result.data?.message || "Plan updated.");
+      setNotice(result.data?.message || "Checkout confirmed.");
       window.history.replaceState({}, document.title, window.location.pathname);
       window.dispatchEvent(new Event("churvox-auth-refresh"));
     } else {
@@ -70,6 +49,7 @@ export default function V3BillingPage() {
   };
 
   useEffect(() => {
+    load();
     confirmCheckout();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -115,8 +95,6 @@ export default function V3BillingPage() {
     setBusy("");
   };
 
-  const locked = !!billing?.billing_locked;
-
   const stats = useMemo(() => ([
     ["Current plan", currentPlan.toUpperCase(), "Active subscription"],
     ["Team used", billing?.team_count ?? 0, `${billing?.max_workers ?? "Plan"} allowed`],
@@ -131,10 +109,7 @@ export default function V3BillingPage() {
           <div>
             <p className="v3-eyebrow">Billing</p>
             <h1>Plan upgrades that actually work.</h1>
-            <p>
-              Upgrade plans, manage SMS credits, and add Enterprise 50-user blocks through secure Stripe checkout.
-              Workers and payroll users cannot change billing.
-            </p>
+            <p>Upgrade plans, manage SMS credits, and add Enterprise 50-user blocks through secure Stripe checkout.</p>
           </div>
 
           <div className="v3-workspace-actions">
@@ -158,7 +133,7 @@ export default function V3BillingPage() {
         </section>
 
         <section className="v3-billing-grid">
-          {plans.map((plan) => {
+          {PLANS.map((plan) => {
             const isCurrent = currentPlan === plan.id;
             return (
               <article className={`v3-billing-plan ${isCurrent ? "current" : ""}`} key={plan.id}>
@@ -239,7 +214,7 @@ export default function V3BillingPage() {
             </div>
 
             <p className="v3-billing-safe">
-              Prices are enforced by the backend. The frontend cannot choose its own price. Checkout sessions are verified before plan changes save.
+              Prices are enforced by the backend. Checkout sessions are verified before plan, SMS credit, or 50-user block changes save.
             </p>
           </article>
         </section>

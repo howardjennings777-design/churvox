@@ -11631,481 +11631,85 @@ async def ai_operator_v3_reject(action_id: str, body: dict = Body(default=None),
 
 
 
-# ===== V3 SECURE BILLING SMS BLOCKS START =====
-V3_SMS_PACKS = {
+
+
+# ===== FINAL V3 BILLING UPGRADES START =====
+V3_FINAL_SMS_PACKS = {
     "100": {"credits": 100, "price_cents": 1000, "label": "100 SMS credits"},
     "500": {"credits": 500, "price_cents": 4500, "label": "500 SMS credits"},
     "1000": {"credits": 1000, "price_cents": 8000, "label": "1000 SMS credits"},
 }
 
-V3_EXTRA_50_USER_BLOCK = {
-    "block_size": 50,
-    "price_cents": 10000,
-    "label": "Extra 50-user block",
+V3_FINAL_PLANS = {
+    "team": {"label": "Churvox Team", "price_cents": 7000, "price_id": STRIPE_PRICE_TEAM},
+    "pro": {"label": "Churvox Pro", "price_cents": 11000, "price_id": STRIPE_PRICE_PRO},
+    "enterprise": {"label": "Churvox Enterprise", "price_cents": 24000, "price_id": STRIPE_PRICE_ENTERPRISE},
 }
 
-def _v3_role(user):
+def _v3_final_role(user):
     return str((user or {}).get("role") or "").lower().strip()
 
-def _v3_plan(user):
-    return str((user or {}).get("plan") or "solo").lower().strip()
-
-def _v3_billing_allowed(user):
-    role = _v3_role(user)
+def _v3_final_billing_allowed(user):
+    role = _v3_final_role(user)
     return role in {"owner", "admin", "employer", "manager"} or is_platform_owner(user)
 
-def _v3_require_billing_admin(user):
-    if not _v3_billing_allowed(user):
+def _v3_final_require_billing_admin(user):
+    if not _v3_final_billing_allowed(user):
         raise HTTPException(status_code=403, detail="Billing is restricted to owner/admin roles")
-    return True
 
-async def _v3_count_team_users(business_id):
-    scope = _ai_scope(business_id) if "_ai_scope" in globals() else {"business_id": str(business_id)}
-    try:
-        users = await db.users.count_documents({
-            "$and": [
-                scope,
-                {"role": {"$in": ["worker", "manager", "office_admin", "payroll"]}},
-            ]
-        })
-    except Exception:
-        users = 0
-
-    try:
-        workers = await db.workers.count_documents(scope)
-    except Exception:
-        workers = 0
-
-    return max(users, workers)
-
-async def _v3_billing_settings(current_user):
-    business_id = await get_user_business_id(current_user)
-    saved = await db.billing_settings.find_one({"business_id": str(business_id)}) or {}
-
-    extra_blocks = int(saved.get("extra_50_user_blocks") or saved.get("extra_user_blocks") or 0)
-    sms_credits = int(saved.get("sms_credits") or 0)
-
-    plan = _v3_plan(current_user)
-    features = get_plan_features(plan)
-    base_workers = int(features.get("max_workers") or PLAN_LIMITS.get(plan, {}).get("max_workers") or 0)
-    base_clients = int(features.get("max_clients") or PLAN_LIMITS.get(plan, {}).get("max_clients") or 0)
-
-    if plan == "enterprise":
-        max_workers = base_workers + (extra_blocks * V3_EXTRA_50_USER_BLOCK["block_size"])
-        can_buy_blocks = True
-    else:
-        max_workers = base_workers
-        can_buy_blocks = False
-
-    team_count = await _v3_count_team_users(business_id)
-
-    status = {
-        "business_id": str(business_id),
-        "plan": plan,
-        "plan_status": current_user.get("plan_status") or current_user.get("subscription_status") or "active",
-        "base_max_workers": base_workers,
-        "max_workers": max_workers,
-        "base_max_clients": base_clients,
-        "extra_50_user_blocks": extra_blocks,
-        "extra_block_size": V3_EXTRA_50_USER_BLOCK["block_size"],
-        "extra_block_price_cents": V3_EXTRA_50_USER_BLOCK["price_cents"],
-        "team_count": team_count,
-        "team_remaining": max(0, max_workers - team_count),
-        "can_buy_50_user_blocks": can_buy_blocks,
-        "sms_credits": sms_credits,
-        "sms_packs": V3_SMS_PACKS,
-        "sms_enabled": bool(features.get("sms") or PLAN_LIMITS.get(plan, {}).get("sms")),
-        "myob_enabled": bool(features.get("myob") or PLAN_LIMITS.get(plan, {}).get("myob")),
-        "billing_locked": not _v3_billing_allowed(current_user),
-        "updated_at": _ai_now() if "_ai_now" in globals() else datetime.now(timezone.utc),
-    }
-    return status
-
-async def _v3_save_billing_event(current_user, event_type, payload):
-    business_id = await get_user_business_id(current_user)
-    await db.billing_events.insert_one({
-        "business_id": str(business_id),
-        "user_id": str(current_user.get("id") or current_user.get("_id") or ""),
-        "event_type": str(event_type),
-        "payload": make_json_safe(payload or {}),
-        "created_at": _ai_now() if "_ai_now" in globals() else datetime.now(timezone.utc),
-    })
-
-def _v3_checkout_urls(kind):
-    success_url = f"{FRONTEND_URL}/v3/plans?billing_success={kind}&session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{FRONTEND_URL}/v3/plans?billing_cancelled={kind}"
-    return success_url, cancel_url
-
-async def _v3_create_one_time_checkout(current_user, kind, label, price_cents, metadata):
-    if not STRIPE_SECRET_KEY:
-        raise HTTPException(status_code=503, detail="Stripe is not configured")
-
-    success_url, cancel_url = _v3_checkout_urls(kind)
-
-    try:
-        session = stripe.checkout.Session.create(
-            mode="payment",
-            payment_method_types=["card"],
-            line_items=[{
-                "price_data": {
-                    "currency": "nzd",
-                    "product_data": {"name": label},
-                    "unit_amount": int(price_cents),
-                },
-                "quantity": 1,
-            }],
-            success_url=success_url,
-            cancel_url=cancel_url,
-            metadata={k: str(v) for k, v in (metadata or {}).items()},
-        )
-        return {"checkout_url": session.url, "session_id": session.id}
-    except Exception as exc:
-        logger.error(f"Stripe checkout failed: {exc}")
-        raise HTTPException(status_code=500, detail="Could not create checkout session")
-
-@api_router.get("/billing/v3/status")
-async def billing_v3_status(current_user: dict = Depends(get_current_user)):
-    status = await _v3_billing_settings(current_user)
-    return {"success": True, "ok": True, "billing": make_json_safe(status)}
-
-@api_router.post("/billing/v3/sms-pack")
-async def billing_v3_buy_sms_pack(body: dict = Body(default=None), current_user: dict = Depends(get_current_user)):
-    _v3_require_billing_admin(current_user)
-
-    body = body or {}
-    pack = str(body.get("pack") or body.get("pack_id") or "").strip()
-
-    if pack not in V3_SMS_PACKS:
-        raise HTTPException(status_code=400, detail="Invalid SMS credit pack")
-
-    business_id = await get_user_business_id(current_user)
-    pack_data = V3_SMS_PACKS[pack]
-
-    metadata = {
-        "kind": "sms_pack",
-        "business_id": str(business_id),
-        "pack": pack,
-        "credits": pack_data["credits"],
-        "user_id": str(current_user.get("id") or current_user.get("_id") or ""),
-    }
-
-    checkout = await _v3_create_one_time_checkout(
-        current_user,
-        "sms_pack",
-        f"Churvox {pack_data['label']}",
-        pack_data["price_cents"],
-        metadata,
-    )
-
-    await _v3_save_billing_event(current_user, "sms_pack_checkout_created", metadata)
-
-    return {
-        "success": True,
-        "ok": True,
-        "message": "SMS credit checkout created.",
-        "pack": pack_data,
-        **checkout,
-    }
-
-@api_router.post("/billing/v3/extra-50-user-block")
-async def billing_v3_buy_extra_50_user_block(current_user: dict = Depends(get_current_user)):
-    _v3_require_billing_admin(current_user)
-
-    business_id = await get_user_business_id(current_user)
-    plan = _v3_plan(current_user)
-
-    if plan != "enterprise":
-        raise HTTPException(status_code=403, detail="Extra 50-user blocks are only available on Enterprise")
-
-    metadata = {
-        "kind": "extra_50_user_block",
-        "business_id": str(business_id),
-        "block_size": V3_EXTRA_50_USER_BLOCK["block_size"],
-        "user_id": str(current_user.get("id") or current_user.get("_id") or ""),
-    }
-
-    checkout = await _v3_create_one_time_checkout(
-        current_user,
-        "extra_50_user_block",
-        "Churvox extra 50-user block",
-        V3_EXTRA_50_USER_BLOCK["price_cents"],
-        metadata,
-    )
-
-    await _v3_save_billing_event(current_user, "extra_50_user_block_checkout_created", metadata)
-
-    return {
-        "success": True,
-        "ok": True,
-        "message": "50-user block checkout created.",
-        "block": V3_EXTRA_50_USER_BLOCK,
-        **checkout,
-    }
-
-@api_router.post("/billing/v3/confirm-checkout")
-async def billing_v3_confirm_checkout(body: dict = Body(default=None), current_user: dict = Depends(get_current_user)):
-    _v3_require_billing_admin(current_user)
-
-    if not STRIPE_SECRET_KEY:
-        raise HTTPException(status_code=503, detail="Stripe is not configured")
-
-    body = body or {}
-    session_id = str(body.get("session_id") or "").strip()
-    if not session_id:
-        raise HTTPException(status_code=400, detail="Missing session_id")
-
-    business_id = await get_user_business_id(current_user)
-
-    try:
-        session = stripe.checkout.Session.retrieve(session_id)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Could not verify checkout session")
-
-    metadata = dict(getattr(session, "metadata", {}) or {})
-    if str(metadata.get("business_id")) != str(business_id):
-        raise HTTPException(status_code=403, detail="Checkout session does not belong to this business")
-
-    if getattr(session, "payment_status", "") != "paid":
-        return {"success": False, "ok": False, "message": "Checkout is not paid yet"}
-
-    kind = metadata.get("kind")
-    now = _ai_now() if "_ai_now" in globals() else datetime.now(timezone.utc)
-
-    if kind == "sms_pack":
-        credits = int(metadata.get("credits") or 0)
-        if credits <= 0:
-            raise HTTPException(status_code=400, detail="Invalid SMS credits")
-
-        await db.billing_settings.update_one(
-            {"business_id": str(business_id)},
-            {
-                "$inc": {"sms_credits": credits},
-                "$set": {"updated_at": now},
-                "$addToSet": {"confirmed_checkout_sessions": session_id},
-                "$setOnInsert": {"created_at": now, "business_id": str(business_id)},
-            },
-            upsert=True,
-        )
-
-        await _v3_save_billing_event(current_user, "sms_pack_confirmed", {
-            "session_id": session_id,
-            "credits": credits,
-        })
-
-    elif kind == "extra_50_user_block":
-        await db.billing_settings.update_one(
-            {"business_id": str(business_id)},
-            {
-                "$inc": {"extra_50_user_blocks": 1},
-                "$set": {"updated_at": now},
-                "$addToSet": {"confirmed_checkout_sessions": session_id},
-                "$setOnInsert": {"created_at": now, "business_id": str(business_id)},
-            },
-            upsert=True,
-        )
-
-        await _v3_save_billing_event(current_user, "extra_50_user_block_confirmed", {
-            "session_id": session_id,
-            "block_size": 50,
-        })
-
-    elif kind == "plan_upgrade":
-        plan = str(metadata.get("plan") or "").lower().strip()
-        if plan not in V3_PLAN_UPGRADES:
-            raise HTTPException(status_code=400, detail="Invalid checkout plan")
-
-        stripe_subscription_id = str(getattr(session, "subscription", "") or "")
-
-        # Keep the business billing settings and user records in sync.
-        await db.billing_settings.update_one(
-            {"business_id": str(business_id)},
-            {
-                "$set": {
-                    "plan": plan,
-                    "plan_status": "active",
-                    "subscription_status": "active",
-                    "stripe_subscription_id": stripe_subscription_id,
-                    "updated_at": now,
-                },
-                "$addToSet": {"confirmed_checkout_sessions": session_id},
-                "$setOnInsert": {"created_at": now, "business_id": str(business_id)},
-            },
-            upsert=True,
-        )
-
-        try:
-            await db.users.update_many(
-                _ai_scope(business_id) if "_ai_scope" in globals() else {"business_id": str(business_id)},
-                {"$set": {
-                    "plan": plan,
-                    "plan_status": "active",
-                    "subscription_status": "active",
-                    "stripe_subscription_id": stripe_subscription_id,
-                    "updated_at": now,
-                }},
-            )
-        except Exception:
-            await db.users.update_one(
-                {"email": current_user.get("email")},
-                {"$set": {
-                    "plan": plan,
-                    "plan_status": "active",
-                    "subscription_status": "active",
-                    "stripe_subscription_id": stripe_subscription_id,
-                    "updated_at": now,
-                }},
-            )
-
-        await _v3_save_billing_event(current_user, "plan_upgrade_confirmed", {
-            "session_id": session_id,
-            "plan": plan,
-            "stripe_subscription_id": stripe_subscription_id,
-        })
-
-    else:
-        raise HTTPException(status_code=400, detail="Unsupported checkout type")
-
-    status = await _v3_billing_settings(current_user)
-    return {"success": True, "ok": True, "message": "Checkout confirmed.", "billing": make_json_safe(status)}
-# ===== V3 SECURE BILLING SMS BLOCKS END =====
-
-
-
-# ===== V3 SECURE PLAN UPGRADE START =====
-V3_PLAN_UPGRADES = {
-    "team": {"price_cents": 7000, "label": "Churvox Team", "plan": "team"},
-    "pro": {"price_cents": 11000, "label": "Churvox Pro", "plan": "pro"},
-    "enterprise": {"price_cents": 24000, "label": "Churvox Enterprise", "plan": "enterprise"},
-}
-
-async def _v3_create_plan_checkout(current_user, plan):
-    _v3_require_billing_admin(current_user)
-
-    if not STRIPE_SECRET_KEY:
-        raise HTTPException(status_code=503, detail="Stripe is not configured")
-
-    plan = str(plan or "").lower().strip()
-    if plan not in V3_PLAN_UPGRADES:
-        raise HTTPException(status_code=400, detail="Invalid plan")
-
-    business_id = await get_user_business_id(current_user)
-    plan_data = V3_PLAN_UPGRADES[plan]
-    success_url, cancel_url = _v3_checkout_urls(f"plan_{plan}")
-
-    try:
-        session = stripe.checkout.Session.create(
-            mode="subscription",
-            payment_method_types=["card"],
-            line_items=[{
-                "price_data": {
-                    "currency": "nzd",
-                    "product_data": {"name": plan_data["label"]},
-                    "unit_amount": int(plan_data["price_cents"]),
-                    "recurring": {"interval": "month"},
-                },
-                "quantity": 1,
-            }],
-            success_url=success_url,
-            cancel_url=cancel_url,
-            metadata={
-                "kind": "plan_upgrade",
-                "plan": plan,
-                "business_id": str(business_id),
-                "user_id": str(current_user.get("id") or current_user.get("_id") or ""),
-            },
-        )
-        return {"checkout_url": session.url, "session_id": session.id}
-    except Exception as exc:
-        logger.error(f"Stripe plan checkout failed: {exc}")
-        raise HTTPException(status_code=500, detail="Could not create plan checkout session")
-
-@api_router.post("/billing/v3/upgrade-plan")
-async def billing_v3_upgrade_plan(body: dict = Body(default=None), current_user: dict = Depends(get_current_user)):
-    _v3_require_billing_admin(current_user)
-
-    body = body or {}
-    plan = str(body.get("plan") or "").lower().strip()
-    checkout = await _v3_create_plan_checkout(current_user, plan)
-
-    await _v3_save_billing_event(current_user, "plan_upgrade_checkout_created", {
-        "plan": plan,
-        "session_id": checkout.get("session_id"),
-    })
-
-    return {
-        "success": True,
-        "ok": True,
-        "message": f"{plan.title()} upgrade checkout created.",
-        "plan": plan,
-        **checkout,
-    }
-# ===== V3 SECURE PLAN UPGRADE END =====
-
-
-
-# ===== WORKING V3 PLAN UPGRADES START =====
-V3_UPGRADE_PLANS = {
-    "team": {"label": "Churvox Team", "price_cents": 7000},
-    "pro": {"label": "Churvox Pro", "price_cents": 11000},
-    "enterprise": {"label": "Churvox Enterprise", "price_cents": 24000},
-}
-
-def _v3_upgrade_role(user):
-    return str((user or {}).get("role") or "").lower().strip()
-
-def _v3_upgrade_is_allowed(user):
-    role = _v3_upgrade_role(user)
-    return role in {"owner", "admin", "employer", "manager"} or is_platform_owner(user)
-
-def _v3_require_upgrade_owner(user):
-    if not _v3_upgrade_is_allowed(user):
-        raise HTTPException(status_code=403, detail="Plan upgrades are restricted to owner/admin roles")
-
-async def _v3_upgrade_business_id(user):
+async def _v3_final_business_id(user):
     return str(await get_user_business_id(user))
 
-def _v3_price_id_for_plan(plan):
+def _v3_final_success_cancel_urls(kind):
+    return (
+        f"{FRONTEND_URL}/v3/plans?billing_success={kind}&session_id={{CHECKOUT_SESSION_ID}}",
+        f"{FRONTEND_URL}/v3/plans?billing_cancelled={kind}",
+    )
+
+async def _v3_final_count_team_users(business_id):
+    query = {
+        "$or": [
+            {"business_id": str(business_id)},
+            {"businessId": str(business_id)},
+            {"owner_id": str(business_id)},
+            {"ownerId": str(business_id)},
+        ],
+        "role": {"$in": ["worker", "manager", "office_admin", "payroll"]},
+    }
+
     try:
-        return PLAN_PRICE_IDS.get(plan) or ""
+        return await db.users.count_documents(query)
     except Exception:
-        return ""
+        return 0
 
-def _v3_success_cancel_urls(kind):
-    success_url = f"{FRONTEND_URL}/v3/plans?billing_success={kind}&session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{FRONTEND_URL}/v3/plans?billing_cancelled={kind}"
-    return success_url, cancel_url
-
-async def _v3_upgrade_status(current_user):
-    business_id = await _v3_upgrade_business_id(current_user)
-    settings = await db.billing_settings.find_one({"business_id": business_id}) or {}
+async def _v3_final_status(current_user):
+    business_id = await _v3_final_business_id(current_user)
+    settings = await db.billing_settings.find_one({"business_id": str(business_id)}) or {}
 
     plan = str(settings.get("plan") or current_user.get("plan") or "solo").lower().strip()
-    plan_status = str(settings.get("plan_status") or current_user.get("plan_status") or current_user.get("subscription_status") or "active")
+    if plan not in PLAN_LIMITS:
+        plan = "solo"
+
+    plan_status = str(
+        settings.get("plan_status")
+        or current_user.get("plan_status")
+        or current_user.get("subscription_status")
+        or "active"
+    )
 
     features = get_plan_features(plan)
     base_workers = int(features.get("max_workers") or PLAN_LIMITS.get(plan, {}).get("max_workers") or 0)
     base_clients = int(features.get("max_clients") or PLAN_LIMITS.get(plan, {}).get("max_clients") or 0)
 
     extra_blocks = int(settings.get("extra_50_user_blocks") or 0)
-    max_workers = base_workers + (extra_blocks * 50 if plan == "enterprise" else 0)
-
-    team_count = 0
-    try:
-        team_count = await db.users.count_documents({
-            "$or": [
-                {"business_id": business_id},
-                {"businessId": business_id},
-                {"owner_id": business_id},
-                {"ownerId": business_id},
-            ],
-            "role": {"$in": ["worker", "manager", "office_admin", "payroll"]},
-        })
-    except Exception:
-        team_count = 0
+    max_workers = base_workers + ((extra_blocks * 50) if plan == "enterprise" else 0)
+    team_count = await _v3_final_count_team_users(business_id)
 
     return {
+        "business_id": str(business_id),
         "plan": plan,
         "plan_status": plan_status,
+        "subscription_status": plan_status,
         "base_max_workers": base_workers,
         "max_workers": max_workers,
         "base_max_clients": base_clients,
@@ -12116,22 +11720,48 @@ async def _v3_upgrade_status(current_user):
         "sms_credits": int(settings.get("sms_credits") or 0),
         "sms_enabled": bool(features.get("sms") or PLAN_LIMITS.get(plan, {}).get("sms")),
         "myob_enabled": bool(features.get("myob") or PLAN_LIMITS.get(plan, {}).get("myob")),
-        "billing_locked": not _v3_upgrade_is_allowed(current_user),
+        "billing_locked": not _v3_final_billing_allowed(current_user),
         "plans": {
             "team": {"price": 70, "label": "Team"},
             "pro": {"price": 110, "label": "Pro"},
             "enterprise": {"price": 240, "label": "Enterprise"},
         },
+        "sms_packs": V3_FINAL_SMS_PACKS,
     }
+
+async def _v3_final_log_billing_event(current_user, event_type, payload):
+    business_id = await _v3_final_business_id(current_user)
+    await db.billing_events.insert_one({
+        "business_id": str(business_id),
+        "user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "event_type": str(event_type),
+        "payload": make_json_safe(payload or {}),
+        "created_at": datetime.now(timezone.utc),
+    })
+
+def _v3_final_checkout_line_item(label, price_cents, price_id=None, subscription=False):
+    if price_id:
+        return {"price": price_id, "quantity": 1}
+
+    price_data = {
+        "currency": "nzd",
+        "product_data": {"name": label},
+        "unit_amount": int(price_cents),
+    }
+
+    if subscription:
+        price_data["recurring"] = {"interval": "month"}
+
+    return {"price_data": price_data, "quantity": 1}
 
 @api_router.get("/billing/v3/status")
 async def billing_v3_status(current_user: dict = Depends(get_current_user)):
-    status = await _v3_upgrade_status(current_user)
+    status = await _v3_final_status(current_user)
     return {"success": True, "ok": True, "billing": make_json_safe(status)}
 
 @api_router.post("/billing/v3/upgrade-plan")
 async def billing_v3_upgrade_plan(body: dict = Body(default=None), current_user: dict = Depends(get_current_user)):
-    _v3_require_upgrade_owner(current_user)
+    _v3_final_require_billing_admin(current_user)
 
     if not STRIPE_SECRET_KEY:
         raise HTTPException(status_code=503, detail="Stripe is not configured")
@@ -12139,49 +11769,40 @@ async def billing_v3_upgrade_plan(body: dict = Body(default=None), current_user:
     body = body or {}
     plan = str(body.get("plan") or "").lower().strip()
 
-    if plan not in V3_UPGRADE_PLANS:
+    if plan not in V3_FINAL_PLANS:
         raise HTTPException(status_code=400, detail="Invalid upgrade plan")
 
-    business_id = await _v3_upgrade_business_id(current_user)
-    plan_data = V3_UPGRADE_PLANS[plan]
-    price_id = _v3_price_id_for_plan(plan)
-    success_url, cancel_url = _v3_success_cancel_urls(f"plan_{plan}")
+    business_id = await _v3_final_business_id(current_user)
+    plan_data = V3_FINAL_PLANS[plan]
+    success_url, cancel_url = _v3_final_success_cancel_urls(f"plan_{plan}")
 
     metadata = {
         "kind": "plan_upgrade",
         "plan": plan,
-        "business_id": business_id,
+        "business_id": str(business_id),
         "user_id": str(current_user.get("id") or current_user.get("_id") or ""),
     }
 
     try:
-        if price_id:
-            line_items = [{"price": price_id, "quantity": 1}]
-        else:
-            line_items = [{
-                "price_data": {
-                    "currency": "nzd",
-                    "product_data": {"name": plan_data["label"]},
-                    "unit_amount": int(plan_data["price_cents"]),
-                    "recurring": {"interval": "month"},
-                },
-                "quantity": 1,
-            }]
-
         session = stripe.checkout.Session.create(
             mode="subscription",
             payment_method_types=["card"],
-            line_items=line_items,
+            line_items=[
+                _v3_final_checkout_line_item(
+                    plan_data["label"],
+                    plan_data["price_cents"],
+                    plan_data.get("price_id"),
+                    subscription=True,
+                )
+            ],
             success_url=success_url,
             cancel_url=cancel_url,
             metadata=metadata,
         )
 
-        await db.billing_events.insert_one({
-            "business_id": business_id,
-            "event_type": "plan_upgrade_checkout_created",
-            "payload": make_json_safe(metadata),
-            "created_at": datetime.now(timezone.utc),
+        await _v3_final_log_billing_event(current_user, "plan_upgrade_checkout_created", {
+            **metadata,
+            "session_id": session.id,
         })
 
         return {
@@ -12197,9 +11818,111 @@ async def billing_v3_upgrade_plan(body: dict = Body(default=None), current_user:
         logger.error(f"V3 plan upgrade checkout failed: {exc}")
         raise HTTPException(status_code=500, detail="Could not create plan checkout")
 
+@api_router.post("/billing/v3/sms-pack")
+async def billing_v3_buy_sms_pack(body: dict = Body(default=None), current_user: dict = Depends(get_current_user)):
+    _v3_final_require_billing_admin(current_user)
+
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="Stripe is not configured")
+
+    body = body or {}
+    pack = str(body.get("pack") or body.get("pack_id") or "").strip()
+
+    if pack not in V3_FINAL_SMS_PACKS:
+        raise HTTPException(status_code=400, detail="Invalid SMS credit pack")
+
+    business_id = await _v3_final_business_id(current_user)
+    pack_data = V3_FINAL_SMS_PACKS[pack]
+    success_url, cancel_url = _v3_final_success_cancel_urls("sms_pack")
+
+    metadata = {
+        "kind": "sms_pack",
+        "business_id": str(business_id),
+        "pack": pack,
+        "credits": str(pack_data["credits"]),
+        "user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+    }
+
+    try:
+        session = stripe.checkout.Session.create(
+            mode="payment",
+            payment_method_types=["card"],
+            line_items=[_v3_final_checkout_line_item(f"Churvox {pack_data['label']}", pack_data["price_cents"])],
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata=metadata,
+        )
+
+        await _v3_final_log_billing_event(current_user, "sms_pack_checkout_created", {
+            **metadata,
+            "session_id": session.id,
+        })
+
+        return {
+            "success": True,
+            "ok": True,
+            "message": "SMS checkout created.",
+            "pack": pack_data,
+            "checkout_url": session.url,
+            "session_id": session.id,
+        }
+
+    except Exception as exc:
+        logger.error(f"V3 SMS checkout failed: {exc}")
+        raise HTTPException(status_code=500, detail="Could not create SMS checkout")
+
+@api_router.post("/billing/v3/extra-50-user-block")
+async def billing_v3_extra_50_user_block(current_user: dict = Depends(get_current_user)):
+    _v3_final_require_billing_admin(current_user)
+
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="Stripe is not configured")
+
+    business_id = await _v3_final_business_id(current_user)
+    status = await _v3_final_status(current_user)
+
+    if status.get("plan") != "enterprise":
+        raise HTTPException(status_code=403, detail="Extra 50-user blocks are only available on Enterprise")
+
+    success_url, cancel_url = _v3_final_success_cancel_urls("extra_50_user_block")
+
+    metadata = {
+        "kind": "extra_50_user_block",
+        "business_id": str(business_id),
+        "block_size": "50",
+        "user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+    }
+
+    try:
+        session = stripe.checkout.Session.create(
+            mode="payment",
+            payment_method_types=["card"],
+            line_items=[_v3_final_checkout_line_item("Churvox extra 50-user block", 10000)],
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata=metadata,
+        )
+
+        await _v3_final_log_billing_event(current_user, "extra_50_user_block_checkout_created", {
+            **metadata,
+            "session_id": session.id,
+        })
+
+        return {
+            "success": True,
+            "ok": True,
+            "message": "50-user block checkout created.",
+            "checkout_url": session.url,
+            "session_id": session.id,
+        }
+
+    except Exception as exc:
+        logger.error(f"V3 50-user block checkout failed: {exc}")
+        raise HTTPException(status_code=500, detail="Could not create 50-user block checkout")
+
 @api_router.post("/billing/v3/confirm-checkout")
 async def billing_v3_confirm_checkout(body: dict = Body(default=None), current_user: dict = Depends(get_current_user)):
-    _v3_require_upgrade_owner(current_user)
+    _v3_final_require_billing_admin(current_user)
 
     if not STRIPE_SECRET_KEY:
         raise HTTPException(status_code=503, detail="Stripe is not configured")
@@ -12210,7 +11933,7 @@ async def billing_v3_confirm_checkout(body: dict = Body(default=None), current_u
     if not session_id:
         raise HTTPException(status_code=400, detail="Missing session_id")
 
-    business_id = await _v3_upgrade_business_id(current_user)
+    business_id = await _v3_final_business_id(current_user)
 
     try:
         session = stripe.checkout.Session.retrieve(session_id)
@@ -12218,90 +11941,130 @@ async def billing_v3_confirm_checkout(body: dict = Body(default=None), current_u
         raise HTTPException(status_code=400, detail="Could not verify checkout session")
 
     metadata = dict(getattr(session, "metadata", {}) or {})
+
     if str(metadata.get("business_id")) != str(business_id):
         raise HTTPException(status_code=403, detail="Checkout session does not belong to this business")
 
     payment_status = str(getattr(session, "payment_status", "") or "")
     subscription_id = str(getattr(session, "subscription", "") or "")
     kind = str(metadata.get("kind") or "")
-    plan = str(metadata.get("plan") or "").lower().strip()
-
-    if kind != "plan_upgrade" or plan not in V3_UPGRADE_PLANS:
-        raise HTTPException(status_code=400, detail="Unsupported checkout type")
 
     if payment_status not in {"paid", "no_payment_required"} and not subscription_id:
         return {"success": False, "ok": False, "message": "Checkout is not paid yet"}
 
     now = datetime.now(timezone.utc)
 
-    await db.billing_settings.update_one(
-        {"business_id": business_id},
-        {
-            "$set": {
-                "business_id": business_id,
+    settings_update = {
+        "business_id": str(business_id),
+        "updated_at": now,
+    }
+
+    event_payload = {
+        "session_id": session_id,
+        "kind": kind,
+        "subscription_id": subscription_id,
+    }
+
+    if kind == "plan_upgrade":
+        plan = str(metadata.get("plan") or "").lower().strip()
+
+        if plan not in V3_FINAL_PLANS:
+            raise HTTPException(status_code=400, detail="Invalid checkout plan")
+
+        settings_update.update({
+            "plan": plan,
+            "plan_status": "active",
+            "subscription_status": "active",
+            "stripe_subscription_id": subscription_id,
+        })
+
+        user_scope = {
+            "$or": [
+                {"business_id": str(business_id)},
+                {"businessId": str(business_id)},
+                {"owner_id": str(business_id)},
+                {"ownerId": str(business_id)},
+            ]
+        }
+
+        try:
+            user_scope["$or"].append({"_id": ObjectId(str(business_id))})
+        except Exception:
+            pass
+
+        await db.users.update_many(
+            user_scope,
+            {"$set": {
                 "plan": plan,
                 "plan_status": "active",
                 "subscription_status": "active",
                 "stripe_subscription_id": subscription_id,
                 "updated_at": now,
+            }},
+        )
+
+        event_payload["plan"] = plan
+        event_type = "plan_upgrade_confirmed"
+
+    elif kind == "sms_pack":
+        credits = int(metadata.get("credits") or 0)
+        if credits <= 0:
+            raise HTTPException(status_code=400, detail="Invalid SMS credits")
+
+        await db.billing_settings.update_one(
+            {"business_id": str(business_id)},
+            {
+                "$inc": {"sms_credits": credits},
+                "$set": settings_update,
+                "$addToSet": {"confirmed_checkout_sessions": session_id},
+                "$setOnInsert": {"created_at": now},
             },
+            upsert=True,
+        )
+
+        await _v3_final_log_billing_event(current_user, "sms_pack_confirmed", {
+            **event_payload,
+            "credits": credits,
+        })
+
+        status = await _v3_final_status(current_user)
+        return {"success": True, "ok": True, "message": "SMS credits added.", "billing": make_json_safe(status)}
+
+    elif kind == "extra_50_user_block":
+        await db.billing_settings.update_one(
+            {"business_id": str(business_id)},
+            {
+                "$inc": {"extra_50_user_blocks": 1},
+                "$set": settings_update,
+                "$addToSet": {"confirmed_checkout_sessions": session_id},
+                "$setOnInsert": {"created_at": now},
+            },
+            upsert=True,
+        )
+
+        await _v3_final_log_billing_event(current_user, "extra_50_user_block_confirmed", event_payload)
+
+        status = await _v3_final_status(current_user)
+        return {"success": True, "ok": True, "message": "50-user block added.", "billing": make_json_safe(status)}
+
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported checkout type")
+
+    await db.billing_settings.update_one(
+        {"business_id": str(business_id)},
+        {
+            "$set": settings_update,
             "$addToSet": {"confirmed_checkout_sessions": session_id},
             "$setOnInsert": {"created_at": now},
         },
         upsert=True,
     )
 
-    user_scope = {
-        "$or": [
-            {"business_id": business_id},
-            {"businessId": business_id},
-            {"owner_id": business_id},
-            {"ownerId": business_id},
-        ]
-    }
+    await _v3_final_log_billing_event(current_user, event_type, event_payload)
 
-    owner_oid = None
-    try:
-        owner_oid = ObjectId(business_id)
-    except Exception:
-        owner_oid = None
-
-    if owner_oid:
-        user_scope["$or"].append({"_id": owner_oid})
-
-    await db.users.update_many(
-        user_scope,
-        {"$set": {
-            "plan": plan,
-            "plan_status": "active",
-            "subscription_status": "active",
-            "stripe_subscription_id": subscription_id,
-            "updated_at": now,
-        }},
-    )
-
-    await db.billing_events.insert_one({
-        "business_id": business_id,
-        "event_type": "plan_upgrade_confirmed",
-        "payload": make_json_safe({
-            "session_id": session_id,
-            "plan": plan,
-            "stripe_subscription_id": subscription_id,
-        }),
-        "created_at": now,
-    })
-
-    status = await _v3_upgrade_status(current_user)
-    status["plan"] = plan
-    status["plan_status"] = "active"
-
-    return {
-        "success": True,
-        "ok": True,
-        "message": f"{plan.title()} plan is now active.",
-        "billing": make_json_safe(status),
-    }
-# ===== WORKING V3 PLAN UPGRADES END =====
+    status = await _v3_final_status(current_user)
+    return {"success": True, "ok": True, "message": f"{settings_update.get('plan', 'Plan').title()} plan is now active.", "billing": make_json_safe(status)}
+# ===== FINAL V3 BILLING UPGRADES END =====
 
 
 app.include_router(api_router)
