@@ -1318,3 +1318,23 @@
     font-size:12px;
   }
 }
+
+
+/* === V3 PAGE SPECIFIC POLISH === */
+.v3-live-text b{
+  color:var(--v3-ink);
+  font-weight:950;
+}
+
+.v3-live-text span{
+  color:var(--v3-muted);
+  font-weight:750;
+}
+
+.v3-live-item small{
+  background:#111;
+  color:#fff;
+  border-radius:999px;
+  padding:7px 10px;
+  font-weight:900;
+}
