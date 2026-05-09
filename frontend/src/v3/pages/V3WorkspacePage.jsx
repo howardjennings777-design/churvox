@@ -51,6 +51,85 @@ const PAGE_META = {
 
 const ORDER = ["decisions", "jobs", "dispatch", "clients", "quotes", "invoices", "team", "payroll", "rules", "reports", "messages", "integrations", "plans", "settings"];
 
+const REAL_PAGE_RULES = {
+  decisions: {
+    recordName: "AI decision",
+    mustShow: ["AI title", "reason", "approve action", "edit/delete in AI Operator"],
+    empty: "No AI decisions waiting. Run AI Operator to prepare work."
+  },
+  jobs: {
+    recordName: "job",
+    mustShow: ["job title", "client", "address", "worker", "status", "schedule", "price"],
+    empty: "No jobs yet. Create a job so AI can assign, proof and invoice it."
+  },
+  dispatch: {
+    recordName: "dispatch job",
+    mustShow: ["unassigned jobs", "worker match", "worker area", "crew availability"],
+    empty: "No jobs need dispatch. AI will show crew gaps here."
+  },
+  clients: {
+    recordName: "client",
+    mustShow: ["client name", "email", "phone", "address", "missing details"],
+    empty: "No clients yet. Add or import clients."
+  },
+  quotes: {
+    recordName: "quote",
+    mustShow: ["quote number", "client", "status", "value", "follow-up draft"],
+    empty: "No quotes yet. Create a quote so AI can follow it up."
+  },
+  invoices: {
+    recordName: "invoice",
+    mustShow: ["invoice number", "client", "status", "total", "payment/reminder"],
+    empty: "No invoices yet. Create one or let AI draft from completed jobs."
+  },
+  team: {
+    recordName: "worker",
+    mustShow: ["worker name", "role", "email", "phone", "region", "availability"],
+    empty: "No team members yet. Invite a worker."
+  },
+  payroll: {
+    recordName: "payroll item",
+    mustShow: ["worker", "completed job", "time", "pay review flag"],
+    empty: "No payroll items yet. Completed jobs and worker time will appear here."
+  },
+  rules: {
+    recordName: "automation rule/action",
+    mustShow: ["rule/action", "module", "risk", "approval state"],
+    empty: "No automation actions waiting. Run AI Operator."
+  },
+  reports: {
+    recordName: "report metric",
+    mustShow: ["completed jobs", "open quotes", "money owed", "crew load"],
+    empty: "No report data yet. Reports fill as real work is added."
+  },
+  messages: {
+    recordName: "message draft",
+    mustShow: ["client", "message type", "draft text", "send approval"],
+    empty: "No message drafts yet. AI will prepare follow-ups/reminders."
+  },
+  integrations: {
+    recordName: "sync item",
+    mustShow: ["MYOB readiness", "invoice handoff", "client data", "sync issue"],
+    empty: "No integration items yet. Connect MYOB/sync when ready."
+  },
+  plans: {
+    recordName: "billing item",
+    mustShow: ["plan", "team capacity", "SMS credits", "50-user blocks", "security lock"],
+    empty: "Billing data should load from secure billing endpoints."
+  },
+  settings: {
+    recordName: "setup item",
+    mustShow: ["business profile", "AI settings", "roles", "missing setup"],
+    empty: "Settings should show business setup and AI controls."
+  },
+  proof: {
+    recordName: "proof pack",
+    mustShow: ["completed job", "photos", "missing proof", "invoice readiness"],
+    empty: "No proof packs yet. Completed jobs/photos will appear here."
+  }
+};
+
+
 const lower = (value) => String(value || "").toLowerCase();
 const safe = (value) => String(value || "").trim();
 const idOf = (item) => item?.id || item?._id || item?.action_id || item?.uuid || "";
@@ -146,6 +225,17 @@ function getBadge(item, pageKey) {
   return "Open";
 }
 
+
+
+function getRealPageRule(pageKey) {
+  return REAL_PAGE_RULES[pageKey] || REAL_PAGE_RULES.jobs;
+}
+
+function realMissingMessage(pageKey) {
+  const rule = getRealPageRule(pageKey);
+  return `This page must show real ${rule.recordName} data: ${rule.mustShow.join(", ")}.`;
+}
+
 function StatCard({ icon: Icon, label, value, copy, onClick }) {
   return (
     <button type="button" className="v3-workspace-card" onClick={onClick}>
@@ -183,7 +273,7 @@ function ActionFormModal({ form, values, setValues, saving, onClose, onSubmit })
                 <textarea
                   value={values[field.name] || ""}
                   onChange={(event) => set(field.name, event.target.value)}
-                  placeholder={field.placeholder || ""}
+                  Needs real data wiring={field.Needs real data wiring || ""}
                   required={field.required}
                 />
               ) : (
@@ -191,7 +281,7 @@ function ActionFormModal({ form, values, setValues, saving, onClose, onSubmit })
                   type={field.type || "text"}
                   value={values[field.name] || ""}
                   onChange={(event) => set(field.name, event.target.value)}
-                  placeholder={field.placeholder || ""}
+                  Needs real data wiring={field.Needs real data wiring || ""}
                   required={field.required}
                   step={field.step}
                 />
@@ -279,7 +369,7 @@ const forms = {
       { name: "customer_name", label: "Customer name" },
       { name: "address", label: "Job address", required: true },
       { name: "scheduled_date", label: "Scheduled date", type: "datetime-local", required: true },
-      { name: "job_type", label: "Job type", placeholder: "other" },
+      { name: "job_type", label: "Job type", Needs real data wiring: "other" },
       { name: "price", label: "Price", type: "number", step: "0.01" },
       { name: "notes", label: "Notes", type: "textarea" },
     ],
