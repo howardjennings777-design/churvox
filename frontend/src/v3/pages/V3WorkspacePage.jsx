@@ -23,8 +23,9 @@ import {
 import {
   approveAiAction,
   loadAiOperatorQueue,
-  prepareTodayWithAi,
-  runAiDailyCheck
+  runAiDailyCheck,
+  loadAiOperatorPageQueue,
+  preparePageWithAi
 } from "../../lib/aiOperator";
 import { get, post } from "../../lib/api";
 import V3Shell from "../components/V3Shell";
@@ -456,7 +457,7 @@ export default function V3WorkspacePage({ type }) {
     setNotice("");
 
     const results = await Promise.allSettled([
-      loadAiOperatorQueue(),
+      loadAiOperatorPageQueue(key),
       get("/jobs"),
       get("/quotes"),
       get("/invoices"),
@@ -481,11 +482,11 @@ export default function V3WorkspacePage({ type }) {
     setAiRunning(true);
     setNotice(mode === "prepare" ? "AI is preparing the next actions…" : "AI is checking the business…");
 
-    const result = mode === "prepare" ? await prepareTodayWithAi() : await runAiDailyCheck();
+    const result = mode === "prepare" ? await preparePageWithAi(key) : await runAiDailyCheck();
 
     if (result.ok) {
       setActions(result.actions || []);
-      setNotice("AI finished. Check Owner Decisions for prepared actions.");
+      setNotice(result.data?.message || `AI finished checking ${meta.title}.`);
     } else {
       setNotice(result.message || "AI could not complete that check.");
     }

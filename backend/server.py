@@ -11257,6 +11257,330 @@ async def ai_operator_v3_scheduled_run(current_user: dict = Depends(get_current_
     }
 
 
+
+def _ai_page_normalize(page: str):
+    page = str(page or "decisions").lower().strip()
+    aliases = {
+        "automation": "rules",
+        "sms": "messages",
+        "sync": "integrations",
+        "billing": "plans",
+        "proof-to-paid": "proof",
+        "owner-decisions": "decisions",
+    }
+    return aliases.get(page, page)
+
+def _ai_action_page(action: dict):
+    module = str((action or {}).get("module") or "").lower()
+    action_type = str((action or {}).get("action_type") or "").lower()
+
+    if action_type in {"assign_worker_to_job", "review_unassigned_job"}:
+        return "dispatch"
+    if action_type in {"create_draft_invoice", "prepare_invoice_reminder"}:
+        return "invoices"
+    if action_type in {"prepare_quote_follow_up"}:
+        return "quotes"
+    if action_type in {"mark_job_needs_proof_review"}:
+        return "proof"
+    if module:
+        return module
+    return "decisions"
+
+async def _ai_build_page_actions(current_user: dict, page: str):
+    page = _ai_page_normalize(page)
+    business_id, jobs, quotes, invoices, clients, workers = await _ai_load_data(current_user)
+
+    base_actions = await _ai_build_actions(current_user)
+    page_actions = []
+
+    # Decisions page should see every owner action.
+    if page in {"decisions", "operator", "rules"}:
+        return await _ai_apply_queue_overrides(base_actions, current_user)
+
+    # Filter existing AI actions to the correct workspace first.
+    for action in base_actions:
+        action_page = _ai_action_page(action)
+        if page == action_page:
+            page_actions.append(action)
+
+    # Jobs page: job health, assignment, proof, invoice readiness.
+    if page == "jobs":
+        for job in jobs[:120]:
+            job_id = _ai_doc_id(job)
+            if not job_id:
+                continue
+
+            if not _ai_has_worker(job) and not _ai_is_completed_job(job):
+                page_actions.append({
+                    "id": _ai_action_id("job_needs_dispatch", job_id),
+                    "action_type": "review_unassigned_job",
+                    "module": "jobs",
+                    "status": "pending",
+                    "title": f"Get {_ai_job_title(job)} assigned",
+                    "summary": "This job has no worker. AI can move it into dispatch and recommend the best match.",
+                    "reason": "Job has no assigned worker.",
+                    "risk_level": "medium",
+                    "job_id": job_id,
+                    "record": _ai_public(job),
+                })
+
+            if _ai_is_completed_job(job) and not await _ai_invoice_exists_for_job(business_id, job_id):
+                page_actions.append({
+                    "id": _ai_action_id("job_ready_for_invoice", job_id),
+                    "action_type": "create_draft_invoice",
+                    "module": "jobs",
+                    "status": "pending",
+                    "title": f"Invoice completed job: {_ai_job_title(job)}",
+                    "summary": "This job is complete and has no invoice yet. AI can create the draft invoice.",
+                    "reason": "Completed job needs a draft invoice.",
+                    "risk_level": "low",
+                    "job_id": job_id,
+                    "record": _ai_public(job),
+                })
+
+    # Clients page: flag missing customer info and follow-up readiness.
+    if page == "clients":
+        for client in clients[:120]:
+            client_id = _ai_doc_id(client)
+            if not client_id:
+                continue
+
+            missing = []
+            if not client.get("email"):
+                missing.append("email")
+            if not client.get("phone"):
+                missing.append("phone")
+            if not client.get("address"):
+                missing.append("address")
+
+            if missing:
+                page_actions.append({
+                    "id": _ai_action_id("client_missing_details", client_id, "_".join(missing)),
+                    "action_type": "flag_client_missing_details",
+                    "module": "clients",
+                    "status": "pending",
+                    "title": f"Clean up client details for {_ai_client_name(client)}",
+                    "summary": "Client is missing " + ", ".join(missing) + ". AI can flag it so the owner/admin can complete the record.",
+                    "reason": "Incomplete customer record.",
+                    "risk_level": "low",
+                    "client_id": client_id,
+                    "record": _ai_public(client),
+                })
+
+    # Team page: flag incomplete worker records.
+    if page == "team":
+        for worker in workers[:120]:
+            worker_id = _ai_doc_id(worker)
+            if not worker_id:
+                continue
+
+            missing = []
+            if not worker.get("email"):
+                missing.append("email")
+            if not worker.get("phone"):
+                missing.append("phone")
+            if not worker.get("region") and not worker.get("area"):
+                missing.append("area/region")
+
+            if missing:
+                page_actions.append({
+                    "id": _ai_action_id("worker_profile_missing_details", worker_id, "_".join(missing)),
+                    "action_type": "flag_worker_missing_details",
+                    "module": "team",
+                    "status": "pending",
+                    "title": f"Complete worker profile for {_ai_name(worker)}",
+                    "summary": "Worker profile is missing " + ", ".join(missing) + ". AI can flag this for cleanup.",
+                    "reason": "Incomplete worker record affects dispatch quality.",
+                    "risk_level": "low",
+                    "worker_id": worker_id,
+                    "record": _ai_public(worker),
+                })
+
+    # Payroll page: flag completed jobs needing pay/time review.
+    if page == "payroll":
+        for job in jobs[:150]:
+            if not _ai_is_completed_job(job):
+                continue
+
+            job_id = _ai_doc_id(job)
+            if not job_id:
+                continue
+
+            if not job.get("payroll_reviewed") and not job.get("payroll_review_needed"):
+                page_actions.append({
+                    "id": _ai_action_id("payroll_review_completed_job", job_id),
+                    "action_type": "flag_payroll_review",
+                    "module": "payroll",
+                    "status": "pending",
+                    "title": f"Review payroll for {_ai_job_title(job)}",
+                    "summary": "Completed job should be checked for worker time/payroll before pay run.",
+                    "reason": "Completed job has not been payroll reviewed.",
+                    "risk_level": "medium",
+                    "job_id": job_id,
+                    "record": _ai_public(job),
+                })
+
+    # Reports page: create an owner summary action.
+    if page == "reports":
+        completed_count = len([j for j in jobs if _ai_is_completed_job(j)])
+        unassigned_count = len([j for j in jobs if not _ai_has_worker(j) and not _ai_is_completed_job(j)])
+        open_quotes = len([q for q in quotes if _ai_status(q) in {"draft", "sent", "pending"}])
+        open_money = len([i for i in invoices if _ai_status(i) in {"draft", "sent", "overdue", "unpaid", "pending"}])
+
+        page_actions.append({
+            "id": _ai_action_id("owner_report_snapshot", completed_count, unassigned_count, open_quotes, open_money),
+            "action_type": "save_owner_report_snapshot",
+            "module": "reports",
+            "status": "pending",
+            "title": "Prepare owner report snapshot",
+            "summary": f"{completed_count} completed jobs, {unassigned_count} unassigned jobs, {open_quotes} open quotes, {open_money} money items need attention.",
+            "reason": "Owner report is ready to save for review.",
+            "risk_level": "low",
+            "record": {
+                "completed_jobs": completed_count,
+                "unassigned_jobs": unassigned_count,
+                "open_quotes": open_quotes,
+                "money_items": open_money,
+            },
+        })
+
+    # Integrations/settings/plans should not pretend to do risky work.
+    if page == "integrations":
+        page_actions.append({
+            "id": _ai_action_id("integration_health_check"),
+            "action_type": "save_integration_health_check",
+            "module": "integrations",
+            "status": "pending",
+            "title": "Check MYOB and sync readiness",
+            "summary": "AI can check whether invoices/customers are ready for MYOB or integration handoff.",
+            "reason": "Integration readiness should be reviewed before sync.",
+            "risk_level": "low",
+        })
+
+    if page == "plans":
+        page_actions.append({
+            "id": _ai_action_id("plan_limits_check"),
+            "action_type": "save_plan_limits_check",
+            "module": "plans",
+            "status": "pending",
+            "title": "Check plan and feature limits",
+            "summary": "AI can review whether current usage is close to plan limits.",
+            "reason": "Owner should know before feature limits block work.",
+            "risk_level": "low",
+        })
+
+    if page == "settings":
+        page_actions.append({
+            "id": _ai_action_id("business_setup_check"),
+            "action_type": "save_business_setup_check",
+            "module": "settings",
+            "status": "pending",
+            "title": "Check business setup",
+            "summary": "AI can check business profile, trade defaults and setup fields for missing information.",
+            "reason": "Better setup improves automation quality.",
+            "risk_level": "low",
+        })
+
+    # Messages page should show only message/follow-up actions.
+    if page == "messages":
+        page_actions = [
+            a for a in base_actions
+            if a.get("action_type") in {"prepare_quote_follow_up", "prepare_invoice_reminder"}
+        ]
+
+    # Remove duplicates by id.
+    deduped = []
+    seen = set()
+    for action in page_actions:
+        action_id = action.get("id") or action.get("action_id")
+        if not action_id or action_id in seen:
+            continue
+        seen.add(action_id)
+        deduped.append(action)
+
+    return await _ai_apply_queue_overrides(deduped[:100], current_user)
+
+async def _ai_execute_page_action(action: dict, current_user: dict):
+    action_type = action.get("action_type") or action.get("type")
+    business_id = await get_user_business_id(current_user)
+
+    if action_type == "flag_client_missing_details":
+        client_id = action.get("client_id")
+        if not client_id:
+            raise HTTPException(status_code=400, detail="Missing client_id")
+        result = await db.clients.update_one(_ai_id_query(business_id, client_id), {"$set": {
+            "ai_review_needed": True,
+            "ai_review_reason": action.get("reason") or "Client record is missing details.",
+            "updated_at": _ai_now(),
+        }})
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Client not found")
+        return {"ok": True, "message": "Client flagged for cleanup.", "client_id": str(client_id)}
+
+    if action_type == "flag_worker_missing_details":
+        worker_id = action.get("worker_id")
+        if not worker_id:
+            raise HTTPException(status_code=400, detail="Missing worker_id")
+
+        result = await db.users.update_one(_ai_id_query(business_id, worker_id), {"$set": {
+            "ai_review_needed": True,
+            "ai_review_reason": action.get("reason") or "Worker profile is missing details.",
+            "updated_at": _ai_now(),
+        }})
+        if result.matched_count == 0:
+            result = await db.workers.update_one(_ai_id_query(business_id, worker_id), {"$set": {
+                "ai_review_needed": True,
+                "ai_review_reason": action.get("reason") or "Worker profile is missing details.",
+                "updated_at": _ai_now(),
+            }})
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Worker not found")
+        return {"ok": True, "message": "Worker flagged for cleanup.", "worker_id": str(worker_id)}
+
+    if action_type == "flag_payroll_review":
+        job_id = action.get("job_id")
+        if not job_id:
+            raise HTTPException(status_code=400, detail="Missing job_id")
+        result = await db.jobs.update_one(_ai_id_query(business_id, job_id), {"$set": {
+            "payroll_review_needed": True,
+            "payroll_review_reason": action.get("reason") or "Completed job needs payroll review.",
+            "updated_at": _ai_now(),
+        }})
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Job not found")
+        return {"ok": True, "message": "Job flagged for payroll review.", "job_id": str(job_id)}
+
+    if action_type in {"save_owner_report_snapshot", "save_integration_health_check", "save_plan_limits_check", "save_business_setup_check"}:
+        await db.ai_operator_v3_snapshots.insert_one({
+            "business_id": str(business_id),
+            "action_type": action_type,
+            "title": action.get("title"),
+            "summary": action.get("summary"),
+            "record": make_json_safe(action.get("record") or {}),
+            "created_at": _ai_now(),
+        })
+        return {"ok": True, "message": "AI review saved.", "action_type": action_type}
+
+    return await _ai_execute(action, current_user)
+
+@api_router.get("/ai/operator/v3/pages/{page}/queue")
+async def ai_operator_v3_page_queue(page: str, current_user: dict = Depends(get_current_user)):
+    actions = await _ai_build_page_actions(current_user, page)
+    return {"success": True, "ok": True, "page": _ai_page_normalize(page), "actions": actions, "count": len(actions)}
+
+@api_router.post("/ai/operator/v3/pages/{page}/prepare")
+async def ai_operator_v3_page_prepare(page: str, current_user: dict = Depends(get_current_user)):
+    actions = await _ai_build_page_actions(current_user, page)
+    return {
+        "success": True,
+        "ok": True,
+        "page": _ai_page_normalize(page),
+        "message": f"AI prepared {len(actions)} action(s) for {_ai_page_normalize(page)}.",
+        "actions": actions,
+        "count": len(actions),
+    }
+
+
 @api_router.get("/ai/operator/v3/queue")
 async def ai_operator_v3_queue(current_user: dict = Depends(get_current_user)):
     actions = await _ai_apply_queue_overrides(await _ai_build_actions(current_user), current_user)
@@ -11290,7 +11614,7 @@ async def ai_operator_v3_approve(action_id: str, body: dict = Body(default=None)
     action = body.get("action") or body
     if not isinstance(action, dict):
         raise HTTPException(status_code=400, detail="Missing action payload")
-    result = await _ai_execute(action, current_user)
+    result = await _ai_execute_page_action(action, current_user)
     await _ai_log(current_user, action, result)
     return {"success": True, "ok": True, **result}
 

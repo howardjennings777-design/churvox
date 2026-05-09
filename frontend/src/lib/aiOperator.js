@@ -63,3 +63,18 @@ export async function rejectAiAction(action) {
   if (!result.ok) return { ok: false, message: result.message };
   return { ok: true, data: result.data };
 }
+
+
+export async function loadAiOperatorPageQueue(page) {
+  const clean = String(page || "decisions").toLowerCase();
+  const result = await get(`/ai/operator/v3/pages/${clean}/queue`);
+  if (!result.ok) return { ok: false, actions: [], message: result.message };
+  return { ok: true, actions: normalizeActions(result.data), data: result.data };
+}
+
+export async function preparePageWithAi(page) {
+  const clean = String(page || "decisions").toLowerCase();
+  const result = await post(`/ai/operator/v3/pages/${clean}/prepare`, {});
+  if (!result.ok) return { ok: false, actions: [], message: result.message };
+  return { ok: true, actions: normalizeActions(result.data), data: result.data };
+}
