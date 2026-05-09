@@ -26,6 +26,7 @@ const workspaces = [
   ["Clients", "/v3/clients", "Customer base"],
   ["Quotes", "/v3/quotes", "Sales desk"],
   ["Invoices", "/v3/invoices", "Money board"],
+  ["AI Operator", "/v3/operator", "Owner queue"],
   ["Decisions", "/v3/decisions", "Owner approval queue"],
   ["Team", "/v3/team", "Crew control"],
   ["Payroll", "/v3/payroll", "Pay run"],

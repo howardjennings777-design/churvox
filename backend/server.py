@@ -11043,26 +11043,240 @@ async def _ai_execute(action, current_user):
 
     raise HTTPException(status_code=400, detail=f"Unsupported AI action type: {action_type}")
 
+
+async def _ai_operator_v3_settings_doc(current_user: dict):
+    business_id = await get_user_business_id(current_user)
+    defaults = {
+        "business_id": str(business_id),
+        "ai_master_enabled": True,
+        "auto_run_enabled": True,
+        "scheduled_time": "08:00",
+        "scheduled_weekdays": [1, 2, 3, 4, 5],
+        "timezone": "Pacific/Auckland",
+        "auto_execute_safe_actions": True,
+        "auto_assign_workers_enabled": True,
+        "auto_send_customer_messages": False,
+        "owner_approval_required_for_external": True,
+        "owner_notify_on_action": True,
+        "quiet_hours_enabled": True,
+        "quiet_hours_start": "20:00",
+        "quiet_hours_end": "07:30",
+        "max_messages_per_client_per_day": 2,
+        "updated_at": _ai_now(),
+    }
+
+    saved = await db.ai_operator_v3_settings.find_one({"business_id": str(business_id)})
+    if not saved:
+        await db.ai_operator_v3_settings.insert_one(defaults.copy())
+        return defaults
+
+    clean = make_json_safe(saved)
+    clean.pop("_id", None)
+    merged = {**defaults, **clean}
+    return merged
+
+async def _ai_apply_queue_overrides(actions, current_user: dict):
+    business_id = await get_user_business_id(current_user)
+    ids = [a.get("id") or a.get("action_id") for a in actions if isinstance(a, dict)]
+    ids = [x for x in ids if x]
+
+    if not ids:
+        return []
+
+    overrides = await db.ai_operator_v3_action_overrides.find({
+        "business_id": str(business_id),
+        "action_id": {"$in": ids},
+    }).to_list(length=1000)
+
+    by_id = {o.get("action_id"): o for o in overrides}
+    output = []
+
+    for action in actions:
+        action_id = action.get("id") or action.get("action_id")
+        override = by_id.get(action_id) or {}
+
+        if override.get("status") in {"deleted", "rejected", "completed"}:
+            continue
+
+        edited_action = dict(action)
+
+        for key in ["title", "summary", "reason", "risk_level", "status"]:
+            if key in override and override.get(key) not in [None, ""]:
+                edited_action[key] = override.get(key)
+
+        action_patch = override.get("action_patch")
+        if isinstance(action_patch, dict):
+            edited_action.update(action_patch)
+
+        edited_action["queue_status"] = override.get("status") or "pending"
+        edited_action["edited_by_owner"] = bool(override.get("edited_by_owner"))
+        output.append(make_json_safe(edited_action))
+
+    return output
+
+async def _ai_operator_v3_save_override(current_user: dict, action_id: str, payload: dict):
+    business_id = await get_user_business_id(current_user)
+    payload = payload or {}
+
+    update = {
+        "business_id": str(business_id),
+        "action_id": str(action_id),
+        "updated_at": _ai_now(),
+    }
+
+    allowed = ["title", "summary", "reason", "risk_level", "status"]
+    for key in allowed:
+        if key in payload:
+            update[key] = payload.get(key)
+
+    if isinstance(payload.get("action_patch"), dict):
+        update["action_patch"] = payload.get("action_patch")
+
+    update["edited_by_owner"] = True
+
+    await db.ai_operator_v3_action_overrides.update_one(
+        {"business_id": str(business_id), "action_id": str(action_id)},
+        {"$set": update, "$setOnInsert": {"created_at": _ai_now()}},
+        upsert=True,
+    )
+
+    return make_json_safe(update)
+
+@api_router.get("/ai/operator/v3/settings")
+async def ai_operator_v3_get_settings(current_user: dict = Depends(get_current_user)):
+    settings = await _ai_operator_v3_settings_doc(current_user)
+    return {"success": True, "ok": True, "settings": settings}
+
+@api_router.patch("/ai/operator/v3/settings")
+async def ai_operator_v3_patch_settings(body: dict = Body(default=None), current_user: dict = Depends(get_current_user)):
+    body = body or {}
+    business_id = await get_user_business_id(current_user)
+
+    allowed = {
+        "ai_master_enabled",
+        "auto_run_enabled",
+        "scheduled_time",
+        "scheduled_weekdays",
+        "timezone",
+        "auto_execute_safe_actions",
+        "auto_assign_workers_enabled",
+        "auto_send_customer_messages",
+        "owner_approval_required_for_external",
+        "owner_notify_on_action",
+        "quiet_hours_enabled",
+        "quiet_hours_start",
+        "quiet_hours_end",
+        "max_messages_per_client_per_day",
+    }
+
+    update = {k: v for k, v in body.items() if k in allowed}
+    update["business_id"] = str(business_id)
+    update["updated_at"] = _ai_now()
+
+    await db.ai_operator_v3_settings.update_one(
+        {"business_id": str(business_id)},
+        {"$set": update, "$setOnInsert": {"created_at": _ai_now()}},
+        upsert=True,
+    )
+
+    settings = await _ai_operator_v3_settings_doc(current_user)
+    return {"success": True, "ok": True, "settings": settings}
+
+@api_router.patch("/ai/operator/v3/actions/{action_id}")
+async def ai_operator_v3_edit_action(action_id: str, body: dict = Body(default=None), current_user: dict = Depends(get_current_user)):
+    saved = await _ai_operator_v3_save_override(current_user, action_id, body or {})
+    return {"success": True, "ok": True, "message": "AI action updated.", "action": saved}
+
+@api_router.delete("/ai/operator/v3/actions/{action_id}")
+async def ai_operator_v3_delete_action(action_id: str, current_user: dict = Depends(get_current_user)):
+    saved = await _ai_operator_v3_save_override(current_user, action_id, {"status": "deleted"})
+    return {"success": True, "ok": True, "message": "AI action deleted from owner queue.", "action": saved}
+
+@api_router.post("/ai/operator/v3/scheduled-run")
+async def ai_operator_v3_scheduled_run(current_user: dict = Depends(get_current_user)):
+    settings = await _ai_operator_v3_settings_doc(current_user)
+
+    if not settings.get("ai_master_enabled", True):
+        return {"success": True, "ok": True, "message": "AI Operator is turned off.", "executed": [], "queued": []}
+
+    actions = await _ai_apply_queue_overrides(await _ai_build_actions(current_user), current_user)
+
+    if not settings.get("auto_run_enabled", True):
+        return {"success": True, "ok": True, "message": "Auto-run is off. Actions were prepared only.", "executed": [], "queued": actions}
+
+    executed = []
+    queued = []
+
+    safe_internal = {
+        "create_draft_invoice",
+        "prepare_quote_follow_up",
+        "prepare_invoice_reminder",
+        "mark_job_needs_proof_review",
+        "review_unassigned_job",
+    }
+
+    if settings.get("auto_assign_workers_enabled", True):
+        safe_internal.add("assign_worker_to_job")
+
+    for action in actions:
+        action_type = action.get("action_type")
+
+        external_message = action_type in {"send_sms", "send_email", "send_customer_message"}
+        if external_message and not settings.get("auto_send_customer_messages", False):
+            queued.append(action)
+            continue
+
+        if action_type not in safe_internal and not external_message:
+            queued.append(action)
+            continue
+
+        if not settings.get("auto_execute_safe_actions", True):
+            queued.append(action)
+            continue
+
+        try:
+            result = await _ai_execute(action, current_user)
+            await _ai_log(current_user, action, result)
+            await _ai_operator_v3_save_override(current_user, action.get("id") or action.get("action_id"), {"status": "completed"})
+            executed.append({"action": action, "result": result})
+        except Exception as exc:
+            queued.append({**action, "auto_error": str(exc)})
+
+    await db.ai_operator_v3_settings.update_one(
+        {"business_id": str(await get_user_business_id(current_user))},
+        {"$set": {"last_scheduled_run_at": _ai_now(), "updated_at": _ai_now()}},
+        upsert=True,
+    )
+
+    return {
+        "success": True,
+        "ok": True,
+        "message": f"AI Operator ran. {len(executed)} action(s) completed, {len(queued)} left for owner review.",
+        "executed": make_json_safe(executed),
+        "queued": make_json_safe(queued),
+    }
+
+
 @api_router.get("/ai/operator/v3/queue")
 async def ai_operator_v3_queue(current_user: dict = Depends(get_current_user)):
-    actions = await _ai_build_actions(current_user)
+    actions = await _ai_apply_queue_overrides(await _ai_build_actions(current_user), current_user)
     return {"success": True, "ok": True, "actions": actions, "count": len(actions)}
 
 @api_router.post("/ai/operator/v3/run-daily-check")
 async def ai_operator_v3_run_daily_check(current_user: dict = Depends(get_current_user)):
-    actions = await _ai_build_actions(current_user)
+    actions = await _ai_apply_queue_overrides(await _ai_build_actions(current_user), current_user)
     return {"success": True, "ok": True, "message": "AI checked the business.", "actions": actions, "count": len(actions)}
 
 @api_router.post("/ai/operator/v3/prepare-today")
 async def ai_operator_v3_prepare_today(current_user: dict = Depends(get_current_user)):
-    actions = await _ai_build_actions(current_user)
+    actions = await _ai_apply_queue_overrides(await _ai_build_actions(current_user), current_user)
     return {"success": True, "ok": True, "message": "AI prepared the owner approval queue.", "actions": actions, "count": len(actions)}
 
 @api_router.post("/ai/operator/v3/ask")
 async def ai_operator_v3_ask(body: dict = Body(default=None), current_user: dict = Depends(get_current_user)):
     body = body or {}
     question = _ai_text(body.get("question"))
-    actions = await _ai_build_actions(current_user)
+    actions = await _ai_apply_queue_overrides(await _ai_build_actions(current_user), current_user)
     if actions:
         first = actions[0]
         answer = f"I found {len(actions)} action(s) ready. Top priority: {first.get('title')}. {first.get('summary')}"

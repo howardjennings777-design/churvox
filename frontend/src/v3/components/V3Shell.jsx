@@ -24,6 +24,7 @@ import "../styles/v3.css";
 
 const navItems = [
   ["Hub", "/dashboard", ShieldCheck],
+  ["AI Operator", "/v3/operator", Sparkles],
   ["Decisions", "/v3/decisions", Sparkles],
   ["Jobs", "/v3/jobs", Briefcase],
   ["Dispatch", "/v3/dispatch", Calendar],

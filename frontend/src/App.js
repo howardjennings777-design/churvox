@@ -30,6 +30,7 @@ import PublicClientPortalPage from "./pages/public/PublicClientPortalPage";
 import QAAuditorPage from "./pages/admin/QAAuditorPage";
 import SmartHubHardReset from "./pages/SmartHubHardReset";
 import V3WorkspacePage from "./v3/pages/V3WorkspacePage";
+import V3OperatorPage from "./v3/pages/V3OperatorPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const Spinner = () => (
@@ -142,6 +143,7 @@ function App() {
         <ErrorBoundary>
         <Toaster position="top-right" richColors />
         <Routes>
+          <Route path="/v3/operator" element={<BusinessRoute><V3OperatorPage /></BusinessRoute>} />
           <Route path="/v3/:section" element={<BusinessRoute><V3WorkspacePage /></BusinessRoute>} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
