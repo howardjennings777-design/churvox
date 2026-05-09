@@ -18,148 +18,56 @@ import {
   Users,
   Wand2,
   X,
-  Zap
+  Zap,
 } from "lucide-react";
-import {
-  approveAiAction,
-  loadAiOperatorQueue,
-  runAiDailyCheck,
-  loadAiOperatorPageQueue,
-  preparePageWithAi
-} from "../../lib/aiOperator";
+import { approveAiAction } from "../../lib/aiOperator";
 import { get, post } from "../../lib/api";
 import V3Shell from "../components/V3Shell";
 import "../styles/v3.css";
 
 const PAGE_META = {
-  decisions: { title: "Owner Decisions", kicker: "AI approval queue", intro: "AI-prepared actions that only need the owner to review and approve.", icon: Sparkles, emptyTitle: "No decisions waiting", emptyCopy: "Tap AI handle this and Churvox will check the business again.", action: "prepare_ai" },
-  jobs: { title: "Jobs", kicker: "Live run sheet", intro: "All jobs, current status, assigned workers, completion state and AI next steps.", icon: Briefcase, emptyTitle: "No jobs found", emptyCopy: "Create a job here or let AI prepare next steps.", action: "new_job" },
-  dispatch: { title: "Dispatch", kicker: "Crew matching", intro: "Unassigned jobs, available workers, schedule gaps and AI worker suggestions.", icon: Calendar, emptyTitle: "No dispatch work waiting", emptyCopy: "AI will surface jobs that need a worker assigned.", action: "prepare_ai" },
-  clients: { title: "Clients", kicker: "Customer base", intro: "Customer records, contact details, addresses and recent work context.", icon: Users, emptyTitle: "No clients found", emptyCopy: "Add a client here or import later.", action: "new_client" },
-  quotes: { title: "Quotes", kicker: "Sales desk", intro: "Draft, sent, pending and accepted quotes with AI follow-up support.", icon: FileText, emptyTitle: "No quotes found", emptyCopy: "Create a quote here or let AI prepare follow-ups.", action: "new_quote" },
-  invoices: { title: "Invoices", kicker: "Money board", intro: "Draft, sent, unpaid and overdue invoices with AI reminder support.", icon: DollarSign, emptyTitle: "No invoices found", emptyCopy: "Create an invoice here or let AI create drafts from completed jobs.", action: "new_invoice" },
-  team: { title: "Team", kicker: "Crew control", intro: "Workers, roles, availability, contact details and assignment readiness.", icon: Users, emptyTitle: "No team members found", emptyCopy: "Invite a worker from here.", action: "new_worker" },
-  payroll: { title: "Payroll", kicker: "Pay run", intro: "Worker time, completed jobs, pay-review signals and export readiness.", icon: CreditCard, emptyTitle: "No payroll data ready", emptyCopy: "Completed jobs and worker time will feed payroll review.", action: "prepare_ai" },
-  rules: { title: "Rules", kicker: "Automation engine", intro: "Background AI checks, prepared actions, automation runs and approval-first controls.", icon: Zap, emptyTitle: "No automation actions waiting", emptyCopy: "AI will add rules/actions here when something needs attention.", action: "prepare_ai" },
-  reports: { title: "Reports", kicker: "Owner numbers", intro: "Business numbers, work completed, crew load, open quotes and money to collect.", icon: ShieldCheck, emptyTitle: "No report data yet", emptyCopy: "Reports fill in as jobs, quotes and invoices are used.", action: "refresh" },
-  messages: { title: "Messages", kicker: "Customer comms", intro: "AI-drafted follow-ups, invoice reminders and customer messages waiting for approval.", icon: MessageSquare, emptyTitle: "No messages waiting", emptyCopy: "AI will prepare reminders and follow-ups here, but will not send without approval.", action: "prepare_ai" },
-  integrations: { title: "Sync", kicker: "MYOB and integrations", intro: "MYOB sync, connected services, integration checks and data handoff status.", icon: Plug, emptyTitle: "No sync actions waiting", emptyCopy: "MYOB and integration tasks will appear here when connected.", action: "prepare_ai" },
-  plans: { title: "Billing", kicker: "Plan and limits", intro: "Plan status, feature access, limits and billing controls.", icon: CreditCard, emptyTitle: "No billing actions waiting", emptyCopy: "Plan and billing controls stay here.", action: "info" },
-  settings: { title: "Settings", kicker: "Business setup", intro: "Business profile, preferences, account setup and workspace controls.", icon: Settings, emptyTitle: "No settings actions waiting", emptyCopy: "Business setup and account controls stay here.", action: "info" },
-  proof: { title: "Job Proof Packs", kicker: "Proof to paid", intro: "Completed work, photos, proof checks and invoice-ready job packs.", icon: CheckCircle2, emptyTitle: "No proof packs waiting", emptyCopy: "Completed jobs and uploaded proof photos will show here.", action: "prepare_ai" },
+  decisions: { title: "Owner Decisions", kicker: "AI approval queue", intro: "AI-prepared work waiting for owner approval.", icon: Sparkles, action: "prepare_ai", primary: "Prepare decisions" },
+  jobs: { title: "Jobs", kicker: "Live run sheet", intro: "Jobs, clients, addresses, workers, status, schedule, proof and billing readiness.", icon: Briefcase, action: "new_job", primary: "Create job" },
+  dispatch: { title: "Dispatch", kicker: "Crew matching", intro: "Unassigned jobs, available workers, crew gaps and AI worker recommendations.", icon: Calendar, action: "prepare_ai", primary: "AI match crew" },
+  clients: { title: "Clients", kicker: "Customer base", intro: "Client records, contact details, missing fields, addresses and follow-up readiness.", icon: Users, action: "new_client", primary: "Add client" },
+  quotes: { title: "Quotes", kicker: "Sales desk", intro: "Quote pipeline, status, value, client, accepted work and AI follow-ups.", icon: FileText, action: "new_quote", primary: "Create quote" },
+  invoices: { title: "Invoices", kicker: "Money board", intro: "Draft, sent, unpaid, overdue and paid invoices with AI reminder support.", icon: DollarSign, action: "new_invoice", primary: "Create invoice" },
+  team: { title: "Team", kicker: "Crew control", intro: "Workers, roles, contact details, regions and dispatch readiness.", icon: Users, action: "new_worker", primary: "Invite worker" },
+  payroll: { title: "Payroll", kicker: "Pay run", intro: "Completed jobs, worker time, pay review flags and payroll handoff.", icon: CreditCard, action: "prepare_ai", primary: "AI review payroll" },
+  rules: { title: "Rules", kicker: "Automation engine", intro: "AI rules, safe actions, approval controls and background checks.", icon: Zap, action: "prepare_ai", primary: "Prepare rules" },
+  reports: { title: "Reports", kicker: "Owner numbers", intro: "Completed work, unassigned jobs, quote movement, money to collect and crew load.", icon: ShieldCheck, action: "refresh", primary: "Refresh reports" },
+  messages: { title: "Messages", kicker: "Customer comms", intro: "Quote follow-ups, invoice reminders and AI-drafted messages.", icon: MessageSquare, action: "prepare_ai", primary: "Prepare messages" },
+  integrations: { title: "Sync", kicker: "MYOB and integrations", intro: "MYOB readiness, invoice handoff, client data and sync checks.", icon: Plug, action: "prepare_ai", primary: "Check sync" },
+  plans: { title: "Billing", kicker: "Plan, SMS and user blocks", intro: "Plan state, SMS credits, team limits and Enterprise 50-user blocks.", icon: CreditCard, action: "billing", primary: "Billing controls" },
+  settings: { title: "Settings", kicker: "Business setup", intro: "Business profile, setup quality, AI controls and missing account fields.", icon: Settings, action: "prepare_ai", primary: "Check setup" },
+  proof: { title: "Job Proof Packs", kicker: "Proof to paid", intro: "Completed jobs, uploaded photos, missing proof and invoice readiness.", icon: CheckCircle2, action: "prepare_ai", primary: "Check proof" },
 };
 
-const ORDER = ["decisions", "jobs", "dispatch", "clients", "quotes", "invoices", "team", "payroll", "rules", "reports", "messages", "integrations", "plans", "settings"];
+const ORDER = ["decisions", "jobs", "dispatch", "clients", "quotes", "invoices", "team", "payroll", "rules", "reports", "messages", "integrations", "plans", "settings", "proof"];
 
-const REAL_PAGE_RULES = {
-  decisions: {
-    recordName: "AI decision",
-    mustShow: ["AI title", "reason", "approve action", "edit/delete in AI Operator"],
-    empty: "No AI decisions waiting. Run AI Operator to prepare work."
-  },
-  jobs: {
-    recordName: "job",
-    mustShow: ["job title", "client", "address", "worker", "status", "schedule", "price"],
-    empty: "No jobs yet. Create a job so AI can assign, proof and invoice it."
-  },
-  dispatch: {
-    recordName: "dispatch job",
-    mustShow: ["unassigned jobs", "worker match", "worker area", "crew availability"],
-    empty: "No jobs need dispatch. AI will show crew gaps here."
-  },
-  clients: {
-    recordName: "client",
-    mustShow: ["client name", "email", "phone", "address", "missing details"],
-    empty: "No clients yet. Add or import clients."
-  },
-  quotes: {
-    recordName: "quote",
-    mustShow: ["quote number", "client", "status", "value", "follow-up draft"],
-    empty: "No quotes yet. Create a quote so AI can follow it up."
-  },
-  invoices: {
-    recordName: "invoice",
-    mustShow: ["invoice number", "client", "status", "total", "payment/reminder"],
-    empty: "No invoices yet. Create one or let AI draft from completed jobs."
-  },
-  team: {
-    recordName: "worker",
-    mustShow: ["worker name", "role", "email", "phone", "region", "availability"],
-    empty: "No team members yet. Invite a worker."
-  },
-  payroll: {
-    recordName: "payroll item",
-    mustShow: ["worker", "completed job", "time", "pay review flag"],
-    empty: "No payroll items yet. Completed jobs and worker time will appear here."
-  },
-  rules: {
-    recordName: "automation rule/action",
-    mustShow: ["rule/action", "module", "risk", "approval state"],
-    empty: "No automation actions waiting. Run AI Operator."
-  },
-  reports: {
-    recordName: "report metric",
-    mustShow: ["completed jobs", "open quotes", "money owed", "crew load"],
-    empty: "No report data yet. Reports fill as real work is added."
-  },
-  messages: {
-    recordName: "message draft",
-    mustShow: ["client", "message type", "draft text", "send approval"],
-    empty: "No message drafts yet. AI will prepare follow-ups/reminders."
-  },
-  integrations: {
-    recordName: "sync item",
-    mustShow: ["MYOB readiness", "invoice handoff", "client data", "sync issue"],
-    empty: "No integration items yet. Connect MYOB/sync when ready."
-  },
-  plans: {
-    recordName: "billing item",
-    mustShow: ["plan", "team capacity", "SMS credits", "50-user blocks", "security lock"],
-    empty: "Billing data should load from secure billing endpoints."
-  },
-  settings: {
-    recordName: "setup item",
-    mustShow: ["business profile", "AI settings", "roles", "missing setup"],
-    empty: "Settings should show business setup and AI controls."
-  },
-  proof: {
-    recordName: "proof pack",
-    mustShow: ["completed job", "photos", "missing proof", "invoice readiness"],
-    empty: "No proof packs yet. Completed jobs/photos will appear here."
-  }
-};
-
-
-const lower = (value) => String(value || "").toLowerCase();
 const safe = (value) => String(value || "").trim();
-const idOf = (item) => item?.id || item?._id || item?.action_id || item?.uuid || "";
+const lower = (value) => safe(value).toLowerCase();
+const titleCase = (value) => safe(value || "unknown").replace(/[_-]+/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
 const actionId = (action) => action?.id || action?.action_id || action?._id || action?.uuid || "";
+const recordId = (item, fallback) => item?.id || item?._id || item?.uuid || fallback;
+
+const money = (value) => {
+  const n = Number(value || 0);
+  if (!Number.isFinite(n) || n <= 0) return "$0";
+  return `$${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+};
+
+const dateText = (value) => {
+  if (!value) return "Not set";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? "Not set" : d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+};
 
 const todayInput = () => {
   const d = new Date();
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   return d.toISOString().slice(0, 16);
 };
-
-const money = (value) => {
-  const number = Number(value || 0);
-  if (!Number.isFinite(number) || number <= 0) return "$0";
-  return `$${number.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
-};
-
-const dateText = (value) => {
-  if (!value) return "";
-  try {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "";
-    return date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
-  } catch {
-    return "";
-  }
-};
-
-const titleCase = (value) =>
-  safe(value || "unknown").replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 const pickArray = (payload, keys = []) => {
   const data = payload?.data ?? payload;
@@ -173,190 +81,25 @@ const pickArray = (payload, keys = []) => {
   return [];
 };
 
-const settledValue = (result) => (result.status === "fulfilled" ? result.value : null);
-const hasWorker = (job) => Boolean(job?.assigned_worker_id || job?.worker_id || job?.assigned_to || job?.assigned_worker_name || job?.worker_name);
+const settled = (result) => (result.status === "fulfilled" ? result.value : null);
+const dataOf = (result) => result?.data || result || {};
+
 const jobStatus = (job) => lower(job?.status || job?.job_status || job?.workflow_status);
+const quoteStatus = (quote) => lower(quote?.status || quote?.quote_status);
+const invoiceStatus = (invoice) => lower(invoice?.status || invoice?.invoice_status);
+
+const hasWorker = (job) => Boolean(job?.assigned_worker_id || job?.worker_id || job?.assigned_to || job?.assigned_worker_name || job?.worker_name);
 const isCompletedJob = (job) => ["completed", "done", "finished"].includes(jobStatus(job)) || job?.completed === true || Boolean(job?.completed_at);
+const hasProof = (job) => ["photos", "photo_urls", "proof_photos", "job_photos", "completion_photos", "worker_photos"].some((key) => {
+  const value = job?.[key];
+  return Array.isArray(value) ? value.length > 0 : Boolean(value);
+});
 
-const hasProof = (job) => {
-  const keys = ["photos", "photo_urls", "proof_photos", "job_photos", "completion_photos", "worker_photos"];
-  return keys.some((key) => {
-    const value = job?.[key];
-    return Array.isArray(value) ? value.length > 0 : Boolean(value);
-  });
-};
-
-function getItemTitle(item, pageKey) {
-  if (!item) return "Untitled";
-  if (pageKey === "decisions" || pageKey === "rules" || item.action_type) return item.title || item.name || "AI prepared action";
-  if (pageKey === "clients") return item.name || item.client_name || item.business_name || item.email || "Client";
-  if (pageKey === "team" || pageKey === "payroll") return item.name || item.full_name || item.email || "Team member";
-  if (pageKey === "quotes") return item.quote_number || item.number || item.title || item.customer_name || item.client_name || "Quote";
-  if (pageKey === "invoices") return item.invoice_number || item.number || item.title || item.customer_name || item.client_name || "Invoice";
-  if (pageKey === "reports") return item.title || "Report";
-  if (["integrations", "plans", "settings", "messages"].includes(pageKey)) return item.title || item.name || "Item";
-  return item.title || item.job_title || item.name || item.customer_name || item.client_name || item.address || "Job";
-}
-
-function getItemSub(item, pageKey) {
-  if (!item) return "";
-  if (pageKey === "decisions" || pageKey === "rules" || item.action_type) return item.summary || item.reason || item.description || "Ready for owner review.";
-  if (pageKey === "clients") return [item.email, item.phone, item.address].filter(Boolean).join(" • ") || "Client record";
-  if (pageKey === "team") return [titleCase(item.role || "worker"), item.email || item.phone].filter(Boolean).join(" • ");
-  if (pageKey === "payroll") return `${titleCase(item.role || "worker")} • Payroll review ready`;
-  if (pageKey === "quotes") return `${titleCase(item.status || "draft")} • ${money(item.total || item.amount || item.price || item.total_amount)}`;
-  if (pageKey === "invoices") return `${titleCase(item.status || "draft")} • ${money(item.total || item.amount || item.subtotal || item.total_amount)}`;
-  if (pageKey === "reports") return item.summary || item.copy || "";
-  if (pageKey === "messages") return item.summary || item.copy || "Draft message or reminder";
-  if (["integrations", "plans", "settings"].includes(pageKey)) return item.summary || item.copy || "";
-  return [
-    titleCase(item.status || item.job_status || "new"),
-    item.assigned_worker_name || item.worker_name || "No worker assigned",
-    dateText(item.scheduled_date || item.date || item.created_at)
-  ].filter(Boolean).join(" • ");
-}
-
-function getBadge(item, pageKey) {
-  if (!item) return "Open";
-  if (item.action_type || pageKey === "decisions" || pageKey === "rules") return "Review";
-  if (pageKey === "quotes" || pageKey === "invoices") return titleCase(item.status || "draft");
-  if (pageKey === "jobs" || pageKey === "dispatch" || pageKey === "proof") return titleCase(item.status || item.job_status || "new");
-  if (pageKey === "team" || pageKey === "payroll") return titleCase(item.role || "worker");
-  return "Open";
-}
-
-
-
-function getRealPageRule(pageKey) {
-  return REAL_PAGE_RULES[pageKey] || REAL_PAGE_RULES.jobs;
-}
-
-function realMissingMessage(pageKey) {
-  const rule = getRealPageRule(pageKey);
-  return `This page must show real ${rule.recordName} data: ${rule.mustShow.join(", ")}.`;
-}
-
-function StatCard({ icon: Icon, label, value, copy, onClick }) {
-  return (
-    <button type="button" className="v3-workspace-card" onClick={onClick}>
-      <Icon size={18} />
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <small>{copy}</small>
-    </button>
-  );
-}
-
-function ActionFormModal({ form, values, setValues, saving, onClose, onSubmit }) {
-  if (!form) return null;
-
-  const set = (key, value) => setValues((current) => ({ ...current, [key]: value }));
-
-  return (
-    <div className="v3-modal-backdrop" onClick={onClose}>
-      <div className="v3-modal" onClick={(event) => event.stopPropagation()}>
-        <div className="v3-modal-head">
-          <div>
-            <p className="v3-eyebrow">Quick action</p>
-            <h2>{form.title}</h2>
-          </div>
-          <button type="button" className="v3-icon-button" onClick={onClose}>
-            <X size={18} />
-          </button>
-        </div>
-
-        <form className="v3-action-form" onSubmit={onSubmit}>
-          {form.fields.map((field) => (
-            <label key={field.name}>
-              <span>{field.label}</span>
-              {field.type === "textarea" ? (
-                <textarea
-                  value={values[field.name] || ""}
-                  onChange={(event) => set(field.name, event.target.value)}
-                  placeholder={field.placeholder || ""}
-                  required={field.required}
-                />
-              ) : (
-                <input
-                  type={field.type || "text"}
-                  value={values[field.name] || ""}
-                  onChange={(event) => set(field.name, event.target.value)}
-                  placeholder={field.placeholder || ""}
-                  required={field.required}
-                  step={field.step}
-                />
-              )}
-            </label>
-          ))}
-
-          <div className="v3-actions">
-            <button type="submit" className="v3-button dark" disabled={saving}>
-              {saving ? "Saving…" : form.submit}
-            </button>
-            <button type="button" className="v3-button secondary" onClick={onClose}>
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function DetailModal({ selected, pageKey, onClose, onApprove, busyActionId, onAskAi }) {
-  if (!selected) return null;
-
-  const item = selected.item;
-  const isAction = selected.isAction || Boolean(item?.action_type);
-  const id = actionId(item);
-
-  return (
-    <div className="v3-modal-backdrop" onClick={onClose}>
-      <div className="v3-modal" onClick={(event) => event.stopPropagation()}>
-        <div className="v3-modal-head">
-          <div>
-            <p className="v3-eyebrow">{isAction ? "AI prepared this" : PAGE_META[pageKey]?.kicker || "Details"}</p>
-            <h2>{getItemTitle(item, pageKey)}</h2>
-          </div>
-          <button type="button" className="v3-icon-button" onClick={onClose}>
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="v3-modal-body">
-          <p>{getItemSub(item, pageKey)}</p>
-
-          <div className="v3-detail-grid">
-            <div><small>Status</small><b>{getBadge(item, pageKey)}</b></div>
-            <div><small>Client</small><b>{item?.customer_name || item?.client_name || item?.name || "Not set"}</b></div>
-            <div><small>Worker</small><b>{item?.assigned_worker_name || item?.worker_name || item?.name || "Not assigned"}</b></div>
-            <div><small>Amount</small><b>{money(item?.total || item?.amount || item?.price || item?.subtotal)}</b></div>
-          </div>
-
-          {isAction ? (
-            <div className="v3-actions">
-              <button type="button" className="v3-button dark" onClick={() => onApprove(item)} disabled={busyActionId === id}>
-                {busyActionId === id ? "Doing it…" : "Approve and do it"}
-              </button>
-              <button type="button" className="v3-button secondary" onClick={onClose}>
-                Not now
-              </button>
-            </div>
-          ) : (
-            <div className="v3-actions">
-              <button type="button" className="v3-button" onClick={onAskAi}>
-                <Sparkles size={18} /> Ask AI to handle next step
-              </button>
-              <button type="button" className="v3-button secondary" onClick={onClose}>
-                Close
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
+const jobTitle = (job) => job?.title || job?.job_title || job?.name || job?.customer_name || job?.client_name || job?.address || "Job";
+const clientTitle = (client) => client?.name || client?.client_name || client?.business_name || client?.email || "Client";
+const workerTitle = (worker) => worker?.name || worker?.full_name || worker?.worker_name || worker?.email || "Worker";
+const quoteTitle = (quote) => quote?.quote_number || quote?.number || quote?.title || quote?.customer_name || quote?.client_name || "Quote";
+const invoiceTitle = (invoice) => invoice?.invoice_number || invoice?.number || invoice?.title || invoice?.customer_name || invoice?.client_name || "Invoice";
 
 const forms = {
   new_job: {
@@ -365,13 +108,13 @@ const forms = {
     endpoint: "/jobs",
     defaults: { title: "", customer_name: "", address: "", scheduled_date: todayInput(), job_type: "other", price: "", notes: "" },
     fields: [
-      { name: "title", label: "Job title", required: true },
-      { name: "customer_name", label: "Customer name" },
-      { name: "address", label: "Job address", required: true },
-      { name: "scheduled_date", label: "Scheduled date", type: "datetime-local", required: true },
-      { name: "job_type", label: "Job type", placeholder: "other" },
-      { name: "price", label: "Price", type: "number", step: "0.01" },
-      { name: "notes", label: "Notes", type: "textarea" },
+      ["title", "Job title", "text", true],
+      ["customer_name", "Customer name"],
+      ["address", "Job address", "text", true],
+      ["scheduled_date", "Scheduled date", "datetime-local", true],
+      ["job_type", "Job type"],
+      ["price", "Price", "number"],
+      ["notes", "Notes", "textarea"],
     ],
     payload: (v) => ({
       title: v.title,
@@ -389,13 +132,7 @@ const forms = {
     submit: "Add client",
     endpoint: "/clients",
     defaults: { name: "", email: "", phone: "", address: "", notes: "" },
-    fields: [
-      { name: "name", label: "Client name", required: true },
-      { name: "email", label: "Email", type: "email" },
-      { name: "phone", label: "Phone" },
-      { name: "address", label: "Address" },
-      { name: "notes", label: "Notes", type: "textarea" },
-    ],
+    fields: [["name", "Client name", "text", true], ["email", "Email", "email"], ["phone", "Phone"], ["address", "Address"], ["notes", "Notes", "textarea"]],
     payload: (v) => v,
   },
   new_quote: {
@@ -403,36 +140,16 @@ const forms = {
     submit: "Create quote",
     endpoint: "/quotes",
     defaults: { customer_name: "", customer_email: "", address: "", job_description: "", price: "" },
-    fields: [
-      { name: "customer_name", label: "Customer name", required: true },
-      { name: "customer_email", label: "Customer email", type: "email" },
-      { name: "address", label: "Address", required: true },
-      { name: "job_description", label: "Job description", type: "textarea", required: true },
-      { name: "price", label: "Quote price", type: "number", step: "0.01", required: true },
-    ],
-    payload: (v) => ({
-      ...v,
-      price: Number(v.price || 0),
-      job_type: "other",
-      pricing_type: "fixed",
-    }),
+    fields: [["customer_name", "Customer name", "text", true], ["customer_email", "Customer email", "email"], ["address", "Address", "text", true], ["job_description", "Job description", "textarea", true], ["price", "Quote price", "number", true]],
+    payload: (v) => ({ ...v, price: Number(v.price || 0), job_type: "other", pricing_type: "fixed" }),
   },
   new_invoice: {
     title: "Create invoice",
     submit: "Create invoice",
     endpoint: "/invoices",
     defaults: { customer_name: "", customer_email: "", address: "", description: "", subtotal: "" },
-    fields: [
-      { name: "customer_name", label: "Customer name", required: true },
-      { name: "customer_email", label: "Customer email", type: "email" },
-      { name: "address", label: "Address" },
-      { name: "description", label: "Invoice description", type: "textarea", required: true },
-      { name: "subtotal", label: "Subtotal", type: "number", step: "0.01", required: true },
-    ],
-    payload: (v) => ({
-      ...v,
-      subtotal: Number(v.subtotal || 0),
-    }),
+    fields: [["customer_name", "Customer name", "text", true], ["customer_email", "Customer email", "email"], ["address", "Address"], ["description", "Invoice description", "textarea", true], ["subtotal", "Subtotal", "number", true]],
+    payload: (v) => ({ ...v, subtotal: Number(v.subtotal || 0) }),
   },
   new_worker: {
     title: "Invite worker",
@@ -440,14 +157,336 @@ const forms = {
     endpoint: "/team/workers",
     fallbackEndpoints: ["/team/invite", "/workers"],
     defaults: { name: "", email: "", phone: "" },
-    fields: [
-      { name: "name", label: "Worker name", required: true },
-      { name: "email", label: "Worker email", type: "email", required: true },
-      { name: "phone", label: "Phone" },
-    ],
+    fields: [["name", "Worker name", "text", true], ["email", "Worker email", "email", true], ["phone", "Phone"]],
     payload: (v) => ({ ...v, role: "worker" }),
   },
 };
+
+function buildActionItem(action, index) {
+  return {
+    id: actionId(action) || `action-${index}`,
+    icon: Sparkles,
+    title: action.title || "AI prepared action",
+    subtitle: action.summary || action.reason || "Ready for owner review.",
+    badge: titleCase(action.module || action.action_type || "AI"),
+    fields: [["Type", titleCase(action.action_type || "Action")], ["Risk", titleCase(action.risk_level || "Low")], ["Status", titleCase(action.queue_status || action.status || "Pending")]],
+    raw: action,
+    isAction: true,
+  };
+}
+
+function buildJobItem(job, index) {
+  return {
+    id: recordId(job, `job-${index}`),
+    icon: Briefcase,
+    title: jobTitle(job),
+    subtitle: [job.customer_name || job.client_name || "No client", job.address || job.job_address || "No address"].join(" • "),
+    badge: titleCase(job.status || job.job_status || "New"),
+    fields: [["Worker", job.assigned_worker_name || job.worker_name || "Unassigned"], ["Scheduled", dateText(job.scheduled_date || job.date || job.created_at)], ["Price", money(job.price || job.total || job.amount)]],
+    raw: job,
+  };
+}
+
+function buildClientItem(client, index) {
+  return {
+    id: recordId(client, `client-${index}`),
+    icon: Users,
+    title: clientTitle(client),
+    subtitle: [client.email || "No email", client.phone || "No phone"].join(" • "),
+    badge: client.ai_review_needed ? "Review" : "Client",
+    fields: [["Address", client.address || "Missing"], ["Email", client.email || "Missing"], ["Phone", client.phone || "Missing"]],
+    raw: client,
+  };
+}
+
+function buildWorkerItem(worker, index) {
+  return {
+    id: recordId(worker, `worker-${index}`),
+    icon: Users,
+    title: workerTitle(worker),
+    subtitle: [titleCase(worker.role || "Worker"), worker.email || "No email"].join(" • "),
+    badge: worker.active === false ? "Inactive" : titleCase(worker.role || "Worker"),
+    fields: [["Phone", worker.phone || "Missing"], ["Area", worker.region || worker.area || "Missing"], ["Status", titleCase(worker.status || "Active")]],
+    raw: worker,
+  };
+}
+
+function buildQuoteItem(quote, index) {
+  return {
+    id: recordId(quote, `quote-${index}`),
+    icon: FileText,
+    title: quoteTitle(quote),
+    subtitle: quote.customer_name || quote.client_name || quote.job_description || "Quote record",
+    badge: titleCase(quote.status || "Draft"),
+    fields: [["Value", money(quote.total || quote.price || quote.amount)], ["Client", quote.customer_name || quote.client_name || "Missing"], ["Updated", dateText(quote.updated_at || quote.created_at)]],
+    raw: quote,
+  };
+}
+
+function buildInvoiceItem(invoice, index) {
+  return {
+    id: recordId(invoice, `invoice-${index}`),
+    icon: DollarSign,
+    title: invoiceTitle(invoice),
+    subtitle: invoice.customer_name || invoice.client_name || invoice.description || "Invoice record",
+    badge: titleCase(invoice.status || "Draft"),
+    fields: [["Total", money(invoice.total || invoice.amount || invoice.subtotal)], ["Client", invoice.customer_name || invoice.client_name || "Missing"], ["Updated", dateText(invoice.updated_at || invoice.created_at)]],
+    raw: invoice,
+  };
+}
+
+function buildSimpleItem(item, index, icon = Sparkles) {
+  return {
+    id: recordId(item, `simple-${index}`),
+    icon,
+    title: item.title || item.name || "Item",
+    subtitle: item.summary || item.copy || item.description || "Live business item",
+    badge: titleCase(item.status || "Open"),
+    fields: item.fields || [],
+    raw: item,
+  };
+}
+
+function StatCard({ icon: Icon, label, value, copy }) {
+  return (
+    <button type="button" className="v3-workspace-card">
+      <Icon size={18} />
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{copy}</small>
+    </button>
+  );
+}
+
+function RealItem({ entry, onClick }) {
+  const Icon = entry.icon || Sparkles;
+  return (
+    <button type="button" className="v3-real-item" onClick={onClick}>
+      <div className="v3-live-icon"><Icon size={18} /></div>
+      <div className="v3-real-item-body">
+        <div className="v3-real-item-head">
+          <div>
+            <b>{entry.title}</b>
+            <span>{entry.subtitle}</span>
+          </div>
+          <small>{entry.badge}</small>
+        </div>
+        <div className="v3-real-fields">
+          {(entry.fields || []).map(([label, value]) => (
+            <div key={label}>
+              <small>{label}</small>
+              <b>{value || "—"}</b>
+            </div>
+          ))}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function EmptyState({ title, copy }) {
+  return (
+    <div className="v3-empty">
+      <b>{title}</b>
+      <span>{copy}</span>
+    </div>
+  );
+}
+
+function FormModal({ form, values, setValues, saving, onClose, onSubmit }) {
+  if (!form) return null;
+  const set = (key, value) => setValues((current) => ({ ...current, [key]: value }));
+
+  return (
+    <div className="v3-modal-backdrop" onClick={onClose}>
+      <div className="v3-modal" onClick={(event) => event.stopPropagation()}>
+        <div className="v3-modal-head">
+          <div>
+            <p className="v3-eyebrow">Quick action</p>
+            <h2>{form.title}</h2>
+          </div>
+          <button type="button" className="v3-icon-button" onClick={onClose}><X size={18} /></button>
+        </div>
+
+        <form className="v3-action-form" onSubmit={onSubmit}>
+          {form.fields.map(([name, label, type = "text", required = false]) => (
+            <label key={name}>
+              <span>{label}</span>
+              {type === "textarea" ? (
+                <textarea value={values[name] || ""} onChange={(event) => set(name, event.target.value)} required={required} />
+              ) : (
+                <input type={type} value={values[name] || ""} onChange={(event) => set(name, event.target.value)} required={required} step={type === "number" ? "0.01" : undefined} />
+              )}
+            </label>
+          ))}
+
+          <div className="v3-actions">
+            <button type="submit" className="v3-button dark" disabled={saving}>{saving ? "Saving…" : form.submit}</button>
+            <button type="button" className="v3-button secondary" onClick={onClose}>Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function DetailModal({ selected, onClose, onApprove, busyActionId, onAskAi }) {
+  if (!selected) return null;
+  const item = selected.raw || {};
+  const isAction = selected.isAction || Boolean(item.action_type);
+  const id = actionId(item);
+
+  return (
+    <div className="v3-modal-backdrop" onClick={onClose}>
+      <div className="v3-modal" onClick={(event) => event.stopPropagation()}>
+        <div className="v3-modal-head">
+          <div>
+            <p className="v3-eyebrow">{isAction ? "AI prepared this" : "Record details"}</p>
+            <h2>{selected.title}</h2>
+          </div>
+          <button type="button" className="v3-icon-button" onClick={onClose}><X size={18} /></button>
+        </div>
+
+        <div className="v3-modal-body">
+          <p>{selected.subtitle}</p>
+
+          <div className="v3-detail-grid">
+            {(selected.fields || []).map(([label, value]) => (
+              <div key={label}>
+                <small>{label}</small>
+                <b>{value || "—"}</b>
+              </div>
+            ))}
+          </div>
+
+          {isAction ? (
+            <div className="v3-actions">
+              <button type="button" className="v3-button dark" onClick={() => onApprove(item)} disabled={busyActionId === id}>
+                {busyActionId === id ? "Doing it…" : "Approve and do it"}
+              </button>
+              <button type="button" className="v3-button secondary" onClick={onClose}>Not now</button>
+            </div>
+          ) : (
+            <div className="v3-actions">
+              <button type="button" className="v3-button" onClick={onAskAi}>
+                <Sparkles size={18} /> Ask AI to handle next step
+              </button>
+              <button type="button" className="v3-button secondary" onClick={onClose}>Close</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function buildView({ key, actions, jobs, quotes, invoices, clients, workers, billing }) {
+  const pendingActions = actions.filter((a) => ["pending", "edited", "needs_review", ""].includes(lower(a.status || a.queue_status)));
+  const unassignedJobs = jobs.filter((job) => !hasWorker(job) && !isCompletedJob(job));
+  const activeJobs = jobs.filter((job) => ["assigned", "acknowledged", "in_progress", "started", "active", "paused"].includes(jobStatus(job)));
+  const completedJobs = jobs.filter(isCompletedJob);
+  const proofNeededJobs = completedJobs.filter((job) => !hasProof(job) || job.ai_proof_review_needed);
+  const proofReadyJobs = completedJobs.filter(hasProof);
+  const openQuotes = quotes.filter((quote) => ["draft", "sent", "pending"].includes(quoteStatus(quote)));
+  const acceptedQuotes = quotes.filter((quote) => ["accepted", "approved"].includes(quoteStatus(quote)));
+  const moneyItems = invoices.filter((invoice) => ["draft", "sent", "overdue", "unpaid", "pending"].includes(invoiceStatus(invoice)));
+  const paidInvoices = invoices.filter((invoice) => ["paid", "complete", "completed"].includes(invoiceStatus(invoice)));
+  const messageActions = pendingActions.filter((a) => ["prepare_quote_follow_up", "prepare_invoice_reminder"].includes(a.action_type));
+
+  const statsMap = {
+    decisions: [[Sparkles, "AI actions", pendingActions.length, "Waiting for owner"], [Calendar, "Dispatch", pendingActions.filter((a) => a.module === "dispatch").length, "Crew actions"], [DollarSign, "Money", pendingActions.filter((a) => a.module === "invoices").length, "Invoice actions"], [MessageSquare, "Messages", messageActions.length, "Draft comms"]],
+    jobs: [[Briefcase, "All jobs", jobs.length, "Live jobs"], [AlertTriangle, "Unassigned", unassignedJobs.length, "Needs worker"], [Clock, "Active", activeJobs.length, "In field"], [CheckCircle2, "Completed", completedJobs.length, "Proof/pay ready"]],
+    dispatch: [[AlertTriangle, "Needs crew", unassignedJobs.length, "Unassigned jobs"], [Users, "Workers", workers.length, "Crew records"], [Clock, "Active jobs", activeJobs.length, "In field"], [Sparkles, "AI matches", pendingActions.filter((a) => a.action_type === "assign_worker_to_job").length, "Ready"]],
+    clients: [[Users, "Clients", clients.length, "Records"], [AlertTriangle, "Missing email", clients.filter((c) => !c.email).length, "Cleanup"], [AlertTriangle, "Missing phone", clients.filter((c) => !c.phone).length, "Cleanup"], [AlertTriangle, "Missing address", clients.filter((c) => !c.address).length, "Cleanup"]],
+    quotes: [[FileText, "Quotes", quotes.length, "Total"], [Clock, "Open", openQuotes.length, "Need movement"], [CheckCircle2, "Accepted", acceptedQuotes.length, "Won work"], [Sparkles, "Follow-ups", messageActions.filter((a) => a.action_type === "prepare_quote_follow_up").length, "AI drafts"]],
+    invoices: [[DollarSign, "Invoices", invoices.length, "Total"], [AlertTriangle, "Money items", moneyItems.length, "Need attention"], [CheckCircle2, "Paid", paidInvoices.length, "Collected"], [Sparkles, "Reminders", messageActions.filter((a) => a.action_type === "prepare_invoice_reminder").length, "AI drafts"]],
+    team: [[Users, "Workers", workers.length, "Crew"], [AlertTriangle, "Missing email", workers.filter((w) => !w.email).length, "Cleanup"], [AlertTriangle, "Missing phone", workers.filter((w) => !w.phone).length, "Cleanup"], [Calendar, "Crew gaps", unassignedJobs.length, "Jobs need worker"]],
+    payroll: [[CreditCard, "Workers", workers.length, "Pay records"], [CheckCircle2, "Completed jobs", completedJobs.length, "Pay source"], [AlertTriangle, "Needs review", completedJobs.filter((j) => !j.payroll_reviewed && !j.payroll_review_needed).length, "AI can flag"], [Clock, "Flagged", completedJobs.filter((j) => j.payroll_review_needed).length, "Payroll ready"]],
+    rules: [[Zap, "AI actions", pendingActions.length, "Prepared"], [Calendar, "Dispatch rules", pendingActions.filter((a) => a.module === "dispatch").length, "Crew"], [DollarSign, "Money rules", pendingActions.filter((a) => a.module === "invoices").length, "Billing"], [MessageSquare, "Message rules", messageActions.length, "Comms"]],
+    reports: [[CheckCircle2, "Completed", completedJobs.length, "Jobs finished"], [AlertTriangle, "Unassigned", unassignedJobs.length, "Needs action"], [FileText, "Open quotes", openQuotes.length, "Pipeline"], [DollarSign, "Money items", moneyItems.length, "Cashflow"]],
+    messages: [[MessageSquare, "Drafts", messageActions.length, "AI prepared"], [FileText, "Quote follow-ups", messageActions.filter((a) => a.action_type === "prepare_quote_follow_up").length, "Sales"], [DollarSign, "Invoice reminders", messageActions.filter((a) => a.action_type === "prepare_invoice_reminder").length, "Money"], [ShieldCheck, "Auto-send", billing?.auto_send_customer_messages ? "On" : "Off", "Owner controlled"]],
+    integrations: [[Plug, "MYOB", billing?.myob_enabled ? "On" : "Off", "Plan access"], [DollarSign, "Invoices", invoices.length, "Sync candidates"], [Users, "Clients", clients.length, "Customer data"], [AlertTriangle, "Missing data", clients.filter((c) => !c.email || !c.phone || !c.address).length, "Cleanup"]],
+    plans: [[CreditCard, "Plan", titleCase(billing?.plan || "Solo"), "Current"], [Users, "Team used", billing?.team_count ?? workers.length, "Workers"], [MessageSquare, "SMS credits", billing?.sms_credits ?? 0, "Available"], [Users, "50 blocks", billing?.extra_50_user_blocks ?? 0, "Enterprise add-ons"]],
+    settings: [[Settings, "Clients", clients.length, "Setup data"], [Users, "Workers", workers.length, "Team setup"], [Sparkles, "AI actions", pendingActions.length, "Automation"], [AlertTriangle, "Missing data", clients.filter((c) => !c.email || !c.phone || !c.address).length, "Cleanup"]],
+    proof: [[CheckCircle2, "Completed", completedJobs.length, "Finished"], [AlertTriangle, "Needs proof", proofNeededJobs.length, "Missing proof"], [CheckCircle2, "Proof ready", proofReadyJobs.length, "Photos saved"], [DollarSign, "Invoice drafts", pendingActions.filter((a) => a.action_type === "create_draft_invoice").length, "AI ready"]],
+  };
+
+  const reportItems = [
+    { title: "Jobs completed", summary: `${completedJobs.length} jobs completed`, status: "live", fields: [["Count", completedJobs.length], ["Next", "Proof + invoice"]] },
+    { title: "Unassigned jobs", summary: `${unassignedJobs.length} jobs need a worker`, status: unassignedJobs.length ? "needs action" : "clear", fields: [["Count", unassignedJobs.length], ["Next", "Dispatch"]] },
+    { title: "Open quotes", summary: `${openQuotes.length} quotes need movement`, status: openQuotes.length ? "active" : "clear", fields: [["Count", openQuotes.length], ["Next", "Follow-up"]] },
+    { title: "Money to collect", summary: `${moneyItems.length} invoices need attention`, status: moneyItems.length ? "active" : "clear", fields: [["Count", moneyItems.length], ["Next", "Reminder"]] },
+  ];
+
+  const integrationItems = [
+    { title: "MYOB sync readiness", summary: "Check invoice/customer readiness before accounting handoff.", status: billing?.myob_enabled ? "enabled" : "locked", fields: [["Invoices", invoices.length], ["Clients", clients.length], ["MYOB", billing?.myob_enabled ? "Enabled" : "Plan locked"]] },
+    { title: "Invoice handoff", summary: `${moneyItems.length} invoice items may need sync or reminder review.`, status: "ready", fields: [["Money items", moneyItems.length], ["Paid", paidInvoices.length]] },
+    { title: "Data cleanup", summary: "Missing client fields can block clean sync.", status: "review", fields: [["Missing email", clients.filter((c) => !c.email).length], ["Missing phone", clients.filter((c) => !c.phone).length]] },
+  ];
+
+  const planItems = [
+    { title: "Current plan", summary: `${titleCase(billing?.plan || "solo")} plan • ${billing?.plan_status || "active"}`, status: "plan", fields: [["Plan", titleCase(billing?.plan || "solo")], ["Status", titleCase(billing?.plan_status || "active")]] },
+    { title: "Team capacity", summary: `${billing?.team_count ?? workers.length} used from ${billing?.max_workers ?? "plan"} allowed.`, status: billing?.can_buy_50_user_blocks ? "50 blocks available" : "plan limit", fields: [["Used", billing?.team_count ?? workers.length], ["Allowed", billing?.max_workers ?? "Plan"], ["Blocks", billing?.extra_50_user_blocks ?? 0]] },
+    { title: "SMS credits", summary: `${billing?.sms_credits ?? 0} SMS credits available.`, status: billing?.sms_enabled ? "enabled" : "locked", fields: [["Credits", billing?.sms_credits ?? 0], ["100 pack", "$10"], ["500 pack", "$45"]] },
+    { title: "50-user blocks", summary: billing?.can_buy_50_user_blocks ? "Enterprise can add $100 / 50-user blocks." : "50-user blocks are Enterprise-only.", status: billing?.can_buy_50_user_blocks ? "available" : "locked", fields: [["Block size", "50"], ["Price", "$100"], ["Owned", billing?.extra_50_user_blocks ?? 0]] },
+  ];
+
+  const settingItems = [
+    { title: "Business profile", summary: "Company details, trade type and setup defaults.", status: "setup", fields: [["Clients", clients.length], ["Workers", workers.length]] },
+    { title: "AI Operator", summary: "Approval-first AI controls and auto-run settings.", status: "owner controlled", fields: [["Queue", pendingActions.length], ["Mode", "Safe"]] },
+    { title: "Data quality", summary: `${clients.filter((c) => !c.email || !c.phone || !c.address).length} client records need cleanup.`, status: "review", fields: [["Missing data", clients.filter((c) => !c.email || !c.phone || !c.address).length], ["AI can flag", "Yes"]] },
+  ];
+
+  const messageItems = [
+    ...messageActions.map(buildActionItem),
+    ...invoices.filter((i) => i.ai_reminder_draft).map((invoice, i) => buildSimpleItem({
+      title: `Invoice reminder for ${invoice.customer_name || invoice.client_name || "client"}`,
+      summary: invoice.ai_reminder_draft,
+      status: "draft",
+      fields: [["Invoice", invoiceTitle(invoice)], ["Total", money(invoice.total || invoice.subtotal)]],
+    }, `invoice-message-${i}`, MessageSquare)),
+    ...quotes.filter((q) => q.ai_follow_up_draft).map((quote, i) => buildSimpleItem({
+      title: `Quote follow-up for ${quote.customer_name || quote.client_name || "client"}`,
+      summary: quote.ai_follow_up_draft,
+      status: "draft",
+      fields: [["Quote", quoteTitle(quote)], ["Value", money(quote.total || quote.price)]],
+    }, `quote-message-${i}`, MessageSquare)),
+  ];
+
+  const viewMap = {
+    decisions: { mainTitle: "Owner approval queue", mainCopy: "Approve, reject or open AI Operator HQ to edit/delete.", mainItems: pendingActions.map(buildActionItem), sideTitle: "Decision groups", sideItems: [
+      { title: "Dispatch decisions", summary: `${pendingActions.filter((a) => a.module === "dispatch").length} crew actions`, status: "crew" },
+      { title: "Invoice decisions", summary: `${pendingActions.filter((a) => a.module === "invoices").length} money actions`, status: "money" },
+      { title: "Proof decisions", summary: `${pendingActions.filter((a) => a.module === "proof").length} proof actions`, status: "proof" },
+    ].map((i, idx) => buildSimpleItem(i, idx, Sparkles)), emptyTitle: "No AI decisions waiting", emptyCopy: "Run AI to prepare owner work." },
+    jobs: { mainTitle: "All jobs", mainCopy: "Real jobs with client, address, worker, schedule and price.", mainItems: jobs.map(buildJobItem), sideTitle: "Needs attention", sideItems: [...unassignedJobs.map(buildJobItem), ...completedJobs.slice(0, 6).map(buildJobItem)], emptyTitle: "No jobs found", emptyCopy: "Create a job and AI will help dispatch/proof/invoice it." },
+    dispatch: { mainTitle: "Unassigned jobs", mainCopy: "Jobs that need worker assignment.", mainItems: unassignedJobs.map(buildJobItem), sideTitle: "Crew available", sideItems: workers.map(buildWorkerItem), emptyTitle: "No jobs need dispatch", emptyCopy: "Dispatch is clear." },
+    clients: { mainTitle: "Client records", mainCopy: "Customer contact details, address and missing data.", mainItems: clients.map(buildClientItem), sideTitle: "Needs cleanup", sideItems: clients.filter((c) => !c.email || !c.phone || !c.address).map(buildClientItem), emptyTitle: "No clients found", emptyCopy: "Add or import clients." },
+    quotes: { mainTitle: "Quote pipeline", mainCopy: "Draft, sent, pending and accepted quotes.", mainItems: quotes.map(buildQuoteItem), sideTitle: "Needs follow-up", sideItems: openQuotes.map(buildQuoteItem), emptyTitle: "No quotes found", emptyCopy: "Create quotes and AI will follow them up." },
+    invoices: { mainTitle: "Invoice money board", mainCopy: "Draft, sent, unpaid, overdue and paid invoices.", mainItems: invoices.map(buildInvoiceItem), sideTitle: "Needs money action", sideItems: moneyItems.map(buildInvoiceItem), emptyTitle: "No invoices found", emptyCopy: "Create invoices or let AI draft from completed jobs." },
+    team: { mainTitle: "Team and workers", mainCopy: "Crew records, roles, region, contact and dispatch readiness.", mainItems: workers.map(buildWorkerItem), sideTitle: "Profile cleanup", sideItems: workers.filter((w) => !w.email || !w.phone || (!w.region && !w.area)).map(buildWorkerItem), emptyTitle: "No team members found", emptyCopy: "Invite workers so AI can dispatch jobs." },
+    payroll: { mainTitle: "Payroll review", mainCopy: "Completed jobs and workers feeding pay review.", mainItems: completedJobs.map(buildJobItem), sideTitle: "Workers", sideItems: workers.map(buildWorkerItem), emptyTitle: "No payroll data ready", emptyCopy: "Completed jobs and worker time will appear here." },
+    rules: { mainTitle: "Automation rules/actions", mainCopy: "AI-prepared business rules and background checks.", mainItems: pendingActions.map(buildActionItem), sideTitle: "Rule groups", sideItems: [
+      { title: "Dispatch automation", summary: "Assign and review unassigned jobs.", status: "crew" },
+      { title: "Money automation", summary: "Draft invoices and reminders.", status: "cashflow" },
+      { title: "Proof automation", summary: "Flag missing proof photos.", status: "proof" },
+    ].map((i, idx) => buildSimpleItem(i, idx, Zap)), emptyTitle: "No automation actions waiting", emptyCopy: "Run AI Operator to prepare actions." },
+    reports: { mainTitle: "Owner numbers", mainCopy: "Real operational metrics from jobs, quotes, invoices and crew.", mainItems: reportItems.map((i, idx) => buildSimpleItem(i, idx, ShieldCheck)), sideTitle: "Actionable numbers", sideItems: reportItems.filter((i) => i.status !== "clear").map((i, idx) => buildSimpleItem(i, idx, ShieldCheck)), emptyTitle: "No report data yet", emptyCopy: "Reports fill as work is added." },
+    messages: { mainTitle: "Drafted customer messages", mainCopy: "AI-prepared quote follow-ups and invoice reminders.", mainItems: messageItems, sideTitle: "Message sources", sideItems: [
+      { title: "Quote follow-ups", summary: `${messageActions.filter((a) => a.action_type === "prepare_quote_follow_up").length} waiting`, status: "quotes" },
+      { title: "Invoice reminders", summary: `${messageActions.filter((a) => a.action_type === "prepare_invoice_reminder").length} waiting`, status: "invoices" },
+    ].map((i, idx) => buildSimpleItem(i, idx, MessageSquare)), emptyTitle: "No message drafts waiting", emptyCopy: "AI will prepare reminders and follow-ups here." },
+    integrations: { mainTitle: "Integration readiness", mainCopy: "MYOB, invoice handoff and sync data quality.", mainItems: integrationItems.map((i, idx) => buildSimpleItem(i, idx, Plug)), sideTitle: "Sync candidates", sideItems: moneyItems.map(buildInvoiceItem), emptyTitle: "No sync items waiting", emptyCopy: "Connect MYOB/sync when ready." },
+    plans: { mainTitle: "Billing, SMS and user blocks", mainCopy: "Secure billing status, SMS credits and 50-user Enterprise blocks.", mainItems: planItems.map((i, idx) => buildSimpleItem(i, idx, CreditCard)), sideTitle: "Billing actions", sideItems: planItems.slice(1).map((i, idx) => buildSimpleItem(i, idx, CreditCard)), emptyTitle: "Billing data not loaded", emptyCopy: "Billing should load from secure backend endpoints." },
+    settings: { mainTitle: "Business setup", mainCopy: "Business setup, AI controls and data quality.", mainItems: settingItems.map((i, idx) => buildSimpleItem(i, idx, Settings)), sideTitle: "Setup cleanup", sideItems: clients.filter((c) => !c.email || !c.phone || !c.address).slice(0, 8).map(buildClientItem), emptyTitle: "No settings actions waiting", emptyCopy: "Setup controls and AI checks live here." },
+    proof: { mainTitle: "Proof packs", mainCopy: "Completed jobs needing proof or invoice readiness.", mainItems: proofNeededJobs.map(buildJobItem), sideTitle: "Proof ready", sideItems: proofReadyJobs.map(buildJobItem), emptyTitle: "No proof packs waiting", emptyCopy: "Completed jobs missing proof will show here." },
+  };
+
+  return {
+    ...(viewMap[key] || viewMap.jobs),
+    stats: (statsMap[key] || statsMap.jobs).map(([icon, label, value, copy]) => ({ icon, label, value, copy })),
+  };
+}
 
 export default function V3WorkspacePage({ type }) {
   const navigate = useNavigate();
@@ -457,11 +496,12 @@ export default function V3WorkspacePage({ type }) {
     const clean = safe(section || type || "jobs").toLowerCase().replace(/[^a-z]/g, "");
     if (clean === "automation") return "rules";
     if (clean === "sms") return "messages";
+    if (clean === "sync") return "integrations";
+    if (clean === "billing") return "plans";
     return PAGE_META[clean] ? clean : "jobs";
   }, [section, type]);
 
   const meta = PAGE_META[key] || PAGE_META.jobs;
-  const HeroIcon = meta.icon || Sparkles;
 
   const [actions, setActions] = useState([]);
   const [jobs, setJobs] = useState([]);
@@ -479,76 +519,18 @@ export default function V3WorkspacePage({ type }) {
   const [activeFormKey, setActiveFormKey] = useState("");
   const [formValues, setFormValues] = useState({});
 
-  const pendingActions = useMemo(() => actions.filter((a) => ["pending", "edited", "needs_review", ""].includes(lower(a.status))), [actions]);
-  const unassignedJobs = useMemo(() => jobs.filter((job) => !hasWorker(job) && !isCompletedJob(job)), [jobs]);
-  const completedJobs = useMemo(() => jobs.filter(isCompletedJob), [jobs]);
-  const proofJobs = useMemo(() => completedJobs.filter((job) => !hasProof(job) || job.ai_proof_review_needed), [completedJobs]);
-  const openQuotes = useMemo(() => quotes.filter((quote) => ["draft", "sent", "pending"].includes(lower(quote.status))), [quotes]);
-  const moneyItems = useMemo(() => invoices.filter((invoice) => ["draft", "sent", "overdue", "unpaid", "pending"].includes(lower(invoice.status))), [invoices]);
-
-  const messageItems = useMemo(() => {
-    const aiMessages = pendingActions.filter((action) => ["prepare_quote_follow_up", "prepare_invoice_reminder"].includes(action.action_type));
-    const invoiceDrafts = invoices.filter((invoice) => invoice.ai_reminder_draft).map((invoice) => ({
-      title: `Invoice reminder for ${invoice.customer_name || invoice.client_name || "client"}`,
-      summary: invoice.ai_reminder_draft,
-      status: "draft",
-    }));
-    const quoteDrafts = quotes.filter((quote) => quote.ai_follow_up_draft).map((quote) => ({
-      title: `Quote follow-up for ${quote.customer_name || quote.client_name || "client"}`,
-      summary: quote.ai_follow_up_draft,
-      status: "draft",
-    }));
-    return [...aiMessages, ...invoiceDrafts, ...quoteDrafts];
-  }, [pendingActions, invoices, quotes]);
-
-  const reportItems = useMemo(() => ([
-    { title: "Jobs completed", summary: `${completedJobs.length} completed jobs`, status: "live" },
-    { title: "Unassigned jobs", summary: `${unassignedJobs.length} jobs need a worker`, status: unassignedJobs.length ? "needs review" : "clear" },
-    { title: "Open quotes", summary: `${openQuotes.length} quotes need movement`, status: openQuotes.length ? "active" : "clear" },
-    { title: "Money to collect", summary: `${moneyItems.length} invoices need attention`, status: moneyItems.length ? "active" : "clear" },
-    { title: "Crew size", summary: `${workers.length} workers/team records`, status: "live" },
-  ]), [completedJobs.length, unassignedJobs.length, openQuotes.length, moneyItems.length, workers.length]);
-
-  const integrationItems = useMemo(() => ([
-    { title: "MYOB sync", summary: "Connection and sync checks live here.", status: "setup" },
-    { title: "Invoice handoff", summary: `${moneyItems.length} invoice items can be reviewed for sync or follow-up.`, status: "ready" },
-    { title: "Data checks", summary: "AI watches for missing customer, invoice and job data.", status: "background" },
-  ]), [moneyItems.length]);
-
-  const plansItems = useMemo(() => ([
-    { title: "Current plan", summary: "Plan status and limits are checked here.", status: "account" },
-    { title: "Feature access", summary: "Team, SMS, MYOB and client limits stay controlled here.", status: "rules" },
-  ]), []);
-
-  const settingsItems = useMemo(() => ([
-    { title: "Business profile", summary: "Company details, trade type and default preferences.", status: "setup" },
-    { title: "Workspace rules", summary: "Approval-first AI, roles and owner controls.", status: "safe" },
-  ]), []);
-
-  const pageItems = useMemo(() => {
-    if (key === "decisions" || key === "rules") return pendingActions;
-    if (key === "jobs") return jobs;
-    if (key === "dispatch") return unassignedJobs.length ? unassignedJobs : workers;
-    if (key === "clients") return clients;
-    if (key === "quotes") return quotes;
-    if (key === "invoices") return invoices;
-    if (key === "team") return workers;
-    if (key === "payroll") return [...workers, ...completedJobs.slice(0, 8)];
-    if (key === "reports") return reportItems;
-    if (key === "messages") return messageItems;
-    if (key === "integrations") return integrationItems;
-    if (key === "plans") return plansItems;
-    if (key === "settings") return settingsItems;
-    if (key === "proof") return proofJobs;
-    return jobs;
-  }, [key, pendingActions, jobs, unassignedJobs, workers, clients, quotes, invoices, completedJobs, reportItems, messageItems, integrationItems, plansItems, settingsItems, proofJobs]);
+  const loadAiQueue = async () => {
+    const pageResult = await get(`/ai/operator/v3/pages/${key}/queue`);
+    if (pageResult.ok) return pageResult;
+    return get("/ai/operator/v3/queue");
+  };
 
   const load = async () => {
     setLoading(true);
     setNotice("");
 
     const results = await Promise.allSettled([
-      loadAiOperatorPageQueue(key),
+      loadAiQueue(),
       get("/jobs"),
       get("/quotes"),
       get("/invoices"),
@@ -557,30 +539,38 @@ export default function V3WorkspacePage({ type }) {
       get("/billing/v3/status"),
     ]);
 
-    setActions(settledValue(results[0])?.actions || []);
-    setJobs(pickArray(settledValue(results[1]), ["jobs"]));
-    setQuotes(pickArray(settledValue(results[2]), ["quotes"]));
-    setInvoices(pickArray(settledValue(results[3]), ["invoices"]));
-    setClients(pickArray(settledValue(results[4]), ["clients"]));
-    setWorkers(pickArray(settledValue(results[5]), ["workers", "team"]));
+    setActions(dataOf(settled(results[0]))?.actions || []);
+    setJobs(pickArray(settled(results[1]), ["jobs"]));
+    setQuotes(pickArray(settled(results[2]), ["quotes"]));
+    setInvoices(pickArray(settled(results[3]), ["invoices"]));
+    setClients(pickArray(settled(results[4]), ["clients"]));
+    setWorkers(pickArray(settled(results[5]), ["workers", "team"]));
+    setBilling(dataOf(settled(results[6]))?.billing || null);
     setLoading(false);
   };
 
   useEffect(() => {
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
 
-  const runAi = async (mode = "prepare") => {
+  const view = useMemo(
+    () => buildView({ key, actions, jobs, quotes, invoices, clients, workers, billing }),
+    [key, actions, jobs, quotes, invoices, clients, workers, billing]
+  );
+
+  const prepareAi = async () => {
     setAiRunning(true);
-    setNotice(mode === "prepare" ? "AI is preparing the next actions…" : "AI is checking the business…");
+    setNotice(`AI is checking ${meta.title}…`);
 
-    const result = mode === "prepare" ? await preparePageWithAi(key) : await runAiDailyCheck();
+    let result = await post(`/ai/operator/v3/pages/${key}/prepare`, {});
+    if (!result.ok) result = await post("/ai/operator/v3/prepare-today", {});
 
     if (result.ok) {
-      setActions(result.actions || []);
-      setNotice(result.data?.message || `AI finished checking ${meta.title}.`);
+      setActions(result.data?.actions || []);
+      setNotice(result.data?.message || `AI prepared ${meta.title} actions.`);
     } else {
-      setNotice(result.message || "AI could not complete that check.");
+      setNotice(result.message || "AI could not prepare actions.");
     }
 
     await load();
@@ -598,7 +588,6 @@ export default function V3WorkspacePage({ type }) {
     const result = await approveAiAction(action);
 
     if (result.ok) {
-      setActions((current) => current.filter((item) => actionId(item) !== id));
       setNotice(result.data?.message || "Approved. AI completed the action.");
       setSelected(null);
       await load();
@@ -614,24 +603,16 @@ export default function V3WorkspacePage({ type }) {
     if (!form) return;
     setActiveFormKey(formKey);
     setFormValues(form.defaults || {});
-    setSelected(null);
   };
 
-  const runPrimaryAction = () => {
-    const action = meta.action;
-    if (forms[action]) {
-      openForm(action);
+  const primaryAction = () => {
+    if (forms[meta.action]) return openForm(meta.action);
+    if (meta.action === "refresh") return load();
+    if (meta.action === "billing") {
+      setNotice("Billing controls are shown below. SMS and 50-user blocks use secure checkout.");
       return;
     }
-    if (action === "refresh") {
-      load();
-      return;
-    }
-    if (action === "info") {
-      setNotice(`${meta.title} controls are inside this V3 workspace. More live controls can be wired here without opening the old build.`);
-      return;
-    }
-    runAi("prepare");
+    return prepareAi();
   };
 
   const submitForm = async (event) => {
@@ -650,12 +631,14 @@ export default function V3WorkspacePage({ type }) {
     }
 
     if (result?.ok || result?.success) {
+      const savedForm = activeFormKey;
       setNotice(`${form.title} saved.`);
       setActiveFormKey("");
       setFormValues({});
       await load();
-      if (["new_job", "new_worker"].includes(activeFormKey)) {
-        await runAi("prepare");
+
+      if (["new_job", "new_worker", "new_quote", "new_invoice"].includes(savedForm)) {
+        await prepareAi();
       }
     } else {
       setNotice(result?.message || result?.error || `${form.title} could not be saved.`);
@@ -664,14 +647,27 @@ export default function V3WorkspacePage({ type }) {
     setSaving(false);
   };
 
-  const sectionStats = [
-    { icon: Sparkles, label: "AI decisions", value: pendingActions.length, copy: "Owner approvals", to: "/v3/decisions" },
-    { icon: AlertTriangle, label: "Unassigned jobs", value: unassignedJobs.length, copy: "AI can match crew", to: "/v3/dispatch" },
-    { icon: DollarSign, label: "Money items", value: moneyItems.length, copy: "Invoices/reminders", to: "/v3/invoices" },
-    { icon: CheckCircle2, label: "Completed jobs", value: completedJobs.length, copy: "Proof + billing", to: "/v3/proof" },
-  ];
+  const buySmsPack = async (pack) => {
+    setSaving(true);
+    const result = await post("/billing/v3/sms-pack", { pack });
+    if (result.ok && result.data?.checkout_url) {
+      window.location.href = result.data.checkout_url;
+      return;
+    }
+    setNotice(result.message || "Could not start SMS checkout.");
+    setSaving(false);
+  };
 
-  const primaryLabel = forms[meta.action]?.submit || (meta.action === "refresh" ? "Refresh data" : meta.action === "info" ? "Show controls" : "AI handle this");
+  const buyExtraBlock = async () => {
+    setSaving(true);
+    const result = await post("/billing/v3/extra-50-user-block", {});
+    if (result.ok && result.data?.checkout_url) {
+      window.location.href = result.data.checkout_url;
+      return;
+    }
+    setNotice(result.message || "Could not start 50-user block checkout.");
+    setSaving(false);
+  };
 
   return (
     <V3Shell>
@@ -684,11 +680,11 @@ export default function V3WorkspacePage({ type }) {
           </div>
 
           <div className="v3-workspace-actions">
-            <button type="button" className="v3-primary-btn" onClick={runPrimaryAction} disabled={aiRunning || saving}>
-              <Wand2 size={18} /> {aiRunning ? "Preparing…" : primaryLabel}
+            <button type="button" className="v3-primary-btn" onClick={primaryAction} disabled={aiRunning || saving}>
+              <Wand2 size={18} /> {aiRunning ? "Preparing…" : meta.primary}
             </button>
-            <button type="button" className="v3-dark-btn" onClick={() => runAi("check")} disabled={aiRunning || saving}>
-              <RefreshCw size={18} /> Check again
+            <button type="button" className="v3-dark-btn" onClick={prepareAi} disabled={aiRunning || saving}>
+              <RefreshCw size={18} /> AI check this page
             </button>
           </div>
         </section>
@@ -696,82 +692,100 @@ export default function V3WorkspacePage({ type }) {
         {notice && <div className="v3-notice">{notice}</div>}
 
         <section className="v3-workspace-grid">
-          {sectionStats.map((stat) => (
-            <StatCard key={stat.label} icon={stat.icon} label={stat.label} value={stat.value} copy={stat.copy} onClick={() => navigate(stat.to)} />
+          {view.stats.map((stat) => (
+            <StatCard key={stat.label} icon={stat.icon} label={stat.label} value={stat.value} copy={stat.copy} />
           ))}
         </section>
 
-        <section className="v3-page-specific">
-          <div className="v3-page-specific-main">
+        <section className="v3-real-page-layout">
+          <article className="v3-real-main">
             <div className="v3-card-head">
               <div>
-                <p>{loading ? "Loading live data" : meta.kicker}</p>
-                <h2>{meta.title}</h2>
+                <p>{meta.kicker}</p>
+                <h2>{view.mainTitle}</h2>
+                <span>{view.mainCopy}</span>
               </div>
-              <strong>{loading ? "…" : pageItems.length}</strong>
+              <strong>{loading ? "…" : view.mainItems.length}</strong>
             </div>
 
             {loading ? (
-              <div className="v3-empty">
-                <b>Loading {meta.title}</b>
-                <span>Checking live jobs, clients, quotes, invoices, team and AI actions.</span>
-              </div>
-            ) : pageItems.length ? (
-              <div className="v3-live-list">
-                {pageItems.slice(0, 18).map((item, index) => {
-                  const itemKey = idOf(item) || `${key}-${index}`;
-                  const isAction = Boolean(item?.action_type) || key === "decisions" || key === "rules";
-
-                  return (
-                    <button type="button" className="v3-live-item" key={itemKey} onClick={() => setSelected({ item, isAction })}>
-                      <div className="v3-live-icon">
-                        <HeroIcon size={18} />
-                      </div>
-                      <div className="v3-live-text">
-                        <b>{getItemTitle(item, key)}</b>
-                        <span>{getItemSub(item, key)}</span>
-                      </div>
-                      <small>{getBadge(item, key)}</small>
-                    </button>
-                  );
-                })}
+              <EmptyState title={`Loading ${meta.title}`} copy="Checking real records and AI actions." />
+            ) : view.mainItems.length ? (
+              <div className="v3-real-list">
+                {view.mainItems.slice(0, 30).map((entry) => (
+                  <RealItem key={entry.id} entry={entry} onClick={() => setSelected(entry)} />
+                ))}
               </div>
             ) : (
-              <div className="v3-empty">
-                <b>{meta.emptyTitle}</b>
-                <span>{meta.emptyCopy}</span>
-              </div>
+              <EmptyState title={view.emptyTitle} copy={view.emptyCopy} />
             )}
-          </div>
+          </article>
 
-          <aside className="v3-page-specific-side">
+          <aside className="v3-real-side">
             <div className="v3-card-head">
               <div>
-                <p>AI next step</p>
-                <h2>What AI can do</h2>
+                <p>Focus panel</p>
+                <h2>{view.sideTitle}</h2>
               </div>
+              <strong>{loading ? "…" : view.sideItems.length}</strong>
             </div>
 
+            {loading ? (
+              <EmptyState title="Loading focus panel" copy="Checking related records." />
+            ) : view.sideItems.length ? (
+              <div className="v3-real-list compact">
+                {view.sideItems.slice(0, 12).map((entry) => (
+                  <RealItem key={entry.id} entry={entry} onClick={() => setSelected(entry)} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="Nothing urgent" copy="AI will surface real items here when needed." />
+            )}
+
             <div className="v3-ai-stack">
-              <button type="button" onClick={() => runAi("prepare")} disabled={aiRunning}>
+              <button type="button" onClick={prepareAi} disabled={aiRunning}>
                 <Sparkles size={18} />
-                <span><b>Prepare owner actions</b><small>AI checks this page and fills the approval queue.</small></span>
+                <span>
+                  <b>AI check this page</b>
+                  <small>Prepare the right actions for this workspace.</small>
+                </span>
               </button>
 
               <button type="button" onClick={() => navigate("/v3/decisions")}>
                 <CheckCircle2 size={18} />
-                <span><b>Open approval queue</b><small>Owner taps approve, then Churvox does the work.</small></span>
+                <span>
+                  <b>Open owner queue</b>
+                  <small>Approve AI-prepared actions.</small>
+                </span>
               </button>
 
-              <button type="button" onClick={() => navigate("/v3/dispatch")}>
-                <Users size={18} />
-                <span><b>Find crew gaps</b><small>AI checks unassigned jobs and worker coverage.</small></span>
-              </button>
+              {key === "plans" && (
+                <>
+                  <button type="button" onClick={() => buySmsPack("100")} disabled={saving || billing?.billing_locked}>
+                    <MessageSquare size={18} />
+                    <span>
+                      <b>Buy 100 SMS credits</b>
+                      <small>$10 secure checkout. Owner/admin only.</small>
+                    </span>
+                  </button>
 
-              <button type="button" onClick={() => navigate("/v3/invoices")}>
-                <Clock size={18} />
-                <span><b>Prepare money follow-ups</b><small>Draft invoices and reminders stay approval-first.</small></span>
-              </button>
+                  <button type="button" onClick={() => buySmsPack("500")} disabled={saving || billing?.billing_locked}>
+                    <MessageSquare size={18} />
+                    <span>
+                      <b>Buy 500 SMS credits</b>
+                      <small>$45 secure checkout. Owner/admin only.</small>
+                    </span>
+                  </button>
+
+                  <button type="button" onClick={buyExtraBlock} disabled={saving || billing?.billing_locked || !billing?.can_buy_50_user_blocks}>
+                    <Users size={18} />
+                    <span>
+                      <b>Add 50-user block</b>
+                      <small>$100 Enterprise add-on. Locked for non-Enterprise.</small>
+                    </span>
+                  </button>
+                </>
+              )}
             </div>
           </aside>
         </section>
@@ -787,23 +801,8 @@ export default function V3WorkspacePage({ type }) {
           </div>
         </section>
 
-        <DetailModal
-          selected={selected}
-          pageKey={key}
-          busyActionId={busyActionId}
-          onClose={() => setSelected(null)}
-          onApprove={approve}
-          onAskAi={() => runAi("prepare")}
-        />
-
-        <ActionFormModal
-          form={forms[activeFormKey]}
-          values={formValues}
-          setValues={setFormValues}
-          saving={saving}
-          onClose={() => setActiveFormKey("")}
-          onSubmit={submitForm}
-        />
+        <DetailModal selected={selected} busyActionId={busyActionId} onClose={() => setSelected(null)} onApprove={approve} onAskAi={prepareAi} />
+        <FormModal form={forms[activeFormKey]} values={formValues} setValues={setFormValues} saving={saving} onClose={() => setActiveFormKey("")} onSubmit={submitForm} />
       </main>
     </V3Shell>
   );
