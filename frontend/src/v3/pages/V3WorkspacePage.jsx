@@ -273,7 +273,7 @@ function ActionFormModal({ form, values, setValues, saving, onClose, onSubmit })
                 <textarea
                   value={values[field.name] || ""}
                   onChange={(event) => set(field.name, event.target.value)}
-                  Needs real data wiring={field.Needs real data wiring || ""}
+                  placeholder={field.placeholder || ""}
                   required={field.required}
                 />
               ) : (
@@ -281,7 +281,7 @@ function ActionFormModal({ form, values, setValues, saving, onClose, onSubmit })
                   type={field.type || "text"}
                   value={values[field.name] || ""}
                   onChange={(event) => set(field.name, event.target.value)}
-                  Needs real data wiring={field.Needs real data wiring || ""}
+                  placeholder={field.placeholder || ""}
                   required={field.required}
                   step={field.step}
                 />
@@ -369,7 +369,7 @@ const forms = {
       { name: "customer_name", label: "Customer name" },
       { name: "address", label: "Job address", required: true },
       { name: "scheduled_date", label: "Scheduled date", type: "datetime-local", required: true },
-      { name: "job_type", label: "Job type", Needs real data wiring: "other" },
+      { name: "job_type", label: "Job type", placeholder: "other" },
       { name: "price", label: "Price", type: "number", step: "0.01" },
       { name: "notes", label: "Notes", type: "textarea" },
     ],
