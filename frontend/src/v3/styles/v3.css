@@ -1097,3 +1097,46 @@
     }
   }
 }
+
+
+/* === V3 REAL BUTTON WIRING === */
+.v3-action-form{
+  display:grid;
+  gap:14px;
+}
+
+.v3-action-form label{
+  display:grid;
+  gap:7px;
+}
+
+.v3-action-form label span{
+  color:var(--v3-muted);
+  font-size:12px;
+  font-weight:950;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+
+.v3-action-form input,
+.v3-action-form textarea{
+  width:100%;
+  border:1px solid var(--v3-line);
+  background:rgba(255,255,255,.76);
+  color:var(--v3-ink);
+  border-radius:18px;
+  padding:13px 14px;
+  outline:none;
+  font-weight:800;
+}
+
+.v3-action-form textarea{
+  min-height:110px;
+  resize:vertical;
+}
+
+.v3-action-form input:focus,
+.v3-action-form textarea:focus{
+  border-color:rgba(249,115,22,.72);
+  box-shadow:0 0 0 4px rgba(249,115,22,.12);
+}
