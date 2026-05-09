@@ -10,6 +10,12 @@ const PLANS = [
   { id: "enterprise", name: "Enterprise", price: "$240", subtitle: "Large crew", points: ["Up to 50 workers", "Up to 50 clients", "MYOB included", "$100 extra 50-user blocks"] },
 ];
 
+const UPGRADE_LABELS = {
+  team: "Upgrade to Team",
+  pro: "Upgrade to Pro",
+  enterprise: "Upgrade to Enterprise",
+};
+
 export default function V3BillingPage() {
   const [billing, setBilling] = useState(null);
   const [notice, setNotice] = useState("");
@@ -158,7 +164,7 @@ export default function V3BillingPage() {
                   onClick={() => upgradePlan(plan.id)}
                   disabled={locked || isCurrent || !!busy}
                 >
-                  {busy === plan.id ? "Opening checkout…" : isCurrent ? "Current plan" : `Upgrade to ${plan.name}`}
+                  {busy === plan.id ? "Opening checkout…" : isCurrent ? "Current plan" : UPGRADE_LABELS[plan.id]}
                 </button>
               </article>
             );
