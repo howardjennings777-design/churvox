@@ -12042,6 +12042,268 @@ async def billing_v3_upgrade_plan(body: dict = Body(default=None), current_user:
 # ===== V3 SECURE PLAN UPGRADE END =====
 
 
+
+# ===== WORKING V3 PLAN UPGRADES START =====
+V3_UPGRADE_PLANS = {
+    "team": {"label": "Churvox Team", "price_cents": 7000},
+    "pro": {"label": "Churvox Pro", "price_cents": 11000},
+    "enterprise": {"label": "Churvox Enterprise", "price_cents": 24000},
+}
+
+def _v3_upgrade_role(user):
+    return str((user or {}).get("role") or "").lower().strip()
+
+def _v3_upgrade_is_allowed(user):
+    role = _v3_upgrade_role(user)
+    return role in {"owner", "admin", "employer", "manager"} or is_platform_owner(user)
+
+def _v3_require_upgrade_owner(user):
+    if not _v3_upgrade_is_allowed(user):
+        raise HTTPException(status_code=403, detail="Plan upgrades are restricted to owner/admin roles")
+
+async def _v3_upgrade_business_id(user):
+    return str(await get_user_business_id(user))
+
+def _v3_price_id_for_plan(plan):
+    try:
+        return PLAN_PRICE_IDS.get(plan) or ""
+    except Exception:
+        return ""
+
+def _v3_success_cancel_urls(kind):
+    success_url = f"{FRONTEND_URL}/v3/plans?billing_success={kind}&session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{FRONTEND_URL}/v3/plans?billing_cancelled={kind}"
+    return success_url, cancel_url
+
+async def _v3_upgrade_status(current_user):
+    business_id = await _v3_upgrade_business_id(current_user)
+    settings = await db.billing_settings.find_one({"business_id": business_id}) or {}
+
+    plan = str(settings.get("plan") or current_user.get("plan") or "solo").lower().strip()
+    plan_status = str(settings.get("plan_status") or current_user.get("plan_status") or current_user.get("subscription_status") or "active")
+
+    features = get_plan_features(plan)
+    base_workers = int(features.get("max_workers") or PLAN_LIMITS.get(plan, {}).get("max_workers") or 0)
+    base_clients = int(features.get("max_clients") or PLAN_LIMITS.get(plan, {}).get("max_clients") or 0)
+
+    extra_blocks = int(settings.get("extra_50_user_blocks") or 0)
+    max_workers = base_workers + (extra_blocks * 50 if plan == "enterprise" else 0)
+
+    team_count = 0
+    try:
+        team_count = await db.users.count_documents({
+            "$or": [
+                {"business_id": business_id},
+                {"businessId": business_id},
+                {"owner_id": business_id},
+                {"ownerId": business_id},
+            ],
+            "role": {"$in": ["worker", "manager", "office_admin", "payroll"]},
+        })
+    except Exception:
+        team_count = 0
+
+    return {
+        "plan": plan,
+        "plan_status": plan_status,
+        "base_max_workers": base_workers,
+        "max_workers": max_workers,
+        "base_max_clients": base_clients,
+        "team_count": team_count,
+        "team_remaining": max(0, max_workers - team_count),
+        "extra_50_user_blocks": extra_blocks,
+        "can_buy_50_user_blocks": plan == "enterprise",
+        "sms_credits": int(settings.get("sms_credits") or 0),
+        "sms_enabled": bool(features.get("sms") or PLAN_LIMITS.get(plan, {}).get("sms")),
+        "myob_enabled": bool(features.get("myob") or PLAN_LIMITS.get(plan, {}).get("myob")),
+        "billing_locked": not _v3_upgrade_is_allowed(current_user),
+        "plans": {
+            "team": {"price": 70, "label": "Team"},
+            "pro": {"price": 110, "label": "Pro"},
+            "enterprise": {"price": 240, "label": "Enterprise"},
+        },
+    }
+
+@api_router.get("/billing/v3/status")
+async def billing_v3_status(current_user: dict = Depends(get_current_user)):
+    status = await _v3_upgrade_status(current_user)
+    return {"success": True, "ok": True, "billing": make_json_safe(status)}
+
+@api_router.post("/billing/v3/upgrade-plan")
+async def billing_v3_upgrade_plan(body: dict = Body(default=None), current_user: dict = Depends(get_current_user)):
+    _v3_require_upgrade_owner(current_user)
+
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="Stripe is not configured")
+
+    body = body or {}
+    plan = str(body.get("plan") or "").lower().strip()
+
+    if plan not in V3_UPGRADE_PLANS:
+        raise HTTPException(status_code=400, detail="Invalid upgrade plan")
+
+    business_id = await _v3_upgrade_business_id(current_user)
+    plan_data = V3_UPGRADE_PLANS[plan]
+    price_id = _v3_price_id_for_plan(plan)
+    success_url, cancel_url = _v3_success_cancel_urls(f"plan_{plan}")
+
+    metadata = {
+        "kind": "plan_upgrade",
+        "plan": plan,
+        "business_id": business_id,
+        "user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+    }
+
+    try:
+        if price_id:
+            line_items = [{"price": price_id, "quantity": 1}]
+        else:
+            line_items = [{
+                "price_data": {
+                    "currency": "nzd",
+                    "product_data": {"name": plan_data["label"]},
+                    "unit_amount": int(plan_data["price_cents"]),
+                    "recurring": {"interval": "month"},
+                },
+                "quantity": 1,
+            }]
+
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            payment_method_types=["card"],
+            line_items=line_items,
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata=metadata,
+        )
+
+        await db.billing_events.insert_one({
+            "business_id": business_id,
+            "event_type": "plan_upgrade_checkout_created",
+            "payload": make_json_safe(metadata),
+            "created_at": datetime.now(timezone.utc),
+        })
+
+        return {
+            "success": True,
+            "ok": True,
+            "message": f"{plan.title()} checkout created.",
+            "plan": plan,
+            "checkout_url": session.url,
+            "session_id": session.id,
+        }
+
+    except Exception as exc:
+        logger.error(f"V3 plan upgrade checkout failed: {exc}")
+        raise HTTPException(status_code=500, detail="Could not create plan checkout")
+
+@api_router.post("/billing/v3/confirm-checkout")
+async def billing_v3_confirm_checkout(body: dict = Body(default=None), current_user: dict = Depends(get_current_user)):
+    _v3_require_upgrade_owner(current_user)
+
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="Stripe is not configured")
+
+    body = body or {}
+    session_id = str(body.get("session_id") or "").strip()
+
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Missing session_id")
+
+    business_id = await _v3_upgrade_business_id(current_user)
+
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Could not verify checkout session")
+
+    metadata = dict(getattr(session, "metadata", {}) or {})
+    if str(metadata.get("business_id")) != str(business_id):
+        raise HTTPException(status_code=403, detail="Checkout session does not belong to this business")
+
+    payment_status = str(getattr(session, "payment_status", "") or "")
+    subscription_id = str(getattr(session, "subscription", "") or "")
+    kind = str(metadata.get("kind") or "")
+    plan = str(metadata.get("plan") or "").lower().strip()
+
+    if kind != "plan_upgrade" or plan not in V3_UPGRADE_PLANS:
+        raise HTTPException(status_code=400, detail="Unsupported checkout type")
+
+    if payment_status not in {"paid", "no_payment_required"} and not subscription_id:
+        return {"success": False, "ok": False, "message": "Checkout is not paid yet"}
+
+    now = datetime.now(timezone.utc)
+
+    await db.billing_settings.update_one(
+        {"business_id": business_id},
+        {
+            "$set": {
+                "business_id": business_id,
+                "plan": plan,
+                "plan_status": "active",
+                "subscription_status": "active",
+                "stripe_subscription_id": subscription_id,
+                "updated_at": now,
+            },
+            "$addToSet": {"confirmed_checkout_sessions": session_id},
+            "$setOnInsert": {"created_at": now},
+        },
+        upsert=True,
+    )
+
+    user_scope = {
+        "$or": [
+            {"business_id": business_id},
+            {"businessId": business_id},
+            {"owner_id": business_id},
+            {"ownerId": business_id},
+        ]
+    }
+
+    owner_oid = None
+    try:
+        owner_oid = ObjectId(business_id)
+    except Exception:
+        owner_oid = None
+
+    if owner_oid:
+        user_scope["$or"].append({"_id": owner_oid})
+
+    await db.users.update_many(
+        user_scope,
+        {"$set": {
+            "plan": plan,
+            "plan_status": "active",
+            "subscription_status": "active",
+            "stripe_subscription_id": subscription_id,
+            "updated_at": now,
+        }},
+    )
+
+    await db.billing_events.insert_one({
+        "business_id": business_id,
+        "event_type": "plan_upgrade_confirmed",
+        "payload": make_json_safe({
+            "session_id": session_id,
+            "plan": plan,
+            "stripe_subscription_id": subscription_id,
+        }),
+        "created_at": now,
+    })
+
+    status = await _v3_upgrade_status(current_user)
+    status["plan"] = plan
+    status["plan_status"] = "active"
+
+    return {
+        "success": True,
+        "ok": True,
+        "message": f"{plan.title()} plan is now active.",
+        "billing": make_json_safe(status),
+    }
+# ===== WORKING V3 PLAN UPGRADES END =====
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
