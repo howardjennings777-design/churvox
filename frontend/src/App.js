@@ -13,25 +13,6 @@ import SignupPage from "./pages/auth/SignupPage";
 import InviteSetupPage from "./pages/auth/InviteSetupPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
-import JobsPage from "./pages/jobs/JobsPage";
-import JobFormPage from "./pages/jobs/JobFormPage";
-import JobDetailPage from "./pages/jobs/JobDetailPage";
-import ClientsPage from "./pages/clients/ClientsPage";
-import ClientFormPage from "./pages/clients/ClientFormPage";
-import ClientDetailPage from "./pages/clients/ClientDetailPage";
-import QuotesPage from "./pages/quotes/QuotesPage";
-import QuoteFormPage from "./pages/quotes/QuoteFormPage";
-import QuoteDetailPage from "./pages/quotes/QuoteDetailPage";
-import InvoicesPage from "./pages/invoices/InvoicesPage";
-import InvoiceFormPage from "./pages/invoices/InvoiceFormPage";
-import InvoiceDetailPage from "./pages/invoices/InvoiceDetailPage";
-import SettingsPage from "./pages/SettingsPage";
-import ContactPage from "./pages/ContactPage";
-import PlansPage from "./pages/PlansPage";
-import CalendarPage from "./pages/CalendarPage";
-import TeamPage from "./pages/TeamPage";
-import SMSPage from "./pages/SMSPage";
-import PayrollPage from "./pages/PayrollPageClean";
 import WorkerJobsPage from "./pages/worker/WorkerJobsPage";
 import WorkerJobDetailPage from "./pages/worker/WorkerJobDetailPage";
 import OnboardingPage from "./pages/OnboardingPage";
@@ -43,19 +24,11 @@ import AdminUsagePage from "./pages/AdminUsagePage";
 import PlatformAdminRoute from "./components/admin/PlatformAdminRoute";
 import PlatformUnlock from "./pages/admin/PlatformUnlock";
 import NotificationsPage from "./pages/NotificationsPage";
-import AutomationPage from "./pages/AutomationPage";
-import AutomationRunsPage from "./pages/AutomationRunsPage";
-import ReportsPage from "./pages/ReportsPage";
-import IntegrationsPage from "./pages/IntegrationsPage";
 import PublicQuotePage from "./pages/public/PublicQuotePage";
 import PublicInvoicePage from "./pages/public/PublicInvoicePage";
 import PublicClientPortalPage from "./pages/public/PublicClientPortalPage";
-import ProofToPaidPage from "./pages/ProofToPaidPage";
 import QAAuditorPage from "./pages/admin/QAAuditorPage";
 import SmartHubHardReset from "./pages/SmartHubHardReset";
-import AIControlRoomPage from "./pages/AIControlRoomPage";
-import AIOperatorApprovalsPage from "./pages/AIOperatorApprovalsPage";
-import AIOperatorSettingsPage from "./pages/AIOperatorSettingsPage";
 import V3WorkspacePage from "./v3/pages/V3WorkspacePage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
@@ -91,52 +64,11 @@ function BusinessRoute({ children }) {
   return children;
 }
 
-function OwnerRoute({ children }) {
-  const { user, loading, isOwnerUser, isWorker, isPayroll, normalizedRole } = useAuth();
-  if (loading) return <Spinner />;
-  if (!user) return <Navigate to="/login" replace />;
-  if (isWorker) return <Navigate to="/worker/jobs" replace />;
-  if (isPayroll) return <Navigate to="/payroll" replace />;
-  if (!isOwnerUser) return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
-  return children;
-}
-
-function TeamRoute({ children }) {
-  const { user, loading, isWorker, isPayroll, hasAppAccess, normalizedRole } = useAuth();
-  if (loading) return <Spinner />;
-  if (!user) return <Navigate to="/login" replace />;
-  if (isWorker) return <Navigate to="/worker/jobs" replace />;
-  if (isPayroll) return <Navigate to="/payroll" replace />;
-  if (!hasAppAccess) return <Navigate to="/plans" replace />;
-  if (normalizedRole !== "owner" && normalizedRole !== "manager") return <Navigate to="/dashboard" replace />;
-  return children;
-}
-
 function WorkerRoute({ children }) {
   const { user, loading, isWorker } = useAuth();
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace />;
   if (!isWorker) return <Navigate to="/dashboard" replace />;
-  return children;
-}
-
-function PayrollRoute({ children }) {
-  const { user, loading, normalizedRole } = useAuth();
-  if (loading) return <Spinner />;
-  if (!user) return <Navigate to="/login" replace />;
-  if (normalizedRole !== "owner" && normalizedRole !== "manager" && normalizedRole !== "payroll") {
-    return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
-  }
-  return children;
-}
-
-function ReportsRoute({ children }) {
-  const { user, loading, normalizedRole } = useAuth();
-  if (loading) return <Spinner />;
-  if (!user) return <Navigate to="/login" replace />;
-  if (!["owner", "manager", "office_admin"].includes(normalizedRole)) {
-    return <Navigate to={getDefaultRoute(normalizedRole)} replace />;
-  }
   return children;
 }
 
@@ -165,22 +97,6 @@ const SmartHubRoute = () => (
   <BusinessRoute>
     <ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login">
       <SmartHubHardReset />
-    </ErrorBoundary>
-  </BusinessRoute>
-);
-
-const AIControlRoomRoute = () => (
-  <BusinessRoute>
-    <ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login">
-      <AIControlRoomPage />
-    </ErrorBoundary>
-  </BusinessRoute>
-);
-
-const AIOperatorStagingRoute = () => (
-  <BusinessRoute>
-    <ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login">
-      <AIOperatorApprovalsPage />
     </ErrorBoundary>
   </BusinessRoute>
 );
@@ -240,11 +156,11 @@ function App() {
           <Route path="/owner" element={<Navigate to="/admin" replace />} />
           <Route path="/owner/login" element={<Navigate to="/login" replace />} />
           <Route path="/proof-to-paid" element={<Navigate to="/v3/proof" replace />} />
-          <Route path="/ai-control-room" element={<AIControlRoomRoute />} />
+          <Route path="/ai-control-room" element={<Navigate to="/dashboard" replace />} />
           <Route path="/ai-operator" element={<SmartHubRoute />} />
           <Route path="/ai-operator/approvals" element={<Navigate to="/v3/decisions" replace />} />
           <Route path="/ai-approvals" element={<Navigate to="/v3/decisions" replace />} />
-          <Route path="/ai-operator/settings" element={<BusinessRoute><AIOperatorSettingsPage /></BusinessRoute>} />
+          <Route path="/ai-operator/settings" element={<Navigate to="/v3/rules" replace />} />
           <Route path="/admin" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
           <Route path="/owner/dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
           <Route path="/platform-dashboard" element={<PlatformAdminRoute><AppOwnerPage /></PlatformAdminRoute>} />
@@ -276,12 +192,12 @@ function App() {
           <Route path="/reports" element={<Navigate to="/v3/reports" replace />} />
           <Route path="/integrations" element={<Navigate to="/v3/integrations" replace />} />
           <Route path="/settings" element={<Navigate to="/v3/settings" replace />} />
-          <Route path="/contact" element={<PrivateRoute><ContactPage /></PrivateRoute>} />
+          <Route path="/contact" element={<Navigate to="/v3/settings" replace />} />
           <Route path="/plans" element={<Navigate to="/v3/plans" replace />} />
           <Route path="/team" element={<Navigate to="/v3/team" replace />} />
           <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
           <Route path="/automation" element={<Navigate to="/v3/rules" replace />} />
-          <Route path="/automation/runs" element={<TeamRoute><AutomationRunsPage /></TeamRoute>} />
+          <Route path="/automation/runs" element={<Navigate to="/v3/rules" replace />} />
           <Route path="/payroll" element={<Navigate to="/v3/payroll" replace />} />
           <Route path="/worker/jobs" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
           <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />

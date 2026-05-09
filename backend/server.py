@@ -2,9 +2,6 @@ import os
 import json
 import urllib.request
 import urllib.error
-import json
-import urllib.request
-import urllib.error
 import asyncio
 import csv
 import io
