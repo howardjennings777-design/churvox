@@ -66,6 +66,16 @@ function BusinessRoute({ children }) {
   return children;
 }
 
+
+function BillingRoute({ children }) {
+  const { user, loading, isWorker, isPayroll } = useAuth();
+  if (loading) return <Spinner />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (isWorker) return <Navigate to="/worker/jobs" replace />;
+  if (isPayroll) return <Navigate to="/payroll" replace />;
+  return children;
+}
+
 function WorkerRoute({ children }) {
   const { user, loading, isWorker } = useAuth();
   if (loading) return <Spinner />;
@@ -148,7 +158,7 @@ function App() {
         <Toaster position="top-right" richColors />
         <Routes>
           <Route path="/v3/operator" element={<BusinessRoute><V3OperatorPage /></BusinessRoute>} />
-          <Route path="/v3/plans" element={<BusinessRoute><V3BillingPage /></BusinessRoute>} />
+          <Route path="/v3/plans" element={<BillingRoute><V3BillingPage /></BillingRoute>} />
           <Route path="/v3/:section" element={<BusinessRoute><V3WorkspacePage /></BusinessRoute>} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />

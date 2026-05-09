@@ -542,7 +542,7 @@ PLAN_LIMITS = {
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
     },
     "pro": {
-        "price": 110, "max_workers": 20, "max_clients": 35,
+        "price": 110, "max_workers": 20, "max_clients": 40,
         "sms": True, "myob": True, "team": True,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
     },
