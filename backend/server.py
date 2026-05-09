@@ -11909,12 +11909,137 @@ async def billing_v3_confirm_checkout(body: dict = Body(default=None), current_u
             "block_size": 50,
         })
 
+    elif kind == "plan_upgrade":
+        plan = str(metadata.get("plan") or "").lower().strip()
+        if plan not in V3_PLAN_UPGRADES:
+            raise HTTPException(status_code=400, detail="Invalid checkout plan")
+
+        stripe_subscription_id = str(getattr(session, "subscription", "") or "")
+
+        # Keep the business billing settings and user records in sync.
+        await db.billing_settings.update_one(
+            {"business_id": str(business_id)},
+            {
+                "$set": {
+                    "plan": plan,
+                    "plan_status": "active",
+                    "subscription_status": "active",
+                    "stripe_subscription_id": stripe_subscription_id,
+                    "updated_at": now,
+                },
+                "$addToSet": {"confirmed_checkout_sessions": session_id},
+                "$setOnInsert": {"created_at": now, "business_id": str(business_id)},
+            },
+            upsert=True,
+        )
+
+        try:
+            await db.users.update_many(
+                _ai_scope(business_id) if "_ai_scope" in globals() else {"business_id": str(business_id)},
+                {"$set": {
+                    "plan": plan,
+                    "plan_status": "active",
+                    "subscription_status": "active",
+                    "stripe_subscription_id": stripe_subscription_id,
+                    "updated_at": now,
+                }},
+            )
+        except Exception:
+            await db.users.update_one(
+                {"email": current_user.get("email")},
+                {"$set": {
+                    "plan": plan,
+                    "plan_status": "active",
+                    "subscription_status": "active",
+                    "stripe_subscription_id": stripe_subscription_id,
+                    "updated_at": now,
+                }},
+            )
+
+        await _v3_save_billing_event(current_user, "plan_upgrade_confirmed", {
+            "session_id": session_id,
+            "plan": plan,
+            "stripe_subscription_id": stripe_subscription_id,
+        })
+
     else:
         raise HTTPException(status_code=400, detail="Unsupported checkout type")
 
     status = await _v3_billing_settings(current_user)
     return {"success": True, "ok": True, "message": "Checkout confirmed.", "billing": make_json_safe(status)}
 # ===== V3 SECURE BILLING SMS BLOCKS END =====
+
+
+
+# ===== V3 SECURE PLAN UPGRADE START =====
+V3_PLAN_UPGRADES = {
+    "team": {"price_cents": 7000, "label": "Churvox Team", "plan": "team"},
+    "pro": {"price_cents": 11000, "label": "Churvox Pro", "plan": "pro"},
+    "enterprise": {"price_cents": 24000, "label": "Churvox Enterprise", "plan": "enterprise"},
+}
+
+async def _v3_create_plan_checkout(current_user, plan):
+    _v3_require_billing_admin(current_user)
+
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(status_code=503, detail="Stripe is not configured")
+
+    plan = str(plan or "").lower().strip()
+    if plan not in V3_PLAN_UPGRADES:
+        raise HTTPException(status_code=400, detail="Invalid plan")
+
+    business_id = await get_user_business_id(current_user)
+    plan_data = V3_PLAN_UPGRADES[plan]
+    success_url, cancel_url = _v3_checkout_urls(f"plan_{plan}")
+
+    try:
+        session = stripe.checkout.Session.create(
+            mode="subscription",
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": "nzd",
+                    "product_data": {"name": plan_data["label"]},
+                    "unit_amount": int(plan_data["price_cents"]),
+                    "recurring": {"interval": "month"},
+                },
+                "quantity": 1,
+            }],
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata={
+                "kind": "plan_upgrade",
+                "plan": plan,
+                "business_id": str(business_id),
+                "user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+            },
+        )
+        return {"checkout_url": session.url, "session_id": session.id}
+    except Exception as exc:
+        logger.error(f"Stripe plan checkout failed: {exc}")
+        raise HTTPException(status_code=500, detail="Could not create plan checkout session")
+
+@api_router.post("/billing/v3/upgrade-plan")
+async def billing_v3_upgrade_plan(body: dict = Body(default=None), current_user: dict = Depends(get_current_user)):
+    _v3_require_billing_admin(current_user)
+
+    body = body or {}
+    plan = str(body.get("plan") or "").lower().strip()
+    checkout = await _v3_create_plan_checkout(current_user, plan)
+
+    await _v3_save_billing_event(current_user, "plan_upgrade_checkout_created", {
+        "plan": plan,
+        "session_id": checkout.get("session_id"),
+    })
+
+    return {
+        "success": True,
+        "ok": True,
+        "message": f"{plan.title()} upgrade checkout created.",
+        "plan": plan,
+        **checkout,
+    }
+# ===== V3 SECURE PLAN UPGRADE END =====
 
 
 app.include_router(api_router)

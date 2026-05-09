@@ -669,6 +669,39 @@ export default function V3WorkspacePage({ type }) {
     setSaving(false);
   };
 
+  const upgradePlan = async (plan) => {
+    setSaving(true);
+    const result = await post("/billing/v3/upgrade-plan", { plan });
+    if (result.ok && result.data?.checkout_url) {
+      window.location.href = result.data.checkout_url;
+      return;
+    }
+    setNotice(result.message || `Could not start ${plan} upgrade checkout.`);
+    setSaving(false);
+  };
+
+  const confirmBillingFromUrl = async () => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+    if (!sessionId || !window.location.search.includes("billing_success")) return;
+
+    setSaving(true);
+    const result = await post("/billing/v3/confirm-checkout", { session_id: sessionId });
+    if (result.ok) {
+      setNotice(result.data?.message || "Billing checkout confirmed.");
+      window.history.replaceState({}, document.title, window.location.pathname);
+      await load();
+    } else {
+      setNotice(result.message || "Could not confirm checkout yet.");
+    }
+    setSaving(false);
+  };
+
+  useEffect(() => {
+    if (key === "plans") confirmBillingFromUrl();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+
   return (
     <V3Shell>
       <main className="v3-workspace-detail">
@@ -761,6 +794,30 @@ export default function V3WorkspacePage({ type }) {
 
               {key === "plans" && (
                 <>
+                  <button type="button" onClick={() => upgradePlan("team")} disabled={saving || billing?.billing_locked || billing?.plan === "team"}>
+                    <CreditCard size={18} />
+                    <span>
+                      <b>Upgrade to Team</b>
+                      <small>$70/month secure checkout. Owner/admin only.</small>
+                    </span>
+                  </button>
+
+                  <button type="button" onClick={() => upgradePlan("pro")} disabled={saving || billing?.billing_locked || billing?.plan === "pro"}>
+                    <CreditCard size={18} />
+                    <span>
+                      <b>Upgrade to Pro</b>
+                      <small>$110/month secure checkout. Owner/admin only.</small>
+                    </span>
+                  </button>
+
+                  <button type="button" onClick={() => upgradePlan("enterprise")} disabled={saving || billing?.billing_locked || billing?.plan === "enterprise"}>
+                    <CreditCard size={18} />
+                    <span>
+                      <b>Upgrade to Enterprise</b>
+                      <small>$240/month secure checkout. Unlocks 50-user blocks.</small>
+                    </span>
+                  </button>
+
                   <button type="button" onClick={() => buySmsPack("100")} disabled={saving || billing?.billing_locked}>
                     <MessageSquare size={18} />
                     <span>
