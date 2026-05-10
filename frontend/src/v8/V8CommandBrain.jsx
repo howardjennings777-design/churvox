@@ -200,6 +200,253 @@ const css = `
   }
 }
 
+
+/* V8 10 OUT OF 10 FINAL POLISH */
+.v8-hero {
+  grid-template-columns: minmax(0, 1.35fr) 315px !important;
+  align-items: stretch !important;
+}
+
+.v8-hero-main {
+  min-height: 335px !important;
+  padding: 46px 52px !important;
+  background:
+    radial-gradient(circle at 9% 10%, rgba(196,81,45,.20), transparent 34%),
+    radial-gradient(circle at 84% 0%, rgba(91,77,255,.13), transparent 32%),
+    linear-gradient(135deg, rgba(255,253,247,.99), rgba(255,247,232,.94)) !important;
+}
+
+.v8-hero-main h1 {
+  max-width: 1040px !important;
+  margin: 0 !important;
+  letter-spacing: -0.062em !important;
+  line-height: 0.95 !important;
+}
+
+.v8-hero-main h1 span,
+.v8-hero-main h1 em {
+  display: block !important;
+  font-style: normal !important;
+}
+
+.v8-hero-main h1 span {
+  font-size: clamp(44px, 5.1vw, 76px) !important;
+  color: #fff7e8 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.15),
+    0 18px 42px rgba(0,0,0,.26) !important;
+  mix-blend-mode: difference;
+}
+
+.v8-hero-main h1 em {
+  margin-top: 4px !important;
+  font-size: clamp(34px, 4.1vw, 62px) !important;
+  color: #c4512d !important;
+}
+
+.v8-hero-main > span {
+  margin-top: 20px !important;
+  max-width: 790px !important;
+  color: #4f4337 !important;
+  font-size: 17px !important;
+  line-height: 1.62 !important;
+  font-weight: 650 !important;
+}
+
+.v8-core {
+  min-height: 335px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  padding: 34px !important;
+}
+
+.v8-core strong {
+  font-size: 100px !important;
+}
+
+.v8-owner-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: -2px 0 18px;
+}
+
+.v8-owner-actions button {
+  border: 1px solid rgba(69,45,29,.16);
+  border-radius: 30px;
+  padding: 18px;
+  min-height: 132px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(240,193,91,.13), transparent 34%),
+    linear-gradient(135deg, rgba(255,253,247,.98), rgba(255,247,232,.94));
+  color: #140f0b;
+  text-align: left;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 13px;
+  align-items: start;
+  box-shadow: 0 18px 48px rgba(54,38,24,.10), inset 0 1px 0 rgba(255,255,255,.88);
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.v8-owner-actions button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(196,81,45,.45);
+  box-shadow: 0 22px 56px rgba(54,38,24,.16);
+}
+
+.v8-owner-actions button span {
+  width: 48px;
+  height: 48px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: #17100b;
+  color: #f0c15b;
+  grid-row: span 2;
+}
+
+.v8-owner-actions button strong {
+  display: block;
+  font-size: 18px;
+  letter-spacing: -.035em;
+  line-height: 1.05;
+}
+
+.v8-owner-actions button small {
+  display: block;
+  margin-top: 6px;
+  color: #756451;
+  line-height: 1.42;
+  font-size: 13px;
+}
+
+.v8-sync {
+  background: rgba(23,16,11,.82) !important;
+  border-color: rgba(240,193,91,.28) !important;
+  color: #f0c15b !important;
+  box-shadow: 0 12px 30px rgba(0,0,0,.16);
+}
+
+.v8-dark {
+  background:
+    radial-gradient(circle at 14% 0%, rgba(196,81,45,.28), transparent 35%),
+    radial-gradient(circle at 92% 12%, rgba(93,72,255,.22), transparent 36%),
+    linear-gradient(160deg, #150e09, #25170e) !important;
+}
+
+.v8-dark .v8-panel-head h2 {
+  font-size: 35px !important;
+  letter-spacing: -0.06em !important;
+}
+
+.v8-move {
+  border-radius: 28px !important;
+  min-height: 132px !important;
+}
+
+.v8-move-body strong {
+  font-size: 21px !important;
+  line-height: 1.13 !important;
+}
+
+.v8-move-body small {
+  font-size: 13.5px !important;
+  line-height: 1.5 !important;
+}
+
+.v8-num {
+  background:
+    radial-gradient(circle at 30% 20%, rgba(240,193,91,.18), transparent 40%),
+    #100a06 !important;
+  color: #f0c15b !important;
+}
+
+.v8-panel {
+  border-radius: 36px !important;
+}
+
+.v8-panel-head h2 {
+  font-size: 32px !important;
+  line-height: 1.06 !important;
+}
+
+.v8-record {
+  border-radius: 27px !important;
+  min-height: 80px !important;
+}
+
+.v8-record-text strong {
+  font-size: 15.5px !important;
+}
+
+.v8-status {
+  font-size: 11.5px !important;
+}
+
+.v8-rules button {
+  min-height: 150px !important;
+}
+
+.v8-rules button strong {
+  font-size: 16px !important;
+  line-height: 1.15 !important;
+}
+
+.v8-operator {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 20px 44px rgba(0,0,0,.26) !important;
+}
+
+.v8-nav button.active {
+  position: relative;
+}
+
+.v8-nav button.active::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #31d181;
+  box-shadow: 0 0 0 5px rgba(49,209,129,.12);
+  transform: translateY(-50%);
+}
+
+@media(max-width:1080px){
+  .v8-hero,
+  .v8-owner-actions {
+    grid-template-columns: 1fr !important;
+  }
+
+  .v8-hero-main {
+    min-height: auto !important;
+    padding: 30px !important;
+  }
+
+  .v8-hero-main h1 span {
+    font-size: 42px !important;
+    mix-blend-mode: normal !important;
+    color: #140f0b !important;
+    text-shadow: none !important;
+  }
+
+  .v8-hero-main h1 em {
+    font-size: 34px !important;
+  }
+
+  .v8-core {
+    min-height: 210px !important;
+  }
+
+  .v8-owner-actions button {
+    min-height: 112px !important;
+  }
+}
+
 `;
 
 const NAV = [
@@ -275,7 +522,7 @@ function Drawer({ drawer, close, children, footer }) {
 
 function Record({ item, type, open }) {
   const Icon = type === "invoice" ? ReceiptText : type === "quote" ? FileText : type === "client" ? ContactRound : type === "worker" ? UsersRound : Hammer;
-  return <button className="v8-record" type="button" onClick={() => open({ mode: "record", type, item })}><span className="v8-record-icon"><Icon size={18}/></span><span className="v8-record-text"><strong>{titleOf(item, type)}</strong><small>{item?.address || item?.customer_email || item?.email || item?.phone || item?.notes || "Tap to open details here"}</small></span><span className="v8-status">{statusOf(item)}</span></button>;
+  return <button className="v8-record" type="button" onClick={() => open({ mode: "record", type, item })}><span className="v8-record-icon"><Icon size={18}/></span><span className="v8-record-text"><strong>{titleOf(item, type)}</strong><small>{item?.address || item?.customer_email || item?.email || item?.phone || item?.notes || "Tap to open command sheet"}</small></span><span className="v8-status">{statusOf(item)}</span></button>;
 }
 
 function useData() {
@@ -298,7 +545,7 @@ function useData() {
       if (r.status === "fulfilled") data[eps[i][0]] = list(r.value);
       else failed = true;
     });
-    setState({ loading: false, error: failed ? "One live source is still loading. The brain loaded the rest." : "", data });
+    setState({ loading: false, error: failed ? "Live sync running. The brain loaded the rest." : "", data });
   };
 
   useEffect(() => { refresh(); }, []);
@@ -429,7 +676,7 @@ export default function V8CommandBrain() {
         <div className="v8-operator">
           <div><BrainCircuit size={22}/><strong>Operator mode</strong></div>
           <p>{moves.length ? `${moves.length} moves prepared from live work, cash and crew data.` : "No urgent moves. Churvox is watching."}</p>
-          <button type="button" onClick={() => go("moves")}>Review moves</button>
+          <button type="button" onClick={() => go("moves")}>Approve moves</button>
         </div>
       </aside>
 
@@ -452,21 +699,39 @@ export default function V8CommandBrain() {
             <section className="v8-hero">
               <div className="v8-hero-main">
                 <p><ActiveIcon size={16}/>{active.label}</p>
-                <h1>Churvox runs the business brain. You approve the moves.</h1>
-                <span>Jobs, cash, clients and crew are read by AI in one cockpit. No full-page maze. Tap anything and the command sheet opens here.</span>
+                <h1><span>Your AI business brain is on.</span><em>It finds the next move before you do.</em></h1>
+                <span>Churvox reads work, cash, clients and crew, prepares the admin, explains the reason, and waits for owner approval. No maze. No full-page jumping.</span>
               </div>
               <div className="v8-core">
                 <small>AI moves ready</small>
                 <strong>{moves.length}</strong>
-                <span>waiting for owner approval</span>
+                <span>ready for owner approval</span>
               </div>
+            </section>
+
+            <section className="v8-owner-actions" aria-label="Owner command actions">
+              <button type="button" onClick={() => go("moves")}>
+                <span><Bot size={21} /></span>
+                <strong>Approve AI moves</strong>
+                <small>Invoices, dispatch, reminders and follow-ups prepared by Churvox.</small>
+              </button>
+              <button type="button" onClick={() => go("work")}>
+                <span><BriefcaseBusiness size={21} /></span>
+                <strong>Run today’s work</strong>
+                <small>Open jobs, unassigned work, crew and proof in one place.</small>
+              </button>
+              <button type="button" onClick={() => go("cash")}>
+                <span><CircleDollarSign size={21} /></span>
+                <strong>Collect cash</strong>
+                <small>Draft invoices, open invoices and quote follow-ups ready to review.</small>
+              </button>
             </section>
 
             {error && <div className="v8-sync"><AlertTriangle size={18}/><span>{error}</span></div>}
 
             {current === "brain" && (
               <div className="v8-layout">
-                <Panel eyebrow="AI Command Stack" title="What Churvox wants to do next" dark>
+                <Panel eyebrow="AI Command Stack" title="What AI has prepared next" dark>
                   <div className="v8-stack">
                     {loading ? <Empty icon={Loader2} title="Reading the business" text="Checking jobs, invoices, quotes, clients and crew."/> :
                     moves.length ? moves.slice(0,7).map((move, index) => (
@@ -483,7 +748,7 @@ export default function V8CommandBrain() {
                   <div className="v8-stats">
                     <Stat label="Open jobs" value={openJobs.length} icon={BriefcaseBusiness} onClick={() => go("work")}/>
                     <Stat label="Need crew" value={unassignedJobs.length} tone="urgent" icon={AlertTriangle} onClick={() => go("work")}/>
-                    <Stat label="Open cash" value={money(openInvoiceValue)} tone="cash" icon={CircleDollarSign} onClick={() => go("cash")}/>
+                    <Stat label="Cash flow" value={money(openInvoiceValue)} tone="cash" icon={CircleDollarSign} onClick={() => go("cash")}/>
                     <Stat label="Clients" value={data.clients.length} icon={ContactRound} onClick={() => go("clients")}/>
                   </div>
                 </Panel>
@@ -494,7 +759,7 @@ export default function V8CommandBrain() {
               </div>
             )}
 
-            {current === "moves" && <Panel eyebrow="AI Operator" title="Prepared moves for approval" dark><div className="v8-move-grid">{moves.length ? moves.map((move, index) => <button className="v8-move" key={move.id} type="button" onClick={() => open({ mode: "move", item: move })}><span className="v8-num">{String(index + 1).padStart(2, "0")}</span><span className="v8-move-body"><Pill tone={move.tone}>{move.summary}</Pill><strong>{move.title}</strong><small>{move.reason}</small></span><ChevronRight size={20}/></button>) : <Empty icon={Bot} title="No moves waiting" text="Churvox is watching for the next job, cash or crew move."/>}</div></Panel>}
+            {current === "moves" && <Panel eyebrow="AI Operator" title="Approve what AI prepared" dark><div className="v8-move-grid">{moves.length ? moves.map((move, index) => <button className="v8-move" key={move.id} type="button" onClick={() => open({ mode: "move", item: move })}><span className="v8-num">{String(index + 1).padStart(2, "0")}</span><span className="v8-move-body"><Pill tone={move.tone}>{move.summary}</Pill><strong>{move.title}</strong><small>{move.reason}</small></span><ChevronRight size={20}/></button>) : <Empty icon={Bot} title="No moves waiting" text="Churvox is watching for the next job, cash or crew move."/>}</div></Panel>}
 
             {current === "work" && <Panel eyebrow="Work command" title="Jobs, dispatch and proof" action={<button className="v8-primary" type="button" onClick={() => setDrawer({ mode: "create", title: "New job", kicker: "Fast action", item: {} })}><Plus size={17}/>Job</button>}><div className="v8-wide"><Stat label="Open jobs" value={openJobs.length} icon={BriefcaseBusiness}/><Stat label="Need crew" value={unassignedJobs.length} tone="urgent" icon={AlertTriangle}/><Stat label="Completed" value={completedJobs.length} tone="good" icon={CheckCircle2}/></div><div className="v8-records">{data.jobs.map((job) => <Record key={idOf(job) || titleOf(job)} type="job" item={job} open={open}/>)}</div></Panel>}
 
@@ -504,7 +769,7 @@ export default function V8CommandBrain() {
 
             {current === "crew" && <Panel eyebrow="Crew command" title="Team, workload and payroll-ready time"><div className="v8-card-grid">{data.workers.map((worker) => <Record key={idOf(worker) || worker.email || worker.name} type="worker" item={worker} open={open}/>)}{!data.workers.length && <Empty icon={UsersRound} title="No crew loaded" text="Invite workers so AI can recommend assignments."/>}</div></Panel>}
 
-            {current === "rules" && <Panel eyebrow="Automation brain" title="Rules that let AI run the admin"><div className="v8-rules">{[["Invoice after completion","Draft invoice when a job is marked complete."],["Crew conflict warning","Warn before assigning a busy worker."],["Cash follow-up","Prepare overdue invoice reminders."],["Quote follow-up","Prepare friendly quote follow-ups."],["Recurring work","Build the next run sheet automatically."],["Proof alert","Notify owner when job proof is uploaded."],["Missing details","Find jobs or clients missing key info."],["Daily owner brief","Prepare the morning business summary."]].map(([title,text]) => <button key={title} type="button" onClick={() => setDrawer({ mode:"rule", title, kicker:"AI rule", item:{ title, text, control:"Approval-first" }})}><ListChecks size={20}/><strong>{title}</strong><span>{text}</span></button>)}</div></Panel>}
+            {current === "rules" && <Panel eyebrow="Automation brain" title="Automations that run the admin"><div className="v8-rules">{[["Invoice after completion","Draft invoice when a job is marked complete."],["Crew conflict warning","Warn before assigning a busy worker."],["Cash follow-up","Prepare overdue invoice reminders."],["Quote follow-up","Prepare friendly quote follow-ups."],["Recurring work","Build the next run sheet automatically."],["Proof alert","Notify owner when job proof is uploaded."],["Missing details","Find jobs or clients missing key info."],["Daily owner brief","Prepare the morning business summary."]].map(([title,text]) => <button key={title} type="button" onClick={() => setDrawer({ mode:"rule", title, kicker:"AI rule", item:{ title, text, control:"Approval-first" }})}><ListChecks size={20}/><strong>{title}</strong><span>{text}</span></button>)}</div></Panel>}
 
             {current === "numbers" && <Panel eyebrow="Numbers" title="Plain-English business performance"><div className="v8-wide"><Stat label="Completed jobs" value={completedJobs.length} tone="good" icon={CheckCircle2}/><Stat label="Open invoice value" value={money(openInvoiceValue)} tone="cash" icon={CircleDollarSign}/><Stat label="Clients" value={data.clients.length} icon={ContactRound}/></div></Panel>}
 
