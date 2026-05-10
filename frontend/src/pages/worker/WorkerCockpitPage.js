@@ -436,6 +436,25 @@ const ACTION_STATUS = {
   complete: "completed",
 };
 
+
+function clearWorkerSessionAndLogout() {
+  if (typeof window === "undefined") return;
+
+  try {
+    TOKEN_KEYS.forEach((key) => window.localStorage.removeItem(key));
+    USER_KEYS.forEach((key) => window.localStorage.removeItem(key));
+    window.localStorage.removeItem("owner_portal_session");
+    window.localStorage.removeItem("platform_owner_email");
+    window.localStorage.removeItem("business_user");
+    window.localStorage.removeItem("current_business");
+    window.sessionStorage.clear();
+  } catch {
+    // keep logout redirect safe
+  }
+
+  window.location.assign("/login");
+}
+
 function actionCandidates(jobId, action, payload) {
   const id = encodeURIComponent(jobId);
   const status = ACTION_STATUS[action];
@@ -765,6 +784,21 @@ export default function WorkerCockpitPage() {
   return (
     <main className="cvx-worker-cockpit">
       {toast ? <div className="cvx-worker-toast">{toast}</div> : null}
+
+      <div className="cvx-worker-app-topbar">
+        <div>
+          <span>Worker App</span>
+          <strong>Field Mode</strong>
+        </div>
+        <div className="cvx-worker-app-topbar-actions">
+          <button type="button" onClick={() => window.location.assign("/worker/settings")}>
+            Settings
+          </button>
+          <button type="button" className="is-logout" onClick={clearWorkerSessionAndLogout}>
+            Log out
+          </button>
+        </div>
+      </div>
 
       <section className="cvx-worker-hero">
         <div className="cvx-worker-hero-copy">
