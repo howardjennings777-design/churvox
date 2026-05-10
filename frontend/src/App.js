@@ -17,6 +17,7 @@ import WorkerJobsPage from "./pages/worker/WorkerJobsPage";
 import WorkerJobDetailPage from "./pages/worker/WorkerJobDetailPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import WorkerSettingsPage from "./pages/worker/WorkerSettingsPage";
+import WorkerCommandProPage from "./pages/worker/WorkerCommandProPage";
 import PrivacyPage from "./pages/legal/PrivacyPage";
 import TermsPage from "./pages/legal/TermsPage";
 import AccountDeletionPage from "./pages/legal/AccountDeletionPage";
@@ -239,7 +240,7 @@ function App() {
           <Route path="/automation/runs" element={<Navigate to="/v3/rules" replace />} />
           <Route path="/worker" element={<WorkerRoute><Navigate to="/worker/jobs" replace /></WorkerRoute>} />
           <Route path="/worker/dashboard" element={<WorkerRoute><Navigate to="/worker/jobs" replace /></WorkerRoute>} />
-          <Route path="/worker/jobs" element={<WorkerRoute><V4WorkerPage /></WorkerRoute>} />
+          <Route path="/worker/jobs" element={<WorkerRoute><WorkerCommandProPage /></WorkerRoute>} />
           <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
           <Route path="/worker/settings" element={<WorkerRoute><WorkerSettingsPage /></WorkerRoute>} />
           <Route path="/worker/profile" element={<WorkerRoute><Navigate to="/worker/settings" replace /></WorkerRoute>} />
