@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Camera, CheckCircle2, ClipboardCheck, Navigation, WifiOff } from "lucide-react";
+import { Camera, CheckCircle2, ClipboardCheck, Navigation, Sparkles, WifiOff } from "lucide-react";
 import WorkerCockpitPage from "./WorkerCockpitPage";
 
 const CHECKS = [
   "Navigate to site",
   "Start job on arrival",
-  "Upload before/after proof",
+  "Upload proof photos",
   "Add final note",
   "Complete job",
 ];
@@ -43,83 +43,144 @@ export default function WorkerCommandProPage() {
 
   return (
     <>
-      <div
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 10000,
-          background: "linear-gradient(135deg,#07100d,#121923)",
-          color: "#fff7e8",
-          padding: "12px",
-          borderBottom: "1px solid rgba(255,255,255,.12)",
-          boxShadow: "0 12px 30px rgba(0,0,0,.18)",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 1180,
-            margin: "0 auto",
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))",
-            gap: 10,
-            alignItems: "stretch",
-          }}
-        >
-          <div style={cardStyle}>
-            {online ? <CheckCircle2 size={19} color="#27f6b7" /> : <WifiOff size={19} color="#ff7a48" />}
-            <div><strong>{online ? "Worker app online" : "Offline mode ready"}</strong><small>Actions are ready for proof-to-paid.</small></div>
+      <section style={wrap}>
+        <div style={hero}>
+          <div style={statusPill}>
+            {online ? <CheckCircle2 size={16} /> : <WifiOff size={16} />}
+            {online ? "Online" : "Offline ready"}
           </div>
 
-          <div style={cardStyle}>
-            <Navigation size={19} color="#ffd48a" />
-            <div><strong>Next best action</strong><small>Navigate, start, upload proof, complete.</small></div>
+          <div>
+            <p style={eyebrow}><Sparkles size={15} /> WORKER COMMAND</p>
+            <h1 style={title}>Do the next job. Prove the work. Move on.</h1>
+            <p style={subtitle}>
+              Open your next job below, navigate, start, upload proof, add the final note, then complete it so the office can invoice faster.
+            </p>
           </div>
 
-          <div style={cardStyle}>
-            <Camera size={19} color="#27f6b7" />
-            <div><strong>Proof-to-paid</strong><small>Photos + note help AI draft the invoice.</small></div>
+          <div style={actions}>
+            <div style={actionCard}>
+              <Navigation size={20} color="#ffd166" />
+              <strong>Next action</strong>
+              <span>Open Next Job below</span>
+            </div>
+            <div style={actionCard}>
+              <Camera size={20} color="#20e3b2" />
+              <strong>Proof-to-paid</strong>
+              <span>Photos + note help AI prepare the invoice</span>
+            </div>
+            <div style={actionCard}>
+              <ClipboardCheck size={20} color="#ffd166" />
+              <strong>Checklist</strong>
+              <span>{completed}/{CHECKS.length} complete</span>
+            </div>
           </div>
 
-          <div style={cardStyle}>
-            <ClipboardCheck size={19} color="#ffd48a" />
-            <div><strong>Daily checklist</strong><small>{completed}/{CHECKS.length} done</small></div>
+          <div style={checkRow}>
+            {CHECKS.map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => toggle(item)}
+                style={{
+                  ...checkBtn,
+                  background: done[item] ? "#20e3b2" : "rgba(255,253,248,.10)",
+                  color: done[item] ? "#08090b" : "#fffdf8",
+                }}
+              >
+                {done[item] ? "✓ " : ""}{item}
+              </button>
+            ))}
           </div>
         </div>
-
-        <div style={{ maxWidth: 1180, margin: "10px auto 0", display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {CHECKS.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => toggle(item)}
-              style={{
-                border: 0,
-                borderRadius: 999,
-                padding: "8px 11px",
-                background: done[item] ? "#27f6b7" : "rgba(255,255,255,.1)",
-                color: done[item] ? "#07100d" : "#fff7e8",
-                fontWeight: 850,
-                fontSize: 12,
-              }}
-            >
-              {done[item] ? "✓ " : ""}{item}
-            </button>
-          ))}
-        </div>
-      </div>
+      </section>
 
       <WorkerCockpitPage />
     </>
   );
 }
 
-const cardStyle = {
+const wrap = {
+  background: "#f3ebdd",
+  padding: "12px",
+};
+
+const hero = {
+  maxWidth: 1180,
+  margin: "0 auto",
+  borderRadius: 30,
+  padding: 18,
+  background: "radial-gradient(circle at 8% 0%, rgba(255,107,53,.20), transparent 32%), radial-gradient(circle at 92% 0%, rgba(32,227,178,.16), transparent 32%), linear-gradient(135deg,#08090b,#17120e)",
+  color: "#fffdf8",
   border: "1px solid rgba(255,255,255,.12)",
-  borderRadius: 20,
-  background: "rgba(255,255,255,.07)",
-  padding: 12,
+  boxShadow: "0 18px 48px rgba(23,18,14,.22)",
   display: "grid",
-  gridTemplateColumns: "24px 1fr",
-  gap: 9,
+  gap: 14,
+};
+
+const statusPill = {
+  width: "fit-content",
+  display: "inline-flex",
   alignItems: "center",
+  gap: 7,
+  borderRadius: 999,
+  padding: "7px 10px",
+  background: "rgba(32,227,178,.14)",
+  color: "#20e3b2",
+  fontWeight: 900,
+  fontSize: 12,
+};
+
+const eyebrow = {
+  margin: 0,
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+  color: "#20e3b2",
+  fontWeight: 950,
+  fontSize: 11,
+  letterSpacing: ".15em",
+};
+
+const title = {
+  margin: "8px 0 0",
+  fontSize: "clamp(32px,6vw,58px)",
+  lineHeight: .92,
+  letterSpacing: "-.07em",
+};
+
+const subtitle = {
+  margin: "10px 0 0",
+  color: "rgba(255,253,248,.72)",
+  maxWidth: 760,
+  fontWeight: 650,
+};
+
+const actions = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))",
+  gap: 10,
+};
+
+const actionCard = {
+  border: "1px solid rgba(255,255,255,.12)",
+  borderRadius: 22,
+  background: "rgba(255,253,248,.08)",
+  padding: 13,
+  display: "grid",
+  gap: 5,
+};
+
+const checkRow = {
+  display: "flex",
+  gap: 8,
+  flexWrap: "wrap",
+};
+
+const checkBtn = {
+  border: 0,
+  borderRadius: 999,
+  padding: "9px 12px",
+  fontWeight: 900,
+  fontSize: 12,
 };
