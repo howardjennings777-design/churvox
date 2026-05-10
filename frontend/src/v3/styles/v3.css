@@ -3211,7 +3211,7 @@
 .churvox-v3-header img,
 [class*="brand"] img,
 [class*="logo"] img {
-  content: url("/churvox-logo-restored.png") !important;
+  content: url("../../assets/churvox-logo-restored.png") !important;
   object-fit: contain !important;
 }
 
@@ -3222,7 +3222,7 @@
 .churvox-brand-mark,
 [class*="logoMark"],
 [class*="brandMark"] {
-  background-image: url("/churvox-logo-restored.png") !important;
+  background-image: url("../../assets/churvox-logo-restored.png") !important;
   background-size: contain !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
