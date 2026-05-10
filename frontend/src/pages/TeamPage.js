@@ -343,7 +343,7 @@ export default function TeamPage() {
                       return;
                     }
                     fileInputRef.current?.click();
-                  
+                  }}
                   disabled={importing}
                   className="border-slate-200 text-slate-500 hover:text-slate-900"
                   data-testid="csv-import-button"
@@ -362,7 +362,7 @@ export default function TeamPage() {
                       return;
                     }
                     setShowAdd((prev) => !prev);
-                  
+                  }}
                   className="bg-churvox-accent hover:bg-churvox-accent/90 text-white"
                   data-testid="add-worker-button"
                 >
@@ -474,7 +474,7 @@ export default function TeamPage() {
                         onClick={() => {
                           setShowAdd(false);
                           setForm({ name: "", email: "", phone: "", country: "New Zealand", region: "", invite_role: "worker" });
-                        
+                        }}
                       >
                         Cancel
                       </Button>

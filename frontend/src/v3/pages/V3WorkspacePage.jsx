@@ -544,7 +544,7 @@ function DetailModal({
 
           <details className="v3-empty">
             <summary>Full record data</summary>
-            <pre style= whiteSpace: "pre-wrap", fontSize: 12 >{JSON.stringify(item, null, 2)}</pre>
+            <pre style={{ whiteSpace: "pre-wrap", fontSize: 12 }}>{JSON.stringify(item, null, 2)}</pre>
           </details>
         </div>
       </div>

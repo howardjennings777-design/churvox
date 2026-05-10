@@ -25,7 +25,7 @@ const AlertDialogContent = React.forwardRef(({ className, ...props }, ref) => (
   <AlertDialogPortal>
     <AlertDialogOverlay />
     <AlertDialogPrimitive.Close asChild>
-      <div className="fixed inset-0 z-50" style= pointerEvents: 'auto'  aria-hidden="true" />
+      <div className="fixed inset-0 z-50" style={{ pointerEvents: 'auto' }} aria-hidden="true" />
     </AlertDialogPrimitive.Close>
     <AlertDialogPrimitive.Content
       ref={ref}

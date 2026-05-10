@@ -364,7 +364,7 @@ export default function PayrollPage() {
                     <button className="cx-button-secondary" disabled={readOnly || t.status !== "pending" || actionLoading[`approve-${t.entry_id}`]} onClick={() => approveOne(t.entry_id)}>Approve</button>
                     <button className="cx-button-secondary" disabled={readOnly || t.status !== "pending" || actionLoading[`reject-${t.entry_id}`]} onClick={() => rejectOne(t.entry_id)}>Reject</button>
                     <button className="cx-button-secondary" disabled={readOnly || t.status !== "pending"} onClick={() => rejectOne(t.entry_id, "Needs review")}>Mark needs review</button>
-                    <button className="cx-button-secondary" disabled={!t.job_id} onClick={() => { window.location.href = `/jobs/${t.job_id}`; >Open related job</button>
+                    <button className="cx-button-secondary" disabled={!t.job_id} onClick={() => { window.location.href = `/jobs/${t.job_id}`; }}>Open related job</button>
                   </div>
                 </div>
               ))}

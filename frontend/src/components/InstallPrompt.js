@@ -164,7 +164,7 @@ const [showBanner, setShowBanner] = useState(false);
   return (
     <div
       className="fixed left-4 right-4 sm:left-auto sm:right-4 sm:w-80 sm:bottom-4 z-[45] pointer-events-auto"
-      style= bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' 
+      style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}
       data-testid="install-banner"
     >
       <div className="bg-churvox-card border border-churvox-border rounded-2xl p-4 shadow-2xl flex items-start gap-3">

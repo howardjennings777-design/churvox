@@ -102,7 +102,7 @@ export default function V3ChurvoxEdge({
       <div className="cvx-edge-main">
         <div className="cvx-edge-badge">
           <Sparkles size={15} />
-          <span>Churvox </span>
+          <span>Churvox AI Trade OS</span>
         </div>
 
         <h2>Your AI operator, not another dashboard.</h2>

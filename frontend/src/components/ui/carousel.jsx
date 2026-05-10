@@ -87,7 +87,7 @@ const Carousel = React.forwardRef((
 
   return (
     <CarouselContext.Provider
-      value=
+      value={{
         carouselRef,
         api: api,
         opts,
@@ -97,7 +97,7 @@ const Carousel = React.forwardRef((
         scrollNext,
         canScrollPrev,
         canScrollNext,
-      >
+      }}>
       <div
         ref={ref}
         onKeyDownCapture={handleKeyDown}

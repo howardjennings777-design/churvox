@@ -85,7 +85,7 @@ function JobCard({ job, onStart, starting }) {
         <div className="worker-card-head">
           <div>
             <p className="worker-card-title">{title}</p>
-            <div style= marginTop: 8 ><StatusBadge status={status} /></div>
+            <div style={{ marginTop: 8 }}><StatusBadge status={status} /></div>
           </div>
           <Link to={`/worker/jobs/${id}`} className="worker-icon-btn" aria-label="Open job">
             <ChevronRight size={20} />
@@ -200,7 +200,7 @@ export default function WorkerJobsPage() {
       <header className="worker-topbar">
         <div className="worker-topbar-inner">
           <ChurvoxLogo size="sm" />
-          <div style= display: "flex", alignItems: "center", gap: 8 >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button onClick={fetchJobs} className="worker-icon-btn" title="Refresh jobs" disabled={loading}>
               <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
             </button>
@@ -250,10 +250,10 @@ export default function WorkerJobsPage() {
         {nextJob && !loading ? (
           <section className="worker-card">
             <div className="worker-card-body">
-              <span className="worker-eyebrow" style= color: "#ad4d31", background: "rgba(244,91,53,0.10)" >
+              <span className="worker-eyebrow" style={{ color: "#ad4d31", background: "rgba(244,91,53,0.10)" }}>
                 <Briefcase size={14} /> Next best job
               </span>
-              <div style= marginTop: 14 >
+              <div style={{ marginTop: 14 }}>
                 <JobCard job={nextJob} onStart={handleQuickStart} starting={startingId} />
               </div>
             </div>
@@ -279,7 +279,7 @@ export default function WorkerJobsPage() {
 
         {error ? (
           <div className="worker-card">
-            <div className="worker-card-body" style= color: "#b91c1c", fontWeight: 800 >{error}</div>
+            <div className="worker-card-body" style={{ color: "#b91c1c", fontWeight: 800 }}>{error}</div>
           </div>
         ) : null}
 
@@ -288,7 +288,7 @@ export default function WorkerJobsPage() {
             <div className="worker-empty-icon"><Briefcase size={26} /></div>
             <h3>No jobs in this view</h3>
             <p>No work is showing here yet. Refresh your run or contact the office if something looks wrong.</p>
-            <div style= display: "grid", gap: 10, marginTop: 16 >
+            <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
               <WorkerButton className="primary full" onClick={fetchJobs}><RefreshCw size={17} /> Refresh jobs</WorkerButton>
               <WorkerButton className="full" onClick={() => setShowContactOffice(true)}><MessageSquare size={17} /> Contact office</WorkerButton>
             </div>

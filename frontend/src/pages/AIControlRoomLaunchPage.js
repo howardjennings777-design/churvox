@@ -273,7 +273,7 @@ function DataList({ items, empty, render }) {
 }
 
 function Row({ title, sub, badge, onClick }) {
-  return <button type="button" style={styles.row} onClick={onClick}><span><strong>{title}</strong><small>{sub}</small></span><em style= color: statusColor(badge) >{badge}</em></button>;
+  return <button type="button" style={styles.row} onClick={onClick}><span><strong>{title}</strong><small>{sub}</small></span><em style={{ color: statusColor(badge) }}>{badge}</em></button>;
 }
 
 function ControlPanel({ panel, draft, setDraft, data, derived, onClose, onRunAiPlan, onOpenWorkspace }) {
@@ -360,7 +360,7 @@ function PanelItem({ item, kind, onOpenWorkspace }) {
         <small>{sub}</small>
       </div>
       <button type="button" style={styles.itemButton} onClick={() => onOpenWorkspace(title, route)}>Open</button>
-      <em style= color: statusColor(badge) >{badge}</em>
+      <em style={{ color: statusColor(badge) }}>{badge}</em>
     </div>
   );
 }

@@ -259,7 +259,7 @@ export default function AIOperatorSettingsPage() {
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="text-sm font-bold" style= color: active ? m.color : "#0d1b34" >{m.label}</p>
+                              <p className="text-sm font-bold" style={{ color: active ? m.color : "#0d1b34" }}>{m.label}</p>
                               <p className="mt-1 text-xs text-[#5b6c87]">{m.desc}</p>
                             </div>
                             {active ? (
@@ -331,7 +331,7 @@ export default function AIOperatorSettingsPage() {
                             const current = settings?.deploy_weekdays || [1, 2, 3, 4, 5];
                             const next = selected ? current.filter((d) => d !== day) : [...current, day].sort();
                             updateSetting("deploy_weekdays", next.length ? next : [1, 2, 3, 4, 5]);
-                          
+                          }}
                           className={`rounded-xl border px-3 py-2 text-sm font-semibold ${selected ? "border-[#155EEF] bg-[#eff6ff] text-[#155EEF]" : "border-[#dde6f3] bg-white text-[#64748b]"}`}
                         >
                           {label}

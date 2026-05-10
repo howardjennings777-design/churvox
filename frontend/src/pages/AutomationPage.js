@@ -264,10 +264,10 @@ function AutomationPage() {
           </section>
 
           <div className="px-grid px-grid--4 automation-v5-stats">
-            <PremiumStatCard label="Active rules" value={activeRules} icon={<Power className="h-4 w-4" />} tone="teal" onClick={() => { />
-            <PremiumStatCard label="Paused rules" value={disabledRules} icon={<Power className="h-4 w-4" />} tone="slate" onClick={() => { />
-            <PremiumStatCard label="Successful runs" value={successRuns} icon={<ShieldCheck className="h-4 w-4" />} tone="sky" onClick={() => { />
-            <PremiumStatCard label="Failed runs" value={failedRuns} icon={<AlertTriangle className="h-4 w-4" />} tone={failedRuns ? "red" : "blue"} onClick={() => { />
+            <PremiumStatCard label="Active rules" value={activeRules} icon={<Power className="h-4 w-4" />} tone="teal" onClick={() => {}} />
+            <PremiumStatCard label="Paused rules" value={disabledRules} icon={<Power className="h-4 w-4" />} tone="slate" onClick={() => {}} />
+            <PremiumStatCard label="Successful runs" value={successRuns} icon={<ShieldCheck className="h-4 w-4" />} tone="sky" onClick={() => {}} />
+            <PremiumStatCard label="Failed runs" value={failedRuns} icon={<AlertTriangle className="h-4 w-4" />} tone={failedRuns ? "red" : "blue"} onClick={() => {}} />
           </div>
 
           {error ? <div className="automation-v5-alert automation-v5-alert--error">{error}</div> : null}
@@ -276,7 +276,7 @@ function AutomationPage() {
           <div className="automation-v5-grid">
             <div className="automation-v5-left">
               <PremiumCard title="Quick templates" icon={<Sparkles className="h-4 w-4" />} subtitle="Safe launch-ready rules">
-                <div className="automation-v5-templates" style= display: "grid", gap: "8px", width: "100%" >
+                <div className="automation-v5-templates" style={{ display: "grid", gap: "8px", width: "100%" }}>
                   {availableTemplates.map((template) => (
                     <button key={template.id || template.name} type="button" onClick={() => applyTemplate(template)} style={templateButtonStyle}>
                       <div style={templateTitleStyle}>{template.name}</div>

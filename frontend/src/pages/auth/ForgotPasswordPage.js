@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="px-auth" style= gridTemplateColumns: '1fr' >
+    <div className="px-auth" style={{ gridTemplateColumns: '1fr' }}>
       <div className="px-auth__panel">
         <div className="px-auth__card">
           <div className="text-center mb-6">

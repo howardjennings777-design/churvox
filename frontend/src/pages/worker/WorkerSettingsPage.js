@@ -136,7 +136,7 @@ export default function WorkerSettingsPage() {
               <small>Profile</small>
               <h2>Your details</h2>
             </div>
-            <img src="/brand/churvox-logo.svg" alt="Churvox" className="h-10 w-10 rounded-2xl shadow-sm" />
+            <img src="/brand/churvox-mark.svg" alt="Churvox" className="h-10 w-10 rounded-2xl shadow-sm" />
           </div>
 
           <Row icon={UserRound} label="Name" value={name} />
@@ -184,7 +184,7 @@ export default function WorkerSettingsPage() {
               <small>Safe worker access</small>
               <h2>Hidden from workers</h2>
             </div>
-            <img src="/brand/churvox-logo.svg" alt="Churvox" className="h-10 w-10 rounded-2xl shadow-sm" />
+            <img src="/brand/churvox-mark.svg" alt="Churvox" className="h-10 w-10 rounded-2xl shadow-sm" />
           </div>
 
           <ul>

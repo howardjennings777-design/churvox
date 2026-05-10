@@ -27,7 +27,7 @@ const DialogContent = React.forwardRef(({ className, children, ...props }, ref) 
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Close asChild>
-      <div className="fixed inset-0 z-50" style= pointerEvents: 'auto'  aria-hidden="true" />
+      <div className="fixed inset-0 z-50" style={{ pointerEvents: 'auto' }} aria-hidden="true" />
     </DialogPrimitive.Close>
     <DialogPrimitive.Content
       ref={ref}

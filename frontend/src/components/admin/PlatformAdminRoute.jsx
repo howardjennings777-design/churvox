@@ -29,7 +29,7 @@ export default function PlatformAdminRoute({ children }) {
     user?.is_platform_owner === true;
 
   if (!isAllowed) {
-    return <Navigate to="/login" replace state= from: location  />;
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   return children ? children : <Outlet />;

@@ -18,7 +18,7 @@ export default function SmartHubPhotoExact() {
       <aside className="cc-sidebar">
         <button className="cc-brand"><span>C</span><b>CHURVOX</b></button>
         <nav className="cc-nav">{nav.map((n, i) => <button key={n} className={i === 0 ? "active" : ""}><i>{icons[i]}</i><span>{n}</span></button>)}</nav>
-        <div className="cc-side-card"><div><strong>12,540</strong><i>▣</i></div><p>SMS Credits</p><small>credits remaining</small><span><em style= width: "78%"  /></span><b>78% remaining</b><button>Buy Credits</button></div>
+        <div className="cc-side-card"><div><strong>12,540</strong><i>▣</i></div><p>SMS Credits</p><small>credits remaining</small><span><em style={{ width: "78%" }} /></span><b>78% remaining</b><button>Buy Credits</button></div>
         <div className="cc-owner"><i /><b>Alex Thompson</b><span>Owner</span><small>● Online</small><button>⌄</button></div>
       </aside>
       <section className="cc-canvas">

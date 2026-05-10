@@ -115,7 +115,7 @@ function Detail({ job, busy, note, finalNote, officeMessage, uploadBusy, onClose
 
         <footer className="v4-worker-actions">
           <a className="v4-btn secondary" href={mapUrl(addressOf(job))} target="_blank" rel="noreferrer"><Navigation size={18} /> Navigate</a>
-          {s === "assigned" ? <button className="v4-btn secondary" disabled={busy} onClick={() => onAction(job, "acknowledge")}><img src="/brand/churvox-logo.svg" alt="Churvox" className="h-10 w-10 rounded-2xl shadow-sm" /> Acknowledge</button> : null}
+          {s === "assigned" ? <button className="v4-btn secondary" disabled={busy} onClick={() => onAction(job, "acknowledge")}><img src="/brand/churvox-mark.svg" alt="Churvox" className="h-10 w-10 rounded-2xl shadow-sm" /> Acknowledge</button> : null}
           {["assigned", "acknowledged", "on_the_way", "paused"].includes(s) ? <button className="v4-btn primary" disabled={busy} onClick={() => onAction(job, s === "paused" ? "resume" : "start")}><Play size={18} /> {s === "paused" ? "Resume" : "Start"}</button> : null}
           {s === "in_progress" ? <button className="v4-btn secondary" disabled={busy} onClick={() => onAction(job, "pause")}><Pause size={18} /> Pause</button> : null}
           {s === "paused" ? <button className="v4-btn secondary" disabled={busy} onClick={() => onAction(job, "resume")}><RotateCcw size={18} /> Resume</button> : null}
