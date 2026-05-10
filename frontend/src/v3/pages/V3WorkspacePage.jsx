@@ -28,21 +28,21 @@ import V3Shell from "../components/V3Shell";
 import "../styles/v3.css";
 
 const PAGE_META = {
-  decisions: { title: "Owner Decisions", kicker: "AI approval queue", intro: "AI-prepared work waiting for owner approval.", icon: Sparkles, action: "prepare_ai", primary: "Prepare decisions" },
-  jobs: { title: "Jobs", kicker: "Live run sheet", intro: "Jobs, clients, addresses, workers, status, schedule, proof and billing readiness.", icon: Briefcase, action: "new_job", primary: "Create job" },
-  dispatch: { title: "Dispatch", kicker: "Crew matching", intro: "Unassigned jobs, available workers, crew gaps and AI worker recommendations.", icon: Calendar, action: "prepare_ai", primary: "AI match crew" },
+  decisions: { title: "Owner Decisions", kicker: "Approve and do it", intro: "AI finds the work, prepares the action, explains why, and waits for owner approval.", icon: Sparkles, action: "prepare_ai", primary: "Prepare decisions" },
+  jobs: { title: "AI Run Sheet", kicker: "Field work command", intro: "Churvox checks every job for crew, proof, timing, billing readiness, and the next owner-approved move.", icon: Briefcase, action: "new_job", primary: "Create job" },
+  dispatch: { title: "Crew Match", kicker: "AI dispatch brain", intro: "AI reviews area, workload, timing, and job fit so the owner can approve the right worker fast.", icon: Calendar, action: "prepare_ai", primary: "Match crew with AI" },
   clients: { title: "Clients", kicker: "Customer base", intro: "Client records, contact details, missing fields, addresses and follow-up readiness.", icon: Users, action: "new_client", primary: "Add client" },
-  quotes: { title: "Quotes", kicker: "Sales desk", intro: "Quote pipeline, status, value, client, accepted work and AI follow-ups.", icon: FileText, action: "new_quote", primary: "Create quote" },
-  invoices: { title: "Invoices", kicker: "Money board", intro: "Draft, sent, unpaid, overdue and paid invoices with AI reminder support.", icon: DollarSign, action: "new_invoice", primary: "Create invoice" },
-  team: { title: "Team", kicker: "Crew control", intro: "Workers, roles, contact details, regions and dispatch readiness.", icon: UserPlus, action: "new_worker", primary: "Invite worker" },
-  payroll: { title: "Payroll", kicker: "Pay run", intro: "Completed jobs, worker time, pay review flags and payroll handoff.", icon: CreditCard, action: "prepare_ai", primary: "AI review payroll" },
-  rules: { title: "Rules", kicker: "Automation engine", intro: "AI rules, safe actions, approval controls and background checks.", icon: Zap, action: "prepare_ai", primary: "Prepare rules" },
+  quotes: { title: "Quote Desk", kicker: "Win work faster", intro: "Quotes, follow-ups, accepted work, and AI-prepared next steps before jobs are missed.", icon: FileText, action: "new_quote", primary: "Create quote" },
+  invoices: { title: "Money Board", kicker: "Proof to paid", intro: "AI watches completed work, draft invoices, unpaid money, reminders, and payment-ready records.", icon: DollarSign, action: "new_invoice", primary: "Create invoice" },
+  team: { title: "Crew", kicker: "People and readiness", intro: "Crew records, roles, regions, workload, missing details, and dispatch readiness.", icon: UserPlus, action: "new_worker", primary: "Invite crew" },
+  payroll: { title: "Pay Run", kicker: "Time and pay review", intro: "Completed work, worker time, review flags, and payroll handoff without exposing owner-only controls.", icon: CreditCard, action: "prepare_ai", primary: "AI review pay run" },
+  rules: { title: "Auto Rules", kicker: "Quiet background engine", intro: "Churvox rules prepare safe admin work while owner approval protects risky actions.", icon: Zap, action: "prepare_ai", primary: "Prepare rules" },
   reports: { title: "Reports", kicker: "Owner numbers", intro: "Completed work, unassigned jobs, quote movement, money to collect and crew load.", icon: ShieldCheck, action: "refresh", primary: "Refresh reports" },
-  messages: { title: "Messages", kicker: "Customer comms", intro: "Quote follow-ups, invoice reminders and AI-drafted messages.", icon: MessageSquare, action: "prepare_ai", primary: "Prepare messages" },
+  messages: { title: "AI Messages", kicker: "Draft-first customer comms", intro: "AI prepares quote follow-ups and invoice reminders, but the owner stays in control before sending.", icon: MessageSquare, action: "prepare_ai", primary: "Prepare messages" },
   integrations: { title: "Sync", kicker: "MYOB and integrations", intro: "MYOB readiness, invoice handoff, client data and sync checks.", icon: Plug, action: "prepare_ai", primary: "Check sync" },
   plans: { title: "Billing", kicker: "Plan, SMS and user blocks", intro: "Plan state, SMS credits, team limits and Enterprise 50-user blocks.", icon: CreditCard, action: "billing", primary: "Billing controls" },
   settings: { title: "Settings", kicker: "Business setup", intro: "Business profile, setup quality, AI controls and missing account fields.", icon: Settings, action: "prepare_ai", primary: "Check setup" },
-  proof: { title: "Job Proof Packs", kicker: "Proof to paid", intro: "Completed jobs, uploaded photos, missing proof and invoice readiness.", icon: CheckCircle2, action: "prepare_ai", primary: "Check proof" },
+  proof: { title: "Proof-to-Paid", kicker: "Photos, time, invoice ready", intro: "Completed jobs, proof photos, visit evidence, and invoice readiness in one Churvox flow.", icon: CheckCircle2, action: "prepare_ai", primary: "Check proof" },
 };
 
 const ORDER = Object.keys(PAGE_META);
@@ -184,7 +184,7 @@ function makeEntry(kind, item, index) {
       id: actionId(item) || `action-${index}`,
       kind,
       icon: Sparkles,
-      title: item.title || item.name || "AI prepared action",
+      title: item.title || item.name || "Churvox prepared action",
       subtitle: item.summary || item.reason || item.description || "Ready for owner review.",
       badge: titleCase(item.module || item.action_type || "AI"),
       fields: [["Type", titleCase(item.action_type || "Action")], ["Risk", titleCase(item.risk_level || "Low")], ["Status", titleCase(item.queue_status || item.status || "Pending")]],
@@ -460,7 +460,7 @@ function DetailModal({
       <div className="v3-modal" onClick={(event) => event.stopPropagation()}>
         <div className="v3-modal-head">
           <div>
-            <p className="v3-eyebrow">{isAction ? "AI prepared this" : "Record details"}</p>
+            <p className="v3-eyebrow">{isAction ? "Prepared by Churvox AI" : "Record details"}</p>
             <h2>{selected.title}</h2>
           </div>
           <button type="button" className="v3-icon-button" onClick={onClose}><X size={18} /></button>
@@ -534,7 +534,7 @@ function DetailModal({
 
             {!isAction && (
               <button type="button" className="v3-button" onClick={onAskAi} disabled={!!busyActionId}>
-                <Sparkles size={18} /> Ask AI to handle next step
+                <Sparkles size={18} /> Ask Churvox AI for next step
               </button>
             )}
 
@@ -872,8 +872,8 @@ export default function V3WorkspacePage() {
           <aside className="v3-page-specific-side">
             <div className="v3-card-head">
               <div>
-                <p>Open workspace</p>
-                <h2>Only these navigate</h2>
+                <p>Navigate only here</p>
+                <h2>Only these buttons navigate</h2>
               </div>
             </div>
 

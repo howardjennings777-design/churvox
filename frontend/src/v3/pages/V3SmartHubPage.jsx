@@ -92,9 +92,9 @@ function SmartModal({ item, onClose, onApprove, busy }) {
 export default function V3SmartHubPage() {
   const navigate = useNavigate();
   const [actions, setActions] = useState([]);
-  const [jobs, setJobs] = useState([]);
-  const [quotes, setQuotes] = useState([]);
-  const [invoices, setInvoices] = useState([]);
+  const [jobs, setAI Run Sheet] = useState([]);
+  const [quotes, setQuote Desk] = useState([]);
+  const [invoices, setMoney Board] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [busyActionId, setBusyActionId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -107,17 +107,17 @@ export default function V3SmartHubPage() {
     [actions]
   );
 
-  const unassignedJobs = useMemo(
+  const unassignedAI Run Sheet = useMemo(
     () => jobs.filter((job) => !job.assigned_worker_id && !job.worker_id && !job.assigned_to && !job.assigned_worker_name),
     [jobs]
   );
 
-  const inProgressJobs = useMemo(
+  const inProgressAI Run Sheet = useMemo(
     () => jobs.filter((job) => ["in_progress", "started", "active", "paused"].includes(lower(job.status))),
     [jobs]
   );
 
-  const draftQuotes = useMemo(
+  const draftQuote Desk = useMemo(
     () => quotes.filter((q) => ["draft", "pending", "sent"].includes(lower(q.status))),
     [quotes]
   );
@@ -140,9 +140,9 @@ export default function V3SmartHubPage() {
     ]);
 
     setActions(queueResult.actions || []);
-    setJobs(pickArray(jobsResult, ["jobs"]));
-    setQuotes(pickArray(quotesResult, ["quotes"]));
-    setInvoices(pickArray(invoicesResult, ["invoices"]));
+    setAI Run Sheet(pickArray(jobsResult, ["jobs"]));
+    setQuote Desk(pickArray(quotesResult, ["quotes"]));
+    setMoney Board(pickArray(invoicesResult, ["invoices"]));
     setWorkers(pickArray(workersResult, ["workers", "team"]));
     setLoading(false);
   };
@@ -200,25 +200,25 @@ export default function V3SmartHubPage() {
     },
     {
       kind: "summary",
-      title: `${unassignedJobs.length} jobs need crew`,
-      kicker: "Dispatch",
-      copy: "AI should match unassigned jobs to the best available worker.",
+      title: `${unassignedAI Run Sheet.length} jobs need crew`,
+      kicker: "Crew Match",
+      copy: "Churvox should match unassigned work to the best available crew member.",
       href: "/v3/dispatch",
-      fields: [["Unassigned", unassignedJobs.length], ["Active jobs", inProgressJobs.length]],
+      fields: [["Unassigned", unassignedAI Run Sheet.length], ["Active jobs", inProgressAI Run Sheet.length]],
     },
     {
       kind: "summary",
-      title: `${draftQuotes.length} quotes need movement`,
-      kicker: "Quotes",
+      title: `${draftQuote Desk.length} quotes need movement`,
+      kicker: "Quote Desk",
       copy: "AI can prepare quote follow-ups and next steps.",
       href: "/v3/quotes",
-      fields: [["Open quotes", draftQuotes.length], ["Next", "Follow-up"]],
+      fields: [["Open quotes", draftQuote Desk.length], ["Next", "Follow-up"]],
     },
     {
       kind: "summary",
       title: `${moneyItems.length} money items`,
-      kicker: "Invoices",
-      copy: "AI can prepare invoice reminders and draft invoices.",
+      kicker: "Money Board",
+      copy: "Churvox can prepare reminders and draft invoices.",
       href: "/v3/invoices",
       fields: [["Money items", moneyItems.length], ["Next", "Collect"]],
     },
@@ -240,18 +240,18 @@ export default function V3SmartHubPage() {
         <section className="v3-hero">
           <div className="v3-hero-main">
             <div className="v3-hero-copy">
-              <p className="v3-eyebrow">AI trade command centre</p>
-              <h1>AI runs the admin. You approve.</h1>
+              <p className="v3-eyebrow">Churvox Trade OS</p>
+              <h1>Your AI Operator for the day.</h1>
               <p>
-                Churvox checks jobs, crew, quotes, invoices, money and owner decisions. Tap a card for a pop-up detail.
-                Only the clear Open workspace button moves you away.
+                Churvox checks jobs, crew, quotes, invoices, proof, and owner decisions before the day gets messy. Tap a card for a pop-up detail.
+                Only clear workspace buttons move you away.
               </p>
               <div className="v3-actions">
                 <button className="v3-button" onClick={() => runAi("prepare")} disabled={aiRunning}>
-                  <Wand2 size={18} /> {aiRunning ? "Preparing…" : "Prepare my day"}
+                  <Wand2 size={18} /> {aiRunning ? "Preparing…" : "Prepare today"}
                 </button>
                 <button className="v3-button secondary" onClick={() => runAi("check")} disabled={aiRunning}>
-                  <RefreshCw size={18} /> Refresh checks
+                  <RefreshCw size={18} /> Run Churvox check
                 </button>
               </div>
               {notice && <div className="v3-notice">{notice}</div>}
@@ -261,9 +261,9 @@ export default function V3SmartHubPage() {
           <aside className="v3-hero-panel">
             <div className="v3-now-card">
               <div>
-                <small>Owner approval queue</small>
+                <small>Owner Decisions</small>
                 <b>{loading ? "…" : pending.length}</b>
-                <span>{pending.length ? "AI-prepared actions waiting" : "Nothing waiting right now"}</span>
+                <span>{pending.length ? "Prepared actions waiting" : "Nothing waiting right now"}</span>
               </div>
               <button
                 className="v3-button dark"
@@ -295,7 +295,7 @@ export default function V3SmartHubPage() {
           </button>
 
           <button className="v3-metric" onClick={() => setSelected(hubItems[1])}>
-            <b>{unassignedJobs.length}</b>
+            <b>{unassignedAI Run Sheet.length}</b>
             <span>Unassigned jobs</span>
             <small>AI can match crew</small>
           </button>
@@ -306,10 +306,10 @@ export default function V3SmartHubPage() {
             <small>Drafts and reminders</small>
           </button>
 
-          <button className="v3-metric" onClick={() => setSelected({ title: `${workers.length} crew`, kicker: "Team", copy: `${inProgressJobs.length} active jobs right now.`, href: "/v3/team", fields: [["Crew", workers.length], ["Active jobs", inProgressJobs.length]] })}>
+          <button className="v3-metric" onClick={() => setSelected({ title: `${workers.length} crew`, kicker: "Crew", copy: `${inProgressAI Run Sheet.length} active jobs right now.`, href: "/v3/team", fields: [["Crew", workers.length], ["Active jobs", inProgressAI Run Sheet.length]] })}>
             <b>{workers.length}</b>
             <span>Crew</span>
-            <small>{inProgressJobs.length} active jobs</small>
+            <small>{inProgressAI Run Sheet.length} active jobs</small>
           </button>
         </section>
 
@@ -318,7 +318,7 @@ export default function V3SmartHubPage() {
             <div className="v3-card-head">
               <div>
                 <p>AI Operator</p>
-                <h2>Owner approval queue</h2>
+                <h2>Owner Decisions</h2>
               </div>
               <strong>{pending.length}</strong>
             </div>
@@ -347,21 +347,21 @@ export default function V3SmartHubPage() {
           <article className="v3-card">
             <div className="v3-card-head">
               <div>
-                <p>AI-prepared work</p>
-                <h2>What needs attention</h2>
+                <p>Prepared by Churvox AI</p>
+                <h2>Next best moves</h2>
               </div>
             </div>
 
             <div className="v3-ai-stack">
               {hubItems.slice(1).map((item) => (
                 <button type="button" key={item.title} onClick={() => setSelected(item)}>
-                  {item.kicker === "Dispatch" ? <Users size={18} /> : item.kicker === "Quotes" ? <Clock size={18} /> : <DollarSign size={18} />}
+                  {item.kicker === "Crew Match" ? <Users size={18} /> : item.kicker === "Quote Desk" ? <Clock size={18} /> : <DollarSign size={18} />}
                   <span><b>{item.title}</b><small>{item.copy}</small></span>
                 </button>
               ))}
               <button type="button" onClick={() => runAi("prepare")} disabled={aiRunning}>
                 <Sparkles size={18} />
-                <span><b>Prepare everything for me</b><small>Run AI checks and fill the owner approval queue.</small></span>
+                <span><b>Prepare the next moves</b><small>Run Churvox checks and fill Owner Decisions.</small></span>
               </button>
             </div>
           </article>
@@ -369,20 +369,20 @@ export default function V3SmartHubPage() {
           <article className="v3-card v3-workspaces">
             <div className="v3-card-head">
               <div>
-                <p>Work areas</p>
-                <h2>Open a workspace</h2>
+                <p>Churvox workspaces</p>
+                <h2>Navigate only here</h2>
               </div>
             </div>
             <div className="v3-workspace-grid">
               {[
-                ["Jobs", "/v3/jobs", "Live run sheet"],
-                ["Dispatch", "/v3/dispatch", "Crew coverage"],
+                ["AI Run Sheet", "/v3/jobs", "Live run sheet"],
+                ["Crew Match", "/v3/dispatch", "Crew coverage"],
                 ["Clients", "/v3/clients", "Customer base"],
-                ["Quotes", "/v3/quotes", "Sales desk"],
-                ["Invoices", "/v3/invoices", "Money board"],
+                ["Quote Desk", "/v3/quotes", "Sales desk"],
+                ["Money Board", "/v3/invoices", "Money board"],
                 ["AI Operator", "/v3/operator", "Owner queue"],
-                ["Team", "/v3/team", "Crew control"],
-                ["Rules", "/v3/rules", "Background engine"],
+                ["Crew", "/v3/team", "Crew control"],
+                ["Auto Rules", "/v3/rules", "Background engine"],
               ].map(([name, path, copy]) => (
                 <button className="v3-workspace" key={path} onClick={() => navigate(path)}>
                   <b>{name}</b>
