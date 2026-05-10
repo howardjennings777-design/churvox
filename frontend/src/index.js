@@ -47,6 +47,7 @@ import "./styles/churvoxUntouchedPagesRedesign.css";
 import "./churvoxRouteTheme";
 
 import "./churvoxWorkerFinalTheme";
+import "./churvoxWorkerPolishTheme";
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
 
