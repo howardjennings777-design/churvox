@@ -6,6 +6,7 @@ import { get } from "../../lib/api";
 import { approveAiAction, loadAiOperatorQueue, prepareTodayWithAi, runAiDailyCheck } from "../../lib/aiOperator";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 import "../styles/v4.css";
+import "../styles/v4-power.css";
 
 const lower = (v) => String(v || "").toLowerCase();
 const actionId = (a) => a?.id || a?._id || a?.action_id || a?.uuid;
