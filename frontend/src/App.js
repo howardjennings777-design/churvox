@@ -32,6 +32,7 @@ import SmartHubHardReset from "./pages/SmartHubHardReset";
 import V3WorkspacePage from "./v3/pages/V3WorkspacePage";
 import V3OperatorPage from "./v3/pages/V3OperatorPage";
 import V3BillingPage from "./v3/pages/V3BillingPage";
+import V3SectionRoute from "./v3/components/V3SectionRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const Spinner = () => (
@@ -159,7 +160,7 @@ function App() {
         <Routes>
           <Route path="/v3/operator" element={<BusinessRoute><V3OperatorPage /></BusinessRoute>} />
           <Route path="/v3/plans" element={<BillingRoute><V3BillingPage /></BillingRoute>} />
-          <Route path="/v3/:section" element={<BusinessRoute><V3WorkspacePage /></BusinessRoute>} />
+          <Route path="/v3/:section" element={<BusinessRoute><V3SectionRoute /></BusinessRoute>} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />

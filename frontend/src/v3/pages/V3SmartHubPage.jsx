@@ -8,7 +8,8 @@ import {
   RefreshCw,
   Sparkles,
   Users,
-  Wand2
+  Wand2,
+  X
 } from "lucide-react";
 import {
   approveAiAction,
@@ -20,21 +21,8 @@ import { get } from "../../lib/api";
 import V3Shell from "../components/V3Shell";
 import "../styles/v3.css";
 
-const workspaces = [
-  ["Jobs", "/v3/jobs", "Live run sheet"],
-  ["Dispatch", "/v3/dispatch", "Crew coverage"],
-  ["Clients", "/v3/clients", "Customer base"],
-  ["Quotes", "/v3/quotes", "Sales desk"],
-  ["Invoices", "/v3/invoices", "Money board"],
-  ["AI Operator", "/v3/operator", "Owner queue"],
-  ["Decisions", "/v3/decisions", "Owner approval queue"],
-  ["Team", "/v3/team", "Crew control"],
-  ["Payroll", "/v3/payroll", "Pay run"],
-  ["Rules", "/v3/rules", "Background engine"],
-  ["Reports", "/v3/reports", "Owner numbers"],
-  ["Messages", "/v3/messages", "Customer comms"],
-];
-
+const lower = (value) => String(value || "").toLowerCase();
+const actionId = (action) => action?.id || action?._id || action?.action_id || action?.uuid;
 const pickArray = (payload, keys = []) => {
   const data = payload?.data ?? payload;
   if (Array.isArray(data)) return data;
@@ -47,9 +35,6 @@ const pickArray = (payload, keys = []) => {
   return [];
 };
 
-const lower = (value) => String(value || "").toLowerCase();
-const actionId = (action) => action?.id || action?._id || action?.action_id || action?.uuid;
-
 function Empty({ title, copy }) {
   return (
     <div className="v3-empty">
@@ -59,18 +44,47 @@ function Empty({ title, copy }) {
   );
 }
 
-function ActionRow({ action, onOpen, onApprove, busy }) {
+function SmartModal({ item, onClose, onApprove, busy }) {
+  if (!item) return null;
+  const isAction = item.kind === "action";
   return (
-    <div className="v3-row">
-      <button type="button" onClick={onOpen} className="v3-button ghost v3-row-main">
-        <span>
-          <b>{action.title || action.name || "AI prepared action"}</b>
-          <span>{action.summary || action.reason || action.description || "Ready for owner review."}</span>
-        </span>
-      </button>
-      <button type="button" className="v3-button dark" onClick={onApprove} disabled={busy}>
-        {busy ? "Doing it…" : "Approve"}
-      </button>
+    <div className="v3-modal-backdrop" onClick={onClose}>
+      <div className="v3-modal" onClick={(event) => event.stopPropagation()}>
+        <div className="v3-modal-head">
+          <div>
+            <p className="v3-eyebrow">{item.kicker || "Smart Hub detail"}</p>
+            <h2>{item.title}</h2>
+          </div>
+          <button type="button" className="v3-icon-button" onClick={onClose}><X size={18} /></button>
+        </div>
+
+        <div className="v3-modal-body">
+          <p>{item.copy}</p>
+
+          <div className="v3-detail-grid">
+            {(item.fields || []).map(([label, value]) => (
+              <div key={label}>
+                <small>{label}</small>
+                <b>{value}</b>
+              </div>
+            ))}
+          </div>
+
+          <div className="v3-actions">
+            {isAction && (
+              <button className="v3-button dark" onClick={() => onApprove(item.raw)} disabled={busy}>
+                {busy ? "Doing it…" : "Approve and do it"}
+              </button>
+            )}
+            {item.href && (
+              <button className="v3-button secondary" onClick={() => { window.location.href = item.href; }}>
+                Open workspace
+              </button>
+            )}
+            <button className="v3-button secondary" onClick={onClose}>Close</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -86,9 +100,10 @@ export default function V3SmartHubPage() {
   const [loading, setLoading] = useState(true);
   const [aiRunning, setAiRunning] = useState(false);
   const [notice, setNotice] = useState("");
+  const [selected, setSelected] = useState(null);
 
   const pending = useMemo(
-    () => actions.filter((a) => ["pending", "edited", "needs_review", ""].includes(lower(a.status))),
+    () => actions.filter((a) => ["pending", "edited", "needs_review", ""].includes(lower(a.status || a.queue_status))),
     [actions]
   );
 
@@ -165,6 +180,7 @@ export default function V3SmartHubPage() {
     if (result.ok) {
       setActions((current) => current.filter((item) => actionId(item) !== id));
       setNotice("Approved. AI completed the action.");
+      setSelected(null);
       await load();
     } else {
       setNotice(result.message || "Approval failed.");
@@ -173,7 +189,50 @@ export default function V3SmartHubPage() {
     setBusyActionId("");
   };
 
-  const topAction = pending[0];
+  const hubItems = [
+    {
+      kind: "summary",
+      title: `${pending.length} owner decisions`,
+      kicker: "AI Operator",
+      copy: pending.length ? "AI-prepared actions are waiting for owner approval." : "Nothing is waiting right now.",
+      href: "/v3/decisions",
+      fields: [["Waiting", pending.length], ["Mode", "Approval-first"]],
+    },
+    {
+      kind: "summary",
+      title: `${unassignedJobs.length} jobs need crew`,
+      kicker: "Dispatch",
+      copy: "AI should match unassigned jobs to the best available worker.",
+      href: "/v3/dispatch",
+      fields: [["Unassigned", unassignedJobs.length], ["Active jobs", inProgressJobs.length]],
+    },
+    {
+      kind: "summary",
+      title: `${draftQuotes.length} quotes need movement`,
+      kicker: "Quotes",
+      copy: "AI can prepare quote follow-ups and next steps.",
+      href: "/v3/quotes",
+      fields: [["Open quotes", draftQuotes.length], ["Next", "Follow-up"]],
+    },
+    {
+      kind: "summary",
+      title: `${moneyItems.length} money items`,
+      kicker: "Invoices",
+      copy: "AI can prepare invoice reminders and draft invoices.",
+      href: "/v3/invoices",
+      fields: [["Money items", moneyItems.length], ["Next", "Collect"]],
+    },
+  ];
+
+  const actionItems = pending.slice(0, 5).map((action) => ({
+    kind: "action",
+    title: action.title || action.name || "AI prepared action",
+    kicker: action.module || action.action_type || "AI action",
+    copy: action.summary || action.reason || action.description || "Ready for owner review.",
+    raw: action,
+    href: "/v3/decisions",
+    fields: [["Type", action.action_type || "Action"], ["Status", action.queue_status || action.status || "Pending"]],
+  }));
 
   return (
     <V3Shell>
@@ -184,8 +243,8 @@ export default function V3SmartHubPage() {
               <p className="v3-eyebrow">AI trade command centre</p>
               <h1>AI runs the admin. You approve.</h1>
               <p>
-                Churvox checks jobs, crew, quotes, invoices, money and owner decisions. It prepares the work,
-                then the owner taps approve when it is right.
+                Churvox checks jobs, crew, quotes, invoices, money and owner decisions. Tap a card for a pop-up detail.
+                Only the clear Open workspace button moves you away.
               </p>
               <div className="v3-actions">
                 <button className="v3-button" onClick={() => runAi("prepare")} disabled={aiRunning}>
@@ -208,10 +267,10 @@ export default function V3SmartHubPage() {
               </div>
               <button
                 className="v3-button dark"
-                onClick={() => (topAction ? approve(topAction) : runAi("check"))}
+                onClick={() => pending[0] ? setSelected(actionItems[0]) : runAi("check")}
                 disabled={aiRunning || !!busyActionId}
               >
-                {topAction ? "Approve first" : "Check again"}
+                {pending[0] ? "Review first" : "Check again"}
               </button>
             </div>
 
@@ -229,25 +288,25 @@ export default function V3SmartHubPage() {
         </section>
 
         <section className="v3-metrics">
-          <button className="v3-metric" onClick={() => navigate("/v3/decisions")}>
+          <button className="v3-metric" onClick={() => setSelected(hubItems[0])}>
             <b>{pending.length}</b>
             <span>Decisions</span>
             <small>{pending.length ? "Needs approval" : "All clear"}</small>
           </button>
 
-          <button className="v3-metric" onClick={() => navigate("/v3/dispatch")}>
+          <button className="v3-metric" onClick={() => setSelected(hubItems[1])}>
             <b>{unassignedJobs.length}</b>
             <span>Unassigned jobs</span>
             <small>AI can match crew</small>
           </button>
 
-          <button className="v3-metric lime" onClick={() => navigate("/v3/invoices")}>
+          <button className="v3-metric lime" onClick={() => setSelected(hubItems[3])}>
             <b>{moneyItems.length}</b>
             <span>Money items</span>
             <small>Drafts and reminders</small>
           </button>
 
-          <button className="v3-metric" onClick={() => navigate("/v3/team")}>
+          <button className="v3-metric" onClick={() => setSelected({ title: `${workers.length} crew`, kicker: "Team", copy: `${inProgressJobs.length} active jobs right now.`, href: "/v3/team", fields: [["Crew", workers.length], ["Active jobs", inProgressJobs.length]] })}>
             <b>{workers.length}</b>
             <span>Crew</span>
             <small>{inProgressJobs.length} active jobs</small>
@@ -266,15 +325,19 @@ export default function V3SmartHubPage() {
 
             {loading ? (
               <Empty title="Checking the business" copy="AI is refreshing prepared work and owner decisions." />
-            ) : pending.length ? (
-              pending.slice(0, 5).map((action) => (
-                <ActionRow
-                  key={actionId(action)}
-                  action={action}
-                  busy={busyActionId === actionId(action)}
-                  onOpen={() => navigate("/v3/decisions")}
-                  onApprove={() => approve(action)}
-                />
+            ) : actionItems.length ? (
+              actionItems.map((item) => (
+                <div className="v3-row" key={actionId(item.raw)}>
+                  <button type="button" onClick={() => setSelected(item)} className="v3-button ghost v3-row-main">
+                    <span>
+                      <b>{item.title}</b>
+                      <span>{item.copy}</span>
+                    </span>
+                  </button>
+                  <button type="button" className="v3-button dark" onClick={() => approve(item.raw)} disabled={busyActionId === actionId(item.raw)}>
+                    {busyActionId === actionId(item.raw) ? "Doing it…" : "Approve"}
+                  </button>
+                </div>
               ))
             ) : (
               <Empty title="Nothing waiting" copy="AI has no owner decisions waiting right now." />
@@ -290,48 +353,18 @@ export default function V3SmartHubPage() {
             </div>
 
             <div className="v3-ai-stack">
-              <button type="button" onClick={() => navigate("/v3/dispatch")}>
-                <Users size={18} />
-                <span><b>{unassignedJobs.length} jobs need crew</b><small>AI should suggest the best available worker.</small></span>
-              </button>
-              <button type="button" onClick={() => navigate("/v3/quotes")}>
-                <Clock size={18} />
-                <span><b>{draftQuotes.length} quotes need movement</b><small>AI should prepare follow-ups and next steps.</small></span>
-              </button>
-              <button type="button" onClick={() => navigate("/v3/invoices")}>
-                <DollarSign size={18} />
-                <span><b>{moneyItems.length} money items</b><small>AI should prepare reminders and draft invoices.</small></span>
-              </button>
+              {hubItems.slice(1).map((item) => (
+                <button type="button" key={item.title} onClick={() => setSelected(item)}>
+                  {item.kicker === "Dispatch" ? <Users size={18} /> : item.kicker === "Quotes" ? <Clock size={18} /> : <DollarSign size={18} />}
+                  <span><b>{item.title}</b><small>{item.copy}</small></span>
+                </button>
+              ))}
               <button type="button" onClick={() => runAi("prepare")} disabled={aiRunning}>
                 <Sparkles size={18} />
                 <span><b>Prepare everything for me</b><small>Run AI checks and fill the owner approval queue.</small></span>
               </button>
             </div>
           </article>
-
-          <div className="v3-side-stack">
-            <article className="v3-card">
-              <div className="v3-card-head">
-                <div>
-                  <p>Automation</p>
-                  <h2>Quiet background</h2>
-                </div>
-              </div>
-              <Empty title="Approval-first" copy="AI can prepare work, but sending, pricing, payroll, deleting and accounting changes still need owner approval." />
-            </article>
-
-            <article className="v3-card">
-              <div className="v3-card-head">
-                <div>
-                  <p>Cashflow</p>
-                  <h2>Invoices</h2>
-                </div>
-              </div>
-              <button className="v3-button dark" onClick={() => navigate("/v3/invoices")}>
-                Open money board
-              </button>
-            </article>
-          </div>
 
           <article className="v3-card v3-workspaces">
             <div className="v3-card-head">
@@ -341,7 +374,16 @@ export default function V3SmartHubPage() {
               </div>
             </div>
             <div className="v3-workspace-grid">
-              {workspaces.map(([name, path, copy]) => (
+              {[
+                ["Jobs", "/v3/jobs", "Live run sheet"],
+                ["Dispatch", "/v3/dispatch", "Crew coverage"],
+                ["Clients", "/v3/clients", "Customer base"],
+                ["Quotes", "/v3/quotes", "Sales desk"],
+                ["Invoices", "/v3/invoices", "Money board"],
+                ["AI Operator", "/v3/operator", "Owner queue"],
+                ["Team", "/v3/team", "Crew control"],
+                ["Rules", "/v3/rules", "Background engine"],
+              ].map(([name, path, copy]) => (
                 <button className="v3-workspace" key={path} onClick={() => navigate(path)}>
                   <b>{name}</b>
                   <span>{copy}</span>
@@ -350,6 +392,13 @@ export default function V3SmartHubPage() {
             </div>
           </article>
         </section>
+
+        <SmartModal
+          item={selected}
+          onClose={() => setSelected(null)}
+          onApprove={approve}
+          busy={!!busyActionId}
+        />
       </div>
     </V3Shell>
   );

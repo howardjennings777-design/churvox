@@ -1419,3 +1419,53 @@
     grid-template-columns:1fr;
   }
 }
+
+/* V3 launch wiring safety */
+.v3-detail-grid select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 14px;
+  padding: 0 12px;
+  background: #fff;
+  color: #0f172a;
+  font-weight: 700;
+}
+.v3-row-main {
+  justify-content: flex-start;
+  text-align: left;
+  flex: 1;
+}
+.v3-row-main span {
+  display: grid;
+  gap: 4px;
+}
+.v3-row-main span span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+}
+.v3-mini-nav {
+  display: grid;
+  gap: 10px;
+}
+.v3-mini-nav button {
+  text-align: left;
+  border: 1px solid rgba(15, 23, 42, 0.09);
+  border-radius: 18px;
+  padding: 14px;
+  background: #fff;
+  display: grid;
+  gap: 4px;
+}
+.v3-mini-nav button b {
+  color: #0f172a;
+}
+.v3-mini-nav button span {
+  color: #64748b;
+  font-size: 13px;
+}
+.v3-modal details pre {
+  max-height: 240px;
+  overflow: auto;
+}
