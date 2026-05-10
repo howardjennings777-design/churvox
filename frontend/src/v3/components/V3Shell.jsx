@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import V3Brand from "./V3Brand";
+import V3AiSiteGuide from "./V3AiSiteGuide";
 import V3CsvImport from "./V3CsvImport";
 import "../styles/v3.css";
 
@@ -113,6 +114,7 @@ export default function V3Shell({ children }) {
         </button>
 
         {children}
+        <V3AiSiteGuide />
       </div>
     </div>
   );
