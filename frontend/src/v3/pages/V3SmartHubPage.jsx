@@ -256,9 +256,9 @@ export default function V3SmartHubPage() {
     {
       kind: "summary",
       title: `${pending.length} Owner Decisions`,
-      kicker: "Approve and do it",
-      copy: pending.length ? "Churvox has prepared actions waiting for owner approval." : "No decisions waiting. Run Churvox AI to check the business.",
-      reason: "This is the main control point that keeps AI powerful but safe.",
+      kicker: "Owner approval queue",
+      copy: pending.length ? "AI has prepared work that needs your approval before it runs." : "No decisions waiting. Run the AI check to prepare the next move.",
+      reason: "This is the main control point: Churvox prepares the admin, but the owner approves the action.",
       href: "/v3/decisions",
       fields: [["Waiting", pending.length], ["Safety", "Owner approval"], ["Risk control", "On"]],
       icon: Sparkles,
@@ -266,9 +266,9 @@ export default function V3SmartHubPage() {
     {
       kind: "summary",
       title: `${unassignedJobs.length} jobs need Crew Match`,
-      kicker: "AI dispatch brain",
-      copy: "Churvox can match unassigned jobs to the best worker by area, load, timing and job fit.",
-      reason: "This separates Churvox from basic scheduling tools because AI prepares the assignment before the owner approves.",
+      kicker: "AI dispatch matching",
+      copy: "AI can recommend the best worker by area, workload, timing and job fit.",
+      reason: "This makes Churvox feel like a real operator, because the assignment is prepared before the owner approves it.",
       href: "/v3/dispatch",
       fields: [["Unassigned", unassignedJobs.length], ["Active jobs", activeJobs.length], ["Crew", workers.length]],
       icon: Users,
@@ -277,8 +277,8 @@ export default function V3SmartHubPage() {
       kind: "summary",
       title: `${moneyItems.length} money moves`,
       kicker: "Money Board",
-      copy: "Churvox watches draft, unpaid and overdue invoices, then prepares reminders and draft invoices.",
-      reason: "The strongest workflow is not invoicing alone. It is completed work moving through proof, approval and payment.",
+      copy: "Draft invoices, unpaid work and overdue follow-ups are grouped for approval.",
+      reason: "The strongest workflow is finished work moving cleanly through proof, invoice approval and payment follow-up.",
       href: "/v3/invoices",
       fields: [["Money items", moneyItems.length], ["Completed jobs", completedJobs.length], ["Proof flags", proofNeeded.length]],
       icon: DollarSign,
@@ -287,8 +287,8 @@ export default function V3SmartHubPage() {
       kind: "summary",
       title: `${proofNeeded.length} Proof-to-Paid checks`,
       kicker: "Proof-to-Paid",
-      copy: "Churvox checks completed jobs for photos, proof, time and invoice readiness.",
-      reason: "This makes the app feel like an operator that prepares billing, not just a place to store jobs.",
+      copy: "Completed jobs are checked for photos, proof, time and invoice readiness.",
+      reason: "This turns the app from a job list into a workflow that helps make sure completed work gets billed.",
       href: "/v3/proof",
       fields: [["Completed", completedJobs.length], ["Needs proof", proofNeeded.length], ["Ready to bill", Math.max(0, completedJobs.length - proofNeeded.length)]],
       icon: CheckCircle2,
@@ -350,7 +350,7 @@ export default function V3SmartHubPage() {
               <div>
                 <small>Next best move</small>
                 <b>{loading ? "Checking…" : nextBestMove}</b>
-                <span>Tap a card for details. Only workspace buttons navigate.</span>
+                <span>Tap cards for pop-up detail. Only workspace buttons change page.</span>
               </div>
               <button
                 className="v3-button dark"
@@ -366,9 +366,9 @@ export default function V3SmartHubPage() {
                 <HardHat size={25} />
               </div>
               <div>
-                <small>Original Churvox lane</small>
+                <small>Churvox promise</small>
                 <b>AI prepares. Owner approves.</b>
-                <span>Built around decisions, not just dashboards.</span>
+                <span>Built around useful decisions, not empty dashboard noise.</span>
               </div>
             </div>
           </aside>
@@ -382,6 +382,7 @@ export default function V3SmartHubPage() {
           proof={proofNeeded.length}
           loading={loading}
           onPrepare={() => runAi("prepare")}
+          onOpenCard={setSelected}
         />
 
         <section className="cvx-command-metrics">
@@ -444,7 +445,15 @@ export default function V3SmartHubPage() {
                 <DollarSign size={18} />
                 <span><b>Money Board</b><small>Drafts, reminders and payment actions are prepared.</small></span>
               </button>
-              <button type="button" onClick={() => navigate("/v3/rules")}>
+              <button type="button" onClick={() => setSelected({
+                kind: "summary",
+                kicker: "Auto Rules",
+                title: "Safe background automation",
+                copy: "Auto Rules can handle safe admin patterns while risky actions stay approval-first.",
+                reason: "This lets Churvox feel automatic without letting important business changes happen silently.",
+                href: "/v3/rules",
+                fields: [["Safe admin", "Can automate"], ["Risky actions", "Approval-first"], ["Workspace", "Auto Rules"]],
+              })}>
                 <Zap size={18} />
                 <span><b>Auto Rules</b><small>Safe admin can run quietly. Risky actions stay approval-first.</small></span>
               </button>
