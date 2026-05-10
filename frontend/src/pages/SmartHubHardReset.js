@@ -1,3 +1,3 @@
-import V3SmartHubPage from "../v3/pages/V3SmartHubPage";
+import V4AppPage from "../v4/pages/V4AppPage";
 
-export default V3SmartHubPage;
+export default V4AppPage;
