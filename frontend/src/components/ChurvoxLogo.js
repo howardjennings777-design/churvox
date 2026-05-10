@@ -1,30 +1,33 @@
-import churvoxLogoIcon from "../assets/churvox-logo-icon.svg";
 import React from "react";
 
-const SIZE_MAP = {
-  sm: "cvx-logo--sm",
-  md: "cvx-logo--md",
-  lg: "cvx-logo--lg",
-  xl: "cvx-logo--xl",
-  hero: "cvx-logo--hero",
-};
-
-export function <img className="churvox-logo-force" src={churvoxLogoIcon} alt="Churvox" /> ChurvoxLogo({ size = "md", className = "", dataTestId = "churvox-logo", compact = false }) {
+export default function ChurvoxLogo({ className = "", showText = true }) {
   return (
-    <div
-      className={`cvx-logo ${SIZE_MAP[size] || SIZE_MAP.md} ${className}`}
-      data-testid={dataTestId}
-      data-logo-size={size}
-    >
-      <span className="cvx-logo__mark" aria-hidden="true">
-        <span className="cvx-logo__slash cvx-logo__slash--red" />
-        <span className="cvx-logo__slash cvx-logo__slash--orange" />
-        <span className="cvx-logo__slash cvx-logo__slash--green" />
+    <div className={`churvox-brand ${className}`.trim()}>
+      <span className="churvox-brand-icon" aria-hidden="true">
+        <svg width="38" height="38" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="churvoxBg" x1="14" y1="8" x2="82" y2="88" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#0F172A" />
+              <stop offset="1" stopColor="#020617" />
+            </linearGradient>
+            <linearGradient id="churvoxBlue" x1="24" y1="20" x2="72" y2="74" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#E0F2FE" />
+              <stop offset=".5" stopColor="#38BDF8" />
+              <stop offset="1" stopColor="#2563EB" />
+            </linearGradient>
+          </defs>
+          <rect x="6" y="6" width="84" height="84" rx="22" fill="url(#churvoxBg)" />
+          <path d="M48 14L75 25.5V43.5C75 62.5 63.5 77 48 83C32.5 77 21 62.5 21 43.5V25.5L48 14Z" fill="#07111F" stroke="url(#churvoxBlue)" strokeWidth="4" />
+          <path d="M66.5 29H40.5C32.2 29 26 35.2 26 43.5C26 51.8 32.2 58 40.5 58H62L56.2 67H40C26.4 67 16 56.6 16 43.5C16 30.4 26.4 20 40 20H72.5L66.5 29Z" fill="url(#churvoxBlue)" />
+          <path d="M39.5 39H68L62.3 48.5H34L39.5 39Z" fill="#F8FAFC" />
+          <path d="M35.5 53H56.5L51 62H30L35.5 53Z" fill="#93C5FD" />
+        </svg>
       </span>
-      {!compact && (
-        <span className="cvx-logo__word">
+
+      {showText && (
+        <span className="churvox-brand-copy">
           <strong>Churvox</strong>
-          <small>Trade OS</small>
+          <small>TRADE OS</small>
         </span>
       )}
     </div>

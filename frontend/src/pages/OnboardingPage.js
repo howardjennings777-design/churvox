@@ -1,4 +1,3 @@
-import churvoxLogoIcon from "../assets/churvox-logo-icon.svg";
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -31,7 +30,7 @@ export default function OnboardingPage() {
   const context = useMemo(() => ({ role: normalizedRole, form }), [normalizedRole, form]);
 
   return <Layout><PremiumPage>
-    <PremiumHero title="Welcome to <img className="churvox-logo-force" src={churvoxLogoIcon} alt="Churvox" /> Churvox" subtitle="Set up your business in a few guided steps." />
+    <PremiumHero title="Welcome to Churvox" subtitle="Set up your business in a few guided steps." />
     <PremiumCard title={`Step ${step + 1}: ${STEPS[step]}`}>
       {step === 0 && <p className='text-sm text-[#5b6c87]'>You can skip this and start now, or finish setup for better defaults and AI guidance.</p>}
       {step === 1 && <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>

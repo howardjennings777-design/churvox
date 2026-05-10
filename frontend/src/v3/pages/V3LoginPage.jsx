@@ -1,4 +1,3 @@
-import churvoxLogoIcon from "../../assets/churvox-logo-icon.svg";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, ArrowRight } from "lucide-react";
@@ -54,7 +53,7 @@ export default function V3LoginPage() {
           <V3Brand />
           <div>
             <h2>Log in</h2>
-            <p>Open your <img className="churvox-logo-force" src={churvoxLogoIcon} alt="Churvox" /> Churvox Trade OS workspace.</p>
+            <p>Open your Churvox Trade OS workspace.</p>
           </div>
 
           {error && <div className="v3-error">{error}</div>}

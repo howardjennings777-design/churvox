@@ -1,4 +1,3 @@
-import churvoxLogoIcon from "../../assets/churvox-logo-icon.svg";
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -99,7 +98,7 @@ export default function V3Shell({ children }) {
               <div className="v3-avatar">{initials(user)}</div>
               <div className="min-w-0">
                 <b>{user?.name || "Account"}</b>
-                <span>{user?.business_name || user?.email || "<img className="churvox-logo-force" src={churvoxLogoIcon} alt="Churvox" /> Churvox"}</span>
+                <span>{user?.business_name || user?.email || "Churvox"}</span>
               </div>
             </div>
             <button className="v3-logout-button" type="button" onClick={signOut} aria-label="Log out">

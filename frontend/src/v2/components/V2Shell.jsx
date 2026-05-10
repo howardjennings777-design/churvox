@@ -1,4 +1,3 @@
-import churvoxLogoIcon from "../assets/churvox-logo-icon.svg";
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -20,7 +19,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { <img className="churvox-logo-force" src={churvoxLogoIcon} alt="Churvox" /> ChurvoxLogo } from "../../components/ChurvoxLogo";
+import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 
 const navGroups = [
   { label: "Workspace", items: [["Smart Hub", "/dashboard", LayoutDashboard], ["Jobs", "/jobs", Briefcase], ["Dispatch", "/dispatch", Calendar], ["Clients", "/clients", Users], ["Job Proofs", "/proof-to-paid", Sparkles]] },

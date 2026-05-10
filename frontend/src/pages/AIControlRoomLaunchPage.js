@@ -1,8 +1,7 @@
-import churvoxLogoIcon from "../assets/churvox-logo-icon.svg";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
-import { <img className="churvox-logo-force" src={churvoxLogoIcon} alt="Churvox" /> ChurvoxLogo } from "../components/ChurvoxLogo";
+import { ChurvoxLogo } from "../components/ChurvoxLogo";
 import { get, post } from "../lib/api";
 
 const toArray = (value) => {

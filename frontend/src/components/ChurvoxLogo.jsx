@@ -1,7 +1,6 @@
-import churvoxLogoIcon from "../assets/churvox-logo-icon.svg";
 import React from "react";
 
-export function <img className="churvox-logo-force" src={churvoxLogoIcon} alt="Churvox" /> ChurvoxLogo({ size = "md", markOnly = false, dark = false }) {
+export function ChurvoxLogo({ size = "md", markOnly = false, dark = false }) {
   const scale = size === "lg" ? 62 : size === "sm" ? 36 : 46;
   const titleSize = size === "lg" ? 24 : size === "sm" ? 15 : 18;
   const titleColor = dark ? "#fff7ed" : "#171717";
