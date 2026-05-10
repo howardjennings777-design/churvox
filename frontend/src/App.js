@@ -36,6 +36,7 @@ import V3SectionRoute from "./v3/components/V3SectionRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 import V4WorkerPage from "./v4/pages/V4WorkerPage";
+import V5CommandApp from "./v5/V5CommandApp";
 
 const Spinner = () => (
   <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -111,7 +112,7 @@ function RoleRedirect() {
 const SmartHubRoute = () => (
   <BusinessRoute>
     <ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login">
-      <SmartHubHardReset />
+      <V5CommandApp />
     </ErrorBoundary>
   </BusinessRoute>
 );
@@ -160,9 +161,9 @@ function App() {
         <ErrorBoundary>
         <Toaster position="top-right" richColors />
         <Routes>
-          <Route path="/v3/operator" element={<BusinessRoute><V3OperatorPage /></BusinessRoute>} />
+          <Route path="/v3/operator" element={<BusinessRoute><V5CommandApp /></BusinessRoute>} />
           <Route path="/v3/plans" element={<BillingRoute><V3BillingPage /></BillingRoute>} />
-          <Route path="/v3/:section" element={<BusinessRoute><V3SectionRoute /></BusinessRoute>} />
+          <Route path="/v3/:section" element={<BusinessRoute><V5CommandApp /></BusinessRoute>} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
