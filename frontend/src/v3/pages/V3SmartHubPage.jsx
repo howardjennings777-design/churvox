@@ -1,4 +1,4 @@
-import churvoxLogoIcon from "../assets/churvox-logo-icon.svg";
+import churvoxLogoIcon from "../../assets/churvox-logo-icon.svg";
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {

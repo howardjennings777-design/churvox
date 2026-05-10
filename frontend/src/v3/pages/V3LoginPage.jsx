@@ -1,4 +1,4 @@
-import churvoxLogoIcon from "../assets/churvox-logo-icon.svg";
+import churvoxLogoIcon from "../../assets/churvox-logo-icon.svg";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, ArrowRight } from "lucide-react";
