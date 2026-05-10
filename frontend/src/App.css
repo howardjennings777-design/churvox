@@ -38,3 +38,52 @@ button:active:not(:disabled) {
 .transition-smooth {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* ===== Churvox reimagined logo icon ===== */
+.v3-topbar [class*="brand"] img,
+.v3-header [class*="brand"] img,
+.v3-shell-header [class*="brand"] img,
+.churvox-topbar [class*="brand"] img,
+.churvox-v3-header [class*="brand"] img,
+[class*="topbar"] [class*="brand"] img,
+[class*="header"] [class*="brand"] img {
+  content: url("assets/churvox-logo-icon.svg") !important;
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  object-fit: contain !important;
+  border-radius: 12px !important;
+}
+
+.v3-brand-mark,
+.v3-logo-mark,
+.logo-mark,
+.brand-mark,
+.churvox-logo-mark,
+.churvox-brand-mark,
+[class*="brandMark"],
+[class*="logoMark"] {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  border-radius: 12px !important;
+  background-image: url("assets/churvox-logo-icon.svg") !important;
+  background-size: contain !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  color: transparent !important;
+  font-size: 0 !important;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18) !important;
+}
+
+.v3-brand-mark > *,
+.v3-logo-mark > *,
+.logo-mark > *,
+.brand-mark > *,
+.churvox-logo-mark > *,
+.churvox-brand-mark > *,
+[class*="brandMark"] > *,
+[class*="logoMark"] > * {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
