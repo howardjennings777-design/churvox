@@ -48,7 +48,6 @@ export async function askBusinessAi(question) {
       message: result.message,
     };
   }
-
   return {
     ok: true,
     answer: result.data?.answer || result.data?.message || "AI prepared a recommendation.",

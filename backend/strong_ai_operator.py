@@ -43,8 +43,12 @@ def now():
     return datetime.now(timezone.utc)
 
 
-def s(value):
+def txt(value):
     return str(value or "").strip()
+
+
+def new_action_id():
+    return "aia_" + secrets.token_urlsafe(18).replace("-", "").replace("_", "")[:24]
 
 
 def safe_doc(doc):
@@ -58,10 +62,10 @@ def safe_doc(doc):
             out[k] = str(v)
         elif isinstance(v, datetime):
             out[k] = v.isoformat()
-        elif isinstance(v, list):
-            out[k] = [safe_doc(x) if isinstance(x, dict) else str(x) if isinstance(x, ObjectId) else x for x in v]
         elif isinstance(v, dict):
             out[k] = safe_doc(v)
+        elif isinstance(v, list):
+            out[k] = [safe_doc(x) if isinstance(x, dict) else str(x) if isinstance(x, ObjectId) else x for x in v]
         else:
             out[k] = v
     return out
@@ -72,18 +76,14 @@ def safe_docs(items):
 
 
 def role_allowed(user, platform_owner_emails):
-    role = s(user.get("role")).lower().replace(" ", "_")
-    email = s(user.get("email")).lower()
+    role = txt(user.get("role")).lower().replace(" ", "_")
+    email = txt(user.get("email")).lower()
     return (
         role in APPROVAL_ROLES
         or email in set(platform_owner_emails or [])
         or user.get("is_admin") is True
         or user.get("is_platform_owner") is True
     )
-
-
-def action_id():
-    return "aia_" + secrets.token_urlsafe(18).replace("-", "").replace("_", "")[:24]
 
 
 def extract_ai_text(payload):
@@ -96,9 +96,7 @@ def extract_ai_text(payload):
             return content
         if isinstance(content, list):
             return "".join(part.get("text", "") for part in content if isinstance(part, dict))
-    if payload.get("output_text"):
-        return payload["output_text"]
-    return ""
+    return payload.get("output_text") or ""
 
 
 async def call_openai_json(prompt, system):
@@ -112,16 +110,16 @@ async def call_openai_json(prompt, system):
         os.environ.get("AI_MODEL_REASONING"),
         os.environ.get("AI_MODEL_FAST"),
     ]
-    models = [m for m in models if s(m)]
+    models = [m for m in models if txt(m)]
     if not models:
         raise HTTPException(status_code=503, detail="AI model is not configured yet. Add AI_MODEL_PRIMARY in Render.")
 
     temperature = float(os.environ.get("AI_TEMPERATURE", "0.2"))
     max_tokens = int(os.environ.get("AI_MAX_OUTPUT_TOKENS", "4000"))
 
-    def do_call(model_name, token_key):
+    def do_call(model, token_key):
         body = {
-            "model": model_name,
+            "model": model,
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": prompt},
@@ -149,17 +147,17 @@ async def call_openai_json(prompt, system):
         for token_key in ["max_completion_tokens", "max_tokens"]:
             try:
                 raw = await asyncio.to_thread(do_call, model, token_key)
-                text = extract_ai_text(raw)
-                if not text:
+                content = extract_ai_text(raw)
+                if not content:
                     raise ValueError("AI returned empty output.")
-                return json.loads(text)
+                return json.loads(content)
             except Exception as exc:
                 last_error = exc
 
     raise HTTPException(status_code=503, detail=f"AI model call failed. Check OPENAI_API_KEY and AI_MODEL_PRIMARY. Last error: {last_error}")
 
 
-async def find_record(db, collection_name, business_id, record_id):
+async def find_record(db, collection, business_id, record_id):
     if not record_id:
         return None
     q = {"business_id": str(business_id), "$or": [{"id": str(record_id)}]}
@@ -167,52 +165,48 @@ async def find_record(db, collection_name, business_id, record_id):
         q["$or"].append({"_id": ObjectId(str(record_id))})
     except Exception:
         pass
-    return await db[collection_name].find_one(q)
+    return await db[collection].find_one(q)
 
 
-async def business_snapshot(db, get_user_business_id, current_user):
-    business_id = await get_user_business_id(current_user)
+async def snapshot(db, get_user_business_id, user):
+    business_id = await get_user_business_id(user)
 
-    async def grab(collection, extra=None, limit=80):
-        q = {"business_id": str(business_id)}
-        if extra:
-            q.update(extra)
+    async def grab(collection, limit=100):
         try:
-            return await db[collection].find(q).sort("created_at", -1).limit(limit).to_list(length=limit)
+            return await db[collection].find({"business_id": str(business_id)}).sort("created_at", -1).limit(limit).to_list(length=limit)
         except Exception:
             return []
 
-    jobs = await grab("jobs", limit=140)
-    quotes = await grab("quotes", limit=90)
-    invoices = await grab("invoices", limit=90)
-    clients = await grab("clients", limit=140)
+    jobs = await grab("jobs", 140)
+    quotes = await grab("quotes", 90)
+    invoices = await grab("invoices", 90)
+    clients = await grab("clients", 140)
 
     workers = []
-    for collection in ["workers", "users", "team"]:
+    for col in ["workers", "users", "team"]:
         try:
-            workers.extend(await db[collection].find({
+            workers.extend(await db[col].find({
                 "business_id": str(business_id),
                 "$or": [{"role": "worker"}, {"role": "manager"}, {"role": "office_admin"}],
             }).limit(100).to_list(length=100))
         except Exception:
             pass
 
-    def st(item):
-        return s(item.get("status") or item.get("job_status") or item.get("invoice_status") or item.get("quote_status")).lower()
+    def status(item):
+        return txt(item.get("status") or item.get("job_status") or item.get("invoice_status") or item.get("quote_status")).lower()
 
-    unassigned_jobs = [j for j in jobs if not (j.get("assigned_worker_id") or j.get("worker_id") or j.get("assigned_to") or j.get("assigned_worker_name")) and st(j) not in {"completed", "done", "cancelled"}]
-    completed_no_invoice = [j for j in jobs if (st(j) == "completed" or j.get("completed") is True or j.get("completed_at")) and not (j.get("invoice_id") or j.get("invoice_created"))]
-    completed_no_proof = [j for j in jobs if (st(j) == "completed" or j.get("completed") is True or j.get("completed_at")) and not (j.get("photos") or j.get("photo_urls") or j.get("proof_photos") or j.get("worker_photos"))]
-    open_quotes = [q for q in quotes if st(q) in {"draft", "sent", "pending", "open", ""}]
-    accepted_quotes = [q for q in quotes if st(q) in {"accepted", "approved"} and not q.get("converted_to_job_id")]
-    money_items = [i for i in invoices if st(i) in {"draft", "sent", "overdue", "unpaid", "pending", ""}]
+    unassigned = [j for j in jobs if not (j.get("assigned_worker_id") or j.get("worker_id") or j.get("assigned_to") or j.get("assigned_worker_name")) and status(j) not in {"completed", "done", "cancelled"}]
+    completed_no_invoice = [j for j in jobs if (status(j) == "completed" or j.get("completed") is True or j.get("completed_at")) and not (j.get("invoice_id") or j.get("invoice_created"))]
+    completed_no_proof = [j for j in jobs if (status(j) == "completed" or j.get("completed") is True or j.get("completed_at")) and not (j.get("photos") or j.get("photo_urls") or j.get("proof_photos") or j.get("worker_photos"))]
+    open_quotes = [q for q in quotes if status(q) in {"draft", "sent", "pending", "open", ""}]
+    accepted_quotes = [q for q in quotes if status(q) in {"accepted", "approved"} and not q.get("converted_to_job_id")]
+    money_items = [i for i in invoices if status(i) in {"draft", "sent", "overdue", "unpaid", "pending", ""}]
     missing_clients = [c for c in clients if not c.get("email") or not c.get("phone") or not c.get("address")]
 
     return {
         "business_id": str(business_id),
         "counts": {
-            "jobs": len(jobs),
-            "unassigned_jobs": len(unassigned_jobs),
+            "unassigned_jobs": len(unassigned),
             "completed_jobs_without_invoice": len(completed_no_invoice),
             "completed_jobs_without_proof": len(completed_no_proof),
             "open_quotes": len(open_quotes),
@@ -221,7 +215,7 @@ async def business_snapshot(db, get_user_business_id, current_user):
             "clients_missing_data": len(missing_clients),
             "workers": len(workers),
         },
-        "unassigned_jobs": safe_docs(unassigned_jobs[:35]),
+        "unassigned_jobs": safe_docs(unassigned[:35]),
         "completed_jobs_without_invoice": safe_docs(completed_no_invoice[:35]),
         "completed_jobs_without_proof": safe_docs(completed_no_proof[:35]),
         "open_quotes": safe_docs(open_quotes[:30]),
@@ -232,38 +226,37 @@ async def business_snapshot(db, get_user_business_id, current_user):
     }
 
 
-def normalize_actions(ai_payload, business_id, source):
-    raw_actions = ai_payload.get("actions") if isinstance(ai_payload, dict) else []
-    if not isinstance(raw_actions, list):
-        raw_actions = []
+def normalise_actions(ai_payload, business_id, source):
+    raw = ai_payload.get("actions") if isinstance(ai_payload, dict) else []
+    if not isinstance(raw, list):
+        raw = []
 
     actions = []
-    for raw in raw_actions[:20]:
-        if not isinstance(raw, dict):
+    for item in raw[:20]:
+        if not isinstance(item, dict):
             continue
-
-        action_type = s(raw.get("action_type")).lower()
+        action_type = txt(item.get("action_type")).lower()
         if action_type not in ALLOWED_ACTIONS:
             continue
 
-        risk = s(raw.get("risk_level") or "medium").lower()
+        risk = txt(item.get("risk_level") or "medium").lower()
         if risk not in {"low", "medium", "high"}:
             risk = "medium"
 
         actions.append({
-            "id": action_id(),
+            "id": new_action_id(),
             "business_id": str(business_id),
-            "module": s(raw.get("module") or "ai_operator"),
+            "module": txt(item.get("module") or "ai_operator"),
             "action_type": action_type,
-            "title": s(raw.get("title") or "AI prepared action"),
-            "summary": s(raw.get("summary") or raw.get("reason") or "AI prepared this for owner review."),
-            "reason": s(raw.get("reason") or raw.get("summary") or ""),
-            "confidence": raw.get("confidence") if isinstance(raw.get("confidence"), (int, float)) else 0.75,
+            "title": txt(item.get("title") or "AI prepared action"),
+            "summary": txt(item.get("summary") or item.get("reason") or "AI prepared this for owner review."),
+            "reason": txt(item.get("reason") or item.get("summary") or ""),
+            "confidence": item.get("confidence") if isinstance(item.get("confidence"), (int, float)) else 0.75,
             "risk_level": risk,
             "approval_required": True,
-            "target_record_type": s(raw.get("target_record_type")),
-            "target_record_id": s(raw.get("target_record_id")),
-            "proposed_payload": raw.get("proposed_payload") if isinstance(raw.get("proposed_payload"), dict) else {},
+            "target_record_type": txt(item.get("target_record_type")),
+            "target_record_id": txt(item.get("target_record_id")),
+            "proposed_payload": item.get("proposed_payload") if isinstance(item.get("proposed_payload"), dict) else {},
             "status": "pending",
             "queue_status": "pending",
             "source": source,
@@ -273,19 +266,16 @@ def normalize_actions(ai_payload, business_id, source):
     return actions
 
 
-async def execute_action(db, get_user_business_id, current_user, action, default_gst_rate):
-    business_id = await get_user_business_id(current_user)
-    action_type = s(action.get("action_type")).lower()
+async def execute_action(db, get_user_business_id, user, action, default_gst_rate):
+    business_id = await get_user_business_id(user)
+    action_type = txt(action.get("action_type")).lower()
     payload = action.get("proposed_payload") or {}
-    target_id = s(action.get("target_record_id") or payload.get("target_record_id") or payload.get("job_id") or payload.get("invoice_id") or payload.get("quote_id") or payload.get("client_id"))
-
-    if action_type not in ALLOWED_ACTIONS:
-        raise HTTPException(status_code=400, detail="AI action type is not allowed.")
+    target_id = txt(action.get("target_record_id") or payload.get("target_record_id") or payload.get("job_id") or payload.get("invoice_id") or payload.get("quote_id") or payload.get("client_id"))
 
     if action_type == "assign_worker_to_job":
-        job_id = s(payload.get("job_id") or target_id)
-        worker_id = s(payload.get("worker_id") or payload.get("assigned_worker_id"))
-        worker_name = s(payload.get("worker_name") or payload.get("assigned_worker_name"))
+        job_id = txt(payload.get("job_id") or target_id)
+        worker_id = txt(payload.get("worker_id") or payload.get("assigned_worker_id"))
+        worker_name = txt(payload.get("worker_name") or payload.get("assigned_worker_name"))
 
         if not job_id or not worker_id:
             raise HTTPException(status_code=400, detail="Missing job_id or worker_id.")
@@ -312,14 +302,14 @@ async def execute_action(db, get_user_business_id, current_user, action, default
         return "Worker assigned to job."
 
     if action_type == "create_draft_invoice":
-        job_id = s(payload.get("job_id") or target_id)
+        job_id = txt(payload.get("job_id") or target_id)
         job = await find_record(db, "jobs", business_id, job_id)
         if not job:
             raise HTTPException(status_code=404, detail="Job not found.")
 
         subtotal = float(payload.get("subtotal") or payload.get("amount") or job.get("price") or job.get("total") or 0)
         client_name = job.get("customer_name") or job.get("client_name") or "Client"
-        description = s(payload.get("description") or job.get("ai_invoice_description") or job.get("invoice_description_draft") or f"{job.get('title') or 'Service work'} completed for {client_name}.")
+        description = txt(payload.get("description") or job.get("ai_invoice_description") or job.get("invoice_description_draft") or f"{job.get('title') or 'Service work'} completed for {client_name}.")
 
         invoice = {
             "business_id": str(business_id),
@@ -341,19 +331,19 @@ async def execute_action(db, get_user_business_id, current_user, action, default
         return "Draft invoice created."
 
     if action_type == "flag_missing_client_data":
-        client = await find_record(db, "clients", business_id, s(payload.get("client_id") or target_id))
+        client = await find_record(db, "clients", business_id, txt(payload.get("client_id") or target_id))
         if client:
             await db.clients.update_one({"_id": client.get("_id")}, {"$set": {"ai_review_needed": True, "ai_review_reason": action.get("reason"), "updated_at": now()}})
         return "Client data flagged."
 
     if action_type == "flag_missing_job_proof":
-        job = await find_record(db, "jobs", business_id, s(payload.get("job_id") or target_id))
+        job = await find_record(db, "jobs", business_id, txt(payload.get("job_id") or target_id))
         if job:
             await db.jobs.update_one({"_id": job.get("_id")}, {"$set": {"ai_proof_review_needed": True, "ai_review_reason": action.get("reason"), "updated_at": now()}})
         return "Job proof issue flagged."
 
     if action_type == "flag_payroll_review":
-        job = await find_record(db, "jobs", business_id, s(payload.get("job_id") or target_id))
+        job = await find_record(db, "jobs", business_id, txt(payload.get("job_id") or target_id))
         if job:
             await db.jobs.update_one({"_id": job.get("_id")}, {"$set": {"payroll_review_needed": True, "payroll_review_reason": action.get("reason"), "updated_at": now()}})
         return "Payroll review flagged."
@@ -393,8 +383,8 @@ def register_strong_ai_operator(api_router, db, get_current_user, get_user_busin
         if os.environ.get("AI_OPERATOR_ENABLED", "true").lower() == "false":
             raise HTTPException(status_code=503, detail="AI Operator is disabled.")
 
-        snapshot = await business_snapshot(db, get_user_business_id, current_user)
-        business_id = snapshot["business_id"]
+        snap = await snapshot(db, get_user_business_id, current_user)
+        business_id = snap["business_id"]
 
         system = """You are Churvox AI Operator, a powerful approval-first AI brain for trade/service businesses.
 Return JSON only.
@@ -407,9 +397,9 @@ Return:
 Prioritise unassigned jobs, draft invoices from completed jobs, invoice reminders, accepted quote conversion, missing proof, missing client data, and payroll flags.
 For worker matching, use availability, region/area, workload, skills/job type if present.
 """
-        prompt = "Create the strongest owner approval queue from this live Churvox snapshot:\n" + json.dumps(snapshot, default=str)[:70000]
+        prompt = "Create the strongest owner approval queue from this live Churvox snapshot:\n" + json.dumps(snap, default=str)[:70000]
         ai_payload = await call_openai_json(prompt, system)
-        actions = normalize_actions(ai_payload, business_id, "strong_prepare_today")
+        actions = normalise_actions(ai_payload, business_id, "strong_prepare_today")
 
         if actions:
             await db.ai_operator_actions.insert_many(actions)
@@ -432,12 +422,12 @@ For worker matching, use availability, region/area, workload, skills/job type if
     async def strong_ai_ask(payload: StrongAiAskRequest, current_user: dict = Depends(get_current_user)):
         if not role_allowed(current_user, platform_owner_emails):
             raise HTTPException(status_code=403, detail="AI Operator is owner/manager/admin only.")
-        snapshot = await business_snapshot(db, get_user_business_id, current_user)
+        snap = await snapshot(db, get_user_business_id, current_user)
         system = """You are Churvox AI Operator. Answer from the business snapshot only.
 Return JSON only: {"answer":"clear answer","recommended_next_steps":["step"],"actions":[]}
 Never claim you sent, deleted, charged, synced, or changed payroll/pricing without owner approval.
 """
-        result = await call_openai_json(f"Question: {payload.question}\n\nSnapshot:\n{json.dumps(snapshot, default=str)[:70000]}", system)
+        result = await call_openai_json(f"Question: {payload.question}\n\nSnapshot:\n{json.dumps(snap, default=str)[:70000]}", system)
         return {
             "answer": result.get("answer") or "AI reviewed the business.",
             "recommended_next_steps": result.get("recommended_next_steps") or [],
@@ -482,7 +472,7 @@ Never claim you sent, deleted, charged, synced, or changed payroll/pricing witho
             else:
                 raise HTTPException(status_code=404, detail="AI action not found.")
 
-        if s(action.get("risk_level")).lower() == "high":
+        if txt(action.get("risk_level")).lower() == "high":
             raise HTTPException(status_code=403, detail="High-risk AI action requires manual handling.")
 
         message = await execute_action(db, get_user_business_id, current_user, action, default_gst_rate)
