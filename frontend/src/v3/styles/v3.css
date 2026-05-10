@@ -1469,3 +1469,157 @@
   max-height: 240px;
   overflow: auto;
 }
+
+/* ===== V3 MODAL PREMIUM FIX - keep buttons visible, clean scroll, better mobile ===== */
+.v3-modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 18px !important;
+  overflow: hidden !important;
+  background: rgba(2, 6, 23, 0.62) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.v3-modal {
+  width: min(860px, calc(100vw - 28px)) !important;
+  max-height: calc(100dvh - 36px) !important;
+  border-radius: 30px !important;
+  background: #ffffff !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 0 34px 90px rgba(15, 23, 42, 0.34) !important;
+}
+
+.v3-modal-head {
+  flex: 0 0 auto !important;
+  padding: 28px 32px 18px !important;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08) !important;
+  background: #ffffff !important;
+}
+
+.v3-modal-head h2 {
+  font-size: clamp(30px, 4vw, 52px) !important;
+  line-height: 0.95 !important;
+  letter-spacing: -0.06em !important;
+  margin: 0 !important;
+}
+
+.v3-action-form,
+.v3-modal-body {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  padding: 22px 32px 0 !important;
+  min-height: 0 !important;
+  display: grid !important;
+  gap: 18px !important;
+}
+
+.v3-action-form label {
+  display: grid !important;
+  gap: 9px !important;
+}
+
+.v3-action-form label span {
+  font-size: 12px !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  font-weight: 900 !important;
+  color: #334155 !important;
+}
+
+.v3-action-form input,
+.v3-action-form textarea,
+.v3-action-form select,
+.v3-detail-grid select {
+  width: 100% !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  font-size: 16px !important;
+  font-weight: 750 !important;
+  min-height: 54px !important;
+  padding: 0 18px !important;
+  outline: none !important;
+}
+
+.v3-action-form textarea {
+  min-height: 116px !important;
+  padding: 16px 18px !important;
+  resize: vertical !important;
+}
+
+.v3-action-form input:focus,
+.v3-action-form textarea:focus,
+.v3-action-form select:focus,
+.v3-detail-grid select:focus {
+  border-color: rgba(37, 99, 235, 0.65) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10) !important;
+}
+
+.v3-action-form .v3-actions,
+.v3-modal-body > .v3-actions {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 3 !important;
+  margin: 8px -32px 0 !important;
+  padding: 18px 32px 24px !important;
+  background: linear-gradient(to top, #ffffff 76%, rgba(255, 255, 255, 0.92)) !important;
+  border-top: 1px solid rgba(15, 23, 42, 0.08) !important;
+  display: flex !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+}
+
+.v3-button,
+.v3-primary-btn,
+.v3-dark-btn {
+  min-height: 48px !important;
+  border-radius: 999px !important;
+  font-weight: 900 !important;
+}
+
+.v3-icon-button {
+  min-width: 46px !important;
+  min-height: 46px !important;
+  border-radius: 999px !important;
+}
+
+@media (max-width: 720px) {
+  .v3-modal-backdrop {
+    align-items: flex-end !important;
+    padding: 10px !important;
+  }
+
+  .v3-modal {
+    width: 100% !important;
+    max-height: calc(100dvh - 20px) !important;
+    border-radius: 26px 26px 0 0 !important;
+  }
+
+  .v3-modal-head {
+    padding: 22px 20px 14px !important;
+  }
+
+  .v3-action-form,
+  .v3-modal-body {
+    padding: 18px 20px 0 !important;
+  }
+
+  .v3-action-form .v3-actions,
+  .v3-modal-body > .v3-actions {
+    margin-left: -20px !important;
+    margin-right: -20px !important;
+    padding: 16px 20px 20px !important;
+  }
+
+  .v3-action-form .v3-actions button,
+  .v3-modal-body > .v3-actions button {
+    flex: 1 1 100% !important;
+  }
+}
