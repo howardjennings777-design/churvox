@@ -807,3 +807,20 @@ body {
 .v3-topbar .churvox-brand-copy strong {
   color: #111827;
 }
+
+/* ===== Worker app protection after logo patch ===== */
+.worker-app .churvox-brand-icon,
+.worker-shell .churvox-brand-icon,
+.worker-layout .churvox-brand-icon,
+.worker-page .churvox-brand-icon,
+[class*="worker"] .churvox-brand-icon {
+  box-shadow: none !important;
+}
+
+.worker-app,
+.worker-shell,
+.worker-layout,
+.worker-page,
+[class*="worker"] {
+  --worker-safe-layout: 1;
+}
