@@ -1,42 +1,31 @@
-import React, { useState } from "react";
-
-// Single source of truth for the Churvox logo.
-// To swap the logo, replace /public/churvox-logo.png
-const LOGO_PATH = "/churvox-logo.png";
+import React from "react";
 
 const SIZE_MAP = {
-  sm: "h-8",
-  md: "h-10",
-  lg: "h-12",
-  xl: "h-16",
-  hero: "h-20 sm:h-24 lg:h-28",
+  sm: "cvx-logo--sm",
+  md: "cvx-logo--md",
+  lg: "cvx-logo--lg",
+  xl: "cvx-logo--xl",
+  hero: "cvx-logo--hero",
 };
 
-export function ChurvoxLogo({ size = "md", className = "", dataTestId = "churvox-logo" }) {
-  const [loadFailed, setLoadFailed] = useState(false);
-
-  if (loadFailed) {
-    return (
-      <span
-        className={`inline-flex items-center font-semibold tracking-wide text-current ${SIZE_MAP[size] || SIZE_MAP.md} ${className}`}
-        data-testid={dataTestId}
-        data-logo-size={size}
-      >
-        Churvox
-      </span>
-    );
-  }
-
+export function ChurvoxLogo({ size = "md", className = "", dataTestId = "churvox-logo", compact = false }) {
   return (
-    <img
-      src={LOGO_PATH}
-      alt="Churvox"
-      className={`block w-auto max-w-full object-contain ${SIZE_MAP[size] || SIZE_MAP.md} ${className}`}
+    <div
+      className={`cvx-logo ${SIZE_MAP[size] || SIZE_MAP.md} ${className}`}
       data-testid={dataTestId}
       data-logo-size={size}
-      onError={() => setLoadFailed(true)}
-      loading="eager"
-      decoding="async"
-    />
+    >
+      <span className="cvx-logo__mark" aria-hidden="true">
+        <span className="cvx-logo__slash cvx-logo__slash--red" />
+        <span className="cvx-logo__slash cvx-logo__slash--orange" />
+        <span className="cvx-logo__slash cvx-logo__slash--green" />
+      </span>
+      {!compact && (
+        <span className="cvx-logo__word">
+          <strong>Churvox</strong>
+          <small>Trade OS</small>
+        </span>
+      )}
+    </div>
   );
 }

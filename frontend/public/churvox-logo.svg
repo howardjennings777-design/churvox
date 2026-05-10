@@ -1,35 +1,8 @@
-<svg width="720" height="168" viewBox="0 0 720 168" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="cxBlue" x1="22" y1="26" x2="136" y2="142" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#3BE4FF"/>
-      <stop offset="0.48" stop-color="#1767FF"/>
-      <stop offset="1" stop-color="#071935"/>
-    </linearGradient>
-    <linearGradient id="cxArrow" x1="78" y1="60" x2="139" y2="108" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#F8FCFF"/>
-      <stop offset="1" stop-color="#D8ECFF"/>
-    </linearGradient>
-    <filter id="cxShadow" x="0" y="0" width="170" height="168" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#1767FF" flood-opacity="0.18"/>
-    </filter>
-  </defs>
-
-  <g filter="url(#cxShadow)">
-    <path d="M88 22C50.1 22 20 49.8 20 84C20 118.2 50.1 146 88 146C110.1 146 129.5 136.3 142 121.4L116.3 99.5C109.8 107.8 99.8 112.8 88 112.8C69.6 112.8 55.2 100.1 55.2 84C55.2 67.9 69.6 55.2 88 55.2C99.8 55.2 109.8 60.2 116.3 68.5L142 46.6C129.5 31.7 110.1 22 88 22Z" fill="url(#cxBlue)"/>
-    <path d="M18 72H56" stroke="#38D9FF" stroke-width="10" stroke-linecap="round"/>
-    <path d="M10 84H56" stroke="#1767FF" stroke-width="10" stroke-linecap="round"/>
-    <path d="M18 96H56" stroke="#071935" stroke-width="10" stroke-linecap="round"/>
-    <path d="M80 57L150 84L80 111L96.5 84L80 57Z" fill="url(#cxArrow)"/>
-    <path d="M100 68L150 84L100 100L109.7 84L100 68Z" fill="#1767FF"/>
-  </g>
-
-  <g fill="#06162E">
-    <path d="M205.9 118.8C195.6 118.8 187.1 115.5 180.3 108.9C173.6 102.2 170.2 93.9 170.2 83.9C170.2 73.9 173.6 65.6 180.3 58.9C187.1 52.3 195.6 49 205.9 49C218.4 49 228.6 55.1 234.5 65.1L216.2 75.6C214 71 210.5 68.8 205.9 68.8C202 68.8 198.7 70.2 196.1 72.9C193.5 75.6 192.2 79.3 192.2 83.9C192.2 88.5 193.5 92.2 196.1 94.9C198.7 97.6 202 99 205.9 99C210.7 99 214.3 96.8 216.5 92.2L234.9 102.5C228.8 112.7 218.5 118.8 205.9 118.8Z"/>
-    <path d="M292.2 50.4H314.1V117.4H292.2V93.6H269.2V117.4H247.3V50.4H269.2V73.3H292.2V50.4Z"/>
-    <path d="M359.7 118.8C351.1 118.8 344.2 116.4 338.8 111.6C333.4 106.8 330.7 100.3 330.7 92.1V50.4H352.6V91.1C352.6 96.9 354.9 99.8 359.7 99.8C364.5 99.8 366.8 96.9 366.8 91.1V50.4H388.7V92.1C388.7 100.3 386 106.8 380.6 111.6C375.2 116.4 368.3 118.8 359.7 118.8Z"/>
-    <path d="M446 117.4L435.1 96.7H429.7V117.4H407.8V50.4H437.7C444.8 50.4 450.8 52.7 455.7 57.3C460.6 61.8 463 67.5 463 74.3C463 78.2 462 81.9 460 85.3C457.9 88.7 455.1 91.5 451.5 93.6L465.3 117.4H446ZM429.7 69V79.7H437.7C439.7 79.7 441.2 79.2 442.3 78.2C443.4 77.2 444 75.9 444 74.3C444 72.6 443.4 71.3 442.3 70.4C441.2 69.5 439.7 69 437.7 69H429.7Z"/>
-    <path d="M522.4 50.4H546.1L524 117.4H498.9L476.8 50.4H500.5L511.5 90.4L522.4 50.4Z"/>
-    <path d="M589.1 118.8C578.9 118.8 570.4 115.4 563.6 108.7C556.8 102 553.4 93.7 553.4 83.9C553.4 74.1 556.8 65.8 563.6 59.1C570.4 52.4 578.9 49 589.1 49C599.3 49 607.8 52.4 614.6 59.1C621.4 65.8 624.8 74.1 624.8 83.9C624.8 93.7 621.4 102 614.6 108.7C607.8 115.4 599.3 118.8 589.1 118.8ZM589.1 99C593.3 99 596.7 97.6 599.4 94.8C602.1 92 603.5 88.4 603.5 83.9C603.5 79.4 602.1 75.8 599.4 73C596.7 70.2 593.3 68.8 589.1 68.8C584.9 68.8 581.5 70.2 578.8 73C576.1 75.8 574.7 79.4 574.7 83.9C574.7 88.4 576.1 92 578.8 94.8C581.5 97.6 584.9 99 589.1 99Z"/>
-  </g>
-  <path d="M706.4 117.4H681.8L669.1 97.2L656.4 117.4H631.8L656.1 83.2L632.8 50.4H657.4L669.1 69.2L680.8 50.4H705.4L682.1 83.2L706.4 117.4Z" fill="#1767FF"/>
+<svg width="260" height="72" viewBox="0 0 260 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="4" y="8" width="56" height="56" rx="15" fill="#111827"/>
+  <path d="M25 22H49L42 32H18L25 22Z" fill="#ef4444"/>
+  <path d="M22 32H46L39 42H15L22 32Z" fill="#f97316"/>
+  <path d="M19 42H43L36 52H12L19 42Z" fill="#22c55e"/>
+  <text x="74" y="34" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="800" fill="#111827">Churvox</text>
+  <text x="76" y="53" font-family="Inter, Arial, sans-serif" font-size="10" font-weight="800" letter-spacing="3" fill="#ef4444">TRADE OS</text>
 </svg>

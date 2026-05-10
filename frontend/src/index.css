@@ -651,3 +651,105 @@ body {
   .hr-shell { min-width: 1180px !important; overflow-x: auto !important; }
   .hr-root { width: 1180px !important; grid-template-columns: 180px 1000px !important; }
 }
+
+
+/* CHURVOX_NEW_LOGO_START */
+.cvx-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: #111827;
+  line-height: 1;
+}
+
+.cvx-logo__mark {
+  position: relative;
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border-radius: 13px;
+  background: #111827;
+  box-shadow: 0 10px 26px rgba(17, 24, 39, 0.18);
+  overflow: hidden;
+}
+
+.cvx-logo__mark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18), transparent 46%);
+  pointer-events: none;
+}
+
+.cvx-logo__slash {
+  position: absolute;
+  left: 11px;
+  width: 23px;
+  height: 7px;
+  border-radius: 999px;
+  transform: skewX(-24deg);
+}
+
+.cvx-logo__slash--red { top: 11px; background: #ef4444; }
+.cvx-logo__slash--orange { top: 18px; background: #f97316; }
+.cvx-logo__slash--green { top: 25px; background: #22c55e; }
+
+.cvx-logo__word {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.cvx-logo__word strong {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #111827;
+}
+
+.cvx-logo__word small {
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #ef4444;
+}
+
+.cvx-logo--sm .cvx-logo__mark { width: 34px; height: 34px; border-radius: 10px; }
+.cvx-logo--sm .cvx-logo__slash { left: 9px; width: 19px; height: 6px; }
+.cvx-logo--sm .cvx-logo__slash--red { top: 9px; }
+.cvx-logo--sm .cvx-logo__slash--orange { top: 15px; }
+.cvx-logo--sm .cvx-logo__slash--green { top: 21px; }
+.cvx-logo--sm .cvx-logo__word strong { font-size: 14px; }
+.cvx-logo--sm .cvx-logo__word small { font-size: 7px; }
+
+.cvx-logo--lg .cvx-logo__mark { width: 52px; height: 52px; border-radius: 16px; }
+.cvx-logo--xl .cvx-logo__mark { width: 64px; height: 64px; border-radius: 20px; }
+.cvx-logo--hero .cvx-logo__mark { width: 84px; height: 84px; border-radius: 25px; }
+
+.cvx-logo--lg .cvx-logo__slash,
+.cvx-logo--xl .cvx-logo__slash,
+.cvx-logo--hero .cvx-logo__slash {
+  left: 28%;
+  width: 50%;
+  height: 14%;
+}
+
+.cvx-logo--lg .cvx-logo__slash--red,
+.cvx-logo--xl .cvx-logo__slash--red,
+.cvx-logo--hero .cvx-logo__slash--red { top: 27%; }
+
+.cvx-logo--lg .cvx-logo__slash--orange,
+.cvx-logo--xl .cvx-logo__slash--orange,
+.cvx-logo--hero .cvx-logo__slash--orange { top: 43%; }
+
+.cvx-logo--lg .cvx-logo__slash--green,
+.cvx-logo--xl .cvx-logo__slash--green,
+.cvx-logo--hero .cvx-logo__slash--green { top: 59%; }
+
+.cvx-logo--hero .cvx-logo__word strong { font-size: 26px; }
+.cvx-logo--hero .cvx-logo__word small { font-size: 10px; }
+/* CHURVOX_NEW_LOGO_END */

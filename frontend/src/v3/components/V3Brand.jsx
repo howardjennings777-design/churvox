@@ -1,18 +1,6 @@
 import React from "react";
+import { ChurvoxLogo } from "../../components/ChurvoxLogo";
 
 export default function V3Brand({ compact = false }) {
-  return (
-    <div className="v3-brand">
-      <div className="v3-mark" aria-hidden="true">
-        <span className="v3-cut a" />
-        <span className="v3-cut b" />
-      </div>
-      {!compact && (
-        <div className="v3-word">
-          <strong>Churvox</strong>
-          <span>Trade OS</span>
-        </div>
-      )}
-    </div>
-  );
+  return <ChurvoxLogo compact={compact} size="md" dataTestId="v3-churvox-logo" />;
 }
