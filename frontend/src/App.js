@@ -222,6 +222,7 @@ function App() {
           <Route path="/worker/jobs" element={<WorkerRoute><WorkerHomePage /></WorkerRoute>} />
           <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
           <Route path="/worker/settings" element={<WorkerRoute><WorkerSettingsPage /></WorkerRoute>} />
+          <Route path="/worker/profile" element={<WorkerRoute><Navigate to="/worker/settings" replace /></WorkerRoute>} />
           <Route path="/worker" element={<WorkerRoute><Navigate to="/worker/jobs" replace /></WorkerRoute>} />
           <Route path="/worker/dashboard" element={<WorkerRoute><Navigate to="/worker/jobs" replace /></WorkerRoute>} />
           <Route path="/privacy" element={<PrivacyPage />} />

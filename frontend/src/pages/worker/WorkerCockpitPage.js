@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../../styles/churvox-worker-cockpit.css";
+import WorkerBottomNav from "@/components/worker/WorkerBottomNav";
 
 const env = typeof process !== "undefined" && process.env ? process.env : {};
 const RAW_API_BASE =
@@ -861,12 +862,7 @@ export default function WorkerCockpitPage() {
           )}
         </div>
       </section>
-
-      <nav className="cvx-worker-mobile-dock" aria-label="Worker quick actions">
-        <button type="button" onClick={() => setActiveTab("today")}>Today</button>
-        <button type="button" onClick={() => nextJob && setSelectedJob(nextJob)} disabled={!nextJob}>Next Job</button>
-        <button type="button" onClick={() => loadAll({ silent: true })}>Refresh</button>
-      </nav>
+      <WorkerBottomNav active="today" />
 
       {selectedJob ? (
         <JobModal

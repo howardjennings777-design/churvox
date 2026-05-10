@@ -1,39 +1,218 @@
 import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  ArrowLeft,
+  Bell,
+  Briefcase,
+  Building2,
+  HelpCircle,
+  LogOut,
+  Mail,
+  RefreshCw,
+  ShieldCheck,
+  Smartphone,
+  UserRound,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { Link } from "react-router-dom";
-import { ArrowLeft, User, Mail, Building2, Shield, LogOut, Smartphone, Bell } from "lucide-react";
-import { PremiumPage, PremiumCard, PremiumButton } from "@/components/premium";
 import WorkerBottomNav from "@/components/worker/WorkerBottomNav";
 import WorkerContactOfficePanel from "@/components/worker/WorkerContactOfficePanel";
+import "../../styles/churvox-worker-settings.css";
+
+function clean(value, fallback = "Not set") {
+  if (value === undefined || value === null || String(value).trim() === "") return fallback;
+  return String(value).trim();
+}
+
+function Row({ icon: Icon, label, value }) {
+  return (
+    <div className="worker-settings-row">
+      <div className="worker-settings-row-icon">
+        <Icon size={18} />
+      </div>
+      <div>
+        <span>{label}</span>
+        <strong>{value}</strong>
+      </div>
+    </div>
+  );
+}
 
 export default function WorkerSettingsPage() {
-  const { user, logout } = useAuth();
-  const [showContactOffice, setShowContactOffice] = React.useState(false);
+  const navigate = useNavigate();
+  const { user, logout, checkAuth } = useAuth();
+  const [showHelp, setShowHelp] = React.useState(false);
+  const [message, setMessage] = React.useState("");
+  const [busy, setBusy] = React.useState("");
+
+  const name = clean(user?.name || user?.full_name || user?.first_name, "Worker");
+  const email = clean(user?.email, "No email saved");
+  const business = clean(user?.business_name || user?.company_name, "Churvox Team");
+  const role = clean(user?.role || user?.user_role, "worker").replace(/_/g, " ");
+  const region = clean(user?.region || user?.area || user?.zone, "Not set");
+
+  React.useEffect(() => {
+    if (!message) return undefined;
+    const timer = setTimeout(() => setMessage(""), 2500);
+    return () => clearTimeout(timer);
+  }, [message]);
+
+  async function refreshProfile() {
+    setBusy("refresh");
+    try {
+      if (checkAuth) await checkAuth();
+      setMessage("Profile refreshed");
+    } catch {
+      setMessage("Could not refresh profile");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function handleLogout() {
+    setBusy("logout");
+    try {
+      await logout();
+      navigate("/login", { replace: true });
+    } finally {
+      setBusy("");
+    }
+  }
 
   return (
-    <div className="px-app min-h-screen pb-28">
-      <header className="bg-white/90 backdrop-blur border-b border-[#e6eef9] px-4 py-4 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Link to="/worker/jobs" className="text-[#5b6c87] hover:text-[#0d1b34]"><ArrowLeft className="h-5 w-5" /></Link>
-          <h1 className="text-lg font-bold text-[#0d1b34]">Worker Settings</h1>
+    <div className="worker-settings-page">
+      {message ? <div className="worker-settings-toast">{message}</div> : null}
+
+      <header className="worker-settings-top">
+        <div className="worker-settings-top-inner">
+          <Link to="/worker/jobs" className="worker-settings-icon-btn" aria-label="Back to worker jobs">
+            <ArrowLeft size={20} />
+          </Link>
+          <div>
+            <small>Worker App</small>
+            <b>Settings</b>
+          </div>
+          <button
+            type="button"
+            className="worker-settings-icon-btn"
+            onClick={refreshProfile}
+            disabled={busy === "refresh"}
+            aria-label="Refresh worker profile"
+          >
+            <RefreshCw size={19} />
+          </button>
         </div>
       </header>
-      <main className="max-w-2xl mx-auto px-4 py-6">
-        <PremiumPage maxWidth={640}>
-          <PremiumCard><div className="px-card__body space-y-3"><div className="flex items-center gap-3"><div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#dbe7ff] to-[#e0f3ff] flex items-center justify-center"><User className="h-7 w-7 text-[#2563eb]" /></div><div><p className="text-lg font-bold text-[#0d1b34]">{user?.name || "Worker"}</p><p className="text-sm text-[#5b6c87]">Field worker profile</p></div></div></div></PremiumCard>
-          <PremiumCard><div className="px-card__body space-y-2"><p className="text-sm font-semibold text-[#0d1b34]">Contact details</p><p className="text-sm text-[#5b6c87] flex items-center gap-2"><Mail className="h-4 w-4" />{user?.email || "No email"}</p><p className="text-sm text-[#5b6c87] flex items-center gap-2"><Building2 className="h-4 w-4" />{user?.business_name || "Churvox Team"}</p></div></PremiumCard>
-          <PremiumCard><div className="px-card__body space-y-2"><p className="text-sm font-semibold text-[#0d1b34]">Role & region</p><p className="text-sm text-[#5b6c87] flex items-center gap-2"><Shield className="h-4 w-4" />Role: Worker</p>{user?.region ? <p className="text-sm text-[#5b6c87]">Region: {user.region}</p> : null}</div></PremiumCard>
-          {typeof user?.notifications_enabled !== "undefined" ? <PremiumCard><div className="px-card__body"><p className="text-sm font-semibold text-[#0d1b34] mb-1 flex items-center gap-2"><Bell className="h-4 w-4" />Notifications</p><p className="text-sm text-[#5b6c87]">{user.notifications_enabled ? "Enabled" : "Disabled"}</p></div></PremiumCard> : null}
-          <PremiumCard><div className="px-card__body"><p className="text-sm font-semibold text-[#0d1b34] mb-1 flex items-center gap-2"><Smartphone className="h-4 w-4" />App install & help</p><p className="text-sm text-[#5b6c87]">Use your phone browser menu to install Churvox to your home screen for faster field access.</p></div></PremiumCard>
-          <PremiumCard id="help"><div className="px-card__body space-y-2"><p className="text-sm font-semibold text-[#0d1b34] mb-1">Help</p><p className="text-sm text-[#5b6c87]">If your jobs are missing or something looks wrong, refresh your jobs page first, then contact the office/admin team.</p><PremiumButton variant="secondary" className="w-full" onClick={() => setShowContactOffice(true)}>Contact office</PremiumButton></div></PremiumCard>
-          <PremiumButton onClick={logout} iconLeft={<LogOut className="h-4 w-4" />} className="w-full">Log out</PremiumButton>
-        </PremiumPage>
+
+      <main className="worker-settings-shell">
+        <section className="worker-settings-hero">
+          <div className="worker-settings-avatar">
+            <UserRound size={34} />
+          </div>
+          <div>
+            <span>Field worker profile</span>
+            <h1>{name}</h1>
+            <p>Worker-only access for jobs, photos, notes, office help, and app setup.</p>
+          </div>
+        </section>
+
+        <section className="worker-settings-actions">
+          <button type="button" onClick={() => navigate("/worker/jobs")}>
+            <Briefcase size={18} />
+            My jobs
+          </button>
+          <button type="button" onClick={() => setShowHelp(true)}>
+            <HelpCircle size={18} />
+            Contact office
+          </button>
+          <button type="button" onClick={refreshProfile} disabled={busy === "refresh"}>
+            <RefreshCw size={18} />
+            Refresh
+          </button>
+        </section>
+
+        <section className="worker-settings-card">
+          <div className="worker-settings-card-head">
+            <div>
+              <small>Profile</small>
+              <h2>Your details</h2>
+            </div>
+            <ShieldCheck size={22} />
+          </div>
+
+          <Row icon={UserRound} label="Name" value={name} />
+          <Row icon={Mail} label="Email" value={email} />
+          <Row icon={Building2} label="Business" value={business} />
+          <Row icon={ShieldCheck} label="Role" value={role} />
+          <Row icon={Briefcase} label="Region / area" value={region} />
+        </section>
+
+        <section className="worker-settings-card" id="help">
+          <div className="worker-settings-card-head">
+            <div>
+              <small>Help</small>
+              <h2>Need office support?</h2>
+            </div>
+            <HelpCircle size={22} />
+          </div>
+
+          <p className="worker-settings-copy">
+            Use this when your jobs are missing, the address is wrong, access is blocked, or you need instructions.
+          </p>
+
+          <button type="button" className="worker-settings-primary" onClick={() => setShowHelp(true)}>
+            <HelpCircle size={18} />
+            Contact office
+          </button>
+        </section>
+
+        <section className="worker-settings-card">
+          <div className="worker-settings-card-head">
+            <div>
+              <small>App setup</small>
+              <h2>Phone settings</h2>
+            </div>
+            <Smartphone size={22} />
+          </div>
+
+          <Row icon={Smartphone} label="Install app" value="Browser menu → Add to Home screen" />
+          <Row icon={Bell} label="Notifications" value="Job updates show inside Churvox" />
+        </section>
+
+        <section className="worker-settings-card worker-settings-safe">
+          <div className="worker-settings-card-head">
+            <div>
+              <small>Safe worker access</small>
+              <h2>Hidden from workers</h2>
+            </div>
+            <ShieldCheck size={22} />
+          </div>
+
+          <ul>
+            <li>Owner pricing</li>
+            <li>Invoices and billing</li>
+            <li>Payroll and MYOB</li>
+            <li>Admin settings</li>
+            <li>GPS proof details</li>
+          </ul>
+        </section>
+
+        <button
+          type="button"
+          className="worker-settings-logout"
+          onClick={handleLogout}
+          disabled={busy === "logout"}
+        >
+          <LogOut size={18} />
+          {busy === "logout" ? "Logging out..." : "Log out"}
+        </button>
       </main>
+
       <WorkerContactOfficePanel
-        open={showContactOffice}
-        onClose={() => setShowContactOffice(false)}
+        open={showHelp}
+        onClose={() => setShowHelp(false)}
         defaultMessage="I need help with my Churvox worker account."
       />
+
       <WorkerBottomNav active="settings" />
     </div>
   );
