@@ -104,6 +104,102 @@ const css = `
 .v8-detail div{border:1px solid rgba(69,45,29,.15);border-radius:20px;background:#fffaf0;padding:13px}.v8-detail span{display:block;margin-bottom:5px;color:#756451;font-size:12px;text-transform:capitalize}.v8-detail strong{word-break:break-word}.v8-danger{border:0;border-radius:999px;padding:12px 16px;background:#b8322a;color:white;font-weight:900;display:inline-flex;align-items:center;gap:8px}
 .v8-tabs{display:none}.v8-spin{animation:v8spin 1s linear infinite}@keyframes v8spin{to{transform:rotate(360deg)}}
 @media(max-width:1080px){.v8-shell{display:block}.v8-rail{position:fixed;z-index:100;inset:0 auto 0 0;width:min(340px,88vw);transform:translateX(-105%);transition:.22s}.v8-rail.is-open{transform:translateX(0)}.v8-close,.v8-menu{display:inline-flex}.v8-main{padding:12px 12px 110px}.v8-top{grid-template-columns:auto 1fr auto auto}.v8-primary:not(.v8-drawer .v8-primary),.v8-icon{display:none}.v8-hero,.v8-layout,.v8-two,.v8-card-grid,.v8-rules,.v8-wide,.v8-stats,.v8-move-grid{grid-template-columns:1fr}.v8-hero-main{min-height:auto;padding:27px}.v8-hero-main h1{font-size:42px;line-height:.96}.v8-tabs{position:fixed;z-index:80;left:10px;right:10px;bottom:10px;display:grid;grid-template-columns:repeat(6,1fr);gap:5px;background:rgba(18,13,9,.94);border:1px solid rgba(255,247,232,.14);border-radius:26px;padding:7px;backdrop-filter:blur(18px)}.v8-tabs button{border:0;background:transparent;color:rgba(255,247,232,.68);border-radius:18px;display:grid;place-items:center;gap:3px;padding:7px 2px;font-size:10px}.v8-tabs button.active{background:#fff7e8;color:#c4512d}.v8-drawer-bg{align-items:flex-end;padding:8px}.v8-drawer{width:100%;max-height:90vh}}
+
+/* V8 FINAL PREMIUM POLISH */
+.v8-hero-main h1 {
+  font-size: clamp(42px, 4.9vw, 68px) !important;
+  line-height: 1.01 !important;
+  letter-spacing: -0.055em !important;
+  word-spacing: 0.015em !important;
+  max-width: 980px !important;
+}
+
+.v8-hero-main {
+  padding: 44px 48px !important;
+  min-height: 310px !important;
+}
+
+.v8-hero-main span {
+  font-size: 16.5px !important;
+  line-height: 1.62 !important;
+  max-width: 760px !important;
+}
+
+.v8-core {
+  padding: 32px !important;
+}
+
+.v8-core strong {
+  font-size: 92px !important;
+}
+
+.v8-panel-head h2 {
+  font-size: 31px !important;
+  line-height: 1.05 !important;
+}
+
+.v8-dark .v8-panel-head h2 {
+  font-size: 34px !important;
+}
+
+.v8-move-body strong {
+  font-size: 20px !important;
+  line-height: 1.18 !important;
+}
+
+.v8-move-body small {
+  font-size: 13.5px !important;
+  line-height: 1.5 !important;
+}
+
+.v8-record-text strong {
+  font-size: 15.5px !important;
+}
+
+.v8-record-text small {
+  font-size: 12.5px !important;
+  line-height: 1.35 !important;
+}
+
+.v8-nav button {
+  border-radius: 20px !important;
+}
+
+.v8-nav b {
+  font-size: 13.5px !important;
+}
+
+.v8-nav small {
+  font-size: 10.5px !important;
+}
+
+.v8-operator {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 18px 38px rgba(0,0,0,.2);
+}
+
+.v8-panel {
+  border-radius: 34px !important;
+}
+
+.v8-move,
+.v8-record,
+.v8-rules button,
+.v8-stat {
+  border-radius: 24px !important;
+}
+
+@media(max-width:1080px) {
+  .v8-hero-main {
+    padding: 28px !important;
+    min-height: auto !important;
+  }
+
+  .v8-hero-main h1 {
+    font-size: 38px !important;
+    line-height: 1.02 !important;
+  }
+}
+
 `;
 
 const NAV = [
