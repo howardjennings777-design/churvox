@@ -1,19 +1,142 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
+import {
+  Briefcase,
+  CalendarClock,
+  CheckCircle2,
+  ChevronRight,
+  Clock3,
+  HardHat,
+  LogOut,
+  MapPin,
+  MessageSquare,
+  Navigation,
+  Play,
+  RefreshCw,
+  Settings,
+  Sparkles,
+  Timer,
+} from "lucide-react";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/context/AuthContext";
-import { Briefcase, Clock3, MapPin, Play, ChevronRight, LogOut, Settings, CalendarClock, CheckCircle2, Timer, RefreshCw } from "lucide-react";
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
-import { PremiumStatusBadge, PremiumButton, PremiumCard } from "@/components/premium";
 import WorkerBottomNav from "@/components/worker/WorkerBottomNav";
 import WorkerContactOfficePanel from "@/components/worker/WorkerContactOfficePanel";
+import "./worker-field.css";
 
 const canStart = (status) => ["assigned", "acknowledged", "paused"].includes(String(status || "").toLowerCase());
+const isDone = (status) => ["completed", "done", "finished"].includes(String(status || "").toLowerCase());
+const jobId = (job) => job?.id || job?._id || job?.uuid || "";
+
+function statusClass(status) {
+  return String(status || "assigned").toLowerCase().replace(/\s+/g, "_");
+}
+
+function StatusBadge({ status }) {
+  const clean = statusClass(status);
+  return <span className={`worker-status ${clean}`}>{clean.replace(/_/g, " ")}</span>;
+}
+
+function getDateKey(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value).slice(0, 10);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+}
+
+function todayKey() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 10);
+}
+
+function shortTime(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function WorkerButton({ children, className = "", ...props }) {
+  return <button className={`worker-btn ${className}`} {...props}>{children}</button>;
+}
+
+function WorkerStat({ label, value }) {
+  return (
+    <div className="worker-stat">
+      <span>{label}</span>
+      <b>{value}</b>
+    </div>
+  );
+}
+
+function JobCard({ job, onStart, starting }) {
+  const id = jobId(job);
+  const status = statusClass(job?.status || "assigned");
+  const title = job?.title || job?.job_title || job?.name || "Untitled job";
+  const address = job?.address || job?.job_address || "";
+  const scheduled = job?.scheduled_date || job?.date || "";
+  const client = job?.client_name || job?.customer_name || "";
+
+  return (
+    <article className="worker-card">
+      <div className="worker-card-body">
+        <div className="worker-card-head">
+          <div>
+            <p className="worker-card-title">{title}</p>
+            <div style={{ marginTop: 8 }}><StatusBadge status={status} /></div>
+          </div>
+          <Link to={`/worker/jobs/${id}`} className="worker-icon-btn" aria-label="Open job">
+            <ChevronRight size={20} />
+          </Link>
+        </div>
+
+        <div className="worker-meta">
+          {client ? <div className="worker-meta-row"><HardHat size={15} /> {client}</div> : null}
+          {address ? <div className="worker-meta-row"><MapPin size={15} /> {address}</div> : null}
+          {scheduled ? (
+            <div className="worker-meta-row">
+              <CalendarClock size={15} />
+              {getDateKey(scheduled)} {job?.scheduled_time ? `• ${job.scheduled_time}` : ""}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="worker-action-grid">
+          <Link to={`/worker/jobs/${id}`} className="worker-btn dark">
+            <Briefcase size={17} /> Open job
+          </Link>
+
+          {canStart(status) ? (
+            <WorkerButton className="primary" onClick={() => onStart(id)} disabled={starting === id}>
+              <Play size={17} /> {starting === id ? "Starting..." : "Start"}
+            </WorkerButton>
+          ) : (
+            <WorkerButton disabled>
+              {isDone(status) ? <CheckCircle2 size={17} /> : <Timer size={17} />}
+              {isDone(status) ? "Done" : "Active"}
+            </WorkerButton>
+          )}
+
+          {address ? (
+            <a className="worker-btn" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} target="_blank" rel="noreferrer">
+              <Navigation size={17} /> Maps
+            </a>
+          ) : (
+            <WorkerButton disabled><MapPin size={17} /> No address</WorkerButton>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
 
 export default function WorkerJobsPage() {
   const { user, logout } = useAuth();
-  const { get, patch } = useApi();
+  const { get, post, patch } = useApi();
   const [jobs, setJobs] = useState([]);
+  const [filter, setFilter] = useState("today");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [startingId, setStartingId] = useState("");
@@ -24,130 +147,165 @@ export default function WorkerJobsPage() {
     setLoading(true);
     setError("");
     const res = await get("/jobs");
-    if (res.success) {
-      setJobs(Array.isArray(res.data) ? res.data : []);
+    if (res?.success || res?.ok) {
+      const data = res.data?.jobs || res.data?.items || res.data?.results || res.data || [];
+      setJobs(Array.isArray(data) ? data : []);
       setLastSynced(new Date());
+    } else {
+      setError("Could not load your jobs. Pull down, refresh, or contact the office.");
     }
-    else setError("Could not load your jobs. Please refresh.");
     setLoading(false);
   }, [get]);
 
-  useEffect(() => { fetchJobs(); }, [fetchJobs]);
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayKey();
+
   const stats = useMemo(() => {
     const total = jobs.length;
-    const dueToday = jobs.filter((j) => String(j?.scheduled_date || "").slice(0, 10) === today).length;
-    const inProgress = jobs.filter((j) => String(j?.status || "").toLowerCase() === "in_progress").length;
-    const completed = jobs.filter((j) => String(j?.status || "").toLowerCase() === "completed").length;
+    const dueToday = jobs.filter((j) => getDateKey(j?.scheduled_date || j?.date) === today).length;
+    const inProgress = jobs.filter((j) => statusClass(j?.status) === "in_progress").length;
+    const completed = jobs.filter((j) => isDone(j?.status)).length;
     return { total, dueToday, inProgress, completed };
   }, [jobs, today]);
 
-  const nextJob = useMemo(() => jobs.find((j) => String(j?.status || "").toLowerCase() !== "completed"), [jobs]);
+  const filteredJobs = useMemo(() => {
+    const open = jobs.filter((j) => !isDone(j?.status));
+    if (filter === "today") return open.filter((j) => getDateKey(j?.scheduled_date || j?.date) === today || !j?.scheduled_date);
+    if (filter === "active") return open.filter((j) => ["in_progress", "paused", "acknowledged"].includes(statusClass(j?.status)));
+    if (filter === "completed") return jobs.filter((j) => isDone(j?.status));
+    return jobs;
+  }, [jobs, filter, today]);
 
-  const handleQuickStart = async (jobId) => {
-    setStartingId(jobId);
-    await patch(`/jobs/${jobId}`, { status: "in_progress" });
+  const nextJob = useMemo(() => {
+    return jobs.find((j) => !isDone(j?.status)) || null;
+  }, [jobs]);
+
+  const handleQuickStart = async (id) => {
+    setStartingId(id);
+    let res = await post(`/jobs/${id}/start`, {});
+    if (!(res?.success || res?.ok)) {
+      res = await patch(`/jobs/${id}`, { status: "in_progress" });
+    }
     await fetchJobs();
     setStartingId("");
   };
 
+  const firstName = user?.name?.split(" ")?.[0] || user?.email?.split("@")?.[0] || "team";
+
   return (
-    <div className="px-app min-h-screen pb-28">
-      <header className="px-mobile-header">
-        <ChurvoxLogo size="sm" />
-        <div className="flex items-center gap-2">
-          <button onClick={fetchJobs} className="px-btn px-btn--ghost px-btn--sm" title="Refresh jobs" disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /></button>
-          <Link to="/worker/settings" className="px-btn px-btn--ghost px-btn--sm" title="Settings"><Settings className="h-4 w-4" /></Link>
-          <button onClick={logout} className="px-btn px-btn--ghost px-btn--sm" title="Log out"><LogOut className="h-4 w-4" /></button>
+    <div className="worker-field-app">
+      <header className="worker-topbar">
+        <div className="worker-topbar-inner">
+          <ChurvoxLogo size="sm" />
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button onClick={fetchJobs} className="worker-icon-btn" title="Refresh jobs" disabled={loading}>
+              <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+            </button>
+            <Link to="/worker/settings" className="worker-icon-btn" title="Settings"><Settings size={18} /></Link>
+            <button onClick={logout} className="worker-icon-btn" title="Log out"><LogOut size={18} /></button>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-5 space-y-4">
-        <div className="px-hero" style={{ padding: "20px" }}>
-          <span className="px-hero__eyebrow"><Briefcase className="h-3 w-3" /> Today&apos;s Work</span>
-          <h1 className="px-hero__title" style={{ fontSize: "24px" }}>Hey {user?.name?.split(" ")[0] || "team"}</h1>
-          <p className="px-hero__sub">Your field schedule, actions, and status updates — ready for the day.</p>
-        </div>
-
-        <PremiumCard>
-          <div className="px-card__body flex items-center justify-between gap-3 py-3">
-            <div>
-              <p className="text-xs font-semibold text-[#2563eb] uppercase tracking-wide">Ready for dispatch</p>
-              <p className="text-xs text-[#5b6c87]">Last synced: {lastSynced ? lastSynced.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "--:--"}</p>
-            </div>
-            <PremiumButton onClick={fetchJobs} disabled={loading} variant="secondary" iconLeft={<RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />}>Refresh jobs</PremiumButton>
+      <main className="worker-field-shell">
+        <section className="worker-hero">
+          <span className="worker-eyebrow"><Sparkles size={14} /> Worker Field OS</span>
+          <h1>Hey {firstName}, your run is ready.</h1>
+          <p>
+            Today’s jobs, route, proof photos, notes, and completion actions in one clean worker view.
+            No owner clutter. Just field work done properly.
+          </p>
+          <div className="worker-hero-actions">
+            <WorkerButton className="primary" onClick={fetchJobs} disabled={loading}>
+              <RefreshCw size={17} className={loading ? "animate-spin" : ""} /> Refresh run
+            </WorkerButton>
+            <WorkerButton onClick={() => setShowContactOffice(true)}>
+              <MessageSquare size={17} /> Contact office
+            </WorkerButton>
           </div>
-        </PremiumCard>
+        </section>
 
-        <div className="grid grid-cols-2 gap-2">
-          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[#5b6c87]">Assigned jobs</p><p className="text-xl font-bold text-[#0d1b34]">{stats.total}</p></div></PremiumCard>
-          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[#5b6c87]">Due today</p><p className="text-xl font-bold text-[#0d1b34]">{stats.dueToday}</p></div></PremiumCard>
-          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[#5b6c87]">In progress</p><p className="text-xl font-bold text-[#0d1b34]">{stats.inProgress}</p></div></PremiumCard>
-          <PremiumCard><div className="px-card__body py-3"><p className="text-xs text-[#5b6c87]">Completed</p><p className="text-xl font-bold text-[#0d1b34]">{stats.completed}</p></div></PremiumCard>
+        <div className="worker-grid-4">
+          <WorkerStat label="Assigned" value={stats.total} />
+          <WorkerStat label="Today" value={stats.dueToday} />
+          <WorkerStat label="Active" value={stats.inProgress} />
+          <WorkerStat label="Done" value={stats.completed} />
         </div>
+
+        <section className="worker-card">
+          <div className="worker-card-body">
+            <div className="worker-route-card">
+              <div className="worker-route-icon"><Clock3 size={24} /></div>
+              <div>
+                <small>Field sync</small>
+                <b>{lastSynced ? `Synced ${shortTime(lastSynced)}` : "Waiting for sync"}</b>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {nextJob && !loading ? (
-          <PremiumCard>
-            <div className="px-card__body space-y-2">
-              <p className="text-xs font-semibold text-[#2563eb] uppercase tracking-wide">Next job</p>
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="font-bold text-[#0d1b34] truncate">{nextJob.title || "Untitled Job"}</p>
-                  <PremiumStatusBadge status={nextJob.status} />
-                </div>
-                <Link to={`/worker/jobs/${nextJob.id || nextJob._id}`}><ChevronRight className="h-5 w-5 text-[#94a3b8]" /></Link>
+          <section className="worker-card">
+            <div className="worker-card-body">
+              <span className="worker-eyebrow" style={{ color: "#ad4d31", background: "rgba(244,91,53,0.10)" }}>
+                <Briefcase size={14} /> Next best job
+              </span>
+              <div style={{ marginTop: 14 }}>
+                <JobCard job={nextJob} onStart={handleQuickStart} starting={startingId} />
               </div>
-              {nextJob.address ? <p className="text-xs text-[#5b6c87] flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{nextJob.address}</p> : null}
             </div>
-          </PremiumCard>
+          </section>
         ) : null}
 
-        {loading ? <div className="px-loading"><div className="px-loading__spinner" /><p className="text-[13px] text-[#5b6c87]">Loading today&apos;s work…</p></div> : null}
-        {error ? <PremiumCard><div className="px-card__body text-sm text-red-600">{error}</div></PremiumCard> : null}
+        <div className="worker-tabs">
+          {[
+            ["today", "Today"],
+            ["active", "Active"],
+            ["all", "All"],
+            ["completed", "Completed"],
+          ].map(([key, label]) => (
+            <button key={key} className={`worker-tab ${filter === key ? "active" : ""}`} onClick={() => setFilter(key)}>
+              {label}
+            </button>
+          ))}
+        </div>
 
-        {!loading && !error && jobs.length === 0 ? (
-          <div className="px-empty">
-            <div className="px-empty__icon"><Briefcase className="h-6 w-6" /></div>
-            <h3 className="px-empty__title">Waiting for dispatch</h3>
-            <p className="px-empty__sub">No jobs are assigned yet. Refresh your jobs page or contact the office if something looks wrong.</p>
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-sm">
-              <PremiumButton onClick={fetchJobs} iconLeft={<RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />}>Refresh jobs</PremiumButton>
-              <PremiumButton variant="secondary" className="w-full" onClick={() => setShowContactOffice(true)}>Contact office</PremiumButton>
+        {loading ? (
+          <div className="worker-loading"><div className="worker-spinner" /></div>
+        ) : null}
+
+        {error ? (
+          <div className="worker-card">
+            <div className="worker-card-body" style={{ color: "#b91c1c", fontWeight: 800 }}>{error}</div>
+          </div>
+        ) : null}
+
+        {!loading && !error && filteredJobs.length === 0 ? (
+          <div className="worker-empty">
+            <div className="worker-empty-icon"><Briefcase size={26} /></div>
+            <h3>No jobs in this view</h3>
+            <p>No work is showing here yet. Refresh your run or contact the office if something looks wrong.</p>
+            <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
+              <WorkerButton className="primary full" onClick={fetchJobs}><RefreshCw size={17} /> Refresh jobs</WorkerButton>
+              <WorkerButton className="full" onClick={() => setShowContactOffice(true)}><MessageSquare size={17} /> Contact office</WorkerButton>
             </div>
           </div>
         ) : null}
 
-        {!loading && !error ? jobs.map((job) => {
-          const id = job.id || job._id;
-          const status = String(job.status || "assigned").toLowerCase();
-          return (
-            <PremiumCard key={id} className="block">
-              <div className="px-card__body space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-semibold text-[#0d1b34]">{job.title || "Untitled Job"}</p>
-                    <PremiumStatusBadge status={status} />
-                  </div>
-                  <Link to={`/worker/jobs/${id}`}><ChevronRight className="h-5 w-5 text-[#94a3b8]" /></Link>
-                </div>
-                {job.address ? <p className="text-xs text-[#5b6c87] flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{job.address}</p> : null}
-                {job.scheduled_date ? <p className="text-xs text-[#5b6c87] flex items-center gap-1"><CalendarClock className="h-3.5 w-3.5" />{String(job.scheduled_date).slice(0, 10)} {job.scheduled_time ? `• ${job.scheduled_time}` : ""}</p> : null}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <Link to={`/worker/jobs/${id}`}><PremiumButton className="w-full" variant="secondary" iconLeft={<Briefcase className="h-4 w-4" />}>View job</PremiumButton></Link>
-                  {canStart(status) ? <PremiumButton className="w-full" onClick={() => handleQuickStart(id)} disabled={startingId === id} iconLeft={<Play className="h-4 w-4" />}>{startingId === id ? "Starting..." : "Start job"}</PremiumButton> : <PremiumButton className="w-full" variant="secondary" disabled iconLeft={status === "completed" ? <CheckCircle2 className="h-4 w-4" /> : <Timer className="h-4 w-4" />}>{status === "completed" ? "Completed" : "In progress"}</PremiumButton>}
-                  {job.address ? <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`} target="_blank" rel="noreferrer"><PremiumButton className="w-full" variant="secondary" iconLeft={<MapPin className="h-4 w-4" />}>Directions</PremiumButton></a> : <PremiumButton className="w-full" variant="secondary" disabled iconLeft={<Clock3 className="h-4 w-4" />}>No address</PremiumButton>}
-                </div>
-              </div>
-            </PremiumCard>
-          );
-        }) : null}
+        {!loading && !error ? filteredJobs.map((job) => (
+          <JobCard key={jobId(job)} job={job} onStart={handleQuickStart} starting={startingId} />
+        )) : null}
       </main>
+
       <WorkerContactOfficePanel
         open={showContactOffice}
         onClose={() => setShowContactOffice(false)}
-        defaultMessage="I need help with my assigned jobs. No jobs are showing for me."
+        defaultMessage="I need help with my assigned jobs."
       />
+
       <WorkerBottomNav active="today" />
     </div>
   );
