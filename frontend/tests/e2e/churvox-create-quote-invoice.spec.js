@@ -21,9 +21,11 @@ async function submitModal(page) {
   const modal = page.locator('.v3-modal').last();
   await expect(modal).toBeVisible({ timeout: 10000 });
 
-  const submit = modal.locator('form button[type="submit"], button[type="submit"]').last();
-  await expect(submit).toBeVisible({ timeout: 10000 });
+  const submit = modal
+    .getByRole('button', { name: /save|create|add/i })
+    .last();
 
+  await expect(submit).toBeVisible({ timeout: 10000 });
   await submit.scrollIntoViewIfNeeded();
   await submit.click({ force: true });
   await page.waitForTimeout(2500);

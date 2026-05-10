@@ -58,7 +58,7 @@ async function loginIfPossible(page) {
   await emailInput.fill(email);
   await passInput.fill(password);
   await page.getByRole('button', { name: /log\s?in|sign\s?in/i }).first().click();
-  await page.waitForURL(/dashboard|smart|home/i, { timeout: 20000 });
+  await page.waitForURL(/dashboard|smart|home|admin/i, { timeout: 20000 });
   return true;
 }
 

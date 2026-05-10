@@ -247,7 +247,12 @@ export default function V3AiSiteGuide() {
   const hasNeedsDoing = ownerMode && actions.some((action) => action.kind === "needs-action" || action.kind === "new-owner");
 
   useEffect(() => {
-    if (!ownerMode || loading || autoShown) return;
+    const autoOpenAllowed =
+      location.pathname === "/" ||
+      location.pathname === "/dashboard" ||
+      location.pathname === "/overview";
+
+    if (!ownerMode || loading || autoShown || !autoOpenAllowed) return;
 
     const storageKey = `churvox-ai-guide-seen-${user?.email || "owner"}`;
     const alreadySeen = window.localStorage.getItem(storageKey);
