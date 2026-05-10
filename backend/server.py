@@ -255,6 +255,7 @@ def _build_visit_summary(job):
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+from fastapi.responses import JSONResponse
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile, Query, Body
 from app.plan_rules import normalize_plan, get_plan_features, can_use_feature, get_max_clients
 from owner_bootstrap import ensure_owner_account
@@ -12082,6 +12083,154 @@ try:
     logger.info("Strong AI Operator routes registered")
 except Exception as strong_ai_exc:
     logger.exception("Strong AI Operator route registration failed: %s", strong_ai_exc)
+
+
+
+# =========================
+# CVX PUBLIC QUOTE LINK FIX
+# =========================
+def _cvx_public_frontend_url():
+    return (os.environ.get("FRONTEND_URL") or os.environ.get("REACT_APP_FRONTEND_URL") or "https://www.churvox.com").rstrip("/")
+
+def _cvx_safe_public_json(value):
+    if value is None:
+        return None
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, list):
+        return [_cvx_safe_public_json(v) for v in value]
+    if isinstance(value, dict):
+        out = {}
+        for k, v in value.items():
+            if k == "_id":
+                out["id"] = str(v)
+            else:
+                out[k] = _cvx_safe_public_json(v)
+        return out
+    try:
+        return value.isoformat()
+    except Exception:
+        return str(value)
+
+async def _cvx_ensure_quote_public_links(limit=1000):
+    base = _cvx_public_frontend_url()
+    query = {
+        "$or": [
+            {"public_token": {"$exists": False}},
+            {"public_token": None},
+            {"public_token": ""},
+            {"public_url": {"$exists": False}},
+            {"public_quote_url": {"$exists": False}},
+        ]
+    }
+
+    try:
+        quotes = await db.quotes.find(query).limit(limit).to_list(length=limit)
+    except Exception:
+        quotes = []
+
+    updated = 0
+    for quote in quotes:
+        token = (
+            quote.get("public_token")
+            or quote.get("token")
+            or quote.get("quote_token")
+            or quote.get("share_token")
+            or secrets.token_urlsafe(22).replace("-", "").replace("_", "")
+        )
+
+        public_url = f"{base}/public/quote/{token}"
+        update = {
+            "public_token": token,
+            "token": token,
+            "quote_token": token,
+            "share_token": token,
+            "public_url": public_url,
+            "public_quote_url": public_url,
+            "updated_at": datetime.now(timezone.utc),
+        }
+
+        try:
+            await db.quotes.update_one({"_id": quote["_id"]}, {"$set": update})
+            updated += 1
+        except Exception:
+            pass
+
+    return updated
+
+async def _cvx_find_public_quote(token: str):
+    token = str(token or "").strip()
+    if not token:
+        return None
+
+    query = {
+        "$or": [
+            {"public_token": token},
+            {"token": token},
+            {"quote_token": token},
+            {"share_token": token},
+        ]
+    }
+    return await db.quotes.find_one(query)
+
+@app.middleware("http")
+async def cvx_public_quote_link_middleware(request, call_next):
+    path = request.url.path.rstrip("/")
+    method = request.method.upper()
+
+    # Backfill public quote links before normal authenticated quote list loads.
+    if path in {"/api/quotes", "/quotes"} and method == "GET":
+        await _cvx_ensure_quote_public_links()
+        return await call_next(request)
+
+    # Backfill after quote creation too, so new quotes become shareable.
+    if path in {"/api/quotes", "/quotes"} and method == "POST":
+        response = await call_next(request)
+        await _cvx_ensure_quote_public_links()
+        return response
+
+    # Serve public quote page data directly and safely.
+    public_prefixes = ["/api/public/quote/", "/public/quote/"]
+    matched_prefix = next((p for p in public_prefixes if path.startswith(p)), None)
+
+    if matched_prefix:
+        rest = path.split(matched_prefix, 1)[1]
+        parts = [p for p in rest.split("/") if p]
+        token = parts[0] if parts else ""
+        action = parts[1].lower() if len(parts) > 1 else ""
+
+        quote = await _cvx_find_public_quote(token)
+        if not quote:
+            return JSONResponse({"detail": "Quote not found"}, status_code=404)
+
+        if method == "GET" and not action:
+            safe = _cvx_safe_public_json(quote)
+            safe["public_token"] = quote.get("public_token") or quote.get("token") or token
+            safe["public_url"] = f"{_cvx_public_frontend_url()}/public/quote/{safe['public_token']}"
+            safe["public_quote_url"] = safe["public_url"]
+            return JSONResponse(safe, status_code=200)
+
+        if method == "POST" and action in {"accept", "decline"}:
+            next_status = "accepted" if action == "accept" else "declined"
+            await db.quotes.update_one(
+                {"_id": quote["_id"]},
+                {"$set": {
+                    "status": next_status,
+                    "public_response": next_status,
+                    "public_responded_at": datetime.now(timezone.utc),
+                    "updated_at": datetime.now(timezone.utc),
+                }}
+            )
+            return JSONResponse({
+                "success": True,
+                "status": next_status,
+                "message": f"Quote {next_status}.",
+            }, status_code=200)
+
+        return JSONResponse({"detail": "Unsupported public quote action"}, status_code=405)
+
+    return await call_next(request)
+
 
 app.include_router(api_router)
 

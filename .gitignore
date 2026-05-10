@@ -562,3 +562,9 @@ credentials.json
 *.pem
 *.key
 .credentials
+
+# Churvox local Playwright output
+frontend/test-results/
+frontend/playwright-report/
+test-results/
+playwright-report/
