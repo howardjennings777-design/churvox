@@ -265,6 +265,7 @@ export default function V9BusinessEngine() {
   const current = MAP[String(params.section || params.area || pathArea || "engine").toLowerCase()] || "engine";
   const active = NAV.find((item) => item.id === current) || NAV[0];
   const ActiveIcon = active.icon;
+  const showCommandHero = current === "engine" || current === "moves";
 
   const go = (area) => { setNavOpen(false); navigate(ROUTE[area] || "/dashboard"); };
 
@@ -695,6 +696,28 @@ export default function V9BusinessEngine() {
           <button className="v9-ai-btn" type="button" onClick={() => go("moves")}><Bot size={18} /> {moves.length}</button>
           <button className="v9-icon" type="button" onClick={() => setDrawer({ mode: "profile", title: user?.name || "Profile", kicker: "Account", item: user || {} })}><UserRound size={18} /></button>
         </header>
+
+          {!showCommandHero && (
+            <section className="v9-page-intro">
+              <div>
+                <p><ActiveIcon size={16} /> {active.label}</p>
+                <h1>
+                  {{
+                    work: "Work command centre",
+                    cash: "Cash and invoice control",
+                    clients: "Client memory and history",
+                    crew: "Crew and workload control",
+                    rules: "Automation rules",
+                    numbers: "Business numbers",
+                    setup: "Business setup",
+                  }[current] || "Business command centre"}
+                </h1>
+                <span>{active.sub} · Tap anything to open it here, not another full-page maze.</span>
+              </div>
+            </section>
+          )}
+
+
 
         {searchResults ? (
           <Panel eyebrow="Search engine" title={`${searchResults.length} live records found`} light action={<button className="v9-soft" type="button" onClick={() => setQuery("")}>Clear</button>}>

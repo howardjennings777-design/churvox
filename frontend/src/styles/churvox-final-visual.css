@@ -154,3 +154,43 @@
     font-size: 36px !important;
   }
 }
+
+/* Final owner subpage intro */
+.v9-page-intro {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255,107,53,.12), transparent 28%),
+    radial-gradient(circle at 92% 10%, rgba(32,227,178,.10), transparent 30%),
+    linear-gradient(135deg, #fffdf8, #fff7ea) !important;
+  border: 1px solid #e4d3bc !important;
+  border-radius: 34px !important;
+  color: #17120e !important;
+  padding: 24px 28px !important;
+  margin-bottom: 20px !important;
+  box-shadow: 0 20px 60px rgba(23,18,14,.10) !important;
+}
+
+.v9-page-intro p {
+  margin: 0 0 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  color: #137e64 !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  letter-spacing: .16em !important;
+  text-transform: uppercase !important;
+}
+
+.v9-page-intro h1 {
+  margin: 0 !important;
+  font-size: clamp(34px, 4vw, 58px) !important;
+  line-height: .95 !important;
+  letter-spacing: -.065em !important;
+}
+
+.v9-page-intro span {
+  display: block !important;
+  margin-top: 10px !important;
+  color: #5b5045 !important;
+  font-weight: 750 !important;
+}
