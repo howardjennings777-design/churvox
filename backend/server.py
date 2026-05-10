@@ -12232,6 +12232,707 @@ async def cvx_public_quote_link_middleware(request, call_next):
     return await call_next(request)
 
 
+
+# === CHURVOX WORKER WIRING START ===
+# Worker-safe field app endpoints.
+# These routes keep workers inside their assigned jobs only and hide owner-only fields.
+
+def _cvx_worker_role(user: dict) -> str:
+    return str(user.get("role") or user.get("user_role") or "").strip().lower()
+
+def _cvx_worker_is_worker(user: dict) -> bool:
+    role = _cvx_worker_role(user)
+    return (not role) or role in {"worker", "employee", "field_worker", "staff"}
+
+def _cvx_worker_oid(value):
+    try:
+        text = str(value or "").strip()
+        if text and ObjectId.is_valid(text):
+            return ObjectId(text)
+    except Exception:
+        pass
+    return None
+
+def _cvx_worker_text(value):
+    return str(value or "").strip()
+
+def _cvx_worker_dt(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+async def _cvx_worker_business_id(user: dict) -> str:
+    try:
+        return str(await get_user_business_id(user))
+    except Exception:
+        return str(
+            user.get("business_id")
+            or user.get("businessId")
+            or user.get("owner_id")
+            or user.get("id")
+            or user.get("_id")
+            or ""
+        )
+
+def _cvx_worker_base_terms(user: dict) -> set:
+    terms = set()
+    for key in [
+        "_id", "id", "user_id", "worker_id", "employee_id",
+        "email", "name", "full_name", "first_name", "last_name"
+    ]:
+        value = user.get(key)
+        if value:
+            terms.add(str(value).strip())
+            terms.add(str(value).strip().lower())
+
+    first = _cvx_worker_text(user.get("first_name"))
+    last = _cvx_worker_text(user.get("last_name"))
+    if first and last:
+        terms.add(f"{first} {last}")
+        terms.add(f"{first} {last}".lower())
+
+    return {x for x in terms if x}
+
+async def _cvx_worker_terms(user: dict, business_id: str) -> list:
+    terms = _cvx_worker_base_terms(user)
+    email = _cvx_worker_text(user.get("email")).lower()
+    user_id = _cvx_worker_text(user.get("id") or user.get("_id") or user.get("user_id"))
+
+    lookups = []
+    if email:
+        lookups.extend([
+            {"email": email},
+            {"worker_email": email},
+            {"assigned_worker_email": email},
+        ])
+    if user_id:
+        lookups.extend([
+            {"user_id": user_id},
+            {"worker_user_id": user_id},
+            {"id": user_id},
+        ])
+        oid = _cvx_worker_oid(user_id)
+        if oid:
+            lookups.append({"_id": oid})
+
+    if lookups:
+        for collection_name in ["workers", "team", "team_members", "users"]:
+            try:
+                collection = getattr(db, collection_name)
+                query = {
+                    "$and": [
+                        {"$or": [
+                            {"business_id": str(business_id)},
+                            {"business_id": business_id},
+                            {"owner_id": str(business_id)},
+                        ]},
+                        {"$or": lookups},
+                    ]
+                }
+                docs = await collection.find(query).limit(20).to_list(length=20)
+                for doc in docs:
+                    for key in [
+                        "_id", "id", "user_id", "worker_id", "employee_id",
+                        "email", "name", "full_name", "first_name", "last_name"
+                    ]:
+                        value = doc.get(key)
+                        if value:
+                            terms.add(str(value).strip())
+                            terms.add(str(value).strip().lower())
+            except Exception:
+                pass
+
+    return sorted({x for x in terms if x})
+
+def _cvx_worker_business_or(business_id: str) -> list:
+    items = [
+        {"business_id": str(business_id)},
+        {"businessId": str(business_id)},
+        {"owner_id": str(business_id)},
+    ]
+    oid = _cvx_worker_oid(business_id)
+    if oid:
+        items.extend([
+            {"business_id": oid},
+            {"owner_id": oid},
+        ])
+    return items
+
+def _cvx_worker_assignment_or(terms: list) -> list:
+    if not terms:
+        return [{"__worker_no_match__": "__none__"}]
+
+    fields = [
+        "assigned_worker_id",
+        "assignedWorkerId",
+        "worker_id",
+        "workerId",
+        "assigned_to",
+        "assignedTo",
+        "assigned_worker",
+        "assignedWorker",
+        "assigned_worker_email",
+        "worker_email",
+        "employee_email",
+        "assigned_worker_name",
+        "worker_name",
+        "employee_name",
+        "assigned_worker.id",
+        "assigned_worker._id",
+        "assigned_worker.email",
+        "assigned_worker.name",
+    ]
+
+    checks = []
+    clean_terms = [str(t).strip() for t in terms if str(t).strip()]
+    lower_terms = list({t.lower() for t in clean_terms})
+    all_terms = list({*clean_terms, *lower_terms})
+
+    for field in fields:
+        for value in all_terms:
+            checks.append({field: value})
+
+    checks.extend([
+        {"assigned_worker_ids": {"$in": all_terms}},
+        {"worker_ids": {"$in": all_terms}},
+        {"assigned_workers": {"$in": all_terms}},
+    ])
+
+    return checks or [{"__worker_no_match__": "__none__"}]
+
+async def _cvx_worker_base_query(current_user: dict):
+    if not _cvx_worker_is_worker(current_user):
+        raise HTTPException(status_code=403, detail="Worker access only")
+
+    business_id = await _cvx_worker_business_id(current_user)
+    terms = await _cvx_worker_terms(current_user, business_id)
+
+    return {
+        "$and": [
+            {"$or": _cvx_worker_business_or(business_id)},
+            {"$or": _cvx_worker_assignment_or(terms)},
+        ]
+    }, business_id, terms
+
+async def _cvx_worker_find_job(job_id: str, current_user: dict) -> dict:
+    base_query, business_id, terms = await _cvx_worker_base_query(current_user)
+    id_checks = [
+        {"id": str(job_id)},
+        {"job_id": str(job_id)},
+        {"uuid": str(job_id)},
+    ]
+    oid = _cvx_worker_oid(job_id)
+    if oid:
+        id_checks.append({"_id": oid})
+
+    job = await db.jobs.find_one({"$and": [base_query, {"$or": id_checks}]})
+    if not job:
+        raise HTTPException(status_code=404, detail="Worker job not found")
+    return job
+
+def _cvx_worker_safe_job(job: dict) -> dict:
+    clean = make_json_safe(dict(job or {}))
+    if "_id" in clean:
+        clean["id"] = str(clean.get("_id"))
+        clean.pop("_id", None)
+
+    hidden_terms = [
+        "price", "pricing", "hourly_rate", "rate_amount", "subtotal", "total",
+        "invoice", "billing", "payment", "stripe", "myob", "accounting",
+        "profit", "margin", "cost", "payroll", "wage",
+        "gps", "geo", "latitude", "longitude", "lat", "lng", "coordinate",
+        "distance_from_site", "location_status", "start_location", "end_location",
+        "verification", "token", "secret",
+    ]
+
+    keep_exact = {
+        "id", "job_id", "uuid", "title", "name", "job_title", "job_type",
+        "service_type", "status", "job_status", "workflow_status",
+        "client_name", "customer_name", "clientName", "customerName",
+        "address", "job_address", "site_address", "property_address", "location",
+        "scheduled_at", "scheduledAt", "scheduled_date", "scheduled_time",
+        "start_time", "startTime", "due_date", "dueDate", "date",
+        "notes", "instructions", "description", "scope",
+        "worker_notes", "worker_note_entries", "photos", "photo_urls",
+        "created_at", "updated_at", "completed_at", "started_at", "paused_at",
+        "region", "area", "zone", "priority", "urgency",
+        "worked_minutes_today", "worked_minutes_week", "today_minutes", "week_minutes",
+    }
+
+    for key in list(clean.keys()):
+        lk = key.lower()
+        if key in keep_exact:
+            continue
+        if any(term in lk for term in hidden_terms):
+            clean.pop(key, None)
+
+    return clean
+
+async def _cvx_worker_json(request: Request) -> dict:
+    try:
+        payload = await request.json()
+        return payload if isinstance(payload, dict) else {}
+    except Exception:
+        return {}
+
+def _cvx_worker_geo(payload: dict) -> dict:
+    raw = payload.get("worker_geo") or payload.get("location") or payload.get("geo") or {}
+    if not isinstance(raw, dict):
+        return {}
+    lat = raw.get("lat", raw.get("latitude"))
+    lng = raw.get("lng", raw.get("longitude"))
+    out = {}
+    try:
+        if lat is not None and lng is not None:
+            out["lat"] = float(lat)
+            out["lng"] = float(lng)
+    except Exception:
+        pass
+    if raw.get("accuracy") is not None:
+        out["accuracy"] = raw.get("accuracy")
+    if raw.get("captured_at"):
+        out["captured_at"] = raw.get("captured_at")
+    return out
+
+def _cvx_worker_job_site(job: dict):
+    lat = (
+        job.get("job_lat")
+        or job.get("site_lat")
+        or job.get("address_lat")
+        or job.get("latitude")
+        or job.get("lat")
+    )
+    lng = (
+        job.get("job_lng")
+        or job.get("site_lng")
+        or job.get("address_lng")
+        or job.get("longitude")
+        or job.get("lng")
+    )
+    try:
+        if lat is not None and lng is not None:
+            return float(lat), float(lng)
+    except Exception:
+        pass
+    return None, None
+
+def _cvx_worker_status_name(value: str) -> str:
+    clean = str(value or "assigned").strip().lower().replace(" ", "_")
+    aliases = {
+        "done": "completed",
+        "complete": "completed",
+        "started": "in_progress",
+        "active": "in_progress",
+        "working": "in_progress",
+        "onway": "on_the_way",
+        "on_my_way": "on_the_way",
+        "travelling": "on_the_way",
+        "traveling": "on_the_way",
+    }
+    return aliases.get(clean, clean)
+
+async def _cvx_worker_notify(job: dict, current_user: dict, event_type: str, message: str):
+    try:
+        business_id = str(job.get("business_id") or await _cvx_worker_business_id(current_user))
+        worker_name = (
+            current_user.get("name")
+            or current_user.get("full_name")
+            or current_user.get("email")
+            or "Worker"
+        )
+        title = {
+            "acknowledged": "Job acknowledged",
+            "on_the_way": "Worker on the way",
+            "in_progress": "Job started",
+            "paused": "Job paused",
+            "completed": "Job completed",
+            "note": "Worker note added",
+            "photo": "Worker photo added",
+            "help": "Worker needs help",
+        }.get(event_type, "Worker update")
+
+        await db.notifications.insert_one({
+            "business_id": business_id,
+            "type": "worker_job_event",
+            "event_type": event_type,
+            "title": title,
+            "message": message,
+            "job_id": str(job.get("_id") or job.get("id") or job.get("job_id") or ""),
+            "job_title": job.get("title") or job.get("name") or job.get("job_title") or "Job",
+            "worker_name": worker_name,
+            "target_roles": ["owner", "admin", "employer", "manager", "office_admin"],
+            "read": False,
+            "created_at": datetime.now(timezone.utc),
+        })
+    except Exception:
+        pass
+
+async def _cvx_apply_worker_status(job_id: str, status: str, request: Request, current_user: dict, action: str = ""):
+    payload = await _cvx_worker_json(request)
+    job = await _cvx_worker_find_job(job_id, current_user)
+
+    now = datetime.now(timezone.utc)
+    status = _cvx_worker_status_name(status)
+    action = action or payload.get("action") or status
+    geo = _cvx_worker_geo(payload)
+
+    update = {
+        "status": status,
+        "job_status": status,
+        "workflow_status": status,
+        "updated_at": now,
+        "last_worker_action": action,
+        "last_worker_action_at": now,
+        "last_worker_action_by": str(current_user.get("email") or current_user.get("id") or current_user.get("_id") or ""),
+    }
+
+    note = (
+        payload.get("worker_notes")
+        or payload.get("worker_note")
+        or payload.get("note")
+        or payload.get("message")
+        or ""
+    )
+    note = str(note).strip()
+
+    if status == "acknowledged":
+        update["acknowledged_at"] = job.get("acknowledged_at") or now
+
+    if status == "on_the_way":
+        update["on_the_way_at"] = now
+
+    if status == "in_progress":
+        if action == "resume":
+            update["resumed_at"] = now
+            paused_at = _cvx_worker_dt(job.get("pause_started_at") or job.get("paused_at"))
+            if paused_at:
+                try:
+                    update["total_paused_seconds"] = int(job.get("total_paused_seconds") or 0) + max(0, int((now - paused_at).total_seconds()))
+                except Exception:
+                    pass
+            update["pause_started_at"] = None
+        else:
+            update["started_at"] = job.get("started_at") or now
+            update["worker_started_at"] = job.get("worker_started_at") or now
+
+    if status == "paused":
+        update["paused_at"] = now
+        update["pause_started_at"] = now
+
+    if status == "completed":
+        update["completed"] = True
+        update["completed_at"] = now
+        update["worker_completed_at"] = now
+        if note:
+            update["worker_notes"] = note
+            update["worker_completion_notes"] = note
+            update["completion_notes"] = note
+
+        started_at = _cvx_worker_dt(job.get("started_at") or job.get("worker_started_at"))
+        total_paused = int(job.get("total_paused_seconds") or 0)
+        if started_at:
+            try:
+                update["total_time_seconds"] = max(0, int((now - started_at).total_seconds()) - total_paused)
+                update["total_minutes"] = round(update["total_time_seconds"] / 60)
+            except Exception:
+                pass
+
+        merged_for_description = dict(job)
+        merged_for_description.update(update)
+        update["invoice_description_draft"] = _format_invoice_description_from_job(
+            merged_for_description,
+            client_name=merged_for_description.get("client_name") or merged_for_description.get("customer_name") or ""
+        )
+        update["ai_invoice_description"] = update["invoice_description_draft"]
+        update["invoice_ready"] = True
+
+    if geo and action in {"start", "complete"}:
+        prefix = "start" if action == "start" else "end"
+        update[f"{prefix}_worker_lat"] = geo.get("lat")
+        update[f"{prefix}_worker_lng"] = geo.get("lng")
+        update[f"{prefix}_worker_location_accuracy"] = geo.get("accuracy")
+        update[f"{prefix}_worker_location_captured_at"] = now
+
+        site_lat, site_lng = _cvx_worker_job_site(job)
+        if site_lat is not None and site_lng is not None and geo.get("lat") is not None and geo.get("lng") is not None:
+            distance = _haversine_meters(geo.get("lat"), geo.get("lng"), site_lat, site_lng)
+            update[f"{prefix}_distance_from_site_meters"] = distance
+            update[f"{prefix}_location_status"] = _visit_status_for_distance(distance)
+        else:
+            update[f"{prefix}_location_status"] = "location_unavailable"
+
+    event = {
+        "type": action,
+        "status": status,
+        "at": now,
+        "by": str(current_user.get("email") or current_user.get("id") or current_user.get("_id") or ""),
+        "source": "worker_app",
+    }
+
+    await db.jobs.update_one(
+        {"_id": job["_id"]},
+        {"$set": update, "$push": {"worker_events": event}},
+    )
+
+    updated = await db.jobs.find_one({"_id": job["_id"]})
+    label = updated.get("title") or updated.get("name") or updated.get("job_title") or "Job"
+    await _cvx_worker_notify(updated, current_user, status, f"{label} was updated by the worker: {status.replace('_', ' ')}.")
+
+    return {
+        "ok": True,
+        "success": True,
+        "job": _cvx_worker_safe_job(updated),
+        "data": _cvx_worker_safe_job(updated),
+    }
+
+@api_router.get("/worker/jobs")
+async def cvx_worker_list_jobs(current_user: dict = Depends(get_current_user)):
+    base_query, business_id, terms = await _cvx_worker_base_query(current_user)
+    cursor = db.jobs.find(base_query).sort([
+        ("scheduled_date", 1),
+        ("scheduled_at", 1),
+        ("date", 1),
+        ("created_at", -1),
+    ]).limit(500)
+    jobs = await cursor.to_list(length=500)
+    safe_jobs = [_cvx_worker_safe_job(normalize_job_status_for_response(dict(job))) for job in jobs]
+    return {"ok": True, "success": True, "jobs": safe_jobs, "count": len(safe_jobs)}
+
+@api_router.get("/worker/jobs/{job_id}")
+async def cvx_worker_get_job(job_id: str, current_user: dict = Depends(get_current_user)):
+    job = await _cvx_worker_find_job(job_id, current_user)
+    return {"ok": True, "success": True, "job": _cvx_worker_safe_job(normalize_job_status_for_response(dict(job)))}
+
+@api_router.patch("/worker/jobs/{job_id}")
+async def cvx_worker_patch_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    payload = await _cvx_worker_json(request)
+    if payload.get("status"):
+        return await _cvx_apply_worker_status(job_id, payload.get("status"), request, current_user, payload.get("action") or "")
+
+    job = await _cvx_worker_find_job(job_id, current_user)
+    update = {"updated_at": datetime.now(timezone.utc)}
+
+    if "worker_notes" in payload:
+        update["worker_notes"] = str(payload.get("worker_notes") or "")
+    if "notes" in payload and "worker_notes" not in payload:
+        update["worker_notes"] = str(payload.get("notes") or "")
+    if "photos" in payload and isinstance(payload.get("photos"), list):
+        update["photos"] = payload.get("photos")[:10]
+
+    if len(update) == 1:
+        return {"ok": True, "success": True, "job": _cvx_worker_safe_job(job)}
+
+    await db.jobs.update_one({"_id": job["_id"]}, {"$set": update})
+    updated = await db.jobs.find_one({"_id": job["_id"]})
+    return {"ok": True, "success": True, "job": _cvx_worker_safe_job(updated), "data": _cvx_worker_safe_job(updated)}
+
+@api_router.post("/worker/jobs/{job_id}/acknowledge")
+async def cvx_worker_acknowledge_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    return await _cvx_apply_worker_status(job_id, "acknowledged", request, current_user, "acknowledge")
+
+@api_router.post("/worker/jobs/{job_id}/on-my-way")
+@api_router.post("/worker/jobs/{job_id}/onway")
+async def cvx_worker_on_way_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    return await _cvx_apply_worker_status(job_id, "on_the_way", request, current_user, "onway")
+
+@api_router.post("/worker/jobs/{job_id}/start")
+async def cvx_worker_start_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    return await _cvx_apply_worker_status(job_id, "in_progress", request, current_user, "start")
+
+@api_router.post("/worker/jobs/{job_id}/pause")
+async def cvx_worker_pause_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    return await _cvx_apply_worker_status(job_id, "paused", request, current_user, "pause")
+
+@api_router.post("/worker/jobs/{job_id}/resume")
+async def cvx_worker_resume_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    return await _cvx_apply_worker_status(job_id, "in_progress", request, current_user, "resume")
+
+@api_router.post("/worker/jobs/{job_id}/complete")
+async def cvx_worker_complete_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    return await _cvx_apply_worker_status(job_id, "completed", request, current_user, "complete")
+
+@api_router.post("/worker/jobs/{job_id}/status")
+async def cvx_worker_status_job(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    payload = await _cvx_worker_json(request)
+    return await _cvx_apply_worker_status(
+        job_id,
+        payload.get("status") or payload.get("next_status") or "assigned",
+        request,
+        current_user,
+        payload.get("action") or "",
+    )
+
+@api_router.post("/worker/jobs/{job_id}/notes")
+async def cvx_worker_add_note(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    payload = await _cvx_worker_json(request)
+    note = str(payload.get("note") or payload.get("message") or payload.get("body") or payload.get("worker_notes") or "").strip()
+    if not note:
+        raise HTTPException(status_code=400, detail="Note is required")
+
+    job = await _cvx_worker_find_job(job_id, current_user)
+    now = datetime.now(timezone.utc)
+    existing = str(job.get("worker_notes") or "").strip()
+    combined = f"{existing}\n\n{note}".strip() if existing and note not in existing else (existing or note)
+
+    entry = {
+        "note": note,
+        "type": payload.get("type") or "note",
+        "issue_type": payload.get("issue_type") or "",
+        "source": "worker_app",
+        "created_at": now,
+        "created_by": str(current_user.get("email") or current_user.get("id") or current_user.get("_id") or ""),
+    }
+
+    await db.jobs.update_one(
+        {"_id": job["_id"]},
+        {
+            "$set": {"worker_notes": combined, "updated_at": now},
+            "$push": {
+                "worker_note_entries": entry,
+                "worker_events": {"type": "note", "at": now, "source": "worker_app"},
+            },
+        },
+    )
+
+    updated = await db.jobs.find_one({"_id": job["_id"]})
+    await _cvx_worker_notify(updated, current_user, "note", f"Worker added a note to {updated.get('title') or updated.get('name') or 'a job'}.")
+    return {"ok": True, "success": True, "job": _cvx_worker_safe_job(updated)}
+
+@api_router.post("/worker/jobs/{job_id}/photos")
+async def cvx_worker_add_photo(job_id: str, request: Request, current_user: dict = Depends(get_current_user)):
+    import base64
+
+    job = await _cvx_worker_find_job(job_id, current_user)
+    now = datetime.now(timezone.utc)
+    photo_value = None
+    photo_type = "job"
+
+    content_type = request.headers.get("content-type", "")
+
+    if "multipart/form-data" in content_type:
+        form = await request.form()
+        file = form.get("file") or form.get("photo")
+        photo_type = str(form.get("type") or "job")
+        if file and hasattr(file, "read"):
+            raw = await file.read()
+            if len(raw) > 6 * 1024 * 1024:
+                raise HTTPException(status_code=413, detail="Photo is too large")
+            mime = getattr(file, "content_type", None) or "image/jpeg"
+            photo_value = f"data:{mime};base64,{base64.b64encode(raw).decode('ascii')}"
+    else:
+        payload = await _cvx_worker_json(request)
+        photo_value = payload.get("photo") or payload.get("url") or payload.get("data_url")
+        photo_type = payload.get("type") or "job"
+
+    if not photo_value:
+        raise HTTPException(status_code=400, detail="Photo is required")
+
+    photos = job.get("photos") if isinstance(job.get("photos"), list) else []
+    if len(photos) >= 10:
+        raise HTTPException(status_code=400, detail="Maximum 10 photos per job")
+
+    photos = photos + [photo_value]
+    entry = {
+        "type": photo_type,
+        "source": "worker_app",
+        "created_at": now,
+        "created_by": str(current_user.get("email") or current_user.get("id") or current_user.get("_id") or ""),
+    }
+
+    await db.jobs.update_one(
+        {"_id": job["_id"]},
+        {
+            "$set": {"photos": photos, "updated_at": now},
+            "$push": {
+                "worker_photo_entries": entry,
+                "worker_events": {"type": "photo", "at": now, "source": "worker_app"},
+            },
+        },
+    )
+
+    updated = await db.jobs.find_one({"_id": job["_id"]})
+    await _cvx_worker_notify(updated, current_user, "photo", f"Worker added a photo to {updated.get('title') or updated.get('name') or 'a job'}.")
+    return {"ok": True, "success": True, "job": _cvx_worker_safe_job(updated), "photos": photos}
+
+@api_router.get("/worker/office-contact")
+async def cvx_worker_office_contact(current_user: dict = Depends(get_current_user)):
+    business_id = await _cvx_worker_business_id(current_user)
+    contacts = []
+    business_name = current_user.get("business_name") or "Your Office"
+
+    or_filters = _cvx_worker_business_or(business_id)
+    oid = _cvx_worker_oid(business_id)
+    if oid:
+        or_filters.append({"_id": oid})
+
+    try:
+        users = await db.users.find({"$or": or_filters}).limit(50).to_list(length=50)
+    except Exception:
+        users = []
+
+    for user in users:
+        role = str(user.get("role") or "").lower()
+        if role in {"owner", "admin", "employer", "manager", "office_admin"} or str(user.get("_id")) == str(business_id):
+            if user.get("business_name"):
+                business_name = user.get("business_name")
+            contacts.append({
+                "name": user.get("name") or user.get("full_name") or user.get("email") or "Office",
+                "role": role.replace("_", " ").title() if role else "Office",
+                "email": user.get("email") or "",
+                "phone": user.get("phone") or user.get("mobile") or user.get("phone_number") or "",
+            })
+
+    deduped = []
+    seen = set()
+    for contact in contacts:
+        key = (contact.get("email") or contact.get("phone") or contact.get("name") or "").lower()
+        if key and key not in seen:
+            seen.add(key)
+            deduped.append(contact)
+
+    return {
+        "ok": True,
+        "success": True,
+        "business_name": business_name,
+        "contacts": deduped[:5],
+        "message": "" if deduped else "No office contact has been set yet.",
+    }
+
+@api_router.post("/worker/contact-office")
+async def cvx_worker_contact_office(request: Request, current_user: dict = Depends(get_current_user)):
+    payload = await _cvx_worker_json(request)
+    message = str(payload.get("message") or "").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="Message is required")
+
+    business_id = await _cvx_worker_business_id(current_user)
+    now = datetime.now(timezone.utc)
+    worker_name = current_user.get("name") or current_user.get("full_name") or current_user.get("email") or "Worker"
+
+    await db.notifications.insert_one({
+        "business_id": str(business_id),
+        "type": "worker_help_request",
+        "event_type": "help",
+        "title": "Worker needs help",
+        "message": message,
+        "job_id": str(payload.get("job_id") or ""),
+        "job_title": str(payload.get("job_title") or ""),
+        "worker_name": worker_name,
+        "target_roles": ["owner", "admin", "employer", "manager", "office_admin"],
+        "read": False,
+        "created_at": now,
+    })
+
+    return {"ok": True, "success": True, "message": "Help request sent to office"}
+
+# === CHURVOX WORKER WIRING END ===
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")

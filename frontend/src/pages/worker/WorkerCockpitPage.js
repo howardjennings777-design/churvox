@@ -439,45 +439,41 @@ function actionCandidates(jobId, action, payload) {
   const id = encodeURIComponent(jobId);
   const status = ACTION_STATUS[action];
 
-  const direct = {
-    acknowledge: [
-      `/jobs/${id}/acknowledge`,
-      `/worker/jobs/${id}/acknowledge`,
-    ],
-    onway: [
-      `/jobs/${id}/on-my-way`,
-      `/jobs/${id}/onway`,
-      `/worker/jobs/${id}/on-my-way`,
-    ],
-    start: [
-      `/jobs/${id}/start`,
-      `/jobs/${id}/start-job`,
-      `/jobs/${id}/time/start`,
-      `/jobs/${id}/timer/start`,
-      `/worker/jobs/${id}/start`,
-    ],
-    pause: [
-      `/jobs/${id}/pause`,
-      `/jobs/${id}/time/pause`,
-      `/jobs/${id}/timer/pause`,
-      `/worker/jobs/${id}/pause`,
-    ],
-    resume: [
-      `/jobs/${id}/resume`,
-      `/jobs/${id}/time/resume`,
-      `/jobs/${id}/timer/resume`,
-      `/worker/jobs/${id}/resume`,
-    ],
-    complete: [
-      `/jobs/${id}/complete`,
-      `/jobs/${id}/finish`,
-      `/jobs/${id}/complete-job`,
-      `/worker/jobs/${id}/complete`,
-    ],
+  const workerDirect = {
+    acknowledge: [`/worker/jobs/${id}/acknowledge`],
+    onway: [`/worker/jobs/${id}/on-my-way`, `/worker/jobs/${id}/onway`],
+    start: [`/worker/jobs/${id}/start`],
+    pause: [`/worker/jobs/${id}/pause`],
+    resume: [`/worker/jobs/${id}/resume`],
+    complete: [`/worker/jobs/${id}/complete`],
+  };
+
+  const legacyDirect = {
+    acknowledge: [`/jobs/${id}/acknowledge`],
+    onway: [`/jobs/${id}/on-my-way`, `/jobs/${id}/onway`],
+    start: [`/jobs/${id}/start`, `/jobs/${id}/start-job`, `/jobs/${id}/time/start`, `/jobs/${id}/timer/start`],
+    pause: [`/jobs/${id}/pause`, `/jobs/${id}/time/pause`, `/jobs/${id}/timer/pause`],
+    resume: [`/jobs/${id}/resume`, `/jobs/${id}/time/resume`, `/jobs/${id}/timer/resume`],
+    complete: [`/jobs/${id}/complete`, `/jobs/${id}/finish`, `/jobs/${id}/complete-job`],
   };
 
   return [
-    ...(direct[action] || []).map((path) => ({
+    ...(workerDirect[action] || []).map((path) => ({
+      path,
+      method: "POST",
+      body: JSON.stringify(payload),
+    })),
+    {
+      path: `/worker/jobs/${id}/status`,
+      method: "POST",
+      body: JSON.stringify({ ...payload, status }),
+    },
+    {
+      path: `/worker/jobs/${id}`,
+      method: "PATCH",
+      body: JSON.stringify({ ...payload, status }),
+    },
+    ...(legacyDirect[action] || []).map((path) => ({
       path,
       method: "POST",
       body: JSON.stringify(payload),
@@ -684,8 +680,8 @@ export default function WorkerCockpitPage() {
 
     try {
       await tryApi([
-        { path: `/jobs/${id}/notes`, method: "POST", body: JSON.stringify(payload) },
         { path: `/worker/jobs/${id}/notes`, method: "POST", body: JSON.stringify(payload) },
+        { path: `/jobs/${id}/notes`, method: "POST", body: JSON.stringify(payload) },
         { path: `/job-notes`, method: "POST", body: JSON.stringify(payload) },
         { path: `/notes`, method: "POST", body: JSON.stringify(payload) },
       ]);
@@ -705,8 +701,8 @@ export default function WorkerCockpitPage() {
 
     const id = encodeURIComponent(job.id);
     const paths = [
-      `/jobs/${id}/photos`,
       `/worker/jobs/${id}/photos`,
+      `/jobs/${id}/photos`,
       `/jobs/${id}/upload-photo`,
       `/job-photos`,
     ];

@@ -219,9 +219,11 @@ function App() {
           <Route path="/automation" element={<Navigate to="/v3/rules" replace />} />
           <Route path="/automation/runs" element={<Navigate to="/v3/rules" replace />} />
           <Route path="/payroll" element={<Navigate to="/v3/payroll" replace />} />
-          <Route path="/worker/jobs" element={<WorkerHomePage />} />
+          <Route path="/worker/jobs" element={<WorkerRoute><WorkerHomePage /></WorkerRoute>} />
           <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
           <Route path="/worker/settings" element={<WorkerRoute><WorkerSettingsPage /></WorkerRoute>} />
+          <Route path="/worker" element={<WorkerRoute><Navigate to="/worker/jobs" replace /></WorkerRoute>} />
+          <Route path="/worker/dashboard" element={<WorkerRoute><Navigate to="/worker/jobs" replace /></WorkerRoute>} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
@@ -231,9 +233,6 @@ function App() {
           <Route path="/" element={<RoleRedirect />} />
           <Route path="*" element={<RoleRedirect />} />
         
-          <Route path="/worker" element={<WorkerHomePage />} />
-          <Route path="/worker/dashboard" element={<WorkerHomePage />} />
-          <Route path="/worker/jobs" element={<WorkerHomePage />} />
         </Routes>
         </ErrorBoundary>
       </AuthProvider>

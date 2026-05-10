@@ -107,7 +107,7 @@ export default function WorkerJobDetailPage() {
 
   const loadJob = useCallback(async () => {
     setLoading(true);
-    const res = await get(`/jobs/${id}`);
+    const res = await get(`/worker/jobs/${id}`);
     if (res?.success || res?.ok) {
       const data = res.data?.job || res.data || {};
       setJob(data);
@@ -144,13 +144,13 @@ export default function WorkerJobDetailPage() {
 
     let res = null;
     if (nextStatus === "in_progress") {
-      res = await post(`/jobs/${id}/start`, { worker_geo: geo });
+      res = await post(`/worker/jobs/${id}/start`, { worker_geo: geo });
     } else if (nextStatus === "completed") {
-      res = await post(`/jobs/${id}/complete`, { worker_geo: geo, worker_notes: finalNote || workerNotes });
+      res = await post(`/worker/jobs/${id}/complete`, { worker_geo: geo, worker_notes: finalNote || workerNotes });
     }
 
     if (!(res?.success || res?.ok)) {
-      res = await patch(`/jobs/${id}`, { status: nextStatus, worker_geo: geo, worker_notes: finalNote || workerNotes });
+      res = await patch(`/worker/jobs/${id}`, { status: nextStatus, worker_geo: geo, worker_notes: finalNote || workerNotes });
     }
 
     if (res?.success || res?.ok) {
@@ -165,9 +165,9 @@ export default function WorkerJobDetailPage() {
 
   const handleAcknowledge = async () => {
     setSavingStatus("acknowledged");
-    let res = await post(`/jobs/${id}/acknowledge`, {});
+    let res = await post(`/worker/jobs/${id}/acknowledge`, {});
     if (!(res?.success || res?.ok)) {
-      res = await patch(`/jobs/${id}`, { status: "acknowledged" });
+      res = await patch(`/worker/jobs/${id}`, { status: "acknowledged" });
     }
     if (res?.success || res?.ok) {
       toast.success("Job acknowledged");
@@ -180,7 +180,7 @@ export default function WorkerJobDetailPage() {
 
   const handleSaveNotes = async (text = workerNotes) => {
     setSavingNotes(true);
-    const res = await patch(`/jobs/${id}`, { worker_notes: text });
+    const res = await patch(`/worker/jobs/${id}`, { worker_notes: text });
     if (res?.success || res?.ok) {
       toast.success("Worker notes saved");
       await loadJob();
@@ -203,7 +203,7 @@ export default function WorkerJobDetailPage() {
     try {
       const dataUrl = await compressImage(file);
       const nextPhotos = [...photos, dataUrl];
-      const res = await patch(`/jobs/${id}`, { photos: nextPhotos });
+      const res = await patch(`/worker/jobs/${id}`, { photos: nextPhotos });
       if (res?.success || res?.ok) {
         toast.success("Photo added");
         setJob((prev) => ({ ...prev, photos: nextPhotos }));
@@ -218,7 +218,7 @@ export default function WorkerJobDetailPage() {
 
   const removePhoto = async (idx) => {
     const nextPhotos = photos.filter((_, index) => index !== idx);
-    const res = await patch(`/jobs/${id}`, { photos: nextPhotos });
+    const res = await patch(`/worker/jobs/${id}`, { photos: nextPhotos });
     if (res?.success || res?.ok) {
       setJob((prev) => ({ ...prev, photos: nextPhotos }));
       toast.success("Photo removed");
