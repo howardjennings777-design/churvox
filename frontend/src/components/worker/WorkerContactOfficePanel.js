@@ -64,7 +64,7 @@ export default function WorkerContactOfficePanel({ open, onClose, defaultMessage
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {contact.phone ? <a href={`tel:${contact.phone}`}><PremiumButton className="w-full" variant="secondary" iconLeft={<Phone className="h-4 w-4" />}>Call</PremiumButton></a> : null}
                 {contact.email ? <a href={`mailto:${contact.email}`}><PremiumButton className="w-full" variant="secondary" iconLeft={<Mail className="h-4 w-4" />}>Email</PremiumButton></a> : null}
-                {contact.email ? <PremiumButton className="w-full" variant="secondary" iconLeft={<Copy className="h-4 w-4" />} onClick={async () => { await navigator.clipboard.writeText(contact.email); toast.success("Email copied"); }}>Copy email</PremiumButton> : null}
+                {contact.email ? <PremiumButton className="w-full" variant="secondary" iconLeft={<Copy className="h-4 w-4" />} onClick={async () => { await navigator.clipboard.writeText(contact.email); toast.success("Email copied"); >Copy email</PremiumButton> : null}
               </div>
             </div>
           ))}
@@ -78,7 +78,7 @@ export default function WorkerContactOfficePanel({ open, onClose, defaultMessage
               if (res?.success) toast.success(res.data?.message || "Help request sent");
               else toast.error(res?.error || "Could not send help request");
               setSending(false);
-            }} disabled={sending || !message.trim()} iconLeft={<Send className="h-4 w-4" />}>
+             disabled={sending || !message.trim()} iconLeft={<Send className="h-4 w-4" />}>
               {sending ? "Sending..." : "Send help request"}
             </PremiumButton>
           </div>

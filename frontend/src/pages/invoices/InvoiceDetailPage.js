@@ -126,7 +126,7 @@ export default function InvoiceDetailPage() {
             </div>
             <div className="text-right">
               <p className="text-xs text-[#7d8ba3] mb-1">Total</p>
-              <p className="text-2xl font-bold text-[#2563eb]" style={{ fontFamily: "'Outfit', sans-serif" }}>{formatCurrency(invoice.total)}</p>
+              <p className="text-2xl font-bold text-[#2563eb]" style= fontFamily: "'Outfit', sans-serif" >{formatCurrency(invoice.total)}</p>
               {pricingLabel && <p className="text-xs text-[#5b6c87] mt-1">{pricingLabel}</p>}
             </div>
           </div>

@@ -244,7 +244,7 @@ function AccountWorkspace({ drawer, user, data, setNotice }) {
 function PreviewItem({ item, drawer, onJob, onExecute }) {
   const id = idOf(item);
   const looksAction = Boolean(item?.type && (item?.job_id || item?.invoice_id || item?.quote_id));
-  if (looksAction) return <ActionCard action={item} onDismiss={() => {}} onExecute={onExecute} onOpenJobEditor={onJob} />;
+  if (looksAction) return <ActionCard action={item} onDismiss={() => { onExecute={onExecute} onOpenJobEditor={onJob} />;
   return <article className="command-preview-row"><b>{item.title || item.name || item.business_name || item.company_name || item.invoice_number || item.quote_number || item.email || `Item`}</b><span>{item.status || item.role || item.email || drawer.subtitle}</span>{drawer.title === "Jobs" || item.address ? <button onClick={() => onJob(id)}>Edit</button> : null}</article>;
 }
 

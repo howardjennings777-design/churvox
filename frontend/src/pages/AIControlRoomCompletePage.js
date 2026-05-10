@@ -213,15 +213,15 @@ export default function AIControlRoomCompletePage() {
               </p>
 
               <div style={s.heroButtons}>
-                <button style={{ ...s.heroButton, ...s.orangeButton }} type="button" onClick={runAiPlan}>
+                <button style= ...s.heroButton, ...s.orangeButton  type="button" onClick={runAiPlan}>
                   <span style={s.buttonIcon}>▷</span> Run AI Plan
                 </button>
 
-                <button style={{ ...s.heroButton, ...s.whiteButton }} type="button" onClick={() => navigate("/ai-operator/approvals")}>
+                <button style= ...s.heroButton, ...s.whiteButton  type="button" onClick={() => navigate("/ai-operator/approvals")}>
                   <span style={s.buttonIcon}>☷</span> Open Approvals Queue
                 </button>
 
-                <button style={{ ...s.heroButton, ...s.whiteButton }} type="button" onClick={() => navigate("/ai-operator/settings")}>
+                <button style= ...s.heroButton, ...s.whiteButton  type="button" onClick={() => navigate("/ai-operator/settings")}>
                   <span style={s.buttonIcon}>✧</span> Operator Settings
                 </button>
               </div>
@@ -262,25 +262,25 @@ export default function AIControlRoomCompletePage() {
               <Title icon="◎">Today’s AI Mission</Title>
 
               <div style={s.bestMove}>
-                <span style={{ color: "#1155e8" }}>✧</span> Best next move: Review unassigned jobs and pending approvals
+                <span style= color: "#1155e8" >✧</span> Best next move: Review unassigned jobs and pending approvals
               </div>
 
               <div style={s.metricGrid}>
-                <Mini icon="♙" label="Need Crew" value={stats.needCrew} sub="Jobs need staff" color="#ff5a12" bg="#fff1e8" onClick={(event) => { event.stopPropagation(); openPanel({ key: "needCrew" }); }} />
-                <Mini icon="$" label="Revenue" value={`$${Math.round(stats.moneyWaiting)}`} sub="Up next to collect" color="#1165ff" bg="#edf4ff" onClick={(event) => { event.stopPropagation(); openPanel({ key: "revenue" }); }} />
-                <Mini icon="☵" label="Follow-ups" value={stats.followUps} sub="Awaiting replies" color="#069bd7" bg="#ecfaff" onClick={(event) => { event.stopPropagation(); openPanel({ key: "followUps" }); }} />
-                <Mini icon="◇" label="Proof" value={stats.proof} sub="Ready for review" color="#0f172a" bg="#f1f5f9" onClick={(event) => { event.stopPropagation(); openPanel({ key: "proof" }); }} />
+                <Mini icon="♙" label="Need Crew" value={stats.needCrew} sub="Jobs need staff" color="#ff5a12" bg="#fff1e8" onClick={(event) => { event.stopPropagation(); openPanel({ key: "needCrew" });  />
+                <Mini icon="$" label="Revenue" value={`$${Math.round(stats.moneyWaiting)}`} sub="Up next to collect" color="#1165ff" bg="#edf4ff" onClick={(event) => { event.stopPropagation(); openPanel({ key: "revenue" });  />
+                <Mini icon="☵" label="Follow-ups" value={stats.followUps} sub="Awaiting replies" color="#069bd7" bg="#ecfaff" onClick={(event) => { event.stopPropagation(); openPanel({ key: "followUps" });  />
+                <Mini icon="◇" label="Proof" value={stats.proof} sub="Ready for review" color="#0f172a" bg="#f1f5f9" onClick={(event) => { event.stopPropagation(); openPanel({ key: "proof" });  />
               </div>
 
               <div style={s.smallActions}>
-                <button style={s.orangeSmall} type="button" onClick={(event) => { event.stopPropagation(); openPanel({ key: "workThePlan" }); }}>
+                <button style={s.orangeSmall} type="button" onClick={(event) => { event.stopPropagation(); openPanel({ key: "workThePlan" }); >
                   Work the plan <span>→</span>
                 </button>
 
                 <button
                   style={s.whiteSmall}
                   type="button"
-                  onClick={(event) => { event.stopPropagation(); openPanel({ key: "explainPlan" }); }}
+                  onClick={(event) => { event.stopPropagation(); openPanel({ key: "explainPlan" }); 
                 >
                   Explain plan <span>ⓘ</span>
                 </button>
@@ -334,7 +334,7 @@ export default function AIControlRoomCompletePage() {
                           <strong>{status}</strong>
                         </Td>
                         <Td>
-                          <button style={s.workButton} type="button" onClick={(event) => { event.stopPropagation(); openPanel({ type: "job", key: "jobWork", job: { id, title, client, assignment, status }, title: `Work panel: ${title}` }); }}>
+                          <button style={s.workButton} type="button" onClick={(event) => { event.stopPropagation(); openPanel({ type: "job", key: "jobWork", job: { id, title, client, assignment, status }, title: `Work panel: ${title}` }); >
                             Work here
                           </button>
                         </Td>
@@ -344,7 +344,7 @@ export default function AIControlRoomCompletePage() {
                 </table>
               </div>
 
-              <button style={s.linkButton} type="button" onClick={(event) => { event.stopPropagation(); openPanel({ key: "allJobs" }); }}>
+              <button style={s.linkButton} type="button" onClick={(event) => { event.stopPropagation(); openPanel({ key: "allJobs" }); >
                 View all jobs <span>→</span>
               </button>
             </article>
@@ -360,25 +360,25 @@ export default function AIControlRoomCompletePage() {
               </div>
 
               <div style={s.approvalGrid}>
-                <Approval label="All" value={String(stats.approvals || 0)} icon="☷" active onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "All", value: stats.approvals || 0 }); }} />
-                <Approval label="Dispatch" value={String(stats.needCrew || 0)} icon="▣" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Dispatch", value: stats.needCrew || 0 }); }} />
-                <Approval label="Revenue" value={String(stats.followUps || 0)} icon="$" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Revenue", value: stats.followUps || 0 }); }} />
-                <Approval label="Follow-ups" value={String(stats.followUps || 0)} icon="▤" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Follow-ups", value: stats.followUps || 0 }); }} />
-                <Approval label="Proof" value={String(stats.proof || 0)} icon="◇" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Proof", value: stats.proof || 0 }); }} />
-                <Approval label="Receptionist" value="0" icon="♙" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Receptionist", value: 0 }); }} />
-                <Approval label="Recurring" value="0" icon="↻" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Recurring", value: 0 }); }} />
-                <Approval label="Customer Updates" value="0" icon="☵" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Customer Updates", value: 0 }); }} />
-                <Approval label="Quote Builder" value="0" icon="☵" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Quote Builder", value: 0 }); }} />
-                <Approval label="Client Memory" value="0" icon="▤" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Client Memory", value: 0 }); }} />
+                <Approval label="All" value={String(stats.approvals || 0)} icon="☷" active onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "All", value: stats.approvals || 0 });  />
+                <Approval label="Dispatch" value={String(stats.needCrew || 0)} icon="▣" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Dispatch", value: stats.needCrew || 0 });  />
+                <Approval label="Revenue" value={String(stats.followUps || 0)} icon="$" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Revenue", value: stats.followUps || 0 });  />
+                <Approval label="Follow-ups" value={String(stats.followUps || 0)} icon="▤" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Follow-ups", value: stats.followUps || 0 });  />
+                <Approval label="Proof" value={String(stats.proof || 0)} icon="◇" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Proof", value: stats.proof || 0 });  />
+                <Approval label="Receptionist" value="0" icon="♙" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Receptionist", value: 0 });  />
+                <Approval label="Recurring" value="0" icon="↻" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Recurring", value: 0 });  />
+                <Approval label="Customer Updates" value="0" icon="☵" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Customer Updates", value: 0 });  />
+                <Approval label="Quote Builder" value="0" icon="☵" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Quote Builder", value: 0 });  />
+                <Approval label="Client Memory" value="0" icon="▤" onClick={(event) => { event.stopPropagation(); openPanel({ key: "approvalTile", label: "Client Memory", value: 0 });  />
               </div>
 
-              <button style={s.linkButton} type="button" onClick={(event) => { event.stopPropagation(); openPanel({ key: "openApprovals" }); }}>
+              <button style={s.linkButton} type="button" onClick={(event) => { event.stopPropagation(); openPanel({ key: "openApprovals" }); >
                 Open approvals queue <span>→</span>
               </button>
             </article>
           </section>
 
-          <section style={{ ...s.card, ...s.workspaceCard }}>
+          <section style= ...s.card, ...s.workspaceCard >
             <div style={s.workspaceHead}>
               <Title icon="▦">Owner Workspaces</Title>
               <p style={s.subText}>Everything you need, in one command centre.</p>
@@ -387,7 +387,7 @@ export default function AIControlRoomCompletePage() {
             <div style={s.workspaceGrid}>
               {workspaces.map(([label, route, icon, color, bg]) => (
                 <button key={label} style={s.workspaceTile} type="button" onClick={() => openWorkspaceModal(label, route)}>
-                  <span style={{ ...s.workspaceIcon, color, background: bg }}>{icon}</span>
+                  <span style= ...s.workspaceIcon, color, background: bg >{icon}</span>
                   <strong style={s.workspaceLabel}>{label}</strong>
                   <em style={s.chev}>›</em>
                 </button>
@@ -396,7 +396,7 @@ export default function AIControlRoomCompletePage() {
           </section>
 
           {loading ? <div style={s.toast}>Loading live Churvox data…</div> : null}
-          {notice ? <div style={{ ...s.toast, background: "#0b5f36" }}>{notice}</div> : null}
+          {notice ? <div style= ...s.toast, background: "#0b5f36" >{notice}</div> : null}
           <ControlRoomPanel panel={activePanel} draft={panelDraft} setDraft={setPanelDraft} onClose={closePanel} onSave={savePanelDraft} updateDraft={updatePanelDraft} navigate={navigate} stats={stats} data={data} notice={panelNotice} setNotice={setPanelNotice} rows={rows} />
           <WorkspacePageModal
             open={Boolean(workspaceModal)}
@@ -422,7 +422,7 @@ function Title({ icon, children }) {
 function LiveStat({ icon, label, value, orange = false, onClick }) {
   return (
     <button style={s.liveStatButton} type="button" onClick={onClick}>
-      <span style={{ ...s.liveIcon, ...(orange ? s.liveIconOrange : {}) }}>{icon}</span>
+      <span style= ...s.liveIcon, ...(orange ? s.liveIconOrange : {}) >{icon}</span>
       <div>
         <small style={s.liveLabel}>{label}</small>
         <strong style={s.liveValue}>{value}</strong>
@@ -434,7 +434,7 @@ function LiveStat({ icon, label, value, orange = false, onClick }) {
 function Mini({ icon, label, value, sub, color, bg, onClick }) {
   return (
     <button style={s.miniButton} type="button" onClick={onClick}>
-      <span style={{ ...s.miniIcon, color, background: bg }}>{icon}</span>
+      <span style= ...s.miniIcon, color, background: bg >{icon}</span>
       <div>
         <small style={s.miniLabel}>{label}</small>
         <strong style={s.miniValue}>{value}</strong>
@@ -446,18 +446,18 @@ function Mini({ icon, label, value, sub, color, bg, onClick }) {
 
 function Move({ title, body, badge, color, icon, onClick }) {
   return (
-    <button style={{ ...s.move, borderColor: color }} type="button" onClick={onClick}>
-      <span style={{ ...s.moveIcon, color, background: color === "#ff5a12" ? "#fff1e8" : "#edf4ff" }}>{icon}</span>
-      <h3 style={{ ...s.moveTitle, color: color === "#1165ff" ? "#005dff" : "#0c1526" }}>{title}</h3>
+    <button style= ...s.move, borderColor: color  type="button" onClick={onClick}>
+      <span style= ...s.moveIcon, color, background: color === "#ff5a12" ? "#fff1e8" : "#edf4ff" >{icon}</span>
+      <h3 style= ...s.moveTitle, color: color === "#1165ff" ? "#005dff" : "#0c1526" >{title}</h3>
       <p style={s.moveBody}>{body}</p>
-      <b style={{ ...s.moveBadge, color, background: color === "#ff5a12" ? "#fff1e8" : "#edf4ff" }}>{badge}</b>
+      <b style= ...s.moveBadge, color, background: color === "#ff5a12" ? "#fff1e8" : "#edf4ff" >{badge}</b>
     </button>
   );
 }
 
 function Approval({ icon, label, value, active = false, onClick }) {
   return (
-    <button style={{ ...s.approvalTile, borderColor: active ? "#ff6b15" : "#e0e5ee" }} type="button" onClick={onClick}>
+    <button style= ...s.approvalTile, borderColor: active ? "#ff6b15" : "#e0e5ee"  type="button" onClick={onClick}>
       <span style={s.approvalIcon}>{icon}</span>
       <small style={s.approvalLabel}>{label}</small>
       <strong style={s.approvalValue}>{value}</strong>
@@ -561,7 +561,7 @@ function Th({ children }) {
 }
 
 function Td({ children, color = "#334155" }) {
-  return <td style={{ ...s.td, color }}>{children}</td>;
+  return <td style= ...s.td, color >{children}</td>;
 }
 
 function cleanJobTitle(title, jobId, index) {

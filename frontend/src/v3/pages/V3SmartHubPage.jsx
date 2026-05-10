@@ -327,7 +327,7 @@ export default function V3SmartHubPage() {
         <section className="v3-hero cvx-command-hero">
           <div className="v3-hero-main">
             <div className="v3-hero-copy">
-              <p className="v3-eyebrow">Churvox AI Trade OS</p>
+              <p className="v3-eyebrow">Churvox </p>
               <h1>Your business operator for today.</h1>
               <p>
                 Churvox checks jobs, crew, proof, quotes, invoices and owner decisions.
@@ -429,7 +429,7 @@ export default function V3SmartHubPage() {
                 <p>Churvox Advantage</p>
                 <h2>Where this beats normal job apps</h2>
               </div>
-              <img src="/brand/churvox-mark.svg" alt="Churvox" className="h-10 w-10 rounded-2xl shadow-sm" />
+              <img src="/brand/churvox-logo.svg" alt="Churvox" className="h-10 w-10 rounded-2xl shadow-sm" />
             </div>
 
             <div className="cvx-advantage-list">

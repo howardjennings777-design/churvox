@@ -37,10 +37,10 @@ export function ActionForm({ type, config, onChange, advanced, setAdvanced }) {
         onBlur={(e) => {
           try { onChange(JSON.parse(e.target.value || "{}")); }
           catch { /* keep last valid */ }
-        }}
+        
       />
       <p className="text-[11px] text-slate-400 mt-1">
-        Use <code className="font-mono">{"{{path}}"}</code> to inject event values (e.g. <code>{"{{job.id}}"}</code>).
+        Use <code className="font-mono">{"path"}</code> to inject event values (e.g. <code>{"job.id"}</code>).
       </p>
     </div>
   );
@@ -78,11 +78,11 @@ export function ActionForm({ type, config, onChange, advanced, setAdvanced }) {
     return (
       <div className="space-y-3">
         <div className="grid sm:grid-cols-2 gap-3">
-          <Field label="Recipient (user_id)" hint="Leave blank to default to actor. Use tokens e.g. {{job.worker_id}}">
+          <Field label="Recipient (user_id)" hint="Leave blank to default to actor. Use tokens e.g. job.worker_id">
             <Input
               value={cfg.user_id || ""}
               onChange={(e) => set({ user_id: e.target.value })}
-              placeholder="{{job.worker_id}}"
+              placeholder="job.worker_id"
             />
           </Field>
           <Field label="Type" hint="Short label used for grouping">
@@ -97,7 +97,7 @@ export function ActionForm({ type, config, onChange, advanced, setAdvanced }) {
           <Input
             value={cfg.title || ""}
             onChange={(e) => set({ title: e.target.value })}
-            placeholder="Job completed: {{job.title}}"
+            placeholder="Job completed: job.title"
           />
         </Field>
         <Field label="Message">
@@ -112,7 +112,7 @@ export function ActionForm({ type, config, onChange, advanced, setAdvanced }) {
             <Input
               value={cfg.route || ""}
               onChange={(e) => set({ route: e.target.value })}
-              placeholder="/jobs/{{job.id}}"
+              placeholder="/jobs/job.id"
             />
           </Field>
           <Field label="Target type">
@@ -126,7 +126,7 @@ export function ActionForm({ type, config, onChange, advanced, setAdvanced }) {
             <Input
               value={cfg.target_id || ""}
               onChange={(e) => set({ target_id: e.target.value })}
-              placeholder="{{job.id}}"
+              placeholder="job.id"
             />
           </Field>
         </div>
@@ -143,7 +143,7 @@ export function ActionForm({ type, config, onChange, advanced, setAdvanced }) {
           <Input
             value={cfg.job_id || ""}
             onChange={(e) => set({ job_id: e.target.value })}
-            placeholder="{{job.id}}"
+            placeholder="job.id"
           />
         </Field>
         <Field label="Note text">
@@ -151,7 +151,7 @@ export function ActionForm({ type, config, onChange, advanced, setAdvanced }) {
             className="w-full h-20 border border-slate-200 rounded-md p-2 text-sm"
             value={cfg.text || ""}
             onChange={(e) => set({ text: e.target.value })}
-            placeholder="Auto-note: {{trigger}} fired on {{job.title}}"
+            placeholder="Auto-note: trigger fired on job.title"
           />
         </Field>
         <div className="flex justify-end"><AdvancedToggle /></div>
@@ -168,7 +168,7 @@ export function ActionForm({ type, config, onChange, advanced, setAdvanced }) {
             <Input
               value={cfg.job_id || ""}
               onChange={(e) => set({ job_id: e.target.value })}
-              placeholder="{{job.id}}"
+              placeholder="job.id"
             />
           </Field>
           <Field label="New status">
@@ -196,14 +196,14 @@ export function ActionForm({ type, config, onChange, advanced, setAdvanced }) {
             <Input
               value={cfg.job_id || ""}
               onChange={(e) => set({ job_id: e.target.value })}
-              placeholder="{{job.id}}"
+              placeholder="job.id"
             />
           </Field>
           <Field label="Client id">
             <Input
               value={cfg.client_id || ""}
               onChange={(e) => set({ client_id: e.target.value })}
-              placeholder="{{job.client_id}}"
+              placeholder="job.client_id"
             />
           </Field>
         </div>
@@ -245,11 +245,11 @@ export function ActionForm({ type, config, onChange, advanced, setAdvanced }) {
         <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-800">
           SMS actions send a real text via your ClickSend account. Make sure <code className="font-mono">CLICKSEND_*</code> env vars are configured.
         </div>
-        <Field label="To (phone, AU/NZ)" hint="E.164 or local format. Use {{job.worker_id}} only if you store phone on the worker.">
+        <Field label="To (phone, AU/NZ)" hint="E.164 or local format. Use job.worker_id only if you store phone on the worker.">
           <Input
             value={cfg.to || ""}
             onChange={(e) => set({ to: e.target.value })}
-            placeholder="+64 21 123 4567 or {{actor.phone}}"
+            placeholder="+64 21 123 4567 or actor.phone"
           />
         </Field>
         <Field label="Message">
@@ -257,7 +257,7 @@ export function ActionForm({ type, config, onChange, advanced, setAdvanced }) {
             className="w-full h-20 border border-slate-200 rounded-md p-2 text-sm"
             value={cfg.message || ""}
             onChange={(e) => set({ message: e.target.value })}
-            placeholder="Hi! {{job.title}} is scheduled for {{job.scheduled_date}}."
+            placeholder="Hi! job.title is scheduled for job.scheduled_date."
           />
         </Field>
         <Field label="Sender label (optional)">

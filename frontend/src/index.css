@@ -955,3 +955,42 @@ img[src="/brand/churvox-logo.svg"] {
   object-fit: contain;
 }
 
+/* === Churvox clean brand fix: no shield, no wrapping, no broken slogan === */
+aside img[src="/brand/churvox-logo.svg"],
+.sidebar img[src="/brand/churvox-logo.svg"],
+nav img[src="/brand/churvox-logo.svg"],
+header img[src="/brand/churvox-logo.svg"] {
+  width: 185px !important;
+  max-width: 185px !important;
+  height: auto !important;
+  display: block !important;
+  object-fit: contain !important;
+  flex-shrink: 0 !important;
+}
+
+aside img[src="/brand/churvox-mark.svg"],
+.sidebar img[src="/brand/churvox-mark.svg"],
+nav img[src="/brand/churvox-mark.svg"],
+header img[src="/brand/churvox-mark.svg"] {
+  width: 48px !important;
+  height: 48px !important;
+  object-fit: contain !important;
+  flex-shrink: 0 !important;
+}
+
+aside .brand,
+aside [class*="brand"],
+.sidebar .brand,
+.sidebar [class*="brand"] {
+  overflow: visible !important;
+  white-space: nowrap !important;
+}
+
+aside [class*="brand"] * {
+  white-space: nowrap !important;
+}
+
+aside {
+  overflow-x: hidden !important;
+}
+

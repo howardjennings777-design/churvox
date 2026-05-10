@@ -246,8 +246,8 @@ export default function CommandCentreStrip() {
             </div>
             <div className="border-t border-[#d8e3f3] bg-white px-4 py-3 flex justify-end gap-2">
               <button onClick={() => setOpenAction(null)} className="rounded-md border border-[#cbd5e1] bg-white px-3 py-1.5 text-xs font-semibold text-[#475569] hover:bg-slate-50">Close</button>
-              <button onClick={() => { reject(openAction); setOpenAction(null); }} className="rounded-md border border-[#cbd5e1] bg-white px-3 py-1.5 text-xs font-semibold text-[#475569] hover:bg-slate-50">Reject</button>
-              <button onClick={() => { approve(openAction); setOpenAction(null); }} className="rounded-md bg-[#155EEF] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0c4ad9]">Approve</button>
+              <button onClick={() => { reject(openAction); setOpenAction(null);  className="rounded-md border border-[#cbd5e1] bg-white px-3 py-1.5 text-xs font-semibold text-[#475569] hover:bg-slate-50">Reject</button>
+              <button onClick={() => { approve(openAction); setOpenAction(null);  className="rounded-md bg-[#155EEF] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0c4ad9]">Approve</button>
             </div>
           </div>
         </div>

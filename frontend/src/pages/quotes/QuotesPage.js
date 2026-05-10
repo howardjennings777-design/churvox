@@ -210,11 +210,11 @@ export default function QuotesPage() {
                               <>
                                 <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} />
                                 <div className="absolute right-0 mt-1 w-44 bg-white border border-[#d8e3f3] rounded-xl shadow-lg z-20 overflow-hidden">
-                                  <button type="button" className="block w-full text-left px-3 py-2 text-[13px] text-[#0d1b34] hover:bg-[#eff4ff]" onClick={() => { setOpenMenu(null); setActiveQuote(quote); }}>View details</button>
+                                  <button type="button" className="block w-full text-left px-3 py-2 text-[13px] text-[#0d1b34] hover:bg-[#eff4ff]" onClick={() => { setOpenMenu(null); setActiveQuote(quote); >View details</button>
                                   <Link to={`/quotes/${quote.id}/edit`} className="block px-3 py-2 text-[13px] text-[#0d1b34] hover:bg-[#eff4ff]" data-testid={`edit-quote-${quote.id}`}>
                                     <Pencil className="h-3.5 w-3.5 inline mr-1.5" />Edit
                                   </Link>
-                                  <button onClick={() => { setOpenMenu(null); setDeleteId(quote.id); }} className="block w-full text-left px-3 py-2 text-[13px] text-[#dc2626] hover:bg-[#fff5f5]" data-testid={`delete-quote-${quote.id}`}>
+                                  <button onClick={() => { setOpenMenu(null); setDeleteId(quote.id);  className="block w-full text-left px-3 py-2 text-[13px] text-[#dc2626] hover:bg-[#fff5f5]" data-testid={`delete-quote-${quote.id}`}>
                                     <Trash2 className="h-3.5 w-3.5 inline mr-1.5" />Delete
                                   </button>
                                 </div>

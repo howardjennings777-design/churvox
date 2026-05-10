@@ -6,7 +6,7 @@ const Toaster = ({ ...props }) => {
   return (
     <Sonner
       className="toaster group z-[99999]"
-      toastOptions={{
+      toastOptions=
         classNames: {
           toast:
             "group toast z-[99999] bg-slate-900 text-white border border-white/10 shadow-xl rounded-xl",
@@ -30,10 +30,10 @@ const Toaster = ({ ...props }) => {
         style: {
           zIndex: 99999,
         },
-      }}
-      style={{
+      
+      style=
         zIndex: 99999,
-      }}
+      
       {...props}
     />
   )

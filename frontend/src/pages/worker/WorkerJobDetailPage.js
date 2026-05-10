@@ -271,7 +271,7 @@ export default function WorkerJobDetailPage() {
       <header className="worker-topbar">
         <div className="worker-topbar-inner">
           <Link to="/worker/jobs" className="worker-icon-btn" aria-label="Back to jobs"><ArrowLeft size={20} /></Link>
-          <b style={{ color: "#080a10" }}>Job Field Card</b>
+          <b style= color: "#080a10" >Job Field Card</b>
           <button className="worker-icon-btn" onClick={() => setShowContactOffice(true)} aria-label="Contact office">
             <MessageSquare size={19} />
           </button>
@@ -296,7 +296,7 @@ export default function WorkerJobDetailPage() {
           </div>
         </section>
 
-        <div className="worker-proof-strip" style={{ margin: "14px 0" }}>
+        <div className="worker-proof-strip" style= margin: "14px 0" >
           <div className="worker-proof-pill"><small>Acknowledge</small><b>{proofReady.acknowledged ? "Done" : "Needed"}</b></div>
           <div className="worker-proof-pill"><small>Photos</small><b>{photos.length}</b></div>
           <div className="worker-proof-pill"><small>Completion</small><b>{proofReady.completed ? "Done" : "Open"}</b></div>
@@ -306,7 +306,7 @@ export default function WorkerJobDetailPage() {
           <div className="worker-card-head">
             <div>
               <p className="worker-card-title">Job details</p>
-              <div style={{ marginTop: 8 }}><StatusBadge status={status} /></div>
+              <div style= marginTop: 8 ><StatusBadge status={status} /></div>
             </div>
           </div>
 
@@ -319,11 +319,11 @@ export default function WorkerJobDetailPage() {
 
         <DetailCard>
           <p className="worker-card-title">Job instructions</p>
-          <div style={{ marginTop: 12 }}>
+          <div style= marginTop: 12 >
             {job?.notes ? (
-              <p style={{ color: "#59614f", fontWeight: 700, whiteSpace: "pre-wrap" }}>{job.notes}</p>
+              <p style= color: "#59614f", fontWeight: 700, whiteSpace: "pre-wrap" >{job.notes}</p>
             ) : (
-              <p style={{ color: "#7b8470", fontWeight: 650 }}>No job instructions have been added yet.</p>
+              <p style= color: "#7b8470", fontWeight: 650 >No job instructions have been added yet.</p>
             )}
           </div>
         </DetailCard>
@@ -353,15 +353,15 @@ export default function WorkerJobDetailPage() {
           <div className="worker-card-head">
             <div>
               <p className="worker-card-title">Proof photos</p>
-              <p style={{ margin: "6px 0 0", color: "#68705e", fontWeight: 650 }}>Add photos before completing where possible.</p>
+              <p style= margin: "6px 0 0", color: "#68705e", fontWeight: 650 >Add photos before completing where possible.</p>
             </div>
-            <label className="worker-btn primary" style={{ cursor: "pointer" }}>
+            <label className="worker-btn primary" style= cursor: "pointer" >
               <Camera size={17} /> {uploadingPhoto ? "Uploading..." : "Add photo"}
-              <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={handleAddPhoto} disabled={uploadingPhoto} />
+              <input type="file" accept="image/*" capture="environment" style= display: "none"  onChange={handleAddPhoto} disabled={uploadingPhoto} />
             </label>
           </div>
 
-          <div style={{ marginTop: 14 }}>
+          <div style= marginTop: 14 >
             {photos.length ? (
               <div className="worker-photo-grid">
                 {photos.map((src, idx) => (
@@ -372,10 +372,10 @@ export default function WorkerJobDetailPage() {
                 ))}
               </div>
             ) : (
-              <div className="worker-empty" style={{ padding: 18 }}>
+              <div className="worker-empty" style= padding: 18 >
                 <div className="worker-empty-icon"><Camera size={22} /></div>
                 <b>No photos yet</b>
-                <p style={{ margin: "6px 0 0", color: "#68705e" }}>Use Add photo to capture proof for the owner.</p>
+                <p style= margin: "6px 0 0", color: "#68705e" >Use Add photo to capture proof for the owner.</p>
               </div>
             )}
           </div>
@@ -383,14 +383,14 @@ export default function WorkerJobDetailPage() {
 
         <DetailCard>
           <p className="worker-card-title">Worker notes</p>
-          <p style={{ color: "#68705e", fontWeight: 650, margin: "6px 0 12px" }}>Add what happened, access issues, materials used, or anything the office should know.</p>
+          <p style= color: "#68705e", fontWeight: 650, margin: "6px 0 12px" >Add what happened, access issues, materials used, or anything the office should know.</p>
           <textarea
             className="worker-textarea"
             value={workerNotes}
             onChange={(event) => setWorkerNotes(event.target.value)}
             placeholder="Add worker notes..."
           />
-          <div style={{ marginTop: 10 }}>
+          <div style= marginTop: 10 >
             <WorkerButton className="primary" onClick={() => handleSaveNotes()} disabled={savingNotes}>
               <ClipboardList size={17} /> {savingNotes ? "Saving..." : "Save notes"}
             </WorkerButton>
@@ -413,15 +413,15 @@ export default function WorkerJobDetailPage() {
 
         <DetailCard>
           <p className="worker-card-title">Complete job</p>
-          <p style={{ color: "#68705e", fontWeight: 650, margin: "6px 0 12px" }}>Final note is saved with the job before completion.</p>
+          <p style= color: "#68705e", fontWeight: 650, margin: "6px 0 12px" >Final note is saved with the job before completion.</p>
           <textarea
             className="worker-textarea"
             value={finalNote}
             onChange={(event) => setFinalNote(event.target.value)}
             placeholder="Final completion note..."
           />
-          <div style={{ marginTop: 10 }}>
-            <WorkerButton className="dark full" onClick={async () => { await handleSaveNotes(finalNote); await handleStatus("completed"); }} disabled={savingStatus || savingNotes || isDone(status)}>
+          <div style= marginTop: 10 >
+            <WorkerButton className="dark full" onClick={async () => { await handleSaveNotes(finalNote); await handleStatus("completed");  disabled={savingStatus || savingNotes || isDone(status)}>
               <CheckCircle2 size={18} /> Complete job now
             </WorkerButton>
           </div>
@@ -429,7 +429,7 @@ export default function WorkerJobDetailPage() {
 
         <DetailCard>
           <p className="worker-card-title">Need office help?</p>
-          <p style={{ color: "#68705e", fontWeight: 650, margin: "6px 0 12px" }}>Ask the office about access, scheduling, job details, or customer instructions.</p>
+          <p style= color: "#68705e", fontWeight: 650, margin: "6px 0 12px" >Ask the office about access, scheduling, job details, or customer instructions.</p>
           <WorkerButton className="full" onClick={() => setShowContactOffice(true)}>
             <MessageSquare size={17} /> Contact office
           </WorkerButton>

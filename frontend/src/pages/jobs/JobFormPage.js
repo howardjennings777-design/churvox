@@ -271,7 +271,7 @@ export default function JobFormPage() {
                   type="datetime-local"
                   value={form.scheduled_date}
                   onChange={(e) => setField("scheduled_date", e.target.value)}
-                  style={{ colorScheme: "light" }}
+                  style= colorScheme: "light" 
                   className="bg-[#f6faff] border-[#d8e3f3] text-[#0d1b34]"
                 />
               </div>

@@ -1043,7 +1043,7 @@ function JobModal({
                 const file = event.target.files?.[0];
                 if (file) onUploadPhoto(job, file);
                 event.target.value = "";
-              }}
+              
             />
 
             <button type="button" onClick={() => fileInputRef.current?.click()} disabled={disabled}>

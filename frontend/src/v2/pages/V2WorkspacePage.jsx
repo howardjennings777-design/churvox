@@ -98,7 +98,7 @@ export default function V2WorkspacePage({ type }) {
           <div className="v2-stat"><b>{filtered.length}</b><span>Showing</span><small>After search</small></div>
         </section>
         <article className="v2-card">
-          <div className="v2-card-head"><div><p>{config.eyebrow}</p><h2>{config.title} list</h2></div><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search…" style={{ maxWidth: 260, minHeight: 42, borderRadius: 14, border: "1px solid #dce7f4", padding: "0 12px" }} /></div>
+          <div className="v2-card-head"><div><p>{config.eyebrow}</p><h2>{config.title} list</h2></div><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search…" style= maxWidth: 260, minHeight: 42, borderRadius: 14, border: "1px solid #dce7f4", padding: "0 12px"  /></div>
           {loading ? <div className="v2-empty"><b>Loading</b><span>Pulling live data from Churvox.</span></div> : filtered.length ? filtered.slice(0, 30).map((item, index) => <button className="v2-row" key={item.id || item._id || index} onClick={() => item.id ? navigate(`/${type}/${item.id}`) : null}><span><b>{getTitle(item)}</b><span>{getSub(item)}</span></span><em>Open</em></button>) : <div className="v2-empty"><b>{config.empty}</b><span>When records exist, they will show here in the new V2 layout.</span></div>}
         </article>
       </div>

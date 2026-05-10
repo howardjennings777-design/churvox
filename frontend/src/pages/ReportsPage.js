@@ -109,7 +109,7 @@ export default function ReportsPage() {
                 value={stat.value}
                 icon={stat.icon}
                 tone={stat.tone}
-                onClick={() => {}}
+                onClick={() => {
               />
             ))}
             {accountingEnabled && (

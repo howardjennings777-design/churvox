@@ -55,7 +55,7 @@ function Card({ eyebrow, title, count, children, action, onAction }) {
 function ActionRow({ action, busy, onOpen, onApprove }) {
   return (
     <div className="v2-row">
-      <button type="button" onClick={onOpen} className="v2-button ghost" style={{ textAlign: "left", justifyContent: "flex-start" }}>
+      <button type="button" onClick={onOpen} className="v2-button ghost" style= textAlign: "left", justifyContent: "flex-start" >
         <span>
           <b>{action.title || "Prepared action"}</b>
           <span>{action.summary || action.reason || "Ready for owner review."}</span>

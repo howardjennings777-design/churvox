@@ -58,7 +58,7 @@ export default function AdminLoginPage() {
             <ChurvoxLogo size="lg" />
           </div>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium mb-4">
-            <img src="/brand/churvox-mark.svg" alt="Churvox" className="h-10 w-10 rounded-2xl shadow-sm" />
+            <img src="/brand/churvox-logo.svg" alt="Churvox" className="h-10 w-10 rounded-2xl shadow-sm" />
             Admin Access
           </div>
           <h1 className="text-2xl font-semibold text-slate-900">Admin Sign In</h1>

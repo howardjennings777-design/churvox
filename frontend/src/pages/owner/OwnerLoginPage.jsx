@@ -144,10 +144,10 @@ export default function OwnerLoginPage() {
           </button>
         </form>
 
-<div style={{ marginTop: "12px", textAlign: "center" }}>
+<div style= marginTop: "12px", textAlign: "center" >
   <a
     href="/owner"
-    style={{
+    style=
       display: "inline-block",
       padding: "10px 14px",
       borderRadius: "12px",
@@ -156,7 +156,7 @@ export default function OwnerLoginPage() {
       color: "#0f172a",
       textDecoration: "none",
       fontWeight: 600
-    }}
+    
   >
     Open Owner Page
   </a>

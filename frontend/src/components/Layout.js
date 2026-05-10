@@ -257,7 +257,7 @@ export default function Layout({ children, smartHubMode = false }) {
                   );
                 })}
                 <button
-                  onClick={() => { setMoreOpen(false); handleLogout(); }}
+                  onClick={() => { setMoreOpen(false); handleLogout(); 
                   className="flex items-center gap-3 w-full px-3 py-3 rounded-xl text-sm font-semibold text-[#dc2626] hover:bg-[#fff5f5]"
                 >
                   <LogOut className="h-5 w-5" />Log out

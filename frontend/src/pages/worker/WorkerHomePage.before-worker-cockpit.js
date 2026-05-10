@@ -535,7 +535,7 @@ export default function WorkerHomePage() {
             onClick={(event) => {
               event.stopPropagation();
               runJobAction(job, "start");
-            }}
+            
           >
             {busyKey === `${id}:start` ? "Starting..." : "Start Job"}
           </button>
@@ -548,7 +548,7 @@ export default function WorkerHomePage() {
             onClick={(event) => {
               event.stopPropagation();
               runJobAction(job, "pause");
-            }}
+            
           >
             {busyKey === `${id}:pause` ? "Pausing..." : "Pause"}
           </button>
@@ -561,7 +561,7 @@ export default function WorkerHomePage() {
             onClick={(event) => {
               event.stopPropagation();
               runJobAction(job, "resume");
-            }}
+            
           >
             {busyKey === `${id}:resume` ? "Resuming..." : "Resume"}
           </button>
@@ -574,7 +574,7 @@ export default function WorkerHomePage() {
             onClick={(event) => {
               event.stopPropagation();
               runJobAction(job, "complete");
-            }}
+            
           >
             {busyKey === `${id}:complete` ? "Completing..." : "Complete"}
           </button>
@@ -610,7 +610,7 @@ export default function WorkerHomePage() {
             onClick={(event) => {
               event.stopPropagation();
               openMaps(job);
-            }}
+            
             disabled={!address}
           >
             Navigate
@@ -620,7 +620,7 @@ export default function WorkerHomePage() {
             onClick={(event) => {
               event.stopPropagation();
               callClient(job);
-            }}
+            
             disabled={!phone}
           >
             Call Client

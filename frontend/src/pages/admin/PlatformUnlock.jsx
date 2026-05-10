@@ -40,7 +40,7 @@ export default function PlatformUnlock() {
             onChange={(e) => {
               setCode(e.target.value);
               setError("");
-            }}
+            
             placeholder="Enter owner code"
             className="w-full rounded-xl bg-white border border-slate-200 px-4 py-3 outline-none"
           />

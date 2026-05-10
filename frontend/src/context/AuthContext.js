@@ -224,7 +224,7 @@ export function AuthProvider({ children }) {
   })();
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, checkAuth, updateUser, forgotPassword, resetPassword, normalizedRole, isEmployer, isWorker, isPayroll, isOwnerUser, isTrialExpired, hasAppAccess }}>
+    <AuthContext.Provider value= user, loading, login, register, logout, checkAuth, updateUser, forgotPassword, resetPassword, normalizedRole, isEmployer, isWorker, isPayroll, isOwnerUser, isTrialExpired, hasAppAccess >
       {children}
     </AuthContext.Provider>
   );

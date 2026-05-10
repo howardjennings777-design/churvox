@@ -227,7 +227,7 @@ export default function CalendarPage() {
               onClick={() => {
                 setActiveFilter(FILTERS.UNASSIGNED);
                 unassignedColumnRef.current?.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
-              }}
+              
             >
               <p className="text-xs text-[#667085]">Unassigned jobs</p>
               <p className="mt-1 text-2xl font-bold text-[#172033]">{columnData.unassigned.length}</p>
@@ -246,7 +246,7 @@ export default function CalendarPage() {
               onClick={() => {
                 setActiveFilter(FILTERS.ALL);
                 workerColumnsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
+              
             >
               <p className="text-xs text-[#667085]">Active workers</p>
               <p className="mt-1 text-2xl font-bold text-[#172033]">{activeWorkerCount}/{workers.length}</p>
@@ -313,7 +313,7 @@ export default function CalendarPage() {
 
               {safeArray(workers).map((worker, index) => (
                 <div key={worker.id} className="cx-dispatch-column snap-start" onDragOver={(e) => e.preventDefault()} onDrop={() => dragJobId && assignJob(dragJobId, worker.id)}>
-                  <div className="h-1.5" style={{ background: index % 2 === 0 ? "#155EEF" : "#16A34A" }} />
+                  <div className="h-1.5" style= background: index % 2 === 0 ? "#155EEF" : "#16A34A"  />
                   <div className="p-4 border-b border-border bg-white">
                     <div className="flex items-start justify-between gap-2">
                       <div>
@@ -412,7 +412,7 @@ export default function CalendarPage() {
                         onClick={() => {
                           setActiveJob(conflictJob);
                           setSelectedConflict(null);
-                        }}
+                        
                       >
                         Open pop-up
                       </button>
@@ -434,7 +434,7 @@ export default function CalendarPage() {
                       if (!firstJob?.id) return;
                       setActiveJob(firstJob);
                       setSelectedConflict(null);
-                    }}
+                    
                   >
                     Open pop-ups
                   </button>

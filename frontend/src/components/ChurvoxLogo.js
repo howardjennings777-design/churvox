@@ -19,11 +19,11 @@ export function ChurvoxLogo({
     <div
       data-testid={dataTestId}
       className={className}
-      style={{
+      style=
         display: "inline-flex",
         alignItems: "center",
         gap: compact || markOnly ? 0 : 12,
-      }}
+      
     >
       <svg
         width={scale}
@@ -92,28 +92,28 @@ export function ChurvoxLogo({
         <path d="M49.2 47.5H63.4" stroke="#18C6A7" strokeWidth="4" strokeLinecap="round" opacity="0.9" />
       </svg>
 
-        <span className={wordmarkClassName} style={{ display: "grid", lineHeight: 1 }}>
+        <span className={wordmarkClassName} style= display: "grid", lineHeight: 1 >
           <strong
-            style={{
+            style=
               color: titleColor,
               fontSize: titleSize,
               letterSpacing: "-0.07em",
               fontWeight: 950,
-            }}
+            
           >
             Churvox
           </strong>
           <span
-            style={{
+            style=
               color: subColor,
               fontSize: Math.max(9, titleSize - 8),
               fontWeight: 950,
               letterSpacing: "0.13em",
               textTransform: "uppercase",
               marginTop: 4,
-            }}
+            
           >
-            AI Trade OS
+            
           </span>
         </span>
       )}

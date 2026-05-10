@@ -278,7 +278,7 @@ export default function InvoiceFormPage() {
                 </div>
                 <div className="flex justify-between text-lg font-bold pt-2 border-t border-[#d8e3f3]">
                   <span className="text-[#0d1b34]">Total</span>
-                  <span className="text-[#2563eb]" style={{ fontFamily: "'Outfit', sans-serif" }}>${total.toFixed(2)}</span>
+                  <span className="text-[#2563eb]" style= fontFamily: "'Outfit', sans-serif" >${total.toFixed(2)}</span>
                 </div>
               </div>
 
