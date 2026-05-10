@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../../styles/churvox-worker-cockpit.css";
-import WorkerBottomNav from "@/components/worker/WorkerBottomNav";
 
 const env = typeof process !== "undefined" && process.env ? process.env : {};
 const RAW_API_BASE =
@@ -436,64 +435,49 @@ const ACTION_STATUS = {
   complete: "completed",
 };
 
-
-function clearWorkerSessionAndLogout() {
-  if (typeof window === "undefined") return;
-
-  try {
-    TOKEN_KEYS.forEach((key) => window.localStorage.removeItem(key));
-    USER_KEYS.forEach((key) => window.localStorage.removeItem(key));
-    window.localStorage.removeItem("owner_portal_session");
-    window.localStorage.removeItem("platform_owner_email");
-    window.localStorage.removeItem("business_user");
-    window.localStorage.removeItem("current_business");
-    window.sessionStorage.clear();
-  } catch {
-    // keep logout redirect safe
-  }
-
-  window.location.assign("/login");
-}
-
 function actionCandidates(jobId, action, payload) {
   const id = encodeURIComponent(jobId);
   const status = ACTION_STATUS[action];
 
-  const workerDirect = {
-    acknowledge: [`/worker/jobs/${id}/acknowledge`],
-    onway: [`/worker/jobs/${id}/on-my-way`, `/worker/jobs/${id}/onway`],
-    start: [`/worker/jobs/${id}/start`],
-    pause: [`/worker/jobs/${id}/pause`],
-    resume: [`/worker/jobs/${id}/resume`],
-    complete: [`/worker/jobs/${id}/complete`],
-  };
-
-  const legacyDirect = {
-    acknowledge: [`/jobs/${id}/acknowledge`],
-    onway: [`/jobs/${id}/on-my-way`, `/jobs/${id}/onway`],
-    start: [`/jobs/${id}/start`, `/jobs/${id}/start-job`, `/jobs/${id}/time/start`, `/jobs/${id}/timer/start`],
-    pause: [`/jobs/${id}/pause`, `/jobs/${id}/time/pause`, `/jobs/${id}/timer/pause`],
-    resume: [`/jobs/${id}/resume`, `/jobs/${id}/time/resume`, `/jobs/${id}/timer/resume`],
-    complete: [`/jobs/${id}/complete`, `/jobs/${id}/finish`, `/jobs/${id}/complete-job`],
+  const direct = {
+    acknowledge: [
+      `/jobs/${id}/acknowledge`,
+      `/worker/jobs/${id}/acknowledge`,
+    ],
+    onway: [
+      `/jobs/${id}/on-my-way`,
+      `/jobs/${id}/onway`,
+      `/worker/jobs/${id}/on-my-way`,
+    ],
+    start: [
+      `/jobs/${id}/start`,
+      `/jobs/${id}/start-job`,
+      `/jobs/${id}/time/start`,
+      `/jobs/${id}/timer/start`,
+      `/worker/jobs/${id}/start`,
+    ],
+    pause: [
+      `/jobs/${id}/pause`,
+      `/jobs/${id}/time/pause`,
+      `/jobs/${id}/timer/pause`,
+      `/worker/jobs/${id}/pause`,
+    ],
+    resume: [
+      `/jobs/${id}/resume`,
+      `/jobs/${id}/time/resume`,
+      `/jobs/${id}/timer/resume`,
+      `/worker/jobs/${id}/resume`,
+    ],
+    complete: [
+      `/jobs/${id}/complete`,
+      `/jobs/${id}/finish`,
+      `/jobs/${id}/complete-job`,
+      `/worker/jobs/${id}/complete`,
+    ],
   };
 
   return [
-    ...(workerDirect[action] || []).map((path) => ({
-      path,
-      method: "POST",
-      body: JSON.stringify(payload),
-    })),
-    {
-      path: `/worker/jobs/${id}/status`,
-      method: "POST",
-      body: JSON.stringify({ ...payload, status }),
-    },
-    {
-      path: `/worker/jobs/${id}`,
-      method: "PATCH",
-      body: JSON.stringify({ ...payload, status }),
-    },
-    ...(legacyDirect[action] || []).map((path) => ({
+    ...(direct[action] || []).map((path) => ({
       path,
       method: "POST",
       body: JSON.stringify(payload),
@@ -700,8 +684,8 @@ export default function WorkerCockpitPage() {
 
     try {
       await tryApi([
-        { path: `/worker/jobs/${id}/notes`, method: "POST", body: JSON.stringify(payload) },
         { path: `/jobs/${id}/notes`, method: "POST", body: JSON.stringify(payload) },
+        { path: `/worker/jobs/${id}/notes`, method: "POST", body: JSON.stringify(payload) },
         { path: `/job-notes`, method: "POST", body: JSON.stringify(payload) },
         { path: `/notes`, method: "POST", body: JSON.stringify(payload) },
       ]);
@@ -721,8 +705,8 @@ export default function WorkerCockpitPage() {
 
     const id = encodeURIComponent(job.id);
     const paths = [
-      `/worker/jobs/${id}/photos`,
       `/jobs/${id}/photos`,
+      `/worker/jobs/${id}/photos`,
       `/jobs/${id}/upload-photo`,
       `/job-photos`,
     ];
@@ -784,21 +768,6 @@ export default function WorkerCockpitPage() {
   return (
     <main className="cvx-worker-cockpit">
       {toast ? <div className="cvx-worker-toast">{toast}</div> : null}
-
-      <div className="cvx-worker-app-topbar">
-        <div>
-          <span>Worker App</span>
-          <strong>Field Mode</strong>
-        </div>
-        <div className="cvx-worker-app-topbar-actions">
-          <button type="button" onClick={() => window.location.assign("/worker/settings")}>
-            Settings
-          </button>
-          <button type="button" className="is-logout" onClick={clearWorkerSessionAndLogout}>
-            Log out
-          </button>
-        </div>
-      </div>
 
       <section className="cvx-worker-hero">
         <div className="cvx-worker-hero-copy">
@@ -896,7 +865,12 @@ export default function WorkerCockpitPage() {
           )}
         </div>
       </section>
-      <WorkerBottomNav active="today" />
+
+      <nav className="cvx-worker-mobile-dock" aria-label="Worker quick actions">
+        <button type="button" onClick={() => setActiveTab("today")}>Today</button>
+        <button type="button" onClick={() => nextJob && setSelectedJob(nextJob)} disabled={!nextJob}>Next Job</button>
+        <button type="button" onClick={() => loadAll({ silent: true })}>Refresh</button>
+      </nav>
 
       {selectedJob ? (
         <JobModal
