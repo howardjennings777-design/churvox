@@ -1,0 +1,204 @@
+/* Churvox V4 Power Layer — stronger command deck identity */
+.v4-app {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(23, 105, 255, 0.16), transparent 26%),
+    radial-gradient(circle at 88% 12%, rgba(139, 212, 80, 0.10), transparent 24%),
+    linear-gradient(90deg, rgba(7,17,31,0.045) 1px, transparent 1px),
+    linear-gradient(180deg, #f8fbff 0%, #edf3f8 100%) !important;
+  background-size: auto, auto, 28px 28px, auto !important;
+}
+
+.v4-sidebar {
+  background: linear-gradient(180deg, #07111f 0%, #0b1626 54%, #ffffff 54%, #f8fbff 100%) !important;
+  border-right: 1px solid rgba(7, 17, 31, 0.12) !important;
+}
+
+.v4-brand {
+  min-height: 118px !important;
+  display: flex !important;
+  align-items: center !important;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(56, 189, 248, 0.22), transparent 30%),
+    linear-gradient(135deg, #07111f 0%, #0f223b 100%) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  box-shadow: 0 26px 70px rgba(7, 17, 31, 0.30) !important;
+}
+
+.v4-sidebar nav {
+  margin-top: 4px !important;
+  padding-top: 10px !important;
+  border-top: 1px solid rgba(255,255,255,0.10) !important;
+}
+
+.v4-sidebar nav button {
+  background: rgba(255,255,255,0.04) !important;
+  border-color: rgba(255,255,255,0.06) !important;
+  color: #d8e6f5 !important;
+}
+
+.v4-sidebar nav button svg {
+  background: rgba(255,255,255,0.08) !important;
+  color: #bfe9ff !important;
+}
+
+.v4-sidebar nav button b { color: #f8fbff !important; }
+.v4-sidebar nav button small { color: rgba(216,230,245,0.64) !important; }
+
+.v4-sidebar nav button:hover {
+  background: rgba(56, 189, 248, 0.12) !important;
+  border-color: rgba(56, 189, 248, 0.20) !important;
+}
+
+.v4-sidebar nav button.active {
+  background: linear-gradient(135deg, #ffffff 0%, #eaf7ff 100%) !important;
+  color: #07111f !important;
+  border-color: rgba(56, 189, 248, 0.34) !important;
+  box-shadow: 0 18px 42px rgba(0,0,0,0.18) !important;
+}
+
+.v4-sidebar nav button.active b { color: #07111f !important; }
+.v4-sidebar nav button.active small { color: #50708f !important; }
+.v4-sidebar nav button.active svg {
+  background: linear-gradient(135deg, #1769ff, #10b7ff) !important;
+  color: #ffffff !important;
+}
+
+.v4-topbar {
+  background: rgba(7, 17, 31, 0.92) !important;
+  border-color: rgba(255,255,255,0.10) !important;
+  color: #ffffff !important;
+  box-shadow: 0 22px 60px rgba(7,17,31,0.22) !important;
+}
+
+.v4-topbar span { color: #7dd3fc !important; }
+.v4-topbar b { color: #ffffff !important; }
+.v4-top-actions button,
+.v4-user {
+  background: rgba(255,255,255,0.08) !important;
+  color: #ffffff !important;
+  border-color: rgba(255,255,255,0.14) !important;
+}
+.v4-user span { color: rgba(255,255,255,0.75) !important; }
+
+.v4-hero-main {
+  min-height: 365px !important;
+  border-radius: 34px !important;
+  padding: 38px 42px !important;
+  background:
+    radial-gradient(circle at 15% 8%, rgba(56, 189, 248, 0.30), transparent 30%),
+    radial-gradient(circle at 78% 12%, rgba(139, 212, 80, 0.17), transparent 28%),
+    linear-gradient(135deg, #050b14 0%, #08192e 45%, #0d2c55 100%) !important;
+  box-shadow: 0 38px 100px rgba(7,17,31,0.36) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+}
+
+.v4-hero-main:before {
+  content: "COMMAND DECK" !important;
+  right: 24px !important;
+  top: 22px !important;
+  color: rgba(255,255,255,0.11) !important;
+  font-size: 50px !important;
+}
+
+.v4-hero h1 {
+  max-width: 720px !important;
+  font-size: clamp(52px, 5.8vw, 84px) !important;
+  line-height: 0.9 !important;
+  letter-spacing: -0.07em !important;
+}
+
+.v4-hero p {
+  max-width: 710px !important;
+  font-size: 17px !important;
+  color: rgba(238, 248, 255, 0.88) !important;
+}
+
+.v4-kicker {
+  background: rgba(56, 189, 248, 0.14) !important;
+  border-color: rgba(56, 189, 248, 0.26) !important;
+  color: #dff7ff !important;
+}
+
+.v4-btn.primary {
+  min-height: 46px !important;
+  background: linear-gradient(135deg, #1769ff 0%, #10b7ff 72%, #8bd450 140%) !important;
+  box-shadow: 0 22px 45px rgba(23,105,255,0.30) !important;
+}
+
+.v4-btn.dark {
+  min-height: 46px !important;
+  background: #ffffff !important;
+  color: #07111f !important;
+}
+
+.v4-next-card {
+  min-height: 365px !important;
+  border-radius: 34px !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,251,255,0.96)) !important;
+  box-shadow: 0 24px 70px rgba(7,17,31,0.12) !important;
+}
+
+.v4-next-card:after {
+  content: "OWNER CONTROL REQUIRED";
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  color: rgba(7,17,31,0.08);
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+.v4-metric,
+.v4-panel,
+.v4-list-card,
+.v4-decision,
+.v4-flow {
+  border-color: rgba(7,17,31,0.12) !important;
+  box-shadow: 0 16px 42px rgba(7,17,31,0.08) !important;
+}
+
+.v4-metric {
+  min-height: 152px !important;
+  border-radius: 24px !important;
+}
+
+.v4-metric svg,
+.v4-panel-head strong {
+  background: linear-gradient(135deg, #07111f 0%, #12305a 100%) !important;
+  box-shadow: 0 12px 28px rgba(7,17,31,0.18) !important;
+}
+
+.v4-panel {
+  border-radius: 30px !important;
+}
+
+.v4-panel-head h2,
+.v4-section-title h1,
+.v4-placeholder h1 {
+  letter-spacing: -0.07em !important;
+}
+
+.v4-decision {
+  background: linear-gradient(90deg, #ffffff 0%, #f7fbff 100%) !important;
+}
+
+.v4-decision > span {
+  background: #07111f !important;
+  color: #7dd3fc !important;
+}
+
+@media(max-width:1120px){
+  .v4-topbar { background: rgba(255,255,255,0.94) !important; color: #07111f !important; }
+  .v4-topbar b { color: #07111f !important; }
+  .v4-topbar span { color: #1769ff !important; }
+  .v4-top-actions button,.v4-user { background:#fff !important; color:#07111f !important; border-color:rgba(15,23,42,.10) !important; }
+}
+
+@media(max-width:640px){
+  .v4-hero-main { min-height: 350px !important; padding: 28px !important; }
+  .v4-hero h1 { font-size: 46px !important; }
+  .v4-hero-main:before { display: none !important; }
+}
