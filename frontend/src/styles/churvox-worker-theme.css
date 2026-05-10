@@ -1,0 +1,142 @@
+/* Worker app must match the premium Churvox owner theme */
+:root {
+  --churvox-worker-bg: #f4f6fa;
+  --churvox-worker-ink: #080b12;
+  --churvox-worker-muted: #64748b;
+  --churvox-worker-border: rgba(15, 23, 42, 0.09);
+  --churvox-worker-red: #ef3f3f;
+  --churvox-worker-red-2: #ff6b54;
+  --churvox-worker-card: #ffffff;
+}
+
+/* Route based worker theme */
+body[data-churvox-worker="true"] {
+  background: var(--churvox-worker-bg) !important;
+  color: var(--churvox-worker-ink) !important;
+}
+
+/* Also catch worker components even when route is shared */
+body:has([class*="worker" i]) {
+  --worker-brand-red: var(--churvox-worker-red);
+}
+
+/* Worker app shell */
+body[data-churvox-worker="true"] #root,
+body[data-churvox-worker="true"] main,
+body[data-churvox-worker="true"] [class*="worker" i],
+body:has([class*="worker" i]) main[class*="worker" i],
+body:has([class*="worker" i]) [class*="worker-page" i],
+body:has([class*="worker" i]) [class*="worker-dashboard" i] {
+  background: var(--churvox-worker-bg) !important;
+  color: var(--churvox-worker-ink) !important;
+}
+
+/* Worker header/nav must match Money Board / Churvox header */
+body[data-churvox-worker="true"] :is(header, nav, aside, [class*="header" i], [class*="topbar" i], [class*="navbar" i], [class*="sidebar" i], [class*="bottom-nav" i]),
+body:has([class*="worker" i]) :is([class*="worker-header" i], [class*="worker-nav" i], [class*="worker-topbar" i]) {
+  background:
+    radial-gradient(circle at top right, rgba(239, 63, 63, 0.22), transparent 30%),
+    linear-gradient(135deg, #070a10 0%, #111821 56%, #171d25 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 22px 60px rgba(6, 10, 18, 0.24) !important;
+}
+
+/* Worker nav items */
+body[data-churvox-worker="true"] :is(header, nav, aside, [class*="header" i], [class*="topbar" i], [class*="navbar" i], [class*="sidebar" i], [class*="bottom-nav" i]) :is(a, button),
+body:has([class*="worker" i]) :is([class*="worker-header" i], [class*="worker-nav" i], [class*="worker-topbar" i]) :is(a, button) {
+  background: rgba(255, 255, 255, 0.065) !important;
+  color: rgba(255, 255, 255, 0.86) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 999px !important;
+  font-weight: 800 !important;
+}
+
+/* Active worker nav/action */
+body[data-churvox-worker="true"] :is(a[aria-current="page"], .active, [class*="active" i]),
+body:has([class*="worker" i]) :is([class*="worker-header" i], [class*="worker-nav" i]) :is(a[aria-current="page"], .active, [class*="active" i]) {
+  background: linear-gradient(135deg, var(--churvox-worker-red), var(--churvox-worker-red-2)) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 14px 30px rgba(239, 63, 63, 0.28) !important;
+}
+
+/* Worker hero / main summary panels */
+body[data-churvox-worker="true"] :is([class*="hero" i], [class*="banner" i], [class*="summary" i], [class*="welcome" i], [class*="command" i]),
+body:has([class*="worker" i]) :is([class*="worker-hero" i], [class*="worker-summary" i], [class*="worker-welcome" i]) {
+  background:
+    radial-gradient(circle at top right, rgba(239, 63, 63, 0.26), transparent 34%),
+    linear-gradient(135deg, #070a10 0%, #101720 58%, #17202a 100%) !important;
+  color: #ffffff !important;
+  border-radius: 30px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 24px 70px rgba(6, 10, 18, 0.26) !important;
+}
+
+/* Text inside dark worker panels */
+body[data-churvox-worker="true"] :is([class*="hero" i], [class*="banner" i], [class*="summary" i], [class*="welcome" i]) :is(h1, h2, h3, p, span, small, div),
+body:has([class*="worker" i]) :is([class*="worker-hero" i], [class*="worker-summary" i], [class*="worker-welcome" i]) :is(h1, h2, h3, p, span, small, div) {
+  color: inherit !important;
+}
+
+/* Worker cards/panels */
+body[data-churvox-worker="true"] :is(article, section, [class*="card" i], [class*="panel" i], [class*="tile" i], [class*="job" i]),
+body:has([class*="worker" i]) :is([class*="worker-card" i], [class*="worker-panel" i], [class*="worker-job" i]) {
+  border-radius: 24px !important;
+  border: 1px solid var(--churvox-worker-border) !important;
+  background: var(--churvox-worker-card) !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Keep nested items from looking like ugly blocks */
+body[data-churvox-worker="true"] :is(article, section, [class*="card" i], [class*="panel" i]) :is(article, section, [class*="card" i], [class*="panel" i]) {
+  box-shadow: none !important;
+  border-color: rgba(15, 23, 42, 0.07) !important;
+}
+
+/* Worker buttons use Churvox red/black instead of random colours */
+body[data-churvox-worker="true"] :is(button, a[role="button"], .btn),
+body:has([class*="worker" i]) :is([class*="worker" i]) :is(button, a[role="button"], .btn) {
+  border-radius: 999px !important;
+  font-weight: 850 !important;
+  letter-spacing: -0.01em !important;
+}
+
+body[data-churvox-worker="true"] :is(button[type="submit"], .btn-primary, [class*="primary" i], .bg-blue-600, .bg-indigo-600, .bg-green-600, .bg-emerald-600),
+body:has([class*="worker" i]) :is([class*="worker" i]) :is(button[type="submit"], .btn-primary, [class*="primary" i], .bg-blue-600, .bg-indigo-600, .bg-green-600, .bg-emerald-600) {
+  background: linear-gradient(135deg, var(--churvox-worker-red), var(--churvox-worker-red-2)) !important;
+  color: #ffffff !important;
+  border-color: rgba(239, 63, 63, 0.22) !important;
+  box-shadow: 0 14px 30px rgba(239, 63, 63, 0.24) !important;
+}
+
+body[data-churvox-worker="true"] :is(.text-blue-600, .text-indigo-600, .text-green-600, .text-emerald-600),
+body:has([class*="worker" i]) :is([class*="worker" i]) :is(.text-blue-600, .text-indigo-600, .text-green-600, .text-emerald-600) {
+  color: var(--churvox-worker-red) !important;
+}
+
+/* Inputs */
+body[data-churvox-worker="true"] :is(input, select, textarea),
+body:has([class*="worker" i]) :is([class*="worker" i]) :is(input, select, textarea) {
+  border-radius: 18px !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+  background: #ffffff !important;
+  color: var(--churvox-worker-ink) !important;
+}
+
+/* Mobile worker polish */
+@media (max-width: 820px) {
+  body[data-churvox-worker="true"] :is(header, nav, aside, [class*="header" i], [class*="topbar" i], [class*="navbar" i], [class*="sidebar" i], [class*="bottom-nav" i]) {
+    border-radius: 22px !important;
+    margin: 10px !important;
+    padding: 12px !important;
+  }
+
+  body[data-churvox-worker="true"] :is([class*="hero" i], [class*="banner" i], [class*="summary" i], [class*="welcome" i]) {
+    border-radius: 24px !important;
+  }
+
+  body[data-churvox-worker="true"] :is(article, section, [class*="card" i], [class*="panel" i], [class*="tile" i], [class*="job" i]) {
+    border-radius: 20px !important;
+  }
+}
