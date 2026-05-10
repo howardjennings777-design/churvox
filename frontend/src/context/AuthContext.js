@@ -6,7 +6,7 @@ import { normalizeRole, isBusinessRole, isOwner, isWorkerRole, isPayrollRole } f
 axios.defaults.withCredentials = true;
 
 const AuthContext = createContext(null);
-const FREE_TRIAL_DAYS = 24;
+const FREE_TRIAL_DAYS = 14;
 
 function parseDate(value) {
   if (!value) return null;
@@ -224,26 +224,7 @@ export function AuthProvider({ children }) {
   })();
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        login,
-        register,
-        logout,
-        checkAuth,
-        updateUser,
-        forgotPassword,
-        resetPassword,
-        normalizedRole,
-        isEmployer,
-        isWorker,
-        isPayroll,
-        isOwnerUser,
-        isTrialExpired,
-        hasAppAccess,
-      }}
-    >
+    <AuthContext.Provider value={{ user, loading, login, register, logout, checkAuth, updateUser, forgotPassword, resetPassword, normalizedRole, isEmployer, isWorker, isPayroll, isOwnerUser, isTrialExpired, hasAppAccess }}>
       {children}
     </AuthContext.Provider>
   );
@@ -251,6 +232,6 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within an AuthProvider");
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
 }
