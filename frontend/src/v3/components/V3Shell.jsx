@@ -104,6 +104,11 @@ export default function V3Shell({ children }) {
           </div>
         </header>
 
+        <button className="v3-mobile-logout-float" type="button" onClick={signOut} aria-label="Log out">
+          <LogOut size={18} />
+          <span>Log out</span>
+        </button>
+
         {children}
       </div>
     </div>
