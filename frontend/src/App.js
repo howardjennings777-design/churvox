@@ -35,7 +35,7 @@ import V3BillingPage from "./v3/pages/V3BillingPage";
 import V3SectionRoute from "./v3/components/V3SectionRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
-import WorkerHomePage from './pages/worker/WorkerHomePage';
+import V4WorkerPage from "./v4/pages/V4WorkerPage";
 
 const Spinner = () => (
   <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -221,7 +221,7 @@ function App() {
           <Route path="/payroll" element={<Navigate to="/v3/payroll" replace />} />
           <Route path="/worker" element={<WorkerRoute><Navigate to="/worker/jobs" replace /></WorkerRoute>} />
           <Route path="/worker/dashboard" element={<WorkerRoute><Navigate to="/worker/jobs" replace /></WorkerRoute>} />
-          <Route path="/worker/jobs" element={<WorkerRoute><WorkerHomePage /></WorkerRoute>} />
+          <Route path="/worker/jobs" element={<WorkerRoute><V4WorkerPage /></WorkerRoute>} />
           <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
           <Route path="/worker/settings" element={<WorkerRoute><WorkerSettingsPage /></WorkerRoute>} />
           <Route path="/worker/profile" element={<WorkerRoute><Navigate to="/worker/settings" replace /></WorkerRoute>} />
