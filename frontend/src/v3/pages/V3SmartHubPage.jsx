@@ -1,15 +1,20 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  AlertTriangle,
+  Brain,
   CheckCircle2,
   Clock,
   DollarSign,
+  FileText,
   HardHat,
   RefreshCw,
+  ShieldCheck,
   Sparkles,
   Users,
   Wand2,
-  X
+  X,
+  Zap,
 } from "lucide-react";
 import {
   approveAiAction,
@@ -19,10 +24,12 @@ import {
 } from "../../lib/aiOperator";
 import { get } from "../../lib/api";
 import V3Shell from "../components/V3Shell";
+import V3ChurvoxEdge from "../components/V3ChurvoxEdge";
 import "../styles/v3.css";
 
 const lower = (value) => String(value || "").toLowerCase();
 const actionId = (action) => action?.id || action?._id || action?.action_id || action?.uuid;
+
 const pickArray = (payload, keys = []) => {
   const data = payload?.data ?? payload;
   if (Array.isArray(data)) return data;
@@ -35,6 +42,17 @@ const pickArray = (payload, keys = []) => {
   return [];
 };
 
+const isCompletedJob = (job) => {
+  const status = lower(job?.status || job?.job_status || job?.workflow_status);
+  return status === "completed" || status === "done" || job?.completed === true || Boolean(job?.completed_at);
+};
+
+const hasWorker = (job) => Boolean(job?.assigned_worker_id || job?.worker_id || job?.assigned_to || job?.assigned_worker_name || job?.worker_name);
+const hasProof = (job) => ["photos", "photo_urls", "proof_photos", "job_photos", "worker_photos", "completion_photos"].some((key) => {
+  const value = job?.[key];
+  return Array.isArray(value) ? value.length > 0 : Boolean(value);
+});
+
 function Empty({ title, copy }) {
   return (
     <div className="v3-empty">
@@ -44,22 +62,29 @@ function Empty({ title, copy }) {
   );
 }
 
-function SmartModal({ item, onClose, onApprove, busy }) {
+function SmartModal({ item, onClose, onApprove, busy, onNavigate }) {
   if (!item) return null;
   const isAction = item.kind === "action";
+
   return (
     <div className="v3-modal-backdrop" onClick={onClose}>
-      <div className="v3-modal" onClick={(event) => event.stopPropagation()}>
+      <div className="v3-modal cvx-decision-modal" onClick={(event) => event.stopPropagation()}>
         <div className="v3-modal-head">
           <div>
-            <p className="v3-eyebrow">{item.kicker || "Smart Hub detail"}</p>
+            <p className="v3-eyebrow">{item.kicker || "Churvox detail"}</p>
             <h2>{item.title}</h2>
           </div>
           <button type="button" className="v3-icon-button" onClick={onClose}><X size={18} /></button>
         </div>
 
         <div className="v3-modal-body">
-          <p>{item.copy}</p>
+          <div className="cvx-ai-explain">
+            <div className="cvx-ai-explain-icon"><Brain size={20} /></div>
+            <div>
+              <small>Prepared by Churvox AI</small>
+              <p>{item.copy}</p>
+            </div>
+          </div>
 
           <div className="v3-detail-grid">
             {(item.fields || []).map(([label, value]) => (
@@ -70,17 +95,26 @@ function SmartModal({ item, onClose, onApprove, busy }) {
             ))}
           </div>
 
+          {item.reason && (
+            <div className="cvx-reason-box">
+              <small>Why this matters</small>
+              <b>{item.reason}</b>
+            </div>
+          )}
+
           <div className="v3-actions">
             {isAction && (
               <button className="v3-button dark" onClick={() => onApprove(item.raw)} disabled={busy}>
                 {busy ? "Doing it…" : "Approve and do it"}
               </button>
             )}
+
             {item.href && (
-              <button className="v3-button secondary" onClick={() => { window.location.href = item.href; }}>
+              <button className="v3-button secondary" onClick={() => onNavigate(item.href)}>
                 Open workspace
               </button>
             )}
+
             <button className="v3-button secondary" onClick={onClose}>Close</button>
           </div>
         </div>
@@ -89,12 +123,29 @@ function SmartModal({ item, onClose, onApprove, busy }) {
   );
 }
 
+function DecisionRow({ item, busy, onOpen, onApprove }) {
+  return (
+    <div className="cvx-decision-row">
+      <button type="button" onClick={onOpen} className="cvx-decision-main">
+        <span className="cvx-decision-icon"><Sparkles size={17} /></span>
+        <span>
+          <b>{item.title}</b>
+          <small>{item.copy}</small>
+        </span>
+      </button>
+      <button type="button" className="v3-button dark" onClick={onApprove} disabled={busy}>
+        {busy ? "Doing…" : "Approve"}
+      </button>
+    </div>
+  );
+}
+
 export default function V3SmartHubPage() {
   const navigate = useNavigate();
   const [actions, setActions] = useState([]);
-  const [jobs, setAI Run Sheet] = useState([]);
-  const [quotes, setQuote Desk] = useState([]);
-  const [invoices, setMoney Board] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const [quotes, setQuotes] = useState([]);
+  const [invoices, setInvoices] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [busyActionId, setBusyActionId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -107,23 +158,30 @@ export default function V3SmartHubPage() {
     [actions]
   );
 
-  const unassignedAI Run Sheet = useMemo(
-    () => jobs.filter((job) => !job.assigned_worker_id && !job.worker_id && !job.assigned_to && !job.assigned_worker_name),
+  const unassignedJobs = useMemo(
+    () => jobs.filter((job) => !hasWorker(job) && !isCompletedJob(job)),
     [jobs]
   );
 
-  const inProgressAI Run Sheet = useMemo(
-    () => jobs.filter((job) => ["in_progress", "started", "active", "paused"].includes(lower(job.status))),
+  const activeJobs = useMemo(
+    () => jobs.filter((job) => ["in_progress", "started", "active", "paused", "assigned", "acknowledged"].includes(lower(job.status || job.job_status))),
     [jobs]
   );
 
-  const draftQuote Desk = useMemo(
-    () => quotes.filter((q) => ["draft", "pending", "sent"].includes(lower(q.status))),
+  const completedJobs = useMemo(() => jobs.filter(isCompletedJob), [jobs]);
+
+  const proofNeeded = useMemo(
+    () => completedJobs.filter((job) => !hasProof(job) || job.ai_proof_review_needed),
+    [completedJobs]
+  );
+
+  const openQuotes = useMemo(
+    () => quotes.filter((q) => ["draft", "pending", "sent", "open", ""].includes(lower(q.status))),
     [quotes]
   );
 
   const moneyItems = useMemo(
-    () => invoices.filter((inv) => ["draft", "sent", "overdue", "unpaid", "pending"].includes(lower(inv.status))),
+    () => invoices.filter((inv) => ["draft", "sent", "overdue", "unpaid", "pending", ""].includes(lower(inv.status))),
     [invoices]
   );
 
@@ -140,9 +198,9 @@ export default function V3SmartHubPage() {
     ]);
 
     setActions(queueResult.actions || []);
-    setAI Run Sheet(pickArray(jobsResult, ["jobs"]));
-    setQuote Desk(pickArray(quotesResult, ["quotes"]));
-    setMoney Board(pickArray(invoicesResult, ["invoices"]));
+    setJobs(pickArray(jobsResult, ["jobs"]));
+    setQuotes(pickArray(quotesResult, ["quotes"]));
+    setInvoices(pickArray(invoicesResult, ["invoices"]));
     setWorkers(pickArray(workersResult, ["workers", "team"]));
     setLoading(false);
   };
@@ -151,16 +209,17 @@ export default function V3SmartHubPage() {
     load();
   }, []);
 
-  const runAi = async (mode) => {
+  const runAi = async (mode = "prepare") => {
     setAiRunning(true);
-    setNotice(mode === "prepare" ? "AI is preparing the owner queue…" : "AI is checking the business…");
+    setNotice(mode === "prepare" ? "Churvox AI is preparing next moves…" : "Churvox AI is checking the business…");
 
     const result = mode === "prepare" ? await prepareTodayWithAi() : await runAiDailyCheck();
+
     if (result.ok) {
       setActions(result.actions || []);
-      setNotice("AI finished. Review the approval queue.");
+      setNotice(result.data?.message || "Churvox AI finished. Review Owner Decisions.");
     } else {
-      setNotice(result.message || "AI check could not run.");
+      setNotice(result.message || "Churvox AI could not run. Check OpenAI/Render settings.");
     }
 
     await load();
@@ -178,8 +237,7 @@ export default function V3SmartHubPage() {
     const result = await approveAiAction(action);
 
     if (result.ok) {
-      setActions((current) => current.filter((item) => actionId(item) !== id));
-      setNotice("Approved. AI completed the action.");
+      setNotice(result.data?.message || "Approved. Churvox AI completed the action.");
       setSelected(null);
       await load();
     } else {
@@ -189,66 +247,95 @@ export default function V3SmartHubPage() {
     setBusyActionId("");
   };
 
-  const hubItems = [
+  const navigateTo = (href) => {
+    setSelected(null);
+    navigate(href);
+  };
+
+  const summaryCards = [
     {
       kind: "summary",
-      title: `${pending.length} owner decisions`,
-      kicker: "AI Operator",
-      copy: pending.length ? "AI-prepared actions are waiting for owner approval." : "Nothing is waiting right now.",
+      title: `${pending.length} Owner Decisions`,
+      kicker: "Approve and do it",
+      copy: pending.length ? "Churvox has prepared actions waiting for owner approval." : "No decisions waiting. Run Churvox AI to check the business.",
+      reason: "This is the main control point that keeps AI powerful but safe.",
       href: "/v3/decisions",
-      fields: [["Waiting", pending.length], ["Mode", "Approval-first"]],
+      fields: [["Waiting", pending.length], ["Safety", "Owner approval"], ["Risk control", "On"]],
+      icon: Sparkles,
     },
     {
       kind: "summary",
-      title: `${unassignedAI Run Sheet.length} jobs need crew`,
-      kicker: "Crew Match",
-      copy: "Churvox should match unassigned work to the best available crew member.",
+      title: `${unassignedJobs.length} jobs need Crew Match`,
+      kicker: "AI dispatch brain",
+      copy: "Churvox can match unassigned jobs to the best worker by area, load, timing and job fit.",
+      reason: "This separates Churvox from basic scheduling tools because AI prepares the assignment before the owner approves.",
       href: "/v3/dispatch",
-      fields: [["Unassigned", unassignedAI Run Sheet.length], ["Active jobs", inProgressAI Run Sheet.length]],
+      fields: [["Unassigned", unassignedJobs.length], ["Active jobs", activeJobs.length], ["Crew", workers.length]],
+      icon: Users,
     },
     {
       kind: "summary",
-      title: `${draftQuote Desk.length} quotes need movement`,
-      kicker: "Quote Desk",
-      copy: "AI can prepare quote follow-ups and next steps.",
-      href: "/v3/quotes",
-      fields: [["Open quotes", draftQuote Desk.length], ["Next", "Follow-up"]],
-    },
-    {
-      kind: "summary",
-      title: `${moneyItems.length} money items`,
+      title: `${moneyItems.length} money moves`,
       kicker: "Money Board",
-      copy: "Churvox can prepare reminders and draft invoices.",
+      copy: "Churvox watches draft, unpaid and overdue invoices, then prepares reminders and draft invoices.",
+      reason: "The strongest workflow is not invoicing alone. It is completed work moving through proof, approval and payment.",
       href: "/v3/invoices",
-      fields: [["Money items", moneyItems.length], ["Next", "Collect"]],
+      fields: [["Money items", moneyItems.length], ["Completed jobs", completedJobs.length], ["Proof flags", proofNeeded.length]],
+      icon: DollarSign,
+    },
+    {
+      kind: "summary",
+      title: `${proofNeeded.length} Proof-to-Paid checks`,
+      kicker: "Proof-to-Paid",
+      copy: "Churvox checks completed jobs for photos, proof, time and invoice readiness.",
+      reason: "This makes the app feel like an operator that prepares billing, not just a place to store jobs.",
+      href: "/v3/proof",
+      fields: [["Completed", completedJobs.length], ["Needs proof", proofNeeded.length], ["Ready to bill", Math.max(0, completedJobs.length - proofNeeded.length)]],
+      icon: CheckCircle2,
     },
   ];
 
-  const actionItems = pending.slice(0, 5).map((action) => ({
+  const actionItems = pending.slice(0, 6).map((action) => ({
     kind: "action",
-    title: action.title || action.name || "AI prepared action",
-    kicker: action.module || action.action_type || "AI action",
+    title: action.title || action.name || "Churvox prepared action",
+    kicker: action.module || action.action_type || "Owner Decision",
     copy: action.summary || action.reason || action.description || "Ready for owner review.",
+    reason: action.reason || "Churvox prepared this because it appears to be the next safest useful business action.",
     raw: action,
     href: "/v3/decisions",
-    fields: [["Type", action.action_type || "Action"], ["Status", action.queue_status || action.status || "Pending"]],
+    fields: [
+      ["Type", action.action_type || "Action"],
+      ["Risk", action.risk_level || "Low"],
+      ["Confidence", action.confidence ? `${Math.round(Number(action.confidence) * 100)}%` : "Prepared"],
+      ["Status", action.queue_status || action.status || "Pending"],
+    ],
   }));
+
+  const nextBestMove = pending.length
+    ? "Review the first Owner Decision."
+    : unassignedJobs.length
+    ? "Run Crew Match for unassigned jobs."
+    : moneyItems.length
+    ? "Open Money Board and approve money actions."
+    : proofNeeded.length
+    ? "Check Proof-to-Paid before invoicing."
+    : "Run Churvox AI to prepare the next moves.";
 
   return (
     <V3Shell>
-      <div className="v3-page">
-        <section className="v3-hero">
+      <div className="v3-page cvx-smart-hub">
+        <section className="v3-hero cvx-command-hero">
           <div className="v3-hero-main">
             <div className="v3-hero-copy">
-              <p className="v3-eyebrow">Churvox Trade OS</p>
-              <h1>Your AI Operator for the day.</h1>
+              <p className="v3-eyebrow">Churvox AI Trade OS</p>
+              <h1>Your business operator for today.</h1>
               <p>
-                Churvox checks jobs, crew, quotes, invoices, proof, and owner decisions before the day gets messy. Tap a card for a pop-up detail.
-                Only clear workspace buttons move you away.
+                Churvox checks jobs, crew, proof, quotes, invoices and owner decisions.
+                It prepares the work, explains why, and waits for approval before risky action.
               </p>
               <div className="v3-actions">
                 <button className="v3-button" onClick={() => runAi("prepare")} disabled={aiRunning}>
-                  <Wand2 size={18} /> {aiRunning ? "Preparing…" : "Prepare today"}
+                  <Wand2 size={18} /> {aiRunning ? "Preparing…" : "Prepare next moves"}
                 </button>
                 <button className="v3-button secondary" onClick={() => runAi("check")} disabled={aiRunning}>
                   <RefreshCw size={18} /> Run Churvox check
@@ -259,18 +346,18 @@ export default function V3SmartHubPage() {
           </div>
 
           <aside className="v3-hero-panel">
-            <div className="v3-now-card">
+            <div className="v3-now-card cvx-next-card">
               <div>
-                <small>Owner Decisions</small>
-                <b>{loading ? "…" : pending.length}</b>
-                <span>{pending.length ? "Prepared actions waiting" : "Nothing waiting right now"}</span>
+                <small>Next best move</small>
+                <b>{loading ? "Checking…" : nextBestMove}</b>
+                <span>Tap a card for details. Only workspace buttons navigate.</span>
               </div>
               <button
                 className="v3-button dark"
-                onClick={() => pending[0] ? setSelected(actionItems[0]) : runAi("check")}
+                onClick={() => actionItems[0] ? setSelected(actionItems[0]) : runAi("prepare")}
                 disabled={aiRunning || !!busyActionId}
               >
-                {pending[0] ? "Review first" : "Check again"}
+                {actionItems[0] ? "Review first" : "Prepare"}
               </button>
             </div>
 
@@ -279,110 +366,108 @@ export default function V3SmartHubPage() {
                 <HardHat size={25} />
               </div>
               <div>
-                <small>Trade OS</small>
-                <b>Field + office synced</b>
-                <span>AI prepares admin. Owners stay in control.</span>
+                <small>Original Churvox lane</small>
+                <b>AI prepares. Owner approves.</b>
+                <span>Built around decisions, not just dashboards.</span>
               </div>
             </div>
           </aside>
         </section>
 
-        <section className="v3-metrics">
-          <button className="v3-metric" onClick={() => setSelected(hubItems[0])}>
-            <b>{pending.length}</b>
-            <span>Decisions</span>
-            <small>{pending.length ? "Needs approval" : "All clear"}</small>
-          </button>
+        <V3ChurvoxEdge
+          section="dashboard"
+          decisions={pending.length}
+          unassigned={unassignedJobs.length}
+          money={moneyItems.length}
+          proof={proofNeeded.length}
+          loading={loading}
+          onPrepare={() => runAi("prepare")}
+        />
 
-          <button className="v3-metric" onClick={() => setSelected(hubItems[1])}>
-            <b>{unassignedAI Run Sheet.length}</b>
-            <span>Unassigned jobs</span>
-            <small>AI can match crew</small>
-          </button>
-
-          <button className="v3-metric lime" onClick={() => setSelected(hubItems[3])}>
-            <b>{moneyItems.length}</b>
-            <span>Money items</span>
-            <small>Drafts and reminders</small>
-          </button>
-
-          <button className="v3-metric" onClick={() => setSelected({ title: `${workers.length} crew`, kicker: "Crew", copy: `${inProgressAI Run Sheet.length} active jobs right now.`, href: "/v3/team", fields: [["Crew", workers.length], ["Active jobs", inProgressAI Run Sheet.length]] })}>
-            <b>{workers.length}</b>
-            <span>Crew</span>
-            <small>{inProgressAI Run Sheet.length} active jobs</small>
-          </button>
+        <section className="cvx-command-metrics">
+          {summaryCards.map(({ icon: Icon, ...item }) => (
+            <button className="cvx-command-card" key={item.title} onClick={() => setSelected(item)}>
+              <Icon size={20} />
+              <span>{item.kicker}</span>
+              <strong>{item.title}</strong>
+              <small>{item.copy}</small>
+            </button>
+          ))}
         </section>
 
-        <section className="v3-board">
-          <article className="v3-card">
+        <section className="v3-board cvx-command-board">
+          <article className="v3-card cvx-owner-decisions">
             <div className="v3-card-head">
               <div>
-                <p>AI Operator</p>
-                <h2>Owner Decisions</h2>
+                <p>Owner Decisions</p>
+                <h2>Prepared by Churvox AI</h2>
               </div>
               <strong>{pending.length}</strong>
             </div>
 
             {loading ? (
-              <Empty title="Checking the business" copy="AI is refreshing prepared work and owner decisions." />
+              <Empty title="Checking the business" copy="Churvox AI is refreshing prepared work and owner decisions." />
             ) : actionItems.length ? (
               actionItems.map((item) => (
-                <div className="v3-row" key={actionId(item.raw)}>
-                  <button type="button" onClick={() => setSelected(item)} className="v3-button ghost v3-row-main">
-                    <span>
-                      <b>{item.title}</b>
-                      <span>{item.copy}</span>
-                    </span>
-                  </button>
-                  <button type="button" className="v3-button dark" onClick={() => approve(item.raw)} disabled={busyActionId === actionId(item.raw)}>
-                    {busyActionId === actionId(item.raw) ? "Doing it…" : "Approve"}
-                  </button>
-                </div>
+                <DecisionRow
+                  key={actionId(item.raw)}
+                  item={item}
+                  busy={busyActionId === actionId(item.raw)}
+                  onOpen={() => setSelected(item)}
+                  onApprove={() => approve(item.raw)}
+                />
               ))
             ) : (
-              <Empty title="Nothing waiting" copy="AI has no owner decisions waiting right now." />
+              <Empty title="No owner decisions waiting" copy="Run Churvox AI to check jobs, proof, crew, quotes and money." />
             )}
           </article>
 
-          <article className="v3-card">
+          <article className="v3-card cvx-moat-card">
             <div className="v3-card-head">
               <div>
-                <p>Prepared by Churvox AI</p>
-                <h2>Next best moves</h2>
+                <p>Churvox Advantage</p>
+                <h2>Where this beats normal job apps</h2>
               </div>
+              <ShieldCheck size={24} />
             </div>
 
-            <div className="v3-ai-stack">
-              {hubItems.slice(1).map((item) => (
-                <button type="button" key={item.title} onClick={() => setSelected(item)}>
-                  {item.kicker === "Crew Match" ? <Users size={18} /> : item.kicker === "Quote Desk" ? <Clock size={18} /> : <DollarSign size={18} />}
-                  <span><b>{item.title}</b><small>{item.copy}</small></span>
-                </button>
-              ))}
-              <button type="button" onClick={() => runAi("prepare")} disabled={aiRunning}>
-                <Sparkles size={18} />
-                <span><b>Prepare the next moves</b><small>Run Churvox checks and fill Owner Decisions.</small></span>
+            <div className="cvx-advantage-list">
+              <button type="button" onClick={() => setSelected(summaryCards[1])}>
+                <Users size={18} />
+                <span><b>Crew Match</b><small>AI recommends the worker before the owner approves.</small></span>
+              </button>
+              <button type="button" onClick={() => setSelected(summaryCards[3])}>
+                <CheckCircle2 size={18} />
+                <span><b>Proof-to-Paid</b><small>Completed work becomes invoice-ready with proof checks.</small></span>
+              </button>
+              <button type="button" onClick={() => setSelected(summaryCards[2])}>
+                <DollarSign size={18} />
+                <span><b>Money Board</b><small>Drafts, reminders and payment actions are prepared.</small></span>
+              </button>
+              <button type="button" onClick={() => navigate("/v3/rules")}>
+                <Zap size={18} />
+                <span><b>Auto Rules</b><small>Safe admin can run quietly. Risky actions stay approval-first.</small></span>
               </button>
             </div>
           </article>
 
-          <article className="v3-card v3-workspaces">
+          <article className="v3-card v3-workspaces cvx-nav-card">
             <div className="v3-card-head">
               <div>
-                <p>Churvox workspaces</p>
-                <h2>Navigate only here</h2>
+                <p>Navigate only here</p>
+                <h2>Churvox workspaces</h2>
               </div>
             </div>
             <div className="v3-workspace-grid">
               {[
-                ["AI Run Sheet", "/v3/jobs", "Live run sheet"],
-                ["Crew Match", "/v3/dispatch", "Crew coverage"],
-                ["Clients", "/v3/clients", "Customer base"],
-                ["Quote Desk", "/v3/quotes", "Sales desk"],
-                ["Money Board", "/v3/invoices", "Money board"],
-                ["AI Operator", "/v3/operator", "Owner queue"],
-                ["Crew", "/v3/team", "Crew control"],
-                ["Auto Rules", "/v3/rules", "Background engine"],
+                ["AI Run Sheet", "/v3/jobs", "Jobs, proof, workers, billing readiness"],
+                ["Crew Match", "/v3/dispatch", "AI dispatch recommendations"],
+                ["Owner Decisions", "/v3/decisions", "Approve prepared actions"],
+                ["Proof-to-Paid", "/v3/proof", "Completed work to invoice-ready"],
+                ["Money Board", "/v3/invoices", "Drafts, reminders, unpaid money"],
+                ["Quote Desk", "/v3/quotes", "Follow-ups and accepted work"],
+                ["Crew", "/v3/team", "People, regions and readiness"],
+                ["Auto Rules", "/v3/rules", "Safe background operator rules"],
               ].map(([name, path, copy]) => (
                 <button className="v3-workspace" key={path} onClick={() => navigate(path)}>
                   <b>{name}</b>
@@ -398,6 +483,7 @@ export default function V3SmartHubPage() {
           onClose={() => setSelected(null)}
           onApprove={approve}
           busy={!!busyActionId}
+          onNavigate={navigateTo}
         />
       </div>
     </V3Shell>

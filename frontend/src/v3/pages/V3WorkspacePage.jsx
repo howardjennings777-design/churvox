@@ -25,6 +25,7 @@ import {
 import { approveAiAction } from "../../lib/aiOperator";
 import { get, post, put, patch, del as delRequest } from "../../lib/api";
 import V3Shell from "../components/V3Shell";
+import V3ChurvoxEdge from "../components/V3ChurvoxEdge";
 import "../styles/v3.css";
 
 const PAGE_META = {
@@ -839,6 +840,14 @@ export default function V3WorkspacePage() {
         </section>
 
         {notice && <div className="v3-notice">{notice}</div>}
+
+        <V3ChurvoxEdge
+          section={key}
+          stats={view.stats}
+          itemCount={view.items.length}
+          loading={loading}
+          onPrepare={runPrimaryAction}
+        />
 
         <section className="v3-workspace-grid">
           {view.stats.map(([StatIcon, label, value, copy]) => (
