@@ -658,7 +658,7 @@ export default function V9BusinessEngine() {
     .slice(0, 18);
 
   return (
-    <div className="v9">
+    <div className={`v9 v9-page-${current} ${showCommandHero ? "v9-show-hero" : "v9-hide-hero"}`}>
       <style>{css}</style>
 
       <aside className={`v9-rail ${navOpen ? "open" : ""}`}>

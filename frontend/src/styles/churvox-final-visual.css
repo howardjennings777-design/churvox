@@ -194,3 +194,24 @@
   color: #5b5045 !important;
   font-weight: 750 !important;
 }
+
+/* Force-hide dashboard engine hero on subpages */
+.v9-hide-hero .v9-hero {
+  display: none !important;
+}
+
+.v9-hide-hero .v9-sync {
+  display: none !important;
+}
+
+.v9-show-hero .v9-page-intro {
+  display: none !important;
+}
+
+.v9-hide-hero .v9-page-intro {
+  display: block !important;
+}
+
+.v9-hide-hero .v9-panel:first-of-type {
+  margin-top: 0 !important;
+}
