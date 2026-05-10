@@ -165,9 +165,42 @@ function App() {
         <ErrorBoundary>
         <Toaster position="top-right" richColors />
         <Routes>
-          <Route path="/v3/operator" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
-          <Route path="/v3/plans" element={<BillingRoute><V3BillingPage /></BillingRoute>} />
+          {/* V8 owner command workspace - all owner areas stay in one popup-first AI brain */}
+          <Route path="/dashboard" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
+          <Route path="/work" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
+          <Route path="/money" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
+          <Route path="/clients" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
+          <Route path="/team" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
+          <Route path="/ai" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
+          <Route path="/automation" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
+          <Route path="/reports" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
+          <Route path="/settings" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
+
+          <Route path="/jobs" element={<Navigate to="/work" replace />} />
+          <Route path="/jobs/new" element={<Navigate to="/work" replace />} />
+          <Route path="/jobs/:id" element={<Navigate to="/work" replace />} />
+          <Route path="/jobs/:id/edit" element={<Navigate to="/work" replace />} />
+          <Route path="/dispatch" element={<Navigate to="/work" replace />} />
+          <Route path="/calendar" element={<Navigate to="/work" replace />} />
+
+          <Route path="/quotes" element={<Navigate to="/money" replace />} />
+          <Route path="/quotes/new" element={<Navigate to="/money" replace />} />
+          <Route path="/quotes/:id" element={<Navigate to="/money" replace />} />
+          <Route path="/quotes/:id/edit" element={<Navigate to="/money" replace />} />
+
+          <Route path="/invoices" element={<Navigate to="/money" replace />} />
+          <Route path="/invoices/new" element={<Navigate to="/money" replace />} />
+          <Route path="/invoices/:id" element={<Navigate to="/money" replace />} />
+
+          <Route path="/sms" element={<Navigate to="/money" replace />} />
+          <Route path="/payroll" element={<Navigate to="/team" replace />} />
+          <Route path="/integrations" element={<Navigate to="/settings" replace />} />
+          <Route path="/contact" element={<Navigate to="/settings" replace />} />
+
+          <Route path="/v3/operator" element={<Navigate to="/ai" replace />} />
           <Route path="/v3/:section" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
+
+          <Route path="/v3/plans" element={<BillingRoute><V3BillingPage /></BillingRoute>} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
@@ -193,55 +226,14 @@ function App() {
           <Route path="/admin/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
           <Route path="/owner/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
           <Route path="/admin/qa-auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
-
-          <Route path="/work" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
-          <Route path="/money" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
-          <Route path="/clients" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
-          <Route path="/team" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
-          <Route path="/ai" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
-          <Route path="/automation" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
-          <Route path="/reports" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
-          <Route path="/settings" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
-
-          <Route path="/work" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
-          <Route path="/money" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
-          <Route path="/clients" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
-          <Route path="/team" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
-          <Route path="/ai" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
-          <Route path="/automation" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
-          <Route path="/reports" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
-          <Route path="/settings" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
-          <Route path="/dashboard" element={<SmartHubRoute />} />
           <Route path="/overview" element={<SmartHubRoute />} />
           <Route path="/onboarding" element={<BusinessRoute><OnboardingPage /></BusinessRoute>} />
-          <Route path="/jobs" element={<Navigate to="/work" replace />} />
-          <Route path="/jobs/new" element={<Navigate to="/work" replace />} />
-          <Route path="/jobs/:id" element={<Navigate to="/work" replace />} />
-          <Route path="/jobs/:id/edit" element={<Navigate to="/work" replace />} />
-          <Route path="/dispatch" element={<Navigate to="/work" replace />} />
-          <Route path="/calendar" element={<Navigate to="/work" replace />} />
-          <Route path="/clients" element={<Navigate to="/v3/clients" replace />} />
           <Route path="/clients/new" element={<Navigate to="/v3/clients" replace />} />
           <Route path="/clients/:id" element={<Navigate to="/v3/clients" replace />} />
           <Route path="/clients/:id/edit" element={<Navigate to="/v3/clients" replace />} />
-          <Route path="/quotes" element={<Navigate to="/money" replace />} />
-          <Route path="/quotes/new" element={<Navigate to="/money" replace />} />
-          <Route path="/quotes/:id" element={<Navigate to="/money" replace />} />
-          <Route path="/quotes/:id/edit" element={<Navigate to="/money" replace />} />
-          <Route path="/invoices" element={<Navigate to="/money" replace />} />
-          <Route path="/invoices/new" element={<Navigate to="/money" replace />} />
-          <Route path="/invoices/:id" element={<Navigate to="/money" replace />} />
-          <Route path="/sms" element={<Navigate to="/money" replace />} />
-          <Route path="/reports" element={<Navigate to="/v3/reports" replace />} />
-          <Route path="/integrations" element={<Navigate to="/settings" replace />} />
-          <Route path="/settings" element={<Navigate to="/v3/settings" replace />} />
-          <Route path="/contact" element={<Navigate to="/settings" replace />} />
           <Route path="/plans" element={<Navigate to="/v3/plans" replace />} />
-          <Route path="/team" element={<Navigate to="/v3/team" replace />} />
           <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
-          <Route path="/automation" element={<Navigate to="/v3/rules" replace />} />
           <Route path="/automation/runs" element={<Navigate to="/v3/rules" replace />} />
-          <Route path="/payroll" element={<Navigate to="/team" replace />} />
           <Route path="/worker" element={<WorkerRoute><Navigate to="/worker/jobs" replace /></WorkerRoute>} />
           <Route path="/worker/dashboard" element={<WorkerRoute><Navigate to="/worker/jobs" replace /></WorkerRoute>} />
           <Route path="/worker/jobs" element={<WorkerRoute><V4WorkerPage /></WorkerRoute>} />
