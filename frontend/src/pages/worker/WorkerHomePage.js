@@ -1,1 +1,1 @@
-export { default } from "./WorkerCockpitPage";
+export { default } from "../../v4/pages/V4WorkerPage";
