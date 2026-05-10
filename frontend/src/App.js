@@ -35,7 +35,6 @@ import V3OperatorPage from "./v3/pages/V3OperatorPage";
 import V3BillingPage from "./v3/pages/V3BillingPage";
 import V3SectionRoute from "./v3/components/V3SectionRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import FinalBusinessOS from "./final/FinalBusinessOS";
 import V9BusinessEngine from "./v9/V9BusinessEngine";
 import V8CommandBrain from "./v8/V8CommandBrain";
 import V7CommandBrain from "./v7/V7CommandBrain";
@@ -169,15 +168,15 @@ function App() {
         <Toaster position="top-right" richColors />
         <Routes>
           {/* V9 owner command engine */}
-          <Route path="/dashboard" element={<BusinessRoute><FinalBusinessOS /></BusinessRoute>} />
-          <Route path="/work" element={<BusinessRoute><FinalBusinessOS /></BusinessRoute>} />
-          <Route path="/money" element={<BusinessRoute><FinalBusinessOS /></BusinessRoute>} />
-          <Route path="/clients" element={<BusinessRoute><FinalBusinessOS /></BusinessRoute>} />
-          <Route path="/team" element={<BusinessRoute><FinalBusinessOS /></BusinessRoute>} />
-          <Route path="/ai" element={<BusinessRoute><FinalBusinessOS /></BusinessRoute>} />
-          <Route path="/automation" element={<BusinessRoute><FinalBusinessOS /></BusinessRoute>} />
-          <Route path="/reports" element={<BusinessRoute><FinalBusinessOS /></BusinessRoute>} />
-          <Route path="/settings" element={<BusinessRoute><FinalBusinessOS /></BusinessRoute>} />
+          <Route path="/dashboard" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
+          <Route path="/work" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
+          <Route path="/money" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
+          <Route path="/clients" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
+          <Route path="/team" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
+          <Route path="/ai" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
+          <Route path="/automation" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
+          <Route path="/reports" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
+          <Route path="/settings" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
 
           <Route path="/jobs" element={<Navigate to="/work" replace />} />
           <Route path="/jobs/new" element={<Navigate to="/work" replace />} />
@@ -201,7 +200,7 @@ function App() {
           <Route path="/contact" element={<Navigate to="/settings" replace />} />
 
           <Route path="/v3/operator" element={<Navigate to="/ai" replace />} />
-          <Route path="/v3/:section" element={<BusinessRoute><FinalBusinessOS /></BusinessRoute>} />
+          <Route path="/v3/:section" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
 
           {/* V8 owner command workspace - all owner areas stay in one popup-first AI brain */}
 
