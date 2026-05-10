@@ -810,19 +810,135 @@ body {
   color: #111827;
 }
 
-/* ===== Worker app protection after logo patch ===== */
-.worker-app .churvox-brand-icon,
-.worker-shell .churvox-brand-icon,
-.worker-layout .churvox-brand-icon,
-.worker-page .churvox-brand-icon,
-[class*="worker"] .churvox-brand-icon {
-  box-shadow: none !important;
+
+/* ===== Worker app mobile rescue ===== */
+body.churvox-worker-route {
+  background: #f4f5f7 !important;
 }
 
-.worker-app,
-.worker-shell,
-.worker-layout,
-.worker-page,
-[class*="worker"] {
-  --worker-safe-layout: 1;
+body.churvox-worker-route main,
+body.churvox-worker-route .v3-page,
+body.churvox-worker-route .v3-workspace,
+body.churvox-worker-route .worker-page,
+body.churvox-worker-route .worker-app,
+body.churvox-worker-route .worker-shell,
+body.churvox-worker-route [class*="worker"] {
+  color: #0f172a;
+}
+
+body.churvox-worker-route .v3-page,
+body.churvox-worker-route .worker-page,
+body.churvox-worker-route .worker-app {
+  padding-left: clamp(14px, 4vw, 22px) !important;
+  padding-right: clamp(14px, 4vw, 22px) !important;
+}
+
+body.churvox-worker-route .v3-hero,
+body.churvox-worker-route .worker-hero,
+body.churvox-worker-route [class*="worker"][class*="hero"],
+body.churvox-worker-route [class*="hero"] {
+  background:
+    radial-gradient(circle at 88% 6%, rgba(225, 29, 46, 0.22), transparent 34%),
+    linear-gradient(145deg, #050914 0%, #0b111c 56%, #111827 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 28px !important;
+  padding: clamp(28px, 7vw, 48px) clamp(22px, 7vw, 56px) !important;
+  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.18) !important;
+  overflow: hidden !important;
+}
+
+body.churvox-worker-route h1 {
+  color: #ffffff !important;
+  font-size: clamp(36px, 10vw, 58px) !important;
+  line-height: 0.96 !important;
+  letter-spacing: -0.06em !important;
+  text-shadow: none !important;
+}
+
+body.churvox-worker-route .v3-hero p,
+body.churvox-worker-route .worker-hero p,
+body.churvox-worker-route [class*="hero"] p {
+  color: rgba(255, 255, 255, 0.78) !important;
+  font-size: clamp(18px, 5.2vw, 30px) !important;
+  line-height: 1.42 !important;
+  letter-spacing: 0.05em !important;
+  max-width: 520px !important;
+  text-shadow: none !important;
+}
+
+body.churvox-worker-route .v3-hero [class*="badge"],
+body.churvox-worker-route .worker-hero [class*="badge"],
+body.churvox-worker-route [class*="hero"] [class*="badge"],
+body.churvox-worker-route .v3-hero [class*="pill"],
+body.churvox-worker-route .worker-hero [class*="pill"],
+body.churvox-worker-route [class*="hero"] [class*="pill"] {
+  background: #fff7ed !important;
+  color: #9a3412 !important;
+  border: 1px solid rgba(251, 146, 60, 0.25) !important;
+  border-radius: 999px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.28em !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
+}
+
+body.churvox-worker-route [class*="stat"],
+body.churvox-worker-route [class*="metric"],
+body.churvox-worker-route [class*="summary"] {
+  background: rgba(255, 255, 255, 0.09) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 22px !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+body.churvox-worker-route [class*="stat"] *,
+body.churvox-worker-route [class*="metric"] *,
+body.churvox-worker-route [class*="summary"] * {
+  color: #ffffff !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
+}
+
+body.churvox-worker-route [class*="stat"] small,
+body.churvox-worker-route [class*="metric"] small,
+body.churvox-worker-route [class*="summary"] small {
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+
+body.churvox-worker-route .card,
+body.churvox-worker-route [class*="card"] {
+  text-shadow: none !important;
+}
+
+body.churvox-worker-route button,
+body.churvox-worker-route a {
+  touch-action: manipulation;
+}
+
+@media (max-width: 720px) {
+  body.churvox-worker-route .v3-hero,
+  body.churvox-worker-route .worker-hero,
+  body.churvox-worker-route [class*="hero"] {
+    border-radius: 24px !important;
+    padding: 34px 24px !important;
+  }
+
+  body.churvox-worker-route h1 {
+    font-size: clamp(42px, 12vw, 58px) !important;
+  }
+
+  body.churvox-worker-route .v3-hero p,
+  body.churvox-worker-route .worker-hero p,
+  body.churvox-worker-route [class*="hero"] p {
+    font-size: clamp(20px, 5.8vw, 28px) !important;
+  }
+
+  body.churvox-worker-route [class*="stat"],
+  body.churvox-worker-route [class*="metric"],
+  body.churvox-worker-route [class*="summary"] {
+    min-height: 86px !important;
+    padding: 16px 12px !important;
+  }
 }
