@@ -4,24 +4,50 @@ export function ChurvoxLogo({ className = "", showText = true }) {
   return (
     <div className={`churvox-brand ${className}`.trim()}>
       <span className="churvox-brand-icon" aria-hidden="true">
-        <svg width="38" height="38" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="40" height="40" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <linearGradient id="churvoxBg" x1="14" y1="8" x2="82" y2="88" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#0F172A" />
-              <stop offset="1" stopColor="#020617" />
+            <linearGradient id="cvBg" x1="12" y1="6" x2="84" y2="90" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#111827" />
+              <stop offset="1" stopColor="#030712" />
             </linearGradient>
-            <linearGradient id="churvoxBlue" x1="24" y1="20" x2="72" y2="74" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#E0F2FE" />
-              <stop offset=".5" stopColor="#38BDF8" />
-              <stop offset="1" stopColor="#2563EB" />
+
+            <linearGradient id="cvFire" x1="25" y1="19" x2="73" y2="75" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#FFE7D1" />
+              <stop offset="0.42" stopColor="#FF7A1A" />
+              <stop offset="1" stopColor="#E11D2E" />
             </linearGradient>
+
+            <filter id="cvGlow" x="0" y="0" width="96" height="96" filterUnits="userSpaceOnUse">
+              <feDropShadow dx="0" dy="10" stdDeviation="8" floodColor="#E11D2E" floodOpacity="0.22" />
+            </filter>
           </defs>
 
-          <rect x="6" y="6" width="84" height="84" rx="22" fill="url(#churvoxBg)" />
-          <path d="M48 14L75 25.5V43.5C75 62.5 63.5 77 48 83C32.5 77 21 62.5 21 43.5V25.5L48 14Z" fill="#07111F" stroke="url(#churvoxBlue)" strokeWidth="4" />
-          <path d="M66.5 29H40.5C32.2 29 26 35.2 26 43.5C26 51.8 32.2 58 40.5 58H62L56.2 67H40C26.4 67 16 56.6 16 43.5C16 30.4 26.4 20 40 20H72.5L66.5 29Z" fill="url(#churvoxBlue)" />
-          <path d="M39.5 39H68L62.3 48.5H34L39.5 39Z" fill="#F8FAFC" />
-          <path d="M35.5 53H56.5L51 62H30L35.5 53Z" fill="#93C5FD" />
+          <rect x="6" y="6" width="84" height="84" rx="24" fill="url(#cvBg)" />
+
+          <g filter="url(#cvGlow)">
+            <path
+              d="M48 14L75 25.6V44.2C75 62.6 64.2 76.8 48 83C31.8 76.8 21 62.6 21 44.2V25.6L48 14Z"
+              fill="#0B1120"
+              stroke="url(#cvFire)"
+              strokeWidth="4"
+              strokeLinejoin="round"
+            />
+
+            <path
+              d="M65.8 30.5H42.2C34.4 30.5 28.8 36.1 28.8 43.8C28.8 51.5 34.4 57.1 42.2 57.1H61.8L56.2 66H41.8C28.6 66 18.8 56.2 18.8 43.8C18.8 31.4 28.6 21.6 41.8 21.6H71.8L65.8 30.5Z"
+              fill="url(#cvFire)"
+            />
+
+            <path
+              d="M42.4 39.2H68.2L62.8 47.8H37L42.4 39.2Z"
+              fill="#FFFFFF"
+            />
+
+            <path
+              d="M37.2 52.4H56.8L51.4 61H31.8L37.2 52.4Z"
+              fill="#FED7AA"
+            />
+          </g>
         </svg>
       </span>
 

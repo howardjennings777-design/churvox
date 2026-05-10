@@ -1,25 +1,23 @@
 <svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="bg" x1="13" y1="8" x2="86" y2="88" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#07111F"/>
-      <stop offset="1" stop-color="#020617"/>
-    </linearGradient>
-    <linearGradient id="blue" x1="26" y1="21" x2="72" y2="76" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#EAF6FF"/>
-      <stop offset="0.48" stop-color="#38BDF8"/>
-      <stop offset="1" stop-color="#2563EB"/>
-    </linearGradient>
-    <filter id="shadow" x="10" y="8" width="76" height="82" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#0EA5E9" flood-opacity="0.18"/>
-    </filter>
-  </defs>
-
-  <rect x="6" y="6" width="84" height="84" rx="24" fill="url(#bg)"/>
-
-  <g filter="url(#shadow)">
-    <path d="M48 13L76 25V43.5C76 62.6 64.2 77.5 48 84C31.8 77.5 20 62.6 20 43.5V25L48 13Z" fill="#08111F" stroke="url(#blue)" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M64.5 29H39.8C31.9 29 26 35.1 26 43.1C26 51.2 31.9 57.3 39.8 57.3H62.2L56.4 67H40C26.6 67 16.5 56.8 16.5 43.3C16.5 29.8 26.8 19.5 40.4 19.5H71.5L64.5 29Z" fill="url(#blue)"/>
-    <path d="M40.5 39H67.5L61.8 48.2H34.8L40.5 39Z" fill="#F8FAFC"/>
-    <path d="M35.5 52.5H56.2L50.7 61.5H30L35.5 52.5Z" fill="#93C5FD"/>
-  </g>
+<defs>
+<linearGradient id="cvBg" x1="12" y1="6" x2="84" y2="90" gradientUnits="userSpaceOnUse">
+<stop stop-color="#111827"/>
+<stop offset="1" stop-color="#030712"/>
+</linearGradient>
+<linearGradient id="cvFire" x1="25" y1="19" x2="73" y2="75" gradientUnits="userSpaceOnUse">
+<stop stop-color="#FFE7D1"/>
+<stop offset="0.42" stop-color="#FF7A1A"/>
+<stop offset="1" stop-color="#E11D2E"/>
+</linearGradient>
+<filter id="cvGlow" x="0" y="0" width="96" height="96" filterUnits="userSpaceOnUse">
+<feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#E11D2E" flood-opacity="0.22"/>
+</filter>
+</defs>
+<rect x="6" y="6" width="84" height="84" rx="24" fill="url(#cvBg)"/>
+<g filter="url(#cvGlow)">
+<path d="M48 14L75 25.6V44.2C75 62.6 64.2 76.8 48 83C31.8 76.8 21 62.6 21 44.2V25.6L48 14Z" fill="#0B1120" stroke="url(#cvFire)" stroke-width="4" stroke-linejoin="round"/>
+<path d="M65.8 30.5H42.2C34.4 30.5 28.8 36.1 28.8 43.8C28.8 51.5 34.4 57.1 42.2 57.1H61.8L56.2 66H41.8C28.6 66 18.8 56.2 18.8 43.8C18.8 31.4 28.6 21.6 41.8 21.6H71.8L65.8 30.5Z" fill="url(#cvFire)"/>
+<path d="M42.4 39.2H68.2L62.8 47.8H37L42.4 39.2Z" fill="#FFFFFF"/>
+<path d="M37.2 52.4H56.8L51.4 61H31.8L37.2 52.4Z" fill="#FED7AA"/>
+</g>
 </svg>
