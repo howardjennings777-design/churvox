@@ -198,7 +198,7 @@ test.describe('Churvox deep owner + worker audit', () => {
       await softClick(page, [/Pause/i], 'worker pause');
       await softClick(page, [/Resume/i], 'worker resume');
       await expect(page.getByText(/Proof photos|Worker notes|Complete job|Office help/i).first()).toBeVisible({ timeout: 10000 });
-      await expect(page.locator('input[type="file"]')).toHaveCountGreaterThan(0);
+      expect(await page.locator('input[type="file"]').count()).toBeGreaterThan(0);
       await expect(page.locator('textarea').first()).toBeVisible({ timeout: 10000 });
     }
   });
