@@ -6,6 +6,41 @@ import { normalizeRole, isBusinessRole, isOwner, isWorkerRole, isPayrollRole } f
 axios.defaults.withCredentials = true;
 
 const AuthContext = createContext(null);
+const FREE_TRIAL_DAYS = 24;
+
+function parseDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function isActivePaidUser(user) {
+  const status = String(user?.subscription_status || user?.plan_status || "").toLowerCase();
+  return Boolean(user?.stripe_subscription_id) || status === "active" || status === "paid";
+}
+
+function isExpiredOrBadBillingStatus(user) {
+  const status = String(user?.subscription_status || user?.plan_status || "").toLowerCase();
+  return ["expired", "trial_expired", "past_due", "unpaid", "canceled", "cancelled", "inactive", "blocked"].includes(status);
+}
+
+function resolveTrialEndsAt(user) {
+  const explicitEnd = parseDate(user?.trial_ends_at || user?.trialEndsAt || user?.free_trial_ends_at);
+  if (explicitEnd) return explicitEnd;
+
+  const started = parseDate(user?.trial_started_at || user?.trialStartedAt || user?.free_trial_started_at || user?.created_at);
+  const status = String(user?.plan_status || user?.subscription_status || "").toLowerCase();
+  const looksLikeTrial = status === "trialing" || status === "trial" || Boolean(user?.trial_started_at || user?.trialStartedAt || user?.free_trial_started_at);
+
+  if (!started || !looksLikeTrial) return null;
+  return new Date(started.getTime() + FREE_TRIAL_DAYS * 24 * 60 * 60 * 1000);
+}
+
+function hasValidTrial(user) {
+  const trialEnd = resolveTrialEndsAt(user);
+  if (!trialEnd) return false;
+  return trialEnd >= new Date();
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -36,6 +71,12 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     checkAuth();
+  }, [checkAuth]);
+
+  useEffect(() => {
+    const refresh = () => checkAuth();
+    window.addEventListener("churvox-auth-refresh", refresh);
+    return () => window.removeEventListener("churvox-auth-refresh", refresh);
   }, [checkAuth]);
 
   const login = useCallback(async (email, password) => {
@@ -161,25 +202,25 @@ export function AuthProvider({ children }) {
 
   const isTrialExpired = (() => {
     if (!user) return false;
-    if (user.stripe_subscription_id) return false;
-    if (user.subscription_status === "active") return false;
-    if (!user.trial_ends_at) return false;
-    try {
-      return new Date(user.trial_ends_at) < new Date();
-    } catch {
-      return false;
-    }
+    if (isActivePaidUser(user)) return false;
+    if (isExpiredOrBadBillingStatus(user)) return true;
+    const trialEnd = resolveTrialEndsAt(user);
+    if (!trialEnd) return false;
+    return trialEnd < new Date();
   })();
 
   const hasAppAccess = (() => {
     if (!user) return false;
+    if (user?.is_platform_owner === true || user?.is_admin === true) return true;
     if (isWorker || isPayroll) return true;
-    const plan = (user.plan || "").toLowerCase();
+
+    const plan = String(user.plan || "").toLowerCase();
     if (!plan || plan === "none") return false;
-    if (user.stripe_subscription_id) return true;
-    if (user.subscription_status === "active") return true;
-    if (isTrialExpired) return false;
-    return true;
+    if (isActivePaidUser(user)) return true;
+    if (isExpiredOrBadBillingStatus(user)) return false;
+    if (hasValidTrial(user)) return true;
+
+    return false;
   })();
 
   return (
