@@ -34,6 +34,7 @@ import V3OperatorPage from "./v3/pages/V3OperatorPage";
 import V3BillingPage from "./v3/pages/V3BillingPage";
 import V3SectionRoute from "./v3/components/V3SectionRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import V8CommandBrain from "./v8/V8CommandBrain";
 import V7CommandBrain from "./v7/V7CommandBrain";
 import V7BusinessBrainCockpit from "./v7/V7BusinessBrainCockpit";
 import V6BusinessBrain from "./v6/V6BusinessBrain";
@@ -164,9 +165,9 @@ function App() {
         <ErrorBoundary>
         <Toaster position="top-right" richColors />
         <Routes>
-          <Route path="/v3/operator" element={<BusinessRoute><V7CommandBrain /></BusinessRoute>} />
+          <Route path="/v3/operator" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
           <Route path="/v3/plans" element={<BillingRoute><V3BillingPage /></BillingRoute>} />
-          <Route path="/v3/:section" element={<BusinessRoute><V7CommandBrain /></BusinessRoute>} />
+          <Route path="/v3/:section" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
@@ -202,14 +203,14 @@ function App() {
           <Route path="/reports" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
           <Route path="/settings" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
 
-          <Route path="/work" element={<BusinessRoute><V7CommandBrain /></BusinessRoute>} />
-          <Route path="/money" element={<BusinessRoute><V7CommandBrain /></BusinessRoute>} />
-          <Route path="/clients" element={<BusinessRoute><V7CommandBrain /></BusinessRoute>} />
-          <Route path="/team" element={<BusinessRoute><V7CommandBrain /></BusinessRoute>} />
-          <Route path="/ai" element={<BusinessRoute><V7CommandBrain /></BusinessRoute>} />
-          <Route path="/automation" element={<BusinessRoute><V7CommandBrain /></BusinessRoute>} />
-          <Route path="/reports" element={<BusinessRoute><V7CommandBrain /></BusinessRoute>} />
-          <Route path="/settings" element={<BusinessRoute><V7CommandBrain /></BusinessRoute>} />
+          <Route path="/work" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
+          <Route path="/money" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
+          <Route path="/clients" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
+          <Route path="/team" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
+          <Route path="/ai" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
+          <Route path="/automation" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
+          <Route path="/reports" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
+          <Route path="/settings" element={<BusinessRoute><V8CommandBrain /></BusinessRoute>} />
           <Route path="/dashboard" element={<SmartHubRoute />} />
           <Route path="/overview" element={<SmartHubRoute />} />
           <Route path="/onboarding" element={<BusinessRoute><OnboardingPage /></BusinessRoute>} />
