@@ -35,7 +35,6 @@ import {
 } from "lucide-react";
 import API_BASE from "../lib/apiBase";
 import { useAuth } from "../context/AuthContext";
-import V9TradeSuperpowers from "./V9TradeSuperpowers";
 
 const css = `
 .v9 *{box-sizing:border-box}
@@ -733,10 +732,7 @@ export default function V9BusinessEngine() {
             </section>
 
             {error && <div className="v9-sync"><AlertTriangle size={18} /><span>{error}</span></div>}
-
-            <V9TradeSuperpowers data={data} moves={moves} current={current} go={go} open={open} />
-
-            {current === "engine" && (
+{current === "engine" && (
               <div className="v9-grid">
                 <Panel eyebrow="AI command engine" title="Moves ready for owner approval" dark>
                   <div className="v9-moves">
