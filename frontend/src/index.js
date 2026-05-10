@@ -1,3 +1,33 @@
+/* Churvox worker-route body class */
+if (typeof window !== "undefined" && typeof document !== "undefined") {
+  const syncChurvoxWorkerRouteClass = () => {
+    const path = window.location.pathname || "";
+    document.body.classList.toggle(
+      "churvox-worker-route",
+      path.includes("/worker") || path.includes("/v3/worker")
+    );
+  };
+
+  syncChurvoxWorkerRouteClass();
+
+  const wrapHistoryMethod = (name) => {
+    const original = window.history[name];
+    if (!original || original.__churvoxWrapped) return;
+    const wrapped = function (...args) {
+      const result = original.apply(this, args);
+      window.dispatchEvent(new Event("churvox-location-change"));
+      return result;
+    };
+    wrapped.__churvoxWrapped = true;
+    window.history[name] = wrapped;
+  };
+
+  wrapHistoryMethod("pushState");
+  wrapHistoryMethod("replaceState");
+  window.addEventListener("popstate", syncChurvoxWorkerRouteClass);
+  window.addEventListener("churvox-location-change", syncChurvoxWorkerRouteClass);
+}
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
@@ -43,11 +73,6 @@ import "./styles/unifiedSmartHubHeaders.css";
 import "./styles/churvoxFinalDesignSystem.css";
 import "./styles/churvoxVisibleRedesign.css";
 import "./styles/churvoxUntouchedPagesRedesign.css";
-
-import "./churvoxRouteTheme";
-
-import "./churvoxWorkerFinalTheme";
-import "./churvoxWorkerPolishTheme";
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
 
