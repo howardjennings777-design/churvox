@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function ChurvoxLogo({ className = "", showText = true }) {
+export function ChurvoxLogo({ className = "", showText = true }) {
   return (
     <div className={`churvox-brand ${className}`.trim()}>
       <span className="churvox-brand-icon" aria-hidden="true">
@@ -16,6 +16,7 @@ export default function ChurvoxLogo({ className = "", showText = true }) {
               <stop offset="1" stopColor="#2563EB" />
             </linearGradient>
           </defs>
+
           <rect x="6" y="6" width="84" height="84" rx="22" fill="url(#churvoxBg)" />
           <path d="M48 14L75 25.5V43.5C75 62.5 63.5 77 48 83C32.5 77 21 62.5 21 43.5V25.5L48 14Z" fill="#07111F" stroke="url(#churvoxBlue)" strokeWidth="4" />
           <path d="M66.5 29H40.5C32.2 29 26 35.2 26 43.5C26 51.8 32.2 58 40.5 58H62L56.2 67H40C26.4 67 16 56.6 16 43.5C16 30.4 26.4 20 40 20H72.5L66.5 29Z" fill="url(#churvoxBlue)" />
@@ -33,3 +34,5 @@ export default function ChurvoxLogo({ className = "", showText = true }) {
     </div>
   );
 }
+
+export default ChurvoxLogo;
