@@ -72,6 +72,10 @@ export default function V3AiSiteGuide() {
 
   const role = normalizedRole || user?.role || "owner";
   const ownerMode = isOwnerRole(role);
+  const autoOpenAllowed =
+    location.pathname === "/" ||
+    location.pathname === "/dashboard" ||
+    location.pathname === "/overview";
 
   const [open, setOpen] = useState(false);
   const [autoShown, setAutoShown] = useState(false);
@@ -247,11 +251,6 @@ export default function V3AiSiteGuide() {
   const hasNeedsDoing = ownerMode && actions.some((action) => action.kind === "needs-action" || action.kind === "new-owner");
 
   useEffect(() => {
-    const autoOpenAllowed =
-      location.pathname === "/" ||
-      location.pathname === "/dashboard" ||
-      location.pathname === "/overview";
-
     if (!ownerMode || loading || autoShown || !autoOpenAllowed) return;
 
     const storageKey = `churvox-ai-guide-seen-${user?.email || "owner"}`;
@@ -262,7 +261,13 @@ export default function V3AiSiteGuide() {
       setAutoShown(true);
       window.localStorage.setItem(storageKey, "1");
     }
-  }, [ownerMode, loading, autoShown, user?.email, isNewOwner, hasNeedsDoing]);
+  }, [ownerMode, loading, autoShown, user?.email, isNewOwner, hasNeedsDoing, autoOpenAllowed]);
+
+  useEffect(() => {
+    if (!autoOpenAllowed && open) {
+      setOpen(false);
+    }
+  }, [autoOpenAllowed, open]);
 
   if (!ownerMode) return null;
 
