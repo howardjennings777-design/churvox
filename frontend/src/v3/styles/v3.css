@@ -1811,3 +1811,165 @@
     flex: 1 1 auto !important;
   }
 }
+
+/* ===== RESTORE CHURVOX ORIGINAL V3 COLOUR FEEL ===== */
+:root {
+  --churvox-ink: #020617;
+  --churvox-slate: #0f172a;
+  --churvox-muted: #64748b;
+  --churvox-blue: #2563eb;
+  --churvox-blue-soft: #eff6ff;
+  --churvox-border: rgba(15, 23, 42, 0.12);
+  --churvox-panel: #ffffff;
+  --churvox-soft: #f8fafc;
+}
+
+/* Bring back stronger app contrast behind modal */
+.v3-modal-backdrop {
+  background:
+    radial-gradient(circle at 20% 10%, rgba(37, 99, 235, 0.22), transparent 32%),
+    radial-gradient(circle at 80% 20%, rgba(14, 165, 233, 0.14), transparent 30%),
+    rgba(2, 6, 23, 0.72) !important;
+  backdrop-filter: blur(10px) saturate(120%) !important;
+}
+
+/* Clean white card with blue brand edge */
+.v3-modal {
+  background: var(--churvox-panel) !important;
+  border: 1px solid rgba(37, 99, 235, 0.16) !important;
+  box-shadow:
+    0 34px 100px rgba(2, 6, 23, 0.42),
+    0 0 0 1px rgba(255, 255, 255, 0.55) inset !important;
+}
+
+/* Header colour back */
+.v3-modal-head {
+  background:
+    linear-gradient(135deg, #ffffff 0%, #f8fbff 48%, #eff6ff 100%) !important;
+  border-bottom: 1px solid rgba(37, 99, 235, 0.14) !important;
+}
+
+.v3-modal-head .v3-eyebrow {
+  color: var(--churvox-blue) !important;
+}
+
+.v3-modal-head h2 {
+  color: var(--churvox-ink) !important;
+}
+
+/* Close button original premium feel */
+.v3-icon-button {
+  background: #ffffff !important;
+  color: var(--churvox-slate) !important;
+  border: 1px solid rgba(37, 99, 235, 0.16) !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08) !important;
+}
+
+.v3-icon-button:hover {
+  background: var(--churvox-blue-soft) !important;
+  color: var(--churvox-blue) !important;
+}
+
+/* Form background and field colour */
+.v3-action-form,
+.v3-modal-body {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+}
+
+.v3-action-form label span,
+.v3-modal-body small,
+.v3-detail-grid small {
+  color: #475569 !important;
+}
+
+.v3-action-form input,
+.v3-action-form textarea,
+.v3-action-form select,
+.v3-detail-grid select {
+  background: #ffffff !important;
+  border: 1.5px solid rgba(15, 23, 42, 0.14) !important;
+  color: var(--churvox-ink) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 8px 24px rgba(15, 23, 42, 0.035) !important;
+}
+
+.v3-action-form input:hover,
+.v3-action-form textarea:hover,
+.v3-action-form select:hover,
+.v3-detail-grid select:hover {
+  border-color: rgba(37, 99, 235, 0.34) !important;
+  background: #fefeff !important;
+}
+
+.v3-action-form input:focus,
+.v3-action-form textarea:focus,
+.v3-action-form select:focus,
+.v3-detail-grid select:focus {
+  border-color: var(--churvox-blue) !important;
+  background: #ffffff !important;
+  box-shadow:
+    0 0 0 4px rgba(37, 99, 235, 0.13),
+    0 12px 28px rgba(37, 99, 235, 0.08) !important;
+}
+
+/* Sticky action bar with original contrast */
+.v3-action-form .v3-actions,
+.v3-modal-body > .v3-actions {
+  background:
+    linear-gradient(to top, #ffffff 82%, rgba(255, 255, 255, 0.94)) !important;
+  border-top: 1px solid rgba(37, 99, 235, 0.12) !important;
+}
+
+/* Main button back to strong Churvox dark */
+.v3-button.dark,
+.v3-dark-btn,
+.v3-action-form .v3-actions .v3-button.dark {
+  background: linear-gradient(135deg, #020617 0%, #0f172a 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(2, 6, 23, 0.95) !important;
+  box-shadow: 0 12px 28px rgba(2, 6, 23, 0.24) !important;
+}
+
+.v3-button.dark:hover,
+.v3-dark-btn:hover,
+.v3-action-form .v3-actions .v3-button.dark:hover {
+  background: linear-gradient(135deg, #111827 0%, #1e293b 100%) !important;
+  transform: translateY(-1px);
+}
+
+/* Blue primary action back */
+.v3-button:not(.dark):not(.secondary):not(.ghost),
+.v3-primary-btn {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(37, 99, 235, 0.75) !important;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.22) !important;
+}
+
+/* Cancel / secondary clean */
+.v3-button.secondary,
+.v3-action-form .v3-actions .v3-button.secondary {
+  background: #ffffff !important;
+  color: var(--churvox-slate) !important;
+  border: 1px solid rgba(15, 23, 42, 0.16) !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05) !important;
+}
+
+/* Active top nav colour stays original/premium */
+.v3-nav a.active {
+  background: #020617 !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.18) !important;
+}
+
+.v3-nav a.active svg {
+  color: #ffffff !important;
+}
+
+/* Small blue highlights on cards */
+.v3-workspace-card svg,
+.v3-live-icon svg,
+.v3-site-icon svg {
+  color: var(--churvox-blue) !important;
+}
