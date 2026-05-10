@@ -2,7 +2,7 @@
   "name": "Churvox",
   "short_name": "Churvox",
   "description": "AI command centre for trade teams.",
-  "id": "/?churvox_global_app_icon=20260511",
+  "id": "/?churvox_global_logo_fix=20260511",
   "start_url": "/?app_icon_v=20260511",
   "scope": "/",
   "display": "standalone",
@@ -15,19 +15,19 @@
   ],
   "icons": [
     {
-      "src": "/icons/churvox-global-app-20260511-global-app-icon-192.png",
+      "src": "/icons/churvox-app-20260511-global-logo-fix-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/churvox-global-app-20260511-global-app-icon-512.png",
+      "src": "/icons/churvox-app-20260511-global-logo-fix-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/churvox-global-maskable-20260511-global-app-icon-512.png",
+      "src": "/icons/churvox-maskable-20260511-global-logo-fix-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

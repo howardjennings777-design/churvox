@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 112" role="img" aria-label="Churvox">
   <defs>
-    <linearGradient id="bg" x1="10" y1="8" x2="104" y2="104" gradientUnits="userSpaceOnUse">
+    <linearGradient id="bg" x1="8" y1="8" x2="104" y2="104" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#020617"/>
-      <stop offset="0.5" stop-color="#1D4ED8"/>
+      <stop offset="0.52" stop-color="#2563EB"/>
       <stop offset="1" stop-color="#06B6D4"/>
     </linearGradient>
   </defs>
   <rect x="6" y="8" width="96" height="96" rx="28" fill="url(#bg)"/>
   <path d="M68 35a30 30 0 1 0 0 42" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
-  <path d="M38 56h38" stroke="#67E8F9" stroke-width="10" stroke-linecap="round"/>
+  <path d="M38 56h38" stroke="#7DD3FC" stroke-width="10" stroke-linecap="round"/>
   <path d="M62 41l17 15-17 15" fill="none" stroke="#22C55E" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="122" y="70" font-family="Inter, Arial, sans-serif" font-size="46" font-weight="850" fill="#F8FAFC" letter-spacing="-1.8">Churvox</text>
+  <text x="122" y="70" font-family="Inter, Arial, sans-serif" font-size="46" font-weight="850" fill="#0F172A" letter-spacing="-1.8">Churvox</text>
 </svg>
