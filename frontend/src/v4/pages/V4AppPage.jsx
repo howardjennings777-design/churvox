@@ -52,6 +52,177 @@ function dateOf(x) { const d = new Date(x?.scheduled_at || x?.scheduledAt || x?.
 function moneyOf(x) { const n = Number(x?.total || x?.amount || x?.balance_due || x?.price || x?.subtotal || 0); return n ? n.toLocaleString([], { style: "currency", currency: "NZD" }) : "—"; }
 function initials(user) { return String(user?.name || user?.email || "CV").split(/[\s@.]+/).filter(Boolean).slice(0,2).map((p) => p[0]).join("").toUpperCase(); }
 
+
+// AI_DECISION_COPY_START
+const LONG_RAW_ID_RE = /\b(?:[a-f0-9]{20,}|\d{7,}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b/gi;
+
+function cleanAiText(value, fallback = "") {
+  let text = String(value || "")
+    .replace(/\bJob\s+\d{7,}/gi, "job")
+    .replace(/\bWorker\s+\d{7,}/gi, "worker")
+    .replace(LONG_RAW_ID_RE, "")
+    .replace(/\s+/g, " ")
+    .replace(/\s+([,.;:!?])/g, "$1")
+    .trim();
+
+  if (!text || text === "-" || /^\d+$/.test(text)) return fallback;
+  return text;
+}
+
+function readNested(obj, paths = []) {
+  for (const path of paths) {
+    const value = path.split(".").reduce((acc, key) => acc?.[key], obj);
+    if (value !== undefined && value !== null && String(value).trim()) return value;
+  }
+  return "";
+}
+
+function cleanLabel(value, fallback) {
+  const cleaned = cleanAiText(value, "");
+  if (!cleaned || cleaned.length < 2) return fallback;
+  return cleaned;
+}
+
+function titleCase(value) {
+  return cleanAiText(value, "Prepared action")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+function actionWorkerLabel(action) {
+  return cleanLabel(
+    readNested(action, [
+      "worker_name",
+      "recommended_worker_name",
+      "assigned_worker_name",
+      "crew_name",
+      "worker.name",
+      "recommended_worker.name",
+      "payload.worker_name",
+      "payload.recommended_worker_name",
+      "payload.worker.name",
+      "metadata.worker_name",
+      "metadata.recommended_worker_name",
+    ]),
+    "the best available crew"
+  );
+}
+
+function actionJobLabel(action) {
+  return cleanLabel(
+    readNested(action, [
+      "job_title",
+      "job_name",
+      "service_type",
+      "job.title",
+      "job.name",
+      "payload.job_title",
+      "payload.job_name",
+      "payload.job.title",
+      "payload.service_type",
+      "metadata.job_title",
+      "metadata.job_name",
+      "client_name",
+      "customer_name",
+      "address",
+      "site_address",
+    ]),
+    "this job"
+  );
+}
+
+function actionTypeLabel(action) {
+  return titleCase(action?.action_type || action?.type || action?.module || "Owner decision");
+}
+
+function isCrewAssignmentAction(action) {
+  const blob = lower(`${action?.action_type || ""} ${action?.type || ""} ${action?.module || ""} ${action?.title || ""} ${action?.summary || ""}`);
+  return blob.includes("assign") || blob.includes("crew") || blob.includes("dispatch") || blob.includes("worker") || blob.includes("put crew");
+}
+
+function isInvoiceAction(action) {
+  const blob = lower(`${action?.action_type || ""} ${action?.type || ""} ${action?.module || ""} ${action?.title || ""}`);
+  return blob.includes("invoice") || blob.includes("money") || blob.includes("payment");
+}
+
+function isQuoteAction(action) {
+  const blob = lower(`${action?.action_type || ""} ${action?.type || ""} ${action?.module || ""} ${action?.title || ""}`);
+  return blob.includes("quote");
+}
+
+function preparedActionTitle(action) {
+  const rawTitle = cleanAiText(action?.title || action?.name || "", "");
+
+  if (isCrewAssignmentAction(action)) {
+    return `Assign ${actionWorkerLabel(action)} to ${actionJobLabel(action)}`;
+  }
+
+  if (isInvoiceAction(action)) {
+    return rawTitle || `Prepare invoice action for ${actionJobLabel(action)}`;
+  }
+
+  if (isQuoteAction(action)) {
+    return rawTitle || `Prepare quote follow-up for ${actionJobLabel(action)}`;
+  }
+
+  return rawTitle || "Review prepared owner action";
+}
+
+function preparedActionCopy(action) {
+  if (isCrewAssignmentAction(action)) {
+    return `${actionWorkerLabel(action)} is the recommended match for ${actionJobLabel(action)}. Owner approval is required before Churvox changes anything.`;
+  }
+
+  const raw = cleanAiText(action?.summary || action?.description || action?.reason || "", "");
+  return raw || "Churvox prepared this owner action. It will only run after you approve it.";
+}
+
+function preparedActionAnswer(action) {
+  const worker = actionWorkerLabel(action);
+  const job = actionJobLabel(action);
+
+  if (isCrewAssignmentAction(action)) {
+    return `I recommend assigning ${worker} to ${job}. This is the next clean move for the run sheet. When you tap approve, Churvox will make the assignment only. It will not send messages, create invoices, charge customers, delete records or sync anything without owner approval.`;
+  }
+
+  if (isInvoiceAction(action)) {
+    return `I found an invoice-related admin move that looks ready for review. Approving lets Churvox prepare or update the invoice action only. Nothing is sent, charged, deleted or synced without owner approval.`;
+  }
+
+  if (isQuoteAction(action)) {
+    return `I found a quote follow-up that looks ready for review. Approving lets Churvox prepare the next quote action only. Nothing is sent to the customer until the owner approves that step.`;
+  }
+
+  return `This is a prepared owner decision. I have kept it approval-first, so Churvox will not send, assign, charge, delete or sync anything until you approve the move.`;
+}
+
+function preparedActionReason(action) {
+  return cleanAiText(
+    action?.reason,
+    "Prepared from current business data and waiting for owner approval."
+  );
+}
+
+function toPreparedDecision(action) {
+  return {
+    kind: "action",
+    kicker: actionTypeLabel(action),
+    title: preparedActionTitle(action),
+    copy: preparedActionCopy(action),
+    answer: preparedActionAnswer(action),
+    reason: preparedActionReason(action),
+    raw: action,
+    fullPath: "/v3/decisions",
+    fields: [
+      ["Type", actionTypeLabel(action)],
+      ["Worker", isCrewAssignmentAction(action) ? actionWorkerLabel(action) : "Not needed"],
+      ["Job", actionJobLabel(action)],
+      ["Safety", "Owner approval required"],
+    ],
+  };
+}
+// AI_DECISION_COPY_END
+
 function Empty({ title, copy }) { return <div className="v4-empty"><Hammer size={28}/><b>{title}</b><span>{copy}</span></div>; }
 function Status({ value }) { const s = lower(value); const cls = s.includes("overdue") || s.includes("cancel") ? "danger" : s.includes("complete") || s.includes("paid") || s.includes("accept") ? "good" : s.includes("progress") || s.includes("sent") ? "blue" : s.includes("pause") ? "warn" : "neutral"; return <span className={`v4-status ${cls}`}>{value || "Open"}</span>; }
 
@@ -61,9 +232,9 @@ function DetailModal({ item, busy, onClose, onApprove, onOpenFull }) {
     <header className="v4-modal-head"><div><span>{item.kicker}</span><h2>{item.title}</h2></div><button onClick={onClose} aria-label="Close"><X size={18}/></button></header>
     <p className="v4-modal-copy">{item.copy}</p>
     <div className="v4-detail-grid">{(item.fields || []).map(([label, value]) => <div key={label}><small>{label}</small><b>{value}</b></div>)}</div>
-    <div className="v4-ai-reason"><Bot size={20}/><div><small>AI reason</small><b>{item.reason || "Churvox prepared this because it looks like the next useful business move."}</b></div></div>
+    <div className="v4-ai-reason v4-ai-answer"><Bot size={20}/><div><small>AI answer</small><b>{item.answer || item.reason || "Churvox prepared this because it looks like the next useful business move."}</b></div></div>
     <footer className="v4-modal-actions">
-      {item.kind === "action" ? <button className="v4-btn primary" disabled={busy} onClick={() => onApprove(item.raw)}>{busy ? "Doing it…" : "Approve and do it"}</button> : null}
+      {item.kind === "action" ? <button className="v4-btn primary v4-approve-strong" disabled={busy} onClick={() => onApprove(item.raw)}>{busy ? "Approving…" : "Approve move"}</button> : null}
       {item.fullPath ? <button className="v4-btn secondary" onClick={() => onOpenFull(item.fullPath)}>Open full workspace</button> : null}
       <button className="v4-btn ghost" onClick={onClose}>Close</button>
     </footer>
@@ -137,7 +308,7 @@ export default function V4AppPage({ initialSection = "smart-hub" }) {
 
   const openSection = (key) => setActiveSection(key);
   const signOut = async () => { await logout(); navigate("/login", { replace: true }); };
-  const prepared = pending.slice(0, 8).map((a) => ({ kind: "action", kicker: a.module || a.action_type || "Owner decision", title: a.title || a.name || "Prepared owner action", copy: a.summary || a.description || a.reason || "Churvox prepared this for approval.", reason: a.reason || "Prepared from current business data and waiting for owner approval.", raw: a, fullPath: "/v3/decisions", fields: [["Type", a.action_type || "Prepared action"], ["Risk", a.risk_level || "Approval-first"], ["Status", a.queue_status || a.status || "Pending"], ["Confidence", a.confidence ? `${Math.round(Number(a.confidence)*100)}%` : "Prepared"]] }));
+  const prepared = pending.slice(0, 8).map((a) => toPreparedDecision(a));
 
   const SmartHub = () => <>
     <section className="v4-hero"><div className="v4-hero-main"><span className="v4-kicker"><Bot size={15}/> Churvox AI Operator</span><h1>Your AI trade command centre.</h1><p>Jobs, crew, quotes, invoices and follow-ups stay in one simple owner view. Churvox prepares the admin. You approve the move.</p><div className="v4-hero-actions"><button className="v4-btn primary" onClick={() => runAi("prepare")} disabled={aiRunning}><Wand2 size={18}/> {aiRunning ? "Preparing…" : "Prepare next moves"}</button><button className="v4-btn dark" onClick={() => runAi("check")} disabled={aiRunning}><RefreshCw size={18}/> Full business check</button><button className="v4-btn light" onClick={() => openSection("decisions")}>Review decisions</button></div></div><aside className="v4-next-card"><small>Next best move</small><b>{pending.length ? "Approve the first prepared action." : unassigned.length ? "Assign unassigned work." : proofNeeded.length ? "Check proof-to-paid." : "Run the AI check."}</b><span>Tap a card to inspect detail. Open the full workspace only when editing is needed.</span></aside></section>
@@ -145,7 +316,7 @@ export default function V4AppPage({ initialSection = "smart-hub" }) {
     <section className="v4-board two"><article className="v4-panel"><div className="v4-panel-head"><div><small>Owner approval queue</small><h2>Prepared actions</h2></div><strong>{pending.length}</strong></div>{prepared.length ? prepared.map((item) => <button className="v4-decision" key={actionId(item.raw)} onClick={() => setSelected(item)}><span><Sparkles size={18}/></span><div><b>{item.title}</b><small>{item.copy}</small></div><ChevronRight size={18}/></button>) : <Empty title="No decisions waiting" copy="Run the AI check to prepare assignments, invoice drafts and follow-ups."/>}</article><article className="v4-panel"><div className="v4-panel-head"><div><small>Operator workflow</small><h2>AI does the prep. You stay in control.</h2></div><Bot size={25}/></div><div className="v4-flow-grid">{[[MapPinned,"Crew Match","Recommend the worker by area, workload, availability and fit.","dispatch"],[CheckCircle2,"Proof-to-Paid","Completed jobs checked for photos, time and invoice readiness.","jobs"],[DollarSign,"Money Board","Draft, chase and clear invoice actions from one place.","invoices"],[Zap,"Auto Rules","Safe admin runs automatically. Risky work stays approval-first.","rules"]].map(([Icon,title,copy,target]) => <button className="v4-flow" key={title} onClick={() => openSection(target)}><Icon size={20}/><b>{title}</b><span>{copy}</span></button>)}</div></article></section>
   </>;
 
-  const Decisions = () => <section className="v4-panel full"><div className="v4-section-title"><small>Approval-first AI</small><h1>Owner Decisions</h1><p>Approve prepared actions here, then Churvox does the admin.</p></div>{prepared.length ? prepared.map((item) => <div className="v4-approval-row" key={actionId(item.raw)}><button onClick={() => setSelected(item)}><b>{item.title}</b><span>{item.copy}</span></button><button className="v4-btn primary" disabled={busyActionId === actionId(item.raw)} onClick={() => approve(item.raw)}>{busyActionId === actionId(item.raw) ? "Doing…" : "Approve"}</button></div>) : <Empty title="No prepared actions" copy="Run the AI Operator from Smart Hub to create owner-approved actions."/>}</section>;
+  const Decisions = () => <section className="v4-panel full"><div className="v4-section-title"><small>Approval-first AI</small><h1>Owner Decisions</h1><p>Approve prepared actions here, then Churvox does the admin.</p></div>{prepared.length ? prepared.map((item) => <div className="v4-approval-row" key={actionId(item.raw)}><button onClick={() => setSelected(item)}><b>{item.title}</b><span>{item.copy}</span></button><button className="v4-btn primary v4-approve-strong" disabled={busyActionId === actionId(item.raw)} onClick={() => approve(item.raw)}>{busyActionId === actionId(item.raw) ? "Approving…" : "Approve move"}</button></div>) : <Empty title="No prepared actions" copy="Run the AI Operator from Smart Hub to create owner-approved actions."/>}</section>;
   const Records = ({ kind, title, kicker, copy, items, type }) => {
     const csvLabel = kind === "clients" ? "Import clients CSV" : kind === "team" ? "Import workers CSV" : "";
     return <section className="v4-panel full"><div className="v4-section-title"><small>{kicker}</small><h1>{title}</h1><p>{copy}</p></div>{csvLabel ? <div className="v4-modal-actions"><button className="v4-btn primary" onClick={() => navigate(`/v3/${kind}`)}><Upload size={18}/> {csvLabel}</button><button className="v4-btn secondary" onClick={() => navigate(`/v3/${kind}`)}>Open full {title} workspace</button></div> : null}<div className="v4-record-grid">{items.length ? items.slice(0, 24).map((item) => <RecordCard key={item.id || item._id || item.email || item.invoice_number || item.quote_number || titleOf(item)} item={item} type={type} onOpen={setSelected}/>) : <Empty title={`No ${title.toLowerCase()} loaded`} copy="When live data is available it will show here."/>}</div>{!csvLabel ? <button className="v4-btn secondary" onClick={() => navigate(`/v3/${kind}`)}>Open current full {title} workspace</button> : null}</section>;
