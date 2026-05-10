@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import V3Brand from "./V3Brand";
+import V3CsvImport from "./V3CsvImport";
 import "../styles/v3.css";
 
 const navItems = [
@@ -88,6 +89,8 @@ export default function V3Shell({ children }) {
               </Link>
             ))}
           </nav>
+
+          <V3CsvImport />
 
           <div className="v3-account">
             <div className="v3-user-pill">
