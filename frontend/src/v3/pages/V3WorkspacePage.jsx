@@ -579,7 +579,7 @@ export default function V3WorkspacePage() {
   const load = async () => {
     setLoading(true);
     const [queueResult, jobsResult, quotesResult, invoicesResult, clientsResult, workersResult, billingResult] = await Promise.allSettled([
-      get("/ai/operator/v3/queue"),
+      get("/ai/operator/v3/strong/queue"),
       get("/jobs"),
       get("/quotes"),
       get("/invoices"),
@@ -625,7 +625,7 @@ export default function V3WorkspacePage() {
     }
     if (meta.action === "prepare_ai") {
       setSaving(true);
-      const res = await post(`/ai/operator/v3/pages/${key}/prepare`, {});
+      const res = await post(`/ai/operator/v3/strong/pages/${key}/prepare`, {});
       if (res.ok) {
         setNotice("AI prepared the next owner actions.");
         await load();
@@ -684,7 +684,7 @@ export default function V3WorkspacePage() {
   const askAi = async () => {
     if (!selected) return;
     setBusyActionId("ask");
-    const res = await post("/ai/operator/v3/ask", {
+    const res = await post("/ai/operator/v3/strong/ask", {
       question: `Review this ${selected.kind} and prepare the next best owner-approved action. Record: ${JSON.stringify(selected.raw || {})}`,
     });
     if (res.ok) {

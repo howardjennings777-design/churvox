@@ -12067,6 +12067,22 @@ async def billing_v3_confirm_checkout(body: dict = Body(default=None), current_u
 # ===== FINAL V3 BILLING UPGRADES END =====
 
 
+
+# Register strong approval-first AI Operator routes
+try:
+    from strong_ai_operator import register_strong_ai_operator
+    register_strong_ai_operator(
+        api_router=api_router,
+        db=db,
+        get_current_user=get_current_user,
+        get_user_business_id=get_user_business_id,
+        default_gst_rate=DEFAULT_GST_RATE,
+        platform_owner_emails=PLATFORM_OWNER_EMAILS,
+    )
+    logger.info("Strong AI Operator routes registered")
+except Exception as strong_ai_exc:
+    logger.exception("Strong AI Operator route registration failed: %s", strong_ai_exc)
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")

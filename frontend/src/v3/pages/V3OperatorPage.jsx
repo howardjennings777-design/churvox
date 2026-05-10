@@ -116,8 +116,8 @@ export default function V3OperatorPage() {
   const load = async () => {
     setLoading(true);
     const [settingsRes, queueRes] = await Promise.all([
-      get("/ai/operator/v3/settings"),
-      get("/ai/operator/v3/queue"),
+      get("/ai/operator/v3/strong/settings"),
+      get("/ai/operator/v3/strong/queue"),
     ]);
 
     if (settingsRes.ok) setSettings({ ...defaults, ...(settingsRes.data?.settings || settingsRes.data || {}) });
@@ -131,7 +131,7 @@ export default function V3OperatorPage() {
 
   const saveSettings = async () => {
     setBusyId("settings");
-    const res = await patch("/ai/operator/v3/settings", settings);
+    const res = await patch("/ai/operator/v3/strong/settings", settings);
     if (res.ok) {
       setSettings({ ...defaults, ...(res.data?.settings || {}) });
       setNotice("AI Operator settings saved.");
@@ -143,7 +143,7 @@ export default function V3OperatorPage() {
 
   const prepareNow = async () => {
     setBusyId("prepare");
-    const res = await post("/ai/operator/v3/prepare-today", {});
+    const res = await post("/ai/operator/v3/strong/prepare-today", {});
     if (res.ok) {
       setActions(res.data?.actions || []);
       setNotice("AI prepared the owner queue.");
@@ -155,7 +155,7 @@ export default function V3OperatorPage() {
 
   const runScheduledNow = async () => {
     setBusyId("scheduled");
-    const res = await post("/ai/operator/v3/scheduled-run", {});
+    const res = await post("/ai/operator/v3/strong/scheduled-run", {});
     if (res.ok) {
       setNotice(res.data?.message || "AI Operator ran.");
       await load();
@@ -181,7 +181,7 @@ export default function V3OperatorPage() {
   const deleteAction = async (action) => {
     const id = actionId(action);
     setBusyId(id);
-    const res = await delRequest(`/ai/operator/v3/actions/${id}`);
+    const res = await delRequest(`/ai/operator/v3/strong/actions/${id}`);
     if (res.ok) {
       setNotice("AI action deleted from queue.");
       await load();
@@ -204,7 +204,7 @@ export default function V3OperatorPage() {
     event.preventDefault();
     const id = actionId(editAction);
     setBusyId("edit");
-    const res = await patch(`/ai/operator/v3/actions/${id}`, editValues);
+    const res = await patch(`/ai/operator/v3/strong/actions/${id}`, editValues);
     if (res.ok) {
       setNotice("AI action updated.");
       setEditAction(null);
