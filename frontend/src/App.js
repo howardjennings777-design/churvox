@@ -35,6 +35,8 @@ import V3BillingPage from "./v3/pages/V3BillingPage";
 import V3SectionRoute from "./v3/components/V3SectionRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
+import WorkerHomePage from './pages/worker/WorkerHomePage';
+
 const Spinner = () => (
   <div className="min-h-screen bg-slate-50 flex items-center justify-center">
     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-600" />
@@ -217,7 +219,7 @@ function App() {
           <Route path="/automation" element={<Navigate to="/v3/rules" replace />} />
           <Route path="/automation/runs" element={<Navigate to="/v3/rules" replace />} />
           <Route path="/payroll" element={<Navigate to="/v3/payroll" replace />} />
-          <Route path="/worker/jobs" element={<WorkerRoute><WorkerJobsPage /></WorkerRoute>} />
+          <Route path="/worker/jobs" element={<WorkerHomePage />} />
           <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
           <Route path="/worker/settings" element={<WorkerRoute><WorkerSettingsPage /></WorkerRoute>} />
           <Route path="/privacy" element={<PrivacyPage />} />
@@ -228,6 +230,10 @@ function App() {
           <Route path="/platform-unlock" element={<PlatformUnlock />} />
           <Route path="/" element={<RoleRedirect />} />
           <Route path="*" element={<RoleRedirect />} />
+        
+          <Route path="/worker" element={<WorkerHomePage />} />
+          <Route path="/worker/dashboard" element={<WorkerHomePage />} />
+          <Route path="/worker/jobs" element={<WorkerHomePage />} />
         </Routes>
         </ErrorBoundary>
       </AuthProvider>

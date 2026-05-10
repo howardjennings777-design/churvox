@@ -1,0 +1,533 @@
+.workerApp {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.13), transparent 36rem),
+    linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+  color: #0f172a;
+  padding: 24px;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.workerHero {
+  max-width: 1120px;
+  margin: 0 auto 18px;
+  padding: 24px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.08);
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+}
+
+.workerHero h1 {
+  margin: 4px 0 8px;
+  font-size: clamp(2rem, 5vw, 4.3rem);
+  line-height: 0.92;
+  letter-spacing: -0.08em;
+}
+
+.workerHero p {
+  margin: 0;
+  color: #64748b;
+  font-size: 1rem;
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #2563eb !important;
+  font-size: 0.72rem !important;
+  font-weight: 900;
+}
+
+.workerStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(84px, 1fr));
+  gap: 10px;
+  min-width: min(390px, 100%);
+}
+
+.workerStats div {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+  padding: 16px;
+  text-align: center;
+}
+
+.workerStats span {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.workerStats small {
+  color: #64748b;
+  font-weight: 800;
+}
+
+.nextJobPanel,
+.workerList,
+.workerTabs {
+  max-width: 1120px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.nextJobPanel {
+  margin-bottom: 16px;
+}
+
+.sectionHeader {
+  margin: 20px 0 10px;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+}
+
+.sectionHeader h2 {
+  margin: 2px 0 0;
+  letter-spacing: -0.04em;
+  font-size: 1.45rem;
+}
+
+.workerJobCard {
+  cursor: pointer;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 52px rgba(15, 23, 42, 0.07);
+  padding: 18px;
+  margin-bottom: 12px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.workerJobCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 64px rgba(15, 23, 42, 0.1);
+  border-color: rgba(37, 99, 235, 0.35);
+}
+
+.workerJobCard.featured {
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.97), rgba(30, 64, 175, 0.94)),
+    #0f172a;
+  color: #fff;
+}
+
+.workerJobCard.featured .jobClient,
+.workerJobCard.featured .jobAddress,
+.workerJobCard.featured .jobTime {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.jobTopLine {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.jobTopLine h3 {
+  margin: 4px 0;
+  font-size: 1.25rem;
+  letter-spacing: -0.035em;
+}
+
+.jobTime {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 900;
+  color: #2563eb;
+}
+
+.jobClient {
+  margin: 0;
+  color: #64748b;
+  font-weight: 800;
+}
+
+.jobAddress {
+  margin: 14px 0;
+  color: #475569;
+  font-weight: 700;
+}
+
+.workerStatus {
+  white-space: nowrap;
+  height: fit-content;
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: capitalize;
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.workerStatus.in_progress {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.workerStatus.paused {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.workerStatus.completed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.workerStatus.cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.workerStatus.acknowledged {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.quickButtons,
+.workerActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.quickButtons button,
+.workerActions button,
+.closeSheet,
+.photoUpload {
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 15px;
+  font-weight: 950;
+  cursor: pointer;
+  background: #eef2ff;
+  color: #1e3a8a;
+  min-height: 44px;
+}
+
+.quickButtons button:disabled,
+.workerActions button:disabled {
+  opacity: 0.46;
+  cursor: not-allowed;
+}
+
+.workerActions {
+  margin-top: 14px;
+}
+
+.workerActions.compact {
+  margin-top: 16px;
+}
+
+.workerActions .primary,
+.primary {
+  background: #2563eb;
+  color: white;
+}
+
+.workerActions .complete,
+.complete {
+  background: #16a34a;
+  color: white;
+}
+
+.workerActions .soft {
+  background: #f59e0b;
+  color: #111827;
+}
+
+.full {
+  width: 100%;
+}
+
+.workerTabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 18px;
+  margin-bottom: 14px;
+}
+
+.workerTabs button {
+  border: 1px solid #dbe3ef;
+  background: rgba(255, 255, 255, 0.78);
+  color: #334155;
+  border-radius: 20px;
+  padding: 14px 10px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.workerTabs button.active {
+  background: #0f172a;
+  color: #fff;
+  border-color: #0f172a;
+}
+
+.workerTabs span {
+  margin-left: 6px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.22);
+}
+
+.emptyWorkerState,
+.workerLoading {
+  max-width: 1120px;
+  margin: 0 auto;
+  border: 1px dashed #cbd5e1;
+  border-radius: 28px;
+  padding: 28px;
+  background: rgba(255, 255, 255, 0.72);
+  text-align: center;
+}
+
+.emptyWorkerState h3 {
+  margin: 0 0 6px;
+  letter-spacing: -0.03em;
+}
+
+.emptyWorkerState p {
+  margin: 0;
+  color: #64748b;
+}
+
+.workerSuccess,
+.workerError {
+  max-width: 1120px;
+  margin: 12px auto;
+  border-radius: 18px;
+  padding: 13px 16px;
+  font-weight: 900;
+}
+
+.workerSuccess {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.workerError {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.pulseCard {
+  height: 170px;
+  border-radius: 24px;
+  background: linear-gradient(90deg, #e2e8f0, #f8fafc, #e2e8f0);
+  background-size: 200% 100%;
+  animation: pulseWorker 1.2s infinite;
+}
+
+.pulseCard.small {
+  height: 80px;
+  margin-top: 12px;
+}
+
+@keyframes pulseWorker {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.workerSheetBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: end;
+  padding: 18px;
+}
+
+.workerSheet {
+  width: min(760px, 100%);
+  max-height: min(90vh, 820px);
+  overflow: auto;
+  background: #ffffff;
+  border-radius: 34px;
+  box-shadow: 0 -30px 80px rgba(15, 23, 42, 0.24);
+  padding: 18px;
+}
+
+.sheetHandle {
+  width: 56px;
+  height: 5px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  margin: 0 auto 16px;
+}
+
+.sheetHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: start;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.sheetHeader h2 {
+  margin: 3px 0;
+  font-size: 1.8rem;
+  letter-spacing: -0.055em;
+}
+
+.sheetHeader p {
+  margin: 0;
+  color: #64748b;
+  font-weight: 800;
+}
+
+.closeSheet {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.sheetBlock {
+  margin-top: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 16px;
+  background: #fbfdff;
+}
+
+.sheetBlock span {
+  display: block;
+  color: #2563eb;
+  font-size: 0.75rem;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 7px;
+}
+
+.sheetBlock p {
+  margin: 0;
+  color: #334155;
+  line-height: 1.5;
+  font-weight: 650;
+}
+
+.sheetBlock textarea {
+  width: 100%;
+  min-height: 104px;
+  resize: vertical;
+  border: 1px solid #cbd5e1;
+  border-radius: 18px;
+  padding: 14px;
+  font: inherit;
+  margin-bottom: 10px;
+  outline: none;
+}
+
+.sheetBlock textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.photoUpload {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  background: #0f172a;
+  color: white;
+}
+
+.photoUpload input {
+  display: none;
+}
+
+.hint {
+  margin-top: 10px !important;
+  color: #64748b !important;
+  font-size: 0.9rem;
+}
+
+.wide {
+  margin-top: 12px;
+}
+
+@media (max-width: 820px) {
+  .workerApp {
+    padding: 14px;
+  }
+
+  .workerHero {
+    padding: 20px;
+    border-radius: 26px;
+    display: block;
+  }
+
+  .workerStats {
+    margin-top: 16px;
+    grid-template-columns: repeat(3, 1fr);
+    min-width: 0;
+  }
+
+  .workerStats div {
+    padding: 12px 8px;
+  }
+
+  .workerStats span {
+    font-size: 1.05rem;
+  }
+
+  .jobTopLine {
+    display: block;
+  }
+
+  .workerStatus {
+    display: inline-flex;
+    margin-top: 10px;
+  }
+
+  .quickButtons button,
+  .workerActions button {
+    flex: 1 1 130px;
+  }
+
+  .workerTabs {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(248, 251, 255, 0.88);
+    backdrop-filter: blur(12px);
+    padding: 8px 0;
+  }
+
+  .workerTabs button {
+    padding: 12px 6px;
+    font-size: 0.82rem;
+  }
+
+  .workerSheetBackdrop {
+    padding: 0;
+  }
+
+  .workerSheet {
+    width: 100%;
+    max-height: 93vh;
+    border-radius: 30px 30px 0 0;
+  }
+
+  .sheetHeader {
+    display: block;
+  }
+
+  .closeSheet {
+    margin-top: 12px;
+    width: 100%;
+  }
+}
