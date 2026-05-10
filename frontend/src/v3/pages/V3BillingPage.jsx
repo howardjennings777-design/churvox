@@ -164,7 +164,7 @@ export default function V3BillingPage() {
                   onClick={() => upgradePlan(plan.id)}
                   disabled={locked || isCurrent || !!busy}
                 >
-                  {busy === plan.id ? "Opening checkout…" : isCurrent ? "Current plan" : UPGRADE_LABELS[plan.id]}
+                  {busy === plan.id ? "Opening checkout…" : isCurrent ? `${UPGRADE_LABELS[plan.id]} — Current plan` : UPGRADE_LABELS[plan.id]}
                 </button>
               </article>
             );
