@@ -104,6 +104,44 @@ const css = `
 .v9-move-detail{display:grid;gap:14px}.v9-move-detail h3{font-size:27px;margin:0;letter-spacing:-.055em}.v9-move-detail p,.v9-move-detail div{border:1px solid rgba(10,11,13,.08);border-radius:25px;background:#fff9ee;padding:16px;color:#65584a;line-height:1.5}.v9-move-detail div{display:flex;gap:12px}.v9-move-detail small{font-weight:850;color:#65584a}
 .v9-detail div{border:1px solid rgba(10,11,13,.08);border-radius:20px;background:#fff9ee;padding:13px}.v9-detail span{display:block;margin-bottom:5px;color:#65584a;font-size:12px;text-transform:capitalize}.v9-detail strong{word-break:break-word}.v9-danger{border:0;border-radius:999px;padding:12px 16px;background:#b8322a;color:white;font-weight:950;display:inline-flex;gap:8px;align-items:center}.v9-tabs{display:none}.v9-spin{animation:v9spin 1s linear infinite}@keyframes v9spin{to{transform:rotate(360deg)}}
 @media(max-width:1080px){.v9{display:block}.v9-rail{position:fixed;z-index:110;inset:0 auto 0 0;width:min(330px,88vw);transform:translateX(-105%);transition:.22s;align-items:stretch}.v9-rail.open{transform:translateX(0)}.v9-brand-word{display:none}.v9-close,.v9-mobile-menu{display:inline-flex!important}.v9-main{padding:12px 12px 110px}.v9-top{grid-template-columns:auto 1fr auto auto}.v9-primary:not(.v9-drawer .v9-primary),.v9-icon{display:none}.v9-hero,.v9-grid,.v9-two,.v9-card-grid,.v9-rules,.v9-wide,.v9-stats,.v9-move-grid{grid-template-columns:1fr}.v9-hero-main{min-height:auto;padding:28px}.v9-hero-main h1{font-size:44px;line-height:.95}.v9-tabs{position:fixed;z-index:90;left:10px;right:10px;bottom:10px;display:grid;grid-template-columns:repeat(6,1fr);gap:5px;background:rgba(8,9,11,.94);border:1px solid rgba(248,241,228,.13);border-radius:28px;padding:7px;backdrop-filter:blur(20px)}.v9-tabs button{border:0;background:transparent;color:rgba(248,241,228,.66);border-radius:19px;display:grid;place-items:center;gap:3px;padding:7px 2px;font-size:10px}.v9-tabs button.active{background:#f8f1e4;color:#c4512d}.v9-drawer-bg{align-items:flex-end;padding:8px}.v9-drawer{width:100%;max-height:90vh}}
+
+/* visible approve buttons */
+.v9-approve-all{
+  min-height:48px;
+  border:0;
+  border-radius:999px;
+  padding:0 18px;
+  background:linear-gradient(135deg,#27f6b7,#ffcf75);
+  color:#07100d;
+  font-weight:950;
+  display:inline-flex!important;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  cursor:pointer;
+  box-shadow:0 18px 38px rgba(39,246,183,.18);
+}
+.v9-approve-all:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
+.v9-drawer-approve-main{
+  width:100%;
+  margin-bottom:4px;
+}
+.v9-panel-head .v9-primary,
+.v9-panel-head .v9-approve-all,
+.v9-drawer .v9-approve-all{
+  display:inline-flex!important;
+}
+@media(max-width:1080px){
+  .v9-panel-head .v9-primary,
+  .v9-panel-head .v9-approve-all,
+  .v9-drawer .v9-approve-all{
+    display:inline-flex!important;
+  }
+}
+
 `;
 
 const NAV = [
@@ -458,6 +496,156 @@ export default function V9BusinessEngine() {
           ? `Approved ${approved} move${approved === 1 ? "" : "s"}. ${failed.length} move${failed.length === 1 ? "" : "s"} need review.`
           : `Approved ${approved} prepared move${approved === 1 ? "" : "s"}.`,
         failed,
+      },
+    });
+  };
+
+
+
+  const postVisibleApproval = async (path, body, method = "POST") => {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE}${path}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      credentials: "include",
+      body: JSON.stringify(body || {}),
+    });
+
+    if (!response.ok) {
+      throw new Error(`${path} failed with ${response.status}`);
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    return contentType.includes("json") ? response.json() : response.text();
+  };
+
+  const tryVisibleApproval = async (requests) => {
+    let lastError = null;
+
+    for (const request of requests) {
+      try {
+        return await postVisibleApproval(request.path, request.body, request.method || "POST");
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error("No approval endpoint worked.");
+  };
+
+  const approveVisibleMove = async (move) => {
+    if (!move || running === move.id || running === "approve-all") return;
+
+    setRunning(move.id);
+
+    try {
+      if (move.kind === "draft_invoice") {
+        const job = move.item || {};
+        const payload = {
+          job_id: idOf(job) || undefined,
+          client_id: job.client_id || undefined,
+          customer_name: job.customer_name || job.client_name || job.name || "Client",
+          customer_email: job.customer_email || job.client_email || undefined,
+          address: job.address || job.job_address || "",
+          description:
+            job.ai_invoice_description ||
+            job.invoice_description_draft ||
+            job.notes ||
+            `Work completed for ${titleOf(job, "job")}.`,
+          subtotal: Number(job.price || job.total || job.subtotal || 0),
+          status: "draft",
+        };
+
+        await tryVisibleApproval([
+          { path: "/api/invoices", method: "POST", body: payload },
+          { path: "/api/ai/operator/approve", method: "POST", body: { move, payload } },
+        ]);
+      } else if (move.kind === "assign_worker") {
+        const job = move.item || {};
+        const worker = move.worker || move.match?.worker || {};
+        const jobId = idOf(job);
+        const workerId = idOf(worker);
+
+        if (!jobId || !workerId) {
+          throw new Error("Missing job or worker for assignment.");
+        }
+
+        const payload = {
+          assigned_worker_id: workerId,
+          worker_id: workerId,
+          assigned_worker_name: worker.name || worker.email || "Worker",
+          status: job.status || "assigned",
+        };
+
+        await tryVisibleApproval([
+          { path: `/api/jobs/${jobId}/assign`, method: "POST", body: payload },
+          { path: `/api/jobs/${jobId}`, method: "PATCH", body: payload },
+          { path: "/api/ai/operator/approve", method: "POST", body: { move, payload } },
+        ]);
+      } else {
+        await tryVisibleApproval([
+          { path: "/api/ai/operator/approve", method: "POST", body: { move } },
+          { path: "/api/automation/runs", method: "POST", body: { source: "v9_visible_approve", move } },
+        ]);
+      }
+
+      try {
+        await refresh();
+      } catch {}
+
+      setDrawer({
+        mode: "done",
+        title: "Move approved",
+        kicker: "Approved",
+        item: { message: `${move.title || "Prepared move"} was approved.` },
+      });
+    } catch (error) {
+      setDrawer({
+        mode: "error",
+        title: "Move could not run",
+        kicker: "Needs review",
+        item: { message: error?.message || "This action could not run yet." },
+      });
+    } finally {
+      setRunning("");
+    }
+  };
+
+  const approveAllVisibleMoves = async () => {
+    const prepared = Array.isArray(moves) ? moves.filter(Boolean) : [];
+    if (!prepared.length || running === "approve-all") return;
+
+    setRunning("approve-all");
+
+    let approved = 0;
+    const failed = [];
+
+    for (const move of prepared) {
+      try {
+        await approveVisibleMove(move);
+        approved += 1;
+      } catch (error) {
+        failed.push(move.title || move.id || "Prepared move");
+      }
+    }
+
+    try {
+      await refresh();
+    } catch {}
+
+    setRunning("");
+
+    setDrawer({
+      mode: failed.length ? "error" : "done",
+      title: failed.length ? "Approve all finished with checks needed" : "All prepared moves approved",
+      kicker: failed.length ? "Needs review" : "Approved",
+      item: {
+        message: failed.length
+          ? `Approved ${approved} move${approved === 1 ? "" : "s"}. ${failed.length} need review.`
+          : `Approved ${approved} prepared move${approved === 1 ? "" : "s"}.`,
       },
     });
   };
