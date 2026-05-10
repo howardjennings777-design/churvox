@@ -328,6 +328,141 @@ export default function V9BusinessEngine() {
     }
   };
 
+
+  const sendJsonForApproveAll = async (path, body, method = "POST") => {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE}${path}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      credentials: "include",
+      body: JSON.stringify(body || {}),
+    });
+
+    if (!response.ok) {
+      throw new Error(`${path} failed with ${response.status}`);
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    return contentType.includes("json") ? response.json() : response.text();
+  };
+
+  const tryApproveAllRequests = async (requests) => {
+    let lastError = null;
+
+    for (const request of requests) {
+      try {
+        return await sendJsonForApproveAll(request.path, request.body, request.method || "POST");
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error("No approval endpoint worked.");
+  };
+
+  const runPreparedMoveForApproveAll = async (move) => {
+    if (!move) throw new Error("Missing move.");
+
+    if (move.kind === "draft_invoice") {
+      const job = move.item || {};
+      const payload = {
+        job_id: idOf(job) || undefined,
+        client_id: job.client_id || undefined,
+        customer_name: job.customer_name || job.client_name || job.name || "Client",
+        customer_email: job.customer_email || job.client_email || undefined,
+        address: job.address || job.job_address || "",
+        description:
+          job.ai_invoice_description ||
+          job.invoice_description_draft ||
+          job.notes ||
+          `Work completed for ${titleOf(job, "job")}.`,
+        subtotal: Number(job.price || job.total || job.subtotal || 0),
+        status: "draft",
+      };
+
+      return tryApproveAllRequests([
+        { path: "/api/invoices", method: "POST", body: payload },
+        { path: "/api/ai/operator/approve", method: "POST", body: { move, payload } },
+      ]);
+    }
+
+    if (move.kind === "assign_worker") {
+      const job = move.item || {};
+      const worker = move.worker || move.match?.worker || {};
+      const jobId = idOf(job);
+      const workerId = idOf(worker);
+
+      if (!jobId || !workerId) {
+        throw new Error("Missing job or worker for assignment.");
+      }
+
+      const payload = {
+        assigned_worker_id: workerId,
+        worker_id: workerId,
+        assigned_worker_name: worker.name || worker.email || "Worker",
+        status: job.status || "assigned",
+      };
+
+      return tryApproveAllRequests([
+        { path: `/api/jobs/${jobId}/assign`, method: "POST", body: payload },
+        { path: `/api/jobs/${jobId}`, method: "PATCH", body: payload },
+        { path: "/api/ai/operator/approve", method: "POST", body: { move, payload } },
+      ]);
+    }
+
+    return tryApproveAllRequests([
+      { path: "/api/ai/operator/approve", method: "POST", body: { move } },
+      { path: "/api/automation/runs", method: "POST", body: { source: "v9_approve_all", move } },
+    ]);
+  };
+
+  const approveAllPreparedMoves = async () => {
+    const prepared = Array.isArray(moves) ? moves.filter(Boolean) : [];
+
+    if (!prepared.length || running === "approve-all") {
+      return;
+    }
+
+    setRunning("approve-all");
+
+    let approved = 0;
+    const failed = [];
+
+    for (const move of prepared) {
+      try {
+        await runPreparedMoveForApproveAll(move);
+        approved += 1;
+      } catch (error) {
+        failed.push({
+          title: move.title || move.id || "Prepared move",
+          message: error?.message || "Could not approve this move.",
+        });
+      }
+    }
+
+    try {
+      await refresh();
+    } catch {}
+
+    setRunning("");
+
+    setDrawer({
+      mode: failed.length ? "error" : "done",
+      title: failed.length ? "Approve all finished with checks needed" : "All prepared moves approved",
+      kicker: failed.length ? "Needs review" : "Approved",
+      item: {
+        message: failed.length
+          ? `Approved ${approved} move${approved === 1 ? "" : "s"}. ${failed.length} move${failed.length === 1 ? "" : "s"} need review.`
+          : `Approved ${approved} prepared move${approved === 1 ? "" : "s"}.`,
+        failed,
+      },
+    });
+  };
+
+
   const detailRows = Object.entries(drawer?.item || {})
     .filter(([key, value]) => !["item", "worker"].includes(key) && value !== "" && value !== null && value !== undefined)
     .slice(0, 18);
