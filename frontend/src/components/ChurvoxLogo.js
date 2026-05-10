@@ -1,3 +1,4 @@
+import churvoxLogoIcon from "../assets/churvox-logo-icon.svg";
 import React from "react";
 
 const SIZE_MAP = {
@@ -8,7 +9,7 @@ const SIZE_MAP = {
   hero: "cvx-logo--hero",
 };
 
-export function ChurvoxLogo({ size = "md", className = "", dataTestId = "churvox-logo", compact = false }) {
+export function <img className="churvox-logo-force" src={churvoxLogoIcon} alt="Churvox" /> ChurvoxLogo({ size = "md", className = "", dataTestId = "churvox-logo", compact = false }) {
   return (
     <div
       className={`cvx-logo ${SIZE_MAP[size] || SIZE_MAP.md} ${className}`}

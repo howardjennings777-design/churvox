@@ -1,3 +1,4 @@
+import churvoxLogoIcon from "../assets/churvox-logo-icon.svg";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 const API_ROOT = (() => {
@@ -221,7 +222,7 @@ function SmartHubBrainPage() {
         <div style={{ ...cardStyle, padding: 28, marginBottom: 20, background: "linear-gradient(135deg, #0f172a 0%, #1d4ed8 55%, #38bdf8 100%)", color: "#ffffff" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 20, flexWrap: "wrap", alignItems: "center" }}>
             <div>
-              <p style={{ margin: 0, opacity: 0.85, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase" }}>Churvox AI Operator</p>
+              <p style={{ margin: 0, opacity: 0.85, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase" }}><img className="churvox-logo-force" src={churvoxLogoIcon} alt="Churvox" /> Churvox AI Operator</p>
               <h1 style={{ margin: "8px 0", fontSize: "clamp(32px, 5vw, 58px)", lineHeight: 1, fontWeight: 900 }}>Smart Hub Brain</h1>
               <p style={{ margin: 0, maxWidth: 720, fontSize: 17, opacity: 0.92 }}>
                 Daily business command centre for jobs, invoices, quotes, workers, and owner approvals.

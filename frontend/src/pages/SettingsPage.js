@@ -1,3 +1,4 @@
+import churvoxLogoIcon from "../assets/churvox-logo-icon.svg";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -341,7 +342,7 @@ export default function SettingsPage() {
                   )}
                 </PremiumButton>
                 <p className="text-[11.5px] text-[#64748b]">
-                  Churvox should only sync approved accounting actions. AI never writes to MYOB without the allowed workflow.
+                  <img className="churvox-logo-force" src={churvoxLogoIcon} alt="Churvox" /> Churvox should only sync approved accounting actions. AI never writes to MYOB without the allowed workflow.
                 </p>
               </form>
             )}

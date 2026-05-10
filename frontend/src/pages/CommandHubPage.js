@@ -1,6 +1,7 @@
+import churvoxLogoIcon from "../assets/churvox-logo-icon.svg";
 import React, { useEffect, useMemo, useState } from "react";
 import Layout from "../components/Layout";
-import { ChurvoxLogo } from "../components/ChurvoxLogo";
+import { <img className="churvox-logo-force" src={churvoxLogoIcon} alt="Churvox" /> ChurvoxLogo } from "../components/ChurvoxLogo";
 import { get, post } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import "../styles/smartCommandSystem.css";

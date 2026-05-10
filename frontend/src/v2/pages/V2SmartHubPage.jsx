@@ -1,3 +1,4 @@
+import churvoxLogoIcon from "../assets/churvox-logo-icon.svg";
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -75,7 +76,7 @@ function Modal({ action, busy, onClose, onApprove }) {
         <p className="ai-modal-eyebrow">Prepared action · {action.module || "business"}</p>
         <h2>{action.title || "Prepared action"}</h2>
         <p className="ai-modal-summary">{action.summary || "This is ready for owner review."}</p>
-        <div className="ai-modal-reason"><b>Why this is recommended</b><span>{action.reason || "Churvox prepared this based on current workspace data."}</span></div>
+        <div className="ai-modal-reason"><b>Why this is recommended</b><span>{action.reason || "<img className="churvox-logo-force" src={churvoxLogoIcon} alt="Churvox" /> Churvox prepared this based on current workspace data."}</span></div>
         <div className="ai-modal-preview"><b>Preview</b><span>{action.preview_text || "Review, approve, or close this item."}</span></div>
         <footer><button onClick={onClose}>Not now</button><button className="primary" onClick={onApprove}>{busy ? "Running…" : "Approve and run"}</button></footer>
       </section>

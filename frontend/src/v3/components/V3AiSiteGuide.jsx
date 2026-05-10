@@ -1,3 +1,4 @@
+import churvoxLogoIcon from "../../assets/churvox-logo-icon.svg";
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -146,7 +147,7 @@ export default function V3AiSiteGuide() {
         kind: "new-owner",
         icon: Users,
         title: "Invite your first worker",
-        copy: "Add your crew so Churvox can help with dispatch and job assignment.",
+        copy: "Add your crew so <img className="churvox-logo-force" src={churvoxLogoIcon} alt="Churvox" /> Churvox can help with dispatch and job assignment.",
         path: "/v3/team",
         button: "Open Crew",
         priority: 2,

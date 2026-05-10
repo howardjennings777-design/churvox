@@ -1,3 +1,4 @@
+import churvoxLogoIcon from "../../assets/churvox-logo-icon.svg";
 import React from "react";
 import { Brain, CheckCircle2, Clock, DollarSign, ShieldCheck, Sparkles, Users, Zap } from "lucide-react";
 import "../styles/v3.css";
@@ -7,7 +8,7 @@ const safeValue = (value) => {
   return String(value);
 };
 
-export default function V3ChurvoxEdge({
+export default function V3<img className="churvox-logo-force" src={churvoxLogoIcon} alt="Churvox" /> ChurvoxEdge({
   section = "dashboard",
   stats = [],
   itemCount = 0,

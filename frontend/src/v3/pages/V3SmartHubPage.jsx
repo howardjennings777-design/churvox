@@ -1,3 +1,4 @@
+import churvoxLogoIcon from "../assets/churvox-logo-icon.svg";
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -24,7 +25,7 @@ import {
 } from "../../lib/aiOperator";
 import { get } from "../../lib/api";
 import V3Shell from "../components/V3Shell";
-import V3ChurvoxEdge from "../components/V3ChurvoxEdge";
+import V3<img className="churvox-logo-force" src={churvoxLogoIcon} alt="Churvox" /> ChurvoxEdge from "../components/V3ChurvoxEdge";
 import "../styles/v3.css";
 
 const lower = (value) => String(value || "").toLowerCase();

@@ -1,8 +1,9 @@
+import churvoxLogoIcon from "../assets/churvox-logo-icon.svg";
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
-import { ChurvoxLogo } from "./ChurvoxLogo";
+import { <img className="churvox-logo-force" src={churvoxLogoIcon} alt="Churvox" /> ChurvoxLogo } from "./ChurvoxLogo";
 import { hasPlanAccess, normalizePlan } from "../utils/planRules";
 import { InstallPrompt } from "./InstallPrompt";
 import { canAccess } from "../lib/roles";

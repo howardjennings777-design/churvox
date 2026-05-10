@@ -3251,3 +3251,23 @@
   opacity: 0 !important;
   visibility: hidden !important;
 }
+
+
+/* ===== Forced Churvox logo icon ===== */
+.churvox-logo-force,
+.v3-brand img,
+.v3-brand-mark img,
+.v3-logo img,
+.v3-logo-mark img,
+.brand-mark img,
+.logo-mark img,
+[class*="brand"] img[src*="churvox-logo-icon"],
+[class*="logo"] img[src*="churvox-logo-icon"] {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  display: block !important;
+  object-fit: contain !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18) !important;
+}
