@@ -65,6 +65,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:launch": "playwright test tests/e2e/launch-smoke.spec.js",
     "test:full": "playwright test tests/e2e/churvox-full-launch.spec.js --project=chromium",
+    "test:deep-owner-worker": "playwright test tests/e2e/churvox-owner-worker-deep.spec.js --project=chromium",
+    "test:deep-owner-worker:headed": "playwright test tests/e2e/churvox-owner-worker-deep.spec.js --project=chromium --headed",
     "test:full:headed": "playwright test tests/e2e/churvox-full-launch.spec.js --project=chromium --headed",
     "test:smoke-small": "playwright test tests/e2e/churvox-smoke-small.spec.js --project=chromium",
     "test:create-client-job": "playwright test tests/e2e/churvox-create-client-job.spec.js --project=chromium",
