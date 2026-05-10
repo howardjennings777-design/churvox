@@ -17,6 +17,7 @@ export default function V3ChurvoxEdge({
   proof = 0,
   loading = false,
   onPrepare,
+  onOpenCard,
 }) {
   const statOne = stats?.[0]?.[2] ?? itemCount ?? 0;
   const statTwo = stats?.[1]?.[2] ?? unassigned ?? 0;
@@ -38,25 +39,61 @@ export default function V3ChurvoxEdge({
       icon: Brain,
       label: "AI Operator",
       value: decisions || statOne,
-      copy: "Finds work, prepares actions, waits for approval.",
+      copy: "Prepares the safest next actions for owner approval.",
+      detail: {
+        kind: "summary",
+        kicker: "AI Operator",
+        title: "AI Operator control",
+        copy: "Churvox finds jobs, quotes, invoices and follow-ups that need action, then prepares the work for the owner to approve.",
+        reason: "This keeps the app powerful without letting AI send, delete, bill or change risky records on its own.",
+        href: "/v3/decisions",
+        fields: [["Waiting decisions", decisions || statOne], ["Approval mode", "Owner first"], ["Safety", "On"]],
+      },
     },
     {
       icon: Users,
       label: "Crew Match",
       value: unassigned || statTwo,
-      copy: "Matches work by area, load, timing and fit.",
+      copy: "Matches work by area, timing, load and job fit.",
+      detail: {
+        kind: "summary",
+        kicker: "Crew Match",
+        title: "AI dispatch matching",
+        copy: "Churvox looks for unassigned work and recommends the best crew option before anyone is assigned.",
+        reason: "This helps the owner move faster while still checking the match before it becomes real.",
+        href: "/v3/dispatch",
+        fields: [["Unassigned jobs", unassigned || statTwo], ["Match signals", "Area, timing, load"], ["Owner action", "Approve assignment"]],
+      },
     },
     {
       icon: DollarSign,
       label: "Proof-to-Paid",
       value: money || proof || statThree,
-      copy: "Turns completed work into invoice-ready actions.",
+      copy: "Moves completed work toward invoice-ready action.",
+      detail: {
+        kind: "summary",
+        kicker: "Proof-to-Paid",
+        title: "Proof-to-Paid workflow",
+        copy: "Churvox checks completed work, proof, photos, draft invoices and unpaid money so the owner can approve the next billing step.",
+        reason: "The value is not just creating invoices. It is making sure finished work keeps moving until it is paid.",
+        href: "/v3/proof",
+        fields: [["Money / proof items", money || proof || statThree], ["Flow", "Completed to paid"], ["Risk", "Approval-first"]],
+      },
     },
     {
       icon: ShieldCheck,
       label: "Owner Control",
       value: "ON",
-      copy: "No risky sends, deletes, payroll or billing without approval.",
+      copy: "Risky sends, deletes, payroll and billing stay locked.",
+      detail: {
+        kind: "summary",
+        kicker: "Owner Control",
+        title: "Owner-approved automation",
+        copy: "Churvox can prepare the work, but important business actions stay behind owner approval.",
+        reason: "This is the clean line: AI does the admin preparation, the owner controls the final action.",
+        href: "/v3/decisions",
+        fields: [["Risky actions", "Locked"], ["Owner approval", "Required"], ["Status", "On"]],
+      },
     },
   ];
 
@@ -68,10 +105,10 @@ export default function V3ChurvoxEdge({
           <span>Churvox AI Trade OS</span>
         </div>
 
-        <h2>Not a dashboard. A business operator.</h2>
+        <h2>Your AI operator, not another dashboard.</h2>
         <p>
-          Churvox checks the business, finds the next move, explains why, prepares the work,
-          and lets the owner approve before anything important happens.
+          Churvox reviews the business, finds the next move, explains why it matters,
+          prepares the work, then waits for the owner before anything important happens.
         </p>
 
         <div className="cvx-next-move">
@@ -84,8 +121,8 @@ export default function V3ChurvoxEdge({
       </div>
 
       <div className="cvx-edge-grid">
-        {cards.map(({ icon: Icon, label, value, copy }) => (
-          <button type="button" className="cvx-edge-card" key={label}>
+        {cards.map(({ icon: Icon, label, value, copy, detail }) => (
+          <button type="button" className="cvx-edge-card" key={label} onClick={() => onOpenCard?.(detail)}>
             <Icon size={18} />
             <span>{label}</span>
             <strong>{safeValue(value)}</strong>
