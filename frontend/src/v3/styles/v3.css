@@ -3202,29 +3202,3 @@
     border-radius: 22px !important;
   }
 }
-
-/* Force restored Churvox logo */
-.v3-topbar img,
-.v3-header img,
-.v3-shell-header img,
-.churvox-topbar img,
-.churvox-v3-header img,
-[class*="brand"] img,
-[class*="logo"] img {
-  content: url("../../assets/churvox-logo-restored.png") !important;
-  object-fit: contain !important;
-}
-
-.v3-logo,
-.v3-brand-mark,
-.brand-mark,
-.churvox-logo,
-.churvox-brand-mark,
-[class*="logoMark"],
-[class*="brandMark"] {
-  background-image: url("../../assets/churvox-logo-restored.png") !important;
-  background-size: contain !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
-}
-
