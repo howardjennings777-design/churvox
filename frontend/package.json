@@ -74,7 +74,8 @@
     "test:billing-public-links": "playwright test tests/e2e/churvox-billing-public-links.spec.js --project=chromium",
     "test:team-worker-route": "playwright test tests/e2e/churvox-team-worker-route.spec.js --project=chromium",
     "test:public-quote-final": "playwright test tests/e2e/churvox-public-quote-final.spec.js --project=chromium",
-    "test:worker-owner-block": "playwright test tests/e2e/churvox-worker-field-owner-check.spec.js --project=chromium"
+    "test:worker-owner-block": "playwright test tests/e2e/churvox-worker-field-owner-check.spec.js --project=chromium",
+    "test:owner-logout": "playwright test tests/e2e/churvox-owner-logout.spec.js --project=chromium"
   },
   "browserslist": {
     "production": [

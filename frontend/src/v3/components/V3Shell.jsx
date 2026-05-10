@@ -69,7 +69,7 @@ export default function V3Shell({ children }) {
 
   const signOut = async () => {
     await logout();
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -97,8 +97,9 @@ export default function V3Shell({ children }) {
                 <span>{user?.business_name || user?.email || "Churvox"}</span>
               </div>
             </div>
-            <button className="v3-icon-button" type="button" onClick={signOut} aria-label="Log out">
+            <button className="v3-logout-button" type="button" onClick={signOut} aria-label="Log out">
               <LogOut size={18} />
+              <span>Log out</span>
             </button>
           </div>
         </header>
