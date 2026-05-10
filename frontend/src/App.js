@@ -34,6 +34,7 @@ import V3OperatorPage from "./v3/pages/V3OperatorPage";
 import V3BillingPage from "./v3/pages/V3BillingPage";
 import V3SectionRoute from "./v3/components/V3SectionRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import V7BusinessBrainCockpit from "./v7/V7BusinessBrainCockpit";
 import V6BusinessBrain from "./v6/V6BusinessBrain";
 
 import V4WorkerPage from "./v4/pages/V4WorkerPage";
@@ -113,7 +114,7 @@ function RoleRedirect() {
 const SmartHubRoute = () => (
   <BusinessRoute>
     <ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login">
-      <V6BusinessBrain />
+      <V7BusinessBrainCockpit />
     </ErrorBoundary>
   </BusinessRoute>
 );
@@ -162,9 +163,9 @@ function App() {
         <ErrorBoundary>
         <Toaster position="top-right" richColors />
         <Routes>
-          <Route path="/v3/operator" element={<BusinessRoute><V6BusinessBrain /></BusinessRoute>} />
+          <Route path="/v3/operator" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
           <Route path="/v3/plans" element={<BillingRoute><V3BillingPage /></BillingRoute>} />
-          <Route path="/v3/:section" element={<BusinessRoute><V6BusinessBrain /></BusinessRoute>} />
+          <Route path="/v3/:section" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
@@ -191,14 +192,14 @@ function App() {
           <Route path="/owner/usage" element={<PlatformAdminRoute><AdminUsagePage /></PlatformAdminRoute>} />
           <Route path="/admin/qa-auditor" element={<QaAuditorRoute><QAAuditorPage /></QaAuditorRoute>} />
 
-          <Route path="/work" element={<BusinessRoute><V6BusinessBrain /></BusinessRoute>} />
-          <Route path="/money" element={<BusinessRoute><V6BusinessBrain /></BusinessRoute>} />
-          <Route path="/clients" element={<BusinessRoute><V6BusinessBrain /></BusinessRoute>} />
-          <Route path="/team" element={<BusinessRoute><V6BusinessBrain /></BusinessRoute>} />
-          <Route path="/ai" element={<BusinessRoute><V6BusinessBrain /></BusinessRoute>} />
-          <Route path="/automation" element={<BusinessRoute><V6BusinessBrain /></BusinessRoute>} />
-          <Route path="/reports" element={<BusinessRoute><V6BusinessBrain /></BusinessRoute>} />
-          <Route path="/settings" element={<BusinessRoute><V6BusinessBrain /></BusinessRoute>} />
+          <Route path="/work" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
+          <Route path="/money" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
+          <Route path="/clients" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
+          <Route path="/team" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
+          <Route path="/ai" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
+          <Route path="/automation" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
+          <Route path="/reports" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
+          <Route path="/settings" element={<BusinessRoute><V7BusinessBrainCockpit /></BusinessRoute>} />
           <Route path="/dashboard" element={<SmartHubRoute />} />
           <Route path="/overview" element={<SmartHubRoute />} />
           <Route path="/onboarding" element={<BusinessRoute><OnboardingPage /></BusinessRoute>} />
