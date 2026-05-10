@@ -941,3 +941,17 @@ body.churvox-worker-route a {
     padding: 16px 12px !important;
   }
 }
+
+/* Churvox brand refresh - no shield logo */
+.churvox-brand-mark,
+img[src="/brand/churvox-mark.svg"] {
+  display: inline-block;
+  object-fit: contain;
+}
+
+.churvox-brand-logo,
+img[src="/brand/churvox-logo.svg"] {
+  display: inline-block;
+  object-fit: contain;
+}
+

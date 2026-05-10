@@ -1,20 +1,47 @@
 {
   "short_name": "Churvox",
   "name": "Churvox",
-  "description": "AI trade operating system for jobs, quotes, invoices, teams and owner decisions.",
+  "description": "AI command centre for trade and service businesses.",
   "id": "/",
   "icons": [
     {
-      "src": "churvox-logo-icon.svg",
-      "sizes": "96x96 192x192 512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/favicon.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "start_url": "/dashboard",
+  "start_url": ".",
   "display": "standalone",
-  "theme_color": "#111827",
-  "background_color": "#ffffff",
+  "theme_color": "#0B1220",
+  "background_color": "#F8FAFC",
   "scope": "/",
   "categories": [
     "business",

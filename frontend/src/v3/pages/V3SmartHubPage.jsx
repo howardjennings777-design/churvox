@@ -429,7 +429,7 @@ export default function V3SmartHubPage() {
                 <p>Churvox Advantage</p>
                 <h2>Where this beats normal job apps</h2>
               </div>
-              <ShieldCheck size={24} />
+              <img src="/brand/churvox-mark.svg" alt="Churvox" className="h-10 w-10 rounded-2xl shadow-sm" />
             </div>
 
             <div className="cvx-advantage-list">

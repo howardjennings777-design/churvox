@@ -157,7 +157,7 @@ export default function LoginPage() {
           </div>
 
           <div className="px-auth__chips">
-            <span className="px-auth__chip"><ShieldCheck className="h-3 w-3 inline mr-1 text-[#0d9488]" />Approval-first AI</span>
+            <span className="px-auth__chip"><img src="/brand/churvox-mark.svg" alt="Churvox" className="h-10 w-10 rounded-2xl shadow-sm" />Approval-first AI</span>
             <span className="px-auth__chip">MYOB sync</span>
             <span className="px-auth__chip">Mobile-first</span>
             <span className="px-auth__chip">SMS reminders</span>
