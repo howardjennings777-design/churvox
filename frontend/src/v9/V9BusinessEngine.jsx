@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import API_BASE from "../lib/apiBase";
 import { useAuth } from "../context/AuthContext";
+import "../styles/churvox-final-visual.css";
 
 const css = `
 .v9 *{box-sizing:border-box}

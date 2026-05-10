@@ -1,0 +1,273 @@
+/* Churvox Obsidian Trade OS — safe V9 visual override */
+
+.v9 {
+  background: #f3ebdd !important;
+  color: #17120e !important;
+}
+
+.v9::before {
+  background:
+    radial-gradient(circle at 8% 4%, rgba(255,107,53,.18), transparent 28%),
+    radial-gradient(circle at 78% 8%, rgba(32,227,178,.16), transparent 30%),
+    radial-gradient(circle at 94% 86%, rgba(255,209,102,.18), transparent 28%),
+    linear-gradient(135deg, #f3ebdd 0%, #fff7ea 45%, #eadac4 100%) !important;
+}
+
+.v9-main {
+}
+
+.v9-rail {
+  background:
+    radial-gradient(circle at 22% 0%, rgba(255,107,53,.25), transparent 34%),
+    radial-gradient(circle at 78% 18%, rgba(32,227,178,.13), transparent 30%),
+    linear-gradient(180deg, #08090b, #17120e 58%, #08090b) !important;
+}
+
+.v9-brand-word {
+  color: #ffd166 !important;
+}
+
+.v9-nav-btn {
+}
+
+.v9-nav-btn.active {
+  background: linear-gradient(145deg, #ff6b35, #20e3b2) !important;
+  color: #08090b !important;
+}
+
+.v9-top {
+}
+
+.v9-search {
+  background: #fffdf8 !important;
+  border-color: #e4d3bc !important;
+  color: #17120e !important;
+}
+
+.v9-search input {
+  color: #17120e !important;
+}
+
+.v9-search input::placeholder {
+}
+
+.v9-primary {
+  background: linear-gradient(135deg, #ff6b35, #ffd166) !important;
+  color: #08090b !important;
+}
+
+.v9-ai-btn,
+.v9-approve-all {
+  background: linear-gradient(135deg, #20e3b2, #ffd166) !important;
+  color: #08090b !important;
+}
+
+.v9-icon,
+.v9-soft {
+  background: #fffdf8 !important;
+  color: #17120e !important;
+  border-color: #e4d3bc !important;
+}
+
+.v9-hero {
+}
+
+.v9-hero-main {
+  background:
+    radial-gradient(circle at 10% 4%, rgba(255,107,53,.18), transparent 35%),
+    radial-gradient(circle at 90% 14%, rgba(32,227,178,.12), transparent 32%),
+    linear-gradient(135deg, #fffdf8, #fff3df) !important;
+  border: 1px solid #e4d3bc !important;
+  color: #17120e !important;
+}
+
+.v9-hero-main::before {
+}
+
+.v9-kicker {
+  color: #137e64 !important;
+}
+
+.v9-hero-main h1 {
+  color: #17120e !important;
+}
+
+.v9-hero-main h1 span {
+  color: #ff6b35 !important;
+}
+
+.v9-hero-main p:not(.v9-kicker) {
+  color: #5b5045 !important;
+}
+
+.v9-glass-btn {
+  background: #fffdf8 !important;
+  color: #17120e !important;
+  border-color: #e4d3bc !important;
+}
+
+.v9-engine-card {
+  background:
+    radial-gradient(circle at 28% 0%, rgba(255,107,53,.28), transparent 35%),
+    radial-gradient(circle at 86% 20%, rgba(32,227,178,.16), transparent 34%),
+    linear-gradient(160deg, #08090b, #17120e) !important;
+  color: #fffdf8 !important;
+}
+
+.v9-engine-top {
+}
+
+.v9-engine-top small {
+  color: #ffd166 !important;
+}
+
+.v9-engine-list div {
+}
+
+.v9-engine-list em {
+}
+
+.v9-pulse {
+  background: #fffdf8 !important;
+  color: #137e64 !important;
+}
+
+.v9-sync {
+  background: #17120e !important;
+  color: #ffd166 !important;
+}
+
+.v9-grid {
+}
+
+.v9-panel {
+  background: #fffdf8 !important;
+  color: #17120e !important;
+  border: 1px solid #e4d3bc !important;
+}
+
+.v9-panel.dark {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255,107,53,.18), transparent 32%),
+    radial-gradient(circle at 90% 10%, rgba(32,227,178,.13), transparent 32%),
+    linear-gradient(150deg, #08090b, #17120e) !important;
+  color: #fffdf8 !important;
+}
+
+.v9-panel.light {
+  background: #fffdf8 !important;
+  color: #17120e !important;
+}
+
+.v9-panel-head p {
+  color: #137e64 !important;
+}
+
+.v9-panel.dark .v9-panel-head p {
+  color: #20e3b2 !important;
+}
+
+.v9-panel-head h2 {
+}
+
+.v9-move {
+  background: #fffdf8 !important;
+  border: 1px solid #e4d3bc !important;
+  color: #17120e !important;
+}
+
+.v9-panel.dark .v9-move {
+  background: #fff7ea !important;
+  color: #17120e !important;
+}
+
+.v9-num {
+  background: #08090b !important;
+  color: #ffd166 !important;
+}
+
+.v9-record,
+.v9-stat,
+.v9-rules button {
+  background: #fff7ea !important;
+  color: #17120e !important;
+  border: 1px solid #e4d3bc !important;
+}
+
+.v9-record-icon {
+  background: #f0dfc8 !important;
+  color: #ff6b35 !important;
+}
+
+.v9-status {
+  background: #f0dfc8 !important;
+  color: #5b5045 !important;
+}
+
+.v9-stat.cash,
+.v9-stat.good {
+  background: #e9fbf4 !important;
+  color: #137e64 !important;
+}
+
+.v9-stat.urgent {
+  background: #fff0e8 !important;
+  color: #b8322a !important;
+}
+
+.v9-empty {
+  border-color: #e4d3bc !important;
+  color: #5b5045 !important;
+}
+
+.v9-drawer-bg {
+}
+
+.v9-drawer {
+  background: #fffdf8 !important;
+  color: #17120e !important;
+  border: 1px solid #e4d3bc !important;
+}
+
+.v9-drawer header,
+.v9-drawer footer {
+  border-color: #e4d3bc !important;
+}
+
+.v9-drawer header p {
+  color: #ff6b35 !important;
+}
+
+.v9-drawer header button,
+.v9-move-detail p,
+.v9-move-detail div,
+.v9-detail div {
+  background: #fff7ea !important;
+  border-color: #e4d3bc !important;
+}
+
+.v9-danger {
+  background: #dc2626 !important;
+}
+
+@media(max-width:1080px) {
+  .v9-main {
+  }
+
+  .v9-hero,
+  .v9-grid {
+  }
+
+  .v9-hero-main {
+  }
+
+  .v9-hero-main h1 {
+  }
+
+  .v9-top {
+  }
+
+  .v9-tabs {
+    background: #08090b !important;
+  }
+}

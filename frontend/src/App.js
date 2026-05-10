@@ -118,7 +118,7 @@ function RoleRedirect() {
 const SmartHubRoute = () => (
   <BusinessRoute>
     <ErrorBoundary fallbackHref="/login" fallbackLabel="Back to login">
-      <V7BusinessBrainCockpit />
+      <V9BusinessEngine />
     </ErrorBoundary>
   </BusinessRoute>
 );
