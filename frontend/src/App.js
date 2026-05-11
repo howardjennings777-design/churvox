@@ -47,6 +47,10 @@ import V6BusinessBrain from "./v6/V6BusinessBrain";
 import V4WorkerPage from "./v4/pages/V4WorkerPage";
 import V5CommandApp from "./v5/V5CommandApp";
 import PremiumWorkerDashboardEntry from "./pages/worker/PremiumWorkerDashboardEntry";
+import ClientsPage from "./pages/clients/ClientsPage";
+import QuotesPage from "./pages/quotes/QuotesPage";
+import InvoicesPage from "./pages/invoices/InvoicesPage";
+import TeamPage from "./pages/TeamPage";
 
 const Spinner = () => (
   <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -181,26 +185,26 @@ function App() {
           <Route path="/dashboard" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
           <Route path="/work" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
           <Route path="/money" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
-          <Route path="/clients" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
-          <Route path="/team" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
+          <Route path="/clients" element={<BusinessRoute><ClientsPage /></BusinessRoute>} />
+          <Route path="/team" element={<BusinessRoute><TeamPage /></BusinessRoute>} />
           <Route path="/ai" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
           <Route path="/automation" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
           <Route path="/reports" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
           <Route path="/settings" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
 
-          <Route path="/jobs" element={<Navigate to="/work" replace />} />
+          <Route path="/jobs" element={<BusinessRoute><JobsPage /></BusinessRoute>} />
           <Route path="/jobs/new" element={<Navigate to="/work" replace />} />
           <Route path="/jobs/:id" element={<Navigate to="/work" replace />} />
           <Route path="/jobs/:id/edit" element={<Navigate to="/work" replace />} />
           <Route path="/dispatch" element={<Navigate to="/work" replace />} />
           <Route path="/calendar" element={<Navigate to="/work" replace />} />
 
-          <Route path="/quotes" element={<Navigate to="/money" replace />} />
+          <Route path="/quotes" element={<BusinessRoute><QuotesPage /></BusinessRoute>} />
           <Route path="/quotes/new" element={<Navigate to="/money" replace />} />
           <Route path="/quotes/:id" element={<Navigate to="/money" replace />} />
           <Route path="/quotes/:id/edit" element={<Navigate to="/money" replace />} />
 
-          <Route path="/invoices" element={<Navigate to="/money" replace />} />
+          <Route path="/invoices" element={<BusinessRoute><InvoicesPage /></BusinessRoute>} />
           <Route path="/invoices/new" element={<Navigate to="/money" replace />} />
           <Route path="/invoices/:id" element={<Navigate to="/money" replace />} />
 
