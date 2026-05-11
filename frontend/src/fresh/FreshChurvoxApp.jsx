@@ -196,7 +196,7 @@ function Hero({ data, prepared }) {
   );
 }
 
-function ApprovalQueue({ unassigned, openInvoices, openQuotes }) {
+function ApprovalQueue({ unassigned, openInvoices, openQuotes, onAction }) {
   const actions = [
     {
       icon: "♧",
@@ -243,7 +243,7 @@ function ApprovalQueue({ unassigned, openInvoices, openQuotes }) {
           <h2>AI APPROVAL QUEUE <b>4</b></h2>
           <p>Actions ready for your approval</p>
         </div>
-        <div className="op-confidence">AI confidence <span>High</span> <button>Review all</button></div>
+        <div className="op-confidence">AI confidence <span>High</span> <button onClick={() => onAction?.({ label: "Operator", title: "Review all prepared actions", text: "Open the approval queue and review every AI-prepared move.", why: "Owner approval is required before Churvox performs admin actions." }, "review")}>Review all</button></div>
       </header>
 
       <div className="op-approval-list">
@@ -258,8 +258,8 @@ function ApprovalQueue({ unassigned, openInvoices, openQuotes }) {
             </div>
             <em>{a.confidence}<b>••••</b></em>
             <div className="op-action-buttons">
-              <button>Approve</button>
-              <button>Review</button>
+              <button onClick={() => onAction?.(a, "approve")}>Approve</button>
+              <button onClick={() => onAction?.(a, "review")}>Review</button>
             </div>
           </article>
         ))}
@@ -311,7 +311,7 @@ function CrewStatus({ team }) {
 
   return (
     <section className="op-panel op-crew">
-      <header><h3>CREW STATUS</h3><a>View all crew</a></header>
+      <header><h3>CREW STATUS</h3><Link to="/team">View all crew</Link></header>
       {rows.map((r, i) => (
         <div className="op-crew-row" key={r[0]}>
           <i>{r[0][0]}</i>
@@ -328,7 +328,7 @@ function CrewStatus({ team }) {
 function Cashflow() {
   return (
     <section className="op-panel op-cash">
-      <header><h3>CASHFLOW OVERVIEW</h3><a>This month⌄</a></header>
+      <header><h3>CASHFLOW OVERVIEW</h3><Link to="/invoices">This month⌄</Link></header>
       <div className="op-cash-grid">
         <div className="op-donut" />
         <div>
@@ -352,7 +352,7 @@ function Schedule() {
   ];
   return (
     <section className="op-panel">
-      <header><h3>TODAY'S SCHEDULE <b>6</b></h3><a>View full schedule</a></header>
+      <header><h3>TODAY'S SCHEDULE <b>6</b></h3><Link to="/jobs">View full schedule</Link></header>
       {rows.map((r) => (
         <div className="op-schedule-row" key={r.join("-")}>
           <span>▦ {r[0]}</span>
@@ -398,7 +398,7 @@ function LiveActivity() {
 
   return (
     <section className="op-panel op-activity">
-      <header><h3>LIVE ACTIVITY</h3><a>View all activity</a></header>
+      <header><h3>LIVE ACTIVITY</h3><Link to="/dashboard">View all activity</Link></header>
       {rows.map((r) => (
         <div className="op-activity-row" key={r[1]}>
           <i>{r[0]}</i>
@@ -428,8 +428,96 @@ function DataPanel({ title, items, type }) {
   );
 }
 
+
+function actionTarget(action) {
+  const label = String(action?.label || action?.title || "").toLowerCase();
+
+  if (label.includes("dispatch") || label.includes("assign") || label.includes("job")) return "/jobs";
+  if (label.includes("cashflow") || label.includes("invoice") || label.includes("payment")) return "/invoices";
+  if (label.includes("sales") || label.includes("quote")) return "/quotes";
+  if (label.includes("crew")) return "/team";
+  return "/dashboard";
+}
+
+function saveApprovalLog(action, mode) {
+  try {
+    const existing = JSON.parse(localStorage.getItem("churvox_operator_approval_log") || "[]");
+    existing.unshift({
+      id: `${Date.now()}`,
+      mode,
+      label: action?.label || "AI Action",
+      title: action?.title || "Prepared action",
+      text: action?.text || "",
+      target: actionTarget(action),
+      created_at: new Date().toISOString(),
+    });
+    localStorage.setItem("churvox_operator_approval_log", JSON.stringify(existing.slice(0, 40)));
+  } catch {
+    // localStorage can fail in private mode. UI should still work.
+  }
+}
+
+function ActionModal({ modal, onClose, onConfirm }) {
+  if (!modal) return null;
+
+  const action = modal.action || {};
+  const mode = modal.mode || "review";
+  const target = actionTarget(action);
+
+  return (
+    <div className="op-modal-backdrop" role="presentation" onClick={onClose}>
+      <section className="op-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+        <div className="op-modal-glow" />
+
+        <header>
+          <p>{mode === "approve" ? "APPROVE AI MOVE" : "REVIEW AI MOVE"}</p>
+          <button type="button" onClick={onClose}>×</button>
+        </header>
+
+        <div className="op-modal-body">
+          <span>{action.label || "AI OPERATOR"}</span>
+          <h2>{action.title || "Prepared action"}</h2>
+          <p>{action.text || "Churvox has prepared this move for your approval."}</p>
+
+          <div className="op-modal-reason">
+            <strong>Why Churvox prepared this</strong>
+            <small>{action.why || "This action is based on the current business data and owner approval rules."}</small>
+          </div>
+
+          <div className="op-modal-route">
+            <b>Next workspace</b>
+            <em>{target}</em>
+          </div>
+        </div>
+
+        <footer>
+          <button type="button" className="op-modal-secondary" onClick={onClose}>Keep reviewing</button>
+          <button type="button" className="op-modal-primary" onClick={onConfirm}>
+            {mode === "approve" ? "Approve and open workspace" : "Open workspace"}
+          </button>
+        </footer>
+      </section>
+    </div>
+  );
+}
+
 function Dashboard() {
   const data = useLiveData();
+  const navigate = useNavigate();
+  const [modal, setModal] = useState(null);
+
+  function openAction(action, mode) {
+    setModal({ action, mode });
+  }
+
+  function confirmAction() {
+    if (!modal) return;
+    saveApprovalLog(modal.action, modal.mode);
+    const target = actionTarget(modal.action);
+    setModal(null);
+    navigate(target);
+  }
+
   const openInvoices = data.invoices.filter((x) => !["paid", "void", "cancelled"].includes(statusOf(x).toLowerCase()));
   const openQuotes = data.quotes.filter((x) => !["accepted", "declined", "converted"].includes(statusOf(x).toLowerCase()));
   const unassigned = data.jobs.filter((j) => !j.assigned_worker_id && !j.worker_id && !j.assigned_to);
@@ -438,11 +526,12 @@ function Dashboard() {
   return (
     <Shell>
       <Topbar />
+      <ActionModal modal={modal} onClose={() => setModal(null)} onConfirm={confirmAction} />
       {data.error ? <div className="op-warning">{data.error}</div> : null}
       <Hero data={data} prepared={prepared} />
 
       <section className="op-top-grid">
-        <ApprovalQueue unassigned={unassigned.length || 6} openInvoices={openInvoices.length || 13} openQuotes={openQuotes.length || 4} />
+        <ApprovalQueue unassigned={unassigned.length || 6} openInvoices={openInvoices.length || 13} openQuotes={openQuotes.length || 4} onAction={openAction} />
         <ProofToPaid />
       </section>
 

@@ -1824,3 +1824,184 @@ body {
     height: 98px !important;
   }
 }
+
+/* =========================================================
+   OPERATOR OS WORKING MODALS / APPROVAL INTERACTIONS
+   ========================================================= */
+
+.op-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background:
+    radial-gradient(circle at 50% 36%, rgba(34, 211, 238, 0.16), transparent 28rem),
+    rgba(2, 7, 18, 0.72);
+  backdrop-filter: blur(18px);
+}
+
+.op-modal {
+  position: relative;
+  width: min(620px, 100%);
+  overflow: hidden;
+  border-radius: 26px;
+  border: 1px solid rgba(103, 232, 249, 0.24);
+  background:
+    radial-gradient(circle at 84% 0%, rgba(14, 165, 255, 0.16), transparent 22rem),
+    linear-gradient(180deg, rgba(7, 18, 34, 0.98), rgba(2, 9, 20, 0.98));
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04) inset,
+    0 34px 110px rgba(0,0,0,0.48),
+    0 0 70px rgba(34,211,238,0.12);
+}
+
+.op-modal-glow {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  right: -70px;
+  top: -90px;
+  border-radius: 999px;
+  background: rgba(34, 211, 238, 0.16);
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+.op-modal header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 20px 22px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.13);
+}
+
+.op-modal header p {
+  margin: 0;
+  color: #67e8f9;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+}
+
+.op-modal header button {
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #e2e8f0;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.op-modal-body {
+  position: relative;
+  z-index: 1;
+  padding: 24px 22px;
+}
+
+.op-modal-body > span {
+  display: inline-flex;
+  margin-bottom: 10px;
+  color: #22d3ee;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+}
+
+.op-modal-body h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+}
+
+.op-modal-body p {
+  margin: 14px 0 0;
+  color: #94a3b8;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.op-modal-reason,
+.op-modal-route {
+  margin-top: 16px;
+  padding: 15px;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(2, 9, 20, 0.58);
+}
+
+.op-modal-reason strong,
+.op-modal-route b {
+  display: block;
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.op-modal-reason small,
+.op-modal-route em {
+  display: block;
+  margin-top: 6px;
+  color: #94a3b8;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.op-modal-route em {
+  color: #67e8f9;
+  font-weight: 900;
+}
+
+.op-modal footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 18px 22px 22px;
+  border-top: 1px solid rgba(148, 163, 184, 0.13);
+}
+
+.op-modal footer button {
+  min-height: 44px;
+  border-radius: 14px;
+  padding: 0 16px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.op-modal-secondary {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.72);
+  color: #cbd5e1;
+}
+
+.op-modal-primary {
+  border: 1px solid rgba(34, 211, 238, 0.36);
+  background: linear-gradient(135deg, rgba(34,211,238,0.98), rgba(14,165,255,0.92));
+  color: #020712;
+  box-shadow: 0 16px 40px rgba(14, 165, 255, 0.18);
+}
+
+.op-panel header a {
+  cursor: pointer;
+}
+
+@media (max-width: 620px) {
+  .op-modal footer {
+    display: grid;
+  }
+
+  .op-modal footer button {
+    width: 100%;
+  }
+}
