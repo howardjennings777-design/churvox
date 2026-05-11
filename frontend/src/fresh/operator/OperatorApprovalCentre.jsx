@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./operatorApprovalCentre.css";
 
 const API_BASE = (() => {
@@ -410,6 +411,7 @@ async function firstWorking(attempts) {
 }
 
 export default function OperatorApprovalCentre() {
+  const navigate = useNavigate();
   const [settings, setSettings] = useState(() => ({ ...DEFAULT_SETTINGS, ...readJson("churvox_ai_operator_settings", {}) }));
   const [data, setData] = useState({ jobs: [], invoices: [], quotes: [], clients: [], team: [], enquiries: [] });
   const [selected, setSelected] = useState(null);
@@ -460,6 +462,12 @@ export default function OperatorApprovalCentre() {
     setSelected(action);
     setEdited(action.payload || {});
     setNotice("");
+  }
+
+  function openWorkspace() {
+    const target = selected?.workspace || "/dashboard";
+    setSelected(null);
+    navigate(target);
   }
 
   function updateField(field, value) {
@@ -848,6 +856,7 @@ export default function OperatorApprovalCentre() {
 
             <footer>
               <button type="button" onClick={rejectAction} disabled={busy}>Reject</button>
+              <button type="button" onClick={openWorkspace} disabled={busy}>Open workspace</button>
               <button type="button" onClick={() => approveAction(false)} disabled={busy}>
                 {busy ? "Saving..." : "Approve / save draft"}
               </button>

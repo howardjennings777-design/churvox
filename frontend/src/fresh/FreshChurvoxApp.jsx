@@ -161,13 +161,14 @@ function Shell({ children }) {
 }
 
 function Topbar() {
+  const navigate = useNavigate();
   return (
     <div className="op-topbar">
       <span>☼ {`Good ${new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, ${localStorage.getItem("churvox_owner_name") || "Owner"}.`}</span>
       <div>
-        <button>⌂ All locations</button>
-        <button>🔔</button>
-        <button>{new Date().toLocaleDateString(undefined, { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}</button>
+        <button type="button" onClick={() => navigate("/clients")}>⌂ All locations</button>
+        <button type="button" onClick={() => navigate("/ai-approvals")}>🔔 AI approvals</button>
+        <button type="button" onClick={() => navigate("/jobs")}>{new Date().toLocaleDateString(undefined, { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}</button>
       </div>
     </div>
   );
@@ -585,9 +586,10 @@ function LiveActivity({ history }) {
 
 function DataPanel({ title, items, type }) {
   const list = items.length ? items.slice(0, 6) : [];
+  const target = type === "jobs" ? "/jobs" : type === "invoices" ? "/invoices" : type === "quotes" ? "/quotes" : type === "clients" ? "/clients" : "/dashboard";
   return (
     <section className="op-panel op-data">
-      <header><h3>{title} <b>{list.length}</b></h3><a>View all {type}</a></header>
+      <header><h3>{title} <b>{list.length}</b></h3><Link to={target}>View all {type}</Link></header>
       {!list.length ? <div className="op-empty">{type === "jobs" ? "No jobs yet" : type === "invoices" ? "No invoices yet" : type === "quotes" ? "No quotes awaiting follow-up" : "No data yet"}</div> : null}
       {list.map((item, index) => (
         <div className="op-data-row" key={item?.id || item?._id || index}>

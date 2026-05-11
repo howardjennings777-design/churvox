@@ -29,3 +29,20 @@ font-size: 19px;
 .worker-app a {
 font-size: 16px;
 }
+
+.worker-upload-proof {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: rgba(14, 165, 233, 0.12);
+  color: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.worker-upload-proof input {
+  display: none;
+}
