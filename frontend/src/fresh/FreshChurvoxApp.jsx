@@ -314,33 +314,198 @@ function ApprovalQueue({ unassigned, openInvoices, openQuotes, completedNeedsInv
 }
 
 
-function ProofToPaid() {
-  const steps = [
-    ["▦", "Job", "Booked"],
-    ["♧", "Crew", "Assigned"],
-    ["◆", "Work", "Completed"],
-    ["▣", "Proof", "Captured"],
-    ["▤", "Invoice", "Drafted"],
-    ["➤", "Sent", ""],
-    ["$", "Paid", ""],
-  ];
+
+function jobPhotos(job) {
+  const raw = job.photos || job.job_photos || job.proof_photos || job.completion_photos || [];
+  if (!Array.isArray(raw)) return [];
+  return raw.map((p) => typeof p === "string" ? p : p?.url || p?.src || p?.path).filter(Boolean);
+}
+
+function jobProofSummary(job) {
+  return (
+    job.ai_summary ||
+    job.completion_summary ||
+    job.ai_invoice_description ||
+    job.invoice_description_draft ||
+    job.worker_completion_notes ||
+    job.completion_notes ||
+    job.worker_notes ||
+    job.notes ||
+    "Completed work is ready for owner review. Add proof notes/photos before sending anything to the client if needed."
+  );
+}
+
+function ProofToPaid({ jobs = [], invoices = [], reload }) {
+  const [selected, setSelected] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+
+  const invoicedJobIds = new Set(invoices.map((i) => String(i.job_id || i.source_job_id || i.linked_job_id || "")).filter(Boolean));
+  const candidates = jobs
+    .filter((j) => ["completed", "done", "closed"].includes(statusSlug(j)))
+    .filter((j) => !invoicedJobIds.has(String(j.id || j._id || "")))
+    .slice(0, 8);
+
+  async function createDraftInvoice(job) {
+    if (!job || busy) return;
+    setBusy(true);
+    setNotice("");
+
+    const total = Number(job.total || job.amount || job.price || job.job_price || job.subtotal || 0);
+    const customerName = job.client_name || job.customer_name || job.customer || job.client || "Client";
+    const description = jobProofSummary(job);
+
+    const body = {
+      job_id: job.id || job._id,
+      source_job_id: job.id || job._id,
+      client_id: job.client_id || job.customer_id || "",
+      customer_id: job.customer_id || job.client_id || "",
+      customer_name: customerName,
+      client_name: customerName,
+      customer_email: job.customer_email || job.client_email || "",
+      address: job.address || job.site_address || job.job_address || "",
+      description,
+      subtotal: total,
+      amount: total,
+      total,
+      status: "draft",
+      created_by_ai: true,
+      source: "proof_to_paid",
+    };
+
+    let ok = false;
+    for (const path of ["/invoices", "/invoices/create"]) {
+      try {
+        await api(path, { method: "POST", body });
+        ok = true;
+        break;
+      } catch {}
+    }
+
+    if (ok) {
+      setNotice("Draft invoice created from completed job proof.");
+      setSelected(null);
+      await reload?.();
+    } else {
+      const drafts = readLocalList("churvox_operator_drafts");
+      drafts.unshift({
+        id: `proof-${Date.now()}`,
+        type: "proof_to_paid_invoice_draft",
+        title: `Invoice draft for ${titleOf(job, "completed job")}`,
+        target: "/invoices",
+        created_at: new Date().toISOString(),
+        job_id: job.id || job._id,
+        description,
+        amount: total,
+      });
+      saveLocalList("churvox_operator_drafts", drafts);
+      setNotice("Backend did not accept invoice creation yet. Draft saved for owner review.");
+    }
+
+    setBusy(false);
+  }
 
   return (
-    <section className="op-proof">
-      <h2>FROM PROOF TO PAID. HANDLED BY AI.</h2>
-      <div className="op-flow">
-        {steps.map(([icon, a, b], index) => (
-          <article className={index === 2 ? "active" : ""} key={`${a}-${b}`}>
-            <i>{icon}</i>
-            <span>{a}</span>
-            <small>{b}</small>
-          </article>
-        ))}
-      </div>
-      <p>Churvox follows every job from first call to final payment. You approve the moves, we handle the rest.</p>
+    <section className="op-proof-live">
+      <header>
+        <div>
+          <p>PROOF TO PAID</p>
+          <h2>Completed work ready to invoice.</h2>
+          <span>{candidates.length} completed {candidates.length === 1 ? "job" : "jobs"} waiting for invoice review</span>
+        </div>
+        <Link to="/invoices">Open invoices</Link>
+      </header>
+
+      {notice ? <div className="op-warning">{notice}</div> : null}
+
+      {!candidates.length ? (
+        <div className="op-approval-empty">
+          <strong>No completed jobs waiting for invoice.</strong>
+          <span>When workers complete jobs, Churvox will collect proof, prepare a summary and move the job toward a draft invoice.</span>
+        </div>
+      ) : (
+        <div className="op-proof-live-grid">
+          {candidates.map((job, index) => {
+            const photos = jobPhotos(job);
+            return (
+              <article className="op-proof-live-card" key={job.id || job._id || index}>
+                <div>
+                  <span>COMPLETED</span>
+                  <strong>{titleOf(job, `Completed job ${index + 1}`)}</strong>
+                  <small>{[job.client_name || job.customer_name, job.address || job.site_address, money(job)].filter(Boolean).join(" · ") || "Ready for review"}</small>
+                </div>
+
+                <section>
+                  <b>AI proof summary</b>
+                  <p>{jobProofSummary(job)}</p>
+                </section>
+
+                <footer>
+                  <small>{photos.length} proof {photos.length === 1 ? "photo" : "photos"}</small>
+                  <button type="button" onClick={() => setSelected(job)}>Review proof</button>
+                </footer>
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      {selected ? (
+        <div className="op-modal-backdrop" role="presentation" onClick={!busy ? () => setSelected(null) : undefined}>
+          <section className="op-modal op-proof-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="op-modal-glow" />
+            <header>
+              <p>PROOF REVIEW</p>
+              <button type="button" onClick={() => setSelected(null)} disabled={busy}>×</button>
+            </header>
+
+            <div className="op-modal-body">
+              <span>COMPLETED JOB</span>
+              <h2>{titleOf(selected, "Completed job")}</h2>
+              <p>{jobProofSummary(selected)}</p>
+
+              <div className="op-modal-reason">
+                <strong>Job details</strong>
+                <small>{[
+                  selected.client_name || selected.customer_name,
+                  selected.address || selected.site_address,
+                  selected.completed_at ? `Completed ${new Date(selected.completed_at).toLocaleString()}` : "",
+                  money(selected) || "Amount needs review"
+                ].filter(Boolean).join(" · ")}</small>
+              </div>
+
+              <div className="op-modal-reason">
+                <strong>Owner approval guardrail</strong>
+                <small>Churvox will create a draft invoice only. Nothing is sent to the client until the owner approves it.</small>
+              </div>
+
+              {jobPhotos(selected).length ? (
+                <div className="op-proof-photo-grid">
+                  {jobPhotos(selected).slice(0, 6).map((src, idx) => (
+                    <img key={`${src}-${idx}`} src={src} alt={`Job proof ${idx + 1}`} />
+                  ))}
+                </div>
+              ) : (
+                <div className="op-approval-empty">
+                  <strong>No proof photos found.</strong>
+                  <span>You can still create a draft invoice, but owner review is recommended before sending.</span>
+                </div>
+              )}
+            </div>
+
+            <footer>
+              <button type="button" className="op-modal-secondary" onClick={() => setSelected(null)} disabled={busy}>Cancel</button>
+              <button type="button" className="op-modal-primary" onClick={() => createDraftInvoice(selected)} disabled={busy}>
+                {busy ? "Creating draft..." : "Create draft invoice"}
+              </button>
+            </footer>
+          </section>
+        </div>
+      ) : null}
     </section>
   );
 }
+
 
 function CrewStatus({ team }) {
   const rows = team.slice(0, 6);
@@ -834,7 +999,7 @@ function Dashboard() {
   const prepared = unassigned.length + openInvoices.length + openQuotes.length + completedNeedsInvoice.length;
 
   return <Shell><Topbar />{toast ? <div className="op-warning">{toast}</div> : null}<ActionModal modal={modal} onClose={() => setModal(null)} onConfirm={confirmAction} busy={busy} />{data.error ? <div className="op-warning">{data.error}</div> : null}<Hero data={data} prepared={prepared} />
-  <section className="op-top-grid"><ApprovalQueue unassigned={unassigned.length} openInvoices={openInvoices.length} openQuotes={openQuotes.length} completedNeedsInvoice={completedNeedsInvoice.length} onAction={openAction} /><ProofToPaid /></section>
+  <section className="op-top-grid"><ApprovalQueue unassigned={unassigned.length} openInvoices={openInvoices.length} openQuotes={openQuotes.length} completedNeedsInvoice={completedNeedsInvoice.length} onAction={openAction} /><ProofToPaid jobs={data.jobs} invoices={data.invoices} reload={data.reload} /></section>
   <DispatchBoard jobs={data.jobs} team={data.team} reload={data.reload} />
   <section className="op-mid-grid"><CrewStatus team={data.team} /><Cashflow invoices={data.invoices} /><Schedule jobs={data.jobs} /><LiveActivity history={history} /></section>
   <section className="op-bottom-grid"><DataPanel title="TODAY'S SCHEDULE" type="jobs" items={data.jobs} /><DataPanel title="QUOTE PIPELINE" type="quotes" items={data.quotes} /></section>
