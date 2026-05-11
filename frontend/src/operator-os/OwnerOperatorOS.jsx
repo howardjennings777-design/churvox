@@ -1,120 +1,232 @@
-import React, { useMemo, useState } from "react";
-import "./operator-phase3.css";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import "./operator-phase4.css";
 
-const ACTIONS = [
-  {
-    id: "assign-job",
-    title: "Assign the next job",
-    meta: "Dispatch recommendation",
-    type: "dispatch",
-    primary: "Approve assignment",
-    summary:
-      "Churvox checks worker availability, area, workload, skills, job history, and schedule conflicts before recommending who should take the next job.",
-    details: [
-      "Best worker match: free today and close to the job area.",
-      "No schedule clash detected from today’s run sheet.",
-      "Owner approval is required before the job is assigned.",
-      "After backend wiring, this action will assign the worker automatically.",
-    ],
-    result: "Assignment approved. Phase 4 will wire this to the real assign-worker endpoint.",
-  },
-  {
-    id: "invoice-draft",
-    title: "Create invoice draft",
-    meta: "Completed work",
-    type: "money",
-    primary: "Create draft",
-    summary:
-      "Churvox prepares an editable invoice draft using the completed job, client, service notes, photos, address, and pricing context.",
-    details: [
-      "Draft description should be created from the completed job details.",
-      "Owner can edit before sending.",
-      "Worker pricing stays hidden from worker-facing screens.",
-      "After backend wiring, this action will create the real draft invoice.",
-    ],
-    result: "Invoice draft prepared locally. Phase 4 will wire this to the real invoice endpoint.",
-  },
-  {
-    id: "quote-followup",
-    title: "Send quote follow-up",
-    meta: "Sales follow-up",
-    type: "followups",
-    primary: "Prepare message",
-    summary:
-      "Churvox drafts a friendly follow-up message for open quotes so the owner can approve before anything is sent.",
-    details: [
-      "Message is approval-first.",
-      "Nothing is sent automatically.",
-      "Owner can review, edit, then send.",
-      "After backend wiring, this action will use the real quote follow-up flow.",
-    ],
-    result: "Follow-up message prepared. Phase 4 will wire this to quote actions.",
-  },
-];
+function getApiBase() {
+  const env =
+    typeof process !== "undefined" && process.env
+      ? process.env
+      : {};
 
-const STAT_DETAILS = {
-  unassigned: {
-    title: "Unassigned jobs",
-    meta: "Dispatch",
-    body:
-      "This should show jobs without a worker and suggest the best available worker based on location, workload, skills, and schedule conflicts.",
-    items: ["Show unassigned jobs", "Recommend worker", "Owner approves", "System assigns"],
-  },
-  completed: {
-    title: "Completed jobs",
-    meta: "Invoicing",
-    body:
-      "This should show completed jobs that are ready for invoice drafts. The owner should not need to retype job details.",
-    items: ["Read completed job", "Generate invoice description", "Prepare draft invoice", "Owner approves"],
-  },
-  invoices: {
-    title: "Open invoices",
-    meta: "Cashflow",
-    body:
-      "This should show invoices that need payment follow-up and prepare reminder messages for approval.",
-    items: ["Find overdue invoices", "Draft reminder", "Owner approves", "Send through real channel"],
-  },
-  quotes: {
-    title: "Open quotes",
-    meta: "Sales",
-    body:
-      "This should show open quotes that need follow-up and help convert them into accepted work.",
-    items: ["Find old open quotes", "Draft follow-up", "Owner approves", "Convert to job when accepted"],
-  },
-};
+  const raw =
+    env.REACT_APP_API_URL ||
+    env.REACT_APP_BACKEND_URL ||
+    env.VITE_BACKEND_URL ||
+    "https://grassley-backend.onrender.com";
 
-const workerMatches = [
-  {
-    name: "Best worker match",
-    reason: "Free today, close to job area, suitable job history",
-    confidence: "92%",
-  },
-  {
-    name: "Backup worker",
-    reason: "Available later today, no schedule clash detected",
-    confidence: "78%",
-  },
-];
+  const clean = String(raw).replace(/\/+$/, "");
+  return clean.endsWith("/api") ? clean : `${clean}/api`;
+}
 
-const runSheet = [
-  {
-    id: "job-1",
-    title: "Unassigned lawn service",
-    client: "ECB Property Maintenance",
-    area: "Lower Hutt",
-    risk: "Needs worker",
-  },
-  {
-    id: "job-2",
-    title: "Completed job ready for invoice",
-    client: "Rental owner follow-up",
-    area: "Naenae",
-    risk: "Money waiting",
-  },
-];
+const API_BASE = getApiBase();
 
-function DetailModal({ item, onClose, onApprove }) {
-  if (!item) return null;
+function apiUrl(path) {
+  const cleanPath = String(path || "").replace(/^\/+/, "");
+  return `${API_BASE}/${cleanPath}`;
+}
+
+function readToken() {
+  try {
+    return (
+      localStorage.getItem("token") ||
+      localStorage.getItem("authToken") ||
+      localStorage.getItem("access_token") ||
+      localStorage.getItem("churvox_token") ||
+      ""
+    );
+  } catch {
+    return "";
+  }
+}
+
+async function fetchJson(path) {
+  const token = readToken();
+  const headers = {
+    Accept: "application/json",
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(apiUrl(path), {
+    method: "GET",
+    credentials: "include",
+    headers,
+  });
+
+  const text = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`${path} failed with ${response.status}`);
+  }
+
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function toArray(payload, preferredKeys = []) {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+
+  for (const key of preferredKeys) {
+    if (Array.isArray(payload[key])) return payload[key];
+  }
+
+  if (Array.isArray(payload.data)) return payload.data;
+  if (Array.isArray(payload.items)) return payload.items;
+  if (Array.isArray(payload.results)) return payload.results;
+
+  const firstArray = Object.values(payload).find((value) => Array.isArray(value));
+  return firstArray || [];
+}
+
+function pickId(item) {
+  return item?.id || item?._id || item?.job_id || item?.invoice_id || item?.quote_id || item?.worker_id || item?.email || item?.name || Math.random().toString(36);
+}
+
+function pickName(item, fallback = "Untitled") {
+  return (
+    item?.title ||
+    item?.name ||
+    item?.job_title ||
+    item?.client_name ||
+    item?.customer_name ||
+    item?.email ||
+    item?.number ||
+    item?.invoice_number ||
+    item?.quote_number ||
+    fallback
+  );
+}
+
+function normaliseStatus(value) {
+  return String(value || "").trim().toLowerCase().replace(/\s+/g, "_");
+}
+
+function getJobStatus(job) {
+  return normaliseStatus(job?.status || job?.job_status || job?.state);
+}
+
+function isCompleteJob(job) {
+  const status = getJobStatus(job);
+  return ["completed", "complete", "done", "finished"].some((word) => status.includes(word));
+}
+
+function isCancelledJob(job) {
+  const status = getJobStatus(job);
+  return ["cancelled", "canceled", "void", "deleted"].some((word) => status.includes(word));
+}
+
+function getAssignedWorker(job) {
+  return (
+    job?.assigned_worker_id ||
+    job?.assigned_worker ||
+    job?.worker_id ||
+    job?.worker ||
+    job?.assigned_to ||
+    job?.assigned_to_name ||
+    job?.assigned_worker_name ||
+    ""
+  );
+}
+
+function isUnassignedJob(job) {
+  return !isCompleteJob(job) && !isCancelledJob(job) && !getAssignedWorker(job);
+}
+
+function isOpenInvoice(invoice) {
+  const status = normaliseStatus(invoice?.status || invoice?.payment_status || invoice?.state);
+  return !["paid", "cancelled", "canceled", "void", "deleted"].some((word) => status.includes(word));
+}
+
+function isOpenQuote(quote) {
+  const status = normaliseStatus(quote?.status || quote?.quote_status || quote?.state);
+  return !["accepted", "approved", "declined", "rejected", "converted", "cancelled", "canceled", "deleted"].some((word) => status.includes(word));
+}
+
+function moneyValue(item) {
+  const value = item?.total || item?.amount || item?.price || item?.balance_due || item?.balance || item?.grand_total;
+  const number = Number(value || 0);
+  if (!Number.isFinite(number) || number <= 0) return "";
+  return new Intl.NumberFormat("en-NZ", {
+    style: "currency",
+    currency: "NZD",
+    maximumFractionDigits: 0,
+  }).format(number);
+}
+
+function dateLabel(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-NZ", { day: "numeric", month: "short" });
+}
+
+function itemSubtitle(item, type) {
+  if (type === "job") {
+    return [
+      item?.client_name || item?.customer_name || item?.client || item?.customer,
+      item?.address || item?.site_address || item?.location,
+      getJobStatus(item),
+    ].filter(Boolean).join(" · ");
+  }
+
+  if (type === "invoice") {
+    return [
+      item?.client_name || item?.customer_name || item?.client,
+      normaliseStatus(item?.status || item?.payment_status),
+      moneyValue(item),
+    ].filter(Boolean).join(" · ");
+  }
+
+  if (type === "quote") {
+    return [
+      item?.client_name || item?.customer_name || item?.client,
+      normaliseStatus(item?.status || item?.quote_status),
+      moneyValue(item),
+    ].filter(Boolean).join(" · ");
+  }
+
+  if (type === "worker") {
+    return [
+      item?.role,
+      item?.region || item?.area,
+      item?.email,
+      item?.phone,
+    ].filter(Boolean).join(" · ");
+  }
+
+  return "";
+}
+
+function chooseWorkerForJob(job, workers) {
+  if (!job || !workers.length) return null;
+
+  const jobArea = String(job?.region || job?.area || job?.suburb || job?.city || "").toLowerCase();
+
+  const activeWorkers = workers.filter((worker) => {
+    const status = normaliseStatus(worker?.status || worker?.state);
+    const role = normaliseStatus(worker?.role || worker?.user_role);
+    return !status.includes("inactive") && !role.includes("owner");
+  });
+
+  if (!activeWorkers.length) return workers[0] || null;
+
+  const sameArea = activeWorkers.find((worker) => {
+    const workerArea = String(worker?.region || worker?.area || worker?.suburb || worker?.city || "").toLowerCase();
+    return jobArea && workerArea && (jobArea.includes(workerArea) || workerArea.includes(jobArea));
+  });
+
+  return sameArea || activeWorkers[0];
+}
+
+function Modal({ modal, onClose, onPrepare }) {
+  if (!modal) return null;
 
   return (
     <div className="op-modal-backdrop" role="presentation" onMouseDown={onClose}>
@@ -127,33 +239,45 @@ function DetailModal({ item, onClose, onApprove }) {
       >
         <div className="op-modal-head">
           <div>
-            <p className="op-kicker">{item.meta || "Details"}</p>
-            <h2 id="op-modal-title">{item.title}</h2>
+            <p className="op-kicker">{modal.meta || "Details"}</p>
+            <h2 id="op-modal-title">{modal.title}</h2>
           </div>
           <button type="button" className="op-icon-btn" onClick={onClose} aria-label="Close details">
             ×
           </button>
         </div>
 
-        <p className="op-modal-body">{item.summary || item.body}</p>
+        {modal.body ? <p className="op-modal-body">{modal.body}</p> : null}
 
-        {item.items ? (
-          <div className="op-modal-steps">
-            {item.items.map((step, index) => (
-              <div className="op-step" key={step}>
-                <b>{index + 1}</b>
-                <span>{step}</span>
-              </div>
+        {modal.items?.length ? (
+          <div className="op-modal-list">
+            {modal.items.map((item) => (
+              <button
+                type="button"
+                className="op-live-row"
+                key={`${modal.type || "item"}-${pickId(item)}`}
+                onClick={() =>
+                  modal.onItemClick
+                    ? modal.onItemClick(item)
+                    : null
+                }
+              >
+                <span>
+                  <strong>{pickName(item, modal.emptyName || "Item")}</strong>
+                  <small>{itemSubtitle(item, modal.itemType)}</small>
+                </span>
+                <em>{dateLabel(item?.created_at || item?.updated_at || item?.date || item?.scheduled_date) || "Open"}</em>
+              </button>
             ))}
           </div>
         ) : null}
 
-        {item.details ? (
-          <div className="op-modal-list">
-            {item.details.map((detail) => (
-              <div key={detail} className="op-modal-list-row">
-                <span />
-                <p>{detail}</p>
+        {modal.steps?.length ? (
+          <div className="op-modal-steps">
+            {modal.steps.map((step, index) => (
+              <div className="op-step" key={step}>
+                <b>{index + 1}</b>
+                <span>{step}</span>
               </div>
             ))}
           </div>
@@ -163,9 +287,9 @@ function DetailModal({ item, onClose, onApprove }) {
           <button type="button" className="op-btn op-btn-soft" onClick={onClose}>
             Close
           </button>
-          {item.primary ? (
-            <button type="button" className="op-btn op-btn-primary" onClick={() => onApprove(item)}>
-              {item.primary}
+          {modal.prepareLabel ? (
+            <button type="button" className="op-btn op-btn-primary" onClick={() => onPrepare(modal)}>
+              {modal.prepareLabel}
             </button>
           ) : null}
         </div>
@@ -179,33 +303,33 @@ function Toast({ message }) {
   return <div className="op-toast">{message}</div>;
 }
 
-function StatCard({ id, label, value, text, tone, onOpen }) {
+function StatCard({ label, value, text, tone, onClick }) {
   return (
-    <button className={`op-stat op-stat-${tone}`} type="button" onClick={() => onOpen(STAT_DETAILS[id])}>
+    <button className={`op-stat op-stat-${tone}`} type="button" onClick={onClick}>
       <span className="op-stat-top">
         <strong>{value}</strong>
         <span>{label}</span>
       </span>
       <small>{text}</small>
-      <em>Tap for details</em>
+      <em>Tap to view live list</em>
     </button>
   );
 }
 
-function ActionCard({ action, onOpen, approved }) {
+function ActionCard({ title, meta, summary, primary, onReview, onPrepare }) {
   return (
-    <article className={`op-action-card ${approved ? "is-approved" : ""}`}>
+    <article className="op-action-card">
       <div>
-        <p className="op-card-kicker">{approved ? "Approved" : action.meta}</p>
-        <h3>{action.title}</h3>
-        <p>{approved ? action.result : action.summary}</p>
+        <p className="op-card-kicker">{meta}</p>
+        <h3>{title}</h3>
+        <p>{summary}</p>
       </div>
       <div className="op-card-actions">
-        <button type="button" className="op-btn op-btn-soft" onClick={() => onOpen(action)}>
+        <button type="button" className="op-btn op-btn-soft" onClick={onReview}>
           Details
         </button>
-        <button type="button" className="op-btn op-btn-primary" onClick={() => onOpen(action)}>
-          {approved ? "Review" : action.primary}
+        <button type="button" className="op-btn op-btn-primary" onClick={onPrepare}>
+          {primary}
         </button>
       </div>
     </article>
@@ -215,39 +339,228 @@ function ActionCard({ action, onOpen, approved }) {
 export default function AIControlRoomPage() {
   const [mode, setMode] = useState("today");
   const [modal, setModal] = useState(null);
-  const [approved, setApproved] = useState({});
   const [toast, setToast] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [data, setData] = useState({
+    jobs: [],
+    invoices: [],
+    quotes: [],
+    workers: [],
+  });
+
+  const showToast = useCallback((message) => {
+    setToast(message);
+    window.setTimeout(() => setToast(""), 3200);
+  }, []);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setLoadError("");
+
+    const requests = await Promise.allSettled([
+      fetchJson("/jobs"),
+      fetchJson("/invoices"),
+      fetchJson("/quotes"),
+      fetchJson("/team/workers"),
+    ]);
+
+    const jobs = requests[0].status === "fulfilled" ? toArray(requests[0].value, ["jobs"]) : [];
+    const invoices = requests[1].status === "fulfilled" ? toArray(requests[1].value, ["invoices"]) : [];
+    const quotes = requests[2].status === "fulfilled" ? toArray(requests[2].value, ["quotes"]) : [];
+    const workers = requests[3].status === "fulfilled" ? toArray(requests[3].value, ["workers", "team"]) : [];
+
+    const failed = requests
+      .map((result, index) => ({ result, name: ["jobs", "invoices", "quotes", "workers"][index] }))
+      .filter(({ result }) => result.status === "rejected")
+      .map(({ name }) => name);
+
+    setData({ jobs, invoices, quotes, workers });
+
+    if (failed.length) {
+      setLoadError(`Could not load: ${failed.join(", ")}. The rest of the page still works.`);
+    }
+
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const derived = useMemo(() => {
+    const unassignedJobs = data.jobs.filter(isUnassignedJob);
+    const completedJobs = data.jobs.filter(isCompleteJob);
+    const openInvoices = data.invoices.filter(isOpenInvoice);
+    const openQuotes = data.quotes.filter(isOpenQuote);
+
+    const firstUnassignedJob = unassignedJobs[0] || null;
+    const bestWorker = chooseWorkerForJob(firstUnassignedJob, data.workers);
+
+    return {
+      unassignedJobs,
+      completedJobs,
+      openInvoices,
+      openQuotes,
+      firstUnassignedJob,
+      bestWorker,
+    };
+  }, [data]);
+
+  const actions = useMemo(() => {
+    const list = [];
+
+    if (derived.firstUnassignedJob) {
+      list.push({
+        id: "assign-live-job",
+        type: "dispatch",
+        title: "Assign unassigned job",
+        meta: "Live dispatch",
+        primary: "Stage assignment",
+        summary: `${pickName(derived.firstUnassignedJob, "Unassigned job")} is waiting for a worker. Best match: ${derived.bestWorker ? pickName(derived.bestWorker, "Worker") : "no worker found yet"}.`,
+        modal: {
+          title: "Assign unassigned job",
+          meta: "Live dispatch",
+          body: "This is using live jobs and live workers. This phase stages the action only. The next phase wires the approve button to the real assignment endpoint.",
+          steps: [
+            `Job: ${pickName(derived.firstUnassignedJob, "Unassigned job")}`,
+            `Client: ${derived.firstUnassignedJob?.client_name || derived.firstUnassignedJob?.customer_name || "Not shown"}`,
+            `Best worker: ${derived.bestWorker ? pickName(derived.bestWorker, "Worker") : "No worker found"}`,
+            "Owner approval required before real assignment",
+          ],
+          prepareLabel: "Stage assignment",
+        },
+      });
+    }
+
+    if (derived.completedJobs[0]) {
+      list.push({
+        id: "draft-live-invoice",
+        type: "money",
+        title: "Prepare invoice draft",
+        meta: "Live completed job",
+        primary: "Stage invoice draft",
+        summary: `${pickName(derived.completedJobs[0], "Completed job")} is completed and ready for an invoice draft.`,
+        modal: {
+          title: "Prepare invoice draft",
+          meta: "Live invoicing",
+          body: "This is using completed live jobs. This phase stages the invoice draft action only so we do not accidentally create duplicate invoices.",
+          steps: [
+            `Completed job: ${pickName(derived.completedJobs[0], "Completed job")}`,
+            `Client: ${derived.completedJobs[0]?.client_name || derived.completedJobs[0]?.customer_name || "Not shown"}`,
+            "AI description should use job notes, service type, photos, address, and pricing",
+            "Owner approves before real invoice creation",
+          ],
+          prepareLabel: "Stage invoice draft",
+        },
+      });
+    }
+
+    if (derived.openInvoices[0]) {
+      list.push({
+        id: "invoice-reminder",
+        type: "money",
+        title: "Prepare invoice reminder",
+        meta: "Live cashflow",
+        primary: "Stage reminder",
+        summary: `${pickName(derived.openInvoices[0], "Open invoice")} is open and may need a payment reminder.`,
+        modal: {
+          title: "Prepare invoice reminder",
+          meta: "Live invoice",
+          body: "This is using live invoice data. The next write phase will connect this to the real message/reminder flow.",
+          steps: [
+            `Invoice: ${pickName(derived.openInvoices[0], "Open invoice")}`,
+            `Amount: ${moneyValue(derived.openInvoices[0]) || "Not shown"}`,
+            "Draft friendly reminder",
+            "Owner approves before sending",
+          ],
+          prepareLabel: "Stage reminder",
+        },
+      });
+    }
+
+    if (derived.openQuotes[0]) {
+      list.push({
+        id: "quote-followup",
+        type: "followups",
+        title: "Prepare quote follow-up",
+        meta: "Live quote",
+        primary: "Stage follow-up",
+        summary: `${pickName(derived.openQuotes[0], "Open quote")} is still open and can be followed up.`,
+        modal: {
+          title: "Prepare quote follow-up",
+          meta: "Live quote",
+          body: "This is using live quote data. The next write phase will connect this to the real quote follow-up action.",
+          steps: [
+            `Quote: ${pickName(derived.openQuotes[0], "Open quote")}`,
+            `Client: ${derived.openQuotes[0]?.client_name || derived.openQuotes[0]?.customer_name || "Not shown"}`,
+            "Draft follow-up message",
+            "Owner approves before sending",
+          ],
+          prepareLabel: "Stage follow-up",
+        },
+      });
+    }
+
+    if (!list.length) {
+      list.push({
+        id: "all-clear",
+        type: "today",
+        title: "No urgent live actions found",
+        meta: "All clear",
+        primary: "Refresh",
+        summary: "Churvox did not find unassigned jobs, completed jobs needing invoices, open invoices, or quote follow-ups from the live data currently loaded.",
+        modal: {
+          title: "No urgent live actions found",
+          meta: "All clear",
+          body: "Refresh live data or continue testing jobs, invoices, and quotes.",
+          steps: ["Jobs checked", "Workers checked", "Invoices checked", "Quotes checked"],
+          prepareLabel: "Refresh live data",
+        },
+      });
+    }
+
+    return list;
+  }, [derived]);
 
   const visibleActions = useMemo(() => {
-    if (mode === "today") return ACTIONS;
-    return ACTIONS.filter((action) => action.type === mode);
-  }, [mode]);
+    if (mode === "today") return actions;
+    return actions.filter((action) => action.type === mode);
+  }, [actions, mode]);
 
-  const command = useMemo(() => {
-    const approvedCount = Object.keys(approved).length;
-    return {
-      safeMoves: ACTIONS.length - approvedCount,
-      urgent: 1,
-      revenue: "$0",
-      approvedCount,
-    };
-  }, [approved]);
-
-  function approveAction(action) {
-    setApproved((current) => ({ ...current, [action.id]: true }));
-    setModal(null);
-    setToast(action.result || "Action approved.");
-    window.setTimeout(() => setToast(""), 3200);
+  function openLiveList(title, meta, body, items, itemType) {
+    setModal({
+      title,
+      meta,
+      body,
+      items,
+      itemType,
+      emptyName: title,
+      onItemClick: (item) =>
+        setModal({
+          title: pickName(item, title),
+          meta,
+          body: itemSubtitle(item, itemType) || "Live record detail",
+          steps: [
+            `Status: ${item?.status || item?.payment_status || item?.quote_status || "Not shown"}`,
+            `Client: ${item?.client_name || item?.customer_name || item?.client || "Not shown"}`,
+            `Amount: ${moneyValue(item) || "Not shown"}`,
+            `ID: ${pickId(item)}`,
+          ],
+        }),
+    });
   }
 
-  function approveAllSafeMoves() {
-    const next = {};
-    ACTIONS.forEach((action) => {
-      next[action.id] = true;
-    });
-    setApproved(next);
-    setToast("Safe moves approved locally. Real endpoint wiring comes next.");
-    window.setTimeout(() => setToast(""), 3200);
+  function prepareModalAction(currentModal) {
+    if (currentModal?.prepareLabel === "Refresh live data") {
+      setModal(null);
+      loadData();
+      showToast("Refreshing live data.");
+      return;
+    }
+
+    setModal(null);
+    showToast("Action staged safely. Real write approval comes in the next phase.");
   }
 
   return (
@@ -257,54 +570,47 @@ export default function AIControlRoomPage() {
       <section className="op-hero">
         <div className="op-hero-copy">
           <p className="op-kicker">Churvox Operator</p>
-          <h1>Today’s work, decisions, and follow-ups in one place.</h1>
+          <h1>Live command centre for today&apos;s work.</h1>
           <p>
-            Churvox prepares the admin work. You review the details, approve the safe moves,
-            and stay in control.
+            This Operator now reads live jobs, workers, invoices, and quotes. It shows what needs action
+            and keeps details inside popups so the owner stays in context.
           </p>
+
           <div className="op-hero-actions">
-            <button type="button" className="op-btn op-btn-primary" onClick={approveAllSafeMoves}>
-              Approve safe moves
+            <button type="button" className="op-btn op-btn-primary" onClick={() => setMode("today")}>
+              Review live actions
             </button>
-            <button
-              type="button"
-              className="op-btn op-btn-dark"
-              onClick={() =>
-                setModal({
-                  title: "Prepare today",
-                  meta: "Daily command",
-                  body:
-                    "This view should run the daily check, find urgent work, prepare assignments, draft invoice actions, and surface follow-ups.",
-                  items: ["Check jobs", "Check crew", "Check invoices", "Check quotes", "Prepare approval queue"],
-                })
-              }
-            >
-              Prepare today
+            <button type="button" className="op-btn op-btn-dark" onClick={loadData}>
+              Refresh live data
             </button>
           </div>
+
+          {loadError ? <div className="op-error">{loadError}</div> : null}
         </div>
 
         <div className="op-command-panel">
           <div className="op-command-head">
-            <span>Command status</span>
-            <strong>{command.safeMoves === 0 ? "Clear" : "Ready"}</strong>
+            <span>Live status</span>
+            <strong>{loading ? "Loading" : "Connected"}</strong>
           </div>
+
           <div className="op-command-grid">
-            <button type="button" onClick={() => setMode("today")}>
-              <strong>{command.safeMoves}</strong>
-              <span>safe moves</span>
-            </button>
             <button type="button" onClick={() => setMode("dispatch")}>
-              <strong>{command.urgent}</strong>
-              <span>urgent item</span>
+              <strong>{derived.unassignedJobs.length}</strong>
+              <span>unassigned</span>
             </button>
             <button type="button" onClick={() => setMode("money")}>
-              <strong>{command.revenue}</strong>
-              <span>ready revenue</span>
+              <strong>{derived.completedJobs.length}</strong>
+              <span>completed</span>
+            </button>
+            <button type="button" onClick={() => setMode("followups")}>
+              <strong>{derived.openQuotes.length}</strong>
+              <span>open quotes</span>
             </button>
           </div>
+
           <p>
-            This page now opens details in-page, gives clear approval feedback, and is ready for real backend wiring.
+            Read-only phase: live records are loaded, details open in-page, and risky write actions are staged only.
           </p>
         </div>
       </section>
@@ -325,10 +631,34 @@ export default function AIControlRoomPage() {
       </section>
 
       <section className="op-stats">
-        <StatCard id="unassigned" value="0" label="Unassigned jobs" text="AI can recommend the best worker match." tone="red" onOpen={setModal} />
-        <StatCard id="completed" value="0" label="Completed jobs" text="Prepare draft invoices and descriptions." tone="green" onOpen={setModal} />
-        <StatCard id="invoices" value="0" label="Open invoices" text="Prepare payment reminder queue." tone="blue" onOpen={setModal} />
-        <StatCard id="quotes" value="0" label="Open quotes" text="Prepare quote follow-up messages." tone="amber" onOpen={setModal} />
+        <StatCard
+          value={loading ? "..." : derived.unassignedJobs.length}
+          label="Unassigned jobs"
+          text="Live jobs waiting for a worker."
+          tone="red"
+          onClick={() => openLiveList("Unassigned jobs", "Live dispatch", "Jobs that currently have no assigned worker.", derived.unassignedJobs, "job")}
+        />
+        <StatCard
+          value={loading ? "..." : derived.completedJobs.length}
+          label="Completed jobs"
+          text="Live completed work ready for invoice review."
+          tone="green"
+          onClick={() => openLiveList("Completed jobs", "Live jobs", "Completed jobs that may be ready for invoice drafts.", derived.completedJobs, "job")}
+        />
+        <StatCard
+          value={loading ? "..." : derived.openInvoices.length}
+          label="Open invoices"
+          text="Live invoices not marked paid."
+          tone="blue"
+          onClick={() => openLiveList("Open invoices", "Live cashflow", "Invoices that are not marked as paid.", derived.openInvoices, "invoice")}
+        />
+        <StatCard
+          value={loading ? "..." : derived.openQuotes.length}
+          label="Open quotes"
+          text="Live quotes that may need follow-up."
+          tone="amber"
+          onClick={() => openLiveList("Open quotes", "Live quotes", "Quotes still open or waiting.", derived.openQuotes, "quote")}
+        />
       </section>
 
       <section className="op-layout">
@@ -336,32 +666,22 @@ export default function AIControlRoomPage() {
           <div className="op-section-head">
             <div>
               <p className="op-kicker">Approval queue</p>
-              <h2>AI-prepared actions</h2>
+              <h2>Live AI-prepared actions</h2>
             </div>
-            <button
-              type="button"
-              className="op-btn op-btn-soft"
-              onClick={() =>
-                setModal({
-                  title: "Approval history",
-                  meta: "Operator log",
-                  body: "Approved actions will appear here once the backend approval log is wired in.",
-                  items: Object.keys(approved).length
-                    ? ACTIONS.filter((action) => approved[action.id]).map((action) => action.title)
-                    : ["No approved actions yet"],
-                })
-              }
-            >
-              View history
+            <button type="button" className="op-btn op-btn-soft" onClick={loadData}>
+              Refresh
             </button>
           </div>
 
           {visibleActions.map((action) => (
             <ActionCard
               key={action.id}
-              action={action}
-              approved={approved[action.id]}
-              onOpen={setModal}
+              title={action.title}
+              meta={action.meta}
+              summary={action.summary}
+              primary={action.primary}
+              onReview={() => setModal(action.modal)}
+              onPrepare={() => setModal(action.modal)}
             />
           ))}
         </div>
@@ -369,63 +689,84 @@ export default function AIControlRoomPage() {
         <aside className="op-right">
           <div className="op-mini-panel">
             <p className="op-kicker">Crew match</p>
-            <h2>Best worker options</h2>
-            <div className="op-worker-list">
-              {workerMatches.map((worker) => (
-                <button
-                  className="op-worker"
-                  key={worker.name}
-                  type="button"
-                  onClick={() =>
-                    setModal({
-                      title: worker.name,
-                      meta: "Crew match",
-                      body: worker.reason,
-                      items: ["Availability checked", "Area checked", "Workload checked", `Confidence: ${worker.confidence}`],
-                    })
-                  }
-                >
-                  <div>
-                    <strong>{worker.name}</strong>
-                    <span>{worker.reason}</span>
-                  </div>
-                  <b>{worker.confidence}</b>
-                </button>
-              ))}
-            </div>
+            <h2>Best worker option</h2>
+
+            {derived.bestWorker ? (
+              <button
+                className="op-worker"
+                type="button"
+                onClick={() =>
+                  setModal({
+                    title: pickName(derived.bestWorker, "Worker"),
+                    meta: "Live worker",
+                    body: itemSubtitle(derived.bestWorker, "worker") || "Worker detail",
+                    steps: [
+                      `Role: ${derived.bestWorker?.role || "Not shown"}`,
+                      `Region: ${derived.bestWorker?.region || derived.bestWorker?.area || "Not shown"}`,
+                      `Email: ${derived.bestWorker?.email || "Not shown"}`,
+                      `Phone: ${derived.bestWorker?.phone || "Not shown"}`,
+                    ],
+                  })
+                }
+              >
+                <div>
+                  <strong>{pickName(derived.bestWorker, "Worker")}</strong>
+                  <span>{itemSubtitle(derived.bestWorker, "worker") || "Live worker record"}</span>
+                </div>
+                <b>Best</b>
+              </button>
+            ) : (
+              <div className="op-empty">No worker match found yet.</div>
+            )}
+
+            <button
+              type="button"
+              className="op-link-btn"
+              onClick={() => openLiveList("Workers", "Live team", "Current worker/team records loaded from Churvox.", data.workers, "worker")}
+            >
+              View all workers
+            </button>
           </div>
 
           <div className="op-mini-panel">
             <p className="op-kicker">Run sheet</p>
-            <h2>Today’s focus</h2>
+            <h2>Live jobs focus</h2>
+
             <div className="op-job-list">
-              {runSheet.map((job) => (
+              {data.jobs.slice(0, 6).map((job) => (
                 <button
                   className="op-job"
                   type="button"
-                  key={job.id}
+                  key={`job-${pickId(job)}`}
                   onClick={() =>
                     setModal({
-                      title: job.title,
-                      meta: job.risk,
-                      body: `${job.client} · ${job.area}`,
-                      items: ["Open job details", "Check assigned worker", "Check invoice readiness", "Prepare next action"],
+                      title: pickName(job, "Job"),
+                      meta: getJobStatus(job) || "Live job",
+                      body: itemSubtitle(job, "job") || "Live job detail",
+                      steps: [
+                        `Client: ${job?.client_name || job?.customer_name || job?.client || "Not shown"}`,
+                        `Assigned worker: ${getAssignedWorker(job) || "Unassigned"}`,
+                        `Address: ${job?.address || job?.site_address || job?.location || "Not shown"}`,
+                        `ID: ${pickId(job)}`,
+                      ],
                     })
                   }
                 >
                   <span>
-                    <strong>{job.title}</strong>
-                    <small>{job.client} · {job.area}</small>
+                    <strong>{pickName(job, "Job")}</strong>
+                    <small>{itemSubtitle(job, "job") || "Live job"}</small>
                   </span>
-                  <em>{job.risk}</em>
+                  <em>{getAssignedWorker(job) ? "Assigned" : "Needs worker"}</em>
                 </button>
               ))}
+
+              {!data.jobs.length && <div className="op-empty">No jobs loaded yet.</div>}
             </div>
           </div>
         </aside>
       </section>
 
-      <DetailModal item={modal} onClose={() => setModal(null)} onApprove={approveAction} />
+      <Modal modal={modal} onClose={() => setModal(null)} onPrepare={prepareModalAction} />
     </main>
   );
 }
