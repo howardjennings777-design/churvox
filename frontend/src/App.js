@@ -18,6 +18,8 @@ import WorkerJobDetailPage from "./pages/worker/WorkerJobDetailPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import WorkerSettingsPage from "./pages/worker/WorkerSettingsPage";
 import WorkerCommandProPage from "./pages/worker/WorkerCommandProPage";
+import OwnerOperatorOS from "./operator-os/OwnerOperatorOS";
+import WorkerOperatorOS from "./operator-os/WorkerOperatorOS";
 import PrivacyPage from "./pages/legal/PrivacyPage";
 import TermsPage from "./pages/legal/TermsPage";
 import AccountDeletionPage from "./pages/legal/AccountDeletionPage";
@@ -175,15 +177,15 @@ function App() {
           <Route path="/pricing" element={<PublicRoute><PublicWebsitePage /></PublicRoute>} />
           <Route path="/contact" element={<PublicRoute><PublicWebsitePage /></PublicRoute>} />
           {/* V9 owner command engine */}
-          <Route path="/dashboard" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
-          <Route path="/work" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
-          <Route path="/money" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
-          <Route path="/clients" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
-          <Route path="/team" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
-          <Route path="/ai" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
-          <Route path="/automation" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
-          <Route path="/reports" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
-          <Route path="/settings" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
+          <Route path="/dashboard" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
+          <Route path="/work" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
+          <Route path="/money" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
+          <Route path="/clients" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
+          <Route path="/team" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
+          <Route path="/ai" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
+          <Route path="/automation" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
+          <Route path="/reports" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
+          <Route path="/settings" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
 
           <Route path="/jobs" element={<Navigate to="/work" replace />} />
           <Route path="/jobs/new" element={<Navigate to="/work" replace />} />
@@ -206,7 +208,7 @@ function App() {
           <Route path="/integrations" element={<Navigate to="/settings" replace />} />
 
           <Route path="/v3/operator" element={<Navigate to="/ai" replace />} />
-          <Route path="/v3/:section" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
+          <Route path="/v3/:section" element={<BusinessRoute><OwnerOperatorOS /></BusinessRoute>} />
 
           {/* V8 owner command workspace - all owner areas stay in one popup-first AI brain */}
 
@@ -246,7 +248,7 @@ function App() {
           <Route path="/automation/runs" element={<Navigate to="/v3/rules" replace />} />
           <Route path="/worker" element={<WorkerRoute><Navigate to="/worker/jobs" replace /></WorkerRoute>} />
           <Route path="/worker/dashboard" element={<WorkerRoute><Navigate to="/worker/jobs" replace /></WorkerRoute>} />
-          <Route path="/worker/jobs" element={<WorkerRoute><WorkerCommandProPage /></WorkerRoute>} />
+          <Route path="/worker/jobs" element={<WorkerRoute><WorkerOperatorOS /></WorkerRoute>} />
           <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
           <Route path="/worker/settings" element={<WorkerRoute><WorkerSettingsPage /></WorkerRoute>} />
           <Route path="/worker/profile" element={<WorkerRoute><Navigate to="/worker/settings" replace /></WorkerRoute>} />
