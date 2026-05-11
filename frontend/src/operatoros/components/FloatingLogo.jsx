@@ -1,12 +1,16 @@
 export default function FloatingLogo({ small = false, wordmark = false }) {
   if (wordmark && !small) {
     return (
-      <div className="op-wordmark-wrap">
+      <div className="op-sidebar-brand-logo">
         <img
-          className="op-wordmark-logo"
-          src="/brand/churvox-sidebar-logo.svg"
-          alt="Churvox Operator OS"
+          className="op-sidebar-brand-mark"
+          src="/brand/churvox-holo-c.svg"
+          alt="Churvox"
         />
+        <div className="op-sidebar-brand-text">
+          <strong>CHURVOX</strong>
+          <span>OPERATOR OS</span>
+        </div>
       </div>
     );
   }

@@ -407,3 +407,107 @@
     padding-left: 18px !important;
   }
 }
+
+/* SAFE_FINAL_REAL_SIDEBAR_LOGO */
+.op-shell {
+  grid-template-columns: 244px minmax(0, 1fr) !important;
+}
+
+.op-sidebar {
+  width: 244px !important;
+  min-width: 244px !important;
+  padding: 16px 12px !important;
+}
+
+.op-sidebar .op-brand {
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 0 18px !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.op-sidebar-brand-logo {
+  width: 100% !important;
+  min-height: 122px !important;
+  display: grid !important;
+  place-items: center !important;
+  gap: 6px !important;
+  padding: 13px 10px 12px !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(125, 234, 255, .20) !important;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(34, 211, 238, .18), transparent 62%),
+    linear-gradient(180deg, rgba(8, 25, 47, .70), rgba(2, 8, 23, .42)) !important;
+  box-shadow: 0 0 30px rgba(34, 211, 238, .14) !important;
+}
+
+.op-sidebar-brand-mark {
+  width: 64px !important;
+  height: 64px !important;
+  display: block !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 0 22px rgba(34, 211, 238, .72)) !important;
+}
+
+.op-sidebar-brand-text {
+  text-align: center !important;
+  line-height: 1 !important;
+}
+
+.op-sidebar-brand-text strong {
+  display: block !important;
+  color: #f5fbff !important;
+  font-size: 17px !important;
+  font-weight: 950 !important;
+  letter-spacing: .26em !important;
+  text-shadow: 0 0 18px rgba(255,255,255,.22) !important;
+}
+
+.op-sidebar-brand-text span {
+  display: block !important;
+  margin-top: 7px !important;
+  color: #67e8f9 !important;
+  font-size: 8px !important;
+  font-weight: 950 !important;
+  letter-spacing: .34em !important;
+  text-shadow: 0 0 15px rgba(103, 232, 249, .72) !important;
+}
+
+.op-sidebar nav button {
+  display: flex !important;
+  align-items: center !important;
+  gap: 13px !important;
+}
+
+.op-sidebar nav button i {
+  width: 24px !important;
+  min-width: 24px !important;
+  display: inline-flex !important;
+  justify-content: center !important;
+}
+
+.op-sidebar nav button span {
+  font-size: 14px !important;
+  font-weight: 850 !important;
+}
+
+@media (max-width: 1180px) {
+  .op-shell {
+    grid-template-columns: 224px minmax(0, 1fr) !important;
+  }
+
+  .op-sidebar {
+    width: 224px !important;
+    min-width: 224px !important;
+  }
+
+  .op-sidebar-brand-logo {
+    min-height: 112px !important;
+  }
+
+  .op-sidebar-brand-mark {
+    width: 56px !important;
+    height: 56px !important;
+  }
+}
