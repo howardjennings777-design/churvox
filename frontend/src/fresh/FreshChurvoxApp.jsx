@@ -931,6 +931,241 @@ function DispatchBoard({ jobs, team, reload }) {
 }
 
 
+
+function invoiceAmount(invoice) {
+  return Number(invoice?.total || invoice?.amount || invoice?.subtotal || invoice?.balance || 0) || 0;
+}
+
+function jobAmount(job) {
+  return Number(job?.total || job?.amount || job?.price || job?.job_price || job?.subtotal || 0) || 0;
+}
+
+function quoteAmount(quote) {
+  return Number(quote?.total || quote?.amount || quote?.price || quote?.subtotal || 0) || 0;
+}
+
+function isOverdueInvoice(invoice) {
+  const status = statusSlug(invoice);
+  if (status.includes("overdue")) return true;
+  const due = invoice?.due_date || invoice?.due_at || invoice?.payment_due_at;
+  if (!due) return false;
+  const d = new Date(due);
+  return Number.isFinite(d.getTime()) && d.getTime() < Date.now() && !status.includes("paid");
+}
+
+function hasUnbilledJobHints(job) {
+  const text = [
+    job?.worker_notes,
+    job?.completion_notes,
+    job?.notes,
+    job?.materials,
+    job?.extras_summary,
+    job?.included_work,
+    job?.description,
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  return (
+    text.includes("extra") ||
+    text.includes("material") ||
+    text.includes("green waste") ||
+    text.includes("tip") ||
+    text.includes("dump") ||
+    text.includes("additional") ||
+    Number(job?.extra_time_minutes || job?.additional_minutes || 0) > 0 ||
+    (Array.isArray(job?.extras) && job.extras.length > 0)
+  );
+}
+
+function buildMoneyRadarItems({ jobs = [], invoices = [], quotes = [] }) {
+  const items = [];
+  const invoicedJobIds = new Set(
+    invoices.map((i) => String(i.job_id || i.source_job_id || i.linked_job_id || "")).filter(Boolean)
+  );
+
+  const completedNoInvoice = jobs
+    .filter((j) => ["completed", "done", "closed"].includes(statusSlug(j)))
+    .filter((j) => !invoicedJobIds.has(String(j.id || j._id || "")));
+
+  completedNoInvoice.forEach((job) => {
+    items.push({
+      type: "completed_not_invoiced",
+      tone: "green",
+      title: "Completed job not invoiced",
+      recordTitle: titleOf(job, "Completed job"),
+      amount: jobAmount(job),
+      reason: "Work is marked complete but no linked invoice was found.",
+      action: "Prepare invoice draft",
+      target: "/invoices",
+      source: job,
+    });
+  });
+
+  invoices.filter(isOverdueInvoice).forEach((invoice) => {
+    items.push({
+      type: "overdue_invoice",
+      tone: "amber",
+      title: "Overdue invoice needs follow-up",
+      recordTitle: titleOf(invoice, "Invoice"),
+      amount: invoiceAmount(invoice),
+      reason: "Invoice appears overdue or past its due date.",
+      action: "Prepare payment reminder",
+      target: "/invoices",
+      source: invoice,
+    });
+  });
+
+  invoices.filter((invoice) => statusSlug(invoice).includes("draft")).forEach((invoice) => {
+    items.push({
+      type: "draft_invoice",
+      tone: "blue",
+      title: "Draft invoice not sent",
+      recordTitle: titleOf(invoice, "Draft invoice"),
+      amount: invoiceAmount(invoice),
+      reason: "Invoice is still in draft, so payment cannot be collected yet.",
+      action: "Review draft invoice",
+      target: "/invoices",
+      source: invoice,
+    });
+  });
+
+  quotes
+    .filter((quote) => ["open", "sent", "pending", "waiting", "draft"].includes(statusSlug(quote)))
+    .forEach((quote) => {
+      items.push({
+        type: "quote_followup",
+        tone: "purple",
+        title: "Quote awaiting follow-up",
+        recordTitle: titleOf(quote, "Open quote"),
+        amount: quoteAmount(quote),
+        reason: "Quote has not been accepted, declined or converted yet.",
+        action: "Prepare quote follow-up",
+        target: "/quotes",
+        source: quote,
+      });
+    });
+
+  jobs
+    .filter((job) => !["cancelled", "closed"].includes(statusSlug(job)))
+    .filter(hasUnbilledJobHints)
+    .forEach((job) => {
+      items.push({
+        type: "possible_unbilled_extras",
+        tone: "red",
+        title: "Possible unbilled extras",
+        recordTitle: titleOf(job, "Job with extras"),
+        amount: jobAmount(job),
+        reason: "Job notes mention extras, materials or additional time. Owner review recommended.",
+        action: "Review job pricing",
+        target: "/jobs",
+        source: job,
+      });
+    });
+
+  return items.slice(0, 12);
+}
+
+function MoneyRadar({ jobs = [], invoices = [], quotes = [] }) {
+  const [selected, setSelected] = useState(null);
+  const [notice, setNotice] = useState("");
+  const items = buildMoneyRadarItems({ jobs, invoices, quotes });
+  const totalKnown = items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+
+  function saveRadarDraft(item) {
+    const drafts = readLocalList("churvox_operator_drafts");
+    drafts.unshift({
+      id: `money-${Date.now()}`,
+      type: item.type,
+      title: `${item.action}: ${item.recordTitle}`,
+      target: item.target,
+      created_at: new Date().toISOString(),
+      amount: item.amount || 0,
+      reason: item.reason,
+    });
+    saveLocalList("churvox_operator_drafts", drafts);
+    setNotice("Money Radar action saved to Operator Drafts for owner review.");
+    setSelected(null);
+  }
+
+  return (
+    <section className="op-money-radar">
+      <header>
+        <div>
+          <p>MONEY RADAR</p>
+          <h2>Find missed money before it leaks.</h2>
+          <span>{items.length} money {items.length === 1 ? "item" : "items"} found · {money({ total: totalKnown }) || "$0"} known value</span>
+        </div>
+        <Link to="/invoices">Open billing</Link>
+      </header>
+
+      {notice ? <div className="op-warning">{notice}</div> : null}
+
+      {!items.length ? (
+        <div className="op-approval-empty">
+          <strong>No money leaks found right now.</strong>
+          <span>Churvox will flag completed jobs without invoices, overdue invoices, draft invoices, quote follow-ups and possible unbilled extras here.</span>
+        </div>
+      ) : (
+        <div className="op-money-grid">
+          {items.map((item, index) => (
+            <article className={`op-money-card ${item.tone}`} key={`${item.type}-${item.recordTitle}-${index}`}>
+              <div>
+                <span>{item.title}</span>
+                <strong>{item.recordTitle}</strong>
+                <small>{item.reason}</small>
+              </div>
+              <aside>
+                <b>{item.amount ? money({ total: item.amount }) : "Needs review"}</b>
+                <button type="button" onClick={() => setSelected(item)}>{item.action}</button>
+              </aside>
+            </article>
+          ))}
+        </div>
+      )}
+
+      {selected ? (
+        <div className="op-modal-backdrop" role="presentation" onClick={() => setSelected(null)}>
+          <section className="op-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="op-modal-glow" />
+            <header>
+              <p>MONEY RADAR REVIEW</p>
+              <button type="button" onClick={() => setSelected(null)}>×</button>
+            </header>
+
+            <div className="op-modal-body">
+              <span>{selected.title}</span>
+              <h2>{selected.recordTitle}</h2>
+              <p>{selected.reason}</p>
+
+              <div className="op-modal-reason">
+                <strong>Known value</strong>
+                <small>{selected.amount ? money({ total: selected.amount }) : "Amount needs owner review"}</small>
+              </div>
+
+              <div className="op-modal-reason">
+                <strong>Owner approval guardrail</strong>
+                <small>Churvox will only save this as a review draft. It will not send messages, change prices or invoice customers without owner approval.</small>
+              </div>
+
+              <div className="op-modal-route">
+                <b>Review workspace</b>
+                <em>{selected.target}</em>
+              </div>
+            </div>
+
+            <footer>
+              <button type="button" className="op-modal-secondary" onClick={() => setSelected(null)}>Cancel</button>
+              <button type="button" className="op-modal-primary" onClick={() => saveRadarDraft(selected)}>
+                Save review draft
+              </button>
+            </footer>
+          </section>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+
 function Dashboard() {
   const data = useLiveData();
   const navigate = useNavigate();
@@ -1002,6 +1237,7 @@ function Dashboard() {
   return <Shell><Topbar />{toast ? <div className="op-warning">{toast}</div> : null}<ActionModal modal={modal} onClose={() => setModal(null)} onConfirm={confirmAction} busy={busy} />{data.error ? <div className="op-warning">{data.error}</div> : null}<Hero data={data} prepared={prepared} />
   <section className="op-top-grid"><ApprovalQueue unassigned={unassigned.length} openInvoices={openInvoices.length} openQuotes={openQuotes.length} completedNeedsInvoice={completedNeedsInvoice.length} onAction={openAction} /><ProofToPaid jobs={data.jobs} invoices={data.invoices} reload={data.reload} /></section>
   <DispatchBoard jobs={data.jobs} team={data.team} reload={data.reload} />
+  <MoneyRadar jobs={data.jobs} invoices={data.invoices} quotes={data.quotes} />
   <section className="op-mid-grid"><CrewStatus team={data.team} /><Cashflow invoices={data.invoices} /><Schedule jobs={data.jobs} /><LiveActivity history={history} /></section>
   <section className="op-bottom-grid"><DataPanel title="TODAY'S SCHEDULE" type="jobs" items={data.jobs} /><DataPanel title="QUOTE PIPELINE" type="quotes" items={data.quotes} /></section>
   <section className="op-bottom-grid"><section className="op-panel"><h3>APPROVAL HISTORY</h3>{history.map((h)=><div className="op-data-row" key={h.id}><strong>{h.result || h.mode}</strong><small>{h.title} · {new Date(h.created_at).toLocaleString()} · {h.target}</small></div>)}</section><section className="op-panel"><h3>OPERATOR DRAFTS</h3>{drafts.map((d)=><div className="op-data-row" key={d.id}><strong>{d.title}</strong><small>{d.type} · {new Date(d.created_at).toLocaleString()} · {d.target}</small></div>)}</section></section>
