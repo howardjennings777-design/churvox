@@ -35,3 +35,20 @@
 - [ ] `python3 -m compileall -q backend`
 - [ ] `npm --prefix frontend run build`
 - [ ] `bash scripts/churvox_launch_audit.sh`
+
+## Current Demo Script
+1. Owner logs in.
+2. Dashboard shows Operator OS.
+3. Open AI approval action drawer.
+4. Review risk/guardrail.
+5. Approve saves backend/local draft.
+6. Open Proof-to-Paid.
+7. Open MYOB Control Centre.
+8. Open Autopilot Replay.
+9. Open Trust / Quality Scores.
+10. Open /worker.
+11. Worker cannot see owner-only data.
+12. Open /book.
+13. Submit enquiry.
+14. Mobile tap test.
+15. Render deploy check.
