@@ -2159,9 +2159,9 @@ function Dashboard() {
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState("");
   const [busy, setBusy] = useState(false);
-  const [tick, setTick] = useState(0);
-  const history = useMemo(() => readLocalList("churvox_operator_approval_log").slice(0,5), [tick]);
-  const drafts = useMemo(() => readLocalList("churvox_operator_drafts").slice(0,5), [tick]);
+  const [setTick] = useState(0);
+  const history = useMemo(() => readLocalList("churvox_operator_approval_log").slice(0,5), []);
+  const drafts = useMemo(() => readLocalList("churvox_operator_drafts").slice(0,5), []);
 
   function openAction(action, mode) { setModal({ action, mode, preview: buildActionPreview(action, data) }); }
   function pushDraft(draft) { const rows = readLocalList("churvox_operator_drafts"); rows.unshift({ id:`d-${Date.now()}`, created_at:new Date().toISOString(), ...draft }); saveLocalList("churvox_operator_drafts", rows); setTick((x)=>x+1); }
