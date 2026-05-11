@@ -199,6 +199,80 @@ function useData() {
   return { ...state, reload: load };
 }
 
+
+function OperatorStrip({ data, openInvoices, openQuotes, unassigned }) {
+  const actions = [
+    {
+      label: "Dispatch",
+      title: unassigned.length ? "Assign waiting jobs" : "Crew is covered",
+      text: unassigned.length ? `${unassigned.length} jobs need a worker match.` : "No unassigned jobs found.",
+      tone: "blue",
+    },
+    {
+      label: "Cashflow",
+      title: openInvoices.length ? "Chase open invoices" : "Money queue clear",
+      text: openInvoices.length ? `${openInvoices.length} invoices need follow-up.` : "No urgent payment follow-up.",
+      tone: "green",
+    },
+    {
+      label: "Sales",
+      title: openQuotes.length ? "Follow up quotes" : "Quote queue clear",
+      text: openQuotes.length ? `${openQuotes.length} quotes are still open.` : "No quote follow-ups waiting.",
+      tone: "amber",
+    },
+  ];
+
+  return (
+    <section className="cvx-operator-strip">
+      <div className="cvx-operator-head">
+        <div>
+          <p className="fresh-eyebrow">AI Operator</p>
+          <h2>Churvox prepares the admin. You approve the move.</h2>
+        </div>
+        <span className="cvx-live-pill">Live business scan</span>
+      </div>
+
+      <div className="cvx-action-grid">
+        {actions.map((action) => (
+          <article className={`cvx-action cvx-action-${action.tone}`} key={action.label}>
+            <span>{action.label}</span>
+            <strong>{action.title}</strong>
+            <p>{action.text}</p>
+            <button type="button">Review action</button>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProofToPaidRail() {
+  const steps = [
+    ["1", "Job booked", "Client, site, worker, notes"],
+    ["2", "Work completed", "Photos, time, proof"],
+    ["3", "Invoice drafted", "AI writes the detail"],
+    ["4", "Owner approves", "Send, sync, collect"],
+  ];
+
+  return (
+    <section className="cvx-proof-rail">
+      <div>
+        <p className="fresh-eyebrow">Proof to paid</p>
+        <h2>The whole job flow in one line.</h2>
+      </div>
+      <div className="cvx-rail-steps">
+        {steps.map(([num, title, text]) => (
+          <article key={num}>
+            <b>{num}</b>
+            <strong>{title}</strong>
+            <small>{text}</small>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Dashboard() {
   const data = useData();
   const openInvoices = data.invoices.filter((x) => !["paid", "cancelled", "void"].includes(statusOf(x).toLowerCase()));
@@ -209,8 +283,8 @@ function Dashboard() {
     <Shell>
       <Hero
         eyebrow="Smart Hub"
-        title="AI command centre for trade and service teams."
-        text="One clean workspace for jobs, clients, invoices, quotes, team and owner approvals."
+        title="The AI operator for trade businesses."
+        text="Churvox turns jobs, photos, time, invoices and follow-ups into one approval-first command centre."
         action={<button className="fresh-primary" onClick={data.reload}>Refresh live data</button>}
       />
 
@@ -225,7 +299,11 @@ function Dashboard() {
         ]}
       />
 
-      <section className="fresh-grid">
+      <OperatorStrip data={data} openInvoices={openInvoices} openQuotes={openQuotes} unassigned={unassigned} />
+
+      <ProofToPaidRail />
+
+      <section className="fresh-grid cvx-workspace-grid">
         <DataList title="Priority jobs" type="Jobs" items={data.jobs.slice(0, 6)} />
         <DataList title="Money queue" type="Invoices" items={openInvoices.slice(0, 6)} />
       </section>
