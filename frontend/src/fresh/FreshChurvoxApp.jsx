@@ -120,7 +120,7 @@ function ChurvoxLogo() {
 function Shell({ children }) {
   const location = useLocation();
   const nav = [
-    ["Command", "/dashboard", "⬡", "Daily command centre"],
+    ["Smart Hub", "/dashboard", "⬡", "Daily command centre"],
     ["AI Work Queue", "/ai-approvals", "◆", "Edit & Approve"],
     ["Jobs", "/jobs", "⌘", "Schedule & Dispatch"],
     ["Crew", "/team", "♧", "People & Availability"],
@@ -2927,7 +2927,7 @@ export default function FreshChurvoxApp() {
         <Route path="/client-portal/:token" element={<PublicClientPortalPage />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Shell><Topbar /><Dashboard /></Shell>} />
           <Route path="/billing" element={<Shell><Topbar /><BillingCentrePage /></Shell>} />
           <Route path="/settings" element={<Shell><Topbar /><SettingsHubPage /></Shell>} />
           <Route path="/import" element={<Shell><Topbar /><ImportCentrePage /></Shell>} />
