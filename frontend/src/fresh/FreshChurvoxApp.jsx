@@ -911,14 +911,14 @@ function Workspace({ kind }) {
       setJobActionBusy(false);
     }
   }
+async function prepareJobInvoiceDraft() {
+    if (kind !== "jobs" || !selected || jobActionBusy) return;
 
-  function prepareJobInvoiceDraft() {
-    if (kind !== "jobs" || !selected) return;
-
+    const jobId = workspaceRecordId(selected);
     const amount = Number(selected.total || selected.amount || selected.price || selected.job_price || 0) || 0;
 
-    const draft = {
-      job_id: workspaceRecordId(selected),
+    const body = {
+      job_id: jobId,
       client_id: selected.client_id || selected.customer_id || "",
       customer_id: selected.customer_id || selected.client_id || "",
       client_name: selected.client_name || selected.customer_name || "",
@@ -929,22 +929,54 @@ function Workspace({ kind }) {
       created_by_ai: true,
     };
 
-    saveWorkspaceDraft({
-      type: "invoice_draft",
-      title: `Invoice draft for ${titleOf(selected, "job")}`,
-      target: "/invoices",
-      record: draft,
-      text: draft.description,
-    });
+    setJobActionBusy(true);
 
-    saveApprovalLog(
-      { label: "INVOICE", title: `Invoice draft prepared for ${titleOf(selected, "job")}` },
-      "drafted",
-      "drafted"
-    );
+    try {
+      let success = false;
 
-    setWorkspaceToast("Invoice draft saved for review. Nothing was sent.");
+      for (const path of ["/invoices", "/invoices/create"]) {
+        try {
+          await api(path, { method: "POST", body });
+          success = true;
+          break;
+        } catch {
+          // Try the next safe endpoint.
+        }
+      }
+
+      if (!success) {
+        saveWorkspaceDraft({
+          type: "invoice_draft",
+          title: `Invoice draft for ${titleOf(selected, "job")}`,
+          target: "/invoices",
+          record: body,
+          text: body.description,
+        });
+
+        saveApprovalLog(
+          { label: "INVOICE", title: `Invoice draft saved locally for ${titleOf(selected, "job")}` },
+          "drafted",
+          "drafted"
+        );
+
+        setWorkspaceToast("Backend did not accept invoice creation yet. Draft saved locally for review.");
+        return;
+      }
+
+      saveApprovalLog(
+        { label: "INVOICE", title: `Draft invoice created for ${titleOf(selected, "job")}` },
+        "approve",
+        "approved"
+      );
+
+      setWorkspaceToast("Draft invoice created for review.");
+      await data.reload();
+      setSelected(null);
+    } finally {
+      setJobActionBusy(false);
+    }
   }
+
 
 
   function prepareInvoiceReminderDraft() {

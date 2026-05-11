@@ -2435,3 +2435,9 @@ body {
   opacity: .62;
   cursor: wait;
 }
+
+/* ===== Phase 4: real invoice draft button state ===== */
+.op-job-action-box button:disabled {
+  opacity: .62;
+  cursor: wait;
+}
