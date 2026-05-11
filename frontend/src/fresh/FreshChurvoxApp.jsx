@@ -219,6 +219,32 @@ function Hero({ data, prepared }) {
   );
 }
 
+function OwnerNotifications({ jobs = [], quotes = [], invoices = [], clients = [], team = [] }) {
+  const notifications = [];
+  const completed = jobs.filter((j) => statusSlug(j) === "completed");
+  const unassigned = jobs.filter(isUnassigned);
+  const overdueInvoices = invoices.filter((i) => statusOf(i, "").toLowerCase().includes("overdue"));
+  const quoteFollowups = quotes.filter((q) => ["sent", "pending", "open"].includes(statusSlug(q)));
+
+  if (completed.length) notifications.push({ id: "worker-complete", label: "Worker completed job", detail: `${completed.length} completed job${completed.length === 1 ? "" : "s"} ready for proof/invoice prep.`, to: "/proof-to-paid" });
+  if (unassigned.length) notifications.push({ id: "job-unassigned", label: "Job unassigned", detail: `${unassigned.length} job${unassigned.length === 1 ? "" : "s"} still need worker assignment.`, to: "/jobs" });
+  if (quoteFollowups.length) notifications.push({ id: "quote-followup", label: "Quote needs follow-up", detail: `${quoteFollowups.length} quote${quoteFollowups.length === 1 ? "" : "s"} waiting for customer response.`, to: "/quotes" });
+  if (overdueInvoices.length) notifications.push({ id: "payment-overdue", label: "Payment overdue", detail: `${overdueInvoices.length} invoice${overdueInvoices.length === 1 ? "" : "s"} are overdue and need owner action.`, to: "/invoices" });
+  if (!clients.length || !team.length) notifications.push({ id: "setup-required", label: "Setup reminder", detail: "Finish import/setup to unlock full AI dispatch and billing flow.", to: "/import" });
+
+  return (
+    <section className="op-panel">
+      <header><h3>OWNER NOTIFICATIONS <b>{notifications.length}</b></h3><span>Tappable, approval-first actions</span></header>
+      {!notifications.length ? <div className="op-empty-mini">No urgent notifications right now.</div> : notifications.map((n) => (
+        <Link key={n.id} to={n.to} className="op-data-row" style={{ textDecoration: "none" }}>
+          <strong>{n.label}</strong>
+          <small>{n.detail}</small>
+        </Link>
+      ))}
+    </section>
+  );
+}
+
 
 function buildApprovalActions(props = {}) {
   const actions = buildOperatorQueue(props);
@@ -2239,19 +2265,11 @@ function Dashboard() {
 
   return <Shell><Topbar />{toast ? <div className="op-warning">{toast}</div> : null}<ActionModal modal={modal} onClose={() => setModal(null)} onConfirm={confirmAction} busy={busy} />{data.error ? <div className="op-warning">{data.error}</div> : null}<Hero data={data} prepared={prepared} />
   <section className="op-top-grid"><ApprovalQueue jobs={data.jobs} invoices={data.invoices} quotes={data.quotes} team={data.team} clients={data.clients} drafts={drafts} history={history} onAction={openAction} /><ProofToPaid jobs={data.jobs} invoices={data.invoices} reload={data.reload} /></section>
-  <DispatchBoard jobs={data.jobs} team={data.team} reload={data.reload} />
-  <MoneyRadar jobs={data.jobs} invoices={data.invoices} quotes={data.quotes} />
-  <PropertyBrain clients={data.clients} jobs={data.jobs} invoices={data.invoices} />
-  <NoteToAdmin jobs={data.jobs} />
-  <LeadInbox clients={data.clients} jobs={data.jobs} />
-  <AIQuoteBuilder clients={data.clients} jobs={data.jobs} quotes={data.quotes} />
-  <section className="op-mid-grid"><CrewStatus team={data.team} /><Cashflow invoices={data.invoices} /><Schedule jobs={data.jobs} /><LiveActivity history={history} /></section>
+  <section className="op-mid-grid"><DispatchBoard jobs={data.jobs} team={data.team} reload={data.reload} /><Cashflow invoices={data.invoices} /><CrewStatus team={data.team} /><Schedule jobs={data.jobs} /></section>
+  <section className="op-mid-grid"><OwnerNotifications jobs={data.jobs} quotes={data.quotes} invoices={data.invoices} clients={data.clients} team={data.team} /><LiveActivity history={history} /><section className="op-panel"><h3>DEEP AI MODULES</h3><p>Advanced tools are available when needed.</p><div className="op-link-row"><Link to="/ai-approvals">AI Work Queue</Link><Link to="/billing">Billing Centre</Link><Link to="/settings">Settings Hub</Link><Link to="/import">Import Centre</Link><Link to="/demo">Demo Workflow</Link></div></section></section>
   <section className="op-bottom-grid"><DataPanel title="TODAY'S SCHEDULE" type="jobs" items={data.jobs} /><DataPanel title="QUOTE PIPELINE" type="quotes" items={data.quotes} /></section>
   <section className="op-bottom-grid"><section className="op-panel"><h3>APPROVAL HISTORY</h3>{history.map((h)=><div className="op-data-row" key={h.id}><strong>{h.result || h.mode}</strong><small>{h.title} · {new Date(h.created_at).toLocaleString()} · {h.target}</small></div>)}</section><section className="op-panel"><h3>OPERATOR DRAFTS</h3>{drafts.map((d)=><div className="op-data-row" key={d.id}><strong>{d.title}</strong><small>{d.type} · {new Date(d.created_at).toLocaleString()} · {d.target}</small></div>)}</section></section>
   <QuotePipeline quotes={data.quotes} />
-  <AutopilotReplay jobs={data.jobs} invoices={data.invoices} team={data.team} drafts={drafts} approvals={history} />
-  <MyobControlCentre api={api} plan={localStorage.getItem("churvox_plan") || "solo"} />
-  <TrustQualityScores jobs={data.jobs} invoices={data.invoices} quotes={data.quotes} team={data.team} />
 </Shell>;
 }
 
