@@ -1166,6 +1166,231 @@ function MoneyRadar({ jobs = [], invoices = [], quotes = [] }) {
 }
 
 
+
+function sameClientRecord(client, record) {
+  const clientIds = [
+    client?.id,
+    client?._id,
+    client?.client_id,
+    client?.customer_id,
+  ].filter(Boolean).map(String);
+
+  const recordIds = [
+    record?.client_id,
+    record?.customer_id,
+    record?.clientId,
+    record?.customerId,
+  ].filter(Boolean).map(String);
+
+  if (clientIds.length && recordIds.some((id) => clientIds.includes(id))) return true;
+
+  const clientNames = [
+    client?.name,
+    client?.client_name,
+    client?.customer_name,
+    client?.business_name,
+  ].filter(Boolean).map((x) => String(x).toLowerCase().trim());
+
+  const recordNames = [
+    record?.client_name,
+    record?.customer_name,
+    record?.customer,
+    record?.client,
+  ].filter(Boolean).map((x) => String(x).toLowerCase().trim());
+
+  return clientNames.length && recordNames.some((name) => clientNames.includes(name));
+}
+
+function newestFirst(a, b) {
+  const ad = new Date(a?.completed_at || a?.scheduled_date || a?.created_at || a?.updated_at || 0).getTime() || 0;
+  const bd = new Date(b?.completed_at || b?.scheduled_date || b?.created_at || b?.updated_at || 0).getTime() || 0;
+  return bd - ad;
+}
+
+function buildSiteMemory(client, jobs, invoices) {
+  const clientJobs = jobs.filter((job) => sameClientRecord(client, job)).sort(newestFirst);
+  const clientInvoices = invoices.filter((invoice) => sameClientRecord(client, invoice)).sort(newestFirst);
+  const completedJobs = clientJobs.filter((job) => ["completed", "done", "closed"].includes(statusSlug(job)));
+  const recurringJobs = clientJobs.filter((job) => job.is_recurring || job.recurring || job.recurrence_pattern);
+
+  const lastJob = clientJobs[0];
+  const lastInvoice = clientInvoices[0];
+  const knownValues = clientInvoices.map(invoiceAmount).filter((n) => n > 0);
+  const avgValue = knownValues.length ? knownValues.reduce((a, b) => a + b, 0) / knownValues.length : 0;
+
+  const notes = [
+    client?.notes,
+    client?.access_notes,
+    client?.site_notes,
+    client?.gate_code ? `Gate/access: ${client.gate_code}` : "",
+    client?.parking_notes ? `Parking: ${client.parking_notes}` : "",
+    client?.hazards ? `Hazards: ${client.hazards}` : "",
+    lastJob?.notes,
+    lastJob?.worker_notes,
+    lastJob?.completion_notes,
+  ].filter(Boolean);
+
+  const preferredWorker =
+    client?.preferred_worker_name ||
+    lastJob?.assigned_worker_name ||
+    lastJob?.worker_name ||
+    "";
+
+  const siteAddress =
+    client?.address ||
+    client?.site_address ||
+    lastJob?.address ||
+    lastJob?.site_address ||
+    "Address not set";
+
+  let nextAction = "No action needed right now.";
+  if (recurringJobs.length && !clientJobs.some((j) => !["completed", "cancelled", "closed", "done"].includes(statusSlug(j)))) {
+    nextAction = "Recurring pattern found but no active future job is obvious. Consider rebooking.";
+  } else if (completedJobs.length && !clientInvoices.length) {
+    nextAction = "Completed work exists but no invoice was found. Review billing.";
+  } else if (!clientJobs.length) {
+    nextAction = "No job history yet. First visit notes should be captured carefully.";
+  } else if (lastJob && statusSlug(lastJob).includes("completed")) {
+    nextAction = "Last job is complete. Check proof, invoice and follow-up status.";
+  }
+
+  return {
+    client,
+    jobs: clientJobs,
+    invoices: clientInvoices,
+    completedJobs,
+    recurringJobs,
+    lastJob,
+    lastInvoice,
+    avgValue,
+    notes,
+    preferredWorker,
+    siteAddress,
+    nextAction,
+  };
+}
+
+function PropertyBrain({ clients = [], jobs = [], invoices = [] }) {
+  const [selected, setSelected] = useState(null);
+
+  const memories = clients
+    .map((client) => buildSiteMemory(client, jobs, invoices))
+    .sort((a, b) => (b.jobs.length + b.invoices.length) - (a.jobs.length + a.invoices.length))
+    .slice(0, 8);
+
+  return (
+    <section className="op-property-brain">
+      <header>
+        <div>
+          <p>PROPERTY BRAIN</p>
+          <h2>Every site remembers the work.</h2>
+          <span>{clients.length} clients · {jobs.length} jobs · site history built from live records</span>
+        </div>
+        <Link to="/clients">Open clients</Link>
+      </header>
+
+      {!memories.length ? (
+        <div className="op-approval-empty">
+          <strong>No site memory yet.</strong>
+          <span>Add clients and complete jobs, then Churvox will build access notes, job history, pricing memory and rebooking hints here.</span>
+        </div>
+      ) : (
+        <div className="op-property-grid">
+          {memories.map((memory, index) => (
+            <article className="op-property-card" key={memory.client.id || memory.client._id || index}>
+              <div>
+                <span>SITE MEMORY</span>
+                <strong>{titleOf(memory.client, `Client ${index + 1}`)}</strong>
+                <small>{memory.siteAddress}</small>
+              </div>
+
+              <section>
+                <b>AI site memory</b>
+                <p>{memory.nextAction}</p>
+              </section>
+
+              <footer>
+                <small>{memory.jobs.length} jobs · {memory.invoices.length} invoices · {memory.avgValue ? money({ total: memory.avgValue }) + " avg" : "No invoice average yet"}</small>
+                <button type="button" onClick={() => setSelected(memory)}>Open brain</button>
+              </footer>
+            </article>
+          ))}
+        </div>
+      )}
+
+      {selected ? (
+        <div className="op-modal-backdrop" role="presentation" onClick={() => setSelected(null)}>
+          <section className="op-modal op-property-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="op-modal-glow" />
+            <header>
+              <p>PROPERTY BRAIN</p>
+              <button type="button" onClick={() => setSelected(null)}>×</button>
+            </header>
+
+            <div className="op-modal-body">
+              <span>SITE MEMORY</span>
+              <h2>{titleOf(selected.client, "Client site")}</h2>
+              <p>{selected.nextAction}</p>
+
+              <div className="op-property-detail-grid">
+                <div><b>Address</b><small>{selected.siteAddress}</small></div>
+                <div><b>Preferred worker</b><small>{selected.preferredWorker || "Not learned yet"}</small></div>
+                <div><b>Total jobs</b><small>{selected.jobs.length}</small></div>
+                <div><b>Completed jobs</b><small>{selected.completedJobs.length}</small></div>
+                <div><b>Last invoice</b><small>{selected.lastInvoice ? `${titleOf(selected.lastInvoice, "Invoice")} · ${money({ total: invoiceAmount(selected.lastInvoice) }) || "Amount needs review"}` : "No invoice found"}</small></div>
+                <div><b>Average invoice</b><small>{selected.avgValue ? money({ total: selected.avgValue }) : "Not enough invoice data"}</small></div>
+              </div>
+
+              <div className="op-modal-reason">
+                <strong>Access / site notes</strong>
+                {selected.notes.length ? (
+                  <ul className="op-property-notes">
+                    {selected.notes.slice(0, 8).map((note, index) => <li key={index}>{note}</li>)}
+                  </ul>
+                ) : (
+                  <small>No access, hazard or parking notes captured yet.</small>
+                )}
+              </div>
+
+              <div className="op-modal-reason">
+                <strong>Recent job history</strong>
+                {selected.jobs.length ? (
+                  <div className="op-property-history">
+                    {selected.jobs.slice(0, 6).map((job, index) => (
+                      <div key={job.id || job._id || index}>
+                        <b>{titleOf(job, `Job ${index + 1}`)}</b>
+                        <small>{[
+                          statusOf(job, "active"),
+                          job.scheduled_date ? new Date(job.scheduled_date).toLocaleDateString() : "",
+                          job.assigned_worker_name || job.worker_name || "",
+                          money(job),
+                        ].filter(Boolean).join(" · ")}</small>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <small>No jobs recorded for this client yet.</small>
+                )}
+              </div>
+
+              <div className="op-modal-reason">
+                <strong>Owner guardrail</strong>
+                <small>Property Brain only summarizes live Churvox records. It does not change prices, rebook jobs or message customers without owner approval.</small>
+              </div>
+            </div>
+
+            <footer>
+              <button type="button" className="op-modal-secondary" onClick={() => setSelected(null)}>Close</button>
+              <button type="button" className="op-modal-primary" onClick={() => setSelected(null)}>Done</button>
+            </footer>
+          </section>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+
 function Dashboard() {
   const data = useLiveData();
   const navigate = useNavigate();
@@ -1238,6 +1463,7 @@ function Dashboard() {
   <section className="op-top-grid"><ApprovalQueue unassigned={unassigned.length} openInvoices={openInvoices.length} openQuotes={openQuotes.length} completedNeedsInvoice={completedNeedsInvoice.length} onAction={openAction} /><ProofToPaid jobs={data.jobs} invoices={data.invoices} reload={data.reload} /></section>
   <DispatchBoard jobs={data.jobs} team={data.team} reload={data.reload} />
   <MoneyRadar jobs={data.jobs} invoices={data.invoices} quotes={data.quotes} />
+  <PropertyBrain clients={data.clients} jobs={data.jobs} invoices={data.invoices} />
   <section className="op-mid-grid"><CrewStatus team={data.team} /><Cashflow invoices={data.invoices} /><Schedule jobs={data.jobs} /><LiveActivity history={history} /></section>
   <section className="op-bottom-grid"><DataPanel title="TODAY'S SCHEDULE" type="jobs" items={data.jobs} /><DataPanel title="QUOTE PIPELINE" type="quotes" items={data.quotes} /></section>
   <section className="op-bottom-grid"><section className="op-panel"><h3>APPROVAL HISTORY</h3>{history.map((h)=><div className="op-data-row" key={h.id}><strong>{h.result || h.mode}</strong><small>{h.title} · {new Date(h.created_at).toLocaleString()} · {h.target}</small></div>)}</section><section className="op-panel"><h3>OPERATOR DRAFTS</h3>{drafts.map((d)=><div className="op-data-row" key={d.id}><strong>{d.title}</strong><small>{d.type} · {new Date(d.created_at).toLocaleString()} · {d.target}</small></div>)}</section></section>
