@@ -613,6 +613,8 @@ function Workspace({ kind }) {
   const data = useLiveData();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(null);
+  const [selectedWorkerId, setSelectedWorkerId] = useState("");
+  const [workspaceToast, setWorkspaceToast] = useState("");
 
   const map = {
     jobs: ["Jobs Command", "Schedule, dispatch, prove and complete work.", data.jobs, "jobs"],
@@ -698,6 +700,85 @@ function Workspace({ kind }) {
     return "info";
   }
 
+
+  function workspaceRecordId(item) {
+    return item?.id || item?._id || item?.job_id || item?.worker_id || "";
+  }
+
+  function saveWorkspaceDraft(draft) {
+    const rows = readLocalList("churvox_operator_drafts");
+    rows.unshift({
+      id: `d-${Date.now()}`,
+      created_at: new Date().toISOString(),
+      ...draft,
+    });
+    saveLocalList("churvox_operator_drafts", rows);
+  }
+
+  function activeWorkers() {
+    return data.team.filter((worker) => isActiveWorker(worker));
+  }
+
+  function saveJobAssignmentRecommendation() {
+    if (kind !== "jobs" || !selected) return;
+
+    const workers = activeWorkers();
+    const worker =
+      workers.find((w) => String(workspaceRecordId(w)) === String(selectedWorkerId)) ||
+      workers[0];
+
+    if (!worker) {
+      setWorkspaceToast("No active worker found.");
+      return;
+    }
+
+    saveWorkspaceDraft({
+      type: "assignment_recommendation",
+      title: `Assign ${titleOf(selected, "job")} to ${titleOf(worker, "worker")}`,
+      target: "/jobs",
+      job_id: workspaceRecordId(selected),
+      worker_id: workspaceRecordId(worker),
+    });
+
+    saveApprovalLog(
+      { label: "DISPATCH", title: `Assignment prepared for ${titleOf(selected, "job")}` },
+      "drafted",
+      "drafted"
+    );
+
+    setWorkspaceToast("Assignment recommendation saved for approval.");
+  }
+
+  function saveJobInvoiceDraft() {
+    if (kind !== "jobs" || !selected) return;
+
+    const amount = Number(selected.total || selected.amount || selected.price || selected.job_price || 0) || 0;
+
+    saveWorkspaceDraft({
+      type: "invoice_draft",
+      title: `Invoice draft for ${titleOf(selected, "job")}`,
+      target: "/invoices",
+      record: {
+        job_id: workspaceRecordId(selected),
+        client_id: selected.client_id || selected.customer_id || "",
+        client_name: selected.client_name || selected.customer_name || "",
+        status: "draft",
+        amount,
+        total: amount,
+        description: `Draft invoice for ${titleOf(selected, "completed job")} at ${selected.address || selected.site_address || "client site"}. Prepared by Churvox Operator OS.`,
+        created_by_ai: true,
+      },
+    });
+
+    saveApprovalLog(
+      { label: "INVOICE", title: `Invoice draft prepared for ${titleOf(selected, "job")}` },
+      "drafted",
+      "drafted"
+    );
+
+    setWorkspaceToast("Invoice draft saved for review.");
+  }
+
   function DetailModal() {
     if (!selected) return null;
 
@@ -731,10 +812,31 @@ function Workspace({ kind }) {
             <p>{primaryLine(selected) || "Churvox is showing the live record details available for this item."}</p>
 
             {kind === "jobs" ? (
-              <div className="op-modal-reason">
-                <strong>AI job read</strong>
-                <small>{aiHint(selected)}</small>
-              </div>
+              <>
+                <div className="op-modal-reason">
+                  <strong>AI job read</strong>
+                  <small>{aiHint(selected)}</small>
+                </div>
+
+                <div className="op-job-action-box">
+                  <strong>Job actions</strong>
+                  <small>Prepare dispatch and invoice work from this popup. Nothing is sent automatically.</small>
+
+                  <select value={selectedWorkerId} onChange={(event) => setSelectedWorkerId(event.target.value)}>
+                    <option value="">Best available worker</option>
+                    {activeWorkers().map((worker) => (
+                      <option key={workspaceRecordId(worker) || titleOf(worker, "worker")} value={workspaceRecordId(worker)}>
+                        {titleOf(worker, "Worker")} {worker.region ? `· ${worker.region}` : ""}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div>
+                    <button type="button" onClick={saveJobAssignmentRecommendation}>Prepare assignment</button>
+                    <button type="button" onClick={saveJobInvoiceDraft}>Prepare invoice draft</button>
+                  </div>
+                </div>
+              </>
             ) : null}
 
             <div className="op-detail-grid">
@@ -760,6 +862,7 @@ function Workspace({ kind }) {
     <Shell>
       <Topbar />
       <DetailModal />
+      {workspaceToast ? <div className="op-warning">{workspaceToast}</div> : null}
 
       <section className="op-page-hero op-workspace-hero">
         <p>CHURVOX COMMAND</p>
@@ -811,7 +914,7 @@ function Workspace({ kind }) {
             type="button"
             className="op-workspace-row"
             key={item.id || item._id || `${type}-${index}`}
-            onClick={() => setSelected(item)}
+            onClick={() => { setSelected(item); setSelectedWorkerId(""); setWorkspaceToast(""); }}
           >
             <i>{kind === "jobs" ? "⌘" : kind === "invoices" ? "▥" : kind === "quotes" ? "▤" : kind === "team" ? "♧" : "◎"}</i>
 
