@@ -527,6 +527,22 @@ export default function OperatorApprovalCentre() {
     }
   }
 
+  async function saveEditedDraft() {
+    if (!selected || busy) return;
+    setBusy(true);
+    setNotice("");
+
+    try {
+      await persistLog(selected, "save_draft", "edited_draft_saved");
+      setSelected(null);
+      setNotice("Edited draft saved. Nothing was sent or executed.");
+    } catch (e) {
+      setNotice(e.message || "Could not save draft.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function approveAction(sendSms = false) {
     if (!selected || busy) return;
     setBusy(true);
@@ -686,6 +702,21 @@ export default function OperatorApprovalCentre() {
     invoices: actions.filter((a) => a.type === "draft_invoice").length,
     dispatch: actions.filter((a) => a.type === "assign_worker").length,
   };
+
+  const isSmsAction = selected ? (selected.type?.startsWith("sms_") || selected.type === "quote_followup") : false;
+  const canSendSms = !!(isSmsAction && settings.smsSendRequiresApproval && edited.to && edited.message);
+  const approveLabel =
+    selected?.type === "assign_worker" ? "Approve assignment" :
+    selected?.type === "draft_invoice" ? "Create draft invoice" :
+    isSmsAction ? "Save SMS draft" :
+    selected?.type === "lead_to_client" ? "Create client draft" :
+    "Approve review";
+  const approvalOutcome =
+    selected?.type === "assign_worker" ? "Assigns the selected worker to the job." :
+    selected?.type === "draft_invoice" ? "Creates or saves an editable invoice draft." :
+    isSmsAction ? "Saves the edited message as a draft unless you press send." :
+    selected?.type === "lead_to_client" ? "Creates or saves an editable client draft." :
+    "Saves the edited review for the owner/admin record.";
 
   return (
     <main className="ai-approval-centre">
@@ -917,14 +948,33 @@ export default function OperatorApprovalCentre() {
               )}
             </div>
 
-            <footer>
+            <div className="ai-approval-summary">
+              <strong>Before anything happens</strong>
+              <p>{approvalOutcome}</p>
+              <small>Owner can edit the fields above first. Customer messages do not send unless you press the SMS send button.</small>
+            </div>
+
+            <footer className="ai-drawer-actions">
               <button type="button" onClick={rejectAction} disabled={busy}>Reject</button>
               <button type="button" onClick={openWorkspace} disabled={busy}>Open related page</button>
-              <button type="button" onClick={() => approveAction(false)} disabled={busy}>
-                {busy ? "Saving..." : "Approve and save draft draft"}
+              <button type="button" onClick={saveEditedDraft} disabled={busy}>
+                {busy ? "Saving..." : "Save edited draft"}
               </button>
-              {(selected.type.startsWith("sms_") || selected.type === "quote_followup") && settings.smsSendRequiresApproval ? (
-                <button className="primary" type="button" onClick={() => approveAction(true)} disabled={busy}>
+              <button
+                type="button"
+                onClick={() => approveAction(false)}
+                disabled={busy || (selected?.type === "assign_worker" && !edited.worker_id)}
+              >
+                {busy ? "Saving..." : approveLabel}
+              </button>
+              {isSmsAction && settings.smsSendRequiresApproval ? (
+                <button
+                  className="primary"
+                  type="button"
+                  onClick={() => approveAction(true)}
+                  disabled={busy || !canSendSms}
+                  title={!canSendSms ? "Phone number and message required before sending" : "Approve and send this SMS"}
+                >
                   {busy ? "Sending..." : "Approve and send SMS"}
                 </button>
               ) : null}

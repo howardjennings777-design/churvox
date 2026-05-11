@@ -4023,3 +4023,11 @@ select:focus {
 .text-red-500 {
   color: #fb7185 !important;
 }
+
+/* Locked/unfinished feature clarity */
+.churvox-locked-feature,
+button:disabled.churvox-locked-feature {
+  opacity: 0.6;
+  cursor: not-allowed;
+  border-style: dashed !important;
+}
