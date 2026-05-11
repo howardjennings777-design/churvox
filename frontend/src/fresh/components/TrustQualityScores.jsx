@@ -1,0 +1,4 @@
+import React from "react";
+import "./trustQualityScores.css";
+const label=(n)=>n<1?'Limited data':n>3?'Strong':'Needs review';
+export default function TrustQualityScores({jobs=[],invoices=[],quotes=[],team=[]}){return <section className='trust-card'><h3>Trust / Quality Scores</h3>{team.slice(0,6).map((w)=>{const id=String(w.id||w._id||'');const a=jobs.filter(j=>String(j.assigned_worker_id||j.worker_id||'')===id).length;const c=jobs.filter(j=>String(j.assigned_worker_id||j.worker_id||'')===id&&['completed','done'].includes(String(j.status||'').toLowerCase())).length;return <div key={id||w.name}><strong>{w.name||'Worker'}</strong> <small>Assigned {a}, Completed {c}, {label(c)}</small></div>;})}<p>Client trust: {label(invoices.filter(i=>String(i.status||'').toLowerCase()==='paid').length+quotes.filter(q=>['accepted','declined'].includes(String(q.status||'').toLowerCase())).length)}</p></section>;}

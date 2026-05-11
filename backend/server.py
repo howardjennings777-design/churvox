@@ -13596,3 +13596,29 @@ async def public_client_portal_approve(token: str):
     next_status = "paid" if pack.get("status") == "paid" else "client_approved"
     await db.job_proof_packs.update_one({"_id": pack["_id"]}, {"$set": {"status": next_status, "client_approved_at": now, "updated_at": now}})
     return {"success": True}
+
+# --- Launch persistence lite endpoints ---
+
+def _biz_rows(name: str):
+    if name not in db:
+        db[name] = []
+    return db[name]
+
+def _now_iso():
+    return datetime.utcnow().isoformat()
+
+@api_router.get('/myob/status-lite')
+async def myob_status_lite(current_user: dict = Depends(get_current_user)):
+    return {'connected': False, 'payment_sync_status': 'not_configured', 'invoice_queue': [], 'errors': []}
+
+@api_router.get('/operator/drafts')
+async def get_operator_drafts(current_user: dict = Depends(get_current_user)):
+    bid = current_user.get('business_id')
+    rows = [r for r in _biz_rows('operator_drafts') if r.get('business_id') == bid]
+    return {'items': rows}
+
+@api_router.post('/operator/drafts')
+async def post_operator_drafts(payload: dict, current_user: dict = Depends(get_current_user)):
+    row = {'id': f"od-{int(time.time()*1000)}", 'business_id': current_user.get('business_id'), 'created_at': _now_iso(), 'updated_at': _now_iso(), 'created_by': current_user.get('id'), **payload}
+    _biz_rows('operator_drafts').insert(0, row)
+    return row

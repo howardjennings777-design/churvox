@@ -1,4 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
+import WorkerFieldApp from "./worker/WorkerFieldApp";
+import MyobControlCentre from "./components/MyobControlCentre";
+import AutopilotReplay from "./components/AutopilotReplay";
+import TrustQualityScores from "./components/TrustQualityScores";
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import PublicClientPortalPage from "../pages/public/PublicClientPortalPage";
 
@@ -2238,7 +2242,11 @@ function Dashboard() {
   <section className="op-mid-grid"><CrewStatus team={data.team} /><Cashflow invoices={data.invoices} /><Schedule jobs={data.jobs} /><LiveActivity history={history} /></section>
   <section className="op-bottom-grid"><DataPanel title="TODAY'S SCHEDULE" type="jobs" items={data.jobs} /><DataPanel title="QUOTE PIPELINE" type="quotes" items={data.quotes} /></section>
   <section className="op-bottom-grid"><section className="op-panel"><h3>APPROVAL HISTORY</h3>{history.map((h)=><div className="op-data-row" key={h.id}><strong>{h.result || h.mode}</strong><small>{h.title} · {new Date(h.created_at).toLocaleString()} · {h.target}</small></div>)}</section><section className="op-panel"><h3>OPERATOR DRAFTS</h3>{drafts.map((d)=><div className="op-data-row" key={d.id}><strong>{d.title}</strong><small>{d.type} · {new Date(d.created_at).toLocaleString()} · {d.target}</small></div>)}</section></section>
-  <QuotePipeline quotes={data.quotes} /></Shell>;
+  <QuotePipeline quotes={data.quotes} />
+  <AutopilotReplay jobs={data.jobs} invoices={data.invoices} team={data.team} drafts={drafts} approvals={history} />
+  <MyobControlCentre api={api} plan={localStorage.getItem("churvox_plan") || "solo"} />
+  <TrustQualityScores jobs={data.jobs} invoices={data.invoices} quotes={data.quotes} team={data.team} />
+</Shell>;
 }
 
 
@@ -2909,6 +2917,9 @@ export default function FreshChurvoxApp() {
         <Route path="/invoices" element={<Workspace kind="invoices" />} />
         <Route path="/team" element={<Workspace kind="team" />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/worker" element={<WorkerFieldApp />} />
+        <Route path="/worker/jobs" element={<WorkerFieldApp />} />
+        <Route path="/worker/dashboard" element={<WorkerFieldApp />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
