@@ -292,6 +292,16 @@ export default function SettingsHubPage() {
           <p className="settings-muted">Pro: optional MYOB add-on. Enterprise: MYOB included by default.</p>
           <Link className="settings-secondary-link" to="/proof-to-paid">Open Proof-to-Paid</Link>
         </SettingCard>
+
+        <SettingCard
+          badge="BILLING"
+          title="Billing and add-ons"
+          text="Buy Enterprise 50-user blocks for $100 and manage SMS credit packs."
+          action={<Link to="/billing">Open billing</Link>}
+        >
+          <p className="settings-muted">Enterprise block: +50 users for $100. SMS packs: 100/$10, 500/$45, 1000/$80.</p>
+        </SettingCard>
+
       </section>
 
       {active === "business" ? (

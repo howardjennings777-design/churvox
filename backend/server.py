@@ -824,6 +824,13 @@ SMS_PACKS = {
 
 SMS_CREDITS_PER_MESSAGE = 2
 
+ENTERPRISE_USER_BLOCK = {
+    "users": 50,
+    "price": 100.00,
+    "currency": "nzd",
+    "label": "+50 users",
+}
+
 # ===================== HELPERS =====================
 def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
@@ -11636,9 +11643,9 @@ async def ai_operator_v3_reject(action_id: str, body: dict = Body(default=None),
 
 # ===== FINAL V3 BILLING UPGRADES START =====
 V3_FINAL_SMS_PACKS = {
-    "100": {"credits": 100, "price_cents": 1000, "label": "100 SMS credits"},
-    "500": {"credits": 500, "price_cents": 4500, "label": "500 SMS credits"},
-    "1000": {"credits": 1000, "price_cents": 8000, "label": "1000 SMS credits"},
+    "100": {"credits": 100, "price": 10.00},
+    "500": {"credits": 500, "price": 45.00},
+    "1000": {"credits": 1000, "price": 80.00},
 }
 
 V3_FINAL_PLANS = {
@@ -13125,6 +13132,173 @@ async def import_workers_csv(file: UploadFile = File(...), current_user: dict = 
         "total": len(rows),
         "errors": errors[:30],
         "message": "Workers imported. They are marked invited/setup required until they finish setup.",
+    }
+
+
+
+
+
+# CHURVOX_BILLING_ADDONS_V1
+def _stripe_price_for_sms_pack(pack: str) -> str:
+    return os.environ.get(f"STRIPE_PRICE_SMS_{pack}", "").strip()
+
+
+def _stripe_price_for_user_block() -> str:
+    return (
+        os.environ.get("STRIPE_PRICE_ENTERPRISE_USER_BLOCK_50", "").strip()
+        or os.environ.get("STRIPE_PRICE_USER_BLOCK_50", "").strip()
+    )
+
+
+async def _create_billing_order(current_user: dict, kind: str, payload: dict):
+    business_id = await get_user_business_id(current_user)
+    owner_id = _resolve_owner_id(current_user)
+    now = datetime.now(timezone.utc)
+    order = {
+        "id": secrets.token_hex(12),
+        "business_id": str(business_id),
+        "owner_id": str(owner_id),
+        "kind": kind,
+        "payload": payload,
+        "status": "pending_checkout",
+        "created_at": now,
+        "updated_at": now,
+    }
+    await db.billing_orders.insert_one(order)
+    order["_id"] = str(order.get("_id", ""))
+    return order
+
+
+@api_router.get("/billing/addons")
+async def get_billing_addons(current_user: dict = Depends(get_current_user)):
+    plan = normalize_plan(current_user.get("plan") or current_user.get("plan_type") or "solo")
+    sms_balance = int(current_user.get("sms_credits") or current_user.get("sms_balance") or 0)
+
+    return {
+        "success": True,
+        "plan": plan,
+        "sms_balance": sms_balance,
+        "enterprise_user_block": {
+            "users": ENTERPRISE_USER_BLOCK["users"],
+            "price": ENTERPRISE_USER_BLOCK["price"],
+            "currency": ENTERPRISE_USER_BLOCK["currency"],
+            "label": ENTERPRISE_USER_BLOCK["label"],
+            "available": plan == "enterprise",
+            "description": "Enterprise can buy extra user capacity in 50-user blocks for $100 per block.",
+        },
+        "sms_packs": [
+            {"pack": key, "credits": value["credits"], "price": value["price"], "currency": "nzd"}
+            for key, value in SMS_PACKS.items()
+        ],
+    }
+
+
+@api_router.post("/billing/user-blocks/buy")
+async def buy_enterprise_user_block(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    plan = normalize_plan(current_user.get("plan") or current_user.get("plan_type") or "solo")
+    if plan != "enterprise":
+        raise HTTPException(status_code=403, detail="Extra 50-user blocks are available on Enterprise only.")
+
+    quantity = int(payload.get("quantity") or 1)
+    quantity = max(1, min(quantity, 20))
+    users = ENTERPRISE_USER_BLOCK["users"] * quantity
+    amount = ENTERPRISE_USER_BLOCK["price"] * quantity
+
+    order = await _create_billing_order(current_user, "enterprise_user_block_50", {
+        "quantity": quantity,
+        "users": users,
+        "price_per_block": ENTERPRISE_USER_BLOCK["price"],
+        "amount": amount,
+        "currency": "nzd",
+    })
+
+    price_id = _stripe_price_for_user_block()
+    if STRIPE_SECRET_KEY and price_id:
+        try:
+            session = stripe.checkout.Session.create(
+                mode="payment",
+                line_items=[{"price": price_id, "quantity": quantity}],
+                success_url=f"{FRONTEND_URL}/billing?user_blocks=success&session_id={{CHECKOUT_SESSION_ID}}",
+                cancel_url=f"{FRONTEND_URL}/billing?user_blocks=cancelled",
+                metadata={
+                    "kind": "enterprise_user_block_50",
+                    "business_id": str(order["business_id"]),
+                    "owner_id": str(order["owner_id"]),
+                    "quantity": str(quantity),
+                    "users": str(users),
+                    "order_id": str(order["id"]),
+                },
+            )
+            await db.billing_orders.update_one(
+                {"id": order["id"]},
+                {"$set": {"stripe_session_id": session.id, "checkout_url": session.url, "updated_at": datetime.now(timezone.utc)}}
+            )
+            return {
+                "success": True,
+                "status": "checkout_ready",
+                "checkout_url": session.url,
+                "message": f"Checkout ready for {quantity} x 50-user block at $100 each.",
+            }
+        except Exception as e:
+            logger.warning(f"User block checkout failed: {e}")
+
+    return {
+        "success": True,
+        "status": "pending_manual_checkout",
+        "order_id": order["id"],
+        "message": f"50-user block order saved: {quantity} block(s), {users} users, ${amount:.0f}. Add STRIPE_PRICE_ENTERPRISE_USER_BLOCK_50 to enable checkout.",
+    }
+
+
+@api_router.post("/billing/sms-packs/buy")
+async def buy_sms_pack(payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
+    pack = str(payload.get("pack") or "").strip()
+    if pack not in SMS_PACKS:
+        raise HTTPException(status_code=400, detail="Invalid SMS pack. Use 100, 500, or 1000.")
+
+    pack_data = SMS_PACKS[pack]
+    order = await _create_billing_order(current_user, "sms_pack", {
+        "pack": pack,
+        "credits": pack_data["credits"],
+        "amount": pack_data["price"],
+        "currency": "nzd",
+    })
+
+    price_id = _stripe_price_for_sms_pack(pack)
+    if STRIPE_SECRET_KEY and price_id:
+        try:
+            session = stripe.checkout.Session.create(
+                mode="payment",
+                line_items=[{"price": price_id, "quantity": 1}],
+                success_url=f"{FRONTEND_URL}/billing?sms_pack={pack}&session_id={{CHECKOUT_SESSION_ID}}",
+                cancel_url=f"{FRONTEND_URL}/billing?sms_pack=cancelled",
+                metadata={
+                    "kind": "sms_pack",
+                    "business_id": str(order["business_id"]),
+                    "owner_id": str(order["owner_id"]),
+                    "pack": pack,
+                    "credits": str(pack_data["credits"]),
+                    "order_id": str(order["id"]),
+                },
+            )
+            await db.billing_orders.update_one(
+                {"id": order["id"]},
+                {"$set": {"stripe_session_id": session.id, "checkout_url": session.url, "updated_at": datetime.now(timezone.utc)}}
+            )
+            return {
+                "success": True,
+                "status": "checkout_ready",
+                "checkout_url": session.url,
+                "message": f"Checkout ready for {pack_data['credits']} SMS credits.",
+            }
+        except Exception as e:
+            logger.warning(f"SMS checkout failed: {e}")
+
+    return {
+        "success": True,
+        "status": "pending_manual_checkout",
+        "order_id": order["id"],
+        "message": f"SMS pack order saved: {pack_data['credits']} credits for ${pack_data['price']:.0f}. Add STRIPE_PRICE_SMS_{pack} to enable checkout.",
     }
 
 
