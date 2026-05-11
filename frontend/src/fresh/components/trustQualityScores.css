@@ -1,1 +1,2 @@
-.trust-card{background:#111827;color:#fff;border:1px solid #374151;border-radius:12px;padding:12px;margin:10px 0}
+.trust-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.trust-grid article{background:rgba(15,23,42,.8);border:1px solid rgba(100,116,139,.45);border-radius:12px;padding:12px;display:grid;gap:4px}.trust-grid span{display:inline-block;border:1px solid #22d3ee;border-radius:999px;padding:3px 8px;font-size:12px;width:max-content}.client-card{margin-top:10px}
+@media (max-width:760px){.trust-grid{grid-template-columns:1fr}}
