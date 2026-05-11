@@ -46,6 +46,7 @@ import V6BusinessBrain from "./v6/V6BusinessBrain";
 
 import V4WorkerPage from "./v4/pages/V4WorkerPage";
 import V5CommandApp from "./v5/V5CommandApp";
+import PremiumWorkerDashboardEntry from "./pages/worker/PremiumWorkerDashboardEntry";
 
 const Spinner = () => (
   <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -246,9 +247,9 @@ function App() {
           <Route path="/plans" element={<Navigate to="/v3/plans" replace />} />
           <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
           <Route path="/automation/runs" element={<Navigate to="/v3/rules" replace />} />
-          <Route path="/worker" element={<WorkerRoute><Navigate to="/worker/jobs" replace /></WorkerRoute>} />
-          <Route path="/worker/dashboard" element={<WorkerRoute><Navigate to="/worker/jobs" replace /></WorkerRoute>} />
-          <Route path="/worker/jobs" element={<WorkerRoute><WorkerOperatorOS /></WorkerRoute>} />
+          <Route path="/worker" element={<WorkerRoute><PremiumWorkerDashboardEntry /></WorkerRoute>} />
+          <Route path="/worker/dashboard" element={<WorkerRoute><PremiumWorkerDashboardEntry /></WorkerRoute>} />
+          <Route path="/worker/jobs" element={<WorkerRoute><PremiumWorkerDashboardEntry /></WorkerRoute>} />
           <Route path="/worker/jobs/:id" element={<WorkerRoute><WorkerJobDetailPage /></WorkerRoute>} />
           <Route path="/worker/settings" element={<WorkerRoute><WorkerSettingsPage /></WorkerRoute>} />
           <Route path="/worker/profile" element={<WorkerRoute><Navigate to="/worker/settings" replace /></WorkerRoute>} />
@@ -260,6 +261,7 @@ function App() {
           <Route path="/platform-unlock" element={<PlatformUnlock />} />
           <Route path="*" element={<RoleRedirect />} />
         
+                  <Route path="/my-jobs" element={<WorkerRoute><PremiumWorkerDashboardEntry /></WorkerRoute>} />
         </Routes>
         </ErrorBoundary>
       </AuthProvider>
