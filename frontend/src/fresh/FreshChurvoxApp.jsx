@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import WorkerFieldApp from "./worker/WorkerFieldApp";
+import DemoModePage from "./demo/DemoModePage";
 import OnboardingSetupPage from "./onboarding/OnboardingSetupPage";
 import ProofToPaidPage from "./proof/ProofToPaidPage";
 import MyobControlCentre from "./components/MyobControlCentre";
@@ -2922,6 +2923,7 @@ export default function FreshChurvoxApp() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/demo" element={<Shell><Topbar /><DemoModePage /></Shell>} />
           <Route path="/proof-to-paid" element={<Shell><Topbar /><ProofToPaidPage /></Shell>} />
           <Route path="/onboarding" element={<Shell><Topbar /><OnboardingSetupPage /></Shell>} />
           <Route path="/ai-approvals" element={<Shell><Topbar /><OperatorApprovalCentre /></Shell>} />

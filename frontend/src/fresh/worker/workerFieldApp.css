@@ -46,3 +46,147 @@ font-size: 16px;
 .worker-upload-proof input {
   display: none;
 }
+
+/* Worker App mobile polish: big field buttons, simple cards, safer touch targets */
+.worker-app {
+  min-height: 100dvh;
+  padding-bottom: 92px;
+}
+
+.worker-app header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(16px);
+}
+
+.worker-app .tabs {
+  position: sticky;
+  top: 76px;
+  z-index: 9;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 8px 0;
+  background: rgba(3, 10, 23, 0.78);
+  backdrop-filter: blur(16px);
+}
+
+.worker-app .tabs button {
+  min-height: 46px;
+  border-radius: 16px;
+  font-weight: 900;
+}
+
+.worker-app .next-job,
+.worker-app .job {
+  border-radius: 24px;
+  border: 1px solid rgba(125, 234, 255, 0.18);
+  background:
+    radial-gradient(circle at top right, rgba(34, 211, 238, 0.08), transparent 38%),
+    rgba(255, 255, 255, 0.065);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+}
+
+.worker-app .job {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.worker-app .job strong,
+.worker-app .next-job h3 {
+  font-size: 20px;
+  letter-spacing: -0.03em;
+}
+
+.worker-app .job div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.worker-app .job button,
+.worker-app .job a,
+.worker-app .sheet button,
+.worker-app .worker-upload-proof,
+.worker-app .bottom-bar button {
+  min-height: 48px;
+  border-radius: 16px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.worker-app .job a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.worker-app .sheet {
+  position: fixed;
+  inset: auto 10px 84px 10px;
+  z-index: 40;
+  max-height: 78dvh;
+  overflow: auto;
+  border: 1px solid rgba(125, 234, 255, 0.22);
+  border-radius: 28px;
+  padding: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(34, 211, 238, 0.12), transparent 34%),
+    linear-gradient(180deg, #061827, #020812);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.48);
+}
+
+.worker-app .sheet h3 {
+  margin-top: 0;
+  font-size: 24px;
+  letter-spacing: -0.04em;
+}
+
+.worker-app .sheet button,
+.worker-app .worker-upload-proof {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.worker-app .bottom-bar {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  z-index: 45;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  border: 1px solid rgba(125, 234, 255, 0.18);
+  border-radius: 24px;
+  padding: 10px;
+  background: rgba(3, 10, 23, 0.84);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 18px 64px rgba(0, 0, 0, 0.34);
+}
+
+@media (min-width: 760px) {
+  .worker-app {
+    padding-bottom: 110px;
+  }
+
+  .worker-app section {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .worker-app .job {
+    margin-bottom: 0;
+  }
+
+  .worker-app .sheet {
+    inset: 80px 24px 104px auto;
+    width: min(460px, calc(100vw - 48px));
+  }
+}
