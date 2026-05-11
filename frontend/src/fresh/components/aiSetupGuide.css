@@ -137,3 +137,43 @@
 }
 
 /* CHURVOX_AI_HELP_DOCK_POLISH_END */
+
+/* CHURVOX_AI_HELP_TINY_BUTTON_START */
+
+.ai-guide-card {
+  right: 14px !important;
+  bottom: 14px !important;
+  width: min(300px, calc(100vw - 28px)) !important;
+  border-radius: 20px !important;
+}
+
+.ai-guide-pill {
+  right: 14px !important;
+  bottom: 14px !important;
+  width: auto !important;
+  max-width: 178px !important;
+  min-height: 34px !important;
+  padding: 8px 12px !important;
+  font-size: 10px !important;
+  border-radius: 999px !important;
+  opacity: .82 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.ai-guide-pill:hover {
+  opacity: 1 !important;
+}
+
+@media (max-width: 760px) {
+  .ai-guide-card {
+    bottom: 76px !important;
+  }
+
+  .ai-guide-pill {
+    bottom: 76px !important;
+  }
+}
+
+/* CHURVOX_AI_HELP_TINY_BUTTON_END */

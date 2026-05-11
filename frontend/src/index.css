@@ -5834,3 +5834,284 @@ select:focus {
 }
 
 /* CHURVOX_APP_WIDE_THEME_FIX_END */
+
+/* CHURVOX_SMART_HUB_FINAL_BALANCE_START */
+
+/* Main shell: premium laptop balance */
+.op-shell {
+  grid-template-columns: 188px minmax(0, 1fr) !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+}
+
+.op-rail {
+  width: 188px !important;
+  min-width: 188px !important;
+  padding: 14px 10px !important;
+}
+
+.op-main {
+  padding: 12px 16px 82px !important;
+  overflow-x: hidden !important;
+}
+
+/* Top bar: cleaner and less cramped */
+.op-topbar {
+  min-height: 43px !important;
+  padding: 7px 10px !important;
+  margin-bottom: 10px !important;
+  border-radius: 15px !important;
+}
+
+.op-topbar > span {
+  font-size: 12px !important;
+  font-weight: 900 !important;
+}
+
+.op-topbar div {
+  gap: 7px !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+}
+
+.op-topbar button {
+  min-height: 31px !important;
+  padding: 0 10px !important;
+  font-size: 10px !important;
+  border-radius: 999px !important;
+}
+
+/* Hero: keep the fire, reduce height a little */
+.op-hero {
+  grid-template-columns: minmax(0, 1fr) 190px !important;
+  gap: 10px !important;
+  margin-bottom: 10px !important;
+}
+
+.op-hero h1 {
+  font-size: clamp(40px, 4.7vw, 64px) !important;
+  line-height: .87 !important;
+}
+
+.op-hero-copy p {
+  font-size: 10px !important;
+  margin-bottom: 7px !important;
+}
+
+.op-hero-copy small {
+  max-width: 650px !important;
+  margin-top: 9px !important;
+  font-size: 12px !important;
+  line-height: 1.42 !important;
+}
+
+.op-hero-actions {
+  margin-top: 11px !important;
+  display: flex !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+.op-hero-actions a,
+.op-hero-primary,
+.op-hero-secondary {
+  min-height: 33px !important;
+  padding: 8px 12px !important;
+  font-size: 10px !important;
+  border-radius: 999px !important;
+}
+
+.op-orb-wrap {
+  height: 132px !important;
+  min-height: 132px !important;
+}
+
+.op-orb {
+  width: 112px !important;
+  height: 112px !important;
+}
+
+.op-orb-logo-img {
+  width: 82px !important;
+  height: 82px !important;
+}
+
+/* AI operator strip */
+.op-status,
+.op-prepared {
+  min-height: 104px !important;
+  padding: 14px !important;
+}
+
+.op-status strong {
+  font-size: clamp(22px, 2.5vw, 34px) !important;
+  line-height: 1 !important;
+}
+
+.op-status span,
+.op-prepared span,
+.op-prepared small {
+  font-size: 11px !important;
+}
+
+/* Bottom grid should stop feeling crushed */
+.op-top-grid {
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr) !important;
+  gap: 10px !important;
+  margin-bottom: 10px !important;
+}
+
+.op-mid-grid,
+.op-bottom-grid {
+  gap: 10px !important;
+  margin-bottom: 10px !important;
+}
+
+.op-approval,
+.op-proof,
+.op-panel,
+.op-pipeline {
+  min-height: 122px !important;
+  padding: 13px !important;
+  border-radius: 18px !important;
+}
+
+.op-proof-live,
+.op-proof {
+  min-height: 180px !important;
+}
+
+.op-approval h2,
+.op-proof h2,
+.op-panel h3,
+.op-pipeline h3 {
+  font-size: 12px !important;
+}
+
+.op-approval p,
+.op-proof p,
+.op-panel p,
+.op-panel small {
+  font-size: 11px !important;
+}
+
+/* Empty states cleaner */
+.op-approval-empty,
+.op-empty,
+.op-empty-mini {
+  min-height: 66px !important;
+  padding: 12px !important;
+  border-radius: 14px !important;
+  display: grid !important;
+  place-items: center !important;
+  text-align: center !important;
+  background: rgba(2, 8, 23, .28) !important;
+  border: 1px dashed rgba(125, 211, 252, .20) !important;
+}
+
+.op-approval-empty strong,
+.op-empty strong {
+  font-size: 12px !important;
+}
+
+.op-approval-empty span,
+.op-empty span {
+  font-size: 11px !important;
+  color: #b8d4e7 !important;
+}
+
+/* Sidebar readable but not oversized */
+.op-logo-img {
+  width: 44px !important;
+  height: 44px !important;
+}
+
+.op-logo strong {
+  font-size: 15px !important;
+}
+
+.op-nav a {
+  min-height: 41px !important;
+}
+
+.op-nav a b {
+  font-size: 9px !important;
+}
+
+.op-nav a small {
+  font-size: 8px !important;
+}
+
+/* Stop the Windows taskbar/bottom edge feeling like it eats content */
+.op-main::after {
+  content: "";
+  display: block;
+  height: 28px;
+}
+
+/* Laptop screenshot size */
+@media (max-width: 1280px) {
+  .op-shell {
+    grid-template-columns: 180px minmax(0, 1fr) !important;
+  }
+
+  .op-rail {
+    width: 180px !important;
+    min-width: 180px !important;
+  }
+
+  .op-main {
+    padding: 10px 12px 86px !important;
+  }
+
+  .op-hero {
+    grid-template-columns: minmax(0, 1fr) 170px !important;
+  }
+
+  .op-hero h1 {
+    font-size: clamp(38px, 4.5vw, 58px) !important;
+  }
+
+  .op-orb-wrap {
+    height: 118px !important;
+    min-height: 118px !important;
+  }
+
+  .op-orb {
+    width: 96px !important;
+    height: 96px !important;
+  }
+
+  .op-orb-logo-img {
+    width: 70px !important;
+    height: 70px !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .op-shell {
+    display: block !important;
+  }
+
+  .op-rail {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .op-main {
+    padding: 12px 10px 96px !important;
+  }
+
+  .op-hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  .op-top-grid,
+  .op-mid-grid,
+  .op-bottom-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* CHURVOX_SMART_HUB_FINAL_BALANCE_END */
