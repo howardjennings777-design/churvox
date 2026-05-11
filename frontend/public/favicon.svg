@@ -1,70 +1,108 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <radialGradient id="bg" cx="50%" cy="42%" r="70%">
-      <stop offset="0%" stop-color="#0f3553"/>
-      <stop offset="48%" stop-color="#06162a"/>
-      <stop offset="100%" stop-color="#020712"/>
+    <radialGradient id="bg" cx="50%" cy="42%" r="72%">
+      <stop offset="0%" stop-color="#123a5b"/>
+      <stop offset="45%" stop-color="#06182c"/>
+      <stop offset="100%" stop-color="#020713"/>
     </radialGradient>
-    <linearGradient id="shieldEdge" x1="115" y1="70" x2="400" y2="440" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#9effff"/>
-      <stop offset=".32" stop-color="#25dfff"/>
-      <stop offset=".68" stop-color="#0870b8"/>
-      <stop offset="1" stop-color="#5df3ff"/>
+
+    <linearGradient id="cyanEdge" x1="112" y1="58" x2="402" y2="442" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#a7ffff"/>
+      <stop offset=".28" stop-color="#28dcff"/>
+      <stop offset=".62" stop-color="#0877c7"/>
+      <stop offset="1" stop-color="#56f2ff"/>
     </linearGradient>
-    <linearGradient id="metalC" x1="160" y1="142" x2="370" y2="350" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#f2ffff"/>
-      <stop offset=".24" stop-color="#9ef7ff"/>
-      <stop offset=".45" stop-color="#22d8ff"/>
-      <stop offset=".7" stop-color="#06375f"/>
-      <stop offset="1" stop-color="#eaffff"/>
+
+    <linearGradient id="steel" x1="147" y1="145" x2="374" y2="346" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff"/>
+      <stop offset=".18" stop-color="#b8faff"/>
+      <stop offset=".34" stop-color="#63dff5"/>
+      <stop offset=".52" stop-color="#7b8ea0"/>
+      <stop offset=".68" stop-color="#1b334a"/>
+      <stop offset=".86" stop-color="#0b1828"/>
+      <stop offset="1" stop-color="#e9ffff"/>
     </linearGradient>
-    <linearGradient id="darkInset" x1="160" y1="120" x2="360" y2="380" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#0d2b49"/>
-      <stop offset="1" stop-color="#020812"/>
+
+    <linearGradient id="shieldFill" x1="145" y1="82" x2="365" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#123655"/>
+      <stop offset=".45" stop-color="#07182d"/>
+      <stop offset="1" stop-color="#020814"/>
     </linearGradient>
-    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="14" result="b"/>
-      <feColorMatrix in="b" type="matrix" values="0 0 0 0 0.13 0 0 0 0 0.86 0 0 0 0 1 0 0 0 .85 0"/>
+
+    <filter id="glow" x="-35%" y="-35%" width="170%" height="170%">
+      <feGaussianBlur stdDeviation="13" result="b"/>
+      <feColorMatrix in="b" type="matrix" values="0 0 0 0 0.08 0 0 0 0 0.82 0 0 0 0 1 0 0 0 .78 0"/>
       <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
-    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="22" result="b"/>
-      <feColorMatrix in="b" type="matrix" values="0 0 0 0 0.06 0 0 0 0 0.72 0 0 0 0 1 0 0 0 .55 0"/>
+
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="24" result="b"/>
+      <feColorMatrix in="b" type="matrix" values="0 0 0 0 0.04 0 0 0 0 0.65 0 0 0 0 1 0 0 0 .44 0"/>
       <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
 
   <rect width="512" height="512" rx="96" fill="url(#bg)"/>
 
-  <g opacity=".6">
-    <circle cx="94" cy="382" r="1.8" fill="#67e8f9"/>
-    <circle cx="405" cy="118" r="2.2" fill="#67e8f9"/>
-    <circle cx="386" cy="350" r="1.4" fill="#67e8f9"/>
-    <circle cx="152" cy="104" r="1.6" fill="#67e8f9"/>
-    <path d="M70 384H438" stroke="#67e8f9" stroke-opacity=".16"/>
-    <path d="M116 104L398 382" stroke="#67e8f9" stroke-opacity=".12" stroke-width="4"/>
+  <ellipse cx="256" cy="260" rx="196" ry="178" fill="#0b2b4a" opacity=".38" filter="url(#soft)"/>
+
+  <g opacity=".55">
+    <path d="M74 392H438" stroke="#67e8f9" stroke-opacity=".18"/>
+    <path d="M119 102L395 378" stroke="#67e8f9" stroke-opacity=".10" stroke-width="4"/>
+    <circle cx="102" cy="380" r="2" fill="#67e8f9"/>
+    <circle cx="406" cy="118" r="2.4" fill="#67e8f9"/>
+    <circle cx="382" cy="354" r="1.7" fill="#67e8f9"/>
   </g>
 
-  <ellipse cx="256" cy="258" rx="190" ry="172" fill="#0b2c4a" opacity=".35" filter="url(#softGlow)"/>
-
+  <!-- angular premium shield, like the first logo in the reference -->
   <g filter="url(#glow)">
-    <path d="M256 49L399 101V235C399 328 342 404 256 456C170 404 113 328 113 235V101L256 49Z"
-      fill="#061326" stroke="url(#shieldEdge)" stroke-width="9" stroke-linejoin="round"/>
-    <path d="M256 78L366 118V230C366 302 323 360 256 401C189 360 146 302 146 230V118L256 78Z"
-      fill="url(#darkInset)" stroke="#15537b" stroke-width="6" stroke-linejoin="round"/>
-    <path d="M256 96L342 127V223C342 281 309 329 256 361C203 329 170 281 170 223V127L256 96Z"
-      fill="none" stroke="#39eaff" stroke-opacity=".46" stroke-width="3" stroke-linejoin="round"/>
-    <path d="M147 131L256 92L365 131" stroke="#dbffff" stroke-opacity=".38" stroke-width="3" stroke-linecap="round"/>
+    <path d="M256 42L404 104V236C404 332 344 409 256 462C168 409 108 332 108 236V104L256 42Z"
+      fill="#04101f"
+      stroke="url(#cyanEdge)"
+      stroke-width="8"
+      stroke-linejoin="round"/>
+
+    <path d="M256 68L374 117V231C374 309 326 371 256 413C186 371 138 309 138 231V117L256 68Z"
+      fill="url(#shieldFill)"
+      stroke="#174f77"
+      stroke-width="7"
+      stroke-linejoin="round"/>
+
+    <path d="M256 92L345 130V220C345 280 310 329 256 363C202 329 167 280 167 220V130L256 92Z"
+      fill="none"
+      stroke="#3beaff"
+      stroke-opacity=".58"
+      stroke-width="4"
+      stroke-linejoin="round"/>
+
+    <path d="M139 117L256 67L373 117" stroke="#e7ffff" stroke-opacity=".36" stroke-width="4" stroke-linecap="round"/>
+    <path d="M168 131L256 93L344 131" stroke="#67e8f9" stroke-opacity=".42" stroke-width="3" stroke-linecap="round"/>
   </g>
 
+  <!-- metallic angular C -->
   <g filter="url(#glow)">
-    <path d="M335 155H236C190 155 153 192 153 238V274C153 320 190 357 236 357H335C356 357 373 340 373 319V295H315V305C315 313 309 319 301 319H240C218 319 200 301 200 279V233C200 211 218 193 240 193H301C309 193 315 199 315 207V216H373V193C373 172 356 155 335 155Z"
-      fill="url(#metalC)" stroke="#eaffff" stroke-width="5" stroke-linejoin="round"/>
-    <path d="M333 181H242C214 181 191 204 191 232V280C191 308 214 331 242 331H303C321 331 336 316 336 298"
-      fill="none" stroke="#041020" stroke-width="16" stroke-linecap="round"/>
-    <path d="M321 181H242C214 181 191 204 191 232V280C191 308 214 331 242 331H303"
-      fill="none" stroke="#67e8f9" stroke-width="4" stroke-linecap="round" opacity=".72"/>
+    <path d="M333 157H235C190 157 154 193 154 238V274C154 319 190 355 235 355H332C354 355 372 337 372 315V294H314V304C314 312 307 319 299 319H240C218 319 200 301 200 279V233C200 211 218 193 240 193H299C307 193 314 200 314 208V218H372V197C372 175 354 157 333 157Z"
+      fill="url(#steel)"
+      stroke="#f1ffff"
+      stroke-width="5"
+      stroke-linejoin="round"/>
+
+    <path d="M329 181H242C214 181 191 204 191 232V280C191 308 214 331 242 331H302C320 331 335 316 335 298"
+      fill="none"
+      stroke="#03101f"
+      stroke-width="16"
+      stroke-linecap="round"/>
+
+    <path d="M319 181H242C214 181 191 204 191 232V280C191 308 214 331 242 331H302"
+      fill="none"
+      stroke="#67e8f9"
+      stroke-width="4"
+      stroke-linecap="round"
+      opacity=".78"/>
+
+    <path d="M236 160H332C350 160 365 174 369 191" stroke="#ffffff" stroke-opacity=".40" stroke-width="3" stroke-linecap="round"/>
+    <path d="M238 352H331C349 352 365 338 369 319" stroke="#26e8ff" stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/>
   </g>
 
-  <path d="M92 396C164 421 348 421 421 394" stroke="#67e8f9" stroke-opacity=".26" stroke-width="3"/>
+  <path d="M95 398C166 424 346 424 417 397" stroke="#67e8f9" stroke-opacity=".25" stroke-width="3"/>
 </svg>
