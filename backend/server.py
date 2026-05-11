@@ -13597,28 +13597,89 @@ async def public_client_portal_approve(token: str):
     await db.job_proof_packs.update_one({"_id": pack["_id"]}, {"$set": {"status": next_status, "client_approved_at": now, "updated_at": now}})
     return {"success": True}
 
-# --- Launch persistence lite endpoints ---
-
-def _biz_rows(name: str):
-    if name not in db:
-        db[name] = []
-    return db[name]
+# --- Launch persistence endpoints ---
 
 def _now_iso():
     return datetime.utcnow().isoformat()
 
+def _operator_doc(payload: dict, current_user: dict):
+    now = _now_iso()
+    return {
+        "id": payload.get("id") or f"op-{int(time.time()*1000)}",
+        "business_id": str(current_user.get("business_id") or ""),
+        "user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "created_by": str(current_user.get("id") or current_user.get("_id") or ""),
+        "type": payload.get("type") or "operator_action",
+        "status": payload.get("status") or "pending",
+        "payload": payload.get("payload") if isinstance(payload.get("payload"), dict) else payload,
+        "created_at": payload.get("created_at") or now,
+        "updated_at": now,
+    }
+
 @api_router.get('/myob/status-lite')
 async def myob_status_lite(current_user: dict = Depends(get_current_user)):
-    return {'connected': False, 'payment_sync_status': 'not_configured', 'invoice_queue': [], 'errors': []}
+    return {'connected': False, 'payment_sync_status': 'not_configured', 'invoice_queue': [], 'errors': [], 'can_write': False}
 
 @api_router.get('/operator/drafts')
 async def get_operator_drafts(current_user: dict = Depends(get_current_user)):
-    bid = current_user.get('business_id')
-    rows = [r for r in _biz_rows('operator_drafts') if r.get('business_id') == bid]
+    bid = str(current_user.get('business_id') or '')
+    rows = await db.operator_drafts.find({'business_id': bid}).sort('created_at', -1).limit(200).to_list(length=200)
+    for r in rows: r.pop('_id', None)
     return {'items': rows}
 
 @api_router.post('/operator/drafts')
 async def post_operator_drafts(payload: dict, current_user: dict = Depends(get_current_user)):
-    row = {'id': f"od-{int(time.time()*1000)}", 'business_id': current_user.get('business_id'), 'created_at': _now_iso(), 'updated_at': _now_iso(), 'created_by': current_user.get('id'), **payload}
-    _biz_rows('operator_drafts').insert(0, row)
+    row = _operator_doc(payload, current_user)
+    await db.operator_drafts.insert_one(row)
     return row
+
+@api_router.patch('/operator/drafts/{draft_id}')
+async def patch_operator_draft(draft_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
+    bid = str(current_user.get('business_id') or '')
+    patch = {k: v for k, v in payload.items() if k in {'status', 'payload', 'type'}}
+    patch['updated_at'] = _now_iso()
+    await db.operator_drafts.update_one({'id': draft_id, 'business_id': bid}, {'$set': patch})
+    row = await db.operator_drafts.find_one({'id': draft_id, 'business_id': bid}, {'_id': 0})
+    if not row: raise HTTPException(status_code=404, detail='Draft not found')
+    return row
+
+@api_router.get('/operator/approval-log')
+async def get_operator_approval_log(current_user: dict = Depends(get_current_user)):
+    bid = str(current_user.get('business_id') or '')
+    rows = await db.operator_approval_log.find({'business_id': bid}).sort('created_at', -1).limit(200).to_list(length=200)
+    for r in rows: r.pop('_id', None)
+    return {'items': rows}
+
+@api_router.post('/operator/approval-log')
+async def post_operator_approval_log(payload: dict, current_user: dict = Depends(get_current_user)):
+    row = _operator_doc(payload, current_user)
+    await db.operator_approval_log.insert_one(row)
+    return row
+
+@api_router.get('/autopilot/replay')
+async def get_autopilot_replay(current_user: dict = Depends(get_current_user)):
+    bid = str(current_user.get('business_id') or '')
+    rows = await db.autopilot_replay.find({'business_id': bid}).sort('created_at', -1).limit(50).to_list(length=50)
+    for r in rows: r.pop('_id', None)
+    return {'items': rows}
+
+@api_router.post('/autopilot/replay')
+async def post_autopilot_replay(payload: dict, current_user: dict = Depends(get_current_user)):
+    row = _operator_doc({**payload, 'type': payload.get('type') or 'autopilot_replay'}, current_user)
+    await db.autopilot_replay.insert_one(row)
+    return row
+
+@api_router.get('/money-radar/reviews')
+async def get_money_radar_reviews(current_user: dict = Depends(get_current_user)):
+    bid = str(current_user.get('business_id') or '')
+    rows = await db.money_radar_reviews.find({'business_id': bid}).sort('created_at', -1).limit(200).to_list(length=200)
+    for r in rows: r.pop('_id', None)
+    return {'items': rows}
+
+@api_router.post('/money-radar/reviews')
+async def post_money_radar_reviews(payload: dict, current_user: dict = Depends(get_current_user)):
+    row = _operator_doc({**payload, 'type': payload.get('type') or 'money_leak_review'}, current_user)
+    await db.money_radar_reviews.insert_one(row)
+    return row
+
+

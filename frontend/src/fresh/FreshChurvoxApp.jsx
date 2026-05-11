@@ -3,6 +3,9 @@ import WorkerFieldApp from "./worker/WorkerFieldApp";
 import MyobControlCentre from "./components/MyobControlCentre";
 import AutopilotReplay from "./components/AutopilotReplay";
 import TrustQualityScores from "./components/TrustQualityScores";
+import OperatorActionDrawer from "./operator/OperatorActionDrawer";
+import { buildOperatorQueue } from "./operator/operatorHelpers";
+import { persistOperatorAction } from "./operator/operatorStorage";
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import PublicClientPortalPage from "../pages/public/PublicClientPortalPage";
 
@@ -202,7 +205,13 @@ function Hero({ data, prepared }) {
 }
 
 
-function buildApprovalActions({ unassigned = 0, openInvoices = 0, openQuotes = 0, completedNeedsInvoice = 0 }) {
+function buildApprovalActions({ jobs = [], invoices = [], quotes = [] }) {
+  const actions = buildOperatorQueue({ jobs, invoices, quotes });
+  return actions;
+}
+
+/* legacy helper retired */
+function _legacyBuildApprovalActions({ unassigned = 0, openInvoices = 0, openQuotes = 0, completedNeedsInvoice = 0 }) {
   const actions = [];
 
   if (unassigned > 0) {
@@ -261,7 +270,7 @@ function buildApprovalActions({ unassigned = 0, openInvoices = 0, openQuotes = 0
 }
 
 function ApprovalQueue({ unassigned, openInvoices, openQuotes, completedNeedsInvoice, onAction }) {
-  const actions = buildApprovalActions({ unassigned, openInvoices, openQuotes, completedNeedsInvoice });
+  const actions = buildApprovalActions({ jobs: window.__op_jobs || [], invoices: window.__op_invoices || [], quotes: window.__op_quotes || [] });
 
   return (
     <section className="op-approval">
@@ -2898,6 +2907,17 @@ function Login() {
       </form>
     </main>
   );
+}
+
+
+function OperatorActionHost({ api, children }) {
+  const [active, setActive] = useState(null);
+  async function onApprove(action){ const result = await persistOperatorAction(api, { ...action, status: "approved" }); alert(result.source === "backend" ? "Action saved to backend draft queue." : "Backend unavailable. Action saved locally."); setActive(null); }
+  const wrapped = React.cloneElement(children, { openOperatorAction: setActive });
+  return <>
+    {wrapped}
+    <OperatorActionDrawer action={active} onClose={()=>setActive(null)} onApprove={onApprove} onReject={(a)=>setActive({ ...a, status: "rejected"})} onReview={(a)=>setActive({ ...a, status: "pending"})} />
+  </>;
 }
 
 export default function FreshChurvoxApp() {
