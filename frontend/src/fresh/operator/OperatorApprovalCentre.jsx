@@ -304,7 +304,7 @@ function buildAiWorkQueue({ jobs, invoices, quotes, clients, team, enquiries }, 
             title: `SMS reminder for ${invoice.invoice_number || "invoice"}`,
             summary: "AI wrote an editable payment reminder.",
             source_id: idOf(invoice),
-            risk: "SMS is not sent unless owner presses Approve and send now.",
+            risk: "SMS is not sent unless owner presses Approve and send SMS.",
             workspace: "/invoices",
             payload: {
               invoice_id: idOf(invoice),
@@ -355,7 +355,7 @@ function buildAiWorkQueue({ jobs, invoices, quotes, clients, team, enquiries }, 
             title: `Confirm ${titleOf(job, "job")}`,
             summary: "AI prepared an editable customer confirmation SMS.",
             source_id: idOf(job),
-            risk: "SMS is not sent unless owner presses Approve and send now.",
+            risk: "SMS is not sent unless owner presses Approve and send SMS.",
             workspace: "/jobs",
             payload: {
               job_id: idOf(job),
@@ -694,7 +694,7 @@ export default function OperatorApprovalCentre() {
           <p>AI WORK QUEUE</p>
           <h1>AI prepares the work. You stay in control.</h1>
           <span>
-            Everything AI prepares lands here first: worker assignments, invoice drafts, Message to customers,
+            Everything AI prepares lands here first: worker assignments, invoice drafts, Customer messages,
             quote follow-ups, client drafts and admin notes. Nothing customer-facing happens until you approve it.
           </span>
         </div>
@@ -723,13 +723,13 @@ export default function OperatorApprovalCentre() {
 
       <section className="ai-mode-panel">
         <div>
-          <strong>Choose how much AI can prepare</strong>
-          <small>Best for launch: Full Operator, with owner approval before anything is sent.</small>
+          <strong>Choose what AI prepares for you</strong>
+          <small>Recommended: AI prepares the work, then you approve before anything is saved or sent.</small>
         </div>
         <select value={settings.mode} onChange={(e) => setSettings((s) => ({ ...s, mode: e.target.value }))}>
           <option value="observe">Watch only — AI shows nothing to approve</option>
           <option value="drafts">Draft only — AI prepares work but does not execute</option>
-          <option value="full_approval">Full Operator — AI prepares real actions for approval</option>
+          <option value="full_approval">Full help — AI prepares jobs, invoices and messages for approval</option>
         </select>
       </section>
 
@@ -758,17 +758,17 @@ export default function OperatorApprovalCentre() {
       </section>
 
       <section className="ai-stat-grid">
-        <article><b>{stats.prepared}</b><small>Things ready</small></article>
-        <article><b>{stats.dispatch}</b><small>Worker picks</small></article>
-        <article><b>{stats.invoices}</b><small>Invoices ready</small></article>
-        <article><b>{stats.sms}</b><small>Messages ready</small></article>
+        <article><b>{stats.prepared}</b><small>Ready to review</small></article>
+        <article><b>{stats.dispatch}</b><small>Workers suggested</small></article>
+        <article><b>{stats.invoices}</b><small>Invoices drafted</small></article>
+        <article><b>{stats.sms}</b><small>Messages drafted</small></article>
       </section>
 
       <section className="ai-work-board">
         <header>
           <div>
-            <p>REVIEW THESE FIRST</p>
-            <h2>Ready for your decision</h2>
+            <p>WORK READY FOR YOU</p>
+            <h2>Review, edit, then approve</h2>
           </div>
           <span>{actions.length} waiting</span>
         </header>
@@ -833,7 +833,7 @@ export default function OperatorApprovalCentre() {
                     </select>
                   </label>
                   <label>
-                    Note for this action
+                    Owner note
                     <textarea value={edited.note || ""} onChange={(e) => updateField("note", e.target.value)} />
                   </label>
                 </>
@@ -859,11 +859,11 @@ export default function OperatorApprovalCentre() {
                     <input value={edited.to || ""} onChange={(e) => updateField("to", e.target.value)} />
                   </label>
                   <label>
-                    Message to customer
+                    Customer message
                     <textarea value={edited.message || ""} onChange={(e) => updateField("message", e.target.value)} />
                   </label>
                   <div className="ai-warning-box">
-                    Nothing sends from this screen unless you press <b>Approve and send now</b>. You can safely save it as a draft instead.
+                    Nothing sends from this screen unless you press <b>Approve and send SMS</b>. You can safely save it as a draft instead.
                   </div>
                 </>
               ) : selected.type === "lead_to_client" ? (
@@ -897,11 +897,11 @@ export default function OperatorApprovalCentre() {
               <button type="button" onClick={rejectAction} disabled={busy}>Reject</button>
               <button type="button" onClick={openWorkspace} disabled={busy}>Open related page</button>
               <button type="button" onClick={() => approveAction(false)} disabled={busy}>
-                {busy ? "Saving..." : "Approve and save"}
+                {busy ? "Saving..." : "Approve and save draft"}
               </button>
               {(selected.type.startsWith("sms_") || selected.type === "quote_followup") && settings.smsSendRequiresApproval ? (
                 <button className="primary" type="button" onClick={() => approveAction(true)} disabled={busy}>
-                  {busy ? "Sending..." : "Approve and send now"}
+                  {busy ? "Sending..." : "Approve and send SMS"}
                 </button>
               ) : null}
             </footer>
