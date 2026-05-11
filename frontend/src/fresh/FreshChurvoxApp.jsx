@@ -133,13 +133,13 @@ function Shell({ children }) {
         <section className="op-ai-mode">
           <p>AI OPERATOR</p>
           <strong>Active & running 24/7</strong>
-          <small>Running 12 automations</small>
+          <small>Approval-first automation monitor</small>
         </section>
 
         <section className="op-user">
           <div className="op-avatar">A</div>
           <div>
-            <strong>Alex Turner</strong>
+            <strong>{localStorage.getItem("churvox_owner_name") || "Owner"}</strong>
             <small>Business Owner</small>
           </div>
         </section>
@@ -153,11 +153,11 @@ function Shell({ children }) {
 function Topbar() {
   return (
     <div className="op-topbar">
-      <span>☼ Good morning, Alex.</span>
+      <span>☼ {`Good ${new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, ${localStorage.getItem("churvox_owner_name") || "Owner"}.`}</span>
       <div>
         <button>⌂ All locations</button>
         <button>🔔 <i>3</i></button>
-        <button>Wed, 11 May 2026</button>
+        <button>{new Date().toLocaleDateString(undefined, { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}</button>
       </div>
     </div>
   );
@@ -302,109 +302,79 @@ function ProofToPaid() {
 }
 
 function CrewStatus({ team }) {
-  const rows = [
-    ["James Carter", "On site", "Newtown"],
-    ["Mia Patel", "On site", "Lower Hutt"],
-    ["Sam Cooper", "Travelling", "Wellington"],
-    ["Luke Barnes", "Off", "Upper Hutt"],
-  ];
+  const rows = team.slice(0, 6);
 
   return (
     <section className="op-panel op-crew">
       <header><h3>CREW STATUS</h3><Link to="/team">View all crew</Link></header>
-      {rows.map((r, i) => (
-        <div className="op-crew-row" key={r[0]}>
-          <i>{r[0][0]}</i>
-          <strong>{r[0]}</strong>
-          <span className={r[1].toLowerCase().replace(" ", "-")}>● {r[1]}</span>
-          <small>⌖ {r[2]}</small>
+      {rows.length ? rows.map((w, i) => (
+        <div className="op-crew-row" key={w.id || w._id || i}>
+          <i>{(titleOf(w, "W")[0] || "W").toUpperCase()}</i>
+          <strong>{titleOf(w, `Worker ${i + 1}`)}</strong>
+          <span className={statusOf(w, "active").toLowerCase().replace(" ", "-")}>● {statusOf(w, "active")}</span>
+          <small>⌖ {w.region || w.location || w.suburb || "Region not set"}</small>
         </div>
-      ))}
-      <footer>{team.length || 22} crew members</footer>
+      )) : <div className="op-empty">No crew added yet</div>}
+      <footer>{team.length} crew members</footer>
     </section>
   );
 }
 
-function Cashflow() {
+function Cashflow({ invoices }) {
+  const invoiced = invoices.reduce((sum, x) => sum + Number(x.total || x.amount || 0), 0);
+  const received = invoices.filter((x) => String(statusOf(x,"")).toLowerCase().includes("paid")).reduce((sum, x) => sum + Number(x.total || x.amount || 0), 0);
+  const outstanding = Math.max(invoiced - received, 0);
   return (
     <section className="op-panel op-cash">
-      <header><h3>CASHFLOW OVERVIEW</h3><Link to="/invoices">This month⌄</Link></header>
+      <header><h3>CASHFLOW OVERVIEW</h3><Link to="/invoices">Live</Link></header>
       <div className="op-cash-grid">
         <div className="op-donut" />
         <div>
-          <strong>$124,580</strong>
-          <span>Net cashflow</span>
-          <small>▲ 18% vs last month</small>
-          <p><i className="blue" /> Invoiced $182,430</p>
-          <p><i className="green" /> Received $124,580</p>
-          <p><i className="orange" /> Outstanding $57,850</p>
+          <strong>{money({ total: received }) || "$0"}</strong>
+          <span>Received payments</span>
+          <p><i className="blue" /> Invoiced {money({ total: invoiced }) || "$0"}</p>
+          <p><i className="green" /> Received {money({ total: received }) || "$0"}</p>
+          <p><i className="orange" /> Outstanding {money({ total: outstanding }) || "$0"}</p>
         </div>
       </div>
     </section>
   );
 }
 
-function Schedule() {
-  const rows = [
-    ["8:00 AM", "Bathroom Reno", "James Carter", "Newtown"],
-    ["10:30 AM", "Deck Repair", "Mia Patel", "Lower Hutt"],
-    ["1:00 PM", "Kitchen Install", "Sam Cooper", "Island Bay"],
-  ];
+function Schedule({ jobs }) {
+  const rows = jobs.filter((j) => !["completed","done","cancelled"].includes(statusSlug(j))).slice(0, 6);
   return (
     <section className="op-panel">
-      <header><h3>TODAY'S SCHEDULE <b>6</b></h3><Link to="/jobs">View full schedule</Link></header>
-      {rows.map((r) => (
-        <div className="op-schedule-row" key={r.join("-")}>
-          <span>▦ {r[0]}</span>
-          <strong>{r[1]}<small>{r[2]}</small></strong>
-          <em>⌖ {r[3]}</em>
+      <header><h3>TODAY'S SCHEDULE <b>{rows.length}</b></h3><Link to="/jobs">View full schedule</Link></header>
+      {!rows.length ? <div className="op-empty">No jobs yet</div> : rows.map((r, idx) => (
+        <div className="op-schedule-row" key={r.id || r._id || idx}>
+          <span>▦ {r.scheduled_time || r.start_time || "Time TBD"}</span>
+          <strong>{titleOf(r, `Job ${idx+1}`)}<small>{r.assigned_worker_name || r.worker_name || "Unassigned"}</small></strong>
+          <em>⌖ {r.address || r.site_address || r.region || "Location TBD"}</em>
         </div>
       ))}
     </section>
   );
 }
 
-function QuotePipeline() {
-  const stages = [
-    ["NEW", 6, "$28,450"],
-    ["SENT", 12, "$74,820"],
-    ["FOLLOW UP", 8, "$46,210"],
-    ["NEGOTIATION", 5, "$31,560"],
-    ["WON", 7, "$58,330"],
-  ];
+function QuotePipeline({ quotes }) {
+  const open = quotes.filter((q) => ["open","sent","pending","waiting","draft"].includes(statusSlug(q)));
   return (
     <section className="op-pipeline">
-      <h3>QUOTE PIPELINE <b>4</b></h3>
-      {stages.map((s) => (
-        <article key={s[0]}>
-          <span>{s[0]}</span>
-          <strong>{s[1]}</strong>
-          <small>{s[2]}</small>
-        </article>
+      <h3>QUOTE PIPELINE <b>{open.length}</b></h3>
+      {!open.length ? <div className="op-empty">No quotes awaiting follow-up</div> : open.slice(0, 5).map((q, i) => (
+        <article key={q.id || q._id || i}><span>{statusOf(q, "open")}</span><strong>{titleOf(q, `Quote ${i+1}`)}</strong><small>{money(q) || "Amount needs review"}</small></article>
       ))}
-      <div><strong>$239,370</strong><small>Total pipeline value</small><em>▲ 12% vs last month</em></div>
     </section>
   );
 }
 
-function LiveActivity() {
-  const rows = [
-    ["⚡", "AI prepared 4 actions for your approval", "2 min ago"],
-    ["▤", "Invoice INV-20260503-124 drafted", "8 min ago"],
-    ["✉", "Payment reminder batch queued", "15 min ago"],
-    ["✓", "Job #1232 marked complete", "32 min ago"],
-    ["☷", "Quote Q-20260511-04 viewed by client", "45 min ago"],
-  ];
-
+function LiveActivity({ history }) {
   return (
     <section className="op-panel op-activity">
       <header><h3>LIVE ACTIVITY</h3><Link to="/dashboard">View all activity</Link></header>
-      {rows.map((r) => (
-        <div className="op-activity-row" key={r[1]}>
-          <i>{r[0]}</i>
-          <span>{r[1]}</span>
-          <small>{r[2]}</small>
-        </div>
+      {!history.length ? <div className="op-empty">No activity yet</div> : history.map((h) => (
+        <div className="op-activity-row" key={h.id}><i>✓</i><span>{h.title}</span><small>{new Date(h.created_at).toLocaleString()}</small></div>
       ))}
     </section>
   );
@@ -414,14 +384,15 @@ function DataPanel({ title, items, type }) {
   const list = items.length ? items.slice(0, 6) : [];
   return (
     <section className="op-panel op-data">
-      <header><h3>{title} <b>{list.length || 6}</b></h3><a>View all {type}</a></header>
-      {(list.length ? list : Array.from({ length: 5 })).map((item, index) => (
+      <header><h3>{title} <b>{list.length}</b></h3><a>View all {type}</a></header>
+      {!list.length ? <div className="op-empty">{type === "jobs" ? "No jobs yet" : type === "invoices" ? "No invoices yet" : type === "quotes" ? "No quotes awaiting follow-up" : "No data yet"}</div> : null}
+      {list.map((item, index) => (
         <div className="op-data-row" key={item?.id || item?._id || index}>
           <div>
-            <strong>{item ? titleOf(item, `${type} ${index + 1}`) : ["Bathroom Reno", "Deck Repair", "Fence repair", "Kitchen install", "Lawn service"][index]}</strong>
-            <small>{item ? [item.client_name || item.customer_name, item.address || item.site_address, money(item)].filter(Boolean).join(" · ") : "1 Deep Audit Street, Wellington · $120"}</small>
+            <strong>{titleOf(item, `${type} ${index + 1}`)}</strong>
+            <small>{[item.client_name || item.customer_name, item.address || item.site_address, money(item)].filter(Boolean).join(" · ")}</small>
           </div>
-          <span>{item ? statusOf(item, type === "invoices" ? "draft" : "assigned") : type === "invoices" ? "Draft" : "Assigned"}</span>
+          <span>{statusOf(item, type === "invoices" ? "draft" : "assigned")}</span>
         </div>
       ))}
     </section>
@@ -598,14 +569,14 @@ function Dashboard() {
   const openInvoices = data.invoices.filter((x) => !["paid", "void", "cancelled"].includes(statusOf(x).toLowerCase()));
   const openQuotes = data.quotes.filter((x) => !["accepted", "declined", "converted"].includes(statusOf(x).toLowerCase()));
   const unassigned = data.jobs.filter(isUnassigned);
-  const prepared = unassigned.length + openInvoices.length + openQuotes.length || 23;
+  const prepared = unassigned.length + openInvoices.length + openQuotes.length;
 
   return <Shell><Topbar />{toast ? <div className="op-warning">{toast}</div> : null}<ActionModal modal={modal} onClose={() => setModal(null)} onConfirm={confirmAction} busy={busy} />{data.error ? <div className="op-warning">{data.error}</div> : null}<Hero data={data} prepared={prepared} />
-  <section className="op-top-grid"><ApprovalQueue unassigned={unassigned.length || 6} openInvoices={openInvoices.length || 13} openQuotes={openQuotes.length || 4} onAction={openAction} /><ProofToPaid /></section>
-  <section className="op-mid-grid"><CrewStatus team={data.team} /><Cashflow /><Schedule /><LiveActivity /></section>
+  <section className="op-top-grid"><ApprovalQueue unassigned={unassigned.length} openInvoices={openInvoices.length} openQuotes={openQuotes.length} onAction={openAction} /><ProofToPaid /></section>
+  <section className="op-mid-grid"><CrewStatus team={data.team} /><Cashflow invoices={data.invoices} /><Schedule jobs={data.jobs} /><LiveActivity history={history} /></section>
   <section className="op-bottom-grid"><DataPanel title="TODAY'S SCHEDULE" type="jobs" items={data.jobs} /><DataPanel title="QUOTE PIPELINE" type="quotes" items={data.quotes} /></section>
   <section className="op-bottom-grid"><section className="op-panel"><h3>APPROVAL HISTORY</h3>{history.map((h)=><div className="op-data-row" key={h.id}><strong>{h.result || h.mode}</strong><small>{h.title} · {new Date(h.created_at).toLocaleString()} · {h.target}</small></div>)}</section><section className="op-panel"><h3>OPERATOR DRAFTS</h3>{drafts.map((d)=><div className="op-data-row" key={d.id}><strong>{d.title}</strong><small>{d.type} · {new Date(d.created_at).toLocaleString()} · {d.target}</small></div>)}</section></section>
-  <QuotePipeline /></Shell>;
+  <QuotePipeline quotes={data.quotes} /></Shell>;
 }
 
 
