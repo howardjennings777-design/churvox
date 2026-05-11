@@ -1,0 +1,178 @@
+/* =========================================================
+   CHURVOX PHASE 21 — PUBLIC CLIENT / QUOTE / INVOICE POLISH
+   CSS only. Existing public portal logic untouched.
+   ========================================================= */
+
+body main [class*="public"],
+body main [class*="Public"],
+body main [class*="portal"],
+body main [class*="Portal"],
+body main [class*="document"],
+body main [class*="Document"],
+body main [class*="quote"],
+body main [class*="Quote"],
+body main [class*="invoice"],
+body main [class*="Invoice"] {
+  scroll-behavior: smooth;
+}
+
+/* Customer-facing page frame */
+body main [class*="public"] .bg-white,
+body main [class*="Public"] .bg-white,
+body main [class*="portal"] .bg-white,
+body main [class*="Portal"] .bg-white,
+body main [class*="document"] .bg-white,
+body main [class*="Document"] .bg-white {
+  background: rgba(255, 255, 255, 0.97) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 26px !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Public cards */
+body main [class*="public"] section,
+body main [class*="Public"] section,
+body main [class*="portal"] section,
+body main [class*="Portal"] section,
+body main [class*="document"] section,
+body main [class*="Document"] section,
+body main [class*="public"] article,
+body main [class*="Public"] article,
+body main [class*="portal"] article,
+body main [class*="Portal"] article,
+body main [class*="document"] article,
+body main [class*="Document"] article {
+  border-radius: 24px !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Public buttons */
+body main [class*="public"] button,
+body main [class*="Public"] button,
+body main [class*="portal"] button,
+body main [class*="Portal"] button,
+body main [class*="document"] button,
+body main [class*="Document"] button,
+body main [class*="public"] a[role="button"],
+body main [class*="Public"] a[role="button"],
+body main [class*="portal"] a[role="button"],
+body main [class*="Portal"] a[role="button"],
+body main [class*="document"] a[role="button"],
+body main [class*="Document"] a[role="button"] {
+  min-height: 46px !important;
+  border-radius: 16px !important;
+  font-weight: 900 !important;
+  touch-action: manipulation;
+}
+
+body main [class*="public"] button:active,
+body main [class*="Public"] button:active,
+body main [class*="portal"] button:active,
+body main [class*="Portal"] button:active,
+body main [class*="document"] button:active,
+body main [class*="Document"] button:active {
+  transform: scale(0.99);
+}
+
+/* Public inputs */
+body main [class*="public"] input,
+body main [class*="Public"] input,
+body main [class*="portal"] input,
+body main [class*="Portal"] input,
+body main [class*="document"] input,
+body main [class*="Document"] input,
+body main [class*="public"] textarea,
+body main [class*="Public"] textarea,
+body main [class*="portal"] textarea,
+body main [class*="Portal"] textarea,
+body main [class*="document"] textarea,
+body main [class*="Document"] textarea {
+  min-height: 46px !important;
+  border-radius: 16px !important;
+  border: 1px solid #dbe4f0 !important;
+  background: #ffffff !important;
+}
+
+/* Quote/invoice decision buttons */
+body main [class*="accept"],
+body main [class*="Accept"],
+body main [data-action*="accept"],
+body main [class*="pay"],
+body main [class*="Pay"] {
+  border-color: #bbf7d0 !important;
+}
+
+body main [class*="decline"],
+body main [class*="Decline"],
+body main [data-action*="decline"] {
+  border-color: #fecaca !important;
+}
+
+/* Document totals and important numbers */
+body main [class*="total"],
+body main [class*="Total"],
+body main [class*="amount"],
+body main [class*="Amount"],
+body main [class*="price"],
+body main [class*="Price"] {
+  letter-spacing: -0.02em;
+}
+
+/* Public tables */
+body main [class*="public"] table,
+body main [class*="Public"] table,
+body main [class*="portal"] table,
+body main [class*="Portal"] table,
+body main [class*="document"] table,
+body main [class*="Document"] table {
+  border-radius: 22px;
+  overflow: hidden;
+}
+
+/* Mobile customer pages */
+@media (max-width: 760px) {
+  body main [class*="public"] h1,
+  body main [class*="Public"] h1,
+  body main [class*="portal"] h1,
+  body main [class*="Portal"] h1,
+  body main [class*="document"] h1,
+  body main [class*="Document"] h1 {
+    font-size: 34px !important;
+    letter-spacing: -0.05em !important;
+  }
+
+  body main [class*="public"] table,
+  body main [class*="Public"] table,
+  body main [class*="portal"] table,
+  body main [class*="Portal"] table,
+  body main [class*="document"] table,
+  body main [class*="Document"] table {
+    display: block;
+    overflow-x: auto;
+    border-radius: 20px;
+  }
+
+  body main [class*="public"] .bg-white,
+  body main [class*="Public"] .bg-white,
+  body main [class*="portal"] .bg-white,
+  body main [class*="Portal"] .bg-white,
+  body main [class*="document"] .bg-white,
+  body main [class*="Document"] .bg-white {
+    border-radius: 22px !important;
+  }
+
+  body main [class*="public"] button,
+  body main [class*="Public"] button,
+  body main [class*="portal"] button,
+  body main [class*="Portal"] button,
+  body main [class*="document"] button,
+  body main [class*="Document"] button,
+  body main [class*="public"] a[role="button"],
+  body main [class*="Public"] a[role="button"],
+  body main [class*="portal"] a[role="button"],
+  body main [class*="Portal"] a[role="button"],
+  body main [class*="document"] a[role="button"],
+  body main [class*="Document"] a[role="button"] {
+    min-height: 48px !important;
+  }
+}
