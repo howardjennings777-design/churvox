@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./operatorTheme.css";
 import "./operatorDesignFinal.css";
+import FreshChurvoxApp from "../fresh/FreshChurvoxApp";
 import OperatorShell from "./OperatorShell";
 import { useOperatorData } from "./dataHooks";
 import CreateModal from "./components/CreateModal";
@@ -76,6 +77,32 @@ const pathToKey = {
   "/settings": "settings",
 };
 
+
+function shouldUseLegacyApp() {
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+
+  const exactLegacyPaths = new Set([
+    "/login",
+    "/signup",
+    "/register",
+    "/forgot-password",
+    "/reset-password",
+    "/admin",
+    "/admin/login",
+    "/owner/login",
+  ]);
+
+  if (exactLegacyPaths.has(path)) return true;
+
+  return (
+    path.startsWith("/public") ||
+    path.startsWith("/client-portal") ||
+    path.startsWith("/worker") ||
+    path.startsWith("/v3") ||
+    path.startsWith("/v4")
+  );
+}
+
 function keyFromPath() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
   return pathToKey[path] || "hub";
@@ -86,6 +113,10 @@ function pathForKey(key) {
 }
 
 export default function OperatorApp() {
+  return shouldUseLegacyApp() ? <FreshChurvoxApp /> : <OperatorOSCore />;
+}
+
+function OperatorOSCore() {
   const data = useOperatorData();
   const [role, setRole] = useState("owner");
   const [current, setCurrentRaw] = useState(keyFromPath);

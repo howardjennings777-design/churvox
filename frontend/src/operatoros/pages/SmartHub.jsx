@@ -38,7 +38,7 @@ function MiniPanel({ title, items = [], empty, onOpen }) {
   );
 }
 
-export default function SmartHub({ data, onNav }) {
+export default function SmartHub({ data, onNav, onCreate }) {
   const actions = buildAiActions(data);
 
   const setupIssues = [
@@ -66,7 +66,7 @@ export default function SmartHub({ data, onNav }) {
           </small>
           <footer>
             <button onClick={() => onNav("queue")}>Open AI Work Queue</button>
-            <button onClick={() => onNav("jobs")}>Create Job</button>
+            <button onClick={() => onCreate?.("jobs")}>Create Job</button>
             <button onClick={() => onNav("import")}>Import CSV</button>
             <button onClick={() => onNav("system")}>System Centre</button>
           </footer>
