@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./operatorTheme.css";
+import "./operatorDesignFinal.css";
 import OperatorShell from "./OperatorShell";
 import { useOperatorData } from "./dataHooks";
 import CreateModal from "./components/CreateModal";
