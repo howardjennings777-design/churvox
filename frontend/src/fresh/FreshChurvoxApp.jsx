@@ -93,7 +93,7 @@ function useLiveData() {
 
     setState({
       loading: false,
-      error: calls.some((c) => c.status === "rejected") ? "Live data is syncing. Safe dashboard view is active." : "",
+      error: calls.some((c) => c.status === "rejected") ? "Live data is syncing. Dashboard is active." : "",
       jobs: calls[0].status === "fulfilled" ? toArray(calls[0].value, ["jobs"]) : [],
       clients: calls[1].status === "fulfilled" ? toArray(calls[1].value, ["clients"]) : [],
       quotes: calls[2].status === "fulfilled" ? toArray(calls[2].value, ["quotes"]) : [],
@@ -558,7 +558,7 @@ function CrewStatus({ team }) {
           <span className={statusOf(w, "active").toLowerCase().replace(" ", "-")}>● {statusOf(w, "active")}</span>
           <small>⌖ {w.region || w.location || w.suburb || "Region not set"}</small>
         </div>
-      )) : <div className="op-empty">No crew added yet</div>}
+      )) : <div className="op-empty">No crew added</div>}
       <footer>{team.length} crew members</footer>
     </section>
   );
@@ -590,7 +590,7 @@ function Schedule({ jobs }) {
   return (
     <section className="op-panel">
       <header><h3>TODAY'S SCHEDULE <b>{rows.length}</b></h3><Link to="/jobs">View full schedule</Link></header>
-      {!rows.length ? <div className="op-empty">No jobs yet</div> : rows.map((r, idx) => (
+      {!rows.length ? <div className="op-empty">No jobs scheduled</div> : rows.map((r, idx) => (
         <div className="op-schedule-row" key={r.id || r._id || idx}>
           <span>▦ {r.scheduled_time || r.start_time || "Time TBD"}</span>
           <strong>{titleOf(r, `Job ${idx+1}`)}<small>{r.assigned_worker_name || r.worker_name || "Unassigned"}</small></strong>
@@ -606,7 +606,7 @@ function QuotePipeline({ quotes }) {
   return (
     <section className="op-pipeline">
       <h3>QUOTE PIPELINE <b>{open.length}</b></h3>
-      {!open.length ? <div className="op-empty">No quotes awaiting follow-up</div> : open.slice(0, 5).map((q, i) => (
+      {!open.length ? <div className="op-empty">No quote follow-ups</div> : open.slice(0, 5).map((q, i) => (
         <article key={q.id || q._id || i}><span>{statusOf(q, "open")}</span><strong>{titleOf(q, `Quote ${i+1}`)}</strong><small>{money(q) || "Amount needs review"}</small></article>
       ))}
     </section>
@@ -630,7 +630,7 @@ function DataPanel({ title, items, type }) {
   return (
     <section className="op-panel op-data">
       <header><h3>{title} <b>{list.length}</b></h3><Link to={target}>View all {type}</Link></header>
-      {!list.length ? <div className="op-empty">{type === "jobs" ? "No jobs yet" : type === "invoices" ? "No invoices yet" : type === "quotes" ? "No quotes awaiting follow-up" : "No data yet"}</div> : null}
+      {!list.length ? <div className="op-empty">{type === "jobs" ? "No jobs scheduled" : type === "invoices" ? "No invoices yet" : type === "quotes" ? "No quote follow-ups" : "No data yet"}</div> : null}
       {list.map((item, index) => (
         <div className="op-data-row" key={item?.id || item?._id || index}>
           <div>

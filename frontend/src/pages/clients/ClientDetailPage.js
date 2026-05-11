@@ -134,7 +134,7 @@ export default function ClientDetailPage() {
           {jobs.length === 0 ? (
             <PremiumEmptyState
               icon={<FileText className="h-10 w-10" />}
-              title="No jobs yet"
+              title="No jobs scheduled"
               subtitle="Jobs you create for this client will appear here."
             />
           ) : (

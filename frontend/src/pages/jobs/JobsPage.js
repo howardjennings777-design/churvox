@@ -222,7 +222,7 @@ export default function JobsPage() {
           ) : filtered.length === 0 ? (
             <PremiumEmptyState
               icon={<Briefcase className="h-6 w-6" />}
-              title={search ? "No jobs match your search" : "No jobs yet"}
+              title={search ? "No jobs match your search" : "No jobs scheduled"}
               subtitle={search ? "Try a different search term." : "Create your first job to start tracking work, photos, time and invoicing."}
               action={!search && isEmployer ? (
                 <PremiumButton onClick={() => navigate("/jobs/new")} iconLeft={<Plus className="h-4 w-4" />} dataTestId="create-first-job">
