@@ -1,0 +1,176 @@
+/* =========================================================
+   CHURVOX PHASE 14 — INVOICES PAGE PREMIUM POLISH
+   CSS only. Existing invoice logic untouched.
+   ========================================================= */
+
+body:not(.chx-worker-route) main [class*="invoice"],
+body:not(.chx-worker-route) main [class*="Invoice"],
+body:not(.chx-worker-route) main [id*="invoice"],
+body:not(.chx-worker-route) main [id*="Invoice"] {
+  scroll-behavior: smooth;
+}
+
+/* Invoice panels/cards */
+body:not(.chx-worker-route) main [class*="invoice"] .bg-white,
+body:not(.chx-worker-route) main [class*="Invoice"] .bg-white,
+body:not(.chx-worker-route) main [class*="invoice"] article,
+body:not(.chx-worker-route) main [class*="Invoice"] article,
+body:not(.chx-worker-route) main [class*="invoice"] section,
+body:not(.chx-worker-route) main [class*="Invoice"] section {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 24px !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08) !important;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+body:not(.chx-worker-route) main [class*="invoice"] article:hover,
+body:not(.chx-worker-route) main [class*="Invoice"] article:hover,
+body:not(.chx-worker-route) main [class*="invoice"] section:hover,
+body:not(.chx-worker-route) main [class*="Invoice"] section:hover {
+  transform: translateY(-1px);
+  border-color: #cfe0f5 !important;
+  box-shadow: 0 22px 56px rgba(15, 23, 42, 0.11) !important;
+}
+
+/* Invoice rows */
+body:not(.chx-worker-route) main [class*="invoice"] tr,
+body:not(.chx-worker-route) main [class*="Invoice"] tr,
+body:not(.chx-worker-route) main [class*="invoice"] li,
+body:not(.chx-worker-route) main [class*="Invoice"] li,
+body:not(.chx-worker-route) main [class*="invoice"] [role="row"],
+body:not(.chx-worker-route) main [class*="Invoice"] [role="row"] {
+  transition: background 0.14s ease;
+}
+
+body:not(.chx-worker-route) main [class*="invoice"] tr:hover,
+body:not(.chx-worker-route) main [class*="Invoice"] tr:hover,
+body:not(.chx-worker-route) main [class*="invoice"] li:hover,
+body:not(.chx-worker-route) main [class*="Invoice"] li:hover,
+body:not(.chx-worker-route) main [class*="invoice"] [role="row"]:hover,
+body:not(.chx-worker-route) main [class*="Invoice"] [role="row"]:hover {
+  background: rgba(37, 99, 235, 0.035);
+}
+
+/* Invoice inputs/forms */
+body:not(.chx-worker-route) main [class*="invoice"] input,
+body:not(.chx-worker-route) main [class*="Invoice"] input,
+body:not(.chx-worker-route) main [class*="invoice"] select,
+body:not(.chx-worker-route) main [class*="Invoice"] select,
+body:not(.chx-worker-route) main [class*="invoice"] textarea,
+body:not(.chx-worker-route) main [class*="Invoice"] textarea {
+  min-height: 46px !important;
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  border: 1px solid #dbe4f0 !important;
+  color: #0f172a !important;
+}
+
+body:not(.chx-worker-route) main [class*="invoice"] input:focus,
+body:not(.chx-worker-route) main [class*="Invoice"] input:focus,
+body:not(.chx-worker-route) main [class*="invoice"] select:focus,
+body:not(.chx-worker-route) main [class*="Invoice"] select:focus,
+body:not(.chx-worker-route) main [class*="invoice"] textarea:focus,
+body:not(.chx-worker-route) main [class*="Invoice"] textarea:focus {
+  border-color: rgba(37, 99, 235, 0.55) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10) !important;
+  outline: none !important;
+}
+
+body:not(.chx-worker-route) main form[class*="invoice"],
+body:not(.chx-worker-route) main form[class*="Invoice"],
+body:not(.chx-worker-route) main [class*="invoice"] form,
+body:not(.chx-worker-route) main [class*="Invoice"] form {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #e2e8f0;
+  border-radius: 26px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  padding: clamp(16px, 2vw, 24px);
+}
+
+/* Invoice buttons */
+body:not(.chx-worker-route) main [class*="invoice"] button,
+body:not(.chx-worker-route) main [class*="Invoice"] button,
+body:not(.chx-worker-route) main [class*="invoice"] a[role="button"],
+body:not(.chx-worker-route) main [class*="Invoice"] a[role="button"] {
+  min-height: 44px !important;
+  border-radius: 15px !important;
+  font-weight: 900 !important;
+  touch-action: manipulation;
+}
+
+body:not(.chx-worker-route) main [class*="invoice"] button:active,
+body:not(.chx-worker-route) main [class*="Invoice"] button:active,
+body:not(.chx-worker-route) main [class*="invoice"] a[role="button"]:active,
+body:not(.chx-worker-route) main [class*="Invoice"] a[role="button"]:active {
+  transform: scale(0.99);
+}
+
+/* Invoice status recognition */
+body:not(.chx-worker-route) main [class*="paid"],
+body:not(.chx-worker-route) main [class*="Paid"],
+body:not(.chx-worker-route) main [data-status*="paid"] {
+  color: #166534 !important;
+  background-color: #dcfce7 !important;
+  border-color: #bbf7d0 !important;
+}
+
+body:not(.chx-worker-route) main [class*="sent"],
+body:not(.chx-worker-route) main [class*="Sent"],
+body:not(.chx-worker-route) main [data-status*="sent"] {
+  color: #1d4ed8 !important;
+  background-color: #dbeafe !important;
+  border-color: #bfdbfe !important;
+}
+
+body:not(.chx-worker-route) main [class*="draft"],
+body:not(.chx-worker-route) main [class*="Draft"],
+body:not(.chx-worker-route) main [data-status*="draft"] {
+  color: #334155 !important;
+  background-color: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
+}
+
+body:not(.chx-worker-route) main [class*="overdue"],
+body:not(.chx-worker-route) main [class*="Overdue"],
+body:not(.chx-worker-route) main [data-status*="overdue"] {
+  color: #991b1b !important;
+  background-color: #fee2e2 !important;
+  border-color: #fecaca !important;
+}
+
+/* Make money totals feel clearer */
+body:not(.chx-worker-route) main [class*="invoice"] [class*="total"],
+body:not(.chx-worker-route) main [class*="Invoice"] [class*="total"],
+body:not(.chx-worker-route) main [class*="invoice"] [class*="amount"],
+body:not(.chx-worker-route) main [class*="Invoice"] [class*="amount"] {
+  letter-spacing: -0.02em;
+}
+
+/* Mobile invoice polish */
+@media (max-width: 760px) {
+  body:not(.chx-worker-route) main h1 {
+    font-size: 34px !important;
+  }
+
+  body:not(.chx-worker-route) main [class*="invoice"] table,
+  body:not(.chx-worker-route) main [class*="Invoice"] table {
+    display: block;
+    overflow-x: auto;
+    border-radius: 20px;
+  }
+
+  body:not(.chx-worker-route) main [class*="invoice"] .bg-white,
+  body:not(.chx-worker-route) main [class*="Invoice"] .bg-white,
+  body:not(.chx-worker-route) main form[class*="invoice"],
+  body:not(.chx-worker-route) main [class*="invoice"] form {
+    border-radius: 22px !important;
+  }
+
+  body:not(.chx-worker-route) main [class*="invoice"] button,
+  body:not(.chx-worker-route) main [class*="Invoice"] button,
+  body:not(.chx-worker-route) main [class*="invoice"] a[role="button"],
+  body:not(.chx-worker-route) main [class*="Invoice"] a[role="button"] {
+    min-height: 46px !important;
+  }
+}
