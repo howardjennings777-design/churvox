@@ -2288,3 +2288,36 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== Operator draft review buttons ===== */
+.op-draft-row-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.op-draft-row-action button {
+  min-height: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(34,211,238,.32);
+  background: rgba(34,211,238,.12);
+  color: #e0faff;
+  padding: 0 12px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.op-draft-row-action button:hover {
+  background: rgba(34,211,238,.18);
+}
+
+@media (max-width: 720px) {
+  .op-draft-row-action {
+    grid-template-columns: 1fr;
+  }
+
+  .op-draft-row-action button {
+    width: 100%;
+  }
+}

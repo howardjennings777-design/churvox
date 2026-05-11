@@ -890,10 +890,21 @@ function Workspace({ kind }) {
             <span>Approval-first drafts. Nothing auto-sent.</span>
           </header>
 
-          {drafts.slice(0, 4).map((draft) => (
-            <div className="op-draft-row" key={draft.id || draft.created_at || draft.title}>
-              <strong>{draft.title || "Operator draft"}</strong>
-              <small>{draft.type || "draft"} · {draft.created_at || "saved"}</small>
+          {drafts.slice(0, 6).map((draft) => (
+            <div className="op-draft-row op-draft-row-action" key={draft.id || draft.created_at || draft.title}>
+              <div>
+                <strong>{draft.title || "Operator draft"}</strong>
+                <small>{draft.type || "draft"} · {draft.created_at || "saved"}</small>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setWorkspaceToast(`${draft.title || "Draft"} is ready for owner review. Nothing has been sent.`);
+                }}
+              >
+                Review
+              </button>
             </div>
           ))}
         </section>
