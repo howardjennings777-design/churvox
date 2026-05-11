@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { ChurvoxLogo } from "../components/ChurvoxLogo";
 import { get, post } from "../lib/api";
-import "../styles/aiControlRoomTopPlayer.css";
-
 const list = (v) => Array.isArray(v) ? v : Array.isArray(v?.data) ? v.data : Array.isArray(v?.items) ? v.items : Array.isArray(v?.results) ? v.results : Array.isArray(v?.actions) ? v.actions : Array.isArray(v?.messages) ? v.messages : [];
 const low = (v) => String(v || "").toLowerCase();
 const money = (v) => `$${Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

@@ -25,8 +25,6 @@ import { safeText } from "../../utils/safeRender";
 import { PremiumAIDraftPanel } from "@/components/premium";
 import WorkerBottomNav from "@/components/worker/WorkerBottomNav";
 import WorkerContactOfficePanel from "@/components/worker/WorkerContactOfficePanel";
-import "./worker-field.css";
-
 const statusClass = (status) => String(status || "assigned").toLowerCase().replace(/\s+/g, "_");
 const isDone = (status) => ["completed", "done", "finished"].includes(statusClass(status));
 

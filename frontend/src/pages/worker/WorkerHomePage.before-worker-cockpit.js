@@ -1,6 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import "./worker-phase8.css";
-
 function getApiBase() {
   const env = typeof process !== "undefined" && process.env ? process.env : {};
   const raw =

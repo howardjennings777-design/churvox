@@ -1,6 +1,4 @@
 import React from "react";
-import "../styles/smartHubPhotoExact.css";
-
 const nav = ["AI Control Room", "Jobs", "Clients", "Quotes", "Invoices", "Dispatch", "Team", "Automation", "Settings"];
 const jobs = [
   ["J-1056", "Smith Residence", "Sarah Smith", "In Progress", "Install air con unit", "Today 2:30pm", "Northridge"],

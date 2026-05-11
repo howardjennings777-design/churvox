@@ -1,7 +1,5 @@
 import React, { useMemo, useState } from "react";
 import WorkerCockpitPage from "../pages/worker/WorkerCockpitPage";
-import "./operator-os.css";
-
 export default function WorkerOperatorOS() {
   const [online, setOnline] = useState(true);
   const [proof, setProof] = useState({ nav: false, start: false, before: false, after: false, note: false, complete: false });

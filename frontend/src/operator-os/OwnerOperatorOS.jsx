@@ -1,6 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import "./operator-phase5.css";
-
 function getApiBase() {
   const env =
     typeof process !== "undefined" && process.env

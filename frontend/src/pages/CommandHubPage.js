@@ -3,8 +3,6 @@ import Layout from "../components/Layout";
 import { ChurvoxLogo } from "../components/ChurvoxLogo";
 import { get, post } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
-import "../styles/smartCommandSystem.css";
-
 const norm = (v) => String(v || "").toLowerCase().trim();
 const idOf = (x) => String(x?.id || x?._id || x?.uuid || "");
 const listFrom = (v, keys = []) => {

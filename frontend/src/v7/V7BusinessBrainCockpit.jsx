@@ -36,8 +36,6 @@ import {
 } from "lucide-react";
 import API_BASE from "../lib/apiBase";
 import { useAuth } from "../context/AuthContext";
-import "./v7.css";
-
 const ZONES = [
   { id: "brain", label: "Brain", full: "Business Brain", line: "AI control", icon: BrainCircuit },
   { id: "work", label: "Work", full: "Work Command", line: "Jobs + dispatch", icon: BriefcaseBusiness },

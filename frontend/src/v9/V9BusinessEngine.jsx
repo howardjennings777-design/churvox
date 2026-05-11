@@ -35,8 +35,6 @@ import {
 } from "lucide-react";
 import API_BASE from "../lib/apiBase";
 import { useAuth } from "../context/AuthContext";
-import "../styles/churvox-final-visual.css";
-
 const css = `
 .v9 *{box-sizing:border-box}
 .v9{min-height:100vh;background:#0a0b0d;color:#f8f1e4;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:grid;grid-template-columns:112px minmax(0,1fr)}

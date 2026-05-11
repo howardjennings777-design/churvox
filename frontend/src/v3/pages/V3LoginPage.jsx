@@ -4,8 +4,6 @@ import { Mail, Lock, ArrowRight } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { getDefaultRoute } from "../../lib/roles";
 import V3Brand from "../components/V3Brand";
-import "../styles/v3.css";
-
 export default function V3LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();

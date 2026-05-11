@@ -22,8 +22,6 @@ import { useAuth } from "../../context/AuthContext";
 import V3Brand from "./V3Brand";
 import V3AiSiteGuide from "./V3AiSiteGuide";
 import V3CsvImport from "./V3CsvImport";
-import "../styles/v3.css";
-
 const navItems = [
   ["Smart Hub", "/dashboard", ShieldCheck],
   ["AI Operator", "/v3/operator", Sparkles],

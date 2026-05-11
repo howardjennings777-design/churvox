@@ -14,8 +14,6 @@ import {
 } from "lucide-react";
 import { get } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
-import "../styles/v3.css";
-
 const safeArray = (value) => {
   if (Array.isArray(value)) return value;
   if (Array.isArray(value?.data)) return value.data;

@@ -16,8 +16,6 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import WorkerBottomNav from "@/components/worker/WorkerBottomNav";
 import WorkerContactOfficePanel from "@/components/worker/WorkerContactOfficePanel";
-import "../../styles/churvox-worker-settings.css";
-
 function clean(value, fallback = "Not set") {
   if (value === undefined || value === null || String(value).trim() === "") return fallback;
   return String(value).trim();

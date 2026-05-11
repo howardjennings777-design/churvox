@@ -30,8 +30,6 @@ import {
 } from "lucide-react";
 import API_BASE from "../lib/apiBase";
 import { useAuth } from "../context/AuthContext";
-import "./v5.css";
-
 const NAV = [
   ["hub", "Smart Hub", "Today first", LayoutDashboard],
   ["work", "Work", "Jobs + dispatch", BriefcaseBusiness],

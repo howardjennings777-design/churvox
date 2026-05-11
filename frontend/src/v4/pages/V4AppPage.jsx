@@ -5,9 +5,6 @@ import { useAuth } from "../../context/AuthContext";
 import { get } from "../../lib/api";
 import { approveAiAction, loadAiOperatorQueue, prepareTodayWithAi, runAiDailyCheck } from "../../lib/aiOperator";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
-import "../styles/v4.css";
-import "../styles/v4-power.css";
-
 const lower = (v) => String(v || "").toLowerCase();
 const actionId = (a) => a?.id || a?._id || a?.action_id || a?.uuid;
 const alias = { dashboard: "smart-hub", overview: "smart-hub", "smart-hub": "smart-hub", operator: "operator", decisions: "decisions", jobs: "jobs", dispatch: "dispatch", clients: "clients", quotes: "quotes", invoices: "invoices", team: "team", payroll: "payroll", rules: "rules", reports: "reports", messages: "messages", integrations: "integrations", settings: "settings" };

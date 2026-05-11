@@ -37,8 +37,6 @@ import {
 } from "lucide-react";
 import API_BASE from "../lib/apiBase";
 import { useAuth } from "../context/AuthContext";
-import "./v7.css";
-
 const NAV = [
   { id: "brain", label: "Brain", sub: "AI runs today", icon: BrainCircuit },
   { id: "moves", label: "Moves", sub: "Approve actions", icon: Bot },

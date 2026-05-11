@@ -20,9 +20,6 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { get, patch, post } from "../../lib/api";
-import "../styles/v4.css";
-import "../styles/v4-worker.css";
-
 const lower = (v) => String(v || "").toLowerCase();
 const list = (payload) => Array.isArray(payload?.data) ? payload.data : Array.isArray(payload?.data?.jobs) ? payload.data.jobs : Array.isArray(payload?.jobs) ? payload.jobs : Array.isArray(payload) ? payload : [];
 const idOf = (j) => j?.id || j?._id || j?.job_id;

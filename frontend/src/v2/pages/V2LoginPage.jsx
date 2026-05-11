@@ -4,8 +4,6 @@ import { Mail, Lock, ArrowRight } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { getDefaultRoute } from "../../lib/roles";
 import { ChurvoxLogo } from "../../components/ChurvoxLogo";
-import "../styles/v2.css";
-
 export default function V2LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();

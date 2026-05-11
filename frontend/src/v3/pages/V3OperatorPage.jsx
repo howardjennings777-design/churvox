@@ -14,8 +14,6 @@ import {
 import { get, post, patch, del as delRequest } from "../../lib/api";
 import { approveAiAction } from "../../lib/aiOperator";
 import V3Shell from "../components/V3Shell";
-import "../styles/v3.css";
-
 const weekdays = [
   [1, "Mon"],
   [2, "Tue"],

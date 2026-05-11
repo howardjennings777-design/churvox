@@ -2,8 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import V2Shell from "../components/V2Shell";
 import { useApi } from "../../hooks/useApi";
-import "../styles/v2.css";
-
 const pageCopy = {
   jobs: { title: "Live Run Sheet", eyebrow: "Jobs", subtitle: "Today’s jobs, crew coverage, completed work and invoice handoff in one calm workspace.", endpoint: "/jobs", primary: "New job", newPath: "/jobs/new", empty: "No jobs found yet." },
   clients: { title: "Client Workspace", eyebrow: "Clients", subtitle: "Customers, sites, jobs, quotes and invoice follow-ups without the clutter.", endpoint: "/clients", primary: "Add client", newPath: "/clients/new", empty: "No clients found yet." },

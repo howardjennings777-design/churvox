@@ -26,8 +26,6 @@ import { approveAiAction } from "../../lib/aiOperator";
 import { get, post, put, patch, del as delRequest } from "../../lib/api";
 import V3Shell from "../components/V3Shell";
 import V3ChurvoxEdge from "../components/V3ChurvoxEdge";
-import "../styles/v3.css";
-
 const PAGE_META = {
   decisions: { title: "Owner Decisions", kicker: "Approve and do it", intro: "AI finds the work, prepares the action, explains why, and waits for owner approval.", icon: Sparkles, action: "prepare_ai", primary: "Prepare decisions" },
   jobs: { title: "AI Run Sheet", kicker: "Field work command", intro: "Churvox checks every job for crew, proof, timing, billing readiness, and the next owner-approved move.", icon: Briefcase, action: "new_job", primary: "Create job" },

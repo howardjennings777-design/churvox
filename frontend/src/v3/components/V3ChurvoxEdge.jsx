@@ -1,7 +1,5 @@
 import React from "react";
 import { Brain, CheckCircle2, Clock, DollarSign, ShieldCheck, Sparkles, Users, Zap } from "lucide-react";
-import "../styles/v3.css";
-
 const safeValue = (value) => {
   if (value === null || value === undefined || value === "") return "0";
   return String(value);

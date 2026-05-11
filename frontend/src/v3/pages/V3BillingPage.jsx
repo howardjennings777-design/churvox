@@ -2,8 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, CreditCard, MessageSquare, RefreshCw, ShieldCheck, Users } from "lucide-react";
 import { get, post } from "../../lib/api";
 import V3Shell from "../components/V3Shell";
-import "../styles/v3.css";
-
 const PLANS = [
   { id: "team", name: "Team", price: "$70", subtitle: "Small crew", points: ["Up to 5 workers", "Up to 30 clients", "SMS enabled", "No MYOB"] },
   { id: "pro", name: "Pro", price: "$110", subtitle: "Growing operation", points: ["Up to 20 workers", "Up to 40 clients", "MYOB add-on ready", "AI admin support"] },

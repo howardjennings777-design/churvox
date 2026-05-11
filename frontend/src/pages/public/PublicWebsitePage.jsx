@@ -18,8 +18,6 @@ import {
   WalletCards,
   Zap,
 } from "lucide-react";
-import "./public-website.css";
-
 const features = [
   ["AI Operator Queue", "Churvox scans jobs, cash, crew, clients, proof, and prepares the next moves for owner approval.", BrainCircuit],
   ["Proof-to-paid", "Worker photos and notes become an AI summary, draft invoice, and approval flow.", ReceiptText],

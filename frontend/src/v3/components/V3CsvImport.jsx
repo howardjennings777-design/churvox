@@ -3,8 +3,6 @@ import { useLocation } from "react-router-dom";
 import { FileSpreadsheet, Upload, X } from "lucide-react";
 import { post } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
-import "../styles/v3.css";
-
 const IMPORTS = [
   {
     key: "clients",

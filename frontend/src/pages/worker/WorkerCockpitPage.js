@@ -1,6 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import "../../styles/churvox-worker-cockpit.css";
-
 const env = typeof process !== "undefined" && process.env ? process.env : {};
 const RAW_API_BASE =
   env.REACT_APP_BACKEND_URL ||

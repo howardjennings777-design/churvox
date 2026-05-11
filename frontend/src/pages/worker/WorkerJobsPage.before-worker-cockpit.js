@@ -22,8 +22,6 @@ import { useAuth } from "@/context/AuthContext";
 import { ChurvoxLogo } from "@/components/ChurvoxLogo";
 import WorkerBottomNav from "@/components/worker/WorkerBottomNav";
 import WorkerContactOfficePanel from "@/components/worker/WorkerContactOfficePanel";
-import "./worker-field.css";
-
 const canStart = (status) => ["assigned", "acknowledged", "paused"].includes(String(status || "").toLowerCase());
 const isDone = (status) => ["completed", "done", "finished"].includes(String(status || "").toLowerCase());
 const jobId = (job) => job?.id || job?._id || job?.uuid || "";

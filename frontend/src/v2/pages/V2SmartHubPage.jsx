@@ -7,8 +7,6 @@ import {
   runAiDailyCheck,
 } from "../../lib/aiOperator";
 import V2Shell from "../components/V2Shell";
-import "../styles/v2.css";
-
 const workspaces = [
   ["Jobs", "/jobs", "Live run sheet"],
   ["Dispatch", "/dispatch", "Crew coverage"],

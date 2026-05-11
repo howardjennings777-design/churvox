@@ -25,8 +25,6 @@ import {
 import { get } from "../../lib/api";
 import V3Shell from "../components/V3Shell";
 import V3ChurvoxEdge from "../components/V3ChurvoxEdge";
-import "../styles/v3.css";
-
 const lower = (value) => String(value || "").toLowerCase();
 const actionId = (action) => action?.id || action?._id || action?.action_id || action?.uuid;
 
