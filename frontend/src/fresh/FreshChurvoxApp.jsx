@@ -2916,7 +2916,7 @@ export default function FreshChurvoxApp() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/ai-approvals" element={<OperatorApprovalCentre />} />
+          <Route path="/ai-approvals" element={<Shell><Topbar /><OperatorApprovalCentre /></Shell>} />
         <Route path="/jobs" element={<Workspace kind="jobs" />} />
         <Route path="/clients" element={<Workspace kind="clients" />} />
         <Route path="/quotes" element={<Workspace kind="quotes" />} />
