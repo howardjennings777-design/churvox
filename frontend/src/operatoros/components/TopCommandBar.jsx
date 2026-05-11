@@ -3,10 +3,21 @@ import { clientOf, titleOf, statusOf } from "../api";
 import DetailDrawer from "./DetailDrawer";
 import NotificationCentre from "./NotificationCentre";
 
+const ROLE_OPTIONS = [
+  { value: "owner", label: "Owner" },
+  { value: "manager", label: "Manager" },
+  { value: "office_admin", label: "Office Admin" },
+  { value: "worker", label: "Worker" },
+  { value: "payroll", label: "Payroll" },
+];
+
 export default function TopCommandBar({ role, setRole, data, onNav, onCreate }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [roleOpen, setRoleOpen] = useState(false);
   const [query, setQuery] = useState("");
+
+  const activeRole = ROLE_OPTIONS.find((item) => item.value === role) || ROLE_OPTIONS[0];
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -42,6 +53,11 @@ export default function TopCommandBar({ role, setRole, data, onNav, onCreate }) 
     onCreate?.(type);
   }
 
+  function chooseRole(nextRole) {
+    setRole?.(nextRole);
+    setRoleOpen(false);
+  }
+
   return (
     <>
       <div className="op-topbar">
@@ -54,15 +70,31 @@ export default function TopCommandBar({ role, setRole, data, onNav, onCreate }) 
           <button type="button" onClick={() => onNav?.("queue")}>AI Queue</button>
           <button type="button" onClick={() => onNav?.("system")}>System Centre</button>
 
-          <select value={role} onChange={(event) => setRole?.(event.target.value)} aria-label="Role preview">
-            <option value="owner">Owner</option>
-            <option value="manager">Manager</option>
-            <option value="office_admin">Office Admin</option>
-            <option value="worker">Worker</option>
-            <option value="payroll">Payroll</option>
-          </select>
+          <div className="op-role-switch">
+            <button type="button" onClick={() => setRoleOpen((open) => !open)}>
+              {activeRole.label}
+              <span>⌄</span>
+            </button>
+
+            {roleOpen ? (
+              <div className="op-role-menu">
+                {ROLE_OPTIONS.map((item) => (
+                  <button
+                    key={item.value}
+                    type="button"
+                    className={item.value === role ? "active" : ""}
+                    onClick={() => chooseRole(item.value)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
+
+      {roleOpen ? <button className="op-click-away" aria-label="Close role menu" onClick={() => setRoleOpen(false)} /> : null}
 
       <DetailDrawer
         open={searchOpen}

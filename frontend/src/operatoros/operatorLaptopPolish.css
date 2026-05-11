@@ -640,3 +640,67 @@
     min-height: 130px !important;
   }
 }
+
+/* CUSTOM_ROLE_DROPDOWN_FIX */
+.op-role-switch {
+  position: relative !important;
+  z-index: 80 !important;
+}
+
+.op-role-switch > button {
+  min-width: 88px !important;
+  display: inline-flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.op-role-switch > button span {
+  color: #67e8f9 !important;
+  font-size: 11px !important;
+}
+
+.op-role-menu {
+  position: absolute !important;
+  top: calc(100% + 8px) !important;
+  right: 0 !important;
+  z-index: 120 !important;
+  width: 174px !important;
+  display: grid !important;
+  gap: 6px !important;
+  padding: 8px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(125, 234, 255, .22) !important;
+  background:
+    radial-gradient(circle at 80% 0%, rgba(34, 211, 238, .12), transparent 70%),
+    rgba(3, 10, 24, .96) !important;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, .45), 0 0 30px rgba(34, 211, 238, .10) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+.op-role-menu button {
+  width: 100% !important;
+  min-height: 34px !important;
+  justify-content: flex-start !important;
+  border-radius: 12px !important;
+  padding: 0 11px !important;
+  color: #dff7ff !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+}
+
+.op-role-menu button:hover,
+.op-role-menu button.active {
+  color: #03111e !important;
+  background: linear-gradient(135deg, #67e8f9, #38bdf8) !important;
+  border-color: rgba(125, 234, 255, .45) !important;
+}
+
+.op-click-away {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 70 !important;
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
