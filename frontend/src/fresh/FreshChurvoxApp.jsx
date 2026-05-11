@@ -72,6 +72,195 @@ function statusOf(item, fallback = "active") {
   return String(item?.status || item?.job_status || item?.payment_status || item?.quote_status || item?.state || fallback).replaceAll("_", " ");
 }
 
+
+// CHURVOX_MANUAL_CREATE_START
+const MANUAL_CREATE_CONFIG = {
+  clients: {
+    label: "Add client",
+    title: "Add client manually",
+    endpoint: "/clients",
+    fields: [
+      ["client_name", "Client name", "text", true],
+      ["contact_name", "Contact name", "text", false],
+      ["email", "Email", "email", false],
+      ["phone", "Phone", "tel", false],
+      ["address", "Address", "text", false],
+      ["notes", "Notes", "textarea", false],
+    ],
+  },
+  jobs: {
+    label: "Add job",
+    title: "Add job manually",
+    endpoint: "/jobs",
+    fields: [
+      ["title", "Job title", "text", true],
+      ["client_name", "Client name", "text", false],
+      ["address", "Job address", "text", false],
+      ["scheduled_date", "Scheduled date", "date", false],
+      ["scheduled_time", "Scheduled time", "time", false],
+      ["description", "Job notes", "textarea", false],
+    ],
+  },
+  quotes: {
+    label: "Add quote",
+    title: "Create quote manually",
+    endpoint: "/quotes",
+    fields: [
+      ["title", "Quote title", "text", true],
+      ["client_name", "Client name", "text", false],
+      ["email", "Client email", "email", false],
+      ["amount", "Amount", "number", false],
+      ["description", "Quote description", "textarea", false],
+    ],
+  },
+  invoices: {
+    label: "Add invoice",
+    title: "Create invoice manually",
+    endpoint: "/invoices",
+    fields: [
+      ["client_name", "Client name", "text", true],
+      ["email", "Client email", "email", false],
+      ["amount", "Amount", "number", false],
+      ["description", "Invoice description", "textarea", false],
+      ["due_date", "Due date", "date", false],
+    ],
+  },
+  team: {
+    label: "Add worker",
+    title: "Add worker manually",
+    endpoint: "/team/workers",
+    fields: [
+      ["name", "Worker name", "text", true],
+      ["email", "Email", "email", true],
+      ["phone", "Phone", "tel", false],
+      ["role", "Role", "text", false],
+      ["region", "Region", "text", false],
+      ["skills", "Skills", "text", false],
+      ["notes", "Notes", "textarea", false],
+    ],
+  },
+};
+
+function ManualCreateModal({ type, onClose, onSaved }) {
+  const config = MANUAL_CREATE_CONFIG[type];
+  const [form, setForm] = React.useState({});
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState("");
+
+  if (!config) return null;
+
+  function updateField(name, value) {
+    setForm((current) => ({ ...current, [name]: value }));
+  }
+
+  async function submit(event) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+
+    const payload = { ...form };
+
+    if (type === "clients") {
+      payload.name = payload.client_name || payload.name;
+      payload.customer_name = payload.client_name || payload.customer_name;
+    }
+
+    if (type === "jobs") {
+      payload.job_title = payload.title || payload.job_title;
+      payload.status = payload.status || "draft";
+    }
+
+    if (type === "quotes") {
+      payload.status = payload.status || "draft";
+      payload.total = Number(payload.amount || 0);
+    }
+
+    if (type === "invoices") {
+      payload.status = payload.status || "draft";
+      payload.total = Number(payload.amount || 0);
+    }
+
+    if (type === "team") {
+      payload.role = payload.role || "worker";
+    }
+
+    try {
+      await api(config.endpoint, { method: "POST", body: payload });
+      await onSaved?.();
+      onClose();
+    } catch (e) {
+      setError(e.message || "Could not save. Nothing was changed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="manual-create-backdrop" role="presentation" onClick={!busy ? onClose : undefined}>
+      <section className="manual-create-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+        <header>
+          <div>
+            <p>MANUAL ENTRY</p>
+            <h2>{config.title}</h2>
+            <span>Add it now. AI can help with the admin after it exists.</span>
+          </div>
+          <button type="button" onClick={onClose} disabled={busy}>×</button>
+        </header>
+
+        {error ? <div className="manual-create-error">{error}</div> : null}
+
+        <form onSubmit={submit}>
+          {config.fields.map(([name, label, inputType, required]) => (
+            <label key={name}>
+              <span>{label}{required ? " *" : ""}</span>
+              {inputType === "textarea" ? (
+                <textarea
+                  value={form[name] || ""}
+                  required={required}
+                  rows={3}
+                  onChange={(event) => updateField(name, event.target.value)}
+                />
+              ) : (
+                <input
+                  type={inputType}
+                  value={form[name] || ""}
+                  required={required}
+                  onChange={(event) => updateField(name, event.target.value)}
+                />
+              )}
+            </label>
+          ))}
+
+          <footer>
+            <button type="button" className="manual-create-secondary" onClick={onClose} disabled={busy}>Cancel</button>
+            <button type="submit" className="manual-create-primary" disabled={busy}>
+              {busy ? "Saving..." : config.label}
+            </button>
+          </footer>
+        </form>
+      </section>
+    </div>
+  );
+}
+
+function ManualCreateButton({ type, onSaved }) {
+  const config = MANUAL_CREATE_CONFIG[type];
+  const [open, setOpen] = React.useState(false);
+
+  if (!config) return null;
+
+  return (
+    <>
+      <button type="button" className="manual-create-button" onClick={() => setOpen(true)}>
+        + {config.label}
+      </button>
+      {open ? <ManualCreateModal type={type} onClose={() => setOpen(false)} onSaved={onSaved} /> : null}
+    </>
+  );
+}
+// CHURVOX_MANUAL_CREATE_END
+
+
 function money(item) {
   const value = Number(item?.total || item?.amount || item?.price || item?.balance || 0);
   if (!Number.isFinite(value) || value <= 0) return "";
@@ -545,12 +734,18 @@ function ProofToPaid({ jobs = [], invoices = [], reload }) {
 }
 
 
-function CrewStatus({ team }) {
+function CrewStatus({ team, reload }) {
   const rows = team.slice(0, 6);
 
   return (
     <section className="op-panel op-crew">
-      <header><h3>CREW STATUS</h3><Link to="/team">View all crew</Link></header>
+      <header>
+        <h3>CREW STATUS</h3>
+        <div className="op-panel-actions">
+          <ManualCreateButton type="team" onSaved={reload} />
+          <Link to="/team">View all crew</Link>
+        </div>
+      </header>
       {rows.length ? rows.map((w, i) => (
         <div className="op-crew-row" key={w.id || w._id || i}>
           <i>{(titleOf(w, "W")[0] || "W").toUpperCase()}</i>
@@ -624,12 +819,18 @@ function LiveActivity({ history }) {
   );
 }
 
-function DataPanel({ title, items, type }) {
+function DataPanel({ title, items, type, reload }) {
   const list = items.length ? items.slice(0, 6) : [];
   const target = type === "jobs" ? "/jobs" : type === "invoices" ? "/invoices" : type === "quotes" ? "/quotes" : type === "clients" ? "/clients" : "/dashboard";
   return (
     <section className="op-panel op-data">
-      <header><h3>{title} <b>{list.length}</b></h3><Link to={target}>View all {type}</Link></header>
+      <header>
+        <h3>{title} <b>{list.length}</b></h3>
+        <div className="op-panel-actions">
+          {MANUAL_CREATE_CONFIG[type] ? <ManualCreateButton type={type} onSaved={reload} /> : null}
+          <Link to={target}>View all {type}</Link>
+        </div>
+      </header>
       {!list.length ? <div className="op-empty">{type === "jobs" ? "No jobs scheduled" : type === "invoices" ? "No invoices yet" : type === "quotes" ? "No quote follow-ups" : "No data yet"}</div> : null}
       {list.map((item, index) => (
         <div className="op-data-row" key={item?.id || item?._id || index}>

@@ -5092,3 +5092,195 @@ body,
 }
 
 /* CHURVOX_SAFE_SMART_HUB_CLEAN_END */
+
+/* CHURVOX_MANUAL_CREATE_UI_START */
+
+.op-panel-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.manual-create-button {
+  min-height: 34px;
+  border: 1px solid rgba(103, 232, 249, .28);
+  border-radius: 999px;
+  padding: 0 13px;
+  color: #03111e;
+  background: linear-gradient(135deg, #67e8f9, #38bdf8);
+  font-size: 12px;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 0 22px rgba(34, 211, 238, .12);
+}
+
+.manual-create-button:hover {
+  filter: brightness(1.08);
+}
+
+.manual-create-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(2, 6, 18, .72);
+  backdrop-filter: blur(16px);
+}
+
+.manual-create-modal {
+  position: relative;
+  width: min(720px, 100%);
+  max-height: min(86vh, 780px);
+  overflow: auto;
+  border: 1px solid rgba(125, 234, 255, .22);
+  border-radius: 28px;
+  padding: 22px;
+  color: #e6fbff;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(34, 211, 238, .18), transparent 16rem),
+    linear-gradient(180deg, rgba(7, 24, 47, .98), rgba(3, 10, 24, .98));
+  box-shadow: 0 34px 110px rgba(0, 0, 0, .48);
+}
+
+.manual-create-modal header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.manual-create-modal header p {
+  margin: 0 0 7px;
+  color: #67e8f9;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .18em;
+}
+
+.manual-create-modal header h2 {
+  margin: 0;
+  color: #f8fdff;
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: .95;
+  letter-spacing: -.06em;
+}
+
+.manual-create-modal header span {
+  display: block;
+  margin-top: 8px;
+  color: #b8d4e7;
+}
+
+.manual-create-modal header > button {
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(125, 234, 255, .18);
+  border-radius: 13px;
+  color: #e6fbff;
+  background: rgba(255, 255, 255, .08);
+  font-size: 24px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.manual-create-modal form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.manual-create-modal label {
+  display: grid;
+  gap: 7px;
+  color: #cbeefa;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.manual-create-modal label:has(textarea) {
+  grid-column: 1 / -1;
+}
+
+.manual-create-modal input,
+.manual-create-modal textarea {
+  width: 100%;
+  border: 1px solid rgba(125, 234, 255, .16);
+  border-radius: 14px;
+  padding: 12px;
+  color: #f8fdff;
+  background: rgba(2, 8, 23, .54);
+  outline: none;
+}
+
+.manual-create-modal textarea {
+  resize: vertical;
+}
+
+.manual-create-modal input:focus,
+.manual-create-modal textarea:focus {
+  border-color: rgba(103, 232, 249, .48);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, .10);
+}
+
+.manual-create-modal form footer {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.manual-create-primary,
+.manual-create-secondary {
+  min-height: 42px;
+  border-radius: 999px;
+  padding: 0 17px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.manual-create-primary {
+  border: 1px solid rgba(103, 232, 249, .30);
+  color: #03111e;
+  background: linear-gradient(135deg, #67e8f9, #38bdf8);
+}
+
+.manual-create-secondary {
+  border: 1px solid rgba(125, 234, 255, .18);
+  color: #e6fbff;
+  background: rgba(255, 255, 255, .08);
+}
+
+.manual-create-error {
+  margin-bottom: 14px;
+  border: 1px solid rgba(248, 113, 113, .28);
+  border-radius: 16px;
+  padding: 11px 13px;
+  color: #fecaca;
+  background: rgba(127, 29, 29, .24);
+  font-weight: 850;
+}
+
+@media (max-width: 760px) {
+  .manual-create-modal {
+    padding: 18px;
+  }
+
+  .manual-create-modal form {
+    grid-template-columns: 1fr;
+  }
+
+  .manual-create-modal form footer {
+    display: grid;
+  }
+
+  .op-panel-actions {
+    justify-content: flex-start;
+  }
+}
+
+/* CHURVOX_MANUAL_CREATE_UI_END */
