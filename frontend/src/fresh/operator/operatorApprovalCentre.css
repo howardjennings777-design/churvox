@@ -393,3 +393,10 @@
     display: grid;
   }
 }
+
+/* Keep AI Approvals inside the Churvox shell/side-panel layout */
+.op-main .ai-approval-centre {
+  min-height: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
