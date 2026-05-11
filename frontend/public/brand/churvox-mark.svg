@@ -1,13 +1,42 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Churvox app icon">
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bg" x1="8" y1="8" x2="112" y2="112" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#020617"/>
-      <stop offset="0.52" stop-color="#2563EB"/>
-      <stop offset="1" stop-color="#06B6D4"/>
+    <radialGradient id="bgGlow" cx="42%" cy="34%" r="72%">
+      <stop offset="0%" stop-color="#E0FAFF"/>
+      <stop offset="18%" stop-color="#67E8F9"/>
+      <stop offset="46%" stop-color="#0EA5FF"/>
+      <stop offset="100%" stop-color="#020712"/>
+    </radialGradient>
+    <linearGradient id="cGrad" x1="90" y1="70" x2="420" y2="438" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="28%" stop-color="#67E8F9"/>
+      <stop offset="58%" stop-color="#0EA5FF"/>
+      <stop offset="100%" stop-color="#0B1220"/>
     </linearGradient>
+    <linearGradient id="innerGrad" x1="150" y1="100" x2="390" y2="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#07111F"/>
+      <stop offset="100%" stop-color="#020712"/>
+    </linearGradient>
+    <filter id="glow" x="-80" y="-80" width="672" height="672" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.133 0 0 0 0 0.827 0 0 0 0 0.933 0 0 0 .85 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
-  <rect x="6" y="6" width="108" height="108" rx="31" fill="url(#bg)"/>
-  <path d="M78 34a34 34 0 1 0 0 52" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round"/>
-  <path d="M42 60h42" stroke="#7DD3FC" stroke-width="12" stroke-linecap="round"/>
-  <path d="M68 42l20 18-20 18" fill="none" stroke="#22C55E" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="26" y="26" width="460" height="460" rx="142" fill="#020712"/>
+  <rect x="26" y="26" width="460" height="460" rx="142" fill="url(#bgGlow)" opacity="0.38"/>
+  <rect x="45" y="45" width="422" height="422" rx="126" stroke="#67E8F9" stroke-opacity="0.22" stroke-width="3"/>
+
+  <g filter="url(#glow)">
+    <path fill-rule="evenodd" clip-rule="evenodd"
+      d="M156 72H356L442 154V202H318L279 164H188L158 194V318L188 348H279L318 310H442V358L356 440H156L70 354V158L156 72Z"
+      fill="url(#cGrad)"/>
+    <path fill-rule="evenodd" clip-rule="evenodd"
+      d="M177 132H336L384 178V190H304L266 154H204L171 188V324L204 358H266L304 322H384V334L336 380H177L130 333V179L177 132Z"
+      fill="url(#innerGrad)"/>
+    <rect x="233" y="244" width="68" height="24" rx="12" fill="url(#cGrad)"/>
+  </g>
 </svg>
