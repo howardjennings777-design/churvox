@@ -779,6 +779,92 @@ function Workspace({ kind }) {
     setWorkspaceToast("Invoice draft saved for review.");
   }
 
+
+  function workspaceRecordId(item) {
+    return item?.id || item?._id || item?.job_id || item?.worker_id || "";
+  }
+
+  function saveWorkspaceDraft(draft) {
+    const rows = readLocalList("churvox_operator_drafts");
+    rows.unshift({
+      id: `d-${Date.now()}`,
+      created_at: new Date().toISOString(),
+      ...draft,
+    });
+    saveLocalList("churvox_operator_drafts", rows);
+  }
+
+  function activeWorkers() {
+    return data.team.filter((worker) => isActiveWorker(worker));
+  }
+
+  function prepareJobAssignmentDraft() {
+    if (kind !== "jobs" || !selected) return;
+
+    const workers = activeWorkers();
+    const worker =
+      workers.find((w) => String(workspaceRecordId(w)) === String(selectedWorkerId)) ||
+      workers[0];
+
+    if (!worker) {
+      setWorkspaceToast("No active worker found. Add a worker first.");
+      return;
+    }
+
+    saveWorkspaceDraft({
+      type: "assignment_recommendation",
+      title: `Assign ${titleOf(selected, "job")} to ${titleOf(worker, "worker")}`,
+      target: "/jobs",
+      job_id: workspaceRecordId(selected),
+      worker_id: workspaceRecordId(worker),
+      job_title: titleOf(selected, "job"),
+      worker_name: titleOf(worker, "worker"),
+      text: "Prepared locally by Churvox Operator OS. No backend assignment has been made yet.",
+    });
+
+    saveApprovalLog(
+      { label: "DISPATCH", title: `Assignment draft prepared for ${titleOf(selected, "job")}` },
+      "drafted",
+      "drafted"
+    );
+
+    setWorkspaceToast("Assignment draft saved. Nothing was assigned yet.");
+  }
+
+  function prepareJobInvoiceDraft() {
+    if (kind !== "jobs" || !selected) return;
+
+    const amount = Number(selected.total || selected.amount || selected.price || selected.job_price || 0) || 0;
+
+    const draft = {
+      job_id: workspaceRecordId(selected),
+      client_id: selected.client_id || selected.customer_id || "",
+      customer_id: selected.customer_id || selected.client_id || "",
+      client_name: selected.client_name || selected.customer_name || "",
+      status: "draft",
+      amount,
+      total: amount,
+      description: `Draft invoice for ${titleOf(selected, "completed job")} at ${selected.address || selected.site_address || "client site"}. Prepared by Churvox Operator OS.`,
+      created_by_ai: true,
+    };
+
+    saveWorkspaceDraft({
+      type: "invoice_draft",
+      title: `Invoice draft for ${titleOf(selected, "job")}`,
+      target: "/invoices",
+      record: draft,
+      text: draft.description,
+    });
+
+    saveApprovalLog(
+      { label: "INVOICE", title: `Invoice draft prepared for ${titleOf(selected, "job")}` },
+      "drafted",
+      "drafted"
+    );
+
+    setWorkspaceToast("Invoice draft saved for review. Nothing was sent.");
+  }
+
   function DetailModal() {
     if (!selected) return null;
 
