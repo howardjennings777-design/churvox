@@ -3685,3 +3685,139 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Churvox readability boost - larger app text */
+body,
+button,
+input,
+select,
+textarea {
+font-size: 16px;
+}
+
+.op-main,
+.op-panel,
+.op-approval,
+.op-action,
+.op-proof-live,
+.op-dispatch,
+.op-data,
+.op-pipeline,
+.myob-card,
+.autopilot-card,
+.trust-card {
+font-size: 16.5px;
+}
+
+.op-main p,
+.op-main small,
+.op-panel small,
+.op-action small,
+.op-data-row small,
+.op-schedule-row small,
+.op-crew-row small,
+.myob-card p,
+.autopilot-card p,
+.trust-card p {
+font-size: 15px;
+line-height: 1.55;
+}
+
+.op-main h1,
+.op-hero-copy h1 {
+font-size: clamp(46px, 6vw, 86px);
+}
+
+.op-main h2,
+.op-approval h2,
+.op-proof-live h2 {
+font-size: clamp(28px, 3vw, 42px);
+}
+
+.op-main h3,
+.op-panel h3,
+.myob-card h3,
+.autopilot-card h3,
+.trust-card h3 {
+font-size: clamp(20px, 2vw, 28px);
+}
+
+.op-nav b {
+font-size: 16px;
+}
+
+.op-nav small {
+font-size: 12.5px;
+}
+
+.op-action strong,
+.op-data-row strong,
+.op-schedule-row strong,
+.op-crew-row strong,
+.op-proof-live-card strong {
+font-size: 18px;
+}
+
+.op-action button,
+.op-modal button,
+.opd-footer button,
+.worker-app button,
+.worker-app a {
+font-size: 15.5px;
+}
+
+.opd-drawer {
+font-size: 16.5px;
+}
+
+.opd-header h3 {
+font-size: clamp(26px, 3vw, 38px);
+}
+
+.opd-body small {
+font-size: 15px;
+line-height: 1.55;
+}
+
+@media (max-width: 720px) {
+body,
+button,
+input,
+select,
+textarea {
+font-size: 16px;
+}
+
+.op-main {
+font-size: 16px;
+}
+
+.op-main h1,
+.op-hero-copy h1 {
+font-size: clamp(40px, 12vw, 62px);
+}
+
+.op-main h2,
+.op-approval h2,
+.op-proof-live h2 {
+font-size: clamp(26px, 8vw, 36px);
+}
+
+.op-main h3,
+.op-panel h3,
+.myob-card h3,
+.autopilot-card h3,
+.trust-card h3 {
+font-size: 22px;
+}
+
+.op-main p,
+.op-main small,
+.op-panel small,
+.op-action small,
+.op-data-row small,
+.op-schedule-row small,
+.op-crew-row small {
+font-size: 15.5px;
+}
+}
