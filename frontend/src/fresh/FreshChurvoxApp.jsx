@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import WorkerFieldApp from "./worker/WorkerFieldApp";
+import ImportCentrePage from "./imports/ImportCentrePage";
+import AISetupGuide from "./components/AISetupGuide";
 import DemoModePage from "./demo/DemoModePage";
 import OnboardingSetupPage from "./onboarding/OnboardingSetupPage";
 import ProofToPaidPage from "./proof/ProofToPaidPage";
@@ -158,7 +160,7 @@ function Shell({ children }) {
         </section>
       </aside>
 
-      <main className="op-main">{children}</main>
+      <main className="op-main">{children}<AISetupGuide /></main>
     </div>
   );
 }
@@ -2923,6 +2925,7 @@ export default function FreshChurvoxApp() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/import" element={<Shell><Topbar /><ImportCentrePage /></Shell>} />
           <Route path="/demo" element={<Shell><Topbar /><DemoModePage /></Shell>} />
           <Route path="/proof-to-paid" element={<Shell><Topbar /><ProofToPaidPage /></Shell>} />
           <Route path="/onboarding" element={<Shell><Topbar /><OnboardingSetupPage /></Shell>} />

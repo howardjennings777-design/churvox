@@ -256,7 +256,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 from fastapi.responses import JSONResponse
-from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile, Query, Body
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, UploadFile, Query, Body, File
 from app.plan_rules import normalize_plan, get_plan_features, can_use_feature, get_max_clients
 from owner_bootstrap import ensure_owner_account
 from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
@@ -12931,6 +12931,202 @@ async def cvx_worker_contact_office(request: Request, current_user: dict = Depen
     return {"ok": True, "success": True, "message": "Help request sent to office"}
 
 # === CHURVOX WORKER WIRING END ===
+
+
+
+
+# CHURVOX_CSV_IMPORT_ENDPOINTS_V1
+def _csv_import_cell(row: dict, *keys: str) -> str:
+    if not isinstance(row, dict):
+        return ""
+    lowered = {str(k or "").strip().lower().replace(" ", "_"): v for k, v in row.items()}
+    for key in keys:
+        k = str(key or "").strip().lower().replace(" ", "_")
+        val = lowered.get(k)
+        if val is not None and str(val).strip():
+            return str(val).strip()
+    return ""
+
+
+async def _read_csv_upload(file: UploadFile):
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="CSV file is empty")
+    try:
+        text = raw.decode("utf-8-sig")
+    except Exception:
+        text = raw.decode("latin-1")
+    reader = csv.DictReader(io.StringIO(text))
+    if not reader.fieldnames:
+        raise HTTPException(status_code=400, detail="CSV needs a header row")
+    rows = []
+    for idx, row in enumerate(reader, start=2):
+        if any(str(v or "").strip() for v in row.values()):
+            rows.append((idx, row))
+    if not rows:
+        raise HTTPException(status_code=400, detail="CSV has no usable rows")
+    return rows
+
+
+@api_router.post("/clients/import-csv")
+async def import_clients_csv(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    owner_id = _resolve_owner_id(current_user)
+    now = datetime.now(timezone.utc).isoformat()
+
+    rows = await _read_csv_upload(file)
+    imported = 0
+    skipped = 0
+    errors = []
+
+    for line_no, row in rows:
+        name = _csv_import_cell(row, "client_name", "customer_name", "name", "company", "business_name")
+        contact_name = _csv_import_cell(row, "contact_name", "contact", "person")
+        email = _csv_import_cell(row, "email", "client_email", "customer_email")
+        phone = clean_phone(_csv_import_cell(row, "phone", "mobile", "client_phone", "customer_phone", "phone_number"))
+        address = _csv_import_cell(row, "address", "site_address", "street_address", "location")
+        notes = _csv_import_cell(row, "notes", "note", "details")
+
+        if not name and not email and not phone:
+            skipped += 1
+            errors.append({"line": line_no, "reason": "Missing name, email and phone"})
+            continue
+
+        display_name = name or contact_name or email or phone or "Imported client"
+        duplicate_terms = []
+        if email:
+            duplicate_terms.append({"email": email})
+        if phone:
+            duplicate_terms.append({"phone": phone})
+        if display_name:
+            duplicate_terms.extend([{"name": display_name}, {"client_name": display_name}])
+
+        existing = None
+        if duplicate_terms:
+            existing = await db.clients.find_one({"business_id": str(business_id), "$or": duplicate_terms})
+
+        if existing:
+            skipped += 1
+            continue
+
+        doc = {
+            "id": secrets.token_hex(12),
+            "business_id": str(business_id),
+            "owner_id": str(owner_id),
+            "name": display_name,
+            "client_name": display_name,
+            "contact_name": contact_name,
+            "email": email,
+            "phone": phone or "",
+            "address": address,
+            "notes": notes,
+            "source": "csv_import",
+            "created_at": now,
+            "updated_at": now,
+        }
+
+        await db.clients.insert_one(doc)
+        imported += 1
+
+    return {
+        "success": True,
+        "type": "clients",
+        "imported": imported,
+        "skipped": skipped,
+        "total": len(rows),
+        "errors": errors[:30],
+    }
+
+
+@api_router.post("/team/workers/import-csv")
+@api_router.post("/team/import-csv")
+@api_router.post("/workers/import-csv")
+async def import_workers_csv(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    business_id = await get_user_business_id(current_user)
+    owner_id = _resolve_owner_id(current_user)
+    now = datetime.now(timezone.utc).isoformat()
+
+    rows = await _read_csv_upload(file)
+    imported = 0
+    skipped = 0
+    errors = []
+
+    for line_no, row in rows:
+        name = _csv_import_cell(row, "name", "worker_name", "employee_name", "team_member", "full_name")
+        email = _csv_import_cell(row, "email", "worker_email", "employee_email")
+        phone = clean_phone(_csv_import_cell(row, "phone", "mobile", "worker_phone", "employee_phone"))
+        role = _csv_import_cell(row, "role", "worker_role") or "worker"
+        region = _csv_import_cell(row, "region", "area", "suburb", "location")
+        skills = _csv_import_cell(row, "skills", "trade", "experience")
+        notes = _csv_import_cell(row, "notes", "note", "details")
+
+        role = str(role).strip().lower().replace(" ", "_")
+        if role not in {"worker", "manager", "office_admin", "payroll"}:
+            role = "worker"
+
+        if not name and not email and not phone:
+            skipped += 1
+            errors.append({"line": line_no, "reason": "Missing name, email and phone"})
+            continue
+
+        display_name = name or email or phone or "Imported worker"
+
+        duplicate_terms = []
+        if email:
+            duplicate_terms.append({"email": email})
+        if phone:
+            duplicate_terms.append({"phone": phone})
+
+        existing = None
+        if duplicate_terms:
+            existing = await db.users.find_one({
+                "business_id": str(business_id),
+                "$or": duplicate_terms,
+                "role": {"$in": ["worker", "manager", "office_admin", "payroll"]},
+            })
+
+        if existing:
+            skipped += 1
+            continue
+
+        invite_token = secrets.token_urlsafe(24)
+        temp_password = secrets.token_urlsafe(18)
+
+        doc = {
+            "id": secrets.token_hex(12),
+            "business_id": str(business_id),
+            "owner_id": str(owner_id),
+            "employer_id": str(owner_id),
+            "name": display_name,
+            "email": email,
+            "phone": phone or "",
+            "role": role,
+            "region": region,
+            "skills": skills,
+            "notes": notes,
+            "status": "invited",
+            "invitation_status": "pending",
+            "invite_token": invite_token,
+            "setup_required": True,
+            "password": hash_password(temp_password),
+            "source": "csv_import",
+            "created_at": now,
+            "updated_at": now,
+        }
+
+        await db.users.insert_one(doc)
+        imported += 1
+
+    return {
+        "success": True,
+        "type": "workers",
+        "imported": imported,
+        "skipped": skipped,
+        "total": len(rows),
+        "errors": errors[:30],
+        "message": "Workers imported. They are marked invited/setup required until they finish setup.",
+    }
+
 
 
 app.include_router(api_router)
