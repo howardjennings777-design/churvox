@@ -18,6 +18,7 @@ import { persistOperatorAction } from "./operator/operatorStorage";
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import PublicClientPortalPage from "../pages/public/PublicClientPortalPage";
 
+import "./churvoxOperatorDirection.css";
 const API_BASE = (() => {
   const raw =
     process.env.REACT_APP_API_URL ||
