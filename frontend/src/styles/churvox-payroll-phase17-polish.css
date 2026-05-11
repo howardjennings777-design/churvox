@@ -1,0 +1,182 @@
+/* =========================================================
+   CHURVOX PHASE 17 — PAYROLL / TIMESHEETS PREMIUM POLISH
+   CSS only. Existing payroll logic untouched.
+   ========================================================= */
+
+body:not(.chx-worker-route) main [class*="payroll"],
+body:not(.chx-worker-route) main [class*="Payroll"],
+body:not(.chx-worker-route) main [class*="timesheet"],
+body:not(.chx-worker-route) main [class*="Timesheet"],
+body:not(.chx-worker-route) main [class*="time"],
+body:not(.chx-worker-route) main [class*="Time"] {
+  scroll-behavior: smooth;
+}
+
+/* Payroll panels/cards */
+body:not(.chx-worker-route) main [class*="payroll"] .bg-white,
+body:not(.chx-worker-route) main [class*="Payroll"] .bg-white,
+body:not(.chx-worker-route) main [class*="timesheet"] .bg-white,
+body:not(.chx-worker-route) main [class*="Timesheet"] .bg-white,
+body:not(.chx-worker-route) main [class*="payroll"] article,
+body:not(.chx-worker-route) main [class*="Payroll"] article,
+body:not(.chx-worker-route) main [class*="timesheet"] article,
+body:not(.chx-worker-route) main [class*="Timesheet"] article,
+body:not(.chx-worker-route) main [class*="payroll"] section,
+body:not(.chx-worker-route) main [class*="Payroll"] section,
+body:not(.chx-worker-route) main [class*="timesheet"] section,
+body:not(.chx-worker-route) main [class*="Timesheet"] section {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 24px !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08) !important;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+body:not(.chx-worker-route) main [class*="payroll"] article:hover,
+body:not(.chx-worker-route) main [class*="Payroll"] article:hover,
+body:not(.chx-worker-route) main [class*="timesheet"] article:hover,
+body:not(.chx-worker-route) main [class*="Timesheet"] article:hover {
+  transform: translateY(-1px);
+  border-color: #cfe0f5 !important;
+  box-shadow: 0 22px 56px rgba(15, 23, 42, 0.11) !important;
+}
+
+/* Payroll tables/rows */
+body:not(.chx-worker-route) main [class*="payroll"] tr,
+body:not(.chx-worker-route) main [class*="Payroll"] tr,
+body:not(.chx-worker-route) main [class*="timesheet"] tr,
+body:not(.chx-worker-route) main [class*="Timesheet"] tr,
+body:not(.chx-worker-route) main [class*="payroll"] li,
+body:not(.chx-worker-route) main [class*="Payroll"] li,
+body:not(.chx-worker-route) main [class*="timesheet"] li,
+body:not(.chx-worker-route) main [class*="Timesheet"] li {
+  transition: background 0.14s ease;
+}
+
+body:not(.chx-worker-route) main [class*="payroll"] tr:hover,
+body:not(.chx-worker-route) main [class*="Payroll"] tr:hover,
+body:not(.chx-worker-route) main [class*="timesheet"] tr:hover,
+body:not(.chx-worker-route) main [class*="Timesheet"] tr:hover,
+body:not(.chx-worker-route) main [class*="payroll"] li:hover,
+body:not(.chx-worker-route) main [class*="Payroll"] li:hover,
+body:not(.chx-worker-route) main [class*="timesheet"] li:hover,
+body:not(.chx-worker-route) main [class*="Timesheet"] li:hover {
+  background: rgba(37, 99, 235, 0.035);
+}
+
+/* Inputs/filter controls */
+body:not(.chx-worker-route) main [class*="payroll"] input,
+body:not(.chx-worker-route) main [class*="Payroll"] input,
+body:not(.chx-worker-route) main [class*="timesheet"] input,
+body:not(.chx-worker-route) main [class*="Timesheet"] input,
+body:not(.chx-worker-route) main [class*="payroll"] select,
+body:not(.chx-worker-route) main [class*="Payroll"] select,
+body:not(.chx-worker-route) main [class*="timesheet"] select,
+body:not(.chx-worker-route) main [class*="Timesheet"] select,
+body:not(.chx-worker-route) main [class*="payroll"] textarea,
+body:not(.chx-worker-route) main [class*="Payroll"] textarea,
+body:not(.chx-worker-route) main [class*="timesheet"] textarea,
+body:not(.chx-worker-route) main [class*="Timesheet"] textarea {
+  min-height: 46px !important;
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  border: 1px solid #dbe4f0 !important;
+  color: #0f172a !important;
+}
+
+body:not(.chx-worker-route) main [class*="payroll"] input:focus,
+body:not(.chx-worker-route) main [class*="Payroll"] input:focus,
+body:not(.chx-worker-route) main [class*="timesheet"] input:focus,
+body:not(.chx-worker-route) main [class*="Timesheet"] input:focus,
+body:not(.chx-worker-route) main [class*="payroll"] select:focus,
+body:not(.chx-worker-route) main [class*="Payroll"] select:focus,
+body:not(.chx-worker-route) main [class*="timesheet"] select:focus,
+body:not(.chx-worker-route) main [class*="Timesheet"] select:focus {
+  border-color: rgba(37, 99, 235, 0.55) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10) !important;
+  outline: none !important;
+}
+
+/* Buttons */
+body:not(.chx-worker-route) main [class*="payroll"] button,
+body:not(.chx-worker-route) main [class*="Payroll"] button,
+body:not(.chx-worker-route) main [class*="timesheet"] button,
+body:not(.chx-worker-route) main [class*="Timesheet"] button,
+body:not(.chx-worker-route) main [class*="payroll"] a[role="button"],
+body:not(.chx-worker-route) main [class*="Payroll"] a[role="button"],
+body:not(.chx-worker-route) main [class*="timesheet"] a[role="button"],
+body:not(.chx-worker-route) main [class*="Timesheet"] a[role="button"] {
+  min-height: 44px !important;
+  border-radius: 15px !important;
+  font-weight: 900 !important;
+  touch-action: manipulation;
+}
+
+body:not(.chx-worker-route) main [class*="payroll"] button:active,
+body:not(.chx-worker-route) main [class*="Payroll"] button:active,
+body:not(.chx-worker-route) main [class*="timesheet"] button:active,
+body:not(.chx-worker-route) main [class*="Timesheet"] button:active {
+  transform: scale(0.99);
+}
+
+/* Payroll status colours */
+body:not(.chx-worker-route) main [class*="approved"],
+body:not(.chx-worker-route) main [class*="Approved"],
+body:not(.chx-worker-route) main [data-status*="approved"] {
+  color: #166534 !important;
+  background-color: #dcfce7 !important;
+  border-color: #bbf7d0 !important;
+}
+
+body:not(.chx-worker-route) main [class*="pending"],
+body:not(.chx-worker-route) main [class*="Pending"],
+body:not(.chx-worker-route) main [data-status*="pending"] {
+  color: #92400e !important;
+  background-color: #fef3c7 !important;
+  border-color: #fde68a !important;
+}
+
+body:not(.chx-worker-route) main [class*="rejected"],
+body:not(.chx-worker-route) main [class*="Rejected"],
+body:not(.chx-worker-route) main [class*="declined"],
+body:not(.chx-worker-route) main [class*="Declined"],
+body:not(.chx-worker-route) main [data-status*="rejected"] {
+  color: #991b1b !important;
+  background-color: #fee2e2 !important;
+  border-color: #fecaca !important;
+}
+
+body:not(.chx-worker-route) main [class*="export"],
+body:not(.chx-worker-route) main [class*="Export"] {
+  border-radius: 16px !important;
+}
+
+/* Mobile payroll polish */
+@media (max-width: 760px) {
+  body:not(.chx-worker-route) main h1 {
+    font-size: 34px !important;
+  }
+
+  body:not(.chx-worker-route) main [class*="payroll"] table,
+  body:not(.chx-worker-route) main [class*="Payroll"] table,
+  body:not(.chx-worker-route) main [class*="timesheet"] table,
+  body:not(.chx-worker-route) main [class*="Timesheet"] table {
+    display: block;
+    overflow-x: auto;
+    border-radius: 20px;
+  }
+
+  body:not(.chx-worker-route) main [class*="payroll"] .bg-white,
+  body:not(.chx-worker-route) main [class*="Payroll"] .bg-white,
+  body:not(.chx-worker-route) main [class*="timesheet"] .bg-white,
+  body:not(.chx-worker-route) main [class*="Timesheet"] .bg-white {
+    border-radius: 22px !important;
+  }
+
+  body:not(.chx-worker-route) main [class*="payroll"] button,
+  body:not(.chx-worker-route) main [class*="Payroll"] button,
+  body:not(.chx-worker-route) main [class*="timesheet"] button,
+  body:not(.chx-worker-route) main [class*="Timesheet"] button {
+    min-height: 46px !important;
+  }
+}
