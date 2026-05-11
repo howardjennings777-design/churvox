@@ -1,797 +1,647 @@
-import React, { useEffect, useMemo, useState } from "react";
-import "../../styles/worker-mobile.css";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import "./worker-phase8.css";
 
-const ENV = typeof process !== "undefined" && process.env ? process.env : {};
-const RAW_API =
-  ENV.REACT_APP_BACKEND_URL ||
-  ENV.VITE_BACKEND_URL ||
-  "https://grassley-backend.onrender.com";
+function getApiBase() {
+  const env = typeof process !== "undefined" && process.env ? process.env : {};
+  const raw =
+    env.REACT_APP_API_URL ||
+    env.REACT_APP_BACKEND_URL ||
+    env.VITE_BACKEND_URL ||
+    "https://grassley-backend.onrender.com";
 
-const API_ROOT = RAW_API.replace(/\/$/, "").endsWith("/api")
-  ? RAW_API.replace(/\/$/, "")
-  : `${RAW_API.replace(/\/$/, "")}/api`;
+  const clean = String(raw).replace(/\/+$/, "");
+  return clean.endsWith("/api") ? clean : `${clean}/api`;
+}
 
-function getToken() {
-  const keys = ["token", "authToken", "access_token", "accessToken", "jwt", "churvox_token"];
-  for (const key of keys) {
-    const value = localStorage.getItem(key);
-    if (value) return value;
-  }
+const API_BASE = getApiBase();
 
+function apiUrl(path) {
+  return `${API_BASE}/${String(path || "").replace(/^\/+/, "")}`;
+}
+
+function readToken() {
   try {
-    const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-    return storedUser.token || storedUser.access_token || "";
+    return (
+      localStorage.getItem("token") ||
+      localStorage.getItem("authToken") ||
+      localStorage.getItem("access_token") ||
+      localStorage.getItem("churvox_token") ||
+      ""
+    );
   } catch {
     return "";
   }
 }
 
-async function api(path, options = {}) {
-  const token = getToken();
-  const isForm = options.body instanceof FormData;
+function readCurrentUser() {
+  const keys = ["user", "authUser", "currentUser", "profile", "churvox_user", "churvoxUser"];
+
+  for (const key of keys) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") return parsed.user || parsed.profile || parsed;
+    } catch {
+      continue;
+    }
+  }
+
+  return {};
+}
+
+function currentUserMatches() {
+  const user = readCurrentUser();
+
+  return [
+    user.id,
+    user._id,
+    user.user_id,
+    user.worker_id,
+    user.email,
+    user.name,
+    user.full_name,
+  ]
+    .filter(Boolean)
+    .map((value) => String(value).toLowerCase());
+}
+
+async function apiRequest(path, options = {}) {
+  const token = readToken();
   const headers = {
-    ...(isForm ? {} : { "Content-Type": "application/json" }),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    Accept: "application/json",
     ...(options.headers || {}),
   };
 
-  const response = await fetch(`${API_ROOT}${path}`, {
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  if (options.body && !(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const response = await fetch(apiUrl(path), {
     method: options.method || "GET",
     credentials: "include",
     headers,
-    body: isForm ? options.body : options.body ? JSON.stringify(options.body) : undefined,
+    body:
+      options.body instanceof FormData
+        ? options.body
+        : options.body
+          ? JSON.stringify(options.body)
+          : undefined,
   });
 
   const text = await response.text();
-  let data = {};
-  try {
-    data = text ? JSON.parse(text) : {};
-  } catch {
-    data = { message: text };
+  let payload = null;
+
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      payload = text;
+    }
   }
 
   if (!response.ok) {
-    throw new Error(data.detail || data.message || `${options.method || "GET"} ${path} failed`);
+    const message =
+      payload?.detail ||
+      payload?.message ||
+      payload?.error ||
+      `${options.method || "GET"} ${path} failed with ${response.status}`;
+    throw new Error(message);
   }
 
-  return data;
+  return payload;
 }
 
-async function callFirst(attempts) {
+async function tryRequests(candidates) {
   let lastError = null;
 
-  for (const attempt of attempts) {
+  for (const candidate of candidates) {
     try {
-      return await api(attempt.path, attempt);
+      return await apiRequest(candidate.path, candidate);
     } catch (error) {
       lastError = error;
     }
   }
 
-  throw lastError || new Error("Action failed");
+  throw lastError || new Error("No matching endpoint worked.");
 }
 
-function extractList(data) {
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data.jobs)) return data.jobs;
-  if (Array.isArray(data.items)) return data.items;
-  if (Array.isArray(data.results)) return data.results;
-  if (Array.isArray(data.data)) return data.data;
-  return [];
+function toArray(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+
+  for (const key of ["jobs", "assigned_jobs", "worker_jobs", "items", "data", "results"]) {
+    if (Array.isArray(payload[key])) return payload[key];
+  }
+
+  const firstArray = Object.values(payload).find((value) => Array.isArray(value));
+  return firstArray || [];
 }
 
-function idOf(job) {
-  return job?._id || job?.id || job?.job_id || "";
+function stableId(item) {
+  return item?.id || item?._id || item?.job_id || item?.uuid || "";
 }
 
-function statusOf(job) {
-  return String(job?.status || "assigned").toLowerCase().replace(/\s+/g, "_");
+function jobTitle(job) {
+  return job?.title || job?.job_title || job?.service_type || job?.name || "Job";
 }
 
-function titleOf(job) {
-  return (
-    job?.title ||
-    job?.job_title ||
-    job?.service_type ||
-    job?.service ||
-    job?.name ||
-    "Job"
-  );
+function cleanStatus(job) {
+  return String(job?.status || job?.job_status || job?.state || "assigned")
+    .toLowerCase()
+    .replace(/\s+/g, "_");
 }
 
-function clientOf(job) {
-  return (
-    job?.client_name ||
-    job?.customer_name ||
-    job?.client?.name ||
-    job?.customer?.name ||
-    "Client"
-  );
+function statusLabel(job) {
+  const status = cleanStatus(job);
+  if (status.includes("complete")) return "Completed";
+  if (status.includes("pause")) return "Paused";
+  if (status.includes("progress") || status.includes("started")) return "In progress";
+  if (status.includes("acknowledge")) return "Acknowledged";
+  if (status.includes("cancel")) return "Cancelled";
+  return "Assigned";
 }
 
-function addressOf(job) {
-  return (
-    job?.address ||
-    job?.site_address ||
-    job?.job_address ||
-    job?.client_address ||
-    job?.location ||
-    job?.client?.address ||
-    ""
-  );
+function statusTone(job) {
+  const status = cleanStatus(job);
+  if (status.includes("complete")) return "green";
+  if (status.includes("pause")) return "amber";
+  if (status.includes("progress") || status.includes("started")) return "blue";
+  if (status.includes("cancel")) return "red";
+  return "slate";
 }
 
-function phoneOf(job) {
-  return (
-    job?.client_phone ||
-    job?.customer_phone ||
-    job?.phone ||
-    job?.client?.phone ||
-    job?.customer?.phone ||
-    ""
-  );
+function jobClient(job) {
+  return job?.client_name || job?.customer_name || job?.client || job?.customer || "Client not shown";
+}
+
+function jobAddress(job) {
+  return job?.address || job?.site_address || job?.location || job?.job_address || "Address not shown";
 }
 
 function jobDate(job) {
   const raw =
-    job?.scheduled_at ||
-    job?.scheduledAt ||
     job?.scheduled_date ||
-    job?.scheduledDate ||
-    job?.start_time ||
-    job?.startTime ||
     job?.date ||
-    job?.job_date;
+    job?.start_date ||
+    job?.created_at ||
+    job?.updated_at;
 
-  if (!raw) return null;
+  if (!raw) return "Today";
   const date = new Date(raw);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
+  if (Number.isNaN(date.getTime())) return "Today";
 
-function sameDay(a, b) {
-  return a && b && a.toDateString() === b.toDateString();
-}
-
-function timeLabel(job) {
-  const date = jobDate(job);
-  if (!date) return "Any time";
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-
-function dateLabel(job) {
-  const date = jobDate(job);
-  if (!date) return "Unscheduled";
-  return date.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
-}
-
-function minutesFromJob(job) {
-  if (Number(job?.total_work_minutes)) return Number(job.total_work_minutes);
-  if (Number(job?.worked_minutes)) return Number(job.worked_minutes);
-  if (Number(job?.duration_minutes)) return Number(job.duration_minutes);
-
-  if (Array.isArray(job?.time_entries)) {
-    return job.time_entries.reduce((sum, entry) => {
-      const start = entry.start || entry.started_at;
-      const end = entry.end || entry.ended_at || entry.completed_at;
-      if (!start || !end) return sum;
-      const diff = (new Date(end).getTime() - new Date(start).getTime()) / 60000;
-      return sum + (Number.isFinite(diff) && diff > 0 ? diff : 0);
-    }, 0);
-  }
-
-  return 0;
-}
-
-function formatHours(minutes) {
-  const mins = Math.max(0, Math.round(minutes || 0));
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  if (h && m) return `${h}h ${m}m`;
-  if (h) return `${h}h`;
-  return `${m}m`;
-}
-
-function statusLabel(status) {
-  const map = {
-    assigned: "Assigned",
-    acknowledged: "Acknowledged",
-    in_progress: "In Progress",
-    paused: "Paused",
-    completed: "Completed",
-    cancelled: "Cancelled",
-  };
-  return map[status] || status.replace(/_/g, " ");
-}
-
-function getWorkerUser() {
-  try {
-    return JSON.parse(localStorage.getItem("user") || "{}");
-  } catch {
-    return {};
-  }
-}
-
-function jobLooksAssignedToUser(job, user) {
-  if (!user || (!user.id && !user._id && !user.email && !user.name)) return true;
-
-  const workerValues = [
-    job.assigned_worker_id,
-    job.worker_id,
-    job.assignee_id,
-    job.assigned_to,
-    job.assignedWorkerId,
-    job.worker_email,
-    job.assigned_worker_email,
-    job.assigned_worker?.id,
-    job.assigned_worker?._id,
-    job.assigned_worker?.email,
-    job.worker?.id,
-    job.worker?._id,
-    job.worker?.email,
-  ]
-    .filter(Boolean)
-    .map((v) => String(v).toLowerCase());
-
-  if (!workerValues.length) return true;
-
-  const userValues = [user.id, user._id, user.email, user.name]
-    .filter(Boolean)
-    .map((v) => String(v).toLowerCase());
-
-  return workerValues.some((value) => userValues.includes(value));
-}
-
-async function getCurrentLocationQuietly() {
-  if (!navigator.geolocation) return null;
-
-  return new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      (position) =>
-        resolve({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-        }),
-      () => resolve(null),
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
-    );
+  return date.toLocaleDateString("en-NZ", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
   });
 }
 
-export default function WorkerHomePage() {
-  const [jobs, setJobs] = useState([]);
-  const [selectedJob, setSelectedJob] = useState(null);
-  const [activeTab, setActiveTab] = useState("today");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [noteText, setNoteText] = useState("");
-  const [busyKey, setBusyKey] = useState("");
+function jobBelongsToCurrentWorker(job, matches) {
+  if (!matches.length) return true;
 
-  async function loadJobs() {
+  const values = [
+    job?.assigned_worker_id,
+    job?.worker_id,
+    job?.assigned_to,
+    job?.assigned_worker,
+    job?.assigned_worker_email,
+    job?.worker_email,
+    job?.assigned_worker_name,
+    job?.worker_name,
+    job?.assigned_to_name,
+  ]
+    .filter(Boolean)
+    .map((value) => String(value).toLowerCase());
+
+  if (!values.length) return true;
+  return values.some((value) => matches.includes(value));
+}
+
+function isCompleted(job) {
+  return cleanStatus(job).includes("complete");
+}
+
+function isPaused(job) {
+  return cleanStatus(job).includes("pause");
+}
+
+function isInProgress(job) {
+  const status = cleanStatus(job);
+  return status.includes("progress") || status.includes("started");
+}
+
+function JobModal({ job, onClose, onAction, onPhoto }) {
+  if (!job) return null;
+
+  return (
+    <div className="wk-modal-backdrop" role="presentation" onMouseDown={onClose}>
+      <section
+        className="wk-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wk-modal-title"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="wk-modal-head">
+          <div>
+            <p className="wk-kicker">Job details</p>
+            <h2 id="wk-modal-title">{jobTitle(job)}</h2>
+          </div>
+          <button type="button" className="wk-icon-btn" onClick={onClose} aria-label="Close">
+            ×
+          </button>
+        </div>
+
+        <div className="wk-detail-grid">
+          <div>
+            <span>Client</span>
+            <strong>{jobClient(job)}</strong>
+          </div>
+          <div>
+            <span>Status</span>
+            <strong>{statusLabel(job)}</strong>
+          </div>
+          <div>
+            <span>Date</span>
+            <strong>{jobDate(job)}</strong>
+          </div>
+          <div>
+            <span>Address</span>
+            <strong>{jobAddress(job)}</strong>
+          </div>
+        </div>
+
+        {job?.description || job?.notes ? (
+          <div className="wk-note-box">
+            <span>Notes</span>
+            <p>{job.description || job.notes}</p>
+          </div>
+        ) : null}
+
+        <div className="wk-modal-actions">
+          {!isCompleted(job) && !isInProgress(job) && (
+            <button type="button" className="wk-btn wk-btn-primary" onClick={() => onAction(job, "start")}>
+              Start job
+            </button>
+          )}
+
+          {isInProgress(job) && !isPaused(job) && (
+            <button type="button" className="wk-btn wk-btn-soft" onClick={() => onAction(job, "pause")}>
+              Pause
+            </button>
+          )}
+
+          {isPaused(job) && (
+            <button type="button" className="wk-btn wk-btn-primary" onClick={() => onAction(job, "resume")}>
+              Resume
+            </button>
+          )}
+
+          {!isCompleted(job) && (
+            <button type="button" className="wk-btn wk-btn-green" onClick={() => onAction(job, "complete")}>
+              Complete
+            </button>
+          )}
+
+          <button type="button" className="wk-btn wk-btn-soft" onClick={() => onPhoto(job)}>
+            Upload photo
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function Toast({ message }) {
+  if (!message) return null;
+  return <div className="wk-toast">{message}</div>;
+}
+
+function JobCard({ job, onOpen, onAction, onPhoto }) {
+  const tone = statusTone(job);
+
+  return (
+    <article className={`wk-job-card wk-tone-${tone}`} onClick={() => onOpen(job)}>
+      <div className="wk-job-main">
+        <div>
+          <p className="wk-job-date">{jobDate(job)}</p>
+          <h3>{jobTitle(job)}</h3>
+          <p>{jobClient(job)}</p>
+          <small>{jobAddress(job)}</small>
+        </div>
+
+        <span className={`wk-status wk-status-${tone}`}>{statusLabel(job)}</span>
+      </div>
+
+      <div className="wk-job-actions" onClick={(event) => event.stopPropagation()}>
+        {!isCompleted(job) && !isInProgress(job) && (
+          <button type="button" className="wk-btn wk-btn-primary" onClick={() => onAction(job, "start")}>
+            Start
+          </button>
+        )}
+
+        {isInProgress(job) && !isPaused(job) && (
+          <button type="button" className="wk-btn wk-btn-soft" onClick={() => onAction(job, "pause")}>
+            Pause
+          </button>
+        )}
+
+        {isPaused(job) && (
+          <button type="button" className="wk-btn wk-btn-primary" onClick={() => onAction(job, "resume")}>
+            Resume
+          </button>
+        )}
+
+        {!isCompleted(job) && (
+          <button type="button" className="wk-btn wk-btn-green" onClick={() => onAction(job, "complete")}>
+            Complete
+          </button>
+        )}
+
+        <button type="button" className="wk-btn wk-btn-soft" onClick={() => onPhoto(job)}>
+          Photo
+        </button>
+      </div>
+    </article>
+  );
+}
+
+export default function WorkerDashboardPage() {
+  const [jobs, setJobs] = useState([]);
+  const [activeFilter, setActiveFilter] = useState("today");
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [photoJob, setPhotoJob] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [toast, setToast] = useState("");
+  const [error, setError] = useState("");
+  const photoInputRef = useRef(null);
+
+  const showToast = useCallback((message) => {
+    setToast(message);
+    window.setTimeout(() => setToast(""), 3500);
+  }, []);
+
+  const loadJobs = useCallback(async () => {
     setLoading(true);
     setError("");
 
-    try {
-      let user = getWorkerUser();
+    const responses = await Promise.allSettled([
+      apiRequest("/worker/jobs"),
+      apiRequest("/jobs/my"),
+      apiRequest("/jobs/assigned"),
+      apiRequest("/jobs"),
+    ]);
 
-      try {
-        const me = await api("/auth/me");
-        user = me.user || me;
-      } catch {
-        try {
-          const me = await api("/users/me");
-          user = me.user || me;
-        } catch {
-          // Local user fallback is enough.
-        }
+    const allJobs = [];
+    responses.forEach((response) => {
+      if (response.status === "fulfilled") {
+        allJobs.push(...toArray(response.value));
       }
+    });
 
-      const response = await api("/jobs");
-      const allJobs = extractList(response);
-      const mine = allJobs.filter((job) => jobLooksAssignedToUser(job, user));
+    const matches = currentUserMatches();
+    const seen = new Set();
 
-      mine.sort((a, b) => {
-        const da = jobDate(a)?.getTime() || 9999999999999;
-        const db = jobDate(b)?.getTime() || 9999999999999;
-        return da - db;
+    const cleaned = allJobs
+      .filter((job) => job && typeof job === "object")
+      .filter((job) => jobBelongsToCurrentWorker(job, matches))
+      .filter((job) => {
+        const id = stableId(job) || `${jobTitle(job)}-${jobDate(job)}-${jobClient(job)}`;
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
       });
 
-      setJobs(mine);
-    } catch (err) {
-      setError(err.message || "Could not load worker jobs.");
-    } finally {
-      setLoading(false);
-    }
-  }
+    setJobs(cleaned);
 
-  useEffect(() => {
-    loadJobs();
+    if (!cleaned.length && responses.every((response) => response.status === "rejected")) {
+      setError("Could not load worker jobs yet. Check worker job endpoints or login session.");
+    }
+
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    if (!selectedJob) return;
-    const fresh = jobs.find((job) => idOf(job) === idOf(selectedJob));
-    if (fresh) setSelectedJob(fresh);
-  }, [jobs, selectedJob]);
+    loadJobs();
+  }, [loadJobs]);
 
-  const grouped = useMemo(() => {
-    const today = new Date();
-    const tomorrow = new Date();
-    tomorrow.setDate(today.getDate() + 1);
-
-    const weekEnd = new Date();
-    weekEnd.setDate(today.getDate() + 7);
-    weekEnd.setHours(23, 59, 59, 999);
-
-    const activeJobs = jobs.filter((job) => !["completed", "cancelled"].includes(statusOf(job)));
-
+  const stats = useMemo(() => {
     return {
-      today: activeJobs.filter((job) => {
-        const date = jobDate(job);
-        return !date || sameDay(date, today);
-      }),
-      tomorrow: activeJobs.filter((job) => sameDay(jobDate(job), tomorrow)),
-      week: activeJobs.filter((job) => {
-        const date = jobDate(job);
-        return date && date >= today && date <= weekEnd;
-      }),
-      completedToday: jobs.filter((job) => statusOf(job) === "completed" && sameDay(jobDate(job), today)),
+      total: jobs.length,
+      active: jobs.filter((job) => !isCompleted(job)).length,
+      inProgress: jobs.filter(isInProgress).length,
+      completed: jobs.filter(isCompleted).length,
     };
   }, [jobs]);
 
-  const nextJob = grouped.today[0] || grouped.tomorrow[0] || grouped.week[0] || null;
-
-  const hours = useMemo(() => {
-    const today = new Date();
-    const todayJobs = jobs.filter((job) => sameDay(jobDate(job), today));
-    const todayMinutes = todayJobs.reduce((sum, job) => sum + minutesFromJob(job), 0);
-    const weekMinutes = jobs.reduce((sum, job) => sum + minutesFromJob(job), 0);
-
-    return {
-      today: formatHours(todayMinutes),
-      week: formatHours(weekMinutes),
-      completed: jobs.filter((job) => statusOf(job) === "completed").length,
-    };
-  }, [jobs]);
-
-  function showSuccess(message) {
-    setSuccess(message);
-    window.clearTimeout(showSuccess.timer);
-    showSuccess.timer = window.setTimeout(() => setSuccess(""), 3000);
-  }
-
-  function optimisticStatus(job, status) {
-    const id = idOf(job);
-    setJobs((current) =>
-      current.map((item) => (idOf(item) === id ? { ...item, status } : item))
-    );
-  }
+  const filteredJobs = useMemo(() => {
+    if (activeFilter === "active") return jobs.filter((job) => !isCompleted(job));
+    if (activeFilter === "progress") return jobs.filter(isInProgress);
+    if (activeFilter === "completed") return jobs.filter(isCompleted);
+    return jobs;
+  }, [activeFilter, jobs]);
 
   async function runJobAction(job, action) {
-    const id = idOf(job);
-    if (!id) return;
+    if (busy) return;
 
-    const key = `${id}:${action}`;
-    setBusyKey(key);
-    setError("");
-
-    try {
-      if (action === "start") {
-        const location = await getCurrentLocationQuietly();
-        const body = {
-          status: "in_progress",
-          started_at: new Date().toISOString(),
-          start_location: location,
-          start_lat: location?.lat,
-          start_lng: location?.lng,
-          location_accuracy: location?.accuracy,
-        };
-
-        await callFirst([
-          { method: "POST", path: `/jobs/${id}/start`, body },
-          { method: "POST", path: `/jobs/${id}/timer/start`, body },
-          { method: "POST", path: `/jobs/${id}/time/start`, body },
-          { method: "POST", path: `/jobs/${id}/start-job`, body },
-          { method: "PATCH", path: `/jobs/${id}`, body },
-        ]);
-
-        optimisticStatus(job, "in_progress");
-        showSuccess("Job started.");
-      }
-
-      if (action === "pause") {
-        const body = { status: "paused", paused_at: new Date().toISOString() };
-
-        await callFirst([
-          { method: "POST", path: `/jobs/${id}/pause`, body },
-          { method: "POST", path: `/jobs/${id}/timer/pause`, body },
-          { method: "POST", path: `/jobs/${id}/time/pause`, body },
-          { method: "PATCH", path: `/jobs/${id}`, body },
-        ]);
-
-        optimisticStatus(job, "paused");
-        showSuccess("Job paused.");
-      }
-
-      if (action === "resume") {
-        const body = { status: "in_progress", resumed_at: new Date().toISOString() };
-
-        await callFirst([
-          { method: "POST", path: `/jobs/${id}/resume`, body },
-          { method: "POST", path: `/jobs/${id}/timer/resume`, body },
-          { method: "POST", path: `/jobs/${id}/time/resume`, body },
-          { method: "PATCH", path: `/jobs/${id}`, body },
-        ]);
-
-        optimisticStatus(job, "in_progress");
-        showSuccess("Job resumed.");
-      }
-
-      if (action === "complete") {
-        const body = { status: "completed", completed_at: new Date().toISOString() };
-
-        await callFirst([
-          { method: "POST", path: `/jobs/${id}/complete`, body },
-          { method: "POST", path: `/jobs/${id}/complete-job`, body },
-          { method: "POST", path: `/jobs/${id}/timer/complete`, body },
-          { method: "POST", path: `/jobs/${id}/time/complete`, body },
-          { method: "PATCH", path: `/jobs/${id}`, body },
-        ]);
-
-        optimisticStatus(job, "completed");
-        showSuccess("Job completed.");
-      }
-
-      await loadJobs();
-    } catch (err) {
-      setError(err.message || "Action failed.");
-    } finally {
-      setBusyKey("");
+    const jobId = stableId(job);
+    if (!jobId) {
+      showToast("This job has no stable ID, so the action was not sent.");
+      return;
     }
-  }
 
-  async function saveNote(job) {
-    const id = idOf(job);
-    const note = noteText.trim();
-    if (!id || !note) return;
+    setBusy(true);
 
-    setBusyKey(`${id}:note`);
-    setError("");
+    const nextStatus =
+      action === "start"
+        ? "in_progress"
+        : action === "pause"
+          ? "paused"
+          : action === "resume"
+            ? "in_progress"
+            : action === "complete"
+              ? "completed"
+              : "acknowledged";
 
     try {
-      await callFirst([
-        { method: "POST", path: `/jobs/${id}/notes`, body: { note, message: note, type: "worker" } },
-        { method: "POST", path: `/job-notes`, body: { job_id: id, note, type: "worker" } },
-        { method: "PATCH", path: `/jobs/${id}`, body: { worker_note: note, latest_worker_note: note } },
+      await tryRequests([
+        { method: "POST", path: `/jobs/${encodeURIComponent(jobId)}/${action}`, body: {} },
+        { method: "POST", path: `/worker/jobs/${encodeURIComponent(jobId)}/${action}`, body: {} },
+        { method: "POST", path: `/jobs/${encodeURIComponent(jobId)}/time/${action}`, body: {} },
+        { method: "POST", path: `/jobs/${encodeURIComponent(jobId)}/timer/${action}`, body: {} },
+        { method: "PATCH", path: `/jobs/${encodeURIComponent(jobId)}`, body: { status: nextStatus } },
+        { method: "PUT", path: `/jobs/${encodeURIComponent(jobId)}`, body: { status: nextStatus } },
       ]);
 
-      setNoteText("");
-      showSuccess("Note saved.");
+      showToast(`Job ${action} saved.`);
+      setSelectedJob(null);
       await loadJobs();
     } catch (err) {
-      setError(err.message || "Could not save note.");
+      showToast(err?.message || `Could not ${action} job yet.`);
     } finally {
-      setBusyKey("");
+      setBusy(false);
     }
   }
 
-  async function uploadPhotos(job, event) {
-    const id = idOf(job);
-    const files = Array.from(event.target.files || []);
-    if (!id || !files.length) return;
+  function choosePhoto(job) {
+    setPhotoJob(job);
+    window.setTimeout(() => photoInputRef.current?.click(), 0);
+  }
 
-    setBusyKey(`${id}:photos`);
-    setError("");
+  async function uploadPhoto(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file || !photoJob) return;
+
+    const jobId = stableId(photoJob);
+    if (!jobId) {
+      showToast("This job has no stable ID, so the photo was not uploaded.");
+      return;
+    }
+
+    const form = new FormData();
+    form.append("file", file);
+    form.append("photo", file);
+    form.append("job_id", jobId);
+
+    setBusy(true);
 
     try {
-      const form = new FormData();
-      files.forEach((file) => {
-        form.append("photos", file);
-        form.append("files", file);
-        form.append("photo", file);
-      });
-      form.append("job_id", id);
-      form.append("type", "worker");
-
-      await callFirst([
-        { method: "POST", path: `/jobs/${id}/photos`, body: form },
-        { method: "POST", path: `/jobs/${id}/upload-photo`, body: form },
-        { method: "POST", path: `/job-photos`, body: form },
+      await tryRequests([
+        { method: "POST", path: `/jobs/${encodeURIComponent(jobId)}/photos`, body: form },
+        { method: "POST", path: `/jobs/${encodeURIComponent(jobId)}/photo`, body: form },
+        { method: "POST", path: `/worker/jobs/${encodeURIComponent(jobId)}/photos`, body: form },
+        { method: "POST", path: `/job-photos/${encodeURIComponent(jobId)}`, body: form },
       ]);
 
-      event.target.value = "";
-      showSuccess(files.length === 1 ? "Photo uploaded." : "Photos uploaded.");
+      showToast("Photo uploaded.");
       await loadJobs();
     } catch (err) {
-      setError(err.message || "Photo upload failed.");
+      showToast(err?.message || "Photo upload endpoint is not ready yet.");
     } finally {
-      setBusyKey("");
+      setBusy(false);
+      setPhotoJob(null);
     }
   }
-
-  function openMaps(job) {
-    const address = addressOf(job);
-    if (!address) return;
-    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, "_blank");
-  }
-
-  function callClient(job) {
-    const phone = phoneOf(job);
-    if (!phone) return;
-    window.location.href = `tel:${phone}`;
-  }
-
-  function ActionButtons({ job, compact = false }) {
-    const status = statusOf(job);
-    const id = idOf(job);
-
-    return (
-      <div className={compact ? "workerActions compact" : "workerActions"}>
-        {status !== "in_progress" && status !== "completed" && status !== "cancelled" && (
-          <button
-            className="primary"
-            disabled={busyKey === `${id}:start`}
-            onClick={(event) => {
-              event.stopPropagation();
-              runJobAction(job, "start");
-            }}
-          >
-            {busyKey === `${id}:start` ? "Starting..." : "Start Job"}
-          </button>
-        )}
-
-        {status === "in_progress" && (
-          <button
-            className="soft"
-            disabled={busyKey === `${id}:pause`}
-            onClick={(event) => {
-              event.stopPropagation();
-              runJobAction(job, "pause");
-            }}
-          >
-            {busyKey === `${id}:pause` ? "Pausing..." : "Pause"}
-          </button>
-        )}
-
-        {status === "paused" && (
-          <button
-            className="primary"
-            disabled={busyKey === `${id}:resume`}
-            onClick={(event) => {
-              event.stopPropagation();
-              runJobAction(job, "resume");
-            }}
-          >
-            {busyKey === `${id}:resume` ? "Resuming..." : "Resume"}
-          </button>
-        )}
-
-        {status !== "completed" && status !== "cancelled" && (
-          <button
-            className="complete"
-            disabled={busyKey === `${id}:complete`}
-            onClick={(event) => {
-              event.stopPropagation();
-              runJobAction(job, "complete");
-            }}
-          >
-            {busyKey === `${id}:complete` ? "Completing..." : "Complete"}
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  function JobCard({ job, featured = false }) {
-    const status = statusOf(job);
-    const address = addressOf(job);
-    const phone = phoneOf(job);
-
-    return (
-      <article
-        className={featured ? "workerJobCard featured" : "workerJobCard"}
-        onClick={() => setSelectedJob(job)}
-      >
-        <div className="jobTopLine">
-          <div>
-            <p className="jobTime">{dateLabel(job)} · {timeLabel(job)}</p>
-            <h3>{titleOf(job)}</h3>
-            <p className="jobClient">{clientOf(job)}</p>
-          </div>
-          <span className={`workerStatus ${status}`}>{statusLabel(status)}</span>
-        </div>
-
-        <p className="jobAddress">{address || "No address saved"}</p>
-
-        <div className="quickButtons">
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              openMaps(job);
-            }}
-            disabled={!address}
-          >
-            Navigate
-          </button>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              callClient(job);
-            }}
-            disabled={!phone}
-          >
-            Call Client
-          </button>
-          <button type="button">Details</button>
-        </div>
-
-        {featured && <ActionButtons job={job} compact />}
-      </article>
-    );
-  }
-
-  const visibleJobs = grouped[activeTab] || [];
 
   return (
-    <main className="workerApp">
-      <section className="workerHero">
+    <main className="wk-page">
+      <Toast message={toast} />
+
+      <input
+        ref={photoInputRef}
+        type="file"
+        accept="image/*"
+        className="wk-hidden-file"
+        onChange={uploadPhoto}
+      />
+
+      <section className="wk-hero">
         <div>
-          <p className="eyebrow">Worker App</p>
-          <h1>Today’s Jobs</h1>
-          <p>Start, navigate, add photos, leave notes, complete, then move on.</p>
+          <p className="wk-kicker">Worker app</p>
+          <h1>Today&apos;s jobs, clear actions, no clutter.</h1>
+          <p>
+            Start work, pause, resume, complete, upload job photos, and open job details without leaving the page.
+          </p>
+
+          <div className="wk-hero-actions">
+            <button type="button" className="wk-btn wk-btn-primary" onClick={loadJobs} disabled={busy}>
+              Refresh jobs
+            </button>
+            <button type="button" className="wk-btn wk-btn-dark" onClick={() => setActiveFilter("active")}>
+              Show active work
+            </button>
+          </div>
+
+          {error ? <div className="wk-error">{error}</div> : null}
         </div>
 
-        <div className="workerStats">
+        <aside className="wk-today-panel">
+          <span>{loading ? "Loading" : "Ready"}</span>
+          <strong>{stats.active}</strong>
+          <p>active jobs waiting for action</p>
+        </aside>
+      </section>
+
+      <section className="wk-stats">
+        <button type="button" className="wk-stat" onClick={() => setActiveFilter("today")}>
+          <strong>{loading ? "..." : stats.total}</strong>
+          <span>All assigned</span>
+        </button>
+        <button type="button" className="wk-stat" onClick={() => setActiveFilter("active")}>
+          <strong>{loading ? "..." : stats.active}</strong>
+          <span>Active</span>
+        </button>
+        <button type="button" className="wk-stat" onClick={() => setActiveFilter("progress")}>
+          <strong>{loading ? "..." : stats.inProgress}</strong>
+          <span>In progress</span>
+        </button>
+        <button type="button" className="wk-stat" onClick={() => setActiveFilter("completed")}>
+          <strong>{loading ? "..." : stats.completed}</strong>
+          <span>Completed</span>
+        </button>
+      </section>
+
+      <section className="wk-board">
+        <div className="wk-board-head">
           <div>
-            <span>{hours.today}</span>
-            <small>Today</small>
+            <p className="wk-kicker">Run sheet</p>
+            <h2>Your job list</h2>
           </div>
-          <div>
-            <span>{hours.week}</span>
-            <small>This week</small>
+
+          <div className="wk-filter">
+            {["today", "active", "progress", "completed"].map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                className={activeFilter === filter ? "active" : ""}
+                onClick={() => setActiveFilter(filter)}
+              >
+                {filter === "today" ? "All" : filter}
+              </button>
+            ))}
           </div>
-          <div>
-            <span>{hours.completed}</span>
-            <small>Completed</small>
-          </div>
+        </div>
+
+        <div className="wk-job-list">
+          {filteredJobs.map((job) => (
+            <JobCard
+              key={stableId(job) || `${jobTitle(job)}-${jobClient(job)}`}
+              job={job}
+              onOpen={setSelectedJob}
+              onAction={runJobAction}
+              onPhoto={choosePhoto}
+            />
+          ))}
+
+          {!loading && !filteredJobs.length ? (
+            <div className="wk-empty">
+              <strong>No jobs in this view.</strong>
+              <p>Try refreshing or changing the filter.</p>
+            </div>
+          ) : null}
+
+          {loading ? (
+            <div className="wk-empty">
+              <strong>Loading jobs...</strong>
+              <p>Pulling your assigned work from Churvox.</p>
+            </div>
+          ) : null}
         </div>
       </section>
 
-      {success && <div className="workerSuccess">{success}</div>}
-      {error && <div className="workerError">{error}</div>}
-
-      {loading ? (
-        <section className="workerLoading">
-          <div className="pulseCard" />
-          <div className="pulseCard small" />
-          <div className="pulseCard small" />
-        </section>
-      ) : (
-        <>
-          <section className="nextJobPanel">
-            <div className="sectionHeader">
-              <div>
-                <p className="eyebrow">Next up</p>
-                <h2>Your next job</h2>
-              </div>
-            </div>
-
-            {nextJob ? (
-              <JobCard job={nextJob} featured />
-            ) : (
-              <div className="emptyWorkerState">
-                <h3>No active jobs right now</h3>
-                <p>New assigned jobs will appear here automatically.</p>
-              </div>
-            )}
-          </section>
-
-          <section className="workerTabs">
-            <button className={activeTab === "today" ? "active" : ""} onClick={() => setActiveTab("today")}>
-              Today <span>{grouped.today.length}</span>
-            </button>
-            <button className={activeTab === "tomorrow" ? "active" : ""} onClick={() => setActiveTab("tomorrow")}>
-              Tomorrow <span>{grouped.tomorrow.length}</span>
-            </button>
-            <button className={activeTab === "week" ? "active" : ""} onClick={() => setActiveTab("week")}>
-              This Week <span>{grouped.week.length}</span>
-            </button>
-          </section>
-
-          <section className="workerList">
-            {visibleJobs.length ? (
-              visibleJobs.map((job) => <JobCard key={idOf(job)} job={job} />)
-            ) : (
-              <div className="emptyWorkerState">
-                <h3>Nothing booked here</h3>
-                <p>Check another tab or wait for the office to assign work.</p>
-              </div>
-            )}
-          </section>
-        </>
-      )}
-
-      {selectedJob && (
-        <div className="workerSheetBackdrop" onClick={() => setSelectedJob(null)}>
-          <section className="workerSheet" onClick={(event) => event.stopPropagation()}>
-            <div className="sheetHandle" />
-
-            <div className="sheetHeader">
-              <div>
-                <p className="jobTime">{dateLabel(selectedJob)} · {timeLabel(selectedJob)}</p>
-                <h2>{titleOf(selectedJob)}</h2>
-                <p>{clientOf(selectedJob)}</p>
-              </div>
-              <button className="closeSheet" onClick={() => setSelectedJob(null)}>Close</button>
-            </div>
-
-            <div className="sheetBlock">
-              <span>Address</span>
-              <p>{addressOf(selectedJob) || "No address saved"}</p>
-              <div className="quickButtons wide">
-                <button onClick={() => openMaps(selectedJob)} disabled={!addressOf(selectedJob)}>Navigate</button>
-                <button onClick={() => callClient(selectedJob)} disabled={!phoneOf(selectedJob)}>Call Client</button>
-              </div>
-            </div>
-
-            <div className="sheetBlock">
-              <span>Instructions</span>
-              <p>
-                {selectedJob.instructions ||
-                  selectedJob.notes ||
-                  selectedJob.description ||
-                  selectedJob.job_notes ||
-                  "No instructions added yet."}
-              </p>
-            </div>
-
-            <div className="sheetBlock">
-              <span>Access / Safety Notes</span>
-              <p>
-                {selectedJob.access_notes ||
-                  selectedJob.safety_notes ||
-                  selectedJob.site_notes ||
-                  "No access or safety notes added."}
-              </p>
-            </div>
-
-            <ActionButtons job={selectedJob} />
-
-            <div className="sheetBlock">
-              <span>Worker Note</span>
-              <textarea
-                value={noteText}
-                onChange={(event) => setNoteText(event.target.value)}
-                placeholder="Example: Gate locked, extra green waste removed, customer asked for quote..."
-              />
-              <button
-                className="primary full"
-                disabled={!noteText.trim() || busyKey === `${idOf(selectedJob)}:note`}
-                onClick={() => saveNote(selectedJob)}
-              >
-                {busyKey === `${idOf(selectedJob)}:note` ? "Saving..." : "Save Note"}
-              </button>
-            </div>
-
-            <div className="sheetBlock">
-              <span>Job Photos</span>
-              <label className="photoUpload">
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(event) => uploadPhotos(selectedJob, event)}
-                />
-                {busyKey === `${idOf(selectedJob)}:photos` ? "Uploading..." : "Upload Photos"}
-              </label>
-              <p className="hint">Use this for before, progress, after, damage, and issue photos.</p>
-            </div>
-          </section>
-        </div>
-      )}
+      <JobModal
+        job={selectedJob}
+        onClose={() => (busy ? null : setSelectedJob(null))}
+        onAction={runJobAction}
+        onPhoto={choosePhoto}
+      />
     </main>
   );
 }
