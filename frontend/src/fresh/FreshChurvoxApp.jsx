@@ -2,23 +2,14 @@ import React, { useEffect, useMemo, useState } from "react";
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
 const API_BASE = (() => {
-  const raw =
-    process.env.REACT_APP_API_URL ||
-    process.env.REACT_APP_BACKEND_URL ||
-    process.env.VITE_BACKEND_URL ||
-    "https://grassley-backend.onrender.com";
+  const raw = process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL || process.env.VITE_BACKEND_URL || "https://grassley-backend.onrender.com";
   const clean = String(raw).replace(/\/+$/, "");
   return clean.endsWith("/api") ? clean : `${clean}/api`;
 })();
 
-function token() {
+function readToken() {
   try {
-    return (
-      localStorage.getItem("token") ||
-      localStorage.getItem("authToken") ||
-      localStorage.getItem("access_token") ||
-      ""
-    );
+    return localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("access_token") || "";
   } catch {
     return "";
   }
@@ -26,28 +17,25 @@ function token() {
 
 async function api(path, options = {}) {
   const headers = { Accept: "application/json", ...(options.headers || {}) };
-  if (token()) headers.Authorization = `Bearer ${token()}`;
+  if (readToken()) headers.Authorization = `Bearer ${readToken()}`;
   if (options.body && !(options.body instanceof FormData)) headers["Content-Type"] = "application/json";
 
   const res = await fetch(`${API_BASE}/${String(path).replace(/^\/+/, "")}`, {
     method: options.method || "GET",
     credentials: "include",
     headers,
-    body:
-      options.body && !(options.body instanceof FormData)
-        ? JSON.stringify(options.body)
-        : options.body,
+    body: options.body && !(options.body instanceof FormData) ? JSON.stringify(options.body) : options.body,
   });
 
   const text = await res.text();
-  let data = null;
-  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+  let payload = null;
+  try { payload = text ? JSON.parse(text) : null; } catch { payload = text; }
 
-  if (!res.ok) throw new Error(data?.detail || data?.message || data?.error || `${path} failed`);
-  return data;
+  if (!res.ok) throw new Error(payload?.detail || payload?.message || payload?.error || `${path} failed`);
+  return payload;
 }
 
-function arr(payload, keys = []) {
+function toArray(payload, keys = []) {
   if (Array.isArray(payload)) return payload;
   if (!payload || typeof payload !== "object") return [];
   for (const key of keys) if (Array.isArray(payload[key])) return payload[key];
@@ -55,123 +43,44 @@ function arr(payload, keys = []) {
   return Object.values(payload).find(Array.isArray) || [];
 }
 
-function titleOf(x, fallback) {
-  return x?.title || x?.name || x?.client_name || x?.customer_name || x?.email || x?.number || x?.invoice_number || x?.quote_number || fallback;
+function itemTitle(item, fallback) {
+  return item?.title || item?.name || item?.client_name || item?.customer_name || item?.invoice_number || item?.quote_number || item?.email || fallback;
 }
 
-function statusOf(x, fallback = "active") {
-  return String(x?.status || x?.job_status || x?.payment_status || x?.quote_status || x?.state || fallback).replaceAll("_", " ");
+function status(item, fallback = "active") {
+  return String(item?.status || item?.job_status || item?.payment_status || item?.quote_status || item?.state || fallback).replaceAll("_", " ");
 }
 
-function money(x) {
-  const n = Number(x?.total || x?.amount || x?.price || x?.balance || 0);
-  if (!Number.isFinite(n) || n <= 0) return "";
-  return new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD", maximumFractionDigits: 0 }).format(n);
+function money(item) {
+  const value = Number(item?.total || item?.amount || item?.price || item?.balance || 0);
+  if (!Number.isFinite(value) || value <= 0) return "";
+  return new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD", maximumFractionDigits: 0 }).format(value);
 }
 
-function Shell({ children }) {
-  const location = useLocation();
-  const nav = [
-    ["/dashboard", "Smart Hub"],
-    ["/jobs", "Jobs"],
-    ["/clients", "Clients"],
-    ["/quotes", "Quotes"],
-    ["/invoices", "Invoices"],
-    ["/team", "Team"],
-    ["/settings", "Settings"],
-  ];
-
+function ChurvoxMark() {
   return (
-    <div className="fresh-shell">
-      <aside className="fresh-side">
-        <div className="fresh-brand">
-          <span>CV</span>
-          <div>
-            <strong>Churvox</strong>
-            <small>AI command centre</small>
-          </div>
-        </div>
-
-        <nav>
-          {nav.map(([href, label]) => (
-            <Link key={href} to={href} className={location.pathname === href ? "active" : ""}>
-              {label}
-            </Link>
-          ))}
-        </nav>
-      </aside>
-
-      <main className="fresh-main">{children}</main>
+    <div className="cx-mark" aria-hidden="true">
+      <i />
+      <b />
+      <em />
+      <span />
     </div>
   );
 }
 
-function Hero({ eyebrow, title, text, action }) {
+function Brand({ large = false }) {
   return (
-    <section className="fresh-hero">
+    <div className={`cx-brand ${large ? "cx-brand-large" : ""}`}>
+      <ChurvoxMark />
       <div>
-        <p className="fresh-eyebrow">{eyebrow}</p>
-        <h1>{title}</h1>
-        <p>{text}</p>
+        <strong>Churvox</strong>
+        <small>Operator OS</small>
       </div>
-      {action}
-    </section>
+    </div>
   );
 }
 
-function StatGrid({ stats }) {
-  return (
-    <section className="fresh-stats">
-      {stats.map((s) => (
-        <article key={s.label} className="fresh-stat">
-          <strong>{s.value}</strong>
-          <span>{s.label}</span>
-          <small>{s.text}</small>
-        </article>
-      ))}
-    </section>
-  );
-}
-
-function DataList({ title, items, type, empty = "Nothing here yet." }) {
-  return (
-    <section className="fresh-card">
-      <div className="fresh-card-head">
-        <div>
-          <p className="fresh-eyebrow">{type}</p>
-          <h2>{title}</h2>
-        </div>
-      </div>
-
-      <div className="fresh-list">
-        {items.map((item, i) => (
-          <article className="fresh-row" key={item.id || item._id || item.email || i}>
-            <div>
-              <strong>{titleOf(item, `${type} ${i + 1}`)}</strong>
-              <small>
-                {[item.client_name || item.customer_name || item.email || item.phone, item.address || item.site_address, money(item)]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </small>
-            </div>
-            <span className={`fresh-badge ${statusOf(item).toLowerCase().replace(/\s+/g, "-")}`}>
-              {statusOf(item)}
-            </span>
-          </article>
-        ))}
-
-        {!items.length && (
-          <div className="fresh-empty">
-            <strong>{empty}</strong>
-            <p>Add real data and this page will fill automatically.</p>
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function useData() {
+function useLiveData() {
   const [state, setState] = useState({ loading: true, error: "", jobs: [], clients: [], quotes: [], invoices: [], team: [] });
 
   async function load() {
@@ -186,12 +95,12 @@ function useData() {
 
     setState({
       loading: false,
-      error: calls.some((c) => c.status === "rejected") ? "Some live data could not load yet. The app is still usable." : "",
-      jobs: calls[0].status === "fulfilled" ? arr(calls[0].value, ["jobs"]) : [],
-      clients: calls[1].status === "fulfilled" ? arr(calls[1].value, ["clients"]) : [],
-      quotes: calls[2].status === "fulfilled" ? arr(calls[2].value, ["quotes"]) : [],
-      invoices: calls[3].status === "fulfilled" ? arr(calls[3].value, ["invoices"]) : [],
-      team: calls[4].status === "fulfilled" ? arr(calls[4].value, ["workers", "team"]) : [],
+      error: calls.some((c) => c.status === "rejected") ? "Some live data could not load. Churvox is still usable." : "",
+      jobs: calls[0].status === "fulfilled" ? toArray(calls[0].value, ["jobs"]) : [],
+      clients: calls[1].status === "fulfilled" ? toArray(calls[1].value, ["clients"]) : [],
+      quotes: calls[2].status === "fulfilled" ? toArray(calls[2].value, ["quotes"]) : [],
+      invoices: calls[3].status === "fulfilled" ? toArray(calls[3].value, ["invoices"]) : [],
+      team: calls[4].status === "fulfilled" ? toArray(calls[4].value, ["workers", "team"]) : [],
     });
   }
 
@@ -199,46 +108,123 @@ function useData() {
   return { ...state, reload: load };
 }
 
-
-function OperatorStrip({ data, openInvoices, openQuotes, unassigned }) {
-  const actions = [
-    {
-      label: "Dispatch",
-      title: unassigned.length ? "Assign waiting jobs" : "Crew is covered",
-      text: unassigned.length ? `${unassigned.length} jobs need a worker match.` : "No unassigned jobs found.",
-      tone: "blue",
-    },
-    {
-      label: "Cashflow",
-      title: openInvoices.length ? "Chase open invoices" : "Money queue clear",
-      text: openInvoices.length ? `${openInvoices.length} invoices need follow-up.` : "No urgent payment follow-up.",
-      tone: "green",
-    },
-    {
-      label: "Sales",
-      title: openQuotes.length ? "Follow up quotes" : "Quote queue clear",
-      text: openQuotes.length ? `${openQuotes.length} quotes are still open.` : "No quote follow-ups waiting.",
-      tone: "amber",
-    },
+function Shell({ children }) {
+  const location = useLocation();
+  const nav = [
+    ["/dashboard", "Command"],
+    ["/jobs", "Jobs"],
+    ["/clients", "Clients"],
+    ["/quotes", "Quotes"],
+    ["/invoices", "Invoices"],
+    ["/team", "Crew"],
+    ["/settings", "Settings"],
   ];
 
   return (
-    <section className="cvx-operator-strip">
-      <div className="cvx-operator-head">
-        <div>
-          <p className="fresh-eyebrow">AI Operator</p>
-          <h2>Churvox prepares the admin. You approve the move.</h2>
+    <div className="cx-os">
+      <aside className="cx-rail">
+        <Brand />
+        <nav>
+          {nav.map(([href, label]) => (
+            <Link key={href} to={href} className={location.pathname === href ? "active" : ""}>
+              <span>{label}</span>
+            </Link>
+          ))}
+        </nav>
+        <div className="cx-rail-card">
+          <small>MODE</small>
+          <strong>Owner approval</strong>
+          <p>AI prepares. You approve.</p>
         </div>
-        <span className="cvx-live-pill">Live business scan</span>
+      </aside>
+
+      <main className="cx-main">
+        <div className="cx-topline">
+          <span>Proof → Photos → Time → Invoice → Paid</span>
+          <b>Live Operator Workspace</b>
+        </div>
+        {children}
+      </main>
+    </div>
+  );
+}
+
+function Hero({ data }) {
+  const unassigned = data.jobs.filter((j) => !j.assigned_worker_id && !j.worker_id && !j.assigned_to);
+  const openInvoices = data.invoices.filter((x) => !["paid", "void", "cancelled"].includes(status(x).toLowerCase()));
+  const openQuotes = data.quotes.filter((x) => !["accepted", "declined", "converted"].includes(status(x).toLowerCase()));
+
+  return (
+    <section className="cx-hero">
+      <div className="cx-hero-copy">
+        <p className="cx-kicker">CHURVOX OPERATOR OS</p>
+        <h1>Run the day from one approval-first command centre.</h1>
+        <p>Churvox turns trade work into a proof-to-paid system: jobs, crew, photos, time, invoices, quote follow-ups, and owner approvals.</p>
+        <div className="cx-hero-actions">
+          <button onClick={data.reload}>Run live scan</button>
+          <span>{data.loading ? "Scanning business…" : "Live scan ready"}</span>
+        </div>
       </div>
 
-      <div className="cvx-action-grid">
-        {actions.map((action) => (
-          <article className={`cvx-action cvx-action-${action.tone}`} key={action.label}>
-            <span>{action.label}</span>
-            <strong>{action.title}</strong>
-            <p>{action.text}</p>
-            <button type="button">Review action</button>
+      <div className="cx-command-orb">
+        <ChurvoxMark />
+        <strong>{unassigned.length + openInvoices.length + openQuotes.length}</strong>
+        <span>AI-prepared moves</span>
+      </div>
+    </section>
+  );
+}
+
+function ProofRail() {
+  const steps = [
+    ["Job", "Booked", "Client, site, notes"],
+    ["Proof", "Captured", "Photos, time, GPS"],
+    ["Draft", "Prepared", "Invoice wording"],
+    ["Paid", "Closed", "Send, sync, collect"],
+  ];
+
+  return (
+    <section className="cx-proof">
+      {steps.map(([label, title, text], index) => (
+        <article key={label}>
+          <b>{index + 1}</b>
+          <span>{label}</span>
+          <strong>{title}</strong>
+          <small>{text}</small>
+        </article>
+      ))}
+    </section>
+  );
+}
+
+function ApprovalQueue({ data }) {
+  const unassigned = data.jobs.filter((j) => !j.assigned_worker_id && !j.worker_id && !j.assigned_to);
+  const openInvoices = data.invoices.filter((x) => !["paid", "void", "cancelled"].includes(status(x).toLowerCase()));
+  const openQuotes = data.quotes.filter((x) => !["accepted", "declined", "converted"].includes(status(x).toLowerCase()));
+
+  const actions = [
+    ["Dispatch", unassigned.length ? `${unassigned.length} jobs need a worker match` : "No dispatch blockers", "Match crew by area, role and load"],
+    ["Cashflow", openInvoices.length ? `${openInvoices.length} invoices need follow-up` : "Invoice queue clear", "Prepare payment reminders"],
+    ["Sales", openQuotes.length ? `${openQuotes.length} quotes waiting` : "Quote follow-ups clear", "Prepare follow-up messages"],
+  ];
+
+  return (
+    <section className="cx-panel cx-approval">
+      <div className="cx-panel-head">
+        <div>
+          <p className="cx-kicker">AI APPROVAL QUEUE</p>
+          <h2>Prepared actions, not generic alerts.</h2>
+        </div>
+        <span className="cx-live">Live</span>
+      </div>
+
+      <div className="cx-actions">
+        {actions.map(([label, title, text]) => (
+          <article key={label}>
+            <span>{label}</span>
+            <strong>{title}</strong>
+            <p>{text}</p>
+            <button type="button">Open approval</button>
           </article>
         ))}
       </div>
@@ -246,93 +232,98 @@ function OperatorStrip({ data, openInvoices, openQuotes, unassigned }) {
   );
 }
 
-function ProofToPaidRail() {
-  const steps = [
-    ["1", "Job booked", "Client, site, worker, notes"],
-    ["2", "Work completed", "Photos, time, proof"],
-    ["3", "Invoice drafted", "AI writes the detail"],
-    ["4", "Owner approves", "Send, sync, collect"],
+function MetricDock({ data }) {
+  const stats = [
+    ["Jobs", data.jobs.length, "Work in motion"],
+    ["Clients", data.clients.length, "Customer base"],
+    ["Invoices", data.invoices.length, "Money workspace"],
+    ["Crew", data.team.length, "Team capacity"],
   ];
 
   return (
-    <section className="cvx-proof-rail">
-      <div>
-        <p className="fresh-eyebrow">Proof to paid</p>
-        <h2>The whole job flow in one line.</h2>
+    <section className="cx-metrics">
+      {stats.map(([label, value, text]) => (
+        <article key={label}>
+          <strong>{value}</strong>
+          <span>{label}</span>
+          <small>{text}</small>
+        </article>
+      ))}
+    </section>
+  );
+}
+
+function ListPanel({ title, label, items, empty }) {
+  return (
+    <section className="cx-panel">
+      <div className="cx-panel-head">
+        <div>
+          <p className="cx-kicker">{label}</p>
+          <h2>{title}</h2>
+        </div>
       </div>
-      <div className="cvx-rail-steps">
-        {steps.map(([num, title, text]) => (
-          <article key={num}>
-            <b>{num}</b>
-            <strong>{title}</strong>
-            <small>{text}</small>
+
+      <div className="cx-list">
+        {items.map((item, index) => (
+          <article className="cx-row" key={item.id || item._id || item.email || index}>
+            <div>
+              <strong>{itemTitle(item, `${label} ${index + 1}`)}</strong>
+              <small>{[item.client_name || item.customer_name || item.email || item.phone, item.address || item.site_address, money(item)].filter(Boolean).join(" · ")}</small>
+            </div>
+            <span>{status(item)}</span>
           </article>
         ))}
+
+        {!items.length && (
+          <div className="cx-empty">
+            <strong>{empty}</strong>
+            <p>Once live records exist, they will appear here.</p>
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
 function Dashboard() {
-  const data = useData();
-  const openInvoices = data.invoices.filter((x) => !["paid", "cancelled", "void"].includes(statusOf(x).toLowerCase()));
-  const openQuotes = data.quotes.filter((x) => !["accepted", "declined", "converted"].includes(statusOf(x).toLowerCase()));
-  const unassigned = data.jobs.filter((x) => !x.assigned_worker_id && !x.worker_id && !x.assigned_to);
+  const data = useLiveData();
 
   return (
     <Shell>
-      <Hero
-        eyebrow="Smart Hub"
-        title="The AI operator for trade businesses."
-        text="Churvox turns jobs, photos, time, invoices and follow-ups into one approval-first command centre."
-        action={<button className="fresh-primary" onClick={data.reload}>Refresh live data</button>}
-      />
-
-      {data.error ? <div className="fresh-warning">{data.error}</div> : null}
-
-      <StatGrid
-        stats={[
-          { value: data.jobs.length, label: "Jobs", text: `${unassigned.length} unassigned` },
-          { value: data.clients.length, label: "Clients", text: "Live client records" },
-          { value: openInvoices.length, label: "Open invoices", text: "Cashflow follow-up" },
-          { value: openQuotes.length, label: "Open quotes", text: "Sales follow-up" },
-        ]}
-      />
-
-      <OperatorStrip data={data} openInvoices={openInvoices} openQuotes={openQuotes} unassigned={unassigned} />
-
-      <ProofToPaidRail />
-
-      <section className="fresh-grid cvx-workspace-grid">
-        <DataList title="Priority jobs" type="Jobs" items={data.jobs.slice(0, 6)} />
-        <DataList title="Money queue" type="Invoices" items={openInvoices.slice(0, 6)} />
+      <Hero data={data} />
+      {data.error ? <div className="cx-warning">{data.error}</div> : null}
+      <ProofRail />
+      <MetricDock data={data} />
+      <ApprovalQueue data={data} />
+      <section className="cx-grid">
+        <ListPanel title="Priority workstream" label="Jobs" items={data.jobs.slice(0, 6)} empty="No jobs loaded yet." />
+        <ListPanel title="Money workstream" label="Invoices" items={data.invoices.slice(0, 6)} empty="No invoices loaded yet." />
       </section>
     </Shell>
   );
 }
 
-function Page({ kind }) {
-  const data = useData();
+function Workspace({ kind }) {
+  const data = useLiveData();
   const map = {
-    jobs: ["Jobs", "Plan, assign, track and complete work.", data.jobs, "Jobs"],
-    clients: ["Clients", "Your customer list and job history base.", data.clients, "Clients"],
-    quotes: ["Quotes", "Create, follow up and convert quotes.", data.quotes, "Quotes"],
-    invoices: ["Invoices", "Draft, review and collect invoices.", data.invoices, "Invoices"],
-    team: ["Team", "Manage workers, roles and dispatch.", data.team, "Team"],
+    jobs: ["Jobs Command", "Schedule, assign, prove and complete work.", data.jobs, "Jobs"],
+    clients: ["Client Base", "Customers, addresses and repeat work.", data.clients, "Clients"],
+    quotes: ["Quote Pipeline", "Follow-ups and approvals before work starts.", data.quotes, "Quotes"],
+    invoices: ["Money Command", "Draft, send, follow up and collect.", data.invoices, "Invoices"],
+    team: ["Crew Board", "Workers, roles, capacity and dispatch.", data.team, "Crew"],
   };
-
-  const [title, text, items, type] = map[kind];
+  const [title, text, items, label] = map[kind];
 
   return (
     <Shell>
-      <Hero
-        eyebrow={type}
-        title={title}
-        text={text}
-        action={<button className="fresh-primary" onClick={data.reload}>Refresh</button>}
-      />
-      {data.error ? <div className="fresh-warning">{data.error}</div> : null}
-      <DataList title={`${title} workspace`} type={type} items={items} empty={`No ${title.toLowerCase()} loaded yet.`} />
+      <section className="cx-page-hero">
+        <p className="cx-kicker">{label}</p>
+        <h1>{title}</h1>
+        <p>{text}</p>
+        <button onClick={data.reload}>Refresh live data</button>
+      </section>
+      {data.error ? <div className="cx-warning">{data.error}</div> : null}
+      <ListPanel title={`${label} live records`} label={label} items={items} empty={`No ${label.toLowerCase()} loaded yet.`} />
     </Shell>
   );
 }
@@ -340,17 +331,17 @@ function Page({ kind }) {
 function Settings() {
   return (
     <Shell>
-      <Hero
-        eyebrow="Settings"
-        title="Business settings."
-        text="Plan, billing, MYOB, SMS and account controls can be rebuilt here next."
-      />
-      <section className="fresh-grid">
-        {["Plan and billing", "MYOB integration", "SMS credits", "Business profile"].map((x) => (
-          <article className="fresh-card" key={x}>
-            <p className="fresh-eyebrow">Coming back clean</p>
-            <h2>{x}</h2>
-            <p className="fresh-muted">This area is ready for the next rebuild pass.</p>
+      <section className="cx-page-hero">
+        <p className="cx-kicker">Settings</p>
+        <h1>Control the Churvox engine.</h1>
+        <p>Plan, billing, MYOB, SMS, business profile and AI Operator controls sit here as the next rebuild layer.</p>
+      </section>
+      <section className="cx-grid">
+        {["Plan & Billing", "MYOB Sync", "SMS Credits", "AI Operator Rules"].map((name) => (
+          <article className="cx-panel cx-setting" key={name}>
+            <p className="cx-kicker">Module</p>
+            <h2>{name}</h2>
+            <p>Ready for the next proper page rebuild.</p>
           </article>
         ))}
       </section>
@@ -361,59 +352,51 @@ function Settings() {
 function Login() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
-  const [msg, setMsg] = useState("");
+  const [message, setMessage] = useState("");
 
-  async function submit(e) {
-    e.preventDefault();
-    setMsg("Signing in...");
+  async function submit(event) {
+    event.preventDefault();
+    setMessage("Signing in…");
     try {
-      const res = await api("/auth/login", { method: "POST", body: form });
-      const t = res?.token || res?.access_token || res?.accessToken;
-      if (t) localStorage.setItem("token", t);
+      const response = await api("/auth/login", { method: "POST", body: form });
+      const access = response?.token || response?.access_token || response?.accessToken;
+      if (access) localStorage.setItem("token", access);
       navigate("/dashboard");
-    } catch (err) {
-      setMsg(err.message || "Login failed.");
+    } catch (error) {
+      setMessage(error.message || "Login failed.");
     }
   }
 
   return (
-    <main className="fresh-login">
-      <form onSubmit={submit} className="fresh-login-card">
-        <div className="fresh-brand big">
-          <span>CV</span>
-          <div>
-            <strong>Churvox</strong>
-            <small>AI command centre</small>
-          </div>
-        </div>
-        <h1>Welcome back.</h1>
-        <p>Sign in to open the fresh Churvox workspace.</p>
+    <main className="cx-login">
+      <form onSubmit={submit}>
+        <Brand large />
+        <h1>Open Operator OS.</h1>
+        <p>Sign in to run Churvox.</p>
         <input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
         <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-        <button className="fresh-primary" type="submit">Sign in</button>
-        {msg ? <small>{msg}</small> : null}
+        <button type="submit">Sign in</button>
+        {message ? <small>{message}</small> : null}
       </form>
     </main>
   );
 }
 
-function FreshChurvoxApp() {
+export default function FreshChurvoxApp() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/jobs" element={<Page kind="jobs" />} />
-        <Route path="/clients" element={<Page kind="clients" />} />
-        <Route path="/quotes" element={<Page kind="quotes" />} />
-        <Route path="/invoices" element={<Page kind="invoices" />} />
-        <Route path="/team" element={<Page kind="team" />} />
+        <Route path="/jobs" element={<Workspace kind="jobs" />} />
+        <Route path="/clients" element={<Workspace kind="clients" />} />
+        <Route path="/quotes" element={<Workspace kind="quotes" />} />
+        <Route path="/invoices" element={<Workspace kind="invoices" />} />
+        <Route path="/team" element={<Workspace kind="team" />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   );
 }
-
-export default FreshChurvoxApp;
