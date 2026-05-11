@@ -163,48 +163,9 @@ function Shell({ children }) {
         </section>
       </aside>
 
-      <main className="op-main"><DashboardCleaner />{children}<AISetupGuide /></main>
+      <main className="op-main">{children}<AISetupGuide /></main>
     </div>
   );
-}
-
-
-function DashboardCleaner() {
-  const location = useLocation();
-
-  useEffect(() => {
-    if (location.pathname !== "/dashboard") return;
-
-    const hideWords = [
-      "AI DISPATCH BOARD",
-      "MONEY RADAR",
-      "PROPERTY BRAIN",
-      "AI NOTE TO ADMIN",
-      "AI RECEPTIONIST",
-      "AI QUOTE BUILDER",
-      "QUOTE PIPELINE",
-      "APPROVAL HISTORY",
-      "OPERATOR DRAFTS",
-      "Autopilot Replay",
-      "MYOB Control Centre",
-      "Quality Signals"
-    ];
-
-    const clean = () => {
-      const sections = Array.from(document.querySelectorAll(".op-main section"));
-      sections.forEach((section) => {
-        const text = (section.textContent || "").toLowerCase();
-        const shouldHide = hideWords.some((word) => text.includes(word.toLowerCase()));
-        if (shouldHide) section.setAttribute("data-smart-hub-hidden", "true");
-      });
-    };
-
-    clean();
-    const timer = window.setTimeout(clean, 500);
-    return () => window.clearTimeout(timer);
-  }, [location.pathname]);
-
-  return null;
 }
 
 function Topbar() {
