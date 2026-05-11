@@ -535,7 +535,6 @@ function ActionModal({ modal, onClose, onConfirm, busy }) {
     </section></div>);
 }
 
-function Workspace({ kind }) { /* unchanged placeholder replaced below */ }
 
 function Dashboard() {
   const data = useLiveData();
