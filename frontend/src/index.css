@@ -2441,3 +2441,37 @@ body {
   opacity: .62;
   cursor: wait;
 }
+
+
+/* Phase 2: real approval queue empty state */
+.op-empty,
+.op-approval-empty {
+  width: 100%;
+  border: 1px dashed rgba(125, 211, 252, .28);
+  border-radius: 16px;
+  padding: 16px;
+  color: #94a3b8;
+  background: rgba(8, 23, 42, .42);
+}
+
+.op-approval-empty {
+  display: grid;
+  gap: 6px;
+  min-height: 96px;
+  align-content: center;
+}
+
+.op-approval-empty strong {
+  color: #e2e8f0;
+  font-size: 15px;
+}
+
+.op-approval-empty span {
+  color: #94a3b8;
+  line-height: 1.45;
+}
+
+.op-action small + small {
+  margin-top: 6px;
+  color: #67e8f9;
+}

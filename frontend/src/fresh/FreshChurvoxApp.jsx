@@ -156,7 +156,7 @@ function Topbar() {
       <span>☼ {`Good ${new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, ${localStorage.getItem("churvox_owner_name") || "Owner"}.`}</span>
       <div>
         <button>⌂ All locations</button>
-        <button>🔔 <i>3</i></button>
+        <button>🔔</button>
         <button>{new Date().toLocaleDateString(undefined, { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}</button>
       </div>
     </div>
@@ -196,82 +196,123 @@ function Hero({ data, prepared }) {
   );
 }
 
-function ApprovalQueue({ unassigned, openInvoices, openQuotes, onAction }) {
-  const actions = [
-    {
+
+function buildApprovalActions({ unassigned = 0, openInvoices = 0, openQuotes = 0, completedNeedsInvoice = 0 }) {
+  const actions = [];
+
+  if (unassigned > 0) {
+    actions.push({
       icon: "♧",
       label: "DISPATCH",
-      title: `Assign ${unassigned || 0} unassigned jobs`,
-      text: "Jobs matched to available crew",
-      why: "Why: Crew are available and within 15km of site.",
-      confidence: "95%",
+      title: `Assign ${unassigned} unassigned ${unassigned === 1 ? "job" : "jobs"}`,
+      text: "AI found jobs without a worker assigned.",
+      why: "Why: Churvox can recommend the best available worker using active status, region and current workload.",
+      guardrail: "Owner approval required before any worker is assigned.",
+      confidence: "Ready",
       tone: "blue",
-    },
-    {
+    });
+  }
+
+  if (openInvoices > 0) {
+    actions.push({
       icon: "✉",
       label: "CASHFLOW",
-      title: `Prepare payment reminders for ${openInvoices || 0} invoices`,
-      text: "Invoices are overdue or ready for follow-up",
-      why: "Why: Improves cash flow based on payment history.",
-      confidence: "91%",
+      title: `Prepare reminders for ${openInvoices} open ${openInvoices === 1 ? "invoice" : "invoices"}`,
+      text: "AI found invoices that may need payment follow-up.",
+      why: "Why: Draft reminders can help cashflow without auto-sending anything.",
+      guardrail: "Nothing is sent to customers until the owner approves.",
+      confidence: "Ready",
       tone: "amber",
-    },
-    {
+    });
+  }
+
+  if (openQuotes > 0) {
+    actions.push({
       icon: "☷",
       label: "SALES",
-      title: `Follow up ${openQuotes || 0} open quotes`,
-      text: "Quotes sent with no response",
-      why: "Why: High-intent leads are most likely to convert now.",
-      confidence: "88%",
+      title: `Follow up ${openQuotes} open ${openQuotes === 1 ? "quote" : "quotes"}`,
+      text: "AI found quotes still waiting for a customer decision.",
+      why: "Why: A timely follow-up can recover work that may otherwise go cold.",
+      guardrail: "AI prepares editable follow-up drafts only.",
+      confidence: "Ready",
       tone: "purple",
-    },
-    {
+    });
+  }
+
+  if (completedNeedsInvoice > 0) {
+    actions.push({
       icon: "▤",
       label: "INVOICE",
-      title: "Draft invoice from completed job proof",
-      text: "Photos, time logs and notes are ready",
-      why: "Why: Ready to invoice based on job completion.",
-      confidence: "93%",
+      title: `Draft ${completedNeedsInvoice} invoice ${completedNeedsInvoice === 1 ? "from completed work" : "from completed jobs"}`,
+      text: "AI found completed jobs that do not appear to have linked invoices yet.",
+      why: "Why: Completed work should move into proof, invoice draft and owner approval.",
+      guardrail: "AI creates draft invoices only. Owner still approves before sending.",
+      confidence: "Ready",
       tone: "green",
-    },
-  ];
+    });
+  }
+
+  return actions;
+}
+
+function ApprovalQueue({ unassigned, openInvoices, openQuotes, completedNeedsInvoice, onAction }) {
+  const actions = buildApprovalActions({ unassigned, openInvoices, openQuotes, completedNeedsInvoice });
 
   return (
     <section className="op-approval">
       <header>
         <div>
-          <h2>AI APPROVAL QUEUE <b>4</b></h2>
-          <p>Actions ready for your approval</p>
+          <h2>AI APPROVAL QUEUE <b>{actions.length}</b></h2>
+          <p>{actions.length ? "Real actions ready for owner approval" : "No AI actions need approval right now"}</p>
         </div>
-        <div className="op-confidence">AI confidence <span>High</span> <button onClick={() => onAction?.({ label: "Operator", title: "Review all prepared actions", text: "Open the approval queue and review every AI-prepared move.", why: "Owner approval is required before Churvox performs admin actions." }, "review")}>Review all</button></div>
+        <div className="op-confidence">
+          AI mode <span>Approval-first</span>
+          {actions.length ? (
+            <button onClick={() => onAction?.({
+              label: "Operator",
+              title: "Review prepared actions",
+              text: "Review the real approval queue and decide which AI-prepared moves should run.",
+              why: "Owner approval is required before Churvox performs sensitive admin actions."
+            }, "review")}>Review all</button>
+          ) : null}
+        </div>
       </header>
 
-      <div className="op-approval-list">
-        {actions.map((a) => (
-          <article className={`op-action ${a.tone}`} key={a.label}>
-            <i>{a.icon}</i>
-            <div>
-              <span>{a.label}</span>
-              <strong>{a.title}</strong>
-              <p>{a.text}</p>
-              <small>{a.why}</small>
-            </div>
-            <em>{a.confidence}<b>••••</b></em>
-            <div className="op-action-buttons">
-              <button onClick={() => onAction?.(a, "approve")}>Approve</button>
-              <button onClick={() => onAction?.(a, "review")}>Review</button>
-            </div>
-          </article>
-        ))}
-      </div>
+      {!actions.length ? (
+        <div className="op-approval-empty">
+          <strong>Nothing urgent waiting.</strong>
+          <span>Churvox will show dispatch, invoice, quote and cashflow approvals here when real records need attention.</span>
+        </div>
+      ) : (
+        <div className="op-approval-list">
+          {actions.map((a) => (
+            <article className={`op-action ${a.tone}`} key={a.label}>
+              <i>{a.icon}</i>
+              <div>
+                <span>{a.label}</span>
+                <strong>{a.title}</strong>
+                <p>{a.text}</p>
+                <small>{a.why}</small>
+                <small>{a.guardrail}</small>
+              </div>
+              <em>{a.confidence}<b>LIVE</b></em>
+              <div className="op-action-buttons">
+                <button onClick={() => onAction?.(a, "approve")}>Approve</button>
+                <button onClick={() => onAction?.(a, "review")}>Review</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
 
       <footer>
-        <span>‹ 4 actions ready</span>
-        <strong>◷ Est. time saved: <b>1h 42m</b></strong>
+        <span>{actions.length} {actions.length === 1 ? "action" : "actions"} ready</span>
+        <strong>Owner approval required</strong>
       </footer>
     </section>
   );
 }
+
 
 function ProofToPaid() {
   const steps = [
@@ -569,10 +610,14 @@ function Dashboard() {
   const openInvoices = data.invoices.filter((x) => !["paid", "void", "cancelled"].includes(statusOf(x).toLowerCase()));
   const openQuotes = data.quotes.filter((x) => !["accepted", "declined", "converted"].includes(statusOf(x).toLowerCase()));
   const unassigned = data.jobs.filter(isUnassigned);
-  const prepared = unassigned.length + openInvoices.length + openQuotes.length;
+  const invoicedJobIds = new Set(data.invoices.map((i) => String(i.job_id || i.source_job_id || i.linked_job_id || "")).filter(Boolean));
+  const completedNeedsInvoice = data.jobs
+    .filter((j) => ["completed", "done", "closed"].includes(statusSlug(j)))
+    .filter((j) => !invoicedJobIds.has(String(j.id || j._id || "")));
+  const prepared = unassigned.length + openInvoices.length + openQuotes.length + completedNeedsInvoice.length;
 
   return <Shell><Topbar />{toast ? <div className="op-warning">{toast}</div> : null}<ActionModal modal={modal} onClose={() => setModal(null)} onConfirm={confirmAction} busy={busy} />{data.error ? <div className="op-warning">{data.error}</div> : null}<Hero data={data} prepared={prepared} />
-  <section className="op-top-grid"><ApprovalQueue unassigned={unassigned.length} openInvoices={openInvoices.length} openQuotes={openQuotes.length} onAction={openAction} /><ProofToPaid /></section>
+  <section className="op-top-grid"><ApprovalQueue unassigned={unassigned.length} openInvoices={openInvoices.length} openQuotes={openQuotes.length} completedNeedsInvoice={completedNeedsInvoice.length} onAction={openAction} /><ProofToPaid /></section>
   <section className="op-mid-grid"><CrewStatus team={data.team} /><Cashflow invoices={data.invoices} /><Schedule jobs={data.jobs} /><LiveActivity history={history} /></section>
   <section className="op-bottom-grid"><DataPanel title="TODAY'S SCHEDULE" type="jobs" items={data.jobs} /><DataPanel title="QUOTE PIPELINE" type="quotes" items={data.quotes} /></section>
   <section className="op-bottom-grid"><section className="op-panel"><h3>APPROVAL HISTORY</h3>{history.map((h)=><div className="op-data-row" key={h.id}><strong>{h.result || h.mode}</strong><small>{h.title} · {new Date(h.created_at).toLocaleString()} · {h.target}</small></div>)}</section><section className="op-panel"><h3>OPERATOR DRAFTS</h3>{drafts.map((d)=><div className="op-data-row" key={d.id}><strong>{d.title}</strong><small>{d.type} · {new Date(d.created_at).toLocaleString()} · {d.target}</small></div>)}</section></section>
