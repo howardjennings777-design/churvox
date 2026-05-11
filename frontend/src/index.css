@@ -1,17 +1,4 @@
-@import "./styles/churvox-public-phase21-polish.css";
-@import "./styles/churvox-phase20-global-polish.css";
-@import "./styles/churvox-settings-phase19-polish.css";
-@import "./styles/churvox-automation-phase18-polish.css";
-@import "./styles/churvox-payroll-phase17-polish.css";
-@import "./styles/churvox-schedule-phase16-polish.css";
-@import "./styles/churvox-team-phase15-polish.css";
-@import "./styles/churvox-invoices-phase14-polish.css";
-@import "./styles/churvox-quotes-phase13-polish.css";
-@import "./styles/churvox-clients-phase12-polish.css";
-@import "./styles/churvox-jobs-phase11-polish.css";
-@import "./styles/churvox-worker-phase10-polish.css";
-@import "./styles/churvox-worker-phase7.css";
-@import "./styles/churvox-phase1-shell.css";
+@import "./styles/churvox-2026-clean-theme.css";
 @import "./styles/churvox-header-clean.css";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700&display=swap');
 
