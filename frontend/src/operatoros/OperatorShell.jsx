@@ -30,7 +30,7 @@ export default function OperatorShell({
     <div className="op-shell">
       <aside className="op-sidebar">
         <button className="op-brand" onClick={() => setCurrent("hub")}>
-          <FloatingLogo />
+          <FloatingLogo wordmark />
         </button>
 
         <nav>

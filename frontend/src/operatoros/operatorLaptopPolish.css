@@ -244,3 +244,27 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* CHURVOX_WORDMARK_LOGO_SWITCH */
+.op-wordmark-wrap {
+  width: 100%;
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(125, 234, 255, .16);
+  background: rgba(2, 8, 23, .32);
+  box-shadow: 0 0 34px rgba(34, 211, 238, .10);
+}
+
+.op-wordmark-logo {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 76px;
+  object-fit: contain;
+}
+
+.op-sidebar .op-brand {
+  padding: 0 !important;
+  margin-bottom: 18px !important;
+}
