@@ -76,7 +76,7 @@ function hasDismissed() {
 export default function AISetupGuide() {
   const location = useLocation();
   const [hidden, setHidden] = useState(hasDismissed);
-  const [small, setSmall] = useState(false);
+  const [small, setSmall] = useState(() => ["/dashboard", "/import"].includes(window.location.pathname));
 
   const tip = useMemo(() => {
     const path = location.pathname;

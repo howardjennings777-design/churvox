@@ -152,7 +152,13 @@ export default function ImportCentrePage() {
             workers and jobs to work with.
           </span>
         </div>
-        <Link to="/onboarding">Back to setup</Link>
+        <aside className="import-hero-brand" aria-label="Churvox import centre">
+          <Link to="/onboarding">Back to setup</Link>
+          <div className="import-floating-logo">
+            <img src="/brand/churvox-holo-c.svg" alt="Churvox" />
+          </div>
+          <span>AI needs your real data first</span>
+        </aside>
       </section>
 
       {notice ? <section className="import-notice">{notice}</section> : null}
