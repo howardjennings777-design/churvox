@@ -1691,3 +1691,48 @@ body {
   color: #67e8f9 !important;
   text-shadow: 0 0 14px rgba(34,211,238,0.5) !important;
 }
+
+/* =========================================================
+   CHURVOX LOGO INNER CUT FIX
+   Replace the 3 hamburger lines with one premium centre dash.
+   ========================================================= */
+
+.op-logo-c1,
+.op-logo-c3 {
+  display: none !important;
+}
+
+.op-logo-c2 {
+  display: block !important;
+  position: absolute !important;
+  z-index: 8 !important;
+  width: 18px !important;
+  height: 6px !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-38%, -50%) !important;
+  border-radius: 999px !important;
+  background: linear-gradient(90deg, #ffffff, #67e8f9) !important;
+  box-shadow:
+    0 0 8px rgba(255,255,255,0.95),
+    0 0 18px rgba(34,211,238,0.82),
+    0 0 30px rgba(14,165,255,0.48) !important;
+}
+
+/* Sidebar logo dash scaled smaller */
+.op-rail > .op-logo .op-logo-c2 {
+  width: 13px !important;
+  height: 4px !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-38%, -50%) !important;
+}
+
+/* Hero hologram logo dash scaled bigger */
+.op-orb .op-logo-c2 {
+  width: 20px !important;
+  height: 6px !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-38%, -50%) !important;
+}
