@@ -643,6 +643,16 @@ button, a, input { touch-action: manipulation; }
 .op-crew-row .on-site { color: #22c55e; }
 .op-crew-row .travelling { color: #38bdf8; }
 .op-crew footer { margin-top: 10px; color: #94a3b8; }
+.op-link-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.op-link-row a {
+  padding: 8px 10px;
+  border: 1px solid #2f3f58;
+  border-radius: 10px;
+  color: #dbe7ff;
+  text-decoration: none;
+  background: #0f1727;
+}
+.op-link-row a:hover { border-color: #5c87ff; color: #fff; }
 
 .op-cash-grid {
   display: grid;
