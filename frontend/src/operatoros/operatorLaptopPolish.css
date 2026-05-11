@@ -329,3 +329,102 @@
 .op-hero-orb .op-floating-logo {
   filter: drop-shadow(0 0 28px rgba(34, 211, 238, .72)) !important;
 }
+
+/* SIDEBAR NAV CLEANUP — stop icons/text overlapping */
+.op-sidebar {
+  width: 252px !important;
+  min-width: 252px !important;
+  padding: 18px 14px !important;
+}
+
+.op-shell {
+  grid-template-columns: 252px minmax(0, 1fr) !important;
+}
+
+.op-sidebar nav {
+  display: grid !important;
+  gap: 9px !important;
+  margin-top: 14px !important;
+}
+
+.op-sidebar nav button {
+  width: 100% !important;
+  min-height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 13px !important;
+  padding: 0 14px !important;
+  border-radius: 18px !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+}
+
+.op-sidebar nav button i {
+  width: 24px !important;
+  min-width: 24px !important;
+  height: 24px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  color: #67e8f9 !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  text-shadow: 0 0 12px rgba(103, 232, 249, .65) !important;
+}
+
+.op-sidebar nav button span {
+  display: block !important;
+  min-width: 0 !important;
+  color: #f4fbff !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+  line-height: 1.1 !important;
+  letter-spacing: -.015em !important;
+}
+
+.op-sidebar nav button.active {
+  border-color: rgba(103, 232, 249, .48) !important;
+  background: linear-gradient(90deg, rgba(34, 211, 238, .18), rgba(14, 165, 255, .08)) !important;
+  box-shadow: inset 0 0 28px rgba(14, 165, 255, .12), 0 0 28px rgba(34, 211, 238, .10) !important;
+}
+
+.op-sidebar nav button.active span,
+.op-sidebar nav button:hover span {
+  color: #ffffff !important;
+}
+
+.op-wordmark-wrap {
+  margin-bottom: 12px !important;
+}
+
+.op-wordmark-logo {
+  min-height: 150px !important;
+  max-height: 170px !important;
+  object-fit: contain !important;
+}
+
+.op-main {
+  padding-left: 24px !important;
+}
+
+@media (max-width: 1180px) {
+  .op-shell {
+    grid-template-columns: 224px minmax(0, 1fr) !important;
+  }
+
+  .op-sidebar {
+    width: 224px !important;
+    min-width: 224px !important;
+  }
+
+  .op-sidebar nav button {
+    gap: 10px !important;
+    padding: 0 11px !important;
+  }
+
+  .op-sidebar nav button span {
+    font-size: 13px !important;
+  }
+}
