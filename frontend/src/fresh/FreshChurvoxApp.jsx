@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import WorkerFieldApp from "./worker/WorkerFieldApp";
+import SettingsHubPage from "./settings/SettingsHubPage";
 import ImportCentrePage from "./imports/ImportCentrePage";
 import AISetupGuide from "./components/AISetupGuide";
 import DemoModePage from "./demo/DemoModePage";
@@ -2925,6 +2926,7 @@ export default function FreshChurvoxApp() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/settings" element={<Shell><Topbar /><SettingsHubPage /></Shell>} />
           <Route path="/import" element={<Shell><Topbar /><ImportCentrePage /></Shell>} />
           <Route path="/demo" element={<Shell><Topbar /><DemoModePage /></Shell>} />
           <Route path="/proof-to-paid" element={<Shell><Topbar /><ProofToPaidPage /></Shell>} />
@@ -2935,7 +2937,6 @@ export default function FreshChurvoxApp() {
         <Route path="/quotes" element={<Workspace kind="quotes" />} />
         <Route path="/invoices" element={<Workspace kind="invoices" />} />
         <Route path="/team" element={<Workspace kind="team" />} />
-        <Route path="/settings" element={<Settings />} />
         <Route path="/worker" element={<WorkerFieldApp />} />
         <Route path="/worker/jobs" element={<WorkerFieldApp />} />
         <Route path="/worker/dashboard" element={<WorkerFieldApp />} />
