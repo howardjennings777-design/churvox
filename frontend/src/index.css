@@ -3214,3 +3214,241 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Phase 9: Booking and Lead Inbox */
+.op-booking-page {
+  min-height: 100vh;
+  padding: 24px;
+  color: #e5f7ff;
+  background:
+    radial-gradient(circle at 80% 0%, rgba(34,211,238,.18), transparent 28rem),
+    radial-gradient(circle at 10% 14%, rgba(14,165,255,.13), transparent 26rem),
+    linear-gradient(180deg, #020712 0%, #06111f 100%);
+}
+
+.op-booking-shell {
+  width: min(1040px, 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.op-booking-hero,
+.op-booking-form {
+  border: 1px solid rgba(125,211,252,.18);
+  border-radius: 28px;
+  background: rgba(5,16,30,.86);
+  box-shadow: 0 34px 100px rgba(0,0,0,.34);
+  padding: 26px;
+}
+
+.op-booking-hero p {
+  margin: 26px 0 10px;
+  color: #67e8f9;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .18em;
+}
+
+.op-booking-hero h1 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: clamp(42px, 6vw, 74px);
+  line-height: .9;
+  letter-spacing: -.07em;
+}
+
+.op-booking-hero span {
+  display: block;
+  margin-top: 16px;
+  color: #94a3b8;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.op-booking-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.op-booking-grid label {
+  display: grid;
+  gap: 7px;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.op-booking-grid label.wide {
+  grid-column: 1 / -1;
+}
+
+.op-booking-grid input,
+.op-booking-grid textarea {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid rgba(148,163,184,.18);
+  border-radius: 14px;
+  color: #e2e8f0;
+  background: rgba(15,23,42,.82);
+  padding: 0 13px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.op-booking-grid textarea {
+  min-height: 130px;
+  padding: 13px;
+  resize: vertical;
+}
+
+.op-booking-form > button {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 14px;
+  border: 1px solid rgba(34,211,238,.32);
+  border-radius: 14px;
+  color: #020712;
+  background: linear-gradient(135deg, #67e8f9, #0ea5ff);
+  font-weight: 950;
+}
+
+.op-lead-inbox {
+  margin: 0 0 16px;
+  padding: 18px;
+  border: 1px solid rgba(14, 165, 255, .18);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 88% 12%, rgba(14,165,255,.12), transparent 24rem),
+    rgba(5, 16, 30, .84);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .24);
+}
+
+.op-lead-inbox > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+.op-lead-inbox > header p {
+  margin: 0 0 8px;
+  color: #67e8f9;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .18em;
+}
+
+.op-lead-inbox > header h2 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: clamp(24px, 2.2vw, 34px);
+  letter-spacing: -.04em;
+}
+
+.op-lead-inbox > header span {
+  display: block;
+  margin-top: 8px;
+  color: #94a3b8;
+}
+
+.op-lead-inbox > header a {
+  color: #67e8f9;
+  text-decoration: none;
+  border: 1px solid rgba(34, 211, 238, .25);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(34, 211, 238, .08);
+  white-space: nowrap;
+}
+
+.op-lead-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.op-lead-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, .14);
+  border-radius: 16px;
+  background: rgba(2, 10, 22, .56);
+}
+
+.op-lead-card span {
+  color: #67e8f9;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .16em;
+}
+
+.op-lead-card strong {
+  display: block;
+  margin-top: 5px;
+  color: #f8fafc;
+  font-size: 16px;
+}
+
+.op-lead-card small,
+.op-lead-card p {
+  color: #94a3b8;
+  line-height: 1.45;
+}
+
+.op-lead-card section {
+  border: 1px solid rgba(34, 211, 238, .14);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(34, 211, 238, .06);
+}
+
+.op-lead-card section b {
+  display: block;
+  color: #67e8f9;
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.op-lead-card footer {
+  display: grid;
+  gap: 10px;
+}
+
+.op-lead-card button {
+  min-height: 40px;
+  border: 1px solid rgba(34, 211, 238, .32);
+  border-radius: 12px;
+  color: #f8fafc;
+  background: rgba(34, 211, 238, .16);
+  font-weight: 900;
+}
+
+@media (max-width: 1040px) {
+  .op-booking-shell,
+  .op-lead-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .op-booking-page {
+    padding: 12px;
+  }
+
+  .op-booking-grid,
+  .op-lead-inbox > header {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}

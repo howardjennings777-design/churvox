@@ -1551,6 +1551,285 @@ function NoteToAdmin({ jobs = [] }) {
 }
 
 
+
+function PublicBookingPage() {
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+    service_type: "",
+    preferred_date: "",
+    preferred_time: "",
+    notes: "",
+  });
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  function update(key, value) {
+    setForm((old) => ({ ...old, [key]: value }));
+  }
+
+  async function submit(event) {
+    event.preventDefault();
+    setNotice("");
+
+    if (!form.name.trim() || !form.phone.trim() || !form.address.trim()) {
+      setNotice("Please add your name, phone and job address.");
+      return;
+    }
+
+    setBusy(true);
+
+    const payload = {
+      ...form,
+      source: "public_booking",
+      status: "new",
+      created_at: new Date().toISOString(),
+    };
+
+    let ok = false;
+    for (const path of ["/public/enquiry", "/enquiries/public", "/enquiries"]) {
+      try {
+        await api(path, { method: "POST", body: payload });
+        ok = true;
+        break;
+      } catch {}
+    }
+
+    if (!ok) {
+      const existing = readLocalList("churvox_public_enquiries");
+      existing.unshift({ id: `lead-${Date.now()}`, ...payload });
+      saveLocalList("churvox_public_enquiries", existing, 80);
+    }
+
+    setNotice("Thanks — your request has been captured. The business can review it and come back to you.");
+    setForm({
+      name: "",
+      phone: "",
+      email: "",
+      address: "",
+      service_type: "",
+      preferred_date: "",
+      preferred_time: "",
+      notes: "",
+    });
+    setBusy(false);
+  }
+
+  return (
+    <div className="op-booking-page">
+      <section className="op-booking-shell">
+        <div className="op-booking-hero">
+          <div className="op-logo">
+            <img className="op-logo-img" src="/brand/churvox-holo-c.svg" alt="Churvox" />
+            <div>
+              <strong>CHURVOX</strong>
+              <small>REQUEST WORK</small>
+            </div>
+          </div>
+          <p>BOOKING REQUEST</p>
+          <h1>Tell us what needs doing.</h1>
+          <span>Your request goes into the Churvox AI Operator queue so the business can review, quote or schedule it.</span>
+        </div>
+
+        <form className="op-booking-form" onSubmit={submit}>
+          {notice ? <div className="op-warning">{notice}</div> : null}
+
+          <div className="op-booking-grid">
+            <label>
+              Name *
+              <input value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="Your name" />
+            </label>
+            <label>
+              Phone *
+              <input value={form.phone} onChange={(event) => update("phone", event.target.value)} placeholder="Best phone number" />
+            </label>
+            <label>
+              Email
+              <input value={form.email} onChange={(event) => update("email", event.target.value)} placeholder="Email address" />
+            </label>
+            <label>
+              Service type
+              <input value={form.service_type} onChange={(event) => update("service_type", event.target.value)} placeholder="Lawn care, cleaning, plumbing..." />
+            </label>
+            <label className="wide">
+              Address *
+              <input value={form.address} onChange={(event) => update("address", event.target.value)} placeholder="Job address" />
+            </label>
+            <label>
+              Preferred date
+              <input type="date" value={form.preferred_date} onChange={(event) => update("preferred_date", event.target.value)} />
+            </label>
+            <label>
+              Preferred time
+              <input value={form.preferred_time} onChange={(event) => update("preferred_time", event.target.value)} placeholder="Morning, afternoon, 10am..." />
+            </label>
+            <label className="wide">
+              Job notes
+              <textarea value={form.notes} onChange={(event) => update("notes", event.target.value)} placeholder="Describe the job, access notes, photos needed, timing, anything important." />
+            </label>
+          </div>
+
+          <button type="submit" disabled={busy}>
+            {busy ? "Sending..." : "Send request"}
+          </button>
+        </form>
+      </section>
+    </div>
+  );
+}
+
+function buildLeadSuggestion(lead) {
+  const service = lead.service_type || "service work";
+  const when = [lead.preferred_date, lead.preferred_time].filter(Boolean).join(" ");
+  return [
+    `Create a ${service} job request for ${lead.name || "new customer"}.`,
+    lead.address ? `Site: ${lead.address}.` : "",
+    when ? `Preferred time: ${when}.` : "",
+    lead.notes ? `Notes: ${lead.notes}` : "",
+  ].filter(Boolean).join(" ");
+}
+
+function LeadInbox({ clients = [], jobs = [] }) {
+  const [leads, setLeads] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [notice, setNotice] = useState("");
+
+  async function loadLeads() {
+    const local = readLocalList("churvox_public_enquiries");
+    let remote = [];
+
+    for (const path of ["/enquiries", "/booking-requests", "/leads"]) {
+      try {
+        const res = await api(path);
+        remote = toArray(res, ["enquiries", "leads", "requests"]);
+        break;
+      } catch {}
+    }
+
+    const all = [...remote, ...local];
+    const seen = new Set();
+    const unique = all.filter((lead) => {
+      const key = String(lead.id || lead._id || `${lead.name}-${lead.phone}-${lead.created_at}`);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    setLeads(unique.slice(0, 20));
+  }
+
+  useEffect(() => {
+    loadLeads();
+  }, []);
+
+  function saveLeadDraft(lead, type) {
+    const drafts = readLocalList("churvox_operator_drafts");
+    drafts.unshift({
+      id: `lead-draft-${Date.now()}`,
+      type,
+      title: `${type === "quote" ? "Quote" : type === "job" ? "Job" : "Client"} draft for ${lead.name || "new lead"}`,
+      target: type === "quote" ? "/quotes" : type === "job" ? "/jobs" : "/clients",
+      created_at: new Date().toISOString(),
+      lead,
+      suggestion: buildLeadSuggestion(lead),
+    });
+    saveLocalList("churvox_operator_drafts", drafts);
+    setNotice(`Saved ${type} draft to Operator Drafts.`);
+    setSelected(null);
+  }
+
+  return (
+    <section className="op-lead-inbox">
+      <header>
+        <div>
+          <p>AI RECEPTIONIST</p>
+          <h2>New requests ready for review.</h2>
+          <span>{leads.length} lead {leads.length === 1 ? "request" : "requests"} captured from booking/enquiry flow</span>
+        </div>
+        <Link to="/book">Open public booking</Link>
+      </header>
+
+      {notice ? <div className="op-warning">{notice}</div> : null}
+
+      {!leads.length ? (
+        <div className="op-approval-empty">
+          <strong>No new requests yet.</strong>
+          <span>Share the /book link with customers. New enquiries will appear here for owner review.</span>
+        </div>
+      ) : (
+        <div className="op-lead-grid">
+          {leads.map((lead, index) => (
+            <article className="op-lead-card" key={lead.id || lead._id || index}>
+              <div>
+                <span>NEW REQUEST</span>
+                <strong>{lead.name || `Lead ${index + 1}`}</strong>
+                <small>{[lead.service_type, lead.phone, lead.address].filter(Boolean).join(" · ")}</small>
+              </div>
+
+              <section>
+                <b>AI suggestion</b>
+                <p>{buildLeadSuggestion(lead)}</p>
+              </section>
+
+              <footer>
+                <small>{lead.created_at ? new Date(lead.created_at).toLocaleString() : "Captured recently"}</small>
+                <button type="button" onClick={() => setSelected(lead)}>Review lead</button>
+              </footer>
+            </article>
+          ))}
+        </div>
+      )}
+
+      {selected ? (
+        <div className="op-modal-backdrop" role="presentation" onClick={() => setSelected(null)}>
+          <section className="op-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="op-modal-glow" />
+            <header>
+              <p>LEAD REVIEW</p>
+              <button type="button" onClick={() => setSelected(null)}>×</button>
+            </header>
+
+            <div className="op-modal-body">
+              <span>AI RECEPTIONIST</span>
+              <h2>{selected.name || "New lead"}</h2>
+              <p>{buildLeadSuggestion(selected)}</p>
+
+              <div className="op-property-detail-grid">
+                <div><b>Phone</b><small>{selected.phone || "Not provided"}</small></div>
+                <div><b>Email</b><small>{selected.email || "Not provided"}</small></div>
+                <div><b>Address</b><small>{selected.address || "Not provided"}</small></div>
+                <div><b>Service</b><small>{selected.service_type || "Not specified"}</small></div>
+                <div><b>Preferred date</b><small>{selected.preferred_date || "Flexible"}</small></div>
+                <div><b>Preferred time</b><small>{selected.preferred_time || "Flexible"}</small></div>
+              </div>
+
+              <div className="op-modal-reason">
+                <strong>Customer notes</strong>
+                <small>{selected.notes || "No extra notes provided."}</small>
+              </div>
+
+              <div className="op-modal-reason">
+                <strong>Owner approval guardrail</strong>
+                <small>Churvox will save a draft only. It will not message the customer or create final records without owner review.</small>
+              </div>
+            </div>
+
+            <footer>
+              <button type="button" className="op-modal-secondary" onClick={() => setSelected(null)}>Cancel</button>
+              <button type="button" className="op-modal-secondary" onClick={() => saveLeadDraft(selected, "client")}>Client draft</button>
+              <button type="button" className="op-modal-secondary" onClick={() => saveLeadDraft(selected, "quote")}>Quote draft</button>
+              <button type="button" className="op-modal-primary" onClick={() => saveLeadDraft(selected, "job")}>Job draft</button>
+            </footer>
+          </section>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+
 function Dashboard() {
   const data = useLiveData();
   const navigate = useNavigate();
@@ -1625,6 +1904,7 @@ function Dashboard() {
   <MoneyRadar jobs={data.jobs} invoices={data.invoices} quotes={data.quotes} />
   <PropertyBrain clients={data.clients} jobs={data.jobs} invoices={data.invoices} />
   <NoteToAdmin jobs={data.jobs} />
+  <LeadInbox clients={data.clients} jobs={data.jobs} />
   <section className="op-mid-grid"><CrewStatus team={data.team} /><Cashflow invoices={data.invoices} /><Schedule jobs={data.jobs} /><LiveActivity history={history} /></section>
   <section className="op-bottom-grid"><DataPanel title="TODAY'S SCHEDULE" type="jobs" items={data.jobs} /><DataPanel title="QUOTE PIPELINE" type="quotes" items={data.quotes} /></section>
   <section className="op-bottom-grid"><section className="op-panel"><h3>APPROVAL HISTORY</h3>{history.map((h)=><div className="op-data-row" key={h.id}><strong>{h.result || h.mode}</strong><small>{h.title} · {new Date(h.created_at).toLocaleString()} · {h.target}</small></div>)}</section><section className="op-panel"><h3>OPERATOR DRAFTS</h3>{drafts.map((d)=><div className="op-data-row" key={d.id}><strong>{d.title}</strong><small>{d.type} · {new Date(d.created_at).toLocaleString()} · {d.target}</small></div>)}</section></section>
@@ -2286,6 +2566,8 @@ export default function FreshChurvoxApp() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/book" element={<PublicBookingPage />} />
+        <Route path="/request" element={<PublicBookingPage />} />
         <Route path="/public/client-portal/:token" element={<PublicClientPortalPage />} />
         <Route path="/client-portal/:token" element={<PublicClientPortalPage />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
