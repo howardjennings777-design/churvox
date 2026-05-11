@@ -608,20 +608,227 @@ function Dashboard() {
   <QuotePipeline /></Shell>;
 }
 
+
 function Workspace({ kind }) {
   const data = useLiveData();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(null);
-  const sources = { jobs: data.jobs, clients: data.clients, quotes: data.quotes, invoices: data.invoices, team: data.team };
-  const items = sources[kind] || [];
-  const filtered = items.filter((it) => JSON.stringify(it).toLowerCase().includes(query.toLowerCase()));
-  return <Shell><Topbar /><section className="op-page-hero"><p>CHURVOX COMMAND</p><h1>{kind.toUpperCase()} WORKSPACE</h1><span>Live records with approval-first details.</span><button onClick={data.reload}>Run scan</button></section>
-    <section className="op-panel"><input className="op-search" placeholder={`Search ${kind}...`} value={query} onChange={(e)=>setQuery(e.target.value)} />
-    {data.loading ? <p>Loading {kind}...</p> : data.error ? <p>{data.error}</p> : !filtered.length ? <p>No {kind} found.</p> : filtered.slice(0,80).map((item,idx)=><button key={item.id || item._id || idx} className="op-data-row op-row-button" onClick={()=>setSelected(item)}><div><strong>{titleOf(item, `${kind} ${idx+1}`)}</strong><small>{[item.client_name || item.customer_name, item.address || item.site_address, money(item), statusOf(item)].filter(Boolean).join(" · ")}</small></div></button>)}
-    </section>
-    {selected ? <div className="op-modal-backdrop" onClick={()=>setSelected(null)}><section className="op-modal" onClick={(e)=>e.stopPropagation()}><header><p>{kind.toUpperCase()} DETAIL</p><button onClick={()=>setSelected(null)}>×</button></header><div className="op-modal-body">{Object.entries(selected).slice(0,12).map(([k,v])=><div key={k} className="op-kv"><b>{k}</b><small>{String(v)}</small></div>)}</div></section></div> : null}
-  </Shell>;
+
+  const map = {
+    jobs: ["Jobs Command", "Schedule, dispatch, prove and complete work.", data.jobs, "jobs"],
+    clients: ["Client Command", "Customers, sites and repeat work.", data.clients, "clients"],
+    quotes: ["Quote Command", "Follow-ups, approvals and conversion.", data.quotes, "quotes"],
+    invoices: ["Money Command", "Draft, send, follow up and collect.", data.invoices, "invoices"],
+    team: ["Crew Command", "Availability, roles and dispatch.", data.team, "crew"],
+  };
+
+  const [title, subtitle, items, type] = map[kind] || map.jobs;
+
+  const drafts = readLocalList("churvox_operator_drafts").filter((draft) => {
+    const target = String(draft.target || "").toLowerCase();
+    const draftType = String(draft.type || "").toLowerCase();
+
+    if (kind === "jobs") return target.includes("jobs") || draftType.includes("assignment");
+    if (kind === "invoices") return target.includes("invoice") || draftType.includes("payment");
+    if (kind === "quotes") return target.includes("quote");
+    return target.includes(kind);
+  });
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+
+    return items.filter((item) => {
+      const haystack = [
+        titleOf(item, ""),
+        item.client_name,
+        item.customer_name,
+        item.address,
+        item.site_address,
+        item.email,
+        item.phone,
+        item.region,
+        item.role,
+        statusOf(item, ""),
+        money(item),
+      ].filter(Boolean).join(" ").toLowerCase();
+
+      return haystack.includes(q);
+    });
+  }, [items, query]);
+
+  function primaryLine(item) {
+    if (kind === "jobs") {
+      return [item.client_name || item.customer_name, item.address || item.site_address, item.assigned_worker_name || item.worker_name].filter(Boolean).join(" · ");
+    }
+
+    if (kind === "invoices" || kind === "quotes") {
+      return [item.client_name || item.customer_name, money(item), item.due_date || item.created_at].filter(Boolean).join(" · ");
+    }
+
+    if (kind === "clients") {
+      return [item.email, item.phone, item.address].filter(Boolean).join(" · ");
+    }
+
+    if (kind === "team") {
+      return [item.role, item.email, item.phone, item.region].filter(Boolean).join(" · ");
+    }
+
+    return "";
+  }
+
+  function aiHint(item) {
+    if (kind !== "jobs") return "";
+
+    if (isUnassigned(item)) return "AI: needs worker assignment";
+
+    const s = statusOf(item, "").toLowerCase();
+    if (s.includes("complete")) return "AI: ready for invoice check";
+
+    return "AI: watching job progress";
+  }
+
+  function statusClass(item) {
+    const s = statusOf(item, "").toLowerCase();
+
+    if (s.includes("complete") || s.includes("paid") || s.includes("accepted") || s.includes("active")) return "good";
+    if (s.includes("overdue") || s.includes("cancel") || s.includes("declin")) return "bad";
+    if (s.includes("draft") || s.includes("pending") || s.includes("sent") || s.includes("assigned")) return "wait";
+
+    return "info";
+  }
+
+  function DetailModal() {
+    if (!selected) return null;
+
+    const fields = [
+      ["Status", statusOf(selected, "ready")],
+      ["Client", selected.client_name || selected.customer_name],
+      ["Address", selected.address || selected.site_address],
+      ["Email", selected.email],
+      ["Phone", selected.phone],
+      ["Worker", selected.assigned_worker_name || selected.worker_name || selected.assigned_to],
+      ["Role", selected.role],
+      ["Region", selected.region || selected.location || selected.suburb],
+      ["Amount", money(selected)],
+      ["Date", selected.scheduled_date || selected.date || selected.created_at],
+      ["ID", selected.id || selected._id],
+    ].filter(([, value]) => value);
+
+    return (
+      <div className="op-modal-backdrop" role="presentation" onClick={() => setSelected(null)}>
+        <section className="op-modal op-workspace-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+          <div className="op-modal-glow" />
+
+          <header>
+            <p>{type.toUpperCase()} DETAIL</p>
+            <button type="button" onClick={() => setSelected(null)}>×</button>
+          </header>
+
+          <div className="op-modal-body">
+            <span>{statusOf(selected, "ready")}</span>
+            <h2>{titleOf(selected, `${type} detail`)}</h2>
+            <p>{primaryLine(selected) || "Churvox is showing the live record details available for this item."}</p>
+
+            {kind === "jobs" ? (
+              <div className="op-modal-reason">
+                <strong>AI job read</strong>
+                <small>{aiHint(selected)}</small>
+              </div>
+            ) : null}
+
+            <div className="op-detail-grid">
+              {fields.map(([label, value]) => (
+                <div key={label}>
+                  <b>{label}</b>
+                  <small>{String(value)}</small>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <footer>
+            <button type="button" className="op-modal-secondary" onClick={() => setSelected(null)}>Close</button>
+            <button type="button" className="op-modal-primary" onClick={data.reload}>Run scan</button>
+          </footer>
+        </section>
+      </div>
+    );
+  }
+
+  return (
+    <Shell>
+      <Topbar />
+      <DetailModal />
+
+      <section className="op-page-hero op-workspace-hero">
+        <p>CHURVOX COMMAND</p>
+        <h1>{title}</h1>
+        <span>{subtitle}</span>
+
+        <div className="op-workspace-actions">
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={`Search ${type}...`}
+            aria-label={`Search ${type}`}
+          />
+          <button type="button" onClick={data.reload}>Run AI scan</button>
+        </div>
+      </section>
+
+      {data.error ? <div className="op-warning">{data.error}</div> : null}
+      {data.loading ? <div className="op-warning">Loading live {type} data...</div> : null}
+
+      {drafts.length ? (
+        <section className="op-panel op-drafts-strip">
+          <header>
+            <h3>OPERATOR DRAFTS <b>{drafts.length}</b></h3>
+            <span>Approval-first drafts. Nothing auto-sent.</span>
+          </header>
+
+          {drafts.slice(0, 4).map((draft) => (
+            <div className="op-draft-row" key={draft.id || draft.created_at || draft.title}>
+              <strong>{draft.title || "Operator draft"}</strong>
+              <small>{draft.type || "draft"} · {draft.created_at || "saved"}</small>
+            </div>
+          ))}
+        </section>
+      ) : null}
+
+      <section className="op-panel op-workspace-list">
+        <header>
+          <h3>{title.toUpperCase()} <b>{filtered.length}</b></h3>
+          <span>{query ? "Filtered live records" : "Live records"}</span>
+        </header>
+
+        {!filtered.length && !data.loading ? (
+          <div className="op-empty-mini">No {type} found yet.</div>
+        ) : null}
+
+        {filtered.slice(0, 40).map((item, index) => (
+          <button
+            type="button"
+            className="op-workspace-row"
+            key={item.id || item._id || `${type}-${index}`}
+            onClick={() => setSelected(item)}
+          >
+            <i>{kind === "jobs" ? "⌘" : kind === "invoices" ? "▥" : kind === "quotes" ? "▤" : kind === "team" ? "♧" : "◎"}</i>
+
+            <span>
+              <b>{titleOf(item, `${type} ${index + 1}`)}</b>
+              <small>{primaryLine(item) || "Tap to inspect record"}</small>
+              {kind === "jobs" ? <em>{aiHint(item)}</em> : null}
+            </span>
+
+            <strong className={`op-row-status ${statusClass(item)}`}>{statusOf(item, "ready")}</strong>
+          </button>
+        ))}
+      </section>
+    </Shell>
+  );
 }
+
 function Settings() {
   return (
     <Shell>

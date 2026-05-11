@@ -2013,3 +2013,221 @@ body {
 .op-search { width:100%; margin-bottom:12px; min-height:40px; border-radius:10px; border:1px solid var(--op-line2); background:#08172a; color:white; padding:0 12px; }
 .op-row-button { width:100%; text-align:left; background:transparent; border:none; color:inherit; cursor:pointer; }
 .op-kv { display:grid; gap:4px; padding:8px 0; border-bottom:1px solid var(--op-line2); }
+
+/* ===== Operator OS workspaces: search, rows, details ===== */
+.op-workspace-hero {
+  display: grid;
+  gap: 14px;
+}
+
+.op-workspace-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.op-workspace-actions input {
+  min-height: 46px;
+  min-width: min(420px, 100%);
+  flex: 1;
+  border: 1px solid rgba(103,232,249,.18);
+  border-radius: 14px;
+  background: rgba(2, 9, 20, .68);
+  color: #f8fafc;
+  padding: 0 14px;
+  outline: none;
+}
+
+.op-workspace-actions input:focus {
+  border-color: rgba(34,211,238,.54);
+  box-shadow: 0 0 0 3px rgba(34,211,238,.10);
+}
+
+.op-workspace-actions button {
+  min-height: 46px;
+  border-radius: 14px;
+  border: 1px solid rgba(34,211,238,.32);
+  background: linear-gradient(135deg, rgba(34,211,238,.18), rgba(14,165,255,.10));
+  color: #e0faff;
+  padding: 0 16px;
+  font-weight: 950;
+}
+
+.op-drafts-strip {
+  margin-bottom: 14px;
+}
+
+.op-drafts-strip header,
+.op-workspace-list header {
+  align-items: center;
+}
+
+.op-drafts-strip header span,
+.op-workspace-list header span {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.op-draft-row {
+  display: grid;
+  gap: 4px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(148,163,184,.10);
+}
+
+.op-draft-row strong {
+  color: #e2e8f0;
+}
+
+.op-draft-row small {
+  color: #94a3b8;
+}
+
+.op-workspace-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  text-align: left;
+  padding: 13px 0;
+  border: 0;
+  border-top: 1px solid rgba(148,163,184,.10);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.op-workspace-row:hover {
+  background: rgba(34,211,238,.045);
+}
+
+.op-workspace-row i {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: rgba(14,165,255,.14);
+  color: #67e8f9;
+  font-style: normal;
+}
+
+.op-workspace-row span {
+  min-width: 0;
+}
+
+.op-workspace-row b,
+.op-workspace-row small,
+.op-workspace-row em {
+  display: block;
+}
+
+.op-workspace-row b {
+  color: #f8fafc;
+  font-size: 14px;
+}
+
+.op-workspace-row small {
+  margin-top: 3px;
+  color: #94a3b8;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.op-workspace-row em {
+  margin-top: 5px;
+  color: #67e8f9;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.op-row-status {
+  justify-self: end;
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: capitalize;
+  border: 1px solid rgba(148,163,184,.16);
+  background: rgba(15,23,42,.72);
+  color: #cbd5e1;
+}
+
+.op-row-status.good {
+  color: #86efac;
+  background: rgba(34,197,94,.12);
+  border-color: rgba(34,197,94,.24);
+}
+
+.op-row-status.wait {
+  color: #fbbf24;
+  background: rgba(245,158,11,.12);
+  border-color: rgba(245,158,11,.24);
+}
+
+.op-row-status.bad {
+  color: #fca5a5;
+  background: rgba(239,68,68,.12);
+  border-color: rgba(239,68,68,.24);
+}
+
+.op-row-status.info {
+  color: #93c5fd;
+  background: rgba(59,130,246,.12);
+  border-color: rgba(59,130,246,.24);
+}
+
+.op-workspace-modal {
+  width: min(760px, 100%);
+}
+
+.op-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.op-detail-grid div {
+  border: 1px solid rgba(148,163,184,.14);
+  border-radius: 14px;
+  background: rgba(2,9,20,.48);
+  padding: 12px;
+}
+
+.op-detail-grid b,
+.op-detail-grid small {
+  display: block;
+}
+
+.op-detail-grid b {
+  color: #e2e8f0;
+  font-size: 12px;
+}
+
+.op-detail-grid small {
+  margin-top: 5px;
+  color: #94a3b8;
+  word-break: break-word;
+}
+
+@media (max-width: 720px) {
+  .op-workspace-row {
+    grid-template-columns: 36px 1fr;
+  }
+
+  .op-row-status {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .op-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
