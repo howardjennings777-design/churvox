@@ -205,8 +205,8 @@ function Hero({ data, prepared }) {
 }
 
 
-function buildApprovalActions({ jobs = [], invoices = [], quotes = [] }) {
-  const actions = buildOperatorQueue({ jobs, invoices, quotes });
+function buildApprovalActions(props = {}) {
+  const actions = buildOperatorQueue(props);
   return actions;
 }
 
@@ -269,8 +269,8 @@ function _legacyBuildApprovalActions({ unassigned = 0, openInvoices = 0, openQuo
   return actions;
 }
 
-function ApprovalQueue({ onAction }) {
-  const actions = buildApprovalActions({ jobs: window.__op_jobs || [], invoices: window.__op_invoices || [], quotes: window.__op_quotes || [] });
+function ApprovalQueue({ jobs = [], invoices = [], quotes = [], team = [], clients = [], leads = [], enquiries = [], drafts = [], history = [], moneyReviews = [], onAction }) {
+  const actions = buildApprovalActions({ jobs, invoices, quotes, team, clients, leads, enquiries, drafts, history, moneyReviews });
 
   return (
     <section className="op-approval">
@@ -289,14 +289,14 @@ function ApprovalQueue({ onAction }) {
       ) : (
         <div className="op-approval-list">
           {actions.map((a) => (
-            <article className={`op-action ${a.tone}`} key={a.label}>
-              <i>{a.icon}</i>
+            <article className={`op-action`} key={a.id}>
+              <i>⚙</i>
               <div>
-                <span>{a.label}</span>
+                <span>{a.type}</span>
                 <strong>{a.title}</strong>
-                <p>{a.text}</p>
-                <small>Risk / Guardrail: {a.guardrail}</small>
-                <small>Confidence: {a.confidence}</small>
+                <p>{a.summary}</p>
+                <small>Risk / Guardrail: {a.risk}</small>
+                <small>Confidence: {a.confidence_label}</small>
               </div>
               <div className="op-action-buttons">
                 <button onClick={() => onAction?.(a, "review")}>Review action</button>
@@ -2222,7 +2222,7 @@ function Dashboard() {
   const prepared = unassigned.length + openInvoices.length + openQuotes.length + completedNeedsInvoice.length;
 
   return <Shell><Topbar />{toast ? <div className="op-warning">{toast}</div> : null}<ActionModal modal={modal} onClose={() => setModal(null)} onConfirm={confirmAction} busy={busy} />{data.error ? <div className="op-warning">{data.error}</div> : null}<Hero data={data} prepared={prepared} />
-  <section className="op-top-grid"><ApprovalQueue unassigned={unassigned.length} openInvoices={openInvoices.length} openQuotes={openQuotes.length} completedNeedsInvoice={completedNeedsInvoice.length} onAction={openAction} /><ProofToPaid jobs={data.jobs} invoices={data.invoices} reload={data.reload} /></section>
+  <section className="op-top-grid"><ApprovalQueue jobs={data.jobs} invoices={data.invoices} quotes={data.quotes} team={data.team} clients={data.clients} drafts={drafts} history={history} onAction={openAction} /><ProofToPaid jobs={data.jobs} invoices={data.invoices} reload={data.reload} /></section>
   <DispatchBoard jobs={data.jobs} team={data.team} reload={data.reload} />
   <MoneyRadar jobs={data.jobs} invoices={data.invoices} quotes={data.quotes} />
   <PropertyBrain clients={data.clients} jobs={data.jobs} invoices={data.invoices} />

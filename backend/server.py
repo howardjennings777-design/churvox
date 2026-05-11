@@ -13623,12 +13623,15 @@ async def myob_status_lite(current_user: dict = Depends(get_current_user)):
 @api_router.get('/operator/drafts')
 async def get_operator_drafts(current_user: dict = Depends(get_current_user)):
     bid = str(current_user.get('business_id') or '')
+    if not bid: raise HTTPException(status_code=403, detail='Business scope missing')
     rows = await db.operator_drafts.find({'business_id': bid}).sort('created_at', -1).limit(200).to_list(length=200)
     for r in rows: r.pop('_id', None)
     return {'items': rows}
 
 @api_router.post('/operator/drafts')
 async def post_operator_drafts(payload: dict, current_user: dict = Depends(get_current_user)):
+    if not isinstance(payload, dict): raise HTTPException(status_code=400, detail='payload must be dict')
+    if not isinstance(payload, dict): raise HTTPException(status_code=400, detail='payload must be dict')
     row = _operator_doc(payload, current_user)
     await db.operator_drafts.insert_one(row)
     return row
@@ -13636,6 +13639,8 @@ async def post_operator_drafts(payload: dict, current_user: dict = Depends(get_c
 @api_router.patch('/operator/drafts/{draft_id}')
 async def patch_operator_draft(draft_id: str, payload: dict, current_user: dict = Depends(get_current_user)):
     bid = str(current_user.get('business_id') or '')
+    if not bid: raise HTTPException(status_code=403, detail='Business scope missing')
+    if not isinstance(payload, dict): raise HTTPException(status_code=400, detail='payload must be dict')
     patch = {k: v for k, v in payload.items() if k in {'status', 'payload', 'type'}}
     patch['updated_at'] = _now_iso()
     await db.operator_drafts.update_one({'id': draft_id, 'business_id': bid}, {'$set': patch})
@@ -13646,6 +13651,7 @@ async def patch_operator_draft(draft_id: str, payload: dict, current_user: dict 
 @api_router.get('/operator/approval-log')
 async def get_operator_approval_log(current_user: dict = Depends(get_current_user)):
     bid = str(current_user.get('business_id') or '')
+    if not bid: raise HTTPException(status_code=403, detail='Business scope missing')
     rows = await db.operator_approval_log.find({'business_id': bid}).sort('created_at', -1).limit(200).to_list(length=200)
     for r in rows: r.pop('_id', None)
     return {'items': rows}
@@ -13659,12 +13665,14 @@ async def post_operator_approval_log(payload: dict, current_user: dict = Depends
 @api_router.get('/autopilot/replay')
 async def get_autopilot_replay(current_user: dict = Depends(get_current_user)):
     bid = str(current_user.get('business_id') or '')
+    if not bid: raise HTTPException(status_code=403, detail='Business scope missing')
     rows = await db.autopilot_replay.find({'business_id': bid}).sort('created_at', -1).limit(50).to_list(length=50)
     for r in rows: r.pop('_id', None)
     return {'items': rows}
 
 @api_router.post('/autopilot/replay')
 async def post_autopilot_replay(payload: dict, current_user: dict = Depends(get_current_user)):
+    if not isinstance(payload, dict): raise HTTPException(status_code=400, detail='payload must be dict')
     row = _operator_doc({**payload, 'type': payload.get('type') or 'autopilot_replay'}, current_user)
     await db.autopilot_replay.insert_one(row)
     return row
@@ -13672,12 +13680,14 @@ async def post_autopilot_replay(payload: dict, current_user: dict = Depends(get_
 @api_router.get('/money-radar/reviews')
 async def get_money_radar_reviews(current_user: dict = Depends(get_current_user)):
     bid = str(current_user.get('business_id') or '')
+    if not bid: raise HTTPException(status_code=403, detail='Business scope missing')
     rows = await db.money_radar_reviews.find({'business_id': bid}).sort('created_at', -1).limit(200).to_list(length=200)
     for r in rows: r.pop('_id', None)
     return {'items': rows}
 
 @api_router.post('/money-radar/reviews')
 async def post_money_radar_reviews(payload: dict, current_user: dict = Depends(get_current_user)):
+    if not isinstance(payload, dict): raise HTTPException(status_code=400, detail='payload must be dict')
     row = _operator_doc({**payload, 'type': payload.get('type') or 'money_leak_review'}, current_user)
     await db.money_radar_reviews.insert_one(row)
     return row
