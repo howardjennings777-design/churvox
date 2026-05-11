@@ -4,6 +4,7 @@ import MyobControlCentre from "./components/MyobControlCentre";
 import AutopilotReplay from "./components/AutopilotReplay";
 import TrustQualityScores from "./components/TrustQualityScores";
 import OperatorActionDrawer from "./operator/OperatorActionDrawer";
+import OperatorApprovalCentre from "./operator/OperatorApprovalCentre";
 import { buildOperatorQueue } from "./operator/operatorHelpers";
 import { persistOperatorAction } from "./operator/operatorStorage";
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
@@ -113,6 +114,7 @@ function Shell({ children }) {
   const location = useLocation();
   const nav = [
     ["Command", "/dashboard", "⬡", "Approval Command Centre"],
+    ["AI Approvals", "/ai-approvals", "◆", "Edit & Approve AI Work"],
     ["Jobs", "/jobs", "⌘", "Schedule & Dispatch"],
     ["Crew", "/team", "♧", "People & Availability"],
     ["Quotes", "/quotes", "▤", "Estimates & Follow-ups"],
@@ -2912,6 +2914,7 @@ export default function FreshChurvoxApp() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/ai-approvals" element={<OperatorApprovalCentre />} />
         <Route path="/jobs" element={<Workspace kind="jobs" />} />
         <Route path="/clients" element={<Workspace kind="clients" />} />
         <Route path="/quotes" element={<Workspace kind="quotes" />} />
