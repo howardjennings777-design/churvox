@@ -1,0 +1,1 @@
+export default function SettingsWorkspace(){return <section><h2>Settings</h2><p>Live data is syncing.</p></section>;}

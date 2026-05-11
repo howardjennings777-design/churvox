@@ -1,0 +1,1 @@
+export default function ImportWorkspace(){return <section><h2>Import</h2><p>Live data is syncing.</p></section>;}

@@ -1,0 +1,1 @@
+export default function PayrollWorkspace(){return <section><h2>Payroll</h2><p>Live data is syncing.</p></section>;}

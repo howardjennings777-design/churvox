@@ -1,3 +1,3 @@
-import FreshChurvoxApp from "./fresh/FreshChurvoxApp";
+import OperatorApp from './operatoros/OperatorApp';
 
-export default FreshChurvoxApp;
+export default OperatorApp;

@@ -1,0 +1,3 @@
+const API_BASE = process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL || process.env.VITE_BACKEND_URL || 'https://grassley-backend.onrender.com';
+const readToken=()=>localStorage.getItem('token')||localStorage.getItem('authToken')||localStorage.getItem('access_token');
+export async function apiFetch(path, options={}){const token=readToken();const headers={'Content-Type':'application/json',...(options.headers||{})};if(token)headers.Authorization=`Bearer ${token}`;const r=await fetch(`${API_BASE}${path}`,{credentials:'include',...options,headers});if(!r.ok)throw new Error('Request failed');return r.status===204?null:r.json();}

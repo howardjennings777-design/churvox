@@ -1,0 +1,1 @@
+export default function AIWorkQueue({data}){return <section><h2>AI Work Queue</h2>{data.aiActions.map(a=><article key={a.id} className='op-card'><h4>{a.title}</h4><p>{a.why}</p><small>{a.guardrail}</small></article>)}<p>Owner approval is required for risky actions.</p></section>;}

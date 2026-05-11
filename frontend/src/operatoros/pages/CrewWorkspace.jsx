@@ -1,0 +1,1 @@
+export default function CrewWorkspace(){return <section><h2>Crew</h2><p>Live data is syncing.</p></section>;}

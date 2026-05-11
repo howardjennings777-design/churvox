@@ -1,0 +1,1 @@
+export default function ProofToPaidWorkspace(){return <section><h2>ProofToPaid</h2><p>Live data is syncing.</p></section>;}
