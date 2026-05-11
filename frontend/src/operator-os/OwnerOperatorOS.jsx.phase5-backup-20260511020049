@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import "./operator-phase5.css";
+import "./operator-phase4.css";
 
 function getApiBase() {
   const env =
@@ -38,77 +38,35 @@ function readToken() {
   }
 }
 
-async function apiRequest(path, options = {}) {
+async function fetchJson(path) {
   const token = readToken();
-  const method = options.method || "GET";
-  const body = options.body;
   const headers = {
     Accept: "application/json",
   };
-
-  if (body !== undefined && body !== null) {
-    headers["Content-Type"] = "application/json";
-  }
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
   const response = await fetch(apiUrl(path), {
-    method,
+    method: "GET",
     credentials: "include",
     headers,
-    body: body !== undefined && body !== null ? JSON.stringify(body) : undefined,
   });
 
   const text = await response.text();
-  let payload = null;
-
-  if (text) {
-    try {
-      payload = JSON.parse(text);
-    } catch {
-      payload = text;
-    }
-  }
 
   if (!response.ok) {
-    const message =
-      payload?.detail ||
-      payload?.message ||
-      payload?.error ||
-      `${method} ${path} failed with ${response.status}`;
-    throw new Error(message);
+    throw new Error(`${path} failed with ${response.status}`);
   }
 
-  return payload;
-}
+  if (!text) return null;
 
-async function fetchJson(path) {
-  return apiRequest(path, { method: "GET" });
-}
-
-async function tryMutation(candidates) {
-  let lastError = null;
-
-  for (const candidate of candidates) {
-    try {
-      const payload = await apiRequest(candidate.path, {
-        method: candidate.method,
-        body: candidate.body,
-      });
-
-      return {
-        path: candidate.path,
-        method: candidate.method,
-        payload,
-      };
-    } catch (error) {
-      lastError = error;
-    }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
   }
-
-  throw lastError || new Error("No approval endpoint worked yet.");
 }
 
 function toArray(payload, preferredKeys = []) {
@@ -265,67 +223,6 @@ function chooseWorkerForJob(job, workers) {
   });
 
   return sameArea || activeWorkers[0];
-}
-
-function getClientName(item) {
-  return item?.client_name || item?.customer_name || item?.client || item?.customer || "";
-}
-
-function getClientId(item) {
-  return item?.client_id || item?.customer_id || item?.clientId || item?.customerId || "";
-}
-
-function getJobAmount(job) {
-  const raw =
-    job?.price ||
-    job?.job_price ||
-    job?.fixed_price ||
-    job?.amount ||
-    job?.total ||
-    job?.estimated_total ||
-    0;
-
-  const amount = Number(raw || 0);
-  return Number.isFinite(amount) ? amount : 0;
-}
-
-function buildInvoiceDescription(job) {
-  const client = getClientName(job) || "the client";
-  const service =
-    job?.service_type ||
-    job?.job_type ||
-    job?.title ||
-    job?.job_title ||
-    "completed service";
-  const address =
-    job?.address ||
-    job?.site_address ||
-    job?.location ||
-    "";
-
-  return [
-    `${service} completed for ${client}.`,
-    address ? `Site: ${address}.` : "",
-    job?.notes ? `Notes: ${job.notes}` : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-}
-
-function buildApprovalMessage(action) {
-  if (!action) return "";
-
-  if (action.kind === "invoice-reminder") {
-    const invoice = action.invoice;
-    return `Hi ${getClientName(invoice) || "there"}, just a friendly reminder that ${pickName(invoice, "your invoice")} is still open${moneyValue(invoice) ? ` for ${moneyValue(invoice)}` : ""}. Thanks.`;
-  }
-
-  if (action.kind === "quote-followup") {
-    const quote = action.quote;
-    return `Hi ${getClientName(quote) || "there"}, just checking in on ${pickName(quote, "the quote")} to see if you would like to go ahead or have any questions. Thanks.`;
-  }
-
-  return "";
 }
 
 function Modal({ modal, onClose, onPrepare }) {
@@ -524,15 +421,14 @@ export default function AIControlRoomPage() {
         modal: {
           title: "Assign unassigned job",
           meta: "Live dispatch",
-          body: "This is using live jobs and live workers. When approved, Churvox will try the real assignment endpoints and refresh live data.",
+          body: "This is using live jobs and live workers. This phase stages the action only. The next phase wires the approve button to the real assignment endpoint.",
           steps: [
             `Job: ${pickName(derived.firstUnassignedJob, "Unassigned job")}`,
             `Client: ${derived.firstUnassignedJob?.client_name || derived.firstUnassignedJob?.customer_name || "Not shown"}`,
             `Best worker: ${derived.bestWorker ? pickName(derived.bestWorker, "Worker") : "No worker found"}`,
             "Owner approval required before real assignment",
           ],
-          prepareLabel: "Approve assignment",
-          action: { kind: "assign-job", job: derived.firstUnassignedJob, worker: derived.bestWorker },
+          prepareLabel: "Stage assignment",
         },
       });
     }
@@ -548,15 +444,14 @@ export default function AIControlRoomPage() {
         modal: {
           title: "Prepare invoice draft",
           meta: "Live invoicing",
-          body: "This is using completed live jobs. When approved, Churvox will try to create a real draft invoice from this completed job.",
+          body: "This is using completed live jobs. This phase stages the invoice draft action only so we do not accidentally create duplicate invoices.",
           steps: [
             `Completed job: ${pickName(derived.completedJobs[0], "Completed job")}`,
             `Client: ${derived.completedJobs[0]?.client_name || derived.completedJobs[0]?.customer_name || "Not shown"}`,
             "AI description should use job notes, service type, photos, address, and pricing",
             "Owner approves before real invoice creation",
           ],
-          prepareLabel: "Create draft invoice",
-          action: { kind: "create-invoice", job: derived.completedJobs[0] },
+          prepareLabel: "Stage invoice draft",
         },
       });
     }
@@ -579,8 +474,7 @@ export default function AIControlRoomPage() {
             "Draft friendly reminder",
             "Owner approves before sending",
           ],
-          prepareLabel: "Prepare reminder",
-          action: { kind: "invoice-reminder", invoice: derived.openInvoices[0] },
+          prepareLabel: "Stage reminder",
         },
       });
     }
@@ -603,8 +497,7 @@ export default function AIControlRoomPage() {
             "Draft follow-up message",
             "Owner approves before sending",
           ],
-          prepareLabel: "Prepare follow-up",
-          action: { kind: "quote-followup", quote: derived.openQuotes[0] },
+          prepareLabel: "Stage follow-up",
         },
       });
     }
@@ -658,7 +551,7 @@ export default function AIControlRoomPage() {
     });
   }
 
-  async function prepareModalAction(currentModal) {
+  function prepareModalAction(currentModal) {
     if (currentModal?.prepareLabel === "Refresh live data") {
       setModal(null);
       loadData();
@@ -666,118 +559,8 @@ export default function AIControlRoomPage() {
       return;
     }
 
-    const action = currentModal?.action;
-
-    if (!action) {
-      setModal(null);
-      showToast("Action staged safely.");
-      return;
-    }
-
-    try {
-      showToast("Working on approved action...");
-
-      if (action.kind === "assign-job") {
-        const job = action.job;
-        const worker = action.worker;
-
-        if (!job) throw new Error("No job selected.");
-        if (!worker) throw new Error("No worker match found.");
-
-        const jobId = pickId(job);
-        const workerId = pickId(worker);
-        const workerName = pickName(worker, "Worker");
-
-        const body = {
-          worker_id: workerId,
-          assigned_worker_id: workerId,
-          assigned_worker: workerId,
-          assigned_to: workerId,
-          worker_name: workerName,
-          assigned_worker_name: workerName,
-          assigned_to_name: workerName,
-        };
-
-        const result = await tryMutation([
-          { method: "POST", path: `/jobs/${encodeURIComponent(jobId)}/assign`, body },
-          { method: "PATCH", path: `/jobs/${encodeURIComponent(jobId)}/assign`, body },
-          { method: "PATCH", path: `/jobs/${encodeURIComponent(jobId)}`, body },
-          { method: "PUT", path: `/jobs/${encodeURIComponent(jobId)}`, body },
-        ]);
-
-        setModal(null);
-        showToast(`Assigned ${workerName}. Used ${result.method} ${result.path}`);
-        await loadData();
-        return;
-      }
-
-      if (action.kind === "create-invoice") {
-        const job = action.job;
-        if (!job) throw new Error("No completed job selected.");
-
-        const jobId = pickId(job);
-        const amount = getJobAmount(job);
-        const description = buildInvoiceDescription(job);
-
-        const invoiceBody = {
-          job_id: jobId,
-          client_id: getClientId(job),
-          customer_id: getClientId(job),
-          client_name: getClientName(job),
-          customer_name: getClientName(job),
-          status: "draft",
-          invoice_status: "draft",
-          description,
-          invoice_description: description,
-          notes: description,
-          amount,
-          total: amount,
-          line_items: [
-            {
-              description,
-              quantity: 1,
-              unit_price: amount,
-              price: amount,
-              total: amount,
-            },
-          ],
-        };
-
-        const result = await tryMutation([
-          { method: "POST", path: `/invoices/from-job/${encodeURIComponent(jobId)}`, body: invoiceBody },
-          { method: "POST", path: `/jobs/${encodeURIComponent(jobId)}/invoice`, body: invoiceBody },
-          { method: "POST", path: `/invoices`, body: invoiceBody },
-        ]);
-
-        setModal(null);
-        showToast(`Draft invoice created. Used ${result.method} ${result.path}`);
-        await loadData();
-        return;
-      }
-
-      if (action.kind === "invoice-reminder" || action.kind === "quote-followup") {
-        const message = buildApprovalMessage(action);
-
-        setModal({
-          title: action.kind === "invoice-reminder" ? "Prepared invoice reminder" : "Prepared quote follow-up",
-          meta: "Approval-first message",
-          body: message || "Message prepared.",
-          steps: [
-            "This is prepared only.",
-            "Nothing has been sent automatically.",
-            "Next phase can wire this to email/SMS once the sending flow is stable.",
-          ],
-        });
-
-        showToast("Message prepared. Nothing sent automatically.");
-        return;
-      }
-
-      setModal(null);
-      showToast("Action approved.");
-    } catch (error) {
-      showToast(error?.message || "Approved action could not complete yet.");
-    }
+    setModal(null);
+    showToast("Action staged safely. Real write approval comes in the next phase.");
   }
 
   return (
