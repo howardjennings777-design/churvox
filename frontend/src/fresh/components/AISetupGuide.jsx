@@ -45,6 +45,12 @@ const PAGE_TIPS = {
     action: "Open invoices",
     href: "/invoices",
   },
+  "/plans": {
+    title: "Choose a plan",
+    body: "Pick Solo, Team, Pro or Enterprise. Plans control client limits, MYOB access, SMS add-ons and Enterprise user blocks.",
+    action: "Open billing",
+    href: "/billing",
+  },
   "/invoices": {
     title: "Keep cashflow moving",
     body: "AI can prepare invoice reminders and draft messages for owner approval.",

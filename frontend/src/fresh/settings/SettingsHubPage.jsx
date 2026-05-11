@@ -251,6 +251,15 @@ export default function SettingsHubPage() {
         </SettingCard>
 
         <SettingCard
+          badge="PLANS"
+          title="Plans and limits"
+          text="Review Solo, Team, Pro and Enterprise pricing, client limits, MYOB availability and trial options."
+          action={<Link to="/plans">Open Plans</Link>}
+        >
+          <p className="settings-muted">Solo $30, Team $70, Pro $110, Enterprise $240. Enterprise can add +50 users for $100.</p>
+        </SettingCard>
+
+        <SettingCard
           badge="GUIDE"
           title="AI setup help"
           text="Reset the help bubble and onboarding checklist so owners get guided through what to do next."

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import WorkerFieldApp from "./worker/WorkerFieldApp";
 import BillingCentrePage from "./billing/BillingCentrePage";
+import PlansCentrePage from "./plans/PlansCentrePage";
 import SettingsHubPage from "./settings/SettingsHubPage";
 import ImportCentrePage from "./imports/ImportCentrePage";
 import AISetupGuide from "./components/AISetupGuide";
@@ -127,6 +128,7 @@ function Shell({ children }) {
     ["Quotes", "/quotes", "▤", "Estimates & Follow-ups"],
     ["Invoices", "/invoices", "▥", "Billing & Payments"],
     ["Clients", "/clients", "◎", "Customers & Sites"],
+    ["Plans", "/plans", "◍", "Choose plan"],
     ["Billing", "/billing", "$", "Users & SMS credits"],
     ["Settings", "/settings", "⚙", "System & Preferences"],
   ];
@@ -2946,6 +2948,7 @@ export default function FreshChurvoxApp() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/plans" element={<Shell><Topbar /><PlansCentrePage /></Shell>} />
           <Route path="/billing" element={<Shell><Topbar /><BillingCentrePage /></Shell>} />
           <Route path="/settings" element={<Shell><Topbar /><SettingsHubPage /></Shell>} />
           <Route path="/import" element={<Shell><Topbar /><ImportCentrePage /></Shell>} />
