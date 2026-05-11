@@ -4,7 +4,7 @@ export default function FloatingLogo({ small = false, wordmark = false }) {
       <div className="op-wordmark-wrap">
         <img
           className="op-wordmark-logo"
-          src="/brand/churvox-operator-logo.svg"
+          src="/brand/churvox-sidebar-logo.svg"
           alt="Churvox Operator OS"
         />
       </div>

@@ -1,0 +1,56 @@
+<svg width="360" height="250" viewBox="0 0 360 250" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="75%">
+      <stop offset="0%" stop-color="#07192f"/>
+      <stop offset="62%" stop-color="#020814"/>
+      <stop offset="100%" stop-color="#00030a"/>
+    </radialGradient>
+
+    <linearGradient id="word" x1="58" y1="162" x2="302" y2="190">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="35%" stop-color="#dffbff"/>
+      <stop offset="72%" stop-color="#67e8f9"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+
+    <filter id="glow" x="-30%" y="-80%" width="160%" height="260%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 .2 0 0 0 0 .82 0 0 0 0 1 0 0 0 .58 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="360" height="250" rx="34" fill="url(#bg)"/>
+
+  <image href="/brand/churvox-holo-c.svg" x="103" y="18" width="154" height="154"/>
+
+  <g filter="url(#glow)">
+    <text
+      x="180"
+      y="185"
+      text-anchor="middle"
+      fill="url(#word)"
+      font-family="Arial Black, Arial, sans-serif"
+      font-size="31"
+      font-weight="900"
+      letter-spacing="8"
+    >CHURVOX</text>
+
+    <text
+      x="180"
+      y="218"
+      text-anchor="middle"
+      fill="#27e8ff"
+      font-family="Arial, sans-serif"
+      font-size="13"
+      font-weight="900"
+      letter-spacing="8"
+    >OPERATOR OS</text>
+  </g>
+
+  <path d="M92 207H131" stroke="#27e8ff" stroke-opacity=".62" stroke-width="2"/>
+  <path d="M229 207H268" stroke="#27e8ff" stroke-opacity=".62" stroke-width="2"/>
+</svg>
