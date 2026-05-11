@@ -1,0 +1,248 @@
+/* =========================================================
+   CHURVOX PHASE 7 — PREMIUM WORKER APP
+   Only applies when body has .chx-worker-route
+   ========================================================= */
+
+body.chx-worker-route {
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.13), transparent 34rem),
+    linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%) !important;
+  color: #0f172a;
+}
+
+body.chx-worker-route #root {
+  min-height: 100vh;
+}
+
+/* Worker app dark premium nav */
+body.chx-worker-route aside,
+body.chx-worker-route nav,
+body.chx-worker-route [class*="sidebar"],
+body.chx-worker-route [class*="Sidebar"] {
+  background:
+    linear-gradient(180deg, #101b33 0%, #06101f 100%) !important;
+  color: #e5eefb !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+body.chx-worker-route aside a,
+body.chx-worker-route aside button,
+body.chx-worker-route nav a,
+body.chx-worker-route nav button {
+  min-height: 46px !important;
+  border-radius: 16px !important;
+  color: #c7d5ea !important;
+  font-weight: 850 !important;
+  touch-action: manipulation;
+}
+
+body.chx-worker-route aside a:hover,
+body.chx-worker-route aside button:hover,
+body.chx-worker-route nav a:hover,
+body.chx-worker-route nav button:hover {
+  background: rgba(255, 255, 255, 0.09) !important;
+  color: #ffffff !important;
+}
+
+body.chx-worker-route aside a.active,
+body.chx-worker-route aside a[aria-current="page"],
+body.chx-worker-route nav a.active,
+body.chx-worker-route nav a[aria-current="page"] {
+  background: linear-gradient(135deg, #2563eb, #0ea5e9) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.28) !important;
+}
+
+/* Worker main workspace */
+body.chx-worker-route main,
+body.chx-worker-route [role="main"] {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(37, 99, 235, 0.09), transparent 28rem),
+    linear-gradient(180deg, rgba(255,255,255,0.72), rgba(241,245,249,1)) !important;
+  padding: 24px 28px 42px !important;
+}
+
+/* Header */
+body.chx-worker-route header {
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(18px);
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 26px !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Typography */
+body.chx-worker-route h1 {
+  font-size: clamp(30px, 4vw, 48px) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.055em !important;
+  color: #0f172a !important;
+  font-weight: 950 !important;
+}
+
+body.chx-worker-route h2 {
+  font-size: clamp(22px, 2.4vw, 32px) !important;
+  letter-spacing: -0.04em !important;
+  color: #0f172a !important;
+  font-weight: 920 !important;
+}
+
+body.chx-worker-route h3 {
+  color: #0f172a !important;
+  letter-spacing: -0.025em !important;
+  font-weight: 880 !important;
+}
+
+body.chx-worker-route p,
+body.chx-worker-route small,
+body.chx-worker-route label {
+  line-height: 1.5;
+}
+
+/* Cards */
+body.chx-worker-route main section,
+body.chx-worker-route main article,
+body.chx-worker-route main .bg-white,
+body.chx-worker-route main [class*="bg-white"],
+body.chx-worker-route main [class*="card"],
+body.chx-worker-route main [class*="Card"],
+body.chx-worker-route main [class*="panel"],
+body.chx-worker-route main [class*="Panel"] {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 26px !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Worker action buttons */
+body.chx-worker-route main button,
+body.chx-worker-route main a[role="button"],
+body.chx-worker-route main .btn {
+  min-height: 46px !important;
+  border-radius: 16px !important;
+  font-weight: 900 !important;
+  touch-action: manipulation;
+}
+
+body.chx-worker-route main button:hover,
+body.chx-worker-route main a[role="button"]:hover {
+  transform: translateY(-1px);
+}
+
+body.chx-worker-route main button:active,
+body.chx-worker-route main a[role="button"]:active {
+  transform: scale(0.99);
+}
+
+/* Inputs */
+body.chx-worker-route input,
+body.chx-worker-route select,
+body.chx-worker-route textarea {
+  background: #ffffff !important;
+  border: 1px solid #dbe4f0 !important;
+  border-radius: 16px !important;
+  min-height: 46px !important;
+  color: #0f172a !important;
+}
+
+body.chx-worker-route input:focus,
+body.chx-worker-route select:focus,
+body.chx-worker-route textarea:focus {
+  border-color: rgba(37, 99, 235, 0.55) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.11) !important;
+  outline: none !important;
+}
+
+/* Better recognition for worker statuses */
+body.chx-worker-route [class*="completed"],
+body.chx-worker-route [class*="Completed"] {
+  border-color: #bbf7d0 !important;
+}
+
+body.chx-worker-route [class*="progress"],
+body.chx-worker-route [class*="Progress"] {
+  border-color: #bfdbfe !important;
+}
+
+body.chx-worker-route [class*="paused"],
+body.chx-worker-route [class*="Paused"] {
+  border-color: #fde68a !important;
+}
+
+body.chx-worker-route [class*="cancel"],
+body.chx-worker-route [class*="Cancel"] {
+  border-color: #fecaca !important;
+}
+
+/* Dialogs */
+body.chx-worker-route [role="dialog"] {
+  border-radius: 28px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 30px 90px rgba(15, 23, 42, 0.28) !important;
+}
+
+/* Mobile worker app */
+@media (max-width: 900px) {
+  body.chx-worker-route main,
+  body.chx-worker-route [role="main"] {
+    padding: 14px 12px 34px !important;
+  }
+
+  body.chx-worker-route aside,
+  body.chx-worker-route nav,
+  body.chx-worker-route [class*="sidebar"],
+  body.chx-worker-route [class*="Sidebar"] {
+    position: sticky !important;
+    top: 0;
+    z-index: 50;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: auto !important;
+    border-radius: 0 0 24px 24px !important;
+    overflow-x: auto !important;
+  }
+
+  body.chx-worker-route nav {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+  }
+
+  body.chx-worker-route aside a,
+  body.chx-worker-route aside button,
+  body.chx-worker-route nav a,
+  body.chx-worker-route nav button {
+    white-space: nowrap !important;
+    min-width: max-content !important;
+  }
+
+  body.chx-worker-route header {
+    border-radius: 22px !important;
+    flex-wrap: wrap;
+  }
+
+  body.chx-worker-route h1 {
+    font-size: 34px !important;
+  }
+
+  body.chx-worker-route main section,
+  body.chx-worker-route main article,
+  body.chx-worker-route main .bg-white,
+  body.chx-worker-route main [class*="bg-white"] {
+    border-radius: 22px !important;
+  }
+}
+
+@media (max-width: 520px) {
+  body.chx-worker-route main,
+  body.chx-worker-route [role="main"] {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  body.chx-worker-route main button,
+  body.chx-worker-route main a[role="button"] {
+    width: 100%;
+  }
+}

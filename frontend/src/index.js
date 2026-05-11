@@ -1,3 +1,4 @@
+import "./utils/churvoxWorkerRouteClass";
 /* Churvox worker-route body class */
 if (typeof window !== "undefined" && typeof document !== "undefined") {
   const syncChurvoxWorkerRouteClass = () => {
