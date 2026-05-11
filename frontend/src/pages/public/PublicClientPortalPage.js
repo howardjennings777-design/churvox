@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useApi } from "../../hooks/useApi";
 
@@ -308,7 +308,7 @@ export default function PublicClientPortalPage() {
   const [notice, setNotice] = useState("");
   const [message, setMessage] = useState("");
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await get(`/public/client-portal/${token}`);
@@ -316,11 +316,11 @@ export default function PublicClientPortalPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [get, token]);
 
   useEffect(() => {
     load();
-  }, [token]);
+  }, [load]);
 
   const photos = useMemo(() => getPhotos(portal), [portal]);
   const payUrl = getPayUrl(portal);
