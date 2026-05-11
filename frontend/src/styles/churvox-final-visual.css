@@ -244,3 +244,59 @@
 .v9-show-hero .v9-page-intro {
   display: none !important;
 }
+
+/* Tiny final layout fix: dashboard keeps hero, subpages hide it */
+.v9:has(.v9-page-intro) .v9-hero,
+.v9:has(.v9-page-intro) .v9-sync {
+  display: none !important;
+}
+
+.v9:has(.v9-page-intro) .v9-page-intro {
+  display: block !important;
+}
+
+.v9:has(.v9-page-intro) .v9-main {
+  padding-top: 22px !important;
+}
+
+.v9:has(.v9-page-intro) .v9-panel {
+  margin-top: 0 !important;
+}
+
+/* Calm the dashboard hero so it feels premium, not loud */
+.v9-page-engine .v9-hero-main,
+.v9-show-hero .v9-hero-main {
+  min-height: 300px !important;
+  padding: 34px 38px !important;
+}
+
+.v9-page-engine .v9-hero-main h1,
+.v9-show-hero .v9-hero-main h1 {
+  font-size: clamp(42px, 5vw, 74px) !important;
+  line-height: .95 !important;
+  letter-spacing: -.07em !important;
+  max-width: 900px !important;
+}
+
+.v9-page-engine .v9-engine-top strong,
+.v9-show-hero .v9-engine-top strong {
+  font-size: 68px !important;
+}
+
+/* Moves page should be simple: header + approve list */
+.v9:has(.v9-page-intro) .v9-move-grid {
+  grid-template-columns: 1fr !important;
+}
+
+.v9:has(.v9-page-intro) .v9-move {
+  min-height: 108px !important;
+  border-radius: 28px !important;
+}
+
+@media(max-width:1080px) {
+  .v9-page-engine .v9-hero-main h1,
+  .v9-show-hero .v9-hero-main h1 {
+    font-size: 38px !important;
+    line-height: .98 !important;
+  }
+}
