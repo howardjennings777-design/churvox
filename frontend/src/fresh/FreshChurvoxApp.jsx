@@ -317,6 +317,8 @@ function Shell({ children }) {
     ["Quotes", "/quotes", "▤", "Estimates & Follow-ups"],
     ["Invoices", "/invoices", "▥", "Billing & Payments"],
     ["Clients", "/clients", "◎", "Customers & Sites"],
+    ["Import", "/import", "⇪", "CSV setup"],
+    ["Proof-to-Paid", "/proof-to-paid", "✓", "Invoice ready"],
     ["Plans", "/plans", "◍", "Choose plan"],
     ["Billing", "/billing", "$", "Users & SMS credits"],
     ["Settings", "/settings", "⚙", "System & Preferences"],
@@ -361,13 +363,32 @@ function Shell({ children }) {
 
 function Topbar() {
   const navigate = useNavigate();
+  const greeting = `Good ${new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, ${localStorage.getItem("churvox_owner_name") || "Owner"}.`;
+
   return (
-    <div className="op-topbar">
-      <span>☼ {`Good ${new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, ${localStorage.getItem("churvox_owner_name") || "Owner"}.`}</span>
-      <div>
-        <button type="button" onClick={() => navigate("/clients")}>⌂ All locations</button>
-        <button type="button" onClick={() => navigate("/ai-approvals")}>🔔 AI work queue</button>
-        <button type="button" onClick={() => navigate("/jobs")}>{new Date().toLocaleDateString(undefined, { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}</button>
+    <div className="op-topbar op-topbar-command">
+      <span>☼ {greeting}</span>
+
+      <div className="op-topbar-actions">
+        <ManualCreateButton type="jobs" />
+        <ManualCreateButton type="clients" />
+        <ManualCreateButton type="invoices" />
+
+        <button type="button" className="op-action-chip" onClick={() => navigate("/import")}>
+          Import CSV
+        </button>
+
+        <button type="button" className="op-action-chip" onClick={() => navigate("/ai-approvals")}>
+          AI work queue
+        </button>
+
+        <button type="button" className="op-action-chip" onClick={() => navigate("/proof-to-paid")}>
+          Proof-to-Paid
+        </button>
+
+        <button type="button" className="op-date-chip" onClick={() => navigate("/jobs")}>
+          {new Date().toLocaleDateString(undefined, { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}
+        </button>
       </div>
     </div>
   );

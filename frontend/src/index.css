@@ -5284,3 +5284,553 @@ body,
 }
 
 /* CHURVOX_MANUAL_CREATE_UI_END */
+
+/* CHURVOX_APP_WIDE_THEME_FIX_START */
+
+/*
+  This is the final shared theme layer for the Fresh app.
+  It does not delete page-specific design. It makes buttons, panels,
+  forms, top actions, modals, nav and empty states consistent.
+*/
+
+:root {
+  --cv-bg: #020713;
+  --cv-bg-2: #06111f;
+  --cv-panel: rgba(8, 23, 42, .76);
+  --cv-panel-2: rgba(11, 31, 58, .82);
+  --cv-line: rgba(125, 234, 255, .16);
+  --cv-line-strong: rgba(125, 234, 255, .28);
+  --cv-text: #f8fdff;
+  --cv-soft: #b8d4e7;
+  --cv-muted: #7fa2b9;
+  --cv-cyan: #67e8f9;
+  --cv-blue: #38bdf8;
+  --cv-green: #22c55e;
+  --cv-amber: #f59e0b;
+  --cv-red: #ef4444;
+  --cv-radius: 22px;
+  --cv-shadow: 0 22px 70px rgba(0, 0, 0, .24);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: var(--cv-bg) !important;
+}
+
+body {
+  color: var(--cv-text) !important;
+  background:
+    radial-gradient(circle at 70% -10%, rgba(34, 211, 238, .13), transparent 30rem),
+    radial-gradient(circle at 12% 8%, rgba(59, 130, 246, .10), transparent 26rem),
+    linear-gradient(180deg, var(--cv-bg) 0%, var(--cv-bg-2) 100%) !important;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  touch-action: manipulation;
+}
+
+/* Layout */
+.op-shell {
+  grid-template-columns: 190px minmax(0, 1fr) !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+}
+
+.op-rail {
+  width: 190px !important;
+  min-width: 190px !important;
+  padding: 14px 10px !important;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(34, 211, 238, .12), transparent 16rem),
+    linear-gradient(180deg, rgba(2, 8, 23, .98), rgba(2, 6, 18, .98)) !important;
+  border-right: 1px solid rgba(125, 234, 255, .14) !important;
+}
+
+.op-main {
+  width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+  padding: 12px 16px 80px !important;
+}
+
+/* Logo */
+.op-logo {
+  gap: 8px !important;
+}
+
+.op-logo-img,
+.op-orb-logo-img,
+.import-floating-logo img {
+  object-fit: contain !important;
+}
+
+.op-logo-img {
+  width: 44px !important;
+  height: 44px !important;
+}
+
+.op-logo strong {
+  font-size: 15px !important;
+  letter-spacing: .22em !important;
+}
+
+.op-logo small {
+  font-size: 7px !important;
+  letter-spacing: .28em !important;
+}
+
+/* Nav */
+.op-nav {
+  gap: 5px !important;
+}
+
+.op-nav a {
+  min-height: 42px !important;
+  padding: 0 8px !important;
+  border-radius: 14px !important;
+  grid-template-columns: 22px minmax(0, 1fr) !important;
+  gap: 8px !important;
+  color: var(--cv-soft) !important;
+  text-decoration: none !important;
+}
+
+.op-nav a i {
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 13px !important;
+}
+
+.op-nav a b {
+  font-size: 9px !important;
+}
+
+.op-nav a small {
+  font-size: 8px !important;
+  color: var(--cv-muted) !important;
+}
+
+.op-nav a:hover,
+.op-nav a.active {
+  background: linear-gradient(90deg, rgba(34, 211, 238, .18), rgba(14, 165, 255, .06)) !important;
+  border-color: rgba(34, 211, 238, .34) !important;
+  box-shadow: inset 0 0 24px rgba(14, 165, 255, .07), 0 0 20px rgba(34, 211, 238, .08) !important;
+}
+
+/* Topbar and missing global actions */
+.op-topbar,
+.op-topbar-command {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 35 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  margin-bottom: 12px !important;
+  padding: 8px 10px !important;
+  border: 1px solid rgba(125, 234, 255, .12) !important;
+  border-radius: 16px !important;
+  background: rgba(3, 10, 24, .78) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+.op-topbar > span {
+  min-width: 160px !important;
+  color: var(--cv-text) !important;
+  font-weight: 850 !important;
+  font-size: 13px !important;
+}
+
+.op-topbar-actions,
+.op-topbar div {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 7px !important;
+  flex-wrap: wrap !important;
+}
+
+.op-topbar button,
+.op-action-chip,
+.op-date-chip,
+.manual-create-button,
+.import-card button,
+.import-card a,
+.import-help a,
+.ai-guide-card a,
+.ai-guide-pill,
+.op-hero-primary,
+.op-hero-secondary,
+.op-panel a,
+.op-pipeline a,
+.op-proof-live a,
+.op-modal-primary,
+.op-modal-secondary,
+.manual-create-primary,
+.manual-create-secondary {
+  min-height: 34px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  padding: 8px 12px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(125, 234, 255, .22) !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+}
+
+.op-topbar button,
+.op-action-chip,
+.op-date-chip,
+.manual-create-secondary,
+.op-modal-secondary,
+.op-hero-secondary {
+  color: var(--cv-text) !important;
+  background: rgba(255, 255, 255, .07) !important;
+}
+
+.manual-create-button,
+.manual-create-primary,
+.op-modal-primary,
+.op-hero-primary,
+.import-card button:not(:first-child),
+.import-card a,
+.import-help a,
+.ai-guide-pill,
+.ai-guide-card a:first-child {
+  color: #03111e !important;
+  background: linear-gradient(135deg, var(--cv-cyan), var(--cv-blue)) !important;
+  box-shadow: 0 0 26px rgba(34, 211, 238, .12) !important;
+}
+
+button:disabled {
+  opacity: .58 !important;
+  cursor: not-allowed !important;
+}
+
+/* Universal page sections */
+.import-page,
+.billing-page,
+.plans-page,
+.settings-page,
+.onboarding-page,
+.demo-page,
+.proof-page,
+.worker-page,
+.operator-page,
+[class*="-page"] {
+  color: var(--cv-text);
+}
+
+.import-hero,
+.op-page-hero,
+.billing-hero,
+.plans-hero,
+.settings-hero,
+.onboarding-hero,
+.proof-hero,
+.operator-hero,
+.demo-hero,
+[class*="hero"] {
+  border-color: var(--cv-line) !important;
+  box-shadow: var(--cv-shadow) !important;
+}
+
+.import-card,
+.import-help,
+.import-notice,
+.import-result,
+.op-panel,
+.op-approval,
+.op-proof,
+.op-pipeline,
+.op-status,
+.op-prepared,
+.billing-card,
+.plans-card,
+.settings-card,
+.onboarding-card,
+.proof-card,
+.operator-card,
+.demo-card,
+[class*="card"],
+[class*="panel"] {
+  border: 1px solid var(--cv-line) !important;
+  border-radius: var(--cv-radius) !important;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(34, 211, 238, .08), transparent 13rem),
+    linear-gradient(180deg, var(--cv-panel-2), rgba(7, 18, 35, .72)) !important;
+  box-shadow: var(--cv-shadow) !important;
+}
+
+/* Text rhythm */
+h1,
+h2,
+h3 {
+  color: var(--cv-text) !important;
+}
+
+p,
+small,
+span {
+  overflow-wrap: anywhere;
+}
+
+.import-hero span,
+.import-card span,
+.import-help p,
+.op-panel p,
+.op-panel small,
+.op-approval p,
+.op-action p,
+.op-action small,
+.ai-guide-card p,
+[class*="muted"] {
+  color: var(--cv-soft) !important;
+  line-height: 1.45 !important;
+}
+
+/* Inputs/forms */
+input,
+textarea,
+select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(125, 234, 255, .16) !important;
+  border-radius: 14px !important;
+  padding: 10px 12px !important;
+  color: var(--cv-text) !important;
+  background: rgba(2, 8, 23, .58) !important;
+  outline: none !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: rgba(103, 232, 249, .52) !important;
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, .11) !important;
+}
+
+/* Manual create modal */
+.manual-create-backdrop,
+.op-modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 95 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 18px !important;
+  background: rgba(0, 0, 0, .58) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.manual-create-modal,
+.op-modal {
+  width: min(720px, 100%) !important;
+  max-height: min(86vh, 780px) !important;
+  overflow-y: auto !important;
+  border: 1px solid rgba(125, 234, 255, .20) !important;
+  border-radius: 28px !important;
+  padding: 18px !important;
+  color: var(--cv-text) !important;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(34, 211, 238, .13), transparent 16rem),
+    rgba(3, 10, 24, .96) !important;
+  box-shadow: 0 34px 110px rgba(0, 0, 0, .52) !important;
+}
+
+.manual-create-modal header,
+.op-modal header {
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  margin-bottom: 14px !important;
+}
+
+.manual-create-modal header p {
+  margin: 0 0 6px !important;
+  color: var(--cv-cyan) !important;
+  font-size: 11px !important;
+  letter-spacing: .18em !important;
+  font-weight: 950 !important;
+}
+
+.manual-create-modal h2 {
+  margin: 0 !important;
+  font-size: 28px !important;
+}
+
+.manual-create-modal form {
+  display: grid !important;
+  gap: 12px !important;
+}
+
+.manual-create-modal label {
+  display: grid !important;
+  gap: 6px !important;
+}
+
+.manual-create-modal label span {
+  color: var(--cv-soft) !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+}
+
+.manual-create-modal footer,
+.op-modal footer {
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 9px !important;
+  margin-top: 14px !important;
+  flex-wrap: wrap !important;
+}
+
+.manual-create-error {
+  margin-bottom: 12px !important;
+  padding: 10px 12px !important;
+  border: 1px solid rgba(239, 68, 68, .28) !important;
+  border-radius: 14px !important;
+  color: #fecaca !important;
+  background: rgba(127, 29, 29, .32) !important;
+}
+
+/* Empty states */
+.op-empty,
+.op-empty-mini,
+.op-approval-empty,
+.v4-empty,
+[class*="empty"] {
+  min-height: 76px !important;
+  display: grid !important;
+  place-items: center !important;
+  gap: 6px !important;
+  padding: 14px !important;
+  text-align: center !important;
+  border: 1px dashed rgba(125, 234, 255, .24) !important;
+  border-radius: 18px !important;
+  color: var(--cv-soft) !important;
+  background: rgba(2, 8, 23, .32) !important;
+}
+
+/* AI help should never block work */
+.ai-guide-card {
+  width: min(300px, calc(100vw - 28px)) !important;
+  right: 14px !important;
+  bottom: 14px !important;
+  z-index: 70 !important;
+  border-radius: 22px !important;
+}
+
+.ai-guide-pill {
+  right: 14px !important;
+  bottom: 14px !important;
+  max-width: min(235px, calc(100vw - 28px)) !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Tables/lists */
+.op-data-row,
+.op-activity-row,
+.op-schedule-row,
+.op-crew-row {
+  border-bottom: 1px solid rgba(125, 234, 255, .09) !important;
+}
+
+.op-data-row:hover,
+.op-schedule-row:hover,
+.op-crew-row:hover {
+  background: rgba(34, 211, 238, .04) !important;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .op-shell {
+    grid-template-columns: 176px minmax(0, 1fr) !important;
+  }
+
+  .op-rail {
+    width: 176px !important;
+    min-width: 176px !important;
+  }
+
+  .op-main {
+    padding: 10px 12px 84px !important;
+  }
+
+  .op-topbar {
+    align-items: flex-start !important;
+  }
+
+  .op-topbar-actions {
+    justify-content: flex-end !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .op-shell {
+    display: block !important;
+  }
+
+  .op-rail {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    position: relative !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid rgba(125, 234, 255, .14) !important;
+  }
+
+  .op-nav {
+    display: flex !important;
+    overflow-x: auto !important;
+    padding-bottom: 4px !important;
+  }
+
+  .op-nav a {
+    min-width: 145px !important;
+  }
+
+  .op-main {
+    padding: 10px 10px 96px !important;
+  }
+
+  .op-topbar {
+    position: relative !important;
+    display: grid !important;
+  }
+
+  .op-topbar-actions {
+    justify-content: flex-start !important;
+  }
+
+  .ai-guide-card {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: 76px !important;
+    width: auto !important;
+  }
+
+  .ai-guide-pill {
+    right: 10px !important;
+    bottom: 76px !important;
+  }
+}
+
+/* CHURVOX_APP_WIDE_THEME_FIX_END */
