@@ -1691,6 +1691,120 @@ function buildLeadSuggestion(lead) {
   ].filter(Boolean).join(" ");
 }
 
+
+function buildReceptionistReply(lead) {
+  const service = lead.service_type || "the work";
+  const name = lead.name || "there";
+  const when = [lead.preferred_date, lead.preferred_time].filter(Boolean).join(" ");
+  return [
+    `Hi ${name}, thanks for getting in touch about ${service}.`,
+    lead.address ? `I have the job address as ${lead.address}.` : "",
+    when ? `I can see your preferred time is ${when}.` : "",
+    "We’ll review the details and come back to you with the next step.",
+    "Thanks.",
+  ].filter(Boolean).join(" ");
+}
+
+function ManualLeadCapture({ onSaved }) {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+    service_type: "",
+    notes: "",
+    source: "missed_call",
+  });
+  const [notice, setNotice] = useState("");
+
+  function update(key, value) {
+    setForm((old) => ({ ...old, [key]: value }));
+  }
+
+  function saveLead() {
+    setNotice("");
+
+    if (!form.name.trim() && !form.phone.trim()) {
+      setNotice("Add at least a name or phone number.");
+      return;
+    }
+
+    const lead = {
+      id: `manual-lead-${Date.now()}`,
+      ...form,
+      status: "new",
+      source: form.source || "manual",
+      created_at: new Date().toISOString(),
+      ai_reply: buildReceptionistReply(form),
+    };
+
+    const rows = readLocalList("churvox_public_enquiries");
+    rows.unshift(lead);
+    saveLocalList("churvox_public_enquiries", rows);
+
+    setForm({
+      name: "",
+      phone: "",
+      email: "",
+      address: "",
+      service_type: "",
+      notes: "",
+      source: "missed_call",
+    });
+    setOpen(false);
+    onSaved?.();
+  }
+
+  return (
+    <>
+      <button type="button" className="op-receptionist-add" onClick={() => setOpen(true)}>
+        Add missed lead
+      </button>
+
+      {open ? (
+        <div className="op-modal-backdrop" role="presentation" onClick={() => setOpen(false)}>
+          <section className="op-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="op-modal-glow" />
+            <header>
+              <p>ADD MISSED LEAD</p>
+              <button type="button" onClick={() => setOpen(false)}>×</button>
+            </header>
+
+            <div className="op-modal-body">
+              <span>AI RECEPTIONIST</span>
+              <h2>Capture a missed call or manual lead.</h2>
+              <p>Churvox will prepare a safe reply and draft next steps for owner approval.</p>
+
+              {notice ? <div className="op-warning">{notice}</div> : null}
+
+              <div className="op-receptionist-form">
+                <label>Name<input value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="Customer name" /></label>
+                <label>Phone<input value={form.phone} onChange={(event) => update("phone", event.target.value)} placeholder="Phone number" /></label>
+                <label>Email<input value={form.email} onChange={(event) => update("email", event.target.value)} placeholder="Email address" /></label>
+                <label>Service<input value={form.service_type} onChange={(event) => update("service_type", event.target.value)} placeholder="What do they need?" /></label>
+                <label className="wide">Address<input value={form.address} onChange={(event) => update("address", event.target.value)} placeholder="Job address" /></label>
+                <label className="wide">Notes<textarea value={form.notes} onChange={(event) => update("notes", event.target.value)} placeholder="Example: missed call, wants quote for hedge trim, prefers Friday morning." /></label>
+              </div>
+
+              <div className="op-modal-reason">
+                <strong>Prepared reply preview</strong>
+                <small>{buildReceptionistReply(form)}</small>
+              </div>
+            </div>
+
+            <footer>
+              <button type="button" className="op-modal-secondary" onClick={() => setOpen(false)}>Cancel</button>
+              <button type="button" className="op-modal-primary" onClick={saveLead}>Save lead</button>
+            </footer>
+          </section>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+
 function LeadInbox({ clients = [], jobs = [] }) {
   const [leads, setLeads] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -1748,7 +1862,7 @@ function LeadInbox({ clients = [], jobs = [] }) {
           <h2>New requests ready for review.</h2>
           <span>{leads.length} lead {leads.length === 1 ? "request" : "requests"} captured from booking/enquiry flow</span>
         </div>
-        <Link to="/book">Open public booking</Link>
+        <div className="op-lead-actions"><ManualLeadCapture onSaved={loadLeads} /><Link to="/book">Open public booking</Link></div>
       </header>
 
       {notice ? <div className="op-warning">{notice}</div> : null}
@@ -1808,6 +1922,11 @@ function LeadInbox({ clients = [], jobs = [] }) {
               <div className="op-modal-reason">
                 <strong>Customer notes</strong>
                 <small>{selected.notes || "No extra notes provided."}</small>
+              </div>
+
+              <div className="op-modal-reason">
+                <strong>Prepared customer reply</strong>
+                <small>{selected.ai_reply || buildReceptionistReply(selected)}</small>
               </div>
 
               <div className="op-modal-reason">

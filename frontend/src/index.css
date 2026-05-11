@@ -3619,3 +3619,69 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Phase 11: AI Receptionist missed lead recovery */
+.op-lead-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.op-receptionist-add {
+  min-height: 42px;
+  border: 1px solid rgba(34, 211, 238, .25);
+  border-radius: 12px;
+  padding: 0 12px;
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, .82);
+  font-weight: 900;
+}
+
+.op-receptionist-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.op-receptionist-form label {
+  display: grid;
+  gap: 7px;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.op-receptionist-form label.wide {
+  grid-column: 1 / -1;
+}
+
+.op-receptionist-form input,
+.op-receptionist-form textarea {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid rgba(148,163,184,.18);
+  border-radius: 14px;
+  color: #e2e8f0;
+  background: rgba(15,23,42,.82);
+  padding: 0 13px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.op-receptionist-form textarea {
+  min-height: 110px;
+  padding: 13px;
+  resize: vertical;
+}
+
+@media (max-width: 720px) {
+  .op-lead-actions,
+  .op-receptionist-form {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
