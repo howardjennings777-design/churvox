@@ -114,7 +114,7 @@ function Shell({ children }) {
   const location = useLocation();
   const nav = [
     ["Command", "/dashboard", "⬡", "Approval Command Centre"],
-    ["AI Approvals", "/ai-approvals", "◆", "Edit & Approve AI Work"],
+    ["AI Work Queue", "/ai-approvals", "◆", "Edit & Approve"],
     ["Jobs", "/jobs", "⌘", "Schedule & Dispatch"],
     ["Crew", "/team", "♧", "People & Availability"],
     ["Quotes", "/quotes", "▤", "Estimates & Follow-ups"],
@@ -167,7 +167,7 @@ function Topbar() {
       <span>☼ {`Good ${new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, ${localStorage.getItem("churvox_owner_name") || "Owner"}.`}</span>
       <div>
         <button type="button" onClick={() => navigate("/clients")}>⌂ All locations</button>
-        <button type="button" onClick={() => navigate("/ai-approvals")}>🔔 AI approvals</button>
+        <button type="button" onClick={() => navigate("/ai-approvals")}>🔔 AI work queue</button>
         <button type="button" onClick={() => navigate("/jobs")}>{new Date().toLocaleDateString(undefined, { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}</button>
       </div>
     </div>

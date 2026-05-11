@@ -203,6 +203,27 @@ function makeAction(partial) {
   };
 }
 
+function friendlyActionType(type) {
+  const map = {
+    assign_worker: "Worker assignment",
+    draft_invoice: "Invoice draft",
+    sms_payment_reminder: "Payment SMS",
+    sms_job_confirmation: "Job confirmation SMS",
+    quote_followup: "Quote follow-up",
+    admin_note_review: "Admin review",
+    lead_to_client: "New client draft",
+  };
+  return map[type] || "AI prepared work";
+}
+
+function ownerSafeStatus(action) {
+  if (!action) return "";
+  if (action.type?.startsWith("sms_") || action.type === "quote_followup") return "Editable message — not sent yet";
+  if (action.type === "draft_invoice") return "Draft only — not sent to customer";
+  if (action.type === "assign_worker") return "Not assigned until approved";
+  return "Waiting for owner review";
+}
+
 function buildAiWorkQueue({ jobs, invoices, quotes, clients, team, enquiries }, settings) {
   if (settings.mode === "observe") return [];
 
@@ -283,7 +304,7 @@ function buildAiWorkQueue({ jobs, invoices, quotes, clients, team, enquiries }, 
             title: `SMS reminder for ${invoice.invoice_number || "invoice"}`,
             summary: "AI wrote an editable payment reminder.",
             source_id: idOf(invoice),
-            risk: "SMS is not sent unless owner presses Approve + Send SMS.",
+            risk: "SMS is not sent unless owner presses Approve and send now.",
             workspace: "/invoices",
             payload: {
               invoice_id: idOf(invoice),
@@ -334,7 +355,7 @@ function buildAiWorkQueue({ jobs, invoices, quotes, clients, team, enquiries }, 
             title: `Confirm ${titleOf(job, "job")}`,
             summary: "AI prepared an editable customer confirmation SMS.",
             source_id: idOf(job),
-            risk: "SMS is not sent unless owner presses Approve + Send SMS.",
+            risk: "SMS is not sent unless owner presses Approve and send now.",
             workspace: "/jobs",
             payload: {
               job_id: idOf(job),
@@ -536,7 +557,7 @@ export default function OperatorApprovalCentre() {
             }),
         ]);
         await persistLog(selected, "approve", "worker_assigned");
-        setNotice("Worker assignment approved and sent to backend.");
+        setNotice("Worker assignment approved.");
       } else if (selected.type === "draft_invoice") {
         await firstWorking([
           () =>
@@ -570,7 +591,7 @@ export default function OperatorApprovalCentre() {
             }),
         ]);
         await persistLog(selected, "approve", "draft_invoice_created");
-        setNotice("Draft invoice approved and created/saved.");
+        setNotice("Invoice draft approved and saved.");
       } else if (selected.type.startsWith("sms_") || selected.type === "quote_followup") {
         if (sendSms) {
           if (!settings.smsSendRequiresApproval) throw new Error("SMS sending is not enabled in Operator settings.");
@@ -607,7 +628,7 @@ export default function OperatorApprovalCentre() {
           setNotice("SMS approved and sent.");
         } else {
           await persistLog(selected, "approve_draft", "sms_draft_saved");
-          setNotice("SMS draft saved for owner approval. Nothing was sent.");
+          setNotice("Message draft saved. Nothing was sent.");
         }
       } else if (selected.type === "lead_to_client") {
         await firstWorking([
@@ -634,10 +655,10 @@ export default function OperatorApprovalCentre() {
             }),
         ]);
         await persistLog(selected, "approve", "client_created_or_saved");
-        setNotice("Lead approved and created/saved as client.");
+        setNotice("Client draft approved and saved.");
       } else {
         await persistLog(selected, "approve", "review_saved");
-        setNotice("AI action saved for admin review.");
+        setNotice("Action saved for review.");
       }
 
       setSelected(null);
@@ -656,7 +677,7 @@ export default function OperatorApprovalCentre() {
     await persistLog(selected, "reject", "owner_rejected");
     setSelected(null);
     setBusy(false);
-    setNotice("Action rejected and logged.");
+    setNotice("Action rejected.");
   }
 
   const stats = {
@@ -670,39 +691,57 @@ export default function OperatorApprovalCentre() {
     <main className="ai-approval-centre">
       <header className="ai-approval-hero">
         <div>
-          <p>AI OPERATOR APPROVAL CENTRE</p>
-          <h1>AI does the work. You edit and approve.</h1>
+          <p>AI WORK QUEUE</p>
+          <h1>AI prepares the work. You stay in control.</h1>
           <span>
-            Churvox prepares worker assignments, invoice drafts, customer SMS messages, quote follow-ups,
-            job confirmations, lead conversions and admin notes into one owner approval page.
+            Everything AI prepares lands here first: worker assignments, invoice drafts, Message to customers,
+            quote follow-ups, client drafts and admin notes. Nothing customer-facing happens until you approve it.
           </span>
         </div>
-        <button type="button" onClick={load} disabled={loading}>{loading ? "Refreshing..." : "Refresh live work"}</button>
+        <button type="button" onClick={load} disabled={loading}>{loading ? "Scanning..." : "Scan for work"}</button>
       </header>
 
       {notice ? <section className="ai-notice">{notice}</section> : null}
 
+      <section className="ai-flow-strip">
+        <article>
+          <b>1</b>
+          <strong>AI scans live work</strong>
+          <small>Jobs, invoices, quotes, clients, crew and enquiries are checked.</small>
+        </article>
+        <article>
+          <b>2</b>
+          <strong>AI prepares the admin</strong>
+          <small>Messages, invoice drafts, worker picks and notes are written for you.</small>
+        </article>
+        <article>
+          <b>3</b>
+          <strong>You edit and approve</strong>
+          <small>You can change anything before it is saved, assigned or sent.</small>
+        </article>
+      </section>
+
       <section className="ai-mode-panel">
         <div>
-          <strong>How much should AI do?</strong>
-          <small>Owner stays in control. SMS/customer actions require approval.</small>
+          <strong>Choose how much AI can prepare</strong>
+          <small>Best for launch: Full Operator, with owner approval before anything is sent.</small>
         </div>
         <select value={settings.mode} onChange={(e) => setSettings((s) => ({ ...s, mode: e.target.value }))}>
-          <option value="observe">Watch only — no prepared work</option>
-          <option value="drafts">Prepare drafts only</option>
-          <option value="full_approval">Full Operator — prepare executable work for approval</option>
+          <option value="observe">Watch only — AI shows nothing to approve</option>
+          <option value="drafts">Draft only — AI prepares work but does not execute</option>
+          <option value="full_approval">Full Operator — AI prepares real actions for approval</option>
         </select>
       </section>
 
       <section className="ai-permission-grid">
         {[
-          ["assignWorkers", "Assign workers", "AI chooses best worker and waits for owner approval."],
-          ["draftInvoices", "Draft invoices", "AI creates invoice drafts from completed jobs."],
-          ["smsDrafts", "Draft SMS", "AI writes payment, quote and job SMS messages."],
-          ["smsSendRequiresApproval", "Allow approve + send SMS", "Owner can explicitly approve and send SMS."],
-          ["quoteFollowups", "Quote follow-ups", "AI prepares follow-up messages for open quotes."],
-          ["jobConfirmations", "Job confirmations", "AI prepares customer job confirmation SMS."],
-          ["adminNotes", "Admin notes", "AI surfaces worker notes/issues for owner review."],
+          ["assignWorkers", "Suggest workers", "AI picks the best worker. You approve before assignment."],
+          ["draftInvoices", "Prepare invoices", "AI turns completed jobs into editable draft invoices."],
+          ["smsDrafts", "Write SMS drafts", "AI writes editable customer messages. Nothing sends automatically."],
+          ["smsSendRequiresApproval", "Allow send after approval", "Shows the send button, but only after you review the message."],
+          ["quoteFollowups", "Follow up quotes", "AI drafts follow-ups for quotes waiting on customers."],
+          ["jobConfirmations", "Confirm jobs", "AI drafts customer job confirmation messages."],
+          ["adminNotes", "Review notes", "AI highlights worker notes and issues that need attention."],
         ].map(([key, title, desc]) => (
           <label className="ai-permission" key={key}>
             <input
@@ -719,37 +758,37 @@ export default function OperatorApprovalCentre() {
       </section>
 
       <section className="ai-stat-grid">
-        <article><b>{stats.prepared}</b><small>Prepared actions</small></article>
-        <article><b>{stats.dispatch}</b><small>Worker assignments</small></article>
-        <article><b>{stats.invoices}</b><small>Invoice drafts</small></article>
-        <article><b>{stats.sms}</b><small>SMS/message drafts</small></article>
+        <article><b>{stats.prepared}</b><small>Things ready</small></article>
+        <article><b>{stats.dispatch}</b><small>Worker picks</small></article>
+        <article><b>{stats.invoices}</b><small>Invoices ready</small></article>
+        <article><b>{stats.sms}</b><small>Messages ready</small></article>
       </section>
 
       <section className="ai-work-board">
         <header>
           <div>
-            <p>OWNER APPROVAL QUEUE</p>
-            <h2>Everything AI prepared</h2>
+            <p>REVIEW THESE FIRST</p>
+            <h2>Ready for your decision</h2>
           </div>
           <span>{actions.length} waiting</span>
         </header>
 
         {!actions.length ? (
           <div className="ai-empty">
-            <strong>No AI actions waiting.</strong>
-            <small>When jobs, invoices, quotes, SMS reminders or admin notes need work, they will appear here.</small>
+            <strong>Nothing needs approval right now.</strong>
+            <small>When Churvox finds work it can prepare for you, it will appear here with edit and approve controls.</small>
           </div>
         ) : (
           <div className="ai-action-list">
             {actions.map((action) => (
               <article className="ai-action-card" key={action.id}>
                 <div>
-                  <span>{action.label}</span>
+                  <span>{friendlyActionType(action.type)}</span>
                   <strong>{action.title}</strong>
                   <p>{action.summary}</p>
-                  <small>{action.risk}</small>
+                  <small>{ownerSafeStatus(action)} · {action.risk}</small>
                 </div>
-                <button type="button" onClick={() => openAction(action)}>Edit / approve</button>
+                <button type="button" onClick={() => openAction(action)}>Review</button>
               </article>
             ))}
           </div>
@@ -761,9 +800,9 @@ export default function OperatorApprovalCentre() {
           <section className="ai-drawer" onClick={(e) => e.stopPropagation()}>
             <header>
               <div>
-                <p>{selected.label}</p>
+                <p>{friendlyActionType(selected.type)}</p>
                 <h2>{selected.title}</h2>
-                <span>{selected.risk}</span>
+                <span>{ownerSafeStatus(selected)}. You can edit the fields below before approving.</span>
               </div>
               <button type="button" onClick={() => setSelected(null)} disabled={busy}>×</button>
             </header>
@@ -794,7 +833,7 @@ export default function OperatorApprovalCentre() {
                     </select>
                   </label>
                   <label>
-                    Owner note
+                    Note for this action
                     <textarea value={edited.note || ""} onChange={(e) => updateField("note", e.target.value)} />
                   </label>
                 </>
@@ -809,7 +848,7 @@ export default function OperatorApprovalCentre() {
                     <input type="number" value={edited.amount || ""} onChange={(e) => updateField("amount", e.target.value)} />
                   </label>
                   <label>
-                    Invoice description
+                    Invoice wording
                     <textarea value={edited.description || ""} onChange={(e) => updateField("description", e.target.value)} />
                   </label>
                 </>
@@ -820,11 +859,11 @@ export default function OperatorApprovalCentre() {
                     <input value={edited.to || ""} onChange={(e) => updateField("to", e.target.value)} />
                   </label>
                   <label>
-                    SMS message
+                    Message to customer
                     <textarea value={edited.message || ""} onChange={(e) => updateField("message", e.target.value)} />
                   </label>
                   <div className="ai-warning-box">
-                    SMS is only sent if you press <b>Approve + Send SMS</b>. Saving draft will not send anything.
+                    Nothing sends from this screen unless you press <b>Approve and send now</b>. You can safely save it as a draft instead.
                   </div>
                 </>
               ) : selected.type === "lead_to_client" ? (
@@ -856,13 +895,13 @@ export default function OperatorApprovalCentre() {
 
             <footer>
               <button type="button" onClick={rejectAction} disabled={busy}>Reject</button>
-              <button type="button" onClick={openWorkspace} disabled={busy}>Open workspace</button>
+              <button type="button" onClick={openWorkspace} disabled={busy}>Open related page</button>
               <button type="button" onClick={() => approveAction(false)} disabled={busy}>
-                {busy ? "Saving..." : "Approve / save draft"}
+                {busy ? "Saving..." : "Approve and save"}
               </button>
               {(selected.type.startsWith("sms_") || selected.type === "quote_followup") && settings.smsSendRequiresApproval ? (
                 <button className="primary" type="button" onClick={() => approveAction(true)} disabled={busy}>
-                  {busy ? "Sending..." : "Approve + Send SMS"}
+                  {busy ? "Sending..." : "Approve and send now"}
                 </button>
               ) : null}
             </footer>
