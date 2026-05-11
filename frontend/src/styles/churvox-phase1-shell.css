@@ -1,0 +1,358 @@
+/* =========================================================
+   CHURVOX PHASE 1 — PREMIUM APP SHELL
+   Safe visual layer only: layout, spacing, sidebar, header,
+   cards, buttons, mobile polish. No API/data logic touched.
+   ========================================================= */
+
+:root {
+  --chx-bg: #f4f7fb;
+  --chx-bg-soft: #f8fafc;
+  --chx-panel: #ffffff;
+  --chx-panel-2: #f8fafc;
+  --chx-border: #e2e8f0;
+  --chx-border-strong: #d7deea;
+  --chx-text: #0f172a;
+  --chx-muted: #64748b;
+  --chx-muted-2: #94a3b8;
+  --chx-blue: #2563eb;
+  --chx-blue-dark: #1d4ed8;
+  --chx-green: #10b981;
+  --chx-red: #ef4444;
+  --chx-amber: #f59e0b;
+  --chx-sidebar: #080d19;
+  --chx-sidebar-2: #101827;
+  --chx-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  --chx-shadow-soft: 0 10px 28px rgba(15, 23, 42, 0.06);
+  --chx-radius: 22px;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: var(--chx-bg);
+}
+
+body {
+  margin: 0;
+  color: var(--chx-text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+/* App background */
+body:has(nav),
+body:has(aside) {
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.10), transparent 34rem),
+    linear-gradient(180deg, #f9fbff 0%, #f3f6fb 100%);
+}
+
+/* Main app frame */
+body:has(aside) #root > div,
+body:has(nav) #root > div {
+  min-height: 100vh;
+}
+
+/* Sidebar cleanup */
+body:has(aside) aside,
+body:has(nav) aside,
+body:has(nav) [class*="sidebar"],
+body:has(nav) [class*="Sidebar"] {
+  width: 248px !important;
+  min-width: 248px !important;
+  min-height: 100vh;
+  background:
+    linear-gradient(180deg, rgba(18, 27, 48, 0.98), rgba(5, 9, 18, 1)),
+    var(--chx-sidebar) !important;
+  color: #e5edf8 !important;
+  padding: 18px 14px !important;
+  border-right: 1px solid rgba(255,255,255,0.06) !important;
+  box-shadow: 14px 0 38px rgba(15, 23, 42, 0.16);
+}
+
+/* Make nav links look premium */
+body:has(nav) aside a,
+body:has(nav) aside button,
+body:has(nav) nav a,
+body:has(nav) nav button,
+body:has(nav) [class*="sidebar"] a,
+body:has(nav) [class*="sidebar"] button {
+  min-height: 46px !important;
+  border-radius: 15px !important;
+  padding: 11px 13px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  text-decoration: none !important;
+  color: #b8c4d6 !important;
+  font-weight: 800 !important;
+  font-size: 14px !important;
+  border: 0 !important;
+  transition: 0.18s ease !important;
+}
+
+body:has(nav) aside a:hover,
+body:has(nav) aside button:hover,
+body:has(nav) nav a:hover,
+body:has(nav) nav button:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+body:has(nav) aside a.active,
+body:has(nav) aside a[aria-current="page"],
+body:has(nav) nav a.active,
+body:has(nav) nav a[aria-current="page"],
+body:has(nav) aside button.active,
+body:has(nav) nav button.active,
+body:has(nav) aside [class*="bg-red"],
+body:has(nav) aside [class*="from-red"],
+body:has(nav) nav [class*="bg-red"],
+body:has(nav) nav [class*="from-red"] {
+  background: linear-gradient(135deg, #ef4444, #fb7185) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 28px rgba(239, 68, 68, 0.28) !important;
+}
+
+/* Main content spacing */
+body:has(nav) main,
+body:has(aside) main,
+body:has(nav) [role="main"] {
+  flex: 1;
+  min-width: 0;
+  padding: 26px 30px 44px !important;
+  background:
+    radial-gradient(circle at 14% 0%, rgba(37, 99, 235, 0.07), transparent 28rem),
+    linear-gradient(180deg, rgba(255,255,255,0.45), rgba(244,247,251,1));
+}
+
+/* Header / top command bar */
+body:has(nav) header,
+body:has(aside) header {
+  background: rgba(255, 255, 255, 0.82) !important;
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(226, 232, 240, 0.95) !important;
+  border-radius: 24px !important;
+  min-height: 74px;
+  padding: 14px 16px !important;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  justify-content: space-between;
+  box-shadow: var(--chx-shadow);
+  margin-bottom: 22px !important;
+}
+
+/* Inputs/search */
+body:has(nav) input,
+body:has(nav) select,
+body:has(nav) textarea {
+  border: 1px solid var(--chx-border) !important;
+  background: #ffffff !important;
+  color: var(--chx-text) !important;
+  border-radius: 14px !important;
+  min-height: 42px;
+  outline: none !important;
+}
+
+body:has(nav) input:focus,
+body:has(nav) select:focus,
+body:has(nav) textarea:focus {
+  border-color: rgba(37, 99, 235, 0.5) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10) !important;
+}
+
+/* Cards / panels */
+body:has(nav) section,
+body:has(nav) article,
+body:has(nav) [class*="card"],
+body:has(nav) [class*="Card"],
+body:has(nav) [class*="panel"],
+body:has(nav) [class*="Panel"] {
+  border-color: var(--chx-border) !important;
+}
+
+body:has(nav) main > div > section,
+body:has(nav) main article,
+body:has(nav) [class*="rounded"],
+body:has(nav) [class*="shadow"] {
+  box-shadow: var(--chx-shadow-soft);
+}
+
+/* Common white boxes */
+body:has(nav) main .bg-white,
+body:has(nav) main [class*="bg-white"] {
+  background: var(--chx-panel) !important;
+  border: 1px solid var(--chx-border) !important;
+  border-radius: 22px !important;
+}
+
+/* Text hierarchy */
+body:has(nav) h1 {
+  font-size: clamp(26px, 3vw, 42px) !important;
+  line-height: 1.04 !important;
+  letter-spacing: -0.045em !important;
+  color: var(--chx-text) !important;
+  font-weight: 950 !important;
+}
+
+body:has(nav) h2 {
+  font-size: clamp(20px, 2vw, 28px) !important;
+  letter-spacing: -0.035em !important;
+  color: var(--chx-text) !important;
+  font-weight: 900 !important;
+}
+
+body:has(nav) h3 {
+  color: var(--chx-text) !important;
+  font-weight: 850 !important;
+}
+
+body:has(nav) p,
+body:has(nav) span,
+body:has(nav) label {
+  line-height: 1.45;
+}
+
+/* Buttons */
+body:has(nav) main button,
+body:has(nav) main a[role="button"],
+body:has(nav) main .btn {
+  border-radius: 14px !important;
+  min-height: 42px;
+  font-weight: 850 !important;
+  transition: 0.18s ease !important;
+}
+
+body:has(nav) main button:hover,
+body:has(nav) main a[role="button"]:hover {
+  transform: translateY(-1px);
+}
+
+/* Tables/lists */
+body:has(nav) table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+body:has(nav) th {
+  color: var(--chx-muted) !important;
+  font-size: 12px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+body:has(nav) td,
+body:has(nav) th {
+  border-bottom: 1px solid var(--chx-border) !important;
+  padding: 13px 12px !important;
+}
+
+/* Popups/modals */
+body:has(nav) [role="dialog"] {
+  border-radius: 24px !important;
+  border: 1px solid var(--chx-border) !important;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.22) !important;
+}
+
+/* Fix tiny broken empty dashboard cards */
+body:has(nav) main > div {
+  max-width: 1440px;
+}
+
+body:has(nav) main > div,
+body:has(nav) main > section,
+body:has(nav) main > article {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Better spacing for direct children */
+body:has(nav) main > * + * {
+  margin-top: 18px;
+}
+
+/* Mobile: sidebar becomes top rail instead of crushing page */
+@media (max-width: 900px) {
+  body:has(nav) #root > div,
+  body:has(aside) #root > div {
+    display: block !important;
+  }
+
+  body:has(nav) aside,
+  body:has(aside) aside,
+  body:has(nav) [class*="sidebar"],
+  body:has(nav) [class*="Sidebar"] {
+    position: sticky !important;
+    top: 0;
+    z-index: 50;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: auto !important;
+    padding: 12px !important;
+    border-radius: 0 0 22px 22px;
+    overflow-x: auto;
+  }
+
+  body:has(nav) nav {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+    padding-bottom: 2px !important;
+  }
+
+  body:has(nav) aside a,
+  body:has(nav) aside button,
+  body:has(nav) nav a,
+  body:has(nav) nav button {
+    white-space: nowrap !important;
+    min-width: max-content !important;
+  }
+
+  body:has(nav) main,
+  body:has(aside) main,
+  body:has(nav) [role="main"] {
+    padding: 16px 14px 34px !important;
+  }
+
+  body:has(nav) header,
+  body:has(aside) header {
+    border-radius: 20px !important;
+    padding: 12px !important;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  body:has(nav) h1 {
+    font-size: 28px !important;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 520px) {
+  body:has(nav) main,
+  body:has(aside) main {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  body:has(nav) main .bg-white,
+  body:has(nav) main [class*="bg-white"],
+  body:has(nav) [role="dialog"] {
+    border-radius: 18px !important;
+  }
+}
