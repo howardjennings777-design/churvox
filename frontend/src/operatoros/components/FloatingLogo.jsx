@@ -1,0 +1,1 @@
+export default function FloatingLogo({small=false}){return <img className={`op-floating-logo ${small?'small':''}`} src='/brand/churvox-holo-c.svg' alt='Churvox'/>;}

@@ -1,0 +1,1 @@
+export default function QuotesWorkspace(){return <section><h2>Quotes</h2><p>Live data is syncing.</p></section>;}

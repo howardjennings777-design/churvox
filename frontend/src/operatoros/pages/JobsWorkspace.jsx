@@ -1,0 +1,1 @@
+export default function JobsWorkspace(){return <section><h2>Jobs</h2><p>Live data is syncing.</p></section>;}

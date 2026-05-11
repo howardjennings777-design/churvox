@@ -1,0 +1,1 @@
+export default function ClientsWorkspace(){return <section><h2>Clients</h2><p>Live data is syncing.</p></section>;}

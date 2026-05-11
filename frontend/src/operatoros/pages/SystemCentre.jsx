@@ -1,0 +1,1 @@
+export default function SystemCentre(){return <section><h2>System Centre</h2><p>Live data is syncing.</p></section>;}

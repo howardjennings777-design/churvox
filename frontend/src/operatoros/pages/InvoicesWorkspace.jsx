@@ -1,0 +1,1 @@
+export default function InvoicesWorkspace(){return <section><h2>Invoices</h2><p>Live data is syncing.</p></section>;}
