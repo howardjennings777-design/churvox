@@ -1,1 +1,13 @@
-export default function QuotesWorkspace(){return <section><h2>Quotes</h2><p>Live data is syncing.</p></section>;}
+import WorkspaceList from "../components/WorkspaceList";
+
+export default function QuotesWorkspace({ data }) {
+  return (
+    <WorkspaceList
+      title="Quotes"
+      eyebrow="QUOTE DESK"
+      description="Drafts, sent quotes and AI follow-up suggestions."
+      items={data.quotes || []}
+      type="quote"
+    />
+  );
+}
