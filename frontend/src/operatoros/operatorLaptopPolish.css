@@ -268,3 +268,33 @@
   padding: 0 !important;
   margin-bottom: 18px !important;
 }
+
+
+/* PROPER_CHURVOX_HEX_WORDMARK */
+.op-wordmark-wrap {
+  width: 100%;
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(125, 234, 255, .18);
+  background: rgba(2, 8, 23, .34);
+  box-shadow: 0 0 34px rgba(34, 211, 238, .12);
+}
+
+.op-wordmark-logo {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 86px;
+  object-fit: cover;
+  object-position: center;
+}
+
+.op-sidebar .op-brand {
+  padding: 0 !important;
+  margin-bottom: 18px !important;
+}
+
+.op-logo-wrap.small .op-floating-logo,
+.op-hero-orb .op-floating-logo {
+  filter: drop-shadow(0 0 28px rgba(34, 211, 238, .72));
+}
