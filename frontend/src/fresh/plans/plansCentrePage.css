@@ -1,0 +1,80 @@
+.plans-page {
+  display: grid;
+  gap: 18px;
+  color: #eaf2ff;
+}
+
+.plans-hero, .plans-current, .plans-status, .plan-card, .plans-addons article {
+  background: linear-gradient(160deg, rgba(16, 20, 30, 0.95), rgba(10, 12, 18, 0.96));
+  border: 1px solid rgba(124, 147, 255, 0.2);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+}
+
+.plans-hero p { font-size: 12px; letter-spacing: 0.08em; color: #8eb6ff; margin: 0 0 6px; }
+.plans-hero h1 { font-size: clamp(1.4rem, 2.2vw, 2rem); margin: 0 0 8px; }
+.plans-hero span { color: #b8c7df; font-size: 0.98rem; }
+
+.plans-current { font-size: 0.98rem; }
+.plans-current strong { color: #86a6ff; }
+.plans-status { color: #d9e7ff; font-size: 0.95rem; }
+
+.plans-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.plan-card { position: relative; display: grid; gap: 10px; }
+.plan-card h2 { margin: 0; font-size: 1.2rem; }
+.plan-price { margin: 0; font-size: 1.7rem; font-weight: 700; }
+.plan-price small { font-size: 0.9rem; color: #b8c7df; margin-left: 6px; }
+.plan-card ul { margin: 0; padding-left: 18px; color: #c8d5ea; display: grid; gap: 6px; font-size: 0.95rem; }
+.plan-actions { display: grid; gap: 8px; margin-top: 6px; }
+.plan-actions button {
+  min-height: 42px;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.94rem;
+  background: #5c7cff;
+  color: #071225;
+}
+.plan-actions .outline {
+  background: transparent;
+  color: #d6e4ff;
+  border: 1px solid rgba(134, 166, 255, 0.45);
+}
+
+.plan-card.is-highlight {
+  border-color: rgba(115, 245, 210, 0.65);
+  box-shadow: 0 12px 30px rgba(69, 203, 173, 0.2);
+}
+.plan-card.is-current { outline: 2px solid rgba(145, 174, 255, 0.7); }
+.plan-tag {
+  position: absolute;
+  top: -11px;
+  right: 12px;
+  background: #39d7b6;
+  color: #072a22;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.plans-addons { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.plans-addons h3 { margin: 0 0 6px; }
+.plans-addons p { margin: 0 0 10px; color: #c6d3e7; }
+.plans-addons a { color: #91b0ff; font-weight: 600; text-decoration: none; }
+
+@media (max-width: 1100px) {
+  .plans-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px) {
+  .plans-grid, .plans-addons { grid-template-columns: 1fr; }
+}
