@@ -269,33 +269,22 @@ function _legacyBuildApprovalActions({ unassigned = 0, openInvoices = 0, openQuo
   return actions;
 }
 
-function ApprovalQueue({ unassigned, openInvoices, openQuotes, completedNeedsInvoice, onAction }) {
+function ApprovalQueue({ onAction }) {
   const actions = buildApprovalActions({ jobs: window.__op_jobs || [], invoices: window.__op_invoices || [], quotes: window.__op_quotes || [] });
 
   return (
     <section className="op-approval">
       <header>
         <div>
-          <h2>AI APPROVAL QUEUE <b>{actions.length}</b></h2>
-          <p>{actions.length ? "Real actions ready for owner approval" : "No AI actions need approval right now"}</p>
-        </div>
-        <div className="op-confidence">
-          AI mode <span>Approval-first</span>
-          {actions.length ? (
-            <button onClick={() => onAction?.({
-              label: "Operator",
-              title: "Review prepared actions",
-              text: "Review the real approval queue and decide which AI-prepared moves should run.",
-              why: "Owner approval is required before Churvox performs sensitive admin actions."
-            }, "review")}>Review all</button>
-          ) : null}
+          <h2>AI Approval Queue <b>{actions.length}</b></h2>
+          <p>{actions.length ? "AI found actions requiring owner approval" : "No approvals waiting. Churvox is monitoring jobs, invoices, quotes and leads."}</p>
         </div>
       </header>
 
       {!actions.length ? (
         <div className="op-approval-empty">
-          <strong>Nothing urgent waiting.</strong>
-          <span>Churvox will show dispatch, invoice, quote and cashflow approvals here when real records need attention.</span>
+          <strong>No approvals waiting.</strong>
+          <span>Churvox is monitoring jobs, invoices, quotes and leads.</span>
         </div>
       ) : (
         <div className="op-approval-list">
@@ -306,27 +295,19 @@ function ApprovalQueue({ unassigned, openInvoices, openQuotes, completedNeedsInv
                 <span>{a.label}</span>
                 <strong>{a.title}</strong>
                 <p>{a.text}</p>
-                <small>{a.why}</small>
-                <small>{a.guardrail}</small>
+                <small>Risk / Guardrail: {a.guardrail}</small>
+                <small>Confidence: {a.confidence}</small>
               </div>
-              <em>{a.confidence}<b>LIVE</b></em>
               <div className="op-action-buttons">
-                <button onClick={() => onAction?.(a, "approve")}>Approve</button>
-                <button onClick={() => onAction?.(a, "review")}>Review</button>
+                <button onClick={() => onAction?.(a, "review")}>Review action</button>
               </div>
             </article>
           ))}
         </div>
       )}
-
-      <footer>
-        <span>{actions.length} {actions.length === 1 ? "action" : "actions"} ready</span>
-        <strong>Owner approval required</strong>
-      </footer>
     </section>
   );
 }
-
 
 
 function jobPhotos(job) {
