@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import PublicClientPortalPage from "../pages/public/PublicClientPortalPage";
 
 const API_BASE = (() => {
   const raw =
@@ -1662,6 +1663,8 @@ export default function FreshChurvoxApp() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/public/client-portal/:token" element={<PublicClientPortalPage />} />
+        <Route path="/client-portal/:token" element={<PublicClientPortalPage />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
