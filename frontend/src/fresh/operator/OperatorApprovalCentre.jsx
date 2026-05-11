@@ -692,7 +692,7 @@ export default function OperatorApprovalCentre() {
       <header className="ai-approval-hero">
         <div>
           <p>AI WORK QUEUE</p>
-          <h1>AI prepares the work. You stay in control.</h1>
+          <h1>AI prepares the work. You approve what happens.</h1>
           <span>
             Everything AI prepares lands here first: worker assignments, invoice drafts, Customer messages,
             quote follow-ups, client drafts and admin notes. Nothing customer-facing happens until you approve it.
@@ -721,16 +721,40 @@ export default function OperatorApprovalCentre() {
         </article>
       </section>
 
-      <section className="ai-mode-panel">
-        <div>
-          <strong>Choose what AI prepares for you</strong>
-          <small>Recommended: AI prepares the work, then you approve before anything is saved or sent.</small>
+      <section className="ai-mode-panel ai-control-panel">
+        <div className="ai-control-head">
+          <strong>Choose your AI control level</strong>
+          <small>Recommended for launch: Full helper. AI prepares the work, then you approve before anything important is saved or sent.</small>
         </div>
-        <select value={settings.mode} onChange={(e) => setSettings((s) => ({ ...s, mode: e.target.value }))}>
-          <option value="observe">Watch only — AI shows nothing to approve</option>
-          <option value="drafts">Draft only — AI prepares work but does not execute</option>
-          <option value="full_approval">Full help — AI prepares jobs, invoices and messages for approval</option>
-        </select>
+
+        <div className="ai-control-options">
+          <button
+            type="button"
+            className={settings.mode === "observe" ? "ai-control-option active" : "ai-control-option"}
+            onClick={() => setSettings((s) => ({ ...s, mode: "observe" }))}
+          >
+            <b>Watch only</b>
+            <span>AI watches the business but does not prepare work.</span>
+          </button>
+
+          <button
+            type="button"
+            className={settings.mode === "drafts" ? "ai-control-option active" : "ai-control-option"}
+            onClick={() => setSettings((s) => ({ ...s, mode: "drafts" }))}
+          >
+            <b>Draft helper</b>
+            <span>AI writes drafts for invoices, notes and messages.</span>
+          </button>
+
+          <button
+            type="button"
+            className={settings.mode === "full_approval" ? "ai-control-option active" : "ai-control-option"}
+            onClick={() => setSettings((s) => ({ ...s, mode: "full_approval" }))}
+          >
+            <b>Full helper</b>
+            <span>AI prepares jobs, invoices, SMS and follow-ups for approval.</span>
+          </button>
+        </div>
       </section>
 
       <section className="ai-permission-grid">
@@ -897,7 +921,7 @@ export default function OperatorApprovalCentre() {
               <button type="button" onClick={rejectAction} disabled={busy}>Reject</button>
               <button type="button" onClick={openWorkspace} disabled={busy}>Open related page</button>
               <button type="button" onClick={() => approveAction(false)} disabled={busy}>
-                {busy ? "Saving..." : "Approve and save draft"}
+                {busy ? "Saving..." : "Approve and save draft draft"}
               </button>
               {(selected.type.startsWith("sms_") || selected.type === "quote_followup") && settings.smsSendRequiresApproval ? (
                 <button className="primary" type="button" onClick={() => approveAction(true)} disabled={busy}>

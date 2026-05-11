@@ -143,7 +143,7 @@ function Shell({ children }) {
         <section className="op-ai-mode">
           <p>AI OPERATOR</p>
           <strong>Active & running 24/7</strong>
-          <small>Approval-first automation monitor</small>
+          <small>Prepares work for approval</small>
         </section>
 
         <section className="op-user">
@@ -179,8 +179,12 @@ function Hero({ data, prepared }) {
     <section className="op-hero">
       <div className="op-hero-copy">
         <p>CHURVOX OPERATOR OS</p>
-        <h1>AI runs the admin.<br /><span>You approve the moves.</span></h1>
-        <small>Churvox Operator OS handles jobs, invoices, quote follow-ups and admin busywork so you can keep the business moving.</small>
+        <h1>AI prepares the admin.<br /><span>You approve the work.</span></h1>
+        <small>Churvox prepares the admin work for you — jobs, invoices, messages and follow-ups — then puts it in one queue for owner approval.</small>
+        <div className="op-hero-actions">
+          <Link to="/ai-approvals" className="op-hero-primary">Open AI Work Queue</Link>
+          <Link to="/jobs" className="op-hero-secondary">Open Jobs</Link>
+        </div>
       </div>
 
       <div className="op-orb-wrap">
@@ -2884,7 +2888,7 @@ function Login() {
       <form onSubmit={submit}>
         <ChurvoxLogo />
         <h1>Open Operator OS.</h1>
-        <p>AI runs the admin. You approve the moves.</p>
+        <p>AI prepares the admin. You approve the work.</p>
         <input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
         <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         <button type="submit">Sign in</button>
