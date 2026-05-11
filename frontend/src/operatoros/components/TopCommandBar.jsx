@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { clientOf, titleOf, statusOf } from "../api";
 import DetailDrawer from "./DetailDrawer";
+import NotificationCentre from "./NotificationCentre";
 
 export default function TopCommandBar({ role, setRole, data, onNav, onCreate }) {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -49,6 +50,7 @@ export default function TopCommandBar({ role, setRole, data, onNav, onCreate }) 
         <div className="op-topbar-right">
           <button type="button" onClick={() => setSearchOpen(true)}>Search</button>
           <button type="button" className="primary" onClick={() => setCreateOpen(true)}>+ Create</button>
+          <NotificationCentre data={data} onNav={onNav} />
           <button type="button" onClick={() => onNav?.("queue")}>AI Queue</button>
           <button type="button" onClick={() => onNav?.("system")}>System Centre</button>
 

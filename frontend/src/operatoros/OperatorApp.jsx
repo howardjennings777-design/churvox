@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./operatorTheme.css";
 import OperatorShell from "./OperatorShell";
 import { useOperatorData } from "./dataHooks";
@@ -25,18 +25,18 @@ const roleNav = {
 };
 
 const baseNav = [
-  { key: "hub", label: "Smart Hub" },
-  { key: "queue", label: "AI Work Queue", mobile: "AI Queue" },
-  { key: "jobs", label: "Jobs" },
-  { key: "clients", label: "Clients" },
-  { key: "crew", label: "Crew" },
-  { key: "quotes", label: "Quotes" },
-  { key: "invoices", label: "Invoices" },
-  { key: "proof", label: "Proof-to-Paid" },
-  { key: "payroll", label: "Payroll" },
-  { key: "import", label: "Import" },
-  { key: "system", label: "System Centre" },
-  { key: "settings", label: "Settings" },
+  { key: "hub", label: "Smart Hub", path: "/dashboard" },
+  { key: "queue", label: "AI Work Queue", mobile: "AI Queue", path: "/ai-approvals" },
+  { key: "jobs", label: "Jobs", path: "/jobs" },
+  { key: "clients", label: "Clients", path: "/clients" },
+  { key: "crew", label: "Crew", path: "/team" },
+  { key: "quotes", label: "Quotes", path: "/quotes" },
+  { key: "invoices", label: "Invoices", path: "/invoices" },
+  { key: "proof", label: "Proof-to-Paid", path: "/proof-to-paid" },
+  { key: "payroll", label: "Payroll", path: "/payroll" },
+  { key: "import", label: "Import", path: "/import" },
+  { key: "system", label: "System Centre", path: "/system-centre" },
+  { key: "settings", label: "Settings", path: "/settings" },
 ];
 
 const pages = {
@@ -54,16 +54,74 @@ const pages = {
   settings: SettingsWorkspace,
 };
 
+const pathToKey = {
+  "/": "hub",
+  "/dashboard": "hub",
+  "/smart-hub": "hub",
+  "/ai-approvals": "queue",
+  "/ai-work-queue": "queue",
+  "/jobs": "jobs",
+  "/clients": "clients",
+  "/team": "crew",
+  "/crew": "crew",
+  "/quotes": "quotes",
+  "/invoices": "invoices",
+  "/proof-to-paid": "proof",
+  "/payroll": "payroll",
+  "/import": "import",
+  "/system-centre": "system",
+  "/plans": "system",
+  "/billing": "system",
+  "/settings": "settings",
+};
+
+function keyFromPath() {
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  return pathToKey[path] || "hub";
+}
+
+function pathForKey(key) {
+  return baseNav.find((item) => item.key === key)?.path || "/dashboard";
+}
+
 export default function OperatorApp() {
   const data = useOperatorData();
   const [role, setRole] = useState("owner");
-  const [current, setCurrent] = useState("hub");
+  const [current, setCurrentRaw] = useState(keyFromPath);
   const [createType, setCreateType] = useState("");
 
   const nav = useMemo(
     () => baseNav.filter((item) => (roleNav[role] || roleNav.owner).includes(item.key)),
     [role]
   );
+
+  useEffect(() => {
+    function handlePopState() {
+      setCurrentRaw(keyFromPath());
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  function setCurrent(key) {
+    const allowed = (roleNav[role] || roleNav.owner).includes(key);
+    const safeKey = allowed ? key : nav[0]?.key || "hub";
+    const nextPath = pathForKey(safeKey);
+
+    setCurrentRaw(safeKey);
+
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState({}, "", nextPath);
+    }
+  }
+
+  useEffect(() => {
+    if (!(roleNav[role] || roleNav.owner).includes(current)) {
+      setCurrent(nav[0]?.key || "hub");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role]);
 
   const Page = pages[current] || SmartHub;
 
