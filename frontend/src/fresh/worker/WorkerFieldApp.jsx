@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "./workerFieldApp.css";
 
 const API_BASE = (() => { const raw = process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL || process.env.VITE_BACKEND_URL || "https://grassley-backend.onrender.com"; const clean = String(raw).replace(/\/+$/, ""); return clean.endsWith('/api') ? clean : `${clean}/api`; })();
@@ -7,10 +7,10 @@ const user=()=>{for(const k of ['user','currentUser','authUser']){try{const v=JS
 async function req(path,opt={}){const h={Accept:'application/json',...(opt.headers||{})}; if(tok()) h.Authorization=`Bearer ${tok()}`; if(opt.body && !(opt.body instanceof FormData)) h['Content-Type']='application/json'; const r=await fetch(`${API_BASE}${path}`,{method:opt.method||'GET',credentials:'include',headers:h,body:opt.body && !(opt.body instanceof FormData)?JSON.stringify(opt.body):opt.body}); const t=await r.text(); let p={}; try{p=t?JSON.parse(t):{}}catch{} if(!r.ok) throw new Error(p.detail||`${path} failed`); return p; }
 
 export default function WorkerFieldApp(){const [jobs,setJobs]=useState([]),[tab,setTab]=useState('today'),[sel,setSel]=useState(null),[msg,setMsg]=useState(''),[loading,setLoading]=useState(false);
-const me=user(); const ids=[me.id,me._id,me.user_id,me.worker_id,me.team_member_id].map(String).filter(Boolean); const email=String(me.email||'').toLowerCase();
-const mine=(j)=>{const vals=[j.assigned_worker_id,j.worker_id,j.assigned_to,j['assigned_worker.id'],j['assigned_worker._id'],j.assigned_worker?.id,j.assigned_worker?._id].map(v=>String(v||'')); const em=[j.worker_email,j.assigned_worker_email,j.assigned_worker?.email].map(v=>String(v||'').toLowerCase()); return vals.some(v=>ids.includes(v)) || (!!email && em.includes(email));};
-const load=async()=>{setLoading(true);setMsg(''); try{const a=await req('/worker/jobs'); setJobs((a.jobs||a.items||a||[]));}catch{try{const b=await req('/jobs'); const all=(b.jobs||b.items||b||[]); setJobs(all.filter(mine)); setMsg('Worker endpoint unavailable — filtered assigned jobs loaded.');}catch(e){setMsg(e.message); setJobs([]);}} finally{setLoading(false);}};
-useEffect(()=>{load();},[]);
+const me=useMemo(()=>user(),[]); const ids=useMemo(()=>[me.id,me._id,me.user_id,me.worker_id,me.team_member_id].map(String).filter(Boolean),[me]); const email=useMemo(()=>String(me.email||'').toLowerCase(),[me]);
+const mine=useCallback((j)=>{const vals=[j.assigned_worker_id,j.worker_id,j.assigned_to,j['assigned_worker.id'],j['assigned_worker._id'],j.assigned_worker?.id,j.assigned_worker?._id].map(v=>String(v||'')); const em=[j.worker_email,j.assigned_worker_email,j.assigned_worker?.email].map(v=>String(v||'').toLowerCase()); return vals.some(v=>ids.includes(v)) || (!!email && em.includes(email));},[ids,email]);
+const load=useCallback(async()=>{setLoading(true);setMsg(''); try{const a=await req('/worker/jobs'); setJobs((a.jobs||a.items||a||[]));}catch{try{const b=await req('/jobs'); const all=(b.jobs||b.items||b||[]); setJobs(all.filter(mine)); setMsg('Worker endpoint unavailable — filtered assigned jobs loaded.');}catch(e){setMsg(e.message); setJobs([]);}} finally{setLoading(false);}},[mine]);
+useEffect(()=>{load();},[load]);
 const filtered=useMemo(()=>jobs.filter((j)=>tab==='completed'?['completed','done'].includes(String(j.status||'').toLowerCase()):tab==='upcoming'? !['completed','done'].includes(String(j.status||'').toLowerCase()):true),[jobs,tab]);
 const action=async(id,a,body)=>{for(const p of [`/worker/jobs/${id}/${a}`,`/jobs/${id}/${a}`]){try{await req(p,{method:'POST',body}); setMsg(`${a} saved to backend.`); load(); return;}catch{}} setMsg('Failed — please review endpoint');};
 const next=filtered[0];
