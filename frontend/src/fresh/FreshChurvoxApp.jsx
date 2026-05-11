@@ -439,144 +439,190 @@ function actionTarget(action) {
   return "/dashboard";
 }
 
-function saveApprovalLog(action, mode) {
+function readLocalList(key) {
+  try { return JSON.parse(localStorage.getItem(key) || "[]"); } catch { return []; }
+}
+
+function saveLocalList(key, rows, max = 80) {
+  localStorage.setItem(key, JSON.stringify(rows.slice(0, max)));
+}
+
+function saveApprovalLog(action, mode, result = "reviewed") {
   try {
-    const existing = JSON.parse(localStorage.getItem("churvox_operator_approval_log") || "[]");
+    const existing = readLocalList("churvox_operator_approval_log");
     existing.unshift({
       id: `${Date.now()}`,
       mode,
+      result,
       label: action?.label || "AI Action",
       title: action?.title || "Prepared action",
-      text: action?.text || "",
       target: actionTarget(action),
       created_at: new Date().toISOString(),
     });
-    localStorage.setItem("churvox_operator_approval_log", JSON.stringify(existing.slice(0, 40)));
-  } catch {
-    // localStorage can fail in private mode. UI should still work.
+    saveLocalList("churvox_operator_approval_log", existing, 40);
+  } catch {}
+}
+
+function statusSlug(item) { return statusOf(item, "").toLowerCase().trim(); }
+function isUnassigned(job) { return !(job?.assigned_worker_id || job?.worker_id || job?.assigned_to); }
+function isActiveWorker(worker) { return ["active", "available", "on_site", "busy"].includes(String(worker?.status || "active").toLowerCase()); }
+
+function chooseDispatchCandidate(jobs, team) {
+  const unassigned = jobs.filter(isUnassigned).filter((j) => !["completed", "cancelled", "closed", "done"].includes(statusSlug(j)));
+  const activeWorkers = team.filter(isActiveWorker);
+  if (!unassigned.length || !activeWorkers.length) return { job: unassigned[0], worker: activeWorkers[0], reason: "No eligible dispatch records found." };
+  const job = unassigned[0];
+  const assignedCount = new Map();
+  jobs.forEach((j) => {
+    const key = String(j.assigned_worker_id || j.worker_id || j.assigned_to || "");
+    if (key) assignedCount.set(key, (assignedCount.get(key) || 0) + 1);
+  });
+  const jobRegion = String(job.region || job.location || job.suburb || "").toLowerCase();
+  const sorted = [...activeWorkers].sort((a, b) => {
+    const aMatch = jobRegion && String(a.region || a.location || a.suburb || "").toLowerCase() === jobRegion ? 1 : 0;
+    const bMatch = jobRegion && String(b.region || b.location || b.suburb || "").toLowerCase() === jobRegion ? 1 : 0;
+    if (aMatch !== bMatch) return bMatch - aMatch;
+    const aCount = assignedCount.get(String(a.id || a._id || "")) || 0;
+    const bCount = assignedCount.get(String(b.id || b._id || "")) || 0;
+    return aCount - bCount;
+  });
+  const worker = sorted[0] || activeWorkers[0];
+  return { job, worker, reason: "Worker selected using active status, regional match, and lowest assigned load." };
+}
+
+function buildActionPreview(action, data) {
+  const label = String(action?.label || "").toLowerCase();
+  if (label.includes("dispatch")) {
+    const pick = chooseDispatchCandidate(data.jobs, data.team);
+    return { records: pick.job && pick.worker ? [pick.job, pick.worker] : [], reason: pick.reason, pick };
   }
+  if (label.includes("cashflow")) {
+    const invoices = data.invoices.filter((x) => ["open", "unpaid", "draft", "sent", "overdue"].includes(statusSlug(x))).filter((x) => !["paid", "void", "cancelled"].includes(statusSlug(x))).slice(0, 20);
+    return { records: invoices, reason: "Prepared reminder drafts only for open invoices." };
+  }
+  if (label.includes("sales")) {
+    const quotes = data.quotes.filter((x) => ["open", "sent", "pending", "waiting", "draft"].includes(statusSlug(x))).filter((x) => !["accepted", "declined", "converted"].includes(statusSlug(x))).slice(0, 20);
+    return { records: quotes, reason: "Prepared follow-up drafts only for quotes awaiting response." };
+  }
+  if (label.includes("invoice")) {
+    const invoicedIds = new Set(data.invoices.map((i) => String(i.job_id || i.source_job_id || i.linked_job_id || "")).filter(Boolean));
+    const jobs = data.jobs.filter((j) => ["completed", "done", "closed"].includes(statusSlug(j))).filter((j) => !invoicedIds.has(String(j.id || j._id || ""))).slice(0, 10);
+    return { records: jobs, reason: "Completed jobs without invoice detected for draft invoice preparation." };
+  }
+  return { records: [], reason: "Owner review required." };
 }
 
-function ActionModal({ modal, onClose, onConfirm }) {
+function ActionModal({ modal, onClose, onConfirm, busy }) {
   if (!modal) return null;
-
-  const action = modal.action || {};
-  const mode = modal.mode || "review";
+  const { action = {}, mode = "review", preview = {} } = modal;
   const target = actionTarget(action);
-
-  return (
-    <div className="op-modal-backdrop" role="presentation" onClick={onClose}>
-      <section className="op-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
-        <div className="op-modal-glow" />
-
-        <header>
-          <p>{mode === "approve" ? "APPROVE AI MOVE" : "REVIEW AI MOVE"}</p>
-          <button type="button" onClick={onClose}>×</button>
-        </header>
-
-        <div className="op-modal-body">
-          <span>{action.label || "AI OPERATOR"}</span>
-          <h2>{action.title || "Prepared action"}</h2>
-          <p>{action.text || "Churvox has prepared this move for your approval."}</p>
-
-          <div className="op-modal-reason">
-            <strong>Why Churvox prepared this</strong>
-            <small>{action.why || "This action is based on the current business data and owner approval rules."}</small>
-          </div>
-
-          <div className="op-modal-route">
-            <b>Next workspace</b>
-            <em>{target}</em>
-          </div>
-        </div>
-
-        <footer>
-          <button type="button" className="op-modal-secondary" onClick={onClose}>Keep reviewing</button>
-          <button type="button" className="op-modal-primary" onClick={onConfirm}>
-            {mode === "approve" ? "Approve and open workspace" : "Open workspace"}
-          </button>
-        </footer>
-      </section>
-    </div>
-  );
+  return (<div className="op-modal-backdrop" role="presentation" onClick={!busy ? onClose : undefined}>
+    <section className="op-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+      <div className="op-modal-glow" />
+      <header><p>{mode === "approve" ? "APPROVE AI MOVE" : "REVIEW AI MOVE"}</p><button type="button" onClick={onClose} disabled={busy}>×</button></header>
+      <div className="op-modal-body">
+        <span>{action.label || "AI OPERATOR"}</span><h2>{action.title || "Prepared action"}</h2><p>{action.text || "Churvox has prepared this move for your approval."}</p>
+        <div className="op-modal-reason"><strong>AI reasoning</strong><small>{preview.reason || action.why || "Based on live data and approval-first policy."}</small></div>
+        <div className="op-modal-reason"><strong>Owner approval required</strong><small>No customer messages, invoice sends, charges or payroll actions will run automatically.</small></div>
+        <div className="op-modal-records">{(preview.records || []).slice(0, 6).map((item, idx)=><div key={item.id || item._id || idx}><b>{titleOf(item, `Record ${idx+1}`)}</b><small>{statusOf(item, "ready")} · {money(item) || item.address || item.region || item.email || ""}</small></div>)}</div>
+        <div className="op-modal-route"><b>Review workspace</b><em>{target}</em></div>
+      </div>
+      <footer>
+        <button type="button" className="op-modal-secondary" onClick={onClose} disabled={busy}>Cancel</button>
+        <button type="button" className="op-modal-secondary" onClick={() => onConfirm("review")} disabled={busy}>Review workspace</button>
+        <button type="button" className="op-modal-primary" onClick={() => onConfirm("approve")} disabled={busy}>{busy ? "Working..." : "Approve action"}</button>
+      </footer>
+    </section></div>);
 }
+
+function Workspace({ kind }) { /* unchanged placeholder replaced below */ }
 
 function Dashboard() {
   const data = useLiveData();
   const navigate = useNavigate();
   const [modal, setModal] = useState(null);
+  const [toast, setToast] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [tick, setTick] = useState(0);
+  const history = useMemo(() => readLocalList("churvox_operator_approval_log").slice(0,5), [tick]);
+  const drafts = useMemo(() => readLocalList("churvox_operator_drafts").slice(0,5), [tick]);
 
-  function openAction(action, mode) {
-    setModal({ action, mode });
+  function openAction(action, mode) { setModal({ action, mode, preview: buildActionPreview(action, data) }); }
+  function pushDraft(draft) { const rows = readLocalList("churvox_operator_drafts"); rows.unshift({ id:`d-${Date.now()}`, created_at:new Date().toISOString(), ...draft }); saveLocalList("churvox_operator_drafts", rows); setTick((x)=>x+1); }
+
+  async function tryDispatch(preview) {
+    const job = preview?.pick?.job; const worker = preview?.pick?.worker;
+    if (!job || !worker) throw new Error("No eligible job/worker found.");
+    const jobId = job.id || job._id; const workerId = worker.id || worker._id;
+    const payloads = [{ worker_id: workerId, assigned_worker_id: workerId },{ assigned_worker_id: workerId },{ worker_id: workerId }];
+    const calls = [
+      () => api(`/jobs/${jobId}/assign`, { method: "POST", body: payloads[0] }),
+      () => api(`/jobs/${jobId}/assign-worker`, { method: "POST", body: payloads[1] }),
+      () => api(`/jobs/${jobId}`, { method: "PATCH", body: payloads[1] }),
+      () => api(`/jobs/${jobId}`, { method: "PUT", body: payloads[2] }),
+    ];
+    for (const fn of calls) { try { await fn(); return { job, worker }; } catch {} }
+    pushDraft({ type:"assignment_recommendation", title:`Assign ${titleOf(job,'job')} to ${titleOf(worker,'worker')}`, target:"/jobs" });
+    setToast("Backend did not accept assignment yet. Recommendation saved.");
+    return null;
   }
 
-  function confirmAction() {
-    if (!modal) return;
-    saveApprovalLog(modal.action, modal.mode);
+  async function confirmAction(intent) {
+    if (!modal || busy) return;
     const target = actionTarget(modal.action);
-    setModal(null);
-    navigate(target);
+    if (intent === "review") { saveApprovalLog(modal.action, "review", "reviewed"); setModal(null); setTick((x)=>x+1); navigate(target); return; }
+    setBusy(true);
+    try {
+      const label = String(modal.action?.label || "").toLowerCase();
+      if (label.includes("dispatch")) {
+        const result = await tryDispatch(modal.preview);
+        saveApprovalLog(modal.action, "approve", result ? "approved" : "drafted");
+        if (result) { await data.reload(); setToast("Dispatch approved and assignment updated."); }
+      } else if (label.includes("cashflow")) {
+        (modal.preview.records || []).forEach((inv) => pushDraft({ type:"payment_reminder", title:`Reminder draft for ${titleOf(inv,'invoice')}`, target:"/invoices" }));
+        saveApprovalLog(modal.action, "approve", "drafted"); setToast("Payment reminder drafts prepared. Nothing was sent.");
+      } else if (label.includes("sales")) {
+        (modal.preview.records || []).forEach((q) => pushDraft({ type:"quote_followup", title:`Follow-up draft for ${titleOf(q,'quote')}`, target:"/quotes" }));
+        saveApprovalLog(modal.action, "approve", "drafted"); setToast("Quote follow-up drafts prepared. Nothing was sent.");
+      } else if (label.includes("invoice")) {
+        const job = modal.preview.records?.[0];
+        if (job) {
+          const body = { job_id: job.id || job._id, client_id: job.client_id || job.customer_id, customer_id: job.customer_id || job.client_id, client_name: job.client_name || job.customer_name, status: "draft", amount: Number(job.total || job.amount || job.price || 0), total: Number(job.total || job.amount || job.price || 0), description: `Draft invoice for ${job.title || 'completed job'} at ${job.address || job.site_address || 'client site'}`, created_by_ai: true };
+          let ok = false; for (const path of ["/invoices", "/invoices/create"]) { try { await api(path, { method: "POST", body }); ok = true; break; } catch {} }
+          if (!ok) { pushDraft({ type:"invoice_draft", title:`Invoice draft for ${titleOf(job,'completed job')}`, target:"/invoices" }); setToast("Invoice draft saved locally for review."); saveApprovalLog(modal.action, "approve", "drafted"); }
+          else { await data.reload(); saveApprovalLog(modal.action, "approve", "approved"); setToast("Invoice draft created for review."); navigate('/invoices'); }
+        }
+      }
+    } finally { setBusy(false); setModal(null); setTick((x)=>x+1); }
   }
 
   const openInvoices = data.invoices.filter((x) => !["paid", "void", "cancelled"].includes(statusOf(x).toLowerCase()));
   const openQuotes = data.quotes.filter((x) => !["accepted", "declined", "converted"].includes(statusOf(x).toLowerCase()));
-  const unassigned = data.jobs.filter((j) => !j.assigned_worker_id && !j.worker_id && !j.assigned_to);
+  const unassigned = data.jobs.filter(isUnassigned);
   const prepared = unassigned.length + openInvoices.length + openQuotes.length || 23;
 
-  return (
-    <Shell>
-      <Topbar />
-      <ActionModal modal={modal} onClose={() => setModal(null)} onConfirm={confirmAction} />
-      {data.error ? <div className="op-warning">{data.error}</div> : null}
-      <Hero data={data} prepared={prepared} />
-
-      <section className="op-top-grid">
-        <ApprovalQueue unassigned={unassigned.length || 6} openInvoices={openInvoices.length || 13} openQuotes={openQuotes.length || 4} onAction={openAction} />
-        <ProofToPaid />
-      </section>
-
-      <section className="op-mid-grid">
-        <CrewStatus team={data.team} />
-        <Cashflow />
-        <Schedule />
-        <LiveActivity />
-      </section>
-
-      <section className="op-bottom-grid">
-        <DataPanel title="TODAY'S SCHEDULE" type="jobs" items={data.jobs} />
-        <DataPanel title="QUOTE PIPELINE" type="quotes" items={data.quotes} />
-      </section>
-
-      <QuotePipeline />
-    </Shell>
-  );
+  return <Shell><Topbar />{toast ? <div className="op-warning">{toast}</div> : null}<ActionModal modal={modal} onClose={() => setModal(null)} onConfirm={confirmAction} busy={busy} />{data.error ? <div className="op-warning">{data.error}</div> : null}<Hero data={data} prepared={prepared} />
+  <section className="op-top-grid"><ApprovalQueue unassigned={unassigned.length || 6} openInvoices={openInvoices.length || 13} openQuotes={openQuotes.length || 4} onAction={openAction} /><ProofToPaid /></section>
+  <section className="op-mid-grid"><CrewStatus team={data.team} /><Cashflow /><Schedule /><LiveActivity /></section>
+  <section className="op-bottom-grid"><DataPanel title="TODAY'S SCHEDULE" type="jobs" items={data.jobs} /><DataPanel title="QUOTE PIPELINE" type="quotes" items={data.quotes} /></section>
+  <section className="op-bottom-grid"><section className="op-panel"><h3>APPROVAL HISTORY</h3>{history.map((h)=><div className="op-data-row" key={h.id}><strong>{h.result || h.mode}</strong><small>{h.title} · {new Date(h.created_at).toLocaleString()} · {h.target}</small></div>)}</section><section className="op-panel"><h3>OPERATOR DRAFTS</h3>{drafts.map((d)=><div className="op-data-row" key={d.id}><strong>{d.title}</strong><small>{d.type} · {new Date(d.created_at).toLocaleString()} · {d.target}</small></div>)}</section></section>
+  <QuotePipeline /></Shell>;
 }
 
 function Workspace({ kind }) {
   const data = useLiveData();
-  const map = {
-    jobs: ["Jobs Command", "Schedule, dispatch, prove and complete work.", data.jobs, "jobs"],
-    clients: ["Client Command", "Customers, sites and repeat work.", data.clients, "clients"],
-    quotes: ["Quote Command", "Follow-ups, approvals and conversion.", data.quotes, "quotes"],
-    invoices: ["Money Command", "Draft, send, follow up and collect.", data.invoices, "invoices"],
-    team: ["Crew Command", "Availability, roles and dispatch.", data.team, "crew"],
-  };
-  const [title, subtitle, items, type] = map[kind];
-
-  return (
-    <Shell>
-      <Topbar />
-      <section className="op-page-hero">
-        <p>CHURVOX COMMAND</p>
-        <h1>{title}</h1>
-        <span>{subtitle}</span>
-        <button onClick={data.reload}>Run scan</button>
-      </section>
-      <DataPanel title={title.toUpperCase()} type={type} items={items} />
-    </Shell>
-  );
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState(null);
+  const sources = { jobs: data.jobs, clients: data.clients, quotes: data.quotes, invoices: data.invoices, team: data.team };
+  const items = sources[kind] || [];
+  const filtered = items.filter((it) => JSON.stringify(it).toLowerCase().includes(query.toLowerCase()));
+  return <Shell><Topbar /><section className="op-page-hero"><p>CHURVOX COMMAND</p><h1>{kind.toUpperCase()} WORKSPACE</h1><span>Live records with approval-first details.</span><button onClick={data.reload}>Run scan</button></section>
+    <section className="op-panel"><input className="op-search" placeholder={`Search ${kind}...`} value={query} onChange={(e)=>setQuery(e.target.value)} />
+    {data.loading ? <p>Loading {kind}...</p> : data.error ? <p>{data.error}</p> : !filtered.length ? <p>No {kind} found.</p> : filtered.slice(0,80).map((item,idx)=><button key={item.id || item._id || idx} className="op-data-row op-row-button" onClick={()=>setSelected(item)}><div><strong>{titleOf(item, `${kind} ${idx+1}`)}</strong><small>{[item.client_name || item.customer_name, item.address || item.site_address, money(item), statusOf(item)].filter(Boolean).join(" · ")}</small></div></button>)}
+    </section>
+    {selected ? <div className="op-modal-backdrop" onClick={()=>setSelected(null)}><section className="op-modal" onClick={(e)=>e.stopPropagation()}><header><p>{kind.toUpperCase()} DETAIL</p><button onClick={()=>setSelected(null)}>×</button></header><div className="op-modal-body">{Object.entries(selected).slice(0,12).map(([k,v])=><div key={k} className="op-kv"><b>{k}</b><small>{String(v)}</small></div>)}</div></section></div> : null}
+  </Shell>;
 }
-
 function Settings() {
   return (
     <Shell>

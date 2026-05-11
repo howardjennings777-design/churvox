@@ -2005,3 +2005,11 @@ body {
     width: 100%;
   }
 }
+
+.op-modal-records { display:grid; gap:8px; margin-top:12px; }
+.op-modal-records div { padding:10px; border:1px solid var(--op-line2); border-radius:10px; background:rgba(8,23,42,.45); }
+.op-modal-records b { display:block; }
+.op-modal-records small { color:var(--op-muted); }
+.op-search { width:100%; margin-bottom:12px; min-height:40px; border-radius:10px; border:1px solid var(--op-line2); background:#08172a; color:white; padding:0 12px; }
+.op-row-button { width:100%; text-align:left; background:transparent; border:none; color:inherit; cursor:pointer; }
+.op-kv { display:grid; gap:4px; padding:8px 0; border-bottom:1px solid var(--op-line2); }
