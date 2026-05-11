@@ -1830,6 +1830,216 @@ function LeadInbox({ clients = [], jobs = [] }) {
 }
 
 
+
+function buildQuoteSuggestion(client, jobs = [], quotes = []) {
+  const memory = client ? buildSiteMemory(client, jobs, []) : null;
+  const clientJobs = client ? jobs.filter((job) => sameClientRecord(client, job)).sort(newestFirst) : [];
+  const clientQuotes = client ? quotes.filter((quote) => sameClientRecord(client, quote)).sort(newestFirst) : [];
+
+  const lastJob = clientJobs[0];
+  const lastQuote = clientQuotes[0];
+
+  const service =
+    lastJob?.job_type ||
+    lastJob?.service_type ||
+    lastQuote?.job_type ||
+    lastQuote?.service_type ||
+    "service work";
+
+  const address =
+    client?.address ||
+    client?.site_address ||
+    lastJob?.address ||
+    lastJob?.site_address ||
+    "";
+
+  const lastAmount =
+    quoteAmount(lastQuote) ||
+    jobAmount(lastJob) ||
+    0;
+
+  const description = [
+    `${service} for ${titleOf(client, "client")}${address ? ` at ${address}` : ""}.`,
+    memory?.notes?.[0] ? `Site note: ${memory.notes[0]}` : "",
+    lastJob ? `Based on previous work: ${titleOf(lastJob, "last job")}.` : "",
+    "Scope, timing and final price should be reviewed before sending.",
+  ].filter(Boolean).join(" ");
+
+  const addons = [];
+  const combinedNotes = [
+    client?.notes,
+    lastJob?.notes,
+    lastJob?.worker_notes,
+    lastJob?.completion_notes,
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  if (combinedNotes.includes("green waste") || service.toLowerCase().includes("lawn") || service.toLowerCase().includes("garden")) {
+    addons.push("Optional green-waste removal");
+  }
+  if (combinedNotes.includes("photo") || combinedNotes.includes("proof")) {
+    addons.push("Before/after proof photos");
+  }
+  if (combinedNotes.includes("recurring") || lastJob?.is_recurring || lastJob?.recurring) {
+    addons.push("Recurring service option");
+  }
+  if (!addons.length) {
+    addons.push("Optional extra labour/materials line", "Customer approval before extras");
+  }
+
+  const followup =
+    clientQuotes.filter((q) => ["open", "sent", "pending", "waiting", "draft"].includes(statusSlug(q))).length;
+
+  return {
+    service,
+    address,
+    lastAmount,
+    description,
+    addons,
+    followup,
+    memory,
+  };
+}
+
+function AIQuoteBuilder({ clients = [], jobs = [], quotes = [] }) {
+  const [clientId, setClientId] = useState("");
+  const [customScope, setCustomScope] = useState("");
+  const [draft, setDraft] = useState(null);
+  const [notice, setNotice] = useState("");
+
+  const selectedClient = clients.find((client) => String(client.id || client._id || client.email || client.name) === String(clientId));
+  const suggestion = selectedClient ? buildQuoteSuggestion(selectedClient, jobs, quotes) : null;
+
+  function prepareQuoteDraft() {
+    setNotice("");
+
+    if (!selectedClient) {
+      setNotice("Choose a client first.");
+      return;
+    }
+
+    const base = buildQuoteSuggestion(selectedClient, jobs, quotes);
+    const quoteText = [
+      base.description,
+      customScope.trim() ? `Owner notes: ${customScope.trim()}` : "",
+      base.addons.length ? `Suggested add-ons: ${base.addons.join(", ")}.` : "",
+      base.lastAmount ? `Previous known value: ${money({ total: base.lastAmount })}.` : "No previous price found. Amount needs review.",
+    ].filter(Boolean).join("\n\n");
+
+    setDraft({
+      client: selectedClient,
+      title: `Quote draft for ${titleOf(selectedClient, "client")}`,
+      description: quoteText,
+      addons: base.addons,
+      amount_hint: base.lastAmount,
+      followup_count: base.followup,
+    });
+  }
+
+  function saveDraft() {
+    if (!draft) return;
+
+    const rows = readLocalList("churvox_operator_drafts");
+    rows.unshift({
+      id: `quote-${Date.now()}`,
+      type: "ai_quote_draft",
+      title: draft.title,
+      target: "/quotes",
+      created_at: new Date().toISOString(),
+      client_id: draft.client.id || draft.client._id || "",
+      customer_name: titleOf(draft.client, "Client"),
+      description: draft.description,
+      addons: draft.addons,
+      amount_hint: draft.amount_hint,
+    });
+    saveLocalList("churvox_operator_drafts", rows);
+
+    setNotice("Quote draft saved to Operator Drafts. Owner can review before sending.");
+    setDraft(null);
+    setCustomScope("");
+  }
+
+  return (
+    <section className="op-quote-builder">
+      <header>
+        <div>
+          <p>AI QUOTE BUILDER</p>
+          <h2>Prepare smarter quotes from client history.</h2>
+          <span>{clients.length} clients · {quotes.length} quotes · site memory used where available</span>
+        </div>
+        <Link to="/quotes">Open quotes</Link>
+      </header>
+
+      {notice ? <div className="op-warning">{notice}</div> : null}
+
+      <div className="op-quote-builder-grid">
+        <div className="op-quote-form-card">
+          <label>
+            Client
+            <select value={clientId} onChange={(event) => { setClientId(event.target.value); setDraft(null); }}>
+              <option value="">Choose client</option>
+              {clients.map((client, index) => (
+                <option key={client.id || client._id || client.email || index} value={client.id || client._id || client.email || client.name}>
+                  {titleOf(client, `Client ${index + 1}`)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            Scope notes
+            <textarea
+              value={customScope}
+              onChange={(event) => setCustomScope(event.target.value)}
+              placeholder="Example: Quote lawn mow, hedge trim and green waste removal. Client wants monthly option."
+            />
+          </label>
+
+          <button type="button" onClick={prepareQuoteDraft}>Prepare quote draft</button>
+        </div>
+
+        <div className="op-quote-suggestion-card">
+          {!selectedClient ? (
+            <div className="op-approval-empty">
+              <strong>Choose a client to build a quote.</strong>
+              <span>Churvox will use previous jobs, quotes, site memory and common add-ons to prepare editable wording.</span>
+            </div>
+          ) : draft ? (
+            <>
+              <span>PREPARED QUOTE</span>
+              <h3>{draft.title}</h3>
+              <pre>{draft.description}</pre>
+
+              <div className="op-quote-addons">
+                {draft.addons.map((addon) => <em key={addon}>{addon}</em>)}
+              </div>
+
+              <button type="button" onClick={saveDraft}>Save quote draft</button>
+            </>
+          ) : (
+            <>
+              <span>SITE-BASED SUGGESTION</span>
+              <h3>{titleOf(selectedClient, "Client")}</h3>
+              <p>{suggestion?.description}</p>
+
+              <div className="op-note-result-list">
+                <div><b>Last value</b><small>{suggestion?.lastAmount ? money({ total: suggestion.lastAmount }) : "No previous value"}</small></div>
+                <div><b>Open follow-ups</b><small>{suggestion?.followup || 0}</small></div>
+                <div><b>Service hint</b><small>{suggestion?.service || "Service work"}</small></div>
+                <div><b>Address</b><small>{suggestion?.address || "Not set"}</small></div>
+              </div>
+
+              <div className="op-quote-addons">
+                {(suggestion?.addons || []).map((addon) => <em key={addon}>{addon}</em>)}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
 function Dashboard() {
   const data = useLiveData();
   const navigate = useNavigate();
@@ -1905,6 +2115,7 @@ function Dashboard() {
   <PropertyBrain clients={data.clients} jobs={data.jobs} invoices={data.invoices} />
   <NoteToAdmin jobs={data.jobs} />
   <LeadInbox clients={data.clients} jobs={data.jobs} />
+  <AIQuoteBuilder clients={data.clients} jobs={data.jobs} quotes={data.quotes} />
   <section className="op-mid-grid"><CrewStatus team={data.team} /><Cashflow invoices={data.invoices} /><Schedule jobs={data.jobs} /><LiveActivity history={history} /></section>
   <section className="op-bottom-grid"><DataPanel title="TODAY'S SCHEDULE" type="jobs" items={data.jobs} /><DataPanel title="QUOTE PIPELINE" type="quotes" items={data.quotes} /></section>
   <section className="op-bottom-grid"><section className="op-panel"><h3>APPROVAL HISTORY</h3>{history.map((h)=><div className="op-data-row" key={h.id}><strong>{h.result || h.mode}</strong><small>{h.title} · {new Date(h.created_at).toLocaleString()} · {h.target}</small></div>)}</section><section className="op-panel"><h3>OPERATOR DRAFTS</h3>{drafts.map((d)=><div className="op-data-row" key={d.id}><strong>{d.title}</strong><small>{d.type} · {new Date(d.created_at).toLocaleString()} · {d.target}</small></div>)}</section></section>

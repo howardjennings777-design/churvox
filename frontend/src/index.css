@@ -3452,3 +3452,170 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Phase 10: AI Quote Builder */
+.op-quote-builder {
+  margin: 0 0 16px;
+  padding: 18px;
+  border: 1px solid rgba(139, 92, 246, .18);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 88% 12%, rgba(139,92,246,.12), transparent 24rem),
+    rgba(5, 16, 30, .84);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .24);
+}
+
+.op-quote-builder > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+.op-quote-builder > header p {
+  margin: 0 0 8px;
+  color: #c4b5fd;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .18em;
+}
+
+.op-quote-builder > header h2 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: clamp(24px, 2.2vw, 34px);
+  letter-spacing: -.04em;
+}
+
+.op-quote-builder > header span {
+  display: block;
+  margin-top: 8px;
+  color: #94a3b8;
+}
+
+.op-quote-builder > header a {
+  color: #c4b5fd;
+  text-decoration: none;
+  border: 1px solid rgba(139, 92, 246, .25);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(139, 92, 246, .08);
+  white-space: nowrap;
+}
+
+.op-quote-builder-grid {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  gap: 14px;
+}
+
+.op-quote-form-card,
+.op-quote-suggestion-card {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, .14);
+  border-radius: 16px;
+  background: rgba(2, 10, 22, .56);
+}
+
+.op-quote-form-card label {
+  display: grid;
+  gap: 7px;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.op-quote-form-card select,
+.op-quote-form-card textarea {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 14px;
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, .82);
+  padding: 12px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.op-quote-form-card select {
+  min-height: 46px;
+}
+
+.op-quote-form-card textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.op-quote-form-card button,
+.op-quote-suggestion-card button {
+  min-height: 42px;
+  border: 1px solid rgba(139, 92, 246, .32);
+  border-radius: 12px;
+  color: #f8fafc;
+  background: rgba(139, 92, 246, .16);
+  font-weight: 900;
+}
+
+.op-quote-suggestion-card span {
+  color: #c4b5fd;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.op-quote-suggestion-card h3 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 20px;
+}
+
+.op-quote-suggestion-card p,
+.op-quote-suggestion-card small {
+  color: #94a3b8;
+  line-height: 1.45;
+}
+
+.op-quote-suggestion-card pre {
+  white-space: pre-wrap;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, .14);
+  border-radius: 14px;
+  color: #cbd5e1;
+  background: rgba(15, 23, 42, .55);
+  line-height: 1.5;
+  font-family: inherit;
+}
+
+.op-quote-addons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.op-quote-addons em {
+  color: #e9d5ff;
+  background: rgba(139, 92, 246, .14);
+  border: 1px solid rgba(139, 92, 246, .24);
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+@media (max-width: 860px) {
+  .op-quote-builder > header,
+  .op-quote-builder-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
