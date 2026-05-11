@@ -548,6 +548,223 @@ function ActionModal({ modal, onClose, onConfirm, busy }) {
 }
 
 
+
+function recommendWorkerForJob(job, jobs, team) {
+  const activeWorkers = team.filter(isActiveWorker);
+  if (!activeWorkers.length) return { worker: null, reason: "No active workers available yet." };
+
+  const assignedCount = new Map();
+  jobs.forEach((j) => {
+    const key = String(j.assigned_worker_id || j.worker_id || j.assigned_to || "");
+    if (key) assignedCount.set(key, (assignedCount.get(key) || 0) + 1);
+  });
+
+  const jobRegion = String(job.region || job.location || job.suburb || job.address || "").toLowerCase();
+
+  const sorted = [...activeWorkers].sort((a, b) => {
+    const aArea = String(a.region || a.location || a.suburb || "").toLowerCase();
+    const bArea = String(b.region || b.location || b.suburb || "").toLowerCase();
+
+    const aMatch = jobRegion && aArea && jobRegion.includes(aArea) ? 1 : 0;
+    const bMatch = jobRegion && bArea && jobRegion.includes(bArea) ? 1 : 0;
+    if (aMatch !== bMatch) return bMatch - aMatch;
+
+    const aCount = assignedCount.get(String(a.id || a._id || "")) || 0;
+    const bCount = assignedCount.get(String(b.id || b._id || "")) || 0;
+    if (aCount !== bCount) return aCount - bCount;
+
+    return titleOf(a, "").localeCompare(titleOf(b, ""));
+  });
+
+  const worker = sorted[0];
+  const load = assignedCount.get(String(worker.id || worker._id || "")) || 0;
+  const regionText = worker.region || worker.location || worker.suburb ? "area match checked" : "no worker region set";
+  return {
+    worker,
+    reason: `Recommended from active workers using ${regionText} and current workload (${load} assigned).`,
+  };
+}
+
+function hasScheduleConflict(worker, job, jobs) {
+  const workerId = String(worker?.id || worker?._id || "");
+  if (!workerId) return false;
+
+  const jobDate = String(job?.scheduled_date || job?.date || "").slice(0, 10);
+  const jobTime = String(job?.scheduled_time || job?.start_time || "");
+  if (!jobDate && !jobTime) return false;
+
+  return jobs.some((j) => {
+    if (String(j.id || j._id || "") === String(job.id || job._id || "")) return false;
+    const assigned = String(j.assigned_worker_id || j.worker_id || j.assigned_to || "");
+    if (assigned !== workerId) return false;
+    const otherDate = String(j.scheduled_date || j.date || "").slice(0, 10);
+    const otherTime = String(j.scheduled_time || j.start_time || "");
+    return (jobDate && otherDate && jobDate === otherDate) && (!jobTime || !otherTime || jobTime === otherTime);
+  });
+}
+
+function DispatchBoard({ jobs, team, reload }) {
+  const [selected, setSelected] = useState(null);
+  const [workerId, setWorkerId] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+
+  const unassigned = jobs
+    .filter(isUnassigned)
+    .filter((j) => !["completed", "cancelled", "closed", "done"].includes(statusSlug(j)))
+    .slice(0, 12);
+
+  function openAssign(job) {
+    const pick = recommendWorkerForJob(job, jobs, team);
+    setSelected({ job, pick });
+    setWorkerId(String(pick.worker?.id || pick.worker?._id || ""));
+    setNotice("");
+  }
+
+  async function approveAssignment() {
+    if (!selected?.job || !workerId || busy) return;
+
+    const job = selected.job;
+    const worker = team.find((w) => String(w.id || w._id || "") === String(workerId));
+    const jobId = job.id || job._id;
+
+    setBusy(true);
+    setNotice("");
+
+    const payloads = [
+      { worker_id: workerId, assigned_worker_id: workerId, assigned_worker_name: titleOf(worker, "Worker") },
+      { assigned_worker_id: workerId, assigned_worker_name: titleOf(worker, "Worker") },
+      { worker_id: workerId, worker_name: titleOf(worker, "Worker") },
+    ];
+
+    const calls = [
+      () => api(`/jobs/${jobId}/assign`, { method: "POST", body: payloads[0] }),
+      () => api(`/jobs/${jobId}/assign-worker`, { method: "POST", body: payloads[1] }),
+      () => api(`/jobs/${jobId}`, { method: "PATCH", body: payloads[1] }),
+      () => api(`/jobs/${jobId}`, { method: "PUT", body: payloads[2] }),
+    ];
+
+    let ok = false;
+    for (const fn of calls) {
+      try {
+        await fn();
+        ok = true;
+        break;
+      } catch {}
+    }
+
+    if (ok) {
+      setNotice("Worker assigned successfully.");
+      setSelected(null);
+      await reload?.();
+    } else {
+      setNotice("Backend did not accept assignment yet. Review job assignment endpoint wiring.");
+    }
+
+    setBusy(false);
+  }
+
+  return (
+    <section className="op-dispatch">
+      <header>
+        <div>
+          <p>AI DISPATCH BOARD</p>
+          <h2>Unassigned work, matched to your crew.</h2>
+          <span>{unassigned.length} unassigned {unassigned.length === 1 ? "job" : "jobs"} · {team.length} crew members</span>
+        </div>
+        <Link to="/jobs">Open jobs workspace</Link>
+      </header>
+
+      {notice ? <div className="op-warning">{notice}</div> : null}
+
+      {!unassigned.length ? (
+        <div className="op-approval-empty">
+          <strong>No dispatch needed right now.</strong>
+          <span>When jobs are created without workers, Churvox will show them here with an AI worker recommendation.</span>
+        </div>
+      ) : (
+        <div className="op-dispatch-grid">
+          {unassigned.map((job, index) => {
+            const pick = recommendWorkerForJob(job, jobs, team);
+            const conflict = pick.worker ? hasScheduleConflict(pick.worker, job, jobs) : false;
+
+            return (
+              <article className="op-dispatch-card" key={job.id || job._id || index}>
+                <div>
+                  <span>{statusOf(job, "unassigned")}</span>
+                  <strong>{titleOf(job, `Job ${index + 1}`)}</strong>
+                  <small>{[job.client_name || job.customer_name, job.address || job.site_address || job.region, job.scheduled_time || "Time TBD"].filter(Boolean).join(" · ")}</small>
+                </div>
+
+                <section>
+                  <b>AI recommends</b>
+                  <strong>{pick.worker ? titleOf(pick.worker, "Worker") : "Add a worker first"}</strong>
+                  <small>{pick.reason}</small>
+                  {conflict ? <em>Schedule conflict warning</em> : null}
+                </section>
+
+                <button type="button" onClick={() => openAssign(job)} disabled={!team.length}>
+                  Assign worker
+                </button>
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      {selected ? (
+        <div className="op-modal-backdrop" role="presentation" onClick={!busy ? () => setSelected(null) : undefined}>
+          <section className="op-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="op-modal-glow" />
+            <header>
+              <p>APPROVE DISPATCH</p>
+              <button type="button" onClick={() => setSelected(null)} disabled={busy}>×</button>
+            </header>
+
+            <div className="op-modal-body">
+              <span>WORKER MATCH</span>
+              <h2>{titleOf(selected.job, "Unassigned job")}</h2>
+              <p>{selected.pick.reason}</p>
+
+              <div className="op-modal-reason">
+                <strong>Job</strong>
+                <small>{[selected.job.client_name || selected.job.customer_name, selected.job.address || selected.job.site_address, selected.job.scheduled_time || "Time TBD"].filter(Boolean).join(" · ")}</small>
+              </div>
+
+              <div className="op-modal-reason">
+                <strong>Choose worker</strong>
+                <select className="op-select" value={workerId} onChange={(event) => setWorkerId(event.target.value)}>
+                  <option value="">Select worker</option>
+                  {team.map((worker) => (
+                    <option key={worker.id || worker._id || worker.email} value={worker.id || worker._id}>
+                      {titleOf(worker, "Worker")} · {worker.region || worker.location || worker.suburb || "No region"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {workerId && hasScheduleConflict(team.find((w) => String(w.id || w._id || "") === String(workerId)), selected.job, jobs) ? (
+                <div className="op-modal-reason danger">
+                  <strong>Conflict warning</strong>
+                  <small>This worker appears to have another job scheduled at the same date/time. Review before approving.</small>
+                </div>
+              ) : null}
+            </div>
+
+            <footer>
+              <button type="button" className="op-modal-secondary" onClick={() => setSelected(null)} disabled={busy}>Cancel</button>
+              <button type="button" className="op-modal-primary" onClick={approveAssignment} disabled={busy || !workerId}>
+                {busy ? "Assigning..." : "Approve assignment"}
+              </button>
+            </footer>
+          </section>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+
 function Dashboard() {
   const data = useLiveData();
   const navigate = useNavigate();
@@ -618,6 +835,7 @@ function Dashboard() {
 
   return <Shell><Topbar />{toast ? <div className="op-warning">{toast}</div> : null}<ActionModal modal={modal} onClose={() => setModal(null)} onConfirm={confirmAction} busy={busy} />{data.error ? <div className="op-warning">{data.error}</div> : null}<Hero data={data} prepared={prepared} />
   <section className="op-top-grid"><ApprovalQueue unassigned={unassigned.length} openInvoices={openInvoices.length} openQuotes={openQuotes.length} completedNeedsInvoice={completedNeedsInvoice.length} onAction={openAction} /><ProofToPaid /></section>
+  <DispatchBoard jobs={data.jobs} team={data.team} reload={data.reload} />
   <section className="op-mid-grid"><CrewStatus team={data.team} /><Cashflow invoices={data.invoices} /><Schedule jobs={data.jobs} /><LiveActivity history={history} /></section>
   <section className="op-bottom-grid"><DataPanel title="TODAY'S SCHEDULE" type="jobs" items={data.jobs} /><DataPanel title="QUOTE PIPELINE" type="quotes" items={data.quotes} /></section>
   <section className="op-bottom-grid"><section className="op-panel"><h3>APPROVAL HISTORY</h3>{history.map((h)=><div className="op-data-row" key={h.id}><strong>{h.result || h.mode}</strong><small>{h.title} · {new Date(h.created_at).toLocaleString()} · {h.target}</small></div>)}</section><section className="op-panel"><h3>OPERATOR DRAFTS</h3>{drafts.map((d)=><div className="op-data-row" key={d.id}><strong>{d.title}</strong><small>{d.type} · {new Date(d.created_at).toLocaleString()} · {d.target}</small></div>)}</section></section>
