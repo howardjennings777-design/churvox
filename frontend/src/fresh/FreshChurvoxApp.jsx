@@ -1391,6 +1391,166 @@ function PropertyBrain({ clients = [], jobs = [], invoices = [] }) {
 }
 
 
+
+function parseAdminNote(rawText, jobs = []) {
+  const text = String(rawText || "").trim();
+  const lower = text.toLowerCase();
+
+  const matchedJob = jobs.find((job) => {
+    const title = String(titleOf(job, "")).toLowerCase();
+    const client = String(job.client_name || job.customer_name || "").toLowerCase();
+    const address = String(job.address || job.site_address || "").toLowerCase();
+    return (
+      (title && lower.includes(title)) ||
+      (client && lower.includes(client)) ||
+      (address && lower.includes(address))
+    );
+  });
+
+  const minutesMatch =
+    lower.match(/extra\s+(\d+)\s*(min|mins|minute|minutes)/) ||
+    lower.match(/additional\s+(\d+)\s*(min|mins|minute|minutes)/) ||
+    lower.match(/(\d+)\s*(min|mins|minute|minutes)\s+extra/);
+
+  const hoursMatch =
+    lower.match(/extra\s+(\d+(?:\.\d+)?)\s*(hour|hours|hr|hrs)/) ||
+    lower.match(/additional\s+(\d+(?:\.\d+)?)\s*(hour|hours|hr|hrs)/);
+
+  const extraMinutes = minutesMatch ? Number(minutesMatch[1]) : hoursMatch ? Math.round(Number(hoursMatch[1]) * 60) : 0;
+
+  const hasGreenWaste = lower.includes("green waste") || lower.includes("rubbish") || lower.includes("dump") || lower.includes("tip");
+  const hasMaterials = lower.includes("material") || lower.includes("parts") || lower.includes("supplies");
+  const hasPhoto = lower.includes("photo") || lower.includes("photos") || lower.includes("picture");
+  const hasComplete = lower.includes("finished") || lower.includes("complete") || lower.includes("completed") || lower.includes("done");
+  const hasInvoice = lower.includes("invoice") || lower.includes("bill") || lower.includes("charge") || lower.includes("add to");
+
+  const bullets = [];
+  if (hasComplete) bullets.push("Mark/review job as completed");
+  if (extraMinutes) bullets.push(`Review extra time: ${extraMinutes} minutes`);
+  if (hasGreenWaste) bullets.push("Review green waste / disposal charge");
+  if (hasMaterials) bullets.push("Review materials or parts used");
+  if (hasPhoto) bullets.push("Check attached proof photos");
+  if (hasInvoice) bullets.push("Prepare invoice description / possible extra charge");
+
+  const invoiceDescription = [
+    matchedJob ? `Work completed for ${titleOf(matchedJob, "job")}.` : "Work completed for client.",
+    text,
+    extraMinutes ? `Additional time noted: ${extraMinutes} minutes.` : "",
+    hasGreenWaste ? "Green waste/disposal was mentioned and should be reviewed for billing." : "",
+    hasMaterials ? "Materials/parts were mentioned and should be reviewed for billing." : "",
+  ].filter(Boolean).join(" ");
+
+  return {
+    original: text,
+    matchedJob,
+    job_id: matchedJob?.id || matchedJob?._id || "",
+    title: matchedJob ? `Admin draft for ${titleOf(matchedJob, "job")}` : "Admin draft from note",
+    summary: bullets.length ? bullets.join(" · ") : "General admin note captured for review.",
+    bullets,
+    extraMinutes,
+    invoiceDescription,
+    needsInvoiceReview: hasInvoice || extraMinutes > 0 || hasGreenWaste || hasMaterials,
+    needsProofReview: hasPhoto,
+    needsCompletionReview: hasComplete,
+  };
+}
+
+function NoteToAdmin({ jobs = [] }) {
+  const [note, setNote] = useState("");
+  const [draft, setDraft] = useState(null);
+  const [notice, setNotice] = useState("");
+
+  function prepareDraft() {
+    setNotice("");
+    if (!note.trim()) {
+      setNotice("Add a job/admin note first.");
+      return;
+    }
+    setDraft(parseAdminNote(note, jobs));
+  }
+
+  function saveDraft() {
+    if (!draft) return;
+
+    const drafts = readLocalList("churvox_operator_drafts");
+    drafts.unshift({
+      id: `note-${Date.now()}`,
+      type: "ai_note_to_admin",
+      title: draft.title,
+      target: draft.job_id ? "/jobs" : "/dashboard",
+      created_at: new Date().toISOString(),
+      job_id: draft.job_id,
+      original_note: draft.original,
+      summary: draft.summary,
+      invoice_description: draft.invoiceDescription,
+      extra_minutes: draft.extraMinutes,
+      needs_invoice_review: draft.needsInvoiceReview,
+      needs_proof_review: draft.needsProofReview,
+      needs_completion_review: draft.needsCompletionReview,
+    });
+    saveLocalList("churvox_operator_drafts", drafts);
+    setNotice("Structured admin draft saved to Operator Drafts.");
+    setNote("");
+    setDraft(null);
+  }
+
+  return (
+    <section className="op-note-admin">
+      <header>
+        <div>
+          <p>AI NOTE TO ADMIN</p>
+          <h2>Turn messy notes into admin drafts.</h2>
+          <span>Paste owner or worker notes. Churvox prepares structured follow-up without changing records automatically.</span>
+        </div>
+      </header>
+
+      {notice ? <div className="op-warning">{notice}</div> : null}
+
+      <div className="op-note-admin-grid">
+        <div className="op-note-input-card">
+          <label>Paste note / voice dictation</label>
+          <textarea
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder="Example: Finished hedge job, extra 30 mins, green waste removed, add to invoice."
+          />
+          <button type="button" onClick={prepareDraft}>Prepare admin draft</button>
+        </div>
+
+        <div className="op-note-result-card">
+          {!draft ? (
+            <div className="op-approval-empty">
+              <strong>No draft prepared yet.</strong>
+              <span>Churvox will identify job match, extra time, materials, proof notes and invoice wording.</span>
+            </div>
+          ) : (
+            <>
+              <span>PREPARED DRAFT</span>
+              <h3>{draft.title}</h3>
+              <p>{draft.summary}</p>
+
+              <div className="op-note-result-list">
+                <div><b>Matched job</b><small>{draft.matchedJob ? titleOf(draft.matchedJob, "Job") : "No clear job match"}</small></div>
+                <div><b>Extra time</b><small>{draft.extraMinutes ? `${draft.extraMinutes} minutes` : "None detected"}</small></div>
+                <div><b>Invoice review</b><small>{draft.needsInvoiceReview ? "Recommended" : "Not detected"}</small></div>
+                <div><b>Proof review</b><small>{draft.needsProofReview ? "Recommended" : "Not detected"}</small></div>
+              </div>
+
+              <div className="op-modal-reason">
+                <strong>Draft invoice wording</strong>
+                <small>{draft.invoiceDescription}</small>
+              </div>
+
+              <button type="button" onClick={saveDraft}>Save to Operator Drafts</button>
+            </>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
 function Dashboard() {
   const data = useLiveData();
   const navigate = useNavigate();
@@ -1464,6 +1624,7 @@ function Dashboard() {
   <DispatchBoard jobs={data.jobs} team={data.team} reload={data.reload} />
   <MoneyRadar jobs={data.jobs} invoices={data.invoices} quotes={data.quotes} />
   <PropertyBrain clients={data.clients} jobs={data.jobs} invoices={data.invoices} />
+  <NoteToAdmin jobs={data.jobs} />
   <section className="op-mid-grid"><CrewStatus team={data.team} /><Cashflow invoices={data.invoices} /><Schedule jobs={data.jobs} /><LiveActivity history={history} /></section>
   <section className="op-bottom-grid"><DataPanel title="TODAY'S SCHEDULE" type="jobs" items={data.jobs} /><DataPanel title="QUOTE PIPELINE" type="quotes" items={data.quotes} /></section>
   <section className="op-bottom-grid"><section className="op-panel"><h3>APPROVAL HISTORY</h3>{history.map((h)=><div className="op-data-row" key={h.id}><strong>{h.result || h.mode}</strong><small>{h.title} · {new Date(h.created_at).toLocaleString()} · {h.target}</small></div>)}</section><section className="op-panel"><h3>OPERATOR DRAFTS</h3>{drafts.map((d)=><div className="op-data-row" key={d.id}><strong>{d.title}</strong><small>{d.type} · {new Date(d.created_at).toLocaleString()} · {d.target}</small></div>)}</section></section>
