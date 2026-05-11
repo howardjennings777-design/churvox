@@ -1,0 +1,218 @@
+/* =========================================================
+   CHURVOX PHASE 19 — SETTINGS / PLANS / BILLING POLISH
+   CSS only. Existing logic untouched.
+   ========================================================= */
+
+body:not(.chx-worker-route) main [class*="setting"],
+body:not(.chx-worker-route) main [class*="Setting"],
+body:not(.chx-worker-route) main [class*="billing"],
+body:not(.chx-worker-route) main [class*="Billing"],
+body:not(.chx-worker-route) main [class*="plan"],
+body:not(.chx-worker-route) main [class*="Plan"],
+body:not(.chx-worker-route) main [class*="subscription"],
+body:not(.chx-worker-route) main [class*="Subscription"],
+body:not(.chx-worker-route) main [class*="myob"],
+body:not(.chx-worker-route) main [class*="MYOB"],
+body:not(.chx-worker-route) main [class*="sms"],
+body:not(.chx-worker-route) main [class*="SMS"] {
+  scroll-behavior: smooth;
+}
+
+/* Premium panels/cards */
+body:not(.chx-worker-route) main [class*="setting"] .bg-white,
+body:not(.chx-worker-route) main [class*="Setting"] .bg-white,
+body:not(.chx-worker-route) main [class*="billing"] .bg-white,
+body:not(.chx-worker-route) main [class*="Billing"] .bg-white,
+body:not(.chx-worker-route) main [class*="plan"] .bg-white,
+body:not(.chx-worker-route) main [class*="Plan"] .bg-white,
+body:not(.chx-worker-route) main [class*="subscription"] .bg-white,
+body:not(.chx-worker-route) main [class*="Subscription"] .bg-white,
+body:not(.chx-worker-route) main [class*="myob"] .bg-white,
+body:not(.chx-worker-route) main [class*="MYOB"] .bg-white,
+body:not(.chx-worker-route) main [class*="sms"] .bg-white,
+body:not(.chx-worker-route) main [class*="SMS"] .bg-white,
+body:not(.chx-worker-route) main [class*="setting"] article,
+body:not(.chx-worker-route) main [class*="Setting"] article,
+body:not(.chx-worker-route) main [class*="billing"] article,
+body:not(.chx-worker-route) main [class*="Billing"] article,
+body:not(.chx-worker-route) main [class*="plan"] article,
+body:not(.chx-worker-route) main [class*="Plan"] article,
+body:not(.chx-worker-route) main [class*="setting"] section,
+body:not(.chx-worker-route) main [class*="Setting"] section,
+body:not(.chx-worker-route) main [class*="billing"] section,
+body:not(.chx-worker-route) main [class*="Billing"] section,
+body:not(.chx-worker-route) main [class*="plan"] section,
+body:not(.chx-worker-route) main [class*="Plan"] section {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 24px !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08) !important;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+body:not(.chx-worker-route) main [class*="setting"] article:hover,
+body:not(.chx-worker-route) main [class*="Setting"] article:hover,
+body:not(.chx-worker-route) main [class*="billing"] article:hover,
+body:not(.chx-worker-route) main [class*="Billing"] article:hover,
+body:not(.chx-worker-route) main [class*="plan"] article:hover,
+body:not(.chx-worker-route) main [class*="Plan"] article:hover {
+  transform: translateY(-1px);
+  border-color: #cfe0f5 !important;
+  box-shadow: 0 22px 56px rgba(15, 23, 42, 0.11) !important;
+}
+
+/* Plan cards: clearer tiers */
+body:not(.chx-worker-route) main [class*="solo"],
+body:not(.chx-worker-route) main [class*="Solo"] {
+  border-top-color: #94a3b8 !important;
+}
+
+body:not(.chx-worker-route) main [class*="team"],
+body:not(.chx-worker-route) main [class*="Team"] {
+  border-top-color: #2563eb !important;
+}
+
+body:not(.chx-worker-route) main [class*="pro"],
+body:not(.chx-worker-route) main [class*="Pro"] {
+  border-top-color: #7c3aed !important;
+}
+
+body:not(.chx-worker-route) main [class*="enterprise"],
+body:not(.chx-worker-route) main [class*="Enterprise"] {
+  border-top-color: #0f172a !important;
+}
+
+/* Inputs */
+body:not(.chx-worker-route) main [class*="setting"] input,
+body:not(.chx-worker-route) main [class*="Setting"] input,
+body:not(.chx-worker-route) main [class*="billing"] input,
+body:not(.chx-worker-route) main [class*="Billing"] input,
+body:not(.chx-worker-route) main [class*="plan"] input,
+body:not(.chx-worker-route) main [class*="Plan"] input,
+body:not(.chx-worker-route) main [class*="setting"] select,
+body:not(.chx-worker-route) main [class*="Setting"] select,
+body:not(.chx-worker-route) main [class*="billing"] select,
+body:not(.chx-worker-route) main [class*="Billing"] select,
+body:not(.chx-worker-route) main [class*="plan"] select,
+body:not(.chx-worker-route) main [class*="Plan"] select,
+body:not(.chx-worker-route) main [class*="setting"] textarea,
+body:not(.chx-worker-route) main [class*="Setting"] textarea {
+  min-height: 46px !important;
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  border: 1px solid #dbe4f0 !important;
+  color: #0f172a !important;
+}
+
+body:not(.chx-worker-route) main [class*="setting"] input:focus,
+body:not(.chx-worker-route) main [class*="Setting"] input:focus,
+body:not(.chx-worker-route) main [class*="billing"] input:focus,
+body:not(.chx-worker-route) main [class*="Billing"] input:focus,
+body:not(.chx-worker-route) main [class*="plan"] input:focus,
+body:not(.chx-worker-route) main [class*="Plan"] input:focus,
+body:not(.chx-worker-route) main [class*="setting"] select:focus,
+body:not(.chx-worker-route) main [class*="Setting"] select:focus,
+body:not(.chx-worker-route) main [class*="billing"] select:focus,
+body:not(.chx-worker-route) main [class*="Billing"] select:focus,
+body:not(.chx-worker-route) main [class*="plan"] select:focus,
+body:not(.chx-worker-route) main [class*="Plan"] select:focus {
+  border-color: rgba(37, 99, 235, 0.55) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10) !important;
+  outline: none !important;
+}
+
+/* Buttons */
+body:not(.chx-worker-route) main [class*="setting"] button,
+body:not(.chx-worker-route) main [class*="Setting"] button,
+body:not(.chx-worker-route) main [class*="billing"] button,
+body:not(.chx-worker-route) main [class*="Billing"] button,
+body:not(.chx-worker-route) main [class*="plan"] button,
+body:not(.chx-worker-route) main [class*="Plan"] button,
+body:not(.chx-worker-route) main [class*="subscription"] button,
+body:not(.chx-worker-route) main [class*="Subscription"] button,
+body:not(.chx-worker-route) main [class*="setting"] a[role="button"],
+body:not(.chx-worker-route) main [class*="Setting"] a[role="button"],
+body:not(.chx-worker-route) main [class*="billing"] a[role="button"],
+body:not(.chx-worker-route) main [class*="Billing"] a[role="button"],
+body:not(.chx-worker-route) main [class*="plan"] a[role="button"],
+body:not(.chx-worker-route) main [class*="Plan"] a[role="button"] {
+  min-height: 44px !important;
+  border-radius: 15px !important;
+  font-weight: 900 !important;
+  touch-action: manipulation;
+}
+
+body:not(.chx-worker-route) main [class*="setting"] button:active,
+body:not(.chx-worker-route) main [class*="Setting"] button:active,
+body:not(.chx-worker-route) main [class*="billing"] button:active,
+body:not(.chx-worker-route) main [class*="Billing"] button:active,
+body:not(.chx-worker-route) main [class*="plan"] button:active,
+body:not(.chx-worker-route) main [class*="Plan"] button:active {
+  transform: scale(0.99);
+}
+
+/* Helpful states */
+body:not(.chx-worker-route) main [class*="connected"],
+body:not(.chx-worker-route) main [class*="Connected"],
+body:not(.chx-worker-route) main [data-status*="connected"],
+body:not(.chx-worker-route) main [class*="active"],
+body:not(.chx-worker-route) main [class*="Active"] {
+  border-color: #bbf7d0 !important;
+}
+
+body:not(.chx-worker-route) main [class*="trial"],
+body:not(.chx-worker-route) main [class*="Trial"] {
+  border-color: #bfdbfe !important;
+}
+
+body:not(.chx-worker-route) main [class*="expired"],
+body:not(.chx-worker-route) main [class*="Expired"],
+body:not(.chx-worker-route) main [class*="failed"],
+body:not(.chx-worker-route) main [class*="Failed"],
+body:not(.chx-worker-route) main [class*="error"],
+body:not(.chx-worker-route) main [class*="Error"] {
+  border-color: #fecaca !important;
+}
+
+body:not(.chx-worker-route) main [class*="coming"],
+body:not(.chx-worker-route) main [class*="Coming"],
+body:not(.chx-worker-route) main [class*="disabled"],
+body:not(.chx-worker-route) main [class*="Disabled"] {
+  opacity: 0.72;
+}
+
+/* Mobile settings polish */
+@media (max-width: 760px) {
+  body:not(.chx-worker-route) main h1 {
+    font-size: 34px !important;
+  }
+
+  body:not(.chx-worker-route) main [class*="setting"] table,
+  body:not(.chx-worker-route) main [class*="Setting"] table,
+  body:not(.chx-worker-route) main [class*="billing"] table,
+  body:not(.chx-worker-route) main [class*="Billing"] table,
+  body:not(.chx-worker-route) main [class*="plan"] table,
+  body:not(.chx-worker-route) main [class*="Plan"] table {
+    display: block;
+    overflow-x: auto;
+    border-radius: 20px;
+  }
+
+  body:not(.chx-worker-route) main [class*="setting"] .bg-white,
+  body:not(.chx-worker-route) main [class*="Setting"] .bg-white,
+  body:not(.chx-worker-route) main [class*="billing"] .bg-white,
+  body:not(.chx-worker-route) main [class*="Billing"] .bg-white,
+  body:not(.chx-worker-route) main [class*="plan"] .bg-white,
+  body:not(.chx-worker-route) main [class*="Plan"] .bg-white {
+    border-radius: 22px !important;
+  }
+
+  body:not(.chx-worker-route) main [class*="setting"] button,
+  body:not(.chx-worker-route) main [class*="Setting"] button,
+  body:not(.chx-worker-route) main [class*="billing"] button,
+  body:not(.chx-worker-route) main [class*="Billing"] button,
+  body:not(.chx-worker-route) main [class*="plan"] button,
+  body:not(.chx-worker-route) main [class*="Plan"] button {
+    min-height: 46px !important;
+  }
+}
