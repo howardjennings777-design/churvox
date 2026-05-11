@@ -511,3 +511,132 @@
     height: 56px !important;
   }
 }
+
+/* FINAL_TOPBAR_HERO_POLISH */
+.op-main {
+  padding-top: 14px !important;
+  padding-right: 18px !important;
+  padding-left: 18px !important;
+}
+
+.op-topbar {
+  min-height: 44px !important;
+  margin-bottom: 12px !important;
+  padding: 7px 10px !important;
+  border-radius: 16px !important;
+  background: rgba(3, 10, 24, .58) !important;
+  border: 1px solid rgba(125, 234, 255, .12) !important;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, .18) !important;
+}
+
+.op-topbar > span {
+  font-size: 12px !important;
+  opacity: .92 !important;
+}
+
+.op-topbar button,
+.op-topbar select {
+  min-height: 32px !important;
+  padding: 0 11px !important;
+  font-size: 11px !important;
+}
+
+.op-command-hero {
+  min-height: 228px !important;
+  padding: 28px !important;
+  border-radius: 28px !important;
+  grid-template-columns: minmax(0, 1fr) 170px !important;
+}
+
+.op-command-hero h1 {
+  font-size: clamp(46px, 5vw, 74px) !important;
+  line-height: .88 !important;
+  max-width: 780px !important;
+}
+
+.op-command-hero small {
+  font-size: 13px !important;
+  max-width: 720px !important;
+}
+
+.op-command-hero footer {
+  margin-top: 14px !important;
+  gap: 8px !important;
+}
+
+.op-command-hero footer button {
+  min-height: 34px !important;
+  padding: 0 13px !important;
+  font-size: 11px !important;
+}
+
+.op-hero-orb {
+  min-height: 150px !important;
+  border-radius: 24px !important;
+}
+
+.op-hero-orb .op-floating-logo {
+  width: 62px !important;
+  height: 62px !important;
+}
+
+.op-hero-orb strong {
+  font-size: 42px !important;
+}
+
+.op-dashboard-grid {
+  gap: 14px !important;
+}
+
+.op-panel {
+  border-radius: 22px !important;
+  padding: 15px !important;
+}
+
+.op-panel h2 {
+  font-size: 26px !important;
+}
+
+.op-notice {
+  margin: 2px 0 0 !important;
+  border-radius: 18px !important;
+}
+
+/* Keep sidebar calm */
+.op-sidebar {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(34, 211, 238, .10), transparent 15rem),
+    linear-gradient(180deg, rgba(3, 10, 24, .98), rgba(2, 8, 20, .98)) !important;
+}
+
+.op-sidebar-brand-logo {
+  min-height: 98px !important;
+}
+
+.op-sidebar-brand-mark {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+.op-sidebar-brand-text strong {
+  font-size: 13px !important;
+}
+
+.op-sidebar nav button {
+  min-height: 40px !important;
+}
+
+@media (max-width: 1180px) {
+  .op-command-hero {
+    grid-template-columns: minmax(0, 1fr) 140px !important;
+    padding: 22px !important;
+  }
+
+  .op-command-hero h1 {
+    font-size: clamp(38px, 5vw, 62px) !important;
+  }
+
+  .op-hero-orb {
+    min-height: 130px !important;
+  }
+}
