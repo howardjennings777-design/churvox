@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import WorkerFieldApp from "./worker/WorkerFieldApp";
+import OnboardingSetupPage from "./onboarding/OnboardingSetupPage";
+import ProofToPaidPage from "./proof/ProofToPaidPage";
 import MyobControlCentre from "./components/MyobControlCentre";
 import AutopilotReplay from "./components/AutopilotReplay";
 import TrustQualityScores from "./components/TrustQualityScores";
@@ -183,7 +185,7 @@ function Hero({ data, prepared }) {
         <small>Churvox prepares the admin work for you — jobs, invoices, messages and follow-ups — then puts it in one queue for owner approval.</small>
         <div className="op-hero-actions">
           <Link to="/ai-approvals" className="op-hero-primary">Open AI Work Queue</Link>
-          <Link to="/jobs" className="op-hero-secondary">Open Jobs</Link>
+          <Link to="/proof-to-paid" className="op-hero-secondary">Open Proof-to-Paid</Link>
         </div>
       </div>
 
@@ -2920,6 +2922,8 @@ export default function FreshChurvoxApp() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/proof-to-paid" element={<Shell><Topbar /><ProofToPaidPage /></Shell>} />
+          <Route path="/onboarding" element={<Shell><Topbar /><OnboardingSetupPage /></Shell>} />
           <Route path="/ai-approvals" element={<Shell><Topbar /><OperatorApprovalCentre /></Shell>} />
         <Route path="/jobs" element={<Workspace kind="jobs" />} />
         <Route path="/clients" element={<Workspace kind="clients" />} />
