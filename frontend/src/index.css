@@ -1736,3 +1736,91 @@ body {
   top: 50% !important;
   transform: translate(-38%, -50%) !important;
 }
+
+/* =========================================================
+   REAL CHURVOX HOLOGRAM C LOGO IMAGE
+   Uses generated-style C emblem everywhere.
+   ========================================================= */
+
+.op-logo-img {
+  width: 62px !important;
+  height: 62px !important;
+  display: block !important;
+  object-fit: contain !important;
+  flex: 0 0 auto !important;
+  border-radius: 20px !important;
+  filter:
+    drop-shadow(0 0 10px rgba(34,211,238,0.48))
+    drop-shadow(0 0 22px rgba(14,165,255,0.28)) !important;
+}
+
+.op-orb-logo-img {
+  width: 118px !important;
+  height: 118px !important;
+  display: block !important;
+  object-fit: contain !important;
+  position: relative !important;
+  z-index: 3 !important;
+  animation: churvoxLogoFloatImg 4.2s ease-in-out infinite;
+  filter:
+    drop-shadow(0 0 14px rgba(255,255,255,0.22))
+    drop-shadow(0 0 34px rgba(34,211,238,0.72))
+    drop-shadow(0 0 68px rgba(14,165,255,0.38)) !important;
+}
+
+@keyframes churvoxLogoFloatImg {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.02); }
+}
+
+/* Hide old CSS-built logo pieces if any old markup remains */
+.op-logo-mark .op-logo-c1,
+.op-logo-mark .op-logo-c2,
+.op-logo-mark .op-logo-c3 {
+  display: none !important;
+}
+
+.op-orb {
+  overflow: visible !important;
+}
+
+.op-orb::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 50% !important;
+  bottom: 15px !important;
+  width: 184px !important;
+  height: 42px !important;
+  transform: translateX(-50%) perspective(420px) rotateX(68deg) !important;
+  border-radius: 999px !important;
+  border: 2px solid rgba(34,211,238,0.82) !important;
+  box-shadow:
+    0 0 22px rgba(34,211,238,0.75),
+    0 0 56px rgba(14,165,255,0.38) !important;
+  background: radial-gradient(circle at center, rgba(34,211,238,0.18), transparent 62%) !important;
+}
+
+.op-orb::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 50% !important;
+  bottom: 28px !important;
+  width: 122px !important;
+  height: 24px !important;
+  transform: translateX(-50%) perspective(420px) rotateX(68deg) !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(125,211,252,0.44) !important;
+  box-shadow: 0 0 24px rgba(34,211,238,0.34) !important;
+}
+
+@media (max-width: 1360px) {
+  .op-logo-img {
+    width: 54px !important;
+    height: 54px !important;
+  }
+
+  .op-orb-logo-img {
+    width: 98px !important;
+    height: 98px !important;
+  }
+}

@@ -92,11 +92,7 @@ function useLiveData() {
 function ChurvoxLogo() {
   return (
     <div className="op-logo">
-      <div className="op-logo-mark">
-        <span className="op-logo-c1" />
-        <span className="op-logo-c2" />
-        <span className="op-logo-c3" />
-      </div>
+      <img className="op-logo-img" src="/brand/churvox-holo-c.svg" alt="Churvox" />
       <div>
         <strong>CHURVOX</strong>
         <small>OPERATOR OS</small>
@@ -179,11 +175,7 @@ function Hero({ data, prepared }) {
       <div className="op-orb-wrap">
         <div className="op-radar" />
         <div className="op-orb">
-          <div className="op-logo-mark mini">
-            <span className="op-logo-c1" />
-            <span className="op-logo-c2" />
-            <span className="op-logo-c3" />
-          </div>
+          <img className="op-orb-logo-img" src="/brand/churvox-holo-c.svg" alt="Churvox Operator" />
         </div>
       </div>
 
