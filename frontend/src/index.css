@@ -4041,3 +4041,266 @@ button:disabled.churvox-locked-feature {
   cursor: not-allowed;
   border-style: dashed !important;
 }
+
+/* CHURVOX_GLOBAL_TYPE_SCALE_START */
+
+/* Global Churvox type scale: keeps all pages feeling same size */
+:root {
+  --cv-xs: 0.82rem;
+  --cv-sm: 0.92rem;
+  --cv-base: 1rem;
+  --cv-lg: 1.08rem;
+  --cv-xl: 1.22rem;
+  --cv-h3: clamp(1.12rem, 1.45vw, 1.35rem);
+  --cv-h2: clamp(1.5rem, 2.35vw, 2.1rem);
+  --cv-h1: clamp(2.25rem, 4.4vw, 4.35rem);
+  --cv-hero: clamp(2.55rem, 5.1vw, 4.9rem);
+}
+
+html {
+  font-size: 16px;
+}
+
+body,
+#root {
+  font-size: var(--cv-base);
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Fresh app pages */
+.op-main,
+.op-shell,
+.worker-app,
+.billing-page,
+.settings-page,
+.import-page,
+.demo-page,
+.onboarding-page,
+.proof-page,
+.plans-page {
+  font-size: var(--cv-base) !important;
+  line-height: 1.5 !important;
+}
+
+.op-main h1,
+.worker-app h1,
+.billing-page h1,
+.settings-page h1,
+.import-page h1,
+.demo-page h1,
+.onboarding-page h1,
+.proof-page h1,
+.plans-page h1 {
+  font-size: var(--cv-h1) !important;
+  line-height: 0.98 !important;
+  letter-spacing: -0.06em !important;
+}
+
+.op-main .op-hero h1,
+.op-main .op-hero-copy h1,
+.billing-hero h1,
+.settings-hero h1,
+.import-hero h1,
+.demo-hero h1,
+.onboarding-hero h1,
+.proof-hero h1,
+.plans-hero h1 {
+  font-size: var(--cv-hero) !important;
+  line-height: 0.94 !important;
+  letter-spacing: -0.075em !important;
+}
+
+.op-main h2,
+.worker-app h2,
+.billing-page h2,
+.settings-page h2,
+.import-page h2,
+.demo-page h2,
+.onboarding-page h2,
+.proof-page h2,
+.plans-page h2 {
+  font-size: var(--cv-h2) !important;
+  line-height: 1.08 !important;
+  letter-spacing: -0.045em !important;
+}
+
+.op-main h3,
+.worker-app h3,
+.billing-page h3,
+.settings-page h3,
+.import-page h3,
+.demo-page h3,
+.onboarding-page h3,
+.proof-page h3,
+.plans-page h3 {
+  font-size: var(--cv-h3) !important;
+  line-height: 1.16 !important;
+  letter-spacing: -0.025em !important;
+}
+
+.op-main p,
+.worker-app p,
+.billing-page p,
+.settings-page p,
+.import-page p,
+.demo-page p,
+.onboarding-page p,
+.proof-page p,
+.plans-page p {
+  font-size: var(--cv-base) !important;
+  line-height: 1.58 !important;
+}
+
+.op-main small,
+.worker-app small,
+.billing-page small,
+.settings-page small,
+.import-page small,
+.demo-page small,
+.onboarding-page small,
+.proof-page small,
+.plans-page small {
+  font-size: var(--cv-sm) !important;
+  line-height: 1.45 !important;
+}
+
+.op-main button,
+.op-main a,
+.worker-app button,
+.worker-app a,
+.billing-page button,
+.billing-page a,
+.settings-page button,
+.settings-page a,
+.import-page button,
+.import-page a,
+.demo-page button,
+.demo-page a,
+.onboarding-page button,
+.onboarding-page a,
+.proof-page button,
+.proof-page a,
+.plans-page button,
+.plans-page a {
+  font-size: var(--cv-sm) !important;
+  line-height: 1.15 !important;
+  min-height: 40px;
+}
+
+/* Tailwind older-page harmoniser */
+#root .text-\[10px\],
+#root .text-\[11px\],
+#root .text-xs {
+  font-size: var(--cv-xs) !important;
+  line-height: 1.35 !important;
+}
+
+#root .text-sm {
+  font-size: var(--cv-sm) !important;
+  line-height: 1.45 !important;
+}
+
+#root .text-base {
+  font-size: var(--cv-base) !important;
+  line-height: 1.5 !important;
+}
+
+#root .text-lg {
+  font-size: var(--cv-lg) !important;
+  line-height: 1.4 !important;
+}
+
+#root .text-xl {
+  font-size: var(--cv-xl) !important;
+  line-height: 1.32 !important;
+}
+
+#root .text-2xl {
+  font-size: clamp(1.42rem, 2vw, 1.72rem) !important;
+  line-height: 1.18 !important;
+}
+
+#root .text-3xl {
+  font-size: clamp(1.65rem, 2.5vw, 2.15rem) !important;
+  line-height: 1.1 !important;
+}
+
+#root .text-4xl {
+  font-size: clamp(2rem, 3.2vw, 2.85rem) !important;
+  line-height: 1.02 !important;
+}
+
+#root .text-5xl,
+#root .text-6xl,
+#root .text-7xl,
+#root .text-8xl,
+#root .text-9xl {
+  font-size: var(--cv-hero) !important;
+  line-height: 0.94 !important;
+  letter-spacing: -0.075em !important;
+}
+
+/* Control huge numbers */
+.op-prepared strong,
+.op-status strong,
+.op-cash strong,
+.billing-card h2,
+.plan-card h2,
+.proof-stats b,
+.demo-stats b,
+.onboarding-progress b {
+  font-size: clamp(1.8rem, 3.2vw, 3.4rem) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.06em !important;
+}
+
+/* AI help should not overpower pages */
+.ai-guide-card {
+  font-size: var(--cv-sm) !important;
+}
+
+.ai-guide-card strong {
+  font-size: var(--cv-lg) !important;
+}
+
+.ai-guide-card p,
+.ai-guide-card a,
+.ai-guide-card button,
+.ai-guide-pill {
+  font-size: var(--cv-sm) !important;
+}
+
+/* Mobile */
+@media (max-width: 760px) {
+  :root {
+    --cv-h1: clamp(2.05rem, 8.5vw, 3.1rem);
+    --cv-hero: clamp(2.18rem, 9.5vw, 3.45rem);
+    --cv-h2: clamp(1.4rem, 5.8vw, 1.85rem);
+    --cv-h3: clamp(1.08rem, 4vw, 1.25rem);
+  }
+
+  .op-main button,
+  .op-main a,
+  .worker-app button,
+  .worker-app a,
+  .billing-page button,
+  .billing-page a,
+  .settings-page button,
+  .settings-page a,
+  .import-page button,
+  .import-page a,
+  .demo-page button,
+  .demo-page a,
+  .onboarding-page button,
+  .onboarding-page a,
+  .proof-page button,
+  .proof-page a,
+  .plans-page button,
+  .plans-page a {
+    min-height: 44px;
+  }
+}
+
+/* CHURVOX_GLOBAL_TYPE_SCALE_END */
