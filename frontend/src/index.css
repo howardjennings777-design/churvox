@@ -2429,3 +2429,9 @@ body {
 .op-money-action-box button:hover {
   background: linear-gradient(135deg, rgba(34,211,238,.28), rgba(14,165,255,.18));
 }
+
+/* ===== Phase 3: real dispatch button state ===== */
+.op-job-action-box button:disabled {
+  opacity: .62;
+  cursor: wait;
+}

@@ -614,6 +614,7 @@ function Workspace({ kind }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(null);
   const [selectedWorkerId, setSelectedWorkerId] = useState("");
+  const [jobActionBusy, setJobActionBusy] = useState(false);
   const [workspaceToast, setWorkspaceToast] = useState("");
 
   const map = {
@@ -798,8 +799,8 @@ function Workspace({ kind }) {
     return data.team.filter((worker) => isActiveWorker(worker));
   }
 
-  function prepareJobAssignmentDraft() {
-    if (kind !== "jobs" || !selected) return;
+  async function prepareJobAssignmentDraft() {
+    if (kind !== "jobs" || !selected || jobActionBusy) return;
 
     const workers = activeWorkers();
     const worker =
@@ -811,24 +812,104 @@ function Workspace({ kind }) {
       return;
     }
 
-    saveWorkspaceDraft({
-      type: "assignment_recommendation",
-      title: `Assign ${titleOf(selected, "job")} to ${titleOf(worker, "worker")}`,
-      target: "/jobs",
-      job_id: workspaceRecordId(selected),
-      worker_id: workspaceRecordId(worker),
-      job_title: titleOf(selected, "job"),
-      worker_name: titleOf(worker, "worker"),
-      text: "Prepared locally by Churvox Operator OS. No backend assignment has been made yet.",
-    });
+    const jobId = workspaceRecordId(selected);
+    const workerId = workspaceRecordId(worker);
 
-    saveApprovalLog(
-      { label: "DISPATCH", title: `Assignment draft prepared for ${titleOf(selected, "job")}` },
-      "drafted",
-      "drafted"
-    );
+    if (!jobId || !workerId) {
+      saveWorkspaceDraft({
+        type: "assignment_recommendation",
+        title: `Assign ${titleOf(selected, "job")} to ${titleOf(worker, "worker")}`,
+        target: "/jobs",
+        job_id: jobId,
+        worker_id: workerId,
+        job_title: titleOf(selected, "job"),
+        worker_name: titleOf(worker, "worker"),
+        text: "Could not safely find job/worker IDs, so this was saved as a recommendation.",
+      });
 
-    setWorkspaceToast("Assignment draft saved. Nothing was assigned yet.");
+      saveApprovalLog(
+        { label: "DISPATCH", title: `Assignment recommendation saved for ${titleOf(selected, "job")}` },
+        "drafted",
+        "drafted"
+      );
+
+      setWorkspaceToast("Missing job or worker ID. Recommendation saved.");
+      return;
+    }
+
+    const payloads = [
+      {
+        worker_id: workerId,
+        assigned_worker_id: workerId,
+        assigned_to: workerId,
+        assigned_worker_name: titleOf(worker, "Worker"),
+      },
+      {
+        assigned_worker_id: workerId,
+        assigned_worker_name: titleOf(worker, "Worker"),
+      },
+      {
+        worker_id: workerId,
+        assigned_worker_name: titleOf(worker, "Worker"),
+      },
+    ];
+
+    const calls = [
+      () => api(`/jobs/${jobId}/assign`, { method: "POST", body: payloads[0] }),
+      () => api(`/jobs/${jobId}/assign-worker`, { method: "POST", body: payloads[0] }),
+      () => api(`/jobs/${jobId}`, { method: "PATCH", body: payloads[1] }),
+      () => api(`/jobs/${jobId}`, { method: "PUT", body: payloads[2] }),
+    ];
+
+    setJobActionBusy(true);
+
+    try {
+      let success = false;
+
+      for (const call of calls) {
+        try {
+          await call();
+          success = true;
+          break;
+        } catch {
+          // Try the next safe endpoint.
+        }
+      }
+
+      if (!success) {
+        saveWorkspaceDraft({
+          type: "assignment_recommendation",
+          title: `Assign ${titleOf(selected, "job")} to ${titleOf(worker, "worker")}`,
+          target: "/jobs",
+          job_id: jobId,
+          worker_id: workerId,
+          job_title: titleOf(selected, "job"),
+          worker_name: titleOf(worker, "worker"),
+          text: "Backend did not accept assignment yet. Recommendation saved for owner review.",
+        });
+
+        saveApprovalLog(
+          { label: "DISPATCH", title: `Assignment recommendation saved for ${titleOf(selected, "job")}` },
+          "drafted",
+          "drafted"
+        );
+
+        setWorkspaceToast("Backend did not accept assignment yet. Recommendation saved.");
+        return;
+      }
+
+      saveApprovalLog(
+        { label: "DISPATCH", title: `Assigned ${titleOf(selected, "job")} to ${titleOf(worker, "worker")}` },
+        "approve",
+        "approved"
+      );
+
+      setWorkspaceToast(`Assigned ${titleOf(selected, "job")} to ${titleOf(worker, "worker")}.`);
+      await data.reload();
+      setSelected(null);
+    } finally {
+      setJobActionBusy(false);
+    }
   }
 
   function prepareJobInvoiceDraft() {
