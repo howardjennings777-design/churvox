@@ -28,6 +28,7 @@ import NotificationsPage from "./pages/NotificationsPage";
 import PublicQuotePage from "./pages/public/PublicQuotePage";
 import PublicInvoicePage from "./pages/public/PublicInvoicePage";
 import PublicClientPortalPage from "./pages/public/PublicClientPortalPage";
+import PublicWebsitePage from "./pages/public/PublicWebsitePage";
 import QAAuditorPage from "./pages/admin/QAAuditorPage";
 import SmartHubHardReset from "./pages/SmartHubHardReset";
 import V3WorkspacePage from "./v3/pages/V3WorkspacePage";
@@ -167,6 +168,12 @@ function App() {
         <ErrorBoundary>
         <Toaster position="top-right" richColors />
         <Routes>
+
+          <Route path="/" element={<PublicRoute><PublicWebsitePage /></PublicRoute>} />
+          <Route path="/home" element={<PublicRoute><PublicWebsitePage /></PublicRoute>} />
+          <Route path="/features" element={<PublicRoute><PublicWebsitePage /></PublicRoute>} />
+          <Route path="/pricing" element={<PublicRoute><PublicWebsitePage /></PublicRoute>} />
+          <Route path="/contact" element={<PublicRoute><PublicWebsitePage /></PublicRoute>} />
           {/* V9 owner command engine */}
           <Route path="/dashboard" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
           <Route path="/work" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
@@ -197,7 +204,6 @@ function App() {
           <Route path="/sms" element={<Navigate to="/money" replace />} />
           <Route path="/payroll" element={<Navigate to="/team" replace />} />
           <Route path="/integrations" element={<Navigate to="/settings" replace />} />
-          <Route path="/contact" element={<Navigate to="/settings" replace />} />
 
           <Route path="/v3/operator" element={<Navigate to="/ai" replace />} />
           <Route path="/v3/:section" element={<BusinessRoute><V9BusinessEngine /></BusinessRoute>} />
@@ -250,7 +256,6 @@ function App() {
           <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           <Route path="/account-deletion" element={<AccountDeletionPage />} />
           <Route path="/platform-unlock" element={<PlatformUnlock />} />
-          <Route path="/" element={<RoleRedirect />} />
           <Route path="*" element={<RoleRedirect />} />
         
         </Routes>
