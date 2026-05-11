@@ -92,7 +92,7 @@ function useLiveData() {
 
     setState({
       loading: false,
-      error: calls.some((c) => c.status === "rejected") ? "Some live data could not load. Showing the Operator OS shell." : "",
+      error: calls.some((c) => c.status === "rejected") ? "Live data is syncing. Safe dashboard view is active." : "",
       jobs: calls[0].status === "fulfilled" ? toArray(calls[0].value, ["jobs"]) : [],
       clients: calls[1].status === "fulfilled" ? toArray(calls[1].value, ["clients"]) : [],
       quotes: calls[2].status === "fulfilled" ? toArray(calls[2].value, ["quotes"]) : [],
@@ -2266,7 +2266,7 @@ function Dashboard() {
   return <Shell><Topbar />{toast ? <div className="op-warning">{toast}</div> : null}<ActionModal modal={modal} onClose={() => setModal(null)} onConfirm={confirmAction} busy={busy} />{data.error ? <div className="op-warning">{data.error}</div> : null}<Hero data={data} prepared={prepared} />
   <section className="op-top-grid"><ApprovalQueue jobs={data.jobs} invoices={data.invoices} quotes={data.quotes} team={data.team} clients={data.clients} drafts={drafts} history={history} onAction={openAction} /><ProofToPaid jobs={data.jobs} invoices={data.invoices} reload={data.reload} /></section>
   <section className="op-mid-grid"><DispatchBoard jobs={data.jobs} team={data.team} reload={data.reload} /><Cashflow invoices={data.invoices} /><CrewStatus team={data.team} /><Schedule jobs={data.jobs} /></section>
-  <section className="op-mid-grid"><OwnerNotifications jobs={data.jobs} quotes={data.quotes} invoices={data.invoices} clients={data.clients} team={data.team} /><LiveActivity history={history} /><section className="op-panel"><h3>DEEP AI MODULES</h3><p>Advanced tools are available when needed.</p><div className="op-link-row"><Link to="/ai-approvals">AI Work Queue</Link><Link to="/billing">Billing Centre</Link><Link to="/settings">Settings Hub</Link><Link to="/import">Import Centre</Link><Link to="/demo">Demo Workflow</Link></div></section></section>
+  <section className="op-mid-grid"><OwnerNotifications jobs={data.jobs} quotes={data.quotes} invoices={data.invoices} clients={data.clients} team={data.team} /><LiveActivity history={history} /><section className="op-panel"><h3>DEEP AI MODULES</h3><p>Extra tools stay tucked away until you need them.</p><div className="op-link-row"><Link to="/ai-approvals">AI Work Queue</Link><Link to="/billing">Billing Centre</Link><Link to="/settings">Settings Hub</Link><Link to="/import">Import Centre</Link><Link to="/demo">Setup Check</Link></div></section></section>
   <section className="op-bottom-grid"><DataPanel title="TODAY'S SCHEDULE" type="jobs" items={data.jobs} /><DataPanel title="QUOTE PIPELINE" type="quotes" items={data.quotes} /></section>
   <section className="op-bottom-grid"><section className="op-panel"><h3>APPROVAL HISTORY</h3>{history.map((h)=><div className="op-data-row" key={h.id}><strong>{h.result || h.mode}</strong><small>{h.title} · {new Date(h.created_at).toLocaleString()} · {h.target}</small></div>)}</section><section className="op-panel"><h3>OPERATOR DRAFTS</h3>{drafts.map((d)=><div className="op-data-row" key={d.id}><strong>{d.title}</strong><small>{d.type} · {new Date(d.created_at).toLocaleString()} · {d.target}</small></div>)}</section></section>
   <QuotePipeline quotes={data.quotes} />

@@ -268,11 +268,35 @@ export default function V4AppPage({ initialSection = "smart-hub" }) {
 
   async function load() {
     setLoading(true);
-    try {
-      const [queue, jobs, quotes, invoices, clients, workers] = await Promise.all([loadAiOperatorQueue(), get("/jobs"), get("/quotes"), get("/invoices"), get("/clients"), get("/team/workers")]);
-      setState({ actions: queue.actions || [], jobs: pickArray(jobs,["jobs"]), quotes: pickArray(quotes,["quotes"]), invoices: pickArray(invoices,["invoices"]), clients: pickArray(clients,["clients"]), workers: pickArray(workers,["workers","team"]) });
-      setNotice("");
-    } catch { setNotice("Some live data could not load. Churvox is showing the safest available view."); }
+
+    const safe = async (fn, fallback) => {
+      try {
+        return await fn();
+      } catch (error) {
+        console.warn("Smart Hub live section still syncing", error);
+        return fallback;
+      }
+    };
+
+    const [queue, jobs, quotes, invoices, clients, workers] = await Promise.all([
+      safe(() => loadAiOperatorQueue(), { actions: [] }),
+      safe(() => get("/jobs"), []),
+      safe(() => get("/quotes"), []),
+      safe(() => get("/invoices"), []),
+      safe(() => get("/clients"), []),
+      safe(() => get("/team/workers"), []),
+    ]);
+
+    setState({
+      actions: queue?.actions || [],
+      jobs: pickArray(jobs, ["jobs"]),
+      quotes: pickArray(quotes, ["quotes"]),
+      invoices: pickArray(invoices, ["invoices"]),
+      clients: pickArray(clients, ["clients"]),
+      workers: pickArray(workers, ["workers", "team"]),
+    });
+
+    setNotice("");
     setLoading(false);
   }
   useEffect(() => { load(); }, []);

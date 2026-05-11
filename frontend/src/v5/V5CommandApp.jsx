@@ -258,7 +258,7 @@ function useCommandData() {
 
     setState({
       loading: false,
-      error: hadError ? "Some live data could not load yet. The command centre still works." : "",
+      error: hadError ? "Live data is syncing yet. The command centre still works." : "",
       data,
     });
   };

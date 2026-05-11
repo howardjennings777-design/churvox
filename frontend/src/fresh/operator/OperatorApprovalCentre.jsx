@@ -463,7 +463,7 @@ export default function OperatorApprovalCentre() {
     });
 
     if (calls.some((c) => c.status === "rejected")) {
-      setNotice("Some live data could not load. AI Operator is using the records it can access.");
+      setNotice("Live data is syncing. AI Operator is using the records it can access.");
     }
 
     setLoading(false);
