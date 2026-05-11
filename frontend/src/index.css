@@ -2386,3 +2386,46 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== Phase 2: invoice + quote popup local draft actions ===== */
+.op-money-action-box {
+  margin-top: 16px;
+  padding: 15px;
+  border-radius: 18px;
+  border: 1px solid rgba(34,211,238,.2);
+  background: rgba(2,9,20,.62);
+}
+
+.op-money-action-box strong,
+.op-money-action-box small {
+  display: block;
+}
+
+.op-money-action-box strong {
+  color: #e0faff;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.op-money-action-box small {
+  margin-top: 5px;
+  color: #94a3b8;
+  line-height: 1.45;
+}
+
+.op-money-action-box button {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(34,211,238,.32);
+  background: linear-gradient(135deg, rgba(34,211,238,.2), rgba(14,165,255,.12));
+  color: #e0faff;
+  font-weight: 950;
+  cursor: pointer;
+  padding: 0 12px;
+}
+
+.op-money-action-box button:hover {
+  background: linear-gradient(135deg, rgba(34,211,238,.28), rgba(14,165,255,.18));
+}

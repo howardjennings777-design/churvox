@@ -865,6 +865,53 @@ function Workspace({ kind }) {
     setWorkspaceToast("Invoice draft saved for review. Nothing was sent.");
   }
 
+
+  function prepareInvoiceReminderDraft() {
+    if (kind !== "invoices" || !selected) return;
+
+    saveWorkspaceDraft({
+      type: "payment_reminder",
+      title: `Payment reminder draft for ${titleOf(selected, "invoice")}`,
+      target: "/invoices",
+      invoice_id: workspaceRecordId(selected),
+      invoice_title: titleOf(selected, "invoice"),
+      client_name: selected.client_name || selected.customer_name || "",
+      amount: money(selected),
+      text: `Friendly payment reminder for ${titleOf(selected, "invoice")} prepared by Churvox Operator OS. Nothing has been sent.`,
+    });
+
+    saveApprovalLog(
+      { label: "CASHFLOW", title: `Payment reminder prepared for ${titleOf(selected, "invoice")}` },
+      "drafted",
+      "drafted"
+    );
+
+    setWorkspaceToast("Payment reminder draft saved. Nothing was sent.");
+  }
+
+  function prepareQuoteFollowupDraft() {
+    if (kind !== "quotes" || !selected) return;
+
+    saveWorkspaceDraft({
+      type: "quote_followup",
+      title: `Quote follow-up draft for ${titleOf(selected, "quote")}`,
+      target: "/quotes",
+      quote_id: workspaceRecordId(selected),
+      quote_title: titleOf(selected, "quote"),
+      client_name: selected.client_name || selected.customer_name || "",
+      amount: money(selected),
+      text: `Quote follow-up for ${titleOf(selected, "quote")} prepared by Churvox Operator OS. Nothing has been sent.`,
+    });
+
+    saveApprovalLog(
+      { label: "SALES", title: `Quote follow-up prepared for ${titleOf(selected, "quote")}` },
+      "drafted",
+      "drafted"
+    );
+
+    setWorkspaceToast("Quote follow-up draft saved. Nothing was sent.");
+  }
+
   function DetailModal() {
     if (!selected) return null;
 
@@ -923,6 +970,22 @@ function Workspace({ kind }) {
                   </div>
                 </div>
               </>
+            ) : null}
+
+            {kind === "invoices" ? (
+              <div className="op-money-action-box">
+                <strong>Cashflow action</strong>
+                <small>Prepare a payment reminder draft for this invoice. Nothing is sent automatically.</small>
+                <button type="button" onClick={prepareInvoiceReminderDraft}>Prepare reminder draft</button>
+              </div>
+            ) : null}
+
+            {kind === "quotes" ? (
+              <div className="op-money-action-box">
+                <strong>Sales action</strong>
+                <small>Prepare a quote follow-up draft for this quote. Nothing is sent automatically.</small>
+                <button type="button" onClick={prepareQuoteFollowupDraft}>Prepare follow-up draft</button>
+              </div>
             ) : null}
 
             <div className="op-detail-grid">
