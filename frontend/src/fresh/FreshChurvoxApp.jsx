@@ -113,7 +113,7 @@ function ChurvoxLogo() {
 function Shell({ children }) {
   const location = useLocation();
   const nav = [
-    ["Command", "/dashboard", "⬡", "Approval Command Centre"],
+    ["Command", "/dashboard", "⬡", "Daily command centre"],
     ["AI Work Queue", "/ai-approvals", "◆", "Edit & Approve"],
     ["Jobs", "/jobs", "⌘", "Schedule & Dispatch"],
     ["Crew", "/team", "♧", "People & Availability"],

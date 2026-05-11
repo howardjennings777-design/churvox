@@ -50,7 +50,7 @@ export default function LoginPage() {
           <div className="flex flex-col items-center text-center mb-7">
             <div className="mb-3"><ChurvoxLogo size="lg" /></div>
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#dbe7ff] text-[#1d4ed8] text-[11px] font-bold uppercase tracking-wider">
-              <Sparkles className="h-3 w-3" /> AI Control Room
+              <Sparkles className="h-3 w-3" /> AI Work Queue
             </span>
             <h1 className="font-heading text-[28px] font-bold text-[#0d1b34] mt-4 leading-tight tracking-tight">Welcome back</h1>
             <p className="text-[14px] text-[#5b6c87] mt-2">Sign in to run jobs, clients, quotes, invoices and crew from one command hub.</p>
@@ -128,7 +128,7 @@ export default function LoginPage() {
       <div className="px-auth__brand">
         <div className="px-auth__brand-inner">
           <div className="inline-flex items-center justify-center"><ChurvoxLogo size="xl" /></div>
-          <h2 className="px-auth__brand-title">Run your business from one AI Control Room</h2>
+          <h2 className="px-auth__brand-title">Run your business from one AI Work Queue</h2>
           <p className="px-auth__brand-sub">
             Churvox prepares dispatch, proof, invoices, reminders, recurring work and customer updates. You approve. Churvox executes safely.
           </p>

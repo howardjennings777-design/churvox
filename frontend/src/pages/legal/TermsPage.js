@@ -20,7 +20,7 @@ export default function TermsPage() {
         <div className="prose prose-invert max-w-none space-y-6" data-testid="terms-content">
           <div className="bg-white border border-slate-200 rounded-xl p-6 md:p-8 space-y-6">
             <p className="text-slate-500 text-sm leading-relaxed">
-              Churvox These Terms of Service govern your use of the Churvox app and related services. By using Churvox, you agree to these terms.
+              These Terms of Service govern your use of the Churvox app and related services. By using Churvox, you agree to these terms.
             </p>
             <div className="border-t border-slate-200 pt-6 space-y-4">
               <h2 className="text-lg font-semibold text-white">Acceptance of Terms</h2>

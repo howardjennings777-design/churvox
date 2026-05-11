@@ -13,7 +13,7 @@ export function ApprovalCentreSummary({ approvalCounts, priorityItems = [], best
     <section className="mt-6 rounded-2xl border border-[#c7bba9] border-l-4 border-l-[#f97316] bg-[#f4eee4] p-4 text-[#101318] shadow-[0_14px_32px_rgba(15,17,21,0.14)] operator-panel operator-card operator-accent-left" data-smart-hub-card="true">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#5a5146]">AI Approval Centre</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#5a5146]">AI AI Work Queue</p>
           <h2 className="mt-1 text-lg font-black text-[#101318]">Owner approval queue</h2>
           <p className="mt-1 text-sm font-semibold text-[#6f6558]">AI prepares the work. You approve what happens next.</p>
         </div>
@@ -43,7 +43,7 @@ export function ApprovalCentreSummary({ approvalCounts, priorityItems = [], best
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <button type="button" onClick={() => onOpen('all')} className="rounded-xl bg-[#f97316] px-4 py-2.5 text-sm font-black text-white shadow-[0_10px_24px_rgba(249,115,22,0.28)] transition hover:bg-[#ea580c] operator-primary" data-operator-primary="true">Open Approval Centre</button>
+        <button type="button" onClick={() => onOpen('all')} className="rounded-xl bg-[#f97316] px-4 py-2.5 text-sm font-black text-white shadow-[0_10px_24px_rgba(249,115,22,0.28)] transition hover:bg-[#ea580c] operator-primary" data-operator-primary="true">Open AI Work Queue</button>
         <button type="button" onClick={onRunPlan} className="rounded-xl bg-[#111317] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[#050607]">Run today's AI plan</button>
       </div>
     </section>
