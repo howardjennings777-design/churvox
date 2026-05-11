@@ -265,7 +265,7 @@ export default function V9BusinessEngine() {
   const current = MAP[String(params.section || params.area || pathArea || "engine").toLowerCase()] || "engine";
   const active = NAV.find((item) => item.id === current) || NAV[0];
   const ActiveIcon = active.icon;
-  const showCommandHero = current === "engine" || current === "moves";
+  const showCommandHero = current === "engine";
 
   const go = (area) => { setNavOpen(false); navigate(ROUTE[area] || "/dashboard"); };
 
@@ -703,6 +703,7 @@ export default function V9BusinessEngine() {
                 <p><ActiveIcon size={16} /> {active.label}</p>
                 <h1>
                   {{
+                    moves: "Approve AI prepared moves",
                     work: "Work command centre",
                     cash: "Cash and invoice control",
                     clients: "Client memory and history",

@@ -215,3 +215,32 @@
 .v9-hide-hero .v9-panel:first-of-type {
   margin-top: 0 !important;
 }
+
+/* Big engine header should be dashboard only */
+.v9-hide-hero .v9-hero,
+.v9-page-moves .v9-hero,
+.v9-page-work .v9-hero,
+.v9-page-cash .v9-hero,
+.v9-page-clients .v9-hero,
+.v9-page-crew .v9-hero,
+.v9-page-rules .v9-hero,
+.v9-page-numbers .v9-hero,
+.v9-page-setup .v9-hero {
+  display: none !important;
+}
+
+.v9-hide-hero .v9-sync,
+.v9-page-moves .v9-sync,
+.v9-page-work .v9-sync,
+.v9-page-cash .v9-sync,
+.v9-page-clients .v9-sync,
+.v9-page-crew .v9-sync,
+.v9-page-rules .v9-sync,
+.v9-page-numbers .v9-sync,
+.v9-page-setup .v9-sync {
+  display: none !important;
+}
+
+.v9-show-hero .v9-page-intro {
+  display: none !important;
+}
