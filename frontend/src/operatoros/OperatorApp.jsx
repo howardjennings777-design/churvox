@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./operatorTheme.css";
 import "./operatorDesignFinal.css";
+import "./operatorLaptopPolish.css";
 import FreshChurvoxApp from "../fresh/FreshChurvoxApp";
 import OperatorShell from "./OperatorShell";
 import { useOperatorData } from "./dataHooks";
