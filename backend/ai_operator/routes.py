@@ -134,6 +134,19 @@ async def latest_saved_memory(db, business_id, user=None):
     return await save_business_memory(db, business_id, ctx["memory"])
 
 
+
+def action_lookup_filter(business_id, action_id):
+    action_id = str(action_id or "")
+    ors = [{"id": action_id}]
+
+    if ObjectId.is_valid(action_id):
+        ors.append({"_id": ObjectId(action_id)})
+
+    return {
+        "business_id": str(business_id),
+        "$or": ors,
+    }
+
 def setup_ai_operator_power_routes(api_router, db, jwt_secret, jwt_algorithm):
     async def owner_context(request: Request):
         return await require_owner(request, db, jwt_secret, jwt_algorithm)
@@ -350,7 +363,7 @@ def setup_ai_operator_power_routes(api_router, db, jwt_secret, jwt_algorithm):
     @api_router.get("/ai/operator/actions/{action_id}")
     async def ai_operator_action(request: Request, action_id: str):
         _, business_id = await owner_context(request)
-        row = await db.ai_operator_actions.find_one({"business_id": str(business_id), "$or":[{"id": action_id}, {"_id": ObjectId(action_id) if ObjectId.is_valid(action_id) else None}]})
+        row = await db.ai_operator_actions.find_one(action_lookup_filter(business_id, action_id))
         if not row: raise HTTPException(status_code=404, detail="Action not found")
         audit = await db.ai_operator_audit_log.find({"business_id": str(business_id), "action_id": str(row.get('id') or row.get('_id'))}).sort("created_at", -1).limit(100).to_list(length=100)
         return {"success": True, "action": clean_value(row), "audit": clean_value(audit)}
@@ -359,7 +372,7 @@ def setup_ai_operator_power_routes(api_router, db, jwt_secret, jwt_algorithm):
     async def ai_operator_action_edit(request: Request, action_id: str, payload: dict = Body(default={})):
         user, business_id = await owner_context(request)
         edited_payload = payload.get("edited_payload") or payload.get("payload") or {}
-        row = await db.ai_operator_actions.find_one({"business_id": str(business_id), "$or":[{"id": action_id}, {"_id": ObjectId(action_id) if ObjectId.is_valid(action_id) else None}]})
+        row = await db.ai_operator_actions.find_one(action_lookup_filter(business_id, action_id))
         if not row: raise HTTPException(status_code=404, detail="Action not found")
         await db.ai_operator_actions.update_one({"_id": row.get("_id")}, {"$set": {"owner_edited_payload": edited_payload, "updated_at": now_utc()}})
         await record_owner_decision(db, business_id, user, row, "edited", edited_payload=edited_payload)
@@ -369,7 +382,7 @@ def setup_ai_operator_power_routes(api_router, db, jwt_secret, jwt_algorithm):
     async def ai_operator_action_approve(request: Request, action_id: str, payload: dict = Body(default={})):
         user, business_id = await owner_context(request)
         edited_payload = payload.get("edited_payload") or {}
-        row = await db.ai_operator_actions.find_one({"business_id": str(business_id), "$or":[{"id": action_id}, {"_id": ObjectId(action_id) if ObjectId.is_valid(action_id) else None}]})
+        row = await db.ai_operator_actions.find_one(action_lookup_filter(business_id, action_id))
         if not row: raise HTTPException(status_code=404, detail="Action not found")
         await record_owner_decision(db, business_id, user, row, "approved", edited_payload=edited_payload)
         try:
@@ -383,7 +396,7 @@ def setup_ai_operator_power_routes(api_router, db, jwt_secret, jwt_algorithm):
     @api_router.post("/ai/operator/actions/{action_id}/reject")
     async def ai_operator_action_reject(request: Request, action_id: str, payload: dict = Body(default={})):
         user, business_id = await owner_context(request)
-        row = await db.ai_operator_actions.find_one({"business_id": str(business_id), "$or":[{"id": action_id}, {"_id": ObjectId(action_id) if ObjectId.is_valid(action_id) else None}]})
+        row = await db.ai_operator_actions.find_one(action_lookup_filter(business_id, action_id))
         if not row: raise HTTPException(status_code=404, detail="Action not found")
         reason = payload.get("reason")
         await record_owner_decision(db, business_id, user, row, "rejected", reason=reason)
