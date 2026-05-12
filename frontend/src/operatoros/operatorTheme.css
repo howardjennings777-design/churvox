@@ -325,3 +325,30 @@
   .op-intel-strip { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 .op-ai-drawer-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:flex;justify-content:flex-end}.op-ai-drawer{background:#0e1320;color:#fff;width:min(100%,520px);height:100%;overflow:auto;padding:16px}.op-ai-reason-list,.op-ai-data-used,.op-ai-exact-changes{font-size:12px}.op-ai-edit-grid{display:grid;grid-template-columns:1fr;gap:8px}.op-ai-activity-timeline article{border-bottom:1px solid #263047;padding:8px 0}.op-ai-priority-pill{padding:2px 8px;border-radius:999px}.op-ai-risk-low{color:#56d17f}.op-ai-risk-medium{color:#f2bb4a}.op-ai-risk-high{color:#ff8a53}.op-ai-risk-forbidden{color:#ff4d6d}
+
+/* Easy logout button */
+.op-logout-button {
+  margin: 14px;
+  width: calc(100% - 28px);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  background: rgba(239, 68, 68, 0.08);
+  color: #b91c1c;
+  border-radius: 18px;
+  padding: 13px 14px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.op-logout-button:hover {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.op-mobile-logout {
+  color: #b91c1c !important;
+  font-weight: 900 !important;
+}

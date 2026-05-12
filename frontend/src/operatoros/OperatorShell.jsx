@@ -28,6 +28,28 @@ export default function OperatorShell({
   data,
   onCreate,
 }) {
+  function handleLogout() {
+    try {
+      localStorage.removeItem("token");
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("role");
+      sessionStorage.clear();
+
+      document.cookie.split(";").forEach((cookie) => {
+        const name = cookie.split("=")[0]?.trim();
+        if (name) {
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        }
+      });
+    } catch (error) {
+      console.warn("Logout cleanup failed", error);
+    }
+
+    window.location.href = "/login";
+  }
+
   return (
     <div className="op-shell">
       <aside className="op-sidebar">
@@ -53,6 +75,11 @@ export default function OperatorShell({
           <strong>Prepares the admin.</strong>
           <span>Owner approves anything risky.</span>
         </section>
+
+        <button className="op-logout-button" onClick={handleLogout}>
+          <i>↪</i>
+          <span>Log out</span>
+        </button>
       </aside>
 
       <main className="op-main">
@@ -81,6 +108,7 @@ export default function OperatorShell({
             </button>
           ))}
         <button onClick={() => setCurrent("settings")}>More</button>
+        <button className="op-mobile-logout" onClick={handleLogout}>Log out</button>
       </nav>
     </div>
   );
