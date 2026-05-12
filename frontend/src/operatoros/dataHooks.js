@@ -35,12 +35,13 @@ export function useOperatorData() {
     billing: {},
     sms: {},
     myob: {},
+    aiActions: [],
   });
 
   const load = useCallback(async () => {
     setState((current) => ({ ...current, loading: true, notice: "" }));
 
-    const [jobs, clients, quotes, invoices, workers, billing, sms, myob] = await Promise.all([
+    const [jobs, clients, quotes, invoices, workers, billing, sms, myob, aiActions] = await Promise.all([
       safe("/jobs", ["jobs"], []),
       safe("/clients", ["clients"], []),
       safe("/quotes", ["quotes"], []),
@@ -49,9 +50,10 @@ export function useOperatorData() {
       safe("/billing/status", null, {}),
       safe("/sms/balance", null, {}),
       safe("/myob/status", null, {}),
+      safe("/ai/operator/actions", ["actions"], []),
     ]);
 
-    const failed = [jobs, clients, quotes, invoices, workers, billing, sms, myob].some((x) => !x.ok);
+    const failed = [jobs, clients, quotes, invoices, workers, billing, sms, myob, aiActions].some((x) => !x.ok);
 
     setState({
       loading: false,
@@ -64,6 +66,7 @@ export function useOperatorData() {
       billing: billing.data,
       sms: sms.data,
       myob: myob.data,
+      aiActions: aiActions.data,
     });
   }, []);
 

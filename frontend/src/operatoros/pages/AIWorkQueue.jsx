@@ -7,6 +7,11 @@ import { buildAiActions } from "./aiActions";
 import { prioritiseAiActions } from "./aiCommandCore";
 
 async function executeAction(action, fields) {
+  if (action?.backend_action && action?.id) {
+    const result = await apiFetch(`/ai/operator/actions/${action.id}/approve`, { method: "POST" });
+    await data.reload?.();
+    return result?.message || "AI action approved and executed.";
+  }
   if (action.execute === "draft_invoice") {
     await tryApi(["/invoices", "/invoices/create"], {
       method: "POST",
@@ -128,7 +133,8 @@ export default function AIWorkQueue({ data }) {
           <h1>Review, edit and approve AI-prepared work.</h1>
           <span>AI does the admin prep. The owner stays in control.</span>
         </div>
-        <button disabled={!actions.some((x) => String(x.risk).toLowerCase() === "low")} onClick={approveAllSafe}>
+        <button type="button" onClick={async () => { await apiFetch("/ai/operator/run", { method: "POST" }); await data.reload?.(); }}>Run AI Operator</button>
+          <button disabled={!actions.some((x) => String(x.risk).toLowerCase() === "low")} onClick={approveAllSafe}>
           Approve all safe
         </button>
       </section>

@@ -467,6 +467,7 @@ email_provider = get_email_provider()
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+from ai_operator_engine import setup_ai_operator_routes
 
 # ===================== ENUMS =====================
 class UserRole(str, Enum):
@@ -13303,6 +13304,7 @@ async def buy_sms_pack(payload: dict = Body(default={}), current_user: dict = De
 
 
 
+setup_ai_operator_routes(api_router, db, JWT_SECRET, JWT_ALGORITHM)
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
