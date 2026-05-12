@@ -4,6 +4,7 @@ import ActionCard from "../components/ActionCard";
 import DetailDrawer from "../components/DetailDrawer";
 import EmptyState from "../components/EmptyState";
 import { buildAiActions } from "./aiActions";
+import { prioritiseAiActions } from "./aiCommandCore";
 
 async function executeAction(action, fields) {
   if (action.execute === "draft_invoice") {

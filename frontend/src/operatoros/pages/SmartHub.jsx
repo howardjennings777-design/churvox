@@ -1,9 +1,11 @@
 import { buildAiActions } from "./aiActions";
+import { computeOperatorCommandCore } from "./aiCommandCore";
 import ActionCard from "../components/ActionCard";
 import EmptyState from "../components/EmptyState";
 import FloatingLogo from "../components/FloatingLogo";
 import StatusBadge from "../components/StatusBadge";
 import AIReadinessPanel from "../components/AIReadinessPanel";
+import AICommandCorePanel from "../components/AICommandCorePanel";
 import { clientOf, moneyOf, statusOf, titleOf } from "../api";
 
 function MiniPanel({ title, items = [], empty, onOpen }) {
@@ -40,7 +42,8 @@ function MiniPanel({ title, items = [], empty, onOpen }) {
 }
 
 export default function SmartHub({ data, onNav, onCreate }) {
-  const actions = buildAiActions(data);
+  const commandCore = computeOperatorCommandCore(data);
+  const actions = commandCore.actions?.length ? commandCore.actions : buildAiActions(data);
 
   const setupIssues = [
     data.currentPlan === "none" ? "Choose a plan" : "",
@@ -81,6 +84,8 @@ export default function SmartHub({ data, onNav, onCreate }) {
       </section>
 
       {data.notice ? <section className="op-notice">{data.notice}</section> : null}
+
+      <AICommandCorePanel data={data} onNav={onNav} />
 
       <section className="op-dashboard-grid">
         <section className="op-panel op-approval-panel">
