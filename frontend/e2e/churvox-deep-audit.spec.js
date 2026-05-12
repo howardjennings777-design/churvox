@@ -73,6 +73,29 @@ async function writeJson(file, data) {
   await fs.promises.writeFile(file, JSON.stringify(data, null, 2));
 }
 
+async function fillFirstVisible(page, selectors, value) {
+  for (const selector of selectors) {
+    const item = page.locator(selector).first();
+    if ((await item.count()) && (await item.isVisible().catch(() => false))) {
+      await item.fill(value);
+      return true;
+    }
+  }
+  return false;
+}
+
+async function clickFirstVisible(page, selectors) {
+  for (const selector of selectors) {
+    const item = page.locator(selector).first();
+    if ((await item.count()) && (await item.isVisible().catch(() => false))) {
+      await item.click();
+      return true;
+    }
+  }
+  return false;
+}
+
+
 test("public audit", async ({ page }, testInfo) => {
   const errors = attachErrorCollectors(page);
   const routes = ["/", "/login", "/plans"];
@@ -89,7 +112,7 @@ test("public audit", async ({ page }, testInfo) => {
 
   const out = {
     project: testInfo.project.name,
-    baseURL: testInfo.config.use.baseURL,
+    baseURL: BASE,
     auditedAt: new Date().toISOString(),
     results,
     errors,
@@ -104,11 +127,34 @@ test("owner + AI deep audit", async ({ page }, testInfo) => {
 
   const errors = attachErrorCollectors(page);
   await page.goto("/login", { waitUntil: "domcontentloaded" });
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/password/i).fill(password);
+  await page.waitForTimeout(1500);
 
-  const submit = page.getByRole("button", { name: /log in|sign in|continue/i }).first();
-  await submit.click();
+  const emailFilled = await fillFirstVisible(page, [
+    'input[type="email"]',
+    'input[name="email"]',
+    'input[placeholder*="email" i]',
+    'input[autocomplete="email"]',
+  ], email);
+
+  const passwordFilled = await fillFirstVisible(page, [
+    'input[type="password"]',
+    'input[name="password"]',
+    'input[placeholder*="password" i]',
+    'input[autocomplete="current-password"]',
+  ], password);
+
+  expect(emailFilled, "Email input should be found").toBeTruthy();
+  expect(passwordFilled, "Password input should be found").toBeTruthy();
+
+  const submitted = await clickFirstVisible(page, [
+    'button[type="submit"]',
+    'button:has-text("Log in")',
+    'button:has-text("Login")',
+    'button:has-text("Sign in")',
+    'button:has-text("Continue")',
+  ]);
+
+  expect(submitted, "Login button should be found").toBeTruthy();
   await page.waitForTimeout(4000);
 
   const ownerResults = [];
@@ -170,7 +216,7 @@ test("owner + AI deep audit", async ({ page }, testInfo) => {
 
   const ownerOut = {
     project: testInfo.project.name,
-    baseURL: testInfo.config.use.baseURL,
+    baseURL: BASE,
     auditedAt: new Date().toISOString(),
     ownerResults,
     aiArea,
