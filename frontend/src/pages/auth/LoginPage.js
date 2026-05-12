@@ -52,8 +52,11 @@ export default function LoginPage() {
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#dbe7ff] text-[#1d4ed8] text-[11px] font-bold uppercase tracking-wider">
               <Sparkles className="h-3 w-3" /> AI Work Queue
             </span>
-            <h1 className="font-heading text-[28px] font-bold text-[#0d1b34] mt-4 leading-tight tracking-tight">Welcome back</h1>
-            <p className="text-[14px] text-[#5b6c87] mt-2">Sign in to run jobs, clients, quotes, invoices and crew from one command hub.</p>
+            <h1 className="font-heading text-[28px] font-bold text-[#0d1b34] mt-4 leading-tight tracking-tight">Welcome back to Churvox</h1>
+            <p className="text-[14px] text-[#5b6c87] mt-2">
+              Churvox is an AI command centre for trade and service businesses. Run jobs, clients,
+              quotes, invoices, crew, proof photos and daily admin from one calm place.
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="px-login-form" data-testid="login-form">
@@ -128,9 +131,11 @@ export default function LoginPage() {
       <div className="px-auth__brand">
         <div className="px-auth__brand-inner">
           <div className="inline-flex items-center justify-center"><ChurvoxLogo size="xl" /></div>
-          <h2 className="px-auth__brand-title">Run your business from one AI Work Queue</h2>
+          <h2 className="px-auth__brand-title">The AI command centre for trade businesses</h2>
           <p className="px-auth__brand-sub">
-            Churvox prepares dispatch, proof, invoices, reminders, recurring work and customer updates. You approve. Churvox executes safely.
+            Churvox helps owners stay on top of jobs, dispatch, proof, quotes, invoices,
+            customer reminders, payroll handoff and MYOB-ready admin. AI prepares the work;
+            you review and approve before anything important happens.
           </p>
 
           <div className="grid grid-cols-2 gap-3 mt-8 max-w-md mx-auto">
