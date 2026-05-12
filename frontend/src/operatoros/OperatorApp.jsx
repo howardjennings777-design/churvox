@@ -103,6 +103,7 @@ function shouldUseLegacyApp() {
   return (
     path.startsWith("/public") ||
     path.startsWith("/client-portal") ||
+    path.startsWith("/worker") ||
     path.startsWith("/v3") ||
     path.startsWith("/v4")
   );
