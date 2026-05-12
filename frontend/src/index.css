@@ -6422,3 +6422,96 @@ select:focus {
   border-radius: 999px;
   font-weight: 800;
 }
+
+/* Churvox live login: left explains the business, right has login */
+body:has(.operator-login-card),
+body:has(.op-login-card),
+body:has(.login-card) {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(34, 211, 238, 0.16), transparent 32%),
+    radial-gradient(circle at 80% 25%, rgba(37, 99, 235, 0.16), transparent 34%),
+    #020816;
+}
+
+.operator-login-shell,
+.op-login-shell,
+.login-shell,
+.auth-shell {
+  min-height: 100vh !important;
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.15fr) minmax(360px, 520px) !important;
+  align-items: center !important;
+  gap: 48px !important;
+  padding: clamp(28px, 6vw, 80px) !important;
+  box-sizing: border-box !important;
+}
+
+.operator-login-shell::before,
+.op-login-shell::before,
+.login-shell::before,
+.auth-shell::before {
+  content: "Churvox is an AI command centre for trade and service businesses. It helps owners run jobs, dispatch, clients, quotes, invoices, proof photos, reminders, payroll handoff and daily admin from one calm place. AI prepares the work — you review and approve.";
+  display: block;
+  max-width: 720px;
+  color: #e0f2fe;
+  font-size: clamp(1.35rem, 3.8vw, 3.85rem);
+  line-height: 1.04;
+  font-weight: 950;
+  letter-spacing: -0.06em;
+  white-space: pre-wrap;
+}
+
+.operator-login-card,
+.op-login-card,
+.login-card,
+.auth-card {
+  justify-self: end !important;
+  width: min(100%, 430px) !important;
+}
+
+.operator-login-card h1,
+.op-login-card h1,
+.login-card h1,
+.auth-card h1 {
+  letter-spacing: -0.04em;
+}
+
+.operator-login-card h1::after,
+.op-login-card h1::after,
+.login-card h1::after,
+.auth-card h1::after {
+  content: "Jobs + crew · Quotes + invoices · AI approval queue";
+  display: block;
+  margin-top: 14px;
+  color: #bae6fd;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: normal;
+  line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+  .operator-login-shell,
+  .op-login-shell,
+  .login-shell,
+  .auth-shell {
+    grid-template-columns: 1fr !important;
+    gap: 22px !important;
+    padding: 22px !important;
+  }
+
+  .operator-login-shell::before,
+  .op-login-shell::before,
+  .login-shell::before,
+  .auth-shell::before {
+    font-size: clamp(1.45rem, 8vw, 2.6rem);
+  }
+
+  .operator-login-card,
+  .op-login-card,
+  .login-card,
+  .auth-card {
+    justify-self: center !important;
+  }
+}
