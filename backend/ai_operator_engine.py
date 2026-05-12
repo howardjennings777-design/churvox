@@ -1,3 +1,4 @@
+from ai_operator.policy import classify_action
 from datetime import datetime, timezone
 from fastapi import HTTPException, Request
 from bson import ObjectId
@@ -757,6 +758,9 @@ async def generate_actions(db, business_id, user):
 
 async def execute_action(db, business_id, user, action):
     action_type = action.get("action_type")
+    policy = classify_action(action_type, action)
+    if policy.get("blocked"):
+        raise HTTPException(status_code=403, detail=policy.get("reason") or "AI policy blocked this action.")
     payload = action.get("suggested_payload") or {}
 
     if action_type == "assign_worker":

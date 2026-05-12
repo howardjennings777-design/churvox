@@ -6,6 +6,7 @@ import FloatingLogo from "../components/FloatingLogo";
 import StatusBadge from "../components/StatusBadge";
 import AIReadinessPanel from "../components/AIReadinessPanel";
 import AICommandCorePanel from "../components/AICommandCorePanel";
+import AIIntelligencePanel from "../components/ai/AIIntelligencePanel";
 import { clientOf, moneyOf, statusOf, titleOf } from "../api";
 
 function MiniPanel({ title, items = [], empty, onOpen }) {
@@ -86,6 +87,8 @@ export default function SmartHub({ data, onNav, onCreate }) {
       {data.notice ? <section className="op-notice">{data.notice}</section> : null}
 
       <AICommandCorePanel data={data} onNav={onNav} />
+
+      <AIIntelligencePanel onNav={onNav} />
 
       <section className="op-dashboard-grid">
         <section className="op-panel op-approval-panel">

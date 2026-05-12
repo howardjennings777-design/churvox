@@ -310,3 +310,5 @@
     grid-template-columns: 1fr;
   }
 }
+
+.op-ai-intelligence{} .op-row-actions{display:flex;gap:8px;flex-wrap:wrap}.op-intel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.op-intel-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px}.op-intel-strip{display:flex;justify-content:space-between}.op-intel-issues p{margin:4px 0}.op-ask-business{margin-top:12px}.op-ai-answer{margin-top:8px;padding:10px;border-radius:10px;background:rgba(110,184,255,.08)}
