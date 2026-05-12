@@ -310,3 +310,17 @@
     grid-template-columns: 1fr;
   }
 }
+
+.op-ai-intelligence { margin-top: 1rem; }
+.op-row-actions { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
+.op-intel-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .75rem; margin-top: .75rem; }
+.op-intel-card { background: var(--op-card-bg, #111827); border: 1px solid var(--op-border, #243041); border-radius: 12px; padding: .8rem; }
+.op-intel-strip { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: .5rem; margin: .75rem 0; }
+.op-intel-strip article { background: rgba(255,255,255,.03); border-radius: 10px; padding: .5rem; }
+.op-intel-issues { display: flex; flex-direction: column; gap: .35rem; }
+.op-ask-business { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid var(--op-border, #243041); }
+.op-ai-answer { margin-top: .5rem; color: #c7f9cc; }
+@media (max-width: 980px) {
+  .op-intel-grid { grid-template-columns: 1fr; }
+  .op-intel-strip { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
