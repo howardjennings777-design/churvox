@@ -1,5 +1,26 @@
 import { buildAiActions } from "./aiActions";
 
+function normaliseBackendAction(action) {
+  return {
+    ...action,
+    id: action.id || action._id || action.action_key,
+    type: action.category || action.type || action.action_type || "AI ACTION",
+    execute: action.action_type || action.execute,
+    fields: action.suggested_payload || action.fields || {},
+    summary: action.summary || action.description || "",
+    risk: action.risk || action.risk_level || "low",
+    backend_action: true,
+  };
+}
+
+function actionsFromData(data = {}) {
+  const backendActions = Array.isArray(data.aiActions)
+    ? data.aiActions.map(normaliseBackendAction)
+    : [];
+
+  return backendActions.length ? backendActions : buildAiActions(data);
+}
+
 function moneyNumber(item) {
   const raw =
     item?.total ??
@@ -156,8 +177,7 @@ function bestBriefing(bestAction, metrics, quality) {
 }
 
 export function computeOperatorCommandCore(data = {}) {
-  const rawActions = buildAiActions(data);
-  const actions = prioritiseAiActions(rawActions);
+  const actions = prioritiseAiActions(actionsFromData(data));
 
   const metrics = {
     preparedActions: actions.length,
@@ -179,41 +199,41 @@ export function computeOperatorCommandCore(data = {}) {
   const lanes = [
     {
       key: "money",
-      label: "Money to chase",
+      label: "Money waiting",
       value: metrics.unpaidInvoices,
       money: formatMoney(metrics.moneyWaiting),
-      status: metrics.unpaidInvoices ? "Needs owner review" : "Clear",
+      status: metrics.unpaidInvoices ? "Reminder draft ready" : "Clear",
       nav: "invoices",
     },
     {
       key: "dispatch",
-      label: "Dispatch gaps",
+      label: "Jobs needing crew",
       value: metrics.dispatchGaps,
       money: "",
-      status: metrics.dispatchGaps ? "Crew decision needed" : "Covered",
+      status: metrics.dispatchGaps ? "Assignment decision needed" : "Covered",
       nav: "jobs",
     },
     {
       key: "proof",
-      label: "Proof-to-paid",
+      label: "Completed work",
       value: metrics.proofToPaid,
       money: formatMoney(metrics.proofValue),
-      status: metrics.proofToPaid ? "Ready to invoice" : "Clear",
+      status: metrics.proofToPaid ? "Draft invoice ready" : "Clear",
       nav: "proof",
     },
     {
       key: "quotes",
-      label: "Quote follow-ups",
+      label: "Quotes to follow up",
       value: metrics.openQuotes,
       money: formatMoney(metrics.quotePipeline),
-      status: metrics.openQuotes ? "Follow-up ready" : "Clear",
+      status: metrics.openQuotes ? "Follow-up draft ready" : "Clear",
       nav: "quotes",
     },
   ];
 
   const guardrails = [
     "AI prepares, owner approves",
-    "No auto-send without approval",
+    "No customer messages sent automatically",
     "No payroll changes without approval",
     "No MYOB/accounting writes without approval",
     "No customer charges without approval",

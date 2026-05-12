@@ -13301,9 +13301,6 @@ async def buy_sms_pack(payload: dict = Body(default={}), current_user: dict = De
         "order_id": order["id"],
         "message": f"SMS pack order saved: {pack_data['credits']} credits for ${pack_data['price']:.0f}. Add STRIPE_PRICE_SMS_{pack} to enable checkout.",
     }
-
-
-
 setup_ai_operator_routes(api_router, db, JWT_SECRET, JWT_ALGORITHM)
 app.include_router(api_router)
 

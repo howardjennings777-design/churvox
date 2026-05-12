@@ -8,7 +8,7 @@ export default function AICommandCorePanel({ data = {}, onNav }) {
       <header>
         <div>
           <p>AI COMMAND CORE</p>
-          <h2>Best move right now</h2>
+          <h2>AI recommended next move</h2>
         </div>
         <button type="button" onClick={() => onNav?.(core.briefing.nav || "queue")}>
           Open
@@ -16,7 +16,7 @@ export default function AICommandCorePanel({ data = {}, onNav }) {
       </header>
 
       <div className="op-command-best">
-        <span>Priority {core.bestAction?.priority_score || core.quality.score}</span>
+        <span>Priority score {core.bestAction?.priority_score || core.quality.score}</span>
         <h3>{core.briefing.title}</h3>
         <p>{core.briefing.summary}</p>
         <small>{core.briefing.reason}</small>
@@ -35,17 +35,17 @@ export default function AICommandCorePanel({ data = {}, onNav }) {
 
       <div className="op-command-bottom">
         <section>
-          <p>Data quality</p>
+          <p>AI data readiness</p>
           <strong>{core.quality.score}%</strong>
           <small>
             {core.quality.missing.length
               ? `Needs: ${core.quality.missing.map((item) => item.label).join(", ")}`
-              : "Enough data for AI operator decisions"}
+              : "Enough data for AI-prepared actions"}
           </small>
         </section>
 
         <section>
-          <p>Approval guardrails</p>
+          <p>Owner approval guardrails</p>
           <div className="op-command-guardrails">
             {core.guardrails.slice(0, 3).map((item) => (
               <span key={item}>{item}</span>

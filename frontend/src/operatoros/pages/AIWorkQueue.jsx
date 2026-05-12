@@ -25,7 +25,7 @@ async function executeAction(action, fields) {
       method: "POST",
     });
 
-    return result?.message || "AI action approved and executed.";
+    return result?.message || "Approved. Churvox completed the prepared action.";
   }
 
   if (action.execute === "draft_invoice") {
@@ -123,7 +123,7 @@ export default function AIWorkQueue({ data }) {
       const result = await apiFetch("/ai/operator/run", { method: "POST" });
       await data.reload?.();
       setNotice(
-        `AI Operator ran. Prepared ${result?.prepared ?? 0}, created ${result?.created ?? 0}, updated ${result?.updated ?? 0}.`
+        `AI scan complete. Prepared ${result?.prepared ?? 0}, created ${result?.created ?? 0}, updated ${result?.updated ?? 0}.`
       );
     } catch (error) {
       setNotice(error.message || "AI Operator run failed.");
@@ -224,16 +224,16 @@ export default function AIWorkQueue({ data }) {
       <section className="op-workspace-head">
         <div>
           <p>AI WORK QUEUE</p>
-          <h1>Review, edit and approve AI-prepared work.</h1>
-          <span>AI does the admin prep. The owner stays in control.</span>
+          <h1>Approve the work AI prepared for you.</h1>
+          <span>AI finds the next admin move, prepares it, and waits for owner approval.</span>
         </div>
 
         <button type="button" disabled={busy === "run-ai-operator"} onClick={runOperator}>
-          {busy === "run-ai-operator" ? "Running..." : "Run AI Operator"}
+          {busy === "run-ai-operator" ? "Scanning..." : "Scan business now"}
         </button>
 
         <button disabled={!actions.some((x) => String(x.risk).toLowerCase() === "low")} onClick={approveAllSafe}>
-          Approve all safe
+          Approve safe drafts
         </button>
       </section>
 
@@ -291,7 +291,7 @@ export default function AIWorkQueue({ data }) {
               disabled={busy === selected?.id}
               onClick={() => approve(selected, edited)}
             >
-              {busy === selected?.id ? "Approving..." : "Approve edited action"}
+              {busy === selected?.id ? "Approving..." : "Approve action"}
             </button>
           </>
         }
