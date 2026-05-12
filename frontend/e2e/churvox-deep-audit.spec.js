@@ -112,7 +112,7 @@ test("public audit", async ({ page }, testInfo) => {
 
   const out = {
     project: testInfo.project.name,
-    baseURL: BASE,
+    baseURL: process.env.CHURVOX_BASE_URL || "https://www.churvox.com",
     auditedAt: new Date().toISOString(),
     results,
     errors,
@@ -216,7 +216,7 @@ test("owner + AI deep audit", async ({ page }, testInfo) => {
 
   const ownerOut = {
     project: testInfo.project.name,
-    baseURL: BASE,
+    baseURL: process.env.CHURVOX_BASE_URL || "https://www.churvox.com",
     auditedAt: new Date().toISOString(),
     ownerResults,
     aiArea,
