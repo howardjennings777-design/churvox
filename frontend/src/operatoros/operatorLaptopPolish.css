@@ -704,3 +704,89 @@
   background: transparent !important;
   padding: 0 !important;
 }
+
+/* PROPER_CODESPACE_LAYOUT_FIX */
+.op-topbar {
+  position: relative !important;
+  overflow: visible !important;
+  z-index: 50 !important;
+}
+
+.op-topbar-right {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+.op-role-switch {
+  position: relative !important;
+  z-index: 100 !important;
+}
+
+.op-role-switch > button {
+  min-width: 92px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+}
+
+.op-role-switch > button span {
+  color: #67e8f9 !important;
+}
+
+.op-role-menu {
+  position: absolute !important;
+  top: calc(100% + 8px) !important;
+  right: 0 !important;
+  z-index: 200 !important;
+  width: 180px !important;
+  display: grid !important;
+  gap: 6px !important;
+  padding: 8px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(125, 234, 255, .24) !important;
+  background:
+    radial-gradient(circle at 80% 0%, rgba(34, 211, 238, .14), transparent 70%),
+    rgba(3, 10, 24, .98) !important;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .48), 0 0 32px rgba(34, 211, 238, .12) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+.op-role-menu button {
+  width: 100% !important;
+  min-height: 36px !important;
+  justify-content: flex-start !important;
+  border-radius: 12px !important;
+  padding: 0 12px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: #e6f7ff !important;
+  text-align: left !important;
+}
+
+.op-role-menu button:hover,
+.op-role-menu button.active {
+  color: #03111e !important;
+  background: linear-gradient(135deg, #67e8f9, #38bdf8) !important;
+  border-color: rgba(125, 234, 255, .45) !important;
+}
+
+.op-click-away {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 90 !important;
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.op-command-hero {
+  overflow: hidden !important;
+}
+
+.op-main {
+  overflow: visible !important;
+}

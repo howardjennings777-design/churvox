@@ -1,35 +1,23 @@
 import { useMemo, useState } from "react";
-import { clientOf, titleOf, statusOf, isOwnerLike, isPayrollRole, isWorkerRole } from "../api";
+import { clientOf, titleOf, statusOf } from "../api";
 import DetailDrawer from "./DetailDrawer";
 import NotificationCentre from "./NotificationCentre";
 
-const ROLE_OPTIONS = [
-  { value: "owner", label: "Owner" },
-  { value: "manager", label: "Manager" },
-  { value: "office_admin", label: "Office Admin" },
-  { value: "worker", label: "Worker" },
-  { value: "payroll", label: "Payroll" },
+const ROLES = [
+  ["owner", "Owner"],
+  ["manager", "Manager"],
+  ["office_admin", "Office Admin"],
+  ["worker", "Worker"],
+  ["payroll", "Payroll"],
 ];
 
-export default function TopCommandBar({ role, setRole, allowRoleSwitch, userName, data, onNav, onCreate }) {
+export default function TopCommandBar({ role, setRole, data, onNav, onCreate }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
   const [query, setQuery] = useState("");
 
-  const activeRole = ROLE_OPTIONS.find((item) => item.value === role) || ROLE_OPTIONS[0];
-  const canCreate = isOwnerLike(role);
-  const createOptions = isPayrollRole(role)
-    ? []
-    : isWorkerRole(role)
-      ? []
-      : [
-          ["jobs", "Job"],
-          ["clients", "Client"],
-          ["quotes", "Quote"],
-          ["invoices", "Invoice"],
-          ["workers", "Worker"],
-        ];
+  const activeRole = ROLES.find(([value]) => value === role)?.[1] || "Owner";
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -65,39 +53,45 @@ export default function TopCommandBar({ role, setRole, allowRoleSwitch, userName
     onCreate?.(type);
   }
 
-  function chooseRole(nextRole) {
-    setRole?.(nextRole);
-    setRoleOpen(false);
-  }
-
   return (
     <>
+      {roleOpen ? (
+        <button
+          type="button"
+          className="op-click-away"
+          aria-label="Close menu"
+          onClick={() => setRoleOpen(false)}
+        />
+      ) : null}
+
       <div className="op-topbar">
-        <span>Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, {userName || activeRole.label}.</span>
+        <span>Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, Owner.</span>
 
         <div className="op-topbar-right">
           <button type="button" onClick={() => setSearchOpen(true)}>Search</button>
-          {canCreate ? <button type="button" className="primary" onClick={() => setCreateOpen(true)}>+ Create</button> : null}
+          <button type="button" className="primary" onClick={() => setCreateOpen(true)}>+ Create</button>
           <NotificationCentre data={data} onNav={onNav} />
-          {isOwnerLike(role) ? <button type="button" onClick={() => onNav?.("queue")}>AI Queue</button> : null}
-          {isOwnerLike(role) ? <button type="button" onClick={() => onNav?.("system")}>System Centre</button> : null}
+          <button type="button" onClick={() => onNav?.("queue")}>AI Queue</button>
+          <button type="button" onClick={() => onNav?.("system")}>System Centre</button>
 
           <div className="op-role-switch">
-            <button type="button" onClick={() => allowRoleSwitch ? setRoleOpen((open) => !open) : null}>
-              {activeRole.label}
-              {allowRoleSwitch ? <span>⌄</span> : null}
+            <button type="button" onClick={() => setRoleOpen((open) => !open)}>
+              {activeRole} <span>⌄</span>
             </button>
 
-            {allowRoleSwitch && roleOpen ? (
+            {roleOpen ? (
               <div className="op-role-menu">
-                {ROLE_OPTIONS.map((item) => (
+                {ROLES.map(([value, label]) => (
                   <button
-                    key={item.value}
+                    key={value}
                     type="button"
-                    className={item.value === role ? "active" : ""}
-                    onClick={() => chooseRole(item.value)}
+                    className={value === role ? "active" : ""}
+                    onClick={() => {
+                      setRole?.(value);
+                      setRoleOpen(false);
+                    }}
                   >
-                    {item.label}
+                    {label}
                   </button>
                 ))}
               </div>
@@ -105,8 +99,6 @@ export default function TopCommandBar({ role, setRole, allowRoleSwitch, userName
           </div>
         </div>
       </div>
-
-      {allowRoleSwitch && roleOpen ? <button className="op-click-away" aria-label="Close role menu" onClick={() => setRoleOpen(false)} /> : null}
 
       <DetailDrawer
         open={searchOpen}
@@ -120,7 +112,7 @@ export default function TopCommandBar({ role, setRole, allowRoleSwitch, userName
             <input
               autoFocus
               value={query}
-              placeholder="Type a client, job, invoice, address or worker"
+              placeholder="Type client, job, invoice, address or worker"
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
@@ -158,9 +150,11 @@ export default function TopCommandBar({ role, setRole, allowRoleSwitch, userName
         onClose={() => setCreateOpen(false)}
       >
         <section className="op-create-grid">
-          {createOptions.length ? createOptions.map(([type, label]) => (
-            <button key={type} onClick={() => chooseCreate(type)}>{label}</button>
-          )) : <p className="op-muted">Your role does not have create permissions here.</p>}
+          <button onClick={() => chooseCreate("jobs")}>Job</button>
+          <button onClick={() => chooseCreate("clients")}>Client</button>
+          <button onClick={() => chooseCreate("quotes")}>Quote</button>
+          <button onClick={() => chooseCreate("invoices")}>Invoice</button>
+          <button onClick={() => chooseCreate("workers")}>Worker</button>
         </section>
       </DetailDrawer>
     </>
