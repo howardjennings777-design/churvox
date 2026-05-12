@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import AIActivityTimeline from "./AIActivityTimeline";
 import {
   askBusiness,
   loadAiIntelligenceSnapshot,
@@ -149,7 +150,7 @@ export default function AIIntelligencePanel({ onNav }) {
       <header>
         <div>
           <p>AI INTELLIGENCE LAYER</p>
-          <h2>Memory, briefing, learning and business questions.</h2>
+          <h2>AI found the work. You approve. Churvox does it.</h2>
         </div>
 
         <div className="op-row-actions">
@@ -240,6 +241,7 @@ export default function AIIntelligencePanel({ onNav }) {
       </form>
 
       {answer ? <section className="op-ai-answer">{answer}</section> : null}
+      <AIActivityTimeline items={audit} />
     </section>
   );
 }

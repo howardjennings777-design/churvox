@@ -13,6 +13,10 @@ from ai_operator.memory import (
 )
 from ai_operator.briefing import build_daily_briefing
 from ai_operator.ask import answer_business_question
+from ai_operator.planner import build_operator_plan
+from ai_operator.reasoning import build_reasoning
+from ai_operator.learning import record_owner_decision
+from ai_operator.executor import execute_approved_action
 
 
 def now_utc():
@@ -316,3 +320,78 @@ def setup_ai_operator_power_routes(api_router, db, jwt_secret, jwt_algorithm):
             "classification": clean_value(classify_action(action_type, action)),
             "policy": clean_value(classify_action(action_type, action)),
         }
+
+
+    @api_router.post("/ai/operator/plan")
+    async def ai_operator_plan(request: Request):
+        user, business_id = await owner_context(request)
+        ctx = await get_business_context(db, business_id, user)
+        actions = build_operator_plan(ctx["jobs"], ctx["clients"], ctx["workers"], ctx["quotes"], ctx["invoices"], ctx["memory"], ctx["quality"], existing_actions=ctx["actions"])
+        created = 0
+        for action in actions:
+            action["business_id"] = str(business_id)
+            reasoning = build_reasoning(action, ctx, ctx["memory"], ctx["quality"])
+            action.update(reasoning)
+            row = await db.ai_operator_actions.find_one({"business_id": str(business_id), "fingerprint": action.get("fingerprint"), "status": {"$in": ["pending","ready","needs_info"]}})
+            if not row:
+                await db.ai_operator_actions.insert_one(action)
+                created += 1
+        rows = await db.ai_operator_actions.find({"business_id": str(business_id)}).sort([("priority_score", -1), ("created_at", -1)]).limit(200).to_list(length=200)
+        return {"success": True, "created": created, "actions": clean_value(rows), "briefing_summary": {"prepared": len(rows)}}
+
+    @api_router.get("/ai/operator/actions")
+    async def ai_operator_actions(request: Request, status: str | None = None):
+        _, business_id = await owner_context(request)
+        q={"business_id": str(business_id)}
+        if status: q["status"]=status
+        rows=await db.ai_operator_actions.find(q).sort([("priority_score", -1), ("created_at", -1)]).limit(200).to_list(length=200)
+        return {"success": True, "actions": clean_value(rows)}
+
+    @api_router.get("/ai/operator/actions/{action_id}")
+    async def ai_operator_action(request: Request, action_id: str):
+        _, business_id = await owner_context(request)
+        row = await db.ai_operator_actions.find_one({"business_id": str(business_id), "$or":[{"id": action_id}, {"_id": ObjectId(action_id) if ObjectId.is_valid(action_id) else None}]})
+        if not row: raise HTTPException(status_code=404, detail="Action not found")
+        audit = await db.ai_operator_audit_log.find({"business_id": str(business_id), "action_id": str(row.get('id') or row.get('_id'))}).sort("created_at", -1).limit(100).to_list(length=100)
+        return {"success": True, "action": clean_value(row), "audit": clean_value(audit)}
+
+    @api_router.post("/ai/operator/actions/{action_id}/edit")
+    async def ai_operator_action_edit(request: Request, action_id: str, payload: dict = Body(default={})):
+        user, business_id = await owner_context(request)
+        edited_payload = payload.get("edited_payload") or payload.get("payload") or {}
+        row = await db.ai_operator_actions.find_one({"business_id": str(business_id), "$or":[{"id": action_id}, {"_id": ObjectId(action_id) if ObjectId.is_valid(action_id) else None}]})
+        if not row: raise HTTPException(status_code=404, detail="Action not found")
+        await db.ai_operator_actions.update_one({"_id": row.get("_id")}, {"$set": {"owner_edited_payload": edited_payload, "updated_at": now_utc()}})
+        await record_owner_decision(db, business_id, user, row, "edited", edited_payload=edited_payload)
+        return {"success": True, "message": "Edits saved."}
+
+    @api_router.post("/ai/operator/actions/{action_id}/approve")
+    async def ai_operator_action_approve(request: Request, action_id: str, payload: dict = Body(default={})):
+        user, business_id = await owner_context(request)
+        edited_payload = payload.get("edited_payload") or {}
+        row = await db.ai_operator_actions.find_one({"business_id": str(business_id), "$or":[{"id": action_id}, {"_id": ObjectId(action_id) if ObjectId.is_valid(action_id) else None}]})
+        if not row: raise HTTPException(status_code=404, detail="Action not found")
+        await record_owner_decision(db, business_id, user, row, "approved", edited_payload=edited_payload)
+        try:
+            result = await execute_approved_action(db, business_id, user, row, approved_payload=edited_payload)
+            await db.ai_operator_actions.update_one({"_id": row.get("_id")}, {"$set": {"status": "executed", "updated_at": now_utc()}})
+            return {"success": True, "message": "Action approved and executed.", "result": clean_value(result)}
+        except Exception as e:
+            await db.ai_operator_actions.update_one({"_id": row.get("_id")}, {"$set": {"status": "failed", "error": str(e), "updated_at": now_utc()}})
+            raise HTTPException(status_code=400, detail=str(e))
+
+    @api_router.post("/ai/operator/actions/{action_id}/reject")
+    async def ai_operator_action_reject(request: Request, action_id: str, payload: dict = Body(default={})):
+        user, business_id = await owner_context(request)
+        row = await db.ai_operator_actions.find_one({"business_id": str(business_id), "$or":[{"id": action_id}, {"_id": ObjectId(action_id) if ObjectId.is_valid(action_id) else None}]})
+        if not row: raise HTTPException(status_code=404, detail="Action not found")
+        reason = payload.get("reason")
+        await record_owner_decision(db, business_id, user, row, "rejected", reason=reason)
+        await db.ai_operator_actions.update_one({"_id": row.get("_id")}, {"$set": {"status": "rejected", "reject_reason": reason, "updated_at": now_utc()}})
+        return {"success": True, "message": "Action rejected."}
+
+    @api_router.get("/ai/operator/activity")
+    async def ai_operator_activity(request: Request, limit: int = 120):
+        _, business_id = await owner_context(request)
+        rows = await db.ai_operator_audit_log.find({"business_id": str(business_id)}).sort("created_at", -1).limit(max(1,min(limit,500))).to_list(length=max(1,min(limit,500)))
+        return {"success": True, "activity": clean_value(rows)}
