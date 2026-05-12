@@ -3138,8 +3138,18 @@ function Login() {
     <main className="op-login">
       <form onSubmit={submit}>
         <ChurvoxLogo />
-        <h1>Open Operator OS.</h1>
-        <p>AI prepares the admin. You approve the work.</p>
+        <h1>Open Churvox.</h1>
+        <p>The AI command centre for trade and service businesses.
+<div className="login-business-mini-copy">
+  <strong>Run jobs, crew and admin from one place.</strong>
+  <span>Churvox helps owners manage jobs, clients, quotes, invoices, proof photos and daily admin — with AI preparing the work for approval.</span>
+  <div>
+    <small>Jobs + crew</small>
+    <small>Quotes + invoices</small>
+    <small>AI approval queue</small>
+  </div>
+</div>
+</p>
         <input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
         <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         <button type="submit">Sign in</button>
