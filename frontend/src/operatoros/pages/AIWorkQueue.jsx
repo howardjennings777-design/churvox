@@ -25,15 +25,38 @@ async function executeAction(action, fields) {
   }
 
   if (action.execute === "assign_worker" && fields.job_id) {
-    await tryApi([`/jobs/${fields.job_id}/assign`, `/jobs/${fields.job_id}`], {
-      method: "POST",
-      body: {
-        worker_id: fields.worker_id,
-        assigned_worker_id: fields.worker_id,
-        assigned_worker_name: fields.worker_name,
-      },
-    });
+    const body = {
+      worker_id: fields.worker_id,
+      assigned_worker_id: fields.worker_id,
+      assigned_worker_name: fields.worker_name,
+      ai_match_score: fields.worker_score,
+      ai_match_reasons: fields.match_reasons,
+      ai_possible_conflict: fields.possible_conflict,
+    };
+
+    try {
+      await tryApi([`/jobs/${fields.job_id}/assign`, `/jobs/${fields.job_id}/assign-worker`], {
+        method: "POST",
+        body,
+      });
+    } catch {
+      await tryApi([`/jobs/${fields.job_id}`], {
+        method: "PATCH",
+        body,
+      });
+    }
+
     return "Worker assignment submitted.";
+  }
+
+  if (String(action.execute || "").startsWith("open_")) {
+    saveOperatorDraft({
+      ...action,
+      fields,
+      status: "owner_needs_to_review_workspace",
+    });
+
+    return "Saved as an owner-review setup action.";
   }
 
   saveOperatorDraft({
