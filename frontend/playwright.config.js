@@ -1,19 +1,37 @@
-const { defineConfig, devices } = require('@playwright/test');
+const { defineConfig, devices } = require("@playwright/test");
 
 module.exports = defineConfig({
-  testDir: './tests/e2e',
-  timeout: 60_000,
-  expect: { timeout: 12_000 },
+  testDir: "./e2e",
+  timeout: 90000,
+  expect: {
+    timeout: 12000,
+  },
+  fullyParallel: false,
   retries: 0,
-  reporter: [['html'], ['list']],
+  workers: 1,
+  reporter: [
+    ["list"],
+    ["html", { outputFolder: "playwright-report", open: "never" }],
+    ["json", { outputFile: "test-results/playwright-audit-results.json" }],
+  ],
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
-    trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    baseURL: process.env.CHURVOX_BASE_URL || "https://www.churvox.com",
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
+    viewport: { width: 1440, height: 1000 },
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile-chrome', use: { ...devices['Pixel 7'] } },
+    {
+      name: "desktop-chrome",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "mobile-chrome",
+      use: {
+        ...devices["Pixel 7"],
+        viewport: { width: 412, height: 915 },
+      },
+    },
   ],
 });
