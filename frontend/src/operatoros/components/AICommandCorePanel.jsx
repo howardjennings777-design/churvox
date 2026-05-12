@@ -11,7 +11,7 @@ export default function AICommandCorePanel({ data = {}, onNav }) {
           <h2>AI's recommended next move</h2>
         </div>
         <button type="button" onClick={() => onNav?.(core.briefing.nav || "queue")}>
-          Open
+          Open details
         </button>
       </header>
 
