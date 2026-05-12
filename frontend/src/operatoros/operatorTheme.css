@@ -31,3 +31,93 @@
 
 /* Next: URL-safe navigation + notification centre */
 .op-notification-button{position:relative}.op-notification-button b{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;display:grid;place-items:center;border-radius:999px;background:#67e8f9;color:#03111e;font-size:10px;font-weight:950}.op-notification-list{display:grid;gap:10px}.op-notification-row{width:100%;display:grid;gap:4px;text-align:left;border:1px solid rgba(125,234,255,.14);border-radius:16px;background:rgba(2,8,23,.30);color:#f4fbff;padding:13px}.op-notification-row strong{font-size:14px}.op-notification-row span{color:#9db4ca;line-height:1.4}.op-notification-row.cyan{border-color:rgba(103,232,249,.28)}.op-notification-row.green{border-color:rgba(34,197,94,.30)}.op-notification-row.amber{border-color:rgba(245,158,11,.32)}.op-notification-row.blue{border-color:rgba(59,130,246,.32)}
+
+.op-ai-readiness {
+  margin-top: 18px;
+}
+
+.op-readiness-score {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 14px 0;
+}
+
+.op-readiness-score strong {
+  font-size: 42px;
+  line-height: 1;
+}
+
+.op-readiness-score span {
+  color: var(--op-muted);
+  font-weight: 800;
+}
+
+.op-readiness-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.op-readiness-grid button {
+  border: 1px solid rgba(130, 180, 255, 0.18);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.045);
+  color: inherit;
+  padding: 13px;
+  text-align: left;
+  display: grid;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.op-readiness-grid button:hover {
+  border-color: rgba(103, 232, 249, 0.55);
+  background: rgba(103, 232, 249, 0.08);
+}
+
+.op-readiness-grid span {
+  color: var(--op-muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.op-readiness-grid strong {
+  font-size: 24px;
+}
+
+.op-readiness-grid small {
+  color: #facc15;
+  line-height: 1.35;
+}
+
+.op-ready-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.op-ready-dot.ok {
+  background: #22c55e;
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.55);
+}
+
+.op-ready-dot.warn {
+  background: #f59e0b;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.5);
+}
+
+@media (max-width: 980px) {
+  .op-readiness-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .op-readiness-grid {
+    grid-template-columns: 1fr;
+  }
+}

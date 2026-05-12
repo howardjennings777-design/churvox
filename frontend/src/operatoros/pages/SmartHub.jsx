@@ -3,6 +3,7 @@ import ActionCard from "../components/ActionCard";
 import EmptyState from "../components/EmptyState";
 import FloatingLogo from "../components/FloatingLogo";
 import StatusBadge from "../components/StatusBadge";
+import AIReadinessPanel from "../components/AIReadinessPanel";
 import { clientOf, moneyOf, statusOf, titleOf } from "../api";
 
 function MiniPanel({ title, items = [], empty, onOpen }) {
@@ -114,6 +115,8 @@ export default function SmartHub({ data, onNav, onCreate }) {
         <MiniPanel title="Proof to paid" items={data.completedJobs || []} empty="No completed jobs waiting" onOpen={() => onNav("proof")} />
         <MiniPanel title="Money watch" items={data.unpaidInvoices || []} empty="No invoices to chase" onOpen={() => onNav("invoices")} />
       </section>
+
+      <AIReadinessPanel data={data} onNav={onNav} />
 
       <section className="op-support-grid">
         <MiniPanel title="Crew watch" items={data.workers || []} empty="No crew added" onOpen={() => onNav("crew")} />
