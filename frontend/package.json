@@ -77,7 +77,10 @@
     "test:team-worker-route": "playwright test tests/e2e/churvox-team-worker-route.spec.js --project=chromium",
     "test:public-quote-final": "playwright test tests/e2e/churvox-public-quote-final.spec.js --project=chromium",
     "test:worker-owner-block": "playwright test tests/e2e/churvox-worker-field-owner-check.spec.js --project=chromium",
-    "test:owner-logout": "playwright test tests/e2e/churvox-owner-logout.spec.js --project=chromium"
+    "test:owner-logout": "playwright test tests/e2e/churvox-owner-logout.spec.js --project=chromium",
+    "audit:live": "playwright test e2e/churvox-deep-audit.spec.js",
+    "audit:live:headed": "playwright test e2e/churvox-deep-audit.spec.js --headed",
+    "audit:report": "playwright show-report"
   },
   "browserslist": {
     "production": [
@@ -105,10 +108,9 @@
     "eslint-plugin-react-hooks": "5.2.0",
     "globals": "15.15.0",
     "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "@playwright/test": "^1.54.2"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
-  "optionalDependencies": {
-    "@playwright/test": "^1.54.2"
-  }
+  "optionalDependencies": {}
 }
