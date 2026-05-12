@@ -23,6 +23,8 @@ export default function OperatorShell({
   children,
   role,
   setRole,
+  allowRoleSwitch,
+  userName,
   data,
   onCreate,
 }) {
@@ -57,6 +59,8 @@ export default function OperatorShell({
         <TopCommandBar
           role={role}
           setRole={setRole}
+          allowRoleSwitch={allowRoleSwitch}
+          userName={userName}
           data={data}
           onNav={setCurrent}
           onCreate={onCreate}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { clientOf, titleOf, statusOf } from "../api";
+import { clientOf, titleOf, statusOf, isOwnerLike, isPayrollRole, isWorkerRole } from "../api";
 import DetailDrawer from "./DetailDrawer";
 import NotificationCentre from "./NotificationCentre";
 
@@ -11,13 +11,25 @@ const ROLE_OPTIONS = [
   { value: "payroll", label: "Payroll" },
 ];
 
-export default function TopCommandBar({ role, setRole, data, onNav, onCreate }) {
+export default function TopCommandBar({ role, setRole, allowRoleSwitch, userName, data, onNav, onCreate }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
   const [query, setQuery] = useState("");
 
   const activeRole = ROLE_OPTIONS.find((item) => item.value === role) || ROLE_OPTIONS[0];
+  const canCreate = isOwnerLike(role);
+  const createOptions = isPayrollRole(role)
+    ? []
+    : isWorkerRole(role)
+      ? []
+      : [
+          ["jobs", "Job"],
+          ["clients", "Client"],
+          ["quotes", "Quote"],
+          ["invoices", "Invoice"],
+          ["workers", "Worker"],
+        ];
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -61,22 +73,22 @@ export default function TopCommandBar({ role, setRole, data, onNav, onCreate }) 
   return (
     <>
       <div className="op-topbar">
-        <span>Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, Owner.</span>
+        <span>Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, {userName || activeRole.label}.</span>
 
         <div className="op-topbar-right">
           <button type="button" onClick={() => setSearchOpen(true)}>Search</button>
-          <button type="button" className="primary" onClick={() => setCreateOpen(true)}>+ Create</button>
+          {canCreate ? <button type="button" className="primary" onClick={() => setCreateOpen(true)}>+ Create</button> : null}
           <NotificationCentre data={data} onNav={onNav} />
-          <button type="button" onClick={() => onNav?.("queue")}>AI Queue</button>
-          <button type="button" onClick={() => onNav?.("system")}>System Centre</button>
+          {isOwnerLike(role) ? <button type="button" onClick={() => onNav?.("queue")}>AI Queue</button> : null}
+          {isOwnerLike(role) ? <button type="button" onClick={() => onNav?.("system")}>System Centre</button> : null}
 
           <div className="op-role-switch">
-            <button type="button" onClick={() => setRoleOpen((open) => !open)}>
+            <button type="button" onClick={() => allowRoleSwitch ? setRoleOpen((open) => !open) : null}>
               {activeRole.label}
-              <span>⌄</span>
+              {allowRoleSwitch ? <span>⌄</span> : null}
             </button>
 
-            {roleOpen ? (
+            {allowRoleSwitch && roleOpen ? (
               <div className="op-role-menu">
                 {ROLE_OPTIONS.map((item) => (
                   <button
@@ -94,7 +106,7 @@ export default function TopCommandBar({ role, setRole, data, onNav, onCreate }) 
         </div>
       </div>
 
-      {roleOpen ? <button className="op-click-away" aria-label="Close role menu" onClick={() => setRoleOpen(false)} /> : null}
+      {allowRoleSwitch && roleOpen ? <button className="op-click-away" aria-label="Close role menu" onClick={() => setRoleOpen(false)} /> : null}
 
       <DetailDrawer
         open={searchOpen}
@@ -146,11 +158,9 @@ export default function TopCommandBar({ role, setRole, data, onNav, onCreate }) 
         onClose={() => setCreateOpen(false)}
       >
         <section className="op-create-grid">
-          <button onClick={() => chooseCreate("jobs")}>Job</button>
-          <button onClick={() => chooseCreate("clients")}>Client</button>
-          <button onClick={() => chooseCreate("quotes")}>Quote</button>
-          <button onClick={() => chooseCreate("invoices")}>Invoice</button>
-          <button onClick={() => chooseCreate("workers")}>Worker</button>
+          {createOptions.length ? createOptions.map(([type, label]) => (
+            <button key={type} onClick={() => chooseCreate(type)}>{label}</button>
+          )) : <p className="op-muted">Your role does not have create permissions here.</p>}
         </section>
       </DetailDrawer>
     </>

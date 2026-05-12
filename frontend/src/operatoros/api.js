@@ -182,3 +182,83 @@ export function saveOperatorDraft(row) {
   });
   saveLocalList("churvox_operator_drafts", rows);
 }
+
+
+export function normalizeRole(role) {
+  const raw = String(role || "").toLowerCase().trim().replace(/\s+/g, "_");
+  if (["owner", "employer", "business_owner", "admin"].includes(raw)) return "owner";
+  if (["manager"].includes(raw)) return "manager";
+  if (["office_admin", "office", "admin_staff"].includes(raw)) return "office_admin";
+  if (["payroll", "payroll_admin"].includes(raw)) return "payroll";
+  if (["worker", "field_worker", "staff", "employee"].includes(raw)) return "worker";
+  return "";
+}
+
+export function readStoredUser() {
+  const keys = ["churvox_user", "user", "auth_user", "current_user", "profile"];
+  for (const key of keys) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") return parsed.user || parsed.profile || parsed;
+    } catch {}
+  }
+
+  try {
+    const email = localStorage.getItem("email") || localStorage.getItem("user_email") || "";
+    const role = localStorage.getItem("role") || localStorage.getItem("user_role") || "";
+    if (email || role) return { email, role };
+  } catch {}
+
+  return {};
+}
+
+export function currentUserRole() {
+  const user = readStoredUser();
+  const fromUser = normalizeRole(user.role || user.user_role || user.account_type || user.type);
+  if (fromUser) return fromUser;
+
+  try {
+    const saved = normalizeRole(localStorage.getItem("churvox_role") || localStorage.getItem("role") || localStorage.getItem("user_role"));
+    if (saved) return saved;
+  } catch {}
+
+  const path = window.location.pathname.toLowerCase();
+  if (path.startsWith("/worker")) return "worker";
+  if (path.startsWith("/payroll")) return "payroll";
+  return "owner";
+}
+
+export function currentUserName() {
+  const user = readStoredUser();
+  return (
+    user.name ||
+    user.full_name ||
+    user.first_name ||
+    user.business_name ||
+    user.email ||
+    "Owner"
+  );
+}
+
+export function canSwitchRoleForTesting() {
+  try {
+    return localStorage.getItem("churvox_allow_role_switch") === "true";
+  } catch {
+    return false;
+  }
+}
+
+export function isOwnerLike(role) {
+  return ["owner", "manager", "office_admin"].includes(normalizeRole(role));
+}
+
+export function isWorkerRole(role) {
+  return normalizeRole(role) === "worker";
+}
+
+export function isPayrollRole(role) {
+  return normalizeRole(role) === "payroll";
+}
+

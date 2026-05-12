@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { apiFetch, saveOperatorDraft } from "../api";
 import { PLAN_TIERS, SMS_PACKS } from "../dataHooks";
 
 export default function SystemCentre({ data }) {
@@ -5,6 +7,65 @@ export default function SystemCentre({ data }) {
   const planStatus = data.planStatus || "not selected";
   const smsBalance = Number(data.smsBalance || 0);
   const myobConnected = Boolean(data.myobConnected);
+  const [notice, setNotice] = useState("");
+
+  async function choosePlan(plan) {
+    setNotice("");
+    try {
+      const payload = await apiFetch("/stripe/create-checkout-session", {
+        method: "POST",
+        body: { plan: plan.id, plan_id: plan.id },
+      });
+
+      const url = payload?.url || payload?.checkout_url || payload?.session_url;
+      if (url) {
+        window.location.href = url;
+        return;
+      }
+
+      throw new Error("Checkout URL was not returned.");
+    } catch (error) {
+      saveOperatorDraft({
+        type: "billing_plan_request",
+        title: `Choose ${plan.name}`,
+        fields: { plan: plan.id, price: plan.price },
+        status: "owner_needs_billing_review",
+        error: error.message,
+      });
+      setNotice(`Plan change saved for owner review. ${error.message || ""}`);
+    }
+  }
+
+  async function buySmsPack(pack) {
+    setNotice("");
+    try {
+      const payload = await apiFetch("/sms/buy-credits", {
+        method: "POST",
+        body: { pack_id: pack.id, credits: pack.credits, amount: pack.price },
+      });
+      setNotice(payload?.message || `${pack.credits} SMS credit purchase started.`);
+      await data.reload?.();
+    } catch (error) {
+      saveOperatorDraft({
+        type: "sms_credit_request",
+        title: `Buy ${pack.credits} SMS credits`,
+        fields: pack,
+        status: "owner_needs_sms_review",
+        error: error.message,
+      });
+      setNotice(`SMS purchase saved for owner review. ${error.message || ""}`);
+    }
+  }
+
+  function reviewMyob() {
+    saveOperatorDraft({
+      type: "myob_connection_review",
+      title: "Review MYOB connection",
+      fields: { currentPlan, myobConnected },
+      status: "owner_needs_myob_review",
+    });
+    setNotice("MYOB review saved. Churvox will not sync accounting changes without owner approval.");
+  }
 
   return (
     <main className="op-workspace">
@@ -16,6 +77,7 @@ export default function SystemCentre({ data }) {
         </div>
       </section>
 
+      {notice ? <section className="op-notice">{notice}</section> : null}
       {data.notice ? <section className="op-notice">{data.notice}</section> : null}
 
       <section className="op-system-summary">
@@ -36,7 +98,9 @@ export default function SystemCentre({ data }) {
               <span>Up to {plan.users} users</span>
               <span>{plan.myob}</span>
               <span>{plan.blocks}</span>
-              <button type="button">{currentPlan === plan.id ? "Current plan" : `Choose ${plan.name}`}</button>
+              <button type="button" disabled={currentPlan === plan.id} onClick={() => choosePlan(plan)}>
+                {currentPlan === plan.id ? "Current plan" : `Choose ${plan.name}`}
+              </button>
             </article>
           ))}
         </div>
@@ -47,16 +111,23 @@ export default function SystemCentre({ data }) {
           <header><div><p>SMS CREDITS</p><h2>{smsBalance} credits</h2></div></header>
           <div className="op-pack-list">
             {SMS_PACKS.map((pack) => (
-              <button key={pack.id} type="button"><strong>{pack.credits} credits</strong><span>${pack.price}</span></button>
+              <button key={pack.id} type="button" onClick={() => buySmsPack(pack)}>
+                <strong>{pack.credits} credits</strong><span>${pack.price}</span>
+              </button>
             ))}
           </div>
-          {smsBalance <= 10 ? <section className="op-warning-soft">SMS credits are low. Churvox can still draft reminders, but sending will need credits.</section> : null}
+          <section className="op-warning-soft">
+            SMS stays owner-controlled. AI can draft reminders, but sending/buying credits requires owner action.
+          </section>
         </article>
 
         <article className="op-panel">
           <header><div><p>MYOB</p><h2>{myobConnected ? "Connected" : "Not connected"}</h2></div></header>
           <p>Solo and Team do not include MYOB. Pro can use MYOB as an optional add-on. Enterprise includes MYOB by default.</p>
           <section className="op-warning-soft">MYOB sync is approval-first. Churvox must not sync accounting changes without owner approval.</section>
+          <footer>
+            <button type="button" onClick={reviewMyob}>{myobConnected ? "Review MYOB sync" : "Review connection setup"}</button>
+          </footer>
         </article>
       </section>
 

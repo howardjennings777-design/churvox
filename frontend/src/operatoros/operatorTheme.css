@@ -121,3 +121,32 @@
     grid-template-columns: 1fr;
   }
 }
+
+.op-form select,
+.op-form textarea,
+.payroll-row textarea {
+  width: 100%;
+  border: 1px solid rgba(130, 180, 255, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  padding: 11px 12px;
+  outline: none;
+}
+
+.op-form select:focus,
+.op-form textarea:focus,
+.payroll-row textarea:focus {
+  border-color: rgba(103, 232, 249, 0.65);
+  box-shadow: 0 0 0 3px rgba(103, 232, 249, 0.10);
+}
+
+.payroll-row {
+  align-items: flex-start;
+}
+
+.payroll-row textarea {
+  margin-top: 10px;
+  min-height: 58px;
+  resize: vertical;
+}

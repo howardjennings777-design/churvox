@@ -6,6 +6,7 @@ import "./operatorSidebarFinal.css";
 import FreshChurvoxApp from "../fresh/FreshChurvoxApp";
 import OperatorShell from "./OperatorShell";
 import { useOperatorData } from "./dataHooks";
+import { canSwitchRoleForTesting, currentUserName, currentUserRole, normalizeRole } from "./api";
 import CreateModal from "./components/CreateModal";
 import SmartHub from "./pages/SmartHub";
 import AIWorkQueue from "./pages/AIWorkQueue";
@@ -65,6 +66,9 @@ const pathToKey = {
   "/ai-approvals": "queue",
   "/ai-work-queue": "queue",
   "/jobs": "jobs",
+  "/worker": "jobs",
+  "/worker/jobs": "jobs",
+  "/worker/dashboard": "jobs",
   "/clients": "clients",
   "/team": "crew",
   "/crew": "crew",
@@ -99,7 +103,6 @@ function shouldUseLegacyApp() {
   return (
     path.startsWith("/public") ||
     path.startsWith("/client-portal") ||
-    path.startsWith("/worker") ||
     path.startsWith("/v3") ||
     path.startsWith("/v4")
   );
@@ -120,9 +123,16 @@ export default function OperatorApp() {
 
 function OperatorOSCore() {
   const data = useOperatorData();
-  const [role, setRole] = useState("owner");
+  const allowRoleSwitch = canSwitchRoleForTesting();
+  const [role, setRoleRaw] = useState(() => normalizeRole(currentUserRole()) || "owner");
+  const userName = currentUserName();
   const [current, setCurrentRaw] = useState(keyFromPath);
   const [createType, setCreateType] = useState("");
+
+  function setRole(nextRole) {
+    if (!allowRoleSwitch) return;
+    setRoleRaw(normalizeRole(nextRole) || "owner");
+  }
 
   const nav = useMemo(
     () => baseNav.filter((item) => (roleNav[role] || roleNav.owner).includes(item.key)),
@@ -140,7 +150,7 @@ function OperatorOSCore() {
 
   function setCurrent(key) {
     const allowed = (roleNav[role] || roleNav.owner).includes(key);
-    const safeKey = allowed ? key : nav[0]?.key || "hub";
+    const safeKey = allowed ? key : nav[0]?.key || "jobs";
     const nextPath = pathForKey(safeKey);
 
     setCurrentRaw(safeKey);
@@ -152,7 +162,7 @@ function OperatorOSCore() {
 
   useEffect(() => {
     if (!(roleNav[role] || roleNav.owner).includes(current)) {
-      setCurrent(nav[0]?.key || "hub");
+      setCurrent(nav[0]?.key || "jobs");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
@@ -166,6 +176,8 @@ function OperatorOSCore() {
       setCurrent={setCurrent}
       role={role}
       setRole={setRole}
+      allowRoleSwitch={allowRoleSwitch}
+      userName={userName}
       data={data}
       onCreate={setCreateType}
     >
