@@ -6329,3 +6329,60 @@ select:focus {
 }
 
 /* CHURVOX_SMART_HUB_UNCRAMP_END */
+
+/* Churvox login business explanation */
+.churvox-login-business-copy {
+  width: min(100%, 560px);
+  margin: 0 auto 24px;
+  padding: 24px;
+  border-radius: 28px;
+  background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.16), transparent 34%), linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.94));
+  color: #ffffff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.churvox-login-kicker {
+  margin: 0 0 8px;
+  color: #93c5fd;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.churvox-login-business-copy h2 {
+  margin: 0 0 10px;
+  font-size: clamp(1.7rem, 4vw, 2.6rem);
+  line-height: 1;
+  color: #ffffff;
+}
+
+.churvox-login-business-copy p {
+  margin: 0;
+  color: #dbeafe;
+  line-height: 1.6;
+}
+
+.churvox-login-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.churvox-login-points span {
+  border-radius: 999px;
+  padding: 8px 11px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #eff6ff;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+@media (max-width: 720px) {
+  .churvox-login-business-copy {
+    margin-bottom: 16px;
+    padding: 18px;
+    border-radius: 22px;
+  }
+}
