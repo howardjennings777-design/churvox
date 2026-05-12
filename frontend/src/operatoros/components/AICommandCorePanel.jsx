@@ -8,7 +8,7 @@ export default function AICommandCorePanel({ data = {}, onNav }) {
       <header>
         <div>
           <p>AI COMMAND CORE</p>
-          <h2>AI recommended next move</h2>
+          <h2>AI's recommended next move</h2>
         </div>
         <button type="button" onClick={() => onNav?.(core.briefing.nav || "queue")}>
           Open
@@ -40,7 +40,7 @@ export default function AICommandCorePanel({ data = {}, onNav }) {
           <small>
             {core.quality.missing.length
               ? `Needs: ${core.quality.missing.map((item) => item.label).join(", ")}`
-              : "Enough data for AI-prepared actions"}
+              : "Enough data for AI-prepared owner actions"}
           </small>
         </section>
 

@@ -83,16 +83,22 @@ function fieldMoney(action) {
 export function prioritiseAiActions(actions = []) {
   return [...actions]
     .map((action, index) => {
-      const score =
-        riskWeight(action) +
-        typeWeight(action) +
-        statusWeight(action) +
-        Math.min(25, fieldMoney(action) / 100) -
-        index;
+      const existingScore = Number(action.priority_score);
+      const score = Number.isFinite(existingScore) && existingScore > 0
+        ? existingScore
+        : riskWeight(action) +
+          typeWeight(action) +
+          statusWeight(action) +
+          Math.min(25, fieldMoney(action) / 100) -
+          index;
 
-      let confidence = "Medium";
-      if (score >= 85) confidence = "High";
-      if (score < 50) confidence = "Needs data";
+      const existingConfidence = action.confidence ? String(action.confidence).replaceAll("_", " ") : "";
+      let confidence = existingConfidence || "Medium";
+
+      if (!existingConfidence) {
+        if (score >= 85) confidence = "High";
+        if (score < 50) confidence = "Needs data";
+      }
 
       return {
         ...action,
@@ -153,7 +159,7 @@ function bestBriefing(bestAction, metrics, quality) {
   if (bestAction) {
     return {
       title: bestAction.title || "Review next AI action",
-      summary: bestAction.summary || "AI has prepared an owner-approved action.",
+      summary: bestAction.summary || "AI has prepared work for owner approval.",
       reason: bestAction.why?.[0] || "This is the strongest next move based on current business data.",
       nav: "queue",
     };
@@ -162,7 +168,7 @@ function bestBriefing(bestAction, metrics, quality) {
   if (quality.missing.length) {
     return {
       title: quality.missing[0].fix,
-      summary: "AI needs stronger business data before it can run the day properly.",
+      summary: "AI needs stronger business data before it can prepare the day properly.",
       reason: `${quality.missing[0].label} is incomplete.`,
       nav: quality.missing[0].key === "workers" ? "crew" : quality.missing[0].key === "clients" ? "clients" : "jobs",
     };
@@ -170,7 +176,7 @@ function bestBriefing(bestAction, metrics, quality) {
 
   return {
     title: "No urgent owner approval needed",
-    summary: "Churvox is monitoring jobs, invoices, quotes, crew and payments.",
+    summary: "Churvox is watching jobs, invoices, quotes, crew and payment follow-ups.",
     reason: "No high-priority action was detected.",
     nav: "queue",
   };

@@ -79,7 +79,7 @@ async function executeAction(action, fields) {
       status: "owner_needs_to_review_workspace",
     });
 
-    return "Saved as an owner-review setup action.";
+    return "Saved for owner review.";
   }
 
   saveOperatorDraft({
@@ -88,7 +88,7 @@ async function executeAction(action, fields) {
     status: "draft_waiting_owner",
   });
 
-  return "Saved as an owner-review draft.";
+  return "Saved as a draft for owner review.";
 }
 
 export default function AIWorkQueue({ data }) {
@@ -126,7 +126,7 @@ export default function AIWorkQueue({ data }) {
         `AI scan complete. Prepared ${result?.prepared ?? 0}, created ${result?.created ?? 0}, updated ${result?.updated ?? 0}.`
       );
     } catch (error) {
-      setNotice(error.message || "AI Operator run failed.");
+      setNotice(error.message || "AI scan could not run.");
     } finally {
       setBusy("");
     }
@@ -201,7 +201,7 @@ export default function AIWorkQueue({ data }) {
         message: "Backend rejected action, saved as draft.",
       });
 
-      setNotice("Backend did not accept this yet, so Churvox saved it as an owner-review draft.");
+      setNotice("Churvox could not complete this automatically, so it saved the prepared work for owner review.");
     } finally {
       setBusy("");
     }
@@ -233,7 +233,7 @@ export default function AIWorkQueue({ data }) {
         </button>
 
         <button disabled={!actions.some((x) => String(x.risk).toLowerCase() === "low")} onClick={approveAllSafe}>
-          Approve safe drafts
+          Approve low-risk drafts
         </button>
       </section>
 
@@ -250,8 +250,8 @@ export default function AIWorkQueue({ data }) {
       <section className="op-queue-list">
         {!actions.length ? (
           <EmptyState
-            title="No approvals waiting"
-            body="Create jobs, invoices, quotes or import clients/crew and Churvox will prepare work here."
+            title="No AI work waiting"
+            body="Create or import jobs, clients, crew, quotes or invoices, then scan the business. Churvox will prepare owner-approved actions here."
           />
         ) : (
           actions.map((action) => (
