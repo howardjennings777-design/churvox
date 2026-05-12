@@ -1,17 +1,33 @@
 import { useMemo, useState } from "react";
-import { addActivity, saveOperatorDraft, tryApi, readLocalList } from "../api";
+import { addActivity, apiFetch, saveOperatorDraft, tryApi, readLocalList } from "../api";
 import ActionCard from "../components/ActionCard";
 import DetailDrawer from "../components/DetailDrawer";
 import EmptyState from "../components/EmptyState";
 import { buildAiActions } from "./aiActions";
 import { prioritiseAiActions } from "./aiCommandCore";
 
+function normaliseBackendAction(action) {
+  return {
+    ...action,
+    id: action.id || action._id || action.action_key,
+    type: action.category || action.type || action.action_type || "AI",
+    execute: action.action_type || action.execute,
+    fields: action.suggested_payload || action.fields || {},
+    summary: action.summary || action.description || "",
+    risk: action.risk || action.risk_level || "low",
+    backend_action: true,
+  };
+}
+
 async function executeAction(action, fields) {
   if (action?.backend_action && action?.id) {
-    const result = await apiFetch(`/ai/operator/actions/${action.id}/approve`, { method: "POST" });
-    await data.reload?.();
+    const result = await apiFetch(`/ai/operator/actions/${action.id}/approve`, {
+      method: "POST",
+    });
+
     return result?.message || "AI action approved and executed.";
   }
+
   if (action.execute === "draft_invoice") {
     await tryApi(["/invoices", "/invoices/create"], {
       method: "POST",
@@ -27,6 +43,7 @@ async function executeAction(action, fields) {
         source: "operator_queue",
       },
     });
+
     return "Draft invoice created.";
   }
 
@@ -75,7 +92,18 @@ async function executeAction(action, fields) {
 }
 
 export default function AIWorkQueue({ data }) {
-  const actions = useMemo(() => buildAiActions(data), [data]);
+  const actions = useMemo(() => {
+    const backendActions = Array.isArray(data.aiActions)
+      ? data.aiActions.map(normaliseBackendAction)
+      : [];
+
+    if (backendActions.length) {
+      return prioritiseAiActions(backendActions);
+    }
+
+    return prioritiseAiActions(buildAiActions(data));
+  }, [data]);
+
   const [selected, setSelected] = useState(null);
   const [edited, setEdited] = useState({});
   const [notice, setNotice] = useState("");
@@ -87,6 +115,60 @@ export default function AIWorkQueue({ data }) {
     setNotice("");
   }
 
+  async function runOperator() {
+    setBusy("run-ai-operator");
+    setNotice("");
+
+    try {
+      const result = await apiFetch("/ai/operator/run", { method: "POST" });
+      await data.reload?.();
+      setNotice(
+        `AI Operator ran. Prepared ${result?.prepared ?? 0}, created ${result?.created ?? 0}, updated ${result?.updated ?? 0}.`
+      );
+    } catch (error) {
+      setNotice(error.message || "AI Operator run failed.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function rejectAction(action) {
+    if (!action) return;
+
+    if (!action.backend_action) {
+      addActivity({
+        type: "dismissed",
+        title: action.title,
+        message: "Owner dismissed AI action.",
+      });
+      setSelected(null);
+      return;
+    }
+
+    setBusy(action.id);
+    setNotice("");
+
+    try {
+      const result = await apiFetch(`/ai/operator/actions/${action.id}/reject`, {
+        method: "POST",
+      });
+
+      addActivity({
+        type: "rejected",
+        title: action.title,
+        message: result?.message || "AI action rejected.",
+      });
+
+      await data.reload?.();
+      setNotice(result?.message || "AI action rejected.");
+      setSelected(null);
+    } catch (error) {
+      setNotice(error.message || "Could not reject action.");
+    } finally {
+      setBusy("");
+    }
+  }
+
   async function approve(action, fields = action.fields || {}) {
     if (!action || busy) return;
 
@@ -95,7 +177,13 @@ export default function AIWorkQueue({ data }) {
 
     try {
       const message = await executeAction(action, fields);
-      addActivity({ type: "approved", title: action.title, message });
+
+      addActivity({
+        type: "approved",
+        title: action.title,
+        message,
+      });
+
       setNotice(message);
       setSelected(null);
       await data.reload?.();
@@ -106,11 +194,13 @@ export default function AIWorkQueue({ data }) {
         status: "backend_needs_review",
         error: error.message,
       });
+
       addActivity({
         type: "fallback",
         title: action.title,
         message: "Backend rejected action, saved as draft.",
       });
+
       setNotice("Backend did not accept this yet, so Churvox saved it as an owner-review draft.");
     } finally {
       setBusy("");
@@ -119,10 +209,14 @@ export default function AIWorkQueue({ data }) {
 
   async function approveAllSafe() {
     const safeActions = actions.filter((x) => String(x.risk).toLowerCase() === "low");
+
     for (const action of safeActions) {
       await approve(action, action.fields || {});
     }
-    if (!safeActions.length) setNotice("No low-risk actions are ready for approve all.");
+
+    if (!safeActions.length) {
+      setNotice("No low-risk actions are ready for approve all.");
+    }
   }
 
   return (
@@ -133,22 +227,32 @@ export default function AIWorkQueue({ data }) {
           <h1>Review, edit and approve AI-prepared work.</h1>
           <span>AI does the admin prep. The owner stays in control.</span>
         </div>
-        <button type="button" onClick={async () => { await apiFetch("/ai/operator/run", { method: "POST" }); await data.reload?.(); }}>Run AI Operator</button>
-          <button disabled={!actions.some((x) => String(x.risk).toLowerCase() === "low")} onClick={approveAllSafe}>
+
+        <button type="button" disabled={busy === "run-ai-operator"} onClick={runOperator}>
+          {busy === "run-ai-operator" ? "Running..." : "Run AI Operator"}
+        </button>
+
+        <button disabled={!actions.some((x) => String(x.risk).toLowerCase() === "low")} onClick={approveAllSafe}>
           Approve all safe
         </button>
       </section>
 
       <section className="op-guardrails">
         <strong>Owner approval guardrails</strong>
-        <span>AI cannot send messages, charge customers, delete records, sync MYOB, change payroll, change prices, invite/remove workers or change billing without approval.</span>
+        <span>
+          AI cannot send messages, charge customers, delete records, sync MYOB, change payroll, change prices,
+          invite/remove workers or change billing without approval.
+        </span>
       </section>
 
       {notice ? <section className="op-notice">{notice}</section> : null}
 
       <section className="op-queue-list">
         {!actions.length ? (
-          <EmptyState title="No approvals waiting" body="Create jobs, invoices, quotes or import clients/crew and Churvox will prepare work here." />
+          <EmptyState
+            title="No approvals waiting"
+            body="Create jobs, invoices, quotes or import clients/crew and Churvox will prepare work here."
+          />
         ) : (
           actions.map((action) => (
             <ActionCard key={action.id} action={action} onReview={review} onApprove={approve} />
@@ -177,15 +281,16 @@ export default function AIWorkQueue({ data }) {
         onClose={() => setSelected(null)}
         footer={
           <>
-            <button
-              onClick={() => {
-                addActivity({ type: "dismissed", title: selected?.title, message: "Owner dismissed AI action." });
-                setSelected(null);
-              }}
-            >
-              Dismiss
+            <button type="button" onClick={() => rejectAction(selected)}>
+              {selected?.backend_action ? "Reject" : "Dismiss"}
             </button>
-            <button className="primary" disabled={busy === selected?.id} onClick={() => approve(selected, edited)}>
+
+            <button
+              type="button"
+              className="primary"
+              disabled={busy === selected?.id}
+              onClick={() => approve(selected, edited)}
+            >
               {busy === selected?.id ? "Approving..." : "Approve edited action"}
             </button>
           </>
@@ -193,7 +298,9 @@ export default function AIWorkQueue({ data }) {
       >
         <section className="op-note">
           <strong>Why AI prepared this</strong>
-          {(selected?.why || [selected?.summary]).map((line) => <p key={line}>{line}</p>)}
+          {(selected?.why || [selected?.summary]).filter(Boolean).map((line) => (
+            <p key={line}>{line}</p>
+          ))}
           <small>{selected?.guardrail}</small>
         </section>
 
@@ -202,9 +309,16 @@ export default function AIWorkQueue({ data }) {
             <label key={key}>
               <span>{key.replaceAll("_", " ")}</span>
               {String(value || "").length > 70 ? (
-                <textarea rows={4} value={value || ""} onChange={(e) => setEdited((c) => ({ ...c, [key]: e.target.value }))} />
+                <textarea
+                  rows={4}
+                  value={value || ""}
+                  onChange={(event) => setEdited((current) => ({ ...current, [key]: event.target.value }))}
+                />
               ) : (
-                <input value={value || ""} onChange={(e) => setEdited((c) => ({ ...c, [key]: e.target.value }))} />
+                <input
+                  value={value || ""}
+                  onChange={(event) => setEdited((current) => ({ ...current, [key]: event.target.value }))}
+                />
               )}
             </label>
           ))}
