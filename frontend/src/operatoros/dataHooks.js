@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiFetch, statusSlug, toArray } from "./api";
 
 export const PLAN_TIERS = [
-  { id: "solo", name: "Solo", price: 30, clients: 20, users: 1, myob: "No MYOB", blocks: "No extra blocks" },
-  { id: "team", name: "Team", price: 70, clients: 30, users: 5, myob: "No MYOB", blocks: "No extra blocks" },
-  { id: "pro", name: "Pro", price: 110, clients: 40, users: 15, myob: "Optional MYOB add-on", blocks: "No extra blocks" },
-  { id: "enterprise", name: "Enterprise", price: 240, clients: 50, users: 50, myob: "MYOB included", blocks: "$100 per extra 50 users" },
+  { id: "solo", name: "Solo", price: 39, clients: 20, users: 1, myob: "No MYOB", blocks: "No extra blocks" },
+  { id: "team", name: "Team", price: 89, clients: 30, users: 5, myob: "No MYOB", blocks: "No extra blocks" },
+  { id: "pro", name: "Pro", price: 159, clients: 40, users: 15, myob: "Optional MYOB add-on $39/month", blocks: "No extra blocks" },
+  { id: "enterprise", name: "Enterprise", price: 299, clients: 50, users: 50, myob: "MYOB included", blocks: "$100 per extra 50 users" },
 ];
 
 export const SMS_PACKS = [

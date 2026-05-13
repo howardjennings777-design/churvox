@@ -6,6 +6,8 @@ import "./operatorSidebarFinal.css";
 import FreshChurvoxApp from "../fresh/FreshChurvoxApp";
 import PublicLandingPage from "./pages/PublicLandingPage";
 import PublicSignupPage from "./pages/PublicSignupPage";
+import PublicPricingPage from "./pages/PublicPricingPage";
+import PublicDemoPage from "./pages/PublicDemoPage";
 import OperatorShell from "./OperatorShell";
 import { useOperatorData } from "./dataHooks";
 import { canSwitchRoleForTesting, currentUserName, currentUserRole, normalizeRole, readToken } from "./api";
@@ -124,14 +126,16 @@ export default function OperatorApp() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
   const publicPaths = new Set(["/", "/features", "/how-it-works", "/trades"]);
   const signupPaths = new Set(["/signup", "/register"]);
+  const pricingPaths = new Set(["/pricing"]);
+  const demoPaths = new Set(["/demo", "/contact"]);
 
   if (publicPaths.has(path) && !readToken()) {
     return <PublicLandingPage />;
   }
 
-  if (signupPaths.has(path) && !readToken()) {
-    return <PublicSignupPage />;
-  }
+  if (signupPaths.has(path) && !readToken()) return <PublicSignupPage />;
+  if (pricingPaths.has(path) && !readToken()) return <PublicPricingPage />;
+  if (demoPaths.has(path) && !readToken()) return <PublicDemoPage />;
 
   return shouldUseLegacyApp() ? <FreshChurvoxApp /> : <OperatorOSCore />;
 }
