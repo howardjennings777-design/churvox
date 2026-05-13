@@ -28,12 +28,13 @@ function actionId(action) {
 export default function AIActionDetailDrawer({ open, action, onClose, onApprove, onReject, onSaveEdits, busy }) {
   const [reason, setReason] = useState("");
   const [edited, setEdited] = useState({});
+  const selectedActionId = actionId(action);
   const payload = useMemo(() => ({ ...(action?.suggested_payload || {}), ...edited }), [action, edited]);
 
   useEffect(() => {
     setReason("");
     setEdited({});
-  }, [open, actionId(action)]);
+  }, [open, selectedActionId]);
 
   if (!open || !action) return null;
 
