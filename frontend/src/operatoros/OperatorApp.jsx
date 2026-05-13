@@ -3,7 +3,6 @@ import "./operatorTheme.css";
 import "./operatorDesignFinal.css";
 import "./operatorLaptopPolish.css";
 import "./operatorSidebarFinal.css";
-import "./operatorLightTheme.css";
 import FreshChurvoxApp from "../fresh/FreshChurvoxApp";
 import ForcedLoginPage from "./pages/ForcedLoginPage";
 import PublicContactPage from "./pages/PublicContactPage";
