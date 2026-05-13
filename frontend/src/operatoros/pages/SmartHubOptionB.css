@@ -620,3 +620,32 @@ html[data-churvox-dashboard-theme="option-b-smart-hub-live"] .op-ai-card span {
     display: none;
   }
 }
+
+/* ===== SMART HUB WIRING BUTTON RESET ===== */
+.vision-core-card,
+.vision-floating-card,
+.vision-feed-row {
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+
+.vision-core-card:hover,
+.vision-floating-card:hover,
+.vision-feed-row:hover {
+  border-color: rgba(119, 226, 255, 0.32);
+  transform: translateY(-2px);
+}
+
+.vision-core-card:focus-visible,
+.vision-floating-card:focus-visible,
+.vision-feed-row:focus-visible,
+.vision-signal:focus-visible,
+.vision-list button:focus-visible,
+.vision-actions button:focus-visible,
+.vision-panel header button:focus-visible,
+.vision-approval button:focus-visible {
+  outline: 2px solid rgba(53, 231, 255, 0.8);
+  outline-offset: 3px;
+}

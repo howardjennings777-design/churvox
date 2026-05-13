@@ -32,11 +32,21 @@ function clientOf(item) {
   return item?.client_name || item?.customer_name || item?.client || item?.customer || "Client";
 }
 
+function rememberSmartHubAction(action) {
+  try {
+    sessionStorage.setItem(
+      "churvox_smart_hub_last_action",
+      JSON.stringify({ ...action, created_at: new Date().toISOString() })
+    );
+  } catch {}
+}
+
 function useCommandModel(data = {}) {
   const jobs = safeList(data.jobs);
   const workers = safeList(data.workers || data.team);
   const invoices = safeList(data.invoices);
   const quotes = safeList(data.quotes);
+  const aiActions = safeList(data.aiActions);
 
   const activeJobs = safeList(data.activeJobs).length
     ? safeList(data.activeJobs)
@@ -44,7 +54,7 @@ function useCommandModel(data = {}) {
 
   const unassignedJobs = safeList(data.unassignedJobs).length
     ? safeList(data.unassignedJobs)
-    : jobs.filter((job) => !job.assigned_worker_id && !job.worker_id && !job.assigned_to);
+    : jobs.filter((job) => !job.assigned_worker_id && !job.worker_id && !job.assigned_to && !job.assigned_worker_name && !job.worker_name);
 
   const completedJobs = safeList(data.completedJobs).length
     ? safeList(data.completedJobs)
@@ -56,18 +66,28 @@ function useCommandModel(data = {}) {
 
   const openQuotes = safeList(data.openQuotes).length
     ? safeList(data.openQuotes)
-    : quotes.filter((quote) => ["sent", "pending", "open", "draft"].includes(statusSlug(quote)));
+    : quotes.filter((quote) => ["sent", "pending", "open", "draft", "waiting"].includes(statusSlug(quote)));
 
   const cashWaiting = unpaidInvoices.reduce((sum, invoice) => sum + amountOf(invoice), 0);
-  const approvals = unassignedJobs.length + unpaidInvoices.length + openQuotes.length + completedJobs.length;
+  const approvals = aiActions.length || unassignedJobs.length + unpaidInvoices.length + openQuotes.length + completedJobs.length;
 
-  const nextMove = completedJobs[0]
+  const nextMove = aiActions[0]
+    ? {
+        tag: aiActions[0].type || aiActions[0].category || "AI work queue",
+        title: aiActions[0].title || "Review the next AI-prepared action",
+        body: aiActions[0].summary || aiActions[0].description || "AI has prepared work for owner review and approval.",
+        nav: "queue",
+        cta: "Review action",
+        context: { source: "ai_action", id: aiActions[0].id || aiActions[0]._id || "" },
+      }
+    : completedJobs[0]
     ? {
         tag: "Proof to paid",
         title: `Turn ${titleOf(completedJobs[0], "completed job")} into a draft invoice`,
         body: "Worker proof is in. Churvox can prepare the invoice draft and hold it for approval.",
         nav: "proof",
         cta: "Review proof",
+        context: { source: "completed_job", id: completedJobs[0].id || completedJobs[0]._id || "" },
       }
     : unassignedJobs[0]
     ? {
@@ -76,6 +96,7 @@ function useCommandModel(data = {}) {
         body: "AI checks area, workload, availability and job type before suggesting a worker.",
         nav: "queue",
         cta: "Open match",
+        context: { source: "unassigned_job", id: unassignedJobs[0].id || unassignedJobs[0]._id || "" },
       }
     : unpaidInvoices[0]
     ? {
@@ -84,6 +105,7 @@ function useCommandModel(data = {}) {
         body: "A customer reminder can be drafted now. Nothing sends without your approval.",
         nav: "invoices",
         cta: "Open invoice",
+        context: { source: "unpaid_invoice", id: unpaidInvoices[0].id || unpaidInvoices[0]._id || "" },
       }
     : openQuotes[0]
     ? {
@@ -92,6 +114,7 @@ function useCommandModel(data = {}) {
         body: "A short follow-up is ready while the job is still warm.",
         nav: "quotes",
         cta: "Open quote",
+        context: { source: "open_quote", id: openQuotes[0].id || openQuotes[0]._id || "" },
       }
     : {
         tag: "All clear",
@@ -99,6 +122,7 @@ function useCommandModel(data = {}) {
         body: "The AI operator is still scanning jobs, proof, cashflow, quotes and crew changes.",
         nav: "queue",
         cta: "Open queue",
+        context: { source: "clear" },
       };
 
   return {
@@ -106,6 +130,7 @@ function useCommandModel(data = {}) {
     workers,
     invoices,
     quotes,
+    aiActions,
     activeJobs,
     unassignedJobs,
     completedJobs,
@@ -127,15 +152,15 @@ function SignalCard({ label, value, text, onClick }) {
   );
 }
 
-function FeedRow({ title, meta, status }) {
+function FeedRow({ title, meta, status, onClick }) {
   return (
-    <article className="vision-feed-row">
+    <button type="button" className="vision-feed-row" onClick={onClick}>
       <div>
         <strong>{title}</strong>
         <span>{meta}</span>
       </div>
       <b>{status}</b>
-    </article>
+    </button>
   );
 }
 
@@ -162,7 +187,7 @@ function ItemList({ items, empty, onOpen }) {
   return (
     <div className="vision-list">
       {shown.map((item, index) => (
-        <button type="button" key={item.id || item._id || index} onClick={onOpen}>
+        <button type="button" key={item.id || item._id || index} onClick={() => onOpen?.(item)}>
           <strong>{titleOf(item, `Item ${index + 1}`)}</strong>
           <span>{clientOf(item)} · {amountOf(item) ? money(amountOf(item)) : statusSlug(item) || "Ready"}</span>
         </button>
@@ -174,11 +199,21 @@ function ItemList({ items, empty, onOpen }) {
 export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
   const model = useCommandModel(data);
 
+  function go(nav, context = {}) {
+    rememberSmartHubAction({ nav, ...context });
+    onNav?.(nav);
+  }
+
+  function create(type, context = {}) {
+    rememberSmartHubAction({ create: type, ...context });
+    onCreate?.(type);
+  }
+
   const signals = [
-    ["Jobs", model.jobs.length, "tracked by the operator", "jobs"],
-    ["Crew", model.workers.length, "watched for dispatch", "crew"],
-    ["Cash", money(model.cashWaiting), "waiting for action", "invoices"],
-    ["Approvals", model.approvals, "ready for owner", "queue"],
+    ["Jobs", model.jobs.length, "tracked by the operator", "jobs", { source: "signal_jobs" }],
+    ["Crew", model.workers.length, "watched for dispatch", "crew", { source: "signal_crew" }],
+    ["Cash", money(model.cashWaiting), "waiting for action", "invoices", { source: "signal_cash" }],
+    ["Approvals", model.approvals, "ready for owner", "queue", { source: "signal_approvals" }],
   ];
 
   return (
@@ -204,9 +239,9 @@ export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
           </strong>
 
           <div className="vision-actions">
-            <button type="button" onClick={() => onNav?.("queue")}>Open AI Work Queue</button>
-            <button type="button" onClick={() => onCreate?.("jobs")}>Create Job</button>
-            <button type="button" onClick={() => onNav?.("proof")}>Proof to Paid</button>
+            <button type="button" onClick={() => go("queue", { source: "hero_queue" })}>Open AI Work Queue</button>
+            <button type="button" onClick={() => create("jobs", { source: "hero_create_job" })}>Create Job</button>
+            <button type="button" onClick={() => go("proof", { source: "hero_proof_to_paid" })}>Proof to Paid</button>
           </div>
         </div>
 
@@ -215,32 +250,34 @@ export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
           <div className="vision-ring ring-two" />
           <div className="vision-ring ring-three" />
 
-          <div className="vision-core-card">
+          <button type="button" className="vision-core-card" onClick={() => go("queue", { source: "orb_core" })}>
             <img src="/brand/churvox-holo-c.svg" alt="" />
             <strong>{model.approvals}</strong>
             <span>owner approvals prepared</span>
-          </div>
+          </button>
 
-          <div className="vision-floating-card card-top">
+          <button type="button" className="vision-floating-card card-top" onClick={() => go("queue", { source: "orb_ai_operator" })}>
             <small>AI OPERATOR</small>
             <b>Live scan active</b>
-          </div>
-          <div className="vision-floating-card card-left">
+          </button>
+
+          <button type="button" className="vision-floating-card card-left" onClick={() => go("jobs", { source: "orb_dispatch" })}>
             <small>DISPATCH</small>
             <b>{model.unassignedJobs.length} need crew</b>
-          </div>
-          <div className="vision-floating-card card-right">
+          </button>
+
+          <button type="button" className="vision-floating-card card-right" onClick={() => go("invoices", { source: "orb_cashflow" })}>
             <small>CASHFLOW</small>
             <b>{money(model.cashWaiting)}</b>
-          </div>
+          </button>
         </aside>
       </section>
 
       {data.notice ? <section className="vision-notice">{data.notice}</section> : null}
 
       <section className="vision-signals">
-        {signals.map(([label, value, text, nav]) => (
-          <SignalCard key={label} label={label} value={value} text={text} onClick={() => onNav?.(nav)} />
+        {signals.map(([label, value, text, nav, context]) => (
+          <SignalCard key={label} label={label} value={value} text={text} onClick={() => go(nav, context)} />
         ))}
       </section>
 
@@ -250,15 +287,15 @@ export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
           title={model.nextMove.title}
           subtitle={model.nextMove.body}
           action={model.nextMove.cta}
-          onClick={() => onNav?.(model.nextMove.nav)}
+          onClick={() => go(model.nextMove.nav, model.nextMove.context)}
         >
           <article className="vision-approval">
             <span>{model.nextMove.tag}</span>
             <h3>Prepared. Explained. Waiting for approval.</h3>
             <p>No customer message, worker assignment, invoice send, payment action, payroll change or MYOB sync happens without owner approval.</p>
             <div>
-              <button type="button" onClick={() => onNav?.("queue")}>Review details</button>
-              <button type="button" onClick={() => onNav?.(model.nextMove.nav)}>Open action</button>
+              <button type="button" onClick={() => go("queue", { source: "next_move_review", ...model.nextMove.context })}>Review details</button>
+              <button type="button" onClick={() => go(model.nextMove.nav, { source: "next_move_open", ...model.nextMove.context })}>Open action</button>
             </div>
           </article>
         </Panel>
@@ -266,13 +303,13 @@ export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
         <Panel
           eyebrow="LIVE OPERATOR FEED"
           title="What AI is watching"
-          subtitle="A cleaner command feed instead of a busy dashboard."
+          subtitle="Tap a feed row to open the real workspace."
         >
           <div className="vision-feed">
-            <FeedRow title="Invoice draft" meta="Completed job proof checked" status="Ready" />
-            <FeedRow title="Worker match" meta="Area and workload scanned" status="Match" />
-            <FeedRow title="Quote recovery" meta="Follow-up can be drafted" status="Draft" />
-            <FeedRow title="Cashflow" meta="Unpaid invoices monitored" status="Watch" />
+            <FeedRow title="Invoice draft" meta={`${model.completedJobs.length} completed job${model.completedJobs.length === 1 ? "" : "s"} ready`} status="Proof" onClick={() => go("proof", { source: "feed_invoice_draft" })} />
+            <FeedRow title="Worker match" meta={`${model.unassignedJobs.length} job${model.unassignedJobs.length === 1 ? "" : "s"} need crew`} status="Dispatch" onClick={() => go("queue", { source: "feed_worker_match" })} />
+            <FeedRow title="Quote recovery" meta={`${model.openQuotes.length} quote${model.openQuotes.length === 1 ? "" : "s"} can be followed up`} status="Quotes" onClick={() => go("quotes", { source: "feed_quote_recovery" })} />
+            <FeedRow title="Cashflow" meta={`${model.unpaidInvoices.length} unpaid invoice action${model.unpaidInvoices.length === 1 ? "" : "s"}`} status="Cash" onClick={() => go("invoices", { source: "feed_cashflow" })} />
           </div>
         </Panel>
 
@@ -281,9 +318,9 @@ export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
           title={`${model.completedJobs.length} completed`}
           subtitle="Completed work ready for proof review and invoice preparation."
           action="Open proof"
-          onClick={() => onNav?.("proof")}
+          onClick={() => go("proof", { source: "panel_proof" })}
         >
-          <ItemList items={model.completedJobs} empty="No completed jobs waiting for invoice prep." onOpen={() => onNav?.("proof")} />
+          <ItemList items={model.completedJobs} empty="No completed jobs waiting for invoice prep." onOpen={(item) => go("proof", { source: "proof_item", id: item.id || item._id || "" })} />
         </Panel>
 
         <Panel
@@ -291,9 +328,9 @@ export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
           title={`${model.unassignedJobs.length} need crew`}
           subtitle="AI can match workers by area, workload, availability and job type."
           action="Open jobs"
-          onClick={() => onNav?.("jobs")}
+          onClick={() => go("jobs", { source: "panel_dispatch" })}
         >
-          <ItemList items={model.unassignedJobs} empty="No unassigned jobs right now." onOpen={() => onNav?.("jobs")} />
+          <ItemList items={model.unassignedJobs} empty="No unassigned jobs right now." onOpen={(item) => go("jobs", { source: "dispatch_item", id: item.id || item._id || "" })} />
         </Panel>
 
         <Panel
@@ -301,9 +338,9 @@ export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
           title={money(model.cashWaiting)}
           subtitle={`${model.unpaidInvoices.length} unpaid invoice action${model.unpaidInvoices.length === 1 ? "" : "s"} waiting.`}
           action="Open invoices"
-          onClick={() => onNav?.("invoices")}
+          onClick={() => go("invoices", { source: "panel_cashflow" })}
         >
-          <ItemList items={model.unpaidInvoices} empty="No unpaid invoices need action." onOpen={() => onNav?.("invoices")} />
+          <ItemList items={model.unpaidInvoices} empty="No unpaid invoices need action." onOpen={(item) => go("invoices", { source: "invoice_item", id: item.id || item._id || "" })} />
         </Panel>
 
         <Panel
@@ -311,9 +348,9 @@ export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
           title={`${model.openQuotes.length} quotes`}
           subtitle="Open quotes that can be followed up from the approval queue."
           action="Open quotes"
-          onClick={() => onNav?.("quotes")}
+          onClick={() => go("quotes", { source: "panel_quotes" })}
         >
-          <ItemList items={model.openQuotes} empty="No quote follow-ups waiting." onOpen={() => onNav?.("quotes")} />
+          <ItemList items={model.openQuotes} empty="No quote follow-ups waiting." onOpen={(item) => go("quotes", { source: "quote_item", id: item.id || item._id || "" })} />
         </Panel>
       </section>
     </main>
