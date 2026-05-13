@@ -253,3 +253,46 @@
     border-radius: 28px;
   }
 }
+/* ===== PREMIUM TRADE INTELLIGENCE CLEAN TEAL — LOGIN ONLY ===== */
+.force-login-page {
+  color: #09243a !important;
+  background:
+    radial-gradient(circle at 16% 8%, rgba(20,184,166,.14), transparent 34%),
+    radial-gradient(circle at 86% 3%, rgba(24,191,208,.11), transparent 32%),
+    linear-gradient(135deg, #fbfffe 0%, #ecfbf8 58%, #eef8ff 100%) !important;
+}
+
+.force-login-page h1,
+.force-login-page h2,
+.force-login-page strong {
+  color: #09243a !important;
+}
+
+.force-login-page p,
+.force-login-page span,
+.force-login-page small {
+  color: #496678 !important;
+}
+
+.force-login-page .force-login-copy > p,
+.force-login-page .force-login-card > p {
+  color: #08756f !important;
+}
+
+.force-login-page .force-login-card {
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(236,253,250,.78)) !important;
+  border-color: rgba(15,118,110,.16) !important;
+  box-shadow: 0 20px 62px rgba(15,46,66,.11), inset 0 1px 0 rgba(255,255,255,.88) !important;
+}
+
+.force-login-page button,
+.force-login-page .force-login-pills b {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #0f9f94 0%, #18bfd0 100%) !important;
+}
+
+.force-login-page input {
+  color: #09243a !important;
+  background: rgba(255,255,255,.94) !important;
+  border-color: rgba(13,148,136,.26) !important;
+}
