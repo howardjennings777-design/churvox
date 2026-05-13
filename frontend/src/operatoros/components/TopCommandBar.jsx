@@ -11,25 +11,37 @@ const ROLES = [
   ["payroll", "Payroll"],
 ];
 
-export default function TopCommandBar({ role, setRole, data, onNav, onCreate }) {
+export default function TopCommandBar({ role, setRole, allowRoleSwitch, data, onNav, onCreate, userName }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
   const [query, setQuery] = useState("");
 
   const activeRole = ROLES.find(([value]) => value === role)?.[1] || "Owner";
+  const isWorker = role === "worker";
+  const greetingName = userName || (isWorker ? "Worker" : "Owner");
+
+  const searchableRows = useMemo(() => {
+    const base = [
+      ...(data?.jobs || []).map((item) => ({ type: "Job", nav: "jobs", item })),
+    ];
+
+    if (isWorker) return base;
+
+    return [
+      ...base,
+      ...(data?.clients || []).map((item) => ({ type: "Client", nav: "clients", item })),
+      ...(data?.invoices || []).map((item) => ({ type: "Invoice", nav: "invoices", item })),
+      ...(data?.quotes || []).map((item) => ({ type: "Quote", nav: "quotes", item })),
+      ...(data?.workers || []).map((item) => ({ type: "Worker", nav: "crew", item })),
+    ];
+  }, [data, isWorker]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
 
-    return [
-      ...(data?.jobs || []).map((item) => ({ type: "Job", nav: "jobs", item })),
-      ...(data?.clients || []).map((item) => ({ type: "Client", nav: "clients", item })),
-      ...(data?.invoices || []).map((item) => ({ type: "Invoice", nav: "invoices", item })),
-      ...(data?.quotes || []).map((item) => ({ type: "Quote", nav: "quotes", item })),
-      ...(data?.workers || []).map((item) => ({ type: "Worker", nav: "crew", item })),
-    ]
+    return searchableRows
       .filter((row) =>
         [
           titleOf(row.item, ""),
@@ -46,7 +58,7 @@ export default function TopCommandBar({ role, setRole, data, onNav, onCreate }) 
           .includes(q)
       )
       .slice(0, 10);
-  }, [data, query]);
+  }, [query, searchableRows]);
 
   function chooseCreate(type) {
     setCreateOpen(false);
@@ -65,54 +77,56 @@ export default function TopCommandBar({ role, setRole, data, onNav, onCreate }) 
       ) : null}
 
       <div className="op-topbar">
-        <span>Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, Owner.</span>
+        <span>Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, {greetingName}.</span>
 
         <div className="op-topbar-right">
           <button type="button" onClick={() => setSearchOpen(true)}>Search</button>
-          <button type="button" className="primary" onClick={() => setCreateOpen(true)}>+ Create</button>
+          {!isWorker ? <button type="button" className="primary" onClick={() => setCreateOpen(true)}>+ Create</button> : null}
           <NotificationCentre data={data} onNav={onNav} />
-          <button type="button" onClick={() => onNav?.("queue")}>AI Queue</button>
-          <button type="button" onClick={() => onNav?.("system")}>System Centre</button>
+          {!isWorker ? <button type="button" onClick={() => onNav?.("queue")}>AI Queue</button> : null}
+          {!isWorker ? <button type="button" onClick={() => onNav?.("system")}>System Centre</button> : null}
 
-          <div className="op-role-switch">
-            <button type="button" onClick={() => setRoleOpen((open) => !open)}>
-              {activeRole} <span>⌄</span>
-            </button>
+          {allowRoleSwitch ? (
+            <div className="op-role-switch">
+              <button type="button" onClick={() => setRoleOpen((open) => !open)}>
+                {activeRole} <span>⌄</span>
+              </button>
 
-            {roleOpen ? (
-              <div className="op-role-menu">
-                {ROLES.map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    className={value === role ? "active" : ""}
-                    onClick={() => {
-                      setRole?.(value);
-                      setRoleOpen(false);
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
+              {roleOpen ? (
+                <div className="op-role-menu">
+                  {ROLES.map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className={value === role ? "active" : ""}
+                      onClick={() => {
+                        setRole?.(value);
+                        setRoleOpen(false);
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
 
       <DetailDrawer
         open={searchOpen}
-        title="Search Churvox"
-        eyebrow="GLOBAL SEARCH"
+        title={isWorker ? "Search your jobs" : "Search Churvox"}
+        eyebrow={isWorker ? "WORKER SEARCH" : "GLOBAL SEARCH"}
         onClose={() => setSearchOpen(false)}
       >
         <form className="op-form" onSubmit={(event) => event.preventDefault()}>
           <label>
-            <span>Search jobs, clients, invoices, quotes and workers</span>
+            <span>{isWorker ? "Search assigned jobs" : "Search jobs, clients, invoices, quotes and workers"}</span>
             <input
               autoFocus
               value={query}
-              placeholder="Type client, job, invoice, address or worker"
+              placeholder={isWorker ? "Type job, address or client" : "Type client, job, invoice, address or worker"}
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
@@ -120,7 +134,7 @@ export default function TopCommandBar({ role, setRole, data, onNav, onCreate }) 
 
         <section className="op-list compact">
           {!query.trim() ? (
-            <p className="op-muted">Start typing to search across Churvox.</p>
+            <p className="op-muted">Start typing to search.</p>
           ) : !results.length ? (
             <p className="op-muted">No matching records found.</p>
           ) : (
