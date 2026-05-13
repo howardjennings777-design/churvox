@@ -253,46 +253,194 @@
     border-radius: 28px;
   }
 }
-/* ===== PREMIUM TRADE INTELLIGENCE CLEAN TEAL — LOGIN ONLY ===== */
+
+/* ===== OPTION B CLEAN TEAL FINAL PAGE THEME ===== */
 .force-login-page {
   color: #09243a !important;
   background:
-    radial-gradient(circle at 16% 8%, rgba(20,184,166,.14), transparent 34%),
-    radial-gradient(circle at 86% 3%, rgba(24,191,208,.11), transparent 32%),
+    radial-gradient(circle at 16% 8%, rgba(20, 184, 166, 0.14), transparent 34%),
+    radial-gradient(circle at 86% 3%, rgba(24, 191, 208, 0.11), transparent 32%),
     linear-gradient(135deg, #fbfffe 0%, #ecfbf8 58%, #eef8ff 100%) !important;
 }
 
 .force-login-page h1,
 .force-login-page h2,
+.force-login-page h3,
+.force-login-page h4,
 .force-login-page strong {
   color: #09243a !important;
+  text-shadow: none !important;
 }
 
 .force-login-page p,
 .force-login-page span,
-.force-login-page small {
+.force-login-page li,
+.force-login-page small,
+.force-login-page label,
+.force-login-page footer {
   color: #496678 !important;
 }
 
-.force-login-page .force-login-copy > p,
-.force-login-page .force-login-card > p {
+.force-login-page a {
   color: #08756f !important;
 }
 
-.force-login-page .force-login-card {
-  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(236,253,250,.78)) !important;
-  border-color: rgba(15,118,110,.16) !important;
-  box-shadow: 0 20px 62px rgba(15,46,66,.11), inset 0 1px 0 rgba(255,255,255,.88) !important;
+.force-login-page .chx-copy > p,
+.force-login-page .chx-preview p,
+.force-login-page .chx-features p,
+.force-login-page .chx-pricing p,
+.force-login-page .chx-trades p,
+.force-login-page .chx-trust p,
+.force-login-page .chx-final p,
+.force-login-page .signup-copy p:first-child,
+.force-login-page .signup-card-head p,
+.force-login-page .pricepub-hero p,
+.force-login-page .pricepub-extra p,
+.force-login-page .pricepub-offer p,
+.force-login-page .contactpub-grid article > p,
+.force-login-page .force-login-copy > p,
+.force-login-page .force-login-card > p,
+.force-login-page .demo-top small,
+.force-login-page .demo-guide small,
+.force-login-page .demo-card small,
+.force-login-page .demo-business small {
+  color: #08756f !important;
 }
 
-.force-login-page button,
-.force-login-page .force-login-pills b {
+.force-login-page .chx-copy h1 span {
+  color: #0f9f94 !important;
+}
+
+.force-login-page .chx-wins article,
+.force-login-page .chx-problems article,
+.force-login-page .chx-preview,
+.force-login-page .chx-features,
+.force-login-page .chx-pricing,
+.force-login-page .chx-trades,
+.force-login-page .chx-trust,
+.force-login-page .chx-final,
+.force-login-page .chx-footer,
+.force-login-page .chx-operator-card,
+.force-login-page .chx-stats div,
+.force-login-page .chx-next,
+.force-login-page .signup-card,
+.force-login-page .signup-sales article,
+.force-login-page .pricepub-grid article,
+.force-login-page .pricepub-extra article,
+.force-login-page .pricepub-offer,
+.force-login-page .contactpub-grid aside,
+.force-login-page .force-login-card,
+.force-login-page .demo-side,
+.force-login-page .demo-guide,
+.force-login-page .demo-card,
+.force-login-page .demo-stats article,
+.force-login-page .demo-business,
+.force-login-page .demo-queue article,
+.force-login-page .demo-workers article,
+.force-login-page .demo-proof article,
+.force-login-page .demo-table article,
+.force-login-page .demo-money {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(236, 253, 250, 0.78)) !important;
+  border-color: rgba(15, 118, 110, 0.16) !important;
+  box-shadow:
+    0 20px 62px rgba(15, 46, 66, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88) !important;
+}
+
+.force-login-page .chx-operator {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.force-login-page .chx-orb-wrap {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.force-login-page .chx-nav nav,
+.force-login-page .pricepub header nav a,
+.force-login-page .demo-top-actions a:not(.primary) {
+  color: #09243a !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+  border-color: rgba(15, 118, 110, 0.14) !important;
+  box-shadow: 0 12px 36px rgba(15, 46, 66, 0.08) !important;
+}
+
+.force-login-page .chx-nav nav a {
+  color: #09243a !important;
+}
+
+.force-login-page .chx-primary,
+.force-login-page .chx-pricing > a,
+.force-login-page .chx-next button,
+.force-login-page .signup-card button,
+.force-login-page .pricepub-hero a,
+.force-login-page .pricepub-grid article > a,
+.force-login-page .contactpub-actions a:first-child,
+.force-login-page .force-login-card button,
+.force-login-page .force-login-pills b,
+.force-login-page .demo-guide button,
+.force-login-page .demo-queue button,
+.force-login-page .demo-proof button,
+.force-login-page .demo-actions-row button,
+.force-login-page .demo-side-footer a:first-child,
+.force-login-page .demo-top-actions a.primary,
+.force-login-page button[type="submit"] {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #0f9f94 0%, #18bfd0 100%) !important;
+  border-color: transparent !important;
+  box-shadow: 0 14px 38px rgba(13, 148, 136, 0.22) !important;
+}
+
+.force-login-page .chx-secondary,
+.force-login-page .contactpub-actions a:nth-child(2),
+.force-login-page .demo-side-footer a:nth-child(2) {
+  color: #08756f !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(13, 148, 136, 0.26) !important;
+}
+
+.force-login-page input,
+.force-login-page select,
+.force-login-page textarea {
+  color: #09243a !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-color: rgba(13, 148, 136, 0.26) !important;
+}
+
+.force-login-page input:focus,
+.force-login-page select:focus,
+.force-login-page textarea:focus {
+  border-color: rgba(15, 159, 148, 0.82) !important;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.14) !important;
+}
+
+.force-login-page .chx-stats b,
+.force-login-page .chx-pricing b,
+.force-login-page .pricepub-grid article > strong,
+.force-login-page .pricepub-extra b,
+.force-login-page .demo-stats strong,
+.force-login-page .demo-money b,
+.force-login-page .demo-workers b,
+.force-login-page .demo-workers span {
+  color: #08756f !important;
+}
+
+.force-login-page .pricepub-grid small,
+.force-login-page .status,
+.force-login-page .demo-side nav button.active {
   color: #ffffff !important;
   background: linear-gradient(135deg, #0f9f94 0%, #18bfd0 100%) !important;
 }
 
-.force-login-page input {
-  color: #09243a !important;
-  background: rgba(255,255,255,.94) !important;
-  border-color: rgba(13,148,136,.26) !important;
+.force-login-page .chx-brand > span,
+.force-login-page .signup-brand span,
+.force-login-page .force-login-brand span,
+.force-login-page .demo-brand > span {
+  box-shadow:
+    0 14px 44px rgba(20, 184, 166, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
 }

@@ -143,6 +143,20 @@ export default function OperatorApp() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
   const loggedIn = Boolean(readToken());
 
+  if (path === "/logout" || path === "/signout" || path === "/log-out") {
+    clearChurvoxAuth();
+    try {
+      localStorage.setItem("churvox_force_login", "true");
+      localStorage.setItem("churvox_logged_out", String(Date.now()));
+    } catch {}
+    window.location.replace("/login?logged_out=1");
+    return null;
+  }
+
+  if (path === "/login" || path === "/admin/login" || path === "/owner/login") {
+    return <ForcedLoginPage />;
+  }
+
   if (!loggedIn) {
     if (["/", "/features", "/how-it-works", "/trades"].includes(path)) return <PublicLandingPage />;
     if (path === "/pricing") return <PublicPricingPage />;
