@@ -1,336 +1,404 @@
 :root {
-  --neo-ink: #071827;
-  --neo-muted: #5a6f7f;
-  --neo-line: rgba(11, 39, 60, 0.12);
-  --neo-cyan: #00c7d9;
-  --neo-blue: #2563eb;
-  --neo-violet: #7c3aed;
-  --neo-green: #00b894;
-  --neo-card: rgba(255, 255, 255, 0.84);
-  --neo-shadow: 0 28px 90px rgba(13, 34, 54, 0.12);
+  --vision-bg: #06111f;
+  --vision-bg-2: #0a2035;
+  --vision-card: rgba(10, 28, 46, 0.78);
+  --vision-card-2: rgba(255, 255, 255, 0.08);
+  --vision-line: rgba(119, 226, 255, 0.2);
+  --vision-text: #f3fbff;
+  --vision-muted: #9db4c7;
+  --vision-cyan: #35e7ff;
+  --vision-blue: #3b82f6;
+  --vision-green: #18f2b2;
+  --vision-gold: #ffd166;
+  --vision-shadow: 0 32px 90px rgba(0, 0, 0, 0.42);
 }
 
-.neo-page {
+html[data-churvox-dashboard-theme="option-b-smart-hub-live"],
+html[data-churvox-dashboard-theme="option-b-smart-hub-live"] body,
+html[data-churvox-dashboard-theme="option-b-smart-hub-live"] #root {
+  background:
+    radial-gradient(circle at 72% 5%, rgba(53, 231, 255, 0.18), transparent 28rem),
+    radial-gradient(circle at 10% 18%, rgba(24, 242, 178, 0.12), transparent 24rem),
+    linear-gradient(135deg, #030914 0%, #06111f 42%, #0a2035 100%) !important;
+  color: var(--vision-text) !important;
+}
+
+html[data-churvox-dashboard-theme="option-b-smart-hub-live"] .op-shell {
+  background:
+    radial-gradient(circle at 72% 5%, rgba(53, 231, 255, 0.18), transparent 28rem),
+    radial-gradient(circle at 10% 18%, rgba(24, 242, 178, 0.12), transparent 24rem),
+    linear-gradient(135deg, #030914 0%, #06111f 42%, #0a2035 100%) !important;
+  color: var(--vision-text) !important;
+}
+
+html[data-churvox-dashboard-theme="option-b-smart-hub-live"] .op-main {
+  background: transparent !important;
+  color: var(--vision-text) !important;
+  padding-top: 22px !important;
+}
+
+html[data-churvox-dashboard-theme="option-b-smart-hub-live"] .op-view-hub .op-topbar {
+  display: none !important;
+}
+
+html[data-churvox-dashboard-theme="option-b-smart-hub-live"] .op-sidebar {
+  background: rgba(4, 12, 24, 0.72) !important;
+  border-right: 1px solid rgba(119, 226, 255, 0.16) !important;
+  box-shadow: 22px 0 70px rgba(0, 0, 0, 0.34) !important;
+  backdrop-filter: blur(22px) !important;
+}
+
+html[data-churvox-dashboard-theme="option-b-smart-hub-live"] .op-sidebar button {
+  background: rgba(255, 255, 255, 0.055) !important;
+  color: rgba(243, 251, 255, 0.82) !important;
+  border: 1px solid rgba(119, 226, 255, 0.12) !important;
+}
+
+html[data-churvox-dashboard-theme="option-b-smart-hub-live"] .op-sidebar button.active {
+  background: linear-gradient(135deg, rgba(53, 231, 255, 0.95), rgba(24, 242, 178, 0.86)) !important;
+  color: #02101a !important;
+  border-color: transparent !important;
+  box-shadow: 0 18px 38px rgba(53, 231, 255, 0.22) !important;
+}
+
+html[data-churvox-dashboard-theme="option-b-smart-hub-live"] .op-ai-card {
+  background: rgba(53, 231, 255, 0.08) !important;
+  color: var(--vision-text) !important;
+  border: 1px solid rgba(53, 231, 255, 0.18) !important;
+}
+
+.vision-page {
   min-height: 100%;
   display: grid;
   gap: 18px;
-  color: var(--neo-ink);
+  color: var(--vision-text);
 }
 
-.neo-hero {
+.vision-stage {
   position: relative;
+  min-height: 520px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(390px, 0.92fr);
-  gap: 28px;
-  min-height: 470px;
-  padding: 42px;
+  grid-template-columns: minmax(0, 1fr) minmax(440px, 0.95fr);
+  align-items: center;
+  gap: 34px;
   overflow: hidden;
-  border: 1px solid var(--neo-line);
+  padding: 46px;
   border-radius: 44px;
+  border: 1px solid rgba(119, 226, 255, 0.16);
   background:
-    radial-gradient(circle at 86% 12%, rgba(0, 199, 217, 0.22), transparent 28rem),
-    radial-gradient(circle at 10% 12%, rgba(124, 58, 237, 0.14), transparent 26rem),
-    linear-gradient(135deg, #ffffff 0%, #f3fbff 46%, #edf8f7 100%);
-  box-shadow: var(--neo-shadow);
+    radial-gradient(circle at 78% 18%, rgba(53, 231, 255, 0.24), transparent 24rem),
+    radial-gradient(circle at 30% 80%, rgba(24, 242, 178, 0.14), transparent 26rem),
+    linear-gradient(135deg, rgba(6, 17, 31, 0.92), rgba(7, 28, 48, 0.82));
+  box-shadow: var(--vision-shadow);
 }
 
-.neo-orbit {
+.vision-gridline {
   position: absolute;
-  border-radius: 999px;
-  border: 1px solid rgba(0, 199, 217, 0.18);
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(119, 226, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(119, 226, 255, 0.07) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(circle at 55% 45%, black, transparent 74%);
   pointer-events: none;
 }
 
-.neo-orbit.one {
+.vision-glow {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(18px);
+  pointer-events: none;
+}
+
+.vision-glow-one {
   width: 420px;
   height: 420px;
-  right: -110px;
-  top: -150px;
+  right: 90px;
+  top: 24px;
+  background: rgba(53, 231, 255, 0.18);
 }
 
-.neo-orbit.two {
-  width: 240px;
-  height: 240px;
-  left: -80px;
-  bottom: -100px;
+.vision-glow-two {
+  width: 280px;
+  height: 280px;
+  left: -90px;
+  bottom: -80px;
+  background: rgba(24, 242, 178, 0.14);
 }
 
-.neo-hero-copy,
-.neo-product {
+.vision-copy,
+.vision-command-orb {
   position: relative;
   z-index: 1;
 }
 
-.neo-hero-copy {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+.vision-brand-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  padding: 9px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(119, 226, 255, 0.18);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.22);
+  margin-bottom: 22px;
 }
 
-.neo-hero-copy p,
-.neo-panel header p,
-.neo-approval-card span {
-  margin: 0 0 14px;
-  color: #08756f;
+.vision-brand-pill img {
+  width: 28px;
+  height: 28px;
+}
+
+.vision-brand-pill span {
+  color: rgba(243, 251, 255, 0.88);
   font-size: 11px;
   font-weight: 950;
   letter-spacing: 0.18em;
+}
+
+.vision-copy p,
+.vision-panel header p,
+.vision-approval span {
+  margin: 0 0 13px;
+  color: var(--vision-cyan);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.19em;
   text-transform: uppercase;
 }
 
-.neo-hero h1 {
+.vision-copy h1 {
   margin: 0;
-  max-width: 820px;
-  color: var(--neo-ink);
-  font-size: clamp(52px, 5.5vw, 92px);
-  line-height: 0.88;
+  max-width: 780px;
+  color: var(--vision-text);
+  font-size: clamp(56px, 6vw, 100px);
+  line-height: 0.86;
   letter-spacing: -0.085em;
 }
 
-.neo-hero h1 span {
+.vision-copy h1 span {
   display: block;
-  margin-top: 10px;
-  background: linear-gradient(135deg, var(--neo-cyan), var(--neo-green), var(--neo-blue));
+  margin-top: 12px;
+  background: linear-gradient(135deg, var(--vision-cyan), var(--vision-green));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-.neo-hero-copy strong {
+.vision-copy strong {
   display: block;
-  max-width: 690px;
+  max-width: 660px;
   margin-top: 22px;
-  color: var(--neo-muted);
+  color: var(--vision-muted);
   font-size: 18px;
   line-height: 1.55;
 }
 
-.neo-actions {
+.vision-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 30px;
 }
 
-.neo-actions button,
-.neo-panel header button,
-.neo-approval-card button {
+.vision-actions button,
+.vision-panel header button,
+.vision-approval button {
   min-height: 48px;
   padding: 0 18px;
-  border: 1px solid rgba(8, 117, 111, 0.16);
   border-radius: 999px;
-  background: white;
-  color: var(--neo-ink);
+  border: 1px solid rgba(119, 226, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--vision-text);
   font-weight: 950;
-  box-shadow: 0 12px 34px rgba(13, 34, 54, 0.08);
   cursor: pointer;
 }
 
-.neo-actions button:first-child,
-.neo-approval-card button:last-child {
+.vision-actions button:first-child,
+.vision-approval button:last-child {
+  color: #03111d;
   border-color: transparent;
-  color: white;
-  background: linear-gradient(135deg, var(--neo-blue), var(--neo-cyan), var(--neo-green));
+  background: linear-gradient(135deg, var(--vision-cyan), var(--vision-green));
+  box-shadow: 0 18px 44px rgba(53, 231, 255, 0.22);
 }
 
-.neo-product {
+.vision-command-orb {
+  min-height: 430px;
   display: grid;
   place-items: center;
 }
 
-.neo-product-glow {
+.vision-ring {
   position: absolute;
-  width: 330px;
-  height: 330px;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(0, 199, 217, 0.3), transparent 68%);
-  filter: blur(8px);
+  border: 1px solid rgba(119, 226, 255, 0.2);
+  box-shadow: inset 0 0 40px rgba(53, 231, 255, 0.08);
 }
 
-.neo-phone-shell {
+.ring-one {
+  width: 360px;
+  height: 360px;
+}
+
+.ring-two {
+  width: 260px;
+  height: 260px;
+  transform: rotate(18deg);
+  border-style: dashed;
+}
+
+.ring-three {
+  width: 170px;
+  height: 170px;
+  border-color: rgba(24, 242, 178, 0.28);
+}
+
+.vision-core-card {
   position: relative;
+  z-index: 2;
+  width: 178px;
+  height: 178px;
   display: grid;
-  grid-template-columns: 130px 1fr;
-  gap: 12px;
-  width: min(100%, 520px);
-  min-height: 360px;
-  padding: 13px;
-  border: 1px solid rgba(8, 117, 111, 0.14);
-  border-radius: 36px;
-  background: rgba(255, 255, 255, 0.68);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.85), 0 30px 80px rgba(13,34,54,.16);
+  place-items: center;
+  text-align: center;
+  border-radius: 44px;
+  border: 1px solid rgba(119, 226, 255, 0.24);
+  background:
+    radial-gradient(circle at 50% 14%, rgba(53, 231, 255, 0.24), transparent 68%),
+    rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 34px 90px rgba(0, 0, 0, 0.38),
+    0 0 70px rgba(53, 231, 255, 0.16);
   backdrop-filter: blur(20px);
 }
 
-.neo-phone-rail,
-.neo-phone-main {
-  border: 1px solid rgba(8, 117, 111, 0.12);
-  border-radius: 26px;
-  background: linear-gradient(180deg, rgba(255,255,255,.94), rgba(237,248,247,.72));
+.vision-core-card img {
+  width: 52px;
+  height: 52px;
 }
 
-.neo-phone-rail {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  padding: 13px;
+.vision-core-card strong {
+  color: var(--vision-text);
+  font-size: 58px;
+  line-height: 0.8;
+  letter-spacing: -0.06em;
 }
 
-.neo-phone-rail img {
-  width: 46px;
-  height: 46px;
-  align-self: center;
-  margin-bottom: 5px;
-}
-
-.neo-phone-rail span {
-  padding: 10px 11px;
-  border-radius: 15px;
-  color: var(--neo-muted);
+.vision-core-card span {
+  color: var(--vision-muted);
   font-size: 12px;
   font-weight: 900;
 }
 
-.neo-phone-rail span.active {
-  color: white;
-  background: linear-gradient(135deg, var(--neo-blue), var(--neo-cyan));
-}
-
-.neo-phone-main {
-  display: grid;
-  align-content: start;
-  gap: 11px;
-  padding: 15px;
-}
-
-.neo-phone-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: var(--neo-muted);
-}
-
-.neo-phone-top b {
-  padding: 7px 10px;
-  border-radius: 999px;
-  color: #08756f;
-  background: rgba(0, 184, 148, 0.11);
-}
-
-.neo-core {
-  display: grid;
-  place-items: center;
-  min-height: 126px;
-  border: 1px solid rgba(8, 117, 111, 0.12);
-  border-radius: 28px;
-  background:
-    radial-gradient(circle at 50% 10%, rgba(0,199,217,.24), transparent 62%),
-    linear-gradient(135deg, #ffffff, #eefbff);
-}
-
-.neo-core img {
-  width: 46px;
-  height: 46px;
-}
-
-.neo-core strong {
-  color: var(--neo-ink);
-  font-size: 60px;
-  line-height: 0.95;
-  letter-spacing: -0.06em;
-}
-
-.neo-core span,
-.neo-mini-action span,
-.neo-panel header span,
-.neo-list span,
-.neo-empty,
-.neo-signal small,
-.neo-approval-card p {
-  color: var(--neo-muted);
-}
-
-.neo-mini-action {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px;
-  border: 1px solid rgba(8, 117, 111, 0.11);
-  border-radius: 18px;
-  background: rgba(255,255,255,.78);
-}
-
-.neo-mini-action strong,
-.neo-list strong {
-  display: block;
-  color: var(--neo-ink);
-}
-
-.neo-mini-action b {
-  align-self: center;
-  padding: 7px 10px;
-  border-radius: 999px;
-  color: #08756f;
-  background: rgba(0, 184, 148, 0.1);
-  font-size: 11px;
-}
-
-.neo-notice {
-  padding: 14px 16px;
-  border: 1px solid var(--neo-line);
+.vision-floating-card {
+  position: absolute;
+  z-index: 3;
+  min-width: 170px;
+  padding: 15px 16px;
   border-radius: 22px;
-  background: rgba(255,255,255,.86);
-  color: var(--neo-muted);
+  border: 1px solid rgba(119, 226, 255, 0.18);
+  background: rgba(6, 17, 31, 0.72);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px);
 }
 
-.neo-signals {
+.vision-floating-card small {
+  display: block;
+  color: var(--vision-cyan);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+}
+
+.vision-floating-card b {
+  display: block;
+  margin-top: 6px;
+  color: var(--vision-text);
+}
+
+.card-top {
+  top: 28px;
+  right: 58px;
+}
+
+.card-left {
+  left: 10px;
+  bottom: 82px;
+}
+
+.card-right {
+  right: 0;
+  bottom: 54px;
+}
+
+.vision-notice {
+  padding: 14px 16px;
+  border-radius: 24px;
+  border: 1px solid rgba(119, 226, 255, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--vision-muted);
+}
+
+.vision-signals {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 }
 
-.neo-signal {
+.vision-signal {
   display: grid;
-  gap: 7px;
+  gap: 8px;
   text-align: left;
   padding: 20px;
-  border: 1px solid var(--neo-line);
-  border-radius: 30px;
-  background: var(--neo-card);
-  box-shadow: 0 18px 50px rgba(13, 34, 54, 0.08);
+  border-radius: 28px;
+  border: 1px solid rgba(119, 226, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  color: var(--vision-text);
   cursor: pointer;
 }
 
-.neo-signal span {
-  color: #08756f;
+.vision-signal span {
+  color: var(--vision-cyan);
   font-size: 11px;
   font-weight: 950;
-  letter-spacing: .12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-.neo-signal strong {
-  color: var(--neo-ink);
+.vision-signal strong {
+  color: var(--vision-text);
   font-size: 36px;
   line-height: 1;
   letter-spacing: -0.05em;
 }
 
-.neo-grid {
+.vision-signal small,
+.vision-panel header span,
+.vision-feed-row span,
+.vision-list span,
+.vision-empty,
+.vision-approval p {
+  color: var(--vision-muted);
+}
+
+.vision-workbench {
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.92fr);
+  grid-template-columns: minmax(0, 1.06fr) minmax(340px, 0.94fr);
   gap: 16px;
 }
 
-.neo-panel {
+.vision-panel {
   padding: 20px;
-  border: 1px solid var(--neo-line);
-  border-radius: 32px;
-  background: var(--neo-card);
-  box-shadow: 0 20px 58px rgba(13, 34, 54, 0.08);
+  border-radius: 30px;
+  border: 1px solid rgba(119, 226, 255, 0.14);
+  background: rgba(255, 255, 255, 0.075);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(18px);
 }
 
-.neo-panel header {
+.vision-panel header {
   display: flex;
   justify-content: space-between;
   gap: 14px;
@@ -338,130 +406,163 @@
   margin-bottom: 15px;
 }
 
-.neo-panel h2 {
+.vision-panel h2 {
   margin: 0;
-  color: var(--neo-ink);
+  color: var(--vision-text);
   font-size: clamp(26px, 3vw, 42px);
-  line-height: .98;
+  line-height: 0.98;
   letter-spacing: -0.055em;
 }
 
-.neo-approval-card,
-.neo-list button,
-.neo-empty {
-  border: 1px solid rgba(8, 117, 111, 0.12);
+.vision-approval,
+.vision-list button,
+.vision-empty,
+.vision-feed-row {
   border-radius: 22px;
-  background: linear-gradient(180deg, #ffffff, rgba(237,248,247,.76));
+  border: 1px solid rgba(119, 226, 255, 0.12);
+  background: rgba(6, 17, 31, 0.46);
 }
 
-.neo-approval-card {
+.vision-approval {
   display: grid;
   gap: 11px;
   padding: 18px;
 }
 
-.neo-approval-card h3 {
+.vision-approval h3 {
   margin: 0;
-  color: var(--neo-ink);
-  font-size: 24px;
+  color: var(--vision-text);
+  font-size: 25px;
   letter-spacing: -0.035em;
 }
 
-.neo-approval-card p {
+.vision-approval p {
   margin: 0;
   line-height: 1.5;
 }
 
-.neo-approval-card div {
+.vision-approval div {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
 
-.neo-list {
+.vision-feed,
+.vision-list {
   display: grid;
   gap: 9px;
 }
 
-.neo-list button {
+.vision-feed-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+}
+
+.vision-feed-row strong,
+.vision-list strong {
+  display: block;
+  color: var(--vision-text);
+}
+
+.vision-feed-row b {
+  align-self: center;
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #03111d;
+  background: linear-gradient(135deg, var(--vision-cyan), var(--vision-green));
+  font-size: 11px;
+}
+
+.vision-list button {
   display: grid;
   gap: 5px;
   padding: 14px;
+  color: var(--vision-text);
   text-align: left;
   cursor: pointer;
 }
 
-.neo-empty {
+.vision-empty {
   padding: 18px;
 }
 
-html[data-churvox-dashboard-theme="option-b-smart-hub-live"] .op-view-hub .op-topbar {
-  display: none !important;
-}
-
-html[data-churvox-dashboard-theme="option-b-smart-hub-live"] .op-view-hub .op-main {
-  padding-top: 22px !important;
-}
-
 html[data-churvox-dashboard-theme="option-b-smart-hub-live"] .op-view-hub::after {
-  content: "NEW AI COMMAND CENTRE LIVE";
+  content: "CINEMATIC AI COMMAND CENTRE LIVE";
   position: fixed;
   right: 14px;
   bottom: 14px;
   z-index: 999999;
   padding: 8px 11px;
   border-radius: 999px;
-  background: rgba(7, 24, 39, .92);
+  background: rgba(3, 9, 20, 0.92);
   color: white;
   font-size: 11px;
   font-weight: 950;
-  letter-spacing: .12em;
+  letter-spacing: 0.12em;
   pointer-events: none;
 }
 
 @media (max-width: 1180px) {
-  .neo-hero,
-  .neo-grid {
+  .vision-stage,
+  .vision-workbench {
     grid-template-columns: 1fr;
   }
 
-  .neo-product {
-    min-height: auto;
+  .vision-command-orb {
+    min-height: 380px;
   }
 }
 
 @media (max-width: 820px) {
-  .neo-signals {
+  .vision-signals {
     grid-template-columns: 1fr 1fr;
   }
 
-  .neo-phone-shell {
-    grid-template-columns: 1fr;
+  .vision-stage {
+    padding: 28px;
   }
 }
 
 @media (max-width: 620px) {
-  .neo-hero,
-  .neo-panel {
+  .vision-stage,
+  .vision-panel {
     padding: 22px;
     border-radius: 28px;
   }
 
-  .neo-hero h1 {
-    font-size: 42px;
+  .vision-copy h1 {
+    font-size: 44px;
   }
 
-  .neo-signals {
+  .vision-signals {
     grid-template-columns: 1fr;
   }
 
-  .neo-actions button,
-  .neo-panel header button,
-  .neo-approval-card button {
+  .vision-actions button,
+  .vision-panel header button,
+  .vision-approval button {
     width: 100%;
   }
 
-  .neo-panel header {
+  .vision-panel header {
     display: grid;
+  }
+
+  .vision-floating-card {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .vision-command-orb {
+    display: grid;
+    gap: 10px;
+  }
+
+  .vision-ring {
+    display: none;
   }
 }
