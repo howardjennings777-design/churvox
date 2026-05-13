@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import "./operatorTheme.css";
-import "./operatorDesignFinal.css";
-import "./operatorLaptopPolish.css";
-import "./operatorSidebarFinal.css";
-import "./operatorLightTheme.css";
 import "./pages/PublicSite.css";
+import "./operatorCleanLight.css";
 import FreshChurvoxApp from "../fresh/FreshChurvoxApp";
 import ForcedLoginPage from "./pages/ForcedLoginPage";
 import PublicContactPage from "./pages/PublicContactPage";
@@ -30,7 +26,6 @@ import ImportWorkspace from "./pages/ImportWorkspace";
 import SystemCentre from "./pages/SystemCentre";
 import SettingsWorkspace from "./pages/SettingsWorkspace";
 import FirstLoginGuide from "./components/FirstLoginGuide";
-import "./operatorUnifiedTheme.css";
 
 const roleNav = {
   owner: ["hub", "queue", "jobs", "clients", "crew", "quotes", "invoices", "proof", "payroll", "import", "system", "settings"],

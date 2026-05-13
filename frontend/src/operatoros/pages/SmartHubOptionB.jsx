@@ -1,357 +1,219 @@
+
+import { clientOf, moneyOf, titleOf } from "../api";
 import "./SmartHubOptionB.css";
 
-function safeList(value) {
-  return Array.isArray(value) ? value : [];
+function countMoney(items) {
+  return (items || []).reduce((sum, item) => sum + Number(item.total || item.amount || item.price || item.balance_due || 0), 0);
 }
 
-function statusSlug(item) {
-  return String(item?.status || item?.job_status || item?.payment_status || item?.quote_status || "")
-    .toLowerCase()
-    .replace(/\s+/g, "_");
-}
-
-function amountOf(item) {
-  const raw = item?.total ?? item?.amount ?? item?.price ?? item?.job_price ?? item?.balance_due ?? 0;
-  const number = Number(String(raw).replace(/[^0-9.-]/g, ""));
-  return Number.isFinite(number) ? number : 0;
-}
-
-function money(value) {
-  return new Intl.NumberFormat("en-NZ", {
-    style: "currency",
-    currency: "NZD",
-    maximumFractionDigits: 0,
-  }).format(Number(value || 0));
-}
-
-function titleOf(item, fallback = "Item") {
-  return item?.title || item?.name || item?.client_name || item?.customer_name || item?.invoice_number || item?.quote_number || fallback;
-}
-
-function clientOf(item) {
-  return item?.client_name || item?.customer_name || item?.client || item?.customer || "Client";
-}
-
-function rememberSmartHubAction(action) {
-  try {
-    sessionStorage.setItem(
-      "churvox_smart_hub_last_action",
-      JSON.stringify({ ...action, created_at: new Date().toISOString() })
-    );
-  } catch {}
-}
-
-function useCommandModel(data = {}) {
-  const jobs = safeList(data.jobs);
-  const workers = safeList(data.workers || data.team);
-  const invoices = safeList(data.invoices);
-  const quotes = safeList(data.quotes);
-  const aiActions = safeList(data.aiActions);
-
-  const activeJobs = safeList(data.activeJobs).length
-    ? safeList(data.activeJobs)
-    : jobs.filter((job) => ["assigned", "acknowledged", "in_progress", "paused"].includes(statusSlug(job)));
-
-  const unassignedJobs = safeList(data.unassignedJobs).length
-    ? safeList(data.unassignedJobs)
-    : jobs.filter((job) => !job.assigned_worker_id && !job.worker_id && !job.assigned_to && !job.assigned_worker_name && !job.worker_name);
-
-  const completedJobs = safeList(data.completedJobs).length
-    ? safeList(data.completedJobs)
-    : jobs.filter((job) => ["completed", "done", "closed"].includes(statusSlug(job)));
-
-  const unpaidInvoices = safeList(data.unpaidInvoices).length
-    ? safeList(data.unpaidInvoices)
-    : invoices.filter((invoice) => !["paid", "cancelled", "void"].includes(statusSlug(invoice)));
-
-  const openQuotes = safeList(data.openQuotes).length
-    ? safeList(data.openQuotes)
-    : quotes.filter((quote) => ["sent", "pending", "open", "draft", "waiting"].includes(statusSlug(quote)));
-
-  const cashWaiting = unpaidInvoices.reduce((sum, invoice) => sum + amountOf(invoice), 0);
-  const approvals = aiActions.length || unassignedJobs.length + unpaidInvoices.length + openQuotes.length + completedJobs.length;
-
-  const nextMove = aiActions[0]
-    ? {
-        tag: aiActions[0].type || aiActions[0].category || "AI work queue",
-        title: aiActions[0].title || "Review the next AI-prepared action",
-        body: aiActions[0].summary || aiActions[0].description || "AI has prepared work for owner review and approval.",
-        nav: "queue",
-        cta: "Review action",
-        context: { source: "ai_action", id: aiActions[0].id || aiActions[0]._id || "" },
-      }
-    : completedJobs[0]
-    ? {
-        tag: "Proof to paid",
-        title: `Turn ${titleOf(completedJobs[0], "completed job")} into a draft invoice`,
-        body: "Worker proof is in. Churvox can prepare the invoice draft and hold it for approval.",
-        nav: "proof",
-        cta: "Review proof",
-        context: { source: "completed_job", id: completedJobs[0].id || completedJobs[0]._id || "" },
-      }
-    : unassignedJobs[0]
-    ? {
-        tag: "Dispatch",
-        title: `Match the right worker to ${titleOf(unassignedJobs[0], "unassigned job")}`,
-        body: "AI checks area, workload, availability and job type before suggesting a worker.",
-        nav: "queue",
-        cta: "Open match",
-        context: { source: "unassigned_job", id: unassignedJobs[0].id || unassignedJobs[0]._id || "" },
-      }
-    : unpaidInvoices[0]
-    ? {
-        tag: "Cashflow",
-        title: `Prepare payment follow-up for ${titleOf(unpaidInvoices[0], "unpaid invoice")}`,
-        body: "A customer reminder can be drafted now. Nothing sends without your approval.",
-        nav: "invoices",
-        cta: "Open invoice",
-        context: { source: "unpaid_invoice", id: unpaidInvoices[0].id || unpaidInvoices[0]._id || "" },
-      }
-    : openQuotes[0]
-    ? {
-        tag: "Sales follow-up",
-        title: `Follow up ${titleOf(openQuotes[0], "open quote")}`,
-        body: "A short follow-up is ready while the job is still warm.",
-        nav: "quotes",
-        cta: "Open quote",
-        context: { source: "open_quote", id: openQuotes[0].id || openQuotes[0]._id || "" },
-      }
-    : {
-        tag: "All clear",
-        title: "No urgent owner approval waiting",
-        body: "The AI operator is still scanning jobs, proof, cashflow, quotes and crew changes.",
-        nav: "queue",
-        cta: "Open queue",
-        context: { source: "clear" },
-      };
-
-  return {
-    jobs,
-    workers,
-    invoices,
-    quotes,
-    aiActions,
-    activeJobs,
-    unassignedJobs,
-    completedJobs,
-    unpaidInvoices,
-    openQuotes,
-    cashWaiting,
-    approvals,
-    nextMove,
-  };
-}
-
-function SignalCard({ label, value, text, onClick }) {
+function Kpi({ label, value, note }) {
   return (
-    <button type="button" className="vision-signal" onClick={onClick}>
+    <article className="vision-signal">
       <span>{label}</span>
       <strong>{value}</strong>
-      <small>{text}</small>
+      <small>{note}</small>
+    </article>
+  );
+}
+
+function ActionCard({ title, body, meta, onClick }) {
+  return (
+    <button className="vision-approval" onClick={onClick}>
+      <span>AI OPERATOR</span>
+      <h3>{title}</h3>
+      <p>{body}</p>
+      <div><button type="button">Review</button><button type="button">Approve</button></div>
+      <small>{meta}</small>
     </button>
-  );
-}
-
-function FeedRow({ title, meta, status, onClick }) {
-  return (
-    <button type="button" className="vision-feed-row" onClick={onClick}>
-      <div>
-        <strong>{title}</strong>
-        <span>{meta}</span>
-      </div>
-      <b>{status}</b>
-    </button>
-  );
-}
-
-function Panel({ eyebrow, title, subtitle, action, onClick, children }) {
-  return (
-    <section className="vision-panel">
-      <header>
-        <div>
-          <p>{eyebrow}</p>
-          <h2>{title}</h2>
-          {subtitle ? <span>{subtitle}</span> : null}
-        </div>
-        {action ? <button type="button" onClick={onClick}>{action}</button> : null}
-      </header>
-      {children}
-    </section>
-  );
-}
-
-function ItemList({ items, empty, onOpen }) {
-  const shown = safeList(items).slice(0, 4);
-  if (!shown.length) return <div className="vision-empty">{empty}</div>;
-
-  return (
-    <div className="vision-list">
-      {shown.map((item, index) => (
-        <button type="button" key={item.id || item._id || index} onClick={() => onOpen?.(item)}>
-          <strong>{titleOf(item, `Item ${index + 1}`)}</strong>
-          <span>{clientOf(item)} · {amountOf(item) ? money(amountOf(item)) : statusSlug(item) || "Ready"}</span>
-        </button>
-      ))}
-    </div>
   );
 }
 
 export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
-  const model = useCommandModel(data);
+  const jobs = data.jobs || [];
+  const invoices = data.invoices || [];
+  const quotes = data.quotes || [];
+  const workers = data.workers || [];
+  const unassigned = data.unassignedJobs || [];
+  const completed = data.completedJobs || [];
+  const overdue = data.overdueInvoices || [];
+  const openQuotes = data.openQuotes || [];
 
-  function go(nav, context = {}) {
-    rememberSmartHubAction({ nav, ...context });
-    onNav?.(nav);
-  }
-
-  function create(type, context = {}) {
-    rememberSmartHubAction({ create: type, ...context });
-    onCreate?.(type);
-  }
-
-  const signals = [
-    ["Jobs", model.jobs.length, "tracked by the operator", "jobs", { source: "signal_jobs" }],
-    ["Crew", model.workers.length, "watched for dispatch", "crew", { source: "signal_crew" }],
-    ["Cash", money(model.cashWaiting), "waiting for action", "invoices", { source: "signal_cash" }],
-    ["Approvals", model.approvals, "ready for owner", "queue", { source: "signal_approvals" }],
+  const actions = [
+    {
+      title: "Assign worker",
+      body: unassigned[0]
+        ? `AI found ${titleOf(unassigned[0], "a job")} without a worker and can prepare the assignment.`
+        : "No urgent unassigned job found. Churvox is watching dispatch.",
+      meta: unassigned[0] ? clientOf(unassigned[0]) : "Dispatch clear",
+      nav: "jobs",
+    },
+    {
+      title: "Draft invoice ready",
+      body: completed[0]
+        ? `Completed work for ${clientOf(completed[0])} is ready for proof-to-paid review.`
+        : "Completed jobs will appear here when they are ready to invoice.",
+      meta: completed[0] ? moneyOf(completed[0]) : "Proof-to-paid clear",
+      nav: "proof",
+    },
+    {
+      title: "Invoice reminder",
+      body: overdue[0]
+        ? `AI can draft a friendly follow-up for ${clientOf(overdue[0])}.`
+        : "No overdue invoice needs urgent follow-up right now.",
+      meta: overdue[0] ? moneyOf(overdue[0]) : "Cashflow clear",
+      nav: "invoices",
+    },
+    {
+      title: "Quote follow-up",
+      body: openQuotes[0]
+        ? `AI can prepare a quote follow-up for ${clientOf(openQuotes[0])}.`
+        : "Open quote follow-ups will appear here.",
+      meta: openQuotes[0] ? titleOf(openQuotes[0], "Quote") : "Pipeline clear",
+      nav: "quotes",
+    },
   ];
 
   return (
-    <main className="vision-page" data-smart-hub="cinematic-ai-command-centre">
+    <main className="vision-page">
       <section className="vision-stage">
-        <div className="vision-gridline" />
-        <div className="vision-glow vision-glow-one" />
-        <div className="vision-glow vision-glow-two" />
-
         <div className="vision-copy">
           <div className="vision-brand-pill">
             <img src="/brand/churvox-holo-c.svg" alt="" />
             <span>CHURVOX AI OPERATOR</span>
           </div>
-
-          <p>COMMAND CENTRE</p>
-          <h1>
-            AI runs the admin layer.
-            <span>You stay in control.</span>
-          </h1>
+          <p>SMART HUB</p>
+          <h1>AI runs the admin.<span>You approve.</span></h1>
           <strong>
-            Churvox scans jobs, crew, proof photos, quotes, invoices and follow-ups, then turns the mess into clear owner-approved moves.
+            A cleaner command centre for today’s jobs, crew, invoices, proof and follow-ups.
+            Churvox prepares the next move and keeps the owner in control.
           </strong>
 
           <div className="vision-actions">
-            <button type="button" onClick={() => go("queue", { source: "hero_queue" })}>Open AI Work Queue</button>
-            <button type="button" onClick={() => create("jobs", { source: "hero_create_job" })}>Create Job</button>
-            <button type="button" onClick={() => go("proof", { source: "hero_proof_to_paid" })}>Proof to Paid</button>
+            <button type="button" onClick={() => onCreate?.("jobs")}>New Job</button>
+            <button type="button" onClick={() => onNav?.("queue")}>Open AI Work Queue</button>
+            <button type="button" onClick={() => onNav?.("proof")}>Proof-to-Paid</button>
           </div>
         </div>
 
-        <aside className="vision-command-orb">
-          <div className="vision-ring ring-one" />
-          <div className="vision-ring ring-two" />
-          <div className="vision-ring ring-three" />
-
-          <button type="button" className="vision-core-card" onClick={() => go("queue", { source: "orb_core" })}>
+        <div className="vision-command-orb">
+          <div className="vision-core-card">
             <img src="/brand/churvox-holo-c.svg" alt="" />
-            <strong>{model.approvals}</strong>
-            <span>owner approvals prepared</span>
-          </button>
-
-          <button type="button" className="vision-floating-card card-top" onClick={() => go("queue", { source: "orb_ai_operator" })}>
-            <small>AI OPERATOR</small>
-            <b>Live scan active</b>
-          </button>
-
-          <button type="button" className="vision-floating-card card-left" onClick={() => go("jobs", { source: "orb_dispatch" })}>
-            <small>DISPATCH</small>
-            <b>{model.unassignedJobs.length} need crew</b>
-          </button>
-
-          <button type="button" className="vision-floating-card card-right" onClick={() => go("invoices", { source: "orb_cashflow" })}>
-            <small>CASHFLOW</small>
-            <b>{money(model.cashWaiting)}</b>
-          </button>
-        </aside>
+            <strong>{data.aiActions?.length || 0}</strong>
+            <span>AI actions ready</span>
+          </div>
+          <div className="vision-floating-card card-top"><small>DISPATCH</small><b>{unassigned.length} need crew</b></div>
+          <div className="vision-floating-card card-left"><small>CASHFLOW</small><b>{moneyOf({ total: countMoney(invoices) })}</b></div>
+          <div className="vision-floating-card card-right"><small>PROOF</small><b>{completed.length} completed</b></div>
+        </div>
       </section>
 
       {data.notice ? <section className="vision-notice">{data.notice}</section> : null}
 
       <section className="vision-signals">
-        {signals.map(([label, value, text, nav, context]) => (
-          <SignalCard key={label} label={label} value={value} text={text} onClick={() => go(nav, context)} />
-        ))}
+        <Kpi label="Jobs" value={jobs.length} note="total records" />
+        <Kpi label="Completed" value={completed.length} note="ready for review" />
+        <Kpi label="Outstanding" value={moneyOf({ total: countMoney(invoices) })} note="invoice value" />
+        <Kpi label="Quotes" value={quotes.length} note="pipeline" />
       </section>
 
       <section className="vision-workbench">
-        <Panel
-          eyebrow="AI NEXT BEST MOVE"
-          title={model.nextMove.title}
-          subtitle={model.nextMove.body}
-          action={model.nextMove.cta}
-          onClick={() => go(model.nextMove.nav, model.nextMove.context)}
-        >
-          <article className="vision-approval">
-            <span>{model.nextMove.tag}</span>
-            <h3>Prepared. Explained. Waiting for approval.</h3>
-            <p>No customer message, worker assignment, invoice send, payment action, payroll change or MYOB sync happens without owner approval.</p>
+        <article className="vision-panel">
+          <header>
             <div>
-              <button type="button" onClick={() => go("queue", { source: "next_move_review", ...model.nextMove.context })}>Review details</button>
-              <button type="button" onClick={() => go(model.nextMove.nav, { source: "next_move_open", ...model.nextMove.context })}>Open action</button>
+              <p>AI OPERATOR</p>
+              <h2>Approval queue</h2>
+              <span>AI prepares the work. You review and approve.</span>
             </div>
-          </article>
-        </Panel>
+            <button type="button" onClick={() => onNav?.("queue")}>View all</button>
+          </header>
 
-        <Panel
-          eyebrow="LIVE OPERATOR FEED"
-          title="What AI is watching"
-          subtitle="Tap a feed row to open the real workspace."
-        >
-          <div className="vision-feed">
-            <FeedRow title="Invoice draft" meta={`${model.completedJobs.length} completed job${model.completedJobs.length === 1 ? "" : "s"} ready`} status="Proof" onClick={() => go("proof", { source: "feed_invoice_draft" })} />
-            <FeedRow title="Worker match" meta={`${model.unassignedJobs.length} job${model.unassignedJobs.length === 1 ? "" : "s"} need crew`} status="Dispatch" onClick={() => go("queue", { source: "feed_worker_match" })} />
-            <FeedRow title="Quote recovery" meta={`${model.openQuotes.length} quote${model.openQuotes.length === 1 ? "" : "s"} can be followed up`} status="Quotes" onClick={() => go("quotes", { source: "feed_quote_recovery" })} />
-            <FeedRow title="Cashflow" meta={`${model.unpaidInvoices.length} unpaid invoice action${model.unpaidInvoices.length === 1 ? "" : "s"}`} status="Cash" onClick={() => go("invoices", { source: "feed_cashflow" })} />
+          <div className="vision-list">
+            {actions.map((action) => (
+              <ActionCard
+                key={action.title}
+                title={action.title}
+                body={action.body}
+                meta={action.meta}
+                onClick={() => onNav?.(action.nav)}
+              />
+            ))}
           </div>
-        </Panel>
+        </article>
 
-        <Panel
-          eyebrow="PROOF TO PAID"
-          title={`${model.completedJobs.length} completed`}
-          subtitle="Completed work ready for proof review and invoice preparation."
-          action="Open proof"
-          onClick={() => go("proof", { source: "panel_proof" })}
-        >
-          <ItemList items={model.completedJobs} empty="No completed jobs waiting for invoice prep." onOpen={(item) => go("proof", { source: "proof_item", id: item.id || item._id || "" })} />
-        </Panel>
+        <article className="vision-panel">
+          <header>
+            <div>
+              <p>TODAY / RUN SHEET</p>
+              <h2>Work moving today</h2>
+              <span>Jobs and crew stay easy to scan.</span>
+            </div>
+            <button type="button" onClick={() => onNav?.("jobs")}>Open jobs</button>
+          </header>
 
-        <Panel
-          eyebrow="DISPATCH CONTROL"
-          title={`${model.unassignedJobs.length} need crew`}
-          subtitle="AI can match workers by area, workload, availability and job type."
-          action="Open jobs"
-          onClick={() => go("jobs", { source: "panel_dispatch" })}
-        >
-          <ItemList items={model.unassignedJobs} empty="No unassigned jobs right now." onOpen={(item) => go("jobs", { source: "dispatch_item", id: item.id || item._id || "" })} />
-        </Panel>
+          <div className="vision-feed">
+            {(jobs.slice(0, 5)).map((job, index) => (
+              <button className="vision-feed-row" key={job.id || job._id || index} onClick={() => onNav?.("jobs")}>
+                <div>
+                  <strong>{titleOf(job, `Job ${index + 1}`)}</strong>
+                  <span>{clientOf(job)} · {job.address || job.site_address || "No address set"}</span>
+                </div>
+                <b>{job.status || job.job_status || "Open"}</b>
+              </button>
+            ))}
 
-        <Panel
-          eyebrow="CASHFLOW RADAR"
-          title={money(model.cashWaiting)}
-          subtitle={`${model.unpaidInvoices.length} unpaid invoice action${model.unpaidInvoices.length === 1 ? "" : "s"} waiting.`}
-          action="Open invoices"
-          onClick={() => go("invoices", { source: "panel_cashflow" })}
-        >
-          <ItemList items={model.unpaidInvoices} empty="No unpaid invoices need action." onOpen={(item) => go("invoices", { source: "invoice_item", id: item.id || item._id || "" })} />
-        </Panel>
+            {!jobs.length ? <div className="vision-empty">No jobs yet. Create a job and Churvox will start preparing the admin.</div> : null}
+          </div>
+        </article>
+      </section>
 
-        <Panel
-          eyebrow="QUOTE RECOVERY"
-          title={`${model.openQuotes.length} quotes`}
-          subtitle="Open quotes that can be followed up from the approval queue."
-          action="Open quotes"
-          onClick={() => go("quotes", { source: "panel_quotes" })}
-        >
-          <ItemList items={model.openQuotes} empty="No quote follow-ups waiting." onOpen={(item) => go("quotes", { source: "quote_item", id: item.id || item._id || "" })} />
-        </Panel>
+      <section className="vision-workbench">
+        <article className="vision-panel">
+          <header>
+            <div>
+              <p>CREW & DISPATCH</p>
+              <h2>Who can take work?</h2>
+              <span>Keep worker workload and dispatch context visible.</span>
+            </div>
+            <button type="button" onClick={() => onNav?.("crew")}>View crew</button>
+          </header>
+
+          <div className="vision-feed">
+            {workers.slice(0, 5).map((worker, index) => (
+              <button className="vision-feed-row" key={worker.id || worker._id || index} onClick={() => onNav?.("crew")}>
+                <div>
+                  <strong>{titleOf(worker, `Worker ${index + 1}`)}</strong>
+                  <span>{worker.role || "Worker"} · {worker.region || "No region set"}</span>
+                </div>
+                <b>{worker.status || "Available"}</b>
+              </button>
+            ))}
+            {!workers.length ? <div className="vision-empty">No workers yet. Add or import crew to unlock stronger AI dispatch.</div> : null}
+          </div>
+        </article>
+
+        <article className="vision-panel">
+          <header>
+            <div>
+              <p>CASHFLOW</p>
+              <h2>Proof to paid</h2>
+              <span>Completed work becomes invoice-ready faster.</span>
+            </div>
+            <button type="button" onClick={() => onNav?.("invoices")}>Open invoices</button>
+          </header>
+
+          <div className="vision-feed">
+            {invoices.slice(0, 5).map((invoice, index) => (
+              <button className="vision-feed-row" key={invoice.id || invoice._id || index} onClick={() => onNav?.("invoices")}>
+                <div>
+                  <strong>{titleOf(invoice, `Invoice ${index + 1}`)}</strong>
+                  <span>{clientOf(invoice)} · {invoice.status || "Draft"}</span>
+                </div>
+                <b>{moneyOf(invoice)}</b>
+              </button>
+            ))}
+            {!invoices.length ? <div className="vision-empty">No invoices yet. Draft invoices will appear here.</div> : null}
+          </div>
+        </article>
       </section>
     </main>
   );
