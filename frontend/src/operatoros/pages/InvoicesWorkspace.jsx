@@ -1,13 +1,17 @@
 import WorkspaceList from "../components/WorkspaceList";
 
-export default function InvoicesWorkspace({ data }) {
+export default function InvoicesWorkspace({ data, onCreate }) {
   return (
     <WorkspaceList
       title="Invoices"
-      eyebrow="MONEY"
-      description="Draft, unpaid, overdue and paid invoices. AI prepares reminders for approval."
+      eyebrow="CASHFLOW"
+      description="Track draft, sent, unpaid and paid invoices."
       items={data.invoices || []}
       type="invoice"
+      endpoint="/invoices"
+      createType="invoices"
+      onCreate={onCreate}
+      reload={data.reload}
     />
   );
 }
