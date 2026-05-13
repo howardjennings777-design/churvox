@@ -306,3 +306,66 @@ body::after {
     width: 100%;
   }
 }
+
+/* ===== FORCE LOAD ORDER PROOF ===== */
+html body::before {
+  content: "CHURVOX THEME ACTIVE";
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 2147483647;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #59eaff, #2ff4c3) !important;
+  color: #04131f !important;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  box-shadow: 0 12px 32px rgba(89, 234, 255, 0.35);
+  pointer-events: none;
+}
+
+html body,
+html #root,
+html .op-shell,
+html .op-main,
+html .cvx-site,
+html .force-login-page {
+  background:
+    radial-gradient(circle at 80% 5%, rgba(89, 234, 255, 0.42), transparent 30rem),
+    radial-gradient(circle at 12% 18%, rgba(47, 244, 195, 0.24), transparent 28rem),
+    linear-gradient(135deg, #0b2032 0%, #123653 48%, #185174 100%) !important;
+}
+
+html .op-sidebar,
+html .op-topbar,
+html .op-workspace-head,
+html .op-toolbar,
+html .op-row,
+html .op-panel,
+html .op-ai-card,
+html .op-detail-grid > div,
+html .op-note,
+html .force-login-card,
+html .force-login-shell,
+html .cvx-nav,
+html .cvx-section,
+html .cvx-page-hero,
+html .cvx-price-grid article {
+  background:
+    radial-gradient(circle at 20% 8%, rgba(89, 234, 255, 0.22), transparent 54%),
+    linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.09)) !important;
+  border-color: rgba(167, 239, 255, 0.45) !important;
+  box-shadow: 0 26px 80px rgba(2, 15, 31, 0.30), inset 0 1px 0 rgba(255,255,255,.20) !important;
+}
+
+html .op-sidebar nav button.active,
+html .op-mobile-nav button.active,
+html .cvx-primary,
+html .cvx-nav-cta,
+html .force-login-card button,
+html .op-workspace button.primary,
+html .op-head-actions .primary {
+  background: linear-gradient(135deg, #59eaff, #2ff4c3) !important;
+  color: #04131f !important;
+}
