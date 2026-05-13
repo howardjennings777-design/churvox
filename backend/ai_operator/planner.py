@@ -16,7 +16,7 @@ def _fp(action):
 
 
 def build_operator_plan(jobs, clients, workers, quotes, invoices, memory, quality, existing_actions=None):
-    existing = {a.get("fingerprint") for a in (existing_actions or []) if a.get("status") in {"pending","ready","needs_info"}}
+    existing = {a.get("fingerprint") for a in (existing_actions or []) if a.get("status") in {"pending","ready","needs_info","waiting_owner"}}
     actions = []
     workers_active = [w for w in (workers or []) if _status(w.get("status")) in {"active","available","ready"}]
 

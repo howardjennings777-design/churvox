@@ -47,7 +47,19 @@ def _number(value, default=0.0):
 
 
 def _normalise_action_type(action):
-    raw = _sid(action.get("action_type") or action.get("type") or "ai_setup_task")
+    if not isinstance(action, dict):
+        return "ai_setup_task"
+
+    raw = _sid(action.get("action_type") or "")
+
+    if not raw:
+        raw = _sid(action.get("type") or "")
+
+    if not raw:
+        payload = action.get("suggested_payload") or action.get("payload") or {}
+        if isinstance(payload, dict):
+            raw = _sid(payload.get("action_type") or payload.get("type") or "")
+
     review_only_aliases = {
         "operator_health_check",
         "proof_to_paid_review",
@@ -57,9 +69,11 @@ def _normalise_action_type(action):
         "invoice_follow_up",
         "job_assignment",
     }
-    if raw in review_only_aliases:
+
+    if not raw or raw in review_only_aliases:
         return "ai_setup_task"
-    return raw or "ai_setup_task"
+
+    return raw
 
 
 async def _audit(db, business_id, user, action, event, result=None):

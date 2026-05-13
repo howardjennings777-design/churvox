@@ -48,6 +48,51 @@ def clean_value(value):
     return value
 
 
+
+ACTIVE_AI_ACTION_STATUSES = ["pending", "ready", "needs_info", "waiting_owner"]
+
+REVIEW_ONLY_ACTION_ALIASES = {
+    "operator_health_check",
+    "proof_to_paid_review",
+    "operator_error_recovery",
+    "dispatch_review",
+    "cashflow_followup",
+    "invoice_follow_up",
+    "job_assignment",
+}
+
+
+def normalize_ai_action_type(action):
+    if not isinstance(action, dict):
+        return "ai_setup_task"
+
+    raw = str(action.get("action_type") or "").strip()
+
+    if not raw:
+        raw = str(action.get("type") or "").strip()
+
+    if not raw:
+        payload = action.get("suggested_payload") or action.get("payload") or {}
+        if isinstance(payload, dict):
+            raw = str(payload.get("action_type") or payload.get("type") or "").strip()
+
+    if not raw or raw in REVIEW_ONLY_ACTION_ALIASES:
+        return "ai_setup_task"
+
+    return raw
+
+
+def prepare_ai_action(action):
+    if not isinstance(action, dict):
+        return action
+
+    display_type = str(action.get("type") or action.get("action_type") or "ai_setup_task").strip()
+    action["type"] = display_type or "ai_setup_task"
+    action["action_type"] = normalize_ai_action_type(action)
+
+    return action
+
+
 def normalize_records(raw):
     """
     Existing business_records() may return a dict or a 5-item tuple/list.
@@ -87,7 +132,7 @@ async def get_business_context(db, business_id, user):
 
     actions = await db.ai_operator_actions.find({
         "business_id": str(business_id),
-        "status": {"$in": ["pending", "ready", "needs_info", "approved", "failed"]},
+        "status": {"$in": ACTIVE_AI_ACTION_STATUSES},
     }).sort([("priority_score", -1), ("updated_at", -1), ("created_at", -1)]).limit(100).to_list(length=100)
 
     audit = await load_audit_rows(db, business_id, limit=300)
@@ -441,21 +486,13 @@ def setup_ai_operator_power_routes(api_router, db, jwt_secret, jwt_algorithm):
                 if not isinstance(action, dict):
                     continue
 
+                action = prepare_ai_action(action)
+
                 now = now_utc()
                 action["business_id"] = business_id
                 action["id"] = str(action.get("id") or action.get("fingerprint") or f"ai_action_{index}")
-                action["action_type"] = action.get("action_type") or action.get("type") or "ai_setup_task"
-
-                if action["action_type"] in {
-                    "operator_health_check",
-                    "proof_to_paid_review",
-                    "operator_error_recovery",
-                    "dispatch_review",
-                    "cashflow_followup",
-                    "invoice_follow_up",
-                    "job_assignment",
-                }:
-                    action["action_type"] = "ai_setup_task"
+                action["type"] = action.get("type") or action.get("action_type") or "ai_setup_task"
+                action["action_type"] = normalize_ai_action_type(action)
 
                 action["status"] = action.get("status") or "pending"
                 action["created_at"] = action.get("created_at") or now
@@ -481,7 +518,7 @@ def setup_ai_operator_power_routes(api_router, db, jwt_secret, jwt_algorithm):
                 existing = await db.ai_operator_actions.find_one({
                     "business_id": business_id,
                     "fingerprint": action.get("fingerprint"),
-                    "status": {"$in": ["pending", "ready", "needs_info", "waiting_owner"]},
+                    "status": {"$in": ACTIVE_AI_ACTION_STATUSES},
                 })
 
                 if not existing:
@@ -492,10 +529,12 @@ def setup_ai_operator_power_routes(api_router, db, jwt_secret, jwt_algorithm):
             planner_error = str(exc)
 
             for action in safe_review_actions(planner_error):
+                action = prepare_ai_action(action)
+
                 existing = await db.ai_operator_actions.find_one({
                     "business_id": business_id,
                     "fingerprint": action.get("fingerprint"),
-                    "status": {"$in": ["pending", "ready", "needs_info", "waiting_owner"]},
+                    "status": {"$in": ACTIVE_AI_ACTION_STATUSES},
                 })
 
                 if not existing:
@@ -504,7 +543,7 @@ def setup_ai_operator_power_routes(api_router, db, jwt_secret, jwt_algorithm):
 
         rows = await db.ai_operator_actions.find({
             "business_id": business_id,
-            "status": {"$in": ["pending", "ready", "needs_info", "waiting_owner"]},
+            "status": {"$in": ACTIVE_AI_ACTION_STATUSES},
         }).sort([
             ("priority_score", -1),
             ("updated_at", -1),
@@ -529,7 +568,7 @@ def setup_ai_operator_power_routes(api_router, db, jwt_secret, jwt_algorithm):
         else:
             query = {
                 "business_id": business_id,
-                "status": {"$in": ["pending", "ready", "needs_info", "waiting_owner"]},
+                "status": {"$in": ACTIVE_AI_ACTION_STATUSES},
             }
 
         rows = await db.ai_operator_actions.find(query).sort([
