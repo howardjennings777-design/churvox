@@ -7039,3 +7039,329 @@ body.chx-live-login button {
     max-width: none !important;
   }
 }
+
+/* ===== CHURVOX INVITING BLUE / TEAL THEME PASS ===== */
+:root {
+  --chx-bg-deep: #071a2b;
+  --chx-bg-mid: #0b2a42;
+  --chx-bg-soft: #0f3850;
+  --chx-panel: rgba(18, 65, 92, 0.64);
+  --chx-panel-strong: rgba(20, 78, 108, 0.78);
+  --chx-panel-soft: rgba(56, 189, 248, 0.13);
+  --chx-line: rgba(165, 243, 252, 0.22);
+  --chx-line-strong: rgba(165, 243, 252, 0.36);
+  --chx-cyan: #67e8f9;
+  --chx-mint: #bdfcff;
+  --chx-cream: #f4fbf6;
+  --chx-muted: rgba(236, 254, 255, 0.76);
+  --chx-muted-soft: rgba(236, 254, 255, 0.62);
+  --chx-shadow: rgba(2, 6, 23, 0.32);
+}
+
+/* main public/app backgrounds */
+.chx-public,
+.demo-real,
+.cleanhub,
+.smartdash,
+.signup-screen,
+.contactpub,
+.pricepub,
+body:has(.chx-public),
+body:has(.demo-real),
+body:has(.cleanhub),
+body:has(.smartdash),
+body:has(.signup-screen),
+body:has(.contactpub),
+body:has(.pricepub) {
+  color: var(--chx-cream) !important;
+  background:
+    radial-gradient(circle at 18% 10%, rgba(103, 232, 249, 0.32), transparent 31%),
+    radial-gradient(circle at 78% 4%, rgba(34, 211, 238, 0.18), transparent 30%),
+    radial-gradient(circle at 50% 98%, rgba(45, 212, 191, 0.14), transparent 34%),
+    linear-gradient(135deg, var(--chx-bg-deep) 0%, var(--chx-bg-mid) 46%, var(--chx-bg-soft) 100%) !important;
+}
+
+/* softer hero lighting */
+.chx-public::before,
+.demo-real::before,
+.cleanhub::before,
+.smartdash::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(103, 232, 249, 0.08), transparent 44%),
+    radial-gradient(circle at 12% 45%, rgba(255, 255, 255, 0.07), transparent 34%);
+  mix-blend-mode: screen;
+  z-index: 0;
+}
+
+.chx-public > *,
+.demo-real > *,
+.cleanhub > *,
+.smartdash > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* glass panels/cards */
+.chx-operator,
+.chx-wins article,
+.chx-problems article,
+.chx-preview,
+.chx-features,
+.chx-pricing,
+.chx-trades,
+.chx-trust,
+.chx-final,
+.chx-footer,
+.demo-side,
+.demo-guide,
+.demo-card,
+.demo-stats article,
+.demo-business,
+.cleanhub-card,
+.cleanhub-metrics article,
+.smartdash-card,
+.smartdash-metrics article,
+.smartdash-job-preview,
+.smartdash-mini-list a,
+.smartdash-queue div,
+.smartdash-workers div,
+.signup-card,
+.signup-sales article,
+.contactpub aside,
+.pricepub-grid article,
+.pricepub-extra article,
+.pricepub-offer {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.052)),
+    var(--chx-panel) !important;
+  border-color: var(--chx-line) !important;
+  box-shadow:
+    0 26px 88px var(--chx-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+/* stronger important cards */
+.chx-operator,
+.chx-next,
+.demo-card.hero,
+.cleanhub-main-card,
+.smartdash-hero-card,
+.signup-card {
+  background:
+    radial-gradient(circle at 22% 0%, rgba(103, 232, 249, 0.22), transparent 36%),
+    linear-gradient(180deg, rgba(26, 91, 124, 0.86), rgba(13, 43, 67, 0.78)) !important;
+  border-color: var(--chx-line-strong) !important;
+}
+
+/* top nav pill */
+.chx-nav nav,
+.pricepub header nav a,
+.demo-top-actions a,
+.cleanhub-header nav a,
+.smartdash-actions a {
+  background: rgba(4, 19, 32, 0.46) !important;
+  border-color: rgba(165, 243, 252, 0.2) !important;
+}
+
+/* typography warmth */
+.chx-copy h1,
+.chx-preview h2,
+.chx-features h2,
+.chx-pricing h2,
+.chx-trades h2,
+.chx-trust h2,
+.chx-final h2,
+.demo-top h1,
+.demo-card h2,
+.cleanhub-header h1,
+.cleanhub-card h2,
+.smartdash-top h1,
+.smartdash-card h2,
+.signup-copy h1,
+.contactpub h1,
+.pricepub-hero h1 {
+  color: var(--chx-cream) !important;
+  text-shadow: 0 8px 34px rgba(3, 17, 31, 0.32) !important;
+}
+
+.chx-copy h2,
+.chx-wins span,
+.chx-problems span,
+.chx-preview span,
+.chx-features span,
+.chx-trades span,
+.chx-trust li,
+.demo-card p,
+.demo-guide p,
+.cleanhub-card p,
+.smartdash-card p,
+.signup-lead,
+.contactpub article > span,
+.pricepub-hero span {
+  color: var(--chx-muted) !important;
+}
+
+/* labels/accent text */
+.chx-copy > p,
+.chx-preview p,
+.chx-features p,
+.chx-pricing p,
+.chx-trades p,
+.chx-trust p,
+.chx-final p,
+.demo-top small,
+.demo-card small,
+.demo-guide small,
+.cleanhub-header p,
+.cleanhub-card small,
+.smartdash-top p,
+.smartdash-card small,
+.signup-copy p:first-child,
+.signup-card-head p,
+.contactpub p,
+.pricepub-hero p,
+.pricepub-extra p,
+.pricepub-offer p {
+  color: var(--chx-cyan) !important;
+}
+
+/* buttons */
+.chx-primary,
+.chx-pricing > a,
+.chx-next button,
+.demo-guide button,
+.demo-queue button,
+.demo-proof button,
+.demo-actions-row button,
+.demo-side-footer a:first-child,
+.cleanhub-header nav a.primary,
+.cleanhub-actions footer button,
+.smartdash-actions a.primary,
+.smartdash-button-row a:first-child,
+.signup-card button,
+.contactpub-actions a:first-child,
+.pricepub-hero a,
+.pricepub-grid article > a {
+  color: #062033 !important;
+  background: linear-gradient(135deg, #f3fffb 0%, #bdfcff 42%, #67e8f9 100%) !important;
+  box-shadow: 0 18px 54px rgba(103, 232, 249, 0.26) !important;
+}
+
+.chx-secondary,
+.demo-side-footer a:nth-child(2),
+.contactpub-actions a:nth-child(2),
+.smartdash-button-row a:not(:first-child),
+.cleanhub-actions footer a {
+  color: var(--chx-cream) !important;
+  background: rgba(255, 255, 255, 0.09) !important;
+  border-color: var(--chx-line) !important;
+}
+
+/* metrics */
+.chx-stats div,
+.demo-stats article,
+.cleanhub-metrics article,
+.smartdash-metrics article {
+  background:
+    linear-gradient(180deg, rgba(103, 232, 249, 0.14), rgba(255, 255, 255, 0.055)),
+    rgba(14, 58, 86, 0.68) !important;
+}
+
+.chx-stats b,
+.demo-stats strong,
+.cleanhub-metrics strong,
+.cleanhub-big,
+.smartdash-metrics strong,
+.smartdash-cash-number,
+.pricepub-grid article > strong {
+  color: var(--chx-mint) !important;
+}
+
+/* lists/cards inside dashboards */
+.cleanhub-actions article,
+.cleanhub-list a,
+.cleanhub-empty,
+.smartdash-mini-list a,
+.smartdash-empty,
+.smartdash-queue div,
+.smartdash-workers div,
+.demo-table article,
+.demo-money,
+.demo-queue article,
+.demo-workers article,
+.demo-proof article {
+  background: rgba(5, 24, 39, 0.34) !important;
+  border-color: rgba(165, 243, 252, 0.16) !important;
+}
+
+/* forms */
+.signup-card input,
+.signup-card select,
+body:has(.fresh-login-fixed-root) input {
+  background: rgba(5, 28, 45, 0.72) !important;
+  border-color: rgba(165, 243, 252, 0.24) !important;
+  color: var(--chx-cream) !important;
+}
+
+.signup-card input:focus,
+.signup-card select:focus,
+body:has(.fresh-login-fixed-root) input:focus {
+  border-color: rgba(103, 232, 249, 0.9) !important;
+  box-shadow: 0 0 0 3px rgba(103, 232, 249, 0.15) !important;
+}
+
+/* logo glow */
+.chx-brand > span,
+.demo-brand > span,
+.signup-brand span,
+.contactpub-brand img,
+.pricepub-brand img {
+  box-shadow:
+    0 16px 60px rgba(103, 232, 249, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+}
+
+/* make public landing feel lighter/inviting without changing layout */
+body:has(.chx-public) .chx-hero {
+  background:
+    linear-gradient(90deg, rgba(103, 232, 249, 0.08), transparent 56%) !important;
+}
+
+body:has(.chx-public) .chx-copy h1 span {
+  color: #d7fffb !important;
+}
+
+body:has(.chx-public) .chx-wins article {
+  background:
+    linear-gradient(180deg, rgba(103, 232, 249, 0.16), rgba(255, 255, 255, 0.055)),
+    rgba(15, 61, 89, 0.66) !important;
+}
+
+/* status pills */
+.live-dot,
+.cleanhub-card-top b,
+.pricepub-grid small,
+.status,
+.demo-top-actions a.primary {
+  color: #062033 !important;
+  background: linear-gradient(135deg, #effffd, #67e8f9) !important;
+}
+
+/* mobile safety */
+@media (max-width: 760px) {
+  .chx-public,
+  .demo-real,
+  .cleanhub,
+  .smartdash,
+  .signup-screen,
+  .contactpub,
+  .pricepub {
+    background:
+      radial-gradient(circle at 20% 0%, rgba(103, 232, 249, 0.26), transparent 34%),
+      linear-gradient(135deg, var(--chx-bg-deep), var(--chx-bg-mid) 56%, var(--chx-bg-soft)) !important;
+  }
+}
