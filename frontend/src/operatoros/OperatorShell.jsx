@@ -1,62 +1,36 @@
-import FloatingLogo from "./components/FloatingLogo";
-import TopCommandBar from "./components/TopCommandBar";
 
-const icons = {
-  hub: "⬡",
-  queue: "◆",
-  jobs: "⌘",
-  clients: "◎",
-  crew: "♧",
-  quotes: "▤",
-  invoices: "▥",
-  proof: "✓",
-  payroll: "◌",
-  import: "⇪",
-  system: "◍",
-  settings: "⚙",
-};
+import { clearChurvoxAuth } from "./logout";
+
+function roleLabel(role) {
+  return String(role || "owner").replaceAll("_", " ");
+}
 
 export default function OperatorShell({
-  nav,
+  nav = [],
   current,
   setCurrent,
-  children,
   role,
   setRole,
   allowRoleSwitch,
   userName,
   data,
   onCreate,
+  children,
 }) {
-  function handleLogout() {
+  function logout() {
+    clearChurvoxAuth();
     try {
-      localStorage.removeItem("token");
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("role");
-      sessionStorage.clear();
-
-      document.cookie.split(";").forEach((cookie) => {
-        const name = cookie.split("=")[0]?.trim();
-        if (name) {
-          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-        }
-      });
-    } catch (error) {
-      console.warn("Logout cleanup failed", error);
-    }
-
-    window.location.href = "/login";
+      localStorage.setItem("churvox_force_login", "true");
+    } catch {}
+    window.location.href = "/login?logged_out=1";
   }
 
-  const safeRole = role || "owner";
-
   return (
-    <div className={`op-shell op-view-${current || "hub"} op-role-${safeRole}`} data-role={safeRole}>
+    <div className="op-shell">
       <aside className="op-sidebar">
-        <button className="op-brand" onClick={() => setCurrent("hub")}>
-          <FloatingLogo wordmark />
+        <button className="op-brand" onClick={() => setCurrent?.("hub")}>
+          <span className="op-logo-mark"><img src="/brand/churvox-holo-c.svg" alt="" /></span>
+          <span><strong>Churvox</strong><small>AI Operator OS</small></span>
         </button>
 
         <nav>
@@ -64,53 +38,58 @@ export default function OperatorShell({
             <button
               key={item.key}
               className={current === item.key ? "active" : ""}
-              onClick={() => setCurrent(item.key)}
+              onClick={() => setCurrent?.(item.key)}
             >
-              <i>{icons[item.key] || "•"}</i>
-              <span>{item.label}</span>
+              {item.label}
             </button>
           ))}
         </nav>
 
         <section className="op-ai-card">
-          <p>{safeRole === "worker" ? "WORKER APP" : "AI OPERATOR"}</p>
-          <strong>{safeRole === "worker" ? "Simple field workflow." : "Prepares the admin."}</strong>
-          <span>{safeRole === "worker" ? "Jobs, notes, photos and completion stay clear." : "Owner approves anything risky."}</span>
+          <p>AI OPERATOR</p>
+          <strong>{data?.aiActions?.length || 0} actions ready</strong>
+          <span>AI prepares the admin. You approve.</span>
         </section>
 
-        <button className="op-logout-button" onClick={handleLogout}>
-          <i>↪</i>
-          <span>Log out</span>
-        </button>
+        {allowRoleSwitch ? (
+          <select value={role} onChange={(event) => setRole?.(event.target.value)}>
+            <option value="owner">Owner</option>
+            <option value="manager">Manager</option>
+            <option value="office_admin">Office Admin</option>
+            <option value="worker">Worker</option>
+            <option value="payroll">Payroll</option>
+          </select>
+        ) : null}
       </aside>
 
       <main className="op-main">
-        <TopCommandBar
-          role={role}
-          setRole={setRole}
-          allowRoleSwitch={allowRoleSwitch}
-          userName={userName}
-          data={data}
-          onNav={setCurrent}
-          onCreate={onCreate}
-        />
+        <header className="op-topbar">
+          <div>
+            <strong>{userName || "Owner"}</strong>
+            <span>{roleLabel(role)} workspace</span>
+          </div>
+
+          <input className="op-search" placeholder="Search anything..." />
+
+          <div className="op-head-actions">
+            <button type="button" className="primary" onClick={() => onCreate?.("jobs")}>New Job</button>
+            <button type="button" onClick={logout}>Logout</button>
+          </div>
+        </header>
+
         {children}
       </main>
 
       <nav className="op-mobile-nav">
-        {nav
-          .filter((item) => ["hub", "queue", "jobs", "invoices"].includes(item.key))
-          .map((item) => (
-            <button
-              key={item.key}
-              className={current === item.key ? "active" : ""}
-              onClick={() => setCurrent(item.key)}
-            >
-              {item.mobile || item.label}
-            </button>
-          ))}
-        <button onClick={() => setCurrent("settings")}>More</button>
-        <button className="op-mobile-logout" onClick={handleLogout}>Log out</button>
+        {nav.slice(0, 5).map((item) => (
+          <button
+            key={item.key}
+            className={current === item.key ? "active" : ""}
+            onClick={() => setCurrent?.(item.key)}
+          >
+            {item.mobile || item.label}
+          </button>
+        ))}
       </nav>
     </div>
   );

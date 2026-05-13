@@ -4,25 +4,13 @@ import "./PublicSite.css";
 const features = [
   ["AI Operator", "Handles the busywork"],
   ["You Approve", "Stay in control"],
-  ["Everything Connected", "From quote to paid"],
+  ["Connected", "From quote to paid"],
   ["Time Back", "Focus on your business"],
-];
-
-const flow = [
-  ["AI scans the business", "Jobs, crew, quotes, invoices and proof stay visible."],
-  ["AI prepares the next move", "Churvox turns admin into clear owner approval cards."],
-  ["Owner approves", "Edit, approve or reject without losing context."],
-];
-
-const operatorCards = [
-  ["Assign Worker", "AI recommends James Carter for Job #1047.", "Review Assignment"],
-  ["Invoice Reminder", "AI drafted a friendly reminder for Acme Plumbing.", "Review Message"],
-  ["Draft Invoice Ready", "AI prepared a draft invoice for Job #1042.", "Review Invoice"],
 ];
 
 function Nav() {
   return (
-    <header className="cvx-nav cvx-vision-nav">
+    <header className="cvx-nav">
       <a className="cvx-brand" href="/">
         <span><img src="/brand/churvox-holo-c.svg" alt="" /></span>
         <div><strong>Churvox</strong><small>AI OPERATOR OS</small></div>
@@ -41,58 +29,63 @@ function Nav() {
   );
 }
 
-function MockDashboard() {
+function ProductMockup() {
   return (
     <aside className="cvx-command-preview">
-      <section className="op-workspace-head">
-        <div>
-          <p>SMART HUB</p>
-          <h1>Today at a glance.</h1>
-          <span>AI has prepared the admin. Review and approve.</span>
-        </div>
-      </section>
-
-      <div className="vision-signals">
-        <article className="vision-signal"><span>Revenue</span><strong>$126k</strong><small>month to date</small></article>
-        <article className="vision-signal"><span>Jobs done</span><strong>28</strong><small>12% up</small></article>
-        <article className="vision-signal"><span>Outstanding</span><strong>$43k</strong><small>needs follow-up</small></article>
-        <article className="vision-signal"><span>Quotes</span><strong>17</strong><small>sent this month</small></article>
-      </div>
-
-      <section className="vision-panel">
-        <header>
-          <div>
-            <p>AI OPERATOR</p>
-            <h2>Approval queue</h2>
-          </div>
-        </header>
-
-        <div className="vision-list">
-          {operatorCards.map(([title, body, action]) => (
-            <button key={title}>
-              <strong>{title}</strong>
-              <span>{body}</span>
-              <small>{action}</small>
-            </button>
+      <div className="cvx-preview-top">
+        <div className="cvx-preview-side">
+          {["Smart Hub", "AI Work Queue", "Jobs", "Clients", "Quotes", "Invoices", "Proof-to-Paid", "Team", "Payroll", "Settings"].map((item, index) => (
+            <button key={item} className={index === 0 ? "active" : ""}>{item}</button>
           ))}
         </div>
-      </section>
+
+        <div className="cvx-preview-main">
+          <section>
+            <p className="cvx-kicker">SMART HUB</p>
+            <h2>Today at a glance.</h2>
+            <span>Your business at a glance.</span>
+          </section>
+
+          <div className="cvx-preview-kpis">
+            <article><small>Revenue</small><strong>$126k</strong><span>↑ 18%</span></article>
+            <article><small>Jobs done</small><strong>28</strong><span>↑ 12%</span></article>
+            <article><small>Outstanding</small><strong>$43k</strong><span>needs follow-up</span></article>
+            <article><small>Quotes</small><strong>17</strong><span>sent</span></article>
+          </div>
+
+          <section>
+            <p className="cvx-kicker">AI OPERATOR</p>
+            <div className="cvx-preview-ai">
+              <article><strong>Assign worker</strong><span>James Carter to Job #1047</span><button>Review</button></article>
+              <article><strong>Invoice reminder</strong><span>Friendly reminder drafted</span><button>Review</button></article>
+              <article><strong>Draft invoice</strong><span>$2,850 ready</span><button>Review</button></article>
+            </div>
+          </section>
+
+          <div className="cvx-preview-list">
+            <strong>Today / Run Sheet</strong>
+            <span>8:00am · Acme Plumbing · In Progress</span>
+            <span>10:30am · Greenview Electrical · Scheduled</span>
+            <span>1:00pm · Blue Lagoon Pools · Scheduled</span>
+          </div>
+        </div>
+      </div>
     </aside>
   );
 }
 
 export default function PublicLandingPage() {
   return (
-    <main className="cvx-site cvx-public-vision">
+    <main className="cvx-site">
       <Nav />
 
-      <section className="cvx-hero cvx-vision-hero">
-        <div className="cvx-vision-copy">
+      <section className="cvx-hero">
+        <div className="cvx-hero-copy">
           <p className="cvx-kicker">CHURVOX AI OPERATOR OS</p>
           <h1>AI runs the admin.<span>You approve.</span></h1>
-          <p className="cvx-lede">
-            A cleaner command centre for trade and service businesses. Jobs, crew,
-            quotes, invoices, proof and follow-ups stay in one calm owner-approved workspace.
+          <p>
+            A cleaner command centre for trade and service businesses.
+            Jobs, crew, quotes, invoices, proof and follow-ups stay in one calm owner-approved workspace.
           </p>
 
           <div className="cvx-actions">
@@ -101,47 +94,37 @@ export default function PublicLandingPage() {
           </div>
 
           <div className="cvx-proofbar">
-            {features.map(([title, body]) => (
-              <span key={title}><strong>{title}</strong> · {body}</span>
+            {features.map(([title, body], index) => (
+              <article className="cvx-mini-card" key={title}>
+                <span>{index + 1}</span>
+                <strong>{title}</strong>
+                <small>{body}</small>
+              </article>
             ))}
           </div>
         </div>
 
-        <MockDashboard />
+        <ProductMockup />
       </section>
 
-      <section className="cvx-section cvx-vision-section">
-        <div className="cvx-section-head">
-          <p className="cvx-kicker">HOW IT WORKS</p>
-          <h2>Built around one simple idea: AI prepares, owner approves.</h2>
-          <p className="cvx-section-copy">
-            Churvox removes the busywork without taking risky action behind your back.
-          </p>
-        </div>
-
-        <div className="cvx-step-grid">
-          {flow.map(([title, body], index) => (
-            <article key={title}>
-              <b>{String(index + 1).padStart(2, "0")}</b>
-              <strong>{title}</strong>
-              <span>{body}</span>
-            </article>
-          ))}
-        </div>
+      <section className="cvx-section">
+        <p className="cvx-kicker">HOW IT WORKS</p>
+        <h2>AI prepares the next move. The owner stays in control.</h2>
+        <p>Churvox does not give you another busy dashboard. It turns admin into reviewable actions.</p>
       </section>
 
-      <section className="cvx-final cvx-vision-final">
+      <section className="cvx-final">
         <p className="cvx-kicker">READY TO SEE IT?</p>
         <h2>Open the demo or start your free trial.</h2>
-        <div>
+        <div className="cvx-actions">
           <a className="cvx-primary" href="/demo">Try live demo</a>
           <a className="cvx-secondary" href="/signup">Start free trial</a>
         </div>
       </section>
 
-      <footer className="cvx-footer cvx-vision-footer">
-        <div><strong>Churvox</strong><span>AI command centre for trade and service businesses.</span></div>
-        <nav><a href="/pricing">Pricing</a><a href="/demo">Demo</a><a href="/contact">Contact</a><a href="/login">Sign in</a></nav>
+      <footer className="cvx-footer">
+        <strong>Churvox</strong>
+        <span>AI command centre for trade and service businesses.</span>
       </footer>
     </main>
   );
