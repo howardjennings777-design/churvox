@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { API_BASE } from "../api";
-import "./PublicSite.css";
+import "./ForcedLoginPage.css";
 
 const industries = ["Lawn care","Property maintenance","Cleaning","Landscaping","Handyman","Painting","Plumbing","Electrical","Pest control","Gardening","Other"];
 
@@ -80,24 +80,45 @@ export default function PublicSignupPage() {
   }
 
   return (
-    <main className="cvx-site cvx-auth-site">
-      <a className="cvx-brand cvx-auth-brand" href="/">
-        <span><img src="/brand/churvox-holo-c.svg" alt="" /></span>
-        <div><strong>CHURVOX</strong><small>OPERATOR OS</small></div>
-      </a>
-      <section className="cvx-auth-layout">
-        <article className="cvx-auth-copy">
-          <p className="cvx-kicker">START FREE TRIAL</p>
-          <h1>Set up your AI command centre.</h1>
-          <p>Choose your industry so Churvox can shape setup around the way your business actually works.</p>
-        </article>
-        <form className="cvx-form" onSubmit={submit}>
-          <label>Your name<input value={form.name} onChange={(e) => update("name", e.target.value)} autoComplete="name" /></label>
-          <label>Business name<input value={form.business_name} onChange={(e) => update("business_name", e.target.value)} autoComplete="organization" required /></label>
-          <label>Business type<select value={form.industry} onChange={(e) => update("industry", e.target.value)}>{industries.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-          <label>Email<input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} autoComplete="email" required /></label>
-          <label>Password<input type="password" value={form.password} onChange={(e) => update("password", e.target.value)} autoComplete="new-password" minLength={6} required /></label>
-          {error ? <p className="cvx-error">{error}</p> : null}
+    <main className="force-login-page">
+      <section className="force-login-shell">
+        <div className="force-login-copy">
+          <a className="force-login-brand" href="/">
+            <span><img src="/brand/churvox-holo-c.svg" alt="" /></span>
+            <div><strong>CHURVOX</strong><small>AI TRADE OPERATOR</small></div>
+          </a>
+
+          <p>START FREE TRIAL</p>
+          <h1>Build your AI command centre.</h1>
+          <span>
+            Set up your business, choose your trade, and let Churvox prepare jobs, crew, invoices, proof and follow-ups for owner approval.
+          </span>
+
+          <div className="force-login-pills">
+            <b>No card needed</b>
+            <b>Approval-first AI</b>
+            <b>Built for crews</b>
+          </div>
+
+          <div className="force-auth-stats">
+            <article><strong>Smart Hub</strong><span>Your daily command centre for jobs, cashflow and approvals.</span></article>
+            <article><strong>Proof-to-Paid</strong><span>Turn completed work into invoice-ready admin faster.</span></article>
+            <article><strong>Crew workflow</strong><span>Mobile-first jobs, notes, photos and simple worker actions.</span></article>
+          </div>
+        </div>
+
+        <form className="force-login-card force-signup-card" onSubmit={submit}>
+          <img src="/brand/churvox-holo-c.svg" alt="" />
+          <p>Trial setup</p>
+          <h2>Start free trial</h2>
+          <span>Create your owner account and open your Churvox command centre.</span>
+
+          <label><small>Your name</small><input value={form.name} onChange={(e) => update("name", e.target.value)} autoComplete="name" /></label>
+          <label><small>Business name</small><input value={form.business_name} onChange={(e) => update("business_name", e.target.value)} autoComplete="organization" required /></label>
+          <label><small>Business type</small><select value={form.industry} onChange={(e) => update("industry", e.target.value)}>{industries.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+          <label><small>Email</small><input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} autoComplete="email" required /></label>
+          <label><small>Password</small><input type="password" value={form.password} onChange={(e) => update("password", e.target.value)} autoComplete="new-password" minLength={6} required /></label>
+          {error ? <p className="force-login-error">{error}</p> : null}
           <button type="submit" disabled={busy}>{busy ? "Creating your trial..." : "Start free trial"}</button>
           <small>Already have an account? <a href="/login">Sign in</a></small>
         </form>
