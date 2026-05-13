@@ -15,15 +15,32 @@ const flows = [
   ["03", "Owner approves", "You stay in control while Churvox does the boring prep work."],
 ];
 
-const trades = ["Lawn care", "Property maintenance", "Cleaning", "Landscaping", "Handyman", "Painting", "Plumbing", "Electrical", "Pest control", "Gardening"];
+const trades = [
+  "Lawn care",
+  "Property maintenance",
+  "Cleaning",
+  "Landscaping",
+  "Handyman",
+  "Painting",
+  "Plumbing",
+  "Electrical",
+  "Pest control",
+  "Gardening",
+];
 
 function Nav() {
   return (
     <header className="cvx-nav cvx-vision-nav">
       <a className="cvx-brand" href="/">
-        <span><img src="/brand/churvox-holo-c.svg" alt="" /></span>
-        <div><strong>CHURVOX</strong><small>AI OPERATOR OS</small></div>
+        <span>
+          <img src="/brand/churvox-holo-c.svg" alt="" />
+        </span>
+        <div>
+          <strong>CHURVOX</strong>
+          <small>AI OPERATOR OS</small>
+        </div>
       </a>
+
       <nav>
         <a href="/">Home</a>
         <a href="#how-it-works">How it works</a>
@@ -32,6 +49,7 @@ function Nav() {
         <a href="/demo">Demo</a>
         <a href="/login">Sign in</a>
       </nav>
+
       <a className="cvx-nav-cta" href="/signup">Start free trial</a>
     </header>
   );
@@ -63,9 +81,20 @@ function ProductPreview() {
         <span>owner approvals prepared</span>
       </div>
 
-      <div className="cvx-floating-chip chip-top"><small>AI OPERATOR</small><b>Live scan active</b></div>
-      <div className="cvx-floating-chip chip-left"><small>DISPATCH</small><b>5 need crew</b></div>
-      <div className="cvx-floating-chip chip-right"><small>CASHFLOW</small><b>$1,278 waiting</b></div>
+      <div className="cvx-floating-chip chip-top">
+        <small>AI OPERATOR</small>
+        <b>Live scan active</b>
+      </div>
+
+      <div className="cvx-floating-chip chip-left">
+        <small>DISPATCH</small>
+        <b>5 need crew</b>
+      </div>
+
+      <div className="cvx-floating-chip chip-right">
+        <small>CASHFLOW</small>
+        <b>$1,278 waiting</b>
+      </div>
     </aside>
   );
 }
@@ -77,19 +106,29 @@ export default function PublicLandingPage() {
 
       <section className="cvx-hero cvx-vision-hero">
         <div className="cvx-vision-copy">
-          <div className="cvx-vision-pill"><img src="/brand/churvox-holo-c.svg" alt="" /><span>AI COMMAND CENTRE FOR TRADIES</span></div>
+          <div className="cvx-vision-pill">
+            <img src="/brand/churvox-holo-c.svg" alt="" />
+            <span>AI COMMAND CENTRE FOR TRADIES</span>
+          </div>
+
           <p className="cvx-kicker">CHURVOX AI OPERATOR OS</p>
+
           <h1>
             AI runs the admin layer.
             <span>You approve the work.</span>
           </h1>
+
           <p className="cvx-lede">
-            Churvox helps trade and service owners run jobs, crews, quotes, invoices, proof photos and follow-ups from one cinematic command centre. The AI prepares the admin. The owner stays in control.
+            Churvox helps trade and service owners run jobs, crews, quotes, invoices,
+            proof photos and follow-ups from one cinematic command centre. The AI
+            prepares the admin. The owner stays in control.
           </p>
+
           <div className="cvx-actions">
             <a className="cvx-primary" href="/signup">Start free trial</a>
             <a className="cvx-secondary" href="/demo">Try live demo</a>
           </div>
+
           <div className="cvx-proofbar">
             <span>Approval-first AI</span>
             <span>Built for mobile crews</span>
@@ -110,6 +149,7 @@ export default function PublicLandingPage() {
       <section className="cvx-section cvx-vision-section" id="how-it-works">
         <p className="cvx-kicker">HOW IT WORKS</p>
         <h2>Churvox turns field-service chaos into owner-approved next moves.</h2>
+
         <div className="cvx-step-grid">
           {flows.map(([number, title, body]) => (
             <article key={title}>
@@ -124,7 +164,11 @@ export default function PublicLandingPage() {
       <section className="cvx-section cvx-vision-section" id="features">
         <p className="cvx-kicker">WHAT IT RUNS</p>
         <h2>The daily AI control room for service-business owners.</h2>
-        <p className="cvx-section-copy">Churvox is not just another job list. It watches the business, prepares the admin, explains the next move, and waits for approval.</p>
+        <p className="cvx-section-copy">
+          Churvox is not just another job list. It watches the business, prepares
+          the admin, explains the next move, and waits for approval.
+        </p>
+
         <div className="cvx-feature-grid">
           {features.map(([title, body]) => (
             <article key={title}>
@@ -138,18 +182,34 @@ export default function PublicLandingPage() {
       <section className="cvx-section cvx-vision-section" id="trades">
         <p className="cvx-kicker">BUILT FOR FIELD SERVICE</p>
         <h2>For owners running crews, sites, customers and proof-based billing.</h2>
-        <div className="cvx-cloud">{trades.map((trade) => <span key={trade}>{trade}</span>)}</div>
+
+        <div className="cvx-cloud">
+          {trades.map((trade) => (
+            <span key={trade}>{trade}</span>
+          ))}
+        </div>
       </section>
 
       <section className="cvx-final cvx-vision-final">
         <p className="cvx-kicker">READY TO SEE IT WORK?</p>
         <h2>Open the demo or start your free trial.</h2>
-        <div><a className="cvx-primary" href="/demo">Try live demo</a><a className="cvx-secondary" href="/signup">Start free trial</a></div>
+        <div>
+          <a className="cvx-primary" href="/demo">Try live demo</a>
+          <a className="cvx-secondary" href="/signup">Start free trial</a>
+        </div>
       </section>
 
       <footer className="cvx-footer cvx-vision-footer">
-        <div><strong>CHURVOX</strong><span>AI command centre for trade and service businesses.</span></div>
-        <nav><a href="/pricing">Pricing</a><a href="/demo">Try demo</a><a href="/contact">Email us</a><a href="/login">Sign in</a></nav>
+        <div>
+          <strong>CHURVOX</strong>
+          <span>AI command centre for trade and service businesses.</span>
+        </div>
+        <nav>
+          <a href="/pricing">Pricing</a>
+          <a href="/demo">Try demo</a>
+          <a href="/contact">Email us</a>
+          <a href="/login">Sign in</a>
+        </nav>
       </footer>
     </main>
   );
