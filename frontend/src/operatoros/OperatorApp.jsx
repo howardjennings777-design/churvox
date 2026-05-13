@@ -109,7 +109,6 @@ function shouldUseLegacyApp() {
   return (
     path.startsWith("/public") ||
     path.startsWith("/client-portal") ||
-    path.startsWith("/worker") ||
     path.startsWith("/v3") ||
     path.startsWith("/v4")
   );
@@ -120,7 +119,8 @@ function keyFromPath() {
   return pathToKey[path] || "hub";
 }
 
-function pathForKey(key) {
+function pathForKey(key, role = "owner") {
+  if (role === "worker" && key === "jobs") return "/worker/jobs";
   return baseNav.find((item) => item.key === key)?.path || "/dashboard";
 }
 
@@ -161,7 +161,9 @@ function OperatorOSCore() {
   } catch {}
   const data = useOperatorData();
   const allowRoleSwitch = canSwitchRoleForTesting();
-  const [role, setRoleRaw] = useState(() => normalizeRole(currentUserRole()) || "owner");
+  const path = window.location.pathname.replace(/\/+$/, "") || "/dashboard";
+  const pathRole = path.startsWith("/worker") ? "worker" : "";
+  const [role, setRoleRaw] = useState(() => pathRole || normalizeRole(currentUserRole()) || "owner");
   const userName = currentUserName();
   const [current, setCurrentRaw] = useState(keyFromPath);
   const [createType, setCreateType] = useState("");
@@ -188,7 +190,7 @@ function OperatorOSCore() {
   function setCurrent(key) {
     const allowed = (roleNav[role] || roleNav.owner).includes(key);
     const safeKey = allowed ? key : nav[0]?.key || "jobs";
-    const nextPath = pathForKey(safeKey);
+    const nextPath = pathForKey(safeKey, role);
 
     setCurrentRaw(safeKey);
 
