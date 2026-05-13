@@ -1,4 +1,3 @@
-
 import { clearChurvoxAuth } from "./logout";
 
 function roleLabel(role) {
@@ -29,8 +28,13 @@ export default function OperatorShell({
     <div className="op-shell">
       <aside className="op-sidebar">
         <button className="op-brand" onClick={() => setCurrent?.("hub")}>
-          <span className="op-logo-mark"><img src="/brand/churvox-holo-c.svg" alt="" /></span>
-          <span><strong>Churvox</strong><small>AI Operator OS</small></span>
+          <span className="op-logo-mark">
+            <img src="/brand/churvox-holo-c.svg" alt="" />
+          </span>
+          <span>
+            <strong>Churvox</strong>
+            <small>AI Operator OS</small>
+          </span>
         </button>
 
         <nav>
@@ -72,8 +76,12 @@ export default function OperatorShell({
           <input className="op-search" placeholder="Search anything..." />
 
           <div className="op-head-actions">
-            <button type="button" className="primary" onClick={() => onCreate?.("jobs")}>New Job</button>
-            <button type="button" onClick={logout}>Logout</button>
+            <button type="button" className="primary" onClick={() => onCreate?.("jobs")}>
+              New Job
+            </button>
+            <button type="button" onClick={logout}>
+              Logout
+            </button>
           </div>
         </header>
 

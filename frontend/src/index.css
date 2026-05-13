@@ -2,13 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Churvox global reset only.
-   Old dark Operator OS styles were removed from here because they were mixing
-   with the new image-style Churvox layout. */
-
 :root {
   color-scheme: light;
-  background: #f6f9fc;
+  background: #f5f8fb;
 }
 
 html,
@@ -16,12 +12,12 @@ body,
 #root {
   min-height: 100%;
   margin: 0;
-  background: #f6f9fc;
+  background: #f5f8fb;
 }
 
 body {
   margin: 0;
-  color: #243246;
+  color: #263648;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -32,6 +28,13 @@ body {
 }
 
 button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
 a,
 input,
 select,
@@ -39,13 +42,7 @@ textarea {
   touch-action: manipulation;
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-
 a {
   color: inherit;
+  text-decoration: none;
 }
