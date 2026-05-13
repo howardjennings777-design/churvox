@@ -70,7 +70,16 @@ export default function PublicSignupPage() {
     try {
       const registerResult = await postJson("/auth/register", payload);
       saveAuth(registerResult, email, businessName, industry);
-      try { await postJson("/billing/start-trial", { plan: "team", source: "public_signup", industry }); } catch {}
+
+      try {
+        await postJson("/billing/start-trial", { plan: "team", source: "public_signup", industry });
+      } catch (trialError) {
+        throw new Error(
+          trialError.message ||
+          "Your account was created, but the free trial could not start. Please sign in and choose a plan."
+        );
+      }
+
       window.location.href = "/dashboard";
     } catch (err) {
       setError(err.message || "Could not create your trial account. Please check the details and try again.");
