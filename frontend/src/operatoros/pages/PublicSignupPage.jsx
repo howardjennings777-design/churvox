@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { API_BASE } from "../api";
-import "./PublicSignupPage.css";
+import "./PublicSite.css";
 
 const industries = ["Lawn care","Property maintenance","Cleaning","Landscaping","Handyman","Painting","Plumbing","Electrical","Pest control","Gardening","Other"];
 
@@ -81,30 +80,27 @@ export default function PublicSignupPage() {
   }
 
   return (
-    <main className="signup-screen">
-      <section className="signup-shell">
-        <a className="signup-brand" href="/"><span><img src="/brand/churvox-holo-c.svg" alt="" /></span><strong>CHURVOX</strong><small>AI Trade Operator</small></a>
-        <div className="signup-grid">
-          <section className="signup-copy">
-            <p>START FREE TRIAL</p>
-            <h1>Set up your AI command centre.</h1>
-            <p className="signup-lead">Choose your industry so Churvox can shape setup around the way your business actually works. Start with jobs, workers, proof, invoices and AI approval-first admin.</p>
-            <div className="signup-sales"><article><strong>14-day trial</strong><span>Try Churvox before committing.</span></article><article><strong>Industry presets</strong><span>Setup wording and next steps match your business type.</span></article><article><strong>Approval-first AI</strong><span>AI prepares work. You approve important actions.</span></article></div>
-          </section>
-          <section className="signup-card">
-            <div className="signup-card-head"><p>FREE TRIAL</p><h2>Create your owner account</h2><span>Start with your business details, then let Churvox guide the first setup steps.</span></div>
-            {error ? <div className="signup-error">{error}</div> : null}
-            <form onSubmit={submit}>
-              <label><span>Your name</span><input value={form.name} onChange={(e) => update("name", e.target.value)} autoComplete="name" /></label>
-              <label><span>Business name</span><input value={form.business_name} onChange={(e) => update("business_name", e.target.value)} autoComplete="organization" required /></label>
-              <label><span>Business type</span><select value={form.industry} onChange={(e) => update("industry", e.target.value)}>{industries.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-              <label><span>Email</span><input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} autoComplete="email" required /></label>
-              <label><span>Password</span><input type="password" value={form.password} onChange={(e) => update("password", e.target.value)} autoComplete="new-password" minLength={6} required /></label>
-              <button type="submit" disabled={busy}>{busy ? "Creating your trial..." : "Start free trial"}</button>
-            </form>
-            <footer>Already have an account? <a href="/login">Sign in</a></footer>
-          </section>
-        </div>
+    <main className="cvx-site cvx-auth-site">
+      <a className="cvx-brand cvx-auth-brand" href="/">
+        <span><img src="/brand/churvox-holo-c.svg" alt="" /></span>
+        <div><strong>CHURVOX</strong><small>OPERATOR OS</small></div>
+      </a>
+      <section className="cvx-auth-layout">
+        <article className="cvx-auth-copy">
+          <p className="cvx-kicker">START FREE TRIAL</p>
+          <h1>Set up your AI command centre.</h1>
+          <p>Choose your industry so Churvox can shape setup around the way your business actually works.</p>
+        </article>
+        <form className="cvx-form" onSubmit={submit}>
+          <label>Your name<input value={form.name} onChange={(e) => update("name", e.target.value)} autoComplete="name" /></label>
+          <label>Business name<input value={form.business_name} onChange={(e) => update("business_name", e.target.value)} autoComplete="organization" required /></label>
+          <label>Business type<select value={form.industry} onChange={(e) => update("industry", e.target.value)}>{industries.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+          <label>Email<input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} autoComplete="email" required /></label>
+          <label>Password<input type="password" value={form.password} onChange={(e) => update("password", e.target.value)} autoComplete="new-password" minLength={6} required /></label>
+          {error ? <p className="cvx-error">{error}</p> : null}
+          <button type="submit" disabled={busy}>{busy ? "Creating your trial..." : "Start free trial"}</button>
+          <small>Already have an account? <a href="/login">Sign in</a></small>
+        </form>
       </section>
     </main>
   );
