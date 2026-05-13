@@ -1,40 +1,45 @@
+/* ===== CHURVOX 10/10 THEME — LIGHTER AI OCEAN GLASS ===== */
+
 :root {
-  --cvx-bg: #030914;
-  --cvx-bg-2: #06111f;
-  --cvx-bg-3: #0a2035;
-  --cvx-ink: #f4fbff;
-  --cvx-muted: #9fb8ca;
-  --cvx-dim: #6f889b;
-  --cvx-cyan: #35e7ff;
-  --cvx-green: #18f2b2;
-  --cvx-blue: #3b82f6;
-  --cvx-red: #ff5d7a;
-  --cvx-panel: rgba(7, 19, 34, 0.72);
-  --cvx-panel-strong: rgba(9, 29, 49, 0.86);
-  --cvx-line: rgba(119, 226, 255, 0.16);
-  --cvx-line-strong: rgba(119, 226, 255, 0.30);
-  --cvx-shadow: 0 28px 88px rgba(0, 0, 0, 0.34);
+  --cvx-bg: #071525;
+  --cvx-bg-2: #0c2236;
+  --cvx-bg-3: #123a56;
+  --cvx-surface: rgba(13, 39, 60, 0.78);
+  --cvx-surface-2: rgba(18, 58, 86, 0.72);
+  --cvx-surface-soft: rgba(255, 255, 255, 0.075);
+  --cvx-ink: #f7fcff;
+  --cvx-muted: #bed3e3;
+  --cvx-dim: #88a9bd;
+  --cvx-cyan: #48e7ff;
+  --cvx-mint: #1ff2bd;
+  --cvx-blue: #5b8cff;
+  --cvx-amber: #ffcc66;
+  --cvx-red: #ff6b88;
+  --cvx-line: rgba(148, 233, 255, 0.22);
+  --cvx-line-strong: rgba(148, 233, 255, 0.36);
+  --cvx-shadow: 0 26px 80px rgba(0, 14, 28, 0.32);
+  --cvx-glow: 0 0 34px rgba(72, 231, 255, 0.22);
 }
 
 html,
 body,
 #root {
   background:
-    radial-gradient(circle at 78% 5%, rgba(53, 231, 255, 0.20), transparent 28rem),
-    radial-gradient(circle at 12% 18%, rgba(24, 242, 178, 0.10), transparent 26rem),
-    radial-gradient(circle at 86% 92%, rgba(59, 130, 246, 0.16), transparent 32rem),
-    linear-gradient(135deg, var(--cvx-bg) 0%, var(--cvx-bg-2) 45%, var(--cvx-bg-3) 100%) !important;
+    radial-gradient(circle at 78% 5%, rgba(72, 231, 255, 0.24), transparent 28rem),
+    radial-gradient(circle at 12% 18%, rgba(31, 242, 189, 0.14), transparent 26rem),
+    radial-gradient(circle at 88% 90%, rgba(91, 140, 255, 0.18), transparent 34rem),
+    linear-gradient(135deg, var(--cvx-bg) 0%, var(--cvx-bg-2) 48%, var(--cvx-bg-3) 100%) !important;
   color: var(--cvx-ink) !important;
 }
 
-/* ===== PUBLIC SITE ===== */
+/* ===== PUBLIC SITE / MARKETING ===== */
 .cvx-site,
 .cvx-public-vision,
 .force-login-page {
   background:
-    radial-gradient(circle at 78% 4%, rgba(53, 231, 255, 0.20), transparent 30rem),
-    radial-gradient(circle at 14% 18%, rgba(24, 242, 178, 0.11), transparent 28rem),
-    linear-gradient(135deg, #020713 0%, #06111f 48%, #0a2035 100%) !important;
+    radial-gradient(circle at 76% 6%, rgba(72, 231, 255, 0.25), transparent 30rem),
+    radial-gradient(circle at 12% 20%, rgba(31, 242, 189, 0.14), transparent 28rem),
+    linear-gradient(135deg, #071525 0%, #0c2236 48%, #123a56 100%) !important;
   color: var(--cvx-ink) !important;
 }
 
@@ -58,11 +63,16 @@ body,
 .force-auth-stats article,
 .force-login-pills b {
   background:
-    radial-gradient(circle at 20% 8%, rgba(53, 231, 255, 0.12), transparent 52%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.072), rgba(255, 255, 255, 0.035)) !important;
+    radial-gradient(circle at 20% 8%, rgba(72, 231, 255, 0.14), transparent 54%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.055)) !important;
   border: 1px solid var(--cvx-line) !important;
-  box-shadow: var(--cvx-shadow), inset 0 1px 0 rgba(255,255,255,.06) !important;
-  backdrop-filter: blur(22px) !important;
+  box-shadow: var(--cvx-shadow), inset 0 1px 0 rgba(255,255,255,.10) !important;
+  backdrop-filter: blur(24px) saturate(140%) !important;
+}
+
+.cvx-nav,
+.cvx-vision-nav {
+  border-radius: 0 0 30px 30px !important;
 }
 
 .cvx-brand strong,
@@ -103,22 +113,14 @@ body,
   color: var(--cvx-cyan) !important;
 }
 
-/* ===== LOGIN / SIGNUP INPUTS ===== */
-.force-login-card input,
-.force-login-card select,
-.force-login-card textarea {
-  background: rgba(3, 11, 21, 0.62) !important;
-  color: var(--cvx-ink) !important;
-  border: 1px solid var(--cvx-line) !important;
-}
-
 /* ===== APP SHELL ===== */
 .op-shell,
 .op-main {
   background:
-    radial-gradient(circle at 78% 5%, rgba(53, 231, 255, 0.20), transparent 28rem),
-    radial-gradient(circle at 12% 18%, rgba(24, 242, 178, 0.10), transparent 26rem),
-    linear-gradient(135deg, #020713 0%, #06111f 48%, #0a2035 100%) !important;
+    radial-gradient(circle at 78% 5%, rgba(72, 231, 255, 0.23), transparent 28rem),
+    radial-gradient(circle at 12% 18%, rgba(31, 242, 189, 0.13), transparent 26rem),
+    radial-gradient(circle at 88% 90%, rgba(91, 140, 255, 0.18), transparent 34rem),
+    linear-gradient(135deg, #071525 0%, #0c2236 48%, #123a56 100%) !important;
   color: var(--cvx-ink) !important;
 }
 
@@ -143,13 +145,16 @@ body,
 .op-ai-exact-changes,
 .op-ai-data-used,
 .op-error,
-.op-warning-soft {
+.op-warning-soft,
+.vision-panel,
+.vision-signal,
+.vision-stage {
   background:
-    radial-gradient(circle at 18% 8%, rgba(53, 231, 255, 0.11), transparent 55%),
-    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.034)) !important;
+    radial-gradient(circle at 18% 8%, rgba(72, 231, 255, 0.13), transparent 55%),
+    linear-gradient(180deg, rgba(255,255,255,.105), rgba(255,255,255,.055)) !important;
   border: 1px solid var(--cvx-line) !important;
-  box-shadow: 0 22px 68px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.055) !important;
-  backdrop-filter: blur(22px) !important;
+  box-shadow: var(--cvx-shadow), inset 0 1px 0 rgba(255,255,255,.095) !important;
+  backdrop-filter: blur(24px) saturate(140%) !important;
 }
 
 .op-workspace-head h1,
@@ -160,7 +165,12 @@ body,
 .op-ai-drawer h3,
 .op-ai-detail-block strong,
 .op-brand strong,
-.op-topbar strong {
+.op-topbar strong,
+.vision-copy h1,
+.vision-panel h2,
+.vision-approval h3,
+.vision-feed-row strong,
+.vision-list strong {
   color: var(--cvx-ink) !important;
 }
 
@@ -177,10 +187,17 @@ body,
 .op-topbar span,
 .op-empty p,
 .op-warning-soft,
-.op-notice {
+.op-notice,
+.vision-copy strong,
+.vision-panel header span,
+.vision-feed-row span,
+.vision-list span,
+.vision-empty,
+.vision-approval p {
   color: var(--cvx-muted) !important;
 }
 
+/* ===== INPUTS / BUTTONS ===== */
 .op-sidebar nav button,
 .op-sidebar button,
 .op-mobile-nav button,
@@ -193,18 +210,23 @@ body,
 .op-form textarea,
 .op-ai-edit-grid input,
 .op-ai-reject-box textarea,
-.payroll-row textarea {
-  background: rgba(3, 11, 21, 0.56) !important;
+.payroll-row textarea,
+.force-login-card input,
+.force-login-card select,
+.force-login-card textarea {
+  background: rgba(7, 21, 37, 0.56) !important;
   color: var(--cvx-ink) !important;
-  border: 1px solid rgba(119, 226, 255, 0.14) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.045) !important;
+  border: 1px solid rgba(148, 233, 255, 0.18) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.065) !important;
 }
 
 .op-sidebar nav button:hover,
 .op-mobile-nav button:hover,
 .op-row:hover,
 .op-workspace button:hover,
-.op-ai-drawer-actions button:hover {
+.op-ai-drawer-actions button:hover,
+.cvx-price-grid article:hover,
+.cvx-feature-grid article:hover {
   border-color: var(--cvx-line-strong) !important;
   transform: translateY(-1px);
 }
@@ -219,33 +241,72 @@ body,
 .cvx-nav-cta,
 .force-login-card button,
 .op-workspace button.primary,
-.op-head-actions .primary {
-  background: linear-gradient(135deg, var(--cvx-cyan), var(--cvx-green)) !important;
-  color: #03111d !important;
+.op-head-actions .primary,
+.vision-actions button:first-child,
+.vision-approval button:last-child,
+.vision-feed-row b {
+  background: linear-gradient(135deg, var(--cvx-cyan), var(--cvx-mint)) !important;
+  color: #04131f !important;
   border-color: transparent !important;
-  box-shadow: 0 18px 46px rgba(53, 231, 255, 0.22) !important;
+  box-shadow: 0 18px 46px rgba(72, 231, 255, 0.26) !important;
+}
+
+.cvx-secondary,
+.cvx-nav nav a,
+.cvx-site a:not(.cvx-primary):not(.cvx-nav-cta),
+.force-login-card footer a {
+  color: var(--cvx-ink) !important;
 }
 
 .op-status,
 .op-status.draft,
 .op-status.open,
 .op-status.sent {
-  background: rgba(53, 231, 255, 0.12) !important;
+  background: rgba(72, 231, 255, 0.14) !important;
   color: var(--cvx-cyan) !important;
-  border-color: rgba(53, 231, 255, 0.22) !important;
+  border-color: rgba(72, 231, 255, 0.28) !important;
 }
 
 .op-status.cancelled,
 .op-status.declined,
 button.danger {
-  background: rgba(255, 93, 122, 0.12) !important;
-  color: #ffd5dd !important;
-  border-color: rgba(255, 93, 122, 0.26) !important;
+  background: rgba(255, 107, 136, 0.14) !important;
+  color: #ffe0e6 !important;
+  border-color: rgba(255, 107, 136, 0.32) !important;
 }
 
 .op-ai-drawer-backdrop {
-  background: rgba(1, 6, 14, 0.72) !important;
-  backdrop-filter: blur(18px) !important;
+  background: rgba(3, 13, 24, 0.68) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+/* ===== SMART HUB HERO ===== */
+.vision-stage {
+  background:
+    radial-gradient(circle at 74% 18%, rgba(72, 231, 255, 0.29), transparent 24rem),
+    radial-gradient(circle at 28% 82%, rgba(31, 242, 189, 0.16), transparent 28rem),
+    linear-gradient(135deg, rgba(9, 31, 50, 0.96), rgba(18, 58, 86, 0.86)) !important;
+}
+
+.vision-copy h1 span {
+  background: linear-gradient(135deg, #ffffff 0%, var(--cvx-cyan) 36%, var(--cvx-mint) 82%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+.vision-ring {
+  border-color: rgba(148, 233, 255, 0.26) !important;
+  box-shadow: inset 0 0 48px rgba(72, 231, 255, 0.14), 0 0 44px rgba(72, 231, 255, 0.11) !important;
+}
+
+.vision-core-card,
+.vision-floating-card {
+  background:
+    radial-gradient(circle at 50% 9%, rgba(72, 231, 255, 0.35), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.065)) !important;
+  border: 1px solid rgba(148, 233, 255, 0.28) !important;
+  box-shadow: 0 35px 90px rgba(0, 14, 28, 0.34), var(--cvx-glow), inset 0 1px 0 rgba(255,255,255,.14) !important;
 }
 
 /* ===== LOGO GLOW ===== */
@@ -255,7 +316,7 @@ button.danger {
 .op-brand img,
 .vision-brand-pill img,
 .vision-core-card img {
-  filter: drop-shadow(0 0 18px rgba(53, 231, 255, 0.34)) !important;
+  filter: drop-shadow(0 0 18px rgba(72, 231, 255, 0.38)) !important;
 }
 
 /* ===== FOCUS ===== */
@@ -264,7 +325,7 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid rgba(53, 231, 255, 0.86) !important;
+  outline: 2px solid rgba(72, 231, 255, 0.88) !important;
   outline-offset: 3px !important;
 }
 
