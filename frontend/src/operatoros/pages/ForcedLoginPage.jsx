@@ -34,6 +34,20 @@ function saveLogin(payload, email) {
   } catch {}
 }
 
+function safeReturnPath() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get("return_to") || "/dashboard";
+
+    if (!raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
+    if (raw.startsWith("/login") || raw.startsWith("/signup") || raw.startsWith("/register")) return "/dashboard";
+
+    return raw;
+  } catch {
+    return "/dashboard";
+  }
+}
+
 async function postLogin(email, password) {
   const paths = ["/auth/login", "/owner/login", "/admin/login"];
 
@@ -92,7 +106,7 @@ export default function ForcedLoginPage() {
     try {
       const payload = await postLogin(email, form.password);
       saveLogin(payload, email);
-      window.location.replace("/dashboard");
+      window.location.replace(safeReturnPath());
     } catch (err) {
       setError(err.message || "Could not sign in. Please check your email and password.");
     } finally {

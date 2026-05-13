@@ -124,6 +124,28 @@ function pathForKey(key, role = "owner") {
   return baseNav.find((item) => item.key === key)?.path || "/dashboard";
 }
 
+function loginRedirectUrl() {
+  const currentPath = `${window.location.pathname}${window.location.search || ""}`;
+  const returnTo = encodeURIComponent(currentPath || "/dashboard");
+  return `/login?return_to=${returnTo}`;
+}
+
+function hasPrivateAuth() {
+  if (readToken()) return true;
+
+  try {
+    const rawUser = localStorage.getItem("churvox_user") || localStorage.getItem("user");
+    if (!rawUser) return false;
+
+    const parsed = JSON.parse(rawUser);
+    const user = parsed?.user || parsed?.profile || parsed;
+
+    return Boolean(user?.email && (user?.id || user?._id || user?.business_id));
+  } catch {
+    return false;
+  }
+}
+
 const CHURVOX_OPTION_B_PUBLIC_BUILD = "option-b-clean-teal-live";
 
 export default function OperatorApp() {
@@ -152,7 +174,18 @@ export default function OperatorApp() {
     return <ForcedLoginPage />;
   }
 
-  return shouldUseLegacyApp() ? <FreshChurvoxApp /> : <OperatorOSCore />;
+  if (shouldUseLegacyApp()) return <FreshChurvoxApp />;
+
+  if (!hasPrivateAuth()) {
+    try {
+      localStorage.setItem("churvox_force_login", "true");
+    } catch {}
+
+    window.location.replace(loginRedirectUrl());
+    return null;
+  }
+
+  return <OperatorOSCore />;
 }
 
 function OperatorOSCore() {
