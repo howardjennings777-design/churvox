@@ -1,135 +1,175 @@
-
 import "./PublicLandingPage.css";
 
-const wins = [
-  ["AI finds the work", "Unassigned jobs, completed jobs, unpaid invoices and quote follow-ups are surfaced before they become problems."],
-  ["AI prepares the admin", "Worker assignments, invoice drafts, customer reminders and proof review are prepared for owner approval."],
-  ["Owner stays in control", "Nothing important is sent, assigned, charged, deleted or synced without approval."],
+const painPoints = [
+  ["Jobs", "Unassigned work is surfaced before the day gets away."],
+  ["Crew", "Churvox prepares the best worker match by area, workload and job type."],
+  ["Proof", "Photos, notes and completed work move into review."],
+  ["Money", "Finished jobs are prepared for invoice action."],
 ];
 
-const problems = [
-  ["Stop chasing workers", "Know who has what job, what is completed, what needs proof and what still needs dispatch."],
-  ["Stop missing invoices", "Completed work moves toward invoice review instead of sitting forgotten."],
-  ["Stop losing follow-ups", "Quote and payment reminders are prepared before warm leads go cold."],
-  ["Stop running from ten places", "Jobs, clients, crew, quotes, invoices, proof and payroll handoff live together."],
+const operatorSteps = [
+  ["1", "AI watches the business", "Jobs, crew, clients, quotes, invoices, proof photos and follow-ups stay visible."],
+  ["2", "AI prepares the next move", "Dispatch, invoice drafts, reminders and proof-to-paid actions are prepared for review."],
+  ["3", "Owner approves", "Nothing important is sent, assigned, charged, deleted or synced without approval."],
 ];
 
-const previews = [
-  ["Smart Hub", "Daily command centre"],
-  ["AI Work Queue", "Prepared actions"],
-  ["Worker Proof", "Photos and notes"],
-  ["Proof-to-Paid", "Invoice-ready review"],
+const features = [
+  "Smart Hub",
+  "AI Work Queue",
+  "Jobs + dispatch",
+  "Worker proof photos",
+  "Quotes",
+  "Invoices",
+  "Proof-to-paid",
+  "Payroll handoff",
+  "Client history",
+  "CSV import",
 ];
 
-const features = ["Jobs + dispatch", "Worker app", "Proof photos", "Quotes", "Invoices", "Payroll handoff", "MYOB-ready workflow", "AI approval queue", "Client history", "CSV import"];
 const trades = ["Lawn care", "Property maintenance", "Cleaning", "Landscaping", "Handyman", "Painting", "Plumbing", "Electrical", "Pest control", "Gardening"];
 
 export default function PublicLandingPage() {
   return (
-    <main className="chx-public">
-      <section className="chx-hero">
-        <header className="chx-nav">
-          <a className="chx-brand" href="/">
-            <span><img src="/brand/churvox-holo-c.svg" alt="" /></span>
-            <div><strong>CHURVOX</strong><small>AI TRADE OPERATOR</small></div>
-          </a>
-          <nav>
-            <a href="/">Home</a>
-            <a href="/how-it-works">How it works</a>
-            <a href="/features">Features</a>
-            <a href="/pricing">Pricing</a>
-            <a href="/demo">Try live demo</a>
-            <a href="/contact">Email us</a>
-            <a href="/login">Sign in</a>
-          </nav>
-        </header>
+    <main className="cvx-home">
+      <header className="cvx-nav">
+        <a className="cvx-brand" href="/" aria-label="Churvox home">
+          <span><img src="/brand/churvox-holo-c.svg" alt="" /></span>
+          <div><strong>CHURVOX</strong><small>OPERATOR OS</small></div>
+        </a>
+        <nav aria-label="Public navigation">
+          <a href="/">Home</a>
+          <a href="/how-it-works">How it works</a>
+          <a href="/features">Features</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/demo">Try live demo</a>
+          <a href="/contact">Email us</a>
+          <a href="/login">Sign in</a>
+        </nav>
+      </header>
 
-        <div className="chx-hero-grid">
-          <section className="chx-copy">
-            <p>PREMIUM TRADE INTELLIGENCE</p>
-            <h1>Run jobs, crew and admin<span>from one calm place.</span></h1>
-            <h2>Churvox watches jobs, workers, clients, quotes, invoices, proof photos and follow-ups — then prepares the next move so the owner only approves what matters.</h2>
-            <div className="chx-actions">
-              <a className="chx-primary" href="/signup">Start free trial</a>
-              <a className="chx-secondary" href="/demo">Try live demo</a>
-            </div>
-            <div className="chx-wins">
-              {wins.map(([title, text]) => <article key={title}><strong>{title}</strong><span>{text}</span></article>)}
-            </div>
+      <section className="cvx-hero" id="home">
+        <div className="cvx-hero-copy">
+          <p className="cvx-kicker">PREMIUM TRADE INTELLIGENCE</p>
+          <h1>AI prepares the admin.<span>You approve the work.</span></h1>
+          <p className="cvx-lede">Churvox gives trade and service owners one calm command centre for jobs, crew, clients, quotes, invoices, proof photos and follow-ups. The AI finds what needs doing, prepares the next move, and waits for owner approval.</p>
+          <div className="cvx-actions">
+            <a className="cvx-primary" href="/signup">Start free trial</a>
+            <a className="cvx-secondary" href="/demo">Try live demo</a>
+          </div>
+          <div className="cvx-proofbar">
+            <span>Approval-first AI</span>
+            <span>Built for mobile crews</span>
+            <span>No auto-send without approval</span>
+          </div>
+        </div>
+
+        <aside className="cvx-operator-card" aria-label="Churvox AI Operator preview">
+          <div className="cvx-orb-stage">
+            <div className="cvx-radar" />
+            <div className="cvx-orb"><img src="/brand/churvox-holo-c.svg" alt="Churvox" /></div>
+          </div>
+          <section className="cvx-live-card">
+            <small>LIVE AI OPERATOR</small>
+            <h2>Your next business moves are ready.</h2>
+            <p>No digging through messages, worker notes, invoices or proof updates.</p>
           </section>
+          <div className="cvx-metrics">
+            <article><strong>3</strong><span>jobs need crew</span></article>
+            <article><strong>5</strong><span>invoice actions</span></article>
+            <article><strong>2</strong><span>follow-ups ready</span></article>
+          </div>
+          <section className="cvx-nextmove">
+            <small>NEXT BEST MOVE</small>
+            <h3>Assign Sam to 14 King Street</h3>
+            <p>Best fit by area, workload and job type. Churvox only applies the move after owner approval.</p>
+            <button type="button">Approve move</button>
+          </section>
+        </aside>
+      </section>
 
-          <aside className="chx-operator">
-            <div className="chx-orb-wrap"><div className="chx-radar" /><div className="chx-orb"><img src="/brand/churvox-holo-c.svg" alt="Churvox" /></div></div>
-            <div className="chx-operator-card">
-              <small>LIVE AI OPERATOR</small>
-              <strong>Your next business moves are ready.</strong>
-              <span>No digging through messages, notes, invoices or worker updates.</span>
-            </div>
-            <div className="chx-stats">
-              <div><b>3</b><span>jobs need crew</span></div>
-              <div><b>5</b><span>invoice actions</span></div>
-              <div><b>2</b><span>follow-ups ready</span></div>
-            </div>
-            <div className="chx-next">
-              <small>NEXT BEST MOVE</small>
-              <strong>Assign Sam to 14 King Street</strong>
-              <p>Best fit by area, workload and job type. Churvox only applies the move after owner approval.</p>
-              <button type="button">Approve move</button>
-            </div>
-          </aside>
+      <section className="cvx-pain-strip" id="how-it-works">
+        {painPoints.map(([title, text]) => (
+          <article key={title}><strong>{title}</strong><span>{text}</span></article>
+        ))}
+      </section>
+
+      <section className="cvx-section cvx-steps">
+        <div className="cvx-section-head">
+          <p className="cvx-kicker">HOW IT WORKS</p>
+          <h2>One simple approval flow from field work to admin done.</h2>
+        </div>
+        <div className="cvx-step-grid">
+          {operatorSteps.map(([number, title, text]) => (
+            <article key={title}>
+              <b>{number}</b>
+              <strong>{title}</strong>
+              <span>{text}</span>
+            </article>
+          ))}
         </div>
       </section>
 
-      <section className="chx-problems" id="how-it-works">
-        {problems.map(([title, text]) => <article key={title}><strong>{title}</strong><span>{text}</span></article>)}
-      </section>
-
-      <section className="chx-preview" id="features">
-        <div><p>PRODUCT PREVIEW</p><h2>What owners see when Churvox is running the admin.</h2><span>One command centre instead of chasing jobs, workers, invoices, texts and spreadsheets.</span></div>
-        <div className="chx-preview-grid">
-          {previews.map(([title, text]) => <article key={title}><strong>{title}</strong><span>{text}</span></article>)}
+      <section className="cvx-section" id="features">
+        <div className="cvx-section-head">
+          <p className="cvx-kicker">WHAT CHURVOX RUNS</p>
+          <h2>The daily control room for field-service admin.</h2>
+          <span>Churvox prepares real business actions, explains why they matter, and gives owners a clean approval queue.</span>
         </div>
+        <div className="cvx-cloud">{features.map((feature) => <span key={feature}>{feature}</span>)}</div>
       </section>
 
-      <section className="chx-features">
-        <div><p>WHAT CHURVOX RUNS</p><h2>The calm control room for field-service admin.</h2><span>Churvox prepares real admin actions, explains why they matter, and gives owners a simple approval queue.</span></div>
-        <div className="chx-cloud">{features.map((feature) => <span key={feature}>{feature}</span>)}</div>
-      </section>
-
-      <section className="chx-pricing" id="pricing">
-        <p>PRICING</p><h2>Serious pricing for a serious AI Operator engine.</h2>
-        <div>
-          <article><strong>Solo</strong><b>$39/mo</b><span>Jobs, clients, quotes, invoices and basic Smart Hub.</span></article>
-          <article className="hot"><strong>Pro</strong><b>$159/mo</b><span>Full AI Operator, approval queue, proof-to-paid and payroll handoff.</span></article>
+      <section className="cvx-section cvx-pricing-preview" id="pricing">
+        <div className="cvx-section-head">
+          <p className="cvx-kicker">PRICING</p>
+          <h2>Built around the AI Operator, not just job lists.</h2>
+        </div>
+        <div className="cvx-price-grid">
+          <article><strong>Solo</strong><b>$39/mo</b><span>Jobs, clients, quotes, invoices and Smart Hub basics.</span></article>
+          <article className="featured"><strong>Pro</strong><b>$159/mo</b><span>Full AI Operator, approval queue, proof-to-paid and payroll handoff.</span></article>
           <article><strong>Enterprise</strong><b>$299/mo</b><span>MYOB included, advanced roles, priority setup and higher limits.</span></article>
         </div>
-        <a href="/pricing">View full pricing</a>
+        <a className="cvx-primary" href="/pricing">View full pricing</a>
       </section>
 
-      <section className="chx-trades" id="trades">
-        <div><p>BUILT FOR FIELD SERVICE</p><h2>For owners running crews, jobs, sites, customers and proof-based billing.</h2><span>Perfect for businesses where work happens in the field and the owner needs proof, progress, invoice readiness and follow-ups without chasing everyone all day.</span></div>
-        <div className="chx-cloud">{trades.map((trade) => <span key={trade}>{trade}</span>)}</div>
+      <section className="cvx-section" id="trades">
+        <div className="cvx-section-head">
+          <p className="cvx-kicker">BUILT FOR FIELD SERVICE</p>
+          <h2>For owners running crews, sites, customers and proof-based billing.</h2>
+        </div>
+        <div className="cvx-cloud">{trades.map((trade) => <span key={trade}>{trade}</span>)}</div>
       </section>
 
-      <section className="chx-trust">
-        <div><p>TRUST + CONTROL</p><h2>Approval-first AI, built for real business control.</h2></div>
+      <section className="cvx-section cvx-trust">
+        <div>
+          <p className="cvx-kicker">OWNER CONTROL</p>
+          <h2>AI prepares the work. You stay in control.</h2>
+        </div>
         <ul>
-          <li>AI prepares work, but the owner approves important actions.</li>
-          <li>Business data stays separated between accounts.</li>
-          <li>MYOB wording remains MYOB-ready until official approval.</li>
-          <li>SMS credits are separate so message costs stay controlled.</li>
-          <li>Privacy, Terms and security pages should be connected before paid public launch.</li>
+          <li>AI prepares actions before anything important happens.</li>
+          <li>Owner approval is required for sending, assigning, charging or syncing.</li>
+          <li>Each business keeps its jobs, crew, clients and billing separate.</li>
+          <li>Workers stay focused on their assigned jobs and proof updates.</li>
         </ul>
       </section>
 
-      <section className="chx-final">
-        <p>READY TO STOP CHASING ADMIN?</p><h2>Try the Churvox demo, then start your free trial.</h2>
-        <div><a className="chx-primary" href="/demo">Try live demo</a><a className="chx-secondary" href="/signup">Start free trial</a></div>
+      <section className="cvx-final">
+        <p className="cvx-kicker">READY TO SEE IT WORK?</p>
+        <h2>Try the live demo, then start your free trial.</h2>
+        <div>
+          <a className="cvx-primary" href="/demo">Try live demo</a>
+          <a className="cvx-secondary" href="/signup">Start free trial</a>
+        </div>
       </section>
 
-      <footer className="chx-footer">
+      <footer className="cvx-footer">
         <div><strong>CHURVOX</strong><span>AI command centre for trade and service businesses.</span></div>
-        <nav><a href="/pricing">Pricing</a><a href="/demo">Try live demo</a><a href="/contact">Email us</a><a href="/login">Sign in</a><a href="mailto:hello@churvox.com">hello@churvox.com</a></nav>
+        <nav>
+          <a href="/pricing">Pricing</a>
+          <a href="/demo">Try live demo</a>
+          <a href="/contact">Email us</a>
+          <a href="/login">Sign in</a>
+          <a href="mailto:hello@churvox.com">hello@churvox.com</a>
+        </nav>
       </footer>
     </main>
   );
