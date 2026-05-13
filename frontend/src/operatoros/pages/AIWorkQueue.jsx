@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+import AIActivityTimeline from "../components/ai/AIActivityTimeline";
   runAiOperatorPlan,
   approveAiAction,
   rejectAiAction,
