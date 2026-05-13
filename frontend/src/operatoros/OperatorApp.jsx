@@ -3,6 +3,7 @@ import "./operatorTheme.css";
 import "./operatorDesignFinal.css";
 import "./operatorLaptopPolish.css";
 import "./operatorSidebarFinal.css";
+import "./operatorLightTheme.css";
 import FreshChurvoxApp from "../fresh/FreshChurvoxApp";
 import ForcedLoginPage from "./pages/ForcedLoginPage";
 import PublicContactPage from "./pages/PublicContactPage";
@@ -15,7 +16,7 @@ import { useOperatorData } from "./dataHooks";
 import { canSwitchRoleForTesting, currentUserName, currentUserRole, normalizeRole, readToken } from "./api";
 import { clearChurvoxAuth } from "./logout";
 import CreateModal from "./components/CreateModal";
-import SmartHub from "./pages/SmartHub";
+import SmartHubOptionB from "./pages/SmartHubOptionB";
 import AIWorkQueue from "./pages/AIWorkQueue";
 import JobsWorkspace from "./pages/JobsWorkspace";
 import ClientsWorkspace from "./pages/ClientsWorkspace";
@@ -53,7 +54,7 @@ const baseNav = [
 ];
 
 const pages = {
-  hub: SmartHub,
+  hub: SmartHubOptionB,
   queue: AIWorkQueue,
   jobs: JobsWorkspace,
   clients: ClientsWorkspace,
