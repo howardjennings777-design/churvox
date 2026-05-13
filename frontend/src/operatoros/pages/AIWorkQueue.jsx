@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import ActionCard from "../components/ActionCard";
 import EmptyState from "../components/EmptyState";
 import AIActionDetailDrawer from "../components/ai/AIActionDetailDrawer";
@@ -12,27 +12,18 @@ import {
   getAiActivity,
 } from "../ai/aiIntelligenceApi";
 
-const HIDDEN_STATUSES = new Set([
-  "executed",
-  "approved",
-  "rejected",
-  "failed",
-  "cancelled",
-  "canceled",
-  "archived",
-  "done",
-]);
+const CACHE_KEY = "churvox_ai_actions_cache";
 
-function actionId(action) {
+function getId(action) {
   return action?.id || action?._id || action?.action_id || action?.fingerprint || "";
 }
 
-function actionStatus(action) {
-  return String(action?.status || "pending").toLowerCase().trim();
+function getStatus(action) {
+  return String(action?.status || "pending").toLowerCase();
 }
 
-function extractActions(payload) {
-  const source =
+function getActions(payload) {
+  const rows =
     payload?.actions ||
     payload?.items ||
     payload?.rows ||
@@ -41,169 +32,158 @@ function extractActions(payload) {
     payload?.data?.rows ||
     [];
 
-  if (!Array.isArray(source)) return [];
+  if (!Array.isArray(rows)) return [];
 
-  return source.filter((action) => {
+  return rows.filter((action) => {
     if (!action || typeof action !== "object") return false;
-    return !HIDDEN_STATUSES.has(actionStatus(action));
+    return !["approved", "executed", "rejected", "failed", "archived", "done"].includes(getStatus(action));
   });
 }
 
-function extractActivity(payload) {
-  const source =
-    payload?.activity ||
-    payload?.items ||
-    payload?.rows ||
-    payload?.data?.activity ||
-    [];
-
-  return Array.isArray(source) ? source : [];
+function getActivity(payload) {
+  const rows = payload?.activity || payload?.items || payload?.rows || payload?.data?.activity || [];
+  return Array.isArray(rows) ? rows : [];
 }
 
-function mergeActions(primary, secondary) {
-  const seen = new Set();
-  const output = [];
+function readCache() {
+  try {
+    return getActions({ actions: JSON.parse(sessionStorage.getItem(CACHE_KEY) || "[]") });
+  } catch {
+    return [];
+  }
+}
 
-  [...primary, ...secondary].forEach((action) => {
-    const id = actionId(action) || `${action?.title || ""}-${action?.summary || ""}`;
+function writeCache(rows) {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(getActions({ actions: rows }).slice(0, 200)));
+  } catch {}
+}
+
+function mergeActions(a, b) {
+  const out = [];
+  const seen = new Set();
+
+  [...a, ...b].forEach((action) => {
+    const id = getId(action) || `${action?.title || ""}-${action?.summary || ""}`;
     if (!id || seen.has(id)) return;
     seen.add(id);
-    output.push(action);
+    out.push(action);
   });
 
-  return output;
+  return out;
 }
 
 export default function AIWorkQueue({ data }) {
-  const [actions, setActions] = useState([]);
+  const [actions, setActions] = useState(() => readCache());
   const [activity, setActivity] = useState([]);
   const [selected, setSelected] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [autoPreparing, setAutoPreparing] = useState(false);
-  const [busyActionId, setBusyActionId] = useState("");
+  const [busyId, setBusyId] = useState("");
   const [notice, setNotice] = useState("");
-  const [loadError, setLoadError] = useState("");
-  const autoRanRef = useRef(false);
+  const [error, setError] = useState("");
 
-  const smartHubContext = useMemo(() => {
+  function showActions(rows) {
+    if (!rows.length) return;
+
+    setActions((current) => {
+      const next = mergeActions(rows, current);
+      writeCache(next);
+      return next;
+    });
+  }
+
+  async function loadActions() {
+    setError("");
+
     try {
-      return JSON.parse(sessionStorage.getItem("churvox_smart_hub_last_action") || "{}");
-    } catch {
-      return {};
+      const payload = await getAiActions();
+      const rows = getActions(payload);
+
+      if (rows.length) {
+        setActions(rows);
+        writeCache(rows);
+        return rows;
+      }
+
+      const cached = readCache();
+      if (cached.length) {
+        setActions(cached);
+        return cached;
+      }
+
+      return [];
+    } catch (err) {
+      const cached = readCache();
+      if (cached.length) setActions(cached);
+      setError(err?.message || "Could not load AI actions.");
+      return cached;
     }
-  }, []);
+  }
 
-  const load = useCallback(async () => {
-    setLoadError("");
-
-    let nextActions = [];
-
+  async function loadActivity() {
     try {
-      const actionPayload = await getAiActions();
-      nextActions = extractActions(actionPayload);
-      setActions(nextActions);
-    } catch (error) {
-      setLoadError(error?.message || "Could not load AI actions.");
-    }
-
-    try {
-      const activityPayload = await getAiActivity();
-      setActivity(extractActivity(activityPayload));
+      const payload = await getAiActivity();
+      setActivity(getActivity(payload));
     } catch {
       setActivity([]);
     }
+  }
 
-    return nextActions;
-  }, []);
+  async function prepareAiWork(auto = false) {
+    setBusy(true);
+    setNotice(auto ? "AI is preparing owner actions..." : "");
+    setError("");
 
-  const refreshEverything = useCallback(async () => {
-    await load();
+    try {
+      const result = await runAiOperatorPlan();
+      const returned = getActions(result);
 
-    if (typeof data?.reload === "function") {
+      showActions(returned);
+
+      const count =
+        returned.length ||
+        Number(result?.created || 0) ||
+        Number(result?.briefing_summary?.prepared || 0) ||
+        0;
+
+      setNotice(count ? `AI prepared ${count} action${count === 1 ? "" : "s"}.` : "AI checked the business.");
+
       try {
-        await data.reload();
+        const payload = await getAiActions();
+        const loaded = getActions(payload);
+        if (loaded.length) showActions(loaded);
       } catch {}
-    }
-  }, [data, load]);
 
-  const runPlanAndShowActions = useCallback(
-    async ({ automatic = false } = {}) => {
-      if (automatic) {
-        setAutoPreparing(true);
-      } else {
-        setBusy(true);
-      }
+      await loadActivity();
 
-      setNotice("");
-      setLoadError("");
-
-      try {
-        const result = await runAiOperatorPlan();
-        const returnedActions = extractActions(result);
-
-        if (returnedActions.length) {
-          setActions((current) => mergeActions(returnedActions, current));
-        }
-
-        const prepared =
-          returnedActions.length ||
-          Number(result?.created || 0) ||
-          Number(result?.briefing_summary?.prepared || 0) ||
-          0;
-
-        setNotice(
-          prepared
-            ? `AI prepared ${prepared} action${prepared === 1 ? "" : "s"}.`
-            : "AI checked the business. No new owner actions found."
-        );
-
+      if (typeof data?.reload === "function") {
         try {
-          const refreshed = await getAiActions();
-          const refreshedActions = extractActions(refreshed);
-
-          setActions((current) => {
-            const merged = mergeActions(refreshedActions, current);
-            return merged.length ? merged : current;
-          });
-        } catch (error) {
-          setLoadError(error?.message || "AI scan worked, but reloading actions failed.");
-        }
-
-        try {
-          const activityPayload = await getAiActivity();
-          setActivity(extractActivity(activityPayload));
+          await data.reload();
         } catch {}
-
-        if (typeof data?.reload === "function") {
-          try {
-            await data.reload();
-          } catch {}
-        }
-      } catch (error) {
-        setNotice(error?.message || "AI scan failed.");
-      } finally {
-        setBusy(false);
-        setAutoPreparing(false);
       }
-    },
-    [data]
-  );
+    } catch (err) {
+      setNotice("");
+      setError(err?.message || "AI scan failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
 
     async function start() {
-      const loadedActions = await load();
+      const loaded = await loadActions();
+      await loadActivity();
+
       if (cancelled) return;
 
-      const lastAutoRun = Number(sessionStorage.getItem("churvox_ai_auto_prepared_at") || "0");
-      const tenMinutes = 10 * 60 * 1000;
-      const recentlyRan = Date.now() - lastAutoRun < tenMinutes;
+      const last = Number(sessionStorage.getItem("churvox_ai_auto_prepare_time") || "0");
+      const tooSoon = Date.now() - last < 10 * 60 * 1000;
 
-      if (!loadedActions.length && !recentlyRan && !autoRanRef.current) {
-        autoRanRef.current = true;
-        sessionStorage.setItem("churvox_ai_auto_prepared_at", String(Date.now()));
-        await runPlanAndShowActions({ automatic: true });
+      if (!loaded.length && !tooSoon) {
+        sessionStorage.setItem("churvox_ai_auto_prepare_time", String(Date.now()));
+        await prepareAiWork(true);
       }
     }
 
@@ -212,70 +192,73 @@ export default function AIWorkQueue({ data }) {
     return () => {
       cancelled = true;
     };
-  }, [load, runPlanAndShowActions]);
+  }, []);
 
-  async function approve(action, editedPayload) {
-    const id = actionId(action);
-    if (!id) {
-      setNotice("This AI action is missing an id, so it cannot be approved yet.");
-      return;
-    }
+  function removeAction(action) {
+    const id = getId(action);
 
-    setBusyActionId(id);
-    setNotice("");
+    setActions((current) => {
+      const next = current.filter((item) => getId(item) !== id);
+      writeCache(next);
+      return next;
+    });
+  }
+
+  async function approve(action, edited) {
+    const id = getId(action);
+    if (!id) return setError("This AI action has no id.");
+
+    setBusyId(id);
+    setError("");
 
     try {
-      const result = await approveAiAction(id, editedPayload);
+      const result = await approveAiAction(id, edited);
+      removeAction(action);
       setSelected(null);
       setNotice(result?.message || "AI action approved.");
-      await refreshEverything();
-    } catch (error) {
-      setNotice(error?.message || "Could not approve this AI action.");
+      await loadActivity();
+    } catch (err) {
+      setError(err?.message || "Could not approve action.");
     } finally {
-      setBusyActionId("");
+      setBusyId("");
     }
   }
 
   async function reject(action, reason) {
-    const id = actionId(action);
-    if (!id) {
-      setNotice("This AI action is missing an id, so it cannot be rejected yet.");
-      return;
-    }
+    const id = getId(action);
+    if (!id) return setError("This AI action has no id.");
 
-    setBusyActionId(id);
-    setNotice("");
+    setBusyId(id);
+    setError("");
 
     try {
       await rejectAiAction(id, reason);
+      removeAction(action);
       setSelected(null);
       setNotice("AI action rejected.");
-      await refreshEverything();
-    } catch (error) {
-      setNotice(error?.message || "Could not reject this AI action.");
+      await loadActivity();
+    } catch (err) {
+      setError(err?.message || "Could not reject action.");
     } finally {
-      setBusyActionId("");
+      setBusyId("");
     }
   }
 
-  async function saveEdits(action, editedPayload) {
-    const id = actionId(action);
-    if (!id) {
-      setNotice("This AI action is missing an id, so edits cannot be saved yet.");
-      return;
-    }
+  async function saveEdits(action, edited) {
+    const id = getId(action);
+    if (!id) return setError("This AI action has no id.");
 
-    setBusyActionId(id);
-    setNotice("");
+    setBusyId(id);
+    setError("");
 
     try {
-      await editAiAction(id, editedPayload);
+      await editAiAction(id, edited);
       setNotice("Edits saved.");
-      await refreshEverything();
-    } catch (error) {
-      setNotice(error?.message || "Could not save edits.");
+      await loadActions();
+    } catch (err) {
+      setError(err?.message || "Could not save edits.");
     } finally {
-      setBusyActionId("");
+      setBusyId("");
     }
   }
 
@@ -285,47 +268,31 @@ export default function AIWorkQueue({ data }) {
         <div>
           <p>AI WORK QUEUE</p>
           <h1>Approve the work AI prepared for you.</h1>
-          <span>
-            AI prepares dispatch, proof-to-paid, invoice follow-up and quote follow-up actions for owner approval.
-          </span>
-          {smartHubContext?.source ? (
-            <small>Opened from Smart Hub: {String(smartHubContext.source).replaceAll("_", " ")}</small>
-          ) : null}
+          <span>AI prepares dispatch, invoice, quote and proof-to-paid actions for owner approval.</span>
         </div>
 
-        <button
-          type="button"
-          className="primary"
-          onClick={() => runPlanAndShowActions({ automatic: false })}
-          disabled={busy || autoPreparing}
-        >
-          {busy || autoPreparing ? "Preparing..." : "Refresh AI work"}
+        <button className="primary" onClick={() => prepareAiWork(false)} disabled={busy}>
+          {busy ? "Preparing..." : "Refresh AI work"}
         </button>
       </section>
 
-      {autoPreparing ? <section className="op-notice">AI is preparing owner actions...</section> : null}
       {notice ? <section className="op-notice">{notice}</section> : null}
-      {loadError ? <section className="op-notice">{loadError}</section> : null}
+      {error ? <section className="op-notice">{error}</section> : null}
 
       <section className="op-queue-list">
         {!actions.length ? (
           <EmptyState
-            title={autoPreparing ? "AI is preparing work" : "No AI work waiting"}
-            body={
-              autoPreparing
-                ? "Churvox is checking jobs, quotes, invoices, proof and crew work now."
-                : "AI will auto-prepare work when this page opens. You can also press Refresh AI work."
-            }
+            title={busy ? "AI is preparing work" : "No AI work waiting"}
+            body={busy ? "Churvox is checking the business now." : "AI will prepare work automatically when needed."}
           />
         ) : (
           actions.map((action, index) => {
-            const id = actionId(action) || `ai-action-${index}`;
-
+            const id = getId(action) || `action-${index}`;
             return (
               <ActionCard
                 key={id}
                 action={action}
-                busy={busyActionId === id}
+                busy={busyId === id}
                 onReview={() => setSelected(action)}
                 onApprove={() => approve(action)}
               />
@@ -340,7 +307,7 @@ export default function AIWorkQueue({ data }) {
         open={!!selected}
         action={selected}
         onClose={() => setSelected(null)}
-        busy={Boolean(busyActionId)}
+        busy={Boolean(busyId)}
         onSaveEdits={saveEdits}
         onApprove={approve}
         onReject={reject}
