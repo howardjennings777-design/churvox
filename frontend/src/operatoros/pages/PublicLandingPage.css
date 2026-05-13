@@ -532,3 +532,161 @@
     border-radius: 30px;
   }
 }
+
+/* ===== Desktop full-screen landing hero ===== */
+@media (min-width: 981px) {
+  .public-landing {
+    min-height: 100vh;
+  }
+
+  .public-hero {
+    width: min(1260px, calc(100% - 52px));
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+    padding: 24px 0 34px;
+    box-sizing: border-box;
+  }
+
+  .public-nav {
+    flex: 0 0 auto;
+    padding-bottom: 18px;
+  }
+
+  .public-hero-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(370px, 440px);
+    gap: 42px;
+    align-items: center;
+  }
+
+  .public-hero-copy {
+    align-self: center;
+  }
+
+  .public-hero-copy h1 {
+    max-width: 760px;
+    font-size: clamp(54px, 5.6vw, 82px);
+    line-height: 0.92;
+  }
+
+  .public-lead {
+    max-width: 700px;
+    font-size: 18px;
+  }
+
+  .public-command-card {
+    justify-self: end;
+    align-self: center;
+    max-width: 440px;
+    min-height: min(610px, calc(100svh - 145px));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .public-orb-wrap {
+    height: min(235px, 28vh);
+  }
+
+  .public-strip {
+    padding-top: 34px;
+  }
+}
+
+@media (min-width: 981px) and (max-height: 760px) {
+  .public-hero {
+    padding-top: 18px;
+    padding-bottom: 22px;
+  }
+
+  .public-nav {
+    padding-bottom: 12px;
+  }
+
+  .public-brand-mark {
+    width: 48px;
+    height: 48px;
+  }
+
+  .public-brand-mark img {
+    width: 35px;
+    height: 35px;
+  }
+
+  .public-hero-copy h1 {
+    font-size: clamp(46px, 5vw, 66px);
+  }
+
+  .public-lead {
+    margin-top: 18px;
+    font-size: 16px;
+    line-height: 1.45;
+  }
+
+  .public-actions {
+    margin-top: 20px;
+  }
+
+  .public-trust-row {
+    margin-top: 16px;
+  }
+
+  .public-command-card {
+    min-height: calc(100svh - 120px);
+    padding: 18px;
+  }
+
+  .public-orb-wrap {
+    height: 168px;
+  }
+
+  .public-radar {
+    width: 158px;
+    height: 158px;
+  }
+
+  .public-orb {
+    width: 96px;
+    height: 96px;
+    border-radius: 30px;
+  }
+
+  .public-orb img {
+    width: 68px;
+    height: 68px;
+  }
+
+  .public-card-head {
+    padding: 15px;
+  }
+
+  .public-card-head strong {
+    font-size: 19px;
+  }
+
+  .public-ai-stack div {
+    padding: 10px 8px;
+  }
+
+  .public-ai-stack b {
+    font-size: 22px;
+  }
+
+  .public-approval-card {
+    padding: 15px;
+  }
+
+  .public-approval-card strong {
+    font-size: 18px;
+  }
+
+  .public-approval-card p {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+}
