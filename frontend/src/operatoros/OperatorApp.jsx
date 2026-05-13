@@ -121,8 +121,9 @@ function pathForKey(key) {
 
 export default function OperatorApp() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  const publicPaths = new Set(["/", "/features", "/how-it-works", "/trades"]);
 
-  if (path === "/" && !readToken()) {
+  if (publicPaths.has(path) && !readToken()) {
     return <PublicLandingPage />;
   }
 
