@@ -429,6 +429,13 @@ PLAN_PRICE_IDS = {
 # Create the main app
 app = FastAPI(title="Churvox API")
 
+
+# Logger must exist before early startup patches use it.
+try:
+    logger
+except NameError:
+    logger = logging.getLogger(__name__)
+
 # ===================== CHURVOX CORS SAFETY PATCH =====================
 CHURVOX_ALLOWED_ORIGINS = [
     "https://www.churvox.com",
