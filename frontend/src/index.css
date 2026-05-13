@@ -7091,197 +7091,60 @@ th {
   }
 }
 
-/* ===== CHURVOX OPTION B — CLEAN TEAL SYSTEM THEME ===== */
+/* ===== CHURVOX SAFE CLEAN TEAL COLOUR ONLY ===== */
+/* Colour-only. No display, width, height, grid, position, padding, margin or layout changes. */
 :root {
-  --chx-clean-bg: #f7fffd;
-  --chx-clean-bg-2: #e9fbf7;
-  --chx-clean-panel: rgba(255, 255, 255, 0.88);
-  --chx-clean-panel-strong: rgba(255, 255, 255, 0.96);
-  --chx-clean-panel-teal: rgba(236, 253, 250, 0.94);
-  --chx-clean-line: rgba(15, 118, 110, 0.16);
-  --chx-clean-line-strong: rgba(13, 148, 136, 0.24);
-  --chx-clean-text: #09243a;
-  --chx-clean-muted: #496678;
-  --chx-clean-soft: #6b8291;
-  --chx-clean-teal: #0f9f94;
-  --chx-clean-teal-dark: #08756f;
-  --chx-clean-cyan: #18bfd0;
-  --chx-clean-blue: #1769d2;
-  --chx-clean-shadow: rgba(15, 46, 66, 0.12);
+  --churvox-clean-bg: #f7fffd;
+  --churvox-clean-bg-soft: #e9fbf7;
+  --churvox-clean-surface: rgba(255, 255, 255, 0.92);
+  --churvox-clean-surface-teal: rgba(236, 253, 250, 0.88);
+  --churvox-clean-line: rgba(15, 118, 110, 0.16);
+  --churvox-clean-line-strong: rgba(13, 148, 136, 0.24);
+  --churvox-clean-text: #09243a;
+  --churvox-clean-muted: #496678;
+  --churvox-clean-teal: #0f9f94;
+  --churvox-clean-cyan: #18bfd0;
 }
 
-/* Global clean-teal colour layer only. No layout changes. */
-body,
-#root,
-.App {
-  background:
-    radial-gradient(circle at 16% 6%, rgba(20, 184, 166, 0.13), transparent 32%),
-    radial-gradient(circle at 86% 4%, rgba(24, 191, 208, 0.11), transparent 30%),
-    linear-gradient(135deg, var(--chx-clean-bg) 0%, var(--chx-clean-bg-2) 100%) !important;
-  color: var(--chx-clean-text) !important;
-}
-
+/* Public pages only */
 .chx-public,
-.demo-real,
-.cleanhub,
-.smartdash,
 .signup-screen,
-.contactpub,
 .pricepub,
-.force-login-page,
-[class*="Dashboard"],
-[class*="dashboard"],
-[class*="SmartHub"],
-[class*="smartHub"],
-[class*="Workspace"],
-[class*="workspace"] {
+.contactpub,
+.force-login-page {
   background:
-    radial-gradient(circle at 18% 7%, rgba(20, 184, 166, 0.14), transparent 34%),
-    radial-gradient(circle at 86% 2%, rgba(24, 191, 208, 0.11), transparent 30%),
-    linear-gradient(135deg, var(--chx-clean-bg) 0%, var(--chx-clean-bg-2) 100%) !important;
-  color: var(--chx-clean-text) !important;
+    radial-gradient(circle at 18% 8%, rgba(20,184,166,0.14), transparent 34%),
+    radial-gradient(circle at 84% 3%, rgba(24,191,208,0.11), transparent 32%),
+    linear-gradient(135deg, var(--churvox-clean-bg) 0%, var(--churvox-clean-bg-soft) 100%) !important;
+  color: var(--churvox-clean-text) !important;
 }
 
-/* Cards / panels */
-.chx-operator,
-.chx-wins article,
-.chx-problems article,
-.chx-preview,
-.chx-features,
-.chx-pricing,
-.chx-trades,
-.chx-trust,
-.chx-final,
-.chx-footer,
-.demo-side,
-.demo-guide,
-.demo-card,
-.demo-stats article,
-.demo-business,
-.cleanhub-card,
-.cleanhub-metrics article,
-.smartdash-card,
-.smartdash-metrics article,
-.smartdash-job-preview,
-.smartdash-mini-list a,
-.smartdash-queue div,
-.smartdash-workers div,
-.signup-card,
-.signup-sales article,
-.contactpub aside,
-.pricepub-grid article,
-.pricepub-extra article,
-.pricepub-offer,
-.force-login-card,
-[class*="card"],
-[class*="Card"],
-[class*="panel"],
-[class*="Panel"],
-[class*="tile"],
-[class*="Tile"] {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.96), rgba(236,253,250,0.72)),
-    var(--chx-clean-panel) !important;
-  border-color: var(--chx-clean-line) !important;
-  box-shadow:
-    0 22px 70px var(--chx-clean-shadow),
-    inset 0 1px 0 rgba(255,255,255,0.9) !important;
-  color: var(--chx-clean-text) !important;
-}
-
-/* Important preview / hero cards */
-.chx-next,
-.demo-card.hero,
-.cleanhub-main-card,
-.smartdash-hero-card,
-.signup-card,
-.force-login-card,
-[class*="hero"],
-[class*="Hero"],
-[class*="highlight"],
-[class*="Highlight"] {
-  background:
-    radial-gradient(circle at 20% 0%, rgba(20,184,166,0.16), transparent 38%),
-    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(225,250,246,0.9)) !important;
-  border-color: var(--chx-clean-line-strong) !important;
-}
-
-/* Remove the ugly big outer card behind the public landing AI preview, keep inner cards. */
-body:has(.chx-public) .chx-operator {
-  background: transparent !important;
-  border-color: transparent !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-}
-
-body:has(.chx-public) .chx-operator::before,
-body:has(.chx-public) .chx-operator::after {
-  display: none !important;
-}
-
-body:has(.chx-public) .chx-orb-wrap {
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-}
-
-body:has(.chx-public) .chx-operator-card,
-body:has(.chx-public) .chx-stats div,
-body:has(.chx-public) .chx-next {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.96), rgba(236,253,250,0.78)) !important;
-  border: 1px solid var(--chx-clean-line-strong) !important;
-  box-shadow: 0 18px 58px rgba(15, 46, 66, 0.11) !important;
-}
-
-/* Typography */
-h1,
-h2,
-h3,
-h4,
-strong,
-.chx-copy h1,
-.chx-preview h2,
-.chx-features h2,
-.chx-pricing h2,
-.chx-trades h2,
-.chx-trust h2,
-.chx-final h2,
-.demo-top h1,
-.demo-card h2,
-.cleanhub-header h1,
-.cleanhub-card h2,
-.smartdash-top h1,
-.smartdash-card h2,
-.signup-copy h1,
+.chx-public h1,
+.chx-public h2,
+.signup-screen h1,
+.signup-screen h2,
+.pricepub h1,
+.pricepub h2,
 .contactpub h1,
-.pricepub-hero h1,
-.force-login-copy h1 {
-  color: var(--chx-clean-text) !important;
+.contactpub h2,
+.force-login-page h1,
+.force-login-page h2 {
+  color: var(--churvox-clean-text) !important;
   text-shadow: none !important;
 }
 
-p,
-span,
-li,
-small,
-label,
-.chx-copy h2,
-.chx-wins span,
-.chx-problems span,
-.chx-preview span,
-.chx-features span,
-.chx-trades span,
-.chx-trust li,
-.demo-card p,
-.demo-guide p,
-.cleanhub-card p,
-.smartdash-card p,
-.signup-lead,
-.contactpub article > span,
-.pricepub-hero span,
-.force-login-copy > span {
-  color: var(--chx-clean-muted) !important;
+.chx-public p,
+.chx-public span,
+.chx-public li,
+.signup-screen p,
+.signup-screen span,
+.pricepub p,
+.pricepub span,
+.contactpub p,
+.contactpub span,
+.force-login-page p,
+.force-login-page span {
+  color: var(--churvox-clean-muted) !important;
 }
 
 .chx-copy > p,
@@ -7291,145 +7154,95 @@ label,
 .chx-trades p,
 .chx-trust p,
 .chx-final p,
-.demo-top small,
-.demo-card small,
-.demo-guide small,
-.cleanhub-header p,
-.cleanhub-card small,
-.smartdash-top p,
-.smartdash-card small,
 .signup-copy p:first-child,
 .signup-card-head p,
-.contactpub p,
 .pricepub-hero p,
 .pricepub-extra p,
 .pricepub-offer p,
-.force-login-card > p,
+.contactpub p,
 .force-login-copy > p,
-[class*="label"],
-[class*="Label"] {
-  color: var(--chx-clean-teal-dark) !important;
+.force-login-card > p {
+  color: var(--churvox-clean-teal) !important;
 }
 
-/* Nav */
-.chx-nav nav,
-.pricepub header nav a,
-.demo-top-actions a,
-.cleanhub-header nav a,
-.smartdash-actions a {
-  background: rgba(255,255,255,0.78) !important;
-  border-color: var(--chx-clean-line) !important;
-  color: var(--chx-clean-text) !important;
-  box-shadow: 0 12px 36px rgba(15, 46, 66, 0.08) !important;
+/* Public cards only */
+.chx-wins article,
+.chx-problems article,
+.chx-preview,
+.chx-features,
+.chx-pricing,
+.chx-trades,
+.chx-trust,
+.chx-final,
+.chx-footer,
+.chx-operator-card,
+.chx-stats div,
+.chx-next,
+.signup-card,
+.signup-sales article,
+.pricepub-grid article,
+.pricepub-extra article,
+.pricepub-offer,
+.contactpub aside,
+.force-login-card {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.96), rgba(236,253,250,0.74)) !important;
+  border-color: var(--churvox-clean-line) !important;
+  box-shadow:
+    0 22px 70px rgba(15, 46, 66, 0.11),
+    inset 0 1px 0 rgba(255,255,255,0.9) !important;
 }
 
-/* Primary actions */
+/* Remove only the ugly outer card behind the public AI preview */
+body:has(.chx-public) .chx-operator {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+body:has(.chx-public) .chx-orb-wrap {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Buttons only */
 .chx-primary,
 .chx-pricing > a,
 .chx-next button,
-.demo-guide button,
-.demo-queue button,
-.demo-proof button,
-.demo-actions-row button,
-.demo-side-footer a:first-child,
-.cleanhub-header nav a.primary,
-.cleanhub-actions footer button,
-.smartdash-actions a.primary,
-.smartdash-button-row a:first-child,
 .signup-card button,
-.contactpub-actions a:first-child,
 .pricepub-hero a,
 .pricepub-grid article > a,
-.force-login-card button,
-.force-login-pills b,
-button[type="submit"],
-[class*="primary"],
-[class*="Primary"] {
+.contactpub-actions a:first-child,
+.force-login-card button {
   color: #ffffff !important;
-  background: linear-gradient(135deg, var(--chx-clean-teal) 0%, var(--chx-clean-cyan) 100%) !important;
+  background: linear-gradient(135deg, var(--churvox-clean-teal) 0%, var(--churvox-clean-cyan) 100%) !important;
   border-color: transparent !important;
   box-shadow: 0 16px 42px rgba(13, 148, 136, 0.22) !important;
 }
 
-/* Secondary actions */
 .chx-secondary,
-.demo-side-footer a:nth-child(2),
-.contactpub-actions a:nth-child(2),
-.smartdash-button-row a:not(:first-child),
-.cleanhub-actions footer a,
-[class*="secondary"],
-[class*="Secondary"] {
-  color: var(--chx-clean-teal-dark) !important;
-  background: rgba(255,255,255,0.84) !important;
-  border-color: var(--chx-clean-line-strong) !important;
+.contactpub-actions a:nth-child(2) {
+  color: var(--churvox-clean-teal) !important;
+  background: rgba(255,255,255,0.86) !important;
+  border-color: var(--churvox-clean-line-strong) !important;
 }
 
-/* Form fields */
-input,
-select,
-textarea,
+/* Form colours only */
 .signup-card input,
 .signup-card select,
 .force-login-card input {
-  background: rgba(255,255,255,0.9) !important;
-  border-color: var(--chx-clean-line-strong) !important;
-  color: var(--chx-clean-text) !important;
+  background: rgba(255,255,255,0.92) !important;
+  border-color: var(--churvox-clean-line-strong) !important;
+  color: var(--churvox-clean-text) !important;
 }
 
-input:focus,
-select:focus,
-textarea:focus {
-  border-color: rgba(15, 159, 148, 0.82) !important;
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.14) !important;
-}
-
-/* Metrics */
-.chx-stats b,
-.demo-stats strong,
-.cleanhub-metrics strong,
-.cleanhub-big,
-.smartdash-metrics strong,
-.smartdash-cash-number,
-.pricepub-grid article > strong,
-[class*="metric"] strong,
-[class*="Metric"] strong,
-[class*="amount"],
-[class*="Amount"] {
-  color: var(--chx-clean-teal-dark) !important;
-}
-
-.live-dot,
-.cleanhub-card-top b,
-.pricepub-grid small,
-.status,
-.demo-top-actions a.primary,
-.badge,
-[class*="badge"],
-[class*="Badge"] {
-  color: #ffffff !important;
-  background: linear-gradient(135deg, var(--chx-clean-teal), var(--chx-clean-cyan)) !important;
-}
-
-/* Logo glow */
+/* Logo glow only */
 .chx-brand > span,
-.demo-brand > span,
 .signup-brand span,
 .force-login-brand span {
   box-shadow:
     0 14px 44px rgba(20, 184, 166, 0.18),
     inset 0 1px 0 rgba(255,255,255,0.8) !important;
-}
-
-/* Keep the public hero clean and light. */
-body:has(.chx-public) .chx-copy h1 span {
-  color: var(--chx-clean-teal) !important;
-}
-
-body:has(.chx-public) .chx-public,
-body:has(.chx-public) .chx-hero {
-  background:
-    radial-gradient(circle at 18% 8%, rgba(20,184,166,0.16), transparent 34%),
-    radial-gradient(circle at 84% 3%, rgba(24,191,208,0.12), transparent 32%),
-    linear-gradient(135deg, #f8fffd 0%, #e9fbf7 100%) !important;
 }
 
