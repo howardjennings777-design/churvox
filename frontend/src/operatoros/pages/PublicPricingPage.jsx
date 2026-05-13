@@ -1,10 +1,10 @@
 import "./PublicSite.css";
 
 const plans = [
-  ["Solo", "$39/mo", "Core jobs, clients, quotes and invoices."],
-  ["Team", "$89/mo", "Crew workflow and worker proof updates."],
-  ["Pro", "$159/mo", "AI Operator, approval queue and proof-to-paid."],
-  ["Enterprise", "$299/mo", "Advanced roles, higher limits and priority setup."],
+  ["Solo", "$30/mo", "Core jobs, clients, quotes and invoices."],
+  ["Team", "$70/mo", "Crew workflow and worker proof updates."],
+  ["Pro", "$110/mo", "AI Operator, approval queue and proof-to-paid."],
+  ["Enterprise", "$240/mo", "Advanced roles, higher limits and priority setup."],
 ];
 
 function Nav() {
