@@ -6943,3 +6943,99 @@ body:has(.chx-public) .chx-secondary {
   border-color: rgba(148, 255, 255, 0.16) !important;
   background: rgba(255, 255, 255, 0.075) !important;
 }
+
+/* ===== CHURVOX LIVE LOGIN FIX ===== */
+body.chx-live-login {
+  margin: 0 !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 16% 14%, rgba(56, 189, 248, 0.38), transparent 30%),
+    radial-gradient(circle at 86% 8%, rgba(34, 211, 238, 0.22), transparent 28%),
+    linear-gradient(135deg, #04101d 0%, #071827 45%, #0b2539 100%) !important;
+}
+
+body.chx-live-login #root,
+body.chx-live-login .App {
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: transparent !important;
+}
+
+body.chx-live-login #root > *,
+body.chx-live-login .App > * {
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: clamp(32px, 5vw, 76px) clamp(44px, 6vw, 100px) !important;
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 450px) !important;
+  align-items: center !important;
+  gap: clamp(48px, 7vw, 120px) !important;
+  background: transparent !important;
+}
+
+body.chx-live-login form,
+body.chx-live-login [class*="login"],
+body.chx-live-login [class*="Login"],
+body.chx-live-login [class*="auth"],
+body.chx-live-login [class*="Auth"] {
+  align-self: center !important;
+}
+
+body.chx-live-login form {
+  justify-self: end !important;
+  width: min(440px, 100%) !important;
+  max-width: 440px !important;
+  margin: 0 !important;
+  padding: 30px !important;
+  border-radius: 34px !important;
+  border: 1px solid rgba(148, 255, 255, 0.24) !important;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(34, 211, 238, 0.18), transparent 34%),
+    rgba(2, 6, 23, 0.58) !important;
+  box-shadow: 0 44px 140px rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+body.chx-live-login input {
+  min-height: 52px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(148, 255, 255, 0.22) !important;
+  background: rgba(15, 35, 55, 0.9) !important;
+  color: #ecfeff !important;
+}
+
+body.chx-live-login button {
+  min-height: 52px !important;
+  border-radius: 16px !important;
+  color: #03111f !important;
+  background: linear-gradient(135deg, #ecfeff, #22d3ee) !important;
+  font-weight: 950 !important;
+}
+
+@media (max-width: 900px) {
+  body.chx-live-login {
+    overflow: auto !important;
+  }
+
+  body.chx-live-login #root > *,
+  body.chx-live-login .App > * {
+    height: auto !important;
+    min-height: 100vh !important;
+    grid-template-columns: 1fr !important;
+    padding: 24px !important;
+  }
+
+  body.chx-live-login form {
+    justify-self: stretch !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+}

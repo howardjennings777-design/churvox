@@ -3174,6 +3174,10 @@ function OperatorActionHost({ api, children }) {
 }
 
 export default function FreshChurvoxApp() {
+  if (typeof document !== "undefined") {
+    const freshPath = window.location.pathname.replace(/\/+$/, "") || "/";
+    document.body.classList.toggle("chx-live-login", ["/login", "/admin/login", "/owner/login"].includes(freshPath));
+  }
   return (
     <BrowserRouter>
       <Routes>
