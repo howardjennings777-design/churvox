@@ -4,9 +4,10 @@ import "./operatorDesignFinal.css";
 import "./operatorLaptopPolish.css";
 import "./operatorSidebarFinal.css";
 import FreshChurvoxApp from "../fresh/FreshChurvoxApp";
+import PublicLandingPage from "./pages/PublicLandingPage";
 import OperatorShell from "./OperatorShell";
 import { useOperatorData } from "./dataHooks";
-import { canSwitchRoleForTesting, currentUserName, currentUserRole, normalizeRole } from "./api";
+import { canSwitchRoleForTesting, currentUserName, currentUserRole, normalizeRole, readToken } from "./api";
 import CreateModal from "./components/CreateModal";
 import SmartHub from "./pages/SmartHub";
 import AIWorkQueue from "./pages/AIWorkQueue";
@@ -119,6 +120,12 @@ function pathForKey(key) {
 }
 
 export default function OperatorApp() {
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+
+  if (path === "/" && !readToken()) {
+    return <PublicLandingPage />;
+  }
+
   return shouldUseLegacyApp() ? <FreshChurvoxApp /> : <OperatorOSCore />;
 }
 
