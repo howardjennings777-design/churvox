@@ -32,8 +32,8 @@ function assignedName(job) {
 }
 
 export default function PayrollWorkspace({ data }) {
-  const workers = data.workers || [];
-  const completedJobs = data.completedJobs || [];
+  const workers = useMemo(() => data?.workers || [], [data?.workers]);
+  const completedJobs = useMemo(() => data?.completedJobs || [], [data?.completedJobs]);
   const [notes, setNotes] = useState(() => readLocalList("churvox_payroll_notes")[0] || {});
 
   const rows = useMemo(() => {
