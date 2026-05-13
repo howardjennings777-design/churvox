@@ -114,13 +114,23 @@ async function tryRecordRequest(endpoint, id, options) {
     `${cleanEndpoint}/id/${cleanRecordId}`,
   ];
 
+  const requestedMethod = String(options?.method || "GET").toUpperCase();
+  const methods =
+    requestedMethod === "PATCH"
+      ? ["PATCH", "PUT"]
+      : requestedMethod === "PUT"
+      ? ["PUT", "PATCH"]
+      : [requestedMethod];
+
   let lastError = null;
 
-  for (const path of paths) {
-    try {
-      return await apiFetch(path, options);
-    } catch (error) {
-      lastError = error;
+  for (const method of methods) {
+    for (const path of paths) {
+      try {
+        return await apiFetch(path, { ...options, method });
+      } catch (error) {
+        lastError = error;
+      }
     }
   }
 
