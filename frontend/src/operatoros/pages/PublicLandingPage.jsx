@@ -1,13 +1,29 @@
 import { useEffect } from "react";
 import "./PublicLandingPage.css";
 
+const heroProof = [
+  "AI finds the admin before it becomes a problem",
+  "Jobs, crew, quotes, invoices and proof in one command centre",
+  "Owner approval before anything important is sent, changed or synced",
+];
+
+const painPoints = [
+  ["Admin chaos", "No more jumping between diary notes, texts, spreadsheets, invoices and job chats."],
+  ["Missed follow-ups", "Churvox spots quote follow-ups, unpaid invoices and completed jobs waiting for action."],
+  ["Crew confusion", "See what is unassigned, what is in progress, what is completed and what needs proof."],
+  ["Slow invoicing", "Completed work moves toward proof review and draft invoice prep instead of sitting forgotten."],
+];
+
 const features = [
-  ["AI Work Queue", "Finds admin that needs action, prepares the next move, and waits for owner approval."],
-  ["Jobs + Dispatch", "Create jobs, assign crew, track site progress, collect notes, and keep the day moving."],
-  ["Proof-to-Paid", "Worker photos, completion notes, time and job proof flow into invoice-ready owner review."],
-  ["Quotes + Invoices", "Prepare quotes, invoices, reminders and payment follow-ups without jumping between tools."],
-  ["Crew + Payroll Handoff", "See workers, approved hours, job history, payroll notes and clean export-ready summaries."],
-  ["MYOB-ready Workflow", "Built for trade/service businesses that need cleaner invoice and payment sync workflows."],
+  ["AI Work Queue", "Churvox prepares assignments, reminders, follow-ups and invoice-ready actions for owner review."],
+  ["Smart Hub", "A daily command centre showing urgent jobs, crew, cashflow, proof and admin that needs action."],
+  ["Jobs + Dispatch", "Create work, assign crew, track progress, capture notes and keep the run sheet moving."],
+  ["Worker Proof", "Photos, notes, completion updates and job status flow back to the owner without messy chasing."],
+  ["Proof-to-Paid", "Finished jobs can become draft invoice actions with proof, notes and owner approval first."],
+  ["Quotes + Invoices", "Prepare quotes, invoices, reminders and follow-ups from one place instead of chasing admin."],
+  ["Clients + Sites", "Keep customer details, addresses, job history and billing context together."],
+  ["Payroll Handoff", "Approved hours and worker job history stay ready for payroll review and export-style handoff."],
+  ["MYOB-ready Workflow", "Built around service businesses that need cleaner invoice and payment sync workflows."],
 ];
 
 const trades = [
@@ -60,15 +76,16 @@ export default function PublicLandingPage() {
 
         <div className="public-hero-grid">
           <article className="public-hero-copy">
-            <p className="public-kicker">FOR TRADE & SERVICE BUSINESS OWNERS</p>
+            <p className="public-kicker">AI COMMAND CENTRE FOR TRADE & SERVICE OWNERS</p>
             <h1>
               AI runs the admin.
               <span>You approve.</span>
             </h1>
+
             <p className="public-lead">
-              Churvox is an AI command centre for jobs, crew, clients, quotes,
-              invoices, proof photos, reminders and payroll handoff. It finds what
-              needs doing, prepares the next move, and keeps you in control.
+              Churvox gives trade and service owners one place to run jobs, crew,
+              clients, quotes, invoices, proof photos, reminders and payroll handoff.
+              It finds what needs doing, prepares the next move, and keeps you in control.
             </p>
 
             <div className="public-actions">
@@ -77,9 +94,7 @@ export default function PublicLandingPage() {
             </div>
 
             <div className="public-trust-row">
-              <span>Approval-first AI</span>
-              <span>Built for mobile crews</span>
-              <span>No auto-send without approval</span>
+              {heroProof.map((item) => <span key={item}>{item}</span>)}
             </div>
           </article>
 
@@ -92,8 +107,9 @@ export default function PublicLandingPage() {
             </div>
 
             <div className="public-card-head">
-              <span>LIVE OPERATOR</span>
-              <strong>Today’s admin is ready for review.</strong>
+              <span>LIVE AI OPERATOR</span>
+              <strong>Today’s next moves are already prepared.</strong>
+              <p>Review the queue, approve the right move, and Churvox does the admin step.</p>
             </div>
 
             <div className="public-ai-stack">
@@ -103,7 +119,7 @@ export default function PublicLandingPage() {
               </div>
               <div>
                 <b>5</b>
-                <span>invoices ready</span>
+                <span>invoice actions ready</span>
               </div>
               <div>
                 <b>2</b>
@@ -122,11 +138,20 @@ export default function PublicLandingPage() {
             </div>
           </aside>
         </div>
+
+        <div className="public-hero-bottom">
+          {painPoints.map(([title, copy]) => (
+            <article key={title}>
+              <strong>{title}</strong>
+              <span>{copy}</span>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="public-strip" id="how-it-works">
         <div>
-          <strong>1. Churvox watches the work</strong>
+          <strong>1. Churvox watches the business</strong>
           <span>Jobs, crew, proof, invoices, quotes and follow-ups stay visible.</span>
         </div>
         <div>
@@ -142,10 +167,10 @@ export default function PublicLandingPage() {
       <section className="public-section" id="features">
         <div className="public-section-head">
           <p>WHAT CHURVOX RUNS</p>
-          <h2>One command centre instead of ten messy admin jobs.</h2>
+          <h2>The daily admin system your trade business has been missing.</h2>
           <span>
-            Designed for real trade/service owners who need the business moving,
-            not another confusing system to babysit.
+            Churvox is not just a job list. It is an AI operator that checks the business,
+            prepares admin, explains the next move, and waits for owner approval.
           </span>
         </div>
 
@@ -163,10 +188,10 @@ export default function PublicLandingPage() {
       <section className="public-proof" id="trades">
         <div>
           <p>BUILT FOR FIELD SERVICE</p>
-          <h2>For crews, jobs, sites, customers and proof-based billing.</h2>
+          <h2>For owners running crews, sites, customers and proof-based billing.</h2>
           <span>
-            Churvox is for businesses where work happens in the field and the
-            owner needs admin prepared before it becomes a problem.
+            Perfect for businesses where jobs happen in the field, workers need simple mobile tools,
+            and the owner needs proof, invoices and follow-ups prepared without chasing everyone.
           </span>
         </div>
 
@@ -176,8 +201,8 @@ export default function PublicLandingPage() {
       </section>
 
       <section className="public-final-cta">
-        <p>READY TO RUN ADMIN WITH AI?</p>
-        <h2>Give your business a command centre.</h2>
+        <p>READY TO STOP CHASING ADMIN?</p>
+        <h2>Give your business an AI command centre.</h2>
         <div>
           <a className="public-primary" href="/login">Start free trial</a>
           <a className="public-secondary" href="/login">Sign in</a>
