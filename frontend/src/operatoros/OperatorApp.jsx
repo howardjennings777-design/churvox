@@ -156,6 +156,9 @@ export default function OperatorApp() {
 }
 
 function OperatorOSCore() {
+  try {
+    document.documentElement.dataset.churvoxDashboardTheme = "option-b-smart-hub-live";
+  } catch {}
   const data = useOperatorData();
   const allowRoleSwitch = canSwitchRoleForTesting();
   const [role, setRoleRaw] = useState(() => normalizeRole(currentUserRole()) || "owner");

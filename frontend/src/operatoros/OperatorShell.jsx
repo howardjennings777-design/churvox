@@ -51,7 +51,7 @@ export default function OperatorShell({
   }
 
   return (
-    <div className="op-shell">
+    <div className={`op-shell op-view-${current || "hub"}`}>
       <aside className="op-sidebar">
         <button className="op-brand" onClick={() => setCurrent("hub")}>
           <FloatingLogo wordmark />
