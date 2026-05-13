@@ -1,0 +1,255 @@
+
+.force-login-page {
+  min-height: 100vh;
+  min-height: 100svh;
+  color: #f4fbf6;
+  background:
+    radial-gradient(circle at 18% 10%, rgba(103, 232, 249, 0.32), transparent 31%),
+    radial-gradient(circle at 78% 4%, rgba(34, 211, 238, 0.18), transparent 30%),
+    linear-gradient(135deg, #071a2b 0%, #0b2a42 46%, #0f3850 100%);
+}
+
+.force-login-shell {
+  width: min(1240px, calc(100% - 48px));
+  min-height: 100vh;
+  min-height: 100svh;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 440px);
+  gap: clamp(44px, 6vw, 98px);
+  align-items: center;
+  padding: 28px 0;
+  box-sizing: border-box;
+}
+
+.force-login-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  color: #fff;
+  text-decoration: none;
+  margin-bottom: 42px;
+}
+
+.force-login-brand span {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 21px;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.34), rgba(59, 130, 246, 0.18));
+  border: 1px solid rgba(165, 243, 252, 0.34);
+  box-shadow: 0 16px 60px rgba(103, 232, 249, 0.26);
+}
+
+.force-login-brand img {
+  width: 42px;
+  height: 42px;
+}
+
+.force-login-brand strong {
+  display: block;
+  font-size: 16px;
+  letter-spacing: 0.2em;
+}
+
+.force-login-brand small {
+  display: block;
+  margin-top: 2px;
+  color: rgba(207, 250, 254, 0.76);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+}
+
+.force-login-copy > p {
+  margin: 0 0 15px;
+  color: #67e8f9;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+}
+
+.force-login-copy h1 {
+  max-width: 790px;
+  margin: 0;
+  color: #fff;
+  font-size: clamp(54px, 6vw, 92px);
+  line-height: 0.9;
+  letter-spacing: -0.075em;
+}
+
+.force-login-copy > span {
+  display: block;
+  max-width: 720px;
+  margin-top: 22px;
+  color: rgba(236, 254, 255, 0.78);
+  font-size: 18px;
+  font-weight: 760;
+  line-height: 1.5;
+}
+
+.force-login-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.force-login-pills b {
+  padding: 11px 14px;
+  border-radius: 999px;
+  color: #062033;
+  background: linear-gradient(135deg, #f3fffb 0%, #bdfcff 42%, #67e8f9 100%);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.force-login-card {
+  display: grid;
+  gap: 13px;
+  width: 100%;
+  padding: 30px;
+  box-sizing: border-box;
+  border-radius: 34px;
+  border: 1px solid rgba(165, 243, 252, 0.28);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(34, 211, 238, 0.2), transparent 34%),
+    linear-gradient(180deg, rgba(26, 91, 124, 0.86), rgba(13, 43, 67, 0.78));
+  box-shadow:
+    0 44px 140px rgba(0, 0, 0, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+}
+
+.force-login-card > img {
+  width: 56px;
+  height: 56px;
+}
+
+.force-login-card > p {
+  margin: 6px 0 0;
+  color: #67e8f9;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.force-login-card h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 42px;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.force-login-card > span {
+  color: rgba(236, 254, 255, 0.72);
+  font-size: 14px;
+  font-weight: 760;
+  line-height: 1.4;
+}
+
+.force-login-card label {
+  display: grid;
+  gap: 7px;
+}
+
+.force-login-card label small {
+  color: rgba(236, 254, 255, 0.8);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.force-login-card input {
+  width: 100%;
+  min-height: 52px;
+  box-sizing: border-box;
+  border: 1px solid rgba(165, 243, 252, 0.24);
+  border-radius: 16px;
+  background: rgba(5, 28, 45, 0.72);
+  color: #f4fbf6;
+  padding: 0 15px;
+  outline: none;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.force-login-card input:focus {
+  border-color: rgba(103, 232, 249, 0.9);
+  box-shadow: 0 0 0 3px rgba(103, 232, 249, 0.15);
+}
+
+.force-login-card button {
+  min-height: 54px;
+  margin-top: 6px;
+  border: 0;
+  border-radius: 16px;
+  color: #062033;
+  background: linear-gradient(135deg, #f3fffb 0%, #bdfcff 42%, #67e8f9 100%);
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.force-login-card button:disabled {
+  opacity: 0.68;
+  cursor: not-allowed;
+}
+
+.force-login-error {
+  padding: 12px 14px;
+  border-radius: 16px;
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.26);
+  border: 1px solid rgba(248, 113, 113, 0.24);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.force-login-card footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.force-login-card footer a {
+  color: #bdfcff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+@media (max-width: 900px) {
+  .force-login-shell {
+    grid-template-columns: 1fr;
+    width: min(100% - 28px, 1180px);
+    min-height: auto;
+  }
+
+  .force-login-copy h1 {
+    font-size: 44px;
+  }
+
+  .force-login-brand {
+    margin-bottom: 28px;
+  }
+}
+
+@media (max-width: 560px) {
+  .force-login-shell {
+    width: min(100% - 24px, 1180px);
+  }
+
+  .force-login-brand small {
+    display: none;
+  }
+
+  .force-login-card {
+    padding: 22px;
+    border-radius: 28px;
+  }
+}
