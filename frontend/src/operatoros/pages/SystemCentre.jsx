@@ -2,7 +2,7 @@ import { useState } from "react";
 import { apiFetch, saveOperatorDraft } from "../api";
 import { PLAN_TIERS, SMS_PACKS } from "../dataHooks";
 
-function StatusPill({ children, tone = "info" }) {
+function Pill({ children, tone = "info" }) {
   return <span className={`op-clean-pill ${tone}`}>{children}</span>;
 }
 
@@ -11,7 +11,7 @@ function SummaryCard({ label, value, note, tone }) {
     <article className="op-clean-summary-card">
       <small>{label}</small>
       <strong>{value}</strong>
-      <StatusPill tone={tone}>{note}</StatusPill>
+      <Pill tone={tone}>{note}</Pill>
     </article>
   );
 }
@@ -92,11 +92,11 @@ export default function SystemCentre({ data }) {
     <main className="op-workspace op-clean-system-page">
       <section className="op-clean-hero">
         <div>
-          <p>SYSTEM CENTRE</p>
+          <p>System Centre</p>
           <h1>Plans, billing and integrations.</h1>
           <span>
-            Keep business setup calm and clear. Owner approval stays in control of plan changes,
-            SMS credits, MYOB connection and user blocks.
+            Clean owner controls for plans, SMS credits, MYOB and user blocks.
+            No confusing dark tables. No hidden AI spend. Everything is approval-first.
           </span>
         </div>
 
@@ -130,7 +130,7 @@ export default function SystemCentre({ data }) {
           tone={myobConnected ? "good" : "info"}
         />
         <SummaryCard
-          label="Enterprise blocks"
+          label="Extra blocks"
           value="$100"
           note="per extra 50 users"
           tone="info"
@@ -140,9 +140,9 @@ export default function SystemCentre({ data }) {
       <section className="op-clean-panel">
         <header>
           <div>
-            <p>PLANS</p>
+            <p>Plans</p>
             <h2>Choose the right operating level.</h2>
-            <span>Simple plan cards. Clear limits. No confusing dark table layout.</span>
+            <span>Clear cards, clear limits, clean owner approval.</span>
           </div>
         </header>
 
@@ -154,7 +154,7 @@ export default function SystemCentre({ data }) {
               <article key={plan.id} className={active ? "active" : ""}>
                 <div className="op-plan-top">
                   <p>{plan.name}</p>
-                  {active ? <StatusPill tone="good">Current</StatusPill> : null}
+                  {active ? <Pill tone="good">Current</Pill> : null}
                 </div>
 
                 <h3>${plan.price}<small>/mo</small></h3>
@@ -179,7 +179,7 @@ export default function SystemCentre({ data }) {
         <article className="op-clean-panel">
           <header>
             <div>
-              <p>SMS CREDITS</p>
+              <p>SMS credits</p>
               <h2>{smsBalance} credits</h2>
               <span>Buy packs only when the owner approves.</span>
             </div>
@@ -207,7 +207,10 @@ export default function SystemCentre({ data }) {
 
           <div className="op-clean-info-card">
             <strong>Plan rule</strong>
-            <span>Solo and Team do not include MYOB. Pro can use MYOB as an optional add-on. Enterprise includes MYOB by default.</span>
+            <span>
+              Solo and Team do not include MYOB. Pro can use MYOB as an optional add-on.
+              Enterprise includes MYOB by default.
+            </span>
           </div>
 
           <button type="button" onClick={reviewMyob}>
@@ -219,7 +222,7 @@ export default function SystemCentre({ data }) {
       <section className="op-clean-panel">
         <header>
           <div>
-            <p>OWNER GUARDRAILS</p>
+            <p>Owner guardrails</p>
             <h2>AI can prepare, but not spend or sync without approval.</h2>
           </div>
         </header>
