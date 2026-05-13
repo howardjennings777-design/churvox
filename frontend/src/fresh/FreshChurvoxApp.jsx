@@ -3135,21 +3135,24 @@ function Login() {
   }
 
   return (
-    <main className="op-login">
+    <main className="op-login cx-login-split-shell">
+      <section className="cx-login-story">
+        <p>AI COMMAND CENTRE FOR TRADE BUSINESSES</p>
+        <h1>Run jobs, crew and admin from one calm place.</h1>
+        <span>
+          Churvox helps trade and service owners manage jobs, clients, quotes, invoices, proof photos, reminders and daily admin. AI prepares the work; you review and approve before anything important happens.
+        </span>
+        <div>
+          <small>Jobs + crew</small>
+          <small>Quotes + invoices</small>
+          <small>Proof-to-paid</small>
+          <small>AI approval queue</small>
+        </div>
+      </section>
       <form onSubmit={submit}>
         <ChurvoxLogo />
-        <h1>Open Churvox.</h1>
-        <p>The AI command centre for trade and service businesses.
-<div className="login-business-mini-copy">
-  <strong>Run jobs, crew and admin from one place.</strong>
-  <span>Churvox helps owners manage jobs, clients, quotes, invoices, proof photos and daily admin — with AI preparing the work for approval.</span>
-  <div>
-    <small>Jobs + crew</small>
-    <small>Quotes + invoices</small>
-    <small>AI approval queue</small>
-  </div>
-</div>
-</p>
+        <h1>Welcome to Churvox</h1>
+        <p>Sign in to your AI command centre.</p>
         <input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
         <input placeholder="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         <button type="submit">Sign in</button>
