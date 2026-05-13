@@ -13304,6 +13304,28 @@ async def buy_sms_pack(payload: dict = Body(default={}), current_user: dict = De
     }
 setup_ai_operator_routes(api_router, db, JWT_SECRET, JWT_ALGORITHM)
 setup_ai_operator_power_routes(api_router, db, JWT_SECRET, JWT_ALGORITHM)
+
+# ===================== AI OPERATOR ROUTE REGISTRATION =====================
+# Keep this before app.include_router(api_router) so Render definitely serves:
+# /api/ai/operator/plan
+# /api/ai/operator/actions
+# /api/ai/operator/actions/{id}/approve
+# /api/ai/operator/actions/{id}/reject
+# /api/ai/operator/actions/{id}/edit
+# /api/ai/operator/activity
+try:
+    setup_ai_operator_routes(api_router, db, JWT_SECRET, JWT_ALGORITHM)
+    logger.info("AI operator basic routes registered")
+except Exception as exc:
+    logger.warning("AI operator basic route registration skipped: %s", exc)
+
+try:
+    setup_ai_operator_power_routes(api_router, db, JWT_SECRET, JWT_ALGORITHM)
+    logger.info("AI operator power routes registered")
+except Exception as exc:
+    logger.warning("AI operator power route registration skipped: %s", exc)
+# =================== END AI OPERATOR ROUTE REGISTRATION ===================
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
