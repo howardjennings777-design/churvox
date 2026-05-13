@@ -5,6 +5,7 @@ import "./operatorLaptopPolish.css";
 import "./operatorSidebarFinal.css";
 import FreshChurvoxApp from "../fresh/FreshChurvoxApp";
 import PublicLandingPage from "./pages/PublicLandingPage";
+import PublicSignupPage from "./pages/PublicSignupPage";
 import OperatorShell from "./OperatorShell";
 import { useOperatorData } from "./dataHooks";
 import { canSwitchRoleForTesting, currentUserName, currentUserRole, normalizeRole, readToken } from "./api";
@@ -122,9 +123,14 @@ function pathForKey(key) {
 export default function OperatorApp() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
   const publicPaths = new Set(["/", "/features", "/how-it-works", "/trades"]);
+  const signupPaths = new Set(["/signup", "/register"]);
 
   if (publicPaths.has(path) && !readToken()) {
     return <PublicLandingPage />;
+  }
+
+  if (signupPaths.has(path) && !readToken()) {
+    return <PublicSignupPage />;
   }
 
   return shouldUseLegacyApp() ? <FreshChurvoxApp /> : <OperatorOSCore />;

@@ -87,7 +87,7 @@ export default function PublicLandingPage() {
             </p>
 
             <div className="public-actions">
-              <a className="public-primary" href="/login">Start free trial</a>
+              <a className="public-primary" href="/signup">Start free trial</a>
               <a className="public-secondary" href="/login">Sign in</a>
             </div>
 
@@ -186,7 +186,7 @@ export default function PublicLandingPage() {
         <p>READY TO STOP CHASING ADMIN?</p>
         <h2>Give your business an AI command centre.</h2>
         <div>
-          <a className="public-primary" href="/login">Start free trial</a>
+          <a className="public-primary" href="/signup">Start free trial</a>
           <a className="public-secondary" href="/login">Sign in</a>
         </div>
       </section>
