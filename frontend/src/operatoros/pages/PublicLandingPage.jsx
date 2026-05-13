@@ -73,7 +73,7 @@ export default function PublicLandingPage() {
             <div className="chx-next">
               <small>NEXT BEST MOVE</small>
               <strong>Assign Sam to 14 King Street</strong>
-              <p>Best fit by area, workload and job type. Churvox only applies this after owner approval.</p>
+              <p>Best fit by area, workload and job type. Churvox only applies the move after owner approval.</p>
               <button type="button">Approve move</button>
             </div>
           </aside>

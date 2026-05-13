@@ -4,6 +4,7 @@ import "./operatorDesignFinal.css";
 import "./operatorLaptopPolish.css";
 import "./operatorSidebarFinal.css";
 import FreshChurvoxApp from "../fresh/FreshChurvoxApp";
+import ForcedLoginPage from "./pages/ForcedLoginPage";
 import PublicContactPage from "./pages/PublicContactPage";
 import PublicLandingPage from "./pages/PublicLandingPage";
 import PublicSignupPage from "./pages/PublicSignupPage";
