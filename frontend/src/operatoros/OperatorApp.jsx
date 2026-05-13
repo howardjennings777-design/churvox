@@ -4,6 +4,7 @@ import "./operatorDesignFinal.css";
 import "./operatorLaptopPolish.css";
 import "./operatorSidebarFinal.css";
 import "./operatorLightTheme.css";
+import "./pages/PublicSite.css";
 import FreshChurvoxApp from "../fresh/FreshChurvoxApp";
 import ForcedLoginPage from "./pages/ForcedLoginPage";
 import PublicContactPage from "./pages/PublicContactPage";
@@ -93,6 +94,9 @@ const pathToKey = {
 
 function shouldUseLegacyApp() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  try {
+    document.documentElement.dataset.churvoxPublicTheme = CHURVOX_OPTION_B_PUBLIC_BUILD;
+  } catch {}
 
   const exactLegacyPaths = new Set([
     "/forgot-password",
@@ -120,8 +124,13 @@ function pathForKey(key) {
   return baseNav.find((item) => item.key === key)?.path || "/dashboard";
 }
 
+const CHURVOX_OPTION_B_PUBLIC_BUILD = "option-b-clean-teal-live";
+
 export default function OperatorApp() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  try {
+    document.documentElement.dataset.churvoxPublicTheme = CHURVOX_OPTION_B_PUBLIC_BUILD;
+  } catch {}
 
   if (path === "/logout" || path === "/signout" || path === "/log-out") {
     clearChurvoxAuth();
@@ -133,15 +142,15 @@ export default function OperatorApp() {
     return null;
   }
 
-  if (path === "/login" || path === "/admin/login" || path === "/owner/login") {
-    return <ForcedLoginPage />;
-  }
-
-  if (["/", "/features", "/how-it-works", "/trades"].includes(path)) return <PublicLandingPage />;
-  if (path === "/pricing") return <PublicPricingPage />;
+  const optionBPublicRoutes = new Set(["/", "/features", "/how-it-works", "/trades"]);
+  if (optionBPublicRoutes.has(path)) return <PublicLandingPage />;
+  if (path === "/pricing" || path === "/plans-public") return <PublicPricingPage />;
   if (path === "/demo" || path === "/try-demo") return <PublicDemoPage />;
   if (path === "/contact" || path === "/email") return <PublicContactPage />;
   if (path === "/signup" || path === "/register") return <PublicSignupPage />;
+  if (path === "/login" || path === "/admin/login" || path === "/owner/login") {
+    return <ForcedLoginPage />;
+  }
 
   return shouldUseLegacyApp() ? <FreshChurvoxApp /> : <OperatorOSCore />;
 }
