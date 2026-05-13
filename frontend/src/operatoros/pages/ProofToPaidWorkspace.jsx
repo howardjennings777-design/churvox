@@ -14,14 +14,31 @@ export default function ProofToPaidWorkspace({ data }) {
     setBusy(true);
     setNotice("");
 
+    const amount = Number(job.total || job.amount || job.price || job.job_price || 0);
+    const customerName = clientOf(job);
+    const description =
+      job.ai_invoice_description ||
+      job.completion_summary ||
+      job.worker_notes ||
+      job.description ||
+      `Completed work for ${customerName}`;
+
     const payload = {
       job_id: job.id || job._id,
       source_job_id: job.id || job._id,
-      client_name: clientOf(job),
-      customer_name: clientOf(job),
-      amount: Number(job.total || job.amount || job.price || 0),
-      total: Number(job.total || job.amount || job.price || 0),
-      description: job.ai_invoice_description || job.completion_summary || job.worker_notes || job.description || `Completed work for ${clientOf(job)}`,
+      client_id: job.client_id || job.customer_id || "",
+      client_name: customerName,
+      customer_name: customerName,
+      customer_email: job.customer_email || job.client_email || job.email || "",
+      address: job.address || job.site_address || job.job_address || "",
+      description,
+      subtotal: amount,
+      amount,
+      total: amount,
+      gst_rate: Number(job.gst_rate || 15),
+      pricing_type: job.pricing_type || "fixed",
+      hourly_rate: Number(job.hourly_rate || 0),
+      hours_worked: Number(job.hours_worked || job.total_hours || 0),
       status: "draft",
       created_by_ai: true,
       source: "proof_to_paid",
