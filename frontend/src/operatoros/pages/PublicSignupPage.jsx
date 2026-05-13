@@ -139,6 +139,7 @@ export default function PublicSignupPage() {
               <span>Start without the admin mess.</span>
             </h1>
             <p className="signup-lead">
+              14-day free trial. 
               Create your owner account and let Churvox prepare jobs, crew actions,
               quote follow-ups, invoice review, proof photos and daily admin from one place.
             </p>
