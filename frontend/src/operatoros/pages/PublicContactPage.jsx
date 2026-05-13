@@ -1,20 +1,5 @@
+import "./PublicSite.css";
 
-import "./PublicContactPage.css";
-export default function PublicContactPage() {
-  return (
-    <main className="contactpub">
-      <section>
-        <a className="contactpub-brand" href="/"><img src="/brand/churvox-holo-c.svg" alt="" /><strong>CHURVOX</strong></a>
-        <div className="contactpub-grid">
-          <article>
-            <p>EMAIL ONLY FOR NOW</p>
-            <h1>Talk to Churvox by email.</h1>
-            <span>We are keeping communication simple while Churvox is being finished. For questions, setup help, MYOB-ready workflow discussion or early customer interest, email us directly.</span>
-            <div className="contactpub-actions"><a href="mailto:hello@churvox.com?subject=Churvox enquiry">Email hello@churvox.com</a><a href="/demo">Try live demo</a></div>
-          </article>
-          <aside><strong>What to include</strong><ul><li>Your business name</li><li>Trade or service type</li><li>Team size</li><li>What you need: jobs, workers, photos, invoices, MYOB, payroll or AI approvals</li></ul></aside>
-        </div>
-      </section>
-    </main>
-  );
-}
+function Nav(){return <header className="cvx-nav"><a className="cvx-brand" href="/"><span><img src="/brand/churvox-holo-c.svg" alt="" /></span><div><strong>CHURVOX</strong><small>OPERATOR OS</small></div></a><nav><a href="/">Home</a><a href="/pricing">Pricing</a><a href="/demo">Try live demo</a><a href="/login">Sign in</a></nav></header>}
+
+export default function PublicContactPage(){return <main className="cvx-site"><Nav/><section className="cvx-page-hero"><p className="cvx-kicker">EMAIL US</p><h1>Talk to Churvox by email.</h1><p>We are keeping communication simple while Churvox is being finished. Send what you need help with and we will reply by email.</p><div className="cvx-actions"><a className="cvx-primary" href="mailto:hello@churvox.com">Email hello@churvox.com</a><a className="cvx-secondary" href="/demo">Try live demo</a></div></section><section className="cvx-section"><h2>What to include</h2><div className="cvx-feature-grid"><article><strong>Your trade</strong><span>Tell us what kind of work your business does.</span></article><article><strong>Your crew size</strong><span>Let us know how many workers or admins you have.</span></article><article><strong>Your biggest pain</strong><span>Jobs, invoices, proof photos, follow-ups, MYOB or payroll handoff.</span></article><article><strong>Your timeline</strong><span>Tell us whether you are testing now or preparing for launch later.</span></article></div></section></main>}
