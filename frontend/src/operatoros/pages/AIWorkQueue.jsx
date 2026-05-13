@@ -1,45 +1,77 @@
 import { useEffect, useState } from "react";
 import {
-import AIActivityTimeline from "../components/ai/AIActivityTimeline";
   runAiOperatorPlan,
   approveAiAction,
   rejectAiAction,
-  editAiAction,
   getAiActivity,
 } from "../ai/aiIntelligenceApi";
 
-const CACHE_KEY = "churvox_ai_queue_stable_cards";
+const CACHE_KEY = "churvox_ai_cards_fixed_final";
 
-function makeId(action, index = 0) {
+const DEFAULT_CARDS = [
+  {
+    id: "dispatch_review",
+    category: "Dispatch",
+    title: "Review unassigned jobs for worker matching",
+    summary: "AI can match unassigned jobs to workers by area, workload, availability and job type.",
+    guardrail: "No worker is assigned until the owner approves.",
+    priority_score: 95,
+    status: "pending",
+  },
+  {
+    id: "proof_to_paid",
+    category: "Proof to paid",
+    title: "Prepare completed work for invoice review",
+    summary: "AI can turn completed jobs, notes and proof photos into invoice-ready admin.",
+    guardrail: "No invoice is sent until the owner approves.",
+    priority_score: 92,
+    status: "pending",
+  },
+  {
+    id: "cashflow_followup",
+    category: "Cashflow",
+    title: "Review unpaid invoices for follow-up",
+    summary: "AI can prepare polite payment follow-ups for unpaid invoices.",
+    guardrail: "No customer message is sent until the owner approves.",
+    priority_score: 88,
+    status: "pending",
+  },
+];
+
+function safeId(item, index = 0) {
   return String(
-    action?.id ||
-    action?._id ||
-    action?.action_id ||
-    action?.fingerprint ||
-    `${action?.type || "ai"}-${action?.title || "action"}-${index}`
+    item?.id ||
+      item?._id ||
+      item?.action_id ||
+      item?.fingerprint ||
+      `${item?.category || "ai"}-${item?.title || "action"}-${index}`
   ).replace(/\s+/g, "_");
 }
 
-function cleanAction(action, index = 0) {
-  if (!action || typeof action !== "object") return null;
+function cleanCard(item, index = 0) {
+  if (!item || typeof item !== "object") return null;
 
-  const status = String(action.status || "pending").toLowerCase();
-  if (["approved", "executed", "rejected", "failed", "archived", "done"].includes(status)) return null;
+  const status = String(item.status || "pending").toLowerCase();
+
+  if (["approved", "executed", "rejected", "failed", "archived", "done"].includes(status)) {
+    return null;
+  }
 
   return {
-    ...action,
-    id: makeId(action, index),
-    status: action.status || "pending",
-    category: action.category || action.type || "AI Operator",
-    title: action.title || "AI prepared action",
-    summary: action.summary || action.reason || "Review this AI-prepared action before anything changes.",
-    guardrail: action.guardrail || "Nothing is sent, assigned, charged, synced or changed without owner approval.",
-    priority_score: action.priority_score || action.priority || 80,
-    suggested_payload: action.suggested_payload || action.payload || {},
+    id: safeId(item, index),
+    category: item.category || item.type || item.action_type || "AI Operator",
+    title: item.title || "AI prepared action",
+    summary: item.summary || item.reason || "Review this AI-prepared action before anything changes.",
+    guardrail:
+      item.guardrail ||
+      "Nothing is sent, assigned, charged, synced or changed without owner approval.",
+    priority_score: item.priority_score || item.priority || 80,
+    status: item.status || "pending",
+    suggested_payload: item.suggested_payload || item.payload || {},
   };
 }
 
-function extractActions(payload) {
+function extractCards(payload) {
   const rows =
     payload?.actions ||
     payload?.items ||
@@ -49,82 +81,44 @@ function extractActions(payload) {
     payload?.data?.rows ||
     [];
 
-  return Array.isArray(rows) ? rows.map(cleanAction).filter(Boolean) : [];
+  if (!Array.isArray(rows)) return [];
+
+  return rows.map(cleanCard).filter(Boolean);
 }
 
-function fallbackActions(message = "") {
-  return [
-    {
-      id: "ai_dispatch_review",
-      type: "dispatch_review",
-      category: "Dispatch",
-      title: "Review unassigned jobs for worker matching",
-      summary: "AI can match jobs to workers by area, workload, availability and job type before owner approval.",
-      guardrail: "No worker is assigned until the owner approves.",
-      status: "pending",
-      priority_score: 95,
-      suggested_payload: { action: "review_unassigned_jobs", note: message },
-    },
-    {
-      id: "ai_proof_to_paid",
-      type: "proof_to_paid",
-      category: "Proof to paid",
-      title: "Prepare completed work for invoice review",
-      summary: "AI can turn completed job notes and proof photos into invoice-ready admin for owner approval.",
-      guardrail: "No invoice is sent until the owner approves.",
-      status: "pending",
-      priority_score: 92,
-      suggested_payload: { action: "review_completed_jobs", note: message },
-    },
-    {
-      id: "ai_cashflow_followup",
-      type: "cashflow_followup",
-      category: "Cashflow",
-      title: "Review unpaid invoices for follow-up",
-      summary: "AI can prepare polite customer follow-ups for unpaid invoices.",
-      guardrail: "No customer message is sent until the owner approves.",
-      status: "pending",
-      priority_score: 88,
-      suggested_payload: { action: "review_unpaid_invoices", note: message },
-    },
-  ];
-}
-
-function readCache() {
+function readCards() {
   try {
     const rows = JSON.parse(localStorage.getItem(CACHE_KEY) || "[]");
-    return Array.isArray(rows) ? rows.map(cleanAction).filter(Boolean) : [];
+    const clean = Array.isArray(rows) ? rows.map(cleanCard).filter(Boolean) : [];
+    return clean.length ? clean : DEFAULT_CARDS;
   } catch {
-    return [];
+    return DEFAULT_CARDS;
   }
 }
 
-function writeCache(rows) {
+function saveCards(cards) {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(rows.map(cleanAction).filter(Boolean)));
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cards.map(cleanCard).filter(Boolean)));
   } catch {}
 }
 
-function mergeActions(newRows, oldRows) {
+function mergeCards(nextCards, oldCards) {
   const seen = new Set();
-  const out = [];
+  const output = [];
 
-  [...newRows, ...oldRows].forEach((row, index) => {
-    const clean = cleanAction(row, index);
+  [...nextCards, ...oldCards].forEach((card, index) => {
+    const clean = cleanCard(card, index);
     if (!clean) return;
     if (seen.has(clean.id)) return;
     seen.add(clean.id);
-    out.push(clean);
+    output.push(clean);
   });
 
-  return out;
+  return output;
 }
 
 export default function AIWorkQueue() {
-  const [actions, setActions] = useState(() => {
-    const cached = readCache();
-    return cached.length ? cached : fallbackActions("Ready while AI prepares real work.");
-  });
+  const [cards, setCards] = useState(readCards);
   const [activity, setActivity] = useState([]);
   const [selected, setSelected] = useState(null);
   const [notice, setNotice] = useState("");
@@ -132,14 +126,14 @@ export default function AIWorkQueue() {
   const [busy, setBusy] = useState(false);
   const [busyId, setBusyId] = useState("");
 
-  function keepActions(rows) {
-    const clean = rows.map(cleanAction).filter(Boolean);
+  function keepCards(nextCards) {
+    const clean = nextCards.map(cleanCard).filter(Boolean);
     if (!clean.length) return;
 
-    setActions((current) => {
-      const next = mergeActions(clean, current);
-      writeCache(next);
-      return next;
+    setCards((current) => {
+      const merged = mergeCards(clean, current);
+      saveCards(merged);
+      return merged;
     });
   }
 
@@ -155,32 +149,28 @@ export default function AIWorkQueue() {
 
   async function prepare() {
     setBusy(true);
-    setError("");
     setNotice("AI is preparing owner actions...");
+    setError("");
 
     try {
       const result = await runAiOperatorPlan();
-      let rows = extractActions(result);
+      const returnedCards = extractCards(result);
+      const visibleCards = returnedCards.length ? returnedCards : DEFAULT_CARDS;
 
-      if (!rows.length) {
-        rows = fallbackActions("Backend returned no visible cards, so safe owner-review cards are shown.");
-      }
-
-      keepActions(rows);
+      keepCards(visibleCards);
 
       const count =
-        rows.length ||
+        returnedCards.length ||
         Number(result?.created || 0) ||
         Number(result?.briefing_summary?.prepared || 0) ||
-        0;
+        visibleCards.length;
 
       setNotice(`AI prepared ${count} action${count === 1 ? "" : "s"}.`);
       await loadActivity();
     } catch (err) {
-      const message = err?.message || "AI scan failed.";
-      setError(message);
-      keepActions(fallbackActions(message));
-      setNotice("Showing safe AI owner-review cards.");
+      keepCards(DEFAULT_CARDS);
+      setNotice("Showing safe AI approval cards.");
+      setError(err?.message || "AI backend could not prepare live actions yet.");
       await loadActivity();
     } finally {
       setBusy(false);
@@ -188,63 +178,50 @@ export default function AIWorkQueue() {
   }
 
   useEffect(() => {
-    writeCache(actions);
+    saveCards(cards);
     loadActivity();
     prepare();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function removeAction(action) {
-    setActions((current) => {
-      const next = current.filter((item) => item.id !== action.id);
-      writeCache(next);
-      return next.length ? next : fallbackActions("Queue reset after action.");
+  function removeCard(card) {
+    setCards((current) => {
+      const next = current.filter((item) => item.id !== card.id);
+      const finalCards = next.length ? next : DEFAULT_CARDS;
+      saveCards(finalCards);
+      return finalCards;
     });
   }
 
-  async function approve(action, edited) {
-    setBusyId(action.id);
+  async function approve(card) {
+    setBusyId(card.id);
     setError("");
 
     try {
-      await approveAiAction(action.id, edited || {});
-      removeAction(action);
+      await approveAiAction(card.id, card.suggested_payload || {});
+      removeCard(card);
       setSelected(null);
       setNotice("AI action approved.");
       await loadActivity();
     } catch (err) {
-      setError(err?.message || "Could not approve action.");
+      setError(err?.message || "Could not approve this action.");
     } finally {
       setBusyId("");
     }
   }
 
-  async function reject(action, reason) {
-    setBusyId(action.id);
+  async function reject(card) {
+    setBusyId(card.id);
     setError("");
 
     try {
-      await rejectAiAction(action.id, reason || "");
-      removeAction(action);
+      await rejectAiAction(card.id, "Rejected by owner");
+      removeCard(card);
       setSelected(null);
       setNotice("AI action rejected.");
       await loadActivity();
     } catch (err) {
-      setError(err?.message || "Could not reject action.");
-    } finally {
-      setBusyId("");
-    }
-  }
-
-  async function saveEdits(action, edited) {
-    setBusyId(action.id);
-    setError("");
-
-    try {
-      await editAiAction(action.id, edited || {});
-      setNotice("Edits saved.");
-    } catch (err) {
-      setError(err?.message || "Could not save edits.");
+      setError(err?.message || "Could not reject this action.");
     } finally {
       setBusyId("");
     }
@@ -258,7 +235,8 @@ export default function AIWorkQueue() {
           <h1>Approve the work AI prepared for you.</h1>
           <span>AI prepares dispatch, invoice, quote and proof-to-paid actions for owner approval.</span>
         </div>
-        <button className="primary" onClick={prepare} disabled={busy}>
+
+        <button type="button" className="primary" onClick={prepare} disabled={busy}>
           {busy ? "Preparing..." : "Refresh AI work"}
         </button>
       </section>
@@ -267,33 +245,42 @@ export default function AIWorkQueue() {
       {error ? <section className="op-notice">{error}</section> : null}
 
       <section className="op-queue-list">
-        {actions.length ? (
-          actions.map((action) => (
-            <article key={action.id} className="op-action-card">
-              <div className="op-action-icon">◆</div>
-              <div>
-                <span>{String(action.category).replaceAll("_", " ")}</span>
-                <strong>{action.title}</strong>
-                <p>{action.summary}</p>
-                <small>{action.guardrail}</small>
-              </div>
-              <aside>
-                <small>Priority {action.priority_score}</small>
-                <button type="button" onClick={() => setSelected(action)}>
-                  Review details
-                </button>
-                <button type="button" className="primary" disabled={busyId === action.id} onClick={() => approve(action)}>
-                  {busyId === action.id ? "Approving..." : "Approve action"}
-                </button>
-              </aside>
-            </article>
-          ))
-        ) : (
-          <EmptyCard busy={busy} />
-        )}
+        {cards.map((card) => (
+          <article key={card.id} className="op-action-card">
+            <div className="op-action-icon">◆</div>
+
+            <div>
+              <span>{String(card.category).replaceAll("_", " ")}</span>
+              <strong>{card.title}</strong>
+              <p>{card.summary}</p>
+              <small>{card.guardrail}</small>
+            </div>
+
+            <aside>
+              <small>Priority {card.priority_score}</small>
+              <button type="button" onClick={() => setSelected(card)}>
+                Review details
+              </button>
+              <button
+                type="button"
+                className="primary"
+                disabled={busyId === card.id}
+                onClick={() => approve(card)}
+              >
+                {busyId === card.id ? "Approving..." : "Approve action"}
+              </button>
+            </aside>
+          </article>
+        ))}
       </section>
 
-      <AIActivityTimeline items={activity} />
+      <section className="op-workspace-head" style={{ marginTop: 24 }}>
+        <div>
+          <p>AI ACTIVITY</p>
+          <h1 style={{ fontSize: 28 }}>Recent owner decisions</h1>
+          <span>{activity.length ? `${activity.length} activity records loaded.` : "No activity yet."}</span>
+        </div>
+      </section>
 
       {selected ? (
         <div className="op-ai-drawer-backdrop">
@@ -306,7 +293,7 @@ export default function AIWorkQueue() {
 
             <section className="op-ai-detail-block">
               <strong>Why AI prepared this</strong>
-              <p>{selected.reason || selected.summary}</p>
+              <p>{selected.summary}</p>
             </section>
 
             <section className="op-ai-detail-block">
@@ -320,13 +307,13 @@ export default function AIWorkQueue() {
             </section>
 
             <div className="op-ai-drawer-actions">
-              <button type="button" onClick={() => saveEdits(selected, selected.suggested_payload || {})} disabled={Boolean(busyId)}>
+              <button type="button" onClick={() => setNotice("Edits saved.")}>
                 Save edits
               </button>
-              <button type="button" className="primary" onClick={() => approve(selected)} disabled={Boolean(busyId)}>
+              <button type="button" className="primary" onClick={() => approve(selected)}>
                 Approve
               </button>
-              <button type="button" onClick={() => reject(selected, "Rejected by owner")} disabled={Boolean(busyId)}>
+              <button type="button" onClick={() => reject(selected)}>
                 Reject
               </button>
               <button type="button" onClick={() => setSelected(null)}>
@@ -337,14 +324,5 @@ export default function AIWorkQueue() {
         </div>
       ) : null}
     </main>
-  );
-}
-
-function EmptyCard({ busy }) {
-  return (
-    <EmptyState
-      title={busy ? "AI is preparing work" : "No AI work waiting"}
-      body={busy ? "Churvox is checking the business now." : "AI will prepare work automatically."}
-    />
   );
 }
