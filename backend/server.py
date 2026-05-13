@@ -429,6 +429,36 @@ PLAN_PRICE_IDS = {
 # Create the main app
 app = FastAPI(title="Churvox API")
 
+# ===================== CHURVOX CORS SAFETY PATCH =====================
+CHURVOX_ALLOWED_ORIGINS = [
+    "https://www.churvox.com",
+    "https://churvox.com",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+]
+
+try:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=CHURVOX_ALLOWED_ORIGINS,
+        allow_origin_regex=r"https://.*\\.churvox\\.com",
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["*"],
+        expose_headers=["*"],
+    )
+    logger.info("Churvox CORS safety middleware registered")
+except Exception as exc:
+    logger.warning("Churvox CORS safety middleware registration skipped: %s", exc)
+
+@app.options("/{rest_of_path:path}")
+async def churvox_options_preflight(rest_of_path: str):
+    return {"ok": True}
+# =================== END CHURVOX CORS SAFETY PATCH ===================
+
+
 ALLOWED_ORIGINS = [
     "https://www.churvox.com",
     "https://churvox.com",
@@ -457,6 +487,28 @@ BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", "https://grassley-back
 
 
 api_router = APIRouter(prefix="/api")
+
+# ===================== CHURVOX SAFE INTEGRATION STATUS ROUTES =====================
+@api_router.get("/myob/status")
+async def churvox_myob_status():
+    return {
+        "connected": False,
+        "enabled": False,
+        "status": "not_connected",
+        "message": "MYOB integration is not connected yet.",
+    }
+
+@api_router.get("/sms/balance")
+async def churvox_sms_balance():
+    return {
+        "balance": 0,
+        "credits": 0,
+        "enabled": False,
+        "status": "coming_soon",
+        "message": "SMS is coming soon.",
+    }
+# =================== END CHURVOX SAFE INTEGRATION STATUS ROUTES ===================
+
 
 # SMS Provider (abstracted — swap providers by changing env config)
 sms_provider = get_sms_provider()
