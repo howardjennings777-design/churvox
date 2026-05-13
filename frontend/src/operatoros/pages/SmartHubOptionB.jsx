@@ -5,7 +5,9 @@ function safeList(value) {
 }
 
 function statusSlug(item) {
-  return String(item?.status || item?.job_status || item?.payment_status || item?.quote_status || "").toLowerCase().replace(/\s+/g, "_");
+  return String(item?.status || item?.job_status || item?.payment_status || item?.quote_status || "")
+    .toLowerCase()
+    .replace(/\s+/g, "_");
 }
 
 function amountOf(item) {
@@ -30,7 +32,7 @@ function clientOf(item) {
   return item?.client_name || item?.customer_name || item?.client || item?.customer || "Client";
 }
 
-function useDashboardModel(data = {}) {
+function useCommandModel(data = {}) {
   const jobs = safeList(data.jobs);
   const workers = safeList(data.workers || data.team);
   const clients = safeList(data.clients);
@@ -58,46 +60,46 @@ function useDashboardModel(data = {}) {
     : quotes.filter((quote) => ["sent", "pending", "open", "draft"].includes(statusSlug(quote)));
 
   const cashWaiting = unpaidInvoices.reduce((sum, invoice) => sum + amountOf(invoice), 0);
-  const preparedActions = unassignedJobs.length + unpaidInvoices.length + openQuotes.length + completedJobs.length;
+  const approvals = unassignedJobs.length + unpaidInvoices.length + openQuotes.length + completedJobs.length;
 
-  const bestMove = completedJobs[0]
+  const nextMove = completedJobs[0]
     ? {
-        label: "Create invoice draft",
-        title: `Create draft invoice from ${titleOf(completedJobs[0], "completed job")}`,
-        body: "AI has proof, job details and customer context ready. Review the invoice draft before sending.",
+        tag: "Proof to paid",
+        title: `Turn ${titleOf(completedJobs[0], "completed job")} into a draft invoice`,
+        body: "The worker proof, job notes and client context are ready. Churvox can prepare the invoice draft, then wait for your approval.",
         nav: "proof",
-        button: "Review proof"
+        cta: "Review proof",
       }
     : unassignedJobs[0]
     ? {
-        label: "Dispatch job",
-        title: `Assign crew to ${titleOf(unassignedJobs[0], "unassigned job")}`,
-        body: "AI can match the best worker by availability, workload, area and job type. Owner approval happens first.",
+        tag: "Dispatch",
+        title: `Match the right worker to ${titleOf(unassignedJobs[0], "unassigned job")}`,
+        body: "The AI can compare workload, area, availability and job type, then prepare the assignment for you to approve.",
         nav: "queue",
-        button: "Open match"
+        cta: "Open match",
       }
     : unpaidInvoices[0]
     ? {
-        label: "Recover cashflow",
-        title: `Follow up ${titleOf(unpaidInvoices[0], "unpaid invoice")}`,
-        body: "AI can prepare a polite payment reminder. Nothing is sent until you approve it.",
+        tag: "Cashflow",
+        title: `Prepare a payment follow-up for ${titleOf(unpaidInvoices[0], "unpaid invoice")}`,
+        body: "Churvox can draft a professional reminder. Nothing is sent until you approve the message.",
         nav: "invoices",
-        button: "Open invoice"
+        cta: "Open invoice",
       }
     : openQuotes[0]
     ? {
-        label: "Win more work",
+        tag: "Sales follow-up",
         title: `Follow up ${titleOf(openQuotes[0], "open quote")}`,
-        body: "AI can draft a quick follow-up while the job is still fresh in the customer’s mind.",
+        body: "A short follow-up is ready to help win the job while the customer is still warm.",
         nav: "quotes",
-        button: "Open quote"
+        cta: "Open quote",
       }
     : {
-        label: "All clear",
+        tag: "Command centre clear",
         title: "No urgent owner approval waiting",
-        body: "Churvox is still watching jobs, proof, invoices, quotes and crew changes in the background.",
+        body: "The AI operator is still watching jobs, invoices, proof, quotes, clients and crew updates in the background.",
         nav: "queue",
-        button: "Open queue"
+        cta: "Open queue",
       };
 
   return {
@@ -112,26 +114,14 @@ function useDashboardModel(data = {}) {
     unpaidInvoices,
     openQuotes,
     cashWaiting,
-    preparedActions,
-    bestMove,
+    approvals,
+    nextMove,
   };
 }
 
-function MiniRow({ title, meta, action }) {
+function SignalCard({ label, value, text, onClick }) {
   return (
-    <article className="cx-mini-row">
-      <div>
-        <strong>{title}</strong>
-        <span>{meta}</span>
-      </div>
-      <b>{action}</b>
-    </article>
-  );
-}
-
-function SmartStat({ label, value, text, onClick }) {
-  return (
-    <button type="button" className="cx-stat" onClick={onClick}>
+    <button type="button" className="neo-signal" onClick={onClick}>
       <span>{label}</span>
       <strong>{value}</strong>
       <small>{text}</small>
@@ -139,32 +129,44 @@ function SmartStat({ label, value, text, onClick }) {
   );
 }
 
-function WorkPanel({ eyebrow, title, subtitle, button, onClick, children }) {
+function MiniAction({ title, meta, status }) {
   return (
-    <section className="cx-panel">
+    <article className="neo-mini-action">
+      <div>
+        <strong>{title}</strong>
+        <span>{meta}</span>
+      </div>
+      <b>{status}</b>
+    </article>
+  );
+}
+
+function CommandPanel({ eyebrow, title, subtitle, action, onClick, children }) {
+  return (
+    <section className="neo-panel">
       <header>
         <div>
           <p>{eyebrow}</p>
           <h2>{title}</h2>
           {subtitle ? <span>{subtitle}</span> : null}
         </div>
-        {button ? <button type="button" onClick={onClick}>{button}</button> : null}
+        {action ? <button type="button" onClick={onClick}>{action}</button> : null}
       </header>
       {children}
     </section>
   );
 }
 
-function ListBlock({ items, empty, onOpen }) {
+function ItemList({ items, empty, onOpen }) {
   const shown = safeList(items).slice(0, 4);
-  if (!shown.length) return <div className="cx-empty">{empty}</div>;
+  if (!shown.length) return <div className="neo-empty">{empty}</div>;
 
   return (
-    <div className="cx-list">
+    <div className="neo-list">
       {shown.map((item, index) => (
         <button type="button" key={item.id || item._id || index} onClick={onOpen}>
           <strong>{titleOf(item, `Item ${index + 1}`)}</strong>
-          <span>{clientOf(item)} · {money(amountOf(item))}</span>
+          <span>{clientOf(item)} · {amountOf(item) ? money(amountOf(item)) : statusSlug(item) || "Ready"}</span>
         </button>
       ))}
     </div>
@@ -172,132 +174,142 @@ function ListBlock({ items, empty, onOpen }) {
 }
 
 export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
-  const model = useDashboardModel(data);
+  const model = useCommandModel(data);
 
-  const stats = [
-    ["Jobs", model.jobs.length, "Every job in one live command view", "jobs"],
-    ["Crew", model.workers.length, "Workers, availability and dispatch", "crew"],
-    ["Invoices", money(model.cashWaiting), "Unpaid value ready for action", "invoices"],
-    ["Actions", model.preparedActions, "AI-prepared owner approvals", "queue"],
+  const signals = [
+    ["Jobs tracked", model.jobs.length, "Live jobs inside the operator", "jobs"],
+    ["Crew watched", model.workers.length, "Worker availability and workload", "crew"],
+    ["Cash waiting", money(model.cashWaiting), "Unpaid value needing action", "invoices"],
+    ["Approvals", model.approvals, "Prepared by AI, approved by owner", "queue"],
   ];
 
   return (
-    <main className="cx-page" data-option-b="10-10-smart-hub">
-      <section className="cx-hero">
-        <div className="cx-hero-copy">
-          <p>BUILD 10/10 · CHURVOX OPTION B</p>
+    <main className="neo-page" data-smart-hub="ai-command-centre">
+      <section className="neo-hero">
+        <div className="neo-orbit one" />
+        <div className="neo-orbit two" />
+
+        <div className="neo-hero-copy">
+          <p>CHURVOX AI COMMAND CENTRE</p>
           <h1>
-            The AI operator for trade businesses.
-            <span>You approve. It runs the admin.</span>
+            The business runs from here.
+            <span>AI does the admin. You approve.</span>
           </h1>
           <strong>
-            Churvox watches jobs, crew, clients, proof photos, quotes, invoices and follow-ups — then prepares the next move for owner approval.
+            Jobs, crew, quotes, invoices, proof photos and follow-ups are pulled into one command view so the owner sees the next move before anything gets missed.
           </strong>
 
-          <div className="cx-hero-actions">
+          <div className="neo-actions">
             <button type="button" onClick={() => onNav?.("queue")}>Open AI Work Queue</button>
             <button type="button" onClick={() => onCreate?.("jobs")}>Create Job</button>
-            <button type="button" onClick={() => onNav?.("invoices")}>Review Cashflow</button>
+            <button type="button" onClick={() => onNav?.("proof")}>Proof to Paid</button>
           </div>
         </div>
 
-        <aside className="cx-product-preview">
-          <div className="cx-mini-sidebar">
-            <div className="cx-mini-logo"><img src="/brand/churvox-holo-c.svg" alt="" /><b>CHURVOX</b></div>
-            { ["Smart Hub", "AI Work Queue", "Jobs", "Crew", "Quotes", "Invoices", "Payments"].map((item, index) => (
-              <span key={item} className={index === 0 ? "active" : ""}>{item}</span>
-            )) }
-          </div>
-
-          <div className="cx-mini-main">
-            <div className="cx-mini-top"><small>AI Operator</small><b>Online & working</b></div>
-            <div className="cx-mini-status">
-              <span>{model.preparedActions}</span>
-              <small>owner approvals ready</small>
+        <aside className="neo-product">
+          <div className="neo-product-glow" />
+          <div className="neo-phone-shell">
+            <div className="neo-phone-rail">
+              <img src="/brand/churvox-holo-c.svg" alt="" />
+              {["Hub", "AI", "Jobs", "Crew", "Cash"].map((item, index) => (
+                <span key={item} className={index === 0 ? "active" : ""}>{item}</span>
+              ))}
             </div>
-            <MiniRow title="Create invoice draft" meta="Completed job → proof reviewed" action="Ready" />
-            <MiniRow title="Assign worker" meta="Best fit by area + workload" action="Match" />
-            <MiniRow title="Quote follow-up" meta="Draft message prepared" action="Approve" />
+
+            <div className="neo-phone-main">
+              <div className="neo-phone-top">
+                <small>AI Operator</small>
+                <b>Live</b>
+              </div>
+              <div className="neo-core">
+                <img src="/brand/churvox-holo-c.svg" alt="" />
+                <strong>{model.approvals}</strong>
+                <span>owner approvals ready</span>
+              </div>
+              <MiniAction title="Invoice draft" meta="Proof ready from completed job" status="Prepared" />
+              <MiniAction title="Worker match" meta="Area, workload and job type checked" status="Match" />
+              <MiniAction title="Client follow-up" meta="Message drafted, not sent" status="Approve" />
+            </div>
           </div>
         </aside>
       </section>
 
-      {data.notice ? <section className="cx-notice">{data.notice}</section> : null}
+      {data.notice ? <section className="neo-notice">{data.notice}</section> : null}
 
-      <section className="cx-stats">
-        {stats.map(([label, value, text, nav]) => (
-          <SmartStat key={label} label={label} value={value} text={text} onClick={() => onNav?.(nav)} />
+      <section className="neo-signals">
+        {signals.map(([label, value, text, nav]) => (
+          <SignalCard key={label} label={label} value={value} text={text} onClick={() => onNav?.(nav)} />
         ))}
       </section>
 
-      <section className="cx-grid">
-        <WorkPanel
-          eyebrow="AI NEXT BEST MOVE"
-          title={model.bestMove.title}
-          subtitle={model.bestMove.body}
-          button={model.bestMove.button}
-          onClick={() => onNav?.(model.bestMove.nav)}
+      <section className="neo-grid">
+        <CommandPanel
+          eyebrow="AI NEXT MOVE"
+          title={model.nextMove.title}
+          subtitle={model.nextMove.body}
+          action={model.nextMove.cta}
+          onClick={() => onNav?.(model.nextMove.nav)}
         >
-          <article className="cx-approval-card">
-            <span>{model.bestMove.label}</span>
-            <h3>AI prepared this action for owner approval.</h3>
-            <p>Guardrail: no customer message, invoice send, worker assignment, payment action, payroll change or MYOB sync happens without approval.</p>
+          <article className="neo-approval-card">
+            <span>{model.nextMove.tag}</span>
+            <h3>Ready for owner approval</h3>
+            <p>Guardrails are locked: no customer send, no worker assignment, no invoice send, no payment action, no payroll change and no MYOB sync without approval.</p>
             <div>
-              <button type="button" onClick={() => onNav?.("queue")}>Review</button>
-              <button type="button" onClick={() => onNav?.(model.bestMove.nav)}>Approve path</button>
+              <button type="button" onClick={() => onNav?.("queue")}>Review details</button>
+              <button type="button" onClick={() => onNav?.(model.nextMove.nav)}>Open action</button>
             </div>
           </article>
-        </WorkPanel>
+        </CommandPanel>
 
-        <WorkPanel
-          eyebrow="CASHFLOW"
+        <CommandPanel
+          eyebrow="CASHFLOW RADAR"
           title={money(model.cashWaiting)}
-          subtitle={`${model.unpaidInvoices.length} unpaid invoice action${model.unpaidInvoices.length === 1 ? "" : "s"} ready.`}
-          button="Open invoices"
+          subtitle={`${model.unpaidInvoices.length} unpaid invoice action${model.unpaidInvoices.length === 1 ? "" : "s"} waiting.`}
+          action="Open invoices"
           onClick={() => onNav?.("invoices")}
         >
-          <ListBlock items={model.unpaidInvoices} empty="No unpaid invoices to chase." onOpen={() => onNav?.("invoices")} />
-        </WorkPanel>
+          <ItemList items={model.unpaidInvoices} empty="No unpaid invoices need action." onOpen={() => onNav?.("invoices")} />
+        </CommandPanel>
 
-        <WorkPanel
+        <CommandPanel
           eyebrow="PROOF TO PAID"
           title={`${model.completedJobs.length} completed`}
-          subtitle="Completed jobs ready for proof review and invoice prep."
-          button="Open proof"
+          subtitle="Completed work ready for proof review and invoice preparation."
+          action="Open proof"
           onClick={() => onNav?.("proof")}
         >
-          <ListBlock items={model.completedJobs} empty="No completed jobs waiting for invoice prep." onOpen={() => onNav?.("proof")} />
-        </WorkPanel>
+          <ItemList items={model.completedJobs} empty="No completed jobs waiting for invoice prep." onOpen={() => onNav?.("proof")} />
+        </CommandPanel>
 
-        <WorkPanel
-          eyebrow="DISPATCH"
+        <CommandPanel
+          eyebrow="DISPATCH CONTROL"
           title={`${model.unassignedJobs.length} need crew`}
-          subtitle="AI can recommend workers by area, workload and job type."
-          button="Open jobs"
+          subtitle="AI can match workers by area, workload, availability and job type."
+          action="Open jobs"
           onClick={() => onNav?.("jobs")}
         >
-          <ListBlock items={model.unassignedJobs} empty="No unassigned jobs right now." onOpen={() => onNav?.("jobs")} />
-        </WorkPanel>
+          <ItemList items={model.unassignedJobs} empty="No unassigned jobs right now." onOpen={() => onNav?.("jobs")} />
+        </CommandPanel>
 
-        <WorkPanel
-          eyebrow="QUOTE FOLLOW-UP"
+        <CommandPanel
+          eyebrow="QUOTE RECOVERY"
           title={`${model.openQuotes.length} quotes`}
-          subtitle="Open quotes that AI can draft follow-ups for."
-          button="Open quotes"
+          subtitle="Open quotes that can be followed up from the approval queue."
+          action="Open quotes"
           onClick={() => onNav?.("quotes")}
         >
-          <ListBlock items={model.openQuotes} empty="No quote follow-ups waiting." onOpen={() => onNav?.("quotes")} />
-        </WorkPanel>
+          <ItemList items={model.openQuotes} empty="No quote follow-ups waiting." onOpen={() => onNav?.("quotes")} />
+        </CommandPanel>
 
-        <WorkPanel
-          eyebrow="CREW CONTROL"
+        <CommandPanel
+          eyebrow="CREW INTELLIGENCE"
           title={`${model.workers.length} people`}
-          subtitle="Crew, office, payroll and manager visibility."
-          button="Open crew"
+          subtitle="Crew, office, payroll and manager visibility in one place."
+          action="Open crew"
           onClick={() => onNav?.("crew")}
         >
-          <ListBlock items={model.workers} empty="No crew loaded yet." onOpen={() => onNav?.("crew")} />
-        </WorkPanel>
+          <ItemList items={model.workers} empty="No crew loaded yet." onOpen={() => onNav?.("crew")} />
+        </CommandPanel>
       </section>
     </main>
   );

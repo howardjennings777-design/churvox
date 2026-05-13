@@ -1,4 +1,4 @@
-/* OPTION B CLEAN TEAL SHELL THEME - full replacement */
+/* CHURVOX AI COMMAND CENTRE SHELL THEME */
 :root {
   --opb-ink: #09243a;
   --opb-muted: #496678;
@@ -75,7 +75,7 @@ body,
 }
 
 
-/* ===== FORCE OPTION B SMART HUB DASHBOARD LIVE ===== */
+/* ===== FORCE NEW AI COMMAND CENTRE DASHBOARD LIVE ===== */
 html[data-churvox-dashboard-theme="option-b-smart-hub-live"],
 html[data-churvox-dashboard-theme="option-b-smart-hub-live"] body,
 html[data-churvox-dashboard-theme="option-b-smart-hub-live"] #root {
@@ -136,7 +136,7 @@ html[data-churvox-dashboard-theme="option-b-smart-hub-live"] .op-topbar * {
 }
 
 html[data-churvox-dashboard-theme="option-b-smart-hub-live"] .op-view-hub::after {
-  content: "OPTION B SMART HUB LIVE";
+  content: "NEW AI COMMAND CENTRE LIVE";
   position: fixed;
   right: 14px;
   bottom: 14px;
