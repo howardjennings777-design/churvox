@@ -13,6 +13,7 @@ import PublicDemoPage from "./pages/PublicDemoPage";
 import OperatorShell from "./OperatorShell";
 import { useOperatorData } from "./dataHooks";
 import { canSwitchRoleForTesting, currentUserName, currentUserRole, normalizeRole, readToken } from "./api";
+import { clearChurvoxAuth } from "./logout";
 import CreateModal from "./components/CreateModal";
 import SmartHub from "./pages/SmartHub";
 import AIWorkQueue from "./pages/AIWorkQueue";
@@ -67,7 +68,6 @@ const pages = {
 };
 
 const pathToKey = {
-  "/": "hub",
   "/dashboard": "hub",
   "/smart-hub": "hub",
   "/ai-approvals": "queue",
@@ -90,28 +90,13 @@ const pathToKey = {
   "/settings": "settings",
 };
 
-
 function shouldUseLegacyApp() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
-  // PREMIUM_TRADE_INTELLIGENCE_PUBLIC_FLOW
-  const isLoginPath = path === "/login" || path === "/admin/login" || path === "/owner/login";
-  const loggedIn = Boolean(readToken());
-  if (isLoginPath) return <ForcedLoginPage />;
-
-  if (path === "/demo" || path === "/try-demo") {
-    return <PublicDemoPage />;
-  }
-
 
   const exactLegacyPaths = new Set([
-    "/login",
-    "/signup",
-    "/register",
     "/forgot-password",
     "/reset-password",
     "/admin",
-    "/admin/login",
-    "/owner/login",
   ]);
 
   if (exactLegacyPaths.has(path)) return true;
@@ -126,12 +111,7 @@ function shouldUseLegacyApp() {
 }
 
 function keyFromPath() {
-  const path = window.location.pathname.replace(/\/+$/, "") || "/";
-
-  if (path === "/demo" || path === "/try-demo") {
-    return <PublicDemoPage />;
-  }
-
+  const path = window.location.pathname.replace(/\/+$/, "") || "/dashboard";
   return pathToKey[path] || "hub";
 }
 
@@ -141,7 +121,6 @@ function pathForKey(key) {
 
 export default function OperatorApp() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
-  const loggedIn = Boolean(readToken());
 
   if (path === "/logout" || path === "/signout" || path === "/log-out") {
     clearChurvoxAuth();
