@@ -41,17 +41,32 @@ def _record_lookup(record_id, business_id):
 
 def _number(value, default=0.0):
     try:
-        num = float(value)
-        return num
+        return float(value)
     except (TypeError, ValueError):
         return float(default)
+
+
+def _normalise_action_type(action):
+    raw = _sid(action.get("action_type") or action.get("type") or "ai_setup_task")
+    review_only_aliases = {
+        "operator_health_check",
+        "proof_to_paid_review",
+        "operator_error_recovery",
+        "dispatch_review",
+        "cashflow_followup",
+        "invoice_follow_up",
+        "job_assignment",
+    }
+    if raw in review_only_aliases:
+        return "ai_setup_task"
+    return raw or "ai_setup_task"
 
 
 async def _audit(db, business_id, user, action, event, result=None):
     await db.ai_operator_audit_log.insert_one({
         "business_id": str(business_id),
-        "action_id": _sid(action.get("id") or action.get("_id")),
-        "action_type": action.get("action_type"),
+        "action_id": _sid(action.get("id") or action.get("_id") or action.get("fingerprint")),
+        "action_type": _normalise_action_type(action),
         "event": event,
         "result": result or {},
         "actor": _sid(user.get("_id") or user.get("id")),
@@ -63,15 +78,16 @@ async def _audit(db, business_id, user, action, event, result=None):
 
 async def execute_approved_action(db, business_id, user, action, approved_payload=None):
     payload = {**(action.get("suggested_payload") or {}), **(approved_payload or {})}
-    classification = classify_action(action.get("action_type"), {
+    t = _normalise_action_type(action)
+
+    classification = classify_action(t, {
         **action,
+        "action_type": t,
         "suggested_payload": payload,
     })
 
     if classification.get("blocked"):
         raise ValueError(classification.get("reason") or "Action blocked by AI policy.")
-
-    t = action.get("action_type")
 
     if t == "assign_worker":
         job_id = payload.get("job_id") or action.get("target_id")
@@ -112,7 +128,7 @@ async def execute_approved_action(db, business_id, user, action, approved_payloa
     elif t == "create_draft_invoice":
         job_id = payload.get("job_id") or action.get("target_id")
         subtotal = _number(payload.get("subtotal"), default=0.0)
-        gst_rate = _number(payload.get("gst_rate"), default=0.1)
+        gst_rate = _number(payload.get("gst_rate"), default=0.15)
         gst_amount = round(subtotal * gst_rate, 2)
         total = round(subtotal + gst_amount, 2)
 
@@ -136,6 +152,7 @@ async def execute_approved_action(db, business_id, user, action, approved_payloa
             "created_at": now,
             "updated_at": now,
         }
+
         inserted = await db.invoices.insert_one(invoice)
         invoice_id = str(inserted.inserted_id)
 
@@ -174,7 +191,7 @@ async def execute_approved_action(db, business_id, user, action, approved_payloa
         execution_result = {"ok": True, "action_type": t, "review_only": True}
 
     else:
-        raise ValueError("Unsupported action type")
+        raise ValueError(f"Unsupported action type: {t}")
 
-    await _audit(db, business_id, user, action, "backend_executed", execution_result)
+    await _audit(db, business_id, user, {**action, "action_type": t}, "backend_executed", execution_result)
     return execution_result

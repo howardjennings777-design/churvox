@@ -338,8 +338,80 @@ def setup_ai_operator_power_routes(api_router, db, jwt_secret, jwt_algorithm):
     @api_router.post("/ai/operator/plan")
     async def ai_operator_plan(request: Request):
         user, business_id = await owner_context(request)
+        business_id = str(business_id)
         created = 0
         planner_error = None
+
+        def safe_review_actions(error_text=None):
+            now = now_utc()
+            return [
+                {
+                    "id": "fallback_operator_health_check",
+                    "business_id": business_id,
+                    "action_type": "ai_setup_task",
+                    "type": "operator_health_check",
+                    "category": "AI Operator",
+                    "title": "Review AI Operator setup",
+                    "summary": "The AI route is live. This confirms the queue, review drawer, approval and reject flow are working from the backend.",
+                    "reason": "Churvox created this backend action because no stronger AI action was available yet.",
+                    "guardrail": "This action does not send messages, assign workers, change payroll, charge customers or sync accounting.",
+                    "status": "pending",
+                    "priority_score": 99,
+                    "confidence": "safe_test",
+                    "risk": "low",
+                    "fingerprint": f"{business_id}:fallback_operator_health_check",
+                    "suggested_payload": {
+                        "next_step": "Review, approve or reject this action to confirm the AI workflow.",
+                        "planner_error": error_text,
+                    },
+                    "owner_can_edit": True,
+                    "approval_required": True,
+                    "created_at": now,
+                    "updated_at": now,
+                },
+                {
+                    "id": "fallback_proof_to_paid_review",
+                    "business_id": business_id,
+                    "action_type": "ai_setup_task",
+                    "type": "proof_to_paid_review",
+                    "category": "Proof to paid",
+                    "title": "Prepare completed work for invoice review",
+                    "summary": "AI can help turn completed jobs, notes and proof photos into invoice-ready admin for owner approval.",
+                    "reason": "This safe backend action confirms the proof-to-paid approval workflow is connected.",
+                    "guardrail": "Nothing is sent to customers without owner approval.",
+                    "status": "pending",
+                    "priority_score": 90,
+                    "confidence": "safe_test",
+                    "risk": "low",
+                    "fingerprint": f"{business_id}:fallback_proof_to_paid_review",
+                    "suggested_payload": {"action": "review_completed_jobs"},
+                    "owner_can_edit": True,
+                    "approval_required": True,
+                    "created_at": now,
+                    "updated_at": now,
+                },
+                {
+                    "id": "fallback_dispatch_review",
+                    "business_id": business_id,
+                    "action_type": "ai_setup_task",
+                    "type": "dispatch_review",
+                    "category": "Dispatch",
+                    "title": "Review unassigned jobs for worker matching",
+                    "summary": "AI can help match jobs to workers by area, workload, availability and job type before owner approval.",
+                    "reason": "This safe backend action confirms the dispatch approval workflow is connected.",
+                    "guardrail": "No worker is assigned until the owner approves.",
+                    "status": "pending",
+                    "priority_score": 88,
+                    "confidence": "safe_test",
+                    "risk": "low",
+                    "fingerprint": f"{business_id}:fallback_dispatch_review",
+                    "suggested_payload": {"action": "review_unassigned_jobs"},
+                    "owner_can_edit": True,
+                    "approval_required": True,
+                    "created_at": now,
+                    "updated_at": now,
+                },
+            ]
 
         try:
             ctx = await get_business_context(db, business_id, user)
@@ -363,51 +435,36 @@ def setup_ai_operator_power_routes(api_router, db, jwt_secret, jwt_algorithm):
                 actions = []
 
             if not actions:
-                actions = [
-                    {
-                        "type": "operator_health_check",
-                        "category": "AI Operator",
-                        "title": "Review AI Operator setup",
-                        "summary": "The AI route is live. This safe approval confirms the queue, review drawer and owner approval flow are working.",
-                        "reason": "No planner actions were available, so Churvox created a safe owner-review action instead of crashing.",
-                        "guardrail": "This action does not send messages, assign workers, change payroll, charge customers or sync accounting.",
-                        "status": "pending",
-                        "priority_score": 99,
-                        "confidence": "safe_test",
-                        "risk": "low",
-                        "fingerprint": "fallback_operator_health_check",
-                        "suggested_payload": {
-                            "next_step": "Review this action, then approve or reject it to confirm the AI workflow.",
-                            "planner_error": planner_error,
-                        },
-                    },
-                    {
-                        "type": "proof_to_paid_review",
-                        "category": "Proof to paid",
-                        "title": "Prepare completed work for invoice review",
-                        "summary": "AI can help turn completed jobs, notes and proof photos into invoice-ready admin for owner approval.",
-                        "reason": "This safe action confirms the proof-to-paid approval workflow is connected.",
-                        "guardrail": "Nothing is sent to customers without owner approval.",
-                        "status": "pending",
-                        "priority_score": 90,
-                        "confidence": "safe_test",
-                        "risk": "low",
-                        "fingerprint": "fallback_proof_to_paid_review",
-                        "suggested_payload": {
-                            "action": "review_completed_jobs"
-                        },
-                    },
-                ]
+                actions = safe_review_actions(planner_error)
 
             for index, action in enumerate(actions):
                 if not isinstance(action, dict):
                     continue
 
-                action["business_id"] = str(business_id)
+                now = now_utc()
+                action["business_id"] = business_id
+                action["id"] = str(action.get("id") or action.get("fingerprint") or f"ai_action_{index}")
+                action["action_type"] = action.get("action_type") or action.get("type") or "ai_setup_task"
+
+                if action["action_type"] in {
+                    "operator_health_check",
+                    "proof_to_paid_review",
+                    "operator_error_recovery",
+                    "dispatch_review",
+                    "cashflow_followup",
+                    "invoice_follow_up",
+                    "job_assignment",
+                }:
+                    action["action_type"] = "ai_setup_task"
+
                 action["status"] = action.get("status") or "pending"
-                action["created_at"] = action.get("created_at") or now_utc()
-                action["updated_at"] = now_utc()
-                action["fingerprint"] = action.get("fingerprint") or f"ai_action_{index}_{action.get('title', 'untitled')}"
+                action["created_at"] = action.get("created_at") or now
+                action["updated_at"] = now
+                action["fingerprint"] = action.get("fingerprint") or f"{business_id}:{action['action_type']}:{action['id']}"
+                action["title"] = action.get("title") or "AI prepared action"
+                action["summary"] = action.get("summary") or action.get("reason") or "Review this AI-prepared action before anything changes."
+                action["guardrail"] = action.get("guardrail") or "Nothing is sent, assigned, charged, synced or changed without owner approval."
+                action["suggested_payload"] = action.get("suggested_payload") or action.get("payload") or {}
 
                 try:
                     reasoning = build_reasoning(
@@ -422,7 +479,7 @@ def setup_ai_operator_power_routes(api_router, db, jwt_secret, jwt_algorithm):
                     action["reasoning_error"] = str(exc)
 
                 existing = await db.ai_operator_actions.find_one({
-                    "business_id": str(business_id),
+                    "business_id": business_id,
                     "fingerprint": action.get("fingerprint"),
                     "status": {"$in": ["pending", "ready", "needs_info", "waiting_owner"]},
                 })
@@ -434,41 +491,25 @@ def setup_ai_operator_power_routes(api_router, db, jwt_secret, jwt_algorithm):
         except Exception as exc:
             planner_error = str(exc)
 
-            fallback = {
-                "business_id": str(business_id),
-                "type": "operator_error_recovery",
-                "category": "AI Operator",
-                "title": "AI Operator backend review needed",
-                "summary": "The AI route is reachable, but the planner hit a backend error. Churvox kept the approval queue online instead of returning a 500.",
-                "reason": "Planner failed safely and returned this owner-review action.",
-                "guardrail": "No customer message, worker assignment, invoice send, payroll change or MYOB sync happens from this fallback action.",
-                "status": "pending",
-                "priority_score": 100,
-                "confidence": "error_recovery",
-                "risk": "low",
-                "fingerprint": "fallback_operator_error_recovery",
-                "suggested_payload": {
-                    "backend_error": planner_error,
-                    "next_step": "Check Render logs for the AI planner exception.",
-                },
-                "created_at": now_utc(),
-                "updated_at": now_utc(),
-            }
+            for action in safe_review_actions(planner_error):
+                existing = await db.ai_operator_actions.find_one({
+                    "business_id": business_id,
+                    "fingerprint": action.get("fingerprint"),
+                    "status": {"$in": ["pending", "ready", "needs_info", "waiting_owner"]},
+                })
 
-            existing = await db.ai_operator_actions.find_one({
-                "business_id": str(business_id),
-                "fingerprint": fallback["fingerprint"],
-                "status": {"$in": ["pending", "ready", "needs_info", "waiting_owner"]},
-            })
-
-            if not existing:
-                await db.ai_operator_actions.insert_one(fallback)
-                created += 1
+                if not existing:
+                    await db.ai_operator_actions.insert_one(action)
+                    created += 1
 
         rows = await db.ai_operator_actions.find({
-            "business_id": str(business_id),
+            "business_id": business_id,
             "status": {"$in": ["pending", "ready", "needs_info", "waiting_owner"]},
-        }).sort([("priority_score", -1), ("created_at", -1)]).limit(200).to_list(length=200)
+        }).sort([
+            ("priority_score", -1),
+            ("updated_at", -1),
+            ("created_at", -1),
+        ]).limit(200).to_list(length=200)
 
         return {
             "success": True,
@@ -481,10 +522,27 @@ def setup_ai_operator_power_routes(api_router, db, jwt_secret, jwt_algorithm):
     @api_router.get("/ai/operator/actions")
     async def ai_operator_actions(request: Request, status: str | None = None):
         _, business_id = await owner_context(request)
-        q={"business_id": str(business_id)}
-        if status: q["status"]=status
-        rows=await db.ai_operator_actions.find(q).sort([("priority_score", -1), ("created_at", -1)]).limit(200).to_list(length=200)
-        return {"success": True, "actions": clean_value(rows)}
+        business_id = str(business_id)
+
+        if status:
+            query = {"business_id": business_id, "status": status}
+        else:
+            query = {
+                "business_id": business_id,
+                "status": {"$in": ["pending", "ready", "needs_info", "waiting_owner"]},
+            }
+
+        rows = await db.ai_operator_actions.find(query).sort([
+            ("priority_score", -1),
+            ("updated_at", -1),
+            ("created_at", -1),
+        ]).limit(200).to_list(length=200)
+
+        return {
+            "success": True,
+            "actions": clean_value(rows),
+            "count": len(rows),
+        }
 
     @api_router.get("/ai/operator/actions/{action_id}")
     async def ai_operator_action(request: Request, action_id: str):
