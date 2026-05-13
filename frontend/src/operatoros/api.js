@@ -1,13 +1,28 @@
+const KNOWN_BACKEND_BASE = "https://grassley-backend.onrender.com/api";
+
+function normaliseBaseUrl(value) {
+  let raw = String(value || "").trim();
+  if (!raw) raw = KNOWN_BACKEND_BASE;
+
+  if (raw.startsWith("//")) raw = `https:${raw}`;
+  if (!/^https?:\/\//i.test(raw) && !raw.startsWith("/")) raw = `https://${raw}`;
+
+  const clean = raw.replace(/\/+$/, "");
+  return clean.endsWith("/api") ? clean : `${clean}/api`;
+}
+
 const rawBase =
   process.env.REACT_APP_API_URL ||
   process.env.REACT_APP_BACKEND_URL ||
   process.env.VITE_BACKEND_URL ||
-  "https://grassley-backend.onrender.com";
+  KNOWN_BACKEND_BASE;
 
-export const API_BASE = (() => {
-  const clean = String(rawBase).replace(/\/+$/, "");
-  return clean.endsWith("/api") ? clean : `${clean}/api`;
-})();
+export const API_BASE = normaliseBaseUrl(rawBase);
+
+function candidateApiBases() {
+  const bases = [API_BASE, KNOWN_BACKEND_BASE].map(normaliseBaseUrl);
+  return [...new Set(bases)];
+}
 
 export function readToken() {
   try {
@@ -22,24 +37,7 @@ export function readToken() {
   }
 }
 
-export async function apiFetch(path, options = {}) {
-  const token = readToken();
-  const body = options.body;
-  const headers = { Accept: "application/json", ...(options.headers || {}) };
-
-  if (token) headers.Authorization = `Bearer ${token}`;
-  if (body && !(body instanceof FormData)) {
-    headers["Content-Type"] = "application/json";
-  }
-
-  const res = await fetch(`${API_BASE}/${String(path).replace(/^\/+/, "")}`, {
-    method: options.method || "GET",
-    credentials: "include",
-    ...options,
-    headers,
-    body: body && !(body instanceof FormData) ? JSON.stringify(body) : body,
-  });
-
+async function parseResponse(res, path) {
   const text = await res.text();
   let payload = null;
 
@@ -54,6 +52,47 @@ export async function apiFetch(path, options = {}) {
   }
 
   return payload;
+}
+
+export async function apiFetch(path, options = {}) {
+  const token = readToken();
+  const body = options.body;
+  const headers = { Accept: "application/json", ...(options.headers || {}) };
+
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (body && !(body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const cleanPath = String(path).replace(/^\/+/, "");
+  let lastError = null;
+
+  for (const base of candidateApiBases()) {
+    try {
+      const res = await fetch(`${base}/${cleanPath}`, {
+        method: options.method || "GET",
+        credentials: "include",
+        ...options,
+        headers,
+        body: body && !(body instanceof FormData) ? JSON.stringify(body) : body,
+      });
+
+      return await parseResponse(res, path);
+    } catch (error) {
+      lastError = error;
+
+      const isNetworkError =
+        error instanceof TypeError ||
+        String(error?.message || "").toLowerCase().includes("failed to fetch") ||
+        String(error?.message || "").toLowerCase().includes("networkerror");
+
+      if (!isNetworkError) throw error;
+    }
+  }
+
+  throw new Error(
+    `Backend could not be reached for ${path}. Check Render backend deploy/CORS, then refresh. Last error: ${lastError?.message || "network error"}`
+  );
 }
 
 export function toArray(payload, keys = []) {
