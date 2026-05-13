@@ -4,6 +4,7 @@ import "./operatorDesignFinal.css";
 import "./operatorLaptopPolish.css";
 import "./operatorSidebarFinal.css";
 import FreshChurvoxApp from "../fresh/FreshChurvoxApp";
+import PublicContactPage from "./pages/PublicContactPage";
 import PublicLandingPage from "./pages/PublicLandingPage";
 import PublicSignupPage from "./pages/PublicSignupPage";
 import PublicPricingPage from "./pages/PublicPricingPage";
@@ -24,6 +25,7 @@ import PayrollWorkspace from "./pages/PayrollWorkspace";
 import ImportWorkspace from "./pages/ImportWorkspace";
 import SystemCentre from "./pages/SystemCentre";
 import SettingsWorkspace from "./pages/SettingsWorkspace";
+import FirstLoginGuide from "./components/FirstLoginGuide";
 
 const roleNav = {
   owner: ["hub", "queue", "jobs", "clients", "crew", "quotes", "invoices", "proof", "payroll", "import", "system", "settings"],
@@ -134,23 +136,15 @@ function pathForKey(key) {
 
 export default function OperatorApp() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  const loggedIn = Boolean(readToken());
 
-  if (path === "/demo" || path === "/try-demo") {
-    return <PublicDemoPage />;
+  if (!loggedIn) {
+    if (["/", "/features", "/how-it-works", "/trades"].includes(path)) return <PublicLandingPage />;
+    if (path === "/pricing") return <PublicPricingPage />;
+    if (path === "/demo" || path === "/try-demo") return <PublicDemoPage />;
+    if (path === "/contact" || path === "/email") return <PublicContactPage />;
+    if (path === "/signup" || path === "/register") return <PublicSignupPage />;
   }
-
-  const publicPaths = new Set(["/", "/features", "/how-it-works", "/trades"]);
-  const signupPaths = new Set(["/signup", "/register"]);
-  const pricingPaths = new Set(["/pricing"]);
-  const demoPaths = new Set(["/demo", "/contact"]);
-
-  if (publicPaths.has(path) && !readToken()) {
-    return <PublicLandingPage />;
-  }
-
-  if (signupPaths.has(path) && !readToken()) return <PublicSignupPage />;
-  if (pricingPaths.has(path) && !readToken()) return <PublicPricingPage />;
-  if (demoPaths.has(path) && !readToken()) return <PublicDemoPage />;
 
   return shouldUseLegacyApp() ? <FreshChurvoxApp /> : <OperatorOSCore />;
 }
@@ -224,6 +218,8 @@ function OperatorOSCore() {
           onSaved={data.reload}
         />
       ) : null}
+
+      <FirstLoginGuide onNav={setCurrent} onCreate={setCreateType} />
     </OperatorShell>
   );
 }
