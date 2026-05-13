@@ -48,7 +48,7 @@ export default function PublicLandingPage() {
             <a href="/how-it-works">How it works</a>
             <a href="/features">Features</a>
             <a href="/pricing">Pricing</a>
-            <a href="/demo">Book demo</a>
+            <a href="/demo">Try live demo</a>
             <a href="/login">Sign in</a>
           </nav>
         </header>
@@ -67,7 +67,7 @@ export default function PublicLandingPage() {
 
             <div className="lpv2-actions">
               <a className="lpv2-primary" href="/signup">Start free trial</a>
-              <a className="lpv2-secondary" href="/demo">Book a demo</a>
+              <a className="lpv2-secondary" href="/demo">Try live demo</a>
             </div>
 
             <div className="lpv2-wins">
@@ -166,7 +166,7 @@ export default function PublicLandingPage() {
         </div>
         <nav>
           <a href="/pricing">Pricing</a>
-          <a href="/demo">Book demo</a>
+          <a href="/demo">Try live demo</a>
           <a href="/login">Sign in</a>
           <a href="mailto:hello@churvox.com">hello@churvox.com</a>
         </nav>

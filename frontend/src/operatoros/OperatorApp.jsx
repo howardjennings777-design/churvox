@@ -91,6 +91,11 @@ const pathToKey = {
 function shouldUseLegacyApp() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
 
+  if (path === "/demo" || path === "/try-demo") {
+    return <PublicDemoPage />;
+  }
+
+
   const exactLegacyPaths = new Set([
     "/login",
     "/signup",
@@ -115,6 +120,11 @@ function shouldUseLegacyApp() {
 
 function keyFromPath() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
+
+  if (path === "/demo" || path === "/try-demo") {
+    return <PublicDemoPage />;
+  }
+
   return pathToKey[path] || "hub";
 }
 
@@ -124,6 +134,11 @@ function pathForKey(key) {
 
 export default function OperatorApp() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
+
+  if (path === "/demo" || path === "/try-demo") {
+    return <PublicDemoPage />;
+  }
+
   const publicPaths = new Set(["/", "/features", "/how-it-works", "/trades"]);
   const signupPaths = new Set(["/signup", "/register"]);
   const pricingPaths = new Set(["/pricing"]);

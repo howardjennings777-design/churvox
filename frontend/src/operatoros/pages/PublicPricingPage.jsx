@@ -71,7 +71,7 @@ export default function PublicPricingPage() {
             <ul>{plan.details.map((d) => <li key={d}>{d}</li>)}</ul>
             <div className="card-actions">
               <a href="/signup" className="btn-primary">Start trial</a>
-              <a href="/demo" className="btn-ghost">Book demo</a>
+              <a href="/demo" className="btn-ghost">Try live demo</a>
             </div>
           </article>
         ))}
