@@ -1,0 +1,292 @@
+:root {
+  --cvx-bg: #030914;
+  --cvx-bg-2: #06111f;
+  --cvx-bg-3: #0a2035;
+  --cvx-ink: #f4fbff;
+  --cvx-muted: #9fb8ca;
+  --cvx-dim: #6f889b;
+  --cvx-cyan: #35e7ff;
+  --cvx-green: #18f2b2;
+  --cvx-blue: #3b82f6;
+  --cvx-red: #ff5d7a;
+  --cvx-panel: rgba(7, 19, 34, 0.72);
+  --cvx-panel-strong: rgba(9, 29, 49, 0.86);
+  --cvx-line: rgba(119, 226, 255, 0.16);
+  --cvx-line-strong: rgba(119, 226, 255, 0.30);
+  --cvx-shadow: 0 28px 88px rgba(0, 0, 0, 0.34);
+}
+
+html,
+body,
+#root {
+  background:
+    radial-gradient(circle at 78% 5%, rgba(53, 231, 255, 0.20), transparent 28rem),
+    radial-gradient(circle at 12% 18%, rgba(24, 242, 178, 0.10), transparent 26rem),
+    radial-gradient(circle at 86% 92%, rgba(59, 130, 246, 0.16), transparent 32rem),
+    linear-gradient(135deg, var(--cvx-bg) 0%, var(--cvx-bg-2) 45%, var(--cvx-bg-3) 100%) !important;
+  color: var(--cvx-ink) !important;
+}
+
+/* ===== PUBLIC SITE ===== */
+.cvx-site,
+.cvx-public-vision,
+.force-login-page {
+  background:
+    radial-gradient(circle at 78% 4%, rgba(53, 231, 255, 0.20), transparent 30rem),
+    radial-gradient(circle at 14% 18%, rgba(24, 242, 178, 0.11), transparent 28rem),
+    linear-gradient(135deg, #020713 0%, #06111f 48%, #0a2035 100%) !important;
+  color: var(--cvx-ink) !important;
+}
+
+.cvx-nav,
+.cvx-vision-nav,
+.cvx-footer,
+.cvx-vision-footer,
+.cvx-page-hero,
+.cvx-section,
+.cvx-vision-section,
+.cvx-final,
+.cvx-vision-final,
+.cvx-price-grid article,
+.cvx-feature-grid article,
+.cvx-step-grid article,
+.cvx-role-list article,
+.cvx-mini-feed,
+.cvx-command-preview,
+.force-login-shell,
+.force-login-card,
+.force-auth-stats article,
+.force-login-pills b {
+  background:
+    radial-gradient(circle at 20% 8%, rgba(53, 231, 255, 0.12), transparent 52%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.072), rgba(255, 255, 255, 0.035)) !important;
+  border: 1px solid var(--cvx-line) !important;
+  box-shadow: var(--cvx-shadow), inset 0 1px 0 rgba(255,255,255,.06) !important;
+  backdrop-filter: blur(22px) !important;
+}
+
+.cvx-brand strong,
+.cvx-site h1,
+.cvx-site h2,
+.cvx-site h3,
+.cvx-price-grid strong,
+.cvx-feature-grid strong,
+.cvx-step-grid strong,
+.cvx-role-list strong,
+.cvx-mini-feed strong,
+.force-login-copy h1,
+.force-login-card h2,
+.force-login-brand strong,
+.force-auth-stats strong {
+  color: var(--cvx-ink) !important;
+}
+
+.cvx-site p,
+.cvx-site span,
+.cvx-site small,
+.cvx-section-copy,
+.cvx-lede,
+.cvx-footer span,
+.force-login-copy p,
+.force-login-card p,
+.force-login-card span,
+.force-login-card small,
+.force-login-copy span,
+.force-auth-stats span {
+  color: var(--cvx-muted) !important;
+}
+
+.cvx-kicker,
+.cvx-brand small,
+.cvx-mini-feed b,
+.cvx-vision-pill span {
+  color: var(--cvx-cyan) !important;
+}
+
+/* ===== LOGIN / SIGNUP INPUTS ===== */
+.force-login-card input,
+.force-login-card select,
+.force-login-card textarea {
+  background: rgba(3, 11, 21, 0.62) !important;
+  color: var(--cvx-ink) !important;
+  border: 1px solid var(--cvx-line) !important;
+}
+
+/* ===== APP SHELL ===== */
+.op-shell,
+.op-main {
+  background:
+    radial-gradient(circle at 78% 5%, rgba(53, 231, 255, 0.20), transparent 28rem),
+    radial-gradient(circle at 12% 18%, rgba(24, 242, 178, 0.10), transparent 26rem),
+    linear-gradient(135deg, #020713 0%, #06111f 48%, #0a2035 100%) !important;
+  color: var(--cvx-ink) !important;
+}
+
+.op-sidebar,
+.op-topbar,
+.op-mobile-nav,
+.op-workspace-head,
+.op-toolbar,
+.op-list,
+.op-row,
+.op-panel,
+.op-ai-card,
+.op-notice,
+.op-import-hero,
+.op-payroll-grid article,
+.op-detail-grid > div,
+.op-note,
+.op-ai-drawer,
+.op-ai-detail-block,
+.op-ai-edit-grid label,
+.op-ai-reject-box,
+.op-ai-exact-changes,
+.op-ai-data-used,
+.op-error,
+.op-warning-soft {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(53, 231, 255, 0.11), transparent 55%),
+    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.034)) !important;
+  border: 1px solid var(--cvx-line) !important;
+  box-shadow: 0 22px 68px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.055) !important;
+  backdrop-filter: blur(22px) !important;
+}
+
+.op-workspace-head h1,
+.op-panel h2,
+.op-row strong,
+.op-detail-grid b,
+.op-note strong,
+.op-ai-drawer h3,
+.op-ai-detail-block strong,
+.op-brand strong,
+.op-topbar strong {
+  color: var(--cvx-ink) !important;
+}
+
+.op-workspace-head p,
+.op-panel header p,
+.op-ai-card p,
+.op-toolbar span,
+.op-row small,
+.op-detail-grid small,
+.op-note p,
+.op-ai-detail-block p,
+.op-ai-detail-block pre,
+.op-ai-drawer span,
+.op-topbar span,
+.op-empty p,
+.op-warning-soft,
+.op-notice {
+  color: var(--cvx-muted) !important;
+}
+
+.op-sidebar nav button,
+.op-sidebar button,
+.op-mobile-nav button,
+.op-head-actions button,
+.op-workspace button,
+.op-ai-drawer-actions button,
+.op-toolbar input,
+.op-form input,
+.op-form select,
+.op-form textarea,
+.op-ai-edit-grid input,
+.op-ai-reject-box textarea,
+.payroll-row textarea {
+  background: rgba(3, 11, 21, 0.56) !important;
+  color: var(--cvx-ink) !important;
+  border: 1px solid rgba(119, 226, 255, 0.14) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.045) !important;
+}
+
+.op-sidebar nav button:hover,
+.op-mobile-nav button:hover,
+.op-row:hover,
+.op-workspace button:hover,
+.op-ai-drawer-actions button:hover {
+  border-color: var(--cvx-line-strong) !important;
+  transform: translateY(-1px);
+}
+
+.op-sidebar nav button.active,
+.op-mobile-nav button.active,
+.op-status.good,
+.op-status.blue,
+.op-status.ready,
+.op-status.paid,
+.cvx-primary,
+.cvx-nav-cta,
+.force-login-card button,
+.op-workspace button.primary,
+.op-head-actions .primary {
+  background: linear-gradient(135deg, var(--cvx-cyan), var(--cvx-green)) !important;
+  color: #03111d !important;
+  border-color: transparent !important;
+  box-shadow: 0 18px 46px rgba(53, 231, 255, 0.22) !important;
+}
+
+.op-status,
+.op-status.draft,
+.op-status.open,
+.op-status.sent {
+  background: rgba(53, 231, 255, 0.12) !important;
+  color: var(--cvx-cyan) !important;
+  border-color: rgba(53, 231, 255, 0.22) !important;
+}
+
+.op-status.cancelled,
+.op-status.declined,
+button.danger {
+  background: rgba(255, 93, 122, 0.12) !important;
+  color: #ffd5dd !important;
+  border-color: rgba(255, 93, 122, 0.26) !important;
+}
+
+.op-ai-drawer-backdrop {
+  background: rgba(1, 6, 14, 0.72) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+/* ===== LOGO GLOW ===== */
+.cvx-brand img,
+.force-login-brand img,
+.force-login-card img,
+.op-brand img,
+.vision-brand-pill img,
+.vision-core-card img {
+  filter: drop-shadow(0 0 18px rgba(53, 231, 255, 0.34)) !important;
+}
+
+/* ===== FOCUS ===== */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(53, 231, 255, 0.86) !important;
+  outline-offset: 3px !important;
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 760px) {
+  .op-workspace-head,
+  .op-toolbar,
+  .op-row,
+  .op-panel,
+  .force-login-card,
+  .cvx-section,
+  .cvx-page-hero {
+    border-radius: 22px !important;
+  }
+
+  .op-head-actions {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .op-head-actions button {
+    width: 100%;
+  }
+}
