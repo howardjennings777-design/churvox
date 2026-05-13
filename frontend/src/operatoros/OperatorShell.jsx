@@ -50,8 +50,10 @@ export default function OperatorShell({
     window.location.href = "/login";
   }
 
+  const safeRole = role || "owner";
+
   return (
-    <div className={`op-shell op-view-${current || "hub"}`}>
+    <div className={`op-shell op-view-${current || "hub"} op-role-${safeRole}`} data-role={safeRole}>
       <aside className="op-sidebar">
         <button className="op-brand" onClick={() => setCurrent("hub")}>
           <FloatingLogo wordmark />
@@ -71,9 +73,9 @@ export default function OperatorShell({
         </nav>
 
         <section className="op-ai-card">
-          <p>AI OPERATOR</p>
-          <strong>Prepares the admin.</strong>
-          <span>Owner approves anything risky.</span>
+          <p>{safeRole === "worker" ? "WORKER APP" : "AI OPERATOR"}</p>
+          <strong>{safeRole === "worker" ? "Simple field workflow." : "Prepares the admin."}</strong>
+          <span>{safeRole === "worker" ? "Jobs, notes, photos and completion stay clear." : "Owner approves anything risky."}</span>
         </section>
 
         <button className="op-logout-button" onClick={handleLogout}>
