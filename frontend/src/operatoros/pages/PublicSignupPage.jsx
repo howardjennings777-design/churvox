@@ -92,7 +92,7 @@ export default function PublicSignupPage() {
             <div className="signup-sales"><article><strong>14-day trial</strong><span>Try Churvox before committing.</span></article><article><strong>Industry presets</strong><span>Setup wording and next steps match your business type.</span></article><article><strong>Approval-first AI</strong><span>AI prepares work. You approve important actions.</span></article></div>
           </section>
           <section className="signup-card">
-            <div className="signup-card-head"><p>FREE TRIAL</p><h2>Create your owner account</h2><span>No messy setup. Start with your business details.</span></div>
+            <div className="signup-card-head"><p>FREE TRIAL</p><h2>Create your owner account</h2><span>Start with your business details, then let Churvox guide the first setup steps.</span></div>
             {error ? <div className="signup-error">{error}</div> : null}
             <form onSubmit={submit}>
               <label><span>Your name</span><input value={form.name} onChange={(e) => update("name", e.target.value)} autoComplete="name" /></label>
