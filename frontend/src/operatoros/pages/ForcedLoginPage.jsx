@@ -119,7 +119,7 @@ export default function ForcedLoginPage() {
           <p>AI COMMAND CENTRE FOR TRADE BUSINESS</p>
           <h1>Sign in to your AI command centre.</h1>
           <span>
-            Jobs, crew, invoices, proof and follow-ups stay organised in one owner-approved workspace.
+            Jobs, crew, invoices, proof and follow-ups stay organised in one calm owner-approved workspace.
           </span>
 
           <div className="force-login-pills">
