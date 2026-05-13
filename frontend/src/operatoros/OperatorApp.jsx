@@ -157,13 +157,11 @@ export default function OperatorApp() {
     return <ForcedLoginPage />;
   }
 
-  if (!loggedIn) {
-    if (["/", "/features", "/how-it-works", "/trades"].includes(path)) return <PublicLandingPage />;
-    if (path === "/pricing") return <PublicPricingPage />;
-    if (path === "/demo" || path === "/try-demo") return <PublicDemoPage />;
-    if (path === "/contact" || path === "/email") return <PublicContactPage />;
-    if (path === "/signup" || path === "/register") return <PublicSignupPage />;
-  }
+  if (["/", "/features", "/how-it-works", "/trades"].includes(path)) return <PublicLandingPage />;
+  if (path === "/pricing") return <PublicPricingPage />;
+  if (path === "/demo" || path === "/try-demo") return <PublicDemoPage />;
+  if (path === "/contact" || path === "/email") return <PublicContactPage />;
+  if (path === "/signup" || path === "/register") return <PublicSignupPage />;
 
   return shouldUseLegacyApp() ? <FreshChurvoxApp /> : <OperatorOSCore />;
 }
