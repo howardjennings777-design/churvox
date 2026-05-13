@@ -192,7 +192,7 @@ function OperatorOSCore() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
 
-  const Page = pages[current] || SmartHub;
+  const Page = pages[current] || SmartHubOptionB;
 
   return (
     <OperatorShell
