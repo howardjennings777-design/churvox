@@ -46,3 +46,76 @@
   color: #ffffff !important;
   background: linear-gradient(135deg, #0f9f94 0%, #18bfd0 100%) !important;
 }
+
+/* ===== OPTION B CLEAN TEAL PRICING PAGE ONLY ===== */
+.pricepub {
+  color: #09243a !important;
+  background:
+    radial-gradient(circle at 16% 8%, rgba(20, 184, 166, 0.14), transparent 34%),
+    radial-gradient(circle at 86% 3%, rgba(24, 191, 208, 0.11), transparent 32%),
+    linear-gradient(135deg, #fbfffe 0%, #ecfbf8 58%, #eef8ff 100%) !important;
+}
+
+.pricepub h1,
+.pricepub h2,
+.pricepub h3,
+.pricepub strong {
+  color: #09243a !important;
+  text-shadow: none !important;
+}
+
+.pricepub p,
+.pricepub span,
+.pricepub li {
+  color: #496678 !important;
+}
+
+.pricepub .pricepub-hero p,
+.pricepub .pricepub-extra p,
+.pricepub .pricepub-offer p {
+  color: #08756f !important;
+}
+
+.pricepub header nav a {
+  color: #09243a !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+  border-color: rgba(15, 118, 110, 0.14) !important;
+  box-shadow: 0 12px 36px rgba(15, 46, 66, 0.08) !important;
+}
+
+.pricepub .pricepub-grid article,
+.pricepub .pricepub-extra article,
+.pricepub .pricepub-offer {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(236, 253, 250, 0.78)) !important;
+  border-color: rgba(15, 118, 110, 0.16) !important;
+  box-shadow:
+    0 20px 62px rgba(15, 46, 66, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88) !important;
+}
+
+.pricepub .pricepub-grid article.hot {
+  background:
+    radial-gradient(circle at 20% 0%, rgba(20, 184, 166, 0.14), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(236, 253, 250, 0.82)) !important;
+  border-color: rgba(13, 148, 136, 0.30) !important;
+}
+
+.pricepub .pricepub-hero a,
+.pricepub .pricepub-grid article > a {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #0f9f94 0%, #18bfd0 100%) !important;
+  border-color: transparent !important;
+  box-shadow: 0 14px 38px rgba(13, 148, 136, 0.22) !important;
+}
+
+.pricepub .pricepub-grid small {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #0f9f94 0%, #18bfd0 100%) !important;
+}
+
+.pricepub .pricepub-grid article > strong,
+.pricepub .pricepub-extra b {
+  color: #08756f !important;
+}
+
