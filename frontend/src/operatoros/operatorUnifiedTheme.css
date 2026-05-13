@@ -1,48 +1,40 @@
-/* ===== CHURVOX 10/10 THEME — LIGHTER AI OCEAN GLASS ===== */
+/* ===== CHURVOX FORCE THEME V2 — LIGHTER ELECTRIC OCEAN ===== */
 
 :root {
-  --cvx-bg: #071525;
-  --cvx-bg-2: #0c2236;
-  --cvx-bg-3: #123a56;
-  --cvx-surface: rgba(13, 39, 60, 0.78);
-  --cvx-surface-2: rgba(18, 58, 86, 0.72);
-  --cvx-surface-soft: rgba(255, 255, 255, 0.075);
-  --cvx-ink: #f7fcff;
-  --cvx-muted: #bed3e3;
-  --cvx-dim: #88a9bd;
-  --cvx-cyan: #48e7ff;
-  --cvx-mint: #1ff2bd;
-  --cvx-blue: #5b8cff;
-  --cvx-amber: #ffcc66;
+  --cvx-bg: #0b2032;
+  --cvx-bg-2: #123653;
+  --cvx-bg-3: #185174;
+  --cvx-card: rgba(22, 65, 95, 0.78);
+  --cvx-card-2: rgba(27, 80, 114, 0.70);
+  --cvx-ink: #f8fdff;
+  --cvx-muted: #c9deeb;
+  --cvx-soft: #9fc0d4;
+  --cvx-cyan: #59eaff;
+  --cvx-mint: #2ff4c3;
+  --cvx-blue: #6ea3ff;
   --cvx-red: #ff6b88;
-  --cvx-line: rgba(148, 233, 255, 0.22);
-  --cvx-line-strong: rgba(148, 233, 255, 0.36);
-  --cvx-shadow: 0 26px 80px rgba(0, 14, 28, 0.32);
-  --cvx-glow: 0 0 34px rgba(72, 231, 255, 0.22);
+  --cvx-line: rgba(167, 239, 255, 0.34);
+  --cvx-line-strong: rgba(167, 239, 255, 0.52);
+  --cvx-shadow: 0 26px 80px rgba(2, 15, 31, 0.30);
 }
 
 html,
 body,
-#root {
-  background:
-    radial-gradient(circle at 78% 5%, rgba(72, 231, 255, 0.24), transparent 28rem),
-    radial-gradient(circle at 12% 18%, rgba(31, 242, 189, 0.14), transparent 26rem),
-    radial-gradient(circle at 88% 90%, rgba(91, 140, 255, 0.18), transparent 34rem),
-    linear-gradient(135deg, var(--cvx-bg) 0%, var(--cvx-bg-2) 48%, var(--cvx-bg-3) 100%) !important;
-  color: var(--cvx-ink) !important;
-}
-
-/* ===== PUBLIC SITE / MARKETING ===== */
+#root,
 .cvx-site,
 .cvx-public-vision,
-.force-login-page {
+.force-login-page,
+.op-shell,
+.op-main {
   background:
-    radial-gradient(circle at 76% 6%, rgba(72, 231, 255, 0.25), transparent 30rem),
-    radial-gradient(circle at 12% 20%, rgba(31, 242, 189, 0.14), transparent 28rem),
-    linear-gradient(135deg, #071525 0%, #0c2236 48%, #123a56 100%) !important;
+    radial-gradient(circle at 78% 6%, rgba(89, 234, 255, 0.34), transparent 30rem),
+    radial-gradient(circle at 14% 20%, rgba(47, 244, 195, 0.19), transparent 28rem),
+    radial-gradient(circle at 88% 88%, rgba(110, 163, 255, 0.25), transparent 34rem),
+    linear-gradient(135deg, #0b2032 0%, #123653 48%, #185174 100%) !important;
   color: var(--cvx-ink) !important;
 }
 
+/* make every big surface visibly match */
 .cvx-nav,
 .cvx-vision-nav,
 .cvx-footer,
@@ -61,69 +53,7 @@ body,
 .force-login-shell,
 .force-login-card,
 .force-auth-stats article,
-.force-login-pills b {
-  background:
-    radial-gradient(circle at 20% 8%, rgba(72, 231, 255, 0.14), transparent 54%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.055)) !important;
-  border: 1px solid var(--cvx-line) !important;
-  box-shadow: var(--cvx-shadow), inset 0 1px 0 rgba(255,255,255,.10) !important;
-  backdrop-filter: blur(24px) saturate(140%) !important;
-}
-
-.cvx-nav,
-.cvx-vision-nav {
-  border-radius: 0 0 30px 30px !important;
-}
-
-.cvx-brand strong,
-.cvx-site h1,
-.cvx-site h2,
-.cvx-site h3,
-.cvx-price-grid strong,
-.cvx-feature-grid strong,
-.cvx-step-grid strong,
-.cvx-role-list strong,
-.cvx-mini-feed strong,
-.force-login-copy h1,
-.force-login-card h2,
-.force-login-brand strong,
-.force-auth-stats strong {
-  color: var(--cvx-ink) !important;
-}
-
-.cvx-site p,
-.cvx-site span,
-.cvx-site small,
-.cvx-section-copy,
-.cvx-lede,
-.cvx-footer span,
-.force-login-copy p,
-.force-login-card p,
-.force-login-card span,
-.force-login-card small,
-.force-login-copy span,
-.force-auth-stats span {
-  color: var(--cvx-muted) !important;
-}
-
-.cvx-kicker,
-.cvx-brand small,
-.cvx-mini-feed b,
-.cvx-vision-pill span {
-  color: var(--cvx-cyan) !important;
-}
-
-/* ===== APP SHELL ===== */
-.op-shell,
-.op-main {
-  background:
-    radial-gradient(circle at 78% 5%, rgba(72, 231, 255, 0.23), transparent 28rem),
-    radial-gradient(circle at 12% 18%, rgba(31, 242, 189, 0.13), transparent 26rem),
-    radial-gradient(circle at 88% 90%, rgba(91, 140, 255, 0.18), transparent 34rem),
-    linear-gradient(135deg, #071525 0%, #0c2236 48%, #123a56 100%) !important;
-  color: var(--cvx-ink) !important;
-}
-
+.force-login-pills b,
 .op-sidebar,
 .op-topbar,
 .op-mobile-nav,
@@ -146,17 +76,35 @@ body,
 .op-ai-data-used,
 .op-error,
 .op-warning-soft,
+.vision-stage,
 .vision-panel,
 .vision-signal,
-.vision-stage {
+.vision-approval,
+.vision-feed-row,
+.vision-list button,
+.vision-empty {
   background:
-    radial-gradient(circle at 18% 8%, rgba(72, 231, 255, 0.13), transparent 55%),
-    linear-gradient(180deg, rgba(255,255,255,.105), rgba(255,255,255,.055)) !important;
+    radial-gradient(circle at 20% 8%, rgba(89, 234, 255, 0.18), transparent 54%),
+    linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,.075)) !important;
   border: 1px solid var(--cvx-line) !important;
-  box-shadow: var(--cvx-shadow), inset 0 1px 0 rgba(255,255,255,.095) !important;
-  backdrop-filter: blur(24px) saturate(140%) !important;
+  box-shadow: var(--cvx-shadow), inset 0 1px 0 rgba(255,255,255,.16) !important;
+  backdrop-filter: blur(24px) saturate(150%) !important;
 }
 
+/* text */
+.cvx-brand strong,
+.cvx-site h1,
+.cvx-site h2,
+.cvx-site h3,
+.cvx-price-grid strong,
+.cvx-feature-grid strong,
+.cvx-step-grid strong,
+.cvx-role-list strong,
+.cvx-mini-feed strong,
+.force-login-copy h1,
+.force-login-card h2,
+.force-login-brand strong,
+.force-auth-stats strong,
 .op-workspace-head h1,
 .op-panel h2,
 .op-row strong,
@@ -174,6 +122,18 @@ body,
   color: var(--cvx-ink) !important;
 }
 
+.cvx-site p,
+.cvx-site span,
+.cvx-site small,
+.cvx-section-copy,
+.cvx-lede,
+.cvx-footer span,
+.force-login-copy p,
+.force-login-card p,
+.force-login-card span,
+.force-login-card small,
+.force-login-copy span,
+.force-auth-stats span,
 .op-workspace-head p,
 .op-panel header p,
 .op-ai-card p,
@@ -197,7 +157,20 @@ body,
   color: var(--cvx-muted) !important;
 }
 
-/* ===== INPUTS / BUTTONS ===== */
+.cvx-kicker,
+.cvx-brand small,
+.cvx-mini-feed b,
+.cvx-vision-pill span,
+.vision-copy p,
+.vision-panel header p,
+.vision-approval span {
+  color: var(--cvx-cyan) !important;
+}
+
+/* inputs/buttons */
+.force-login-card input,
+.force-login-card select,
+.force-login-card textarea,
 .op-sidebar nav button,
 .op-sidebar button,
 .op-mobile-nav button,
@@ -210,14 +183,11 @@ body,
 .op-form textarea,
 .op-ai-edit-grid input,
 .op-ai-reject-box textarea,
-.payroll-row textarea,
-.force-login-card input,
-.force-login-card select,
-.force-login-card textarea {
-  background: rgba(7, 21, 37, 0.56) !important;
+.payroll-row textarea {
+  background: rgba(8, 28, 45, 0.62) !important;
   color: var(--cvx-ink) !important;
-  border: 1px solid rgba(148, 233, 255, 0.18) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.065) !important;
+  border: 1px solid rgba(167, 239, 255, 0.28) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.09) !important;
 }
 
 .op-sidebar nav button:hover,
@@ -226,11 +196,14 @@ body,
 .op-workspace button:hover,
 .op-ai-drawer-actions button:hover,
 .cvx-price-grid article:hover,
-.cvx-feature-grid article:hover {
+.cvx-feature-grid article:hover,
+.vision-signal:hover,
+.vision-list button:hover {
   border-color: var(--cvx-line-strong) !important;
   transform: translateY(-1px);
 }
 
+/* primary actions */
 .op-sidebar nav button.active,
 .op-mobile-nav button.active,
 .op-status.good,
@@ -248,44 +221,33 @@ body,
   background: linear-gradient(135deg, var(--cvx-cyan), var(--cvx-mint)) !important;
   color: #04131f !important;
   border-color: transparent !important;
-  box-shadow: 0 18px 46px rgba(72, 231, 255, 0.26) !important;
+  box-shadow: 0 18px 48px rgba(89, 234, 255, 0.34) !important;
 }
 
-.cvx-secondary,
-.cvx-nav nav a,
-.cvx-site a:not(.cvx-primary):not(.cvx-nav-cta),
-.force-login-card footer a {
-  color: var(--cvx-ink) !important;
-}
-
+/* status colors */
 .op-status,
 .op-status.draft,
 .op-status.open,
 .op-status.sent {
-  background: rgba(72, 231, 255, 0.14) !important;
+  background: rgba(89, 234, 255, 0.18) !important;
   color: var(--cvx-cyan) !important;
-  border-color: rgba(72, 231, 255, 0.28) !important;
+  border-color: rgba(89, 234, 255, 0.36) !important;
 }
 
 .op-status.cancelled,
 .op-status.declined,
 button.danger {
-  background: rgba(255, 107, 136, 0.14) !important;
+  background: rgba(255, 107, 136, 0.16) !important;
   color: #ffe0e6 !important;
-  border-color: rgba(255, 107, 136, 0.32) !important;
+  border-color: rgba(255, 107, 136, 0.36) !important;
 }
 
-.op-ai-drawer-backdrop {
-  background: rgba(3, 13, 24, 0.68) !important;
-  backdrop-filter: blur(20px) !important;
-}
-
-/* ===== SMART HUB HERO ===== */
+/* smart hub hero extra punch */
 .vision-stage {
   background:
-    radial-gradient(circle at 74% 18%, rgba(72, 231, 255, 0.29), transparent 24rem),
-    radial-gradient(circle at 28% 82%, rgba(31, 242, 189, 0.16), transparent 28rem),
-    linear-gradient(135deg, rgba(9, 31, 50, 0.96), rgba(18, 58, 86, 0.86)) !important;
+    radial-gradient(circle at 72% 18%, rgba(89, 234, 255, 0.38), transparent 25rem),
+    radial-gradient(circle at 28% 82%, rgba(47, 244, 195, 0.22), transparent 28rem),
+    linear-gradient(135deg, rgba(18, 54, 83, 0.98), rgba(24, 81, 116, 0.90)) !important;
 }
 
 .vision-copy h1 span {
@@ -295,41 +257,34 @@ button.danger {
   color: transparent !important;
 }
 
-.vision-ring {
-  border-color: rgba(148, 233, 255, 0.26) !important;
-  box-shadow: inset 0 0 48px rgba(72, 231, 255, 0.14), 0 0 44px rgba(72, 231, 255, 0.11) !important;
-}
-
-.vision-core-card,
-.vision-floating-card {
-  background:
-    radial-gradient(circle at 50% 9%, rgba(72, 231, 255, 0.35), transparent 62%),
-    linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.065)) !important;
-  border: 1px solid rgba(148, 233, 255, 0.28) !important;
-  box-shadow: 0 35px 90px rgba(0, 14, 28, 0.34), var(--cvx-glow), inset 0 1px 0 rgba(255,255,255,.14) !important;
-}
-
-/* ===== LOGO GLOW ===== */
+/* logo glow */
 .cvx-brand img,
 .force-login-brand img,
 .force-login-card img,
 .op-brand img,
 .vision-brand-pill img,
 .vision-core-card img {
-  filter: drop-shadow(0 0 18px rgba(72, 231, 255, 0.38)) !important;
+  filter: drop-shadow(0 0 20px rgba(89, 234, 255, 0.46)) !important;
 }
 
-/* ===== FOCUS ===== */
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid rgba(72, 231, 255, 0.88) !important;
-  outline-offset: 3px !important;
+/* prove loaded marker */
+body::after {
+  content: "theme v2";
+  position: fixed;
+  right: 10px;
+  bottom: 10px;
+  z-index: 999999;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--cvx-cyan), var(--cvx-mint));
+  color: #04131f;
+  font-size: 10px;
+  font-weight: 900;
+  opacity: 0.45;
+  pointer-events: none;
 }
 
-/* ===== MOBILE ===== */
+/* mobile */
 @media (max-width: 760px) {
   .op-workspace-head,
   .op-toolbar,
