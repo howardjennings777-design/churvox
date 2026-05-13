@@ -46,9 +46,9 @@ export default function PublicLandingPage() {
 
         <div className="chx-hero-grid">
           <section className="chx-copy">
-            <p>AI COMMAND CENTRE FOR TRADE & SERVICE OWNERS</p>
+            <p>PREMIUM TRADE INTELLIGENCE</p>
             <h1>Run jobs, crew and admin<span>from one calm place.</span></h1>
-            <h2>Churvox watches jobs, workers, clients, quotes, invoices, proof photos, reminders and payroll handoff — then prepares the next move so the owner only approves what matters.</h2>
+            <h2>Churvox watches jobs, workers, clients, quotes, invoices, proof photos and follow-ups — then prepares the next move so the owner only approves what matters.</h2>
             <div className="chx-actions">
               <a className="chx-primary" href="/signup">Start free trial</a>
               <a className="chx-secondary" href="/demo">Try live demo</a>
@@ -92,7 +92,7 @@ export default function PublicLandingPage() {
       </section>
 
       <section className="chx-features">
-        <div><p>WHAT CHURVOX RUNS</p><h2>The daily admin system your trade business has been missing.</h2><span>Churvox prepares real admin actions, explains why they matter, and gives owners a simple approval queue.</span></div>
+        <div><p>WHAT CHURVOX RUNS</p><h2>The calm control room for field-service admin.</h2><span>Churvox prepares real admin actions, explains why they matter, and gives owners a simple approval queue.</span></div>
         <div className="chx-cloud">{features.map((feature) => <span key={feature}>{feature}</span>)}</div>
       </section>
 
@@ -112,7 +112,7 @@ export default function PublicLandingPage() {
       </section>
 
       <section className="chx-trust">
-        <div><p>TRUST + CONTROL</p><h2>Approval-first AI, built for business control.</h2></div>
+        <div><p>TRUST + CONTROL</p><h2>Approval-first AI, built for real business control.</h2></div>
         <ul>
           <li>AI prepares work, but the owner approves important actions.</li>
           <li>Business data stays separated between accounts.</li>

@@ -25,8 +25,8 @@ const quotes = [
 ];
 
 const guide = [
-  "This is a safe mock Churvox workspace. No login, no real data, no backend changes.",
-  "AI has already scanned jobs, workers, invoices and quote follow-ups.",
+  "This is a safe Churvox demo workspace. No login, no real data, no backend changes.",
+  "AI has already scanned jobs, workers, invoices and quote follow-ups, then prepared the next moves.",
   "Approve the dispatch suggestion to see how the owner stays in control.",
   "Open Proof-to-Paid to see how completed work becomes invoice-ready.",
 ];

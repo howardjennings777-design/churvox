@@ -86,9 +86,9 @@ export default function PublicSignupPage() {
         <a className="signup-brand" href="/"><span><img src="/brand/churvox-holo-c.svg" alt="" /></span><strong>CHURVOX</strong><small>AI Trade Operator</small></a>
         <div className="signup-grid">
           <section className="signup-copy">
-            <p>START YOUR CHURVOX TRIAL</p>
-            <h1>Give your business an AI command centre.</h1>
-            <p className="signup-lead">Choose your industry so Churvox can shape the setup around your work. Start with jobs, workers, proof, invoices and AI approval-first admin.</p>
+            <p>START FREE TRIAL</p>
+            <h1>Set up your AI command centre.</h1>
+            <p className="signup-lead">Choose your industry so Churvox can shape setup around the way your business actually works. Start with jobs, workers, proof, invoices and AI approval-first admin.</p>
             <div className="signup-sales"><article><strong>14-day trial</strong><span>Try Churvox before committing.</span></article><article><strong>Industry presets</strong><span>Setup wording and next steps match your business type.</span></article><article><strong>Approval-first AI</strong><span>AI prepares work. You approve important actions.</span></article></div>
           </section>
           <section className="signup-card">

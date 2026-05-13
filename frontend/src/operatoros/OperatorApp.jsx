@@ -93,6 +93,10 @@ const pathToKey = {
 
 function shouldUseLegacyApp() {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  // PREMIUM_TRADE_INTELLIGENCE_PUBLIC_FLOW
+  const isLoginPath = path === "/login" || path === "/admin/login" || path === "/owner/login";
+  const loggedIn = Boolean(readToken());
+  if (isLoginPath) return <ForcedLoginPage />;
 
   if (path === "/demo" || path === "/try-demo") {
     return <PublicDemoPage />;
