@@ -6615,33 +6615,33 @@ body.chx-live-login button {
   }
 }
 
-/* ===== CHURVOX COLOR ONLY BLUE TEAL THEME ===== */
+/* ===== CHURVOX PREMIUM SITE-WIDE POLISH: TEXT + CARDS ONLY ===== */
+/* This pass does NOT change page layout. It only fixes colours, text scale, overflow, card readability and consistency. */
+
 :root {
   --chx-bg-deep: #071a2b;
   --chx-bg-mid: #0b2a42;
   --chx-bg-soft: #0f3850;
   --chx-panel-blue: rgba(18, 65, 92, 0.66);
-  --chx-panel-teal: rgba(20, 88, 118, 0.72);
+  --chx-panel-strong: rgba(20, 88, 118, 0.74);
   --chx-panel-soft: rgba(103, 232, 249, 0.12);
-  --chx-border-soft: rgba(165, 243, 252, 0.22);
-  --chx-border-bright: rgba(165, 243, 252, 0.34);
+  --chx-line: rgba(165, 243, 252, 0.22);
+  --chx-line-strong: rgba(165, 243, 252, 0.34);
   --chx-cyan: #67e8f9;
   --chx-mint: #bdfcff;
   --chx-cream: #f4fbf6;
-  --chx-text-soft: rgba(236, 254, 255, 0.76);
-  --chx-text-faint: rgba(236, 254, 255, 0.62);
+  --chx-text: rgba(244, 251, 246, 0.94);
+  --chx-muted: rgba(236, 254, 255, 0.76);
+  --chx-faint: rgba(236, 254, 255, 0.62);
+  --chx-danger: #fecaca;
+  --chx-good: #bbf7d0;
+  --chx-warn: #fde68a;
 }
 
+/* Keep the new inviting colour across the whole product without moving anything. */
 body,
 #root,
-.App {
-  background:
-    radial-gradient(circle at 18% 10%, rgba(103, 232, 249, 0.24), transparent 31%),
-    radial-gradient(circle at 78% 4%, rgba(34, 211, 238, 0.16), transparent 30%),
-    linear-gradient(135deg, var(--chx-bg-deep) 0%, var(--chx-bg-mid) 48%, var(--chx-bg-soft) 100%) !important;
-  color: var(--chx-cream) !important;
-}
-
+.App,
 .chx-public,
 .demo-real,
 .cleanhub,
@@ -6650,129 +6650,118 @@ body,
 .contactpub,
 .pricepub,
 .force-login-page,
-[class*="Dashboard"],
-[class*="dashboard"],
-[class*="SmartHub"],
-[class*="smartHub"],
+[class*="page"],
+[class*="Page"],
+[class*="screen"],
+[class*="Screen"],
+[class*="workspace"],
 [class*="Workspace"],
-[class*="workspace"] {
+[class*="dashboard"],
+[class*="Dashboard"] {
   background:
-    radial-gradient(circle at 18% 10%, rgba(103, 232, 249, 0.24), transparent 31%),
-    radial-gradient(circle at 78% 4%, rgba(34, 211, 238, 0.16), transparent 30%),
+    radial-gradient(circle at 18% 10%, rgba(103, 232, 249, 0.22), transparent 31%),
+    radial-gradient(circle at 78% 4%, rgba(34, 211, 238, 0.15), transparent 30%),
     linear-gradient(135deg, var(--chx-bg-deep) 0%, var(--chx-bg-mid) 48%, var(--chx-bg-soft) 100%) !important;
-  color: var(--chx-cream) !important;
+  color: var(--chx-text) !important;
 }
 
-.chx-operator,
-.chx-wins article,
-.chx-problems article,
-.chx-preview,
-.chx-features,
-.chx-pricing,
-.chx-trades,
-.chx-trust,
-.chx-final,
-.chx-footer,
-.demo-side,
-.demo-guide,
-.demo-card,
-.demo-stats article,
-.demo-business,
-.cleanhub-card,
-.cleanhub-metrics article,
-.smartdash-card,
-.smartdash-metrics article,
-.smartdash-job-preview,
-.smartdash-mini-list a,
-.smartdash-queue div,
-.smartdash-workers div,
-.signup-card,
-.signup-sales article,
-.contactpub aside,
-.pricepub-grid article,
-.pricepub-extra article,
-.pricepub-offer,
-.force-login-card,
-[class*="card"],
-[class*="Card"],
-[class*="panel"],
-[class*="Panel"],
-[class*="tile"],
-[class*="Tile"] {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.095), rgba(255,255,255,0.05)),
-    var(--chx-panel-blue) !important;
-  border-color: var(--chx-border-soft) !important;
-  box-shadow:
-    0 24px 80px rgba(2, 6, 23, 0.30),
-    inset 0 1px 0 rgba(255,255,255,0.08) !important;
+/* Stop text spilling out of cards/buttons everywhere. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-.chx-operator,
-.chx-next,
-.demo-card.hero,
-.cleanhub-main-card,
-.smartdash-hero-card,
-.signup-card,
-.force-login-card,
-[class*="hero"],
-[class*="Hero"],
-[class*="highlight"],
-[class*="Highlight"] {
-  background:
-    radial-gradient(circle at 22% 0%, rgba(103, 232, 249, 0.20), transparent 36%),
-    linear-gradient(180deg, rgba(26, 91, 124, 0.84), rgba(13, 43, 67, 0.76)) !important;
-  border-color: var(--chx-border-bright) !important;
-}
-
-h1,
-h2,
-h3,
-h4,
-strong,
-.chx-copy h1,
-.chx-preview h2,
-.chx-features h2,
-.chx-pricing h2,
-.chx-trades h2,
-.chx-trust h2,
-.chx-final h2,
-.demo-top h1,
-.demo-card h2,
-.cleanhub-header h1,
-.cleanhub-card h2,
-.smartdash-top h1,
-.smartdash-card h2,
-.signup-copy h1,
-.contactpub h1,
-.pricepub-hero h1,
-.force-login-copy h1 {
-  color: var(--chx-cream) !important;
+* {
+  min-width: 0;
 }
 
 p,
 span,
-li,
 small,
+strong,
+b,
+em,
+li,
 label,
-.chx-copy h2,
-.chx-wins span,
-.chx-problems span,
-.chx-preview span,
-.chx-features span,
-.chx-trades span,
-.chx-trust li,
-.demo-card p,
-.demo-guide p,
-.cleanhub-card p,
-.smartdash-card p,
-.signup-lead,
-.contactpub article > span,
-.pricepub-hero span,
-.force-login-copy > span {
-  color: var(--chx-text-soft) !important;
+a,
+button,
+input,
+textarea,
+select,
+td,
+th,
+div {
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
+button,
+a,
+input,
+textarea,
+select {
+  max-width: 100%;
+}
+
+/* Premium consistent type scale. */
+h1 {
+  font-size: clamp(34px, 4.4vw, 62px) !important;
+  line-height: 0.98 !important;
+  letter-spacing: -0.055em !important;
+  color: var(--chx-cream) !important;
+  text-wrap: balance;
+}
+
+h2 {
+  font-size: clamp(26px, 3vw, 42px) !important;
+  line-height: 1.03 !important;
+  letter-spacing: -0.04em !important;
+  color: var(--chx-cream) !important;
+  text-wrap: balance;
+}
+
+h3 {
+  font-size: clamp(19px, 2vw, 26px) !important;
+  line-height: 1.12 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--chx-cream) !important;
+}
+
+h4 {
+  font-size: clamp(16px, 1.5vw, 20px) !important;
+  line-height: 1.2 !important;
+  color: var(--chx-cream) !important;
+}
+
+p,
+li,
+label,
+input,
+textarea,
+select {
+  font-size: clamp(13px, 1.02vw, 15px) !important;
+  line-height: 1.48 !important;
+  color: var(--chx-muted) !important;
+}
+
+small {
+  font-size: 11px !important;
+  line-height: 1.25 !important;
+}
+
+strong,
+b {
+  color: var(--chx-cream) !important;
+}
+
+/* Label/kicker consistency. */
+[class*="label"],
+[class*="Label"],
+[class*="eyebrow"],
+[class*="Eyebrow"],
+[class*="kicker"],
+[class*="Kicker"],
 .chx-copy > p,
 .chx-preview p,
 .chx-features p,
@@ -6794,15 +6783,171 @@ label,
 .pricepub-extra p,
 .pricepub-offer p,
 .force-login-card > p,
-.force-login-copy > p,
-[class*="label"],
-[class*="Label"] {
+.force-login-copy > p {
   color: var(--chx-cyan) !important;
+  font-size: 11px !important;
+  line-height: 1.25 !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
 }
 
-a,
-button {
-  border-color: var(--chx-border-soft) !important;
+/* Glass card consistency without changing grid/flex layouts. */
+[class*="card"],
+[class*="Card"],
+[class*="panel"],
+[class*="Panel"],
+[class*="tile"],
+[class*="Tile"],
+[class*="box"],
+[class*="Box"],
+.chx-operator,
+.chx-wins article,
+.chx-problems article,
+.chx-preview,
+.chx-features,
+.chx-pricing,
+.chx-trades,
+.chx-trust,
+.chx-final,
+.chx-footer,
+.demo-guide,
+.demo-card,
+.demo-stats article,
+.demo-business,
+.cleanhub-card,
+.cleanhub-metrics article,
+.smartdash-card,
+.smartdash-metrics article,
+.smartdash-job-preview,
+.smartdash-mini-list a,
+.smartdash-queue div,
+.smartdash-workers div,
+.signup-card,
+.signup-sales article,
+.contactpub aside,
+.pricepub-grid article,
+.pricepub-extra article,
+.pricepub-offer,
+.force-login-card {
+  color: var(--chx-text) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.052)),
+    var(--chx-panel-blue) !important;
+  border-color: var(--chx-line) !important;
+  box-shadow:
+    0 22px 70px rgba(2, 6, 23, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  overflow: hidden;
+}
+
+/* Keep inner card text readable. */
+[class*="card"] *,
+[class*="Card"] *,
+[class*="panel"] *,
+[class*="Panel"] *,
+[class*="tile"] *,
+[class*="Tile"] * {
+  max-width: 100%;
+}
+
+[class*="card"] p,
+[class*="Card"] p,
+[class*="panel"] p,
+[class*="Panel"] p,
+[class*="tile"] p,
+[class*="Tile"] p {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+/* Highlight cards keep the new warmer blue/teal colour only. */
+.chx-operator,
+.chx-next,
+.demo-card.hero,
+.cleanhub-main-card,
+.smartdash-hero-card,
+.signup-card,
+.force-login-card,
+[class*="hero"],
+[class*="Hero"],
+[class*="highlight"],
+[class*="Highlight"] {
+  background:
+    radial-gradient(circle at 22% 0%, rgba(103, 232, 249, 0.20), transparent 36%),
+    linear-gradient(180deg, rgba(26, 91, 124, 0.84), rgba(13, 43, 67, 0.76)) !important;
+  border-color: var(--chx-line-strong) !important;
+}
+
+/* Prevent giant dashboard titles and numbers from wrecking cards. */
+[class*="metric"] strong,
+[class*="Metric"] strong,
+[class*="stat"] strong,
+[class*="Stat"] strong,
+[class*="amount"],
+[class*="Amount"],
+[class*="total"],
+[class*="Total"],
+.chx-stats b,
+.demo-stats strong,
+.cleanhub-metrics strong,
+.cleanhub-big,
+.smartdash-metrics strong,
+.smartdash-cash-number,
+.pricepub-grid article > strong {
+  color: var(--chx-mint) !important;
+  font-size: clamp(28px, 3.4vw, 48px) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.045em !important;
+}
+
+/* Long job/client names need to wrap cleanly inside cards. */
+[class*="job"] strong,
+[class*="Job"] strong,
+[class*="client"] strong,
+[class*="Client"] strong,
+[class*="invoice"] strong,
+[class*="Invoice"] strong,
+[class*="quote"] strong,
+[class*="Quote"] strong,
+[class*="worker"] strong,
+[class*="Worker"] strong {
+  line-height: 1.18 !important;
+  overflow-wrap: anywhere !important;
+}
+
+/* Buttons look consistent and never spill. */
+button,
+.button,
+.btn,
+a[role="button"],
+[class*="button"],
+[class*="Button"],
+.chx-primary,
+.chx-secondary,
+.chx-pricing > a,
+.chx-next button,
+.demo-guide button,
+.demo-queue button,
+.demo-proof button,
+.demo-actions-row button,
+.demo-side-footer a,
+.cleanhub-header nav a,
+.cleanhub-actions footer button,
+.cleanhub-actions footer a,
+.smartdash-actions a,
+.smartdash-button-row a,
+.signup-card button,
+.contactpub-actions a,
+.pricepub-hero a,
+.pricepub-grid article > a,
+.force-login-card button {
+  min-width: 0;
+  white-space: normal !important;
+  text-align: center;
+  line-height: 1.15 !important;
+  font-size: clamp(12px, 0.95vw, 14px) !important;
+  font-weight: 850 !important;
 }
 
 .chx-primary,
@@ -6822,15 +6967,16 @@ button {
 .pricepub-hero a,
 .pricepub-grid article > a,
 .force-login-card button,
-.force-login-pills b,
 button[type="submit"],
 [class*="primary"],
 [class*="Primary"] {
   color: #062033 !important;
   background: linear-gradient(135deg, #f3fffb 0%, #bdfcff 46%, #67e8f9 100%) !important;
-  box-shadow: 0 16px 48px rgba(103, 232, 249, 0.24) !important;
+  border-color: rgba(165, 243, 252, 0.28) !important;
+  box-shadow: 0 16px 48px rgba(103, 232, 249, 0.22) !important;
 }
 
+/* Secondary buttons. */
 .chx-secondary,
 .demo-side-footer a:nth-child(2),
 .contactpub-actions a:nth-child(2),
@@ -6840,9 +6986,10 @@ button[type="submit"],
 [class*="Secondary"] {
   color: var(--chx-cream) !important;
   background: rgba(255, 255, 255, 0.09) !important;
-  border-color: var(--chx-border-soft) !important;
+  border-color: var(--chx-line) !important;
 }
 
+/* Forms across all pages. */
 input,
 select,
 textarea,
@@ -6854,6 +7001,11 @@ textarea,
   color: var(--chx-cream) !important;
 }
 
+input::placeholder,
+textarea::placeholder {
+  color: rgba(236, 254, 255, 0.5) !important;
+}
+
 input:focus,
 select:focus,
 textarea:focus {
@@ -6861,38 +7013,81 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(103, 232, 249, 0.15) !important;
 }
 
-.chx-stats b,
-.demo-stats strong,
-.cleanhub-metrics strong,
-.cleanhub-big,
-.smartdash-metrics strong,
-.smartdash-cash-number,
-.pricepub-grid article > strong,
-[class*="metric"] strong,
-[class*="Metric"] strong,
-[class*="amount"],
-[class*="Amount"] {
-  color: var(--chx-mint) !important;
-}
-
-.chx-brand > span,
-.demo-brand > span,
-.signup-brand span,
-.force-login-brand span {
-  box-shadow:
-    0 16px 60px rgba(103, 232, 249, 0.26),
-    inset 0 1px 0 rgba(255,255,255,0.18) !important;
-}
-
+/* Badges/status pills consistent. */
+.badge,
+[class*="badge"],
+[class*="Badge"],
+.status,
 .live-dot,
 .cleanhub-card-top b,
 .pricepub-grid small,
-.status,
-.demo-top-actions a.primary,
-.badge,
-[class*="badge"],
-[class*="Badge"] {
+.demo-top-actions a.primary {
   color: #062033 !important;
   background: linear-gradient(135deg, #effffd, #67e8f9) !important;
+  border-color: rgba(165, 243, 252, 0.25) !important;
+  font-size: 11px !important;
+  line-height: 1.15 !important;
+  font-weight: 900 !important;
+  white-space: normal !important;
+}
+
+/* Tables/list rows: no text leaking outside. */
+table,
+tbody,
+thead,
+tr,
+td,
+th {
+  max-width: 100%;
+}
+
+td,
+th {
+  overflow-wrap: anywhere !important;
+  white-space: normal !important;
+}
+
+/* Public landing headline can stay stronger, but not absurdly oversized. */
+.chx-copy h1 {
+  font-size: clamp(44px, 5.4vw, 86px) !important;
+  line-height: 0.9 !important;
+}
+
+.chx-copy h2 {
+  font-size: clamp(15px, 1.15vw, 19px) !important;
+  line-height: 1.45 !important;
+}
+
+/* Mobile safety. */
+@media (max-width: 760px) {
+  h1 {
+    font-size: clamp(32px, 10vw, 44px) !important;
+  }
+
+  h2 {
+    font-size: clamp(24px, 7vw, 34px) !important;
+  }
+
+  h3 {
+    font-size: clamp(18px, 5vw, 24px) !important;
+  }
+
+  p,
+  li,
+  label,
+  input,
+  textarea,
+  select {
+    font-size: 14px !important;
+  }
+
+  button,
+  .button,
+  .btn,
+  a[role="button"],
+  [class*="button"],
+  [class*="Button"] {
+    font-size: 13px !important;
+  }
 }
 
