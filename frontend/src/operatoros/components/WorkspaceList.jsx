@@ -236,8 +236,8 @@ export default function WorkspaceList({
   const actions = ACTIONS_BY_TYPE[type] || [];
 
   return (
-    <main className="op-workspace">
-      <section className="op-workspace-head">
+    <main className="op-workspace op-image-workspace">
+      <section className="op-workspace-head op-image-hero">
         <div>
           <p>{eyebrow}</p>
           <h1>{title}</h1>
@@ -256,7 +256,7 @@ export default function WorkspaceList({
 
       {notice ? <section className="op-notice">{notice}</section> : null}
 
-      <section className="op-toolbar">
+      <section className="op-toolbar op-image-toolbar">
         <input
           value={query}
           placeholder={`Search ${title.toLowerCase()}`}
@@ -265,17 +265,17 @@ export default function WorkspaceList({
         <span>{filtered.length} shown</span>
       </section>
 
-      <section className="op-list">
+      <section className="op-list op-image-list">
         {!filtered.length ? (
           <EmptyState
             title={`No ${title.toLowerCase()} yet`}
-            body="Add or import records and Churvox will start preparing work."
+            body="Add or import records and Churvox will prepare the next owner-approved action."
           />
         ) : (
           filtered.map((item, index) => (
             <button
               key={idOf(item) || `${type}-${index}`}
-              className="op-row"
+              className="op-row op-image-row"
               onClick={() => setSelected(item)}
             >
               <div>
@@ -322,7 +322,7 @@ export default function WorkspaceList({
           ) : null
         }
       >
-        <div className="op-detail-grid">
+        <div className="op-detail-grid op-image-detail-grid">
           {visibleFields(selected, type).slice(0, 10).map(([label, value]) => (
             <div key={label}>
               <small>{label}</small>
@@ -331,7 +331,7 @@ export default function WorkspaceList({
           ))}
         </div>
 
-        <section className="op-note">
+        <section className="op-note op-image-note">
           <strong>AI Operator note</strong>
           <p>
             Details stay in this drawer so the owner keeps context. Use the actions below to update this record without leaving the workspace.
