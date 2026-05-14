@@ -868,133 +868,191 @@ function Workspace({ page, setPage, data }) {
   const team = data?.team?.length ? data.team : TEAM;
   const quotes = data?.quotes?.length ? data.quotes : QUOTES;
   const invoices = data?.invoices?.length ? data.invoices : INVOICES;
+  const stats = data?.stats || {};
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [approved, setApproved] = useState({});
 
-  if (page === "dashboard") return <Dashboard setPage={setPage} data={data} />;
+  const meta = {
+    dashboard: {
+      kicker: "Smart Hub",
+      title: "AI has prepared today’s business actions.",
+      body: data?.loading ? "Syncing your live Churvox workspace..." : data?.error || "Start with decisions, not clutter. Churvox turns admin into one calm approval flow.",
+      rows: jobs,
+    },
+    queue: {
+      kicker: "AI Work Queue",
+      title: "Review what AI prepared.",
+      body: "Every important action is approval-first. Check the reason, edit if needed, then approve.",
+      rows: actions.map((item) => [item.type, item.title, item.body, item.action]),
+    },
+    jobs: {
+      kicker: "Jobs",
+      title: "Dispatch without the mess.",
+      body: "Jobs are grouped into a clean AI-ready workspace.",
+      rows: jobs,
+    },
+    clients: {
+      kicker: "Clients",
+      title: "Clients with memory.",
+      body: "Customer history, follow-ups, and admin context stay together.",
+      rows: clients,
+    },
+    team: {
+      kicker: "Team",
+      title: "Crew availability and worker matching.",
+      body: "AI helps surface who is available and what needs owner attention.",
+      rows: team,
+    },
+    quotes: {
+      kicker: "Quotes",
+      title: "Quote pipeline that follows up.",
+      body: "AI keeps stale quotes visible so work does not go cold.",
+      rows: quotes,
+    },
+    invoices: {
+      kicker: "Invoices",
+      title: "Cashflow without chasing.",
+      body: "Drafts, overdue reminders, and payment follow-ups stay visible.",
+      rows: invoices,
+    },
+    proof: {
+      kicker: "Proof-to-Paid",
+      title: "Completed work becomes invoice-ready.",
+      body: "Job notes, photos, and completed work can move toward owner-approved invoicing.",
+      rows: [...jobs.slice(0, 3), ...invoices.slice(0, 3)],
+    },
+    settings: {
+      kicker: "Settings",
+      title: "Business setup and controls.",
+      body: "Plans, roles, integrations, and guardrails belong in one calm workspace.",
+      rows: [
+        ["Plan", "Billing", "Roles", "Owner safe"],
+        ["MYOB", "SMS", "Imports", "Connected tools"],
+        ["Security", "Business profile", "Permissions", "Control"],
+      ],
+    },
+  };
 
-  if (page === "queue") {
-    return (
-      <section className="cx-workspace">
-        <WorkspaceHero
-          kicker="AI Work Queue"
-          title="Review what AI prepared."
-          body="Every important action is approval-first. Check the reason, edit if needed, then approve."
-          metric={`${actions.length} actions`}
-          action="Prepared and waiting."
-          setPage={setPage}
-        />
-        <ActionQueue actions={actions} />
-      </section>
-    );
+  const current = meta[page] || meta.dashboard;
+
+  function openRecord(item) {
+    setSelectedRecord(item);
   }
 
-  if (page === "jobs") {
-    return (
-      <Board
-        title="Dispatch without the mess."
-        body="Jobs are grouped into simple stages with AI worker suggestions ready for approval."
-        setPage={setPage}
-        columns={[
-          ["Needs worker", jobs.filter((j) => String(j[3]).toLowerCase().includes("need") || String(j[3]).toLowerCase().includes("unassigned"))],
-          ["Scheduled", jobs.filter((j) => String(j[3]).toLowerCase().includes("scheduled") || String(j[3]).toLowerCase().includes("assigned"))],
-          ["In progress", jobs.filter((j) => String(j[3]).toLowerCase().includes("progress") || String(j[3]).toLowerCase().includes("started"))],
-        ]}
-      />
-    );
-  }
-
-  if (page === "clients") {
-    return (
-      <Board
-        title="Clients with memory."
-        body="See active work, follow-ups and invoice opportunities without hunting through pages."
-        setPage={setPage}
-        columns={[
-          ["Active", clients.filter((c) => String(c[3]).toLowerCase().includes("active"))],
-          ["Needs follow-up", clients.filter((c) => String(c[3]).toLowerCase().includes("follow"))],
-          ["Ready", clients.filter((c) => String(c[3]).toLowerCase().includes("ready"))],
-        ]}
-      />
-    );
-  }
-
-  if (page === "team") {
-    return (
-      <Board
-        title="Crew availability and worker matching."
-        body="AI recommends who can take the job, but the owner approves the assignment."
-        setPage={setPage}
-        columns={[
-          ["Best match", team.filter((t) => String(t[3]).toLowerCase().includes("best"))],
-          ["Available", team.filter((t) => String(t[3]).toLowerCase().includes("available") || String(t[3]).toLowerCase().includes("online"))],
-          ["Busy", team.filter((t) => String(t[3]).toLowerCase().includes("busy") || String(t[3]).toLowerCase().includes("site"))],
-        ]}
-      />
-    );
-  }
-
-  if (page === "quotes") {
-    return (
-      <Board
-        title="Quote pipeline that follows up."
-        body="AI spots stale quotes and prepares follow-up messages for owner approval."
-        setPage={setPage}
-        columns={[
-          ["Draft", quotes.filter((q) => String(q[3]).toLowerCase().includes("draft"))],
-          ["Sent", quotes.filter((q) => String(q[3]).toLowerCase().includes("sent") || String(q[3]).toLowerCase().includes("open"))],
-          ["Follow-up", quotes.filter((q) => String(q[3]).toLowerCase().includes("follow") || String(q[3]).toLowerCase().includes("pending"))],
-        ]}
-      />
-    );
-  }
-
-  if (page === "invoices") {
-    return (
-      <Board
-        title="Cashflow without chasing."
-        body="Drafts, overdue reminders and payment follow-ups are prepared in one place."
-        setPage={setPage}
-        columns={[
-          ["Draft", invoices.filter((i) => String(i[3]).toLowerCase().includes("draft"))],
-          ["Overdue", invoices.filter((i) => String(i[3]).toLowerCase().includes("overdue"))],
-          ["Paid", invoices.filter((i) => String(i[3]).toLowerCase().includes("paid"))],
-        ]}
-      />
-    );
-  }
-
-  if (page === "proof") {
-    return (
-      <Board
-        title="Proof-to-paid workflow."
-        body="Completed work, notes and photos become invoice-ready drafts for approval."
-        setPage={setPage}
-        columns={[
-          ["Completed jobs", jobs.filter((j) => String(j[3]).toLowerCase().includes("complete")).slice(0, 6)],
-          ["AI invoice drafts", invoices.filter((i) => String(i[3]).toLowerCase().includes("draft"))],
-          ["Approve and send", invoices.filter((i) => !String(i[3]).toLowerCase().includes("paid"))],
-        ]}
-      />
-    );
+  function approveAction(item) {
+    setApproved((currentApproved) => ({ ...currentApproved, [item.title]: true }));
+    setSelectedRecord([
+      item.type,
+      `${item.title} approved`,
+      "Approved in this AI shell. Next wiring can connect this to the matching backend action.",
+      "Approved",
+    ]);
   }
 
   return (
     <section className="cx-workspace">
-      <WorkspaceHero
-        kicker="Settings"
-        title="Business setup and controls."
-        body="Plans, billing, roles and integrations should feel part of the same AI-powered system."
-        metric="Owner safe"
-        action="Guardrails stay on."
-        setPage={setPage}
-      />
-      <section className="cx-feature-list app">
-        {["Plan", "Billing", "Roles", "MYOB", "SMS", "Imports", "Security", "Business profile"].map((item) => (
-          <article key={item}>{item}</article>
-        ))}
+      <section className="cx-work-hero">
+        <div>
+          <span>{current.kicker}</span>
+          <h1>{current.title}</h1>
+          <p>{current.body}</p>
+        </div>
+
+        <aside>
+          <span>AI Operator</span>
+          <strong>{actions.length} ready</strong>
+          <p>Prepared for owner approval.</p>
+          <button type="button" onClick={() => setPage("queue")}>Review queue</button>
+        </aside>
       </section>
+
+      {page === "dashboard" ? (
+        <section className="cx-stats">
+          <Stat label="Jobs today" value={stats.jobsToday || String(jobs.length)} note="live workspace count" />
+          <Stat label="Ready to invoice" value={stats.readyToInvoice || "$0"} note="drafts and follow-ups" />
+          <Stat label="Open quotes" value={stats.openQuotes || String(quotes.length)} note="pipeline watched" />
+          <Stat label="Crew online" value={stats.crewOnline || String(team.length)} note="team records" />
+        </section>
+      ) : null}
+
+      {(page === "dashboard" || page === "queue") ? (
+        <section className="cx-action-board">
+          {actions.map((item) => {
+            const isApproved = approved[item.title];
+
+            return (
+              <article className={`cx-work-action ${item.tone || "blue"}`} key={item.title}>
+                <span>{item.type}</span>
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
+                {isApproved ? <small className="cx-approved-note">Approved in this session</small> : null}
+                <div>
+                  <button type="button" onClick={() => openRecord([item.type, item.title, item.body, item.action])}>Details</button>
+                  <button type="button" className="approve" onClick={() => approveAction(item)}>
+                    {isApproved ? "Approved" : item.action}
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </section>
+      ) : null}
+
+      <section className="cx-panel">
+        <header>
+          <div>
+            <span>{current.kicker}</span>
+            <h2>{page === "queue" ? "Prepared actions" : "Workspace records"}</h2>
+          </div>
+        </header>
+
+        <div className="cx-panel-list">
+          {current.rows.map((item, index) => (
+            <button type="button" className="cx-row" key={`${page}-${index}-${item[1] || item[0]}`} onClick={() => openRecord(item)}>
+              <span>{item[0]}</span>
+              <strong>{item[1]}</strong>
+              <small>{item[2]}</small>
+              <b>{item[3]}</b>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {selectedRecord ? (
+        <div className="cx-record-backdrop" onClick={() => setSelectedRecord(null)}>
+          <section className="cx-record-modal" onClick={(event) => event.stopPropagation()}>
+            <header>
+              <div>
+                <span>Churvox record</span>
+                <h2>{selectedRecord[1]}</h2>
+              </div>
+              <button type="button" onClick={() => setSelectedRecord(null)}>×</button>
+            </header>
+
+            <p>{selectedRecord[2]}</p>
+
+            <div className="cx-record-grid">
+              <article>
+                <strong>Status</strong>
+                <small>{selectedRecord[3]}</small>
+              </article>
+              <article>
+                <strong>AI context</strong>
+                <small>Churvox can use this record to prepare dispatch, invoice, quote, follow-up, or proof-to-paid actions.</small>
+              </article>
+            </div>
+
+            <footer>
+              <button type="button" onClick={() => setSelectedRecord(null)}>Close</button>
+              <button type="button" className="approve" onClick={() => setSelectedRecord(null)}>Done</button>
+            </footer>
+          </section>
+        </div>
+      ) : null}
     </section>
   );
 }
+
 
 export default function ChurvoxAIShell() {
   const [authed, setAuthed] = useState(hasSavedLogin);
