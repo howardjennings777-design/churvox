@@ -1036,6 +1036,21 @@ function Workspace({ page, setPage, data }) {
         </aside>
       </section>
 
+      <section className="cx-ai-guardrail-strip">
+        <article>
+          <span>AI prepares</span>
+          <strong>Dispatch, invoices, quotes, reminders</strong>
+        </article>
+        <article>
+          <span>Owner approves</span>
+          <strong>No sends, price changes, or records changed without approval</strong>
+        </article>
+        <article>
+          <span>Live context</span>
+          <strong>Jobs, clients, team, quotes, and invoices stay watched</strong>
+        </article>
+      </section>
+
       <section className="cx-workspace-command-bar">
         {[
           ["AI Queue", "/ai-approvals", "queue"],
