@@ -136,6 +136,21 @@ export default function AIActionDock() {
   });
   const [checking, setChecking] = useState(false);
   const [lastChecked, setLastChecked] = useState("");
+  const [deployVersion, setDeployVersion] = useState("");
+
+  useEffect(() => {
+    async function loadDeployVersion() {
+      try {
+        const res = await fetch(`/ai-shell-deploy-marker.txt?ts=${Date.now()}`, { cache: "no-store" });
+        const text = await res.text();
+        setDeployVersion(text.trim());
+      } catch {
+        setDeployVersion("version marker not found yet");
+      }
+    }
+
+    loadDeployVersion();
+  }, []);
 
   useEffect(() => {
     const check = () => setVisible(isLoggedIn());
@@ -232,6 +247,7 @@ export default function AIActionDock() {
                 <p className="ai-dock-check">
                   {checking ? "Checking live workspace..." : lastChecked ? `Last checked ${lastChecked}` : "Live check ready"}
                 </p>
+                {deployVersion ? <p className="ai-dock-version">{deployVersion}</p> : null}
               </div>
               <button type="button" onClick={() => setOpen(false)}>×</button>
             </header>
