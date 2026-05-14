@@ -20,6 +20,7 @@ import PublicClientPortalPage from "../pages/public/PublicClientPortalPage";
 
 import "./churvoxOperatorDirection.css";
 import FreshAuthShell from "./FreshAuthShell";
+import FreshAIPublicShell from "./FreshAIPublicShell";
 const API_BASE = (() => {
   const raw =
     process.env.REACT_APP_API_URL ||
@@ -32,8 +33,10 @@ const API_BASE = (() => {
 
 
 function ChurvoxPublicLanding() {
-  return <FreshAuthShell />;
+  return <FreshAIPublicShell />;
 }
+
+
 
 function readToken() {
   try {
