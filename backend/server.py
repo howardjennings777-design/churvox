@@ -14704,6 +14704,107 @@ async def list_owner_command_approved_drafts(current_user: dict = Depends(get_cu
     }
 
 
+
+
+# ===== Owner Command Hub approved draft ready-to-send =====
+async def _owner_command_find_approved_draft_for_send(business_id: str, draft_id: str, draft_kind: str):
+    if not draft_id:
+        return None, None
+
+    collections = []
+
+    kind = str(draft_kind or "").lower()
+    if "quote" in kind:
+        collections = [("quote", db.owner_command_followups)]
+    elif "payment" in kind or "invoice" in kind or "cashflow" in kind:
+        collections = [("payment", db.owner_command_payment_reminders)]
+    else:
+        collections = [
+            ("quote", db.owner_command_followups),
+            ("payment", db.owner_command_payment_reminders),
+        ]
+
+    business_filter = _owner_command_business_filter(business_id)
+
+    for label, collection in collections:
+        candidates = []
+        try:
+            candidates.append({"_id": ObjectId(str(draft_id))})
+        except Exception:
+            pass
+
+        candidates.extend([
+            {"_id": str(draft_id)},
+            {"id": str(draft_id)},
+        ])
+
+        for query in candidates:
+            final_query = {"$and": [query, business_filter]} if business_filter else query
+            found = await collection.find_one(final_query)
+            if found:
+                return label, found
+
+    return None, None
+
+
+@api_router.post("/ai/owner-command/approved-drafts/ready")
+async def mark_owner_approved_draft_ready(payload: dict, current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or current_user.get("user_role") or "").lower()
+    if role == "worker":
+        raise HTTPException(status_code=403, detail="Owner/admin access required")
+
+    business_id = _owner_command_business_id(current_user)
+    now = datetime.utcnow()
+
+    draft_id = str(payload.get("draft_id") or payload.get("id") or "").strip()
+    draft_kind = str(payload.get("kind") or payload.get("source_type") or payload.get("type") or "").strip()
+
+    label, draft = await _owner_command_find_approved_draft_for_send(business_id, draft_id, draft_kind)
+    if not draft:
+        raise HTTPException(status_code=404, detail="Approved draft not found")
+
+    collection = db.owner_command_followups if label == "quote" else db.owner_command_payment_reminders
+
+    await collection.update_one(
+        {"_id": draft["_id"]},
+        {"$set": {
+            "send_status": "ready_to_send",
+            "ready_to_send": True,
+            "ready_to_send_at": now,
+            "ready_to_send_by": str(current_user.get("id") or current_user.get("_id") or ""),
+            "ready_to_send_by_email": current_user.get("email"),
+            "updated_at": now,
+        }}
+    )
+
+    approval_doc = {
+        "business_id": business_id,
+        "owner_user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "owner_email": current_user.get("email"),
+        "type": "Ready to send",
+        "title": draft.get("title") or "Approved draft marked ready to send",
+        "status": "ready_to_send",
+        "draft_id": str(draft.get("_id") or ""),
+        "draft_kind": label,
+        "message": draft.get("message") or "",
+        "created_at": now,
+        "approved_at": now,
+        "approval_first": True,
+    }
+
+    result = await db.owner_command_approvals.insert_one(make_json_safe(approval_doc))
+    approval_doc["id"] = str(result.inserted_id)
+
+    updated = {**draft, "send_status": "ready_to_send", "ready_to_send": True, "ready_to_send_at": now}
+
+    return {
+        "ok": True,
+        "message": "Approved draft marked ready to send. Nothing has been sent automatically.",
+        "draft": make_json_safe(updated),
+        "approval": make_json_safe(approval_doc),
+    }
+
+
 # /api/ai/operator/plan
 # /api/ai/operator/actions
 # /api/ai/operator/actions/{id}/approve

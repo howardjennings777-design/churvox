@@ -1426,6 +1426,42 @@ function Workspace({ page, setPage, data }) {
     window.dispatchEvent(new PopStateEvent("popstate"));
   }
 
+  async function markDraftReadyToSend(item) {
+    const draftId = item?.id || item?._id || "";
+    if (!draftId) {
+      setApprovedDraftsStatus("Draft missing ID");
+      return;
+    }
+
+    setApprovedDraftsStatus("Marking draft ready to send...");
+
+    try {
+      const result = await apiPost("/ai/owner-command/approved-drafts/ready", {
+        draft_id: draftId,
+        kind: item.kind || item.type || item.source_type,
+      });
+
+      setApprovedDrafts((current) => current.map((draft) => {
+        const currentId = draft.id || draft._id;
+        if (String(currentId) !== String(draftId)) return draft;
+        return {
+          ...draft,
+          send_status: "ready_to_send",
+          status: "ready_to_send",
+          ready_to_send: true,
+        };
+      }));
+
+      if (result?.approval) {
+        setBackendApprovalLog((current) => [result.approval, ...current].slice(0, 12));
+      }
+
+      setApprovedDraftsStatus(result?.message || "Draft marked ready to send");
+    } catch (err) {
+      setApprovedDraftsStatus(err?.message || "Could not mark draft ready to send");
+    }
+  }
+
   return (
     <section className="cx-workspace cx-owner-command-shell">
       <section className="cx-work-hero cx-owner-command-hero">
@@ -1616,6 +1652,14 @@ function Workspace({ page, setPage, data }) {
                   <strong>{item.client_name || "Client"}</strong>
                   <small>{item.message || item.title || "Approved draft ready"}</small>
                   <b>{item.send_status || item.status || "not_sent"}</b>
+                  <button
+                    type="button"
+                    className="cx-owner-draft-ready"
+                    onClick={() => markDraftReadyToSend(item)}
+                    disabled={String(item.send_status || item.status || "").includes("ready_to_send")}
+                  >
+                    {String(item.send_status || item.status || "").includes("ready_to_send") ? "Ready" : "Mark ready"}
+                  </button>
                 </article>
               )) : <p>No approved message drafts yet.</p>}
             </div>
