@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "./AIActionDock.css";
 
 const API_BASE = (() => {
@@ -126,7 +126,7 @@ export default function AIActionDock() {
     };
   }, []);
 
-  async function runCheck() {
+  const runCheck = useCallback(async function runCheck() {
     if (!visible) return;
     setChecking(true);
 
@@ -151,7 +151,7 @@ export default function AIActionDock() {
     } finally {
       setChecking(false);
     }
-  }
+  }, [visible]);
 
   useEffect(() => {
     runCheck();
