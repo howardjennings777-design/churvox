@@ -38,6 +38,8 @@ function ChurvoxPublicLanding() {
 
 
 
+
+
 function readToken() {
   try {
     return localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("access_token") || "";
@@ -3196,6 +3198,25 @@ function OperatorActionHost({ api, children }) {
 }
 
 export default function FreshChurvoxApp() {
+  // CHURVOX_FORCE_NEW_AI_PUBLIC_SHELL
+  const churvoxEntryPath = typeof window !== "undefined" ? window.location.pathname : "/";
+  const churvoxPublicBypass =
+    churvoxEntryPath.startsWith("/public") ||
+    churvoxEntryPath.startsWith("/client-portal") ||
+    churvoxEntryPath.startsWith("/portal");
+
+  const churvoxAuthEntry =
+    churvoxEntryPath === "/" ||
+    churvoxEntryPath === "/login" ||
+    churvoxEntryPath === "/signup" ||
+    churvoxEntryPath === "/register" ||
+    churvoxEntryPath === "/auth";
+
+  if (!churvoxPublicBypass && (churvoxAuthEntry || !readToken())) {
+    return <FreshAIPublicShell />;
+  }
+
+
   if (typeof document !== "undefined") {
     const freshPath = window.location.pathname.replace(/\/+$/, "") || "/";
     document.body.classList.toggle("chx-live-login", ["/login", "/admin/login", "/owner/login"].includes(freshPath));
