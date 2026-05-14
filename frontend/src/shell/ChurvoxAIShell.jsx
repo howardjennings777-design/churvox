@@ -11,6 +11,18 @@ const API_BASE = (() => {
   return clean.endsWith("/api") ? clean : `${clean}/api`;
 })();
 
+const APP_PATHS = {
+  dashboard: "/dashboard",
+  queue: "/ai-approvals",
+  jobs: "/jobs",
+  clients: "/clients",
+  team: "/team",
+  quotes: "/quotes",
+  invoices: "/invoices",
+  proof: "/proof-to-paid",
+  settings: "/settings",
+};
+
 const NAV = [
   ["dashboard", "Smart Hub", "AI command centre"],
   ["queue", "AI Work Queue", "Prepared actions"],
@@ -872,28 +884,42 @@ export default function ChurvoxAIShell() {
   const [page, setPage] = useState("dashboard");
 
   useEffect(() => {
-    const path = window.location.pathname.replace(/\/+$/, "") || "/";
-    const map = {
-      "/": "public",
-      "/login": "login",
-      "/signup": "signup",
-      "/register": "signup",
-      "/dashboard": "dashboard",
-      "/smart-hub": "dashboard",
-      "/ai-approvals": "queue",
-      "/jobs": "jobs",
-      "/clients": "clients",
-      "/team": "team",
-      "/quotes": "quotes",
-      "/invoices": "invoices",
-      "/proof-to-paid": "proof",
-      "/settings": "settings",
+    const mapPathToPage = () => {
+      const path = window.location.pathname.replace(/\/+$/, "") || "/";
+      const map = {
+        "/": "public",
+        "/login": "login",
+        "/signup": "signup",
+        "/register": "signup",
+        "/dashboard": "dashboard",
+        "/smart-hub": "dashboard",
+        "/ai-approvals": "queue",
+        "/jobs": "jobs",
+        "/clients": "clients",
+        "/team": "team",
+        "/quotes": "quotes",
+        "/invoices": "invoices",
+        "/proof-to-paid": "proof",
+        "/settings": "settings",
+      };
+
+      const next = map[path] || "dashboard";
+      if (next === "login" || next === "signup") setAuthMode(next);
+      if (!["public", "login", "signup"].includes(next)) setPage(next);
     };
 
-    const next = map[path] || "dashboard";
-    if (next === "login" || next === "signup") setAuthMode(next);
-    if (!["public", "login", "signup"].includes(next)) setPage(next);
+    mapPathToPage();
+    window.addEventListener("popstate", mapPathToPage);
+    return () => window.removeEventListener("popstate", mapPathToPage);
   }, []);
+
+  useEffect(() => {
+    if (!authed) return;
+    const nextPath = APP_PATHS[page] || "/dashboard";
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState({}, "", nextPath);
+    }
+  }, [authed, page]);
 
   const liveData = useLiveChurvoxData(authed);
   const showPublic = useMemo(() => !authed, [authed]);
