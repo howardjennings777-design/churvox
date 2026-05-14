@@ -19,7 +19,6 @@ import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate 
 import PublicClientPortalPage from "../pages/public/PublicClientPortalPage";
 
 import "./churvoxOperatorDirection.css";
-import FreshAuthShell from "./FreshAuthShell";
 import FreshAIPublicShell from "./FreshAIPublicShell";
 const API_BASE = (() => {
   const raw =
@@ -3182,7 +3181,7 @@ function Login() {
     </form>
   );
 
-  return <FreshAuthShell onLogin={loginNode} onSignup={signupNode} />;
+  return <FreshAIPublicShell />;
 }
 
 
