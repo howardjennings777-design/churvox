@@ -62,6 +62,19 @@ function status(item) {
 export default function AIActionDock() {
   const [open, setOpen] = useState(false);
   const [visible, setVisible] = useState(isLoggedIn());
+  const [activity, setActivity] = useState([]);
+
+  function logActivity(label) {
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    setActivity((current) => [{ label, time }, ...current].slice(0, 4));
+  }
+
+  function go(path, label) {
+    logActivity(label);
+    setOpen(false);
+    window.history.pushState({}, "", path);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }
   const [counts, setCounts] = useState({
     unassigned: 0,
     drafts: 0,
@@ -172,15 +185,25 @@ export default function AIActionDock() {
                   type="button"
                   key={label}
                   onClick={() => {
-                    setOpen(false);
-                    window.history.pushState({}, "", path);
-                    window.dispatchEvent(new PopStateEvent("popstate"));
+                    go(path, `Opened ${label}`);
                   }}
                 >
                   {label}
                 </button>
               ))}
             </div>
+
+            {activity.length ? (
+              <section className="ai-dock-activity">
+                <span>Session activity</span>
+                {activity.map((item) => (
+                  <p key={`${item.time}-${item.label}`}>
+                    <strong>{item.time}</strong>
+                    {item.label}
+                  </p>
+                ))}
+              </section>
+            ) : null}
 
             {actions.map(([type, title, action, path]) => (
               <article key={`${type}-${title}`}>
@@ -190,9 +213,7 @@ export default function AIActionDock() {
                 <button
                   type="button"
                   onClick={() => {
-                    setOpen(false);
-                    window.history.pushState({}, "", path);
-                    window.dispatchEvent(new PopStateEvent("popstate"));
+                    go(path, `Opened ${label}`);
                   }}
                 >
                   Review
