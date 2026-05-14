@@ -3,6 +3,7 @@
     "date-fns": "3.6.0"
   },
   "scripts": {
-    "smoke:ai-shell": "bash scripts/churvox-ai-shell-smoke-test.sh"
+    "smoke:ai-shell": "bash scripts/churvox-ai-shell-smoke-test.sh",
+    "deploy:ai-shell": "bash scripts/deploy-ai-shell.sh"
   }
 }
