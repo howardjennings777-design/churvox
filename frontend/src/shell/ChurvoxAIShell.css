@@ -1594,3 +1594,63 @@ button {
     flex-direction: column;
   }
 }
+
+.cx-approval-log {
+  display: grid;
+  gap: 12px;
+  border-radius: 28px;
+  padding: 18px;
+  border: 1px solid rgba(20, 184, 166, 0.18);
+  background: rgba(20, 184, 166, 0.08);
+  box-shadow: var(--cx-shadow);
+}
+
+.cx-approval-log header span {
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.cx-approval-log header h2 {
+  margin: 4px 0 0;
+  color: #102033;
+  font-size: 24px;
+  letter-spacing: -.04em;
+  font-weight: 950;
+}
+
+.cx-approval-log > div {
+  display: grid;
+  gap: 8px;
+}
+
+.cx-approval-log article {
+  display: grid;
+  grid-template-columns: 76px 110px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-height: 46px;
+  padding: 10px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.68);
+  border: 1px solid rgba(20,184,166,.14);
+}
+
+.cx-approval-log article span,
+.cx-approval-log article small {
+  color: #607386;
+  font-weight: 800;
+}
+
+.cx-approval-log article strong {
+  color: #0f513f;
+  font-weight: 950;
+}
+
+@media (max-width: 720px) {
+  .cx-approval-log article {
+    grid-template-columns: 1fr;
+  }
+}

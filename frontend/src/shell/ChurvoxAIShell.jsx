@@ -871,6 +871,7 @@ function Workspace({ page, setPage, data }) {
   const stats = data?.stats || {};
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [approved, setApproved] = useState({});
+  const [approvalLog, setApprovalLog] = useState([]);
 
   const meta = {
     dashboard: {
@@ -940,7 +941,14 @@ function Workspace({ page, setPage, data }) {
   }
 
   function approveAction(item) {
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
     setApproved((currentApproved) => ({ ...currentApproved, [item.title]: true }));
+    setApprovalLog((currentLog) => [
+      { title: item.title, type: item.type, time },
+      ...currentLog,
+    ].slice(0, 5));
+
     setSelectedRecord([
       item.type,
       `${item.title} approved`,
@@ -995,6 +1003,26 @@ function Workspace({ page, setPage, data }) {
               </article>
             );
           })}
+        </section>
+      ) : null}
+
+      {approvalLog.length ? (
+        <section className="cx-approval-log">
+          <header>
+            <div>
+              <span>Session approvals</span>
+              <h2>Owner-approved actions</h2>
+            </div>
+          </header>
+          <div>
+            {approvalLog.map((item) => (
+              <article key={`${item.time}-${item.title}`}>
+                <span>{item.time}</span>
+                <strong>{item.type}</strong>
+                <small>{item.title}</small>
+              </article>
+            ))}
+          </div>
         </section>
       ) : null}
 
