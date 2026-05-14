@@ -13909,7 +13909,6 @@ async def list_owner_command_approvals(current_user: dict = Depends(get_current_
     }
 
 
-app.include_router(api_router) so Render definitely serves:
 # /api/ai/operator/plan
 # /api/ai/operator/actions
 # /api/ai/operator/actions/{id}/approve
