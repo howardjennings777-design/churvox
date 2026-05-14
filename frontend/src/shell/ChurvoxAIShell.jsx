@@ -1188,6 +1188,8 @@ function Workspace({ page, setPage, data }) {
   const [approvalLog, setApprovalLog] = useState(() => readOwnerCommandLog());
   const [backendApprovalLog, setBackendApprovalLog] = useState([]);
   const [backendApprovalStatus, setBackendApprovalStatus] = useState("");
+  const [approvedDrafts, setApprovedDrafts] = useState([]);
+  const [approvedDraftsStatus, setApprovedDraftsStatus] = useState("");
 
   const meta = {
     dashboard: {
@@ -1274,7 +1276,24 @@ function Workspace({ page, setPage, data }) {
       }
     }
 
+    async function loadApprovedDrafts() {
+      try {
+        setApprovedDraftsStatus("Loading approved drafts...");
+        const payload = await apiGet("/ai/owner-command/approved-drafts");
+        const drafts = Array.isArray(payload?.drafts) ? payload.drafts : [];
+        if (!cancelled) {
+          setApprovedDrafts(drafts.slice(0, 10));
+          setApprovedDraftsStatus(drafts.length ? "Approved drafts ready" : "No approved drafts yet");
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setApprovedDraftsStatus("Approved drafts could not load yet");
+        }
+      }
+    }
+
     loadBackendApprovals();
+    loadApprovedDrafts();
 
     return () => {
       cancelled = true;
@@ -1575,6 +1594,30 @@ function Workspace({ page, setPage, data }) {
                   {label}
                 </button>
               ))}
+            </div>
+          </section>
+
+          <section className="cx-panel cx-owner-log cx-owner-drafts">
+            <header>
+              <div>
+                <span>Approved drafts</span>
+                <h2>Ready to review/send</h2>
+                {approvedDraftsStatus ? <p>{approvedDraftsStatus}</p> : null}
+              </div>
+              <button type="button" onClick={() => switchPage("quotes")}>
+                Open quotes
+              </button>
+            </header>
+
+            <div>
+              {approvedDrafts.length ? approvedDrafts.map((item, index) => (
+                <article key={`${item.id || index}-${item.title}`}>
+                  <span>{item.kind || "Draft"}</span>
+                  <strong>{item.client_name || "Client"}</strong>
+                  <small>{item.message || item.title || "Approved draft ready"}</small>
+                  <b>{item.send_status || item.status || "not_sent"}</b>
+                </article>
+              )) : <p>No approved message drafts yet.</p>}
             </div>
           </section>
 

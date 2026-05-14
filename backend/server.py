@@ -14643,6 +14643,67 @@ async def approve_owner_cashflow_command(payload: dict, current_user: dict = Dep
     }
 
 
+
+
+# ===== Owner Command Hub approved drafts list =====
+@api_router.get("/ai/owner-command/approved-drafts")
+async def list_owner_command_approved_drafts(current_user: dict = Depends(get_current_user)):
+    business_id = _owner_command_business_id(current_user)
+    business_filter = _owner_command_business_filter(business_id)
+
+    followup_query = business_filter if business_filter else {}
+    reminder_query = business_filter if business_filter else {}
+
+    quote_followups = await db.owner_command_followups.find(
+        followup_query
+    ).sort("created_at", -1).limit(15).to_list(15)
+
+    payment_reminders = await db.owner_command_payment_reminders.find(
+        reminder_query
+    ).sort("created_at", -1).limit(15).to_list(15)
+
+    drafts = []
+
+    for item in quote_followups:
+        drafts.append({
+            "id": str(item.get("_id") or item.get("id") or ""),
+            "kind": "Quote follow-up",
+            "type": item.get("type") or "quote_follow_up",
+            "title": item.get("title") or "Quote follow-up draft",
+            "message": item.get("message") or "",
+            "client_name": item.get("client_name") or "Client",
+            "status": item.get("status") or "draft_approved",
+            "send_status": item.get("send_status") or "not_sent",
+            "source_id": str(item.get("quote_id") or ""),
+            "source_type": "quote",
+            "created_at": item.get("created_at"),
+            "approved_at": item.get("approved_at"),
+        })
+
+    for item in payment_reminders:
+        drafts.append({
+            "id": str(item.get("_id") or item.get("id") or ""),
+            "kind": "Payment reminder",
+            "type": item.get("type") or "payment_reminder",
+            "title": item.get("title") or "Payment reminder draft",
+            "message": item.get("message") or "",
+            "client_name": item.get("client_name") or "Client",
+            "status": item.get("status") or "draft_approved",
+            "send_status": item.get("send_status") or "not_sent",
+            "source_id": str(item.get("invoice_id") or ""),
+            "source_type": "invoice",
+            "created_at": item.get("created_at"),
+            "approved_at": item.get("approved_at"),
+        })
+
+    drafts.sort(key=lambda item: str(item.get("created_at") or item.get("approved_at") or ""), reverse=True)
+
+    return {
+        "ok": True,
+        "drafts": make_json_safe(drafts[:25]),
+    }
+
+
 # /api/ai/operator/plan
 # /api/ai/operator/actions
 # /api/ai/operator/actions/{id}/approve
