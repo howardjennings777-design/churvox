@@ -1,0 +1,546 @@
+:root {
+  --neural-bg: #F2F6FF;
+  --neural-ink: #040816;
+  --neural-navy: #050B1D;
+  --neural-panel: #FFFFFF;
+  --neural-line: #CBD9F2;
+  --neural-blue: #2137FF;
+  --neural-violet: #7C3DFF;
+  --neural-cyan: #00E0FF;
+  --neural-mint: #9DFFF3;
+  --neural-soft: #EEF3FF;
+  --neural-glow-blue: rgba(33,55,255,.28);
+  --neural-glow-cyan: rgba(0,224,255,.26);
+  --neural-shadow: 0 24px 80px rgba(4,8,22,.12);
+}
+
+/* app-wide AI atmosphere */
+html,
+body,
+#root {
+  background:
+    radial-gradient(circle at 14% 3%, rgba(33,55,255,.22), transparent 34rem),
+    radial-gradient(circle at 88% 0%, rgba(0,224,255,.20), transparent 36rem),
+    radial-gradient(circle at 48% 100%, rgba(124,61,255,.14), transparent 34rem),
+    linear-gradient(180deg, #FFFFFF 0%, #F4F7FF 42%, #EEF7FF 100%) !important;
+}
+
+/* subtle neural mesh through public + app backgrounds */
+.sx-public,
+.sx-app,
+.sx-auth-page {
+  position: relative !important;
+  isolation: isolate !important;
+}
+
+.sx-public::before,
+.sx-app::before,
+.sx-auth-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .42;
+  background:
+    linear-gradient(rgba(33,55,255,.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,224,255,.045) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at 50% 24%, rgba(0,0,0,.75), transparent 72%);
+}
+
+/* logo becomes AI-node mark */
+.sx-brand span,
+.sx-sidebar .sx-brand span,
+.sx-public-nav .sx-brand span,
+.sx-auth-copy .sx-brand span {
+  width: 44px !important;
+  height: 44px !important;
+  border: 0 !important;
+  background:
+    radial-gradient(circle at 28% 18%, rgba(255,255,255,.95), transparent 23%),
+    linear-gradient(135deg, var(--neural-blue), var(--neural-violet) 48%, var(--neural-cyan) 78%, var(--neural-mint)) !important;
+  box-shadow:
+    0 18px 48px rgba(33,55,255,.32),
+    0 0 0 7px rgba(33,55,255,.06),
+    inset 0 1px 0 rgba(255,255,255,.48) !important;
+}
+
+.sx-brand img {
+  width: 28px !important;
+  height: 28px !important;
+  filter: drop-shadow(0 10px 20px rgba(4,8,22,.40)) !important;
+}
+
+.sx-brand b {
+  color: var(--neural-ink) !important;
+  font-weight: 950 !important;
+  letter-spacing: -.045em !important;
+}
+
+/* public nav */
+.sx-public-nav {
+  background: rgba(255,255,255,.88) !important;
+  border: 1px solid rgba(203,217,242,.95) !important;
+  box-shadow:
+    0 28px 90px rgba(33,55,255,.14),
+    inset 0 1px 0 rgba(255,255,255,.88) !important;
+  backdrop-filter: blur(24px) saturate(155%) !important;
+}
+
+.sx-public-nav nav button:hover {
+  background: linear-gradient(135deg, #EEF3FF, #FFFFFF) !important;
+  color: var(--neural-blue) !important;
+}
+
+/* landing hero: AI OS look */
+.sx-landing-hero {
+  max-width: 1220px !important;
+  min-height: calc(100vh - 150px) !important;
+  grid-template-columns: minmax(0,.80fr) minmax(540px,1.20fr) !important;
+  gap: 56px !important;
+}
+
+.sx-landing-hero > div::before {
+  content: "AI OPERATING SYSTEM FOR TRADE TEAMS" !important;
+  background:
+    linear-gradient(135deg, rgba(33,55,255,.10), rgba(0,224,255,.08), #FFFFFF) !important;
+  border: 1px solid #C6D5FF !important;
+  color: var(--neural-blue) !important;
+  box-shadow: 0 16px 38px rgba(33,55,255,.14) !important;
+}
+
+.sx-landing-hero > div > p {
+  display: none !important;
+}
+
+.sx-landing-hero h1 {
+  color: var(--neural-ink) !important;
+  font-size: clamp(64px, 8.6vw, 120px) !important;
+  line-height: .82 !important;
+  letter-spacing: -.105em !important;
+}
+
+.sx-landing-hero h1::after {
+  content: none !important;
+}
+
+.sx-landing-hero > div > span {
+  color: #354960 !important;
+  font-size: 18.5px !important;
+  line-height: 1.66 !important;
+}
+
+/* product preview: make it the hero visual */
+.sx-product-card {
+  min-height: 660px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  padding: 28px !important;
+  border-radius: 48px !important;
+  background:
+    radial-gradient(circle at 82% 8%, rgba(157,255,243,.40), transparent 18rem),
+    radial-gradient(circle at 8% 14%, rgba(33,55,255,.52), transparent 23rem),
+    radial-gradient(circle at 54% 80%, rgba(124,61,255,.34), transparent 20rem),
+    linear-gradient(145deg, #040816 0%, #071327 42%, #162C92 145%) !important;
+  border: 1px solid rgba(157,255,243,.24) !important;
+  box-shadow:
+    0 54px 150px rgba(4,8,22,.40),
+    inset 0 1px 0 rgba(255,255,255,.13) !important;
+}
+
+.sx-product-card::before {
+  content: "";
+  position: absolute;
+  inset: 18px;
+  border-radius: 38px;
+  border: 1px solid rgba(255,255,255,.11);
+  background:
+    radial-gradient(circle at 20% 20%, rgba(0,224,255,.20) 0 2px, transparent 3px),
+    radial-gradient(circle at 72% 42%, rgba(157,255,243,.16) 0 2px, transparent 3px),
+    linear-gradient(rgba(157,255,243,.060) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(157,255,243,.052) 1px, transparent 1px);
+  background-size: 130px 130px, 160px 160px, 32px 32px, 32px 32px;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,.96), rgba(0,0,0,.20));
+  pointer-events: none;
+}
+
+.sx-product-card::after {
+  content: "";
+  position: absolute;
+  width: 330px;
+  height: 330px;
+  right: -88px;
+  bottom: -110px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(157,255,243,.42), transparent 64%);
+  filter: blur(5px);
+  pointer-events: none;
+}
+
+.sx-product-top,
+.sx-preview-stats,
+.sx-ai-stack {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.sx-product-top span,
+.sx-product-card p,
+.sx-ai-stack article span {
+  color: #A9FFF7 !important;
+}
+
+.sx-product-card strong,
+.sx-preview-stats .sx-stat strong,
+.sx-ai-stack article strong {
+  color: #FFFFFF !important;
+}
+
+.sx-product-card small,
+.sx-preview-stats .sx-stat span,
+.sx-preview-stats .sx-stat small,
+.sx-ai-stack article small {
+  color: rgba(234,248,255,.84) !important;
+}
+
+.sx-preview-stats .sx-stat,
+.sx-ai-stack article {
+  background: rgba(255,255,255,.125) !important;
+  border: 1px solid rgba(157,255,243,.17) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(19px) saturate(150%) !important;
+}
+
+.sx-ai-stack article {
+  min-height: 106px !important;
+}
+
+/* app shell turns into AI command system */
+.sx-app {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(33,55,255,.19), transparent 35rem),
+    radial-gradient(circle at 90% 0%, rgba(0,224,255,.17), transparent 36rem),
+    radial-gradient(circle at 50% 100%, rgba(124,61,255,.12), transparent 32rem),
+    linear-gradient(180deg, #FFFFFF 0%, #F3F7FF 44%, #EEF7FF 100%) !important;
+}
+
+.sx-sidebar {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.99), rgba(246,250,255,.96)) !important;
+  border-right: 1px solid var(--neural-line) !important;
+  box-shadow: 20px 0 56px rgba(33,55,255,.07) !important;
+}
+
+.sx-sidebar nav p {
+  color: #7489A3 !important;
+}
+
+.sx-sidebar nav button {
+  min-height: 46px !important;
+  border-radius: 17px !important;
+  font-weight: 950 !important;
+  color: #17243A !important;
+}
+
+.sx-sidebar nav button.active,
+.sx-sidebar nav button:hover,
+.sx-bottom-nav button.active {
+  background:
+    radial-gradient(circle at 88% 50%, rgba(0,224,255,.22), transparent 7rem),
+    linear-gradient(135deg, #EEF3FF, #FFFFFF) !important;
+  color: var(--neural-blue) !important;
+  box-shadow:
+    inset 3px 0 0 var(--neural-blue),
+    0 15px 36px rgba(33,55,255,.11) !important;
+}
+
+.sx-sidebar nav button.active::after {
+  content: "";
+  float: right;
+  width: 7px;
+  height: 7px;
+  margin-top: 17px;
+  border-radius: 999px;
+  background: var(--neural-cyan);
+  box-shadow: 0 0 20px rgba(0,224,255,1);
+}
+
+/* dark AI side module */
+.sx-side-ai {
+  border-radius: 26px !important;
+  padding: 18px !important;
+  background:
+    radial-gradient(circle at 88% 8%, rgba(157,255,243,.28), transparent 8rem),
+    radial-gradient(circle at 18% 86%, rgba(124,61,255,.32), transparent 9rem),
+    linear-gradient(145deg, #040816, #071327 65%, #162C92 160%) !important;
+  border: 1px solid rgba(157,255,243,.22) !important;
+  box-shadow:
+    0 28px 68px rgba(4,8,22,.28),
+    inset 0 1px 0 rgba(255,255,255,.11) !important;
+}
+
+.sx-side-ai p {
+  color: #A9FFF7 !important;
+}
+
+.sx-side-ai strong {
+  color: #FFFFFF !important;
+  font-size: 20px !important;
+}
+
+.sx-side-ai span {
+  color: rgba(234,248,255,.80) !important;
+}
+
+/* topbar */
+.sx-topbar {
+  background: rgba(255,255,255,.90) !important;
+  border: 1px solid var(--neural-line) !important;
+  box-shadow:
+    0 22px 68px rgba(33,55,255,.12),
+    inset 0 1px 0 rgba(255,255,255,.88) !important;
+  backdrop-filter: blur(24px) saturate(150%) !important;
+}
+
+.sx-topbar strong {
+  color: var(--neural-ink) !important;
+  font-weight: 950 !important;
+}
+
+.sx-topbar span {
+  color: #536B87 !important;
+}
+
+.sx-topbar input {
+  background: linear-gradient(180deg, #FFFFFF, #F7FAFF) !important;
+  border-color: var(--neural-line) !important;
+}
+
+/* dashboard hero: stronger AI feel */
+.sx-hero {
+  min-height: 350px !important;
+  border-radius: 40px !important;
+  background:
+    radial-gradient(circle at 86% 18%, rgba(0,224,255,.19), transparent 24rem),
+    radial-gradient(circle at 12% 16%, rgba(33,55,255,.13), transparent 23rem),
+    radial-gradient(circle at 60% 95%, rgba(124,61,255,.10), transparent 18rem),
+    linear-gradient(135deg, #FFFFFF, #F0F5FF) !important;
+  border: 1px solid var(--neural-line) !important;
+  box-shadow:
+    0 30px 90px rgba(33,55,255,.12),
+    inset 0 1px 0 rgba(255,255,255,.88) !important;
+}
+
+.sx-hero h1 {
+  color: var(--neural-ink) !important;
+  font-size: clamp(52px, 6.3vw, 90px) !important;
+  line-height: .86 !important;
+  letter-spacing: -.092em !important;
+}
+
+.sx-hero > div > p {
+  width: fit-content !important;
+  padding: 9px 13px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(135deg, #EEF3FF, #FFFFFF) !important;
+  border: 1px solid #C8D5FF !important;
+  color: var(--neural-blue) !important;
+  box-shadow: 0 12px 30px rgba(33,55,255,.12) !important;
+}
+
+.sx-hero aside {
+  overflow: hidden !important;
+  border-radius: 34px !important;
+  background:
+    radial-gradient(circle at 90% 10%, rgba(157,255,243,.28), transparent 9rem),
+    radial-gradient(circle at 16% 84%, rgba(124,61,255,.30), transparent 9rem),
+    linear-gradient(145deg, #040816, #071327) !important;
+  border: 1px solid rgba(157,255,243,.20) !important;
+  box-shadow:
+    0 26px 70px rgba(4,8,22,.23),
+    inset 0 1px 0 rgba(255,255,255,.11) !important;
+}
+
+.sx-hero aside p {
+  color: #A9FFF7 !important;
+}
+
+.sx-hero aside strong {
+  color: #FFFFFF !important;
+  font-size: 30px !important;
+}
+
+.sx-hero aside small {
+  color: rgba(234,248,255,.82) !important;
+}
+
+/* every card gets AI polish */
+.sx-panel,
+.sx-stat,
+.sx-ai-grid article,
+.sx-row,
+.sx-column,
+.sx-mini-grid article,
+.sx-invoice-preview,
+.sx-feature-grid article,
+.sx-auth-shell,
+.sx-auth-card {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.99), rgba(248,251,255,.96)) !important;
+  border: 1px solid var(--neural-line) !important;
+  box-shadow:
+    0 20px 60px rgba(4,8,22,.07),
+    inset 0 1px 0 rgba(255,255,255,.76) !important;
+}
+
+/* AI action cards should look powered */
+.sx-ai-grid article {
+  position: relative !important;
+  min-height: 176px !important;
+  overflow: hidden !important;
+  border-radius: 26px !important;
+}
+
+.sx-ai-grid article::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(0,224,255,.20), transparent 8rem),
+    radial-gradient(circle at 0% 92%, rgba(124,61,255,.16), transparent 8rem);
+  pointer-events: none;
+}
+
+.sx-ai-grid article::after {
+  content: "";
+  position: absolute;
+  right: 16px;
+  top: 14px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--neural-cyan);
+  box-shadow: 0 0 18px rgba(0,224,255,1);
+}
+
+.sx-ai-grid article > * {
+  position: relative;
+  z-index: 1;
+}
+
+.sx-ai-grid article span {
+  color: var(--neural-blue) !important;
+}
+
+.sx-ai-grid article strong {
+  font-size: 18px !important;
+  letter-spacing: -.04em !important;
+}
+
+.sx-ai-grid article button {
+  margin-top: auto !important;
+  min-height: 44px !important;
+  background:
+    linear-gradient(135deg, var(--neural-blue), var(--neural-violet) 54%, var(--neural-cyan)) !important;
+  box-shadow: 0 17px 42px rgba(33,55,255,.25) !important;
+}
+
+/* rows */
+.sx-row {
+  border-radius: 22px !important;
+}
+
+.sx-row:hover {
+  transform: translateY(-1px);
+  border-color: #B9D0FF !important;
+  box-shadow:
+    0 20px 52px rgba(33,55,255,.10),
+    inset 0 1px 0 rgba(255,255,255,.78) !important;
+}
+
+.sx-avatar {
+  background:
+    linear-gradient(135deg, #EEF3FF, #FFFFFF) !important;
+  color: var(--neural-blue) !important;
+  border: 1px solid #C8D5FF !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8) !important;
+}
+
+.sx-pill {
+  background: #EEF3FF !important;
+  color: var(--neural-blue) !important;
+  border-color: #BFD0FF !important;
+}
+
+.sx-pill.good {
+  background: #E9F8FF !important;
+  color: var(--neural-blue) !important;
+  border-color: #B8E9FF !important;
+}
+
+.sx-pill.warn {
+  background: #FFF8E7 !important;
+  color: #B45309 !important;
+  border-color: #FDE68A !important;
+}
+
+/* buttons */
+.primary,
+button.primary,
+.sx-actions .primary,
+.sx-public-nav > button.primary,
+.sx-auth-card button.primary,
+.sx-topbar button.primary,
+.sx-ai-grid button {
+  background:
+    linear-gradient(135deg, var(--neural-blue), var(--neural-violet) 54%, var(--neural-cyan)) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  box-shadow:
+    0 20px 52px rgba(33,55,255,.31),
+    inset 0 1px 0 rgba(255,255,255,.36) !important;
+}
+
+/* login/signup */
+.sx-auth-shell {
+  border-radius: 46px !important;
+  background:
+    radial-gradient(circle at 14% 8%, rgba(33,55,255,.17), transparent 27rem),
+    radial-gradient(circle at 90% 12%, rgba(0,224,255,.15), transparent 25rem),
+    linear-gradient(135deg, #FFFFFF, #F3F8FF) !important;
+}
+
+.sx-auth-card {
+  border-radius: 34px !important;
+}
+
+/* mobile */
+@media (max-width: 980px) {
+  .sx-sidebar.open {
+    box-shadow:
+      18px 0 90px rgba(4,8,22,.30),
+      0 0 0 999px rgba(4,8,22,.22) !important;
+  }
+
+  .sx-bottom-nav {
+    background: rgba(255,255,255,.94) !important;
+    border-color: var(--neural-line) !important;
+    box-shadow: 0 22px 70px rgba(33,55,255,.17) !important;
+  }
+
+  .sx-landing-hero {
+    min-height: auto !important;
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .sx-landing-hero h1 {
+    font-size: clamp(48px, 16vw, 78px) !important;
+  }
+
+  .sx-product-card {
+    min-height: auto !important;
+  }
+}

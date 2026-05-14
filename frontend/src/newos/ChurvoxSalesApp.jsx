@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import "./churvoxSales.css";
+import "./churvoxNeuralAi.css";
 import "./churvoxHardAi.css";
 import "./churvoxFinalIdentity.css";
 
 const NAV = [
   ["dashboard", "Command"],
-  ["ai", "AI Queue"],
+  ["ai", "Operator Queue"],
   ["jobs", "Jobs"],
   ["clients", "Clients"],
   ["quotes", "Quotes"],
@@ -160,9 +161,9 @@ function Landing({ go }) {
       <section className="sx-landing-hero">
         <div>
           <p>CHURVOX AI OPERATOR OS</p>
-          <h1>AI runs the admin. You approve.</h1>
+          <h1>AI operates the business admin. You stay in control.</h1>
           <span>
-            A modern command centre for trade and service businesses. Churvox prepares jobs,
+            An AI operating layer for trade and service businesses. Churvox prepares jobs,
             quotes, invoices, reminders and dispatch actions so the owner only reviews and approves.
           </span>
 
@@ -182,7 +183,7 @@ function Landing({ go }) {
 
         <aside className="sx-product-card">
           <div className="sx-product-top">
-            <span>Smart Hub</span>
+            <span>AI Command</span>
             <Pill>Live Preview</Pill>
           </div>
 
@@ -312,7 +313,7 @@ function AppShell({ page, go }) {
             <span>New shell · backend wiring next</span>
           </div>
           <input placeholder="Search jobs, clients, invoices..." />
-          <button onClick={() => go("ai")}>AI Queue</button>
+          <button onClick={() => go("ai")}>Operator Queue</button>
           <button className="primary" onClick={() => go("jobs")}>New Job</button>
         </header>
 
@@ -370,13 +371,13 @@ function Workspace({ page, go }) {
 function Dashboard({ go }) {
   return (
     <main className="sx-workspace">
-      <Hero kicker="SMART HUB" title="AI runs the admin. You approve." subtitle="A clean command centre for jobs, crew, invoices, proof and follow-ups.">
+      <Hero kicker="SMART HUB" title="AI operates the business admin. You stay in control." subtitle="A live AI command layer for dispatch, clients, invoices, proof and daily decisions.">
         <p>AI OPERATOR</p>
         <strong>{aiCards.length} actions ready</strong>
         <small>Prepared for owner approval.</small>
         <div className="sx-actions compact">
-          <button className="primary" onClick={() => go("jobs")}>Create job</button>
-          <button onClick={() => go("ai")}>Review queue</button>
+          <button className="primary" onClick={() => go("jobs")}>Run job setup</button>
+          <button onClick={() => go("ai")}>Review AI queue</button>
         </div>
       </Hero>
 
