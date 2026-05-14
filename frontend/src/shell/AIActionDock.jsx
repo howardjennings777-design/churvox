@@ -146,14 +146,16 @@ export default function AIActionDock() {
   }, [counts]);
 
   const readyCount = counts.unassigned + counts.drafts + counts.followups + counts.overdue || actions.length;
+  const urgentCount = counts.unassigned + counts.overdue;
 
   if (!visible) return null;
 
   return (
     <>
-      <button className="ai-dock-button" type="button" onClick={() => setOpen(true)}>
+      <button className={`ai-dock-button ${urgentCount ? "urgent" : ""}`} type="button" onClick={() => setOpen(true)}>
         <span>AI</span>
         <strong>{readyCount} ready</strong>
+        {urgentCount ? <em>{urgentCount} urgent</em> : null}
       </button>
 
       {open ? (
@@ -163,6 +165,7 @@ export default function AIActionDock() {
               <div>
                 <span>AI Operator</span>
                 <h2>Prepared actions</h2>
+                {urgentCount ? <p className="ai-dock-urgent-note">{urgentCount} urgent item{urgentCount === 1 ? "" : "s"} need owner review.</p> : null}
                 <p className="ai-dock-check">
                   {checking ? "Checking live workspace..." : lastChecked ? `Last checked ${lastChecked}` : "Live check ready"}
                 </p>

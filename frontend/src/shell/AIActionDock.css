@@ -180,3 +180,38 @@
   min-width: 58px;
   color: #102033;
 }
+
+.ai-dock-button.urgent {
+  animation: aiDockPulse 1.8s ease-in-out infinite;
+}
+
+.ai-dock-button em {
+  position: absolute;
+  right: 8px;
+  top: -10px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #7f1d1d;
+  background: #fee2e2;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 950;
+  box-shadow: 0 10px 24px rgba(127, 29, 29, 0.18);
+}
+
+.ai-dock-urgent-note {
+  margin: 7px 0 0;
+  color: #7f1d1d;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+@keyframes aiDockPulse {
+  0%, 100% {
+    box-shadow: 0 24px 70px rgba(37, 99, 235, 0.32);
+  }
+  50% {
+    box-shadow: 0 24px 90px rgba(220, 38, 38, 0.28);
+  }
+}
