@@ -969,6 +969,13 @@ function Workspace({ page, setPage, data }) {
     setSelectedRecord(item);
   }
 
+  function goToWorkspace(path, nextPage) {
+    setSelectedRecord(null);
+    setPage(nextPage);
+    window.history.pushState({}, "", path);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }
+
   function approveAction(item) {
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -1113,8 +1120,11 @@ function Workspace({ page, setPage, data }) {
               </article>
             </div>
 
-            <footer>
+            <footer className="cx-record-actions">
               <button type="button" onClick={() => setSelectedRecord(null)}>Close</button>
+              <button type="button" onClick={() => goToWorkspace("/dashboard", "dashboard")}>Smart Hub</button>
+              <button type="button" onClick={() => goToWorkspace("/jobs", "jobs")}>Jobs</button>
+              <button type="button" onClick={() => goToWorkspace("/invoices", "invoices")}>Invoices</button>
               <button type="button" className="approve" onClick={() => setSelectedRecord(null)}>Done</button>
             </footer>
           </section>

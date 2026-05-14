@@ -1731,3 +1731,19 @@ button {
   background: rgba(255,255,255,.68);
   font-weight: 950;
 }
+
+.cx-record-actions {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cx-record-actions button {
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .cx-record-actions {
+    grid-template-columns: 1fr !important;
+  }
+}
