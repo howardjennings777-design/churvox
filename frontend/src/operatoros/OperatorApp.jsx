@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./pages/PublicSite.css";
 import FreshChurvoxApp from "../fresh/FreshChurvoxApp";
+import ChurvoxNewShell from "../newos/ChurvoxNewShell";
 import ForcedLoginPage from "./pages/ForcedLoginPage";
 import PublicContactPage from "./pages/PublicContactPage";
 import PublicLandingPage from "./pages/PublicLandingPage";
@@ -184,81 +185,6 @@ export default function OperatorApp() {
 }
 
 function OperatorOSCore() {
-  try {
-    document.documentElement.dataset.churvoxDashboardTheme = "option-b-smart-hub-live";
-  } catch {}
-  const data = useOperatorData();
-  const allowRoleSwitch = canSwitchRoleForTesting();
-  const path = window.location.pathname.replace(/\/+$/, "") || "/dashboard";
-  const pathRole = path.startsWith("/worker") ? "worker" : "";
-  const [role, setRoleRaw] = useState(() => pathRole || normalizeRole(currentUserRole()) || "owner");
-  const userName = currentUserName();
-  const [current, setCurrentRaw] = useState(keyFromPath);
-  const [createType, setCreateType] = useState("");
-
-  function setRole(nextRole) {
-    if (!allowRoleSwitch) return;
-    setRoleRaw(normalizeRole(nextRole) || "owner");
-  }
-
-  const nav = useMemo(
-    () => baseNav.filter((item) => (roleNav[role] || roleNav.owner).includes(item.key)),
-    [role]
-  );
-
-  useEffect(() => {
-    function handlePopState() {
-      setCurrentRaw(keyFromPath());
-    }
-
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-
-  function setCurrent(key) {
-    const allowed = (roleNav[role] || roleNav.owner).includes(key);
-    const safeKey = allowed ? key : nav[0]?.key || "jobs";
-    const nextPath = pathForKey(safeKey, role);
-
-    setCurrentRaw(safeKey);
-
-    if (window.location.pathname !== nextPath) {
-      window.history.pushState({}, "", nextPath);
-    }
-  }
-
-  useEffect(() => {
-    if (!(roleNav[role] || roleNav.owner).includes(current)) {
-      setCurrent(nav[0]?.key || "jobs");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role]);
-
-  const Page = pages[current] || SmartHubOptionB;
-
-  return (
-    <OperatorShell
-      nav={nav}
-      current={current}
-      setCurrent={setCurrent}
-      role={role}
-      setRole={setRole}
-      allowRoleSwitch={allowRoleSwitch}
-      userName={userName}
-      data={data}
-      onCreate={setCreateType}
-    >
-      <Page data={data} role={role} onNav={setCurrent} onCreate={setCreateType} />
-
-      {createType ? (
-        <CreateModal
-          type={createType}
-          onClose={() => setCreateType("")}
-          onSaved={data.reload}
-        />
-      ) : null}
-
-      <FirstLoginGuide onNav={setCurrent} onCreate={setCreateType} />
-    </OperatorShell>
-  );
+  return <ChurvoxNewShell />;
 }
+
