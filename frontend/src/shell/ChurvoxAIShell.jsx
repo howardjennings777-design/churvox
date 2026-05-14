@@ -148,6 +148,281 @@ async function authRequest(path, body) {
   return payload;
 }
 
+
+function readToken() {
+  try {
+    return (
+      localStorage.getItem("token") ||
+      localStorage.getItem("authToken") ||
+      localStorage.getItem("access_token") ||
+      ""
+    );
+  } catch {
+    return "";
+  }
+}
+
+async function apiGet(path) {
+  const token = readToken();
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  const text = await res.text();
+  let payload = {};
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    payload = { message: text };
+  }
+
+  if (!res.ok) {
+    throw new Error(payload.detail || payload.message || payload.error || `${path} failed`);
+  }
+
+  return payload;
+}
+
+function toArray(payload, keys = []) {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+  for (const key of keys) {
+    if (Array.isArray(payload[key])) return payload[key];
+  }
+  for (const key of ["data", "items", "results", "records"]) {
+    if (Array.isArray(payload[key])) return payload[key];
+  }
+  return Object.values(payload).find(Array.isArray) || [];
+}
+
+function textValue(...values) {
+  for (const value of values) {
+    if (value !== undefined && value !== null && String(value).trim()) return String(value).trim();
+  }
+  return "";
+}
+
+function statusText(item, fallback = "Active") {
+  return textValue(item?.status, item?.job_status, item?.payment_status, item?.quote_status, item?.state, fallback)
+    .replaceAll("_", " ");
+}
+
+function initials(name, fallback = "AI") {
+  const parts = String(name || fallback).trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return fallback.slice(0, 2).toUpperCase();
+  return parts.slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+}
+
+function moneyValue(item) {
+  const raw = item?.total ?? item?.amount ?? item?.price ?? item?.balance ?? item?.invoice_total ?? item?.quote_total;
+  const value = Number(raw || 0);
+  if (!Number.isFinite(value) || value <= 0) return "";
+  return new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD", maximumFractionDigits: 0 }).format(value);
+}
+
+function jobRow(item, index) {
+  const title = textValue(item?.title, item?.job_title, item?.name, item?.service_type, `Job ${index + 1}`);
+  const client = textValue(item?.client_name, item?.customer_name, item?.client?.name, item?.address, "No client attached");
+  const time = textValue(item?.scheduled_time, item?.start_time, item?.time, item?.scheduled_date, `${index + 1}`);
+  return [time, title, client, statusText(item, item?.assigned_worker_id || item?.assigned_worker ? "Assigned" : "Needs worker")];
+}
+
+function clientRow(item, index) {
+  const name = textValue(item?.client_name, item?.customer_name, item?.name, item?.business_name, `Client ${index + 1}`);
+  const detail = textValue(item?.email, item?.phone, item?.address, item?.notes, "Client record");
+  return [initials(name, "CL"), name, detail, statusText(item, "Active")];
+}
+
+function workerRow(item, index) {
+  const name = textValue(item?.name, item?.full_name, item?.worker_name, item?.email, `Worker ${index + 1}`);
+  const detail = [item?.role, item?.region, item?.email].filter(Boolean).join(" · ") || "Team member";
+  return [initials(name, "WK"), name, detail, statusText(item, "Available")];
+}
+
+function quoteRow(item, index) {
+  const title = textValue(item?.quote_number, item?.number, item?.title, `Quote ${index + 1}`);
+  const client = textValue(item?.client_name, item?.customer_name, item?.client?.name, "Client");
+  const amount = moneyValue(item);
+  return [title, client, amount || "Quote", statusText(item, "Draft")];
+}
+
+function invoiceRow(item, index) {
+  const title = textValue(item?.invoice_number, item?.number, item?.title, `Invoice ${index + 1}`);
+  const client = textValue(item?.client_name, item?.customer_name, item?.client?.name, "Client");
+  const amount = moneyValue(item);
+  return [title, client, amount || "Invoice", statusText(item, "Draft")];
+}
+
+function buildLiveActions(raw) {
+  const jobs = raw.jobs || [];
+  const invoices = raw.invoices || [];
+  const quotes = raw.quotes || [];
+
+  const unassigned = jobs.filter((job) => {
+    const status = statusText(job, "").toLowerCase();
+    return (
+      !job.assigned_worker_id &&
+      !job.assigned_worker &&
+      !job.worker_id &&
+      !status.includes("complete") &&
+      !status.includes("cancel")
+    );
+  });
+
+  const completed = jobs.filter((job) => statusText(job, "").toLowerCase().includes("complete"));
+  const overdue = invoices.filter((invoice) => statusText(invoice, "").toLowerCase().includes("overdue"));
+  const drafts = invoices.filter((invoice) => statusText(invoice, "").toLowerCase().includes("draft"));
+  const followQuotes = quotes.filter((quote) => {
+    const status = statusText(quote, "").toLowerCase();
+    return status.includes("sent") || status.includes("pending") || status.includes("follow") || status.includes("open");
+  });
+
+  const actions = [];
+
+  if (unassigned.length) {
+    actions.push({
+      type: "Dispatch",
+      title: `${unassigned.length} unassigned ${unassigned.length === 1 ? "job" : "jobs"} found`,
+      body: "AI can recommend the best worker using workload, availability, area and job fit.",
+      action: "Review assignment",
+      tone: "blue",
+    });
+  }
+
+  if (completed.length || drafts.length) {
+    actions.push({
+      type: "Invoice",
+      title: `${completed.length || drafts.length} invoice ${completed.length + drafts.length === 1 ? "draft" : "drafts"} ready`,
+      body: "Completed work and draft invoices are ready for owner review before sending.",
+      action: "Review invoice",
+      tone: "teal",
+    });
+  }
+
+  if (followQuotes.length) {
+    actions.push({
+      type: "Quote",
+      title: `${followQuotes.length} quote follow-up${followQuotes.length === 1 ? "" : "s"} ready`,
+      body: "AI found quotes that may need a customer follow-up to keep work moving.",
+      action: "Review follow-up",
+      tone: "purple",
+    });
+  }
+
+  if (overdue.length) {
+    actions.push({
+      type: "Cashflow",
+      title: `${overdue.length} overdue invoice${overdue.length === 1 ? "" : "s"}`,
+      body: "AI prepared payment follow-up work, but nothing sends without approval.",
+      action: "Review reminder",
+      tone: "amber",
+    });
+  }
+
+  return actions.length ? actions : AI_ACTIONS;
+}
+
+function useLiveChurvoxData(authed) {
+  const [state, setState] = useState({
+    loading: false,
+    error: "",
+    jobs: JOBS,
+    clients: CLIENTS,
+    team: TEAM,
+    quotes: QUOTES,
+    invoices: INVOICES,
+    actions: AI_ACTIONS,
+    stats: {
+      jobsToday: "14",
+      readyToInvoice: "$8.7k",
+      openQuotes: "7",
+      crewOnline: "4",
+    },
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      if (!authed) return;
+
+      setState((current) => ({ ...current, loading: true, error: "" }));
+
+      const results = await Promise.allSettled([
+        apiGet("/jobs"),
+        apiGet("/clients"),
+        apiGet("/team/workers"),
+        apiGet("/quotes"),
+        apiGet("/invoices"),
+      ]);
+
+      if (cancelled) return;
+
+      const rawJobs = results[0].status === "fulfilled" ? toArray(results[0].value, ["jobs"]) : [];
+      const rawClients = results[1].status === "fulfilled" ? toArray(results[1].value, ["clients"]) : [];
+      const rawTeam = results[2].status === "fulfilled" ? toArray(results[2].value, ["workers", "team"]) : [];
+      const rawQuotes = results[3].status === "fulfilled" ? toArray(results[3].value, ["quotes"]) : [];
+      const rawInvoices = results[4].status === "fulfilled" ? toArray(results[4].value, ["invoices"]) : [];
+
+      const mappedJobs = rawJobs.map(jobRow);
+      const mappedClients = rawClients.map(clientRow);
+      const mappedTeam = rawTeam.map(workerRow);
+      const mappedQuotes = rawQuotes.map(quoteRow);
+      const mappedInvoices = rawInvoices.map(invoiceRow);
+      const liveActions = buildLiveActions({
+        jobs: rawJobs,
+        clients: rawClients,
+        team: rawTeam,
+        quotes: rawQuotes,
+        invoices: rawInvoices,
+      });
+
+      const readyInvoices = rawInvoices.filter((item) => {
+        const status = statusText(item, "").toLowerCase();
+        return status.includes("draft") || status.includes("ready") || status.includes("overdue");
+      });
+
+      const invoiceTotal = readyInvoices.reduce((sum, item) => {
+        const value = Number(item?.total ?? item?.amount ?? item?.price ?? item?.balance ?? 0);
+        return Number.isFinite(value) ? sum + value : sum;
+      }, 0);
+
+      setState({
+        loading: false,
+        error: results.some((result) => result.status === "rejected") ? "Some live data is still syncing." : "",
+        jobs: mappedJobs.length ? mappedJobs : JOBS,
+        clients: mappedClients.length ? mappedClients : CLIENTS,
+        team: mappedTeam.length ? mappedTeam : TEAM,
+        quotes: mappedQuotes.length ? mappedQuotes : QUOTES,
+        invoices: mappedInvoices.length ? mappedInvoices : INVOICES,
+        actions: liveActions,
+        stats: {
+          jobsToday: String(rawJobs.length || JOBS.length),
+          readyToInvoice: invoiceTotal > 0
+            ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD", maximumFractionDigits: 0 }).format(invoiceTotal)
+            : `$${Math.max(rawInvoices.length, INVOICES.length)}`,
+          openQuotes: String(rawQuotes.length || QUOTES.length),
+          crewOnline: String(rawTeam.length || TEAM.length),
+        },
+      });
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authed]);
+
+  return state;
+}
+
+
 function Logo() {
   return (
     <div className="cx-logo">
@@ -383,7 +658,7 @@ function Landing({ authMode, setAuthMode, onLogin }) {
   );
 }
 
-function Shell({ page, setPage, onLogout }) {
+function Shell({ page, setPage, onLogout, data }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const current = NAV.find(([key]) => key === page) || NAV[0];
 
@@ -411,7 +686,7 @@ function Shell({ page, setPage, onLogout }) {
 
         <section className="cx-side-operator">
           <span>AI Operator</span>
-          <strong>{AI_ACTIONS.length} actions ready</strong>
+          <strong>{(data?.actions?.length || AI_ACTIONS.length)} actions ready</strong>
           <p>Prepared for owner approval.</p>
         </section>
       </aside>
@@ -440,7 +715,7 @@ function Shell({ page, setPage, onLogout }) {
           </button>
         </header>
 
-        <Workspace page={page} setPage={setPage} />
+        <Workspace page={page} setPage={setPage} data={data} />
       </section>
     </main>
   );
@@ -456,122 +731,15 @@ function Stat({ label, value, note }) {
   );
 }
 
-function WorkspaceHero({ kicker, title, body, metric, action, setPage }) {
-  return (
-    <section className="cx-work-hero">
-      <div>
-        <span>{kicker}</span>
-        <h1>{title}</h1>
-        <p>{body}</p>
-      </div>
+function Workspace({ page, setPage, data }) {
+  const actions = data?.actions?.length ? data.actions : AI_ACTIONS;
+  const jobs = data?.jobs?.length ? data.jobs : JOBS;
+  const clients = data?.clients?.length ? data.clients : CLIENTS;
+  const team = data?.team?.length ? data.team : TEAM;
+  const quotes = data?.quotes?.length ? data.quotes : QUOTES;
+  const invoices = data?.invoices?.length ? data.invoices : INVOICES;
 
-      <aside>
-        <span>AI Operator</span>
-        <strong>{metric}</strong>
-        <p>{action}</p>
-        <button type="button" onClick={() => setPage("queue")}>
-          Review queue
-        </button>
-      </aside>
-    </section>
-  );
-}
-
-function ActionQueue() {
-  return (
-    <section className="cx-action-board">
-      {AI_ACTIONS.map((item) => (
-        <article className={`cx-work-action ${item.tone}`} key={item.title}>
-          <span>{item.type}</span>
-          <h3>{item.title}</h3>
-          <p>{item.body}</p>
-          <div>
-            <button type="button">Details</button>
-            <button type="button" className="approve">{item.action}</button>
-          </div>
-        </article>
-      ))}
-    </section>
-  );
-}
-
-function DataRow({ item }) {
-  return (
-    <button type="button" className="cx-row">
-      <span>{item[0]}</span>
-      <strong>{item[1]}</strong>
-      <small>{item[2]}</small>
-      <b>{item[3]}</b>
-    </button>
-  );
-}
-
-function Dashboard({ setPage }) {
-  return (
-    <section className="cx-workspace">
-      <WorkspaceHero
-        kicker="Smart Hub"
-        title="AI has prepared today’s business actions."
-        body="Start with decisions, not clutter. Churvox turns admin into a simple approval queue."
-        metric="4 ready"
-        action="Dispatch, invoice, quote and cashflow actions prepared."
-        setPage={setPage}
-      />
-
-      <section className="cx-stats">
-        <Stat label="Jobs today" value="14" note="3 need owner action" />
-        <Stat label="Ready to invoice" value="$8.7k" note="AI drafts prepared" />
-        <Stat label="Open quotes" value="7" note="2 follow-ups ready" />
-        <Stat label="Crew online" value="4" note="1 best match found" />
-      </section>
-
-      <ActionQueue />
-
-      <section className="cx-split">
-        <Panel title="Today’s run sheet" subtitle="Live field work">
-          {JOBS.map((item) => <DataRow item={item} key={item[1]} />)}
-        </Panel>
-        <Panel title="Crew status" subtitle="AI worker matching">
-          {TEAM.map((item) => <DataRow item={item} key={item[1]} />)}
-        </Panel>
-      </section>
-    </section>
-  );
-}
-
-function Panel({ title, subtitle, children }) {
-  return (
-    <section className="cx-panel">
-      <header>
-        <div>
-          <span>{subtitle}</span>
-          <h2>{title}</h2>
-        </div>
-      </header>
-      <div className="cx-panel-list">{children}</div>
-    </section>
-  );
-}
-
-function Board({ title, body, columns, setPage }) {
-  return (
-    <section className="cx-workspace">
-      <WorkspaceHero kicker="Workspace" title={title} body={body} metric="AI ready" action="Smart actions prepared." setPage={setPage} />
-      <section className="cx-board">
-        {columns.map(([name, rows]) => (
-          <article className="cx-column" key={name}>
-            <span>Stage</span>
-            <h3>{name}</h3>
-            {rows.map((row) => <DataRow item={row} key={`${name}-${row[1]}`} />)}
-          </article>
-        ))}
-      </section>
-    </section>
-  );
-}
-
-function Workspace({ page, setPage }) {
-  if (page === "dashboard") return <Dashboard setPage={setPage} />;
+  if (page === "dashboard") return <Dashboard setPage={setPage} data={data} />;
 
   if (page === "queue") {
     return (
@@ -580,11 +748,11 @@ function Workspace({ page, setPage }) {
           kicker="AI Work Queue"
           title="Review what AI prepared."
           body="Every important action is approval-first. Check the reason, edit if needed, then approve."
-          metric="4 actions"
+          metric={`${actions.length} actions`}
           action="Prepared and waiting."
           setPage={setPage}
         />
-        <ActionQueue />
+        <ActionQueue actions={actions} />
       </section>
     );
   }
@@ -596,9 +764,9 @@ function Workspace({ page, setPage }) {
         body="Jobs are grouped into simple stages with AI worker suggestions ready for approval."
         setPage={setPage}
         columns={[
-          ["Needs worker", JOBS.filter((j) => j[3] === "Needs worker")],
-          ["Scheduled", JOBS.filter((j) => j[3] === "Scheduled" || j[3] === "Assigned")],
-          ["In progress", JOBS.filter((j) => j[3] === "In progress")],
+          ["Needs worker", jobs.filter((j) => String(j[3]).toLowerCase().includes("need") || String(j[3]).toLowerCase().includes("unassigned"))],
+          ["Scheduled", jobs.filter((j) => String(j[3]).toLowerCase().includes("scheduled") || String(j[3]).toLowerCase().includes("assigned"))],
+          ["In progress", jobs.filter((j) => String(j[3]).toLowerCase().includes("progress") || String(j[3]).toLowerCase().includes("started"))],
         ]}
       />
     );
@@ -611,9 +779,9 @@ function Workspace({ page, setPage }) {
         body="See active work, follow-ups and invoice opportunities without hunting through pages."
         setPage={setPage}
         columns={[
-          ["Active", CLIENTS.filter((c) => c[3] === "Active")],
-          ["Needs follow-up", CLIENTS.filter((c) => c[3] === "Follow-up")],
-          ["Ready", CLIENTS.filter((c) => c[3] === "Ready")],
+          ["Active", clients.filter((c) => String(c[3]).toLowerCase().includes("active"))],
+          ["Needs follow-up", clients.filter((c) => String(c[3]).toLowerCase().includes("follow"))],
+          ["Ready", clients.filter((c) => String(c[3]).toLowerCase().includes("ready"))],
         ]}
       />
     );
@@ -626,9 +794,9 @@ function Workspace({ page, setPage }) {
         body="AI recommends who can take the job, but the owner approves the assignment."
         setPage={setPage}
         columns={[
-          ["Best match", TEAM.filter((t) => t[3] === "Best match")],
-          ["Available", TEAM.filter((t) => t[3] === "Available" || t[3] === "Online")],
-          ["Busy", TEAM.filter((t) => t[3] === "Busy")],
+          ["Best match", team.filter((t) => String(t[3]).toLowerCase().includes("best"))],
+          ["Available", team.filter((t) => String(t[3]).toLowerCase().includes("available") || String(t[3]).toLowerCase().includes("online"))],
+          ["Busy", team.filter((t) => String(t[3]).toLowerCase().includes("busy") || String(t[3]).toLowerCase().includes("site"))],
         ]}
       />
     );
@@ -641,9 +809,9 @@ function Workspace({ page, setPage }) {
         body="AI spots stale quotes and prepares follow-up messages for owner approval."
         setPage={setPage}
         columns={[
-          ["Draft", QUOTES.filter((q) => q[3] === "Draft")],
-          ["Sent", QUOTES.filter((q) => q[3] === "Sent")],
-          ["Follow-up", QUOTES.filter((q) => q[3] === "Follow-up")],
+          ["Draft", quotes.filter((q) => String(q[3]).toLowerCase().includes("draft"))],
+          ["Sent", quotes.filter((q) => String(q[3]).toLowerCase().includes("sent") || String(q[3]).toLowerCase().includes("open"))],
+          ["Follow-up", quotes.filter((q) => String(q[3]).toLowerCase().includes("follow") || String(q[3]).toLowerCase().includes("pending"))],
         ]}
       />
     );
@@ -656,9 +824,9 @@ function Workspace({ page, setPage }) {
         body="Drafts, overdue reminders and payment follow-ups are prepared in one place."
         setPage={setPage}
         columns={[
-          ["Draft", INVOICES.filter((i) => i[3] === "Draft")],
-          ["Overdue", INVOICES.filter((i) => i[3] === "Overdue")],
-          ["Paid", INVOICES.filter((i) => i[3] === "Paid")],
+          ["Draft", invoices.filter((i) => String(i[3]).toLowerCase().includes("draft"))],
+          ["Overdue", invoices.filter((i) => String(i[3]).toLowerCase().includes("overdue"))],
+          ["Paid", invoices.filter((i) => String(i[3]).toLowerCase().includes("paid"))],
         ]}
       />
     );
@@ -671,9 +839,9 @@ function Workspace({ page, setPage }) {
         body="Completed work, notes and photos become invoice-ready drafts for approval."
         setPage={setPage}
         columns={[
-          ["Completed jobs", JOBS.slice(0, 2)],
-          ["AI invoice drafts", INVOICES.filter((i) => i[3] === "Draft")],
-          ["Approve and send", INVOICES.filter((i) => i[3] === "Overdue")],
+          ["Completed jobs", jobs.filter((j) => String(j[3]).toLowerCase().includes("complete")).slice(0, 6)],
+          ["AI invoice drafts", invoices.filter((i) => String(i[3]).toLowerCase().includes("draft"))],
+          ["Approve and send", invoices.filter((i) => !String(i[3]).toLowerCase().includes("paid"))],
         ]}
       />
     );
@@ -727,6 +895,7 @@ export default function ChurvoxAIShell() {
     if (!["public", "login", "signup"].includes(next)) setPage(next);
   }, []);
 
+  const liveData = useLiveChurvoxData(authed);
   const showPublic = useMemo(() => !authed, [authed]);
 
   function onLogin() {
@@ -755,5 +924,5 @@ export default function ChurvoxAIShell() {
     return <Landing authMode={authMode} setAuthMode={setAuthMode} onLogin={onLogin} />;
   }
 
-  return <Shell page={page} setPage={setPage} onLogout={onLogout} />;
+  return <Shell page={page} setPage={setPage} onLogout={onLogout} data={liveData} />;
 }
