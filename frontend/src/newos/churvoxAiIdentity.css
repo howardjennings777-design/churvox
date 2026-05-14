@@ -1,0 +1,395 @@
+:root {
+  --brand-blue: #0B72FF;
+  --brand-cyan: #00C8FF;
+  --brand-glow: #78F7FF;
+  --brand-navy: #071B3A;
+  --brand-ink: #071327;
+  --brand-soft: #EAF4FF;
+  --brand-soft-2: #F3FAFF;
+  --brand-line: #B8DFFF;
+}
+
+/* full identity background */
+html,
+body,
+#root {
+  background:
+    radial-gradient(circle at 13% 8%, rgba(11,114,255,.18), transparent 30rem),
+    radial-gradient(circle at 84% 3%, rgba(0,200,255,.18), transparent 34rem),
+    radial-gradient(circle at 50% 92%, rgba(120,247,255,.10), transparent 28rem),
+    linear-gradient(180deg, #ffffff 0%, #f2f8ff 48%, #eef7fb 100%) !important;
+}
+
+/* logo system */
+.sx-brand span,
+.sx-sidebar .sx-brand span,
+.sx-public-nav .sx-brand span,
+.sx-auth-copy .sx-brand span {
+  position: relative !important;
+  background:
+    radial-gradient(circle at 28% 18%, rgba(255,255,255,.95), transparent 27%),
+    linear-gradient(135deg, var(--brand-blue), var(--brand-cyan) 62%, var(--brand-glow)) !important;
+  border: 0 !important;
+  box-shadow:
+    0 18px 38px rgba(11,114,255,.28),
+    inset 0 1px 0 rgba(255,255,255,.45) !important;
+  overflow: hidden !important;
+}
+
+.sx-brand span::after {
+  content: "";
+  position: absolute;
+  width: 56%;
+  height: 56%;
+  border-radius: 999px;
+  right: -18%;
+  top: -18%;
+  background: rgba(255,255,255,.22);
+  filter: blur(2px);
+}
+
+.sx-brand img {
+  width: 26px !important;
+  height: 26px !important;
+  filter: drop-shadow(0 8px 16px rgba(7,27,58,.30)) !important;
+  position: relative;
+  z-index: 1;
+}
+
+.sx-brand b {
+  color: var(--brand-ink) !important;
+  letter-spacing: -.04em !important;
+}
+
+.sx-brand small {
+  color: #486078 !important;
+}
+
+/* nav identity */
+.sx-public-nav {
+  border-color: rgba(184,223,255,.9) !important;
+  background: rgba(255,255,255,.84) !important;
+  backdrop-filter: blur(22px) saturate(140%) !important;
+  box-shadow:
+    0 24px 80px rgba(11,114,255,.12),
+    inset 0 1px 0 rgba(255,255,255,.8) !important;
+}
+
+.sx-public-nav nav button:hover,
+.sx-sidebar nav button:hover,
+.sx-sidebar nav button.active,
+.sx-bottom-nav button.active {
+  background: linear-gradient(135deg, #EAF4FF, #F7FCFF) !important;
+  color: var(--brand-blue) !important;
+  box-shadow: inset 3px 0 0 var(--brand-blue) !important;
+}
+
+/* premium landing */
+.sx-landing-hero {
+  max-width: 1200px !important;
+  min-height: calc(100vh - 150px) !important;
+  grid-template-columns: minmax(0, .86fr) minmax(470px, 1.14fr) !important;
+  gap: 42px !important;
+  margin-top: 28px !important;
+}
+
+.sx-landing-hero > div {
+  position: relative !important;
+  padding: 38px 0 !important;
+}
+
+.sx-landing-hero > div::before {
+  content: "AI OPERATOR FOR TRADE BUSINESSES";
+  width: fit-content;
+  display: inline-flex;
+  margin-bottom: 20px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #EAF4FF, #FFFFFF);
+  border: 1px solid var(--brand-line);
+  color: var(--brand-blue);
+  box-shadow: 0 12px 28px rgba(11,114,255,.10);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .13em;
+}
+
+.sx-landing-hero > div > p {
+  display: none !important;
+}
+
+.sx-landing-hero h1 {
+  max-width: 650px !important;
+  color: var(--brand-ink) !important;
+  font-size: clamp(60px, 8vw, 112px) !important;
+  line-height: .84 !important;
+  letter-spacing: -.095em !important;
+}
+
+.sx-landing-hero h1::after {
+  content: "Approve.";
+  display: block;
+  width: fit-content;
+  margin-top: 4px;
+  padding-right: 10px;
+  background: linear-gradient(120deg, var(--brand-blue), var(--brand-cyan), var(--brand-glow));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.sx-landing-hero > div > span {
+  max-width: 590px !important;
+  color: #3F526A !important;
+  font-size: 18.5px !important;
+  line-height: 1.66 !important;
+}
+
+/* buttons */
+.primary,
+button.primary,
+.sx-actions .primary,
+.sx-public-nav > button.primary,
+.sx-auth-card button.primary,
+.sx-topbar button.primary,
+.sx-ai-grid button {
+  background:
+    linear-gradient(135deg, var(--brand-blue), var(--brand-cyan)) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow:
+    0 18px 46px rgba(11,114,255,.30),
+    inset 0 1px 0 rgba(255,255,255,.36) !important;
+}
+
+.sx-actions button:not(.primary),
+.sx-public-nav nav button,
+.sx-topbar button:not(.primary),
+.sx-auth-card button:not(.primary) {
+  background: rgba(255,255,255,.92) !important;
+  border-color: #D5E7F4 !important;
+  color: #1D2D44 !important;
+}
+
+/* AI-powered product preview */
+.sx-product-card {
+  min-height: 600px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  padding: 24px !important;
+  border-radius: 42px !important;
+  background:
+    radial-gradient(circle at 76% 12%, rgba(120,247,255,.36), transparent 18rem),
+    radial-gradient(circle at 6% 18%, rgba(11,114,255,.42), transparent 20rem),
+    linear-gradient(145deg, #061733 0%, #092B5C 46%, #0B72FF 140%) !important;
+  border: 1px solid rgba(184,223,255,.42) !important;
+  box-shadow:
+    0 42px 110px rgba(7,27,58,.32),
+    inset 0 1px 0 rgba(255,255,255,.14) !important;
+}
+
+.sx-product-card::before {
+  content: "";
+  position: absolute;
+  inset: 18px;
+  border-radius: 32px;
+  border: 1px solid rgba(255,255,255,.11);
+  background:
+    linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,.9), rgba(0,0,0,.15));
+  pointer-events: none;
+}
+
+.sx-product-card::after {
+  content: "";
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  right: -70px;
+  bottom: -80px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(120,247,255,.38), transparent 62%);
+  filter: blur(2px);
+}
+
+.sx-product-top,
+.sx-preview-stats,
+.sx-ai-stack {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.sx-product-top span,
+.sx-product-card > span,
+.sx-product-card p,
+.sx-ai-stack article span {
+  color: #9EEBFF !important;
+}
+
+.sx-product-card strong,
+.sx-product-card h2,
+.sx-preview-stats .sx-stat strong,
+.sx-ai-stack article strong {
+  color: #ffffff !important;
+}
+
+.sx-product-card small,
+.sx-preview-stats .sx-stat span,
+.sx-preview-stats .sx-stat small,
+.sx-ai-stack article small {
+  color: rgba(232,247,255,.78) !important;
+}
+
+.sx-preview-stats .sx-stat,
+.sx-ai-stack article {
+  background: rgba(255,255,255,.115) !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(18px) saturate(130%) !important;
+}
+
+/* feature identity */
+.sx-feature-grid article,
+.sx-panel,
+.sx-stat,
+.sx-ai-grid article,
+.sx-row,
+.sx-column,
+.sx-mini-grid article,
+.sx-invoice-preview,
+.sx-auth-shell,
+.sx-auth-card {
+  border-color: #D8E9F5 !important;
+  box-shadow: 0 18px 52px rgba(15,23,42,.06) !important;
+}
+
+.sx-feature-grid article {
+  min-height: 190px !important;
+  background:
+    radial-gradient(circle at 88% 12%, rgba(11,114,255,.08), transparent 9rem),
+    linear-gradient(180deg, rgba(255,255,255,.99), rgba(247,251,255,.96)) !important;
+}
+
+.sx-feature-grid article strong {
+  font-size: 20px !important;
+  letter-spacing: -.045em !important;
+}
+
+/* app shell: AI command centre */
+.sx-app {
+  background:
+    radial-gradient(circle at 16% 4%, rgba(11,114,255,.15), transparent 32rem),
+    radial-gradient(circle at 88% 0%, rgba(0,200,255,.14), transparent 30rem),
+    linear-gradient(180deg, #ffffff 0%, #F4F8FB 100%) !important;
+}
+
+.sx-sidebar {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.98), rgba(247,251,255,.96)) !important;
+  border-right-color: #D8E9F5 !important;
+}
+
+.sx-side-ai {
+  background:
+    radial-gradient(circle at 86% 0%, rgba(0,200,255,.20), transparent 8rem),
+    linear-gradient(145deg, #061733, #0A2A54) !important;
+  border-color: rgba(184,223,255,.28) !important;
+}
+
+.sx-side-ai p {
+  color: #9EEBFF !important;
+}
+
+.sx-side-ai strong {
+  color: #ffffff !important;
+}
+
+.sx-side-ai span {
+  color: rgba(232,247,255,.76) !important;
+}
+
+.sx-topbar {
+  background: rgba(255,255,255,.86) !important;
+  border-color: #D8E9F5 !important;
+  box-shadow: 0 18px 56px rgba(11,114,255,.10) !important;
+}
+
+.sx-hero {
+  border-color: #D8E9F5 !important;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(11,114,255,.18), transparent 26rem),
+    linear-gradient(135deg, #ffffff, #F1F8FF) !important;
+}
+
+.sx-hero h1 {
+  color: var(--brand-ink) !important;
+}
+
+/* status pills */
+.sx-pill {
+  background: #EFF8FF !important;
+  color: var(--brand-blue) !important;
+  border-color: #B9E0FF !important;
+}
+
+.sx-pill.good {
+  background: #EAF4FF !important;
+  color: var(--brand-blue) !important;
+  border-color: var(--brand-line) !important;
+}
+
+.sx-pill.warn {
+  background: #FFF8E7 !important;
+  color: #B45309 !important;
+  border-color: #FDE68A !important;
+}
+
+/* auth identity */
+.sx-auth-shell {
+  border-radius: 42px !important;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(11,114,255,.14), transparent 26rem),
+    radial-gradient(circle at 90% 12%, rgba(0,200,255,.12), transparent 24rem),
+    linear-gradient(135deg, #ffffff, #F4F9FF) !important;
+  box-shadow: 0 38px 110px rgba(11,114,255,.14) !important;
+}
+
+.sx-auth-card {
+  border-radius: 32px !important;
+}
+
+/* create AI circuit accent cards on dashboard */
+.sx-ai-grid article {
+  position: relative;
+  overflow: hidden;
+}
+
+.sx-ai-grid article::after {
+  content: "";
+  position: absolute;
+  width: 92px;
+  height: 92px;
+  right: -34px;
+  top: -34px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(11,114,255,.14), transparent 66%);
+}
+
+@media (max-width: 980px) {
+  .sx-landing-hero {
+    min-height: auto !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .sx-product-card {
+    min-height: auto !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .sx-landing-hero h1 {
+    font-size: clamp(48px, 16vw, 76px) !important;
+  }
+}
