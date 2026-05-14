@@ -2,15 +2,15 @@
   --cx-bg: #f5f8fb;
   --cx-card: #ffffff;
   --cx-soft: #f8fbfd;
-  --cx-soft-blue: #eef8fc;
+  --cx-soft-blue: #F1F8FF;
   --cx-line: #dbe7ee;
   --cx-line-strong: #c5d9e4;
   --cx-ink: #101828;
   --cx-text: #233044;
   --cx-muted: #66788a;
   --cx-faint: #91a3b4;
-  --cx-teal: #0797b8;
-  --cx-teal-2: #06b6d4;
+  --cx-teal: #0B72FF;
+  --cx-teal-2: #00C8FF;
   --cx-green: #16a34a;
   --cx-amber: #d97706;
   --cx-red: #dc2626;
@@ -47,7 +47,7 @@
   padding: 34px;
   border-radius: 34px;
   background:
-    radial-gradient(circle at 82% 18%, rgba(6, 182, 212, .17), transparent 26rem),
+    radial-gradient(circle at 82% 18%, rgba(11, 114, 255, .16), transparent 26rem),
     linear-gradient(135deg, #ffffff, #eef9fd);
 }
 
@@ -106,7 +106,7 @@
   background: linear-gradient(135deg, var(--cx-teal), var(--cx-teal-2));
   color: #ffffff;
   border-color: transparent;
-  box-shadow: 0 14px 32px rgba(8, 145, 178, .20);
+  box-shadow: 0 14px 32px rgba(11,114,255,.24);
 }
 
 .cx-page-preview {
@@ -254,7 +254,7 @@
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: #e5f7fc;
+  background: #EAF4FF;
   color: var(--cx-teal);
   font-weight: 900;
   font-size: 13px;
@@ -276,8 +276,8 @@
   min-height: 26px;
   padding: 0 10px;
   border-radius: 999px;
-  border: 1px solid #bae6fd;
-  background: #ecfeff;
+  border: 1px solid #B9E0FF;
+  background: #EFF8FF;
   color: var(--cx-teal);
   font-size: 12px;
   font-weight: 850;
@@ -354,7 +354,7 @@
   padding: 28px !important;
   border-radius: 32px !important;
   background:
-    radial-gradient(circle at 82% 18%, rgba(6,182,212,.17), transparent 26rem),
+    radial-gradient(circle at 82% 18%, rgba(11,114,255,.16), transparent 26rem),
     linear-gradient(135deg, #ffffff, #eef9fd) !important;
 }
 

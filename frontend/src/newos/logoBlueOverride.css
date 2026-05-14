@@ -1,0 +1,99 @@
+:root {
+  --logo-blue: #0B72FF;
+  --logo-cyan: #00C8FF;
+  --logo-blue-soft: #EAF4FF;
+  --logo-blue-soft-2: #F1F8FF;
+  --logo-blue-line: #B8DFFF;
+}
+
+html,
+body,
+#root {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(11,114,255,.11), transparent 32rem),
+    radial-gradient(circle at 92% 0%, rgba(0,200,255,.10), transparent 32rem),
+    linear-gradient(180deg, #ffffff 0%, #f4f8fb 100%) !important;
+}
+
+.sx-brand span,
+.nvx-brand span,
+.ux-logo,
+.cx-logo,
+.chx-mark,
+.op-logo-mark {
+  background: linear-gradient(135deg, var(--logo-blue-soft), #ffffff) !important;
+  border-color: var(--logo-blue-line) !important;
+}
+
+.primary,
+button.primary,
+.sx-actions .primary,
+.sx-topbar button.primary,
+.sx-auth-card button.primary,
+.sx-ai-grid button,
+.sx-public-nav > button.primary,
+.nvx-actions .primary,
+.nvx-top-actions .primary {
+  background: linear-gradient(135deg, var(--logo-blue), var(--logo-cyan)) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 16px 36px rgba(11,114,255,.25) !important;
+}
+
+.sx-sidebar nav button:hover,
+.sx-sidebar nav button.active,
+.sx-bottom-nav button.active,
+.nvx-sidebar nav button:hover,
+.nvx-sidebar nav button.active,
+.nvx-bottom-nav button.active {
+  background: var(--logo-blue-soft) !important;
+  color: var(--logo-blue) !important;
+  box-shadow: inset 3px 0 0 var(--logo-blue) !important;
+}
+
+.sx-landing-hero p,
+.sx-auth-copy p,
+.sx-hero p,
+.sx-panel header p,
+.sx-ai-grid span,
+.sx-column > span,
+.sx-mini-grid span,
+.sx-invoice-preview p,
+.sx-product-card span,
+.sx-feature-grid span,
+.sx-side-ai p,
+.sx-sidebar nav p,
+.nvx-hero p,
+.nvx-panel header p,
+.nvx-ai-card span,
+.nvx-column > span,
+.nvx-mini span,
+.nvx-invoice-preview p,
+.nvx-side-card p,
+.nvx-sidebar nav p {
+  color: var(--logo-blue) !important;
+}
+
+.sx-pill,
+.nvx-pill,
+.ux-pill,
+.cx-pill,
+.chx-pill,
+.op-status {
+  background: #EFF8FF !important;
+  color: var(--logo-blue) !important;
+  border-color: #B9E0FF !important;
+}
+
+.sx-stat small,
+.nvx-stat small {
+  color: var(--logo-blue) !important;
+}
+
+.sx-hero,
+.sx-landing-hero .sx-product-card,
+.nvx-hero {
+  background:
+    radial-gradient(circle at 82% 18%, rgba(11,114,255,.16), transparent 26rem),
+    linear-gradient(135deg, #ffffff, #F1F8FF) !important;
+}

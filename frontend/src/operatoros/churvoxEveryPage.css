@@ -5,15 +5,15 @@
   --cx-bg: #f5f8fb;
   --cx-card: #ffffff;
   --cx-soft: #f8fbfd;
-  --cx-soft-blue: #eef8fc;
+  --cx-soft-blue: #F1F8FF;
   --cx-line: #dbe7ee;
   --cx-line-strong: #c5d9e4;
   --cx-ink: #101828;
   --cx-text: #233044;
   --cx-muted: #66788a;
   --cx-faint: #91a3b4;
-  --cx-teal: #0797b8;
-  --cx-teal-2: #06b6d4;
+  --cx-teal: #0B72FF;
+  --cx-teal-2: #00C8FF;
   --cx-green: #16a34a;
   --cx-amber: #d97706;
   --cx-red: #dc2626;
@@ -33,8 +33,8 @@ body,
 .cx-shell,
 .cx-main {
   background:
-    radial-gradient(circle at 8% 0%, rgba(6, 182, 212, 0.10), transparent 32rem),
-    radial-gradient(circle at 92% 0%, rgba(14, 165, 233, 0.08), transparent 32rem),
+    radial-gradient(circle at 8% 0%, rgba(11, 114, 255, .11), transparent 32rem),
+    radial-gradient(circle at 92% 0%, rgba(0, 200, 255, .10), transparent 32rem),
     linear-gradient(180deg, #ffffff 0%, var(--cx-bg) 100%) !important;
   color: var(--cx-text) !important;
 }
@@ -77,7 +77,7 @@ body,
   padding: 28px !important;
   border-radius: 32px !important;
   background:
-    radial-gradient(circle at 82% 18%, rgba(6, 182, 212, 0.17), transparent 26rem),
+    radial-gradient(circle at 82% 18%, rgba(11, 114, 255, .16), transparent 26rem),
     linear-gradient(135deg, #ffffff, #eef9fd) !important;
   border: 1px solid var(--cx-line) !important;
   box-shadow: var(--cx-shadow) !important;
@@ -359,7 +359,7 @@ body,
   background: linear-gradient(135deg, var(--cx-teal), var(--cx-teal-2)) !important;
   color: #ffffff !important;
   border-color: transparent !important;
-  box-shadow: 0 14px 32px rgba(8, 145, 178, .20) !important;
+  box-shadow: 0 14px 32px rgba(11,114,255,.24) !important;
 }
 
 .op-workspace button.danger,
@@ -409,8 +409,8 @@ button.danger {
   justify-content: center !important;
   padding: 0 10px !important;
   border-radius: 999px !important;
-  border: 1px solid #bae6fd !important;
-  background: #ecfeff !important;
+  border: 1px solid #B9E0FF !important;
+  background: #EFF8FF !important;
   color: var(--cx-teal) !important;
   font-size: 12px !important;
   font-weight: 850 !important;
@@ -505,7 +505,7 @@ button.danger {
   padding: 32px !important;
   border-radius: 32px !important;
   background:
-    radial-gradient(circle at 82% 18%, rgba(6,182,212,.17), transparent 26rem),
+    radial-gradient(circle at 82% 18%, rgba(11,114,255,.16), transparent 26rem),
     linear-gradient(135deg, #ffffff, #eef9fd) !important;
   border: 1px solid var(--cx-line) !important;
   box-shadow: var(--cx-shadow) !important;

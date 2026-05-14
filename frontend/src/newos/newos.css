@@ -2,13 +2,13 @@
   --nvx-bg: #f5f8fb;
   --nvx-card: #fff;
   --nvx-soft: #f8fbfd;
-  --nvx-soft-blue: #eef8fc;
+  --nvx-soft-blue: #F1F8FF;
   --nvx-line: #dbe7ee;
   --nvx-ink: #101828;
   --nvx-text: #233044;
   --nvx-muted: #66788a;
-  --nvx-teal: #0797b8;
-  --nvx-teal2: #06b6d4;
+  --nvx-teal: #0B72FF;
+  --nvx-teal2: #00C8FF;
   --nvx-green: #16a34a;
   --nvx-amber: #d97706;
   --nvx-shadow: 0 20px 60px rgba(15, 23, 42, .075);
@@ -24,8 +24,8 @@ html, body, #root {
   display: grid;
   grid-template-columns: 230px minmax(0, 1fr);
   background:
-    radial-gradient(circle at 8% 0%, rgba(6, 182, 212, .10), transparent 32rem),
-    radial-gradient(circle at 92% 0%, rgba(14, 165, 233, .08), transparent 32rem),
+    radial-gradient(circle at 8% 0%, rgba(11, 114, 255, .11), transparent 32rem),
+    radial-gradient(circle at 92% 0%, rgba(0, 200, 255, .10), transparent 32rem),
     linear-gradient(180deg, #fff 0%, var(--nvx-bg) 100%);
   color: var(--nvx-text);
 }
@@ -62,8 +62,8 @@ html, body, #root {
   display: grid;
   place-items: center;
   border-radius: 14px;
-  background: linear-gradient(135deg, #e1f8ff, #f1fffb);
-  border: 1px solid #b7e8f5;
+  background: linear-gradient(135deg, #EAF4FF, #F6FBFF);
+  border: 1px solid #B8DFFF;
 }
 
 .nvx-brand img {
@@ -105,7 +105,7 @@ html, body, #root {
 
 .nvx-sidebar nav button:hover,
 .nvx-sidebar nav button.active {
-  background: #e5f7fc;
+  background: #EAF4FF;
   color: var(--nvx-teal);
   box-shadow: inset 3px 0 0 var(--nvx-teal);
 }
@@ -216,7 +216,7 @@ html, body, #root {
   padding: 34px;
   border-radius: 34px;
   background:
-    radial-gradient(circle at 82% 18%, rgba(6, 182, 212, .17), transparent 26rem),
+    radial-gradient(circle at 82% 18%, rgba(11, 114, 255, .16), transparent 26rem),
     linear-gradient(135deg, #fff, #eef9fd);
 }
 
@@ -264,7 +264,7 @@ button.primary,
   background: linear-gradient(135deg, var(--nvx-teal), var(--nvx-teal2));
   color: #fff;
   border-color: transparent;
-  box-shadow: 0 14px 32px rgba(8, 145, 178, .20);
+  box-shadow: 0 14px 32px rgba(11,114,255,.24);
 }
 
 .nvx-stats,
@@ -363,7 +363,7 @@ button.primary,
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: #e5f7fc;
+  background: #EAF4FF;
   color: var(--nvx-teal);
   font-weight: 900;
   font-size: 12px;
@@ -376,8 +376,8 @@ button.primary,
   min-height: 26px;
   padding: 0 10px;
   border-radius: 999px;
-  border: 1px solid #bae6fd;
-  background: #ecfeff;
+  border: 1px solid #B9E0FF;
+  background: #EFF8FF;
   color: var(--nvx-teal);
   font-size: 12px;
   font-weight: 850;
