@@ -29,6 +29,160 @@ const API_BASE = (() => {
   return clean.endsWith("/api") ? clean : `${clean}/api`;
 })();
 
+
+function ChurvoxPublicLanding({ onLogin }) {
+  return (
+    <div className="min-h-screen bg-[#07111f] text-white overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-40 -right-32 h-[520px] w-[520px] rounded-full bg-cyan-400/20 blur-3xl" />
+        <div className="absolute top-40 -left-32 h-[420px] w-[420px] rounded-full bg-blue-600/20 blur-3xl" />
+        <div className="absolute bottom-0 right-1/3 h-[360px] w-[360px] rounded-full bg-emerald-400/10 blur-3xl" />
+      </div>
+
+      <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-2xl shadow-cyan-500/20">
+            <div className="relative h-7 w-7">
+              <span className="absolute left-1 top-1 h-5 w-2 rounded-full bg-[#0ea5e9] rotate-[-22deg]" />
+              <span className="absolute left-3 top-0 h-7 w-2 rounded-full bg-[#38bdf8] rotate-[18deg]" />
+              <span className="absolute right-1 top-1 h-5 w-2 rounded-full bg-[#2563eb] rotate-[-22deg]" />
+            </div>
+          </div>
+          <div>
+            <div className="text-xl font-black tracking-tight">Churvox</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-200/80">
+              AI Operator OS
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={onLogin}
+          className="rounded-full border border-white/15 bg-white/10 px-5 py-2.5 text-sm font-bold text-white backdrop-blur hover:bg-white hover:text-slate-950"
+        >
+          Login
+        </button>
+      </header>
+
+      <main className="relative z-10 mx-auto grid max-w-7xl items-center gap-12 px-5 pb-16 pt-8 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:pb-24 lg:pt-14">
+        <section>
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-sm font-bold text-cyan-100">
+            <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_20px_rgba(110,231,183,.9)]" />
+            Built for trade and service businesses
+          </div>
+
+          <h1 className="max-w-4xl text-5xl font-black leading-[0.95] tracking-[-0.05em] sm:text-6xl lg:text-7xl">
+            AI prepares the admin.
+            <span className="block bg-gradient-to-r from-cyan-200 via-sky-300 to-blue-400 bg-clip-text text-transparent">
+              You just approve.
+            </span>
+          </h1>
+
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
+            Churvox helps owners run jobs, quotes, invoices, clients, teams, time tracking,
+            worker updates and daily follow-ups from one clean command centre.
+          </p>
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <button
+              onClick={onLogin}
+              className="rounded-2xl bg-cyan-300 px-7 py-4 text-base font-black text-slate-950 shadow-2xl shadow-cyan-400/25 hover:bg-white"
+            >
+              Open Churvox
+            </button>
+            <a
+              href="#how-it-works"
+              className="rounded-2xl border border-white/15 bg-white/10 px-7 py-4 text-center text-base font-black text-white backdrop-blur hover:bg-white/15"
+            >
+              See how it works
+            </a>
+          </div>
+
+          <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
+            {[
+              ["Jobs", "Assign, track and complete work"],
+              ["Invoices", "Draft, review and send faster"],
+              ["AI Queue", "Approve prepared actions"],
+            ].map(([title, text]) => (
+              <div key={title} className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+                <div className="text-lg font-black">{title}</div>
+                <div className="mt-1 text-xs leading-5 text-slate-400">{text}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="relative">
+          <div className="rounded-[2rem] border border-white/12 bg-white/[0.08] p-4 shadow-2xl shadow-black/40 backdrop-blur-xl">
+            <div className="rounded-[1.5rem] bg-slate-950/90 p-5">
+              <div className="mb-5 flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-bold text-cyan-200">Today’s AI Operator</div>
+                  <div className="text-2xl font-black">Ready for approval</div>
+                </div>
+                <div className="rounded-full bg-emerald-300/15 px-3 py-1 text-xs font-black text-emerald-200">
+                  LIVE
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  ["Assign unallocated job", "AI found Jay free nearby with matching experience.", "Approve assignment"],
+                  ["Prepare invoice", "Completed lawn service is ready with job notes and photos.", "Review draft"],
+                  ["Quote follow-up", "2 quotes are waiting on customer approval.", "Send follow-up"],
+                ].map(([title, body, action]) => (
+                  <div key={title} className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="font-black">{title}</div>
+                        <div className="mt-1 text-sm leading-6 text-slate-400">{body}</div>
+                      </div>
+                      <button className="shrink-0 rounded-xl bg-cyan-300 px-3 py-2 text-xs font-black text-slate-950">
+                        {action}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-cyan-300 p-4 text-slate-950">
+                  <div className="text-3xl font-black">12</div>
+                  <div className="text-xs font-bold uppercase tracking-wide">jobs today</div>
+                </div>
+                <div className="rounded-2xl bg-white p-4 text-slate-950">
+                  <div className="text-3xl font-black">$4.8k</div>
+                  <div className="text-xs font-bold uppercase tracking-wide">ready to invoice</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <section id="how-it-works" className="relative z-10 mx-auto max-w-7xl px-5 pb-20 sm:px-8">
+        <div className="grid gap-4 lg:grid-cols-4">
+          {[
+            ["1", "Capture work", "Add jobs, clients, workers, quotes and job notes in one place."],
+            ["2", "AI checks the day", "Churvox finds unassigned jobs, overdue invoices, quote follow-ups and risks."],
+            ["3", "Owner approves", "AI prepares the action, but the owner stays in control before anything important happens."],
+            ["4", "Admin gets done", "Assignments, draft invoices, reminders and updates move through faster."],
+          ].map(([num, title, body]) => (
+            <div key={num} className="rounded-3xl border border-white/10 bg-white/[0.06] p-6 backdrop-blur">
+              <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-300 text-lg font-black text-slate-950">
+                {num}
+              </div>
+              <h3 className="text-xl font-black">{title}</h3>
+              <p className="mt-3 text-sm leading-7 text-slate-400">{body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+
 function readToken() {
   try {
     return localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("access_token") || "";

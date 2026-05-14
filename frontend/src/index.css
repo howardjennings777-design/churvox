@@ -46,3 +46,12 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+/* Churvox public landing polish */
+html {
+  scroll-behavior: smooth;
+}
+
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
