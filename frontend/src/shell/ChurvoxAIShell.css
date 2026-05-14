@@ -1714,3 +1714,20 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+.cx-approval-log header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cx-clear-approval-log {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 118, 110, 0.16);
+  color: #0f513f;
+  background: rgba(255,255,255,.68);
+  font-weight: 950;
+}

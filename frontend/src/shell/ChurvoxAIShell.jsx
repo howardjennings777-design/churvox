@@ -99,6 +99,35 @@ const INVOICES = [
   ["INV-1040", "Blue Lagoon Pools", "$4,600", "Paid"],
 ];
 
+const AI_APPROVAL_LOG_KEY = "churvox_ai_shell_approval_log";
+
+function readApprovalLog() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(AI_APPROVAL_LOG_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.slice(0, 5) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveApprovalLog(items) {
+  try {
+    localStorage.setItem(AI_APPROVAL_LOG_KEY, JSON.stringify(items.slice(0, 5)));
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function clearApprovalLogStorage() {
+  try {
+    localStorage.removeItem(AI_APPROVAL_LOG_KEY);
+  } catch {
+    // ignore storage errors
+  }
+}
+
+
+
 function hasSavedLogin() {
   try {
     return Boolean(
@@ -871,7 +900,7 @@ function Workspace({ page, setPage, data }) {
   const stats = data?.stats || {};
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [approved, setApproved] = useState({});
-  const [approvalLog, setApprovalLog] = useState([]);
+  const [approvalLog, setApprovalLog] = useState(() => readApprovalLog());
 
   const meta = {
     dashboard: {
@@ -944,10 +973,14 @@ function Workspace({ page, setPage, data }) {
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     setApproved((currentApproved) => ({ ...currentApproved, [item.title]: true }));
-    setApprovalLog((currentLog) => [
-      { title: item.title, type: item.type, time },
-      ...currentLog,
-    ].slice(0, 5));
+    setApprovalLog((currentLog) => {
+      const nextLog = [
+        { title: item.title, type: item.type, time },
+        ...currentLog,
+      ].slice(0, 5);
+      saveApprovalLog(nextLog);
+      return nextLog;
+    });
 
     setSelectedRecord([
       item.type,
@@ -1010,9 +1043,19 @@ function Workspace({ page, setPage, data }) {
         <section className="cx-approval-log">
           <header>
             <div>
-              <span>Session approvals</span>
+              <span>Saved approvals</span>
               <h2>Owner-approved actions</h2>
             </div>
+            <button
+              type="button"
+              className="cx-clear-approval-log"
+              onClick={() => {
+                clearApprovalLogStorage();
+                setApprovalLog([]);
+              }}
+            >
+              Clear
+            </button>
           </header>
           <div>
             {approvalLog.map((item) => (
