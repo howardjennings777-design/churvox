@@ -1518,6 +1518,38 @@ function Workspace({ page, setPage, data }) {
     }
   }
 
+  async function copyDraftMessage(item, area = "approved") {
+    const message = String(item?.message || item?.title || "").trim();
+
+    if (!message) {
+      if (area === "send") setSendCenterStatus("No message to copy");
+      else setApprovedDraftsStatus("No message to copy");
+      return;
+    }
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(message);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = message;
+        textArea.setAttribute("readonly", "");
+        textArea.style.position = "absolute";
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+
+      if (area === "send") setSendCenterStatus("Message copied");
+      else setApprovedDraftsStatus("Message copied");
+    } catch (err) {
+      if (area === "send") setSendCenterStatus("Could not copy message");
+      else setApprovedDraftsStatus("Could not copy message");
+    }
+  }
+
   return (
     <section className="cx-workspace cx-owner-command-shell">
       <section className="cx-work-hero cx-owner-command-hero">
@@ -1710,6 +1742,13 @@ function Workspace({ page, setPage, data }) {
                   <b>{item.send_status || "ready_to_send"}</b>
                   <button
                     type="button"
+                    className="cx-owner-draft-copy"
+                    onClick={() => copyDraftMessage(item, "send")}
+                  >
+                    Copy message
+                  </button>
+                  <button
+                    type="button"
                     className="cx-owner-draft-ready"
                     onClick={() => markDraftManuallySent(item)}
                   >
@@ -1739,6 +1778,13 @@ function Workspace({ page, setPage, data }) {
                   <strong>{item.client_name || "Client"}</strong>
                   <small>{item.message || item.title || "Approved draft ready"}</small>
                   <b>{item.send_status || item.status || "not_sent"}</b>
+                  <button
+                    type="button"
+                    className="cx-owner-draft-copy"
+                    onClick={() => copyDraftMessage(item, "approved")}
+                  >
+                    Copy message
+                  </button>
                   <button
                     type="button"
                     className="cx-owner-draft-ready"
