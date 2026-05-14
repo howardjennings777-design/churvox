@@ -1186,6 +1186,8 @@ function Workspace({ page, setPage, data }) {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [approved, setApproved] = useState({});
   const [approvalLog, setApprovalLog] = useState(() => readOwnerCommandLog());
+  const [backendApprovalLog, setBackendApprovalLog] = useState([]);
+  const [backendApprovalStatus, setBackendApprovalStatus] = useState("");
 
   const meta = {
     dashboard: {
@@ -1252,6 +1254,33 @@ function Workspace({ page, setPage, data }) {
   };
 
   const current = meta[page] || meta.dashboard;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadBackendApprovals() {
+      try {
+        setBackendApprovalStatus("Loading saved approvals...");
+        const payload = await apiGet("/ai/owner-command/approvals");
+        const approvals = Array.isArray(payload?.approvals) ? payload.approvals : [];
+        if (!cancelled) {
+          setBackendApprovalLog(approvals.slice(0, 12));
+          setBackendApprovalStatus(approvals.length ? "Saved approvals loaded" : "No saved approvals yet");
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setBackendApprovalStatus("Saved approvals could not load yet");
+        }
+      }
+    }
+
+    loadBackendApprovals();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
 
   const commandSections = page === "dashboard"
     ? [
@@ -1553,9 +1582,10 @@ function Workspace({ page, setPage, data }) {
             <header>
               <div>
                 <span>Command log</span>
-                <h2>Recent edits / approvals</h2>
+                <h2>Saved approvals</h2>
+                {backendApprovalStatus ? <p>{backendApprovalStatus}</p> : null}
               </div>
-              {approvalLog.length ? (
+              {(approvalLog.length || backendApprovalLog.length) ? (
                 <button
                   type="button"
                   onClick={() => {
@@ -1563,12 +1593,21 @@ function Workspace({ page, setPage, data }) {
                     setApprovalLog([]);
                   }}
                 >
-                  Clear
+                  Clear session
                 </button>
               ) : null}
             </header>
 
             <div>
+              {backendApprovalLog.length ? backendApprovalLog.map((item, index) => (
+                <article key={`${item.id || item._id || index}-${item.title}`}>
+                  <span>{item.approved_at ? new Date(item.approved_at).toLocaleString([], { dateStyle: "short", timeStyle: "short" }) : "Saved"}</span>
+                  <strong>{item.type || "Approval"}</strong>
+                  <small>{item.title || "Owner command approved"}</small>
+                  <b>{item.status || "saved"}</b>
+                </article>
+              )) : null}
+
               {approvalLog.length ? approvalLog.map((item) => (
                 <article key={`${item.time}-${item.title}`}>
                   <span>{item.time}</span>
@@ -1576,7 +1615,9 @@ function Workspace({ page, setPage, data }) {
                   <small>{item.title}</small>
                   <b>{item.status}</b>
                 </article>
-              )) : <p>No owner approvals yet this session.</p>}
+              )) : null}
+
+              {!backendApprovalLog.length && !approvalLog.length ? <p>No owner approvals yet.</p> : null}
             </div>
           </section>
         </aside>
