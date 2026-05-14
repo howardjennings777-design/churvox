@@ -1804,3 +1804,60 @@ button {
     grid-template-columns: 1fr !important;
   }
 }
+
+.cx-command-intent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 24px;
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  background:
+    radial-gradient(circle at top right, rgba(103, 232, 249, 0.22), transparent 10rem),
+    rgba(37, 99, 235, 0.07);
+  box-shadow: var(--cx-shadow);
+}
+
+.cx-command-intent span {
+  display: block;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.cx-command-intent strong {
+  display: block;
+  margin-top: 5px;
+  color: #102033;
+  font-size: 22px;
+  letter-spacing: -.04em;
+  font-weight: 950;
+}
+
+.cx-command-intent small {
+  display: block;
+  margin-top: 5px;
+  color: #607386;
+  line-height: 1.45;
+  font-weight: 750;
+}
+
+.cx-command-intent button {
+  min-height: 42px;
+  border-radius: 16px;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  color: #173050;
+  background: rgba(255,255,255,.72);
+  padding: 0 14px;
+  font-weight: 950;
+}
+
+@media (max-width: 720px) {
+  .cx-command-intent {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

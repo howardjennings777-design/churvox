@@ -107,10 +107,19 @@ export default function AIActionDock() {
   }
 
   function routeCommand(path, label) {
+    const intent = { label, path, at: new Date().toISOString() };
+
+    try {
+      localStorage.setItem("churvox_ai_create_intent", JSON.stringify(intent));
+    } catch {
+      // ignore storage errors
+    }
+
     if (typeof logActivity === "function") logActivity(label);
     setCommandOpen(false);
     window.history.pushState({}, "", path);
     window.dispatchEvent(new PopStateEvent("popstate"));
+    window.dispatchEvent(new CustomEvent("churvox-ai-intent", { detail: intent }));
   }
 
   function go(path, label) {
