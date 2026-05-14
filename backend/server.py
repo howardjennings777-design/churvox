@@ -717,6 +717,178 @@ async def list_ai_actions(request: Request, status: str = Query("pending")):
     }
 
 
+
+async def _ai_find_job_for_action(action_id: str, business_id: str):
+    raw = str(action_id or "")
+    job_id = raw.replace("dispatch-", "", 1).replace("proof-to-paid-", "", 1)
+
+    query_options = []
+    if job_id:
+        query_options.append({"business_id": str(business_id), "id": job_id})
+        query_options.append({"business_id": str(business_id), "job_id": job_id})
+        try:
+            query_options.append({"business_id": str(business_id), "_id": ObjectId(job_id)})
+        except Exception:
+            pass
+
+    for query in query_options:
+        job = await db.jobs.find_one(query)
+        if job:
+            return job
+
+    return None
+
+
+async def _ai_worker_candidates(business_id: str):
+    candidates = []
+
+    try:
+        users = await db.users.find({
+            "business_id": str(business_id),
+            "role": {"$in": ["worker", "employee", "field_worker"]}
+        }).limit(100).to_list(length=100)
+        candidates.extend(users or [])
+    except Exception:
+        pass
+
+    try:
+        workers = await db.workers.find({"business_id": str(business_id)}).limit(100).to_list(length=100)
+        candidates.extend(workers or [])
+    except Exception:
+        pass
+
+    seen = set()
+    unique = []
+    for worker in candidates:
+        key = str(worker.get("_id") or worker.get("id") or worker.get("email") or worker.get("name") or "")
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        unique.append(worker)
+
+    return unique
+
+
+def _ai_score_worker_for_job(worker: dict, job: dict):
+    score = 0
+    reasons = []
+
+    worker_status = str(worker.get("status") or worker.get("availability") or "").lower()
+    if worker_status in ["available", "active", "online", "free", ""]:
+        score += 2
+        reasons.append("available")
+
+    worker_region = str(worker.get("region") or worker.get("area") or worker.get("location") or "").lower().strip()
+    job_region = str(job.get("region") or job.get("area") or job.get("suburb") or "").lower().strip()
+    if worker_region and job_region and worker_region == job_region:
+        score += 3
+        reasons.append("same region")
+
+    worker_role = str(worker.get("role") or "").lower()
+    if "worker" in worker_role or "field" in worker_role:
+        score += 1
+        reasons.append("field role")
+
+    job_type = str(job.get("job_type") or job.get("service_type") or job.get("title") or "").lower()
+    skills = " ".join([
+        str(worker.get("skills") or ""),
+        str(worker.get("trade") or ""),
+        str(worker.get("job_type") or ""),
+        str(worker.get("service_type") or ""),
+        str(worker.get("notes") or ""),
+    ]).lower()
+
+    if job_type and skills and any(part for part in job_type.split("_") if part and part in skills):
+        score += 2
+        reasons.append("skill match")
+
+    return score, reasons
+
+
+async def _ai_recommend_worker_for_job(business_id: str, job: dict):
+    workers = await _ai_worker_candidates(business_id)
+    if not workers:
+        return None, "No workers found for this business."
+
+    scored = []
+    for worker in workers:
+        score, reasons = _ai_score_worker_for_job(worker, job)
+        scored.append((score, reasons, worker))
+
+    scored.sort(key=lambda item: item[0], reverse=True)
+    best_score, best_reasons, best_worker = scored[0]
+
+    # Safe rule: assign if there is one worker, or if the best worker has a meaningful score.
+    if len(scored) == 1 or best_score >= 2:
+        return best_worker, ", ".join(best_reasons) or "best available worker"
+
+    return None, "No clear worker match. Owner should choose manually."
+
+
+async def _ai_perform_dispatch_approval(action_id: str, business_id: str):
+    job = await _ai_find_job_for_action(action_id, business_id)
+    if not job:
+        return {
+            "performed": False,
+            "needs_owner_choice": True,
+            "message": "Job was not found for this dispatch action.",
+        }
+
+    existing_worker = job.get("assigned_worker_id") or job.get("assigned_worker") or job.get("worker_id")
+    if existing_worker:
+        return {
+            "performed": False,
+            "already_done": True,
+            "message": "Job already has a worker assigned.",
+        }
+
+    worker, reason = await _ai_recommend_worker_for_job(business_id, job)
+    if not worker:
+        return {
+            "performed": False,
+            "needs_owner_choice": True,
+            "message": reason,
+        }
+
+    worker_id = str(worker.get("_id") or worker.get("id") or "")
+    worker_name = str(worker.get("name") or worker.get("full_name") or worker.get("worker_name") or worker.get("email") or "Assigned worker")
+
+    now = datetime.now(timezone.utc)
+    job_query = {"business_id": str(business_id)}
+    if job.get("_id"):
+        job_query["_id"] = job["_id"]
+    else:
+        job_query["id"] = str(job.get("id"))
+
+    await db.jobs.update_one(
+        job_query,
+        {
+            "$set": {
+                "assigned_worker_id": worker_id,
+                "assigned_worker": worker_id,
+                "assigned_worker_name": worker_name,
+                "worker_id": worker_id,
+                "status": "assigned",
+                "job_status": "assigned",
+                "workflow_status": "assigned",
+                "ai_assigned_at": now,
+                "ai_assignment_reason": reason,
+                "updated_at": now,
+            }
+        }
+    )
+
+    return {
+        "performed": True,
+        "message": f"Assigned {worker_name} to the job.",
+        "worker_id": worker_id,
+        "worker_name": worker_name,
+        "reason": reason,
+        "job_id": str(job.get("_id") or job.get("id") or ""),
+    }
+
+
+
 @api_router.post("/ai/actions/{action_id}/approve")
 async def approve_ai_action(action_id: str, request: Request):
     current_user = await _ai_queue_current_user(request)
@@ -725,15 +897,23 @@ async def approve_ai_action(action_id: str, request: Request):
         raise HTTPException(status_code=401, detail="Business not found")
 
     now = datetime.now(timezone.utc)
+    performed_result = None
+
+    if str(action_id).startswith("dispatch-"):
+        performed_result = await _ai_perform_dispatch_approval(action_id, business_id)
+
+    action_status = "completed" if performed_result and performed_result.get("performed") else "approved"
+
     await db.ai_actions.update_one(
         {"business_id": str(business_id), "id": str(action_id)},
         {
             "$set": {
                 "business_id": str(business_id),
                 "id": str(action_id),
-                "status": "approved",
+                "status": action_status,
                 "approved_at": now,
                 "approved_by": str(current_user.get("id") or current_user.get("_id") or ""),
+                "performed_result": performed_result,
                 "updated_at": now,
             },
             "$setOnInsert": {"created_at": now},
@@ -741,7 +921,12 @@ async def approve_ai_action(action_id: str, request: Request):
         upsert=True,
     )
 
-    return {"ok": True, "id": action_id, "status": "approved"}
+    return {
+        "ok": True,
+        "id": action_id,
+        "status": action_status,
+        "performed_result": performed_result,
+    }
 
 
 @api_router.post("/ai/actions/{action_id}/dismiss")
