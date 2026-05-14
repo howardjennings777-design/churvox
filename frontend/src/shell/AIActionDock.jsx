@@ -200,7 +200,7 @@ export default function AIActionDock() {
       window.clearInterval(interval);
       window.removeEventListener("focus", runCheck);
     };
-  }, [visible]);
+  }, [runCheck]);
 
   const actions = useMemo(() => {
     const prepared = [
@@ -303,7 +303,7 @@ export default function AIActionDock() {
                   type="button"
                   key={label}
                   onClick={() => {
-                    go(path, `Opened ${label}`);
+                    go(path, `Reviewed ${type}`);
                   }}
                 >
                   {label}
@@ -355,7 +355,7 @@ export default function AIActionDock() {
                 <button
                   type="button"
                   onClick={() => {
-                    go(path, `Opened ${label}`);
+                    go(path, `Reviewed ${type}`);
                   }}
                 >
                   Review
