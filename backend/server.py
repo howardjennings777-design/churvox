@@ -14316,6 +14316,165 @@ async def approve_owner_invoice_command(payload: dict, current_user: dict = Depe
     }
 
 
+
+
+# ===== Owner Command Hub quote follow-up approval =====
+async def _owner_command_find_quote_for_followup(business_id: str, quote_id: str = ""):
+    if quote_id:
+        quote = await _owner_command_find_by_id(db.quotes, quote_id, business_id)
+        if quote:
+            return quote
+
+    business_filter = _owner_command_business_filter(business_id)
+
+    followup_filter = {
+        "$or": [
+            {"status": {"$in": ["sent", "pending", "open", "follow_up", "follow-up"]}},
+            {"quote_status": {"$in": ["sent", "pending", "open", "follow_up", "follow-up"]}},
+            {"state": {"$in": ["sent", "pending", "open", "follow_up", "follow-up"]}},
+        ]
+    }
+
+    query = {"$and": [business_filter, followup_filter]} if business_filter else followup_filter
+
+    quote = await db.quotes.find_one(
+        query,
+        sort=[
+            ("updated_at", 1),
+            ("created_at", 1),
+        ],
+    )
+
+    if quote:
+        return quote
+
+    query = business_filter if business_filter else {}
+    return await db.quotes.find_one(
+        query,
+        sort=[
+            ("updated_at", 1),
+            ("created_at", 1),
+        ],
+    )
+
+
+def _owner_command_quote_message(quote: dict, draft: dict) -> str:
+    saved = (
+        draft.get("customerMessage")
+        or draft.get("message")
+        or draft.get("detail")
+        or draft.get("description")
+        or ""
+    )
+    if saved:
+        return str(saved).strip()
+
+    client_name = (
+        quote.get("client_name")
+        or quote.get("customer_name")
+        or quote.get("name")
+        or "there"
+    )
+
+    quote_number = quote.get("quote_number") or quote.get("number") or quote.get("title") or "your quote"
+
+    return (
+        f"Hi {client_name}, just checking in on {quote_number}. "
+        "Let me know if you have any questions or would like to go ahead."
+    )
+
+
+@api_router.post("/ai/owner-command/quote/approve")
+async def approve_owner_quote_command(payload: dict, current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or current_user.get("user_role") or "").lower()
+    if role == "worker":
+        raise HTTPException(status_code=403, detail="Owner/admin access required")
+
+    business_id = _owner_command_business_id(current_user)
+    now = datetime.utcnow()
+
+    draft = payload.get("draft") or {}
+    selection = payload.get("selection") or {}
+
+    quote_id = (
+        payload.get("quote_id")
+        or payload.get("source_id")
+        or draft.get("quote_id")
+        or selection.get("quote_id")
+        or ""
+    )
+
+    quote = await _owner_command_find_quote_for_followup(business_id, quote_id)
+    if not quote:
+        raise HTTPException(status_code=404, detail="No quote found for follow-up approval")
+
+    quote_record_id = str(quote.get("_id") or quote.get("id") or "")
+    message = _owner_command_quote_message(quote, draft)
+
+    followup_doc = {
+        "business_id": business_id,
+        "owner_id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "owner_email": current_user.get("email"),
+        "type": "quote_follow_up",
+        "status": "draft_approved",
+        "send_status": "not_sent",
+        "approval_first": True,
+        "quote_id": quote_record_id,
+        "client_id": quote.get("client_id") or quote.get("customer_id") or draft.get("client_id"),
+        "client_name": quote.get("client_name") or quote.get("customer_name") or draft.get("client_name"),
+        "quote_number": quote.get("quote_number") or quote.get("number"),
+        "title": payload.get("title") or draft.get("title") or "Quote follow-up approved",
+        "message": message,
+        "channel": draft.get("channel") or "email_or_sms",
+        "created_at": now,
+        "updated_at": now,
+        "approved_at": now,
+        "draft": draft,
+        "selection": selection,
+    }
+
+    result = await db.owner_command_followups.insert_one(make_json_safe(followup_doc))
+    followup_doc["_id"] = result.inserted_id
+
+    await db.quotes.update_one(
+        {"_id": quote["_id"]},
+        {"$set": {
+            "ai_followup_draft_ready": True,
+            "ai_followup_message": message,
+            "ai_followup_approved_at": now,
+            "follow_up_status": "draft_approved",
+            "updated_at": now,
+        }}
+    )
+
+    approval_doc = {
+        "business_id": business_id,
+        "owner_user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "owner_email": current_user.get("email"),
+        "type": "Quote",
+        "title": payload.get("title") or "Quote follow-up approved",
+        "status": "quote_followup_draft_saved",
+        "quote_id": quote_record_id,
+        "followup_id": str(followup_doc.get("_id") or ""),
+        "draft": draft,
+        "selection": selection,
+        "approved_at": now,
+        "created_at": now,
+        "approval_first": True,
+    }
+
+    approval_result = await db.owner_command_approvals.insert_one(make_json_safe(approval_doc))
+    approval_doc["id"] = str(approval_result.inserted_id)
+
+    return {
+        "ok": True,
+        "message": "Quote follow-up draft saved. Nothing has been sent.",
+        "quote": make_json_safe({**quote, "ai_followup_message": message, "follow_up_status": "draft_approved"}),
+        "followup": make_json_safe(followup_doc),
+        "approval": make_json_safe(approval_doc),
+    }
+
+
 # /api/ai/operator/plan
 # /api/ai/operator/actions
 # /api/ai/operator/actions/{id}/approve

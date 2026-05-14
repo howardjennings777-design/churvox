@@ -1310,19 +1310,28 @@ function Workspace({ page, setPage, data }) {
       const approvalType = String(selection.group || payload.type || "").toLowerCase();
       const isDispatchApproval = approvalType.includes("dispatch");
       const isInvoiceApproval = approvalType.includes("invoice");
+      const isQuoteApproval = approvalType.includes("quote");
 
       const approvalPath = isDispatchApproval
         ? "/ai/owner-command/dispatch/approve"
         : isInvoiceApproval
           ? "/ai/owner-command/invoice/approve"
-          : "/ai/owner-command/approve";
+          : isQuoteApproval
+            ? "/ai/owner-command/quote/approve"
+            : "/ai/owner-command/approve";
 
       const result = await apiPost(approvalPath, payload);
 
       logCommand(
         selection.group || "Approved",
         title,
-        isDispatchApproval ? "Worker assigned" : isInvoiceApproval ? "Invoice draft created" : "Saved to backend"
+        isDispatchApproval
+          ? "Worker assigned"
+          : isInvoiceApproval
+            ? "Invoice draft created"
+            : isQuoteApproval
+              ? "Quote follow-up saved"
+              : "Saved to backend"
       );
 
       setSelectedRecord({
@@ -1337,7 +1346,9 @@ function Workspace({ page, setPage, data }) {
           ? "Dispatch approval completed. Churvox assigned a worker to an unassigned job and saved the owner approval."
           : String(selection.group || "").toLowerCase().includes("invoice")
             ? "Invoice approval completed. Churvox created or updated a draft invoice from a completed job."
-            : "This approval is now saved on the backend. Next we can wire exact approval types to prepare customer follow-ups.",
+            : String(selection.group || "").toLowerCase().includes("quote")
+              ? "Quote approval completed. Churvox saved a follow-up draft. Nothing was sent automatically."
+              : "This approval is now saved on the backend. Next we can wire exact approval types to prepare payment reminders.",
       });
     } catch (err) {
       logCommand(selection.group || "Approve failed", title, "Backend error");
