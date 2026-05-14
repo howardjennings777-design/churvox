@@ -1,3 +1,5 @@
-import OperatorApp from './operatoros/OperatorApp';
+import ChurvoxSalesApp from "./newos/ChurvoxSalesApp";
 
-export default OperatorApp;
+export default function App() {
+  return <ChurvoxSalesApp />;
+}
