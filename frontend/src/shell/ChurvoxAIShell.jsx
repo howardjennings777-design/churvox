@@ -985,6 +985,12 @@ function Workspace({ page, setPage, data }) {
     setSelectedRecord(item);
   }
 
+  function workspaceGo(path, nextPage) {
+    setPage(nextPage);
+    window.history.pushState({}, "", path);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }
+
   function goToWorkspace(path, nextPage) {
     setSelectedRecord(null);
     setPage(nextPage);
@@ -1028,6 +1034,20 @@ function Workspace({ page, setPage, data }) {
           <p>Prepared for owner approval.</p>
           <button type="button" onClick={() => setPage("queue")}>Review queue</button>
         </aside>
+      </section>
+
+      <section className="cx-workspace-command-bar">
+        {[
+          ["AI Queue", "/ai-approvals", "queue"],
+          ["New job", "/jobs", "jobs"],
+          ["Add client", "/clients", "clients"],
+          ["New quote", "/quotes", "quotes"],
+          ["New invoice", "/invoices", "invoices"],
+        ].map(([label, path, nextPage]) => (
+          <button type="button" key={label} onClick={() => workspaceGo(path, nextPage)}>
+            {label}
+          </button>
+        ))}
       </section>
 
       {page === "dashboard" ? (
