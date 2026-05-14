@@ -8,8 +8,7 @@ function safeNumber(value) {
 }
 
 function money(value) {
-  const n = safeNumber(value);
-  return `$${n.toLocaleString()}`;
+  return `$${safeNumber(value).toLocaleString()}`;
 }
 
 function titleOf(item, fallback) {
@@ -35,20 +34,20 @@ function clientOf(item) {
   );
 }
 
-function statusClass(status) {
-  const value = String(status || "").toLowerCase();
-  if (["paid", "completed", "active", "approved", "ready"].includes(value)) return "good";
-  if (["overdue", "low", "late", "needs review"].includes(value)) return "warn";
+function pillTone(value) {
+  const status = String(value || "").toLowerCase();
+  if (["paid", "completed", "active", "approved", "ready", "available"].includes(status)) return "good";
+  if (["overdue", "low", "late", "needs review"].includes(status)) return "warn";
   return "";
 }
 
-function StatusPill({ value }) {
-  return <span className={`vision-pill ${statusClass(value)}`}>{value || "Open"}</span>;
+function Pill({ value }) {
+  return <span className={`chx-pill ${pillTone(value)}`}>{value || "Open"}</span>;
 }
 
-function Kpi({ label, value, note }) {
+function Stat({ label, value, note }) {
   return (
-    <article className="vision-stat">
+    <article className="chx-stat">
       <span>{label}</span>
       <strong>{value}</strong>
       <small>{note}</small>
@@ -58,11 +57,11 @@ function Kpi({ label, value, note }) {
 
 function ApprovalCard({ title, body, meta, onOpen }) {
   return (
-    <article className="vision-approval-card">
+    <article className="chx-card">
       <span>AI OPERATOR</span>
       <strong>{title}</strong>
       <small>{body}</small>
-      <div className="vision-approval-actions">
+      <div className="chx-card-actions">
         <button type="button" onClick={onOpen}>Review</button>
         <button type="button" className="approve" onClick={onOpen}>Approve</button>
       </div>
@@ -82,7 +81,7 @@ export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
   const unassignedJobs = asArray(data.unassignedJobs);
   const openQuotes = asArray(data.openQuotes);
 
-  const totalInvoiceValue = invoices.reduce(
+  const invoiceValue = invoices.reduce(
     (sum, item) => sum + safeNumber(item.total || item.amount || item.balance_due || item.price),
     0
   );
@@ -123,10 +122,10 @@ export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
   ];
 
   return (
-    <main className="vision-page">
-      <section className="vision-stage">
-        <div className="vision-copy">
-          <p>SMART HUB</p>
+    <main className="chx-hub">
+      <section className="chx-hero">
+        <div className="chx-hero-copy">
+          <p className="chx-kicker">SMART HUB</p>
           <h1>
             AI runs the admin.
             <span>You approve.</span>
@@ -136,26 +135,26 @@ export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
             Churvox prepares the next move and keeps the owner in control.
           </strong>
 
-          <div className="vision-actions">
+          <div className="chx-actions">
             <button type="button" className="primary" onClick={() => onCreate?.("jobs")}>New Job</button>
             <button type="button" onClick={() => onNav?.("queue")}>AI Work Queue</button>
             <button type="button" onClick={() => onNav?.("proof")}>Proof-to-Paid</button>
           </div>
 
-          <div className="vision-stats">
-            <Kpi label="AI actions" value={aiActions.length} note="ready for review" />
-            <Kpi label="Jobs" value={jobs.length} note="work on the board" />
-            <Kpi label="Quotes" value={quotes.length} note="pipeline moving" />
-            <Kpi label="Invoice value" value={money(totalInvoiceValue)} note="draft to paid" />
+          <div className="chx-stats">
+            <Stat label="AI actions" value={aiActions.length} note="ready for review" />
+            <Stat label="Jobs" value={jobs.length} note="work on the board" />
+            <Stat label="Quotes" value={quotes.length} note="pipeline moving" />
+            <Stat label="Invoice value" value={money(invoiceValue)} note="draft to paid" />
           </div>
         </div>
 
-        <aside className="vision-command-card">
-          <p>TODAY</p>
-          <h2>{actions.filter((a) => !a.body.toLowerCase().includes("no ")).length} priority actions</h2>
+        <aside className="chx-preview">
+          <p className="chx-kicker">TODAY</p>
+          <h2>{actions.filter((a) => !a.body.toLowerCase().startsWith("no ")).length} priority actions</h2>
           <span>Churvox has prepared the next likely admin actions for owner approval.</span>
 
-          <div className="vision-approval-list">
+          <div className="chx-card-list">
             {actions.map((action) => (
               <ApprovalCard
                 key={action.title}
@@ -169,9 +168,9 @@ export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
         </aside>
       </section>
 
-      <section className="vision-workbench">
-        <article className="vision-panel">
-          <header className="vision-panel-header">
+      <section className="chx-grid">
+        <article className="chx-panel">
+          <header className="chx-panel-head">
             <div>
               <p>AI OPERATOR</p>
               <h2>Approval queue</h2>
@@ -180,21 +179,21 @@ export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
             <button type="button" onClick={() => onNav?.("queue")}>View all</button>
           </header>
 
-          <div className="vision-list">
+          <div className="chx-list">
             {actions.map((action) => (
-              <button className="vision-list-item" key={action.title} onClick={() => onNav?.(action.nav)}>
+              <button className="chx-row" key={action.title} onClick={() => onNav?.(action.nav)}>
                 <div>
                   <strong>{action.title}</strong>
                   <small>{action.body}</small>
                 </div>
-                <StatusPill value="Ready" />
+                <Pill value="Ready" />
               </button>
             ))}
           </div>
         </article>
 
-        <article className="vision-panel">
-          <header className="vision-panel-header">
+        <article className="chx-panel">
+          <header className="chx-panel-head">
             <div>
               <p>TODAY / RUN SHEET</p>
               <h2>Work moving today</h2>
@@ -203,28 +202,24 @@ export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
             <button type="button" onClick={() => onNav?.("jobs")}>Open jobs</button>
           </header>
 
-          <div className="vision-feed">
+          <div className="chx-feed">
             {jobs.slice(0, 5).map((job, index) => (
-              <button
-                className="vision-feed-row"
-                key={job.id || job._id || index}
-                onClick={() => onNav?.("jobs")}
-              >
+              <button className="chx-row" key={job.id || job._id || index} onClick={() => onNav?.("jobs")}>
                 <div>
                   <strong>{titleOf(job, `Job ${index + 1}`)}</strong>
                   <small>{clientOf(job)} · {job.address || job.site_address || "No address set"}</small>
                 </div>
-                <StatusPill value={job.status || job.job_status || "Open"} />
+                <Pill value={job.status || job.job_status || "Open"} />
               </button>
             ))}
-            {!jobs.length ? <div className="vision-empty">No jobs yet. Create a job and Churvox will start preparing the admin.</div> : null}
+            {!jobs.length ? <div className="chx-empty">No jobs yet. Create a job and Churvox will start preparing the admin.</div> : null}
           </div>
         </article>
       </section>
 
-      <section className="vision-workbench">
-        <article className="vision-panel">
-          <header className="vision-panel-header">
+      <section className="chx-grid">
+        <article className="chx-panel">
+          <header className="chx-panel-head">
             <div>
               <p>CREW & DISPATCH</p>
               <h2>Who can take work?</h2>
@@ -233,26 +228,22 @@ export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
             <button type="button" onClick={() => onNav?.("crew")}>View crew</button>
           </header>
 
-          <div className="vision-feed">
+          <div className="chx-feed">
             {workers.slice(0, 5).map((worker, index) => (
-              <button
-                className="vision-feed-row"
-                key={worker.id || worker._id || index}
-                onClick={() => onNav?.("crew")}
-              >
+              <button className="chx-row" key={worker.id || worker._id || index} onClick={() => onNav?.("crew")}>
                 <div>
                   <strong>{titleOf(worker, `Worker ${index + 1}`)}</strong>
                   <small>{worker.role || "Worker"} · {worker.region || "No region set"}</small>
                 </div>
-                <StatusPill value={worker.status || "Available"} />
+                <Pill value={worker.status || "Available"} />
               </button>
             ))}
-            {!workers.length ? <div className="vision-empty">No workers yet. Add or import crew to unlock stronger AI dispatch.</div> : null}
+            {!workers.length ? <div className="chx-empty">No workers yet. Add or import crew to unlock stronger AI dispatch.</div> : null}
           </div>
         </article>
 
-        <article className="vision-panel">
-          <header className="vision-panel-header">
+        <article className="chx-panel">
+          <header className="chx-panel-head">
             <div>
               <p>CASHFLOW</p>
               <h2>Proof to paid</h2>
@@ -261,21 +252,17 @@ export default function SmartHubOptionB({ data = {}, onNav, onCreate }) {
             <button type="button" onClick={() => onNav?.("invoices")}>Open invoices</button>
           </header>
 
-          <div className="vision-feed">
+          <div className="chx-feed">
             {invoices.slice(0, 5).map((invoice, index) => (
-              <button
-                className="vision-feed-row"
-                key={invoice.id || invoice._id || index}
-                onClick={() => onNav?.("invoices")}
-              >
+              <button className="chx-row" key={invoice.id || invoice._id || index} onClick={() => onNav?.("invoices")}>
                 <div>
                   <strong>{titleOf(invoice, `Invoice ${index + 1}`)}</strong>
                   <small>{clientOf(invoice)} · {invoice.status || "Draft"}</small>
                 </div>
-                <StatusPill value={money(invoice.total || invoice.amount || invoice.balance_due || invoice.price)} />
+                <Pill value={money(invoice.total || invoice.amount || invoice.balance_due || invoice.price)} />
               </button>
             ))}
-            {!invoices.length ? <div className="vision-empty">No invoices yet. Draft invoices will appear here.</div> : null}
+            {!invoices.length ? <div className="chx-empty">No invoices yet. Draft invoices will appear here.</div> : null}
           </div>
         </article>
       </section>
