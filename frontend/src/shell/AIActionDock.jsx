@@ -261,6 +261,25 @@ export default function AIActionDock() {
               ))}
             </div>
 
+            <section className="ai-dock-summary">
+              <article>
+                <span>Dispatch</span>
+                <strong>{dismissed ? 0 : counts.unassigned}</strong>
+              </article>
+              <article>
+                <span>Draft invoices</span>
+                <strong>{dismissed ? 0 : counts.drafts}</strong>
+              </article>
+              <article>
+                <span>Quote follow-ups</span>
+                <strong>{dismissed ? 0 : counts.followups}</strong>
+              </article>
+              <article>
+                <span>Overdue</span>
+                <strong>{dismissed ? 0 : counts.overdue}</strong>
+              </article>
+            </section>
+
             {activity.length ? (
               <section className="ai-dock-activity">
                 <span>Session activity</span>
