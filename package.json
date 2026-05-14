@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "date-fns": "3.6.0"
+  },
+  "scripts": {
+    "smoke:ai-shell": "bash scripts/churvox-ai-shell-smoke-test.sh"
   }
 }
