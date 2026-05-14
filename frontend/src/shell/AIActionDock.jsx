@@ -181,6 +181,14 @@ export default function AIActionDock() {
   const readyCount = dismissed ? 0 : rawReadyCount;
   const urgentCount = dismissed ? 0 : rawUrgentCount;
 
+  const briefing = dismissed
+    ? "You marked today’s AI actions reviewed. The operator will stay quiet unless you refresh the check."
+    : urgentCount
+      ? `AI found ${urgentCount} urgent item${urgentCount === 1 ? "" : "s"} needing owner review first.`
+      : readyCount
+        ? `AI prepared ${readyCount} action${readyCount === 1 ? "" : "s"} for review. Nothing sends without approval.`
+        : "Your workspace is calm. AI is watching for dispatch, invoice, quote, and cashflow work.";
+
   if (!visible) return null;
 
   return (
@@ -260,6 +268,11 @@ export default function AIActionDock() {
                 </button>
               ))}
             </div>
+
+            <section className="ai-dock-briefing">
+              <span>AI daily briefing</span>
+              <p>{briefing}</p>
+            </section>
 
             <section className="ai-dock-summary">
               <article>

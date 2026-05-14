@@ -271,3 +271,31 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.ai-dock-briefing {
+  margin: 0 0 12px;
+  padding: 14px;
+  border-radius: 20px;
+  color: #102033;
+  background:
+    radial-gradient(circle at top right, rgba(103, 232, 249, 0.25), transparent 8rem),
+    rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.14);
+}
+
+.ai-dock-briefing span {
+  display: block;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.ai-dock-briefing p {
+  margin: 7px 0 0;
+  color: #173050;
+  line-height: 1.45;
+  font-size: 14px;
+  font-weight: 850;
+}
