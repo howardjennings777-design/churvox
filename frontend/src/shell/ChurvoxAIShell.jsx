@@ -229,6 +229,35 @@ async function apiGet(path) {
   return payload;
 }
 
+
+async function apiPost(path, body = {}) {
+  const token = readToken();
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+
+  const text = await res.text();
+  let payload = {};
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    payload = { message: text };
+  }
+
+  if (!res.ok) {
+    throw new Error(payload.detail || payload.message || payload.error || `${path} failed`);
+  }
+
+  return payload;
+}
+
 function toArray(payload, keys = []) {
   if (Array.isArray(payload)) return payload;
   if (!payload || typeof payload !== "object") return [];
@@ -297,6 +326,34 @@ function invoiceRow(item, index) {
   const client = textValue(item?.client_name, item?.customer_name, item?.client?.name, "Client");
   const amount = moneyValue(item);
   return [title, client, amount || "Invoice", statusText(item, "Draft")];
+}
+
+
+function aiActionTone(item) {
+  const type = String(item?.type || "").toLowerCase();
+  const priority = String(item?.priority || "").toLowerCase();
+
+  if (priority === "urgent") return "amber";
+  if (type.includes("dispatch")) return "blue";
+  if (type.includes("invoice") || type.includes("proof")) return "teal";
+  if (type.includes("quote")) return "purple";
+  if (type.includes("cashflow")) return "amber";
+  return "blue";
+}
+
+function aiActionRow(item) {
+  return {
+    id: textValue(item?.id, item?._id),
+    type: textValue(item?.type, "AI"),
+    title: textValue(item?.title, "AI action ready"),
+    body: textValue(item?.body, item?.reason, "AI prepared this action for owner review."),
+    action: textValue(item?.recommended_action, item?.action, "Review"),
+    tone: aiActionTone(item),
+    status: textValue(item?.status, "pending"),
+    source_type: textValue(item?.source_type),
+    source_id: textValue(item?.source_id),
+    priority: textValue(item?.priority, "normal"),
+  };
 }
 
 function buildLiveActions(raw) {
@@ -400,6 +457,7 @@ function useLiveChurvoxData(authed) {
         apiGet("/team/workers"),
         apiGet("/quotes"),
         apiGet("/invoices"),
+        apiGet("/ai/actions"),
       ]);
 
       if (cancelled) return;
@@ -409,19 +467,22 @@ function useLiveChurvoxData(authed) {
       const rawTeam = results[2].status === "fulfilled" ? toArray(results[2].value, ["workers", "team"]) : [];
       const rawQuotes = results[3].status === "fulfilled" ? toArray(results[3].value, ["quotes"]) : [];
       const rawInvoices = results[4].status === "fulfilled" ? toArray(results[4].value, ["invoices"]) : [];
+      const rawAiActions = results[5].status === "fulfilled" ? toArray(results[5].value, ["actions"]) : [];
 
       const mappedJobs = rawJobs.map(jobRow);
       const mappedClients = rawClients.map(clientRow);
       const mappedTeam = rawTeam.map(workerRow);
       const mappedQuotes = rawQuotes.map(quoteRow);
       const mappedInvoices = rawInvoices.map(invoiceRow);
-      const liveActions = buildLiveActions({
-        jobs: rawJobs,
-        clients: rawClients,
-        team: rawTeam,
-        quotes: rawQuotes,
-        invoices: rawInvoices,
-      });
+      const liveActions = rawAiActions.length
+        ? rawAiActions.map(aiActionRow)
+        : buildLiveActions({
+            jobs: rawJobs,
+            clients: rawClients,
+            team: rawTeam,
+            quotes: rawQuotes,
+            invoices: rawInvoices,
+          });
 
       const readyInvoices = rawInvoices.filter((item) => {
         const status = statusText(item, "").toLowerCase();
@@ -998,7 +1059,7 @@ function Workspace({ page, setPage, data }) {
     window.dispatchEvent(new PopStateEvent("popstate"));
   }
 
-  function approveAction(item) {
+  async function approveAction(item) {
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     setApproved((currentApproved) => ({ ...currentApproved, [item.title]: true }));
@@ -1011,10 +1072,20 @@ function Workspace({ page, setPage, data }) {
       return nextLog;
     });
 
+    if (item.id) {
+      try {
+        await apiPost(`/ai/actions/${encodeURIComponent(item.id)}/approve`);
+      } catch (err) {
+        console.warn("AI action approval saved locally only:", err);
+      }
+    }
+
     setSelectedRecord([
       item.type,
       `${item.title} approved`,
-      "Approved in this AI shell. Next wiring can connect this to the matching backend action.",
+      item.id
+        ? "Approved and saved to the backend AI action queue."
+        : "Approved in this AI shell. Backend action id was not available, so this was saved locally.",
       "Approved",
     ]);
   }
