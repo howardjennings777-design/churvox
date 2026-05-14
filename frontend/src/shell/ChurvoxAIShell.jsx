@@ -1307,8 +1307,12 @@ function Workspace({ page, setPage, data }) {
         },
       };
 
-      const result = await apiPost("/ai/owner-command/approve", payload);
-      logCommand(selection.group || "Approved", title, "Saved to backend");
+      const isDispatchApproval = String(selection.group || payload.type || "").toLowerCase().includes("dispatch");
+      const result = await apiPost(
+        isDispatchApproval ? "/ai/owner-command/dispatch/approve" : "/ai/owner-command/approve",
+        payload
+      );
+      logCommand(selection.group || "Approved", title, isDispatchApproval ? "Worker assigned" : "Saved to backend");
 
       setSelectedRecord({
         ...selection,
@@ -1318,7 +1322,9 @@ function Workspace({ page, setPage, data }) {
           result?.message || "Approval saved to backend.",
           "Backend saved",
         ],
-        recommendation: "This approval is now saved on the backend. Next we can wire exact approval types to assign workers, create invoice drafts, or prepare customer follow-ups.",
+        recommendation: String(selection.group || "").toLowerCase().includes("dispatch")
+          ? "Dispatch approval completed. Churvox assigned a worker to an unassigned job and saved the owner approval."
+          : "This approval is now saved on the backend. Next we can wire exact approval types to create invoice drafts or prepare customer follow-ups.",
       });
     } catch (err) {
       logCommand(selection.group || "Approve failed", title, "Backend error");

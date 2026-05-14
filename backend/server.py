@@ -13909,6 +13909,223 @@ async def list_owner_command_approvals(current_user: dict = Depends(get_current_
     }
 
 
+
+
+# ===== Owner Command Hub dispatch approval =====
+def _owner_command_business_id(current_user: dict) -> str:
+    return str(
+        current_user.get("business_id")
+        or current_user.get("company_id")
+        or current_user.get("owner_id")
+        or current_user.get("id")
+        or current_user.get("_id")
+        or ""
+    )
+
+
+def _owner_command_business_filter(business_id: str):
+    if not business_id:
+        return {}
+
+    possible_values = [business_id]
+    try:
+        possible_values.append(ObjectId(business_id))
+    except Exception:
+        pass
+
+    return {
+        "$or": [
+            {"business_id": {"$in": possible_values}},
+            {"company_id": {"$in": possible_values}},
+            {"owner_id": {"$in": possible_values}},
+        ]
+    }
+
+
+async def _owner_command_find_by_id(collection, record_id, business_id: str):
+    if not record_id:
+        return None
+
+    candidates = []
+    text_id = str(record_id)
+
+    try:
+        candidates.append({"_id": ObjectId(text_id)})
+    except Exception:
+        pass
+
+    candidates.extend([
+        {"_id": text_id},
+        {"id": text_id},
+        {"job_id": text_id},
+        {"worker_id": text_id},
+    ])
+
+    business_filter = _owner_command_business_filter(business_id)
+
+    for query in candidates:
+        final_query = {"$and": [query, business_filter]} if business_filter else query
+        found = await collection.find_one(final_query)
+        if found:
+            return found
+
+    return None
+
+
+async def _owner_command_find_worker(business_id: str, worker_id: str = ""):
+    collections = [
+        getattr(db, "workers"),
+        getattr(db, "team"),
+        getattr(db, "team_members"),
+        getattr(db, "users"),
+    ]
+
+    for collection in collections:
+        worker = await _owner_command_find_by_id(collection, worker_id, business_id)
+        if worker:
+            return worker
+
+    business_filter = _owner_command_business_filter(business_id)
+    active_worker_filter = {
+        "$or": [
+            {"role": {"$in": ["worker", "Worker"]}},
+            {"user_role": {"$in": ["worker", "Worker"]}},
+            {"type": {"$in": ["worker", "Worker"]}},
+            {"is_worker": True},
+        ]
+    }
+
+    for collection in collections:
+        query = {"$and": [business_filter, active_worker_filter]} if business_filter else active_worker_filter
+        worker = await collection.find_one(query)
+        if worker:
+            return worker
+
+    return None
+
+
+async def _owner_command_find_unassigned_job(business_id: str, job_id: str = ""):
+    if job_id:
+        job = await _owner_command_find_by_id(db.jobs, job_id, business_id)
+        if job:
+            return job
+
+    business_filter = _owner_command_business_filter(business_id)
+
+    unassigned_filter = {
+        "$and": [
+            {
+                "$or": [
+                    {"assigned_worker_id": {"$exists": False}},
+                    {"assigned_worker_id": None},
+                    {"assigned_worker_id": ""},
+                    {"worker_id": {"$exists": False}},
+                    {"worker_id": None},
+                    {"worker_id": ""},
+                ]
+            },
+            {
+                "$or": [
+                    {"status": {"$exists": False}},
+                    {"status": {"$nin": ["completed", "cancelled", "canceled"]}},
+                ]
+            },
+        ]
+    }
+
+    query = {"$and": [business_filter, unassigned_filter]} if business_filter else unassigned_filter
+    return await db.jobs.find_one(query)
+
+
+@api_router.post("/ai/owner-command/dispatch/approve")
+async def approve_owner_dispatch_command(payload: dict, current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or current_user.get("user_role") or "").lower()
+    if role == "worker":
+        raise HTTPException(status_code=403, detail="Owner/admin access required")
+
+    business_id = _owner_command_business_id(current_user)
+    now = datetime.utcnow()
+
+    draft = payload.get("draft") or {}
+    selection = payload.get("selection") or {}
+
+    job_id = (
+        payload.get("job_id")
+        or payload.get("source_id")
+        or draft.get("job_id")
+        or selection.get("job_id")
+        or ""
+    )
+
+    worker_id = (
+        payload.get("worker_id")
+        or draft.get("worker_id")
+        or selection.get("worker_id")
+        or ""
+    )
+
+    job = await _owner_command_find_unassigned_job(business_id, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="No unassigned job found to dispatch")
+
+    worker = await _owner_command_find_worker(business_id, worker_id)
+    if not worker:
+        raise HTTPException(status_code=404, detail="No worker found for dispatch approval")
+
+    worker_record_id = str(worker.get("_id") or worker.get("id") or worker.get("worker_id") or "")
+    worker_name = (
+        worker.get("name")
+        or worker.get("full_name")
+        or worker.get("worker_name")
+        or worker.get("email")
+        or "Assigned worker"
+    )
+
+    update = {
+        "assigned_worker_id": worker_record_id,
+        "assigned_worker": worker_name,
+        "assigned_worker_name": worker_name,
+        "worker_id": worker_record_id,
+        "status": "assigned",
+        "job_status": "assigned",
+        "workflow_status": "assigned",
+        "updated_at": now,
+        "ai_dispatch_approved_at": now,
+        "ai_dispatch_approved_by": str(current_user.get("id") or current_user.get("_id") or ""),
+        "ai_dispatch_approved_by_email": current_user.get("email"),
+    }
+
+    await db.jobs.update_one({"_id": job["_id"]}, {"$set": update})
+
+    approval_doc = {
+        "business_id": business_id,
+        "owner_user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "owner_email": current_user.get("email"),
+        "type": "Dispatch",
+        "title": payload.get("title") or "Worker assignment approved",
+        "status": "worker_assigned",
+        "job_id": str(job.get("_id") or job.get("id") or ""),
+        "worker_id": worker_record_id,
+        "worker_name": worker_name,
+        "draft": draft,
+        "selection": selection,
+        "approved_at": now,
+        "created_at": now,
+        "approval_first": True,
+    }
+
+    result = await db.owner_command_approvals.insert_one(make_json_safe(approval_doc))
+    approval_doc["id"] = str(result.inserted_id)
+
+    return {
+        "ok": True,
+        "message": f"Dispatch approved. {worker_name} assigned to job.",
+        "job": make_json_safe({**job, **update}),
+        "worker": make_json_safe(worker),
+        "approval": make_json_safe(approval_doc),
+    }
+
+
 # /api/ai/operator/plan
 # /api/ai/operator/actions
 # /api/ai/operator/actions/{id}/approve
