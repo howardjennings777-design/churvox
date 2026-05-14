@@ -25,10 +25,10 @@ export default function OperatorShell({
   }
 
   return (
-    <div className="chx-shell">
-      <aside className="chx-sidebar">
-        <button className="chx-brand" onClick={() => setCurrent?.("hub")}>
-          <span className="chx-mark">
+    <div className="cx-shell">
+      <aside className="cx-sidebar">
+        <button className="cx-brand" onClick={() => setCurrent?.("hub")}>
+          <span className="cx-logo">
             <img src="/brand/churvox-holo-c.svg" alt="" />
           </span>
           <span>
@@ -37,7 +37,7 @@ export default function OperatorShell({
           </span>
         </button>
 
-        <nav className="chx-nav">
+        <nav className="cx-nav">
           {nav.map((item) => (
             <button
               key={item.key}
@@ -49,14 +49,14 @@ export default function OperatorShell({
           ))}
         </nav>
 
-        <section className="chx-ai-note">
+        <section className="cx-ai-note">
           <p>AI OPERATOR</p>
           <strong>{data?.aiActions?.length || 0} actions ready</strong>
           <span>AI prepares the admin. You approve.</span>
         </section>
 
         {allowRoleSwitch ? (
-          <select className="chx-role-select" value={role} onChange={(event) => setRole?.(event.target.value)}>
+          <select className="cx-role-select" value={role} onChange={(event) => setRole?.(event.target.value)}>
             <option value="owner">Owner</option>
             <option value="manager">Manager</option>
             <option value="office_admin">Office Admin</option>
@@ -66,16 +66,16 @@ export default function OperatorShell({
         ) : null}
       </aside>
 
-      <main className="chx-main">
-        <header className="chx-topbar">
+      <main className="cx-main">
+        <header className="cx-topbar">
           <div>
             <strong>{userName || "Owner"}</strong>
             <span>{roleLabel(role)} workspace</span>
           </div>
 
-          <input className="chx-search" placeholder="Search anything..." />
+          <input className="cx-search" placeholder="Search anything..." />
 
-          <div className="chx-top-actions">
+          <div className="cx-top-actions">
             <button type="button" className="primary" onClick={() => onCreate?.("jobs")}>
               New Job
             </button>
@@ -88,7 +88,7 @@ export default function OperatorShell({
         {children}
       </main>
 
-      <nav className="chx-mobile-nav">
+      <nav className="cx-mobile-nav">
         {nav.slice(0, 5).map((item) => (
           <button
             key={item.key}
