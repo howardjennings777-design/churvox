@@ -113,10 +113,10 @@ export default function AIActionDock() {
 
   const actions = useMemo(() => {
     const prepared = [
-      ["Dispatch", counts.unassigned ? `${counts.unassigned} unassigned job${counts.unassigned === 1 ? "" : "s"} found` : "Dispatch check ready", "Review worker recommendations"],
-      ["Invoice", counts.drafts ? `${counts.drafts} draft invoice${counts.drafts === 1 ? "" : "s"} ready` : "Invoice check ready", "Review invoice drafts"],
-      ["Quote", counts.followups ? `${counts.followups} quote follow-up${counts.followups === 1 ? "" : "s"} ready` : "Quote follow-up check ready", "Approve customer follow-up"],
-      ["Cashflow", counts.overdue ? `${counts.overdue} overdue invoice${counts.overdue === 1 ? "" : "s"}` : "Cashflow check ready", "Review payment reminders"],
+      ["Dispatch", counts.unassigned ? `${counts.unassigned} unassigned job${counts.unassigned === 1 ? "" : "s"} found` : "Dispatch check ready", "Review worker recommendations", "/jobs"],
+      ["Invoice", counts.drafts ? `${counts.drafts} draft invoice${counts.drafts === 1 ? "" : "s"} ready` : "Invoice check ready", "Review invoice drafts", "/invoices"],
+      ["Quote", counts.followups ? `${counts.followups} quote follow-up${counts.followups === 1 ? "" : "s"} ready` : "Quote follow-up check ready", "Approve customer follow-up", "/quotes"],
+      ["Cashflow", counts.overdue ? `${counts.overdue} overdue invoice${counts.overdue === 1 ? "" : "s"}` : "Cashflow check ready", "Review payment reminders", "/invoices"],
     ];
 
     return prepared;
@@ -144,12 +144,21 @@ export default function AIActionDock() {
               <button type="button" onClick={() => setOpen(false)}>×</button>
             </header>
 
-            {actions.map(([type, title, action]) => (
+            {actions.map(([type, title, action, path]) => (
               <article key={`${type}-${title}`}>
                 <span>{type}</span>
                 <strong>{title}</strong>
                 <p>{action}</p>
-                <button type="button" onClick={() => setOpen(false)}>Review</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    window.history.pushState({}, "", path);
+                    window.dispatchEvent(new PopStateEvent("popstate"));
+                  }}
+                >
+                  Review
+                </button>
               </article>
             ))}
           </section>
