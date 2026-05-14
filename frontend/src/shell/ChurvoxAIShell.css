@@ -2105,3 +2105,21 @@ button {
     backdrop-filter: blur(16px);
   }
 }
+
+.cx-work-action.dismissed {
+  opacity: 0.62;
+  border-color: rgba(100, 116, 139, 0.18);
+  background: rgba(248, 250, 252, 0.72);
+}
+
+.cx-dismissed-note {
+  width: fit-content;
+  margin: 0 0 14px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #475569;
+  background: rgba(100, 116, 139, 0.12);
+  border: 1px solid rgba(100, 116, 139, 0.18);
+  font-size: 12px;
+  font-weight: 900;
+}

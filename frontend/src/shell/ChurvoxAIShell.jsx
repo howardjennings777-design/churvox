@@ -961,6 +961,7 @@ function Workspace({ page, setPage, data }) {
   const stats = data?.stats || {};
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [approved, setApproved] = useState({});
+  const [dismissedActions, setDismissedActions] = useState({});
   const [approvalLog, setApprovalLog] = useState(() => readApprovalLog());
 
   const meta = {
@@ -1059,6 +1060,28 @@ function Workspace({ page, setPage, data }) {
     window.dispatchEvent(new PopStateEvent("popstate"));
   }
 
+  async function dismissAction(item) {
+    const key = item.title || item.id || item.type;
+    setDismissedActions((currentDismissed) => ({ ...currentDismissed, [key]: true }));
+
+    if (item.id) {
+      try {
+        await apiPost(`/ai/actions/${encodeURIComponent(item.id)}/dismiss`);
+      } catch (err) {
+        console.warn("AI action dismissal saved locally only:", err);
+      }
+    }
+
+    setSelectedRecord([
+      item.type,
+      `${item.title} dismissed`,
+      item.id
+        ? "Dismissed and saved to the backend AI action queue."
+        : "Dismissed in this AI shell. Backend action id was not available, so this was saved locally.",
+      "Dismissed",
+    ]);
+  }
+
   async function approveAction(item) {
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -1149,15 +1172,20 @@ function Workspace({ page, setPage, data }) {
         <section className="cx-action-board">
           {actions.map((item) => {
             const isApproved = approved[item.title];
+            const isDismissed = dismissedActions[item.title || item.id || item.type];
 
             return (
-              <article className={`cx-work-action ${item.tone || "blue"}`} key={item.title}>
+              <article className={`cx-work-action ${item.tone || "blue"} ${isDismissed ? "dismissed" : ""}`} key={item.title}>
                 <span>{item.type}</span>
                 <h3>{item.title}</h3>
                 <p>{item.body}</p>
                 {isApproved ? <small className="cx-approved-note">Approved in this session</small> : null}
+                {isDismissed ? <small className="cx-dismissed-note">Dismissed in this session</small> : null}
                 <div>
                   <button type="button" onClick={() => openRecord([item.type, item.title, item.body, item.action])}>Details</button>
+                  <button type="button" onClick={() => dismissAction(item)}>
+                    {isDismissed ? "Dismissed" : "Dismiss"}
+                  </button>
                   <button type="button" className="approve" onClick={() => approveAction(item)}>
                     {isApproved ? "Approved" : item.action}
                   </button>
