@@ -1782,3 +1782,25 @@ button {
   line-height: 1.55;
   font-weight: 750;
 }
+
+.cx-record-actions {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.cx-record-actions button {
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .cx-record-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .cx-record-actions {
+    grid-template-columns: 1fr !important;
+  }
+}

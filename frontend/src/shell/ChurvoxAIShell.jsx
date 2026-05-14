@@ -1146,6 +1146,9 @@ function Workspace({ page, setPage, data }) {
               <button type="button" onClick={() => setSelectedRecord(null)}>Close</button>
               <button type="button" onClick={() => goToWorkspace("/dashboard", "dashboard")}>Smart Hub</button>
               <button type="button" onClick={() => goToWorkspace("/jobs", "jobs")}>Jobs</button>
+              <button type="button" onClick={() => goToWorkspace("/clients", "clients")}>Clients</button>
+              <button type="button" onClick={() => goToWorkspace("/team", "team")}>Team</button>
+              <button type="button" onClick={() => goToWorkspace("/quotes", "quotes")}>Quotes</button>
               <button type="button" onClick={() => goToWorkspace("/invoices", "invoices")}>Invoices</button>
               <button type="button" className="approve" onClick={() => setSelectedRecord(null)}>Done</button>
             </footer>
