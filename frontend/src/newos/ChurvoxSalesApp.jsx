@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import FreshAIPublicShell from "../fresh/FreshAIPublicShell";
 import "./churvoxSales.css";
 import "./churvoxNeuralAi.css";
 import "./churvoxHardAi.css";
@@ -594,11 +595,9 @@ export default function ChurvoxSalesApp() {
     window.history.pushState({}, "", PAGE_PATHS[next] || "/dashboard");
   };
 
-  const publicPage = page === "landing" || page === "login" || page === "signup";
-
-  if (page === "landing") return <Landing go={go} />;
-  if (page === "login") return <AuthPage go={go} mode="login" />;
-  if (page === "signup") return <AuthPage go={go} mode="signup" />;
+  if (page === "landing") return <FreshAIPublicShell />;
+  if (page === "login") return <FreshAIPublicShell />;
+  if (page === "signup") return <FreshAIPublicShell />;
 
   return <AppShell page={page} go={go} />;
 }
