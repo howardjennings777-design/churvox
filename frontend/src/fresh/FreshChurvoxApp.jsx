@@ -31,6 +31,10 @@ const API_BASE = (() => {
 })();
 
 
+function ChurvoxPublicLanding() {
+  return <FreshAuthShell />;
+}
+
 function readToken() {
   try {
     return localStorage.getItem("token") || localStorage.getItem("authToken") || localStorage.getItem("access_token") || "";
