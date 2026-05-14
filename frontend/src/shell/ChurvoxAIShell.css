@@ -1935,3 +1935,173 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+/* Churvox AI shell mobile/touch polish */
+.cx-app-main {
+  padding-bottom: 110px;
+}
+
+.cx-topbar button,
+.cx-app-nav button,
+.cx-workspace-command-bar button,
+.cx-row,
+.cx-work-action button,
+.cx-record-modal button {
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cx-row:hover,
+.cx-work-action:hover,
+.cx-column:hover,
+.cx-stat:hover {
+  transform: translateY(-1px);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.cx-row:focus-visible,
+.cx-work-action button:focus-visible,
+.cx-record-modal button:focus-visible,
+.cx-workspace-command-bar button:focus-visible,
+.cx-topbar button:focus-visible,
+.cx-app-nav button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.28);
+  outline-offset: 3px;
+}
+
+@media (max-width: 920px) {
+  .cx-app {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(360px, 88vw);
+    z-index: 75;
+    transform: translateX(-104%);
+    transition: transform 220ms ease;
+    box-shadow: 30px 0 90px rgba(6, 15, 30, 0.22);
+  }
+
+  .cx-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .cx-app-main {
+    min-width: 0;
+  }
+
+  .cx-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: blur(18px);
+  }
+
+  .cx-topbar input {
+    order: 5;
+    flex-basis: 100%;
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .cx-workspace {
+    gap: 14px;
+  }
+
+  .cx-work-hero {
+    grid-template-columns: 1fr;
+    padding: 18px;
+    border-radius: 28px;
+  }
+
+  .cx-work-hero h1 {
+    font-size: clamp(34px, 11vw, 56px);
+    letter-spacing: -0.07em;
+  }
+
+  .cx-work-hero aside {
+    min-height: auto;
+  }
+
+  .cx-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cx-action-board {
+    gap: 12px;
+  }
+
+  .cx-work-action {
+    min-height: auto;
+  }
+
+  .cx-work-action div {
+    flex-direction: column;
+  }
+
+  .cx-panel {
+    border-radius: 26px;
+    padding: 14px;
+  }
+
+  .cx-row {
+    min-height: 74px;
+    border-radius: 18px;
+  }
+
+  .cx-record-modal {
+    border-radius: 28px;
+    padding: 18px;
+  }
+
+  .cx-record-modal h2 {
+    font-size: clamp(30px, 10vw, 46px);
+  }
+
+  .cx-record-actions {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .cx-app-main {
+    padding: 12px 12px 120px;
+  }
+
+  .cx-topbar {
+    gap: 8px;
+    padding: 10px;
+    border-radius: 22px;
+  }
+
+  .cx-topbar > div {
+    min-width: 0;
+  }
+
+  .cx-topbar > div strong,
+  .cx-topbar > div span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cx-topbar button {
+    min-height: 42px;
+    padding-inline: 11px;
+  }
+
+  .cx-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-workspace-command-bar {
+    position: sticky;
+    top: 78px;
+    z-index: 30;
+    backdrop-filter: blur(16px);
+  }
+}

@@ -413,3 +413,68 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* AI Operator dock mobile/touch polish */
+.ai-dock-button,
+.ai-dock-panel button,
+.ai-command-panel button {
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ai-dock-panel,
+.ai-command-panel {
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+}
+
+.ai-dock-panel button:focus-visible,
+.ai-command-panel button:focus-visible,
+.ai-dock-button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.28);
+  outline-offset: 3px;
+}
+
+@media (max-width: 720px) {
+  .ai-dock-button {
+    right: 14px;
+    bottom: 14px;
+    min-width: 116px;
+    min-height: 54px;
+    border-radius: 22px;
+  }
+
+  .ai-dock-backdrop {
+    place-items: end center;
+    padding: 12px;
+  }
+
+  .ai-dock-panel {
+    width: 100%;
+    border-radius: 28px;
+    padding: 16px;
+  }
+
+  .ai-dock-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ai-dock-owner-controls,
+  .ai-dock-quick-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-command-backdrop {
+    padding: 12px;
+  }
+
+  .ai-command-panel {
+    border-radius: 28px;
+    padding: 16px;
+  }
+
+  .ai-command-grid {
+    grid-template-columns: 1fr;
+  }
+}
