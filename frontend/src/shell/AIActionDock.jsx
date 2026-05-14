@@ -91,6 +91,7 @@ function status(item) {
 
 export default function AIActionDock() {
   const [open, setOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
   const [dismissed, setDismissed] = useState(wasReviewedToday);
   const [visible, setVisible] = useState(isLoggedIn());
   const [activity, setActivity] = useState([]);
@@ -98,6 +99,18 @@ export default function AIActionDock() {
   function logActivity(label) {
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     setActivity((current) => [{ label, time }, ...current].slice(0, 4));
+  }
+
+  function openCommand() {
+    setOpen(false);
+    setCommandOpen(true);
+  }
+
+  function routeCommand(path, label) {
+    if (typeof logActivity === "function") logActivity(label);
+    setCommandOpen(false);
+    window.history.pushState({}, "", path);
+    window.dispatchEvent(new PopStateEvent("popstate"));
   }
 
   function go(path, label) {
@@ -227,6 +240,10 @@ export default function AIActionDock() {
               {checking ? "Checking..." : "Refresh AI check"}
             </button>
 
+            <button className="ai-dock-command-open" type="button" onClick={openCommand}>
+              Open AI quick-create
+            </button>
+
             <div className="ai-dock-owner-controls">
               <button
                 type="button"
@@ -320,6 +337,37 @@ export default function AIActionDock() {
                 </button>
               </article>
             ))}
+          </section>
+        </div>
+      ) : null}
+
+      {commandOpen ? (
+        <div className="ai-command-backdrop" onClick={() => setCommandOpen(false)}>
+          <section className="ai-command-panel" onClick={(event) => event.stopPropagation()}>
+            <header>
+              <div>
+                <span>AI quick-create</span>
+                <h2>What do you want to start?</h2>
+                <p>AI keeps the owner in control. Pick the workspace and approve the real details there.</p>
+              </div>
+              <button type="button" onClick={() => setCommandOpen(false)}>×</button>
+            </header>
+
+            <div className="ai-command-grid">
+              {[
+                ["New job", "Start or dispatch work", "/jobs"],
+                ["Add client", "Create or review customer record", "/clients"],
+                ["New quote", "Prepare sales follow-up", "/quotes"],
+                ["New invoice", "Review cashflow and drafts", "/invoices"],
+                ["Team", "Check crew and assignment fit", "/team"],
+                ["Smart Hub", "Return to command centre", "/dashboard"],
+              ].map(([title, body, path]) => (
+                <button type="button" key={title} onClick={() => routeCommand(path, `Opened ${title}`)}>
+                  <strong>{title}</strong>
+                  <small>{body}</small>
+                </button>
+              ))}
+            </div>
           </section>
         </div>
       ) : null}
