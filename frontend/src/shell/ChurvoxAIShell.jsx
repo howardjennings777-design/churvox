@@ -965,6 +965,22 @@ function Workspace({ page, setPage, data }) {
 
   const current = meta[page] || meta.dashboard;
 
+  function getRecordRecommendation() {
+    const map = {
+      dashboard: ["Review in AI queue", "AI has surfaced this because it may affect today’s dispatch, invoicing, quotes, or cashflow."],
+      queue: ["Approve or inspect", "Check the reason, then approve only when the action looks right."],
+      jobs: ["Check dispatch fit", "Confirm worker, timing, status, and whether this job should move toward proof-to-paid."],
+      clients: ["Review client context", "Check recent jobs, outstanding invoices, and whether a follow-up is needed."],
+      team: ["Check worker availability", "Review workload, region, role, and whether this worker is the right fit for the next job."],
+      quotes: ["Prepare follow-up", "If the quote is quiet, AI can help prepare a short customer follow-up for approval."],
+      invoices: ["Protect cashflow", "Review draft or overdue invoice status, then approve the right follow-up."],
+      proof: ["Move toward invoice", "Use completed work, notes, and photos to prepare the invoice path."],
+      settings: ["Review setup", "Check the business control or integration before changing anything important."],
+    };
+
+    return map[page] || map.dashboard;
+  }
+
   function openRecord(item) {
     setSelectedRecord(item);
   }
@@ -1119,6 +1135,12 @@ function Workspace({ page, setPage, data }) {
                 <small>Churvox can use this record to prepare dispatch, invoice, quote, follow-up, or proof-to-paid actions.</small>
               </article>
             </div>
+
+            <section className="cx-record-recommendation">
+              <span>AI recommended next step</span>
+              <strong>{getRecordRecommendation()[0]}</strong>
+              <p>{getRecordRecommendation()[1]}</p>
+            </section>
 
             <footer className="cx-record-actions">
               <button type="button" onClick={() => setSelectedRecord(null)}>Close</button>
