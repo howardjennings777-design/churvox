@@ -61,6 +61,7 @@ function status(item) {
 
 export default function AIActionDock() {
   const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const [visible, setVisible] = useState(isLoggedIn());
   const [activity, setActivity] = useState([]);
 
@@ -106,6 +107,8 @@ export default function AIActionDock() {
         get("/invoices"),
       ]);
 
+      setDismissed(false);
+
       setCounts({
         unassigned: jobs.filter((job) => {
           const s = status(job);
@@ -145,8 +148,10 @@ export default function AIActionDock() {
     return prepared;
   }, [counts]);
 
-  const readyCount = counts.unassigned + counts.drafts + counts.followups + counts.overdue || actions.length;
-  const urgentCount = counts.unassigned + counts.overdue;
+  const rawReadyCount = counts.unassigned + counts.drafts + counts.followups + counts.overdue || actions.length;
+  const rawUrgentCount = counts.unassigned + counts.overdue;
+  const readyCount = dismissed ? 0 : rawReadyCount;
+  const urgentCount = dismissed ? 0 : rawUrgentCount;
 
   if (!visible) return null;
 
@@ -176,6 +181,28 @@ export default function AIActionDock() {
             <button className="ai-dock-refresh" type="button" onClick={runCheck} disabled={checking}>
               {checking ? "Checking..." : "Refresh AI check"}
             </button>
+
+            <div className="ai-dock-owner-controls">
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  window.history.pushState({}, "", "/dashboard");
+                  window.dispatchEvent(new PopStateEvent("popstate"));
+                }}
+              >
+                Open Smart Hub
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDismissed(true);
+                  if (typeof logActivity === "function") logActivity("Marked AI actions reviewed");
+                }}
+              >
+                Mark all reviewed
+              </button>
+            </div>
 
             <div className="ai-dock-quick-actions">
               {[
