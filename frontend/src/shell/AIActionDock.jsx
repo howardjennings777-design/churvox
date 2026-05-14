@@ -52,7 +52,7 @@ async function get(path) {
 
   if (!res.ok) return [];
   if (Array.isArray(payload)) return payload;
-  return payload.jobs || payload.clients || payload.workers || payload.quotes || payload.invoices || payload.data || payload.items || [];
+  return payload.actions || payload.jobs || payload.clients || payload.workers || payload.quotes || payload.invoices || payload.data || payload.items || [];
 }
 
 const REVIEWED_KEY = "churvox_ai_dock_reviewed_date";
@@ -83,6 +83,29 @@ function clearReviewedToday() {
   } catch {
     // ignore
   }
+}
+
+function pathForAction(action) {
+  const type = String(action?.type || "").toLowerCase();
+  const sourceType = String(action?.source_type || "").toLowerCase();
+
+  if (type.includes("dispatch") || sourceType === "job") return "/jobs";
+  if (type.includes("invoice") || type.includes("cashflow") || sourceType === "invoice") return "/invoices";
+  if (type.includes("quote") || sourceType === "quote") return "/quotes";
+  if (type.includes("team") || sourceType === "worker") return "/team";
+  if (type.includes("client") || sourceType === "client") return "/clients";
+  if (type.includes("proof")) return "/proof-to-paid";
+  return "/dashboard";
+}
+
+function labelForPath(path) {
+  if (path === "/jobs") return "Jobs";
+  if (path === "/invoices") return "Invoices";
+  if (path === "/quotes") return "Quotes";
+  if (path === "/team") return "Team";
+  if (path === "/clients") return "Clients";
+  if (path === "/proof-to-paid") return "Proof-to-Paid";
+  return "Smart Hub";
 }
 
 function status(item) {
@@ -134,6 +157,7 @@ export default function AIActionDock() {
     followups: 0,
     overdue: 0,
   });
+  const [backendActions, setBackendActions] = useState([]);
   const [checking, setChecking] = useState(false);
   const [lastChecked, setLastChecked] = useState("");
   const [deployVersion, setDeployVersion] = useState("");
@@ -168,11 +192,14 @@ export default function AIActionDock() {
     setChecking(true);
 
     try {
-      const [jobs, quotes, invoices] = await Promise.all([
+      const [jobs, quotes, invoices, aiActions] = await Promise.all([
         get("/jobs"),
         get("/quotes"),
         get("/invoices"),
+        get("/ai/actions"),
       ]);
+
+      setBackendActions(Array.isArray(aiActions) ? aiActions : []);
 
       setCounts({
         unassigned: jobs.filter((job) => {
@@ -203,15 +230,27 @@ export default function AIActionDock() {
   }, [runCheck]);
 
   const actions = useMemo(() => {
-    const prepared = [
-      ["Dispatch", counts.unassigned ? `${counts.unassigned} unassigned job${counts.unassigned === 1 ? "" : "s"} found` : "Dispatch check ready", "Review worker recommendations", "/jobs"],
-      ["Invoice", counts.drafts ? `${counts.drafts} draft invoice${counts.drafts === 1 ? "" : "s"} ready` : "Invoice check ready", "Review invoice drafts", "/invoices"],
-      ["Quote", counts.followups ? `${counts.followups} quote follow-up${counts.followups === 1 ? "" : "s"} ready` : "Quote follow-up check ready", "Approve customer follow-up", "/quotes"],
-      ["Cashflow", counts.overdue ? `${counts.overdue} overdue invoice${counts.overdue === 1 ? "" : "s"}` : "Cashflow check ready", "Review payment reminders", "/invoices"],
-    ];
+    if (backendActions.length) {
+      return backendActions.map((item) => {
+        const path = pathForAction(item);
+        return [
+          item.type || "AI",
+          item.title || "AI action ready",
+          item.recommended_action || item.action || item.body || "Review action",
+          path,
+          item.id || "",
+          item.priority || "normal",
+        ];
+      });
+    }
 
-    return prepared;
-  }, [counts]);
+    return [
+      ["Dispatch", counts.unassigned ? `${counts.unassigned} unassigned job${counts.unassigned === 1 ? "" : "s"} found` : "Dispatch check ready", "Review worker recommendations", "/jobs", "", counts.unassigned ? "urgent" : "normal"],
+      ["Invoice", counts.drafts ? `${counts.drafts} draft invoice${counts.drafts === 1 ? "" : "s"} ready` : "Invoice check ready", "Review invoice drafts", "/invoices", "", "normal"],
+      ["Quote", counts.followups ? `${counts.followups} quote follow-up${counts.followups === 1 ? "" : "s"} ready` : "Quote follow-up check ready", "Approve customer follow-up", "/quotes", "", "normal"],
+      ["Cashflow", counts.overdue ? `${counts.overdue} overdue invoice${counts.overdue === 1 ? "" : "s"}` : "Cashflow check ready", "Review payment reminders", "/invoices", "", counts.overdue ? "urgent" : "normal"],
+    ];
+  }, [backendActions, counts]);
 
   const rawReadyCount = counts.unassigned + counts.drafts + counts.followups + counts.overdue || actions.length;
   const rawUrgentCount = counts.unassigned + counts.overdue;
@@ -347,11 +386,12 @@ export default function AIActionDock() {
               </section>
             ) : null}
 
-            {actions.map(([type, title, action, path]) => (
-              <article key={`${type}-${title}`}>
+            {actions.map(([type, title, action, path, id, priority]) => (
+              <article className={priority === "urgent" ? "urgent" : ""} key={`${type}-${title}-${id || path}`}>
                 <span>{type}</span>
                 <strong>{title}</strong>
                 <p>{action}</p>
+                <small className="ai-dock-route-label">Opens {labelForPath(path)}</small>
                 <button
                   type="button"
                   onClick={() => {
