@@ -55,13 +55,43 @@ async function get(path) {
   return payload.jobs || payload.clients || payload.workers || payload.quotes || payload.invoices || payload.data || payload.items || [];
 }
 
+const REVIEWED_KEY = "churvox_ai_dock_reviewed_date";
+
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function wasReviewedToday() {
+  try {
+    return localStorage.getItem(REVIEWED_KEY) === todayKey();
+  } catch {
+    return false;
+  }
+}
+
+function saveReviewedToday() {
+  try {
+    localStorage.setItem(REVIEWED_KEY, todayKey());
+  } catch {
+    // ignore
+  }
+}
+
+function clearReviewedToday() {
+  try {
+    localStorage.removeItem(REVIEWED_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 function status(item) {
   return String(item?.status || item?.job_status || item?.payment_status || item?.quote_status || "").toLowerCase();
 }
 
 export default function AIActionDock() {
   const [open, setOpen] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(wasReviewedToday);
   const [visible, setVisible] = useState(isLoggedIn());
   const [activity, setActivity] = useState([]);
 
@@ -106,8 +136,6 @@ export default function AIActionDock() {
         get("/quotes"),
         get("/invoices"),
       ]);
-
-      setDismissed(false);
 
       setCounts({
         unassigned: jobs.filter((job) => {
@@ -178,7 +206,16 @@ export default function AIActionDock() {
               <button type="button" onClick={() => setOpen(false)}>×</button>
             </header>
 
-            <button className="ai-dock-refresh" type="button" onClick={runCheck} disabled={checking}>
+            <button
+              className="ai-dock-refresh"
+              type="button"
+              onClick={() => {
+                clearReviewedToday();
+                setDismissed(false);
+                runCheck();
+              }}
+              disabled={checking}
+            >
               {checking ? "Checking..." : "Refresh AI check"}
             </button>
 
@@ -196,6 +233,7 @@ export default function AIActionDock() {
               <button
                 type="button"
                 onClick={() => {
+                  saveReviewedToday();
                   setDismissed(true);
                   if (typeof logActivity === "function") logActivity("Marked AI actions reviewed");
                 }}
