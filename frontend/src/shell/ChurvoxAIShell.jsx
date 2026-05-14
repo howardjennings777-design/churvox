@@ -259,34 +259,6 @@ async function apiPost(path, body) {
 }
 
 
-async function apiPost(path, body = {}) {
-  const token = readToken();
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(body),
-  });
-
-  const text = await res.text();
-  let payload = {};
-  try {
-    payload = text ? JSON.parse(text) : {};
-  } catch {
-    payload = { message: text };
-  }
-
-  if (!res.ok) {
-    throw new Error(payload.detail || payload.message || payload.error || `${path} failed`);
-  }
-
-  return payload;
-}
-
 function toArray(payload, keys = []) {
   if (Array.isArray(payload)) return payload;
   if (!payload || typeof payload !== "object") return [];
