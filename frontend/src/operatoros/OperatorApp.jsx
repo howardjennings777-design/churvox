@@ -25,7 +25,6 @@ import ImportWorkspace from "./pages/ImportWorkspace";
 import SystemCentre from "./pages/SystemCentre";
 import SettingsWorkspace from "./pages/SettingsWorkspace";
 import FirstLoginGuide from "./components/FirstLoginGuide";
-import "./churvoxImageDashboard.css";
 
 const roleNav = {
   owner: ["hub", "queue", "jobs", "clients", "crew", "quotes", "invoices", "proof", "payroll", "import", "system", "settings"],
