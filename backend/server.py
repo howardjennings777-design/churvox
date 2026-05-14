@@ -14126,6 +14126,196 @@ async def approve_owner_dispatch_command(payload: dict, current_user: dict = Dep
     }
 
 
+
+
+# ===== Owner Command Hub invoice approval =====
+def _owner_command_money_value(record: dict) -> float:
+    if not isinstance(record, dict):
+        return 0.0
+
+    for key in [
+        "total",
+        "amount",
+        "price",
+        "job_price",
+        "fixed_price",
+        "estimated_price",
+        "quote_total",
+        "invoice_total",
+    ]:
+        try:
+            value = float(record.get(key) or 0)
+            if value > 0:
+                return value
+        except Exception:
+            pass
+
+    return 0.0
+
+
+async def _owner_command_find_completed_job_for_invoice(business_id: str, job_id: str = ""):
+    if job_id:
+        job = await _owner_command_find_by_id(db.jobs, job_id, business_id)
+        if job:
+            return job
+
+    business_filter = _owner_command_business_filter(business_id)
+
+    completed_filter = {
+        "$or": [
+            {"status": "completed"},
+            {"job_status": "completed"},
+            {"workflow_status": "completed"},
+            {"completed": True},
+            {"completed_at": {"$exists": True, "$ne": None}},
+        ]
+    }
+
+    query = {"$and": [business_filter, completed_filter]} if business_filter else completed_filter
+
+    return await db.jobs.find_one(
+        query,
+        sort=[
+            ("completed_at", -1),
+            ("updated_at", -1),
+            ("created_at", -1),
+        ],
+    )
+
+
+def _owner_command_invoice_number(now):
+    return "INV-AI-" + now.strftime("%Y%m%d%H%M%S")
+
+
+@api_router.post("/ai/owner-command/invoice/approve")
+async def approve_owner_invoice_command(payload: dict, current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or current_user.get("user_role") or "").lower()
+    if role == "worker":
+        raise HTTPException(status_code=403, detail="Owner/admin access required")
+
+    business_id = _owner_command_business_id(current_user)
+    now = datetime.utcnow()
+
+    draft = payload.get("draft") or {}
+    selection = payload.get("selection") or {}
+
+    job_id = (
+        payload.get("job_id")
+        or payload.get("source_id")
+        or draft.get("job_id")
+        or selection.get("job_id")
+        or ""
+    )
+
+    job = await _owner_command_find_completed_job_for_invoice(business_id, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="No completed job found to create invoice draft")
+
+    job_record_id = str(job.get("_id") or job.get("id") or "")
+    existing = await db.invoices.find_one({
+        "$or": [
+            {"job_id": job_record_id},
+            {"source_job_id": job_record_id},
+            {"ai_source_job_id": job_record_id},
+        ]
+    })
+
+    client_name = (
+        job.get("client_name")
+        or job.get("customer_name")
+        or draft.get("client_name")
+        or draft.get("customer_name")
+        or "Client"
+    )
+
+    amount = _owner_command_money_value(job) or _owner_command_money_value(draft)
+    description = (
+        draft.get("detail")
+        or draft.get("description")
+        or draft.get("ownerNote")
+        or _format_invoice_description_from_job(job, client_name)
+    )
+
+    invoice_doc = {
+        "business_id": business_id,
+        "owner_id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "job_id": job_record_id,
+        "source_job_id": job_record_id,
+        "ai_source_job_id": job_record_id,
+        "client_id": job.get("client_id") or job.get("customer_id") or draft.get("client_id"),
+        "client_name": client_name,
+        "customer_name": client_name,
+        "title": draft.get("title") or f"Invoice draft for {job.get('title') or job.get('name') or 'completed job'}",
+        "description": description,
+        "notes": description,
+        "amount": amount,
+        "total": amount,
+        "balance": amount,
+        "currency": "NZD",
+        "status": "draft",
+        "invoice_status": "draft",
+        "payment_status": "draft",
+        "ai_generated": True,
+        "ai_prepared": True,
+        "approval_first": True,
+        "approved_for_draft_at": now,
+        "updated_at": now,
+    }
+
+    if existing:
+        await db.invoices.update_one(
+            {"_id": existing["_id"]},
+            {"$set": invoice_doc}
+        )
+        invoice_doc["_id"] = existing["_id"]
+        invoice_doc["invoice_number"] = existing.get("invoice_number") or existing.get("number") or _owner_command_invoice_number(now)
+        message = "Invoice draft updated from completed job."
+    else:
+        invoice_doc["invoice_number"] = _owner_command_invoice_number(now)
+        invoice_doc["number"] = invoice_doc["invoice_number"]
+        invoice_doc["created_at"] = now
+        result = await db.invoices.insert_one(make_json_safe(invoice_doc))
+        invoice_doc["_id"] = result.inserted_id
+        message = "Invoice draft created from completed job."
+
+    await db.jobs.update_one(
+        {"_id": job["_id"]},
+        {"$set": {
+            "ai_invoice_draft_created": True,
+            "ai_invoice_draft_created_at": now,
+            "invoice_status": "draft_ready",
+            "updated_at": now,
+        }}
+    )
+
+    approval_doc = {
+        "business_id": business_id,
+        "owner_user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "owner_email": current_user.get("email"),
+        "type": "Invoice",
+        "title": payload.get("title") or "Invoice draft approved",
+        "status": "invoice_draft_created",
+        "job_id": job_record_id,
+        "invoice_id": str(invoice_doc.get("_id") or ""),
+        "draft": draft,
+        "selection": selection,
+        "approved_at": now,
+        "created_at": now,
+        "approval_first": True,
+    }
+
+    result = await db.owner_command_approvals.insert_one(make_json_safe(approval_doc))
+    approval_doc["id"] = str(result.inserted_id)
+
+    return {
+        "ok": True,
+        "message": message,
+        "job": make_json_safe(job),
+        "invoice": make_json_safe(invoice_doc),
+        "approval": make_json_safe(approval_doc),
+    }
+
+
 # /api/ai/operator/plan
 # /api/ai/operator/actions
 # /api/ai/operator/actions/{id}/approve

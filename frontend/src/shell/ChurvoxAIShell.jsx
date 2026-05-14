@@ -1307,12 +1307,23 @@ function Workspace({ page, setPage, data }) {
         },
       };
 
-      const isDispatchApproval = String(selection.group || payload.type || "").toLowerCase().includes("dispatch");
-      const result = await apiPost(
-        isDispatchApproval ? "/ai/owner-command/dispatch/approve" : "/ai/owner-command/approve",
-        payload
+      const approvalType = String(selection.group || payload.type || "").toLowerCase();
+      const isDispatchApproval = approvalType.includes("dispatch");
+      const isInvoiceApproval = approvalType.includes("invoice");
+
+      const approvalPath = isDispatchApproval
+        ? "/ai/owner-command/dispatch/approve"
+        : isInvoiceApproval
+          ? "/ai/owner-command/invoice/approve"
+          : "/ai/owner-command/approve";
+
+      const result = await apiPost(approvalPath, payload);
+
+      logCommand(
+        selection.group || "Approved",
+        title,
+        isDispatchApproval ? "Worker assigned" : isInvoiceApproval ? "Invoice draft created" : "Saved to backend"
       );
-      logCommand(selection.group || "Approved", title, isDispatchApproval ? "Worker assigned" : "Saved to backend");
 
       setSelectedRecord({
         ...selection,
@@ -1324,7 +1335,9 @@ function Workspace({ page, setPage, data }) {
         ],
         recommendation: String(selection.group || "").toLowerCase().includes("dispatch")
           ? "Dispatch approval completed. Churvox assigned a worker to an unassigned job and saved the owner approval."
-          : "This approval is now saved on the backend. Next we can wire exact approval types to create invoice drafts or prepare customer follow-ups.",
+          : String(selection.group || "").toLowerCase().includes("invoice")
+            ? "Invoice approval completed. Churvox created or updated a draft invoice from a completed job."
+            : "This approval is now saved on the backend. Next we can wire exact approval types to prepare customer follow-ups.",
       });
     } catch (err) {
       logCommand(selection.group || "Approve failed", title, "Backend error");
