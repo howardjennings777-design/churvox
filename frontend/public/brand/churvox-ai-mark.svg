@@ -1,41 +1,45 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bg" x1="122" y1="92" x2="902" y2="912" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#004DFF"/>
-      <stop offset="0.45" stop-color="#0B72FF"/>
-      <stop offset="0.72" stop-color="#00C8FF"/>
-      <stop offset="1" stop-color="#82F7FF"/>
+    <linearGradient id="bg" x1="120" y1="92" x2="904" y2="930" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#102BFF"/>
+      <stop offset="0.45" stop-color="#6D5BFF"/>
+      <stop offset="0.72" stop-color="#00D9FF"/>
+      <stop offset="1" stop-color="#8DFFF6"/>
     </linearGradient>
-    <linearGradient id="white" x1="244" y1="246" x2="738" y2="798" gradientUnits="userSpaceOnUse">
+    <linearGradient id="core" x1="235" y1="232" x2="810" y2="790" gradientUnits="userSpaceOnUse">
       <stop stop-color="#FFFFFF"/>
-      <stop offset="0.65" stop-color="#EAF8FF"/>
-      <stop offset="1" stop-color="#B8E9FF"/>
+      <stop offset="0.58" stop-color="#E8F8FF"/>
+      <stop offset="1" stop-color="#B8F7FF"/>
     </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="22" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.03 0 0 0 0 0.69 0 0 0 0 1 0 0 0 0.7 0"/>
+      <feBlend in="SourceGraphic"/>
+    </filter>
     <filter id="drop" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="34" stdDeviation="38" flood-color="#052B68" flood-opacity=".34"/>
+      <feDropShadow dx="0" dy="38" stdDeviation="40" flood-color="#020817" flood-opacity=".42"/>
     </filter>
   </defs>
 
-  <rect x="78" y="78" width="868" height="868" rx="260" fill="url(#bg)"/>
-  <rect x="124" y="124" width="776" height="776" rx="222" stroke="white" stroke-opacity=".26" stroke-width="24"/>
+  <rect x="70" y="70" width="884" height="884" rx="272" fill="#050B1D"/>
+  <rect x="92" y="92" width="840" height="840" rx="252" fill="url(#bg)"/>
+  <rect x="130" y="130" width="764" height="764" rx="218" stroke="white" stroke-opacity=".22" stroke-width="22"/>
 
-  <path d="M650 286C607 251 554 232 493 232C340 232 230 350 230 512C230 674 340 792 493 792C557 792 613 772 658 735"
-    stroke="url(#white)" stroke-width="116" stroke-linecap="round" filter="url(#drop)"/>
+  <path d="M650 286C606 251 552 232 491 232C339 232 230 350 230 512C230 674 339 792 491 792C558 792 615 771 660 733"
+    stroke="url(#core)" stroke-width="116" stroke-linecap="round" filter="url(#drop)"/>
 
-  <path d="M548 356H706C750 356 786 392 786 436C786 480 750 516 706 516H554"
+  <path d="M548 356H708C752 356 788 392 788 436C788 480 752 516 708 516H554"
     stroke="#FFFFFF" stroke-width="66" stroke-linecap="round"/>
 
-  <path d="M554 516H690C738 516 778 555 778 603C778 651 738 690 690 690H548"
-    stroke="#DCF8FF" stroke-width="66" stroke-linecap="round"/>
+  <path d="M554 516H692C740 516 780 556 780 604C780 652 740 692 692 692H548"
+    stroke="#DDFBFF" stroke-width="66" stroke-linecap="round"/>
 
-  <circle cx="720" cy="356" r="42" fill="#061733"/>
-  <circle cx="720" cy="356" r="17" fill="#82F7FF"/>
+  <circle cx="722" cy="356" r="43" fill="#050B1D" filter="url(#glow)"/>
+  <circle cx="722" cy="356" r="17" fill="#8DFFF6"/>
+  <circle cx="554" cy="516" r="43" fill="#050B1D" filter="url(#glow)"/>
+  <circle cx="554" cy="516" r="17" fill="#8DFFF6"/>
+  <circle cx="712" cy="692" r="43" fill="#050B1D" filter="url(#glow)"/>
+  <circle cx="712" cy="692" r="17" fill="#8DFFF6"/>
 
-  <circle cx="554" cy="516" r="42" fill="#061733"/>
-  <circle cx="554" cy="516" r="17" fill="#82F7FF"/>
-
-  <circle cx="710" cy="690" r="42" fill="#061733"/>
-  <circle cx="710" cy="690" r="17" fill="#82F7FF"/>
-
-  <path d="M720 398V474M596 516H670M710 648V560" stroke="#82F7FF" stroke-width="16" stroke-linecap="round"/>
+  <path d="M722 398V474M596 516H672M712 650V562" stroke="#8DFFF6" stroke-width="16" stroke-linecap="round"/>
 </svg>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./churvoxSales.css";
+import "./churvoxHardAi.css";
 import "./churvoxFinalIdentity.css";
 
 const NAV = [
