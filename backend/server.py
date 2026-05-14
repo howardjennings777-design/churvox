@@ -13828,7 +13828,88 @@ setup_ai_operator_routes(api_router, db, JWT_SECRET, JWT_ALGORITHM)
 setup_ai_operator_power_routes(api_router, db, JWT_SECRET, JWT_ALGORITHM)
 
 # ===================== AI OPERATOR ROUTE REGISTRATION =====================
-# Keep this before app.include_router(api_router) so Render definitely serves:
+# Keep this before 
+
+# ===== Owner Command Hub approvals =====
+@api_router.post("/ai/owner-command/approve")
+async def approve_owner_command(payload: dict, current_user: dict = Depends(get_current_user)):
+    """
+    Persist an owner-approved AI command from the Smart Hub.
+
+    This is intentionally approval-first and safe:
+    - records exactly what the owner approved
+    - does not auto-send customer messages
+    - does not change payroll/pricing/accounting
+    - gives the frontend a real backend confirmation
+    """
+    try:
+        business_id = (
+            current_user.get("business_id")
+            or current_user.get("company_id")
+            or current_user.get("owner_id")
+            or current_user.get("id")
+            or str(current_user.get("_id", ""))
+        )
+    except Exception:
+        business_id = ""
+
+    now = datetime.utcnow()
+
+    command_type = str(payload.get("type") or payload.get("group") or "Owner command").strip()
+    title = str(payload.get("title") or "Owner command approved").strip()
+    status = str(payload.get("status") or "approved").strip()
+
+    doc = {
+        "business_id": str(business_id),
+        "owner_user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "owner_email": current_user.get("email"),
+        "type": command_type,
+        "title": title,
+        "status": status,
+        "page": payload.get("page"),
+        "source_id": payload.get("source_id"),
+        "source_type": payload.get("source_type"),
+        "draft": payload.get("draft") or {},
+        "selection": payload.get("selection") or {},
+        "approved_at": now,
+        "created_at": now,
+        "approval_first": True,
+    }
+
+    result = await db.owner_command_approvals.insert_one(make_json_safe(doc))
+    doc["id"] = str(result.inserted_id)
+
+    return {
+        "ok": True,
+        "message": "Owner command approval saved.",
+        "approval": make_json_safe(doc),
+    }
+
+
+@api_router.get("/ai/owner-command/approvals")
+async def list_owner_command_approvals(current_user: dict = Depends(get_current_user)):
+    try:
+        business_id = (
+            current_user.get("business_id")
+            or current_user.get("company_id")
+            or current_user.get("owner_id")
+            or current_user.get("id")
+            or str(current_user.get("_id", ""))
+        )
+    except Exception:
+        business_id = ""
+
+    items = await db.owner_command_approvals.find(
+        {"business_id": str(business_id)}
+    ).sort("created_at", -1).limit(25).to_list(25)
+
+    return {
+        "ok": True,
+        "approvals": make_json_safe(items),
+    }
+
+
+app.include_router(api_router) so Render definitely serves:
 # /api/ai/operator/plan
 # /api/ai/operator/actions
 # /api/ai/operator/actions/{id}/approve

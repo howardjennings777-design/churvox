@@ -230,6 +230,35 @@ async function apiGet(path) {
 }
 
 
+async function apiPost(path, body) {
+  const token = readToken();
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body || {}),
+  });
+
+  const text = await res.text();
+  let payload = {};
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    payload = { message: text };
+  }
+
+  if (!res.ok) {
+    throw new Error(payload.detail || payload.message || payload.error || `${path} failed`);
+  }
+
+  return payload;
+}
+
+
 async function apiPost(path, body = {}) {
   const token = readToken();
   const res = await fetch(`${API_BASE}${path}`, {
@@ -1285,14 +1314,53 @@ function Workspace({ page, setPage, data }) {
     });
   }
 
-  function approveSelection(selection, draft) {
-    setApproved((currentApproved) => ({ ...currentApproved, [draft.title]: true }));
-    logCommand(selection.group || "Approved", draft.title, "Approved");
-    setSelectedRecord({
-      ...selection,
-      item: [selection.group || "Owner approval", `${draft.title} approved`, draft.ownerNote || draft.detail, "Approved"],
-      recommendation: "Approved in the Owner Command Hub. Next backend wiring can connect each approval type to its exact database action.",
-    });
+  async function approveSelection(selection, draft) {
+    const title = draft?.title || selection?.label || "Owner command approved";
+    setApproved((currentApproved) => ({ ...currentApproved, [title]: true }));
+    logCommand(selection.group || "Approved", title, "Saving...");
+
+    try {
+      const payload = {
+        type: selection.group || "Owner command",
+        group: selection.group || "Owner command",
+        title,
+        status: draft?.status || "approved",
+        page: selection.page || page,
+        draft: draft || {},
+        selection: {
+          label: selection.label,
+          group: selection.group,
+          page: selection.page,
+          item: selection.item,
+        },
+      };
+
+      const result = await apiPost("/ai/owner-command/approve", payload);
+      logCommand(selection.group || "Approved", title, "Saved to backend");
+
+      setSelectedRecord({
+        ...selection,
+        item: [
+          selection.group || "Owner approval",
+          `${title} approved`,
+          result?.message || "Approval saved to backend.",
+          "Backend saved",
+        ],
+        recommendation: "This approval is now saved on the backend. Next we can wire exact approval types to assign workers, create invoice drafts, or prepare customer follow-ups.",
+      });
+    } catch (err) {
+      logCommand(selection.group || "Approve failed", title, "Backend error");
+      setSelectedRecord({
+        ...selection,
+        item: [
+          selection.group || "Owner approval",
+          `${title} needs attention`,
+          err?.message || "Could not save approval to backend.",
+          "Save failed",
+        ],
+        recommendation: "The front-end stayed safe, but the backend did not accept this approval. Check Render logs if this repeats.",
+      });
+    }
   }
 
   function switchPage(nextPage) {
