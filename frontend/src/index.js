@@ -33,7 +33,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
-import "./operatoros/churvoxEveryPage.css";
+import "./operatoros/churvoxAllPagesImage.css";
 async function clearOldPwaShell() {
   if (typeof window === "undefined") return;
 

@@ -1,17 +1,17 @@
-import WorkspaceList from "../components/WorkspaceList";
+import ImageWorkspacePage from "../components/ImageWorkspacePage";
 
-export default function QuotesWorkspace({ data, onCreate }) {
+export default function QuotesWorkspace({ data = {}, onCreate, onNav }) {
   return (
-    <WorkspaceList
+    <ImageWorkspacePage
+      data={data}
       title="Quotes"
-      eyebrow="QUOTE PIPELINE"
-      description="Review, send and follow up quote opportunities."
+      kicker="QUOTE PIPELINE"
+      subtitle="Track quote follow-ups, approvals and conversion-ready opportunities."
       items={data.quotes || []}
-      type="quote"
-      endpoint="/quotes"
-      createType="quotes"
-      onCreate={onCreate}
-      reload={data.reload}
+      type="quotes"
+      primaryLabel="New"
+      onPrimary={() => onCreate?.("quotes")}
+      onNav={onNav}
     />
   );
 }

@@ -1,17 +1,17 @@
-import WorkspaceList from "../components/WorkspaceList";
+import ImageWorkspacePage from "../components/ImageWorkspacePage";
 
-export default function ClientsWorkspace({ data, onCreate }) {
+export default function ClientsWorkspace({ data = {}, onCreate, onNav }) {
   return (
-    <WorkspaceList
+    <ImageWorkspacePage
+      data={data}
       title="Clients"
-      eyebrow="CLIENTS"
-      description="Client records, contact details and job history context."
+      kicker="CLIENTS"
+      subtitle="Customer records, contact details and job context in one clean workspace."
       items={data.clients || []}
-      type="client"
-      endpoint="/clients"
-      createType="clients"
-      onCreate={onCreate}
-      reload={data.reload}
+      type="clients"
+      primaryLabel="New"
+      onPrimary={() => onCreate?.("clients")}
+      onNav={onNav}
     />
   );
 }

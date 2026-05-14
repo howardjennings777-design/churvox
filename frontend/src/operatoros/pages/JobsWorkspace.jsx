@@ -1,17 +1,17 @@
-import WorkspaceList from "../components/WorkspaceList";
+import ImageWorkspacePage from "../components/ImageWorkspacePage";
 
-export default function JobsWorkspace({ data, onCreate }) {
+export default function JobsWorkspace({ data = {}, onCreate, onNav }) {
   return (
-    <WorkspaceList
+    <ImageWorkspacePage
+      data={data}
       title="Jobs"
-      eyebrow="RUN SHEET"
-      description="Create, review and dispatch jobs. Details open in a drawer, not random pages."
+      kicker="RUN SHEET"
+      subtitle="Clean job board for scheduled, assigned, in-progress and completed work."
       items={data.jobs || []}
-      type="job"
-      endpoint="/jobs"
-      createType="jobs"
-      onCreate={onCreate}
-      reload={data.reload}
+      type="jobs"
+      primaryLabel="New"
+      onPrimary={() => onCreate?.("jobs")}
+      onNav={onNav}
     />
   );
 }

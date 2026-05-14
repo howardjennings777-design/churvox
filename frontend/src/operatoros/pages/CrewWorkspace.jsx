@@ -1,13 +1,17 @@
-import WorkspaceList from "../components/WorkspaceList";
+import ImageWorkspacePage from "../components/ImageWorkspacePage";
 
-export default function CrewWorkspace({ data }) {
+export default function CrewWorkspace({ data = {}, onCreate, onNav }) {
   return (
-    <WorkspaceList
+    <ImageWorkspacePage
+      data={data}
       title="Crew"
-      eyebrow="TEAM"
-      description="Workers, roles, regions and assignment readiness."
-      items={data.workers || []}
-      type="worker"
+      kicker="CREW & DISPATCH"
+      subtitle="Worker availability, roles, regions and dispatch context in one clean view."
+      items={data.workers || data.team || []}
+      type="crew"
+      primaryLabel="New"
+      onPrimary={() => onCreate?.("team")}
+      onNav={onNav}
     />
   );
 }

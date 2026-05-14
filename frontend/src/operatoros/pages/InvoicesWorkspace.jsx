@@ -1,17 +1,17 @@
-import WorkspaceList from "../components/WorkspaceList";
+import ImageWorkspacePage from "../components/ImageWorkspacePage";
 
-export default function InvoicesWorkspace({ data, onCreate }) {
+export default function InvoicesWorkspace({ data = {}, onCreate, onNav }) {
   return (
-    <WorkspaceList
+    <ImageWorkspacePage
+      data={data}
       title="Invoices"
-      eyebrow="CASHFLOW"
-      description="Track draft, sent, unpaid and paid invoices."
+      kicker="CASHFLOW"
+      subtitle="Draft, sent, overdue and paid invoices with owner-approved actions."
       items={data.invoices || []}
-      type="invoice"
-      endpoint="/invoices"
-      createType="invoices"
-      onCreate={onCreate}
-      reload={data.reload}
+      type="invoices"
+      primaryLabel="New"
+      onPrimary={() => onCreate?.("invoices")}
+      onNav={onNav}
     />
   );
 }
