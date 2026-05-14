@@ -495,6 +495,284 @@ BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", "https://grassley-back
 
 api_router = APIRouter(prefix="/api")
 
+# ===================== CHURVOX AI ACTION QUEUE ROUTES =====================
+async def _ai_queue_current_user(request: Request):
+    token = ""
+    auth_header = request.headers.get("authorization") or request.headers.get("Authorization") or ""
+    if auth_header.lower().startswith("bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+
+    if not token:
+        for cookie_name in ["access_token", "token", "authToken", "session", "churvox_token"]:
+            token = request.cookies.get(cookie_name) or ""
+            if token:
+                break
+
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid session")
+
+    user_id = (
+        payload.get("id")
+        or payload.get("user_id")
+        or payload.get("sub")
+        or payload.get("_id")
+    )
+    email = (payload.get("email") or "").strip().lower()
+
+    user = None
+    if user_id:
+        try:
+            user = await db.users.find_one({"_id": ObjectId(str(user_id))})
+        except Exception:
+            user = None
+
+        if not user:
+            user = await db.users.find_one({"id": str(user_id)})
+
+    if not user and email:
+        user = await db.users.find_one({"email": email})
+
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    return safe_doc(user)
+
+
+def _ai_action_business_id(user: dict) -> str:
+    return str(
+        user.get("business_id")
+        or user.get("businessId")
+        or user.get("id")
+        or user.get("_id")
+        or user.get("user_id")
+        or ""
+    )
+
+
+def _ai_action_doc(action_id, business_id, action_type, title, body, action, source_type="", source_id="", priority="normal", reason=None):
+    return {
+        "id": str(action_id),
+        "business_id": str(business_id),
+        "type": action_type,
+        "title": title,
+        "body": body,
+        "reason": reason or body,
+        "recommended_action": action,
+        "action": action,
+        "source_type": source_type,
+        "source_id": str(source_id or ""),
+        "priority": priority,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def _ai_doc_id(doc):
+    return str(doc.get("_id") or doc.get("id") or doc.get("job_id") or doc.get("invoice_id") or doc.get("quote_id") or "")
+
+
+def _ai_status(doc):
+    return str(
+        doc.get("status")
+        or doc.get("job_status")
+        or doc.get("payment_status")
+        or doc.get("quote_status")
+        or ""
+    ).lower().replace("_", " ")
+
+
+async def _build_ai_actions_for_business(business_id: str):
+    actions = []
+
+    jobs = await db.jobs.find({"business_id": str(business_id)}).sort("created_at", -1).limit(100).to_list(length=100)
+    invoices = await db.invoices.find({"business_id": str(business_id)}).sort("created_at", -1).limit(100).to_list(length=100)
+    quotes = await db.quotes.find({"business_id": str(business_id)}).sort("created_at", -1).limit(100).to_list(length=100)
+
+    for job in jobs:
+        status = _ai_status(job)
+        job_id = _ai_doc_id(job)
+        title = _safe_text(job.get("title") or job.get("name") or job.get("service_type") or "Unassigned job")
+        client_name = _safe_text(job.get("client_name") or job.get("customer_name") or job.get("address") or "No client attached")
+        assigned = job.get("assigned_worker_id") or job.get("assigned_worker") or job.get("worker_id")
+
+        if not assigned and "complete" not in status and "cancel" not in status:
+            actions.append(_ai_action_doc(
+                f"dispatch-{job_id}",
+                business_id,
+                "dispatch",
+                f"Assign worker for {title}",
+                f"{client_name} needs a worker assigned. AI should review crew availability, area, workload, and job fit.",
+                "Review assignment",
+                "job",
+                job_id,
+                "urgent",
+                "Unassigned job blocks the run sheet.",
+            ))
+
+        if "complete" in status:
+            actions.append(_ai_action_doc(
+                f"proof-to-paid-{job_id}",
+                business_id,
+                "proof_to_paid",
+                f"Prepare invoice path for {title}",
+                f"{client_name} has completed work. AI can help turn notes, time, and photos into an invoice draft.",
+                "Prepare invoice draft",
+                "job",
+                job_id,
+                "normal",
+                "Completed work should move toward owner-approved invoicing.",
+            ))
+
+    for invoice in invoices:
+        status = _ai_status(invoice)
+        invoice_id = _ai_doc_id(invoice)
+        invoice_number = _safe_text(invoice.get("invoice_number") or invoice.get("number") or f"Invoice {invoice_id[-6:]}")
+        customer = _safe_text(invoice.get("customer_name") or invoice.get("client_name") or "Customer")
+
+        if "draft" in status:
+            actions.append(_ai_action_doc(
+                f"invoice-draft-{invoice_id}",
+                business_id,
+                "invoice",
+                f"Review draft {invoice_number}",
+                f"{customer} has a draft invoice ready for owner review.",
+                "Review invoice",
+                "invoice",
+                invoice_id,
+                "normal",
+                "Draft invoices should be reviewed before sending.",
+            ))
+
+        if "overdue" in status:
+            actions.append(_ai_action_doc(
+                f"cashflow-{invoice_id}",
+                business_id,
+                "cashflow",
+                f"Overdue invoice {invoice_number}",
+                f"{customer} has an overdue invoice. AI can prepare a payment reminder for approval.",
+                "Review reminder",
+                "invoice",
+                invoice_id,
+                "urgent",
+                "Overdue invoices affect cashflow.",
+            ))
+
+    for quote in quotes:
+        status = _ai_status(quote)
+        quote_id = _ai_doc_id(quote)
+        quote_number = _safe_text(quote.get("quote_number") or quote.get("number") or f"Quote {quote_id[-6:]}")
+        customer = _safe_text(quote.get("customer_name") or quote.get("client_name") or "Customer")
+
+        if any(word in status for word in ["sent", "pending", "follow", "open"]):
+            actions.append(_ai_action_doc(
+                f"quote-followup-{quote_id}",
+                business_id,
+                "quote",
+                f"Follow up {quote_number}",
+                f"{customer} may need a quote follow-up to keep the work moving.",
+                "Review follow-up",
+                "quote",
+                quote_id,
+                "normal",
+                "Open quotes can go cold without follow-up.",
+            ))
+
+    persisted = await db.ai_actions.find({"business_id": str(business_id)}).to_list(length=500)
+    persisted_by_id = {str(item.get("id") or item.get("_id")): item for item in persisted}
+
+    merged = []
+    for action in actions:
+        saved = persisted_by_id.get(action["id"])
+        if saved:
+            action["status"] = saved.get("status", action["status"])
+            action["approved_at"] = _safe_iso(saved.get("approved_at"))
+            action["dismissed_at"] = _safe_iso(saved.get("dismissed_at"))
+            action["completed_at"] = _safe_iso(saved.get("completed_at"))
+        merged.append(action)
+
+    merged.sort(key=lambda item: 0 if item.get("priority") == "urgent" else 1)
+    return merged[:50]
+
+
+@api_router.get("/ai/actions")
+async def list_ai_actions(request: Request, status: str = Query("pending")):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    actions = await _build_ai_actions_for_business(business_id)
+    if status and status != "all":
+        actions = [item for item in actions if item.get("status") == status]
+
+    return {
+        "actions": actions,
+        "count": len(actions),
+        "business_id": business_id,
+    }
+
+
+@api_router.post("/ai/actions/{action_id}/approve")
+async def approve_ai_action(action_id: str, request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    now = datetime.now(timezone.utc)
+    await db.ai_actions.update_one(
+        {"business_id": str(business_id), "id": str(action_id)},
+        {
+            "$set": {
+                "business_id": str(business_id),
+                "id": str(action_id),
+                "status": "approved",
+                "approved_at": now,
+                "approved_by": str(current_user.get("id") or current_user.get("_id") or ""),
+                "updated_at": now,
+            },
+            "$setOnInsert": {"created_at": now},
+        },
+        upsert=True,
+    )
+
+    return {"ok": True, "id": action_id, "status": "approved"}
+
+
+@api_router.post("/ai/actions/{action_id}/dismiss")
+async def dismiss_ai_action(action_id: str, request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    now = datetime.now(timezone.utc)
+    await db.ai_actions.update_one(
+        {"business_id": str(business_id), "id": str(action_id)},
+        {
+            "$set": {
+                "business_id": str(business_id),
+                "id": str(action_id),
+                "status": "dismissed",
+                "dismissed_at": now,
+                "dismissed_by": str(current_user.get("id") or current_user.get("_id") or ""),
+                "updated_at": now,
+            },
+            "$setOnInsert": {"created_at": now},
+        },
+        upsert=True,
+    )
+
+    return {"ok": True, "id": action_id, "status": "dismissed"}
+# =================== END CHURVOX AI ACTION QUEUE ROUTES ===================
+
+
+
 # ===================== CHURVOX SAFE INTEGRATION STATUS ROUTES =====================
 @api_router.get("/myob/status")
 async def churvox_myob_status():
