@@ -743,6 +743,124 @@ function Stat({ label, value, note }) {
   );
 }
 
+
+function WorkspaceHero({ kicker, title, body, metric, action, setPage }) {
+  return (
+    <section className="cx-work-hero">
+      <div>
+        <span>{kicker}</span>
+        <h1>{title}</h1>
+        <p>{body}</p>
+      </div>
+      <aside>
+        <span>AI Operator</span>
+        <strong>{metric}</strong>
+        <p>{action}</p>
+        <button type="button" onClick={() => setPage("queue")}>Review queue</button>
+      </aside>
+    </section>
+  );
+}
+
+function MiniRow({ item }) {
+  return (
+    <button type="button" className="cx-row">
+      <span>{item[0]}</span>
+      <strong>{item[1]}</strong>
+      <small>{item[2]}</small>
+      <b>{item[3]}</b>
+    </button>
+  );
+}
+
+function ActionQueue({ actions = AI_ACTIONS }) {
+  return (
+    <section className="cx-action-board">
+      {actions.map((item) => (
+        <article className={`cx-work-action ${item.tone || "blue"}`} key={item.title}>
+          <span>{item.type}</span>
+          <h3>{item.title}</h3>
+          <p>{item.body}</p>
+          <button type="button">{item.action}</button>
+        </article>
+      ))}
+    </section>
+  );
+}
+
+function Board({ title, body, columns, setPage }) {
+  return (
+    <section className="cx-workspace">
+      <WorkspaceHero
+        kicker="Workspace"
+        title={title}
+        body={body}
+        metric="AI ready"
+        action="Smart actions prepared."
+        setPage={setPage}
+      />
+
+      <section className="cx-board">
+        {columns.map(([name, rows]) => (
+          <article className="cx-column" key={name}>
+            <span>Stage</span>
+            <h3>{name}</h3>
+            {rows.length ? rows.map((row, index) => (
+              <MiniRow item={row} key={`${name}-${index}-${row[1]}`} />
+            )) : <small>No records in this stage.</small>}
+          </article>
+        ))}
+      </section>
+    </section>
+  );
+}
+
+function Dashboard({ setPage, data }) {
+  const actions = data?.actions?.length ? data.actions : AI_ACTIONS;
+  const jobs = data?.jobs?.length ? data.jobs : JOBS;
+  const team = data?.team?.length ? data.team : TEAM;
+  const stats = data?.stats || {};
+
+  return (
+    <section className="cx-workspace">
+      <WorkspaceHero
+        kicker="Smart Hub"
+        title="AI has prepared today’s business actions."
+        body={data?.loading ? "Syncing your live Churvox workspace..." : data?.error || "Start with decisions, not clutter. Churvox turns admin into a simple approval queue."}
+        metric={`${actions.length} ready`}
+        action="Dispatch, invoice, quote and cashflow actions prepared."
+        setPage={setPage}
+      />
+
+      <section className="cx-stats">
+        <Stat label="Jobs today" value={stats.jobsToday || String(jobs.length)} note="live workspace count" />
+        <Stat label="Ready to invoice" value={stats.readyToInvoice || "$0"} note="drafts and follow-ups" />
+        <Stat label="Open quotes" value={stats.openQuotes || "0"} note="pipeline watched" />
+        <Stat label="Crew online" value={stats.crewOnline || String(team.length)} note="team records" />
+      </section>
+
+      <ActionQueue actions={actions} />
+
+      <section className="cx-split">
+        <section className="cx-panel">
+          <header><div><span>Live field work</span><h2>Today’s run sheet</h2></div></header>
+          <div className="cx-panel-list">
+            {jobs.map((item, index) => <MiniRow item={item} key={`job-${index}-${item[1]}`} />)}
+          </div>
+        </section>
+
+        <section className="cx-panel">
+          <header><div><span>AI worker matching</span><h2>Crew status</h2></div></header>
+          <div className="cx-panel-list">
+            {team.map((item, index) => <MiniRow item={item} key={`team-${index}-${item[1]}`} />)}
+          </div>
+        </section>
+      </section>
+    </section>
+  );
+}
+
+
 function Workspace({ page, setPage, data }) {
   const actions = data?.actions?.length ? data.actions : AI_ACTIONS;
   const jobs = data?.jobs?.length ? data.jobs : JOBS;
