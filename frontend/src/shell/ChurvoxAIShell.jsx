@@ -1190,6 +1190,8 @@ function Workspace({ page, setPage, data }) {
   const [backendApprovalStatus, setBackendApprovalStatus] = useState("");
   const [approvedDrafts, setApprovedDrafts] = useState([]);
   const [approvedDraftsStatus, setApprovedDraftsStatus] = useState("");
+  const [sendCenterItems, setSendCenterItems] = useState([]);
+  const [sendCenterStatus, setSendCenterStatus] = useState("");
 
   const meta = {
     dashboard: {
@@ -1292,8 +1294,25 @@ function Workspace({ page, setPage, data }) {
       }
     }
 
+    async function loadSendCenter() {
+      try {
+        setSendCenterStatus("Loading ready-to-send drafts...");
+        const payload = await apiGet("/ai/owner-command/send-center");
+        const items = Array.isArray(payload?.items) ? payload.items : [];
+        if (!cancelled) {
+          setSendCenterItems(items.slice(0, 10));
+          setSendCenterStatus(items.length ? "Ready-to-send drafts loaded" : "No drafts ready to send");
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setSendCenterStatus("Send Center could not load yet");
+        }
+      }
+    }
+
     loadBackendApprovals();
     loadApprovedDrafts();
+    loadSendCenter();
 
     return () => {
       cancelled = true;
@@ -1456,9 +1475,46 @@ function Workspace({ page, setPage, data }) {
         setBackendApprovalLog((current) => [result.approval, ...current].slice(0, 12));
       }
 
+      setSendCenterItems((current) => [
+        {
+          ...item,
+          send_status: "ready_to_send",
+          status: "ready_to_send",
+        },
+        ...current.filter((draft) => String(draft.id || draft._id) !== String(draftId)),
+      ].slice(0, 10));
+
       setApprovedDraftsStatus(result?.message || "Draft marked ready to send");
+      setSendCenterStatus("Ready-to-send drafts loaded");
     } catch (err) {
       setApprovedDraftsStatus(err?.message || "Could not mark draft ready to send");
+    }
+  }
+
+  async function markDraftManuallySent(item) {
+    const draftId = item?.id || item?._id || "";
+    if (!draftId) {
+      setSendCenterStatus("Draft missing ID");
+      return;
+    }
+
+    setSendCenterStatus("Marking draft manually sent...");
+
+    try {
+      const result = await apiPost("/ai/owner-command/send-center/mark-sent", {
+        draft_id: draftId,
+        kind: item.kind || item.type || item.source_type,
+      });
+
+      setSendCenterItems((current) => current.filter((draft) => String(draft.id || draft._id) !== String(draftId)));
+
+      if (result?.approval) {
+        setBackendApprovalLog((current) => [result.approval, ...current].slice(0, 12));
+      }
+
+      setSendCenterStatus(result?.message || "Draft marked manually sent");
+    } catch (err) {
+      setSendCenterStatus(err?.message || "Could not mark draft sent");
     }
   }
 
@@ -1630,6 +1686,37 @@ function Workspace({ page, setPage, data }) {
                   {label}
                 </button>
               ))}
+            </div>
+          </section>
+
+          <section className="cx-panel cx-owner-log cx-owner-send-center">
+            <header>
+              <div>
+                <span>Send Center</span>
+                <h2>Ready to send</h2>
+                {sendCenterStatus ? <p>{sendCenterStatus}</p> : null}
+              </div>
+              <button type="button" onClick={() => switchPage("invoices")}>
+                Open invoices
+              </button>
+            </header>
+
+            <div>
+              {sendCenterItems.length ? sendCenterItems.map((item, index) => (
+                <article key={`${item.id || index}-${item.title}`}>
+                  <span>{item.kind || "Ready draft"}</span>
+                  <strong>{item.client_name || "Client"}</strong>
+                  <small>{item.message || item.title || "Ready to send"}</small>
+                  <b>{item.send_status || "ready_to_send"}</b>
+                  <button
+                    type="button"
+                    className="cx-owner-draft-ready"
+                    onClick={() => markDraftManuallySent(item)}
+                  >
+                    Mark sent
+                  </button>
+                </article>
+              )) : <p>No drafts ready to send.</p>}
             </div>
           </section>
 

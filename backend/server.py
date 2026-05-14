@@ -14805,6 +14805,129 @@ async def mark_owner_approved_draft_ready(payload: dict, current_user: dict = De
     }
 
 
+
+
+# ===== Owner Command Hub Send Center =====
+@api_router.get("/ai/owner-command/send-center")
+async def list_owner_command_send_center(current_user: dict = Depends(get_current_user)):
+    business_id = _owner_command_business_id(current_user)
+    business_filter = _owner_command_business_filter(business_id)
+
+    ready_filter = {
+        "$or": [
+            {"send_status": "ready_to_send"},
+            {"ready_to_send": True},
+        ]
+    }
+
+    query = {"$and": [business_filter, ready_filter]} if business_filter else ready_filter
+
+    quote_followups = await db.owner_command_followups.find(
+        query
+    ).sort("ready_to_send_at", -1).limit(25).to_list(25)
+
+    payment_reminders = await db.owner_command_payment_reminders.find(
+        query
+    ).sort("ready_to_send_at", -1).limit(25).to_list(25)
+
+    items = []
+
+    for item in quote_followups:
+        items.append({
+            "id": str(item.get("_id") or item.get("id") or ""),
+            "kind": "Quote follow-up",
+            "type": "quote_follow_up",
+            "title": item.get("title") or "Quote follow-up ready",
+            "message": item.get("message") or "",
+            "client_name": item.get("client_name") or "Client",
+            "send_status": item.get("send_status") or "ready_to_send",
+            "source_type": "quote",
+            "source_id": str(item.get("quote_id") or ""),
+            "ready_to_send_at": item.get("ready_to_send_at"),
+            "created_at": item.get("created_at"),
+        })
+
+    for item in payment_reminders:
+        items.append({
+            "id": str(item.get("_id") or item.get("id") or ""),
+            "kind": "Payment reminder",
+            "type": "payment_reminder",
+            "title": item.get("title") or "Payment reminder ready",
+            "message": item.get("message") or "",
+            "client_name": item.get("client_name") or "Client",
+            "send_status": item.get("send_status") or "ready_to_send",
+            "source_type": "invoice",
+            "source_id": str(item.get("invoice_id") or ""),
+            "ready_to_send_at": item.get("ready_to_send_at"),
+            "created_at": item.get("created_at"),
+        })
+
+    items.sort(key=lambda item: str(item.get("ready_to_send_at") or item.get("created_at") or ""), reverse=True)
+
+    return {
+        "ok": True,
+        "items": make_json_safe(items[:30]),
+    }
+
+
+@api_router.post("/ai/owner-command/send-center/mark-sent")
+async def mark_owner_command_send_center_sent(payload: dict, current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or current_user.get("user_role") or "").lower()
+    if role == "worker":
+        raise HTTPException(status_code=403, detail="Owner/admin access required")
+
+    business_id = _owner_command_business_id(current_user)
+    now = datetime.utcnow()
+
+    draft_id = str(payload.get("draft_id") or payload.get("id") or "").strip()
+    draft_kind = str(payload.get("kind") or payload.get("source_type") or payload.get("type") or "").strip()
+
+    label, draft = await _owner_command_find_approved_draft_for_send(business_id, draft_id, draft_kind)
+    if not draft:
+        raise HTTPException(status_code=404, detail="Ready draft not found")
+
+    collection = db.owner_command_followups if label == "quote" else db.owner_command_payment_reminders
+
+    await collection.update_one(
+        {"_id": draft["_id"]},
+        {"$set": {
+            "send_status": "sent_manual",
+            "manually_sent": True,
+            "manually_sent_at": now,
+            "manually_sent_by": str(current_user.get("id") or current_user.get("_id") or ""),
+            "manually_sent_by_email": current_user.get("email"),
+            "updated_at": now,
+        }}
+    )
+
+    approval_doc = {
+        "business_id": business_id,
+        "owner_user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "owner_email": current_user.get("email"),
+        "type": "Manual send",
+        "title": draft.get("title") or "Draft marked manually sent",
+        "status": "sent_manual",
+        "draft_id": str(draft.get("_id") or ""),
+        "draft_kind": label,
+        "message": draft.get("message") or "",
+        "created_at": now,
+        "approved_at": now,
+        "approval_first": True,
+    }
+
+    result = await db.owner_command_approvals.insert_one(make_json_safe(approval_doc))
+    approval_doc["id"] = str(result.inserted_id)
+
+    updated = {**draft, "send_status": "sent_manual", "manually_sent": True, "manually_sent_at": now}
+
+    return {
+        "ok": True,
+        "message": "Draft marked as manually sent.",
+        "draft": make_json_safe(updated),
+        "approval": make_json_safe(approval_doc),
+    }
+
+
 # /api/ai/operator/plan
 # /api/ai/operator/actions
 # /api/ai/operator/actions/{id}/approve
