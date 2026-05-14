@@ -342,7 +342,7 @@ export default function AIActionDock() {
                   type="button"
                   key={label}
                   onClick={() => {
-                    go(path, `Reviewed ${type}`);
+                    go(path, `Opened ${label}`);
                   }}
                 >
                   {label}

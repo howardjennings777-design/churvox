@@ -441,6 +441,13 @@ function useLiveChurvoxData(authed) {
       openQuotes: "7",
       crewOnline: "4",
     },
+    raw: {
+      jobs: [],
+      clients: [],
+      team: [],
+      quotes: [],
+      invoices: [],
+    },
   });
 
   useEffect(() => {
@@ -510,6 +517,13 @@ function useLiveChurvoxData(authed) {
             : `$${Math.max(rawInvoices.length, INVOICES.length)}`,
           openQuotes: String(rawQuotes.length || QUOTES.length),
           crewOnline: String(rawTeam.length || TEAM.length),
+        },
+        raw: {
+          jobs: rawJobs,
+          clients: rawClients,
+          team: rawTeam,
+          quotes: rawQuotes,
+          invoices: rawInvoices,
         },
       });
     }
@@ -951,6 +965,215 @@ function Dashboard({ setPage, data }) {
 }
 
 
+
+const OWNER_COMMAND_LOG_KEY = "churvox_owner_command_log";
+
+function readOwnerCommandLog() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(OWNER_COMMAND_LOG_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.slice(0, 8) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveOwnerCommandLog(items) {
+  try {
+    localStorage.setItem(OWNER_COMMAND_LOG_KEY, JSON.stringify(items.slice(0, 8)));
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function rowText(item, index, fallback = "Record") {
+  if (Array.isArray(item)) {
+    return {
+      lead: textValue(item[0], fallback),
+      title: textValue(item[1], `${fallback} ${index + 1}`),
+      detail: textValue(item[2], "No details yet"),
+      status: textValue(item[3], "Review"),
+    };
+  }
+
+  const title = textValue(
+    item?.title,
+    item?.job_title,
+    item?.name,
+    item?.client_name,
+    item?.customer_name,
+    item?.quote_number,
+    item?.invoice_number,
+    item?.email,
+    `${fallback} ${index + 1}`
+  );
+
+  const detail = textValue(
+    item?.description,
+    item?.notes,
+    item?.address,
+    item?.email,
+    item?.phone,
+    item?.client_name,
+    item?.customer_name,
+    "No details yet"
+  );
+
+  return {
+    lead: textValue(item?.type, item?.role, fallback),
+    title,
+    detail,
+    status: statusText(item, "Review"),
+  };
+}
+
+function draftFromSelection(selection) {
+  const row = rowText(selection?.item, 0, selection?.label || "Record");
+  return {
+    title: row.title,
+    detail: row.detail,
+    status: row.status,
+    ownerNote: "",
+    customerMessage: "",
+    internalDecision: "",
+  };
+}
+
+function workspacePathForPage(page) {
+  const paths = {
+    dashboard: "/dashboard",
+    queue: "/ai-approvals",
+    jobs: "/jobs",
+    clients: "/clients",
+    team: "/team",
+    quotes: "/quotes",
+    invoices: "/invoices",
+    proof: "/proof-to-paid",
+    settings: "/settings",
+  };
+  return paths[page] || "/dashboard";
+}
+
+function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage }) {
+  const [draft, setDraft] = useState(() => draftFromSelection(selection));
+
+  useEffect(() => {
+    setDraft(draftFromSelection(selection));
+  }, [selection]);
+
+  if (!selection) return null;
+
+  const row = rowText(selection.item, 0, selection.label || "Record");
+
+  function update(key, value) {
+    setDraft((current) => ({ ...current, [key]: value }));
+  }
+
+  function go(page) {
+    setPage(page);
+    window.history.pushState({}, "", workspacePathForPage(page));
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    onClose();
+  }
+
+  return (
+    <div className="cx-command-modal-backdrop" onClick={onClose}>
+      <section className="cx-command-modal" onClick={(event) => event.stopPropagation()}>
+        <header>
+          <div>
+            <span>{selection.group || "Owner command"}</span>
+            <h2>{draft.title}</h2>
+            <p>{row.detail}</p>
+          </div>
+          <button type="button" onClick={onClose}>×</button>
+        </header>
+
+        <section className="cx-command-modal-grid">
+          <label>
+            Title / summary
+            <input value={draft.title} onChange={(event) => update("title", event.target.value)} />
+          </label>
+
+          <label>
+            Status
+            <input value={draft.status} onChange={(event) => update("status", event.target.value)} />
+          </label>
+
+          <label className="wide">
+            Owner edit / internal note
+            <textarea
+              value={draft.ownerNote}
+              onChange={(event) => update("ownerNote", event.target.value)}
+              placeholder="Add your edit, instruction, or approval note..."
+            />
+          </label>
+
+          <label className="wide">
+            Customer / worker message draft
+            <textarea
+              value={draft.customerMessage}
+              onChange={(event) => update("customerMessage", event.target.value)}
+              placeholder="Write or edit the message before anything is sent..."
+            />
+          </label>
+
+          <label className="wide">
+            AI decision context
+            <textarea
+              value={draft.detail}
+              onChange={(event) => update("detail", event.target.value)}
+            />
+          </label>
+        </section>
+
+        <section className="cx-command-ai-box">
+          <span>AI recommendation</span>
+          <strong>{selection.recommendation || "Review, edit if needed, then approve only when it looks right."}</strong>
+          <p>
+            This hub keeps you on one page. You can inspect the record, edit the wording, save a command note, approve it,
+            or jump to the exact workspace if you need deeper controls.
+          </p>
+        </section>
+
+        <footer>
+          <button type="button" onClick={() => onSaveDraft(selection, draft)}>Save edit</button>
+          <button type="button" onClick={() => go(selection.page || "dashboard")}>Open workspace</button>
+          <button type="button" onClick={() => go("jobs")}>Jobs</button>
+          <button type="button" onClick={() => go("clients")}>Clients</button>
+          <button type="button" onClick={() => go("team")}>Team</button>
+          <button type="button" onClick={() => go("quotes")}>Quotes</button>
+          <button type="button" onClick={() => go("invoices")}>Invoices</button>
+          <button type="button" className="approve" onClick={() => onApprove(selection, draft)}>
+            Approve
+          </button>
+        </footer>
+      </section>
+    </div>
+  );
+}
+
+function OwnerCommandRow({ item, index, page, group, onOpen }) {
+  const row = rowText(item, index, group);
+
+  return (
+    <button
+      type="button"
+      className="cx-command-row"
+      onClick={() => onOpen({
+        item,
+        page,
+        group,
+        label: row.title,
+        recommendation: "Open this in the hub, check the detail, edit the wording, then approve or jump to the full workspace."
+      })}
+    >
+      <span>{row.lead}</span>
+      <strong>{row.title}</strong>
+      <small>{row.detail}</small>
+      <b>{row.status}</b>
+    </button>
+  );
+}
+
 function Workspace({ page, setPage, data }) {
   const actions = data?.actions?.length ? data.actions : AI_ACTIONS;
   const jobs = data?.jobs?.length ? data.jobs : JOBS;
@@ -961,161 +1184,126 @@ function Workspace({ page, setPage, data }) {
   const stats = data?.stats || {};
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [approved, setApproved] = useState({});
-  const [dismissedActions, setDismissedActions] = useState({});
-  const [approvalLog, setApprovalLog] = useState(() => readApprovalLog());
+  const [approvalLog, setApprovalLog] = useState(() => readOwnerCommandLog());
 
   const meta = {
     dashboard: {
-      kicker: "Smart Hub",
-      title: "AI has prepared today’s business actions.",
-      body: data?.loading ? "Syncing your live Churvox workspace..." : data?.error || "Start with decisions, not clutter. Churvox turns admin into one calm approval flow.",
+      kicker: "Owner Command Hub",
+      title: "Approve, edit, and run the business from one page.",
+      body: data?.loading
+        ? "Syncing live Churvox data..."
+        : data?.error || "AI lines up the admin. You inspect, edit, approve, or open the exact workspace without getting lost.",
       rows: jobs,
     },
     queue: {
       kicker: "AI Work Queue",
-      title: "Review what AI prepared.",
-      body: "Every important action is approval-first. Check the reason, edit if needed, then approve.",
+      title: "Every prepared action in one approval lane.",
+      body: "Review AI-prepared dispatch, invoice, quote, and cashflow actions before anything important changes.",
       rows: actions.map((item) => [item.type, item.title, item.body, item.action]),
     },
     jobs: {
       kicker: "Jobs",
-      title: "Dispatch without the mess.",
-      body: "Jobs are grouped into a clean AI-ready workspace.",
+      title: "Dispatch, edit, and inspect job work.",
+      body: "Open any job in a pop-up, review AI context, then approve or jump deeper.",
       rows: jobs,
     },
     clients: {
       kicker: "Clients",
-      title: "Clients with memory.",
-      body: "Customer history, follow-ups, and admin context stay together.",
+      title: "Client history and follow-up control.",
+      body: "Open client records, add notes, and move to jobs, quotes, or invoices fast.",
       rows: clients,
     },
     team: {
       kicker: "Team",
-      title: "Crew availability and worker matching.",
-      body: "AI helps surface who is available and what needs owner attention.",
+      title: "Crew availability and assignment decisions.",
+      body: "Review worker fit, workload, region, and role before approving assignment work.",
       rows: team,
     },
     quotes: {
       kicker: "Quotes",
-      title: "Quote pipeline that follows up.",
-      body: "AI keeps stale quotes visible so work does not go cold.",
+      title: "Quote follow-ups ready for approval.",
+      body: "Open, edit, and approve quote follow-up actions from the hub.",
       rows: quotes,
     },
     invoices: {
       kicker: "Invoices",
-      title: "Cashflow without chasing.",
-      body: "Drafts, overdue reminders, and payment follow-ups stay visible.",
+      title: "Drafts, overdue reminders, and cashflow.",
+      body: "Review invoice drafts and reminders before sending or opening full invoice controls.",
       rows: invoices,
     },
     proof: {
       kicker: "Proof-to-Paid",
-      title: "Completed work becomes invoice-ready.",
-      body: "Job notes, photos, and completed work can move toward owner-approved invoicing.",
-      rows: [...jobs.slice(0, 3), ...invoices.slice(0, 3)],
+      title: "Completed work into invoice-ready admin.",
+      body: "Review job proof, completion context, notes, and invoice-readiness in one place.",
+      rows: [...jobs.slice(0, 4), ...invoices.slice(0, 4)],
     },
     settings: {
       kicker: "Settings",
-      title: "Business setup and controls.",
-      body: "Plans, roles, integrations, and guardrails belong in one calm workspace.",
+      title: "Business controls and guardrails.",
+      body: "Review plans, roles, permissions, integrations, and owner safety controls.",
       rows: [
-        ["Plan", "Billing", "Roles", "Owner safe"],
-        ["MYOB", "SMS", "Imports", "Connected tools"],
-        ["Security", "Business profile", "Permissions", "Control"],
+        ["Plan", "Billing", "Roles and owner controls", "Review"],
+        ["MYOB", "Integration", "Accounting sync settings", "Review"],
+        ["SMS", "Messages", "Credits and sending guardrails", "Review"],
+        ["Security", "Permissions", "Team and role access", "Review"],
       ],
     },
   };
 
   const current = meta[page] || meta.dashboard;
 
-  function getRecordRecommendation() {
-    const map = {
-      dashboard: ["Review in AI queue", "AI has surfaced this because it may affect today’s dispatch, invoicing, quotes, or cashflow."],
-      queue: ["Approve or inspect", "Check the reason, then approve only when the action looks right."],
-      jobs: ["Check dispatch fit", "Confirm worker, timing, status, and whether this job should move toward proof-to-paid."],
-      clients: ["Review client context", "Check recent jobs, outstanding invoices, and whether a follow-up is needed."],
-      team: ["Check worker availability", "Review workload, region, role, and whether this worker is the right fit for the next job."],
-      quotes: ["Prepare follow-up", "If the quote is quiet, AI can help prepare a short customer follow-up for approval."],
-      invoices: ["Protect cashflow", "Review draft or overdue invoice status, then approve the right follow-up."],
-      proof: ["Move toward invoice", "Use completed work, notes, and photos to prepare the invoice path."],
-      settings: ["Review setup", "Check the business control or integration before changing anything important."],
-    };
+  const commandSections = page === "dashboard"
+    ? [
+        ["AI approvals", "queue", actions.map((item) => [item.type, item.title, item.body, item.action]).slice(0, 4)],
+        ["Jobs", "jobs", jobs.slice(0, 5)],
+        ["Invoices", "invoices", invoices.slice(0, 5)],
+        ["Quotes", "quotes", quotes.slice(0, 4)],
+        ["Team", "team", team.slice(0, 4)],
+        ["Clients", "clients", clients.slice(0, 4)],
+      ]
+    : [[current.kicker, page, current.rows]];
 
-    return map[page] || map.dashboard;
+  function openCommand(selection) {
+    setSelectedRecord(selection);
   }
 
-  function openRecord(item) {
-    setSelectedRecord(item);
-  }
-
-  function workspaceGo(path, nextPage) {
-    setPage(nextPage);
-    window.history.pushState({}, "", path);
-    window.dispatchEvent(new PopStateEvent("popstate"));
-  }
-
-  function goToWorkspace(path, nextPage) {
-    setSelectedRecord(null);
-    setPage(nextPage);
-    window.history.pushState({}, "", path);
-    window.dispatchEvent(new PopStateEvent("popstate"));
-  }
-
-  async function dismissAction(item) {
-    const key = item.title || item.id || item.type;
-    setDismissedActions((currentDismissed) => ({ ...currentDismissed, [key]: true }));
-
-    if (item.id) {
-      try {
-        await apiPost(`/ai/actions/${encodeURIComponent(item.id)}/dismiss`);
-      } catch (err) {
-        console.warn("AI action dismissal saved locally only:", err);
-      }
-    }
-
-    setSelectedRecord([
-      item.type,
-      `${item.title} dismissed`,
-      item.id
-        ? "Dismissed and saved to the backend AI action queue."
-        : "Dismissed in this AI shell. Backend action id was not available, so this was saved locally.",
-      "Dismissed",
-    ]);
-  }
-
-  async function approveAction(item) {
+  function logCommand(type, title, status) {
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-    setApproved((currentApproved) => ({ ...currentApproved, [item.title]: true }));
     setApprovalLog((currentLog) => {
-      const nextLog = [
-        { title: item.title, type: item.type, time },
-        ...currentLog,
-      ].slice(0, 5);
-      saveApprovalLog(nextLog);
+      const nextLog = [{ type, title, status, time }, ...currentLog].slice(0, 8);
+      saveOwnerCommandLog(nextLog);
       return nextLog;
     });
+  }
 
-    if (item.id) {
-      try {
-        await apiPost(`/ai/actions/${encodeURIComponent(item.id)}/approve`);
-      } catch (err) {
-        console.warn("AI action approval saved locally only:", err);
-      }
-    }
+  function saveDraft(selection, draft) {
+    logCommand("Edited", draft.title, "Saved in hub");
+    setSelectedRecord({
+      ...selection,
+      item: [selection.group || "Owner edit", draft.title, draft.ownerNote || draft.detail, "Saved"],
+      recommendation: "Your edit has been saved in the command log for this session. Use Open workspace for deeper backend edits if needed.",
+    });
+  }
 
-    setSelectedRecord([
-      item.type,
-      `${item.title} approved`,
-      item.id
-        ? "Approved and saved to the backend AI action queue."
-        : "Approved in this AI shell. Backend action id was not available, so this was saved locally.",
-      "Approved",
-    ]);
+  function approveSelection(selection, draft) {
+    setApproved((currentApproved) => ({ ...currentApproved, [draft.title]: true }));
+    logCommand(selection.group || "Approved", draft.title, "Approved");
+    setSelectedRecord({
+      ...selection,
+      item: [selection.group || "Owner approval", `${draft.title} approved`, draft.ownerNote || draft.detail, "Approved"],
+      recommendation: "Approved in the Owner Command Hub. Next backend wiring can connect each approval type to its exact database action.",
+    });
+  }
+
+  function switchPage(nextPage) {
+    setPage(nextPage);
+    window.history.pushState({}, "", workspacePathForPage(nextPage));
+    window.dispatchEvent(new PopStateEvent("popstate"));
   }
 
   return (
-    <section className="cx-workspace">
-      <section className="cx-work-hero">
+    <section className="cx-workspace cx-owner-command-shell">
+      <section className="cx-work-hero cx-owner-command-hero">
         <div>
           <span>{current.kicker}</span>
           <h1>{current.title}</h1>
@@ -1125,170 +1313,205 @@ function Workspace({ page, setPage, data }) {
         <aside>
           <span>AI Operator</span>
           <strong>{actions.length} ready</strong>
-          <p>Prepared for owner approval.</p>
-          <button type="button" onClick={() => setPage("queue")}>Review queue</button>
+          <p>Approve/edit from this page first. Open full workspaces only when needed.</p>
+          <button type="button" onClick={() => switchPage("queue")}>Review AI queue</button>
         </aside>
       </section>
 
-      <section className="cx-ai-guardrail-strip">
+      <section className="cx-owner-command-strip">
         <article>
-          <span>AI prepares</span>
-          <strong>Dispatch, invoices, quotes, reminders</strong>
+          <span>Approve</span>
+          <strong>AI actions, job decisions, invoice drafts</strong>
         </article>
         <article>
-          <span>Owner approves</span>
-          <strong>No sends, price changes, or records changed without approval</strong>
+          <span>Edit</span>
+          <strong>Notes, customer messages, status wording</strong>
         </article>
         <article>
-          <span>Live context</span>
-          <strong>Jobs, clients, team, quotes, and invoices stay watched</strong>
+          <span>Navigate</span>
+          <strong>Jobs, clients, team, quotes, invoices from one hub</strong>
         </article>
       </section>
 
-      <section className="cx-workspace-command-bar">
+      <section className="cx-workspace-command-bar cx-owner-command-tabs">
         {[
-          ["AI Queue", "/ai-approvals", "queue"],
-          ["New job", "/jobs", "jobs"],
-          ["Add client", "/clients", "clients"],
-          ["New quote", "/quotes", "quotes"],
-          ["New invoice", "/invoices", "invoices"],
-        ].map(([label, path, nextPage]) => (
-          <button type="button" key={label} onClick={() => workspaceGo(path, nextPage)}>
+          ["Smart Hub", "dashboard"],
+          ["AI Queue", "queue"],
+          ["Jobs", "jobs"],
+          ["Clients", "clients"],
+          ["Team", "team"],
+          ["Quotes", "quotes"],
+          ["Invoices", "invoices"],
+          ["Proof-to-Paid", "proof"],
+          ["Settings", "settings"],
+        ].map(([label, nextPage]) => (
+          <button
+            type="button"
+            key={label}
+            className={page === nextPage ? "active" : ""}
+            onClick={() => switchPage(nextPage)}
+          >
             {label}
           </button>
         ))}
       </section>
 
-      {page === "dashboard" ? (
-        <section className="cx-stats">
-          <Stat label="Jobs today" value={stats.jobsToday || String(jobs.length)} note="live workspace count" />
-          <Stat label="Ready to invoice" value={stats.readyToInvoice || "$0"} note="drafts and follow-ups" />
-          <Stat label="Open quotes" value={stats.openQuotes || String(quotes.length)} note="pipeline watched" />
-          <Stat label="Crew online" value={stats.crewOnline || String(team.length)} note="team records" />
-        </section>
-      ) : null}
-
-      {(page === "dashboard" || page === "queue") ? (
-        <section className="cx-action-board">
-          {actions.map((item) => {
-            const isApproved = approved[item.title];
-            const isDismissed = dismissedActions[item.title || item.id || item.type];
-
-            return (
-              <article className={`cx-work-action ${item.tone || "blue"} ${isDismissed ? "dismissed" : ""}`} key={item.title}>
-                <span>{item.type}</span>
-                <h3>{item.title}</h3>
-                <p>{item.body}</p>
-                {isApproved ? <small className="cx-approved-note">Approved in this session</small> : null}
-                {isDismissed ? <small className="cx-dismissed-note">Dismissed in this session</small> : null}
-                <div>
-                  <button type="button" onClick={() => openRecord([item.type, item.title, item.body, item.action])}>Details</button>
-                  <button type="button" onClick={() => dismissAction(item)}>
-                    {isDismissed ? "Dismissed" : "Dismiss"}
-                  </button>
-                  <button type="button" className="approve" onClick={() => approveAction(item)}>
-                    {isApproved ? "Approved" : item.action}
-                  </button>
-                </div>
-              </article>
-            );
-          })}
-        </section>
-      ) : null}
-
-      {approvalLog.length ? (
-        <section className="cx-approval-log">
-          <header>
-            <div>
-              <span>Saved approvals</span>
-              <h2>Owner-approved actions</h2>
-            </div>
-            <button
-              type="button"
-              className="cx-clear-approval-log"
-              onClick={() => {
-                clearApprovalLogStorage();
-                setApprovalLog([]);
-              }}
-            >
-              Clear
-            </button>
-          </header>
-          <div>
-            {approvalLog.map((item) => (
-              <article key={`${item.time}-${item.title}`}>
-                <span>{item.time}</span>
-                <strong>{item.type}</strong>
-                <small>{item.title}</small>
-              </article>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      <section className="cx-panel">
-        <header>
-          <div>
-            <span>{current.kicker}</span>
-            <h2>{page === "queue" ? "Prepared actions" : "Workspace records"}</h2>
-          </div>
-        </header>
-
-        <div className="cx-panel-list">
-          {current.rows.map((item, index) => (
-            <button type="button" className="cx-row" key={`${page}-${index}-${item[1] || item[0]}`} onClick={() => openRecord(item)}>
-              <span>{item[0]}</span>
-              <strong>{item[1]}</strong>
-              <small>{item[2]}</small>
-              <b>{item[3]}</b>
-            </button>
-          ))}
-        </div>
+      <section className="cx-stats">
+        <Stat label="Jobs today" value={stats.jobsToday || String(jobs.length)} note="tap jobs below to inspect" />
+        <Stat label="Ready to invoice" value={stats.readyToInvoice || "$0"} note="drafts and reminders" />
+        <Stat label="Open quotes" value={stats.openQuotes || String(quotes.length)} note="follow-ups watched" />
+        <Stat label="Crew online" value={stats.crewOnline || String(team.length)} note="assignment context" />
       </section>
 
-      {selectedRecord ? (
-        <div className="cx-record-backdrop" onClick={() => setSelectedRecord(null)}>
-          <section className="cx-record-modal" onClick={(event) => event.stopPropagation()}>
+      <section className="cx-owner-command-layout">
+        <section className="cx-owner-command-main">
+          {(page === "dashboard" || page === "queue") ? (
+            <section className="cx-owner-queue">
+              <header>
+                <div>
+                  <span>Approval lane</span>
+                  <h2>AI-prepared actions</h2>
+                </div>
+                <button type="button" onClick={() => switchPage("queue")}>Open queue</button>
+              </header>
+
+              <div className="cx-owner-queue-grid">
+                {actions.map((item) => {
+                  const isApproved = approved[item.title];
+
+                  return (
+                    <article className={`cx-work-action ${item.tone || "blue"}`} key={item.title}>
+                      <span>{item.type}</span>
+                      <h3>{item.title}</h3>
+                      <p>{item.body}</p>
+                      {isApproved ? <small className="cx-approved-note">Approved in this hub</small> : null}
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => openCommand({
+                            item: [item.type, item.title, item.body, item.action],
+                            page: "queue",
+                            group: item.type,
+                            label: item.title,
+                            recommendation: "Check the AI reason, edit the message or note, then approve only when it looks right.",
+                          })}
+                        >
+                          Details / edit
+                        </button>
+                        <button
+                          type="button"
+                          className="approve"
+                          onClick={() => approveSelection({
+                            item: [item.type, item.title, item.body, item.action],
+                            page: "queue",
+                            group: item.type,
+                          }, {
+                            title: item.title,
+                            detail: item.body,
+                            ownerNote: "",
+                          })}
+                        >
+                          {isApproved ? "Approved" : item.action}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {commandSections.map(([group, sectionPage, rows]) => (
+            <section className="cx-panel cx-owner-section" key={`${group}-${sectionPage}`}>
+              <header>
+                <div>
+                  <span>{group}</span>
+                  <h2>{sectionPage === "queue" ? "Prepared actions" : "Open, edit, approve"}</h2>
+                </div>
+                <button type="button" onClick={() => switchPage(sectionPage)}>View all</button>
+              </header>
+
+              <div className="cx-command-list">
+                {rows.length ? rows.map((item, index) => (
+                  <OwnerCommandRow
+                    item={item}
+                    index={index}
+                    page={sectionPage}
+                    group={group}
+                    onOpen={openCommand}
+                    key={`${group}-${index}-${Array.isArray(item) ? item.join("-") : item?.id || item?._id || item?.title || index}`}
+                  />
+                )) : <small>No records here yet.</small>}
+              </div>
+            </section>
+          ))}
+        </section>
+
+        <aside className="cx-owner-command-side">
+          <section className="cx-panel">
             <header>
               <div>
-                <span>Churvox record</span>
-                <h2>{selectedRecord[1]}</h2>
+                <span>Owner controls</span>
+                <h2>Quick actions</h2>
               </div>
-              <button type="button" onClick={() => setSelectedRecord(null)}>×</button>
             </header>
 
-            <p>{selectedRecord[2]}</p>
-
-            <div className="cx-record-grid">
-              <article>
-                <strong>Status</strong>
-                <small>{selectedRecord[3]}</small>
-              </article>
-              <article>
-                <strong>AI context</strong>
-                <small>Churvox can use this record to prepare dispatch, invoice, quote, follow-up, or proof-to-paid actions.</small>
-              </article>
+            <div className="cx-owner-quick-buttons">
+              {[
+                ["New job", "jobs"],
+                ["Add client", "clients"],
+                ["Assign worker", "team"],
+                ["New quote", "quotes"],
+                ["New invoice", "invoices"],
+                ["Proof-to-Paid", "proof"],
+              ].map(([label, nextPage]) => (
+                <button type="button" key={label} onClick={() => switchPage(nextPage)}>
+                  {label}
+                </button>
+              ))}
             </div>
-
-            <section className="cx-record-recommendation">
-              <span>AI recommended next step</span>
-              <strong>{getRecordRecommendation()[0]}</strong>
-              <p>{getRecordRecommendation()[1]}</p>
-            </section>
-
-            <footer className="cx-record-actions">
-              <button type="button" onClick={() => setSelectedRecord(null)}>Close</button>
-              <button type="button" onClick={() => goToWorkspace("/dashboard", "dashboard")}>Smart Hub</button>
-              <button type="button" onClick={() => goToWorkspace("/jobs", "jobs")}>Jobs</button>
-              <button type="button" onClick={() => goToWorkspace("/clients", "clients")}>Clients</button>
-              <button type="button" onClick={() => goToWorkspace("/team", "team")}>Team</button>
-              <button type="button" onClick={() => goToWorkspace("/quotes", "quotes")}>Quotes</button>
-              <button type="button" onClick={() => goToWorkspace("/invoices", "invoices")}>Invoices</button>
-              <button type="button" className="approve" onClick={() => setSelectedRecord(null)}>Done</button>
-            </footer>
           </section>
-        </div>
-      ) : null}
+
+          <section className="cx-panel cx-owner-log">
+            <header>
+              <div>
+                <span>Command log</span>
+                <h2>Recent edits / approvals</h2>
+              </div>
+              {approvalLog.length ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    saveOwnerCommandLog([]);
+                    setApprovalLog([]);
+                  }}
+                >
+                  Clear
+                </button>
+              ) : null}
+            </header>
+
+            <div>
+              {approvalLog.length ? approvalLog.map((item) => (
+                <article key={`${item.time}-${item.title}`}>
+                  <span>{item.time}</span>
+                  <strong>{item.type}</strong>
+                  <small>{item.title}</small>
+                  <b>{item.status}</b>
+                </article>
+              )) : <p>No owner approvals yet this session.</p>}
+            </div>
+          </section>
+        </aside>
+      </section>
+
+      <OwnerCommandModal
+        selection={selectedRecord}
+        onClose={() => setSelectedRecord(null)}
+        onSaveDraft={saveDraft}
+        onApprove={approveSelection}
+        setPage={setPage}
+      />
     </section>
   );
 }
