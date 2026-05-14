@@ -68,6 +68,8 @@ export default function AIActionDock() {
     followups: 0,
     overdue: 0,
   });
+  const [checking, setChecking] = useState(false);
+  const [lastChecked, setLastChecked] = useState("");
 
   useEffect(() => {
     const check = () => setVisible(isLoggedIn());
@@ -80,19 +82,16 @@ export default function AIActionDock() {
     };
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
+  async function runCheck() {
+    if (!visible) return;
+    setChecking(true);
 
-    async function load() {
-      if (!visible) return;
-
+    try {
       const [jobs, quotes, invoices] = await Promise.all([
         get("/jobs"),
         get("/quotes"),
         get("/invoices"),
       ]);
-
-      if (cancelled) return;
 
       setCounts({
         unassigned: jobs.filter((job) => {
@@ -103,11 +102,22 @@ export default function AIActionDock() {
         followups: quotes.filter((quote) => /sent|pending|follow|open/.test(status(quote))).length,
         overdue: invoices.filter((invoice) => status(invoice).includes("overdue")).length,
       });
-    }
 
-    load();
+      setLastChecked(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  useEffect(() => {
+    runCheck();
+
+    const interval = window.setInterval(runCheck, 60000);
+    window.addEventListener("focus", runCheck);
+
     return () => {
-      cancelled = true;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", runCheck);
     };
   }, [visible]);
 
@@ -140,9 +150,16 @@ export default function AIActionDock() {
               <div>
                 <span>AI Operator</span>
                 <h2>Prepared actions</h2>
+                <p className="ai-dock-check">
+                  {checking ? "Checking live workspace..." : lastChecked ? `Last checked ${lastChecked}` : "Live check ready"}
+                </p>
               </div>
               <button type="button" onClick={() => setOpen(false)}>×</button>
             </header>
+
+            <button className="ai-dock-refresh" type="button" onClick={runCheck} disabled={checking}>
+              {checking ? "Checking..." : "Refresh AI check"}
+            </button>
 
             {actions.map(([type, title, action, path]) => (
               <article key={`${type}-${title}`}>

@@ -110,3 +110,26 @@
   background: linear-gradient(135deg, #102033, #2563eb);
   font-weight: 950;
 }
+
+.ai-dock-check {
+  margin: 6px 0 0;
+  color: #607386;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ai-dock-refresh {
+  width: 100%;
+  min-height: 44px;
+  margin: 6px 0 10px;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: 16px;
+  color: #173050;
+  background: rgba(37, 99, 235, 0.08);
+  font-weight: 950;
+}
+
+.ai-dock-refresh:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
