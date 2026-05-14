@@ -161,6 +161,27 @@ export default function AIActionDock() {
               {checking ? "Checking..." : "Refresh AI check"}
             </button>
 
+            <div className="ai-dock-quick-actions">
+              {[
+                ["New job", "/jobs"],
+                ["Add client", "/clients"],
+                ["New quote", "/quotes"],
+                ["New invoice", "/invoices"],
+              ].map(([label, path]) => (
+                <button
+                  type="button"
+                  key={label}
+                  onClick={() => {
+                    setOpen(false);
+                    window.history.pushState({}, "", path);
+                    window.dispatchEvent(new PopStateEvent("popstate"));
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
             {actions.map(([type, title, action, path]) => (
               <article key={`${type}-${title}`}>
                 <span>{type}</span>
