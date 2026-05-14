@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./churvoxSales.css";
+import "./churvoxFinalIdentity.css";
 
 const NAV = [
   ["dashboard", "Command"],
