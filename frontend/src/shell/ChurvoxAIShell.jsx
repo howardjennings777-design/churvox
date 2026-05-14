@@ -1311,6 +1311,7 @@ function Workspace({ page, setPage, data }) {
       const isDispatchApproval = approvalType.includes("dispatch");
       const isInvoiceApproval = approvalType.includes("invoice");
       const isQuoteApproval = approvalType.includes("quote");
+      const isCashflowApproval = approvalType.includes("cashflow") || approvalType.includes("payment") || approvalType.includes("overdue");
 
       const approvalPath = isDispatchApproval
         ? "/ai/owner-command/dispatch/approve"
@@ -1318,7 +1319,9 @@ function Workspace({ page, setPage, data }) {
           ? "/ai/owner-command/invoice/approve"
           : isQuoteApproval
             ? "/ai/owner-command/quote/approve"
-            : "/ai/owner-command/approve";
+            : isCashflowApproval
+              ? "/ai/owner-command/cashflow/approve"
+              : "/ai/owner-command/approve";
 
       const result = await apiPost(approvalPath, payload);
 
@@ -1331,7 +1334,9 @@ function Workspace({ page, setPage, data }) {
             ? "Invoice draft created"
             : isQuoteApproval
               ? "Quote follow-up saved"
-              : "Saved to backend"
+              : isCashflowApproval
+                ? "Payment reminder saved"
+                : "Saved to backend"
       );
 
       setSelectedRecord({
@@ -1348,7 +1353,9 @@ function Workspace({ page, setPage, data }) {
             ? "Invoice approval completed. Churvox created or updated a draft invoice from a completed job."
             : String(selection.group || "").toLowerCase().includes("quote")
               ? "Quote approval completed. Churvox saved a follow-up draft. Nothing was sent automatically."
-              : "This approval is now saved on the backend. Next we can wire exact approval types to prepare payment reminders.",
+              : (String(selection.group || "").toLowerCase().includes("cashflow") || String(selection.group || "").toLowerCase().includes("payment") || String(selection.group || "").toLowerCase().includes("overdue"))
+                ? "Cashflow approval completed. Churvox saved a payment reminder draft. Nothing was sent automatically."
+                : "This approval is now saved on the backend.",
       });
     } catch (err) {
       logCommand(selection.group || "Approve failed", title, "Backend error");

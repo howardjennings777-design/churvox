@@ -14475,6 +14475,174 @@ async def approve_owner_quote_command(payload: dict, current_user: dict = Depend
     }
 
 
+
+
+# ===== Owner Command Hub cashflow reminder approval =====
+async def _owner_command_find_overdue_invoice_for_reminder(business_id: str, invoice_id: str = ""):
+    if invoice_id:
+        invoice = await _owner_command_find_by_id(db.invoices, invoice_id, business_id)
+        if invoice:
+            return invoice
+
+    business_filter = _owner_command_business_filter(business_id)
+
+    overdue_filter = {
+        "$or": [
+            {"status": {"$in": ["overdue", "unpaid", "late"]}},
+            {"invoice_status": {"$in": ["overdue", "unpaid", "late"]}},
+            {"payment_status": {"$in": ["overdue", "unpaid", "late"]}},
+            {"balance": {"$gt": 0}},
+        ]
+    }
+
+    query = {"$and": [business_filter, overdue_filter]} if business_filter else overdue_filter
+
+    invoice = await db.invoices.find_one(
+        query,
+        sort=[
+            ("due_date", 1),
+            ("updated_at", 1),
+            ("created_at", 1),
+        ],
+    )
+
+    if invoice:
+        return invoice
+
+    query = business_filter if business_filter else {}
+    return await db.invoices.find_one(
+        query,
+        sort=[
+            ("updated_at", 1),
+            ("created_at", 1),
+        ],
+    )
+
+
+def _owner_command_payment_reminder_message(invoice: dict, draft: dict) -> str:
+    saved = (
+        draft.get("customerMessage")
+        or draft.get("message")
+        or draft.get("detail")
+        or draft.get("description")
+        or ""
+    )
+    if saved:
+        return str(saved).strip()
+
+    client_name = (
+        invoice.get("client_name")
+        or invoice.get("customer_name")
+        or invoice.get("name")
+        or "there"
+    )
+
+    number = invoice.get("invoice_number") or invoice.get("number") or invoice.get("title") or "your invoice"
+    amount = _owner_command_money_value(invoice)
+
+    if amount > 0:
+        amount_text = f" for ${amount:,.2f}"
+    else:
+        amount_text = ""
+
+    return (
+        f"Hi {client_name}, just a friendly reminder that {number}{amount_text} is still outstanding. "
+        "Please let us know if you have already paid or need anything else from us."
+    )
+
+
+@api_router.post("/ai/owner-command/cashflow/approve")
+async def approve_owner_cashflow_command(payload: dict, current_user: dict = Depends(get_current_user)):
+    role = str(current_user.get("role") or current_user.get("user_role") or "").lower()
+    if role == "worker":
+        raise HTTPException(status_code=403, detail="Owner/admin access required")
+
+    business_id = _owner_command_business_id(current_user)
+    now = datetime.utcnow()
+
+    draft = payload.get("draft") or {}
+    selection = payload.get("selection") or {}
+
+    invoice_id = (
+        payload.get("invoice_id")
+        or payload.get("source_id")
+        or draft.get("invoice_id")
+        or selection.get("invoice_id")
+        or ""
+    )
+
+    invoice = await _owner_command_find_overdue_invoice_for_reminder(business_id, invoice_id)
+    if not invoice:
+        raise HTTPException(status_code=404, detail="No invoice found for payment reminder approval")
+
+    invoice_record_id = str(invoice.get("_id") or invoice.get("id") or "")
+    message = _owner_command_payment_reminder_message(invoice, draft)
+
+    reminder_doc = {
+        "business_id": business_id,
+        "owner_id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "owner_email": current_user.get("email"),
+        "type": "payment_reminder",
+        "status": "draft_approved",
+        "send_status": "not_sent",
+        "approval_first": True,
+        "invoice_id": invoice_record_id,
+        "client_id": invoice.get("client_id") or invoice.get("customer_id") or draft.get("client_id"),
+        "client_name": invoice.get("client_name") or invoice.get("customer_name") or draft.get("client_name"),
+        "invoice_number": invoice.get("invoice_number") or invoice.get("number"),
+        "title": payload.get("title") or draft.get("title") or "Payment reminder approved",
+        "message": message,
+        "channel": draft.get("channel") or "email_or_sms",
+        "amount": _owner_command_money_value(invoice),
+        "created_at": now,
+        "updated_at": now,
+        "approved_at": now,
+        "draft": draft,
+        "selection": selection,
+    }
+
+    result = await db.owner_command_payment_reminders.insert_one(make_json_safe(reminder_doc))
+    reminder_doc["_id"] = result.inserted_id
+
+    await db.invoices.update_one(
+        {"_id": invoice["_id"]},
+        {"$set": {
+            "ai_payment_reminder_draft_ready": True,
+            "ai_payment_reminder_message": message,
+            "ai_payment_reminder_approved_at": now,
+            "payment_reminder_status": "draft_approved",
+            "updated_at": now,
+        }}
+    )
+
+    approval_doc = {
+        "business_id": business_id,
+        "owner_user_id": str(current_user.get("id") or current_user.get("_id") or ""),
+        "owner_email": current_user.get("email"),
+        "type": "Cashflow",
+        "title": payload.get("title") or "Payment reminder approved",
+        "status": "payment_reminder_draft_saved",
+        "invoice_id": invoice_record_id,
+        "reminder_id": str(reminder_doc.get("_id") or ""),
+        "draft": draft,
+        "selection": selection,
+        "approved_at": now,
+        "created_at": now,
+        "approval_first": True,
+    }
+
+    approval_result = await db.owner_command_approvals.insert_one(make_json_safe(approval_doc))
+    approval_doc["id"] = str(approval_result.inserted_id)
+
+    return {
+        "ok": True,
+        "message": "Payment reminder draft saved. Nothing has been sent.",
+        "invoice": make_json_safe({**invoice, "ai_payment_reminder_message": message, "payment_reminder_status": "draft_approved"}),
+        "reminder": make_json_safe(reminder_doc),
+        "approval": make_json_safe(approval_doc),
+    }
+
+
 # /api/ai/operator/plan
 # /api/ai/operator/actions
 # /api/ai/operator/actions/{id}/approve
