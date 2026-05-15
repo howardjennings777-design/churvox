@@ -16222,6 +16222,525 @@ async def update_recurring_job(recurring_id: str, request: Request):
 # =================== END CHURVOX DISPATCH BOARD + RECURRING JOBS ===================
 
 
+
+
+# ===================== CHURVOX SERVICE TEMPLATES + WORKER PROOF PACKS =====================
+
+def _template_clean_text(value, limit=1000):
+    return str(value or "").strip()[:limit]
+
+def _template_doc_id(doc):
+    return str(doc.get("id") or doc.get("_id") or "")
+
+def _template_job_query(business_id: str, job_id: str):
+    query_ids = [{"id": str(job_id)}, {"job_id": str(job_id)}]
+
+    try:
+        if ObjectId.is_valid(str(job_id)):
+            query_ids.append({"_id": ObjectId(str(job_id))})
+    except Exception:
+        pass
+
+    return {
+        "business_id": str(business_id),
+        "$or": query_ids,
+    }
+
+def _default_service_templates(business_id: str):
+    now = datetime.now(timezone.utc)
+
+    templates = [
+        {
+            "id": "preset-lawn-care",
+            "business_id": str(business_id),
+            "name": "Lawn care visit",
+            "industry": "Lawn Care",
+            "service_type": "Lawn care",
+            "default_duration_minutes": 60,
+            "default_pricing_type": "fixed",
+            "default_price": 0,
+            "checklist": ["Mow lawns", "Edge paths", "Blow down hard surfaces", "Take completion photo"],
+            "photo_required": True,
+            "default_invoice_description": "Lawn care service completed, including mowing, edging, tidy-up and completion proof.",
+            "notes": "Useful for repeat lawn maintenance jobs.",
+            "source": "churvox_preset",
+            "active": True,
+            "created_at": now,
+            "updated_at": now,
+        },
+        {
+            "id": "preset-property-maintenance",
+            "business_id": str(business_id),
+            "name": "Property maintenance visit",
+            "industry": "Property Maintenance",
+            "service_type": "Property maintenance",
+            "default_duration_minutes": 90,
+            "default_pricing_type": "fixed",
+            "default_price": 0,
+            "checklist": ["Inspect requested areas", "Complete maintenance tasks", "Record notes", "Take before/after photos"],
+            "photo_required": True,
+            "default_invoice_description": "Property maintenance work completed with notes and proof photos attached.",
+            "notes": "Good for rental/property owner work.",
+            "source": "churvox_preset",
+            "active": True,
+            "created_at": now,
+            "updated_at": now,
+        },
+        {
+            "id": "preset-cleaning",
+            "business_id": str(business_id),
+            "name": "Cleaning visit",
+            "industry": "Cleaning",
+            "service_type": "Cleaning",
+            "default_duration_minutes": 120,
+            "default_pricing_type": "hourly",
+            "default_price": 0,
+            "checklist": ["Complete agreed cleaning areas", "Check missed areas", "Record notes", "Take completion proof"],
+            "photo_required": False,
+            "default_invoice_description": "Cleaning service completed as agreed.",
+            "notes": "Good for domestic or commercial cleaning work.",
+            "source": "churvox_preset",
+            "active": True,
+            "created_at": now,
+            "updated_at": now,
+        },
+        {
+            "id": "preset-handyman",
+            "business_id": str(business_id),
+            "name": "Handyman repair",
+            "industry": "Handyman",
+            "service_type": "Handyman",
+            "default_duration_minutes": 90,
+            "default_pricing_type": "hourly",
+            "default_price": 0,
+            "checklist": ["Inspect issue", "Complete repair", "Record materials/extras", "Take proof photo"],
+            "photo_required": True,
+            "default_invoice_description": "Handyman repair completed, including labour, notes and any listed materials.",
+            "notes": "Good for small repair jobs.",
+            "source": "churvox_preset",
+            "active": True,
+            "created_at": now,
+            "updated_at": now,
+        },
+    ]
+
+    return templates
+
+async def _ensure_default_service_templates(business_id: str):
+    existing_count = await db.service_templates.count_documents({
+        "business_id": str(business_id),
+        "source": "churvox_preset",
+    })
+
+    if existing_count:
+        return
+
+    await db.service_templates.insert_many(_default_service_templates(business_id))
+
+def _template_match_score(template: dict, text: str):
+    text = str(text or "").lower()
+    score = 0
+
+    fields = [
+        template.get("name"),
+        template.get("industry"),
+        template.get("service_type"),
+        template.get("notes"),
+    ]
+
+    for field in fields:
+        value = str(field or "").lower()
+        if value and value in text:
+            score += 5
+
+        for word in value.replace("/", " ").replace("-", " ").split():
+            if len(word) > 3 and word in text:
+                score += 1
+
+    checklist = template.get("checklist") or []
+    if isinstance(checklist, list):
+        for item in checklist:
+            for word in str(item).lower().split():
+                if len(word) > 4 and word in text:
+                    score += 1
+
+    return score
+
+async def _proof_job_for_business(business_id: str, job_id: str):
+    job = await db.jobs.find_one(_template_job_query(business_id, job_id))
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return job
+
+def _proof_photo_list(job: dict):
+    photos = []
+
+    for key in ["photos", "job_photos", "worker_photos", "proof_photos", "completion_photos"]:
+        value = job.get(key)
+        if isinstance(value, list):
+            photos.extend(value)
+
+    cleaned = []
+    seen = set()
+
+    for item in photos:
+        if isinstance(item, dict):
+            url = item.get("url") or item.get("file_url") or item.get("src") or item.get("path") or ""
+            label = item.get("label") or item.get("caption") or item.get("note") or "Job photo"
+            raw = dict(item)
+        else:
+            url = str(item or "")
+            label = "Job photo"
+            raw = {"url": url, "label": label}
+
+        key = url or str(raw)
+        if not key or key in seen:
+            continue
+
+        seen.add(key)
+        raw["url"] = url
+        raw["label"] = label
+        cleaned.append(raw)
+
+    return cleaned[:24]
+
+def _proof_checklist_from_job(job: dict):
+    checklist = job.get("checklist") or job.get("proof_checklist") or job.get("completion_checklist") or []
+
+    if isinstance(checklist, str):
+        checklist = [item.strip() for item in checklist.splitlines() if item.strip()]
+
+    if not isinstance(checklist, list):
+        checklist = []
+
+    return checklist
+
+def _proof_pack_from_job(job: dict):
+    client_name = _template_clean_text(job.get("client_name") or job.get("customer_name") or (job.get("client") if isinstance(job.get("client"), str) else ""), 180)
+    title = _template_clean_text(job.get("title") or job.get("name") or job.get("service_type") or "Completed job", 180)
+    summary = _template_clean_text(job.get("proof_summary") or job.get("completion_summary"), 2000)
+
+    if not summary:
+        try:
+            summary = _build_visit_summary(job)
+        except Exception:
+            summary = ""
+
+    if not summary:
+        summary = _format_invoice_description_from_job(job, client_name)
+
+    started_at = job.get("started_at") or job.get("start_time")
+    completed_at = job.get("completed_at") or job.get("finish_time") or job.get("ended_at")
+
+    return {
+        "job_id": _template_doc_id(job),
+        "title": title,
+        "client_name": client_name,
+        "address": job.get("address") or job.get("job_address") or job.get("service_address") or "",
+        "status": job.get("status") or job.get("job_status") or "",
+        "started_at": _safe_iso(started_at) if "_safe_iso" in globals() else str(started_at or ""),
+        "completed_at": _safe_iso(completed_at) if "_safe_iso" in globals() else str(completed_at or ""),
+        "worker_name": job.get("assigned_worker_name") or job.get("worker_name") or "",
+        "time_summary": job.get("total_time_on_site_label") or job.get("worked_time_label") or "",
+        "summary": summary,
+        "photos": _proof_photo_list(job),
+        "checklist": _proof_checklist_from_job(job),
+        "invoice_description": _format_invoice_description_from_job(job, client_name),
+        "customer_ready": bool(job.get("proof_pack_customer_ready")),
+        "owner_approved": bool(job.get("proof_pack_owner_approved")),
+    }
+
+@api_router.get("/service-templates")
+async def list_service_templates(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    await _ensure_default_service_templates(business_id)
+
+    templates = await db.service_templates.find({
+        "business_id": str(business_id),
+        "active": {"$ne": False},
+    }).sort("created_at", -1).limit(500).to_list(length=500)
+
+    return {
+        "ok": True,
+        "templates": make_json_safe(safe_docs(templates)),
+        "count": len(templates),
+    }
+
+@api_router.post("/service-templates")
+async def create_service_template(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    name = _template_clean_text(payload.get("name") or payload.get("title"), 180)
+    if not name:
+        raise HTTPException(status_code=400, detail="Template name is required")
+
+    now = datetime.now(timezone.utc)
+    template_id = secrets.token_urlsafe(10)
+
+    checklist = payload.get("checklist") or []
+    if isinstance(checklist, str):
+        checklist = [item.strip() for item in checklist.splitlines() if item.strip()]
+    if not isinstance(checklist, list):
+        checklist = []
+
+    doc = {
+        "id": template_id,
+        "business_id": str(business_id),
+        "name": name,
+        "industry": _template_clean_text(payload.get("industry"), 120),
+        "service_type": _template_clean_text(payload.get("service_type"), 160),
+        "default_duration_minutes": int(payload.get("default_duration_minutes") or 60),
+        "default_pricing_type": _template_clean_text(payload.get("default_pricing_type") or "fixed", 80),
+        "default_price": payload.get("default_price") or 0,
+        "checklist": checklist,
+        "photo_required": bool(payload.get("photo_required", False)),
+        "default_invoice_description": _template_clean_text(payload.get("default_invoice_description"), 1800),
+        "notes": _template_clean_text(payload.get("notes"), 1200),
+        "source": "business_custom",
+        "active": True,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    await db.service_templates.insert_one(doc)
+
+    return {
+        "ok": True,
+        "message": "Service template created.",
+        "template": make_json_safe(safe_doc(doc)),
+    }
+
+@api_router.post("/service-templates/suggest")
+async def suggest_service_template(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    await _ensure_default_service_templates(business_id)
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    text = " ".join([
+        str(payload.get("title") or ""),
+        str(payload.get("service_type") or ""),
+        str(payload.get("description") or ""),
+        str(payload.get("notes") or ""),
+        str(payload.get("industry") or ""),
+    ]).lower()
+
+    templates = await db.service_templates.find({
+        "business_id": str(business_id),
+        "active": {"$ne": False},
+    }).limit(500).to_list(length=500)
+
+    scored = []
+    for template in templates:
+        score = _template_match_score(template, text)
+        scored.append((score, template))
+
+    scored.sort(key=lambda item: item[0], reverse=True)
+
+    suggestions = []
+    for score, template in scored[:5]:
+        item = safe_doc(template)
+        item["match_score"] = score
+        item["ai_reason"] = "Matched using service type, notes, checklist words and industry context."
+        suggestions.append(make_json_safe(item))
+
+    return {
+        "ok": True,
+        "suggestions": suggestions,
+    }
+
+@api_router.post("/jobs/from-template")
+async def create_job_from_template(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    template_id = _template_clean_text(payload.get("template_id"), 120)
+    if not template_id:
+        raise HTTPException(status_code=400, detail="template_id is required")
+
+    query = {"business_id": str(business_id), "$or": [{"id": template_id}]}
+    try:
+        if ObjectId.is_valid(template_id):
+            query["$or"].append({"_id": ObjectId(template_id)})
+    except Exception:
+        pass
+
+    template = await db.service_templates.find_one(query)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    now = datetime.now(timezone.utc)
+    job_id = secrets.token_urlsafe(10)
+
+    job_doc = {
+        "id": job_id,
+        "business_id": str(business_id),
+        "title": _template_clean_text(payload.get("title") or template.get("name"), 180),
+        "name": _template_clean_text(payload.get("title") or template.get("name"), 180),
+        "client_name": _template_clean_text(payload.get("client_name") or payload.get("customer_name"), 180),
+        "address": _template_clean_text(payload.get("address"), 300),
+        "service_type": template.get("service_type") or payload.get("service_type") or "",
+        "description": payload.get("description") or template.get("notes") or "",
+        "notes": payload.get("notes") or template.get("notes") or "",
+        "status": "pending",
+        "job_status": "pending",
+        "pricing_type": template.get("default_pricing_type") or "fixed",
+        "price": template.get("default_price") or 0,
+        "checklist": template.get("checklist") or [],
+        "photo_required": template.get("photo_required") is True,
+        "template_id": str(template.get("id") or template.get("_id")),
+        "ai_invoice_description": template.get("default_invoice_description") or "",
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    await db.jobs.insert_one(job_doc)
+
+    return {
+        "ok": True,
+        "message": "Job created from template.",
+        "job": make_json_safe(safe_doc(job_doc)),
+    }
+
+@api_router.get("/jobs/{job_id}/proof-pack")
+async def get_job_proof_pack(job_id: str, request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    job = await _proof_job_for_business(business_id, job_id)
+    pack = _proof_pack_from_job(job)
+
+    return {
+        "ok": True,
+        "proof_pack": make_json_safe(pack),
+    }
+
+@api_router.post("/jobs/{job_id}/proof-pack")
+async def save_job_proof_pack(job_id: str, request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    job = await _proof_job_for_business(business_id, job_id)
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    update = {
+        "proof_summary": _template_clean_text(payload.get("summary") or payload.get("proof_summary"), 2200),
+        "proof_checklist": payload.get("checklist") if isinstance(payload.get("checklist"), list) else _proof_checklist_from_job(job),
+        "proof_pack_customer_ready": bool(payload.get("customer_ready")),
+        "proof_pack_owner_approved": bool(payload.get("owner_approved")),
+        "updated_at": datetime.now(timezone.utc),
+    }
+
+    photos = payload.get("photos")
+    if isinstance(photos, list):
+        update["proof_photos"] = photos[:24]
+
+    invoice_description = _template_clean_text(payload.get("invoice_description"), 1800)
+    if invoice_description:
+        update["ai_invoice_description"] = invoice_description
+        update["invoice_description_draft"] = invoice_description
+
+    await db.jobs.update_one({"_id": job.get("_id")}, {"$set": update})
+
+    updated = await db.jobs.find_one({"_id": job.get("_id")})
+    pack = _proof_pack_from_job(updated or {**job, **update})
+
+    return {
+        "ok": True,
+        "message": "Proof pack saved.",
+        "proof_pack": make_json_safe(pack),
+    }
+
+@api_router.post("/jobs/{job_id}/proof-pack/prepare-client-summary")
+async def prepare_client_proof_summary(job_id: str, request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    job = await _proof_job_for_business(business_id, job_id)
+    pack = _proof_pack_from_job(job)
+    now = datetime.now(timezone.utc)
+
+    summary = pack.get("summary") or _format_invoice_description_from_job(job, pack.get("client_name") or "")
+    invoice_description = pack.get("invoice_description") or _format_invoice_description_from_job(job, pack.get("client_name") or "")
+
+    await db.jobs.update_one(
+        {"_id": job.get("_id")},
+        {
+            "$set": {
+                "proof_summary": summary,
+                "ai_invoice_description": invoice_description,
+                "invoice_description_draft": invoice_description,
+                "proof_pack_customer_ready": True,
+                "updated_at": now,
+            }
+        },
+    )
+
+    action_id = secrets.token_urlsafe(10)
+    await db.ai_actions.insert_one({
+        "id": action_id,
+        "business_id": str(business_id),
+        "type": "Proof-to-paid",
+        "title": f"Proof pack ready for {pack.get('title') or 'completed job'}",
+        "body": summary,
+        "action": "Review proof pack",
+        "status": "pending",
+        "source_type": "job_proof_pack",
+        "source_id": _template_doc_id(job),
+        "created_at": now,
+        "updated_at": now,
+    })
+
+    return {
+        "ok": True,
+        "message": "Client-ready proof summary prepared.",
+        "proof_pack": make_json_safe({
+            **pack,
+            "summary": summary,
+            "invoice_description": invoice_description,
+            "customer_ready": True,
+        }),
+    }
+
+# =================== END CHURVOX SERVICE TEMPLATES + WORKER PROOF PACKS ===================
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
