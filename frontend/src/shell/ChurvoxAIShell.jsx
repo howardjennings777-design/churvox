@@ -2280,17 +2280,49 @@ function SmartHubActionControl({ boxKey, row, draft, onChange, team = [] }) {
 
   if (mode === "invoice") {
     return (
-      <section className="cx-smart-control-panel">
+      <section className="cx-smart-control-panel cx-smart-control-invoice cx-smart-control-proof-to-paid">
         <header>
           <span>Invoice draft</span>
-          <h4>AI prepared the invoice draft</h4>
-          <p>Churvox fills this from job price, invoice total, notes, proof, and completed work details where available.</p>
+          <h4>Ready for owner approval</h4>
+          <p>Check the amount and wording. Approve to save this as a draft invoice.</p>
         </header>
-        <div className="cx-smart-control-grid">
-          <label>Amount<input value={draft.invoiceAmount} onChange={(e) => onChange("invoiceAmount", e.target.value)} placeholder="Add a job price to auto-fill this" /></label>
-          <label>Status<select value={draft.invoiceStatus} onChange={(e) => onChange("invoiceStatus", e.target.value)}><option value="draft">Save as draft</option><option value="ready">Ready for review</option><option value="approved">Owner approved</option></select></label>
-          <label className="wide">AI invoice description<textarea value={draft.invoiceDescription} onChange={(e) => onChange("invoiceDescription", e.target.value)} placeholder="AI invoice wording from job notes, proof photos, time, service details and pricing..." /></label>
-          <label className="wide">Owner invoice note<textarea value={draft.ownerNote} onChange={(e) => onChange("ownerNote", e.target.value)} placeholder="Anything to adjust before saving..." /></label>
+
+        <div className="cx-smart-invoice-simple-grid">
+          <label>
+            Amount
+            <input
+              value={draft.invoiceAmount}
+              onChange={(e) => onChange("invoiceAmount", e.target.value)}
+              placeholder="Add job price"
+            />
+          </label>
+
+          <label>
+            Status
+            <select value={draft.invoiceStatus} onChange={(e) => onChange("invoiceStatus", e.target.value)}>
+              <option value="draft">Draft</option>
+              <option value="ready">Ready</option>
+              <option value="approved">Approved</option>
+            </select>
+          </label>
+
+          <label className="wide">
+            Invoice wording
+            <textarea
+              value={draft.invoiceDescription}
+              onChange={(e) => onChange("invoiceDescription", e.target.value)}
+              placeholder="Invoice wording from job notes, proof photos, time and service details..."
+            />
+          </label>
+
+          <label className="wide">
+            Owner note
+            <textarea
+              value={draft.ownerNote}
+              onChange={(e) => onChange("ownerNote", e.target.value)}
+              placeholder="Optional internal note..."
+            />
+          </label>
         </div>
       </section>
     );
@@ -2652,7 +2684,7 @@ function SmartHubBoxModal({
   return (
     <div className="cx-smart-modal-backdrop" onClick={onClose}>
       <section
-        className="cx-smart-modal"
+        className={`cx-smart-modal cx-smart-modal-${box.key}`}
         role="dialog"
         aria-modal="true"
         aria-label={box.title}
@@ -2694,6 +2726,7 @@ function SmartHubBoxModal({
             const controlKey = smartControlKey(box.key, item, index, row);
             const controlDraft = controlDraftFor(controlKey, row, item);
             const actionGroup = actionGroupForBox(box.key, row);
+            const itemKindClass = `cx-smart-modal-item-${String(actionGroup || box.key || "item").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 
             const actionId = item?.id || item?._id || item?.action_id || "";
             const sourceType = item?.source_type || item?.kind || item?.type || row.lead;
@@ -2713,7 +2746,7 @@ function SmartHubBoxModal({
             const isApproved = approved[row.title];
 
             return (
-              <article className="cx-smart-modal-item" key={`${box.key}-${index}-${row.title}`}>
+              <article className={`cx-smart-modal-item ${itemKindClass}`} key={`${box.key}-${index}-${row.title}`}>
                 <div>
                   <span>{row.lead}</span>
                   <h3>{row.title}</h3>
