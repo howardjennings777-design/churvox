@@ -1386,10 +1386,22 @@ function SmartHubBoxModal({
         <section className="cx-smart-modal-list">
           {rows.length ? rows.map((item, index) => {
             const row = rowText(item, index, box.title);
+            const actionGroup = box.key === "approvals"
+              ? row.lead
+              : box.key === "invoice"
+                ? "Invoice"
+                : box.key === "collect"
+                  ? "Cashflow"
+                  : box.key === "quotes"
+                    ? "Quote"
+                    : box.key === "messages"
+                      ? "Message"
+                      : box.title;
+
             const selection = {
               item,
               page: workspaceForBox,
-              group: box.title,
+              group: actionGroup,
               hubBoxKey: box.key,
               label: row.title,
               recommendation: reasonFor(row),
