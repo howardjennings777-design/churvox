@@ -1231,6 +1231,50 @@ function SmartHubBoxModal({
     return "AI surfaced this because it may need an owner decision.";
   }
 
+  function primaryActionLabel(row) {
+    const text = `${box.key} ${row.lead} ${row.title} ${row.detail} ${row.status}`.toLowerCase();
+
+    if (box.key === "setup") return "Fix setup";
+    if (box.key === "fix") return "Fix now";
+    if (box.key === "invoice") return "Approve invoice";
+    if (box.key === "messages") return "Approve message";
+    if (box.key === "collect") return "Prepare reminder";
+    if (box.key === "quotes") return "Follow up";
+    if (box.key === "crew") return "Review worker";
+    if (box.key === "work") return "Review work";
+
+    if (text.includes("worker") || text.includes("assign")) return "Approve worker";
+    if (text.includes("invoice")) return "Approve invoice";
+    if (text.includes("quote")) return "Approve follow-up";
+    if (text.includes("payment") || text.includes("overdue")) return "Approve reminder";
+
+    return "Approve";
+  }
+
+  function fullRecordLabel() {
+    if (workspaceForBox === "jobs") return "Open jobs";
+    if (workspaceForBox === "invoices") return "Open invoices";
+    if (workspaceForBox === "quotes") return "Open quotes";
+    if (workspaceForBox === "team") return "Open team";
+    if (workspaceForBox === "settings") return "Open settings";
+    return "Open Smart Hub";
+  }
+
+  function modalEmptyTitle() {
+    if (box.key === "approvals") return "No approvals waiting.";
+    if (box.key === "fix") return "No blockers right now.";
+    if (box.key === "invoice") return "No invoice-ready work right now.";
+    if (box.key === "messages") return "No messages ready right now.";
+    if (box.key === "collect") return "No collection actions right now.";
+    if (box.key === "setup") return "Setup is looking good.";
+    return "Nothing here right now.";
+  }
+
+  function modalEmptyBody() {
+    if (box.key === "setup") return "Churvox will keep checking setup details as the business grows.";
+    return "Everything in this box is handled, snoozed, or dismissed for this session.";
+  }
+
   return (
     <div className="cx-smart-modal-backdrop" onClick={onClose}>
       <section className="cx-smart-modal" onClick={(event) => event.stopPropagation()}>
@@ -1302,19 +1346,19 @@ function SmartHubBoxModal({
                         ownerNote: "",
                       })}
                     >
-                      {isApproved ? "Approved" : "Approve"}
+                      {isApproved ? "Approved" : primaryActionLabel(row)}
                     </button>
                     <button type="button" onClick={() => onSnooze(box, item)}>Snooze</button>
                     <button type="button" onClick={() => onDismiss(box, item)}>Dismiss</button>
-                    <button type="button" onClick={() => onOpenFull(workspaceForBox)}>Open full record</button>
+                    <button type="button" onClick={() => onOpenFull(workspaceForBox)}>{fullRecordLabel()}</button>
                   </div>
                 </aside>
               </article>
             );
           }) : (
             <div className="cx-smart-modal-empty">
-              <h3>Nothing here right now.</h3>
-              <p>Everything in this box is handled, snoozed, or dismissed for this session.</p>
+              <h3>{modalEmptyTitle()}</h3>
+              <p>{modalEmptyBody()}</p>
             </div>
           )}
         </section>

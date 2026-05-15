@@ -3259,3 +3259,20 @@ button {
   letter-spacing: -0.07em;
 }
 
+
+/* ===== Smart Hub modal action polish ===== */
+.cx-smart-modal-item aside button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(16,32,51,0.08);
+}
+
+.cx-smart-modal-item aside button:nth-last-child(2) {
+  color: #92400e;
+  background: rgba(251,146,60,0.12);
+}
+
+.cx-smart-modal-item aside button:nth-last-child(1) {
+  color: #102033;
+  background: rgba(16,32,51,0.08);
+}
+
