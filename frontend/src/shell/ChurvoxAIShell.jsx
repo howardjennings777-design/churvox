@@ -833,7 +833,7 @@ function AuthCard({ authMode, setAuthMode, onLogin }) {
 
 function Landing({ authMode, setAuthMode, onLogin }) {
   return (
-    <main className="cx-public" id="top">
+    <main className="cx-public cx-public-landing" id="top">
       <div className="cx-grid-bg" />
       <div className="cx-glow cx-glow-a" />
       <div className="cx-glow cx-glow-b" />

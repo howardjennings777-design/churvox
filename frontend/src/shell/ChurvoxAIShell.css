@@ -4125,3 +4125,19 @@ button {
     width: 100%;
   }
 }
+
+/* ===== Hide app-only AI dock on public landing ===== */
+body:has(.cx-public-landing) [class*="AIActionDock"],
+body:has(.cx-public-landing) [class*="ai-action-dock"],
+body:has(.cx-public-landing) [class*="approval-dock"],
+body:has(.cx-public-landing) [class*="floating-ai"],
+body:has(.cx-public-landing) [class*="FloatingAI"],
+body:has(.cx-public-landing) [class*="ai-dock"],
+body:has(.cx-public-landing) .cx-ai-dock,
+body:has(.cx-public-landing) .cx-live-ai-dock,
+body:has(.cx-public-landing) .cx-floating-ai,
+body:has(.cx-public-landing) .ai-action-dock {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
