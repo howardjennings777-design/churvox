@@ -1691,8 +1691,8 @@ function Workspace({ page, setPage, data }) {
                 <b>Daily command brief</b>
               </div>
               <h1>
-                Today’s decisions,
-                <em> lined up by AI.</em>
+                AI has lined up
+                <em> today’s decisions.</em>
               </h1>
               <p>Approve work, fix blockers, review messages, and keep the day moving from one simple board.</p>
               <div className="cx-smart-hero-pills">
