@@ -7010,3 +7010,193 @@ button.primary,
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ===== Smart Hub edit popup rescue ===== */
+.cx-smart-modal {
+  position: relative !important;
+}
+
+.cx-smart-modal:has(.cx-smart-modal-edit)::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 20 !important;
+  background: rgba(8, 18, 32, 0.34) !important;
+  backdrop-filter: blur(8px) !important;
+  pointer-events: none !important;
+}
+
+.cx-smart-modal-edit {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 30 !important;
+
+  width: min(780px, calc(100% - 44px)) !important;
+  max-height: calc(100% - 44px) !important;
+  overflow: auto !important;
+
+  border-radius: 30px !important;
+  border: 1px solid rgba(37, 99, 235, 0.14) !important;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(103, 232, 249, 0.16), transparent 32%),
+    linear-gradient(145deg, #ffffff, #f6fbff) !important;
+  box-shadow:
+    0 34px 100px rgba(8, 18, 32, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+
+  padding: 0 !important;
+}
+
+.cx-smart-modal-edit > header {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 2 !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  padding: 22px 24px 16px !important;
+  border-bottom: 1px solid rgba(37, 99, 235, 0.10) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.cx-smart-modal-edit > header span {
+  display: block !important;
+  color: #2563eb !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+}
+
+.cx-smart-modal-edit > header h3 {
+  margin: 6px 0 5px !important;
+  color: #102033 !important;
+  font-size: clamp(26px, 3vw, 40px) !important;
+  line-height: 0.98 !important;
+  letter-spacing: -0.065em !important;
+  font-weight: 950 !important;
+}
+
+.cx-smart-modal-edit > header p {
+  margin: 0 !important;
+  color: #526b82 !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+  font-weight: 800 !important;
+}
+
+.cx-smart-modal-edit > header button {
+  min-width: 96px !important;
+  min-height: 38px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(37,99,235,0.12) !important;
+  background: rgba(255,255,255,0.86) !important;
+  color: #102033 !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+}
+
+.cx-smart-modal-edit > div {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 13px !important;
+  padding: 20px 24px 18px !important;
+}
+
+.cx-smart-modal-edit label {
+  display: grid !important;
+  gap: 7px !important;
+  color: #24415f !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.cx-smart-modal-edit label.wide {
+  grid-column: 1 / -1 !important;
+}
+
+.cx-smart-modal-edit input,
+.cx-smart-modal-edit textarea {
+  width: 100% !important;
+  border: 1px solid rgba(37, 99, 235, 0.14) !important;
+  border-radius: 16px !important;
+  color: #102033 !important;
+  background: rgba(255,255,255,0.94) !important;
+  padding: 13px 14px !important;
+  font-size: 14px !important;
+  font-weight: 820 !important;
+  outline: none !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+.cx-smart-modal-edit textarea {
+  min-height: 92px !important;
+  max-height: 170px !important;
+  resize: vertical !important;
+  line-height: 1.5 !important;
+}
+
+.cx-smart-modal-edit > footer {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 2 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  padding: 14px 24px 20px !important;
+  border-top: 1px solid rgba(37, 99, 235, 0.10) !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.cx-smart-modal-edit > footer button {
+  min-height: 40px !important;
+  border-radius: 999px !important;
+  padding: 0 16px !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  white-space: nowrap !important;
+}
+
+.cx-smart-modal-edit > footer .approve {
+  background: linear-gradient(135deg, #102033, #2563eb) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  box-shadow: 0 14px 34px rgba(37,99,235,0.24) !important;
+}
+
+@media (max-width: 760px) {
+  .cx-smart-modal-edit {
+    width: calc(100% - 20px) !important;
+    max-height: calc(100% - 20px) !important;
+    border-radius: 24px !important;
+  }
+
+  .cx-smart-modal-edit > div {
+    grid-template-columns: 1fr !important;
+    padding: 16px !important;
+  }
+
+  .cx-smart-modal-edit > header {
+    padding: 18px 16px 14px !important;
+  }
+
+  .cx-smart-modal-edit > footer {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    padding: 12px 16px 16px !important;
+  }
+
+  .cx-smart-modal-edit > footer button {
+    width: 100% !important;
+  }
+}
