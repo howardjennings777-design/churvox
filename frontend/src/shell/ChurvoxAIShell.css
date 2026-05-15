@@ -7246,3 +7246,14 @@ button.primary,
   letter-spacing: 0;
   text-transform: none;
 }
+
+/* ===== AI invoice prep wording polish ===== */
+.cx-smart-control-panel header p {
+  margin: 6px 0 0;
+  color: #526b82;
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 820;
+  letter-spacing: 0;
+  text-transform: none;
+}

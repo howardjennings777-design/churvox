@@ -2105,6 +2105,100 @@ function OwnerCommandRow({ item, index, page, group, onOpen }) {
 }
 
 
+function cxMoneyValue(value) {
+  if (value === null || value === undefined || value === "") return 0;
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const cleaned = String(value).replace(/[^0-9.-]/g, "");
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function cxMoneyInput(value) {
+  const amount = cxMoneyValue(value);
+  if (!amount) return "";
+  return amount % 1 === 0 ? String(amount) : amount.toFixed(2);
+}
+
+function cxInvoiceAmount(item = {}) {
+  const values = [
+    item.invoice_amount,
+    item.amount_due,
+    item.balance,
+    item.total,
+    item.total_amount,
+    item.amount,
+    item.price,
+    item.job_price,
+    item.fixed_price,
+    item.fixedPrice,
+    item.quote_total,
+    item.quoted_total,
+    item.estimated_price,
+  ];
+
+  for (const value of values) {
+    const amount = cxMoneyValue(value);
+    if (amount > 0) return cxMoneyInput(amount);
+  }
+
+  const rate = cxMoneyValue(item.hourly_rate || item.rate || item.labour_rate || item.labor_rate);
+  const hours = cxMoneyValue(item.billable_hours || item.worked_hours || item.total_hours || item.hours || item.duration_hours);
+  if (rate > 0 && hours > 0) return cxMoneyInput(rate * hours);
+
+  const minutes = cxMoneyValue(item.billable_minutes || item.worked_minutes || item.total_minutes || item.duration_minutes);
+  if (rate > 0 && minutes > 0) return cxMoneyInput(rate * (minutes / 60));
+
+  return "";
+}
+
+function cxCleanInvoiceText(value) {
+  return String(value || "").trim();
+}
+
+function cxInvoiceDescription(item = {}, fallback = "") {
+  const existing = cxCleanInvoiceText(
+    item.ai_invoice_description ||
+    item.invoice_description ||
+    item.invoiceDescription ||
+    item.invoice_description_draft ||
+    item.description_for_invoice ||
+    item.description
+  );
+
+  if (existing && existing.length > 18) return existing;
+
+  const client = cxCleanInvoiceText(item.client_name || item.customer_name || item.client || item.customer);
+  const title = cxCleanInvoiceText(item.title || item.name || item.service_type || item.job_type || "Service");
+  const address = cxCleanInvoiceText(item.address || item.job_address || item.service_address);
+  const notes = cxCleanInvoiceText(item.completion_notes || item.worker_notes || item.job_notes || item.notes || fallback);
+  const worker = cxCleanInvoiceText(item.assigned_worker_name || item.worker_name);
+  const photos = Array.isArray(item.photos || item.worker_photos || item.proof_photos)
+    ? (item.photos || item.worker_photos || item.proof_photos).length
+    : 0;
+
+  const parts = [];
+  parts.push(`${title} completed${client ? ` for ${client}` : ""}${address ? ` at ${address}` : ""}.`);
+
+  if (notes) parts.push(notes.endsWith(".") ? notes : `${notes}.`);
+  if (worker) parts.push(`Completed by ${worker}.`);
+  if (photos > 0) parts.push(`${photos} proof photo${photos === 1 ? "" : "s"} attached.`);
+
+  return parts.join(" ").replace(/\s+/g, " ").trim();
+}
+
+function cxInvoiceStatus(item = {}) {
+  const raw = String(item.invoice_status || item.status || item.payment_status || item.job_status || "").toLowerCase();
+  if (raw.includes("approved")) return "approved";
+  if (raw.includes("ready")) return "ready";
+  return "draft";
+}
+
+function cxInvoicePreparedStatus(item = {}) {
+  const amount = cxInvoiceAmount(item);
+  return amount ? `Prepared $${amount}` : "Needs amount";
+}
+
+
 function SmartHubActionControl({ boxKey, row, draft, onChange, team = [] }) {
   const text = `${boxKey || ""} ${row?.lead || ""} ${row?.title || ""} ${row?.detail || ""} ${row?.status || ""}`.toLowerCase();
 
@@ -2406,9 +2500,11 @@ function SmartHubBoxModal({
     return `${boxKey || "hub"}::${rawId || index}::${row?.title || "item"}`;
   }
 
-  function baseControlDraft(row) {
+  function baseControlDraft(row, item = {}) {
     const title = row?.title || "Owner action";
     const detail = row?.detail || "";
+    const preparedInvoiceAmount = cxInvoiceAmount(item);
+    const preparedInvoiceDescription = cxInvoiceDescription(item, detail || `Work completed for ${title}.`);
     return {
       title,
       detail,
@@ -2417,9 +2513,9 @@ function SmartHubBoxModal({
       customerMessage: `Hi, quick update about ${title}.`,
       workerChoice: "",
       conflictStatus: "clear",
-      invoiceAmount: row?.invoice_amount || row?.amount || row?.total || row?.price || row?.job_price || "",
-      invoiceStatus: row?.invoice_status || row?.status || "draft",
-      invoiceDescription: row?.invoice_description || row?.description || detail || `Work completed for ${title}.`,
+      invoiceAmount: preparedInvoiceAmount,
+      invoiceStatus: cxInvoiceStatus(item),
+      invoiceDescription: preparedInvoiceDescription,
       collectAction: "friendly_reminder",
       paymentStatus: "unpaid",
       reminderMessage: "Hi, just a friendly reminder that this invoice is still showing as unpaid. Please let us know if you need anything from us.",
@@ -2435,8 +2531,8 @@ function SmartHubBoxModal({
     };
   }
 
-  function controlDraftFor(controlKey, row) {
-    return { ...baseControlDraft(row), ...(controlDrafts[controlKey] || {}) };
+  function controlDraftFor(controlKey, row, item = {}) {
+    return { ...baseControlDraft(row, item), ...(controlDrafts[controlKey] || {}) };
   }
 
   function updateControlDraft(controlKey, key, value) {
@@ -2596,7 +2692,7 @@ function SmartHubBoxModal({
           {rows.length ? rows.map((item, index) => {
             const row = rowText(item, index, box.title);
             const controlKey = smartControlKey(box.key, item, index, row);
-            const controlDraft = controlDraftFor(controlKey, row);
+            const controlDraft = controlDraftFor(controlKey, row, item);
             const actionGroup = actionGroupForBox(box.key, row);
 
             const actionId = item?.id || item?._id || item?.action_id || "";
@@ -3049,21 +3145,33 @@ function Workspace({ page, setPage, data }) {
       const jobId = String(job?._id || job?.id || job?.job_id || "");
       return !jobId || !invoicedJobIds.has(jobId);
     })
-    .map((job) => [
-      "Completed job",
-      job?.title || job?.name || job?.client_name || "Completed job",
-      job?.address || job?.description || "Ready for invoice review",
-      "Create invoice",
-    ]);
+    .map((job) => ({
+      ...job,
+      type: "Completed job",
+      title: `Prepare invoice for ${job?.client_name || job?.customer_name || job?.title || job?.name || "completed job"}`,
+      message: cxInvoiceDescription(job, "Completed job ready for invoice review"),
+      status: cxInvoicePreparedStatus(job),
+      source_type: "completed_job",
+      source_id: job?._id || job?.id || job?.job_id || "",
+      invoice_amount: cxInvoiceAmount(job),
+      invoice_description: cxInvoiceDescription(job, "Completed job ready for invoice review"),
+      invoice_status: "draft",
+    }));
 
   const draftInvoiceRows = invoices
     .filter((invoice) => /draft|ready|pending/i.test(String(invoice?.status || invoice?.invoice_status || invoice?.payment_status || "")))
-    .map((invoice) => [
-      "Invoice draft",
-      invoice?.client_name || invoice?.customer_name || invoice?.title || "Draft invoice",
-      invoice?.description || invoice?.notes || "Draft invoice ready for review",
-      invoice?.status || invoice?.invoice_status || "draft",
-    ]);
+    .map((invoice) => ({
+      ...invoice,
+      type: "Invoice draft",
+      title: invoice?.client_name || invoice?.customer_name || invoice?.title || "Draft invoice",
+      message: cxInvoiceDescription(invoice, "Draft invoice ready for review"),
+      status: cxInvoicePreparedStatus(invoice),
+      source_type: "invoice",
+      source_id: invoice?._id || invoice?.id || invoice?.invoice_id || "",
+      invoice_amount: cxInvoiceAmount(invoice),
+      invoice_description: cxInvoiceDescription(invoice, "Draft invoice ready for review"),
+      invoice_status: cxInvoiceStatus(invoice),
+    }));
 
   const readyInvoiceRows = [
     ...completedJobsReadyToInvoice,
@@ -3740,6 +3848,21 @@ function Workspace({ page, setPage, data }) {
       if (selection.hubBoxKey === "reports") {
         logCommand("Owner reports", title, draft?.reportDecision || "Reviewed");
         return true;
+      }
+
+      if (selection.hubBoxKey === "invoice" && selectedSourceId) {
+        payload.source_id = selectedSourceId;
+        payload.source_type = selection.sourceType || selection?.item?.source_type || "completed_job";
+        payload.invoice_amount = draft?.invoiceAmount || "";
+        payload.invoice_description = draft?.invoiceDescription || draft?.detail || "";
+        payload.invoice_status = draft?.invoiceStatus || "draft";
+        payload.draft = {
+          ...(payload.draft || {}),
+          invoiceAmount: draft?.invoiceAmount || "",
+          invoiceDescription: draft?.invoiceDescription || draft?.detail || "",
+          invoiceStatus: draft?.invoiceStatus || "draft",
+          ownerNote: draft?.ownerNote || "",
+        };
       }
 
       const approvalPath = directActionId
