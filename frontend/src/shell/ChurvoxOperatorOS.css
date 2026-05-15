@@ -3025,3 +3025,388 @@ button.resolve {
     width: 100%;
   }
 }
+
+
+/* Phase 14: status clarity + mobile tap polish
+   Clear recognition colours, safer touch targets, calmer mobile layouts.
+*/
+
+/* status recognition */
+.status-completed,
+.status-complete,
+.status-done,
+.cx-worker-job-card.status-completed,
+.cx-worker-job-card.status-complete,
+.cx-worker-job-card.status-done,
+.risk-ready,
+.cx-row b:where(.complete, .completed, .done) {
+  color: #bfffea !important;
+  background: rgba(56, 232, 164, 0.13) !important;
+  border-color: rgba(56, 232, 164, 0.28) !important;
+}
+
+.status-in-progress,
+.status-progress,
+.status-started,
+.cx-worker-job-card.status-in-progress,
+.cx-worker-job-card.status-progress,
+.risk-check {
+  color: #cfefff !important;
+  background: rgba(53, 183, 255, 0.14) !important;
+  border-color: rgba(53, 183, 255, 0.28) !important;
+}
+
+.status-paused,
+.status-pending,
+.status-waiting,
+.cx-worker-job-card.status-paused,
+.risk-missing {
+  color: #ffe2a0 !important;
+  background: rgba(255, 204, 102, 0.13) !important;
+  border-color: rgba(255, 204, 102, 0.28) !important;
+}
+
+.status-assigned,
+.status-ready,
+.cx-worker-job-card.status-assigned,
+.cx-worker-job-card.status-ready {
+  color: #d9e8f5 !important;
+  background: rgba(143, 164, 183, 0.13) !important;
+  border-color: rgba(143, 164, 183, 0.24) !important;
+}
+
+.status-cancelled,
+.status-canceled,
+.status-urgent,
+.status-overdue,
+.cx-worker-job-card.status-cancelled,
+.cx-worker-job-card.status-canceled,
+.risk-urgent {
+  color: #ffd1d6 !important;
+  background: rgba(255, 107, 122, 0.13) !important;
+  border-color: rgba(255, 107, 122, 0.30) !important;
+}
+
+/* make badges consistent even when they are just b/small tags */
+.cx-smart-modal-tags b,
+.cx-smart-modal-tags small,
+.cx-worker-job-card b,
+.cx-worker-job-card em,
+.cx-proof-missing,
+.cx-proof-ready,
+.cx-ai-missing-strip,
+.cx-record-next-panel b {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* touch safety */
+button,
+a,
+input,
+select,
+textarea,
+.cx-row,
+.cx-command-row,
+.cx-hub-box,
+.cx-worker-job-card,
+.cx-plan-card button,
+.cx-proof-package footer button,
+.cx-quick-action-import label {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+.cx-row,
+.cx-command-row,
+.cx-hub-box,
+.cx-worker-job-card {
+  touch-action: manipulation;
+}
+
+.cx-topbar button,
+.cx-app-nav button,
+.cx-hub-box,
+.cx-command-row,
+.cx-row,
+.cx-worker-job-card,
+.cx-proof-package footer button,
+.cx-plan-card button,
+.cx-teach-churvox-missing button,
+.cx-owner-guardrails button,
+.cx-ask-churvox button,
+.cx-quick-action-modal button {
+  cursor: pointer;
+}
+
+/* prevent old overlays / panels from blocking taps */
+.cx-grid-bg,
+.cx-glow,
+.cx-hero-copy::before,
+.cx-work-hero::after,
+.cx-smart-modal-item::after,
+.cx-hub-box::before {
+  pointer-events: none !important;
+}
+
+/* desktop readability */
+.cx-app-main {
+  min-width: 0;
+}
+
+.cx-owner-command-main,
+.cx-owner-command-side,
+.cx-panel,
+.cx-command-list,
+.cx-smart-modal,
+.cx-command-modal,
+.cx-worker-drawer {
+  min-width: 0;
+}
+
+.cx-command-row,
+.cx-row,
+.cx-worker-job-card,
+.cx-proof-package,
+.cx-plan-card {
+  overflow-wrap: anywhere;
+}
+
+/* modal layout safety */
+.cx-smart-modal,
+.cx-command-modal,
+.cx-worker-drawer,
+.cx-quick-action-modal {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(116,247,255,.35) rgba(4,10,16,.5);
+}
+
+.cx-smart-modal::-webkit-scrollbar,
+.cx-command-modal::-webkit-scrollbar,
+.cx-worker-drawer::-webkit-scrollbar,
+.cx-quick-action-modal::-webkit-scrollbar {
+  width: 10px;
+}
+
+.cx-smart-modal::-webkit-scrollbar-thumb,
+.cx-command-modal::-webkit-scrollbar-thumb,
+.cx-worker-drawer::-webkit-scrollbar-thumb,
+.cx-quick-action-modal::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(116,247,255,.28);
+}
+
+/* stronger primary action hierarchy */
+.cx-ai-prepared-actions .approve,
+.cx-command-footer-approval .approve,
+.cx-proof-package footer .approve,
+.cx-quick-action-modal footer .approve,
+.cx-worker-proof-actions .complete {
+  position: relative;
+  overflow: hidden;
+}
+
+.cx-ai-prepared-actions .approve::after,
+.cx-command-footer-approval .approve::after,
+.cx-proof-package footer .approve::after,
+.cx-quick-action-modal footer .approve::after,
+.cx-worker-proof-actions .complete::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent, rgba(255,255,255,.28), transparent);
+  transform: translateX(-140%);
+  transition: transform 320ms ease;
+}
+
+.cx-ai-prepared-actions .approve:hover::after,
+.cx-command-footer-approval .approve:hover::after,
+.cx-proof-package footer .approve:hover::after,
+.cx-quick-action-modal footer .approve:hover::after,
+.cx-worker-proof-actions .complete:hover::after {
+  transform: translateX(140%);
+}
+
+/* mobile polish */
+@media (max-width: 760px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .cx-app {
+    grid-template-columns: 1fr !important;
+    min-height: 100vh;
+  }
+
+  .cx-sidebar {
+    position: fixed !important;
+    inset: 10px auto 10px 10px;
+    z-index: 80;
+    width: min(320px, calc(100vw - 20px));
+    max-height: calc(100vh - 20px);
+    transform: translateX(calc(-100% - 18px));
+    transition: transform 180ms ease;
+  }
+
+  .cx-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .cx-app-main {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .cx-topbar {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .cx-topbar > div {
+    min-width: 0;
+  }
+
+  .cx-topbar > div strong,
+  .cx-topbar > div span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cx-topbar input {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .cx-topbar .cx-top-primary,
+  .cx-topbar .cx-logout {
+    min-height: 42px;
+    padding-inline: 12px;
+  }
+
+  .cx-work-hero,
+  .cx-owner-command-hero,
+  .cx-worker-run-hero,
+  .cx-plans-machine-hero,
+  .cx-proof-machine-hero {
+    padding: 22px !important;
+  }
+
+  .cx-work-hero h1,
+  .cx-owner-command-hero h1,
+  .cx-worker-run-hero h1,
+  .cx-plans-machine h2,
+  .cx-proof-machine h2 {
+    font-size: clamp(34px, 12vw, 48px) !important;
+    letter-spacing: -0.075em !important;
+  }
+
+  .cx-hub-box-grid,
+  .cx-plans-grid,
+  .cx-proof-package-grid,
+  .cx-worker-job-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cx-hub-box {
+    min-height: 154px;
+    padding: 16px;
+  }
+
+  .cx-smart-modal-backdrop,
+  .cx-command-modal-backdrop,
+  .cx-worker-drawer-backdrop,
+  .cx-quick-action-backdrop {
+    padding: 8px;
+    place-items: end center;
+  }
+
+  .cx-smart-modal,
+  .cx-command-modal,
+  .cx-worker-drawer,
+  .cx-quick-action-modal {
+    width: 100%;
+    max-height: calc(100vh - 16px);
+    border-radius: 24px 24px 18px 18px;
+    padding: 16px;
+  }
+
+  .cx-smart-modal > header,
+  .cx-command-modal > header,
+  .cx-worker-drawer > header,
+  .cx-quick-action-modal > header {
+    gap: 10px;
+  }
+
+  .cx-smart-modal > header h2,
+  .cx-command-modal > header h2,
+  .cx-worker-drawer > header h2,
+  .cx-quick-action-modal > header h2 {
+    font-size: 28px !important;
+  }
+
+  .cx-ai-prepared-actions,
+  .cx-proof-package footer,
+  .cx-command-modal footer,
+  .cx-quick-action-modal footer,
+  .cx-worker-proof-actions {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .cx-ai-prepared-actions button,
+  .cx-proof-package footer button,
+  .cx-command-modal footer button,
+  .cx-quick-action-modal footer button,
+  .cx-worker-proof-actions button,
+  .cx-worker-proof-actions label {
+    width: 100%;
+    min-height: 50px;
+  }
+
+  .cx-public-nav {
+    position: relative;
+    top: auto;
+  }
+
+  .cx-public-nav nav {
+    display: none;
+  }
+
+  .cx-hero {
+    margin-top: 10px;
+  }
+
+  .cx-hero h1 {
+    font-size: clamp(44px, 15vw, 64px) !important;
+  }
+}
+
+/* very small phones */
+@media (max-width: 430px) {
+  .cx-topbar {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .cx-topbar .cx-logout {
+    grid-column: 2;
+  }
+
+  .cx-proof-strip,
+  .cx-owner-command-strip,
+  .cx-plans-ai-rule,
+  .cx-proof-flow,
+  .cx-teach-churvox-flow,
+  .cx-owner-guardrails-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
