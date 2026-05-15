@@ -4376,3 +4376,104 @@ body:has(.cx-public-landing) .ai-action-dock {
     width: fit-content;
   }
 }
+
+/* ===== Item 4: stronger Inside Churvox section ===== */
+.cx-public-landing .cx-features {
+  align-items: stretch;
+  overflow: hidden;
+  position: relative;
+}
+
+.cx-public-landing .cx-features::after {
+  content: "";
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  right: -80px;
+  bottom: -100px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(103,232,249,0.22), transparent 62%);
+  pointer-events: none;
+}
+
+.cx-public-landing .cx-features > * {
+  position: relative;
+  z-index: 1;
+}
+
+.cx-features-story {
+  max-width: 470px;
+  margin: 14px 0 0;
+  color: #526b82;
+  font-size: 15px;
+  line-height: 1.62;
+  font-weight: 820;
+}
+
+.cx-flowline {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.cx-flowline article {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.58);
+  border: 1px solid rgba(37,99,235,0.10);
+}
+
+.cx-flowline b {
+  display: inline-flex;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 8px 10px;
+  color: white;
+  background: linear-gradient(135deg, #102033, #2563eb);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.cx-flowline small {
+  color: #526b82;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.cx-public-landing .cx-feature-list article {
+  position: relative;
+  min-height: 70px;
+  padding-left: 46px;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.cx-public-landing .cx-feature-list article::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #67e8f9, #2563eb);
+  box-shadow: 0 0 18px rgba(37,99,235,0.34);
+}
+
+.cx-public-landing .cx-feature-list article:hover {
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.76);
+  box-shadow: 0 18px 44px rgba(16,32,51,0.09);
+}
+
+@media (max-width: 820px) {
+  .cx-flowline article {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-flowline b {
+    width: fit-content;
+  }
+}

@@ -946,6 +946,29 @@ function Landing({ authMode, setAuthMode, onLogin }) {
         <div>
           <span>Inside Churvox</span>
           <h2>One AI-powered workspace for the whole business.</h2>
+          <p className="cx-features-story">
+            Everything connects. Jobs create proof. Proof creates invoices. Invoices create follow-ups.
+            AI keeps the owner in control from the first job to the final payment.
+          </p>
+
+          <div className="cx-flowline">
+            <article>
+              <b>Job</b>
+              <small>Work starts</small>
+            </article>
+            <article>
+              <b>Proof</b>
+              <small>Notes + photos</small>
+            </article>
+            <article>
+              <b>Invoice</b>
+              <small>Draft prepared</small>
+            </article>
+            <article>
+              <b>Follow-up</b>
+              <small>Owner approves</small>
+            </article>
+          </div>
         </div>
 
         <div className="cx-feature-list">
