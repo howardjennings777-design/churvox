@@ -10,7 +10,7 @@ The owner should feel:
 
 > AI runs the admin. I approve what matters.
 
-Churvox is not just job software with AI added. Smart Hub is the control room.
+Smart Hub is the control room.
 
 ---
 
@@ -27,7 +27,7 @@ Churvox is not just job software with AI added. Smart Hub is the control room.
 
 Flow:
 
-AI finds work → AI explains why → AI prepares action → owner approves → Churvox executes.
+AI finds work -> AI explains why -> AI prepares action -> owner approves -> Churvox executes.
 
 ---
 
@@ -40,18 +40,18 @@ Smart Hub should show:
 AI Operator badge.
 
 Headline:
+
 AI has lined up today's decisions.
 
 Support text:
+
 Approve work, fix blockers, review messages, and keep the day moving from one simple board.
 
 ### AI Daily Brief
 
 A short plain-English summary, for example:
 
-"3 jobs need decisions, 2 completed jobs can be invoiced, 1 quote needs follow-up, and $1,250 is overdue."
-
-The daily brief should make the owner feel Churvox has already checked the business.
+3 jobs need decisions, 2 completed jobs can be invoiced, 1 quote needs follow-up, and $1,250 is overdue.
 
 ### Main boxes
 
@@ -125,176 +125,43 @@ Each modal row should include:
 
 ---
 
-## Box details
+## Main box details
 
-### 1. To approve
+### To approve
 
-Shows AI-prepared actions.
+Shows AI-prepared dispatch, invoice, quote follow-up, and payment reminder actions.
 
-Includes:
+### Needs attention
 
-- dispatch approvals
-- invoice draft approvals
-- quote follow-up approvals
-- payment reminder approvals
+Shows blockers: unassigned jobs, worker conflicts, failed actions, missing client/amount, missing phone/email, overdue jobs, later MYOB/sync issues.
 
-Actions:
+### Ready to invoice
 
-- Details
-- Edit
-- Approve
-- Snooze
-- Dismiss
-- Open full record
+Shows completed jobs with no invoice, completed jobs with proof/photos/notes/time/pricing, and AI-created draft invoices.
 
-### 2. Needs attention
+### Messages ready
 
-Shows blockers and problems.
+Shows quote follow-ups, payment reminders, customer updates, and worker/admin messages.
 
-Includes:
+### Today's work
 
-- unassigned jobs
-- worker conflicts
-- failed approval actions
-- invoices missing client or amount
-- missing client phone/email
-- overdue jobs
-- sync issues later, including MYOB
+Shows today's jobs, assigned worker, status, late/not-started work, and completed jobs needing review.
 
-Actions:
+### Money to collect
 
-- Fix now
-- Snooze
-- Mark resolved
-- Open full record
+Shows unpaid/overdue invoices, draft reminders, and payment follow-ups.
 
-### 3. Ready to invoice
+### Quotes waiting
 
-Shows money-ready work.
+Shows sent/stale quotes and quote follow-up drafts.
 
-Includes:
+### Crew active
 
-- completed jobs with no invoice
-- completed jobs with photos, notes, time, and price
-- draft invoices created by AI
-- jobs with pricing ready
+Shows worker availability, workload, overloaded workers, and assignment capacity.
 
-Actions:
+### Setup health later
 
-- View proof
-- Edit invoice description
-- Create invoice draft
-- Approve invoice draft
-- Open job/invoice
-
-### 4. Messages ready
-
-Shows communication prepared by AI.
-
-Includes:
-
-- quote follow-ups
-- payment reminders
-- customer updates
-- worker/admin messages
-
-Actions:
-
-- Copy message
-- Edit message
-- Mark ready
-- Mark sent
-- Later: send email/SMS only after approval
-
-### 5. Today's work
-
-Shows work happening now/today.
-
-Includes:
-
-- jobs today
-- assigned worker
-- job status
-- late or not-started jobs
-- completed jobs needing owner review
-
-Actions:
-
-- Open job
-- Assign/reassign
-- View worker update
-- Review completion
-
-### 6. Money to collect
-
-Shows cashflow actions.
-
-Includes:
-
-- overdue invoices
-- unpaid invoices
-- draft reminders
-- payment follow-ups
-
-Actions:
-
-- Prepare reminder
-- Copy/send reminder
-- Mark paid/manual
-- Open invoice
-
-### 7. Quotes waiting
-
-Shows sales follow-up.
-
-Includes:
-
-- sent quotes
-- stale quotes
-- quote follow-up drafts
-
-Actions:
-
-- Edit follow-up
-- Mark follow-up ready
-- Open quote
-- Convert to job later
-
-### 8. Crew active
-
-Shows team context.
-
-Includes:
-
-- workers available
-- workers assigned today
-- overloaded workers
-- unassigned worker capacity
-
-Actions:
-
-- View worker
-- Assign job
-- Check workload
-
-### 9. Setup health later
-
-Only show for new or incomplete businesses.
-
-Checks:
-
-- business details complete
-- clients imported
-- workers added
-- worker regions/skills set
-- pricing set
-- invoice settings complete
-- MYOB connected
-- SMS/email ready
-
-Example:
-
-"Your setup is 72% complete. Add worker regions to improve AI assignment."
+Checks business details, clients imported, workers added, worker regions/skills, pricing, invoice settings, MYOB, SMS/email.
 
 ---
 
@@ -304,18 +171,16 @@ Every AI-prepared action must explain why.
 
 Examples:
 
-- "Jay is best because he is nearby, available, and has lawn-care experience."
-- "This job is ready to invoice because it is completed, has photos, notes, and pricing."
-- "This quote needs follow-up because it has been waiting 5 days."
-- "This invoice needs a reminder because it is overdue and still has a balance."
-
-AI must not feel decorative. It must explain its reasoning in plain business language.
+- Jay is best because he is nearby, available, and has lawn-care experience.
+- This job is ready to invoice because it is completed, has photos, notes, and pricing.
+- This quote needs follow-up because it has been waiting 5 days.
+- This invoice needs a reminder because it is overdue and still has a balance.
 
 ---
 
 ## Risk and urgency labels
 
-Every modal item should have a simple label:
+Every modal item should have one simple label:
 
 - Low risk
 - Needs owner check
@@ -323,17 +188,6 @@ Every modal item should have a simple label:
 - Missing info
 - Failed action
 - Ready
-
-Examples:
-
-Ready to invoice:
-Low risk — job completed, price found, client exists.
-
-Needs attention:
-Urgent — job has no worker assigned.
-
-Messages ready:
-Needs owner check — message drafted but not sent.
 
 ---
 
@@ -353,16 +207,7 @@ No important action should happen without owner approval.
 
 ## Approval history
 
-Smart Hub should show a simple decision history.
-
-Track:
-
-- what was approved
-- when it happened
-- who approved it
-- what changed
-- linked job/invoice/quote/client
-- status/result
+Smart Hub should show what was approved, when, by who, what changed, linked record, and result.
 
 Examples:
 
@@ -375,8 +220,6 @@ Examples:
 
 ## Pages to keep
 
-Keep these main pages:
-
 - Smart Hub
 - Jobs
 - Clients
@@ -386,20 +229,16 @@ Keep these main pages:
 - Proof-to-Paid
 - Settings
 
-Smart Hub is the daily command centre.
-
-The other pages are deeper workspaces.
+Smart Hub is the daily command centre. The other pages are deeper workspaces.
 
 ---
 
 ## Remove or hide
 
-Remove/hide:
-
 - separate AI Work Queue page
 - duplicate horizontal Smart Hub tabs
 - duplicate topbar Smart Hub/AI buttons
-- fake "New job" buttons unless they open a create form
+- fake New Job buttons unless they open a create form
 - Fast Actions panel
 - old Smart Hub CSS experiments
 - circles/target/koru leftovers
@@ -410,8 +249,6 @@ Approvals live inside Smart Hub only.
 
 ## Worker flow
 
-Worker app should stay simple.
-
 Worker sees:
 
 - today's assigned jobs
@@ -421,91 +258,22 @@ Worker sees:
 - upload photo
 - complete job
 
-Worker should not see:
-
-- pricing
-- invoices
-- owner settings
-- billing
-- AI owner approvals
-- MYOB/admin controls
+Worker should not see pricing, invoices, owner settings, billing, AI owner approvals, MYOB, or admin controls.
 
 ---
 
 ## Build order
 
-### Phase 1 — Stabilise
-
-- clean Codespace after crashes
-- confirm backend syntax
-- confirm frontend build
-- do not push unless build passes
-
-### Phase 2 — Clean Smart Hub
-
-- keep 8 boxes
-- remove visible separate AI Work Queue navigation
-- remove duplicate buttons/topbar clutter
-- clean old CSS into one final Smart Hub system
-
-### Phase 3 — Build full pop-up system
-
-- create SmartHubBoxModal
-- tap box opens full pop-up
-- no full page jump
-- modal has rows, reasons, labels, and actions
-
-### Phase 4 — Make modal rows useful
-
-Each row gets:
-
-- title
-- reason
-- risk/urgency label
-- status
-- Details
-- Edit
-- Approve
-- Snooze
-- Dismiss
-- Open full record
-
-### Phase 5 — Wire real actions
-
-- dispatch approval assigns worker
-- invoice approval creates draft invoice
-- quote approval saves follow-up draft
-- cashflow approval saves payment reminder
-- message mark-ready / mark-sent
-- approval history
-
-### Phase 6 — Clean deep workspaces
-
-Clean:
-
-- Jobs
-- Clients
-- Team
-- Quotes
-- Invoices
-- Proof-to-Paid
-- Worker app
-
-Each should be simple and only for deeper work.
-
-### Phase 7 — Final testing
-
-Test only after the logic is clean:
-
-- owner login
-- Smart Hub boxes
-- pop-ups
-- approve actions
-- worker job flow
-- invoice flow
-- quote flow
-- mobile taps
-- Render deploy
+1. Stabilise repo.
+2. Clean Smart Hub logic and CSS.
+3. Keep 8 Smart Hub boxes.
+4. Build SmartHubBoxModal.
+5. Make every box open a full pop-up.
+6. Add AI Daily Brief.
+7. Add AI reason, risk labels, snooze, dismiss, and approval history.
+8. Keep approvals inside Smart Hub only.
+9. Remove visible AI Work Queue navigation once stable.
+10. Clean Jobs, Clients, Team, Quotes, Invoices, Proof-to-Paid, and Worker app.
 
 ---
 
@@ -537,5 +305,3 @@ Owner reviews.
 Owner approves.
 
 Churvox does the admin.
-
-That is the site.
