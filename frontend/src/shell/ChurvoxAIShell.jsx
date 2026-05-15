@@ -1688,17 +1688,17 @@ function Workspace({ page, setPage, data }) {
             <>
               <div className="cx-smart-hero-badge">
                 <span>AI Operator</span>
-                <b>Live command brief</b>
+                <b>Daily command brief</b>
               </div>
               <h1>
-                Your business,
-                <em> already sorted.</em>
+                Today’s decisions,
+                <em> lined up by AI.</em>
               </h1>
-              <p>Churvox has lined up the approvals, fixes, messages, and work that need your attention today.</p>
+              <p>Approve work, fix blockers, review messages, and keep the day moving from one simple board.</p>
               <div className="cx-smart-hero-pills">
                 <small>Approval-first</small>
-                <small>No auto-send</small>
-                <small>Owner stays in control</small>
+                <small>Nothing sends itself</small>
+                <small>You stay in control</small>
               </div>
             </>
           ) : (
