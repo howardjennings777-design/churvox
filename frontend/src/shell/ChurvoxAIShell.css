@@ -2728,3 +2728,106 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ===== Smart Hub summary boxes ===== */
+.cx-hub-box-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 16px 0 18px;
+}
+
+.cx-hub-box {
+  min-height: 172px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 30px;
+  padding: 20px;
+  text-align: left;
+  color: #102033;
+  background:
+    radial-gradient(circle at top right, rgba(103, 232, 249, 0.2), transparent 12rem),
+    rgba(255, 255, 255, 0.64);
+  box-shadow: 0 24px 70px rgba(16, 32, 51, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(22px);
+}
+
+.cx-hub-box:hover,
+.cx-hub-box.active {
+  transform: translateY(-2px);
+  border-color: rgba(37, 99, 235, 0.34);
+  box-shadow: 0 30px 84px rgba(37, 99, 235, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.cx-hub-box span {
+  display: block;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cx-hub-box strong {
+  display: inline-block;
+  margin-top: 12px;
+  color: #102033;
+  font-size: 54px;
+  line-height: 0.9;
+  letter-spacing: -0.08em;
+  font-weight: 950;
+}
+
+.cx-hub-box b {
+  display: inline-block;
+  margin-left: 8px;
+  color: #55718a;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.cx-hub-box small {
+  display: block;
+  margin-top: 14px;
+  color: #5b7088;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.cx-hub-box em {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 14px;
+  border-radius: 999px;
+  padding: 9px 11px;
+  color: white;
+  background: linear-gradient(135deg, #102033, #2563eb);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.cx-hub-hidden-panel {
+  display: none !important;
+}
+
+@media (max-width: 1100px) {
+  .cx-hub-box-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .cx-hub-box-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-hub-box {
+    min-height: 145px;
+  }
+
+  .cx-hub-box strong {
+    font-size: 46px;
+  }
+}

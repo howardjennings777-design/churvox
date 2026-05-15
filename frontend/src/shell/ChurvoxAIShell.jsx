@@ -1192,14 +1192,15 @@ function Workspace({ page, setPage, data }) {
   const [approvedDraftsStatus, setApprovedDraftsStatus] = useState("");
   const [sendCenterItems, setSendCenterItems] = useState([]);
   const [sendCenterStatus, setSendCenterStatus] = useState("");
+  const [hubFocus, setHubFocus] = useState("");
 
   const meta = {
     dashboard: {
       kicker: "Smart Hub",
-      title: "Start here. Approve what matters today.",
+      title: "Your business at a glance.",
       body: data?.loading
         ? "Syncing live Churvox data..."
-        : data?.error || "Churvox puts the important decisions first. Jobs, invoices, quotes, team and clients are one tap away.",
+        : data?.error || "Tap a box to approve, fix, send, or review. Nothing opens until you choose it.",
       rows: jobs,
     },
     queue: {
@@ -1325,10 +1326,72 @@ function Workspace({ page, setPage, data }) {
     ...invoices.slice(0, 2),
   ];
 
+  const preparedMessageRows = [
+    ...sendCenterItems.map((item) => [
+      item.kind || "Ready message",
+      item.client_name || "Client",
+      item.message || item.title || "Ready to send",
+      item.send_status || "ready_to_send",
+    ]),
+    ...approvedDrafts.map((item) => [
+      item.kind || "Approved draft",
+      item.client_name || "Client",
+      item.message || item.title || "Approved draft",
+      item.send_status || item.status || "not_sent",
+    ]),
+  ].slice(0, 6);
+
+  const attentionRows = actions
+    .filter((item) => {
+      const type = String(item.type || "").toLowerCase();
+      return type.includes("dispatch") || type.includes("cashflow") || type.includes("payment") || type.includes("overdue");
+    })
+    .map((item) => [item.type, item.title, item.body, item.action])
+    .slice(0, 5);
+
+  const hubBoxes = [
+    {
+      key: "approvals",
+      count: actions.length,
+      label: "to approve",
+      title: "Approvals",
+      body: "AI-prepared actions waiting for your decision.",
+      action: "Open",
+    },
+    {
+      key: "fix",
+      count: attentionRows.length,
+      label: "to fix",
+      title: "Needs attention",
+      body: "Dispatch, overdue, or cashflow items that may block the day.",
+      action: "Check",
+    },
+    {
+      key: "messages",
+      count: preparedMessageRows.length,
+      label: "messages",
+      title: "Prepared messages",
+      body: "Quote follow-ups and reminders ready to copy or mark sent.",
+      action: "View",
+    },
+    {
+      key: "work",
+      count: todayRows.length,
+      label: "today",
+      title: "Today’s work",
+      body: "Jobs and invoices worth checking today.",
+      action: "Review",
+    },
+  ];
+
   const commandSections = page === "dashboard"
-    ? [
-        ["Today’s work", "jobs", todayRows.slice(0, 5)],
-      ]
+    ? hubFocus === "messages"
+      ? [["Prepared messages", "quotes", preparedMessageRows]]
+      : hubFocus === "fix"
+        ? [["Needs attention", "queue", attentionRows]]
+        : hubFocus === "work"
+          ? [["Today’s work", "jobs", todayRows.slice(0, 5)]]
+          : []
     : page === "queue"
       ? []
       : [[current.kicker, page, current.rows]];
@@ -1442,6 +1505,7 @@ function Workspace({ page, setPage, data }) {
   }
 
   function switchPage(nextPage) {
+    if (nextPage !== "dashboard") setHubFocus("");
     setPage(nextPage);
     window.history.pushState({}, "", workspacePathForPage(nextPage));
     window.dispatchEvent(new PopStateEvent("popstate"));
@@ -1614,9 +1678,28 @@ function Workspace({ page, setPage, data }) {
         <Stat label="Crew online" value={stats.crewOnline || String(team.length)} note="assignment context" />
       </section>
 
+      {page === "dashboard" ? (
+        <section className="cx-hub-box-grid">
+          {hubBoxes.map((box) => (
+            <button
+              type="button"
+              key={box.key}
+              className={`cx-hub-box ${hubFocus === box.key ? "active" : ""}`}
+              onClick={() => setHubFocus(hubFocus === box.key ? "" : box.key)}
+            >
+              <span>{box.title}</span>
+              <strong>{box.count}</strong>
+              <b>{box.label}</b>
+              <small>{box.body}</small>
+              <em>{hubFocus === box.key ? "Hide" : box.action}</em>
+            </button>
+          ))}
+        </section>
+      ) : null}
+
       <section className="cx-owner-command-layout">
         <section className="cx-owner-command-main">
-          {(page === "dashboard" || page === "queue") ? (
+          {((page === "dashboard" && hubFocus === "approvals") || page === "queue") ? (
             <section className="cx-owner-queue">
               <header>
                 <div>
@@ -1729,7 +1812,7 @@ function Workspace({ page, setPage, data }) {
             </div>
           </section>
 
-          <section className="cx-panel cx-owner-log cx-owner-prepared-messages">
+          <section className={`cx-panel cx-owner-log cx-owner-prepared-messages ${page === "dashboard" && hubFocus !== "messages" ? "cx-hub-hidden-panel" : ""}`}>
             <header>
               <div>
                 <span>Prepared messages</span>
@@ -1811,7 +1894,7 @@ function Workspace({ page, setPage, data }) {
             </div>
           </section>
 
-          <section className="cx-panel cx-owner-log">
+          <section className={`cx-panel cx-owner-log ${page === "dashboard" && hubFocus !== "approvals" ? "cx-hub-hidden-panel" : ""}`}>
             <header>
               <div>
                 <span>Recent approvals</span>
