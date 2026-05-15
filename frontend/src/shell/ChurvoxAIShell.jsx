@@ -2435,6 +2435,17 @@ function SmartHubBoxModal({
     return text.includes("dispatch") || text.includes("assign") || text.includes("worker");
   }
 
+  function editingNeedsInvoiceDraft() {
+    const text = `${editingSelection?.hubBoxKey || ""} ${editingSelection?.group || ""} ${editingSelection?.sourceType || ""} ${editingDraft?.title || ""} ${editingDraft?.detail || ""} ${editingDraft?.status || ""}`.toLowerCase();
+    return (
+      text.includes("invoice") ||
+      text.includes("proof") ||
+      text.includes("paid") ||
+      Boolean(editingDraft?.invoiceAmount) ||
+      Boolean(editingDraft?.invoiceDescription)
+    );
+  }
+
   if (!box) return null;
 
   const workspaceForBox = {
@@ -2658,16 +2669,25 @@ function SmartHubBoxModal({
     return "Everything in this box is handled, snoozed, or dismissed for this session.";
   }
 
-  function startEdit(selection) {
+  function startEdit(selection, preparedDraft = {}) {
     const row = rowText(selection?.item, 0, selection?.label || "Smart Hub item");
+    const item = selection?.item || {};
+    const invoiceAmount = preparedDraft.invoiceAmount || cxInvoiceAmount(item);
+    const invoiceDescription = preparedDraft.invoiceDescription || cxInvoiceDescription(item, row.detail || "");
+    const invoiceStatus = preparedDraft.invoiceStatus || cxInvoiceStatus(item);
+
     setEditingSelection(selection);
     setEditingDraft({
-      title: row.title,
-      detail: row.detail,
-      status: row.status,
-      ownerNote: "",
-      customerMessage: "",
-      workerChoice: selection?.item?.assigned_worker_id || selection?.item?.worker_id || selection?.item?.recommended_worker_id || "",
+      ...preparedDraft,
+      title: preparedDraft.title || row.title,
+      detail: preparedDraft.detail || row.detail,
+      status: preparedDraft.status || row.status,
+      ownerNote: preparedDraft.ownerNote || "",
+      customerMessage: preparedDraft.customerMessage || "",
+      workerChoice: preparedDraft.workerChoice || selection?.item?.assigned_worker_id || selection?.item?.worker_id || selection?.item?.recommended_worker_id || "",
+      invoiceAmount,
+      invoiceDescription,
+      invoiceStatus,
     });
   }
 
@@ -2771,7 +2791,7 @@ function SmartHubBoxModal({
                   />
 
                   <div>
-                    <button type="button" onClick={() => startEdit(selection)}>Details / edit</button>
+                    <button type="button" onClick={() => startEdit(selection, controlDraft)}>Details / edit</button>
                     <button
                       type="button"
                       className="approve"
@@ -2823,73 +2843,122 @@ function SmartHubBoxModal({
               <button type="button" onClick={() => setEditingSelection(null)}>Close edit</button>
             </header>
 
-            <div>
-              <label>
-                Title / summary
-                <input
-                  value={editingDraft.title}
-                  onChange={(event) => updateEditingDraft("title", event.target.value)}
-                />
-              </label>
+            {editingNeedsInvoiceDraft() ? (
+              <div className="cx-edit-invoice-draft">
+                <section className="cx-edit-invoice-preview-card">
+                  <span>Invoice draft prepared</span>
+                  <h4>{editingDraft.title || "Invoice draft"}</h4>
+                  <p>{editingDraft.invoiceDescription || editingDraft.detail || "Churvox prepared this invoice draft from the completed work."}</p>
+                </section>
 
-              <label>
-                Status
-                <input
-                  value={editingDraft.status}
-                  onChange={(event) => updateEditingDraft("status", event.target.value)}
-                />
-              </label>
-
-              {editingNeedsWorkerDropdown() ? (
                 <label>
-                  Assign worker
-                  <select
-                    value={editingDraft.workerChoice || ""}
-                    onChange={(event) => updateEditingDraft("workerChoice", event.target.value)}
-                  >
-                    <option value="">Choose worker...</option>
-                    {workerOptionsForEdit.map((worker) => (
-                      <option key={`${worker.id}-${worker.name}`} value={worker.id || worker.name}>
-                        {worker.name}{worker.region ? ` · ${worker.region}` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  {!workerOptionsForEdit.length ? <small className="cx-worker-picker-note">No workers loaded yet. Add workers in Team first.</small> : null}
+                  Amount
+                  <input
+                    value={editingDraft.invoiceAmount || ""}
+                    onChange={(event) => updateEditingDraft("invoiceAmount", event.target.value)}
+                    placeholder="Add amount"
+                  />
                 </label>
-              ) : null}
 
-              <label className="wide">
-                AI context / detail
-                <textarea
-                  value={editingDraft.detail}
-                  onChange={(event) => updateEditingDraft("detail", event.target.value)}
-                />
-              </label>
+                <label>
+                  Status
+                  <select
+                    value={editingDraft.invoiceStatus || "draft"}
+                    onChange={(event) => updateEditingDraft("invoiceStatus", event.target.value)}
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="ready">Ready</option>
+                    <option value="approved">Approved</option>
+                  </select>
+                </label>
 
-              <label className="wide">
-                Owner note
-                <textarea
-                  value={editingDraft.ownerNote}
-                  onChange={(event) => updateEditingDraft("ownerNote", event.target.value)}
-                  placeholder="Add your instruction or internal decision note..."
-                />
-              </label>
+                <label className="wide">
+                  Invoice wording owner will approve
+                  <textarea
+                    value={editingDraft.invoiceDescription || ""}
+                    onChange={(event) => updateEditingDraft("invoiceDescription", event.target.value)}
+                    placeholder="Invoice wording should be prepared here..."
+                  />
+                </label>
 
-              <label className="wide">
-                Customer / worker message
-                <textarea
-                  value={editingDraft.customerMessage}
-                  onChange={(event) => updateEditingDraft("customerMessage", event.target.value)}
-                  placeholder="Edit the message before anything is marked ready..."
-                />
-              </label>
-            </div>
+                <label className="wide">
+                  Owner note
+                  <textarea
+                    value={editingDraft.ownerNote || ""}
+                    onChange={(event) => updateEditingDraft("ownerNote", event.target.value)}
+                    placeholder="Optional internal note..."
+                  />
+                </label>
+              </div>
+            ) : (
+              <div>
+                <label>
+                  Title / summary
+                  <input
+                    value={editingDraft.title}
+                    onChange={(event) => updateEditingDraft("title", event.target.value)}
+                  />
+                </label>
+
+                <label>
+                  Status
+                  <input
+                    value={editingDraft.status}
+                    onChange={(event) => updateEditingDraft("status", event.target.value)}
+                  />
+                </label>
+
+                {editingNeedsWorkerDropdown() ? (
+                  <label>
+                    Assign worker
+                    <select
+                      value={editingDraft.workerChoice || ""}
+                      onChange={(event) => updateEditingDraft("workerChoice", event.target.value)}
+                    >
+                      <option value="">Choose worker...</option>
+                      {workerOptionsForEdit.map((worker) => (
+                        <option key={`${worker.id}-${worker.name}`} value={worker.id || worker.name}>
+                          {worker.name}{worker.region ? ` · ${worker.region}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    {!workerOptionsForEdit.length ? <small className="cx-worker-picker-note">No workers loaded yet. Add workers in Team first.</small> : null}
+                  </label>
+                ) : null}
+
+                <label className="wide">
+                  AI context / detail
+                  <textarea
+                    value={editingDraft.detail}
+                    onChange={(event) => updateEditingDraft("detail", event.target.value)}
+                  />
+                </label>
+
+                <label className="wide">
+                  Owner note
+                  <textarea
+                    value={editingDraft.ownerNote}
+                    onChange={(event) => updateEditingDraft("ownerNote", event.target.value)}
+                    placeholder="Add your instruction or internal decision note..."
+                  />
+                </label>
+
+                <label className="wide">
+                  Customer / worker message
+                  <textarea
+                    value={editingDraft.customerMessage}
+                    onChange={(event) => updateEditingDraft("customerMessage", event.target.value)}
+                    placeholder="Edit the message before anything is marked ready..."
+                  />
+                </label>
+              </div>
+            )}
 
             <footer>
               <button type="button" onClick={() => setEditingSelection(null)}>Cancel</button>
               <button type="button" onClick={() => onOpen(editingSelection)}>Open full editor</button>
               <button type="button" className="approve" onClick={approveEditedSelection}>
-                Approve edited action
+                {editingNeedsInvoiceDraft() ? "Approve invoice draft" : "Approve edited action"}
               </button>
             </footer>
           </section>

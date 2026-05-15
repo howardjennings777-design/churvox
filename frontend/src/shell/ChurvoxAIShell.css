@@ -7458,3 +7458,91 @@ button.primary,
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ===== Invoice draft approval edit popup ===== */
+.cx-edit-invoice-draft {
+  display: grid !important;
+  grid-template-columns: 0.75fr 0.75fr !important;
+  gap: 12px !important;
+  padding: 18px 24px !important;
+}
+
+.cx-edit-invoice-draft .wide {
+  grid-column: 1 / -1 !important;
+}
+
+.cx-edit-invoice-preview-card {
+  grid-column: 1 / -1 !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(37, 99, 235, 0.12) !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(37,99,235,0.12), transparent 34%),
+    rgba(255,255,255,0.78) !important;
+  padding: 16px !important;
+}
+
+.cx-edit-invoice-preview-card span {
+  display: block !important;
+  color: #2563eb !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+}
+
+.cx-edit-invoice-preview-card h4 {
+  margin: 6px 0 8px !important;
+  color: #102033 !important;
+  font-size: 24px !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.045em !important;
+  font-weight: 950 !important;
+}
+
+.cx-edit-invoice-preview-card p {
+  margin: 0 !important;
+  color: #24415f !important;
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+  font-weight: 850 !important;
+}
+
+.cx-edit-invoice-draft label {
+  display: grid !important;
+  gap: 7px !important;
+  color: #24415f !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.cx-edit-invoice-draft input,
+.cx-edit-invoice-draft select,
+.cx-edit-invoice-draft textarea {
+  width: 100% !important;
+  border: 1px solid rgba(37, 99, 235, 0.14) !important;
+  border-radius: 15px !important;
+  background: rgba(255,255,255,0.94) !important;
+  color: #102033 !important;
+  padding: 12px 13px !important;
+  font-size: 14px !important;
+  font-weight: 820 !important;
+  outline: none !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+.cx-edit-invoice-draft textarea {
+  min-height: 96px !important;
+  max-height: 190px !important;
+  resize: vertical !important;
+  line-height: 1.45 !important;
+}
+
+@media (max-width: 760px) {
+  .cx-edit-invoice-draft {
+    grid-template-columns: 1fr !important;
+    padding: 16px !important;
+  }
+}
