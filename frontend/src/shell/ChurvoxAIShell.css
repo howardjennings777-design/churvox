@@ -4237,3 +4237,33 @@ body:has(.cx-public-landing) .ai-action-dock {
     bottom: -70px;
   }
 }
+
+/* ===== Item 3: AI cards found/prepared/approve wording ===== */
+.cx-public-landing .cx-ai-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.cx-public-landing .cx-ai-card::before {
+  content: "AI found it · AI prepared it · You approve it";
+  display: block;
+  margin-bottom: 12px;
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cx-public-landing .cx-ai-status {
+  margin-bottom: 12px;
+}
+
+.cx-public-landing .cx-ai-card h3 {
+  font-size: 21px;
+}
+
+.cx-public-landing .cx-ai-card button {
+  color: #102033;
+  background: rgba(37,99,235,0.10);
+}
