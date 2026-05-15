@@ -1181,6 +1181,7 @@ function SmartHubBoxModal({
   onApprove,
   onSnooze,
   onDismiss,
+  onResolve,
   onOpenFull,
 }) {
   const [editingSelection, setEditingSelection] = useState(null);
@@ -1267,6 +1268,16 @@ function SmartHubBoxModal({
     if (workspaceForBox === "team") return "Open team";
     if (workspaceForBox === "settings") return "Open settings";
     return "Open Smart Hub";
+  }
+
+  function canResolveBox() {
+    return box.key === "fix" || box.key === "setup" || box.key === "work";
+  }
+
+  function resolveLabel() {
+    if (box.key === "setup") return "Mark improved";
+    if (box.key === "work") return "Mark reviewed";
+    return "Mark resolved";
   }
 
   function modalEmptyTitle() {
@@ -1379,6 +1390,11 @@ function SmartHubBoxModal({
                     >
                       {isApproved ? "Approved" : primaryActionLabel(row)}
                     </button>
+                    {canResolveBox() ? (
+                      <button type="button" className="resolve" onClick={() => onResolve(box, item)}>
+                        {resolveLabel()}
+                      </button>
+                    ) : null}
                     <button type="button" onClick={() => onSnooze(box, item)}>Snooze</button>
                     <button type="button" onClick={() => onDismiss(box, item)}>Dismiss</button>
                     <button type="button" onClick={() => onOpenFull(workspaceForBox)}>{fullRecordLabel()}</button>
@@ -1914,10 +1930,17 @@ function Workspace({ page, setPage, data }) {
     logCommand(box?.title || "Smart Hub", row.title, "Dismissed");
   }
 
+  function resolveHubItem(box, item) {
+    const row = rowText(item, 0, box?.title || "Smart Hub");
+    const key = hubItemKey(box?.key || box?.title, item);
+    setHubItemStatus((current) => ({ ...current, [key]: "resolved" }));
+    logCommand(box?.title || "Smart Hub", row.title, box?.key === "setup" ? "Improved" : "Resolved");
+  }
+
   const selectedHubRows = selectedHubBox
     ? hubRowsForKey(selectedHubBox.key).filter((item) => {
         const status = hubItemStatus[hubItemKey(selectedHubBox.key, item)];
-        return status !== "approved" && status !== "snoozed" && status !== "dismissed";
+        return status !== "approved" && status !== "snoozed" && status !== "dismissed" && status !== "resolved";
       })
     : [];
 
@@ -2557,6 +2580,7 @@ function Workspace({ page, setPage, data }) {
         }}
         onSnooze={snoozeHubItem}
         onDismiss={dismissHubItem}
+        onResolve={resolveHubItem}
         onOpenFull={(nextPage) => {
           setSelectedHubBox(null);
           switchPage(nextPage);

@@ -3405,3 +3405,10 @@ button {
   }
 }
 
+
+/* ===== Smart Hub resolve action ===== */
+.cx-smart-modal-item aside button.resolve {
+  color: #065f46;
+  background: rgba(20,184,166,0.14);
+}
+
