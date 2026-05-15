@@ -2639,16 +2639,9 @@ function SmartHubBoxModal({
     const detail = row?.detail || "";
     const preparedInvoiceAmount = cxInvoiceAmount(item);
     const preparedInvoiceDescription = cxInvoiceDescription(item, detail || `Work completed for ${title}.`);
-    const preparedInvoiceClientName = String(item?.client_name || item?.customer_name || item?.client || item?.customer || "Client").trim();
-    const preparedInvoiceDueDate = item?.due_date || item?.invoice_due_date || (() => {
-      const due = new Date();
-      due.setDate(due.getDate() + 14);
-      return due.toISOString().slice(0, 10);
-    })();
-    const preparedInvoiceLineItem = [
-      item?.service_type || item?.job_type || item?.title || item?.name || title,
-      item?.address || item?.job_address || item?.service_address || "",
-    ].filter(Boolean).join(" — ");
+    const preparedInvoiceClientName = cxInvoiceClient(item, title);
+    const preparedInvoiceDueDate = cxInvoiceDueDate(item);
+    const preparedInvoiceLineItem = cxInvoiceLineItem(item, title);
     return {
       title,
       detail,
@@ -2780,16 +2773,9 @@ function SmartHubBoxModal({
     const invoiceAmount = preparedDraft.invoiceAmount || cxInvoiceAmount(item);
     const invoiceDescription = preparedDraft.invoiceDescription || cxInvoiceDescription(item, row.detail || "");
     const invoiceStatus = preparedDraft.invoiceStatus || cxInvoiceStatus(item);
-    const invoiceClientName = preparedDraft.invoiceClientName || String(item?.client_name || item?.customer_name || item?.client || item?.customer || "Client").trim();
-    const invoiceDueDate = preparedDraft.invoiceDueDate || item?.due_date || item?.invoice_due_date || (() => {
-      const due = new Date();
-      due.setDate(due.getDate() + 14);
-      return due.toISOString().slice(0, 10);
-    })();
-    const invoiceLineItemsText = preparedDraft.invoiceLineItemsText || [
-      item?.service_type || item?.job_type || item?.title || item?.name || row.title,
-      item?.address || item?.job_address || item?.service_address || "",
-    ].filter(Boolean).join(" — ");
+    const invoiceClientName = preparedDraft.invoiceClientName || cxInvoiceClient(item, row.title);
+    const invoiceDueDate = preparedDraft.invoiceDueDate || cxInvoiceDueDate(item);
+    const invoiceLineItemsText = preparedDraft.invoiceLineItemsText || cxInvoiceLineItem(item, row.title);
 
     setEditingSelection(selection);
     setEditingDraft({
@@ -2966,15 +2952,15 @@ function SmartHubBoxModal({
               <div className="cx-edit-invoice-draft cx-edit-invoice-draft-real">
                 <section className="cx-edit-invoice-preview-card">
                   <span>Invoice draft prepared</span>
-                  <h4>{editingDraft.invoiceClient || "Client invoice"}</h4>
+                  <h4>{editingDraft.invoiceClientName || "Client invoice"}</h4>
                   <p>{editingDraft.invoiceDescription || "Churvox prepared this invoice draft from the completed work."}</p>
                 </section>
 
                 <label>
                   Client
                   <input
-                    value={editingDraft.invoiceClient || ""}
-                    onChange={(event) => updateEditingDraft("invoiceClient", event.target.value)}
+                    value={editingDraft.invoiceClientName || ""}
+                    onChange={(event) => updateEditingDraft("invoiceClientName", event.target.value)}
                     placeholder="Client name"
                   />
                 </label>
@@ -3012,8 +2998,8 @@ function SmartHubBoxModal({
                 <label className="wide">
                   Line item
                   <input
-                    value={editingDraft.invoiceLineItem || ""}
-                    onChange={(event) => updateEditingDraft("invoiceLineItem", event.target.value)}
+                    value={editingDraft.invoiceLineItemsText || ""}
+                    onChange={(event) => updateEditingDraft("invoiceLineItemsText", event.target.value)}
                     placeholder="Completed service"
                   />
                 </label>
@@ -4104,17 +4090,19 @@ function Workspace({ page, setPage, data }) {
         payload.invoice_amount = draft?.invoiceAmount || "";
         payload.invoice_description = draft?.invoiceDescription || draft?.detail || "";
         payload.invoice_status = draft?.invoiceStatus || "draft";
-        payload.invoice_client_name = draft?.invoiceClient || "";
+        payload.invoice_client_name = draft?.invoiceClientName || draft?.invoiceClient || "";
         payload.invoice_due_date = draft?.invoiceDueDate || "";
-        payload.invoice_line_item = draft?.invoiceLineItem || "";
+        payload.invoice_line_item = draft?.invoiceLineItemsText || draft?.invoiceLineItem || "";
         payload.draft = {
           ...(payload.draft || {}),
           invoiceAmount: draft?.invoiceAmount || "",
           invoiceDescription: draft?.invoiceDescription || draft?.detail || "",
           invoiceStatus: draft?.invoiceStatus || "draft",
-          invoiceClient: draft?.invoiceClient || "",
+          invoiceClientName: draft?.invoiceClientName || draft?.invoiceClient || "",
+          invoiceClient: draft?.invoiceClientName || draft?.invoiceClient || "",
           invoiceDueDate: draft?.invoiceDueDate || "",
-          invoiceLineItem: draft?.invoiceLineItem || "",
+          invoiceLineItemsText: draft?.invoiceLineItemsText || draft?.invoiceLineItem || "",
+          invoiceLineItem: draft?.invoiceLineItemsText || draft?.invoiceLineItem || "",
           ownerNote: draft?.ownerNote || "",
         };
       }
