@@ -1386,20 +1386,10 @@ function SmartHubBoxModal({
         <section className="cx-smart-modal-list">
           {rows.length ? rows.map((item, index) => {
             const row = rowText(item, index, box.title);
-            const actionGroup = box.key === "approvals"
-              ? row.lead
-              : box.key === "collect"
-                ? "Cashflow"
-                : box.key === "messages"
-                  ? "Message"
-                  : box.key === "invoice"
-                    ? "Invoice"
-                    : box.title;
-
             const selection = {
               item,
               page: workspaceForBox,
-              group: actionGroup,
+              group: box.title,
               hubBoxKey: box.key,
               label: row.title,
               recommendation: reasonFor(row),
@@ -2106,8 +2096,7 @@ function Workspace({ page, setPage, data }) {
       const isDispatchApproval = approvalType.includes("dispatch");
       const isInvoiceApproval = approvalType.includes("invoice");
       const isQuoteApproval = approvalType.includes("quote");
-      const isMessageApproval = approvalType.includes("message");
-      const isCashflowApproval = approvalType.includes("cashflow") || approvalType.includes("payment") || approvalType.includes("overdue") || approvalType.includes("collect");
+      const isCashflowApproval = approvalType.includes("cashflow") || approvalType.includes("payment") || approvalType.includes("overdue");
 
       const approvalPath = isDispatchApproval
         ? "/ai/owner-command/dispatch/approve"
@@ -2117,9 +2106,7 @@ function Workspace({ page, setPage, data }) {
             ? "/ai/owner-command/quote/approve"
             : isCashflowApproval
               ? "/ai/owner-command/cashflow/approve"
-              : isMessageApproval
-                ? "/ai/owner-command/approve"
-                : "/ai/owner-command/approve";
+              : "/ai/owner-command/approve";
 
       const result = await apiPost(approvalPath, payload);
 
@@ -2134,9 +2121,7 @@ function Workspace({ page, setPage, data }) {
               ? "Quote follow-up saved"
               : isCashflowApproval
                 ? "Payment reminder saved"
-                : isMessageApproval
-                  ? "Message decision saved"
-                  : "Saved to backend"
+                : "Saved to backend"
       );
 
       setSelectedRecord({
@@ -2153,11 +2138,9 @@ function Workspace({ page, setPage, data }) {
             ? "Invoice approval completed. Churvox created or updated a draft invoice from a completed job."
             : String(selection.group || "").toLowerCase().includes("quote")
               ? "Quote approval completed. Churvox saved a follow-up draft. Nothing was sent automatically."
-              : (String(selection.group || "").toLowerCase().includes("cashflow") || String(selection.group || "").toLowerCase().includes("payment") || String(selection.group || "").toLowerCase().includes("overdue") || String(selection.group || "").toLowerCase().includes("collect"))
+              : (String(selection.group || "").toLowerCase().includes("cashflow") || String(selection.group || "").toLowerCase().includes("payment") || String(selection.group || "").toLowerCase().includes("overdue"))
                 ? "Cashflow approval completed. Churvox saved a payment reminder draft. Nothing was sent automatically."
-                : String(selection.group || "").toLowerCase().includes("message")
-                  ? "Message approval completed. Churvox saved the message decision. Nothing was sent automatically."
-                  : "This approval is now saved on the backend.",
+                : "This approval is now saved on the backend.",
       });
     } catch (err) {
       logCommand(selection.group || "Approve failed", title, "Backend error");
