@@ -15048,6 +15048,315 @@ except Exception as exc:
     logger.warning("AI operator power route registration skipped: %s", exc)
 # =================== END AI OPERATOR ROUTE REGISTRATION ===================
 
+
+
+# ===================== CHURVOX PUBLIC CLIENT PORTAL + JOB REQUEST ROUTES =====================
+
+def _public_clean_text(value, limit=1000):
+    text = str(value or "").strip()
+    return text[:limit]
+
+def _public_token_query(token: str):
+    token = str(token or "").strip()
+    return {
+        "$or": [
+            {"public_token": token},
+            {"share_token": token},
+            {"portal_token": token},
+            {"client_portal_token": token},
+            {"proof_to_paid_token": token},
+            {"public_id": token},
+            {"id": token},
+        ]
+    }
+
+async def _find_public_record_by_token(token: str):
+    token = str(token or "").strip()
+    if not token:
+        return None, None
+
+    query = _public_token_query(token)
+
+    for collection_name in ["invoices", "quotes", "jobs"]:
+        collection = getattr(db, collection_name)
+        record = await collection.find_one(query)
+        if record:
+            return collection_name, record
+
+    return None, None
+
+async def _public_find_by_business_and_id(collection_name: str, business_id: str, record_id: str):
+    if not business_id or not record_id:
+        return None
+
+    collection = getattr(db, collection_name)
+    query_ids = [{"id": str(record_id)}]
+
+    try:
+        if ObjectId.is_valid(str(record_id)):
+            query_ids.append({"_id": ObjectId(str(record_id))})
+    except Exception:
+        pass
+
+    return await collection.find_one({
+        "business_id": str(business_id),
+        "$or": query_ids,
+    })
+
+@api_router.post("/public/job-request")
+async def create_public_job_request(request: Request):
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    name = _public_clean_text(payload.get("name"), 160)
+    email = _public_clean_text(payload.get("email"), 220)
+    phone = clean_phone(payload.get("phone")) or _public_clean_text(payload.get("phone"), 80)
+    address = _public_clean_text(payload.get("address"), 300)
+    service_type = _public_clean_text(payload.get("service_type"), 160)
+    preferred_date = _public_clean_text(payload.get("preferred_date"), 120)
+    notes = _public_clean_text(payload.get("notes"), 1800)
+    business_id = _public_clean_text(payload.get("business_id"), 120)
+    source = _public_clean_text(payload.get("source") or "public_request", 120)
+
+    if not name or not email or not notes:
+        raise HTTPException(status_code=400, detail="Name, email, and request details are required")
+
+    now = datetime.now(timezone.utc)
+    request_id = secrets.token_urlsafe(10)
+
+    doc = {
+        "id": request_id,
+        "request_id": request_id,
+        "business_id": business_id,
+        "source": source,
+        "name": name,
+        "email": email,
+        "phone": phone,
+        "address": address,
+        "service_type": service_type,
+        "preferred_date": preferred_date,
+        "notes": notes,
+        "status": "new",
+        "ai_status": "draft_job_ready",
+        "ai_summary": f"New public request from {name}. Churvox should prepare a draft job, check client match, and suggest the next owner approval.",
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    await db.public_job_requests.insert_one(doc)
+
+    if business_id:
+        await db.ai_actions.insert_one({
+            "business_id": str(business_id),
+            "type": "Job request",
+            "title": f"New job request from {name}",
+            "body": notes or service_type or "New public request received",
+            "action": "Prepare draft job",
+            "status": "pending",
+            "source_type": "public_job_request",
+            "source_id": request_id,
+            "created_at": now,
+            "updated_at": now,
+        })
+
+    return {
+        "ok": True,
+        "message": "Request received. Churvox will prepare it for owner review.",
+        "request": safe_doc(doc),
+    }
+
+@api_router.get("/public/client-portal/{token}")
+async def get_public_client_portal(token: str):
+    collection_name, record = await _find_public_record_by_token(token)
+
+    if not record:
+        raise HTTPException(status_code=404, detail="Client portal link not found")
+
+    business_id = str(record.get("business_id") or "")
+    client_id = str(record.get("client_id") or record.get("customer_id") or "")
+    job_id = str(record.get("job_id") or record.get("source_job_id") or record.get("ai_source_job_id") or "")
+    quote_id = str(record.get("quote_id") or "")
+    invoice_id = str(record.get("invoice_id") or "")
+
+    related_job = record if collection_name == "jobs" else None
+    related_quote = record if collection_name == "quotes" else None
+    related_invoice = record if collection_name == "invoices" else None
+    related_client = None
+
+    if business_id and job_id and not related_job:
+        related_job = await _public_find_by_business_and_id("jobs", business_id, job_id)
+
+    if business_id and quote_id and not related_quote:
+        related_quote = await _public_find_by_business_and_id("quotes", business_id, quote_id)
+
+    if business_id and invoice_id and not related_invoice:
+        related_invoice = await _public_find_by_business_and_id("invoices", business_id, invoice_id)
+
+    if business_id and client_id:
+        related_client = await _public_find_by_business_and_id("clients", business_id, client_id)
+
+    proof_summary = ""
+    if related_job:
+        try:
+            proof_summary = _build_visit_summary(related_job)
+        except Exception:
+            proof_summary = ""
+        if not proof_summary:
+            proof_summary = _format_invoice_description_from_job(
+                related_job,
+                record.get("client_name") or record.get("customer_name") or "",
+            )
+
+    photos = []
+    if isinstance(related_job, dict):
+        raw_photos = related_job.get("photos") or related_job.get("job_photos") or related_job.get("worker_photos") or []
+        if isinstance(raw_photos, list):
+            photos = raw_photos[:12]
+
+    portal = {
+        "type": collection_name,
+        "record": safe_doc(record),
+        "client": safe_doc(related_client) if related_client else None,
+        "job": safe_doc(related_job) if related_job else None,
+        "quote": safe_doc(related_quote) if related_quote else None,
+        "invoice": safe_doc(related_invoice) if related_invoice else None,
+        "proof": {
+            "summary": proof_summary or "Work details are ready for review.",
+            "photos": photos,
+        },
+        "actions": {
+            "can_approve_work": True,
+            "can_accept_quote": bool(related_quote or collection_name == "quotes"),
+            "can_message": True,
+            "pay_url": (
+                record.get("payment_url")
+                or record.get("pay_url")
+                or (related_invoice or {}).get("payment_url")
+                or (related_invoice or {}).get("pay_url")
+                or ""
+            ),
+        },
+    }
+
+    return {
+        "ok": True,
+        "portal": make_json_safe(portal),
+    }
+
+@api_router.post("/public/client-portal/{token}/message")
+async def public_client_portal_message(token: str, request: Request):
+    collection_name, record = await _find_public_record_by_token(token)
+    if not record:
+        raise HTTPException(status_code=404, detail="Client portal link not found")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    name = _public_clean_text(payload.get("name"), 160)
+    email = _public_clean_text(payload.get("email"), 220)
+    message = _public_clean_text(payload.get("message"), 1800)
+
+    if not message:
+        raise HTTPException(status_code=400, detail="Message is required")
+
+    now = datetime.now(timezone.utc)
+    doc = {
+        "id": secrets.token_urlsafe(10),
+        "portal_token": token,
+        "source_collection": collection_name,
+        "source_id": str(record.get("id") or record.get("_id") or ""),
+        "business_id": str(record.get("business_id") or ""),
+        "name": name,
+        "email": email,
+        "message": message,
+        "status": "new",
+        "created_at": now,
+    }
+
+    await db.client_portal_messages.insert_one(doc)
+
+    business_id = str(record.get("business_id") or "")
+    if business_id:
+        await db.ai_actions.insert_one({
+            "business_id": business_id,
+            "type": "Client portal",
+            "title": f"Client message on {collection_name}",
+            "body": message,
+            "action": "Review message",
+            "status": "pending",
+            "source_type": "client_portal_message",
+            "source_id": doc["id"],
+            "created_at": now,
+            "updated_at": now,
+        })
+
+    return {
+        "ok": True,
+        "message": "Message sent to the business.",
+        "item": safe_doc(doc),
+    }
+
+@api_router.post("/public/client-portal/{token}/approve")
+async def public_client_portal_approve(token: str, request: Request):
+    collection_name, record = await _find_public_record_by_token(token)
+    if not record:
+        raise HTTPException(status_code=404, detail="Client portal link not found")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    approval_type = _public_clean_text(payload.get("approval_type") or "work_approved", 80)
+    name = _public_clean_text(payload.get("name"), 160)
+    email = _public_clean_text(payload.get("email"), 220)
+    note = _public_clean_text(payload.get("note"), 1200)
+
+    now = datetime.now(timezone.utc)
+    doc = {
+        "id": secrets.token_urlsafe(10),
+        "portal_token": token,
+        "source_collection": collection_name,
+        "source_id": str(record.get("id") or record.get("_id") or ""),
+        "business_id": str(record.get("business_id") or ""),
+        "approval_type": approval_type,
+        "name": name,
+        "email": email,
+        "note": note,
+        "status": "approved",
+        "created_at": now,
+    }
+
+    await db.client_portal_approvals.insert_one(doc)
+
+    business_id = str(record.get("business_id") or "")
+    if business_id:
+        await db.ai_actions.insert_one({
+            "business_id": business_id,
+            "type": "Client approval",
+            "title": f"Client approved {approval_type.replace('_', ' ')}",
+            "body": note or "Client approval received through portal.",
+            "action": "Review approval",
+            "status": "pending",
+            "source_type": "client_portal_approval",
+            "source_id": doc["id"],
+            "created_at": now,
+            "updated_at": now,
+        })
+
+    return {
+        "ok": True,
+        "message": "Approval saved.",
+        "approval": safe_doc(doc),
+    }
+
+# =================== END CHURVOX PUBLIC CLIENT PORTAL + JOB REQUEST ROUTES ===================
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")

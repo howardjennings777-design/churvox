@@ -89,6 +89,38 @@ function readApprovalLog() {
   }
 }
 
+
+async function publicApiPost(path, body = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(payload.detail || payload.message || payload.error || `${path} failed`);
+  }
+
+  return payload;
+}
+
+async function publicApiGet(path) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { Accept: "application/json" },
+  });
+
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(payload.detail || payload.message || payload.error || `${path} failed`);
+  }
+
+  return payload;
+}
+
 function saveApprovalLog(items) {
   try {
     localStorage.setItem(AI_APPROVAL_LOG_KEY, JSON.stringify(items.slice(0, 5)));
@@ -828,6 +860,279 @@ function AuthCard({ authMode, setAuthMode, onLogin }) {
   );
 }
 
+
+function PublicJobRequestPage() {
+  const params = new URLSearchParams(window.location.search);
+  const businessId = params.get("business_id") || params.get("business") || "";
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    service_type: "",
+    preferred_date: "",
+    notes: "",
+  });
+  const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  function update(key, value) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function submit(event) {
+    event.preventDefault();
+    setBusy(true);
+    setStatus("Preparing request...");
+
+    try {
+      const result = await publicApiPost("/public/job-request", {
+        ...form,
+        business_id: businessId,
+        source: "public_request_page",
+      });
+
+      setStatus(result?.message || "Request received. Churvox will prepare it for owner review.");
+      setForm({
+        name: "",
+        email: "",
+        phone: "",
+        address: "",
+        service_type: "",
+        preferred_date: "",
+        notes: "",
+      });
+    } catch (err) {
+      setStatus(err.message || "Could not send request.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <main className="cx-public cx-public-landing cx-public-tool-page" id="top">
+      <PublicNav />
+      <section className="cx-public-tool-shell">
+        <aside>
+          <span>Online job request</span>
+          <h1>Customers request work. Churvox prepares the draft job.</h1>
+          <p>
+            The request is saved for owner review. When connected to a business, Churvox can surface it in Smart Hub as a draft job action.
+          </p>
+
+          <div className="cx-public-tool-steps">
+            <article><b>1</b><div><strong>Customer sends request</strong><small>Details, address, timing and notes.</small></div></article>
+            <article><b>2</b><div><strong>AI prepares admin</strong><small>Draft job, client match and next action.</small></div></article>
+            <article><b>3</b><div><strong>Owner approves</strong><small>No work is created blindly.</small></div></article>
+          </div>
+        </aside>
+
+        <form className="cx-public-request-form" onSubmit={submit}>
+          <h2>Request work</h2>
+
+          <label>
+            Name
+            <input required value={form.name} onChange={(event) => update("name", event.target.value)} />
+          </label>
+
+          <label>
+            Email
+            <input required type="email" value={form.email} onChange={(event) => update("email", event.target.value)} />
+          </label>
+
+          <label>
+            Phone
+            <input value={form.phone} onChange={(event) => update("phone", event.target.value)} />
+          </label>
+
+          <label>
+            Address
+            <input value={form.address} onChange={(event) => update("address", event.target.value)} />
+          </label>
+
+          <label>
+            Service type
+            <select value={form.service_type} onChange={(event) => update("service_type", event.target.value)}>
+              <option value="">Choose service</option>
+              <option value="Lawn care">Lawn care</option>
+              <option value="Property maintenance">Property maintenance</option>
+              <option value="Cleaning">Cleaning</option>
+              <option value="Handyman">Handyman</option>
+              <option value="Plumbing">Plumbing</option>
+              <option value="Electrical">Electrical</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+
+          <label>
+            Preferred date
+            <input value={form.preferred_date} onChange={(event) => update("preferred_date", event.target.value)} placeholder="e.g. Friday morning" />
+          </label>
+
+          <label className="wide">
+            What do you need done?
+            <textarea required value={form.notes} onChange={(event) => update("notes", event.target.value)} />
+          </label>
+
+          <button type="submit" disabled={busy}>{busy ? "Sending..." : "Send request"}</button>
+          {status ? <p className="cx-public-form-status">{status}</p> : null}
+        </form>
+      </section>
+    </main>
+  );
+}
+
+function PublicClientPortalPage({ token }) {
+  const [state, setState] = useState({ loading: true, error: "", portal: null });
+  const [message, setMessage] = useState({ name: "", email: "", message: "" });
+  const [status, setStatus] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPortal() {
+      try {
+        const payload = await publicApiGet(`/public/client-portal/${encodeURIComponent(token)}`);
+        if (!cancelled) {
+          setState({ loading: false, error: "", portal: payload.portal || null });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setState({ loading: false, error: err.message || "Portal link could not load.", portal: null });
+        }
+      }
+    }
+
+    loadPortal();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  const portal = state.portal || {};
+  const record = portal.record || {};
+  const job = portal.job || {};
+  const quote = portal.quote || {};
+  const invoice = portal.invoice || {};
+  const proof = portal.proof || {};
+  const title = record.title || record.name || record.client_name || record.customer_name || quote.title || invoice.invoice_number || job.title || "Client portal";
+
+  function updateMessage(key, value) {
+    setMessage((current) => ({ ...current, [key]: value }));
+  }
+
+  async function sendMessage(event) {
+    event.preventDefault();
+    setStatus("Sending message...");
+
+    try {
+      const result = await publicApiPost(`/public/client-portal/${encodeURIComponent(token)}/message`, message);
+      setStatus(result?.message || "Message sent.");
+      setMessage({ name: "", email: "", message: "" });
+    } catch (err) {
+      setStatus(err.message || "Could not send message.");
+    }
+  }
+
+  async function approve(approvalType) {
+    setStatus("Saving approval...");
+
+    try {
+      const result = await publicApiPost(`/public/client-portal/${encodeURIComponent(token)}/approve`, {
+        approval_type: approvalType,
+        name: message.name,
+        email: message.email,
+        note: message.message,
+      });
+      setStatus(result?.message || "Approval saved.");
+    } catch (err) {
+      setStatus(err.message || "Could not save approval.");
+    }
+  }
+
+  if (state.loading) {
+    return (
+      <main className="cx-public cx-public-landing cx-public-tool-page">
+        <PublicNav />
+        <section className="cx-public-tool-shell"><aside><h1>Loading client portal...</h1></aside></section>
+      </main>
+    );
+  }
+
+  if (state.error) {
+    return (
+      <main className="cx-public cx-public-landing cx-public-tool-page">
+        <PublicNav />
+        <section className="cx-public-tool-shell"><aside><h1>Portal link not found.</h1><p>{state.error}</p></aside></section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="cx-public cx-public-landing cx-public-tool-page" id="top">
+      <PublicNav />
+      <section className="cx-public-tool-shell">
+        <aside>
+          <span>Proof-to-paid client link</span>
+          <h1>{title}</h1>
+          <p>{proof.summary || "Work, quote, invoice and messages are ready for review."}</p>
+
+          <div className="cx-client-portal-actions">
+            {portal.actions?.pay_url ? (
+              <a href={portal.actions.pay_url} target="_blank" rel="noreferrer">Pay now</a>
+            ) : null}
+            {portal.actions?.can_accept_quote ? (
+              <button type="button" onClick={() => approve("quote_accepted")}>Accept quote</button>
+            ) : null}
+            {portal.actions?.can_approve_work ? (
+              <button type="button" onClick={() => approve("work_approved")}>Approve work</button>
+            ) : null}
+          </div>
+        </aside>
+
+        <section className="cx-client-portal-card">
+          <div className="cx-client-portal-grid">
+            <article>
+              <span>Job</span>
+              <strong>{job.title || job.name || record.job_title || "Job details"}</strong>
+              <p>{job.address || job.description || record.address || "No job address shown."}</p>
+            </article>
+
+            <article>
+              <span>Quote</span>
+              <strong>{quote.quote_number || quote.title || "Quote"}</strong>
+              <p>{quote.status || quote.quote_status || "Ready for customer review when attached."}</p>
+            </article>
+
+            <article>
+              <span>Invoice</span>
+              <strong>{invoice.invoice_number || record.invoice_number || "Invoice"}</strong>
+              <p>{invoice.status || invoice.payment_status || record.payment_status || "Payment status will show here."}</p>
+            </article>
+
+            <article>
+              <span>Proof</span>
+              <strong>{Array.isArray(proof.photos) ? proof.photos.length : 0} photos</strong>
+              <p>{proof.summary || "Job proof will show here once attached."}</p>
+            </article>
+          </div>
+
+          <form className="cx-client-portal-message" onSubmit={sendMessage}>
+            <h2>Send a message</h2>
+            <input value={message.name} onChange={(event) => updateMessage("name", event.target.value)} placeholder="Your name" />
+            <input type="email" value={message.email} onChange={(event) => updateMessage("email", event.target.value)} placeholder="Email" />
+            <textarea required value={message.message} onChange={(event) => updateMessage("message", event.target.value)} placeholder="Message or approval note..." />
+            <button type="submit">Send message</button>
+            {status ? <p className="cx-public-form-status">{status}</p> : null}
+          </form>
+        </section>
+      </section>
+    </main>
+  );
+}
+
+
 function Landing({ authMode, setAuthMode, onLogin }) {
   return (
     <main className="cx-public cx-public-landing" id="top">
@@ -860,6 +1165,9 @@ function Landing({ authMode, setAuthMode, onLogin }) {
             </a>
             <a href="#operator" className="cx-secondary">
               See AI Operator
+            </a>
+            <a href="/request" className="cx-secondary">
+              Request work demo
             </a>
           </div>
 
@@ -3606,6 +3914,17 @@ export default function ChurvoxAIShell() {
   }
 
   if (showPublic) {
+    const publicPath = window.location.pathname.replace(/\/+$/, "") || "/";
+
+    if (publicPath === "/request" || publicPath === "/job-request") {
+      return <PublicJobRequestPage />;
+    }
+
+    if (publicPath.startsWith("/portal/")) {
+      const token = decodeURIComponent(publicPath.replace("/portal/", ""));
+      return <PublicClientPortalPage token={token} />;
+    }
+
     return <Landing authMode={authMode} setAuthMode={setAuthMode} onLogin={onLogin} />;
   }
 
