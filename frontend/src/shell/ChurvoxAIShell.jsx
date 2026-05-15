@@ -4278,7 +4278,7 @@ function SmartHubBoxModal({
           <article>
             <span>Safety</span>
             <strong>No auto-send</strong>
-            <small>You stay in control</small>
+            <small>Owner controls decisions</small>
           </article>
         </section>
 
@@ -5294,6 +5294,77 @@ function ChurvoxPlansWorkspace({ planCatalog, onChoosePlan, onOpenSettings }) {
   );
 }
 
+
+
+
+
+function OwnerGuardrailsPanel({ onOpenSettings }) {
+  const canPrepare = [
+    "worker assignment recommendations",
+    "invoice drafts from completed jobs",
+    "quote follow-up drafts",
+    "payment reminder drafts",
+    "client cleanup suggestions",
+    "proof-to-paid summaries",
+  ];
+
+  const mustApprove = [
+    "send customer messages",
+    "assign or reassign workers",
+    "create or send invoices",
+    "change pricing or totals",
+    "sync MYOB/accounting changes",
+    "delete or remove business records",
+  ];
+
+  const neverBlind = [
+    "charge customers",
+    "change payroll",
+    "make tax/legal decisions",
+    "send SMS/email without owner approval",
+    "expose pricing to workers",
+    "show owner-only data to workers",
+  ];
+
+  return (
+    <section className="cx-owner-guardrails">
+      <header>
+        <div>
+          <span>Owner safety</span>
+          <h2>Churvox prepares the work. The owner controls the decision.</h2>
+          <p>
+            This keeps the AI powerful without making it risky. Churvox can prepare admin,
+            but sensitive business actions stay approval-first.
+          </p>
+        </div>
+        <button type="button" onClick={onOpenSettings}>Review guardrails</button>
+      </header>
+
+      <div className="cx-owner-guardrails-grid">
+        <article>
+          <span>Churvox can prepare</span>
+          <ul>
+            {canPrepare.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </article>
+
+        <article className="approval">
+          <span>Always needs owner approval</span>
+          <ul>
+            {mustApprove.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </article>
+
+        <article className="locked">
+          <span>Never happens blindly</span>
+          <ul>
+            {neverBlind.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </article>
+      </div>
+    </section>
+  );
+}
 
 
 
@@ -7403,8 +7474,8 @@ function Workspace({ page, setPage, data }) {
               <p>Approve work, fix blockers, review messages, and keep the day moving from one simple board.</p>
               <div className="cx-smart-hero-pills">
                 <small>Approval-first</small>
-                <small>Nothing sends itself</small>
-                <small>You stay in control</small>
+                <small>Approval-first</small>
+                <small>Owner controls decisions</small>
               </div>
             </>
           ) : (
@@ -7467,6 +7538,10 @@ function Workspace({ page, setPage, data }) {
           onOpenJobs={() => switchPage("jobs")}
           onOpenQuotes={() => switchPage("quotes")}
         />
+      ) : null}
+
+      {(page === "dashboard" || page === "settings") ? (
+        <OwnerGuardrailsPanel onOpenSettings={() => switchPage("settings")} />
       ) : null}
 
       {page === "dashboard" && hubNotice ? (
