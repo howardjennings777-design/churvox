@@ -1654,6 +1654,26 @@ function Workspace({ page, setPage, data }) {
     },
   ];
 
+
+  const dailyBriefItems = [
+    actions.length ? `${actions.length} approval${actions.length === 1 ? "" : "s"}` : "",
+    attentionRows.length ? `${attentionRows.length} blocker${attentionRows.length === 1 ? "" : "s"}` : "",
+    readyInvoiceRows.length ? `${readyInvoiceRows.length} ready to invoice` : "",
+    preparedMessageRows.length ? `${preparedMessageRows.length} message${preparedMessageRows.length === 1 ? "" : "s"} ready` : "",
+    collectRows.length ? `${moneyToCollectLabel} to collect` : "",
+  ].filter(Boolean);
+
+  const dailyBriefText = data?.loading
+    ? "Churvox is checking today’s jobs, invoices, quotes, messages and crew."
+    : data?.error
+      ? data.error
+      : dailyBriefItems.length
+        ? `Churvox found ${dailyBriefItems.join(", ")}. Review the boxes below when you are ready.`
+        : "Churvox has checked the workspace. Nothing urgent needs approval right now.";
+
+  const topBriefBox = hubBoxes.find((box) => Number(box.count) > 0) || hubBoxes[0];
+
+
   const commandSections = page === "dashboard"
     ? hubFocus === "messages"
       ? [["Messages ready", "quotes", preparedMessageRows]]
@@ -1962,6 +1982,25 @@ function Workspace({ page, setPage, data }) {
           </aside>
         ) : null}
       </section>
+
+      {page === "dashboard" ? (
+        <section className="cx-ai-daily-brief">
+          <div>
+            <span>AI Daily Brief</span>
+            <h2>Churvox has checked the day.</h2>
+            <p>{dailyBriefText}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setHubFocus("");
+              setSelectedHubBox(topBriefBox);
+            }}
+          >
+            Review first item
+          </button>
+        </section>
+      ) : null}
 
       <section className="cx-owner-command-strip">
         <article>
