@@ -2040,11 +2040,23 @@ function Workspace({ page, setPage, data }) {
     setSelectedRecord(selection);
   }
 
+  function pageForCommandType(type) {
+    const text = String(type || "").toLowerCase();
+    if (text.includes("invoice") || text.includes("cashflow") || text.includes("payment") || text.includes("collect")) return "invoices";
+    if (text.includes("quote")) return "quotes";
+    if (text.includes("dispatch") || text.includes("job") || text.includes("work")) return "jobs";
+    if (text.includes("crew") || text.includes("worker") || text.includes("team")) return "team";
+    if (text.includes("setup") || text.includes("setting")) return "settings";
+    if (text.includes("message")) return "quotes";
+    return "dashboard";
+  }
+
   function logCommand(type, title, status) {
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    setHubNotice({ type, title, status, time });
+    const targetPage = pageForCommandType(type);
+    setHubNotice({ type, title, status, time, targetPage });
     setApprovalLog((currentLog) => {
-      const nextLog = [{ type, title, status, time }, ...currentLog].slice(0, 8);
+      const nextLog = [{ type, title, status, time, targetPage }, ...currentLog].slice(0, 8);
       saveOwnerCommandLog(nextLog);
       return nextLog;
     });
@@ -2344,7 +2356,21 @@ function Workspace({ page, setPage, data }) {
             <strong>{hubNotice.title}</strong>
             <p>{hubNotice.status} · {hubNotice.time}</p>
           </div>
-          <button type="button" onClick={() => setHubNotice(null)}>Dismiss</button>
+          <div className="cx-smart-hub-notice-actions">
+            {hubNotice.targetPage && hubNotice.targetPage !== "dashboard" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const nextPage = hubNotice.targetPage;
+                  setHubNotice(null);
+                  switchPage(nextPage);
+                }}
+              >
+                Open workspace
+              </button>
+            ) : null}
+            <button type="button" onClick={() => setHubNotice(null)}>Dismiss</button>
+          </div>
         </section>
       ) : null}
 

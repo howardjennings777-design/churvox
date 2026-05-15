@@ -3489,3 +3489,29 @@ button {
   }
 }
 
+
+/* ===== Smart Hub notice actions ===== */
+.cx-smart-hub-notice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.cx-smart-hub-notice-actions button:first-child {
+  color: white;
+  background: linear-gradient(135deg, #102033, #2563eb);
+  box-shadow: 0 12px 28px rgba(37,99,235,0.16);
+}
+
+@media (max-width: 760px) {
+  .cx-smart-hub-notice-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .cx-smart-hub-notice-actions button {
+    width: 100%;
+  }
+}
+
