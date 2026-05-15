@@ -1670,25 +1670,530 @@ function Landing({ authMode, setAuthMode, onLogin }) {
   );
 }
 
-function Shell({ page, setPage, onLogout, data }) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const current = NAV.find(([key]) => key === page) || NAV[0];
+
+function cxWorkerJobId(job = {}) {
+  return String(job.id || job._id || job.job_id || "").trim();
+}
+
+function cxWorkerJobTitle(job = {}, fallback = "Assigned job") {
+  return textValue(job.title, job.job_title, job.name, job.service_type, fallback);
+}
+
+function cxWorkerJobClient(job = {}) {
+  return textValue(job.client_name, job.customer_name, job.client?.name, job.customer?.name, "Client");
+}
+
+function cxWorkerJobAddress(job = {}) {
+  return textValue(job.address, job.job_address, job.service_address, job.location, "Address not set");
+}
+
+function cxWorkerJobStatus(job = {}) {
+  return String(textValue(job.status, job.job_status, job.workflow_status, job.state, "Assigned")).toLowerCase();
+}
+
+function cxWorkerPhotoCount(job = {}) {
+  for (const key of ["photos", "worker_photos", "proof_photos", "job_photos", "images"]) {
+    if (Array.isArray(job[key])) return job[key].length;
+  }
+  const raw = Number(job.photo_count || job.photos_count || job.proof_count || 0);
+  return Number.isFinite(raw) ? raw : 0;
+}
+
+function cxWorkerHasNote(job = {}) {
+  return Boolean(textValue(job.completion_notes, job.worker_notes, job.job_notes, job.notes, job.description));
+}
+
+function cxWorkerRawJobs(data = {}) {
+  const identity = currentUserIdentity();
+  const rawJobs = Array.isArray(data?.raw?.jobs) ? data.raw.jobs : [];
+  const hasAssignmentData = rawJobs.some(jobHasWorkerAssignment);
+
+  if (!rawJobs.length) return [];
+
+  return hasAssignmentData
+    ? rawJobs.filter((job) => jobMatchesWorker(job, identity))
+    : rawJobs;
+}
+
+function cxWorkerJobNeeds(job = {}) {
+  const status = cxWorkerJobStatus(job);
+  const needs = [];
+
+  if (!status.includes("progress") && !status.includes("complete") && !status.includes("done")) {
+    needs.push("Start job");
+  }
+
+  if (!cxWorkerHasNote(job)) {
+    needs.push("Add job note");
+  }
+
+  if (!cxWorkerPhotoCount(job)) {
+    needs.push("Upload proof photo");
+  }
+
+  if (!status.includes("complete") && !status.includes("done")) {
+    needs.push("Complete job");
+  }
+
+  return needs;
+}
+
+async function cxWorkerPostFirst(paths, body = {}) {
+  let lastError = null;
+
+  for (const path of paths.filter(Boolean)) {
+    try {
+      return await apiPost(path, body);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error("Worker action could not be saved.");
+}
+
+function WorkerJobDrawer({ job, onClose, onLocalUpdate }) {
+  const [note, setNote] = useState("");
+  const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState("");
+  const jobId = cxWorkerJobId(job);
+  const title = cxWorkerJobTitle(job);
+  const client = cxWorkerJobClient(job);
+  const address = cxWorkerJobAddress(job);
+  const currentStatus = cxWorkerJobStatus(job);
+  const proofCount = cxWorkerPhotoCount(job);
+  const needs = cxWorkerJobNeeds(job);
+
+  async function runAction(action) {
+    setBusy(action);
+    setStatus("");
+
+    try {
+      if (!jobId) {
+        throw new Error("This job needs to be saved before worker actions can sync.");
+      }
+
+      const paths = {
+        start: [
+          `/jobs/${encodeURIComponent(jobId)}/start`,
+          `/jobs/${encodeURIComponent(jobId)}/start-job`,
+          `/worker/jobs/${encodeURIComponent(jobId)}/start`,
+          `/jobs/${encodeURIComponent(jobId)}/time/start`,
+        ],
+        pause: [
+          `/jobs/${encodeURIComponent(jobId)}/pause`,
+          `/worker/jobs/${encodeURIComponent(jobId)}/pause`,
+          `/jobs/${encodeURIComponent(jobId)}/time/pause`,
+        ],
+        resume: [
+          `/jobs/${encodeURIComponent(jobId)}/resume`,
+          `/worker/jobs/${encodeURIComponent(jobId)}/resume`,
+          `/jobs/${encodeURIComponent(jobId)}/time/resume`,
+        ],
+        complete: [
+          `/jobs/${encodeURIComponent(jobId)}/complete`,
+          `/worker/jobs/${encodeURIComponent(jobId)}/complete`,
+          `/jobs/${encodeURIComponent(jobId)}/status`,
+        ],
+      }[action];
+
+      const payload = {
+        job_id: jobId,
+        status: action === "complete" ? "completed" : action === "start" ? "in_progress" : action,
+        worker_note: note,
+        note,
+        source: "worker_my_run",
+      };
+
+      const result = await cxWorkerPostFirst(paths, payload);
+      setStatus(result?.message || `Saved: ${action}`);
+      onLocalUpdate?.(jobId, action, result);
+    } catch (err) {
+      setStatus(err?.message || "Could not save worker action.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function saveNote() {
+    const cleanNote = String(note || "").trim();
+    if (!cleanNote) {
+      setStatus("Add a note first.");
+      return;
+    }
+
+    setBusy("note");
+    setStatus("");
+
+    try {
+      if (!jobId) {
+        throw new Error("This job needs to be saved before notes can sync.");
+      }
+
+      const result = await cxWorkerPostFirst([
+        `/jobs/${encodeURIComponent(jobId)}/notes`,
+        `/worker/jobs/${encodeURIComponent(jobId)}/notes`,
+        `/jobs/${encodeURIComponent(jobId)}/add-note`,
+      ], {
+        job_id: jobId,
+        note: cleanNote,
+        notes: cleanNote,
+        message: cleanNote,
+        source: "worker_my_run",
+      });
+
+      setStatus(result?.message || "Note saved for owner review.");
+      onLocalUpdate?.(jobId, "note", result);
+    } catch (err) {
+      setStatus(err?.message || "Could not save note.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function uploadPhoto(file) {
+    if (!file) return;
+
+    setBusy("photo");
+    setStatus("");
+
+    try {
+      if (!jobId) {
+        throw new Error("This job needs to be saved before photos can sync.");
+      }
+
+      const token = readToken();
+      const endpoints = [
+        `/jobs/${encodeURIComponent(jobId)}/photos`,
+        `/worker/jobs/${encodeURIComponent(jobId)}/photos`,
+        `/jobs/${encodeURIComponent(jobId)}/upload-photo`,
+      ];
+
+      let lastError = null;
+
+      for (const path of endpoints) {
+        try {
+          const form = new FormData();
+          form.append("file", file);
+          form.append("photo", file);
+          form.append("job_id", jobId);
+          form.append("source", "worker_my_run");
+
+          const res = await fetch(`${API_BASE}${path}`, {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              Accept: "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: form,
+          });
+
+          const payload = await res.json().catch(() => ({}));
+
+          if (!res.ok) {
+            throw new Error(payload.detail || payload.message || `${path} failed`);
+          }
+
+          setStatus(payload?.message || "Photo uploaded for owner approval.");
+          onLocalUpdate?.(jobId, "photo", payload);
+          setBusy("");
+          return;
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      throw lastError || new Error("Photo upload failed.");
+    } catch (err) {
+      setStatus(err?.message || "Could not upload photo.");
+    } finally {
+      setBusy("");
+    }
+  }
 
   return (
-    <main className="cx-app">
+    <div className="cx-worker-drawer-backdrop" onClick={onClose}>
+      <section className="cx-worker-drawer" onClick={(event) => event.stopPropagation()}>
+        <header>
+          <div>
+            <span>Worker run</span>
+            <h2>{title}</h2>
+            <p>{client} · {address}</p>
+          </div>
+          <button type="button" onClick={onClose}>×</button>
+        </header>
+
+        <section className="cx-worker-job-machine">
+          <article>
+            <span>Churvox prepared</span>
+            <strong>Your job flow</strong>
+            <p>Start the job, add proof, complete the work. Churvox turns your notes and photos into owner approval work.</p>
+          </article>
+          <article>
+            <span>Status</span>
+            <strong>{currentStatus.replaceAll("_", " ")}</strong>
+            <p>{proofCount} proof photo{proofCount === 1 ? "" : "s"} saved.</p>
+          </article>
+        </section>
+
+        <section className="cx-worker-needs-panel">
+          <span>Churvox needs from you</span>
+          <div>
+            {needs.map((item) => <b key={item}>{item}</b>)}
+          </div>
+        </section>
+
+        <section className="cx-worker-job-detail-grid">
+          <article>
+            <span>Instructions</span>
+            <p>{textValue(job.description, job.instructions, job.owner_notes, job.notes, "No special instructions added yet.")}</p>
+          </article>
+          <article>
+            <span>Time</span>
+            <p>{textValue(job.scheduled_time, job.start_time, job.scheduled_date, "No time set")}</p>
+          </article>
+        </section>
+
+        <label className="cx-worker-note-box">
+          Add job note for owner approval
+          <textarea
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder="What did you do? Any issue? Anything the owner should know before invoice/proof approval?"
+          />
+        </label>
+
+        <section className="cx-worker-proof-actions">
+          <button type="button" disabled={busy === "start"} onClick={() => runAction("start")}>
+            {busy === "start" ? "Starting..." : "Start job"}
+          </button>
+          <button type="button" disabled={busy === "pause"} onClick={() => runAction("pause")}>
+            Pause
+          </button>
+          <button type="button" disabled={busy === "resume"} onClick={() => runAction("resume")}>
+            Resume
+          </button>
+          <button type="button" disabled={busy === "note"} onClick={saveNote}>
+            Save note
+          </button>
+          <label>
+            Upload photo
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(event) => uploadPhoto(event.target.files?.[0])}
+            />
+          </label>
+          <button type="button" className="complete" disabled={busy === "complete"} onClick={() => runAction("complete")}>
+            {busy === "complete" ? "Completing..." : "Complete job"}
+          </button>
+        </section>
+
+        {status ? <p className="cx-worker-action-status">{status}</p> : null}
+      </section>
+    </div>
+  );
+}
+
+function WorkerJobCard({ job, index, onOpen }) {
+  const title = cxWorkerJobTitle(job, `Job ${index + 1}`);
+  const client = cxWorkerJobClient(job);
+  const address = cxWorkerJobAddress(job);
+  const status = cxWorkerJobStatus(job);
+  const needs = cxWorkerJobNeeds(job);
+  const proofCount = cxWorkerPhotoCount(job);
+
+  return (
+    <button type="button" className={`cx-worker-job-card status-${status.replace(/[^a-z0-9]+/g, "-")}`} onClick={() => onOpen(job)}>
+      <span>{status.includes("complete") ? "Sent to owner" : status.includes("progress") ? "In progress" : "Ready"}</span>
+      <strong>{title}</strong>
+      <small>{client} · {address}</small>
+      <div>
+        <b>{proofCount} photo{proofCount === 1 ? "" : "s"}</b>
+        <em>{needs[0] || "Owner approval next"}</em>
+      </div>
+    </button>
+  );
+}
+
+function WorkerMyRun({ page, setPage, data }) {
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [localEvents, setLocalEvents] = useState([]);
+  const jobs = cxWorkerRawJobs(data);
+  const statusTextFor = (job) => cxWorkerJobStatus(job);
+
+  const activeJobs = jobs.filter((job) => {
+    const status = statusTextFor(job);
+    return status.includes("progress") || status.includes("paused");
+  });
+
+  const readyJobs = jobs.filter((job) => {
+    const status = statusTextFor(job);
+    return !status.includes("complete") && !status.includes("done") && !status.includes("cancel") && !status.includes("progress") && !status.includes("paused");
+  });
+
+  const proofNeededJobs = jobs.filter((job) => {
+    const status = statusTextFor(job);
+    return !status.includes("complete") && (!cxWorkerPhotoCount(job) || !cxWorkerHasNote(job));
+  });
+
+  const completedJobs = jobs.filter((job) => {
+    const status = statusTextFor(job);
+    return status.includes("complete") || status.includes("done") || job.completed === true;
+  });
+
+  const nextJob = activeJobs[0] || readyJobs[0] || jobs[0];
+
+  function rememberLocalUpdate(jobId, action, result) {
+    const title = selectedJob ? cxWorkerJobTitle(selectedJob) : "Job";
+    setLocalEvents((current) => [{
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      title,
+      action,
+      message: result?.message || `${action} saved`,
+      jobId,
+    }, ...current].slice(0, 5));
+  }
+
+  return (
+    <section className="cx-worker-run">
+      <section className="cx-worker-run-hero">
+        <div>
+          <span>My Run</span>
+          <h1>Churvox has prepared your work.</h1>
+          <p>Follow the run, add notes and photos, then complete the job. Your proof feeds the owner approval flow.</p>
+        </div>
+        <aside>
+          <span>Today</span>
+          <strong>{jobs.length}</strong>
+          <p>{activeJobs.length ? "You have a job in progress." : readyJobs.length ? "Your next job is ready." : "No active job waiting."}</p>
+        </aside>
+      </section>
+
+      <section className="cx-worker-run-grid">
+        <article className="cx-worker-panel cx-worker-next-panel">
+          <header>
+            <div>
+              <span>Ready now</span>
+              <h2>{nextJob ? cxWorkerJobTitle(nextJob) : "No assigned job yet"}</h2>
+              <p>{nextJob ? `${cxWorkerJobClient(nextJob)} · ${cxWorkerJobAddress(nextJob)}` : "When the owner assigns work, Churvox will show it here."}</p>
+            </div>
+          </header>
+
+          {nextJob ? (
+            <div className="cx-worker-next-actions">
+              <button type="button" onClick={() => setSelectedJob(nextJob)}>Open job flow</button>
+              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cxWorkerJobAddress(nextJob))}`} target="_blank" rel="noreferrer">
+                Directions
+              </a>
+            </div>
+          ) : null}
+        </article>
+
+        <article className="cx-worker-panel">
+          <header>
+            <span>Churvox needs proof</span>
+            <h2>{proofNeededJobs.length} job{proofNeededJobs.length === 1 ? "" : "s"}</h2>
+            <p>Notes and photos help Churvox prepare invoice/proof work for owner approval.</p>
+          </header>
+        </article>
+
+        <article className="cx-worker-panel">
+          <header>
+            <span>Sent to owner</span>
+            <h2>{completedJobs.length} complete</h2>
+            <p>Completed work is sent back into the owner approval machine.</p>
+          </header>
+        </article>
+      </section>
+
+      <section className="cx-worker-run-board">
+        <div>
+          <span>Ready / In progress</span>
+          <h2>Today’s assigned jobs</h2>
+        </div>
+
+        <div className="cx-worker-job-grid">
+          {[...activeJobs, ...readyJobs].length ? (
+            [...activeJobs, ...readyJobs].map((job, index) => (
+              <WorkerJobCard job={job} index={index} onOpen={setSelectedJob} key={cxWorkerJobId(job) || `${index}-${cxWorkerJobTitle(job)}`} />
+            ))
+          ) : (
+            <EmptyState
+              title="No jobs assigned right now."
+              body="When the owner assigns work, Churvox will prepare your run here."
+            />
+          )}
+        </div>
+      </section>
+
+      <section className="cx-worker-run-board">
+        <div>
+          <span>Completed</span>
+          <h2>Sent for owner approval</h2>
+        </div>
+
+        <div className="cx-worker-job-grid">
+          {completedJobs.length ? completedJobs.map((job, index) => (
+            <WorkerJobCard job={job} index={index} onOpen={setSelectedJob} key={cxWorkerJobId(job) || `done-${index}-${cxWorkerJobTitle(job)}`} />
+          )) : (
+            <EmptyState
+              title="No completed jobs yet."
+              body="Completed jobs will show here after you finish them and send proof back to the owner."
+            />
+          )}
+        </div>
+      </section>
+
+      {localEvents.length ? (
+        <section className="cx-worker-run-log">
+          <span>Worker updates</span>
+          {localEvents.map((event) => (
+            <article key={`${event.time}-${event.title}-${event.action}`}>
+              <b>{event.time}</b>
+              <strong>{event.title}</strong>
+              <small>{event.message}</small>
+            </article>
+          ))}
+        </section>
+      ) : null}
+
+      <WorkerJobDrawer
+        job={selectedJob}
+        onClose={() => setSelectedJob(null)}
+        onLocalUpdate={rememberLocalUpdate}
+      />
+    </section>
+  );
+}
+
+
+
+function Shell({ page, setPage, onLogout, data }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const workerMode = isWorkerSession();
+  const navItems = workerMode ? WORKER_NAV : NAV;
+  const safePage = workerMode && !["dashboard", "jobs"].includes(page) ? "dashboard" : page;
+  const current = navItems.find(([key]) => key === safePage) || navItems[0];
+
+  function choosePage(key) {
+    setPage(key);
+    setMobileOpen(false);
+  }
+
+  return (
+    <main className={`cx-app ${workerMode ? "cx-worker-app" : ""}`}>
       <aside className={`cx-sidebar ${mobileOpen ? "open" : ""}`}>
         <Logo />
 
         <nav className="cx-app-nav">
-          {NAV.map(([key, label, sub]) => (
+          {navItems.map(([key, label, sub]) => (
             <button
               type="button"
               key={key}
-              className={page === key ? "active" : ""}
-              onClick={() => {
-                setPage(key);
-                setMobileOpen(false);
-              }}
+              className={safePage === key ? "active" : ""}
+              onClick={() => choosePage(key)}
             >
               <span>{label}</span>
               <small>{sub}</small>
@@ -1697,9 +2202,17 @@ function Shell({ page, setPage, onLogout, data }) {
         </nav>
 
         <section className="cx-side-operator">
-          <span>AI Operator</span>
-          <strong>{(data?.actions?.length || 0)} actions ready</strong>
-          <p>Prepared for owner approval.</p>
+          <span>{workerMode ? "My Run" : "AI Operator"}</span>
+          <strong>
+            {workerMode
+              ? `${cxWorkerRawJobs(data).length} assigned`
+              : `${(data?.actions?.length || 0)} actions ready`}
+          </strong>
+          <p>
+            {workerMode
+              ? "Churvox prepared your jobs. Add proof and complete the work."
+              : "Prepared for owner approval."}
+          </p>
         </section>
       </aside>
 
@@ -1714,17 +2227,21 @@ function Shell({ page, setPage, onLogout, data }) {
             <span>{current[2]}</span>
           </div>
 
-          <input placeholder="Search jobs, clients, invoices..." />
+          <input placeholder={workerMode ? "Search my assigned jobs..." : "Search jobs, clients, invoices..."} />
 
-          <button type="button" className="cx-top-primary" onClick={() => setPage("jobs")}>
-            Open jobs
+          <button type="button" className="cx-top-primary" onClick={() => choosePage(workerMode ? "dashboard" : "jobs")}>
+            {workerMode ? "Open my run" : "Open jobs"}
           </button>
           <button type="button" className="cx-logout" onClick={onLogout}>
             Logout
           </button>
         </header>
 
-        <Workspace page={page} setPage={setPage} data={data} />
+        {workerMode ? (
+          <WorkerMyRun page={safePage} setPage={setPage} data={data} />
+        ) : (
+          <Workspace page={safePage} setPage={setPage} data={data} />
+        )}
       </section>
     </main>
   );
