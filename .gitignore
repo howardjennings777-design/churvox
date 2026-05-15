@@ -570,3 +570,25 @@ test-results/
 playwright-report/
 
 frontend/playwright/.cache/
+
+# Churvox cleanup ignores
+Thumbs.db
+*.log
+*.tmp
+*.temp
+*.orig
+*.rej
+*.swp
+*.swo
+**/__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+coverage/
+.nyc_output/
+frontend/build/
+frontend/.cache/
+frontend/coverage/
+!.env.example
