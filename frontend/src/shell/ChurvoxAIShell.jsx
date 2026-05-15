@@ -2357,25 +2357,27 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
 
 function OwnerCommandRow({ item, index, page, group, onOpen }) {
   const row = rowText(item, index, group);
+  const context = cxPreparedActionContext({ item, row, boxKey: page, group });
 
   return (
     <button
       type="button"
-      className="cx-command-row"
+      className={`cx-command-row cx-command-row-ai cx-command-row-${context.mode}`}
       onClick={() => onOpen({
         item,
         page,
         group,
         label: row.title,
-        recommendation: page === "dashboard" || page === "queue"
-          ? "Open this in the hub, check the detail, edit the wording, then approve or jump to the full workspace."
-          : "Open this record in a pop-up first. Use the full workspace only when you need deeper controls."
+        recommendation: `${context.found} ${context.prepared}`,
       })}
     >
       <span>{row.lead}</span>
       <strong>{row.title}</strong>
-      <small>{row.detail}</small>
-      <b>{row.status}</b>
+      <small>{context.found}</small>
+      <div className="cx-command-row-ai-mini">
+        <b>{context.confidenceLabel}</b>
+        <em>{context.prepared}</em>
+      </div>
     </button>
   );
 }
@@ -2608,6 +2610,239 @@ function cxInvoiceClientFromDraftOrItem(draft = {}, item = {}, title = "") {
   }
 
   return "Client name needed";
+}
+
+
+
+function cxPreparedActionContext({ item = {}, row = {}, boxKey = "", group = "", controlDraft = {} } = {}) {
+  const rowLead = textValue(row.lead, item.type, item.kind, group, boxKey, "AI action");
+  const rowTitle = textValue(row.title, item.title, item.name, item.client_name, item.customer_name, "Owner action");
+  const rowDetail = textValue(row.detail, item.message, item.body, item.description, item.notes, "");
+  const rowStatus = textValue(row.status, item.status, item.invoice_status, item.payment_status, "Review");
+  const allText = `${boxKey} ${group} ${rowLead} ${rowTitle} ${rowDetail} ${rowStatus} ${item.source_type || ""}`.toLowerCase();
+
+  function pick(...values) {
+    for (const value of values) {
+      if (value !== undefined && value !== null && String(value).trim()) return String(value).trim();
+    }
+    return "";
+  }
+
+  function money(itemValue = {}) {
+    if (typeof moneyValue === "function") {
+      const formatted = moneyValue(itemValue);
+      if (formatted) return formatted;
+    }
+
+    const raw = pick(itemValue.total, itemValue.amount, itemValue.balance, itemValue.price, itemValue.job_price, itemValue.fixed_price, itemValue.invoice_amount);
+    return raw ? `$${String(raw).replace(/^\$/, "")}` : "";
+  }
+
+  function photoCount(itemValue = {}) {
+    for (const key of ["photos", "worker_photos", "proof_photos", "job_photos", "images"]) {
+      if (Array.isArray(itemValue[key])) return itemValue[key].length;
+    }
+    const raw = Number(itemValue.photo_count || itemValue.photos_count || itemValue.proof_count || 0);
+    return Number.isFinite(raw) ? raw : 0;
+  }
+
+  function contactState(itemValue = {}) {
+    const email = pick(itemValue.client_email, itemValue.customer_email, itemValue.email);
+    const phone = pick(itemValue.client_phone, itemValue.customer_phone, itemValue.phone);
+    if (email && phone) return "client email and phone";
+    if (email) return "client email";
+    if (phone) return "client phone";
+    return "missing client contact";
+  }
+
+  const client = pick(
+    controlDraft.invoiceClientName,
+    item.client_name,
+    item.customer_name,
+    item.client?.name,
+    item.customer?.name,
+    item.name,
+    rowTitle.includes(" for ") ? rowTitle.split(" for ").pop() : "",
+    "Client"
+  );
+
+  const address = pick(item.address, item.job_address, item.service_address, item.location);
+  const worker = pick(item.recommended_worker_name, item.assigned_worker_name, item.worker_name, item.worker, controlDraft.workerChoice);
+  const service = pick(item.service_type, item.job_type, item.trade, item.title, item.name, rowTitle);
+  const amount = pick(controlDraft.invoiceAmount ? `$${controlDraft.invoiceAmount}` : "", money(item), item.invoice_amount ? `$${item.invoice_amount}` : "");
+  const due = pick(controlDraft.invoiceDueDate, item.due_date, item.payment_due_date, item.next_due_date);
+  const notes = pick(item.completion_notes, item.worker_notes, item.job_notes, item.notes, item.message, rowDetail);
+  const photos = photoCount(item);
+
+  let mode = "review";
+  if (allText.includes("dispatch") || allText.includes("assign") || allText.includes("unassigned")) mode = "dispatch";
+  else if (allText.includes("invoice") || allText.includes("completed job") || allText.includes("proof-to-paid") || allText.includes("proof")) mode = "invoice";
+  else if (allText.includes("cashflow") || allText.includes("payment") || allText.includes("overdue") || allText.includes("collect")) mode = "cashflow";
+  else if (allText.includes("quote") || allText.includes("follow-up") || allText.includes("follow up")) mode = "quote";
+  else if (allText.includes("client cleanup") || allText.includes("missing client") || allText.includes("duplicate")) mode = "client";
+  else if (allText.includes("setup")) mode = "setup";
+  else if (allText.includes("request")) mode = "request";
+  else if (allText.includes("recurring")) mode = "recurring";
+  else if (allText.includes("template")) mode = "template";
+  else if (allText.includes("worker") || allText.includes("crew") || allText.includes("team")) mode = "crew";
+
+  const base = {
+    mode,
+    found: `Churvox found "${rowTitle}" and prepared it for owner review.`,
+    checked: [
+      "source record",
+      "status",
+      "owner approval requirement",
+    ],
+    prepared: rowDetail || "A reviewable owner action is ready.",
+    approvalPreview: "Approving saves the owner decision and logs the action.",
+    missing: [],
+    confidenceLabel: "Owner check",
+  };
+
+  if (mode === "dispatch") {
+    base.found = `Churvox found an unassigned job: ${service}${address ? ` at ${address}` : ""}.`;
+    base.checked = [
+      "job status",
+      "assigned worker field",
+      "team list",
+      worker ? `recommended/selected worker: ${worker}` : "worker still needs selection",
+      address ? `job location: ${address}` : "job location not fully set",
+    ];
+    base.prepared = worker
+      ? `Prepared a worker assignment for ${worker} with job instructions ready to edit.`
+      : "Prepared the dispatch decision, but the owner needs to choose the worker before approval.";
+    base.approvalPreview = "Approving assigns the worker, updates the job, and keeps the action in the approval log.";
+    if (!worker) base.missing.push("Choose worker before approving");
+    base.confidenceLabel = worker ? "Ready" : "Needs worker";
+  }
+
+  if (mode === "invoice") {
+    const invoiceText = pick(controlDraft.invoiceDescription, item.invoice_description, item.ai_invoice_description, notes, rowDetail);
+    base.found = `Churvox found invoice-ready work for ${client}${address ? ` at ${address}` : ""}.`;
+    base.checked = [
+      "completed job / invoice source",
+      contactState(item),
+      photos ? `${photos} proof photo${photos === 1 ? "" : "s"}` : "no proof photos found",
+      notes ? "worker/job notes found" : "no completion notes found",
+      amount ? `amount source: ${amount}` : "amount needs owner input",
+    ];
+    base.prepared = invoiceText || `Prepared invoice wording for ${service}.`;
+    base.approvalPreview = "Approving creates or updates the draft invoice from the job proof, notes and owner-edited wording.";
+    if (!amount) base.missing.push("Invoice amount");
+    if (!pick(item.client_email, item.customer_email, item.email)) base.missing.push("Client email may need checking");
+    base.confidenceLabel = amount ? "Ready" : "Needs amount";
+  }
+
+  if (mode === "cashflow") {
+    base.found = `Churvox found a payment follow-up for ${rowTitle}.`;
+    base.checked = [
+      "invoice/payment status",
+      amount ? `amount: ${amount}` : "amount needs checking",
+      due ? `due date: ${due}` : "due date not found",
+      contactState(item),
+    ];
+    base.prepared = pick(controlDraft.reminderMessage, item.message, rowDetail, `A friendly payment reminder for ${client}.`);
+    base.approvalPreview = "Approving saves the reminder draft or marks it ready. Nothing sends without owner approval.";
+    if (!pick(item.client_email, item.customer_email, item.email, item.phone)) base.missing.push("Client contact");
+    base.confidenceLabel = allText.includes("overdue") ? "Urgent" : "Ready";
+  }
+
+  if (mode === "quote") {
+    base.found = `Churvox found a quote follow-up opportunity for ${client}.`;
+    base.checked = [
+      "quote status",
+      amount ? `quote value: ${amount}` : "quote value not set",
+      pick(item.sent_at, item.created_at, item.updated_at) ? "quote age/date" : "quote date not found",
+      contactState(item),
+    ];
+    base.prepared = pick(controlDraft.quoteMessage, item.message, rowDetail, `A follow-up message for ${client}.`);
+    base.approvalPreview = "Approving saves the follow-up draft and updates the quote follow-up workflow.";
+    base.confidenceLabel = "Ready";
+  }
+
+  if (mode === "client") {
+    base.found = `Churvox found client data that needs cleanup for ${client}.`;
+    base.checked = [
+      "client name",
+      pick(item.email) ? "email present" : "email missing",
+      pick(item.phone) ? "phone present" : "phone missing",
+      pick(item.address) ? "address present" : "address missing",
+    ];
+    base.prepared = "Prepared a cleanup action so future jobs, invoices and reminders do not rely on guessed details.";
+    base.approvalPreview = "Approving or resolving updates the client cleanup state and keeps the owner decision logged.";
+    ["email", "phone", "address"].forEach((field) => {
+      if (!pick(item[field])) base.missing.push(field);
+    });
+    base.confidenceLabel = "Needs info";
+  }
+
+  if (mode === "setup") {
+    base.found = `Churvox found setup context that will improve the AI machine: ${rowTitle}.`;
+    base.checked = [
+      "business setup",
+      "worker/client readiness",
+      "AI recommendation quality",
+    ];
+    base.prepared = rowDetail || "Prepared the next setup improvement so Churvox can make better decisions.";
+    base.approvalPreview = "Resolving this improves the data Churvox uses to prepare future actions.";
+    base.confidenceLabel = "Setup";
+  }
+
+  if (mode === "request") {
+    base.found = `Churvox found a customer request: ${rowTitle}.`;
+    base.checked = [
+      "customer request details",
+      address ? `address: ${address}` : "address needs checking",
+      contactState(item),
+      notes ? "request notes found" : "request notes missing",
+    ];
+    base.prepared = "Prepared a draft job path from this request so the owner can approve without starting from a blank form.";
+    base.approvalPreview = "Approving creates a draft job from the request and logs the owner action.";
+    base.confidenceLabel = "Ready";
+  }
+
+  if (mode === "recurring") {
+    base.found = `Churvox found recurring work due: ${rowTitle}.`;
+    base.checked = [
+      due ? `next due date: ${due}` : "due date needs checking",
+      "repeat schedule",
+      "job template/source",
+    ];
+    base.prepared = "Prepared the next recurring job generation step for owner approval.";
+    base.approvalPreview = "Approving generates the next job from this recurring schedule.";
+    base.confidenceLabel = "Ready";
+  }
+
+  if (mode === "template") {
+    base.found = `Churvox found a service template ready to use: ${rowTitle}.`;
+    base.checked = [
+      "template name",
+      "default job notes",
+      "proof/invoice wording",
+    ];
+    base.prepared = "Prepared a job creation form from this template so the owner only fills the missing client/site details.";
+    base.approvalPreview = "Approving creates a job from the selected service template.";
+    base.confidenceLabel = "Template";
+  }
+
+  if (mode === "crew") {
+    base.found = `Churvox found team context for ${rowTitle}.`;
+    base.checked = [
+      pick(item.role) ? `role: ${item.role}` : "worker role",
+      pick(item.region, item.service_area, item.area) ? `area: ${pick(item.region, item.service_area, item.area)}` : "worker area missing",
+      pick(item.email, item.phone) ? "contact details" : "worker contact missing",
+      "assignment readiness",
+    ];
+    base.prepared = "Prepared worker context for assignment decisions and crew planning.";
+    base.approvalPreview = "Reviewing keeps worker data ready for better dispatch decisions.";
+    base.confidenceLabel = "Crew";
+  }
+
+  base.checked = base.checked.filter(Boolean).slice(0, 5);
+  base.missing = [...new Set(base.missing.filter(Boolean))];
+
+  return base;
 }
 
 
@@ -3273,6 +3508,16 @@ function SmartHubBoxModal({
     setEditingSelection(null);
   }
 
+  const editingContext = editingSelection
+    ? cxPreparedActionContext({
+        item: editingSelection.item || {},
+        row: rowText(editingSelection.item, 0, editingSelection.label || "Smart Hub item"),
+        boxKey: editingSelection.hubBoxKey || box.key,
+        group: editingSelection.group || box.title,
+        controlDraft: editingDraft,
+      })
+    : null;
+
   return (
     <div className="cx-smart-modal-backdrop" onClick={onClose}>
       <section
@@ -3335,6 +3580,13 @@ function SmartHubBoxModal({
               recommendation: reasonFor(row),
             };
             const isApproved = approved[row.title];
+            const context = cxPreparedActionContext({
+              item,
+              row,
+              boxKey: box.key,
+              group: actionGroup,
+              controlDraft,
+            });
 
             return (
               <article className={`cx-smart-modal-item ${itemKindClass}`} key={`${box.key}-${index}-${row.title}`}>
@@ -3350,11 +3602,38 @@ function SmartHubBoxModal({
                 </div>
 
                 <aside>
-                  <section className="cx-ai-prepared-brief">
-                    <span>Prepared action</span>
+                  <section className="cx-ai-prepared-brief cx-ai-prepared-machine">
+                    <span>Churvox prepared</span>
                     <h4>{primaryActionLabel(row)}</h4>
-                    <p>{reasonFor(row)}</p>
-                    <small>Review the prepared details in this Smart Hub pop-up. No page jump needed.</small>
+                    <p>{context.found}</p>
+
+                    <div className="cx-ai-context-grid">
+                      <article>
+                        <b>Checked</b>
+                        <ul>
+                          {context.checked.map((point) => (
+                            <li key={point}>{point}</li>
+                          ))}
+                        </ul>
+                      </article>
+                      <article>
+                        <b>Prepared</b>
+                        <p>{context.prepared}</p>
+                      </article>
+                      <article>
+                        <b>Approval preview</b>
+                        <p>{context.approvalPreview}</p>
+                      </article>
+                    </div>
+
+                    {context.missing.length ? (
+                      <div className="cx-ai-missing-strip">
+                        <b>Needs owner input</b>
+                        <span>{context.missing.join(" · ")}</span>
+                      </div>
+                    ) : (
+                      <small>Ready for owner review. No page jump needed.</small>
+                    )}
                   </section>
 
                   <div className="cx-ai-prepared-actions">
@@ -3401,6 +3680,31 @@ function SmartHubBoxModal({
               </div>
               <button type="button" onClick={() => setEditingSelection(null)}>Back</button>
             </header>
+
+            {editingContext ? (
+              <section className="cx-ai-approval-preview-machine">
+                <article>
+                  <span>What Churvox found</span>
+                  <p>{editingContext.found}</p>
+                </article>
+                <article>
+                  <span>What Churvox checked</span>
+                  <ul>
+                    {editingContext.checked.map((point) => (
+                      <li key={point}>{point}</li>
+                    ))}
+                  </ul>
+                </article>
+                <article>
+                  <span>What Churvox prepared</span>
+                  <p>{editingContext.prepared}</p>
+                </article>
+                <article>
+                  <span>When approved</span>
+                  <p>{editingContext.approvalPreview}</p>
+                </article>
+              </section>
+            ) : null}
 
             {editingNeedsInvoiceDraft() ? (
               <div className="cx-edit-invoice-draft cx-edit-invoice-draft-real cx-invoice-owner-preview-wrap">
@@ -5209,10 +5513,22 @@ function Workspace({ page, setPage, data }) {
                   const isApproved = approved[item.title];
 
                   return (
-                    <article className={`cx-work-action ${item.tone || "blue"}`} key={item.title}>
+                    <article className={`cx-work-action ${item.tone || "blue"} cx-work-action-ai-machine`} key={item.title}>
                       <span>{item.type}</span>
                       <h3>{item.title}</h3>
                       <p>{item.body}</p>
+                      <section className="cx-work-action-context">
+                        {(() => {
+                          const row = rowText(item, 0, item.type || "AI action");
+                          const context = cxPreparedActionContext({ item, row, boxKey: "approvals", group: item.type });
+                          return (
+                            <>
+                              <b>{context.confidenceLabel}</b>
+                              <small>{context.prepared}</small>
+                            </>
+                          );
+                        })()}
+                      </section>
                       {isApproved ? <small className="cx-approved-note">Approved in this hub</small> : null}
                       <div>
                         <button
