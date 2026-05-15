@@ -2187,11 +2187,15 @@ function SmartHubActionControl({ boxKey, row, draft, onChange, team = [] }) {
   if (mode === "invoice") {
     return (
       <section className="cx-smart-control-panel">
-        <header><span>Invoice draft</span><h4>Approve invoice draft here</h4></header>
+        <header>
+          <span>Invoice draft</span>
+          <h4>AI prepared the invoice draft</h4>
+          <p>Churvox fills this from job price, invoice total, notes, proof, and completed work details where available.</p>
+        </header>
         <div className="cx-smart-control-grid">
-          <label>Amount<input value={draft.invoiceAmount} onChange={(e) => onChange("invoiceAmount", e.target.value)} placeholder="e.g. 250.00" /></label>
+          <label>Amount<input value={draft.invoiceAmount} onChange={(e) => onChange("invoiceAmount", e.target.value)} placeholder="Add a job price to auto-fill this" /></label>
           <label>Status<select value={draft.invoiceStatus} onChange={(e) => onChange("invoiceStatus", e.target.value)}><option value="draft">Save as draft</option><option value="ready">Ready for review</option><option value="approved">Owner approved</option></select></label>
-          <label className="wide">Invoice description<textarea value={draft.invoiceDescription} onChange={(e) => onChange("invoiceDescription", e.target.value)} placeholder="Invoice description based on job notes, photos, time and pricing..." /></label>
+          <label className="wide">AI invoice description<textarea value={draft.invoiceDescription} onChange={(e) => onChange("invoiceDescription", e.target.value)} placeholder="AI invoice wording from job notes, proof photos, time, service details and pricing..." /></label>
           <label className="wide">Owner invoice note<textarea value={draft.ownerNote} onChange={(e) => onChange("ownerNote", e.target.value)} placeholder="Anything to adjust before saving..." /></label>
         </div>
       </section>
@@ -2413,9 +2417,9 @@ function SmartHubBoxModal({
       customerMessage: `Hi, quick update about ${title}.`,
       workerChoice: "",
       conflictStatus: "clear",
-      invoiceAmount: "",
-      invoiceStatus: "draft",
-      invoiceDescription: detail || `Work completed for ${title}.`,
+      invoiceAmount: row?.invoice_amount || row?.amount || row?.total || row?.price || row?.job_price || "",
+      invoiceStatus: row?.invoice_status || row?.status || "draft",
+      invoiceDescription: row?.invoice_description || row?.description || detail || `Work completed for ${title}.`,
       collectAction: "friendly_reminder",
       paymentStatus: "unpaid",
       reminderMessage: "Hi, just a friendly reminder that this invoice is still showing as unpaid. Please let us know if you need anything from us.",
