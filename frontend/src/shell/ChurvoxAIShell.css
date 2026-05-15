@@ -7585,3 +7585,51 @@ button.primary,
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ===== Real invoice approval draft layout ===== */
+.cx-edit-invoice-draft-real {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  padding: 16px 22px !important;
+}
+
+.cx-edit-invoice-draft-real .wide,
+.cx-edit-invoice-draft-real .cx-edit-invoice-preview-card {
+  grid-column: 1 / -1 !important;
+}
+
+.cx-edit-invoice-draft-real .cx-edit-invoice-preview-card {
+  padding: 14px !important;
+  border-radius: 18px !important;
+}
+
+.cx-edit-invoice-draft-real .cx-edit-invoice-preview-card h4 {
+  font-size: 22px !important;
+  margin: 5px 0 6px !important;
+}
+
+.cx-edit-invoice-draft-real .cx-edit-invoice-preview-card p {
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+}
+
+.cx-edit-invoice-draft-real input,
+.cx-edit-invoice-draft-real select {
+  min-height: 40px !important;
+}
+
+.cx-edit-invoice-draft-real textarea {
+  min-height: 78px !important;
+  max-height: 140px !important;
+}
+
+.cx-smart-modal-edit > footer {
+  padding-top: 10px !important;
+}
+
+@media (max-width: 760px) {
+  .cx-edit-invoice-draft-real {
+    grid-template-columns: 1fr !important;
+    padding: 14px !important;
+  }
+}

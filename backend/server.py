@@ -14332,7 +14332,10 @@ async def approve_owner_invoice_command(payload: dict, current_user: dict = Depe
     })
 
     client_name = (
-        job.get("client_name")
+        payload.get("invoice_client_name")
+        or draft.get("invoiceClient")
+        or draft.get("invoice_client_name")
+        or job.get("client_name")
         or job.get("customer_name")
         or draft.get("client_name")
         or draft.get("customer_name")
@@ -14374,6 +14377,14 @@ async def approve_owner_invoice_command(payload: dict, current_user: dict = Depe
         "title": draft.get("title") or f"Invoice draft for {job.get('title') or job.get('name') or 'completed job'}",
         "description": description,
         "notes": description,
+        "due_date": payload.get("invoice_due_date") or draft.get("invoiceDueDate") or draft.get("due_date"),
+        "line_item": payload.get("invoice_line_item") or draft.get("invoiceLineItem") or draft.get("line_item") or draft.get("title"),
+        "items": [{
+            "description": payload.get("invoice_line_item") or draft.get("invoiceLineItem") or draft.get("line_item") or draft.get("title") or description,
+            "amount": amount,
+            "quantity": 1,
+            "unit_price": amount,
+        }],
         "amount": amount,
         "total": amount,
         "balance": amount,
