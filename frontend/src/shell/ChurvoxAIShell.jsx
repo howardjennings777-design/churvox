@@ -1273,6 +1273,16 @@ function SmartHubBoxModal({
     setup: "These setup checks help Churvox make better AI decisions for your business.",
   }[box.key] || "Review the items Churvox found.";
 
+  const modalCount = String(box.count || "").includes("$") || String(box.count || "").includes("%")
+    ? box.count
+    : rows.length;
+
+  const modalCountLabel = String(box.count || "").includes("$") || String(box.count || "").includes("%")
+    ? box.label
+    : rows.length === 1
+      ? "item remaining"
+      : "items remaining";
+
   function riskFor(row) {
     const text = `${row.lead} ${row.title} ${row.detail} ${row.status}`.toLowerCase();
     if (text.includes("missing") || text.includes("failed")) return "Missing info";
@@ -1411,8 +1421,8 @@ function SmartHubBoxModal({
         <section className="cx-smart-modal-summary">
           <article>
             <span>Found</span>
-            <strong>{box.count}</strong>
-            <small>{box.label}</small>
+            <strong>{modalCount}</strong>
+            <small>{modalCountLabel}</small>
           </article>
           <article>
             <span>Mode</span>
