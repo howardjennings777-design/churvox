@@ -50,7 +50,7 @@ export default function LoginPage() {
           <div className="flex flex-col items-center text-center mb-7">
             <div className="mb-3"><ChurvoxLogo size="lg" /></div>
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#dbe7ff] text-[#1d4ed8] text-[11px] font-bold uppercase tracking-wider">
-              <Sparkles className="h-3 w-3" /> AI Work Queue
+              <Sparkles className="h-3 w-3" /> Smart Hub
             </span>
             <h1 className="font-heading text-[28px] font-bold text-[#0d1b34] mt-4 leading-tight tracking-tight">Welcome back to Churvox</h1>
             <p className="text-[14px] text-[#5b6c87] mt-2">

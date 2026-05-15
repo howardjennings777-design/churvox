@@ -4491,3 +4491,283 @@ body:has(.cx-public-landing) .ai-action-dock {
 .cx-public-landing .cx-ai-status {
   margin-bottom: 16px;
 }
+
+
+/* ===== Churvox public polish: items 2, 3, 4 ===== */
+
+/* Remove white/pasted logo backing on public page. */
+.cx-public-landing .cx-logo-link,
+.cx-public-landing .cx-logo,
+.cx-public-landing .cx-logo > div:not(.cx-logo-mark) {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.cx-public-landing .cx-logo-link {
+  display: inline-flex;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+/* Item 2: product story leads, login supports it. */
+.cx-public-landing .cx-hero {
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.6fr);
+  gap: clamp(18px, 3vw, 36px);
+}
+
+.cx-public-landing .cx-hero-copy {
+  position: relative;
+  overflow: hidden;
+  min-height: 690px;
+}
+
+.cx-public-landing .cx-hero-copy::after {
+  content: "";
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  right: -90px;
+  bottom: -110px;
+  border-radius: 48%;
+  background:
+    radial-gradient(circle at 36% 34%, rgba(103,232,249,0.34), transparent 30%),
+    conic-gradient(from 180deg, rgba(37,99,235,0.12), rgba(20,184,166,0.16), rgba(37,99,235,0.06), rgba(37,99,235,0.12));
+  opacity: 0.76;
+  pointer-events: none;
+}
+
+.cx-public-landing .cx-hero-copy > * {
+  position: relative;
+  z-index: 1;
+}
+
+.cx-public-landing .cx-hero-text {
+  max-width: 720px;
+  font-size: 19px;
+  color: #415a73;
+}
+
+.cx-public-landing .cx-hero-side {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.cx-public-landing .cx-auth-card {
+  margin-top: 18px;
+  transform: scale(0.96);
+  transform-origin: top right;
+  background: rgba(255,255,255,0.48);
+  border-color: rgba(255,255,255,0.64);
+  box-shadow:
+    0 22px 58px rgba(16,32,51,0.09),
+    inset 0 1px 0 rgba(255,255,255,0.76);
+}
+
+.cx-public-landing .cx-auth-head h2 {
+  font-size: 26px;
+}
+
+.cx-public-landing .cx-auth-orb {
+  width: 46px;
+  height: 46px;
+  border-radius: 17px;
+}
+
+.cx-public-control-card {
+  border: 1px solid rgba(255,255,255,0.72);
+  border-radius: 30px;
+  padding: 20px;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(103,232,249,0.22), transparent 34%),
+    linear-gradient(145deg, rgba(255,255,255,0.64), rgba(239,247,255,0.44));
+  box-shadow:
+    0 22px 58px rgba(16,32,51,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.78);
+  backdrop-filter: blur(20px);
+}
+
+.cx-public-control-card > span {
+  display: block;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cx-public-control-card h3 {
+  margin: 8px 0 16px;
+  color: #102033;
+  font-size: 24px;
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+  font-weight: 950;
+}
+
+.cx-public-control-card div {
+  display: grid;
+  gap: 10px;
+}
+
+.cx-public-control-card article {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.54);
+  border: 1px solid rgba(37,99,235,0.08);
+}
+
+.cx-public-control-card b {
+  display: inline-flex;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 8px 10px;
+  color: white;
+  background: linear-gradient(135deg, #102033, #2563eb);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.cx-public-control-card p {
+  margin: 0;
+  color: #526b82;
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+/* Item 3: cards stay clean, no repeated ribbon on every card. */
+.cx-public-landing .cx-ai-card::before {
+  content: none !important;
+  display: none !important;
+}
+
+.cx-public-landing .cx-ai-card {
+  padding-top: 20px;
+}
+
+.cx-public-landing .cx-ai-status {
+  margin-bottom: 16px;
+}
+
+.cx-public-landing .cx-ai-card h3 {
+  font-size: 21px;
+}
+
+/* Item 4: stronger Inside Churvox story. */
+.cx-public-landing .cx-features {
+  align-items: stretch;
+  overflow: hidden;
+  position: relative;
+}
+
+.cx-public-landing .cx-features::after {
+  content: "";
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  right: -80px;
+  bottom: -100px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(103,232,249,0.22), transparent 62%);
+  pointer-events: none;
+}
+
+.cx-public-landing .cx-features > * {
+  position: relative;
+  z-index: 1;
+}
+
+.cx-features-story {
+  max-width: 470px;
+  margin: 14px 0 0;
+  color: #526b82;
+  font-size: 15px;
+  line-height: 1.62;
+  font-weight: 820;
+}
+
+.cx-flowline {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.cx-flowline article {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.58);
+  border: 1px solid rgba(37,99,235,0.10);
+}
+
+.cx-flowline b {
+  display: inline-flex;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 8px 10px;
+  color: white;
+  background: linear-gradient(135deg, #102033, #2563eb);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.cx-flowline small {
+  color: #526b82;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.cx-public-landing .cx-feature-list article {
+  position: relative;
+  min-height: 70px;
+  padding-left: 46px;
+}
+
+.cx-public-landing .cx-feature-list article::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #67e8f9, #2563eb);
+  box-shadow: 0 0 18px rgba(37,99,235,0.34);
+}
+
+@media (max-width: 980px) {
+  .cx-public-landing .cx-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-public-landing .cx-auth-card {
+    transform: none;
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 620px) {
+  .cx-public-landing .cx-hero-copy {
+    min-height: auto;
+  }
+
+  .cx-public-control-card article,
+  .cx-flowline article {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-public-control-card b,
+  .cx-flowline b {
+    width: fit-content;
+  }
+}
+

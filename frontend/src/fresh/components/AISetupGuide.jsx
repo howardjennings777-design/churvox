@@ -5,8 +5,8 @@ import "./aiSetupGuide.css";
 const PAGE_TIPS = {
   "/dashboard": {
     title: "Start in Smart Hub",
-    body: "This is the daily command centre. Open the AI Work Queue to review what Churvox prepared.",
-    action: "Open AI Work Queue",
+    body: "This is the daily command centre. Open the Smart Hub to review what Churvox prepared.",
+    action: "Open Smart Hub",
     href: "/ai-approvals",
   },
   "/ai-approvals": {
@@ -36,7 +36,7 @@ const PAGE_TIPS = {
   "/jobs": {
     title: "Create jobs",
     body: "Once jobs exist, AI can prepare worker assignments, reminders and invoice drafts.",
-    action: "Open AI Work Queue",
+    action: "Open Smart Hub",
     href: "/ai-approvals",
   },
   "/proof-to-paid": {
@@ -54,7 +54,7 @@ const PAGE_TIPS = {
   "/invoices": {
     title: "Keep cashflow moving",
     body: "AI can prepare invoice reminders and draft messages for owner approval.",
-    action: "Open AI Work Queue",
+    action: "Open Smart Hub",
     href: "/ai-approvals",
   },
   "/onboarding": {
@@ -90,7 +90,7 @@ export default function AISetupGuide() {
 
     return {
       title: "Need help?",
-      body: "Churvox can guide the next step. Start with setup, imports, then AI Work Queue.",
+      body: "Churvox can guide the next step. Start with setup, imports, then Smart Hub.",
       action: "Open setup",
       href: "/onboarding",
     };

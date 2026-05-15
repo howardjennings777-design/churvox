@@ -3,12 +3,12 @@ import { useState } from "react";
 import "../pages/FirstLoginGuide.css";
 
 const setupByIndustry = {
-  "Lawn care": ["Import clients", "Add workers", "Create recurring lawn jobs", "Try Proof-to-Paid", "Review AI Work Queue"],
+  "Lawn care": ["Import clients", "Add workers", "Create recurring lawn jobs", "Try Proof-to-Paid", "Review Smart Hub"],
   "Property maintenance": ["Import landlords/properties", "Add workers", "Create first maintenance job", "Upload proof photos", "Create draft invoice"],
   Cleaning: ["Import clients", "Add cleaners", "Create recurring cleaning jobs", "Capture completion notes", "Review invoice actions"],
   Landscaping: ["Add clients", "Add crew", "Create first project job", "Track proof photos", "Prepare quote follow-up"],
   Handyman: ["Add clients", "Add workers", "Create first repair job", "Capture notes/photos", "Prepare invoice"],
-  Other: ["Add clients", "Add team", "Create first job", "Try AI Work Queue", "Prepare first invoice"],
+  Other: ["Add clients", "Add team", "Create first job", "Try Smart Hub", "Prepare first invoice"],
 };
 
 export default function FirstLoginGuide({ onNav, onCreate }) {
@@ -30,7 +30,7 @@ export default function FirstLoginGuide({ onNav, onCreate }) {
         <h2>Let’s shape Churvox around your {industry.toLowerCase()} business.</h2>
         <span>Start with the basics. Churvox works best once clients, workers and the first jobs are in place.</span>
         <div className="firstguide-steps">{steps.map((step, index) => <article key={step}><b>{index + 1}</b><strong>{step}</strong></article>)}</div>
-        <footer><button onClick={() => { onCreate?.("client"); done(); }}>Add client</button><button onClick={() => { onCreate?.("job"); done(); }}>Create job</button><button onClick={() => { onNav?.("queue"); done(); }}>Open AI Work Queue</button><button className="secondary" onClick={done}>Skip for now</button></footer>
+        <footer><button onClick={() => { onCreate?.("client"); done(); }}>Add client</button><button onClick={() => { onCreate?.("job"); done(); }}>Create job</button><button onClick={() => { onNav?.("queue"); done(); }}>Open Smart Hub</button><button className="secondary" onClick={done}>Skip for now</button></footer>
       </section>
     </div>
   );

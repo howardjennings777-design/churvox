@@ -107,7 +107,7 @@ export default function AIReadinessPanel({ data = {}, onNav }) {
       ) : (
         <div className="op-note">
           <strong>Ready for big test</strong>
-          <p>AI has prepared actions. Review them in AI Work Queue and approve one safe action.</p>
+          <p>AI has prepared actions. Review them in Smart Hub and approve one safe action.</p>
         </div>
       )}
     </section>

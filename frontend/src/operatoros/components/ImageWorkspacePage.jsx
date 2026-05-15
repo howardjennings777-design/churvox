@@ -142,7 +142,7 @@ export default function ImageWorkspacePage({
 
           <div className="cx-page-actions">
             <button type="button" className="primary" onClick={onPrimary}>+ {primaryLabel}</button>
-            <button type="button" onClick={() => onNav?.("queue")}>AI Work Queue</button>
+            <button type="button" onClick={() => onNav?.("queue")}>Smart Hub</button>
             <button type="button" onClick={() => onNav?.("hub")}>Smart Hub</button>
           </div>
         </div>

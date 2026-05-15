@@ -35,7 +35,7 @@ const DEMO_ACTIONS = [
 
 const DEMO_STEPS = [
   "Open Smart Hub and see what AI found.",
-  "Open AI Work Queue and review prepared work.",
+  "Open Smart Hub and review prepared work.",
   "Edit the message, invoice wording, worker or client details.",
   "Approve and save, or approve and send SMS when ready.",
   "Open Proof-to-Paid to turn completed jobs into draft invoices.",
@@ -95,7 +95,7 @@ export default function DemoModePage() {
             <p>SELLING DEMO</p>
             <h2>What the owner sees</h2>
           </div>
-          <Link to="/ai-approvals">Open AI Work Queue</Link>
+          <Link to="/ai-approvals">Open Smart Hub</Link>
         </header>
 
         <div className="demo-action-list">
@@ -131,7 +131,7 @@ export default function DemoModePage() {
 
       <section className="demo-links">
         <Link to="/dashboard">Open Smart Hub</Link>
-        <Link to="/ai-approvals">Open AI Work Queue</Link>
+        <Link to="/ai-approvals">Open Smart Hub</Link>
         <Link to="/proof-to-paid">Open Proof-to-Paid</Link>
         <Link to="/worker">Open Worker App</Link>
       </section>

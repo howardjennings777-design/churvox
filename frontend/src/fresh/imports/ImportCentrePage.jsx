@@ -221,9 +221,9 @@ export default function ImportCentrePage() {
         <strong>AI setup tip</strong>
         <p>
           Import clients first, then workers, then create jobs. Once those records exist,
-          the AI Work Queue can suggest worker assignments, invoice drafts, reminders and follow-ups.
+          the Smart Hub can suggest worker assignments, invoice drafts, reminders and follow-ups.
         </p>
-        <Link to="/ai-approvals">Open AI Work Queue</Link>
+        <Link to="/ai-approvals">Open Smart Hub</Link>
       </section>
     </main>
   );

@@ -322,7 +322,7 @@ function Shell({ children }) {
   const location = useLocation();
   const nav = [
     ["Smart Hub", "/dashboard", "⬡", "Daily command centre"],
-    ["AI Work Queue", "/ai-approvals", "◆", "Edit & Approve"],
+    ["Smart Hub", "/ai-approvals", "◆", "Edit & Approve"],
     ["Jobs", "/jobs", "⌘", "Schedule & Dispatch"],
     ["Crew", "/team", "♧", "People & Availability"],
     ["Quotes", "/quotes", "▤", "Estimates & Follow-ups"],
@@ -413,7 +413,7 @@ function Hero({ data, prepared }) {
         <h1>AI prepares the admin.<br /><span>You approve the work.</span></h1>
         <small>Churvox prepares the admin work for you — jobs, invoices, messages and follow-ups — then puts it in one queue for owner approval.</small>
         <div className="op-hero-actions">
-          <Link to="/ai-approvals" className="op-hero-primary">Open AI Work Queue</Link>
+          <Link to="/ai-approvals" className="op-hero-primary">Open Smart Hub</Link>
           <Link to="/proof-to-paid" className="op-hero-secondary">Open Proof-to-Paid</Link>
         </div>
       </div>
@@ -2501,7 +2501,7 @@ function Dashboard() {
   return <Shell><Topbar />{toast ? <div className="op-warning">{toast}</div> : null}<ActionModal modal={modal} onClose={() => setModal(null)} onConfirm={confirmAction} busy={busy} />{data.error ? <div className="op-warning">{data.error}</div> : null}<Hero data={data} prepared={prepared} />
   <section className="op-top-grid"><ApprovalQueue jobs={data.jobs} invoices={data.invoices} quotes={data.quotes} team={data.team} clients={data.clients} drafts={drafts} history={history} onAction={openAction} /><ProofToPaid jobs={data.jobs} invoices={data.invoices} reload={data.reload} /></section>
   <section className="op-mid-grid"><DispatchBoard jobs={data.jobs} team={data.team} reload={data.reload} /><Cashflow invoices={data.invoices} /><CrewStatus team={data.team} /><Schedule jobs={data.jobs} /></section>
-  <section className="op-mid-grid"><OwnerNotifications jobs={data.jobs} quotes={data.quotes} invoices={data.invoices} clients={data.clients} team={data.team} /><LiveActivity history={history} /><section className="op-panel"><h3>DEEP AI MODULES</h3><p>Extra tools stay tucked away until you need them.</p><div className="op-link-row"><Link to="/ai-approvals">AI Work Queue</Link><Link to="/billing">Billing Centre</Link><Link to="/settings">Settings Hub</Link><Link to="/import">Import Centre</Link><Link to="/demo">Setup Check</Link></div></section></section>
+  <section className="op-mid-grid"><OwnerNotifications jobs={data.jobs} quotes={data.quotes} invoices={data.invoices} clients={data.clients} team={data.team} /><LiveActivity history={history} /><section className="op-panel"><h3>DEEP AI MODULES</h3><p>Extra tools stay tucked away until you need them.</p><div className="op-link-row"><Link to="/ai-approvals">Smart Hub</Link><Link to="/billing">Billing Centre</Link><Link to="/settings">Settings Hub</Link><Link to="/import">Import Centre</Link><Link to="/demo">Setup Check</Link></div></section></section>
   <section className="op-bottom-grid"><DataPanel title="TODAY'S SCHEDULE" type="jobs" items={data.jobs} /><DataPanel title="QUOTE PIPELINE" type="quotes" items={data.quotes} /></section>
   <section className="op-bottom-grid"><section className="op-panel"><h3>APPROVAL HISTORY</h3>{history.map((h)=><div className="op-data-row" key={h.id}><strong>{h.result || h.mode}</strong><small>{h.title} · {new Date(h.created_at).toLocaleString()} · {h.target}</small></div>)}</section><section className="op-panel"><h3>OPERATOR DRAFTS</h3>{drafts.map((d)=><div className="op-data-row" key={d.id}><strong>{d.title}</strong><small>{d.type} · {new Date(d.created_at).toLocaleString()} · {d.target}</small></div>)}</section></section>
   <QuotePipeline quotes={data.quotes} />

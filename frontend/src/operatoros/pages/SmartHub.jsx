@@ -88,7 +88,7 @@ export default function SmartHub({ data = {}, onNav, onCreate }) {
           <h1>AI prepares the admin. <span>You approve the work.</span></h1>
           <strong>Jobs, crew, proof, invoices and follow-ups are organised into owner-approved next moves.</strong>
           <div className="hub-actions">
-            <button type="button" onClick={() => onNav?.("queue")}>Open AI Work Queue</button>
+            <button type="button" onClick={() => onNav?.("queue")}>Open Smart Hub</button>
             <button type="button" onClick={() => onCreate?.("jobs")}>Create job</button>
             <button type="button" onClick={() => onNav?.("import")}>Import CSV</button>
             <button type="button" onClick={() => onNav?.("system")}>System Centre</button>

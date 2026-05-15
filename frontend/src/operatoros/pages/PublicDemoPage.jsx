@@ -78,7 +78,7 @@ export default function PublicDemoPage() {
 
   const nav = [
     ["hub", "Smart Hub"],
-    ["queue", "AI Work Queue"],
+    ["queue", "Smart Hub"],
     ["jobs", "Jobs"],
     ["proof", "Proof-to-Paid"],
     ["cash", "Quotes + Invoices"],
@@ -152,7 +152,7 @@ export default function PublicDemoPage() {
                 <h2>Today’s admin is already organised.</h2>
                 <p>Churvox has found dispatch, proof-to-paid, invoice and quote follow-up actions. The owner approves before anything important happens.</p>
                 <div className="demo-actions-row">
-                  <button onClick={() => setTab("queue")}>Open AI Work Queue</button>
+                  <button onClick={() => setTab("queue")}>Open Smart Hub</button>
                   <button onClick={() => setTab("jobs")}>View jobs</button>
                 </div>
               </article>

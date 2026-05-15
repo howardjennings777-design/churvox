@@ -35,7 +35,7 @@ const STEPS = [
     id: "ai",
     title: "Choose your AI control level",
     text: "Pick how much admin AI prepares before owner approval.",
-    cta: "Open AI Work Queue",
+    cta: "Open Smart Hub",
     href: "/ai-approvals",
   },
   {
@@ -84,7 +84,7 @@ export default function OnboardingSetupPage() {
           <p>OWNER SETUP</p>
           <h1>Get Churvox ready to run the admin.</h1>
           <span>
-            Finish these steps once, then Smart Hub and the AI Work Queue can prepare real work:
+            Finish these steps once, then Smart Hub and the Smart Hub can prepare real work:
             assignments, drafts, reminders, invoices and follow-ups.
           </span>
         </div>

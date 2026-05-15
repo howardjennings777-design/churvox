@@ -853,8 +853,8 @@ function Landing({ authMode, setAuthMode, onLogin }) {
           </h1>
 
           <p className="cx-hero-text">
-            Churvox watches jobs, clients, workers, invoices and quotes, then prepares the next action.
-            Owners get one calm approval queue instead of a messy admin dashboard.
+            Churvox watches the busy parts of the business, finds what needs doing, prepares the admin,
+            and puts it in one owner-safe approval flow.
           </p>
 
           <div className="cx-hero-actions">
@@ -912,7 +912,7 @@ function Landing({ authMode, setAuthMode, onLogin }) {
       <section className="cx-operator-preview" id="operator">
         <div className="cx-section-title">
           <span>AI Operator</span>
-          <h2>Better than a dashboard. Churvox prepares what needs doing.</h2>
+          <h2>Better than a dashboard. Churvox finds the work, prepares the action, and waits for approval.</h2>
         </div>
 
         <div className="cx-ai-card-grid">
@@ -931,8 +931,8 @@ function Landing({ authMode, setAuthMode, onLogin }) {
         {[
           ["1", "Work comes in", "Jobs, notes, photos, clients, quotes and invoices stay connected."],
           ["2", "AI checks the day", "It finds missing workers, overdue invoices, quote follow-ups and completed jobs."],
-          ["3", "AI prepares actions", "Worker assignments, invoice drafts and messages are prepared for review."],
-          ["4", "Owner approves", "You stay in control before anything important is sent or changed."],
+          ["3", "AI prepares actions", "Worker matches, invoice drafts, quote nudges and reminders are prepared for review."],
+          ["4", "Owner approves", "Nothing important sends, changes or moves until the owner approves it."],
         ].map(([num, title, body]) => (
           <article key={num}>
             <b>{num}</b>
