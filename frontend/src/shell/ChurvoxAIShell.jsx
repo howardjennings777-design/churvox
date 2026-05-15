@@ -820,11 +820,8 @@ function Shell({ page, setPage, onLogout, data }) {
 
           <input placeholder="Search jobs, clients, invoices..." />
 
-          <button type="button" onClick={() => setPage("dashboard")}>
-            Smart Hub
-          </button>
           <button type="button" className="cx-top-primary" onClick={() => setPage("jobs")}>
-            New job
+            Open jobs
           </button>
           <button type="button" className="cx-logout" onClick={onLogout}>
             Logout
