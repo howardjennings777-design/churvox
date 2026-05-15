@@ -2248,6 +2248,49 @@ function cxInvoiceDueDate(item = {}) {
 }
 
 
+function cxLooksGenericClientName(value) {
+  const text = cxCleanInvoiceText(value).toLowerCase();
+  return !text || text === "client" || text === "client invoice" || text === "customer" || text === "customer invoice";
+}
+
+function cxInvoiceClientFromDraftOrItem(draft = {}, item = {}, title = "") {
+  const choices = [
+    draft.invoiceClientName,
+    draft.invoiceClient,
+    item.client_name,
+    item.customer_name,
+    item.client,
+    item.customer,
+    item.business_client_name,
+    item.name,
+  ];
+
+  for (const choice of choices) {
+    const clean = cxCleanInvoiceText(choice);
+    if (clean && !cxLooksGenericClientName(clean) && !clean.toLowerCase().includes("prepare invoice")) {
+      return clean;
+    }
+  }
+
+  const titleText = cxCleanInvoiceText(title || item.title || item.name || "");
+  const parsedTitle = titleText
+    .replace(/^prepare invoice(?: path)? for\s+/i, "")
+    .replace(/^invoice draft for\s+/i, "")
+    .replace(/^completed service for\s+/i, "")
+    .trim();
+
+  if (parsedTitle && !cxLooksGenericClientName(parsedTitle)) return parsedTitle;
+
+  const description = cxCleanInvoiceText(item.invoice_description || item.ai_invoice_description || item.description || draft.invoiceDescription || "");
+  const match = description.match(/\bfor\s+([A-Za-z0-9][A-Za-z0-9 '&.-]{1,80})\b/i);
+  if (match && match[1] && !cxLooksGenericClientName(match[1])) {
+    return match[1].replace(/[.]+$/, "").trim();
+  }
+
+  return "Client name needed";
+}
+
+
 function SmartHubActionControl({ boxKey, row, draft, onChange, team = [] }) {
   const text = `${boxKey || ""} ${row?.lead || ""} ${row?.title || ""} ${row?.detail || ""} ${row?.status || ""}`.toLowerCase();
 
@@ -2639,7 +2682,7 @@ function SmartHubBoxModal({
     const detail = row?.detail || "";
     const preparedInvoiceAmount = cxInvoiceAmount(item);
     const preparedInvoiceDescription = cxInvoiceDescription(item, detail || `Work completed for ${title}.`);
-    const preparedInvoiceClientName = cxInvoiceClient(item, title);
+    const preparedInvoiceClientName = cxInvoiceClientFromDraftOrItem({}, item, title);
     const preparedInvoiceDueDate = cxInvoiceDueDate(item);
     const preparedInvoiceLineItem = cxInvoiceLineItem(item, title);
     return {
@@ -2673,7 +2716,19 @@ function SmartHubBoxModal({
   }
 
   function controlDraftFor(controlKey, row, item = {}) {
-    return { ...baseControlDraft(row, item), ...(controlDrafts[controlKey] || {}) };
+    const base = baseControlDraft(row, item);
+    const saved = controlDrafts[controlKey] || {};
+    const merged = { ...base, ...saved };
+
+    if (cxLooksGenericClientName(merged.invoiceClientName) && !cxLooksGenericClientName(base.invoiceClientName)) {
+      merged.invoiceClientName = base.invoiceClientName;
+    }
+
+    if (!merged.invoiceTitle || cxLooksGenericClientName(merged.invoiceTitle)) {
+      merged.invoiceTitle = `Invoice draft for ${merged.invoiceClientName || base.invoiceClientName || "client"}`;
+    }
+
+    return merged;
   }
 
   function updateControlDraft(controlKey, key, value) {
@@ -2773,7 +2828,7 @@ function SmartHubBoxModal({
     const invoiceAmount = preparedDraft.invoiceAmount || cxInvoiceAmount(item);
     const invoiceDescription = preparedDraft.invoiceDescription || cxInvoiceDescription(item, row.detail || "");
     const invoiceStatus = preparedDraft.invoiceStatus || cxInvoiceStatus(item);
-    const invoiceClientName = preparedDraft.invoiceClientName || cxInvoiceClient(item, row.title);
+    const invoiceClientName = cxInvoiceClientFromDraftOrItem(preparedDraft, item, row.title);
     const invoiceDueDate = preparedDraft.invoiceDueDate || cxInvoiceDueDate(item);
     const invoiceLineItemsText = preparedDraft.invoiceLineItemsText || cxInvoiceLineItem(item, row.title);
 
@@ -2941,9 +2996,17 @@ function SmartHubBoxModal({
           <section className="cx-smart-modal-edit">
             <header>
               <div>
-                <span>Edit before approval</span>
-                <h3>{editingDraft.title}</h3>
-                <p>Adjust the title, note, or message before Churvox saves the approval.</p>
+                <span>{editingNeedsInvoiceDraft() ? "Invoice draft approval" : "Edit before approval"}</span>
+                <h3>
+                  {editingNeedsInvoiceDraft()
+                    ? (editingDraft.invoiceTitle || `Invoice draft for ${editingDraft.invoiceClientName || "client"}`)
+                    : editingDraft.title}
+                </h3>
+                <p>
+                  {editingNeedsInvoiceDraft()
+                    ? "This is the invoice draft the owner is approving. Check client, amount, due date, line item and wording."
+                    : "Adjust the title, note, or message before Churvox saves the approval."}
+                </p>
               </div>
               <button type="button" onClick={() => setEditingSelection(null)}>Close edit</button>
             </header>
@@ -2952,7 +3015,7 @@ function SmartHubBoxModal({
               <div className="cx-edit-invoice-draft cx-edit-invoice-draft-real">
                 <section className="cx-edit-invoice-preview-card">
                   <span>Invoice draft prepared</span>
-                  <h4>{editingDraft.invoiceClientName || "Client invoice"}</h4>
+                  <h4>{editingDraft.invoiceTitle || `Invoice draft for ${editingDraft.invoiceClientName || "client"}`}</h4>
                   <p>{editingDraft.invoiceDescription || "Churvox prepared this invoice draft from the completed work."}</p>
                 </section>
 
@@ -2960,7 +3023,10 @@ function SmartHubBoxModal({
                   Client
                   <input
                     value={editingDraft.invoiceClientName || ""}
-                    onChange={(event) => updateEditingDraft("invoiceClientName", event.target.value)}
+                    onChange={(event) => {
+                      updateEditingDraft("invoiceClientName", event.target.value);
+                      updateEditingDraft("invoiceTitle", `Invoice draft for ${event.target.value || "client"}`);
+                    }}
                     placeholder="Client name"
                   />
                 </label>
