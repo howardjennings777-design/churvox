@@ -1588,3 +1588,166 @@ button.resolve {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Phase 7: Teach Churvox / owner guidance */
+.cx-teach-churvox-panel {
+  border-radius: 30px;
+  padding: 20px;
+  border: 1px solid rgba(116,247,255,.13);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(32,217,255,.09), transparent 20rem),
+    radial-gradient(circle at 100% 0%, rgba(24,227,194,.07), transparent 20rem),
+    linear-gradient(180deg, rgba(13, 26, 38, .94), rgba(5, 12, 18, .90));
+  box-shadow: var(--cx-calm-shadow), var(--cx-focus-glow), inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.cx-teach-churvox-panel > header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  gap: 16px;
+  align-items: stretch;
+  margin-bottom: 16px;
+}
+
+.cx-teach-churvox-panel span {
+  color: var(--cx-cyan);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.cx-teach-churvox-panel h2 {
+  margin: 8px 0 0;
+  color: var(--cx-text);
+  font-size: clamp(26px, 3vw, 42px);
+  line-height: 1.02;
+  letter-spacing: -.06em;
+  font-weight: 950;
+}
+
+.cx-teach-churvox-panel p {
+  color: var(--cx-text-soft);
+  line-height: 1.6;
+  font-weight: 750;
+}
+
+.cx-teach-churvox-panel aside {
+  border-radius: 24px;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(116,247,255,.16), transparent 12rem),
+    rgba(4,10,16,.54);
+  border: 1px solid rgba(116,247,255,.12);
+}
+
+.cx-teach-churvox-panel aside strong {
+  display: block;
+  color: var(--cx-text);
+  font-size: 46px;
+  line-height: .95;
+  letter-spacing: -.07em;
+  font-weight: 950;
+}
+
+.cx-teach-churvox-panel aside small {
+  display: block;
+  margin-top: 8px;
+  color: var(--cx-text-soft);
+  font-weight: 850;
+}
+
+.cx-teach-churvox-flow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.cx-teach-churvox-flow article,
+.cx-teach-churvox-missing article {
+  border-radius: 22px;
+  padding: 16px;
+  background: rgba(4,10,16,.48);
+  border: 1px solid rgba(116,247,255,.10);
+}
+
+.cx-teach-churvox-flow b {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  color: #031018;
+  background: linear-gradient(135deg, #74f7ff, #35b7ff);
+  font-weight: 950;
+}
+
+.cx-teach-churvox-flow span {
+  display: block;
+  margin-top: 12px;
+}
+
+.cx-teach-churvox-flow p {
+  margin: 8px 0 0;
+  font-size: 13px;
+}
+
+.cx-teach-churvox-missing {
+  display: grid;
+  gap: 10px;
+}
+
+.cx-teach-churvox-missing article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+}
+
+.cx-teach-churvox-missing h3 {
+  margin: 6px 0 0;
+  color: var(--cx-text);
+  font-size: 20px;
+  line-height: 1.15;
+  letter-spacing: -.04em;
+  font-weight: 950;
+}
+
+.cx-teach-churvox-missing p {
+  margin: 6px 0 0;
+}
+
+.cx-teach-churvox-missing button {
+  min-height: 46px;
+  border-radius: 16px;
+  padding: 0 16px;
+  color: #031018;
+  font-weight: 950;
+  border: 1px solid rgba(116,247,255,.42);
+  background:
+    radial-gradient(circle at 28% 0%, rgba(255,255,255,.74), transparent 28%),
+    linear-gradient(135deg, #74f7ff, #35b7ff 48%, #18e3c2);
+  box-shadow: 0 16px 36px rgba(32, 217, 255, 0.18);
+}
+
+.cx-teach-churvox-missing article.complete {
+  border-color: rgba(56,232,164,.18);
+}
+
+.cx-teach-churvox-missing article.complete span {
+  color: var(--cx-success);
+}
+
+@media (max-width: 900px) {
+  .cx-teach-churvox-panel > header,
+  .cx-teach-churvox-flow,
+  .cx-teach-churvox-missing article {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-teach-churvox-missing button {
+    width: 100%;
+  }
+}

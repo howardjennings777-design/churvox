@@ -2290,7 +2290,7 @@ function MiniRow({ item }) {
 function EmptyState({ title, body, action, onAction }) {
   return (
     <article className="cx-empty-state">
-      <span>Ready when you are</span>
+      <span>Churvox needs context</span>
       <h3>{title}</h3>
       <p>{body}</p>
       {action ? <button type="button" onClick={onAction}>{action}</button> : null}
@@ -4986,6 +4986,100 @@ function workspaceOperatorConfig(page, counts = {}) {
   return configs[page] || configs.jobs;
 }
 
+
+function TeachChurvoxPanel({
+  setupChecks = [],
+  setupScore = 0,
+  onOpenSettings,
+  onOpenClients,
+  onOpenTeam,
+  onOpenJobs,
+  onOpenQuotes,
+}) {
+  const missing = setupChecks.filter((item) => !item.done);
+  const topMissing = missing.slice(0, 4);
+
+  function actionFor(item) {
+    if (item.action === "clients") return onOpenClients;
+    if (item.action === "team") return onOpenTeam;
+    if (item.action === "jobs") return onOpenJobs;
+    if (item.action === "quotes") return onOpenQuotes;
+    return onOpenSettings;
+  }
+
+  function buttonLabel(item) {
+    if (item.action === "clients") return "Add/import clients";
+    if (item.action === "team") return "Add workers";
+    if (item.action === "jobs") return "Create job";
+    if (item.action === "quotes") return "Create quote";
+    return "Teach Churvox";
+  }
+
+  return (
+    <section className="cx-teach-churvox-panel">
+      <header>
+        <div>
+          <span>Teach Churvox</span>
+          <h2>Give Churvox the context it needs to prepare real work.</h2>
+          <p>
+            Churvox should not guess. Add the business details, clients, workers and job context once,
+            then the AI can prepare specific assignments, invoices, quote follow-ups and reminders.
+          </p>
+        </div>
+
+        <aside>
+          <strong>{setupScore}%</strong>
+          <small>AI setup strength</small>
+        </aside>
+      </header>
+
+      <section className="cx-teach-churvox-flow">
+        <article>
+          <b>1</b>
+          <span>Teach</span>
+          <p>Business type, region, workers, clients, pricing and wording.</p>
+        </article>
+        <article>
+          <b>2</b>
+          <span>Prepare</span>
+          <p>Churvox uses that context to prepare exact job, invoice and follow-up actions.</p>
+        </article>
+        <article>
+          <b>3</b>
+          <span>Approve</span>
+          <p>Owner reviews, edits if needed, then approves from the same pop-up.</p>
+        </article>
+      </section>
+
+      <section className="cx-teach-churvox-missing">
+        {topMissing.length ? topMissing.map((item) => (
+          <article key={item.key}>
+            <div>
+              <span>Needed for better AI prep</span>
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+            </div>
+            <button type="button" onClick={actionFor(item)}>
+              {buttonLabel(item)}
+            </button>
+          </article>
+        )) : (
+          <article className="complete">
+            <div>
+              <span>Setup strong</span>
+              <h3>Churvox has enough context to prepare better actions.</h3>
+              <p>Keep adding real jobs, clients, workers, notes and proof so the AI gets more useful over time.</p>
+            </div>
+            <button type="button" onClick={onOpenSettings}>Review guardrails</button>
+          </article>
+        )}
+      </section>
+    </section>
+  );
+}
+
+
+
 function WorkspaceOperatorPanel({ page, counts, onOpen }) {
   const config = workspaceOperatorConfig(page, counts);
 
@@ -6327,6 +6421,18 @@ function Workspace({ page, setPage, data }) {
             Review first item
           </button>
         </section>
+      ) : null}
+
+      {(page === "dashboard" || page === "settings") ? (
+        <TeachChurvoxPanel
+          setupChecks={setupChecks}
+          setupScore={setupScore}
+          onOpenSettings={() => switchPage("settings")}
+          onOpenClients={() => switchPage("clients")}
+          onOpenTeam={() => switchPage("team")}
+          onOpenJobs={() => switchPage("jobs")}
+          onOpenQuotes={() => switchPage("quotes")}
+        />
       ) : null}
 
       {page === "dashboard" && hubNotice ? (
