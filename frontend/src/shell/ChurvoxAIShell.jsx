@@ -715,7 +715,7 @@ function Logo() {
   );
 }
 
-function PublicNav({ setAuthMode }) {
+function PublicNav() {
   return (
     <header className="cx-public-nav">
       <a href="#top" className="cx-logo-link">
@@ -726,9 +726,6 @@ function PublicNav({ setAuthMode }) {
         <a href="#flow">How it works</a>
         <a href="#features">Features</a>
       </nav>
-      <button type="button" onClick={() => setAuthMode("login")}>
-        Login
-      </button>
     </header>
   );
 }
@@ -838,7 +835,7 @@ function Landing({ authMode, setAuthMode, onLogin }) {
       <div className="cx-glow cx-glow-a" />
       <div className="cx-glow cx-glow-b" />
 
-      <PublicNav setAuthMode={setAuthMode} />
+      <PublicNav />
 
       <section className="cx-hero">
         <div className="cx-hero-copy">
