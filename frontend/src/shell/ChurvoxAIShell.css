@@ -2688,3 +2688,43 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ===== Smart Hub clarity fix ===== */
+.cx-owner-command-main .cx-owner-section {
+  margin-top: 0;
+}
+
+.cx-owner-command-main .cx-owner-section + .cx-owner-section {
+  margin-top: 4px;
+}
+
+.cx-owner-queue {
+  border: 1px solid rgba(37, 99, 235, 0.16);
+}
+
+.cx-owner-queue header h2 {
+  font-size: 24px;
+}
+
+.cx-owner-command-side .cx-owner-quick-buttons button {
+  text-align: center;
+}
+
+.cx-owner-command-side .cx-owner-prepared-messages {
+  border-color: rgba(20, 184, 166, 0.18);
+}
+
+.cx-owner-command-side .cx-owner-log:not(.cx-owner-prepared-messages) {
+  opacity: 0.92;
+}
+
+@media (max-width: 760px) {
+  .cx-owner-command-tabs {
+    margin-bottom: 10px;
+  }
+
+  .cx-owner-queue-grid {
+    grid-template-columns: 1fr;
+  }
+}

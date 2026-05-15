@@ -1196,10 +1196,10 @@ function Workspace({ page, setPage, data }) {
   const meta = {
     dashboard: {
       kicker: "Smart Hub",
-      title: "Today’s approvals, messages, and work — in one calm view.",
+      title: "Start here. Approve what matters today.",
       body: data?.loading
         ? "Syncing live Churvox data..."
-        : data?.error || "Start with what needs your decision. Everything else is one tap away.",
+        : data?.error || "Churvox puts the important decisions first. Jobs, invoices, quotes, team and clients are one tap away.",
       rows: jobs,
     },
     queue: {
@@ -1320,14 +1320,6 @@ function Workspace({ page, setPage, data }) {
   }, []);
 
 
-  const workspaceRows = [
-    ["Jobs", "Jobs workspace", `${jobs.length} job records`, "Open"],
-    ["Invoices", "Invoices workspace", `${invoices.length} invoice records`, "Open"],
-    ["Quotes", "Quotes workspace", `${quotes.length} quote records`, "Open"],
-    ["Team", "Team workspace", `${team.length} team records`, "Open"],
-    ["Clients", "Clients workspace", `${clients.length} client records`, "Open"],
-  ];
-
   const todayRows = [
     ...jobs.slice(0, 3),
     ...invoices.slice(0, 2),
@@ -1335,11 +1327,11 @@ function Workspace({ page, setPage, data }) {
 
   const commandSections = page === "dashboard"
     ? [
-        ["Needs approval now", "queue", actions.map((item) => [item.type, item.title, item.body, item.action]).slice(0, 4)],
         ["Today’s work", "jobs", todayRows.slice(0, 5)],
-        ["Workspaces", "dashboard", workspaceRows],
       ]
-    : [[current.kicker, page, current.rows]];
+    : page === "queue"
+      ? []
+      : [[current.kicker, page, current.rows]];
 
   function openCommand(selection) {
     setSelectedRecord(selection);
@@ -1628,10 +1620,10 @@ function Workspace({ page, setPage, data }) {
             <section className="cx-owner-queue">
               <header>
                 <div>
-                  <span>Approval lane</span>
-                  <h2>AI-prepared actions</h2>
+                  <span>Needs approval now</span>
+                  <h2>Review these first</h2>
                 </div>
-                <button type="button" onClick={() => switchPage("queue")}>Open queue</button>
+                <button type="button" onClick={() => switchPage("queue")}>View all</button>
               </header>
 
               <div className="cx-owner-queue-grid">
@@ -1686,15 +1678,11 @@ function Workspace({ page, setPage, data }) {
                 <div>
                   <span>{group}</span>
                   <h2>
-                    {group === "Needs approval now"
-                      ? "AI-prepared decisions"
-                      : group === "Today’s work"
-                        ? "Jobs and invoices needing attention"
-                        : group === "Workspaces"
-                          ? "Open the full area"
-                          : sectionPage === "queue"
-                            ? "Prepared actions"
-                            : "Open, edit, approve"}
+                    {group === "Today’s work"
+                      ? "Jobs and invoices needing attention"
+                      : sectionPage === "queue"
+                        ? "Prepared actions"
+                        : "Open, edit, approve"}
                   </h2>
                 </div>
                 <button type="button" onClick={() => switchPage(sectionPage)}>View all</button>
@@ -1727,11 +1715,11 @@ function Workspace({ page, setPage, data }) {
 
             <div className="cx-owner-quick-buttons">
               {[
-                ["New job", "jobs"],
-                ["Add client", "clients"],
-                ["Assign worker", "team"],
-                ["New quote", "quotes"],
-                ["New invoice", "invoices"],
+                ["Open jobs", "jobs"],
+                ["Open clients", "clients"],
+                ["Open team", "team"],
+                ["Open quotes", "quotes"],
+                ["Open invoices", "invoices"],
                 ["Proof-to-Paid", "proof"],
               ].map(([label, nextPage]) => (
                 <button type="button" key={label} onClick={() => switchPage(nextPage)}>
@@ -1745,7 +1733,7 @@ function Workspace({ page, setPage, data }) {
             <header>
               <div>
                 <span>Prepared messages</span>
-                <h2>Ready drafts</h2>
+                <h2>Messages waiting</h2>
                 <p>
                   {sendCenterItems.length
                     ? sendCenterStatus
@@ -1755,7 +1743,7 @@ function Workspace({ page, setPage, data }) {
                 </p>
               </div>
               <button type="button" onClick={() => switchPage("quotes")}>
-                Open messages
+                Open quotes
               </button>
             </header>
 
