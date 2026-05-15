@@ -1840,7 +1840,7 @@ function Workspace({ page, setPage, data }) {
     ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD", maximumFractionDigits: 0 }).format(moneyToCollect)
     : String(collectRows.length);
 
-  const hubBoxes = [
+  const baseHubBoxes = [
     {
       key: "approvals",
       count: actions.length,
@@ -1905,15 +1905,20 @@ function Workspace({ page, setPage, data }) {
       body: "Workers and team records available for assignment.",
       action: "View",
     },
-    {
-      key: "setup",
-      count: `${setupScore}%`,
-      label: "complete",
-      title: "Setup health",
-      body: "Business setup checks that improve AI recommendations.",
-      action: "Improve",
-    },
   ];
+
+  const setupHealthBox = {
+    key: "setup",
+    count: `${setupScore}%`,
+    label: "complete",
+    title: "Setup health",
+    body: "Business setup checks that improve AI recommendations.",
+    action: "Improve",
+  };
+
+  const hubBoxes = setupScore < 100
+    ? [...baseHubBoxes, setupHealthBox]
+    : baseHubBoxes;
 
 
   function hubRemainingCount(key) {
@@ -2466,7 +2471,7 @@ function Workspace({ page, setPage, data }) {
             <button
               type="button"
               key={box.key}
-              className={`cx-hub-box ${selectedHubBox?.key === box.key ? "active" : ""}`}
+              className={`cx-hub-box cx-hub-box-${box.key} ${selectedHubBox?.key === box.key ? "active" : ""}`}
               onClick={() => {
                 setHubFocus("");
                 setSelectedHubBox({ ...box, count: visibleHubCount(box.key, box.count) });
