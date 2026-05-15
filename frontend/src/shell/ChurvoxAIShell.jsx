@@ -1194,6 +1194,7 @@ function SmartHubBoxModal({
     collect: "invoices",
     quotes: "quotes",
     crew: "team",
+    setup: "settings",
   }[box.key] || "dashboard";
 
   const intro = {
@@ -1205,6 +1206,7 @@ function SmartHubBoxModal({
     collect: "Unpaid or overdue invoices that need follow-up.",
     quotes: "Open quotes and follow-ups that may need a nudge.",
     crew: "Worker capacity and team records available for assignment.",
+    setup: "These setup checks help Churvox make better AI decisions for your business.",
   }[box.key] || "Review the items Churvox found.";
 
   function riskFor(row) {
@@ -1223,6 +1225,7 @@ function SmartHubBoxModal({
     if (text.includes("quote")) return "AI found a quote or follow-up that may need attention.";
     if (text.includes("payment") || text.includes("overdue") || text.includes("collect")) return "AI found unpaid or overdue money that may need a reminder.";
     if (text.includes("worker") || text.includes("crew")) return "AI found team capacity or worker context that may help with assignment.";
+    if (text.includes("setup") || text.includes("business settings") || text.includes("import")) return "AI found setup details that will improve recommendations and reduce manual admin.";
     if (text.includes("message") || text.includes("follow")) return "AI prepared communication for review before anything is sent.";
 
     return "AI surfaced this because it may need an owner decision.";
@@ -1576,6 +1579,25 @@ function Workspace({ page, setPage, data }) {
 
   const crewRows = team.slice(0, 6);
 
+  const setupRows = [
+    clients.length ? null : ["Setup", "Import or add clients", "Clients help AI connect jobs, quotes and invoices.", "Missing info"],
+    team.length ? null : ["Setup", "Add workers", "Workers let AI recommend job assignments.", "Missing info"],
+    jobs.length ? null : ["Setup", "Create first job", "Jobs are the centre of the daily Smart Hub workflow.", "Missing info"],
+    invoices.length ? null : ["Setup", "Set invoice details", "Invoice settings help AI prepare clean drafts.", "Needs owner check"],
+    quotes.length ? null : ["Setup", "Create or import quotes", "Quotes allow AI to prepare follow-ups.", "Needs owner check"],
+    ["Setup", "Review business settings", "Check business details, roles, SMS, MYOB and invoice preferences.", "Review"],
+  ].filter(Boolean).slice(0, 6);
+
+  const setupCompleteChecks = [
+    clients.length > 0,
+    team.length > 0,
+    jobs.length > 0,
+    invoices.length > 0,
+    quotes.length > 0,
+  ];
+
+  const setupScore = Math.round((setupCompleteChecks.filter(Boolean).length / setupCompleteChecks.length) * 100);
+
   const moneyToCollect = collectRows.reduce((sum, invoice) => {
     const raw = invoice?.balance || invoice?.total || invoice?.amount || 0;
     const value = typeof raw === "number" ? raw : Number(String(raw).replace(/[^0-9.-]/g, ""));
@@ -1651,6 +1673,14 @@ function Workspace({ page, setPage, data }) {
       body: "Workers and team records available for assignment.",
       action: "View",
     },
+    {
+      key: "setup",
+      count: `${setupScore}%`,
+      label: "complete",
+      title: "Setup health",
+      body: "Business setup checks that improve AI recommendations.",
+      action: "Improve",
+    },
   ];
 
 
@@ -1711,12 +1741,16 @@ function Workspace({ page, setPage, data }) {
     if (key === "collect") return collectRows;
     if (key === "quotes") return quoteRows;
     if (key === "crew") return crewRows;
+    if (key === "setup") return setupRows;
     return [];
   }
 
 
   function visibleHubCount(key, fallback) {
     if (key === "collect" && String(fallback || "").includes("$")) {
+      return fallback;
+    }
+    if (key === "setup" && String(fallback || "").includes("%")) {
       return fallback;
     }
 

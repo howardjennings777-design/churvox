@@ -3246,3 +3246,16 @@ button {
   }
 }
 
+
+/* ===== Smart Hub setup health box polish ===== */
+.cx-hub-box:nth-last-child(1) {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.78), rgba(239,247,255,0.72)) !important;
+  border-color: rgba(37,99,235,0.14);
+}
+
+.cx-hub-box:nth-last-child(1) strong {
+  font-size: 46px;
+  letter-spacing: -0.07em;
+}
+
