@@ -878,6 +878,21 @@ function buildLiveActions(raw) {
   return actions.slice(0, 12);
 }
 
+
+function notifyChurvoxLiveRefresh(reason = "updated") {
+  try {
+    window.dispatchEvent(new CustomEvent("churvox:refresh-live-data", {
+      detail: {
+        reason,
+        at: new Date().toISOString(),
+      },
+    }));
+  } catch {
+    // Keep UI safe if browser event dispatch is unavailable.
+  }
+}
+
+
 function useLiveChurvoxData(authed) {
   const [state, setState] = useState({
     loading: false,
@@ -1038,8 +1053,22 @@ function useLiveChurvoxData(authed) {
 
     load();
 
+    function handleLiveRefresh() {
+      load();
+    }
+
+    window.addEventListener("churvox:refresh-live-data", handleLiveRefresh);
+
+    const refreshTimer = window.setInterval(() => {
+      if (!document.hidden) {
+        load();
+      }
+    }, 120000);
+
     return () => {
       cancelled = true;
+      window.removeEventListener("churvox:refresh-live-data", handleLiveRefresh);
+      window.clearInterval(refreshTimer);
     };
   }, [authed]);
 
@@ -1806,6 +1835,7 @@ function WorkerJobDrawer({ job, onClose, onLocalUpdate }) {
       const result = await cxWorkerPostFirst(paths, payload);
       setStatus(result?.message || `Saved: ${action}`);
       onLocalUpdate?.(jobId, action, result);
+      notifyChurvoxLiveRefresh(`worker ${action}`);
     } catch (err) {
       setStatus(err?.message || "Could not save worker action.");
     } finally {
@@ -1842,6 +1872,7 @@ function WorkerJobDrawer({ job, onClose, onLocalUpdate }) {
 
       setStatus(result?.message || "Note saved for owner review.");
       onLocalUpdate?.(jobId, "note", result);
+      notifyChurvoxLiveRefresh("worker note saved");
     } catch (err) {
       setStatus(err?.message || "Could not save note.");
     } finally {
@@ -1895,6 +1926,7 @@ function WorkerJobDrawer({ job, onClose, onLocalUpdate }) {
 
           setStatus(payload?.message || "Photo uploaded for owner approval.");
           onLocalUpdate?.(jobId, "photo", payload);
+          notifyChurvoxLiveRefresh("worker photo uploaded");
           setBusy("");
           return;
         } catch (err) {
@@ -2222,7 +2254,7 @@ function Shell({ page, setPage, onLogout, data }) {
 
           <div>
             <strong>{current[1]}</strong>
-            <span>{current[2]}</span>
+            <span>{workerMode ? current[2] : data?.loading ? "Syncing Churvox live data..." : current[2]}</span>
           </div>
 
           <input placeholder={workerMode ? "Search my assigned jobs..." : "Search jobs, clients, invoices..."} />
@@ -6048,6 +6080,7 @@ function OwnerQuickActionModal({ area, onClose, onSaved }) {
           const result = await apiPost(endpoint, body);
           setStatus(result?.message || `${config.label} saved.`);
           onSaved?.(`${config.label} saved`);
+          notifyChurvoxLiveRefresh(`${config.label} saved`);
           setBusy(false);
           return;
         } catch (err) {
@@ -6101,6 +6134,7 @@ function OwnerQuickActionModal({ area, onClose, onSaved }) {
 
           setStatus(payload?.message || "CSV imported. Churvox will check the records.");
           onSaved?.("CSV import saved");
+          notifyChurvoxLiveRefresh("CSV import saved");
           setBusy(false);
           return;
         } catch (err) {
@@ -7170,6 +7204,7 @@ function Workspace({ page, setPage, data }) {
         });
 
         logCommand("Request inbox", title, result?.message || "Draft job created");
+        notifyChurvoxLiveRefresh("request converted to job");
         return true;
       }
 
@@ -7177,6 +7212,7 @@ function Workspace({ page, setPage, data }) {
         const result = await apiPost(`/recurring-jobs/${encodeURIComponent(selectedSourceId)}/generate`, {});
 
         logCommand("Recurring jobs", title, result?.message || "Next job generated");
+        notifyChurvoxLiveRefresh("recurring job generated");
         return true;
       }
 
@@ -7209,6 +7245,7 @@ function Workspace({ page, setPage, data }) {
         }
 
         logCommand("Dispatch", title, result?.message || "Job assigned");
+        notifyChurvoxLiveRefresh("worker assigned");
         return true;
       }
 
@@ -7223,11 +7260,13 @@ function Workspace({ page, setPage, data }) {
         });
 
         logCommand("Service templates", title, result?.message || "Job created from template");
+        notifyChurvoxLiveRefresh("job created from template");
         return true;
       }
 
       if (selection.hubBoxKey === "reports") {
         logCommand("Owner reports", title, draft?.reportDecision || "Reviewed");
+        notifyChurvoxLiveRefresh("owner report reviewed");
         return true;
       }
 
@@ -7304,6 +7343,8 @@ function Workspace({ page, setPage, data }) {
         });
       }
 
+      notifyChurvoxLiveRefresh("owner approval saved");
+
       return true;
     } catch (err) {
       logCommand(selection.group || "Approve failed", title, "Backend error");
@@ -7373,6 +7414,7 @@ function Workspace({ page, setPage, data }) {
 
       setApprovedDraftsStatus(result?.message || "Draft marked ready to send");
       setSendCenterStatus("Ready-to-send drafts loaded");
+      notifyChurvoxLiveRefresh("message marked ready");
     } catch (err) {
       setApprovedDraftsStatus(err?.message || "Could not mark draft ready to send");
     }
@@ -7400,6 +7442,7 @@ function Workspace({ page, setPage, data }) {
       }
 
       setSendCenterStatus(result?.message || "Draft marked manually sent");
+      notifyChurvoxLiveRefresh("message marked sent");
     } catch (err) {
       setSendCenterStatus(err?.message || "Could not mark draft sent");
     }

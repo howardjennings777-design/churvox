@@ -3410,3 +3410,38 @@ a,
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* Phase 15: live refresh polish */
+.cx-topbar > div span {
+  transition: color 160ms ease;
+}
+
+.cx-topbar > div span:has(+ *) {
+  color: var(--cx-text-soft);
+}
+
+.cx-smart-hub-notice strong,
+.cx-ask-notice strong {
+  overflow-wrap: anywhere;
+}
+
+/* keep refresh state visually calm */
+.cx-topbar > div span {
+  min-height: 18px;
+}
+
+/* approvals that just saved should feel resolved without creating noise */
+.cx-approved-note {
+  display: inline-flex !important;
+  width: fit-content;
+  min-height: 30px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: #bfffea !important;
+  background: rgba(56, 232, 164, 0.12) !important;
+  border: 1px solid rgba(56,232,164,.18);
+  font-size: 11px;
+  font-weight: 950;
+}
