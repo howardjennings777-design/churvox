@@ -1975,7 +1975,7 @@ function WorkerJobDrawer({ job, onClose, onLocalUpdate }) {
             Resume
           </button>
           <button type="button" disabled={busy === "note"} onClick={saveNote}>
-            Save note
+            Save in-place note
           </button>
           <label>
             Upload photo
@@ -2668,6 +2668,169 @@ function workspacePathForPage(page) {
   return paths[page] || "/dashboard";
 }
 
+
+function cxRecordContextForModal(selection = {}, draft = {}) {
+  const item = selection.item || {};
+  const row = rowText(item, 0, selection.label || selection.group || "Record");
+  const page = selection.page || "dashboard";
+  const group = selection.group || row.lead || "Record";
+
+  if (typeof cxPreparedActionContext === "function") {
+    const prepared = cxPreparedActionContext({
+      item,
+      row,
+      boxKey: page,
+      group,
+      controlDraft: draft,
+    });
+
+    return {
+      ...prepared,
+      page,
+      group,
+      row,
+    };
+  }
+
+  return {
+    page,
+    group,
+    row,
+    mode: page,
+    found: `Churvox found ${row.title}.`,
+    checked: ["record details", "status", "owner review need"],
+    prepared: row.detail || "Record ready for owner review.",
+    approvalPreview: "Save edits or approve the prepared action.",
+    missing: [],
+    confidenceLabel: "Review",
+  };
+}
+
+function cxRecordDetailFacts(selection = {}, draft = {}) {
+  const item = selection.item || {};
+  const row = rowText(item, 0, selection.label || selection.group || "Record");
+  const page = selection.page || "";
+  const text = `${page} ${selection.group || ""} ${row.lead} ${row.title} ${row.detail} ${row.status} ${item.source_type || ""}`.toLowerCase();
+
+  function pick(label, value) {
+    const clean = value !== undefined && value !== null && String(value).trim() ? String(value).trim() : "";
+    return clean ? { label, value: clean } : null;
+  }
+
+  const facts = [];
+
+  if (text.includes("job") || page === "jobs" || page === "proof") {
+    facts.push(
+      pick("Client", item.client_name || item.customer_name || item.client?.name),
+      pick("Address", item.address || item.job_address || item.service_address),
+      pick("Worker", item.assigned_worker_name || item.worker_name || item.assigned_worker || item.worker_id),
+      pick("Status", item.status || item.job_status || row.status),
+      pick("Time", item.scheduled_time || item.scheduled_date || item.start_time),
+      pick("Proof", Array.isArray(item.photos || item.worker_photos || item.proof_photos) ? `${(item.photos || item.worker_photos || item.proof_photos).length} photos` : "")
+    );
+  } else if (page === "clients" || text.includes("client")) {
+    facts.push(
+      pick("Name", item.client_name || item.customer_name || item.name || row.title),
+      pick("Email", item.email || item.client_email || item.customer_email),
+      pick("Phone", item.phone || item.client_phone || item.customer_phone),
+      pick("Address", item.address || item.service_address),
+      pick("Status", item.status || row.status)
+    );
+  } else if (page === "team" || text.includes("worker") || text.includes("crew")) {
+    facts.push(
+      pick("Worker", item.name || item.full_name || item.worker_name || row.title),
+      pick("Role", item.role || item.position),
+      pick("Region", item.region || item.service_area || item.area),
+      pick("Email", item.email),
+      pick("Status", item.status || item.availability || row.status)
+    );
+  } else if (page === "quotes" || text.includes("quote")) {
+    facts.push(
+      pick("Quote", item.quote_number || item.number || row.title),
+      pick("Client", item.client_name || item.customer_name || item.client?.name),
+      pick("Amount", moneyValue(item) || item.total || item.amount),
+      pick("Status", item.status || item.quote_status || row.status),
+      pick("Date", item.sent_at || item.created_at || item.updated_at)
+    );
+  } else if (page === "invoices" || text.includes("invoice") || text.includes("cashflow")) {
+    facts.push(
+      pick("Invoice", item.invoice_number || item.number || row.title),
+      pick("Client", item.client_name || item.customer_name || item.client?.name),
+      pick("Amount", moneyValue(item) || item.total || item.amount || item.balance),
+      pick("Status", item.status || item.invoice_status || item.payment_status || row.status),
+      pick("Due", item.due_date || item.payment_due_date)
+    );
+  } else {
+    facts.push(
+      pick("Type", row.lead),
+      pick("Title", row.title),
+      pick("Status", row.status),
+      pick("Detail", row.detail)
+    );
+  }
+
+  return facts.filter(Boolean).slice(0, 8);
+}
+
+function cxRecordNextActions(selection = {}) {
+  const page = selection.page || "";
+  const group = String(selection.group || "").toLowerCase();
+
+  if (page === "jobs" || page === "proof" || group.includes("dispatch")) {
+    return [
+      "Review job details",
+      "Check worker assignment",
+      "Confirm proof / notes",
+      "Prepare invoice if completed",
+    ];
+  }
+
+  if (page === "clients") {
+    return [
+      "Check missing contact details",
+      "Review recent jobs / invoices",
+      "Prepare follow-up if needed",
+      "Keep client data clean",
+    ];
+  }
+
+  if (page === "team" || group.includes("crew")) {
+    return [
+      "Check role and region",
+      "Review workload",
+      "Use for worker matching",
+      "Keep dispatch data clean",
+    ];
+  }
+
+  if (page === "quotes" || group.includes("quote")) {
+    return [
+      "Check quote status",
+      "Edit follow-up wording",
+      "Approve follow-up",
+      "Convert to job if accepted",
+    ];
+  }
+
+  if (page === "invoices" || group.includes("cashflow") || group.includes("invoice")) {
+    return [
+      "Check amount and client",
+      "Edit invoice wording",
+      "Approve draft/reminder",
+      "Keep payment follow-up logged",
+    ];
+  }
+
+  return [
+    "Review record",
+    "Edit note/message",
+    "Approve if ready",
+    "Open full workspace only if needed",
+  ];
+}
+
+
+
 function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage }) {
   const [draft, setDraft] = useState(() => draftFromSelection(selection));
   const [portalLinkStatus, setPortalLinkStatus] = useState("");
@@ -2743,6 +2906,9 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
   }
 
   const canCreatePortalLink = Boolean(portalRecordType() && portalRecordId());
+  const recordContext = cxRecordContextForModal(selection, draft);
+  const recordFacts = cxRecordDetailFacts(selection, draft);
+  const recordNextActions = cxRecordNextActions(selection);
 
   async function copyPortalLink() {
     const type = portalRecordType();
@@ -2786,6 +2952,51 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
           </div>
           <button type="button" aria-label="Close Smart Hub pop-up" onClick={onClose}>×</button>
         </header>
+
+        <section className="cx-record-machine-panel">
+          <article className="cx-record-machine-primary">
+            <span>What Churvox found</span>
+            <h3>{recordContext.found}</h3>
+            <p>{recordContext.prepared}</p>
+          </article>
+
+          <article>
+            <span>What Churvox checked</span>
+            <ul>
+              {recordContext.checked.map((point) => (
+                <li key={point}>{point}</li>
+              ))}
+            </ul>
+          </article>
+
+          <article>
+            <span>Owner decision</span>
+            <p>{recordContext.approvalPreview}</p>
+            {recordContext.missing?.length ? (
+              <b>Needs: {recordContext.missing.join(" · ")}</b>
+            ) : (
+              <b>{recordContext.confidenceLabel}</b>
+            )}
+          </article>
+        </section>
+
+        <section className="cx-record-facts-panel">
+          {recordFacts.map((fact) => (
+            <article key={`${fact.label}-${fact.value}`}>
+              <span>{fact.label}</span>
+              <strong>{fact.value}</strong>
+            </article>
+          ))}
+        </section>
+
+        <section className="cx-record-next-panel">
+          <span>What the owner can do here</span>
+          <div>
+            {recordNextActions.map((action) => (
+              <b key={action}>{action}</b>
+            ))}
+          </div>
+        </section>
 
         <section className="cx-command-modal-grid">
           <label>
@@ -2850,10 +3061,10 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
 
         <footer className={isApprovalFlow ? "cx-command-footer-approval" : "cx-command-footer-record"}>
           <button type="button" onClick={() => onSaveDraft(selection, draft)}>
-            {isApprovalFlow ? "Save edit" : "Save note"}
+            {isApprovalFlow ? "Save edit" : "Save in-place note"}
           </button>
           <button type="button" onClick={() => go(selection.page || "dashboard")}>
-            Open {workspaceName}
+            Open full {workspaceName}
           </button>
           {canCreatePortalLink ? (
             <button type="button" className="cx-portal-link-btn" onClick={copyPortalLink}>

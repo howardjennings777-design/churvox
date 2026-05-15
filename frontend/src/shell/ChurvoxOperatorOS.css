@@ -1461,3 +1461,130 @@ button.resolve {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Phase 6: in-place record popups */
+.cx-record-machine-panel {
+  display: grid;
+  grid-template-columns: 1.25fr 0.9fr 0.9fr;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.cx-record-machine-panel article,
+.cx-record-facts-panel article,
+.cx-record-next-panel {
+  border-radius: 22px;
+  padding: 16px;
+  border: 1px solid rgba(116,247,255,.12);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(32,217,255,.08), transparent 14rem),
+    rgba(4,10,16,.52);
+}
+
+.cx-record-machine-panel span,
+.cx-record-facts-panel span,
+.cx-record-next-panel span {
+  display: block;
+  color: var(--cx-cyan);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.cx-record-machine-panel h3 {
+  margin: 8px 0 0;
+  color: var(--cx-text);
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1.08;
+  letter-spacing: -.045em;
+  font-weight: 950;
+}
+
+.cx-record-machine-panel p,
+.cx-record-machine-panel li {
+  color: var(--cx-text-soft);
+  line-height: 1.55;
+  font-weight: 750;
+}
+
+.cx-record-machine-panel ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+}
+
+.cx-record-machine-panel b {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 10px;
+  border-radius: 999px;
+  padding: 8px 10px;
+  color: #031018;
+  background: linear-gradient(135deg, #74f7ff, #35b7ff);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.cx-record-facts-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.cx-record-facts-panel article {
+  padding: 13px;
+}
+
+.cx-record-facts-panel strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--cx-text);
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.cx-record-next-panel {
+  margin-bottom: 14px;
+}
+
+.cx-record-next-panel div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.cx-record-next-panel b {
+  border-radius: 999px;
+  padding: 8px 10px;
+  color: #bfffea;
+  background: rgba(56, 232, 164, 0.1);
+  border: 1px solid rgba(56,232,164,.16);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.cx-command-modal-grid {
+  border-top: 1px solid rgba(116,247,255,.08);
+  padding-top: 14px;
+}
+
+.cx-command-modal footer {
+  border-top: 1px solid rgba(116,247,255,.10);
+  margin-top: 16px;
+  padding-top: 14px;
+}
+
+@media (max-width: 900px) {
+  .cx-record-machine-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-record-facts-panel {
+    grid-template-columns: 1fr;
+  }
+}
