@@ -13,7 +13,7 @@ const API_BASE = (() => {
 
 const APP_PATHS = {
   dashboard: "/dashboard",
-  queue: "/ai-approvals",
+  queue: "/dashboard",
   jobs: "/jobs",
   clients: "/clients",
   team: "/team",
@@ -1038,7 +1038,7 @@ function draftFromSelection(selection) {
 function workspacePathForPage(page) {
   const paths = {
     dashboard: "/dashboard",
-    queue: "/ai-approvals",
+    queue: "/dashboard",
     jobs: "/jobs",
     clients: "/clients",
     team: "/team",
@@ -1350,9 +1350,9 @@ function Workspace({ page, setPage, data }) {
       rows: jobs,
     },
     queue: {
-      kicker: "AI Work Queue",
-      title: "Every prepared action in one approval lane.",
-      body: "Review AI-prepared dispatch, invoice, quote, and cashflow actions before anything important changes.",
+      kicker: "Smart Hub",
+      title: "Approvals live inside Smart Hub.",
+      body: "Use the To approve box on Smart Hub to review AI-prepared actions.",
       rows: actions.map((item) => [item.type, item.title, item.body, item.action]),
     },
     jobs: {
@@ -1829,9 +1829,10 @@ function Workspace({ page, setPage, data }) {
   }
 
   function switchPage(nextPage) {
-    if (nextPage !== "dashboard") setHubFocus("");
-    setPage(nextPage);
-    window.history.pushState({}, "", workspacePathForPage(nextPage));
+    const safePage = nextPage === "queue" ? "dashboard" : nextPage;
+    if (safePage !== "dashboard") setHubFocus("");
+    setPage(safePage);
+    window.history.pushState({}, "", workspacePathForPage(safePage));
     window.dispatchEvent(new PopStateEvent("popstate"));
   }
 
@@ -1975,7 +1976,7 @@ function Workspace({ page, setPage, data }) {
             <span>AI Operator</span>
             <strong>{actions.length} ready</strong>
             <p>Approve/edit from this page first. Open full workspaces only when needed.</p>
-            <button type="button" onClick={() => switchPage("queue")}>Review AI queue</button>
+            <button type="button" onClick={() => switchPage("dashboard")}>Open Smart Hub</button>
           </aside>
         ) : null}
       </section>
@@ -2331,7 +2332,7 @@ export default function ChurvoxAIShell() {
         "/register": "signup",
         "/dashboard": "dashboard",
         "/smart-hub": "dashboard",
-        "/ai-approvals": "queue",
+        "/ai-approvals": "dashboard",
         "/jobs": "jobs",
         "/clients": "clients",
         "/team": "team",
