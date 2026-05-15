@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
+import "./ChurvoxOperatorOS.css";
 
 const API_BASE = (() => {
   const raw =
@@ -546,72 +547,335 @@ function aiActionRow(item) {
 }
 
 function buildLiveActions(raw) {
-  const jobs = raw.jobs || [];
-  const invoices = raw.invoices || [];
-  const quotes = raw.quotes || [];
-
-  const unassigned = jobs.filter((job) => {
-    const status = statusText(job, "").toLowerCase();
-    return (
-      !job.assigned_worker_id &&
-      !job.assigned_worker &&
-      !job.worker_id &&
-      !status.includes("complete") &&
-      !status.includes("cancel")
-    );
-  });
-
-  const completed = jobs.filter((job) => statusText(job, "").toLowerCase().includes("complete"));
-  const overdue = invoices.filter((invoice) => statusText(invoice, "").toLowerCase().includes("overdue"));
-  const drafts = invoices.filter((invoice) => statusText(invoice, "").toLowerCase().includes("draft"));
-  const followQuotes = quotes.filter((quote) => {
-    const status = statusText(quote, "").toLowerCase();
-    return status.includes("sent") || status.includes("pending") || status.includes("follow") || status.includes("open");
-  });
+  const jobs = Array.isArray(raw.jobs) ? raw.jobs : [];
+  const clients = Array.isArray(raw.clients) ? raw.clients : [];
+  const team = Array.isArray(raw.team) ? raw.team : [];
+  const invoices = Array.isArray(raw.invoices) ? raw.invoices : [];
+  const quotes = Array.isArray(raw.quotes) ? raw.quotes : [];
 
   const actions = [];
+  const seen = new Set();
 
-  if (unassigned.length) {
+  function clean(...values) {
+    for (const value of values) {
+      if (value !== undefined && value !== null && String(value).trim()) {
+        return String(value).trim();
+      }
+    }
+    return "";
+  }
+
+  function recordId(item = {}) {
+    return clean(item.id, item._id, item.job_id, item.invoice_id, item.quote_id, item.client_id, item.request_id);
+  }
+
+  function lower(value) {
+    return String(value || "").toLowerCase();
+  }
+
+  function sourceKey(type, item, fallback = "") {
+    return `${type}:${recordId(item) || fallback}`;
+  }
+
+  function addAction(action) {
+    const key = clean(action.key, `${action.type}:${action.title}:${action.source_id}`);
+    if (seen.has(key)) return;
+    seen.add(key);
     actions.push({
+      status: "prepared",
+      priority: action.priority || "normal",
+      ...action,
+      key,
+    });
+  }
+
+  function jobTitle(job, fallback = "job") {
+    return clean(job.title, job.job_title, job.name, job.service_type, job.address, fallback);
+  }
+
+  function clientName(item, fallback = "the client") {
+    return clean(item.client_name, item.customer_name, item.client?.name, item.customer?.name, item.name, fallback);
+  }
+
+  function addressText(item) {
+    return clean(item.address, item.job_address, item.service_address, item.location, "");
+  }
+
+  function jobStatus(job) {
+    return lower(clean(job.status, job.job_status, job.workflow_status, job.state));
+  }
+
+  function isComplete(job) {
+    const status = jobStatus(job);
+    return status.includes("complete") || status.includes("done") || job.completed === true || Boolean(job.completed_at);
+  }
+
+  function isCancelled(job) {
+    const status = jobStatus(job);
+    return status.includes("cancel");
+  }
+
+  function assignedWorker(job) {
+    return clean(job.assigned_worker_id, job.worker_id, job.assigned_worker, job.assigned_worker_name, job.worker_name);
+  }
+
+  function countPhotos(item = {}) {
+    for (const key of ["photos", "worker_photos", "proof_photos", "job_photos", "images"]) {
+      if (Array.isArray(item[key])) return item[key].length;
+    }
+    return Number(item.photo_count || item.photos_count || item.proof_count || 0) || 0;
+  }
+
+  function noteText(item = {}) {
+    return clean(item.completion_notes, item.worker_notes, item.job_notes, item.notes, item.description, item.message);
+  }
+
+  function priceText(item = {}) {
+    const amount = moneyValue(item);
+    if (amount) return amount;
+    const raw = clean(item.job_price, item.fixed_price, item.price, item.amount, item.total, item.balance);
+    return raw ? `$${String(raw).replace(/^\$/, "")}` : "";
+  }
+
+  function dateText(item = {}) {
+    return clean(
+      item.scheduled_date,
+      item.scheduled_time,
+      item.start_time,
+      item.completed_at,
+      item.due_date,
+      item.created_at,
+      item.updated_at,
+      ""
+    );
+  }
+
+  function clientHasContact(item = {}) {
+    return Boolean(clean(item.client_email, item.customer_email, item.email, item.client_phone, item.customer_phone, item.phone));
+  }
+
+  function workerName(worker, fallback = "worker") {
+    return clean(worker.name, worker.full_name, worker.worker_name, worker.email, fallback);
+  }
+
+  function workerRegion(worker) {
+    return lower(clean(worker.region, worker.service_area, worker.area, worker.location));
+  }
+
+  function workerRole(worker) {
+    return lower(clean(worker.role, worker.trade, worker.skill, worker.skills, worker.position));
+  }
+
+  function chooseWorkerForJob(job) {
+    if (!team.length) return null;
+
+    const jobRegion = lower(clean(job.region, job.service_area, job.area, job.suburb, job.city, addressText(job)));
+    const jobSkill = lower(clean(job.service_type, job.job_type, job.trade, job.title, job.name));
+
+    const scored = team.map((worker) => {
+      let score = 0;
+      const status = lower(clean(worker.status, worker.availability, "available"));
+      const region = workerRegion(worker);
+      const role = workerRole(worker);
+
+      if (!status.includes("busy") && !status.includes("off")) score += 2;
+      if (jobRegion && region && jobRegion.includes(region)) score += 3;
+      if (jobSkill && role && jobSkill.includes(role)) score += 2;
+      if (clean(worker.email, worker.phone)) score += 1;
+
+      return { worker, score };
+    }).sort((a, b) => b.score - a.score);
+
+    return scored[0]?.worker || team[0];
+  }
+
+  const invoicedJobIds = new Set(
+    invoices
+      .map((invoice) => clean(invoice.job_id, invoice.source_job_id, invoice.ai_source_job_id))
+      .filter(Boolean)
+  );
+
+  const unassignedJobs = jobs
+    .filter((job) => !isComplete(job) && !isCancelled(job) && !assignedWorker(job))
+    .slice(0, 4);
+
+  unassignedJobs.forEach((job, index) => {
+    const bestWorker = chooseWorkerForJob(job);
+    const title = jobTitle(job, `Job ${index + 1}`);
+    const client = clientName(job);
+    const address = addressText(job);
+    const when = dateText(job);
+    const worker = bestWorker ? workerName(bestWorker) : "";
+    const region = bestWorker ? clean(bestWorker.region, bestWorker.service_area, bestWorker.area) : "";
+    const why = worker
+      ? `${worker}${region ? ` is the first worker to check because their area is ${region}` : " is the first worker to check from the team list"}.`
+      : "No worker records are loaded yet, so Churvox prepared the assignment but needs a worker selected.";
+
+    addAction({
+      key: sourceKey("dispatch", job, title),
       type: "Dispatch",
-      title: `${unassigned.length} unassigned ${unassigned.length === 1 ? "job" : "jobs"} found`,
-      body: "AI can recommend the best worker using workload, availability, area and job fit.",
+      title: `Assign worker to ${title}`,
+      body: `I checked ${client}${address ? ` at ${address}` : ""}${when ? ` for ${when}` : ""}. ${why} Approving will assign the chosen worker and move this job into the run.`,
       action: "Review assignment",
       tone: "blue",
+      source_type: "job",
+      source_id: recordId(job),
+      priority: "high",
+      recommendation: why,
+      approval_preview: "Assign selected worker, update job status, and prepare worker instructions.",
+      raw: job,
     });
-  }
+  });
 
-  if (completed.length || drafts.length) {
-    actions.push({
+  const completedReadyJobs = jobs
+    .filter((job) => {
+      if (!isComplete(job)) return false;
+      const id = recordId(job);
+      return !id || !invoicedJobIds.has(id);
+    })
+    .slice(0, 4);
+
+  completedReadyJobs.forEach((job, index) => {
+    const title = jobTitle(job, `Completed job ${index + 1}`);
+    const client = clientName(job);
+    const address = addressText(job);
+    const photos = countPhotos(job);
+    const notes = noteText(job);
+    const price = priceText(job);
+    const contact = clientHasContact(job);
+    const invoiceDescription = typeof cxInvoiceDescription === "function"
+      ? cxInvoiceDescription(job, title)
+      : clean(notes, `${title} completed${address ? ` at ${address}` : ""}.`);
+
+    addAction({
+      key: sourceKey("invoice", job, title),
       type: "Invoice",
-      title: `${completed.length || drafts.length} invoice ${completed.length + drafts.length === 1 ? "draft" : "drafts"} ready`,
-      body: "Completed work and draft invoices are ready for owner review before sending.",
-      action: "Review invoice",
+      title: `Prepare invoice for ${client}`,
+      body: `I checked the completed job "${title}"${address ? ` at ${address}` : ""}. ${photos ? `${photos} proof photo${photos === 1 ? "" : "s"} found. ` : "No proof photos found yet. "}${notes ? "Worker notes are available. " : "No worker completion note yet. "}${price ? `Price source found: ${price}. ` : "Amount still needs owner input. "}${contact ? "Client contact is saved." : "Client contact may need checking."}`,
+      action: "Review invoice draft",
       tone: "teal",
+      source_type: "completed_job",
+      source_id: recordId(job),
+      priority: price ? "high" : "normal",
+      recommendation: invoiceDescription,
+      approval_preview: "Create/edit invoice draft from the completed job, proof, notes, and price source.",
+      invoice_description: invoiceDescription,
+      raw: job,
+    });
+  });
+
+  invoices
+    .filter((invoice) => {
+      const status = lower(clean(invoice.status, invoice.invoice_status, invoice.payment_status));
+      return status.includes("overdue") || status.includes("unpaid") || Number(invoice.balance || 0) > 0;
+    })
+    .slice(0, 4)
+    .forEach((invoice, index) => {
+      const number = clean(invoice.invoice_number, invoice.number, invoice.title, `Invoice ${index + 1}`);
+      const client = clientName(invoice);
+      const amount = priceText(invoice);
+      const due = clean(invoice.due_date, invoice.payment_due_date, "");
+
+      addAction({
+        key: sourceKey("cashflow", invoice, number),
+        type: "Cashflow",
+        title: `Review payment reminder for ${number}`,
+        body: `I checked ${number} for ${client}. ${amount ? `Outstanding amount appears to be ${amount}. ` : "Amount needs checking. "}${due ? `Due date: ${due}. ` : ""}I prepared this as an owner-approved reminder so nothing sends blindly.`,
+        action: "Review reminder",
+        tone: "amber",
+        source_type: "invoice",
+        source_id: recordId(invoice),
+        priority: "high",
+        approval_preview: "Save or send the approved payment reminder and log the follow-up.",
+        raw: invoice,
+      });
+    });
+
+  quotes
+    .filter((quote) => {
+      const status = lower(clean(quote.status, quote.quote_status, quote.state));
+      return status.includes("sent") || status.includes("pending") || status.includes("open") || status.includes("follow");
+    })
+    .slice(0, 4)
+    .forEach((quote, index) => {
+      const number = clean(quote.quote_number, quote.number, quote.title, `Quote ${index + 1}`);
+      const client = clientName(quote);
+      const amount = priceText(quote);
+      const sent = clean(quote.sent_at, quote.created_at, quote.updated_at, "");
+
+      addAction({
+        key: sourceKey("quote", quote, number),
+        type: "Quote",
+        title: `Prepare follow-up for ${client}`,
+        body: `I checked ${number}${amount ? ` worth ${amount}` : ""}${sent ? ` from ${sent}` : ""}. The quote is still open, so I prepared a follow-up for owner review before anything is sent.`,
+        action: "Review follow-up",
+        tone: "purple",
+        source_type: "quote",
+        source_id: recordId(quote),
+        priority: "normal",
+        approval_preview: "Save or send the approved quote follow-up and update the quote follow-up status.",
+        raw: quote,
+      });
+    });
+
+  const missingClientInfo = clients
+    .filter((client) => !clean(client.email, client.phone, client.address))
+    .slice(0, 3);
+
+  missingClientInfo.forEach((client, index) => {
+    const name = clientName(client, `Client ${index + 1}`);
+    const missing = [
+      clean(client.email) ? "" : "email",
+      clean(client.phone) ? "" : "phone",
+      clean(client.address) ? "" : "address",
+    ].filter(Boolean).join(", ");
+
+    addAction({
+      key: sourceKey("client-cleanup", client, name),
+      type: "Client cleanup",
+      title: `Complete client details for ${name}`,
+      body: `I checked this client record and found missing ${missing || "details"}. Completing this helps Churvox prepare jobs, reminders, quotes and invoices without guessing.`,
+      action: "Review client details",
+      tone: "blue",
+      source_type: "client",
+      source_id: recordId(client),
+      priority: "normal",
+      approval_preview: "Update the client record with owner-approved contact details.",
+      raw: client,
+    });
+  });
+
+  if (!clients.length) {
+    addAction({
+      key: "setup:clients",
+      type: "Setup",
+      title: "Prepare client import",
+      body: "Churvox needs client data before it can prepare jobs, invoices and quote follow-ups properly. Import CSV or add the first client, then Churvox can start preparing real actions.",
+      action: "Import or add clients",
+      tone: "blue",
+      source_type: "setup",
+      source_id: "clients",
+      priority: "high",
+      approval_preview: "Open client setup/import so Churvox can build real client-linked work.",
     });
   }
 
-  if (followQuotes.length) {
-    actions.push({
-      type: "Quote",
-      title: `${followQuotes.length} quote follow-up${followQuotes.length === 1 ? "" : "s"} ready`,
-      body: "AI found quotes that may need a customer follow-up to keep work moving.",
-      action: "Review follow-up",
-      tone: "purple",
+  if (!team.length) {
+    addAction({
+      key: "setup:team",
+      type: "Setup",
+      title: "Prepare worker setup",
+      body: "Churvox needs worker names, roles and regions before it can recommend assignments properly. Add workers so dispatch decisions become specific, not generic.",
+      action: "Add workers",
+      tone: "blue",
+      source_type: "setup",
+      source_id: "team",
+      priority: "high",
+      approval_preview: "Open team setup so Churvox can prepare worker matches.",
     });
   }
 
-  if (overdue.length) {
-    actions.push({
-      type: "Cashflow",
-      title: `${overdue.length} overdue invoice${overdue.length === 1 ? "" : "s"}`,
-      body: "AI prepared payment follow-up work, but nothing sends without approval.",
-      action: "Review reminder",
-      tone: "amber",
-    });
-  }
-
-  return actions;
+  return actions.slice(0, 12);
 }
 
 function useLiveChurvoxData(authed) {
@@ -704,15 +968,25 @@ function useLiveChurvoxData(authed) {
       const mappedTeam = rawTeam.map(workerRow);
       const mappedQuotes = rawQuotes.map(quoteRow);
       const mappedInvoices = rawInvoices.map(invoiceRow);
-      const liveActions = rawAiActions.length
-        ? rawAiActions.map(aiActionRow)
-        : buildLiveActions({
-            jobs: rawJobs,
-            clients: rawClients,
-            team: rawTeam,
-            quotes: rawQuotes,
-            invoices: rawInvoices,
+      const generatedActions = buildLiveActions({
+        jobs: rawJobs,
+        clients: rawClients,
+        team: rawTeam,
+        quotes: rawQuotes,
+        invoices: rawInvoices,
+      });
+
+      const backendActions = rawAiActions.map(aiActionRow);
+      const liveActions = [
+        ...generatedActions,
+        ...backendActions.filter((item) => {
+          const key = `${String(item.source_type || "").toLowerCase()}-${String(item.source_id || "").toLowerCase()}-${String(item.title || "").toLowerCase()}`;
+          return !generatedActions.some((generated) => {
+            const generatedKey = `${String(generated.source_type || "").toLowerCase()}-${String(generated.source_id || "").toLowerCase()}-${String(generated.title || "").toLowerCase()}`;
+            return generatedKey === key;
           });
+        }),
+      ].slice(0, 12);
 
       const readyInvoices = rawInvoices.filter((item) => {
         const status = statusText(item, "").toLowerCase();
