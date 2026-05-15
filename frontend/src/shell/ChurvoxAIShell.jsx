@@ -34,6 +34,11 @@ const NAV = [
   ["settings", "Settings", "Business setup"],
 ];
 
+const WORKER_NAV = [
+  ["dashboard", "My Work", "Today’s assigned jobs"],
+  ["jobs", "My Jobs", "Start, note, photo, complete"],
+];
+
 const PUBLIC_AI_PREVIEW = [
   {
     type: "Dispatch",
@@ -137,6 +142,91 @@ function saveChurvoxSetupProfile(profile) {
   } catch {
     // ignore
   }
+}
+
+
+
+function readSavedUser() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem("churvox_user") || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function currentUserIdentity() {
+  const user = readSavedUser();
+
+  return {
+    id: String(user.id || user._id || user.user_id || "").trim().toLowerCase(),
+    email: String(user.email || localStorage.getItem("churvox_email") || "").trim().toLowerCase(),
+    name: String(user.name || user.full_name || user.worker_name || "").trim().toLowerCase(),
+    role: String(user.role || localStorage.getItem("churvox_role") || "").trim().toLowerCase(),
+  };
+}
+
+function isWorkerSession() {
+  const role = currentUserIdentity().role;
+  return ["worker", "employee", "field_worker"].includes(role);
+}
+
+function workerAssignmentValue(job, keys) {
+  for (const key of keys) {
+    const value = job?.[key];
+    if (value !== undefined && value !== null && String(value).trim()) {
+      return String(value).trim().toLowerCase();
+    }
+  }
+
+  return "";
+}
+
+function jobHasWorkerAssignment(job) {
+  return Boolean(workerAssignmentValue(job, [
+    "assigned_worker_id",
+    "worker_id",
+    "assigned_worker",
+    "assigned_to",
+    "assigned_worker_email",
+    "worker_email",
+    "assigned_worker_name",
+    "worker_name",
+  ]));
+}
+
+function jobMatchesWorker(job, identity) {
+  if (!job || !identity) return false;
+
+  const assignedId = workerAssignmentValue(job, ["assigned_worker_id", "worker_id", "assigned_worker", "assigned_to"]);
+  const assignedEmail = workerAssignmentValue(job, ["assigned_worker_email", "worker_email", "employee_email"]);
+  const assignedName = workerAssignmentValue(job, ["assigned_worker_name", "worker_name", "employee_name"]);
+
+  if (identity.id && assignedId && assignedId === identity.id) return true;
+  if (identity.email && assignedEmail && assignedEmail === identity.email) return true;
+  if (identity.name && assignedName && assignedName === identity.name) return true;
+
+  return false;
+}
+
+function workerRowsFromData(data) {
+  const identity = currentUserIdentity();
+  const rawJobs = Array.isArray(data?.raw?.jobs) ? data.raw.jobs : [];
+  const hasAssignmentData = rawJobs.some(jobHasWorkerAssignment);
+
+  if (rawJobs.length) {
+    const filtered = hasAssignmentData
+      ? rawJobs.filter((job) => jobMatchesWorker(job, identity))
+      : rawJobs;
+
+    return filtered.map(jobRow);
+  }
+
+  return Array.isArray(data?.jobs) ? data.jobs : [];
+}
+
+function rowStatus(row) {
+  return String(Array.isArray(row) ? row[3] : row?.status || "").toLowerCase();
 }
 
 
