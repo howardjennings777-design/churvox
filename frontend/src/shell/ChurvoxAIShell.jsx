@@ -230,6 +230,8 @@ function rowStatus(row) {
 }
 
 
+let churvoxAuthExpiredHandled = false;
+
 function clearSavedSession() {
   try {
     [
@@ -247,12 +249,27 @@ function clearSavedSession() {
 }
 
 function notifyAuthExpired() {
+  if (typeof churvoxAuthExpiredHandled !== "undefined" && churvoxAuthExpiredHandled) return;
+  try {
+    churvoxAuthExpiredHandled = true;
+  } catch {
+    // ignore
+  }
+
   clearSavedSession();
 
   try {
     window.dispatchEvent(new CustomEvent("churvox:auth-expired"));
   } catch {
     // ignore browser event errors
+  }
+
+  try {
+    if (window.location.pathname !== "/") {
+      window.history.replaceState({}, "", "/");
+    }
+  } catch {
+    // ignore history errors
   }
 }
 
@@ -593,6 +610,11 @@ function useLiveChurvoxData(authed) {
 
     async function load() {
       if (!authed) return;
+
+      if (!readToken()) {
+        notifyAuthExpired();
+        return;
+      }
 
       setState((current) => ({ ...current, loading: true, error: "" }));
 
@@ -2086,6 +2108,8 @@ function Workspace({ page, setPage, data }) {
     let cancelled = false;
 
     async function loadSetupProfile() {
+      if (!readToken()) return;
+
       try {
         const payload = await apiGet("/business/setup-profile");
         const profile = payload?.profile && typeof payload.profile === "object"
@@ -2124,6 +2148,8 @@ function Workspace({ page, setPage, data }) {
     let cancelled = false;
 
     async function loadBackendApprovals() {
+      if (!readToken()) return;
+
       try {
         setBackendApprovalStatus("Loading saved approvals...");
         const payload = await apiGet("/ai/owner-command/approvals");
@@ -2140,6 +2166,8 @@ function Workspace({ page, setPage, data }) {
     }
 
     async function loadApprovedDrafts() {
+      if (!readToken()) return;
+
       try {
         setApprovedDraftsStatus("Loading approved drafts...");
         const payload = await apiGet("/ai/owner-command/approved-drafts");
@@ -2156,6 +2184,8 @@ function Workspace({ page, setPage, data }) {
     }
 
     async function loadSendCenter() {
+      if (!readToken()) return;
+
       try {
         setSendCenterStatus("Loading ready-to-send drafts...");
         const payload = await apiGet("/ai/owner-command/send-center");
@@ -3355,6 +3385,26 @@ export default function ChurvoxAIShell() {
       window.history.pushState({}, "", nextPath);
     }
   }, [authed, page]);
+
+  useEffect(() => {
+    function handleAuthExpired() {
+      clearSavedSession();
+      setAuthed(false);
+      setAuthMode("login");
+      setPage("dashboard");
+
+      try {
+        if (window.location.pathname !== "/") {
+          window.history.replaceState({}, "", "/");
+        }
+      } catch {
+        // ignore history errors
+      }
+    }
+
+    window.addEventListener("churvox:auth-expired", handleAuthExpired);
+    return () => window.removeEventListener("churvox:auth-expired", handleAuthExpired);
+  }, []);
 
   const liveData = useLiveChurvoxData(authed);
   const showPublic = useMemo(() => !authed, [authed]);
