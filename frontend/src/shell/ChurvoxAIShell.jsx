@@ -1747,6 +1747,25 @@ function Workspace({ page, setPage, data }) {
       })
     : [];
 
+  const recentDecisionItems = [
+    ...backendApprovalLog.map((item, index) => ({
+      id: item.id || item._id || `backend-${index}`,
+      time: item.approved_at
+        ? new Date(item.approved_at).toLocaleString([], { dateStyle: "short", timeStyle: "short" })
+        : "Saved",
+      type: item.type || "Approval",
+      title: item.title || "Owner command approved",
+      status: item.status || "saved",
+    })),
+    ...approvalLog.map((item, index) => ({
+      id: `session-${index}-${item.time || ""}`,
+      time: item.time || "Session",
+      type: item.type || "Smart Hub",
+      title: item.title || "Owner decision",
+      status: item.status || "saved",
+    })),
+  ].slice(0, 6);
+
   function openCommand(selection) {
     setSelectedRecord(selection);
   }
@@ -2090,6 +2109,40 @@ function Workspace({ page, setPage, data }) {
               <em>{box.action}</em>
             </button>
           ))}
+        </section>
+      ) : null}
+
+      {page === "dashboard" && recentDecisionItems.length ? (
+        <section className="cx-ai-decision-history">
+          <header>
+            <div>
+              <span>Recent AI decisions</span>
+              <h2>What Churvox has handled</h2>
+              <p>Approvals, snoozes and dismissals appear here so the owner can see what changed.</p>
+            </div>
+            {approvalLog.length ? (
+              <button
+                type="button"
+                onClick={() => {
+                  saveOwnerCommandLog([]);
+                  setApprovalLog([]);
+                }}
+              >
+                Clear session
+              </button>
+            ) : null}
+          </header>
+
+          <div>
+            {recentDecisionItems.map((item) => (
+              <article key={item.id}>
+                <span>{item.time}</span>
+                <strong>{item.type}</strong>
+                <p>{item.title}</p>
+                <b>{item.status}</b>
+              </article>
+            ))}
+          </div>
         </section>
       ) : null}
 

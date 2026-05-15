@@ -3129,3 +3129,120 @@ button {
   }
 }
 
+
+/* ===== Smart Hub AI decision history ===== */
+.cx-ai-decision-history {
+  margin: 0 0 18px;
+  border: 1px solid rgba(37,99,235,0.12);
+  border-radius: 30px;
+  padding: 18px;
+  background: rgba(255,255,255,0.68);
+  box-shadow:
+    0 22px 60px rgba(16,32,51,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.86);
+  backdrop-filter: blur(20px);
+}
+
+.cx-ai-decision-history > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.cx-ai-decision-history > header span {
+  display: block;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cx-ai-decision-history > header h2 {
+  margin: 5px 0 0;
+  color: #102033;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: -0.045em;
+  font-weight: 950;
+}
+
+.cx-ai-decision-history > header p {
+  max-width: 720px;
+  margin: 8px 0 0;
+  color: #5b7088;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 820;
+}
+
+.cx-ai-decision-history > header button {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 13px;
+  color: #173050;
+  background: rgba(37,99,235,0.08);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.cx-ai-decision-history > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cx-ai-decision-history article {
+  border-radius: 20px;
+  padding: 13px;
+  border: 1px solid rgba(37,99,235,0.10);
+  background: rgba(255,255,255,0.72);
+}
+
+.cx-ai-decision-history article span {
+  display: block;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.cx-ai-decision-history article strong {
+  display: block;
+  margin-top: 5px;
+  color: #102033;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.cx-ai-decision-history article p {
+  margin: 5px 0 0;
+  color: #5b7088;
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 780;
+}
+
+.cx-ai-decision-history article b {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 8px;
+  border-radius: 999px;
+  padding: 6px 8px;
+  color: #065f46;
+  background: rgba(20,184,166,0.12);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+@media (max-width: 900px) {
+  .cx-ai-decision-history > div {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-ai-decision-history > header {
+    flex-direction: column;
+  }
+}
+
