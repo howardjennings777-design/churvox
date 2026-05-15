@@ -1923,7 +1923,7 @@ function Workspace({ page, setPage, data }) {
     setSetupSaved("");
   }
 
-  function saveSetupProfileLocal() {
+  async function saveSetupProfileLocal() {
     const cleaned = {
       ...DEFAULT_SETUP_PROFILE,
       ...setupProfile,
@@ -1938,8 +1938,49 @@ function Workspace({ page, setPage, data }) {
 
     setSetupProfile(cleaned);
     saveChurvoxSetupProfile(cleaned);
-    setSetupSaved("Setup saved on this device.");
+    setSetupSaved("Saving setup...");
+
+    try {
+      const result = await apiPost("/business/setup-profile", cleaned);
+      const savedProfile = result?.profile && typeof result.profile === "object"
+        ? { ...DEFAULT_SETUP_PROFILE, ...result.profile }
+        : cleaned;
+
+      setSetupProfile(savedProfile);
+      saveChurvoxSetupProfile(savedProfile);
+      setSetupSaved("Setup saved. Churvox recommendations will use this context.");
+    } catch {
+      setSetupSaved("Setup saved on this device. Backend sync will retry when available.");
+    }
   }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSetupProfile() {
+      try {
+        const payload = await apiGet("/business/setup-profile");
+        const profile = payload?.profile && typeof payload.profile === "object"
+          ? { ...DEFAULT_SETUP_PROFILE, ...payload.profile }
+          : readChurvoxSetupProfile();
+
+        if (!cancelled) {
+          setSetupProfile(profile);
+          saveChurvoxSetupProfile(profile);
+        }
+      } catch {
+        if (!cancelled) {
+          setSetupProfile(readChurvoxSetupProfile());
+        }
+      }
+    }
+
+    loadSetupProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     saveSmartHubItemStatus(hubItemStatus);

@@ -958,6 +958,107 @@ async def dismiss_ai_action(action_id: str, request: Request):
 
 
 
+
+# ===================== CHURVOX BUSINESS SETUP PROFILE ROUTES =====================
+_ALLOWED_SETUP_PROFILE_FIELDS = {
+    "businessName",
+    "industry",
+    "region",
+    "serviceArea",
+    "invoiceEmail",
+    "invoicePrefix",
+    "quotePrefix",
+    "ownerApprovalMode",
+}
+
+def _clean_setup_profile_payload(payload: dict) -> dict:
+    if not isinstance(payload, dict):
+        payload = {}
+
+    cleaned = {}
+    for key in _ALLOWED_SETUP_PROFILE_FIELDS:
+        value = payload.get(key)
+        if value is None:
+            value = ""
+        cleaned[key] = str(value).strip()
+
+    cleaned["invoicePrefix"] = cleaned.get("invoicePrefix") or "INV"
+    cleaned["quotePrefix"] = cleaned.get("quotePrefix") or "Q"
+    cleaned["ownerApprovalMode"] = cleaned.get("ownerApprovalMode") or "approval_first"
+    return cleaned
+
+@api_router.get("/business/setup-profile")
+async def get_business_setup_profile(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    profile = await db.business_setup_profiles.find_one({"business_id": str(business_id)})
+
+    if not profile:
+        fallback = {
+            "businessName": current_user.get("business_name") or current_user.get("businessName") or "",
+            "industry": current_user.get("industry") or "",
+            "region": current_user.get("region") or "",
+            "serviceArea": current_user.get("service_area") or current_user.get("serviceArea") or "",
+            "invoiceEmail": current_user.get("email") or "",
+            "invoicePrefix": "INV",
+            "quotePrefix": "Q",
+            "ownerApprovalMode": "approval_first",
+        }
+        return {
+            "ok": True,
+            "profile": fallback,
+            "source": "user_fallback",
+        }
+
+    return {
+        "ok": True,
+        "profile": safe_doc(profile),
+        "source": "business_setup_profiles",
+    }
+
+@api_router.post("/business/setup-profile")
+async def save_business_setup_profile(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    cleaned = _clean_setup_profile_payload(payload)
+    now = datetime.now(timezone.utc)
+
+    cleaned.update({
+        "business_id": str(business_id),
+        "updated_at": now,
+        "updated_by": str(current_user.get("id") or current_user.get("_id") or ""),
+    })
+
+    await db.business_setup_profiles.update_one(
+        {"business_id": str(business_id)},
+        {
+            "$set": cleaned,
+            "$setOnInsert": {"created_at": now},
+        },
+        upsert=True,
+    )
+
+    profile = await db.business_setup_profiles.find_one({"business_id": str(business_id)})
+
+    return {
+        "ok": True,
+        "message": "Business setup profile saved.",
+        "profile": safe_doc(profile),
+    }
+# =================== END CHURVOX BUSINESS SETUP PROFILE ROUTES ===================
+
+
 # ===================== CHURVOX SAFE INTEGRATION STATUS ROUTES =====================
 @api_router.get("/myob/status")
 async def churvox_myob_status():
