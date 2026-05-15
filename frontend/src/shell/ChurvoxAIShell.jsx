@@ -2227,8 +2227,8 @@ function Shell({ page, setPage, onLogout, data }) {
 
           <input placeholder={workerMode ? "Search my assigned jobs..." : "Search jobs, clients, invoices..."} />
 
-          <button type="button" className="cx-top-primary" onClick={() => choosePage(workerMode ? "dashboard" : "jobs")}>
-            {workerMode ? "Open my run" : "Jobs"}
+          <button type="button" className="cx-top-primary" onClick={() => workerMode ? choosePage("dashboard") : choosePage("dashboard")}>
+            {workerMode ? "Open my run" : "Smart Hub"}
           </button>
           <button type="button" className="cx-logout" onClick={onLogout}>
             Logout
@@ -5441,6 +5441,284 @@ function workspaceMachineEmptyCopy(page) {
 
 
 
+
+function OwnerQuickActionModal({ area, onClose, onSaved }) {
+  const [form, setForm] = useState({});
+  const [csvFile, setCsvFile] = useState(null);
+  const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  if (!area) return null;
+
+  const config = {
+    clients: {
+      label: "Client setup",
+      title: "Add or import client details",
+      body: "Churvox needs client details so jobs, quotes, invoices and reminders are prepared from real data.",
+      fields: [
+        ["name", "Client / business name"],
+        ["email", "Email"],
+        ["phone", "Phone"],
+        ["address", "Address"],
+        ["notes", "Notes", "textarea"],
+      ],
+      endpoints: ["/clients"],
+      csvEndpoints: ["/clients/import-csv", "/clients/import", "/import/clients"],
+      payload: (data) => ({
+        name: data.name,
+        client_name: data.name,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        notes: data.notes,
+      }),
+    },
+    team: {
+      label: "Team setup",
+      title: "Add worker / invite team member",
+      body: "Churvox needs workers, roles and regions so dispatch recommendations are specific.",
+      fields: [
+        ["name", "Worker name"],
+        ["email", "Email"],
+        ["phone", "Phone"],
+        ["role", "Role e.g. worker, manager, office admin, payroll"],
+        ["region", "Region / service area"],
+      ],
+      endpoints: ["/team/invite", "/team/workers", "/team/add-worker"],
+      csvEndpoints: ["/team/import-csv", "/team/workers/import-csv", "/import/team"],
+      payload: (data) => ({
+        name: data.name,
+        full_name: data.name,
+        email: data.email,
+        phone: data.phone,
+        role: data.role || "worker",
+        region: data.region,
+        service_area: data.region,
+      }),
+    },
+    jobs: {
+      label: "Job setup",
+      title: "Add job for Churvox to prepare",
+      body: "Create the job once. Churvox can then prepare dispatch, proof and invoice actions around it.",
+      fields: [
+        ["title", "Job title"],
+        ["client_name", "Client name"],
+        ["address", "Job address"],
+        ["scheduled_date", "Scheduled date"],
+        ["description", "Job notes / instructions", "textarea"],
+      ],
+      endpoints: ["/jobs"],
+      csvEndpoints: ["/jobs/import-csv", "/import/jobs"],
+      payload: (data) => ({
+        title: data.title,
+        job_title: data.title,
+        client_name: data.client_name,
+        address: data.address,
+        scheduled_date: data.scheduled_date,
+        description: data.description,
+        notes: data.description,
+      }),
+    },
+    quotes: {
+      label: "Quote setup",
+      title: "Add quote for follow-up",
+      body: "Churvox can prepare follow-ups and convert accepted quotes into jobs after owner approval.",
+      fields: [
+        ["title", "Quote title"],
+        ["client_name", "Client name"],
+        ["amount", "Amount"],
+        ["status", "Status e.g. draft, sent, pending"],
+        ["notes", "Quote notes", "textarea"],
+      ],
+      endpoints: ["/quotes"],
+      csvEndpoints: ["/quotes/import-csv", "/import/quotes"],
+      payload: (data) => ({
+        title: data.title,
+        client_name: data.client_name,
+        amount: data.amount,
+        total: data.amount,
+        status: data.status || "draft",
+        notes: data.notes,
+      }),
+    },
+    invoices: {
+      label: "Invoice setup",
+      title: "Add invoice or draft",
+      body: "Churvox can prepare invoice wording, payment reminders and cashflow follow-up from this record.",
+      fields: [
+        ["client_name", "Client name"],
+        ["amount", "Amount"],
+        ["due_date", "Due date"],
+        ["status", "Status e.g. draft, unpaid, overdue"],
+        ["description", "Invoice description", "textarea"],
+      ],
+      endpoints: ["/invoices"],
+      csvEndpoints: ["/invoices/import-csv", "/import/invoices"],
+      payload: (data) => ({
+        client_name: data.client_name,
+        amount: data.amount,
+        total: data.amount,
+        due_date: data.due_date,
+        status: data.status || "draft",
+        description: data.description,
+        invoice_description: data.description,
+      }),
+    },
+  }[area];
+
+  if (!config) return null;
+
+  function updateField(key, value) {
+    setForm((current) => ({ ...current, [key]: value }));
+    setStatus("");
+  }
+
+  async function saveRecord() {
+    setBusy(true);
+    setStatus("Saving...");
+
+    try {
+      let lastError = null;
+      const body = config.payload(form);
+
+      for (const endpoint of config.endpoints) {
+        try {
+          const result = await apiPost(endpoint, body);
+          setStatus(result?.message || `${config.label} saved.`);
+          onSaved?.(`${config.label} saved`);
+          setBusy(false);
+          return;
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      throw lastError || new Error("Could not save record.");
+    } catch (err) {
+      setStatus(err?.message || "Could not save record.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function uploadCsv() {
+    if (!csvFile) {
+      setStatus("Choose a CSV file first.");
+      return;
+    }
+
+    setBusy(true);
+    setStatus("Importing CSV...");
+
+    try {
+      const token = readToken();
+      let lastError = null;
+
+      for (const endpoint of config.csvEndpoints) {
+        try {
+          const fd = new FormData();
+          fd.append("file", csvFile);
+          fd.append("csv", csvFile);
+          fd.append("source", "operator_os_quick_import");
+
+          const res = await fetch(`${API_BASE}${endpoint}`, {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              Accept: "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: fd,
+          });
+
+          const payload = await res.json().catch(() => ({}));
+
+          if (!res.ok) {
+            throw new Error(payload.detail || payload.message || `${endpoint} failed`);
+          }
+
+          setStatus(payload?.message || "CSV imported. Churvox will check the records.");
+          onSaved?.("CSV import saved");
+          setBusy(false);
+          return;
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      throw lastError || new Error("CSV import failed.");
+    } catch (err) {
+      setStatus(err?.message || "Could not import CSV.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="cx-quick-action-backdrop" onClick={onClose}>
+      <section className="cx-quick-action-modal" onClick={(event) => event.stopPropagation()}>
+        <header>
+          <div>
+            <span>{config.label}</span>
+            <h2>{config.title}</h2>
+            <p>{config.body}</p>
+          </div>
+          <button type="button" onClick={onClose}>×</button>
+        </header>
+
+        <section className="cx-quick-action-machine">
+          <article>
+            <span>What Churvox needs</span>
+            <p>Enough real data to prepare specific actions instead of generic suggestions.</p>
+          </article>
+          <article>
+            <span>What happens next</span>
+            <p>The record becomes part of Smart Hub, worker matching, proof-to-paid, invoices or follow-ups.</p>
+          </article>
+        </section>
+
+        <section className="cx-quick-action-grid">
+          {config.fields.map(([key, label, type]) => (
+            <label key={key} className={type === "textarea" ? "wide" : ""}>
+              {label}
+              {type === "textarea" ? (
+                <textarea value={form[key] || ""} onChange={(event) => updateField(key, event.target.value)} />
+              ) : (
+                <input value={form[key] || ""} onChange={(event) => updateField(key, event.target.value)} />
+              )}
+            </label>
+          ))}
+        </section>
+
+        <section className="cx-quick-action-import">
+          <div>
+            <span>CSV import</span>
+            <p>Upload a CSV when adding multiple records. Churvox will use the imported records for future AI-prepared work.</p>
+          </div>
+          <label>
+            Choose CSV
+            <input type="file" accept=".csv,text/csv" onChange={(event) => setCsvFile(event.target.files?.[0] || null)} />
+          </label>
+          <button type="button" onClick={uploadCsv} disabled={busy}>
+            Import CSV
+          </button>
+        </section>
+
+        {status ? <p className="cx-quick-action-status">{status}</p> : null}
+
+        <footer>
+          <button type="button" onClick={onClose}>Close</button>
+          <button type="button" className="approve" onClick={saveRecord} disabled={busy}>
+            {busy ? "Saving..." : "Save for Churvox"}
+          </button>
+        </footer>
+      </section>
+    </div>
+  );
+}
+
+
+
 function Workspace({ page, setPage, data }) {
   const actions = data?.actions || [];
   const jobs = data?.jobs || [];
@@ -5451,6 +5729,7 @@ function Workspace({ page, setPage, data }) {
   const stats = data?.stats || {};
   const operator = data?.operator || {};
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [quickActionArea, setQuickActionArea] = useState(null);
   const [approved, setApproved] = useState({});
   const [approvalLog, setApprovalLog] = useState(() => readOwnerCommandLog());
   const [backendApprovalLog, setBackendApprovalLog] = useState([]);
@@ -6311,6 +6590,16 @@ function Workspace({ page, setPage, data }) {
     setSelectedRecord(selection);
   }
 
+  function openQuickAction(area) {
+    const safeArea = area === "proof" ? "jobs" : area;
+    if (["clients", "team", "jobs", "quotes", "invoices"].includes(safeArea)) {
+      setQuickActionArea(safeArea);
+      return;
+    }
+
+    switchPage(safeArea || "dashboard");
+  }
+
   function pageForCommandType(type) {
     const text = String(type || "").toLowerCase();
     if (text.includes("invoice") || text.includes("cashflow") || text.includes("payment") || text.includes("collect")) return "invoices";
@@ -7150,6 +7439,15 @@ function Workspace({ page, setPage, data }) {
           </section>
         </aside>
       </section>
+
+      <OwnerQuickActionModal
+        area={quickActionArea}
+        onClose={() => setQuickActionArea(null)}
+        onSaved={(message) => {
+          logCommand("Quick add", message || "Saved", "Churvox context updated");
+          setQuickActionArea(null);
+        }}
+      />
 
       <SmartHubBoxModal
         box={selectedHubBox}
