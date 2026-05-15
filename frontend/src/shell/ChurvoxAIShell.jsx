@@ -3058,6 +3058,7 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
             <span>What Churvox found</span>
             <h3>{recordContext.found}</h3>
             <p>{recordContext.prepared}</p>
+            <AiReadinessBadge context={recordContext} />
           </article>
 
           <article>
@@ -3203,7 +3204,7 @@ function OwnerCommandRow({ item, index, page, group, onOpen }) {
       <strong>{row.title}</strong>
       <small>{context.found}</small>
       <div className="cx-command-row-ai-mini">
-        <b>{context.confidenceLabel}</b>
+        <b>{cxReadinessForPreparedContext(context).title}</b>
         <em>{context.prepared}</em>
       </div>
     </button>
@@ -3438,6 +3439,58 @@ function cxInvoiceClientFromDraftOrItem(draft = {}, item = {}, title = "") {
   }
 
   return "Client name needed";
+}
+
+
+
+
+function cxReadinessForPreparedContext(context = {}) {
+  const missing = Array.isArray(context.missing) ? context.missing.filter(Boolean) : [];
+  const label = String(context.confidenceLabel || "").toLowerCase();
+  const mode = String(context.mode || "").toLowerCase();
+
+  if (missing.length >= 2 || label.includes("blocked")) {
+    return {
+      level: "blocked",
+      title: "Blocked",
+      body: `Churvox needs ${missing.join(", ")} before this should be approved.`,
+    };
+  }
+
+  if (missing.length || label.includes("need")) {
+    return {
+      level: "needs-input",
+      title: "Needs input",
+      body: missing.length
+        ? `Owner should check ${missing.join(", ")} before approval.`
+        : "Owner should check this before approval.",
+    };
+  }
+
+  if (mode.includes("setup")) {
+    return {
+      level: "setup",
+      title: "Setup",
+      body: "This improves the context Churvox uses to prepare future work.",
+    };
+  }
+
+  return {
+    level: "ready",
+    title: "Ready",
+    body: "Churvox has enough context for owner review and approval.",
+  };
+}
+
+function AiReadinessBadge({ context }) {
+  const readiness = cxReadinessForPreparedContext(context);
+
+  return (
+    <div className={`cx-ai-readiness-badge ${readiness.level}`}>
+      <span>{readiness.title}</span>
+      <small>{readiness.body}</small>
+    </div>
+  );
 }
 
 
@@ -4454,6 +4507,8 @@ function SmartHubBoxModal({
                       </article>
                     </div>
 
+                    <AiReadinessBadge context={context} />
+
                     {context.missing.length ? (
                       <div className="cx-ai-missing-strip">
                         <b>Needs owner input</b>
@@ -4511,6 +4566,10 @@ function SmartHubBoxModal({
 
             {editingContext ? (
               <section className="cx-ai-approval-preview-machine">
+                <article className="cx-ai-approval-readiness-cell">
+                  <span>Readiness</span>
+                  <AiReadinessBadge context={editingContext} />
+                </article>
                 <article>
                   <span>What Churvox found</span>
                   <p>{editingContext.found}</p>
