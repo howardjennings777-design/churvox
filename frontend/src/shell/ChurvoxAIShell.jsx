@@ -622,6 +622,17 @@ function useLiveChurvoxData(authed) {
     quotes: [],
     invoices: [],
     actions: [],
+    operator: {
+      dispatch: null,
+      recurring: [],
+      templates: [],
+      setupAudit: null,
+      ownerSummary: null,
+      cashflow: null,
+      workerReport: null,
+      quoteReport: null,
+      requests: [],
+    },
     stats: {
       jobsToday: "0",
       readyToInvoice: "$0",
@@ -657,6 +668,15 @@ function useLiveChurvoxData(authed) {
         apiGet("/quotes"),
         apiGet("/invoices"),
         apiGet("/ai/actions"),
+        apiGet("/dispatch/board"),
+        apiGet("/recurring-jobs"),
+        apiGet("/service-templates"),
+        apiGet("/setup/ai-audit"),
+        apiGet("/reports/owner-summary"),
+        apiGet("/reports/cashflow"),
+        apiGet("/reports/workers"),
+        apiGet("/reports/quotes"),
+        apiGet("/public-job-requests"),
       ]);
 
       if (cancelled) return;
@@ -667,6 +687,15 @@ function useLiveChurvoxData(authed) {
       const rawQuotes = results[3].status === "fulfilled" ? toArray(results[3].value, ["quotes"]) : [];
       const rawInvoices = results[4].status === "fulfilled" ? toArray(results[4].value, ["invoices"]) : [];
       const rawAiActions = results[5].status === "fulfilled" ? toArray(results[5].value, ["actions"]) : [];
+      const rawDispatch = results[6].status === "fulfilled" ? (results[6].value || {}) : {};
+      const rawRecurring = results[7].status === "fulfilled" ? toArray(results[7].value, ["recurring_jobs", "items"]) : [];
+      const rawTemplates = results[8].status === "fulfilled" ? toArray(results[8].value, ["templates", "items"]) : [];
+      const rawSetupAudit = results[9].status === "fulfilled" ? (results[9].value || null) : null;
+      const rawOwnerSummary = results[10].status === "fulfilled" ? (results[10].value || null) : null;
+      const rawCashflow = results[11].status === "fulfilled" ? (results[11].value || null) : null;
+      const rawWorkerReport = results[12].status === "fulfilled" ? (results[12].value || null) : null;
+      const rawQuoteReport = results[13].status === "fulfilled" ? (results[13].value || null) : null;
+      const rawPublicRequests = results[14].status === "fulfilled" ? toArray(results[14].value, ["requests", "items"]) : [];
 
       const mappedJobs = rawJobs.map(jobRow);
       const mappedClients = rawClients.map(clientRow);
@@ -702,6 +731,17 @@ function useLiveChurvoxData(authed) {
         quotes: mappedQuotes,
         invoices: mappedInvoices,
         actions: liveActions,
+        operator: {
+          dispatch: rawDispatch,
+          recurring: rawRecurring,
+          templates: rawTemplates,
+          setupAudit: rawSetupAudit,
+          ownerSummary: rawOwnerSummary,
+          cashflow: rawCashflow,
+          workerReport: rawWorkerReport,
+          quoteReport: rawQuoteReport,
+          requests: rawPublicRequests,
+        },
         stats: {
           jobsToday: String(rawJobs.length),
           readyToInvoice: invoiceTotal > 0
@@ -2133,6 +2173,11 @@ function SmartHubBoxModal({
     collect: "invoices",
     quotes: "quotes",
     crew: "team",
+    requests: "jobs",
+    dispatch: "jobs",
+    recurring: "jobs",
+    templates: "settings",
+    reports: "dashboard",
     setup: "settings",
   }[box.key] || "dashboard";
 
@@ -2145,6 +2190,11 @@ function SmartHubBoxModal({
     collect: "Unpaid or overdue invoices that need follow-up.",
     quotes: "Open quotes and follow-ups that may need a nudge.",
     crew: "Worker capacity and team records available for assignment.",
+    requests: "Customer requests that can become draft jobs or quotes.",
+    dispatch: "Dispatch decisions, unassigned jobs and possible schedule conflicts.",
+    recurring: "Recurring jobs that may need the next job generated.",
+    templates: "Service templates that can speed up job creation and proof/invoice wording.",
+    reports: "Owner summaries for cashflow, quotes, workers and weekly performance.",
     setup: "These setup checks help Churvox make better AI decisions for your business.",
   }[box.key] || "Review the items Churvox found.";
 
@@ -2260,6 +2310,11 @@ function SmartHubBoxModal({
     if (box.key === "collect") return "Prepare reminder";
     if (box.key === "quotes") return "Follow up";
     if (box.key === "crew") return "Review worker";
+    if (box.key === "requests") return "Create draft job";
+    if (box.key === "dispatch") return "Review dispatch";
+    if (box.key === "recurring") return "Generate job";
+    if (box.key === "templates") return "Review template";
+    if (box.key === "reports") return "Review report";
     if (box.key === "work") return "Review work";
 
     if (text.includes("worker") || text.includes("assign")) return "Approve worker";
@@ -2382,7 +2437,7 @@ function SmartHubBoxModal({
 
             const actionId = item?.id || item?._id || item?.action_id || "";
             const sourceType = item?.source_type || item?.kind || item?.type || row.lead;
-            const sourceId = item?.source_id || item?.job_id || item?.invoice_id || item?.quote_id || "";
+            const sourceId = item?.source_id || item?.job_id || item?.invoice_id || item?.quote_id || item?.id || item?._id || "";
 
             const selection = {
               item,
@@ -2541,6 +2596,7 @@ function Workspace({ page, setPage, data }) {
   const quotes = data?.quotes || [];
   const invoices = data?.invoices || [];
   const stats = data?.stats || {};
+  const operator = data?.operator || {};
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [approved, setApproved] = useState({});
   const [approvalLog, setApprovalLog] = useState(() => readOwnerCommandLog());
@@ -2881,6 +2937,136 @@ function Workspace({ page, setPage, data }) {
 
   const crewRows = team.slice(0, 6);
 
+  const requestRows = (Array.isArray(operator.requests) ? operator.requests : [])
+    .filter((item) => !["converted_to_job", "dismissed", "closed"].includes(String(item?.status || "").toLowerCase()))
+    .slice(0, 6)
+    .map((item) => ({
+      ...item,
+      type: "Job request",
+      title: item?.service_type || item?.title || `Request from ${item?.name || "customer"}`,
+      message: item?.notes || item?.address || "Customer request waiting for owner review",
+      status: "Create draft job",
+      source_type: "public_job_request",
+      source_id: item?.id || item?.request_id || item?._id || "",
+    }));
+
+  const dispatchBoard = operator.dispatch || {};
+  const dispatchRows = [
+    ...((Array.isArray(dispatchBoard.unassigned) ? dispatchBoard.unassigned : []).slice(0, 4).map((item) => ({
+      ...item,
+      type: "Dispatch",
+      title: item?.title || item?.name || item?.client_name || "Unassigned job",
+      message: item?.address || item?.description || "Needs worker assignment",
+      status: "Assign worker",
+      source_type: "dispatch_job",
+      source_id: item?.id || item?._id || "",
+    }))),
+    ...((Array.isArray(dispatchBoard.conflicts) ? dispatchBoard.conflicts : []).slice(0, 2).map((item) => ({
+      ...item,
+      type: "Schedule conflict",
+      title: item?.worker_name || "Worker conflict",
+      message: item?.message || "Possible schedule clash",
+      status: "Check conflict",
+      source_type: "dispatch_conflict",
+      source_id: item?.job_a || item?.job_b || "",
+    }))),
+  ];
+
+  const recurringRows = (Array.isArray(operator.recurring) ? operator.recurring : [])
+    .slice(0, 6)
+    .map((item) => ({
+      ...item,
+      type: "Recurring job",
+      title: item?.title || item?.client_name || "Recurring job due",
+      message: item?.address || item?.notes || item?.ai_summary || "Generate the next scheduled job",
+      status: item?.next_due_date ? `Due ${item.next_due_date}` : "Generate next job",
+      source_type: "recurring_job",
+      source_id: item?.id || item?._id || "",
+    }));
+
+  const templateRows = (Array.isArray(operator.templates) ? operator.templates : [])
+    .slice(0, 6)
+    .map((item) => ({
+      ...item,
+      type: "Service template",
+      title: item?.name || item?.service_type || "Service template",
+      message: item?.default_invoice_description || item?.notes || "Reusable job preset",
+      status: item?.photo_required ? "Photo proof required" : "Ready",
+      source_type: "service_template",
+      source_id: item?.id || item?._id || "",
+    }));
+
+  const ownerSummary = operator.ownerSummary || {};
+  const cashflowReport = operator.cashflow || {};
+  const workerReport = operator.workerReport || {};
+  const quoteReport = operator.quoteReport || {};
+  const reportSummary = ownerSummary.summary || {};
+  const cashflowSummary = cashflowReport.summary || {};
+  const quoteSummary = quoteReport.summary || {};
+  const reportRows = [
+    {
+      type: "Owner report",
+      title: "Weekly business summary",
+      message: ownerSummary.ai_summary || "Completed jobs, quotes, invoices and cashflow summary",
+      status: `${reportSummary.completed_jobs || 0} completed`,
+      source_type: "owner_report",
+      source_id: "owner-summary",
+    },
+    {
+      type: "Cashflow",
+      title: "Money to collect",
+      message: cashflowReport.ai_summary || "Unpaid and overdue invoice summary",
+      status: `${cashflowSummary.overdue?.count || 0} overdue`,
+      source_type: "cashflow_report",
+      source_id: "cashflow",
+    },
+    {
+      type: "Quotes",
+      title: "Quote follow-up report",
+      message: quoteReport.ai_summary || "Open quotes and follow-up opportunities",
+      status: `${quoteSummary.needs_followup || 0} follow-ups`,
+      source_type: "quote_report",
+      source_id: "quotes",
+    },
+    {
+      type: "Workers",
+      title: "Worker workload report",
+      message: workerReport.ai_summary || "Worker load and completed job summary",
+      status: `${workerReport.summary?.worker_rows || 0} workers`,
+      source_type: "worker_report",
+      source_id: "workers",
+    },
+  ];
+
+  const backendSetupAudit = operator.setupAudit || {};
+  const backendSetupSummary = backendSetupAudit.summary || {};
+  const backendSetupRows = [
+    ...(backendSetupAudit.client_cleanup?.duplicate_groups || []).slice(0, 3).map((item) => ({
+      type: "Setup cleanup",
+      title: `${item.count || 2} possible duplicate clients`,
+      message: item.ai_recommendation || "Review duplicate clients before merging",
+      status: "Review duplicates",
+      source_type: "setup_audit",
+      source_id: item.match_key || "duplicate-clients",
+    })),
+    ...(backendSetupAudit.client_cleanup?.missing_phone || []).slice(0, 2).map((item) => ({
+      type: "Setup cleanup",
+      title: `${item.name || "Client"} missing phone`,
+      message: item.email || "Client record needs phone number",
+      status: "Missing phone",
+      source_type: "setup_audit",
+      source_id: item.id || "missing-phone",
+    })),
+    ...(backendSetupAudit.worker_cleanup?.missing_region || []).slice(0, 2).map((item) => ({
+      type: "Setup cleanup",
+      title: `${item.name || "Worker"} missing region`,
+      message: item.email || "Worker needs service area for better dispatch",
+      status: "Missing region",
+      source_type: "setup_audit",
+      source_id: item.id || "missing-region",
+    })),
+  ];
+
   const setupChecks = [
     { key: "business", done: Boolean(setupProfile.businessName), title: "Add business name", body: "This keeps quotes, invoices and messages branded.", action: "settings" },
     { key: "industry", done: Boolean(setupProfile.industry), title: "Choose industry / trade", body: "Trade context helps AI prepare better actions.", action: "settings" },
@@ -2975,6 +3161,46 @@ function Workspace({ page, setPage, data }) {
       body: "Workers and team records available for assignment.",
       action: "View",
     },
+    {
+      key: "requests",
+      count: requestRows.length,
+      label: "new",
+      title: "Request inbox",
+      body: "Customer requests ready to become draft jobs or quotes.",
+      action: "Prepare",
+    },
+    {
+      key: "dispatch",
+      count: dispatchRows.length,
+      label: "dispatch",
+      title: "Dispatch board",
+      body: "Unassigned jobs, schedule conflicts and dispatch decisions.",
+      action: "Assign",
+    },
+    {
+      key: "recurring",
+      count: recurringRows.length,
+      label: "due",
+      title: "Recurring jobs",
+      body: "Repeat work ready to generate or schedule.",
+      action: "Generate",
+    },
+    {
+      key: "templates",
+      count: templateRows.length,
+      label: "presets",
+      title: "Service templates",
+      body: "Reusable job presets, checklist and invoice wording.",
+      action: "Use",
+    },
+    {
+      key: "reports",
+      count: reportRows.length,
+      label: "reports",
+      title: "Owner reports",
+      body: "Cashflow, quote, worker and weekly business summaries.",
+      action: "Review",
+    },
   ];
 
   const setupHealthBox = {
@@ -3028,7 +3254,12 @@ function Workspace({ page, setPage, data }) {
     "collect",
     "work",
     "quotes",
+    "requests",
+    "dispatch",
+    "recurring",
+    "reports",
     "crew",
+    "templates",
     "setup",
   ]
     .map((key) => hubBoxes.find((box) => box.key === key))
@@ -3055,7 +3286,17 @@ function Workspace({ page, setPage, data }) {
                 ? [["Quotes waiting", "quotes", quoteRows]]
                 : hubFocus === "crew"
                   ? [["Crew active", "team", crewRows]]
-                  : []
+                  : hubFocus === "requests"
+                    ? [["Request inbox", "jobs", requestRows]]
+                    : hubFocus === "dispatch"
+                      ? [["Dispatch board", "jobs", dispatchRows]]
+                      : hubFocus === "recurring"
+                        ? [["Recurring jobs", "jobs", recurringRows]]
+                        : hubFocus === "templates"
+                          ? [["Service templates", "settings", templateRows]]
+                          : hubFocus === "reports"
+                            ? [["Owner reports", "dashboard", reportRows]]
+                            : []
     : page === "queue"
       ? []
       : [[current.kicker, page, current.rows]];
@@ -3079,7 +3320,12 @@ function Workspace({ page, setPage, data }) {
     if (key === "collect") return collectRows;
     if (key === "quotes") return quoteRows;
     if (key === "crew") return crewRows;
-    if (key === "setup") return setupRows;
+    if (key === "requests") return requestRows;
+    if (key === "dispatch") return dispatchRows;
+    if (key === "recurring") return recurringRows;
+    if (key === "templates") return templateRows;
+    if (key === "reports") return reportRows;
+    if (key === "setup") return [...setupRows, ...backendSetupRows];
     return [];
   }
 
@@ -3242,6 +3488,25 @@ function Workspace({ page, setPage, data }) {
       const directActionId = selection.hubBoxKey === "approvals"
         ? String(selection.actionId || selection?.item?.id || selection?.item?._id || "").trim()
         : "";
+
+      const selectedSourceId = String(selection.sourceId || selection.actionId || selection?.item?.id || selection?.item?._id || "").trim();
+
+      if (selection.hubBoxKey === "requests" && selectedSourceId) {
+        const result = await apiPost(`/public-job-requests/${encodeURIComponent(selectedSourceId)}/create-job`, {
+          title,
+          notes: draft?.detail || draft?.ownerNote || "",
+        });
+
+        logCommand("Request inbox", title, result?.message || "Draft job created");
+        return true;
+      }
+
+      if (selection.hubBoxKey === "recurring" && selectedSourceId) {
+        const result = await apiPost(`/recurring-jobs/${encodeURIComponent(selectedSourceId)}/generate`, {});
+
+        logCommand("Recurring jobs", title, result?.message || "Next job generated");
+        return true;
+      }
 
       const approvalPath = directActionId
         ? `/ai/actions/${encodeURIComponent(directActionId)}/approve`
@@ -3593,6 +3858,49 @@ function Workspace({ page, setPage, data }) {
               <em>{box.action}</em>
             </button>
           ))}
+        </section>
+      ) : null}
+
+      {page === "dashboard" ? (
+        <section className="cx-operator-expansion-panel">
+          <header>
+            <div>
+              <span>Connected operator systems</span>
+              <h2>New backend features are now feeding Smart Hub.</h2>
+              <p>Requests, dispatch, recurring jobs, templates, setup cleanup and reports are visible from one board.</p>
+            </div>
+          </header>
+
+          <div>
+            {[
+              ["requests", "Request inbox", requestRows.length, "Customer requests waiting"],
+              ["dispatch", "Dispatch board", dispatchRows.length, "Unassigned jobs / conflicts"],
+              ["recurring", "Recurring jobs", recurringRows.length, "Repeat work due"],
+              ["templates", "Service templates", templateRows.length, "Reusable job presets"],
+              ["reports", "Owner reports", reportRows.length, "Cashflow and workload"],
+              ["setup", "Setup audit", backendSetupSummary.cleanup_action_count || backendSetupRows.length || setupRows.length, "Cleanup actions"],
+            ].map(([key, title, count, body]) => (
+              <button
+                type="button"
+                key={key}
+                onClick={() => {
+                  const box = hubBoxes.find((item) => item.key === key) || {
+                    key,
+                    title,
+                    count,
+                    label: "items",
+                    body,
+                    action: "Review",
+                  };
+                  setSelectedHubBox({ ...box, count: visibleHubCount(key, count) });
+                }}
+              >
+                <span>{title}</span>
+                <strong>{count}</strong>
+                <small>{body}</small>
+              </button>
+            ))}
+          </div>
         </section>
       ) : null}
 

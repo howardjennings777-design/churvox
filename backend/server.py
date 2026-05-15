@@ -17311,6 +17311,208 @@ async def get_quote_report(request: Request):
 # =================== END CHURVOX SETUP CLEANUP AI + SIMPLE REPORTS ===================
 
 
+
+
+# ===================== CHURVOX OWNER REQUEST INBOX + PORTAL LINK ACTIONS =====================
+
+def _owner_request_clean(value, limit=1000):
+    return str(value or "").strip()[:limit]
+
+def _owner_request_id_query(request_id: str):
+    query = [{"id": str(request_id)}, {"request_id": str(request_id)}]
+    try:
+        if ObjectId.is_valid(str(request_id)):
+            query.append({"_id": ObjectId(str(request_id))})
+    except Exception:
+        pass
+    return query
+
+@api_router.get("/public-job-requests")
+async def list_owner_public_job_requests(request: Request, status: str = Query("")):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    query = {"business_id": str(business_id)}
+    if status:
+        query["status"] = status
+
+    items = await db.public_job_requests.find(query).sort("created_at", -1).limit(250).to_list(length=250)
+
+    return {
+        "ok": True,
+        "requests": make_json_safe(safe_docs(items)),
+        "count": len(items),
+    }
+
+@api_router.post("/public-job-requests/{request_id}/create-job")
+async def create_job_from_public_request(request_id: str, request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    req = await db.public_job_requests.find_one({
+        "business_id": str(business_id),
+        "$or": _owner_request_id_query(request_id),
+    })
+
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    now = datetime.now(timezone.utc)
+    job_id = secrets.token_urlsafe(10)
+
+    title = _owner_request_clean(
+        payload.get("title")
+        or req.get("service_type")
+        or f"Job request from {req.get('name') or 'customer'}",
+        180,
+    )
+
+    notes = _owner_request_clean(
+        payload.get("notes")
+        or payload.get("detail")
+        or req.get("notes")
+        or "",
+        1800,
+    )
+
+    job_doc = {
+        "id": job_id,
+        "business_id": str(business_id),
+        "title": title,
+        "name": title,
+        "client_name": req.get("name") or "",
+        "customer_name": req.get("name") or "",
+        "customer_email": req.get("email") or "",
+        "client_email": req.get("email") or "",
+        "phone": req.get("phone") or "",
+        "address": req.get("address") or "",
+        "service_type": req.get("service_type") or "",
+        "preferred_date": req.get("preferred_date") or "",
+        "description": notes,
+        "notes": notes,
+        "status": "pending",
+        "job_status": "pending",
+        "source": "public_job_request",
+        "source_request_id": str(req.get("id") or req.get("request_id") or req.get("_id")),
+        "ai_summary": req.get("ai_summary") or "Public request converted into a draft job for owner approval.",
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    await db.jobs.insert_one(job_doc)
+
+    await db.public_job_requests.update_one(
+        {"_id": req.get("_id")},
+        {
+            "$set": {
+                "status": "converted_to_job",
+                "converted_job_id": job_id,
+                "converted_at": now,
+                "updated_at": now,
+            }
+        },
+    )
+
+    await db.ai_actions.insert_one({
+        "business_id": str(business_id),
+        "type": "Job request",
+        "title": f"Draft job created from request: {title}",
+        "body": notes or "Public request converted to job.",
+        "action": "Review draft job",
+        "status": "pending",
+        "source_type": "job",
+        "source_id": job_id,
+        "created_at": now,
+        "updated_at": now,
+    })
+
+    return {
+        "ok": True,
+        "message": "Draft job created from customer request.",
+        "job": make_json_safe(safe_doc(job_doc)),
+    }
+
+@api_router.post("/portal-links/{record_type}/{record_id}/ensure")
+async def ensure_public_portal_link(record_type: str, record_id: str, request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    record_type = str(record_type or "").strip().lower()
+    collection_map = {
+        "job": "jobs",
+        "jobs": "jobs",
+        "quote": "quotes",
+        "quotes": "quotes",
+        "invoice": "invoices",
+        "invoices": "invoices",
+    }
+
+    collection_name = collection_map.get(record_type)
+    if not collection_name:
+        raise HTTPException(status_code=400, detail="record_type must be job, quote, or invoice")
+
+    collection = getattr(db, collection_name)
+
+    query_ids = [{"id": str(record_id)}]
+    try:
+        if ObjectId.is_valid(str(record_id)):
+            query_ids.append({"_id": ObjectId(str(record_id))})
+    except Exception:
+        pass
+
+    record = await collection.find_one({
+        "business_id": str(business_id),
+        "$or": query_ids,
+    })
+
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+
+    token = (
+        record.get("proof_to_paid_token")
+        or record.get("client_portal_token")
+        or record.get("portal_token")
+        or record.get("public_token")
+        or secrets.token_urlsafe(18)
+    )
+
+    now = datetime.now(timezone.utc)
+    await collection.update_one(
+        {"_id": record.get("_id")},
+        {
+            "$set": {
+                "proof_to_paid_token": token,
+                "client_portal_token": token,
+                "portal_token": token,
+                "public_token": token,
+                "portal_link_enabled": True,
+                "portal_link_updated_at": now,
+                "updated_at": now,
+            }
+        },
+    )
+
+    return {
+        "ok": True,
+        "token": token,
+        "portal_path": f"/portal/{token}",
+        "message": "Portal link ready.",
+    }
+
+# =================== END CHURVOX OWNER REQUEST INBOX + PORTAL LINK ACTIONS ===================
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
