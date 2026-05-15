@@ -2624,6 +2624,87 @@ function SmartHubBoxModal({
     );
   }
 
+  function editingApprovalMode() {
+    const text = `${editingSelection?.hubBoxKey || ""} ${editingSelection?.group || ""} ${editingSelection?.sourceType || ""} ${editingDraft?.title || ""} ${editingDraft?.detail || ""} ${editingDraft?.status || ""}`.toLowerCase();
+
+    if (editingNeedsInvoiceDraft()) return "invoice";
+    if (text.includes("dispatch") || text.includes("assign") || text.includes("worker")) return "dispatch";
+    if (text.includes("cashflow") || text.includes("payment") || text.includes("overdue") || text.includes("collect")) return "cashflow";
+    if (text.includes("quote") || text.includes("message") || text.includes("follow")) return "message";
+    if (text.includes("request")) return "request";
+    if (text.includes("recurring")) return "recurring";
+    if (text.includes("template")) return "template";
+    if (text.includes("report")) return "report";
+
+    return "review";
+  }
+
+  function editingReviewCopy() {
+    const mode = editingApprovalMode();
+
+    if (mode === "dispatch") {
+      return {
+        label: "Dispatch approval",
+        title: "AI prepared a worker assignment",
+        body: "Choose or confirm the worker, check instructions, then approve. Churvox assigns the job without sending you to another page.",
+      };
+    }
+
+    if (mode === "cashflow") {
+      return {
+        label: "Payment follow-up",
+        title: "AI prepared a payment reminder",
+        body: "Review the reminder wording and payment status. Nothing is sent automatically.",
+      };
+    }
+
+    if (mode === "message") {
+      return {
+        label: "Quote / message follow-up",
+        title: "AI prepared the customer follow-up",
+        body: "Review the message and timing, then approve the draft. You stay in Smart Hub.",
+      };
+    }
+
+    if (mode === "request") {
+      return {
+        label: "Request to job",
+        title: "AI prepared a draft job from the request",
+        body: "Check the customer request summary and approve when it is ready to become a job.",
+      };
+    }
+
+    if (mode === "recurring") {
+      return {
+        label: "Recurring job",
+        title: "AI prepared the next recurring job",
+        body: "Review the job details and approve generation. No page jumping needed.",
+      };
+    }
+
+    if (mode === "template") {
+      return {
+        label: "Template to job",
+        title: "AI prepared a job from a service template",
+        body: "Confirm the job title, client, address and notes before creating it.",
+      };
+    }
+
+    if (mode === "report") {
+      return {
+        label: "Owner report",
+        title: "AI prepared an owner decision summary",
+        body: "Review the recommendation and mark the action handled.",
+      };
+    }
+
+    return {
+      label: "Owner approval",
+      title: "AI prepared this action",
+      body: "Review what Churvox prepared, adjust only if needed, then approve here.",
+    };
+  }
+
   if (!box) return null;
 
   const workspaceForBox = {
@@ -2901,7 +2982,18 @@ function SmartHubBoxModal({
 
   function approveEditedSelection() {
     if (!editingSelection) return;
-    onApprove(editingSelection, editingDraft);
+
+    const normalizedDraft = {
+      ...editingDraft,
+      customerMessage: editingDraft.customerMessage || editingDraft.quoteMessage || editingDraft.reminderMessage || editingDraft.workerInstruction || "",
+      message: editingDraft.message || editingDraft.customerMessage || editingDraft.quoteMessage || editingDraft.reminderMessage || "",
+      description: editingDraft.description || editingDraft.invoiceDescription || editingDraft.detail || "",
+      worker_id: editingDraft.workerChoice || editingDraft.worker_id || "",
+      invoice_client_name: editingDraft.invoiceClientName || "",
+      invoice_line_item: editingDraft.invoiceLineItemsText || "",
+    };
+
+    onApprove(editingSelection, normalizedDraft);
     setEditingSelection(null);
   }
 
@@ -3144,66 +3236,225 @@ function SmartHubBoxModal({
                 </section>
               </div>
             ) : (
-              <div>
-                <label>
-                  Title / summary
-                  <input
-                    value={editingDraft.title}
-                    onChange={(event) => updateEditingDraft("title", event.target.value)}
-                  />
-                </label>
+              <div className={`cx-action-review cx-action-review-${editingApprovalMode()}`}>
+                <section className="cx-action-review-prepared">
+                  <span>{editingReviewCopy().label}</span>
+                  <h4>{editingReviewCopy().title}</h4>
+                  <p>{editingReviewCopy().body}</p>
+                </section>
 
-                <label>
-                  Status
-                  <input
-                    value={editingDraft.status}
-                    onChange={(event) => updateEditingDraft("status", event.target.value)}
-                  />
-                </label>
+                {editingApprovalMode() === "dispatch" ? (
+                  <>
+                    <label>
+                      Assign worker
+                      <select
+                        value={editingDraft.workerChoice || ""}
+                        onChange={(event) => updateEditingDraft("workerChoice", event.target.value)}
+                      >
+                        <option value="">Choose worker...</option>
+                        {workerOptionsForEdit.map((worker) => (
+                          <option key={`${worker.id}-${worker.name}`} value={worker.id || worker.name}>
+                            {worker.name}{worker.region ? ` · ${worker.region}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                      {!workerOptionsForEdit.length ? <small className="cx-worker-picker-note">No workers loaded yet. Add workers in Team first.</small> : null}
+                    </label>
 
-                {editingNeedsWorkerDropdown() ? (
-                  <label>
-                    Assign worker
-                    <select
-                      value={editingDraft.workerChoice || ""}
-                      onChange={(event) => updateEditingDraft("workerChoice", event.target.value)}
-                    >
-                      <option value="">Choose worker...</option>
-                      {workerOptionsForEdit.map((worker) => (
-                        <option key={`${worker.id}-${worker.name}`} value={worker.id || worker.name}>
-                          {worker.name}{worker.region ? ` · ${worker.region}` : ""}
-                        </option>
-                      ))}
-                    </select>
-                    {!workerOptionsForEdit.length ? <small className="cx-worker-picker-note">No workers loaded yet. Add workers in Team first.</small> : null}
-                  </label>
-                ) : null}
+                    <label>
+                      Conflict check
+                      <select
+                        value={editingDraft.conflictStatus || "clear"}
+                        onChange={(event) => updateEditingDraft("conflictStatus", event.target.value)}
+                      >
+                        <option value="clear">No conflict found</option>
+                        <option value="check">Needs check</option>
+                        <option value="conflict">Possible conflict</option>
+                      </select>
+                    </label>
 
-                <label className="wide">
-                  AI context / detail
-                  <textarea
-                    value={editingDraft.detail}
-                    onChange={(event) => updateEditingDraft("detail", event.target.value)}
-                  />
-                </label>
+                    <label className="wide">
+                      Worker instruction
+                      <textarea
+                        value={editingDraft.customerMessage || ""}
+                        onChange={(event) => updateEditingDraft("customerMessage", event.target.value)}
+                        placeholder="Instructions for the worker..."
+                      />
+                    </label>
 
-                <label className="wide">
-                  Owner note
-                  <textarea
-                    value={editingDraft.ownerNote}
-                    onChange={(event) => updateEditingDraft("ownerNote", event.target.value)}
-                    placeholder="Add your instruction or internal decision note..."
-                  />
-                </label>
+                    <label className="wide">
+                      Owner note
+                      <textarea
+                        value={editingDraft.ownerNote || ""}
+                        onChange={(event) => updateEditingDraft("ownerNote", event.target.value)}
+                        placeholder="Access notes, timing, priority..."
+                      />
+                    </label>
+                  </>
+                ) : editingApprovalMode() === "cashflow" ? (
+                  <>
+                    <label>
+                      Follow-up type
+                      <select
+                        value={editingDraft.collectAction || "friendly_reminder"}
+                        onChange={(event) => updateEditingDraft("collectAction", event.target.value)}
+                      >
+                        <option value="friendly_reminder">Friendly reminder</option>
+                        <option value="second_notice">Second notice</option>
+                        <option value="check_payment">Check payment</option>
+                        <option value="mark_paid">Mark paid</option>
+                      </select>
+                    </label>
 
-                <label className="wide">
-                  Customer / worker message
-                  <textarea
-                    value={editingDraft.customerMessage}
-                    onChange={(event) => updateEditingDraft("customerMessage", event.target.value)}
-                    placeholder="Edit the message before anything is marked ready..."
-                  />
-                </label>
+                    <label>
+                      Payment status
+                      <select
+                        value={editingDraft.paymentStatus || "unpaid"}
+                        onChange={(event) => updateEditingDraft("paymentStatus", event.target.value)}
+                      >
+                        <option value="unpaid">Unpaid</option>
+                        <option value="overdue">Overdue</option>
+                        <option value="part_paid">Part paid</option>
+                        <option value="paid">Paid</option>
+                      </select>
+                    </label>
+
+                    <label className="wide">
+                      Payment reminder owner will approve
+                      <textarea
+                        value={editingDraft.reminderMessage || editingDraft.customerMessage || ""}
+                        onChange={(event) => updateEditingDraft("reminderMessage", event.target.value)}
+                        placeholder="Prepared reminder wording..."
+                      />
+                    </label>
+
+                    <label className="wide">
+                      Internal note
+                      <textarea
+                        value={editingDraft.ownerNote || ""}
+                        onChange={(event) => updateEditingDraft("ownerNote", event.target.value)}
+                        placeholder="Payment context or next follow-up..."
+                      />
+                    </label>
+                  </>
+                ) : editingApprovalMode() === "message" ? (
+                  <>
+                    <label>
+                      Follow-up status
+                      <select
+                        value={editingDraft.followupStatus || "draft"}
+                        onChange={(event) => updateEditingDraft("followupStatus", event.target.value)}
+                      >
+                        <option value="draft">Draft</option>
+                        <option value="ready">Ready to send/copy</option>
+                        <option value="followed_up">Followed up</option>
+                        <option value="snoozed">Snoozed</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Timing
+                      <input
+                        value={editingDraft.followupTiming || ""}
+                        onChange={(event) => updateEditingDraft("followupTiming", event.target.value)}
+                        placeholder="Today, tomorrow, next week"
+                      />
+                    </label>
+
+                    <label className="wide">
+                      Customer follow-up owner will approve
+                      <textarea
+                        value={editingDraft.quoteMessage || editingDraft.customerMessage || ""}
+                        onChange={(event) => updateEditingDraft("quoteMessage", event.target.value)}
+                        placeholder="Prepared quote or customer follow-up..."
+                      />
+                    </label>
+
+                    <label className="wide">
+                      Owner note
+                      <textarea
+                        value={editingDraft.ownerNote || ""}
+                        onChange={(event) => updateEditingDraft("ownerNote", event.target.value)}
+                        placeholder="Customer preference or internal note..."
+                      />
+                    </label>
+                  </>
+                ) : editingApprovalMode() === "template" ? (
+                  <>
+                    <label>
+                      Job title
+                      <input
+                        value={editingDraft.templateJobTitle || editingDraft.title || ""}
+                        onChange={(event) => updateEditingDraft("templateJobTitle", event.target.value)}
+                        placeholder="Job title"
+                      />
+                    </label>
+
+                    <label>
+                      Client
+                      <input
+                        value={editingDraft.templateClientName || ""}
+                        onChange={(event) => updateEditingDraft("templateClientName", event.target.value)}
+                        placeholder="Client name"
+                      />
+                    </label>
+
+                    <label className="wide">
+                      Address
+                      <input
+                        value={editingDraft.templateAddress || ""}
+                        onChange={(event) => updateEditingDraft("templateAddress", event.target.value)}
+                        placeholder="Job address"
+                      />
+                    </label>
+
+                    <label className="wide">
+                      Job notes
+                      <textarea
+                        value={editingDraft.templateNotes || editingDraft.detail || ""}
+                        onChange={(event) => updateEditingDraft("templateNotes", event.target.value)}
+                        placeholder="Notes for the new job..."
+                      />
+                    </label>
+                  </>
+                ) : (
+                  <>
+                    <label>
+                      Decision
+                      <input
+                        value={editingDraft.status || ""}
+                        onChange={(event) => updateEditingDraft("status", event.target.value)}
+                        placeholder="Decision"
+                      />
+                    </label>
+
+                    <label>
+                      Follow-up
+                      <input
+                        value={editingDraft.reportFollowUp || editingDraft.followupTiming || ""}
+                        onChange={(event) => updateEditingDraft("reportFollowUp", event.target.value)}
+                        placeholder="Optional follow-up"
+                      />
+                    </label>
+
+                    <label className="wide">
+                      AI-prepared detail
+                      <textarea
+                        value={editingDraft.detail || ""}
+                        onChange={(event) => updateEditingDraft("detail", event.target.value)}
+                      />
+                    </label>
+
+                    <label className="wide">
+                      Owner note
+                      <textarea
+                        value={editingDraft.ownerNote || ""}
+                        onChange={(event) => updateEditingDraft("ownerNote", event.target.value)}
+                        placeholder="Add decision note before approval..."
+                      />
+                    </label>
+                  </>
+                )}
               </div>
             )}
 
