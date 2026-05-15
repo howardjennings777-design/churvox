@@ -16741,6 +16741,576 @@ async def prepare_client_proof_summary(job_id: str, request: Request):
 # =================== END CHURVOX SERVICE TEMPLATES + WORKER PROOF PACKS ===================
 
 
+
+
+# ===================== CHURVOX SETUP CLEANUP AI + SIMPLE REPORTS =====================
+
+def _cleanup_text(value, limit=1000):
+    return str(value or "").strip()[:limit]
+
+def _cleanup_lower(value):
+    return _cleanup_text(value).lower()
+
+def _cleanup_doc_id(doc):
+    return str(doc.get("id") or doc.get("_id") or "")
+
+def _cleanup_money(value):
+    try:
+        if isinstance(value, (int, float)):
+            return float(value)
+        return float(str(value or "0").replace("$", "").replace(",", "").strip() or 0)
+    except Exception:
+        return 0.0
+
+def _cleanup_status(doc):
+    return str(
+        doc.get("status")
+        or doc.get("job_status")
+        or doc.get("quote_status")
+        or doc.get("invoice_status")
+        or doc.get("payment_status")
+        or ""
+    ).lower().replace("_", " ")
+
+def _cleanup_client_key(client):
+    name = _cleanup_lower(client.get("name") or client.get("client_name") or client.get("customer_name"))
+    email = _cleanup_lower(client.get("email") or client.get("client_email") or client.get("customer_email"))
+    phone = clean_phone(client.get("phone") or client.get("mobile") or client.get("phone_number"))
+    address = _cleanup_lower(client.get("address") or client.get("service_address") or client.get("billing_address"))
+    return email or phone or f"{name}|{address}"
+
+def _cleanup_client_name(client):
+    return _cleanup_text(client.get("name") or client.get("client_name") or client.get("customer_name") or "Unnamed client", 180)
+
+def _cleanup_phone(client):
+    return clean_phone(
+        client.get("phone")
+        or client.get("mobile")
+        or client.get("phone_number")
+        or client.get("contact_phone")
+    )
+
+def _cleanup_email(client):
+    return _cleanup_text(client.get("email") or client.get("client_email") or client.get("customer_email"), 220)
+
+def _cleanup_address(client):
+    return _cleanup_text(client.get("address") or client.get("service_address") or client.get("billing_address"), 300)
+
+async def _cleanup_load_business_records(business_id: str):
+    clients = await db.clients.find({"business_id": str(business_id)}).limit(2000).to_list(length=2000)
+    jobs = await db.jobs.find({"business_id": str(business_id)}).limit(2000).to_list(length=2000)
+    workers = []
+
+    try:
+        worker_docs = await db.workers.find({"business_id": str(business_id)}).limit(1000).to_list(length=1000)
+        workers.extend(worker_docs or [])
+    except Exception:
+        pass
+
+    try:
+        user_workers = await db.users.find({
+            "business_id": str(business_id),
+            "role": {"$in": ["worker", "employee", "field_worker"]},
+        }).limit(1000).to_list(length=1000)
+        workers.extend(user_workers or [])
+    except Exception:
+        pass
+
+    quotes = await db.quotes.find({"business_id": str(business_id)}).limit(2000).to_list(length=2000)
+    invoices = await db.invoices.find({"business_id": str(business_id)}).limit(2000).to_list(length=2000)
+
+    return {
+        "clients": clients,
+        "jobs": jobs,
+        "workers": workers,
+        "quotes": quotes,
+        "invoices": invoices,
+    }
+
+def _cleanup_audit_clients(clients):
+    duplicates = {}
+    missing_phone = []
+    missing_email = []
+    missing_address = []
+
+    for client in clients:
+        key = _cleanup_client_key(client)
+        if key:
+            duplicates.setdefault(key, []).append(client)
+
+        if not _cleanup_phone(client):
+            missing_phone.append(client)
+        if not _cleanup_email(client):
+            missing_email.append(client)
+        if not _cleanup_address(client):
+            missing_address.append(client)
+
+    duplicate_groups = []
+    for key, group in duplicates.items():
+        if len(group) > 1:
+            duplicate_groups.append({
+                "match_key": key,
+                "count": len(group),
+                "clients": [
+                    {
+                        "id": _cleanup_doc_id(item),
+                        "name": _cleanup_client_name(item),
+                        "email": _cleanup_email(item),
+                        "phone": _cleanup_phone(item),
+                        "address": _cleanup_address(item),
+                    }
+                    for item in group[:8]
+                ],
+                "ai_recommendation": "Review duplicates before merging. Keep the best address, phone and email.",
+            })
+
+    return {
+        "duplicate_groups": duplicate_groups[:25],
+        "missing_phone": [
+            {"id": _cleanup_doc_id(item), "name": _cleanup_client_name(item), "email": _cleanup_email(item)}
+            for item in missing_phone[:50]
+        ],
+        "missing_email": [
+            {"id": _cleanup_doc_id(item), "name": _cleanup_client_name(item), "phone": _cleanup_phone(item)}
+            for item in missing_email[:50]
+        ],
+        "missing_address": [
+            {"id": _cleanup_doc_id(item), "name": _cleanup_client_name(item), "email": _cleanup_email(item)}
+            for item in missing_address[:50]
+        ],
+    }
+
+def _cleanup_audit_workers(workers):
+    seen = set()
+    cleaned = []
+    missing_region = []
+    missing_phone = []
+    missing_role = []
+
+    for worker in workers:
+        key = str(worker.get("id") or worker.get("_id") or worker.get("email") or worker.get("name") or "")
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        cleaned.append(worker)
+
+        if not worker.get("region") and not worker.get("service_area"):
+            missing_region.append(worker)
+        if not clean_phone(worker.get("phone") or worker.get("mobile") or worker.get("phone_number")):
+            missing_phone.append(worker)
+        if not worker.get("role"):
+            missing_role.append(worker)
+
+    def worker_row(item):
+        return {
+            "id": _cleanup_doc_id(item),
+            "name": _cleanup_text(item.get("name") or item.get("full_name") or item.get("email") or "Worker", 180),
+            "email": _cleanup_text(item.get("email"), 220),
+            "phone": clean_phone(item.get("phone") or item.get("mobile") or item.get("phone_number")),
+        }
+
+    return {
+        "worker_count": len(cleaned),
+        "missing_region": [worker_row(item) for item in missing_region[:50]],
+        "missing_phone": [worker_row(item) for item in missing_phone[:50]],
+        "missing_role": [worker_row(item) for item in missing_role[:50]],
+    }
+
+def _cleanup_setup_score(records):
+    clients = records["clients"]
+    jobs = records["jobs"]
+    workers = records["workers"]
+    quotes = records["quotes"]
+    invoices = records["invoices"]
+
+    checks = [
+        {"key": "clients", "done": len(clients) > 0, "title": "Add or import clients"},
+        {"key": "jobs", "done": len(jobs) > 0, "title": "Create first job"},
+        {"key": "workers", "done": len(workers) > 0, "title": "Add workers"},
+        {"key": "quotes", "done": len(quotes) > 0, "title": "Create quotes"},
+        {"key": "invoices", "done": len(invoices) > 0, "title": "Create invoices"},
+    ]
+
+    done_count = len([item for item in checks if item["done"]])
+    score = round((done_count / max(len(checks), 1)) * 100)
+
+    return {
+        "score": score,
+        "checks": checks,
+        "missing": [item for item in checks if not item["done"]],
+    }
+
+@api_router.get("/setup/ai-audit")
+async def get_setup_ai_audit(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    records = await _cleanup_load_business_records(business_id)
+    client_audit = _cleanup_audit_clients(records["clients"])
+    worker_audit = _cleanup_audit_workers(records["workers"])
+    setup = _cleanup_setup_score(records)
+
+    action_count = (
+        len(client_audit["duplicate_groups"])
+        + len(client_audit["missing_phone"])
+        + len(client_audit["missing_email"])
+        + len(client_audit["missing_address"])
+        + len(worker_audit["missing_region"])
+        + len(worker_audit["missing_phone"])
+        + len(setup["missing"])
+    )
+
+    return {
+        "ok": True,
+        "business_id": business_id,
+        "setup": setup,
+        "client_cleanup": client_audit,
+        "worker_cleanup": worker_audit,
+        "summary": {
+            "client_count": len(records["clients"]),
+            "job_count": len(records["jobs"]),
+            "worker_count": worker_audit["worker_count"],
+            "quote_count": len(records["quotes"]),
+            "invoice_count": len(records["invoices"]),
+            "cleanup_action_count": action_count,
+        },
+        "ai_recommendation": (
+            "Setup is strong. Keep testing live workflows."
+            if setup["score"] >= 80 and action_count == 0
+            else "Clean missing client/worker details and duplicates so Smart Hub recommendations are more accurate."
+        ),
+    }
+
+@api_router.post("/setup/import-cleanup/clients/preview")
+async def preview_client_import_cleanup(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    incoming = payload.get("clients") or payload.get("rows") or []
+    if not isinstance(incoming, list):
+        raise HTTPException(status_code=400, detail="clients must be a list")
+
+    existing = await db.clients.find({"business_id": str(business_id)}).limit(3000).to_list(length=3000)
+    existing_keys = {_cleanup_client_key(client): client for client in existing if _cleanup_client_key(client)}
+
+    preview = []
+    duplicates = []
+    missing = []
+
+    for index, row in enumerate(incoming[:1000]):
+        if not isinstance(row, dict):
+            continue
+
+        key = _cleanup_client_key(row)
+        item = {
+            "row": index + 1,
+            "name": _cleanup_client_name(row),
+            "email": _cleanup_email(row),
+            "phone": _cleanup_phone(row),
+            "address": _cleanup_address(row),
+            "match_key": key,
+            "action": "import",
+            "issues": [],
+        }
+
+        if not item["phone"]:
+            item["issues"].append("missing_phone")
+        if not item["email"]:
+            item["issues"].append("missing_email")
+        if not item["address"]:
+            item["issues"].append("missing_address")
+
+        if key and key in existing_keys:
+            item["action"] = "possible_duplicate"
+            item["existing_client"] = {
+                "id": _cleanup_doc_id(existing_keys[key]),
+                "name": _cleanup_client_name(existing_keys[key]),
+            }
+            duplicates.append(item)
+
+        if item["issues"]:
+            missing.append(item)
+
+        preview.append(item)
+
+    return {
+        "ok": True,
+        "preview": preview,
+        "summary": {
+            "rows_checked": len(preview),
+            "possible_duplicates": len(duplicates),
+            "rows_with_missing_info": len(missing),
+        },
+        "duplicates": duplicates[:100],
+        "missing": missing[:100],
+        "ai_recommendation": "Review possible duplicates and missing fields before importing. Churvox can still import them, but cleaner data improves AI matching.",
+    }
+
+def _report_date_bounds(period: str):
+    now = datetime.now(timezone.utc)
+    period = str(period or "this_week").lower().strip()
+
+    if period in ["today", "day"]:
+        start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
+    elif period in ["this_month", "month"]:
+        start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+    elif period in ["last_30_days", "30d"]:
+        start = now - timedelta(days=30)
+    else:
+        start = now - timedelta(days=7)
+
+    return start, now
+
+def _report_in_period(doc, start, end):
+    for key in ["completed_at", "created_at", "updated_at", "date", "scheduled_date"]:
+        value = doc.get(key)
+        if not value:
+            continue
+
+        try:
+            if isinstance(value, datetime):
+                dt = value
+            else:
+                dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+            return start <= dt <= end
+        except Exception:
+            continue
+
+    return False
+
+def _report_worker_name(job):
+    return _cleanup_text(
+        job.get("assigned_worker_name")
+        or job.get("worker_name")
+        or job.get("assigned_worker")
+        or "Unassigned",
+        180,
+    )
+
+@api_router.get("/reports/owner-summary")
+async def get_owner_summary_report(request: Request, period: str = Query("this_week")):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    start, end = _report_date_bounds(period)
+    records = await _cleanup_load_business_records(business_id)
+
+    jobs = records["jobs"]
+    quotes = records["quotes"]
+    invoices = records["invoices"]
+
+    completed_jobs = [
+        job for job in jobs
+        if "complete" in _cleanup_status(job) and _report_in_period(job, start, end)
+    ]
+
+    open_quotes = [
+        quote for quote in quotes
+        if any(word in _cleanup_status(quote) for word in ["sent", "open", "pending", "follow"])
+    ]
+
+    accepted_quotes = [
+        quote for quote in quotes
+        if "accept" in _cleanup_status(quote) and _report_in_period(quote, start, end)
+    ]
+
+    unpaid_invoices = [
+        invoice for invoice in invoices
+        if any(word in _cleanup_status(invoice) for word in ["unpaid", "overdue", "draft", "sent"])
+        or _cleanup_money(invoice.get("balance")) > 0
+    ]
+
+    overdue_invoices = [
+        invoice for invoice in unpaid_invoices
+        if "overdue" in _cleanup_status(invoice)
+    ]
+
+    money_to_collect = sum(
+        _cleanup_money(invoice.get("balance") or invoice.get("amount_due") or invoice.get("total") or invoice.get("amount"))
+        for invoice in unpaid_invoices
+    )
+
+    worker_counts = {}
+    for job in jobs:
+        name = _report_worker_name(job)
+        worker_counts[name] = worker_counts.get(name, 0) + 1
+
+    worker_load = [
+        {"worker": name, "job_count": count}
+        for name, count in sorted(worker_counts.items(), key=lambda item: item[1], reverse=True)
+    ]
+
+    return {
+        "ok": True,
+        "period": period,
+        "range": {
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+        },
+        "summary": {
+            "completed_jobs": len(completed_jobs),
+            "open_quotes": len(open_quotes),
+            "accepted_quotes": len(accepted_quotes),
+            "unpaid_invoices": len(unpaid_invoices),
+            "overdue_invoices": len(overdue_invoices),
+            "money_to_collect": round(money_to_collect, 2),
+            "worker_count": len(records["workers"]),
+        },
+        "worker_load": worker_load[:20],
+        "top_actions": [
+            "Review overdue invoices" if overdue_invoices else "",
+            "Follow up open quotes" if open_quotes else "",
+            "Invoice completed jobs" if completed_jobs else "",
+        ],
+        "ai_summary": (
+            f"{len(completed_jobs)} jobs completed, {len(open_quotes)} quotes open, "
+            f"{len(unpaid_invoices)} invoices unpaid, and ${round(money_to_collect, 2)} to collect."
+        ),
+    }
+
+@api_router.get("/reports/cashflow")
+async def get_cashflow_report(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    invoices = await db.invoices.find({"business_id": str(business_id)}).limit(3000).to_list(length=3000)
+
+    buckets = {
+        "draft": [],
+        "sent": [],
+        "unpaid": [],
+        "overdue": [],
+        "paid": [],
+    }
+
+    for invoice in invoices:
+        status = _cleanup_status(invoice)
+        if "paid" in status and "unpaid" not in status:
+            buckets["paid"].append(invoice)
+        elif "overdue" in status:
+            buckets["overdue"].append(invoice)
+        elif "unpaid" in status:
+            buckets["unpaid"].append(invoice)
+        elif "sent" in status:
+            buckets["sent"].append(invoice)
+        else:
+            buckets["draft"].append(invoice)
+
+    def bucket_total(items):
+        return round(sum(_cleanup_money(item.get("balance") or item.get("amount_due") or item.get("total") or item.get("amount")) for item in items), 2)
+
+    return {
+        "ok": True,
+        "summary": {
+            key: {
+                "count": len(items),
+                "total": bucket_total(items),
+            }
+            for key, items in buckets.items()
+        },
+        "ai_summary": f"{len(buckets['overdue'])} overdue invoices and ${bucket_total(buckets['overdue'])} overdue.",
+    }
+
+@api_router.get("/reports/workers")
+async def get_worker_report(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    records = await _cleanup_load_business_records(business_id)
+    jobs = records["jobs"]
+
+    worker_map = {}
+
+    for job in jobs:
+        name = _report_worker_name(job)
+        item = worker_map.setdefault(name, {
+            "worker": name,
+            "assigned": 0,
+            "completed": 0,
+            "in_progress": 0,
+            "paused": 0,
+        })
+
+        status = _cleanup_status(job)
+        item["assigned"] += 1
+
+        if "complete" in status:
+            item["completed"] += 1
+        if "progress" in status:
+            item["in_progress"] += 1
+        if "paused" in status:
+            item["paused"] += 1
+
+    workers = sorted(worker_map.values(), key=lambda item: item["assigned"], reverse=True)
+
+    return {
+        "ok": True,
+        "workers": workers,
+        "summary": {
+            "worker_rows": len(workers),
+            "total_jobs_counted": len(jobs),
+        },
+        "ai_summary": "Use this to spot overloaded workers and lighter workers for dispatch decisions.",
+    }
+
+@api_router.get("/reports/quotes")
+async def get_quote_report(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    quotes = await db.quotes.find({"business_id": str(business_id)}).limit(3000).to_list(length=3000)
+
+    summary = {
+        "draft": 0,
+        "sent": 0,
+        "open": 0,
+        "accepted": 0,
+        "declined": 0,
+        "needs_followup": 0,
+    }
+
+    for quote in quotes:
+        status = _cleanup_status(quote)
+
+        if "accept" in status:
+            summary["accepted"] += 1
+        elif "declin" in status:
+            summary["declined"] += 1
+        elif "sent" in status:
+            summary["sent"] += 1
+            summary["needs_followup"] += 1
+        elif "open" in status or "pending" in status:
+            summary["open"] += 1
+            summary["needs_followup"] += 1
+        else:
+            summary["draft"] += 1
+
+    return {
+        "ok": True,
+        "summary": summary,
+        "ai_summary": f"{summary['needs_followup']} quotes may need follow-up. Churvox can prepare owner-approved messages.",
+    }
+
+# =================== END CHURVOX SETUP CLEANUP AI + SIMPLE REPORTS ===================
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
