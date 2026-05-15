@@ -1183,6 +1183,15 @@ function SmartHubBoxModal({
   onDismiss,
   onOpenFull,
 }) {
+  const [editingSelection, setEditingSelection] = useState(null);
+  const [editingDraft, setEditingDraft] = useState({
+    title: "",
+    detail: "",
+    status: "",
+    ownerNote: "",
+    customerMessage: "",
+  });
+
   if (!box) return null;
 
   const workspaceForBox = {
@@ -1275,6 +1284,28 @@ function SmartHubBoxModal({
     return "Everything in this box is handled, snoozed, or dismissed for this session.";
   }
 
+  function startEdit(selection) {
+    const row = rowText(selection?.item, 0, selection?.label || "Smart Hub item");
+    setEditingSelection(selection);
+    setEditingDraft({
+      title: row.title,
+      detail: row.detail,
+      status: row.status,
+      ownerNote: "",
+      customerMessage: "",
+    });
+  }
+
+  function updateEditingDraft(key, value) {
+    setEditingDraft((current) => ({ ...current, [key]: value }));
+  }
+
+  function approveEditedSelection() {
+    if (!editingSelection) return;
+    onApprove(editingSelection, editingDraft);
+    setEditingSelection(null);
+  }
+
   return (
     <div className="cx-smart-modal-backdrop" onClick={onClose}>
       <section className="cx-smart-modal" onClick={(event) => event.stopPropagation()}>
@@ -1335,7 +1366,7 @@ function SmartHubBoxModal({
                   <strong>Why AI found this</strong>
                   <p>{reasonFor(row)}</p>
                   <div>
-                    <button type="button" onClick={() => onOpen(selection)}>Details / edit</button>
+                    <button type="button" onClick={() => startEdit(selection)}>Details / edit</button>
                     <button
                       type="button"
                       className="approve"
@@ -1362,6 +1393,71 @@ function SmartHubBoxModal({
             </div>
           )}
         </section>
+
+        {editingSelection ? (
+          <section className="cx-smart-modal-edit">
+            <header>
+              <div>
+                <span>Edit before approval</span>
+                <h3>{editingDraft.title}</h3>
+                <p>Adjust the title, note, or message before Churvox saves the approval.</p>
+              </div>
+              <button type="button" onClick={() => setEditingSelection(null)}>Close edit</button>
+            </header>
+
+            <div>
+              <label>
+                Title / summary
+                <input
+                  value={editingDraft.title}
+                  onChange={(event) => updateEditingDraft("title", event.target.value)}
+                />
+              </label>
+
+              <label>
+                Status
+                <input
+                  value={editingDraft.status}
+                  onChange={(event) => updateEditingDraft("status", event.target.value)}
+                />
+              </label>
+
+              <label className="wide">
+                AI context / detail
+                <textarea
+                  value={editingDraft.detail}
+                  onChange={(event) => updateEditingDraft("detail", event.target.value)}
+                />
+              </label>
+
+              <label className="wide">
+                Owner note
+                <textarea
+                  value={editingDraft.ownerNote}
+                  onChange={(event) => updateEditingDraft("ownerNote", event.target.value)}
+                  placeholder="Add your instruction or internal decision note..."
+                />
+              </label>
+
+              <label className="wide">
+                Customer / worker message
+                <textarea
+                  value={editingDraft.customerMessage}
+                  onChange={(event) => updateEditingDraft("customerMessage", event.target.value)}
+                  placeholder="Edit the message before anything is marked ready..."
+                />
+              </label>
+            </div>
+
+            <footer>
+              <button type="button" onClick={() => setEditingSelection(null)}>Cancel</button>
+              <button type="button" onClick={() => onOpen(editingSelection)}>Open full editor</button>
+              <button type="button" className="approve" onClick={approveEditedSelection}>
+                Approve edited action
+              </button>
+            </footer>
+          </section>
+        ) : null}
       </section>
     </div>
   );

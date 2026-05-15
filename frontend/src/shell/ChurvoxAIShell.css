@@ -3276,3 +3276,132 @@ button {
   background: rgba(16,32,51,0.08);
 }
 
+
+/* ===== Smart Hub modal in-popup edit mode ===== */
+.cx-smart-modal-edit {
+  margin-top: 18px;
+  border-radius: 26px;
+  padding: 18px;
+  border: 1px solid rgba(37,99,235,0.14);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.88), rgba(239,247,255,0.72));
+  box-shadow: 0 18px 46px rgba(16,32,51,0.08);
+}
+
+.cx-smart-modal-edit > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.cx-smart-modal-edit > header span {
+  display: block;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.cx-smart-modal-edit > header h3 {
+  margin: 6px 0 0;
+  color: #102033;
+  font-size: 26px;
+  letter-spacing: -0.05em;
+}
+
+.cx-smart-modal-edit > header p {
+  margin: 6px 0 0;
+  color: #5b7088;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.cx-smart-modal-edit > header button {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 12px;
+  color: #173050;
+  background: rgba(37,99,235,0.08);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.cx-smart-modal-edit > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cx-smart-modal-edit label {
+  display: grid;
+  gap: 7px;
+  color: #23405e;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cx-smart-modal-edit label.wide {
+  grid-column: 1 / -1;
+}
+
+.cx-smart-modal-edit input,
+.cx-smart-modal-edit textarea {
+  width: 100%;
+  border: 1px solid rgba(37,99,235,0.14);
+  border-radius: 18px;
+  color: #102033;
+  background: rgba(255,255,255,0.82);
+  padding: 13px;
+  font-size: 14px;
+  font-weight: 800;
+  outline: none;
+}
+
+.cx-smart-modal-edit textarea {
+  min-height: 86px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.cx-smart-modal-edit footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.cx-smart-modal-edit footer button {
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 13px;
+  color: #173050;
+  background: rgba(37,99,235,0.08);
+  font-weight: 950;
+}
+
+.cx-smart-modal-edit footer button.approve {
+  color: white;
+  background: linear-gradient(135deg, #102033, #2563eb);
+  box-shadow: 0 14px 30px rgba(37,99,235,0.18);
+}
+
+@media (max-width: 760px) {
+  .cx-smart-modal-edit > header,
+  .cx-smart-modal-edit footer {
+    flex-direction: column;
+  }
+
+  .cx-smart-modal-edit > div {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-smart-modal-edit footer button {
+    width: 100%;
+  }
+}
+
