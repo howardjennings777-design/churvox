@@ -5319,7 +5319,7 @@ function ChurvoxPlansWorkspace({ planCatalog, onChoosePlan, onOpenSettings }) {
         <article>
           <span>What the owner does</span>
           <strong>Review, edit, approve.</strong>
-          <p>No risky sends, pricing changes, accounting syncs or worker assignments happen blindly.</p>
+          <p>No sends, pricing changes, accounting syncs, worker assignments or sensitive actions happen blindly.</p>
         </article>
         <article>
           <span>What workers do</span>
@@ -5483,6 +5483,111 @@ function DecisionLedgerPanel({ recent = [], backend = [], session = [], onClear,
 
 
 
+
+function IntegrationControlPanel({ onOpenPlans, onOpenSettings, onOpenInvoices, onOpenClients }) {
+  const controls = [
+    {
+      key: "myob",
+      label: "MYOB",
+      status: "Owner-approved sync",
+      title: "Accounting sync must never happen blindly.",
+      body: "Churvox can prepare invoice/payment sync actions, but MYOB changes must stay owner-approved. Pro can use MYOB as an add-on. Enterprise includes MYOB.",
+      prepares: ["invoice sync draft", "payment status check", "sync issue warning"],
+      owner: ["approve sync", "review conflicts", "check plan access"],
+      action: "Review plans",
+      onClick: onOpenPlans,
+      tone: "blue",
+    },
+    {
+      key: "sms",
+      label: "SMS",
+      status: "Coming soon / locked",
+      title: "SMS should be prepared, not randomly sent.",
+      body: "SMS is kept controlled while the phone/SMS flow is stabilised. Churvox can prepare customer wording, but sending stays locked until owner-approved SMS is ready.",
+      prepares: ["reminder wording", "quote follow-up draft", "job update message"],
+      owner: ["review wording", "approve send later", "keep SMS locked for now"],
+      action: "Review settings",
+      onClick: onOpenSettings,
+      tone: "amber",
+    },
+    {
+      key: "email",
+      label: "Email",
+      status: "Approval-first",
+      title: "Customer emails should come from prepared drafts.",
+      body: "Churvox prepares quote follow-ups, payment reminders and proof messages from real records. The owner reviews and approves before sending.",
+      prepares: ["proof message", "quote follow-up", "payment reminder"],
+      owner: ["edit message", "approve send", "copy/mark sent"],
+      action: "Open invoices",
+      onClick: onOpenInvoices,
+      tone: "teal",
+    },
+    {
+      key: "csv",
+      label: "CSV import",
+      status: "Data cleanup source",
+      title: "Imports should feed the AI machine, not dump messy records.",
+      body: "CSV import should let Churvox check missing fields, duplicates and bad rows so future jobs, quotes and invoices are specific.",
+      prepares: ["client cleanup", "missing contact warnings", "duplicate checks"],
+      owner: ["approve import", "fix bad rows", "review clients"],
+      action: "Import clients",
+      onClick: onOpenClients,
+      tone: "purple",
+    },
+  ];
+
+  return (
+    <section className="cx-integration-control">
+      <header>
+        <div>
+          <span>Connected systems</span>
+          <h2>Integrations must follow the same Churvox rule.</h2>
+          <p>
+            Churvox prepares syncs, messages and imports from real business records.
+            The owner reviews, edits and approves before anything sensitive happens.
+          </p>
+        </div>
+      </header>
+
+      <section className="cx-integration-control-grid">
+        {controls.map((item) => (
+          <article className={`cx-integration-card ${item.tone}`} key={item.key}>
+            <div className="cx-integration-card-head">
+              <span>{item.label}</span>
+              <b>{item.status}</b>
+            </div>
+
+            <h3>{item.title}</h3>
+            <p>{item.body}</p>
+
+            <div className="cx-integration-card-lists">
+              <section>
+                <span>Churvox prepares</span>
+                <ul>
+                  {item.prepares.map((point) => <li key={point}>{point}</li>)}
+                </ul>
+              </section>
+
+              <section>
+                <span>Owner controls</span>
+                <ul>
+                  {item.owner.map((point) => <li key={point}>{point}</li>)}
+                </ul>
+              </section>
+            </div>
+
+            <button type="button" onClick={item.onClick}>
+              {item.action}
+            </button>
+          </article>
+        ))}
+      </section>
+    </section>
+  );
+}
+
+
+
 function OwnerGuardrailsPanel({ onOpenSettings }) {
   const canPrepare = [
     "worker assignment recommendations",
@@ -5506,7 +5611,7 @@ function OwnerGuardrailsPanel({ onOpenSettings }) {
     "charge customers",
     "change payroll",
     "make tax/legal decisions",
-    "send SMS/email without owner approval",
+    "send SMS/email or sync accounting without owner approval",
     "expose pricing to workers",
     "show owner-only data to workers",
   ];
@@ -7738,6 +7843,15 @@ function Workspace({ page, setPage, data }) {
 
       {(page === "dashboard" || page === "settings") ? (
         <OwnerGuardrailsPanel onOpenSettings={() => switchPage("settings")} />
+      ) : null}
+
+      {(page === "dashboard" || page === "settings" || page === "plans") ? (
+        <IntegrationControlPanel
+          onOpenPlans={() => switchPage("plans")}
+          onOpenSettings={() => switchPage("settings")}
+          onOpenInvoices={() => switchPage("invoices")}
+          onOpenClients={() => openQuickAction("clients")}
+        />
       ) : null}
 
       {page === "dashboard" && hubNotice ? (
