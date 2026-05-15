@@ -3739,3 +3739,210 @@ button {
   }
 }
 
+
+/* ===== Proper worker app layout ===== */
+.cx-worker-workspace {
+  display: grid;
+  gap: 18px;
+}
+
+.cx-worker-layout-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 18px;
+  align-items: stretch;
+  border: 1px solid rgba(37,99,235,0.12);
+  border-radius: 34px;
+  padding: 28px;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(37,99,235,0.14), transparent 34%),
+    linear-gradient(135deg, rgba(255,255,255,0.88), rgba(239,247,255,0.74));
+  box-shadow:
+    0 24px 70px rgba(16,32,51,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.86);
+}
+
+.cx-worker-layout-hero span,
+.cx-worker-summary-grid span,
+.cx-worker-job-list header span {
+  display: block;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cx-worker-layout-hero h1 {
+  max-width: 740px;
+  margin: 10px 0 0;
+  color: #102033;
+  font-size: clamp(38px, 6vw, 70px);
+  line-height: 0.92;
+  letter-spacing: -0.075em;
+  font-weight: 950;
+}
+
+.cx-worker-layout-hero p {
+  max-width: 720px;
+  margin: 16px 0 0;
+  color: #526b82;
+  font-size: 15px;
+  line-height: 1.55;
+  font-weight: 820;
+}
+
+.cx-worker-layout-hero aside {
+  border-radius: 28px;
+  padding: 20px;
+  color: white;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(45,212,191,0.28), transparent 36%),
+    linear-gradient(135deg, #102033, #123d7a 58%, #2563eb);
+  box-shadow: 0 22px 48px rgba(37,99,235,0.18);
+}
+
+.cx-worker-layout-hero aside span {
+  color: #6ee7f9;
+}
+
+.cx-worker-layout-hero aside strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 54px;
+  line-height: 0.9;
+  letter-spacing: -0.07em;
+  font-weight: 950;
+}
+
+.cx-worker-layout-hero aside p {
+  margin: 10px 0 0;
+  color: rgba(255,255,255,0.82);
+}
+
+.cx-worker-layout-hero aside button {
+  width: 100%;
+  margin-top: 18px;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 14px;
+  color: #102033;
+  background: #6ee7f9;
+  font-weight: 950;
+}
+
+.cx-worker-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cx-worker-summary-grid article {
+  border: 1px solid rgba(37,99,235,0.12);
+  border-radius: 24px;
+  padding: 18px;
+  background: rgba(255,255,255,0.74);
+  box-shadow:
+    0 16px 42px rgba(16,32,51,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.78);
+}
+
+.cx-worker-summary-grid strong {
+  display: block;
+  margin-top: 8px;
+  color: #102033;
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  font-weight: 950;
+}
+
+.cx-worker-summary-grid small {
+  display: block;
+  margin-top: 8px;
+  color: #5b7088;
+  font-size: 13px;
+  font-weight: 820;
+}
+
+.cx-worker-flow-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cx-worker-flow-steps article {
+  border: 1px solid rgba(16,32,51,0.08);
+  border-radius: 24px;
+  padding: 17px;
+  background: rgba(255,255,255,0.68);
+}
+
+.cx-worker-flow-steps b {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: white;
+  background: linear-gradient(135deg, #102033, #2563eb);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.cx-worker-flow-steps h3 {
+  margin: 12px 0 0;
+  color: #102033;
+  font-size: 18px;
+  letter-spacing: -0.04em;
+  font-weight: 950;
+}
+
+.cx-worker-flow-steps p,
+.cx-worker-locked-note p,
+.cx-worker-job-list header p {
+  margin: 7px 0 0;
+  color: #5b7088;
+  line-height: 1.5;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.cx-worker-locked-note {
+  border: 1px solid rgba(20,184,166,0.16);
+  border-radius: 24px;
+  padding: 16px 18px;
+  background: rgba(236,253,245,0.70);
+}
+
+.cx-worker-locked-note strong {
+  display: block;
+  color: #065f46;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+@media (max-width: 980px) {
+  .cx-worker-layout-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-worker-summary-grid,
+  .cx-worker-flow-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .cx-worker-layout-hero {
+    padding: 20px;
+    border-radius: 28px;
+  }
+
+  .cx-worker-summary-grid,
+  .cx-worker-flow-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
