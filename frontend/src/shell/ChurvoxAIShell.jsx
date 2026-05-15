@@ -2179,36 +2179,40 @@ function Workspace({ page, setPage, data }) {
                 : "Saved to backend"
       );
 
-      setSelectedRecord({
-        ...selection,
-        item: [
-          selection.group || "Owner approval",
-          `${title} approved`,
-          result?.message || "Approval saved to backend.",
-          "Backend saved",
-        ],
-        recommendation: String(selection.group || "").toLowerCase().includes("dispatch")
-          ? "Dispatch approval completed. Churvox assigned a worker to an unassigned job and saved the owner approval."
-          : String(selection.group || "").toLowerCase().includes("invoice")
-            ? "Invoice approval completed. Churvox created or updated a draft invoice from a completed job."
-            : String(selection.group || "").toLowerCase().includes("quote")
-              ? "Quote approval completed. Churvox saved a follow-up draft. Nothing was sent automatically."
-              : (String(selection.group || "").toLowerCase().includes("cashflow") || String(selection.group || "").toLowerCase().includes("payment") || String(selection.group || "").toLowerCase().includes("overdue"))
-                ? "Cashflow approval completed. Churvox saved a payment reminder draft. Nothing was sent automatically."
-                : "This approval is now saved on the backend.",
-      });
+      if (!selection?.fromSmartHubModal) {
+        setSelectedRecord({
+          ...selection,
+          item: [
+            selection.group || "Owner approval",
+            `${title} approved`,
+            result?.message || "Approval saved to backend.",
+            "Backend saved",
+          ],
+          recommendation: String(selection.group || "").toLowerCase().includes("dispatch")
+            ? "Dispatch approval completed. Churvox assigned a worker to an unassigned job and saved the owner approval."
+            : String(selection.group || "").toLowerCase().includes("invoice")
+              ? "Invoice approval completed. Churvox created or updated a draft invoice from a completed job."
+              : String(selection.group || "").toLowerCase().includes("quote")
+                ? "Quote approval completed. Churvox saved a follow-up draft. Nothing was sent automatically."
+                : (String(selection.group || "").toLowerCase().includes("cashflow") || String(selection.group || "").toLowerCase().includes("payment") || String(selection.group || "").toLowerCase().includes("overdue"))
+                  ? "Cashflow approval completed. Churvox saved a payment reminder draft. Nothing was sent automatically."
+                  : "This approval is now saved on the backend.",
+        });
+      }
     } catch (err) {
       logCommand(selection.group || "Approve failed", title, "Backend error");
-      setSelectedRecord({
-        ...selection,
-        item: [
-          selection.group || "Owner approval",
-          `${title} needs attention`,
-          err?.message || "Could not save approval to backend.",
-          "Save failed",
-        ],
-        recommendation: "The front-end stayed safe, but the backend did not accept this approval. Check Render logs if this repeats.",
-      });
+      if (!selection?.fromSmartHubModal) {
+        setSelectedRecord({
+          ...selection,
+          item: [
+            selection.group || "Owner approval",
+            `${title} needs attention`,
+            err?.message || "Could not save approval to backend.",
+            "Save failed",
+          ],
+          recommendation: "The front-end stayed safe, but the backend did not accept this approval. Check Render logs if this repeats.",
+        });
+      }
     }
   }
 
@@ -2758,8 +2762,14 @@ function Workspace({ page, setPage, data }) {
             const key = hubItemKey(selection.hubBoxKey, selection.item);
             setHubItemStatus((current) => ({ ...current, [key]: "approved" }));
           }
-          setSelectedHubBox(null);
-          approveSelection(selection, draft);
+
+          approveSelection(
+            {
+              ...selection,
+              fromSmartHubModal: true,
+            },
+            draft
+          );
         }}
         onSnooze={snoozeHubItem}
         onDismiss={dismissHubItem}
