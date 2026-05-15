@@ -4141,3 +4141,99 @@ body:has(.cx-public-landing) .ai-action-dock {
   visibility: hidden !important;
   pointer-events: none !important;
 }
+
+/* ===== Item 2: stronger hero, softer login ===== */
+.cx-public-landing .cx-hero {
+  grid-template-columns: minmax(0, 1.24fr) minmax(300px, 0.56fr);
+  gap: clamp(18px, 3vw, 36px);
+}
+
+.cx-public-landing .cx-hero-copy {
+  position: relative;
+  overflow: hidden;
+  min-height: 690px;
+}
+
+.cx-public-landing .cx-hero-copy::after {
+  content: "";
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  right: -90px;
+  bottom: -110px;
+  border-radius: 48%;
+  background:
+    radial-gradient(circle at 36% 34%, rgba(103,232,249,0.34), transparent 30%),
+    conic-gradient(from 180deg, rgba(37,99,235,0.12), rgba(20,184,166,0.16), rgba(37,99,235,0.06), rgba(37,99,235,0.12));
+  opacity: 0.76;
+  pointer-events: none;
+}
+
+.cx-public-landing .cx-hero-copy > * {
+  position: relative;
+  z-index: 1;
+}
+
+.cx-public-landing .cx-hero h1 {
+  max-width: 860px;
+}
+
+.cx-public-landing .cx-hero-text {
+  max-width: 720px;
+  font-size: 19px;
+  color: #415a73;
+}
+
+.cx-public-landing .cx-auth-card {
+  margin-top: 18px;
+  transform: scale(0.96);
+  transform-origin: top right;
+  background: rgba(255,255,255,0.48);
+  border-color: rgba(255,255,255,0.64);
+  box-shadow:
+    0 22px 58px rgba(16,32,51,0.09),
+    inset 0 1px 0 rgba(255,255,255,0.76);
+}
+
+.cx-public-landing .cx-auth-head h2 {
+  font-size: 26px;
+}
+
+.cx-public-landing .cx-auth-orb {
+  width: 46px;
+  height: 46px;
+  border-radius: 17px;
+}
+
+.cx-public-landing .cx-form input {
+  min-height: 46px;
+}
+
+.cx-public-landing .cx-form button,
+.cx-public-landing .cx-switch {
+  min-height: 46px;
+}
+
+@media (max-width: 980px) {
+  .cx-public-landing .cx-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-public-landing .cx-auth-card {
+    transform: none;
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 620px) {
+  .cx-public-landing .cx-hero-copy {
+    min-height: auto;
+  }
+
+  .cx-public-landing .cx-hero-copy::after {
+    width: 190px;
+    height: 190px;
+    right: -70px;
+    bottom: -70px;
+  }
+}
