@@ -1617,6 +1617,87 @@ function OwnerCommandRow({ item, index, page, group, onOpen }) {
 }
 
 
+function SmartHubActionControl({ boxKey, row, draft, onChange }) {
+  const text = `${boxKey || ""} ${row?.lead || ""} ${row?.title || ""} ${row?.detail || ""} ${row?.status || ""}`.toLowerCase();
+
+  const mode = text.includes("unassigned") || text.includes("assign")
+    ? "dispatch"
+    : boxKey === "invoice" || text.includes("invoice") || text.includes("completed job")
+      ? "invoice"
+      : boxKey === "collect" || text.includes("overdue") || text.includes("payment")
+        ? "collect"
+        : boxKey === "quotes" || boxKey === "messages" || text.includes("quote") || text.includes("follow")
+          ? "message"
+          : "review";
+
+  if (mode === "dispatch") {
+    return (
+      <section className="cx-smart-control-panel">
+        <header><span>Worker assignment</span><h4>Assign the worker here</h4></header>
+        <div className="cx-smart-control-grid">
+          <label>Chosen worker<input value={draft.workerChoice} onChange={(e) => onChange("workerChoice", e.target.value)} placeholder="Choose worker or keep AI match" /></label>
+          <label>Conflict check<select value={draft.conflictStatus} onChange={(e) => onChange("conflictStatus", e.target.value)}><option value="clear">No conflict found</option><option value="check">Needs check</option><option value="conflict">Possible conflict</option></select></label>
+          <label className="wide">Worker instruction<textarea value={draft.customerMessage} onChange={(e) => onChange("customerMessage", e.target.value)} placeholder="Instruction for the worker..." /></label>
+          <label className="wide">Owner note<textarea value={draft.ownerNote} onChange={(e) => onChange("ownerNote", e.target.value)} placeholder="Access notes, timing, priority..." /></label>
+        </div>
+      </section>
+    );
+  }
+
+  if (mode === "invoice") {
+    return (
+      <section className="cx-smart-control-panel">
+        <header><span>Invoice draft</span><h4>Approve invoice draft here</h4></header>
+        <div className="cx-smart-control-grid">
+          <label>Amount<input value={draft.invoiceAmount} onChange={(e) => onChange("invoiceAmount", e.target.value)} placeholder="e.g. 250.00" /></label>
+          <label>Status<select value={draft.invoiceStatus} onChange={(e) => onChange("invoiceStatus", e.target.value)}><option value="draft">Save as draft</option><option value="ready">Ready for review</option><option value="approved">Owner approved</option></select></label>
+          <label className="wide">Invoice description<textarea value={draft.invoiceDescription} onChange={(e) => onChange("invoiceDescription", e.target.value)} placeholder="Invoice description based on job notes, photos, time and pricing..." /></label>
+          <label className="wide">Owner invoice note<textarea value={draft.ownerNote} onChange={(e) => onChange("ownerNote", e.target.value)} placeholder="Anything to adjust before saving..." /></label>
+        </div>
+      </section>
+    );
+  }
+
+  if (mode === "collect") {
+    return (
+      <section className="cx-smart-control-panel">
+        <header><span>Payment follow-up</span><h4>Prepare reminder here</h4></header>
+        <div className="cx-smart-control-grid">
+          <label>Follow-up type<select value={draft.collectAction} onChange={(e) => onChange("collectAction", e.target.value)}><option value="friendly_reminder">Friendly reminder</option><option value="second_notice">Second notice</option><option value="check_payment">Check payment</option><option value="mark_paid">Mark paid</option></select></label>
+          <label>Payment status<select value={draft.paymentStatus} onChange={(e) => onChange("paymentStatus", e.target.value)}><option value="unpaid">Unpaid</option><option value="overdue">Overdue</option><option value="part_paid">Part paid</option><option value="paid">Paid</option></select></label>
+          <label className="wide">Payment reminder<textarea value={draft.reminderMessage} onChange={(e) => onChange("reminderMessage", e.target.value)} placeholder="Edit reminder before copying or marking ready..." /></label>
+          <label className="wide">Internal note<textarea value={draft.ownerNote} onChange={(e) => onChange("ownerNote", e.target.value)} placeholder="Payment context or next follow-up..." /></label>
+        </div>
+      </section>
+    );
+  }
+
+  if (mode === "message") {
+    return (
+      <section className="cx-smart-control-panel">
+        <header><span>Quote / message follow-up</span><h4>Edit follow-up here</h4></header>
+        <div className="cx-smart-control-grid">
+          <label>Status<select value={draft.followupStatus} onChange={(e) => onChange("followupStatus", e.target.value)}><option value="draft">Draft</option><option value="ready">Ready to send/copy</option><option value="followed_up">Followed up</option><option value="snoozed">Snoozed</option></select></label>
+          <label>Timing<input value={draft.followupTiming} onChange={(e) => onChange("followupTiming", e.target.value)} placeholder="Today, tomorrow, next week" /></label>
+          <label className="wide">Customer message<textarea value={draft.quoteMessage} onChange={(e) => onChange("quoteMessage", e.target.value)} placeholder="Edit the follow-up before approval..." /></label>
+          <label className="wide">Owner note<textarea value={draft.ownerNote} onChange={(e) => onChange("ownerNote", e.target.value)} placeholder="Customer preference or internal note..." /></label>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="cx-smart-control-panel">
+      <header><span>Owner control</span><h4>Review and decide here</h4></header>
+      <div className="cx-smart-control-grid">
+        <label className="wide">Owner note<textarea value={draft.ownerNote} onChange={(e) => onChange("ownerNote", e.target.value)} placeholder="Add decision note before approval..." /></label>
+      </div>
+    </section>
+  );
+}
+
+
+
 function SmartHubBoxModal({
   box,
   rows = [],
@@ -1641,6 +1722,7 @@ function SmartHubBoxModal({
     ownerNote: "",
     customerMessage: "",
   });
+  const [controlDrafts, setControlDrafts] = useState({});
 
   useEffect(() => {
     if (!box) return undefined;
@@ -1733,9 +1815,71 @@ function SmartHubBoxModal({
     return "AI surfaced this because it may need an owner decision.";
   }
 
+  function actionGroupForBox(boxKey, row) {
+    const text = `${boxKey || ""} ${row?.lead || ""} ${row?.title || ""} ${row?.detail || ""} ${row?.status || ""}`.toLowerCase();
+    if (text.includes("unassigned") || text.includes("assign")) return "Dispatch";
+    if (boxKey === "invoice" || text.includes("invoice") || text.includes("completed job")) return "Invoice";
+    if (boxKey === "collect" || text.includes("payment") || text.includes("overdue")) return "Cashflow";
+    if (boxKey === "quotes" || text.includes("quote")) return "Quote";
+    if (boxKey === "messages" || text.includes("message") || text.includes("follow")) return "Message";
+    if (boxKey === "crew" || text.includes("worker") || text.includes("crew")) return "Crew";
+    return "Owner command";
+  }
+
+  function smartControlKey(boxKey, item, index, row) {
+    const rawId = item?.id || item?._id || item?.draft_id || item?.job_id || item?.invoice_id || item?.quote_id || "";
+    return `${boxKey || "hub"}::${rawId || index}::${row?.title || "item"}`;
+  }
+
+  function baseControlDraft(row) {
+    const title = row?.title || "Owner action";
+    const detail = row?.detail || "";
+    return {
+      title,
+      detail,
+      status: row?.status || "Review",
+      ownerNote: "",
+      customerMessage: `Hi, quick update about ${title}.`,
+      workerChoice: "",
+      conflictStatus: "clear",
+      invoiceAmount: "",
+      invoiceStatus: "draft",
+      invoiceDescription: detail || `Work completed for ${title}.`,
+      collectAction: "friendly_reminder",
+      paymentStatus: "unpaid",
+      reminderMessage: "Hi, just a friendly reminder that this invoice is still showing as unpaid. Please let us know if you need anything from us.",
+      quoteMessage: `Hi, just following up on the quote for ${title}. Happy to answer any questions or help book the work in.`,
+      followupStatus: "draft",
+      followupTiming: "Today",
+    };
+  }
+
+  function controlDraftFor(controlKey, row) {
+    return { ...baseControlDraft(row), ...(controlDrafts[controlKey] || {}) };
+  }
+
+  function updateControlDraft(controlKey, key, value) {
+    setControlDrafts((current) => ({
+      ...current,
+      [controlKey]: { ...(current[controlKey] || {}), [key]: value },
+    }));
+  }
+
+  function approvalDraftFromControl(row, controlDraft) {
+    return {
+      ...controlDraft,
+      title: controlDraft.title || row?.title || "Owner action",
+      detail: controlDraft.detail || row?.detail || "",
+      status: controlDraft.status || row?.status || "approved",
+      ownerNote: controlDraft.ownerNote || "",
+      customerMessage: controlDraft.customerMessage || controlDraft.quoteMessage || controlDraft.reminderMessage || "",
+    };
+  }
+
   function primaryActionLabel(row) {
     const text = `${box.key} ${row.lead} ${row.title} ${row.detail} ${row.status}`.toLowerCase();
 
+    if (text.includes("unassigned") || text.includes("assign")) return "Assign worker";
     if (box.key === "setup") return "Fix setup";
     if (box.key === "fix") return "Fix now";
     if (box.key === "invoice") return "Approve invoice";
@@ -1859,17 +2003,9 @@ function SmartHubBoxModal({
         <section className="cx-smart-modal-list">
           {rows.length ? rows.map((item, index) => {
             const row = rowText(item, index, box.title);
-            const actionGroup = box.key === "approvals"
-              ? row.lead
-              : box.key === "invoice"
-                ? "Invoice"
-                : box.key === "collect"
-                  ? "Cashflow"
-                  : box.key === "quotes"
-                    ? "Quote"
-                    : box.key === "messages"
-                      ? "Message"
-                      : box.title;
+            const controlKey = smartControlKey(box.key, item, index, row);
+            const controlDraft = controlDraftFor(controlKey, row);
+            const actionGroup = actionGroupForBox(box.key, row);
 
             const actionId = item?.id || item?._id || item?.action_id || "";
             const sourceType = item?.source_type || item?.kind || item?.type || row.lead;
@@ -1904,17 +2040,20 @@ function SmartHubBoxModal({
                 <aside>
                   <strong>Why AI found this</strong>
                   <p>{reasonFor(row)}</p>
+
+                  <SmartHubActionControl
+                    boxKey={box.key}
+                    row={row}
+                    draft={controlDraft}
+                    onChange={(key, value) => updateControlDraft(controlKey, key, value)}
+                  />
+
                   <div>
                     <button type="button" onClick={() => startEdit(selection)}>Details / edit</button>
                     <button
                       type="button"
                       className="approve"
-                      onClick={() => onApprove(selection, {
-                        title: row.title,
-                        detail: row.detail,
-                        status: row.status,
-                        ownerNote: "",
-                      })}
+                      onClick={() => onApprove(selection, approvalDraftFromControl(row, controlDraft))}
                     >
                       {isApproved ? "Approved" : primaryActionLabel(row)}
                     </button>
