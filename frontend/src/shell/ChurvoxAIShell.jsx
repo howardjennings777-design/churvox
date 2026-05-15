@@ -5296,6 +5296,140 @@ function ChurvoxPlansWorkspace({ planCatalog, onChoosePlan, onOpenSettings }) {
 
 
 
+
+function AskChurvoxCommand({ onRunCommand }) {
+  const [query, setQuery] = useState("");
+  const [hint, setHint] = useState("");
+
+  const suggestions = [
+    ["What needs approval?", "approvals"],
+    ["Ready invoices", "invoice"],
+    ["Money to collect", "collect"],
+    ["Add client", "add_client"],
+    ["Import clients", "import_clients"],
+    ["Add worker", "add_worker"],
+    ["Show dispatch", "dispatch"],
+    ["Quote follow-ups", "quotes"],
+    ["Proof-to-paid", "proof"],
+    ["Teach Churvox", "settings"],
+  ];
+
+  function classifyCommand(raw) {
+    const value = String(raw || "").toLowerCase().trim();
+
+    if (!value) return { type: "help", label: "Show command help" };
+
+    if (value.includes("approval") || value.includes("approve") || value.includes("what needs")) {
+      return { type: "hub", key: "approvals", label: "Open approvals" };
+    }
+
+    if (value.includes("invoice") || value.includes("ready to invoice") || value.includes("draft")) {
+      return { type: "hub", key: "invoice", label: "Open ready invoices" };
+    }
+
+    if (value.includes("overdue") || value.includes("collect") || value.includes("payment") || value.includes("cash")) {
+      return { type: "hub", key: "collect", label: "Open money to collect" };
+    }
+
+    if (value.includes("quote") || value.includes("follow")) {
+      return { type: "hub", key: "quotes", label: "Open quote follow-ups" };
+    }
+
+    if (value.includes("dispatch") || value.includes("assign") || value.includes("worker match")) {
+      return { type: "hub", key: "dispatch", label: "Open dispatch" };
+    }
+
+    if (value.includes("proof") || value.includes("paid") || value.includes("complete")) {
+      return { type: "page", page: "proof", label: "Open proof-to-paid" };
+    }
+
+    if (value.includes("teach") || value.includes("setup") || value.includes("setting") || value.includes("guardrail")) {
+      return { type: "page", page: "settings", label: "Open Teach Churvox" };
+    }
+
+    if ((value.includes("add") || value.includes("new")) && value.includes("client")) {
+      return { type: "quick", area: "clients", label: "Add client" };
+    }
+
+    if (value.includes("import") && value.includes("client")) {
+      return { type: "quick", area: "clients", label: "Import clients" };
+    }
+
+    if ((value.includes("add") || value.includes("invite") || value.includes("new")) && (value.includes("worker") || value.includes("team"))) {
+      return { type: "quick", area: "team", label: "Add worker" };
+    }
+
+    if ((value.includes("add") || value.includes("new") || value.includes("create")) && value.includes("job")) {
+      return { type: "quick", area: "jobs", label: "Add job" };
+    }
+
+    if ((value.includes("add") || value.includes("new") || value.includes("create")) && value.includes("quote")) {
+      return { type: "quick", area: "quotes", label: "Add quote" };
+    }
+
+    if ((value.includes("add") || value.includes("new") || value.includes("create")) && value.includes("invoice")) {
+      return { type: "quick", area: "invoices", label: "Add invoice" };
+    }
+
+    if (value.includes("client")) return { type: "page", page: "clients", label: "Open clients" };
+    if (value.includes("team") || value.includes("worker")) return { type: "page", page: "team", label: "Open team" };
+    if (value.includes("job")) return { type: "page", page: "jobs", label: "Open jobs" };
+    if (value.includes("plan") || value.includes("price")) return { type: "page", page: "plans", label: "Open plans" };
+
+    return { type: "hub", key: "approvals", label: "Open approvals" };
+  }
+
+  function run(raw = query) {
+    const command = classifyCommand(raw);
+    onRunCommand?.(command, raw);
+    setHint(command.label);
+    setQuery("");
+  }
+
+  function submit(event) {
+    event.preventDefault();
+    run();
+  }
+
+  return (
+    <section className="cx-ask-churvox">
+      <div>
+        <span>Ask Churvox</span>
+        <h2>Tell Churvox what you want prepared.</h2>
+        <p>Use plain words. Churvox opens the right approval queue, workspace, add form or import flow without page hunting.</p>
+      </div>
+
+      <form onSubmit={submit}>
+        <input
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setHint("");
+          }}
+          placeholder="Try: what needs approval, add client, import clients, ready invoices..."
+        />
+        <button type="submit">Run</button>
+      </form>
+
+      <div className="cx-ask-suggestions">
+        {suggestions.map(([label, command]) => (
+          <button
+            type="button"
+            key={command}
+            onClick={() => run(label)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {hint ? <p className="cx-ask-hint">{hint}</p> : null}
+    </section>
+  );
+}
+
+
+
 function TeachChurvoxPanel({
   setupChecks = [],
   setupScore = 0,
@@ -5999,6 +6133,7 @@ function Workspace({ page, setPage, data }) {
   const [selectedHubBox, setSelectedHubBox] = useState(null);
   const [hubItemStatus, setHubItemStatus] = useState(() => readSmartHubItemStatus());
   const [hubNotice, setHubNotice] = useState(null);
+  const [askNotice, setAskNotice] = useState("");
   const [setupProfile, setSetupProfile] = useState(() => readChurvoxSetupProfile());
   const [setupSaved, setSetupSaved] = useState("");
   const planCatalog = useChurvoxPlanCatalog(page === "plans");
@@ -6857,6 +6992,35 @@ function Workspace({ page, setPage, data }) {
     switchPage(safeArea || "dashboard");
   }
 
+  function runAskChurvoxCommand(command, raw = "") {
+    const label = command?.label || raw || "Churvox command";
+
+    if (command?.type === "hub") {
+      const box = hubBoxes.find((item) => item.key === command.key) || topBriefBox;
+      setHubFocus("");
+      setSelectedHubBox({ ...box, count: visibleHubCount(box.key, box.count) });
+      setAskNotice(label);
+      logCommand("Ask Churvox", label, "Opened");
+      return;
+    }
+
+    if (command?.type === "quick") {
+      openQuickAction(command.area);
+      setAskNotice(label);
+      logCommand("Ask Churvox", label, "Opened quick add");
+      return;
+    }
+
+    if (command?.type === "page") {
+      switchPage(command.page || "dashboard");
+      setAskNotice(label);
+      logCommand("Ask Churvox", label, "Opened workspace");
+      return;
+    }
+
+    setAskNotice("Try approvals, ready invoices, add client, import clients, workers, quotes, proof-to-paid or settings.");
+  }
+
   function pageForCommandType(type) {
     const text = String(type || "").toLowerCase();
     if (text.includes("invoice") || text.includes("cashflow") || text.includes("payment") || text.includes("collect")) return "invoices";
@@ -7278,6 +7442,18 @@ function Workspace({ page, setPage, data }) {
           >
             Review first item
           </button>
+        </section>
+      ) : null}
+
+      {page === "dashboard" ? (
+        <AskChurvoxCommand onRunCommand={runAskChurvoxCommand} />
+      ) : null}
+
+      {page === "dashboard" && askNotice ? (
+        <section className="cx-ask-notice">
+          <span>Ask Churvox</span>
+          <strong>{askNotice}</strong>
+          <button type="button" onClick={() => setAskNotice("")}>Dismiss</button>
         </section>
       ) : null}
 
