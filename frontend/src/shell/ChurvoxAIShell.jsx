@@ -2373,7 +2373,7 @@ function Workspace({ page, setPage, data }) {
         </section>
       ) : null}
 
-      <section className={`cx-owner-command-layout ${page === "dashboard" && (!hubFocus || hubFocus === "fix" || hubFocus === "work") ? "cx-hub-single-column" : ""}`}>
+      <section className={`cx-owner-command-layout ${page === "dashboard" ? "cx-smart-hub-popup-only" : ""} ${page === "dashboard" && (!hubFocus || hubFocus === "fix" || hubFocus === "work") ? "cx-hub-single-column" : ""}`}>
         <section className="cx-owner-command-main">
           {((page === "dashboard" && hubFocus === "approvals") || page === "queue") ? (
             <section className="cx-owner-queue">

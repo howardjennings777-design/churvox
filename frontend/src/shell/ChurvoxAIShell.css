@@ -3412,3 +3412,9 @@ button {
   background: rgba(20,184,166,0.14);
 }
 
+
+/* ===== Smart Hub popup-only mode ===== */
+.cx-owner-command-layout.cx-smart-hub-popup-only {
+  display: none !important;
+}
+
