@@ -2105,7 +2105,7 @@ function OwnerCommandRow({ item, index, page, group, onOpen }) {
 }
 
 
-function SmartHubActionControl({ boxKey, row, draft, onChange }) {
+function SmartHubActionControl({ boxKey, row, draft, onChange, team = [] }) {
   const text = `${boxKey || ""} ${row?.lead || ""} ${row?.title || ""} ${row?.detail || ""} ${row?.status || ""}`.toLowerCase();
 
   const mode = boxKey === "templates"
@@ -2121,6 +2121,16 @@ function SmartHubActionControl({ boxKey, row, draft, onChange }) {
             : boxKey === "quotes" || boxKey === "messages" || text.includes("quote") || text.includes("follow")
               ? "message"
               : "review";
+
+  const workerOptions = (Array.isArray(team) ? team : [])
+    .map((worker) => {
+      const id = String(worker?.id || worker?._id || worker?.user_id || worker?.email || worker?.name || "").trim();
+      const name = String(worker?.name || worker?.full_name || worker?.worker_name || worker?.email || "Worker").trim();
+      const region = String(worker?.region || worker?.service_area || worker?.area || "").trim();
+
+      return { id, name, region };
+    })
+    .filter((worker) => worker.id || worker.name);
 
   if (mode === "template") {
     return (
@@ -2154,7 +2164,18 @@ function SmartHubActionControl({ boxKey, row, draft, onChange }) {
       <section className="cx-smart-control-panel">
         <header><span>Worker assignment</span><h4>Assign the worker here</h4></header>
         <div className="cx-smart-control-grid">
-          <label>Chosen worker<input value={draft.workerChoice} onChange={(e) => onChange("workerChoice", e.target.value)} placeholder="Choose worker or keep AI match" /></label>
+          <label>
+            Chosen worker
+            <select value={draft.workerChoice || ""} onChange={(e) => onChange("workerChoice", e.target.value)}>
+              <option value="">Choose worker...</option>
+              {workerOptions.map((worker) => (
+                <option key={`${worker.id}-${worker.name}`} value={worker.id || worker.name}>
+                  {worker.name}{worker.region ? ` · ${worker.region}` : ""}
+                </option>
+              ))}
+            </select>
+            {!workerOptions.length ? <small className="cx-worker-picker-note">No workers loaded yet. Add workers in Team first.</small> : null}
+          </label>
           <label>Conflict check<select value={draft.conflictStatus} onChange={(e) => onChange("conflictStatus", e.target.value)}><option value="clear">No conflict found</option><option value="check">Needs check</option><option value="conflict">Possible conflict</option></select></label>
           <label className="wide">Worker instruction<textarea value={draft.customerMessage} onChange={(e) => onChange("customerMessage", e.target.value)} placeholder="Instruction for the worker..." /></label>
           <label className="wide">Owner note<textarea value={draft.ownerNote} onChange={(e) => onChange("ownerNote", e.target.value)} placeholder="Access notes, timing, priority..." /></label>
@@ -2232,6 +2253,7 @@ function SmartHubBoxModal({
   onMarkSent,
   onResetBox,
   onOpenFull,
+  team = [],
 }) {
   const [editingSelection, setEditingSelection] = useState(null);
   const [editingDraft, setEditingDraft] = useState({
@@ -2267,6 +2289,21 @@ function SmartHubBoxModal({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [box, editingSelection, onClose]);
+
+  const workerOptionsForEdit = (Array.isArray(team) ? team : [])
+    .map((worker) => {
+      const id = String(worker?.id || worker?._id || worker?.user_id || worker?.email || worker?.name || "").trim();
+      const name = String(worker?.name || worker?.full_name || worker?.worker_name || worker?.email || "Worker").trim();
+      const region = String(worker?.region || worker?.service_area || worker?.area || "").trim();
+
+      return { id, name, region };
+    })
+    .filter((worker) => worker.id || worker.name);
+
+  function editingNeedsWorkerDropdown() {
+    const text = `${editingSelection?.hubBoxKey || ""} ${editingSelection?.group || ""} ${editingDraft?.title || ""} ${editingDraft?.detail || ""} ${editingDraft?.status || ""}`.toLowerCase();
+    return text.includes("dispatch") || text.includes("assign") || text.includes("worker");
+  }
 
   if (!box) return null;
 
@@ -2498,6 +2535,7 @@ function SmartHubBoxModal({
       status: row.status,
       ownerNote: "",
       customerMessage: "",
+      workerChoice: selection?.item?.assigned_worker_id || selection?.item?.worker_id || selection?.item?.recommended_worker_id || "",
     });
   }
 
@@ -2596,6 +2634,7 @@ function SmartHubBoxModal({
                     row={row}
                     draft={controlDraft}
                     onChange={(key, value) => updateControlDraft(controlKey, key, value)}
+                    team={team}
                   />
 
                   <div>
@@ -2667,6 +2706,24 @@ function SmartHubBoxModal({
                   onChange={(event) => updateEditingDraft("status", event.target.value)}
                 />
               </label>
+
+              {editingNeedsWorkerDropdown() ? (
+                <label>
+                  Assign worker
+                  <select
+                    value={editingDraft.workerChoice || ""}
+                    onChange={(event) => updateEditingDraft("workerChoice", event.target.value)}
+                  >
+                    <option value="">Choose worker...</option>
+                    {workerOptionsForEdit.map((worker) => (
+                      <option key={`${worker.id}-${worker.name}`} value={worker.id || worker.name}>
+                        {worker.name}{worker.region ? ` · ${worker.region}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {!workerOptionsForEdit.length ? <small className="cx-worker-picker-note">No workers loaded yet. Add workers in Team first.</small> : null}
+                </label>
+              ) : null}
 
               <label className="wide">
                 AI context / detail
@@ -4339,6 +4396,7 @@ function Workspace({ page, setPage, data }) {
         box={selectedHubBox}
         rows={selectedHubRows}
         approved={approved}
+        team={team}
         onClose={() => setSelectedHubBox(null)}
         onOpen={(selection) => {
           setSelectedHubBox(null);

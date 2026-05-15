@@ -7200,3 +7200,27 @@ button.primary,
     width: 100% !important;
   }
 }
+
+/* ===== Worker dropdown inside Smart Hub approval modals ===== */
+.cx-worker-picker-note {
+  display: block !important;
+  margin-top: 4px !important;
+  color: #b45309 !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.cx-smart-modal-edit select {
+  width: 100% !important;
+  min-height: 44px !important;
+  border: 1px solid rgba(37, 99, 235, 0.14) !important;
+  border-radius: 16px !important;
+  color: #102033 !important;
+  background: rgba(255,255,255,0.94) !important;
+  padding: 11px 14px !important;
+  font-size: 14px !important;
+  font-weight: 820 !important;
+  outline: none !important;
+}
