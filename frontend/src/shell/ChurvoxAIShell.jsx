@@ -1200,7 +1200,7 @@ function Workspace({ page, setPage, data }) {
       title: "Your business at a glance.",
       body: data?.loading
         ? "Syncing live Churvox data..."
-        : data?.error || "Tap a box. Churvox opens only what needs your attention.",
+        : data?.error || "AI sorts the day into approvals, blockers, invoices, messages, cashflow, quotes and crew.",
       rows: jobs,
     },
     queue: {
@@ -1341,17 +1341,82 @@ function Workspace({ page, setPage, data }) {
     ]),
   ].slice(0, 6);
 
-  const attentionRows = actions
+  const completedJobs = jobs.filter((job) => {
+    const status = String(job?.status || job?.job_status || job?.workflow_status || "").toLowerCase();
+    return status.includes("complete") || status.includes("done") || job?.completed === true || Boolean(job?.completed_at);
+  });
+
+  const invoicedJobIds = new Set(
+    invoices
+      .map((invoice) => String(invoice?.job_id || invoice?.source_job_id || invoice?.ai_source_job_id || ""))
+      .filter(Boolean)
+  );
+
+  const completedJobsReadyToInvoice = completedJobs
+    .filter((job) => {
+      const jobId = String(job?._id || job?.id || job?.job_id || "");
+      return !jobId || !invoicedJobIds.has(jobId);
+    })
+    .map((job) => [
+      "Completed job",
+      job?.title || job?.name || job?.client_name || "Completed job",
+      job?.address || job?.description || "Ready for invoice review",
+      "Create invoice",
+    ]);
+
+  const draftInvoiceRows = invoices
+    .filter((invoice) => /draft|ready|pending/i.test(String(invoice?.status || invoice?.invoice_status || invoice?.payment_status || "")))
+    .map((invoice) => [
+      "Invoice draft",
+      invoice?.client_name || invoice?.customer_name || invoice?.title || "Draft invoice",
+      invoice?.description || invoice?.notes || "Draft invoice ready for review",
+      invoice?.status || invoice?.invoice_status || "draft",
+    ]);
+
+  const readyInvoiceRows = [
+    ...completedJobsReadyToInvoice,
+    ...draftInvoiceRows,
+  ].slice(0, 6);
+
+  const unassignedJobRows = jobs
+    .filter((job) => {
+      const status = String(job?.status || job?.job_status || job?.workflow_status || "").toLowerCase();
+      const done = status.includes("complete") || status.includes("cancel");
+      const assigned = job?.assigned_worker_id || job?.worker_id || job?.assigned_worker || job?.assigned_worker_name;
+      return !done && !assigned;
+    })
+    .map((job) => [
+      "Unassigned job",
+      job?.title || job?.name || job?.client_name || "Job needs worker",
+      job?.address || job?.description || "No worker assigned yet",
+      "Assign",
+    ]);
+
+  const brokenInvoiceRows = invoices
+    .filter((invoice) => {
+      const hasClient = invoice?.client_name || invoice?.customer_name || invoice?.client_id || invoice?.customer_id;
+      const hasAmount = Number(invoice?.total || invoice?.amount || invoice?.balance || 0) > 0;
+      return !hasClient || !hasAmount;
+    })
+    .map((invoice) => [
+      "Invoice issue",
+      invoice?.title || invoice?.client_name || "Invoice needs checking",
+      !invoice?.client_name && !invoice?.customer_name ? "Missing client details" : "Missing amount or balance",
+      "Fix",
+    ]);
+
+  const aiBlockerRows = actions
     .filter((item) => {
       const type = String(item.type || "").toLowerCase();
       return type.includes("dispatch") || type.includes("cashflow") || type.includes("payment") || type.includes("overdue");
     })
-    .map((item) => [item.type, item.title, item.body, item.action])
-    .slice(0, 5);
+    .map((item) => [item.type, item.title, item.body, item.action]);
 
-  const readyInvoiceRows = invoices
-    .filter((invoice) => /draft|ready|pending|unpaid/i.test(String(invoice?.status || invoice?.invoice_status || invoice?.payment_status || "")))
-    .slice(0, 6);
+  const attentionRows = [
+    ...unassignedJobRows,
+    ...brokenInvoiceRows,
+    ...aiBlockerRows,
+  ].slice(0, 6);
 
   const collectRows = invoices
     .filter((invoice) => /overdue|unpaid|late/i.test(String(invoice?.status || invoice?.invoice_status || invoice?.payment_status || "")) || Number(invoice?.balance || 0) > 0)
@@ -1387,7 +1452,7 @@ function Workspace({ page, setPage, data }) {
       count: attentionRows.length,
       label: "to fix",
       title: "Needs attention",
-      body: "Jobs, dispatch, overdue, or cashflow items that may block the day.",
+      body: "Unassigned jobs, invoice issues, overdue items, or cashflow blockers.",
       action: "Check",
     },
     {
@@ -1395,7 +1460,7 @@ function Workspace({ page, setPage, data }) {
       count: readyInvoiceRows.length,
       label: "ready",
       title: "Ready to invoice",
-      body: "Completed or draft invoice work that can turn into money.",
+      body: "Completed jobs and draft invoices that can turn into money.",
       action: "Review",
     },
     {
