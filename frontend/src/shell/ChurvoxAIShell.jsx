@@ -1015,6 +1015,7 @@ function rowText(item, index, fallback = "Record") {
 
   const title = textValue(
     item?.title,
+    item?.subject,
     item?.job_title,
     item?.name,
     item?.client_name,
@@ -1022,10 +1023,13 @@ function rowText(item, index, fallback = "Record") {
     item?.quote_number,
     item?.invoice_number,
     item?.email,
+    item?.kind,
     `${fallback} ${index + 1}`
   );
 
   const detail = textValue(
+    item?.message,
+    item?.body,
     item?.description,
     item?.notes,
     item?.address,
@@ -1203,6 +1207,9 @@ function SmartHubBoxModal({
   onSnooze,
   onDismiss,
   onResolve,
+  onCopyMessage,
+  onMarkReady,
+  onMarkSent,
   onOpenFull,
 }) {
   const [editingSelection, setEditingSelection] = useState(null);
@@ -1299,6 +1306,14 @@ function SmartHubBoxModal({
     if (box.key === "setup") return "Mark improved";
     if (box.key === "work") return "Mark reviewed";
     return "Mark resolved";
+  }
+
+  function isMessageBox() {
+    return box.key === "messages";
+  }
+
+  function messageArea(item) {
+    return item?.source_area === "send" ? "send" : "approved";
   }
 
   function modalEmptyTitle() {
@@ -1415,6 +1430,19 @@ function SmartHubBoxModal({
                       <button type="button" className="resolve" onClick={() => onResolve(box, item)}>
                         {resolveLabel()}
                       </button>
+                    ) : null}
+                    {isMessageBox() ? (
+                      <>
+                        <button type="button" className="message-action" onClick={() => onCopyMessage(item, messageArea(item))}>
+                          Copy message
+                        </button>
+                        <button type="button" className="message-action" onClick={() => onMarkReady(item)}>
+                          Mark ready
+                        </button>
+                        <button type="button" className="message-action" onClick={() => onMarkSent(item)}>
+                          Mark sent
+                        </button>
+                      </>
                     ) : null}
                     <button type="button" onClick={() => onSnooze(box, item)}>Snooze</button>
                     <button type="button" onClick={() => onDismiss(box, item)}>Dismiss</button>
@@ -1659,18 +1687,22 @@ function Workspace({ page, setPage, data }) {
   ];
 
   const preparedMessageRows = [
-    ...sendCenterItems.map((item) => [
-      item.kind || "Ready message",
-      item.client_name || "Client",
-      item.message || item.title || "Ready to send",
-      item.send_status || "ready_to_send",
-    ]),
-    ...approvedDrafts.map((item) => [
-      item.kind || "Approved draft",
-      item.client_name || "Client",
-      item.message || item.title || "Approved draft",
-      item.send_status || item.status || "not_sent",
-    ]),
+    ...sendCenterItems.map((item) => ({
+      ...item,
+      type: item.kind || item.type || "Ready message",
+      title: item.client_name || item.customer_name || item.title || "Client message",
+      message: item.message || item.body || item.title || "Ready to send",
+      status: item.send_status || item.status || "ready_to_send",
+      source_area: "send",
+    })),
+    ...approvedDrafts.map((item) => ({
+      ...item,
+      type: item.kind || item.type || "Approved draft",
+      title: item.client_name || item.customer_name || item.title || "Client message",
+      message: item.message || item.body || item.title || "Approved draft",
+      status: item.send_status || item.status || "not_sent",
+      source_area: "approved",
+    })),
   ].slice(0, 6);
 
   const completedJobs = jobs.filter((job) => {
@@ -1908,7 +1940,8 @@ function Workspace({ page, setPage, data }) {
 
   function hubItemKey(boxKey, item) {
     const row = rowText(item, 0, boxKey || "Smart Hub");
-    return `${boxKey || "hub"}::${row.lead}::${row.title}::${row.detail}`;
+    const rawId = item?.id || item?._id || item?.draft_id || item?.invoice_number || item?.quote_number || "";
+    return `${boxKey || "hub"}::${rawId || row.lead}::${row.title}::${row.detail}`;
   }
 
   function hubRowsForKey(key) {
@@ -2183,6 +2216,26 @@ function Workspace({ page, setPage, data }) {
     } catch (err) {
       setSendCenterStatus(err?.message || "Could not mark draft sent");
     }
+  }
+
+  async function copyHubMessage(item, area = "approved") {
+    const row = rowText(item, 0, "Message");
+    await copyDraftMessage(item, area);
+    logCommand("Messages ready", row.title, "Copied");
+  }
+
+  async function markHubMessageReady(item) {
+    const row = rowText(item, 0, "Message");
+    await markDraftReadyToSend(item);
+    logCommand("Messages ready", row.title, "Marked ready");
+  }
+
+  async function markHubMessageSent(item) {
+    const row = rowText(item, 0, "Message");
+    await markDraftManuallySent(item);
+    const key = hubItemKey("messages", item);
+    setHubItemStatus((current) => ({ ...current, [key]: "resolved" }));
+    logCommand("Messages ready", row.title, "Marked sent");
   }
 
   async function copyDraftMessage(item, area = "approved") {
@@ -2611,6 +2664,9 @@ function Workspace({ page, setPage, data }) {
         onSnooze={snoozeHubItem}
         onDismiss={dismissHubItem}
         onResolve={resolveHubItem}
+        onCopyMessage={copyHubMessage}
+        onMarkReady={markHubMessageReady}
+        onMarkSent={markHubMessageSent}
         onOpenFull={(nextPage) => {
           setSelectedHubBox(null);
           switchPage(nextPage);
