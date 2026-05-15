@@ -20,6 +20,7 @@ const APP_PATHS = {
   quotes: "/quotes",
   invoices: "/invoices",
   proof: "/proof-to-paid",
+  plans: "/plans",
   settings: "/settings",
 };
 
@@ -31,6 +32,7 @@ const NAV = [
   ["quotes", "Quotes", "Sales pipeline"],
   ["invoices", "Invoices", "Cashflow"],
   ["proof", "Proof-to-Paid", "Completed work"],
+  ["plans", "Plans", "Billing and trial"],
   ["settings", "Settings", "Business setup"],
 ];
 
@@ -3516,13 +3518,13 @@ function Workspace({ page, setPage, data }) {
     jobs: {
       kicker: "Jobs",
       title: "Dispatch, edit, and inspect job work.",
-      body: "Open any job in a pop-up, review AI context, then approve or jump deeper.",
+      body: "See jobs that need action. Open only what matters, approve prepared work, and keep the crew moving.",
       rows: jobs,
     },
     clients: {
       kicker: "Clients",
       title: "Client history and follow-up control.",
-      body: "Open client records, add notes, and move to jobs, quotes, or invoices fast.",
+      body: "See client history, recent work, quotes and invoices without digging through pages.",
       rows: clients,
     },
     team: {
@@ -3534,13 +3536,13 @@ function Workspace({ page, setPage, data }) {
     quotes: {
       kicker: "Quotes",
       title: "Quote follow-ups ready for approval.",
-      body: "Open, edit, and approve quote follow-up actions from the hub.",
+      body: "Review quote status and approve follow-ups Churvox has prepared.",
       rows: quotes,
     },
     invoices: {
       kicker: "Invoices",
       title: "Drafts, overdue reminders, and cashflow.",
-      body: "Review invoice drafts and reminders before sending or opening full invoice controls.",
+      body: "Review invoice drafts, overdue reminders and cashflow actions prepared by Churvox.",
       rows: invoices,
     },
     proof: {
@@ -3549,10 +3551,21 @@ function Workspace({ page, setPage, data }) {
       body: "Review job proof, completion context, notes, and invoice-readiness in one place.",
       rows: [...jobs.slice(0, 4), ...invoices.slice(0, 4)],
     },
+    plans: {
+      kicker: "Plans",
+      title: "Choose your Churvox plan.",
+      body: "Simple plans for trade and service businesses. AI runs the admin, owner approves the important parts.",
+      rows: [
+        ["Solo", "$30 / month", "One operator, simple job control, up to 20 clients.", "Current"],
+        ["Team", "$70 / month", "Small crew, jobs, clients, quotes, invoices and team workflow.", "Choose"],
+        ["Pro", "$110 / month", "Stronger AI Operator workflows, automation and MYOB add-on option.", "Choose"],
+        ["Enterprise", "$240 / month", "Larger teams, advanced controls, MYOB included and more capacity.", "Choose"],
+      ],
+    },
     settings: {
       kicker: "Settings",
       title: "Business controls and guardrails.",
-      body: "Review plans, roles, permissions, integrations, and owner safety controls.",
+      body: "Set up business details, roles, permissions, integrations, owner safety and launch controls.",
       rows: [
         ["Plan", "Billing", "Roles and owner controls", "Review"],
         ["MYOB", "Integration", "Accounting sync settings", "Review"],
@@ -5203,6 +5216,8 @@ export default function ChurvoxAIShell() {
         "/quotes": "quotes",
         "/invoices": "invoices",
         "/proof-to-paid": "proof",
+        "/plans": "plans",
+        "/billing": "plans",
         "/settings": "settings",
       };
 

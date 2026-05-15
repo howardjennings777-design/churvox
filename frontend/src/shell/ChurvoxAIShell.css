@@ -8473,3 +8473,111 @@ button.primary,
     padding: 18px !important;
   }
 }
+
+/* ===== Visual cleanup pass 1: make deep pages feel intentional ===== */
+
+/* Deep pages should not feel like duplicated Smart Hub dashboards. */
+.cx-workspace:not(.cx-worker-shell) .cx-work-hero:not(.cx-owner-command-hero:first-child) {
+  min-height: auto !important;
+}
+
+/* Make non-dashboard page hero shorter and more useful. */
+.cx-owner-command-shell:has(.cx-owner-command-tabs:not(.cx-hide-on-smart-hub)) .cx-owner-command-hero,
+.cx-workspace:has(.cx-owner-command-tabs:not(.cx-hide-on-smart-hub)) .cx-owner-command-hero {
+  padding: 42px 52px !important;
+  border-radius: 34px !important;
+  min-height: 250px !important;
+}
+
+.cx-workspace:has(.cx-owner-command-tabs:not(.cx-hide-on-smart-hub)) .cx-owner-command-hero h1 {
+  max-width: 780px !important;
+  font-size: clamp(46px, 5vw, 82px) !important;
+  line-height: 0.92 !important;
+}
+
+.cx-workspace:has(.cx-owner-command-tabs:not(.cx-hide-on-smart-hub)) .cx-owner-command-hero p {
+  max-width: 680px !important;
+  font-size: 16px !important;
+  line-height: 1.55 !important;
+}
+
+/* Stop every deep page from shouting the same AI operator block. */
+.cx-workspace:has(.cx-owner-command-tabs:not(.cx-hide-on-smart-hub)) .cx-owner-command-hero aside {
+  max-width: 260px !important;
+  padding: 22px !important;
+  border-radius: 24px !important;
+}
+
+.cx-workspace:has(.cx-owner-command-tabs:not(.cx-hide-on-smart-hub)) .cx-owner-command-hero aside strong {
+  font-size: 34px !important;
+}
+
+/* Deep pages: hide repeated stats strip so records become the focus. */
+.cx-workspace:has(.cx-owner-command-tabs:not(.cx-hide-on-smart-hub)) .cx-stats {
+  display: none !important;
+}
+
+/* Deep pages: hide right-side repeated messages/approvals panels. */
+.cx-workspace:has(.cx-owner-command-tabs:not(.cx-hide-on-smart-hub)) .cx-owner-command-side {
+  display: none !important;
+}
+
+.cx-workspace:has(.cx-owner-command-tabs:not(.cx-hide-on-smart-hub)) .cx-owner-command-layout {
+  grid-template-columns: minmax(0, 1fr) !important;
+  max-width: 1120px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Make lists feel like clean work queues instead of database dumps. */
+.cx-workspace:has(.cx-owner-command-tabs:not(.cx-hide-on-smart-hub)) .cx-panel.cx-owner-section {
+  border-radius: 30px !important;
+  padding: 24px !important;
+}
+
+.cx-workspace:has(.cx-owner-command-tabs:not(.cx-hide-on-smart-hub)) .cx-panel.cx-owner-section > header h2 {
+  font-size: clamp(24px, 2.5vw, 38px) !important;
+  letter-spacing: -0.055em !important;
+}
+
+.cx-command-list {
+  gap: 12px !important;
+}
+
+.cx-command-list article,
+.cx-work-action,
+.cx-owner-command-row {
+  border-radius: 20px !important;
+}
+
+/* Fix tiny/wrapped Open pop-up buttons. */
+.cx-command-list button,
+.cx-owner-command-row button,
+.cx-work-action button {
+  white-space: nowrap !important;
+  min-width: 96px !important;
+  min-height: 40px !important;
+  border-radius: 999px !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+}
+
+/* Plans should look like plans, not dumped settings rows. */
+.cx-owner-command-shell:has(.cx-owner-command-tabs button.active) .cx-panel.cx-owner-section .cx-command-list {
+  display: grid !important;
+  gap: 12px !important;
+}
+
+/* Settings rows need stronger card separation. */
+.cx-workspace:has(.cx-owner-command-tabs:not(.cx-hide-on-smart-hub)) .cx-command-list > * {
+  background: rgba(255,255,255,0.82) !important;
+  border: 1px solid rgba(37,99,235,0.10) !important;
+  box-shadow: 0 12px 30px rgba(15,32,64,0.04) !important;
+}
+
+/* The top bar action should not dominate every page. */
+.cx-topbar button,
+.cx-shell-topbar button,
+.cx-workspace-topbar button {
+  max-width: 280px !important;
+}
