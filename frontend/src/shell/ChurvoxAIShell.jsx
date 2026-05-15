@@ -1697,7 +1697,7 @@ function Workspace({ page, setPage, data }) {
         </section>
       ) : null}
 
-      <section className="cx-owner-command-layout">
+      <section className={`cx-owner-command-layout ${page === "dashboard" && (!hubFocus || hubFocus === "fix" || hubFocus === "work") ? "cx-hub-single-column" : ""}`}>
         <section className="cx-owner-command-main">
           {((page === "dashboard" && hubFocus === "approvals") || page === "queue") ? (
             <section className="cx-owner-queue">
@@ -1788,30 +1788,6 @@ function Workspace({ page, setPage, data }) {
         </section>
 
         <aside className="cx-owner-command-side">
-          <section className="cx-panel">
-            <header>
-              <div>
-                <span>Fast actions</span>
-                <h2>Create or open</h2>
-              </div>
-            </header>
-
-            <div className="cx-owner-quick-buttons">
-              {[
-                ["Open jobs", "jobs"],
-                ["Open clients", "clients"],
-                ["Open team", "team"],
-                ["Open quotes", "quotes"],
-                ["Open invoices", "invoices"],
-                ["Proof-to-Paid", "proof"],
-              ].map(([label, nextPage]) => (
-                <button type="button" key={label} onClick={() => switchPage(nextPage)}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          </section>
-
           <section className={`cx-panel cx-owner-log cx-owner-prepared-messages ${page === "dashboard" && hubFocus !== "messages" ? "cx-hub-hidden-panel" : ""}`}>
             <header>
               <div>

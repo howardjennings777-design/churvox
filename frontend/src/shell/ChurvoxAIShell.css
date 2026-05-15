@@ -2831,3 +2831,22 @@ button {
     font-size: 46px;
   }
 }
+
+
+/* ===== Remove duplicate Fast Actions from Smart Hub ===== */
+.cx-hub-single-column {
+  grid-template-columns: 1fr !important;
+}
+
+.cx-hub-single-column .cx-owner-command-side {
+  display: none !important;
+}
+
+.cx-owner-command-layout.cx-hub-single-column .cx-owner-command-main {
+  width: 100%;
+}
+
+.cx-owner-command-layout.cx-hub-single-column .cx-owner-section,
+.cx-owner-command-layout.cx-hub-single-column .cx-owner-queue {
+  max-width: none;
+}
