@@ -1549,6 +1549,7 @@ function Workspace({ page, setPage, data }) {
   const [hubFocus, setHubFocus] = useState("");
   const [selectedHubBox, setSelectedHubBox] = useState(null);
   const [hubItemStatus, setHubItemStatus] = useState(() => readSmartHubItemStatus());
+  const [hubNotice, setHubNotice] = useState(null);
 
   const meta = {
     dashboard: {
@@ -1619,6 +1620,12 @@ function Workspace({ page, setPage, data }) {
   useEffect(() => {
     saveSmartHubItemStatus(hubItemStatus);
   }, [hubItemStatus]);
+
+  useEffect(() => {
+    if (!hubNotice) return undefined;
+    const timer = window.setTimeout(() => setHubNotice(null), 4200);
+    return () => window.clearTimeout(timer);
+  }, [hubNotice]);
 
   useEffect(() => {
     let cancelled = false;
@@ -2035,6 +2042,7 @@ function Workspace({ page, setPage, data }) {
 
   function logCommand(type, title, status) {
     const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    setHubNotice({ type, title, status, time });
     setApprovalLog((currentLog) => {
       const nextLog = [{ type, title, status, time }, ...currentLog].slice(0, 8);
       saveOwnerCommandLog(nextLog);
@@ -2326,6 +2334,17 @@ function Workspace({ page, setPage, data }) {
           >
             Review first item
           </button>
+        </section>
+      ) : null}
+
+      {page === "dashboard" && hubNotice ? (
+        <section className="cx-smart-hub-notice">
+          <div>
+            <span>{hubNotice.type}</span>
+            <strong>{hubNotice.title}</strong>
+            <p>{hubNotice.status} · {hubNotice.time}</p>
+          </div>
+          <button type="button" onClick={() => setHubNotice(null)}>Dismiss</button>
         </section>
       ) : null}
 
