@@ -1349,12 +1349,36 @@ function Workspace({ page, setPage, data }) {
     .map((item) => [item.type, item.title, item.body, item.action])
     .slice(0, 5);
 
+  const readyInvoiceRows = invoices
+    .filter((invoice) => /draft|ready|pending|unpaid/i.test(String(invoice?.status || invoice?.invoice_status || invoice?.payment_status || "")))
+    .slice(0, 6);
+
+  const collectRows = invoices
+    .filter((invoice) => /overdue|unpaid|late/i.test(String(invoice?.status || invoice?.invoice_status || invoice?.payment_status || "")) || Number(invoice?.balance || 0) > 0)
+    .slice(0, 6);
+
+  const quoteRows = quotes
+    .filter((quote) => /sent|pending|open|follow/i.test(String(quote?.status || quote?.quote_status || quote?.state || "")))
+    .slice(0, 6);
+
+  const crewRows = team.slice(0, 6);
+
+  const moneyToCollect = collectRows.reduce((sum, invoice) => {
+    const raw = invoice?.balance || invoice?.total || invoice?.amount || 0;
+    const value = typeof raw === "number" ? raw : Number(String(raw).replace(/[^0-9.-]/g, ""));
+    return sum + (Number.isFinite(value) ? value : 0);
+  }, 0);
+
+  const moneyToCollectLabel = moneyToCollect > 0
+    ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD", maximumFractionDigits: 0 }).format(moneyToCollect)
+    : String(collectRows.length);
+
   const hubBoxes = [
     {
       key: "approvals",
       count: actions.length,
       label: "to approve",
-      title: "Approvals",
+      title: "To approve",
       body: "AI-prepared actions waiting for your decision.",
       action: "Open",
     },
@@ -1363,14 +1387,22 @@ function Workspace({ page, setPage, data }) {
       count: attentionRows.length,
       label: "to fix",
       title: "Needs attention",
-      body: "Dispatch, overdue, or cashflow items that may block the day.",
+      body: "Jobs, dispatch, overdue, or cashflow items that may block the day.",
       action: "Check",
+    },
+    {
+      key: "invoice",
+      count: readyInvoiceRows.length,
+      label: "ready",
+      title: "Ready to invoice",
+      body: "Completed or draft invoice work that can turn into money.",
+      action: "Review",
     },
     {
       key: "messages",
       count: preparedMessageRows.length,
       label: "messages",
-      title: "Prepared messages",
+      title: "Messages ready",
       body: "Quote follow-ups and reminders ready to copy or mark sent.",
       action: "View",
     },
@@ -1382,16 +1414,48 @@ function Workspace({ page, setPage, data }) {
       body: "Jobs and invoices worth checking today.",
       action: "Review",
     },
+    {
+      key: "collect",
+      count: moneyToCollectLabel,
+      label: "to collect",
+      title: "Money to collect",
+      body: "Unpaid or overdue invoices that need attention.",
+      action: "Collect",
+    },
+    {
+      key: "quotes",
+      count: quoteRows.length,
+      label: "waiting",
+      title: "Quotes waiting",
+      body: "Open quotes and follow-ups that may need a nudge.",
+      action: "Open",
+    },
+    {
+      key: "crew",
+      count: crewRows.length,
+      label: "active",
+      title: "Crew active",
+      body: "Workers and team records available for assignment.",
+      action: "View",
+    },
   ];
 
   const commandSections = page === "dashboard"
     ? hubFocus === "messages"
-      ? [["Prepared messages", "quotes", preparedMessageRows]]
+      ? [["Messages ready", "quotes", preparedMessageRows]]
       : hubFocus === "fix"
         ? [["Needs attention", "queue", attentionRows]]
         : hubFocus === "work"
           ? [["Today’s work", "jobs", todayRows.slice(0, 5)]]
-          : []
+          : hubFocus === "invoice"
+            ? [["Ready to invoice", "invoices", readyInvoiceRows]]
+            : hubFocus === "collect"
+              ? [["Money to collect", "invoices", collectRows]]
+              : hubFocus === "quotes"
+                ? [["Quotes waiting", "quotes", quoteRows]]
+                : hubFocus === "crew"
+                  ? [["Crew active", "team", crewRows]]
+                  : []
     : page === "queue"
       ? []
       : [[current.kicker, page, current.rows]];
@@ -1694,7 +1758,7 @@ function Workspace({ page, setPage, data }) {
         ))}
       </section>
 
-      <section className="cx-stats">
+      <section className={`cx-stats ${page === "dashboard" ? "cx-hide-on-smart-hub" : ""}`}>
         <Stat label="Jobs today" value={stats.jobsToday || String(jobs.length)} note="tap jobs below to inspect" />
         <Stat label="Ready to invoice" value={stats.readyToInvoice || "$0"} note="drafts and reminders" />
         <Stat label="Open quotes" value={stats.openQuotes || String(quotes.length)} note="follow-ups watched" />
@@ -1711,7 +1775,7 @@ function Workspace({ page, setPage, data }) {
               onClick={() => setHubFocus(hubFocus === box.key ? "" : box.key)}
             >
               <span>{box.title}</span>
-              <strong>{box.count}</strong>
+              <strong className={String(box.count).includes("$") ? "money" : ""}>{box.count}</strong>
               <b>{box.label}</b>
               <small>{box.body}</small>
               <em>{hubFocus === box.key ? "Hide" : box.action}</em>

@@ -3026,3 +3026,80 @@ button {
     opacity: 0.1;
   }
 }
+
+
+/* ===== Smart Hub business-action boxes ===== */
+.cx-hide-on-smart-hub {
+  display: none !important;
+}
+
+.cx-hub-box-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.cx-hub-box {
+  position: relative;
+  min-height: 172px;
+}
+
+.cx-hub-box:nth-child(1),
+.cx-hub-box:nth-child(2),
+.cx-hub-box:nth-child(3),
+.cx-hub-box:nth-child(4) {
+  min-height: 190px;
+}
+
+.cx-hub-box:nth-child(1)::after,
+.cx-hub-box:nth-child(2)::after,
+.cx-hub-box:nth-child(3)::after,
+.cx-hub-box:nth-child(4)::after {
+  content: "";
+  position: absolute;
+  inset: 12px 12px auto auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(0, 214, 255, 0.55), rgba(33, 55, 255, 0.08));
+}
+
+.cx-hub-box strong.money {
+  font-size: 38px;
+  letter-spacing: -0.06em;
+}
+
+.cx-hub-box:nth-child(1) {
+  background:
+    radial-gradient(circle at top right, rgba(33, 55, 255, 0.22), transparent 12rem),
+    rgba(255, 255, 255, 0.7);
+}
+
+.cx-hub-box:nth-child(2) {
+  background:
+    radial-gradient(circle at top right, rgba(251, 146, 60, 0.22), transparent 12rem),
+    rgba(255, 255, 255, 0.7);
+}
+
+.cx-hub-box:nth-child(3) {
+  background:
+    radial-gradient(circle at top right, rgba(20, 184, 166, 0.22), transparent 12rem),
+    rgba(255, 255, 255, 0.7);
+}
+
+.cx-hub-box:nth-child(4) {
+  background:
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.22), transparent 12rem),
+    rgba(255, 255, 255, 0.7);
+}
+
+@media (max-width: 1180px) {
+  .cx-hub-box-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .cx-hub-box-grid {
+    grid-template-columns: 1fr;
+  }
+}
