@@ -3515,3 +3515,25 @@ button {
   }
 }
 
+
+/* ===== Smart Hub risk label colors ===== */
+.cx-smart-modal-tags b.risk-urgent {
+  color: #991b1b;
+  background: rgba(248,113,113,0.16);
+}
+
+.cx-smart-modal-tags b.risk-missing {
+  color: #92400e;
+  background: rgba(251,191,36,0.18);
+}
+
+.cx-smart-modal-tags b.risk-ready {
+  color: #065f46;
+  background: rgba(20,184,166,0.14);
+}
+
+.cx-smart-modal-tags b.risk-check {
+  color: #1d4ed8;
+  background: rgba(37,99,235,0.12);
+}
+

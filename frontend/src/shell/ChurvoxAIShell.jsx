@@ -1255,6 +1255,14 @@ function SmartHubBoxModal({
     return "Needs owner check";
   }
 
+  function riskClassFor(row) {
+    const risk = riskFor(row).toLowerCase();
+    if (risk.includes("urgent")) return "urgent";
+    if (risk.includes("missing")) return "missing";
+    if (risk.includes("ready")) return "ready";
+    return "check";
+  }
+
   function reasonFor(row) {
     const text = `${row.lead} ${row.title} ${row.detail} ${row.status}`.toLowerCase();
 
@@ -1415,7 +1423,7 @@ function SmartHubBoxModal({
                   <h3>{row.title}</h3>
                   <p>{row.detail}</p>
                   <div className="cx-smart-modal-tags">
-                    <b>{riskFor(row)}</b>
+                    <b className={`risk-${riskClassFor(row)}`}>{riskFor(row)}</b>
                     <small>{row.status}</small>
                     {isApproved ? <small>Approved</small> : null}
                   </div>
