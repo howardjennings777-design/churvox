@@ -1265,6 +1265,7 @@ function SmartHubBoxModal({
               item,
               page: workspaceForBox,
               group: box.title,
+              hubBoxKey: box.key,
               label: row.title,
               recommendation: reasonFor(row),
             };
@@ -1713,6 +1714,18 @@ function Workspace({ page, setPage, data }) {
     return [];
   }
 
+
+  function visibleHubCount(key, fallback) {
+    if (key === "collect" && String(fallback || "").includes("$")) {
+      return fallback;
+    }
+
+    return hubRowsForKey(key).filter((item) => {
+      const status = hubItemStatus[hubItemKey(key, item)];
+      return status !== "approved" && status !== "snoozed" && status !== "dismissed";
+    }).length;
+  }
+
   function snoozeHubItem(box, item) {
     const row = rowText(item, 0, box?.title || "Smart Hub");
     const key = hubItemKey(box?.key || box?.title, item);
@@ -1730,7 +1743,7 @@ function Workspace({ page, setPage, data }) {
   const selectedHubRows = selectedHubBox
     ? hubRowsForKey(selectedHubBox.key).filter((item) => {
         const status = hubItemStatus[hubItemKey(selectedHubBox.key, item)];
-        return status !== "snoozed" && status !== "dismissed";
+        return status !== "approved" && status !== "snoozed" && status !== "dismissed";
       })
     : [];
 
@@ -2067,11 +2080,11 @@ function Workspace({ page, setPage, data }) {
               className={`cx-hub-box ${selectedHubBox?.key === box.key ? "active" : ""}`}
               onClick={() => {
                 setHubFocus("");
-                setSelectedHubBox(box);
+                setSelectedHubBox({ ...box, count: visibleHubCount(box.key, box.count) });
               }}
             >
               <span>{box.title}</span>
-              <strong className={String(box.count).includes("$") ? "money" : ""}>{box.count}</strong>
+              <strong className={String(visibleHubCount(box.key, box.count)).includes("$") ? "money" : ""}>{visibleHubCount(box.key, box.count)}</strong>
               <b>{box.label}</b>
               <small>{box.body}</small>
               <em>{box.action}</em>
@@ -2308,6 +2321,10 @@ function Workspace({ page, setPage, data }) {
           openCommand(selection);
         }}
         onApprove={(selection, draft) => {
+          if (selection?.hubBoxKey && selection?.item) {
+            const key = hubItemKey(selection.hubBoxKey, selection.item);
+            setHubItemStatus((current) => ({ ...current, [key]: "approved" }));
+          }
           setSelectedHubBox(null);
           approveSelection(selection, draft);
         }}
