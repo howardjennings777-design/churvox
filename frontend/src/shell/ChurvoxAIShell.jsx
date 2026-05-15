@@ -1916,12 +1916,25 @@ function Workspace({ page, setPage, data }) {
   ];
 
 
+  function hubRemainingCount(key) {
+    return hubRowsForKey(key).filter((item) => {
+      const status = hubItemStatus[hubItemKey(key, item)];
+      return status !== "approved" && status !== "snoozed" && status !== "dismissed" && status !== "resolved";
+    }).length;
+  }
+
+  const remainingApprovals = hubRemainingCount("approvals");
+  const remainingAttention = hubRemainingCount("fix");
+  const remainingInvoices = hubRemainingCount("invoice");
+  const remainingMessages = hubRemainingCount("messages");
+  const remainingCollect = hubRemainingCount("collect");
+
   const dailyBriefItems = [
-    actions.length ? `${actions.length} approval${actions.length === 1 ? "" : "s"}` : "",
-    attentionRows.length ? `${attentionRows.length} blocker${attentionRows.length === 1 ? "" : "s"}` : "",
-    readyInvoiceRows.length ? `${readyInvoiceRows.length} ready to invoice` : "",
-    preparedMessageRows.length ? `${preparedMessageRows.length} message${preparedMessageRows.length === 1 ? "" : "s"} ready` : "",
-    collectRows.length ? `${moneyToCollectLabel} to collect` : "",
+    remainingApprovals ? `${remainingApprovals} approval${remainingApprovals === 1 ? "" : "s"}` : "",
+    remainingAttention ? `${remainingAttention} blocker${remainingAttention === 1 ? "" : "s"}` : "",
+    remainingInvoices ? `${remainingInvoices} ready to invoice` : "",
+    remainingMessages ? `${remainingMessages} message${remainingMessages === 1 ? "" : "s"} ready` : "",
+    remainingCollect ? `${moneyToCollectLabel} to collect` : "",
   ].filter(Boolean);
 
   const dailyBriefText = data?.loading
@@ -1932,7 +1945,24 @@ function Workspace({ page, setPage, data }) {
         ? `Churvox found ${dailyBriefItems.join(", ")}. Review the boxes below when you are ready.`
         : "Churvox has checked the workspace. Nothing urgent needs approval right now.";
 
-  const topBriefBox = hubBoxes.find((box) => Number(box.count) > 0) || hubBoxes[0];
+  const topBriefBox = [
+    "approvals",
+    "fix",
+    "invoice",
+    "messages",
+    "collect",
+    "work",
+    "quotes",
+    "crew",
+    "setup",
+  ]
+    .map((key) => hubBoxes.find((box) => box.key === key))
+    .filter(Boolean)
+    .find((box) => {
+      if (box.key === "collect") return hubRemainingCount("collect") > 0;
+      if (box.key === "setup") return setupScore < 100;
+      return hubRemainingCount(box.key) > 0;
+    }) || hubBoxes[0];
 
 
   const commandSections = page === "dashboard"
@@ -1989,7 +2019,7 @@ function Workspace({ page, setPage, data }) {
 
     return hubRowsForKey(key).filter((item) => {
       const status = hubItemStatus[hubItemKey(key, item)];
-      return status !== "approved" && status !== "snoozed" && status !== "dismissed";
+      return status !== "approved" && status !== "snoozed" && status !== "dismissed" && status !== "resolved";
     }).length;
   }
 
