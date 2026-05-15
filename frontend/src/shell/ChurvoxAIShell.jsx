@@ -1779,6 +1779,61 @@ async function cxWorkerPostFirst(paths, body = {}) {
   throw lastError || new Error("Worker action could not be saved.");
 }
 
+
+function WorkerRoleClarityPanel() {
+  return (
+    <section className="cx-worker-role-clarity">
+      <header>
+        <div>
+          <span>Your role in the Churvox machine</span>
+          <h2>You complete the work. Churvox prepares the admin for the owner.</h2>
+          <p>
+            Your notes, photos, start times and completion updates feed the owner approval flow.
+            You stay focused on jobs, proof and completion — not pricing, invoices, quotes or business admin.
+          </p>
+        </div>
+      </header>
+
+      <div>
+        <article>
+          <span>You can do</span>
+          <ul>
+            <li>view your assigned jobs</li>
+            <li>start, pause, resume and complete work</li>
+            <li>add job notes</li>
+            <li>upload proof photos</li>
+            <li>send completion proof to owner approval</li>
+          </ul>
+        </article>
+
+        <article>
+          <span>Churvox uses this for</span>
+          <ul>
+            <li>job completion summary</li>
+            <li>proof-to-paid package</li>
+            <li>invoice wording source</li>
+            <li>owner review context</li>
+            <li>team accountability trail</li>
+          </ul>
+        </article>
+
+        <article className="locked">
+          <span>Owner-only</span>
+          <ul>
+            <li>pricing and invoice totals</li>
+            <li>quotes and customer follow-ups</li>
+            <li>plans, billing and MYOB</li>
+            <li>payroll and business reports</li>
+            <li>owner approval queue</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+
+
 function WorkerJobDrawer({ job, onClose, onLocalUpdate }) {
   const [note, setNote] = useState("");
   const [status, setStatus] = useState("");
@@ -2092,7 +2147,7 @@ function WorkerMyRun({ page, setPage, data }) {
         <div>
           <span>My Run</span>
           <h1>Churvox has prepared your work.</h1>
-          <p>Follow the run, add notes and photos, then complete the job. Your proof feeds the owner approval flow.</p>
+          <p>Follow the run, add notes/photos, then complete the job. Churvox turns your proof into owner approval work.</p>
         </div>
         <aside>
           <span>Today</span>
@@ -2100,6 +2155,8 @@ function WorkerMyRun({ page, setPage, data }) {
           <p>{activeJobs.length ? "You have a job in progress." : readyJobs.length ? "Your next job is ready." : "No active job waiting."}</p>
         </aside>
       </section>
+
+      <WorkerRoleClarityPanel />
 
       <section className="cx-worker-run-grid">
         <article className="cx-worker-panel cx-worker-next-panel">
@@ -2207,6 +2264,19 @@ function Shell({ page, setPage, onLogout, data }) {
   const safePage = workerMode && !["dashboard", "jobs"].includes(page) ? "dashboard" : page;
   const current = navItems.find(([key]) => key === safePage) || navItems[0];
 
+  useEffect(() => {
+    if (!workerMode) return;
+
+    if (!["dashboard", "jobs"].includes(page)) {
+      setPage("dashboard");
+      try {
+        window.history.replaceState({}, "", "/dashboard");
+      } catch {
+        // ignore history errors
+      }
+    }
+  }, [workerMode, page, setPage]);
+
   function choosePage(key) {
     setPage(key);
     setMobileOpen(false);
@@ -2240,7 +2310,7 @@ function Shell({ page, setPage, onLogout, data }) {
           </strong>
           <p>
             {workerMode
-              ? "Churvox prepared your jobs. Add proof and complete the work."
+              ? "Your proof feeds owner approval."
               : "Prepared for owner approval."}
           </p>
         </section>

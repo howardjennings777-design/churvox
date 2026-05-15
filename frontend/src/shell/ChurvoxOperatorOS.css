@@ -3604,3 +3604,125 @@ a,
     width: 100%;
   }
 }
+
+
+/* Phase 17: role clarity + worker safety lock */
+.cx-worker-role-clarity {
+  border-radius: 30px;
+  padding: 20px;
+  border: 1px solid rgba(116,247,255,.13);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(24,227,194,.10), transparent 20rem),
+    radial-gradient(circle at 100% 0%, rgba(32,217,255,.07), transparent 20rem),
+    linear-gradient(180deg, rgba(13, 26, 38, .94), rgba(5, 12, 18, .90));
+  box-shadow: var(--cx-calm-shadow), inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.cx-worker-role-clarity > header {
+  margin-bottom: 14px;
+}
+
+.cx-worker-role-clarity span {
+  color: var(--cx-cyan);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.cx-worker-role-clarity h2 {
+  margin: 8px 0 0;
+  color: var(--cx-text);
+  font-size: clamp(24px, 3vw, 38px);
+  line-height: 1.02;
+  letter-spacing: -.06em;
+  font-weight: 950;
+}
+
+.cx-worker-role-clarity p {
+  max-width: 900px;
+  color: var(--cx-text-soft);
+  line-height: 1.6;
+  font-weight: 750;
+}
+
+.cx-worker-role-clarity > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cx-worker-role-clarity article {
+  border-radius: 22px;
+  padding: 16px;
+  background: rgba(4,10,16,.50);
+  border: 1px solid rgba(116,247,255,.10);
+}
+
+.cx-worker-role-clarity article.locked {
+  border-color: rgba(255,107,122,.18);
+}
+
+.cx-worker-role-clarity article.locked span {
+  color: #ff9aa5;
+}
+
+.cx-worker-role-clarity ul {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 9px;
+}
+
+.cx-worker-role-clarity li {
+  position: relative;
+  padding-left: 22px;
+  color: var(--cx-text-soft);
+  line-height: 1.45;
+  font-size: 13px;
+  font-weight: 820;
+}
+
+.cx-worker-role-clarity li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--cx-success);
+  font-weight: 950;
+}
+
+.cx-worker-role-clarity article.locked li::before {
+  content: "×";
+  color: var(--cx-danger);
+}
+
+/* workers get simple safe navigation only */
+.cx-worker-app .cx-app-nav button span {
+  font-size: 15px;
+}
+
+.cx-worker-app .cx-side-operator {
+  border-color: rgba(24,227,194,.18);
+}
+
+.cx-worker-app .cx-side-operator span {
+  color: var(--cx-success) !important;
+}
+
+.cx-worker-app .cx-topbar input::placeholder {
+  color: rgba(168, 186, 201, 0.55) !important;
+}
+
+/* worker drawer should not show financial/admin language */
+.cx-worker-app .cx-worker-drawer,
+.cx-worker-app .cx-worker-run,
+.cx-worker-app .cx-worker-role-clarity {
+  isolation: isolate;
+}
+
+@media (max-width: 900px) {
+  .cx-worker-role-clarity > div {
+    grid-template-columns: 1fr;
+  }
+}
