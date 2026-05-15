@@ -2894,3 +2894,135 @@ button {
     min-height: 150px;
   }
 }
+
+
+/* ===== Premium Smart Hub hero ===== */
+.cx-owner-command-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 230px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  background:
+    radial-gradient(circle at 10% 10%, rgba(33, 55, 255, 0.16), transparent 18rem),
+    radial-gradient(circle at 88% 18%, rgba(0, 214, 255, 0.26), transparent 20rem),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(239, 247, 255, 0.78));
+  box-shadow:
+    0 36px 100px rgba(16, 32, 51, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+.cx-owner-command-hero::before {
+  content: "";
+  position: absolute;
+  inset: 18px 24px auto auto;
+  width: 170px;
+  height: 170px;
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(33, 55, 255, 0.95), rgba(0, 214, 255, 0.82));
+  opacity: 0.16;
+  filter: blur(4px);
+}
+
+.cx-owner-command-hero::after {
+  content: "";
+  position: absolute;
+  right: 48px;
+  bottom: -54px;
+  width: 260px;
+  height: 260px;
+  border-radius: 999px;
+  border: 1px solid rgba(33, 55, 255, 0.12);
+  box-shadow:
+    inset 0 0 0 22px rgba(255, 255, 255, 0.22),
+    inset 0 0 0 44px rgba(0, 214, 255, 0.08);
+}
+
+.cx-smart-hero-copy {
+  position: relative;
+  z-index: 2;
+}
+
+.cx-smart-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 999px;
+  padding: 8px 10px;
+  background: rgba(16, 32, 51, 0.92);
+  box-shadow: 0 18px 40px rgba(16, 32, 51, 0.18);
+}
+
+.cx-smart-hero-badge span {
+  color: #67e8f9;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.cx-smart-hero-badge b {
+  color: white;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.cx-smart-hero-copy h1 {
+  max-width: 760px;
+  margin-top: 18px;
+  color: #0b1628;
+  font-size: clamp(46px, 6vw, 86px);
+  line-height: 0.9;
+  letter-spacing: -0.085em;
+}
+
+.cx-smart-hero-copy h1 em {
+  font-style: normal;
+  background: linear-gradient(135deg, #2137ff, #00a7ff, #00d6ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.cx-smart-hero-copy p {
+  max-width: 680px;
+  margin-top: 18px;
+  color: #314862;
+  font-size: 16px;
+  line-height: 1.55;
+  font-weight: 850;
+}
+
+.cx-smart-hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.cx-smart-hero-pills small {
+  border: 1px solid rgba(33, 55, 255, 0.13);
+  border-radius: 999px;
+  padding: 9px 11px;
+  color: #173050;
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  font-weight: 950;
+  box-shadow: 0 12px 28px rgba(16, 32, 51, 0.06);
+}
+
+@media (max-width: 760px) {
+  .cx-owner-command-hero {
+    min-height: 210px;
+    padding: 24px;
+  }
+
+  .cx-smart-hero-copy h1 {
+    font-size: 42px;
+  }
+
+  .cx-owner-command-hero::before,
+  .cx-owner-command-hero::after {
+    opacity: 0.1;
+  }
+}

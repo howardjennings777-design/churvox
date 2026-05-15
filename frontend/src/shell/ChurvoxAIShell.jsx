@@ -1619,10 +1619,31 @@ function Workspace({ page, setPage, data }) {
   return (
     <section className="cx-workspace cx-owner-command-shell">
       <section className="cx-work-hero cx-owner-command-hero">
-        <div>
-          <span>{current.kicker}</span>
-          <h1>{current.title}</h1>
-          <p>{current.body}</p>
+        <div className={page === "dashboard" ? "cx-smart-hero-copy" : ""}>
+          {page === "dashboard" ? (
+            <>
+              <div className="cx-smart-hero-badge">
+                <span>AI Operator</span>
+                <b>Live command brief</b>
+              </div>
+              <h1>
+                Your business,
+                <em> already sorted.</em>
+              </h1>
+              <p>Churvox has lined up the approvals, fixes, messages, and work that need your attention today.</p>
+              <div className="cx-smart-hero-pills">
+                <small>Approval-first</small>
+                <small>No auto-send</small>
+                <small>Owner stays in control</small>
+              </div>
+            </>
+          ) : (
+            <>
+              <span>{current.kicker}</span>
+              <h1>{current.title}</h1>
+              <p>{current.body}</p>
+            </>
+          )}
         </div>
 
         {page !== "dashboard" ? (
