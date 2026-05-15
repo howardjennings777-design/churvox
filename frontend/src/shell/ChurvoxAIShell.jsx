@@ -230,13 +230,38 @@ function rowStatus(row) {
 }
 
 
+function clearSavedSession() {
+  try {
+    [
+      "token",
+      "authToken",
+      "access_token",
+      "churvox_user",
+      "churvox_role",
+      "churvox_email",
+      "churvox_owner_name",
+    ].forEach((key) => localStorage.removeItem(key));
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function notifyAuthExpired() {
+  clearSavedSession();
+
+  try {
+    window.dispatchEvent(new CustomEvent("churvox:auth-expired"));
+  } catch {
+    // ignore browser event errors
+  }
+}
+
 function hasSavedLogin() {
   try {
     return Boolean(
       localStorage.getItem("token") ||
       localStorage.getItem("authToken") ||
-      localStorage.getItem("access_token") ||
-      localStorage.getItem("churvox_user")
+      localStorage.getItem("access_token")
     );
   } catch {
     return false;
@@ -325,6 +350,11 @@ async function apiGet(path) {
   }
 
   if (!res.ok) {
+    if (res.status === 401) {
+      notifyAuthExpired();
+      throw new Error("Session expired. Please log in again.");
+    }
+
     throw new Error(payload.detail || payload.message || payload.error || `${path} failed`);
   }
 
@@ -354,6 +384,11 @@ async function apiPost(path, body) {
   }
 
   if (!res.ok) {
+    if (res.status === 401) {
+      notifyAuthExpired();
+      throw new Error("Session expired. Please log in again.");
+    }
+
     throw new Error(payload.detail || payload.message || payload.error || `${path} failed`);
   }
 
@@ -3331,16 +3366,7 @@ export default function ChurvoxAIShell() {
   }
 
   function onLogout() {
-    try {
-      localStorage.removeItem("token");
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("churvox_user");
-      localStorage.removeItem("churvox_role");
-      localStorage.removeItem("churvox_email");
-    } catch {
-      // ignore
-    }
+    clearSavedSession();
     setAuthed(false);
     setAuthMode("login");
     window.history.pushState({}, "", "/");
