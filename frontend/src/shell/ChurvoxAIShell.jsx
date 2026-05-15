@@ -982,6 +982,27 @@ function saveOwnerCommandLog(items) {
   }
 }
 
+
+const SMART_HUB_ITEM_STATUS_KEY = "churvox_smart_hub_item_status";
+
+function readSmartHubItemStatus() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SMART_HUB_ITEM_STATUS_KEY) || "{}");
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveSmartHubItemStatus(items) {
+  try {
+    localStorage.setItem(SMART_HUB_ITEM_STATUS_KEY, JSON.stringify(items || {}));
+  } catch {
+    // ignore storage errors
+  }
+}
+
+
 function rowText(item, index, fallback = "Record") {
   if (Array.isArray(item)) {
     return {
@@ -1499,7 +1520,7 @@ function Workspace({ page, setPage, data }) {
   const [sendCenterStatus, setSendCenterStatus] = useState("");
   const [hubFocus, setHubFocus] = useState("");
   const [selectedHubBox, setSelectedHubBox] = useState(null);
-  const [hubItemStatus, setHubItemStatus] = useState({});
+  const [hubItemStatus, setHubItemStatus] = useState(() => readSmartHubItemStatus());
 
   const meta = {
     dashboard: {
@@ -1566,6 +1587,10 @@ function Workspace({ page, setPage, data }) {
   };
 
   const current = meta[page] || meta.dashboard;
+
+  useEffect(() => {
+    saveSmartHubItemStatus(hubItemStatus);
+  }, [hubItemStatus]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1935,6 +1960,14 @@ function Workspace({ page, setPage, data }) {
     const key = hubItemKey(box?.key || box?.title, item);
     setHubItemStatus((current) => ({ ...current, [key]: "resolved" }));
     logCommand(box?.title || "Smart Hub", row.title, box?.key === "setup" ? "Improved" : "Resolved");
+  }
+
+  function clearSmartHubSession() {
+    setHubItemStatus({});
+    saveSmartHubItemStatus({});
+    saveOwnerCommandLog([]);
+    setApprovalLog([]);
+    logCommand("Smart Hub", "Session reset", "Cleared");
   }
 
   const selectedHubRows = selectedHubBox
@@ -2320,12 +2353,9 @@ function Workspace({ page, setPage, data }) {
             {approvalLog.length ? (
               <button
                 type="button"
-                onClick={() => {
-                  saveOwnerCommandLog([]);
-                  setApprovalLog([]);
-                }}
+                onClick={clearSmartHubSession}
               >
-                Clear session
+                Reset handled items
               </button>
             ) : null}
           </header>
