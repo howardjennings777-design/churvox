@@ -1310,7 +1310,7 @@ function SmartHubBoxModal({
           }) : (
             <div className="cx-smart-modal-empty">
               <h3>Nothing here right now.</h3>
-              <p>Churvox will fill this when there is something useful to review.</p>
+              <p>Everything in this box is handled, snoozed, or dismissed for this session.</p>
             </div>
           )}
         </section>
@@ -1339,6 +1339,7 @@ function Workspace({ page, setPage, data }) {
   const [sendCenterStatus, setSendCenterStatus] = useState("");
   const [hubFocus, setHubFocus] = useState("");
   const [selectedHubBox, setSelectedHubBox] = useState(null);
+  const [hubItemStatus, setHubItemStatus] = useState({});
 
   const meta = {
     dashboard: {
@@ -1692,6 +1693,12 @@ function Workspace({ page, setPage, data }) {
       : [[current.kicker, page, current.rows]];
 
 
+
+  function hubItemKey(boxKey, item) {
+    const row = rowText(item, 0, boxKey || "Smart Hub");
+    return `${boxKey || "hub"}::${row.lead}::${row.title}::${row.detail}`;
+  }
+
   function hubRowsForKey(key) {
     if (key === "approvals") {
       return actions.map((item) => [item.type, item.title, item.body, item.action]);
@@ -1708,17 +1715,24 @@ function Workspace({ page, setPage, data }) {
 
   function snoozeHubItem(box, item) {
     const row = rowText(item, 0, box?.title || "Smart Hub");
+    const key = hubItemKey(box?.key || box?.title, item);
+    setHubItemStatus((current) => ({ ...current, [key]: "snoozed" }));
     logCommand(box?.title || "Smart Hub", row.title, "Snoozed");
-    setSelectedHubBox(null);
   }
 
   function dismissHubItem(box, item) {
     const row = rowText(item, 0, box?.title || "Smart Hub");
+    const key = hubItemKey(box?.key || box?.title, item);
+    setHubItemStatus((current) => ({ ...current, [key]: "dismissed" }));
     logCommand(box?.title || "Smart Hub", row.title, "Dismissed");
-    setSelectedHubBox(null);
   }
 
-  const selectedHubRows = selectedHubBox ? hubRowsForKey(selectedHubBox.key) : [];
+  const selectedHubRows = selectedHubBox
+    ? hubRowsForKey(selectedHubBox.key).filter((item) => {
+        const status = hubItemStatus[hubItemKey(selectedHubBox.key, item)];
+        return status !== "snoozed" && status !== "dismissed";
+      })
+    : [];
 
   function openCommand(selection) {
     setSelectedRecord(selection);
