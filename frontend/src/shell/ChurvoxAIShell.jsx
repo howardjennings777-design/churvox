@@ -1848,6 +1848,9 @@ function Workspace({ page, setPage, data }) {
   const [selectedHubBox, setSelectedHubBox] = useState(null);
   const [hubItemStatus, setHubItemStatus] = useState(() => readSmartHubItemStatus());
   const [hubNotice, setHubNotice] = useState(null);
+  const [setupProfile, setSetupProfile] = useState(() => readChurvoxSetupProfile());
+  const [setupSaved, setSetupSaved] = useState("");
+  const workerMode = isWorkerSession();
 
   const meta = {
     dashboard: {
