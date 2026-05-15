@@ -7546,3 +7546,42 @@ button.primary,
     padding: 16px !important;
   }
 }
+
+/* ===== Real invoice draft preview ===== */
+.cx-ai-invoice-preview {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  margin: 10px 0 12px !important;
+}
+
+.cx-ai-invoice-preview article {
+  border: 1px solid rgba(37,99,235,0.12) !important;
+  border-radius: 16px !important;
+  background: rgba(255,255,255,0.82) !important;
+  padding: 11px 12px !important;
+}
+
+.cx-ai-invoice-preview span {
+  display: block !important;
+  color: #2563eb !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+.cx-ai-invoice-preview strong {
+  display: block !important;
+  margin-top: 5px !important;
+  color: #102033 !important;
+  font-size: 16px !important;
+  font-weight: 950 !important;
+  overflow-wrap: anywhere !important;
+}
+
+@media (max-width: 760px) {
+  .cx-ai-invoice-preview {
+    grid-template-columns: 1fr !important;
+  }
+}

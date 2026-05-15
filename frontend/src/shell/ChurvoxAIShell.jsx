@@ -2283,23 +2283,56 @@ function SmartHubActionControl({ boxKey, row, draft, onChange, team = [] }) {
       <section className="cx-smart-control-panel cx-smart-control-invoice cx-smart-control-proof-to-paid">
         <header>
           <span>Invoice draft</span>
-          <h4>Ready for owner approval</h4>
-          <p>Check the amount and wording. Approve to save this as a draft invoice.</p>
+          <h4>AI prepared this invoice</h4>
+          <p>Owner checks the invoice draft below, edits anything needed, then approves.</p>
         </header>
+
+        <section className="cx-ai-invoice-preview">
+          <article>
+            <span>Client</span>
+            <strong>{draft.invoiceClientName || "Client"}</strong>
+          </article>
+          <article>
+            <span>Amount</span>
+            <strong>{draft.invoiceAmount ? `$${draft.invoiceAmount}` : "Needs price"}</strong>
+          </article>
+          <article>
+            <span>Due</span>
+            <strong>{draft.invoiceDueDate || "14 days"}</strong>
+          </article>
+        </section>
 
         <div className="cx-smart-invoice-simple-grid">
           <label>
+            Client
+            <input
+              value={draft.invoiceClientName || ""}
+              onChange={(e) => onChange("invoiceClientName", e.target.value)}
+              placeholder="Client name"
+            />
+          </label>
+
+          <label>
             Amount
             <input
-              value={draft.invoiceAmount}
+              value={draft.invoiceAmount || ""}
               onChange={(e) => onChange("invoiceAmount", e.target.value)}
-              placeholder="Add job price"
+              placeholder="Add amount"
+            />
+          </label>
+
+          <label>
+            Due date
+            <input
+              type="date"
+              value={draft.invoiceDueDate || ""}
+              onChange={(e) => onChange("invoiceDueDate", e.target.value)}
             />
           </label>
 
           <label>
             Status
-            <select value={draft.invoiceStatus} onChange={(e) => onChange("invoiceStatus", e.target.value)}>
+            <select value={draft.invoiceStatus || "draft"} onChange={(e) => onChange("invoiceStatus", e.target.value)}>
               <option value="draft">Draft</option>
               <option value="ready">Ready</option>
               <option value="approved">Approved</option>
@@ -2307,18 +2340,27 @@ function SmartHubActionControl({ boxKey, row, draft, onChange, team = [] }) {
           </label>
 
           <label className="wide">
-            Invoice wording
+            Line item
+            <input
+              value={draft.invoiceLineItemsText || ""}
+              onChange={(e) => onChange("invoiceLineItemsText", e.target.value)}
+              placeholder="Service line item"
+            />
+          </label>
+
+          <label className="wide">
+            Invoice wording owner will approve
             <textarea
-              value={draft.invoiceDescription}
+              value={draft.invoiceDescription || ""}
               onChange={(e) => onChange("invoiceDescription", e.target.value)}
-              placeholder="Invoice wording from job notes, proof photos, time and service details..."
+              placeholder="AI invoice wording should be here..."
             />
           </label>
 
           <label className="wide">
             Owner note
             <textarea
-              value={draft.ownerNote}
+              value={draft.ownerNote || ""}
               onChange={(e) => onChange("ownerNote", e.target.value)}
               placeholder="Optional internal note..."
             />
@@ -2548,6 +2590,16 @@ function SmartHubBoxModal({
     const detail = row?.detail || "";
     const preparedInvoiceAmount = cxInvoiceAmount(item);
     const preparedInvoiceDescription = cxInvoiceDescription(item, detail || `Work completed for ${title}.`);
+    const preparedInvoiceClientName = String(item?.client_name || item?.customer_name || item?.client || item?.customer || "Client").trim();
+    const preparedInvoiceDueDate = item?.due_date || item?.invoice_due_date || (() => {
+      const due = new Date();
+      due.setDate(due.getDate() + 14);
+      return due.toISOString().slice(0, 10);
+    })();
+    const preparedInvoiceLineItem = [
+      item?.service_type || item?.job_type || item?.title || item?.name || title,
+      item?.address || item?.job_address || item?.service_address || "",
+    ].filter(Boolean).join(" — ");
     return {
       title,
       detail,
@@ -2556,7 +2608,11 @@ function SmartHubBoxModal({
       customerMessage: `Hi, quick update about ${title}.`,
       workerChoice: "",
       conflictStatus: "clear",
+      invoiceClientName: preparedInvoiceClientName,
+      invoiceTitle: `Invoice draft for ${preparedInvoiceClientName}`,
       invoiceAmount: preparedInvoiceAmount,
+      invoiceDueDate: preparedInvoiceDueDate,
+      invoiceLineItemsText: preparedInvoiceLineItem,
       invoiceStatus: cxInvoiceStatus(item),
       invoiceDescription: preparedInvoiceDescription,
       collectAction: "friendly_reminder",
@@ -2675,6 +2731,16 @@ function SmartHubBoxModal({
     const invoiceAmount = preparedDraft.invoiceAmount || cxInvoiceAmount(item);
     const invoiceDescription = preparedDraft.invoiceDescription || cxInvoiceDescription(item, row.detail || "");
     const invoiceStatus = preparedDraft.invoiceStatus || cxInvoiceStatus(item);
+    const invoiceClientName = preparedDraft.invoiceClientName || String(item?.client_name || item?.customer_name || item?.client || item?.customer || "Client").trim();
+    const invoiceDueDate = preparedDraft.invoiceDueDate || item?.due_date || item?.invoice_due_date || (() => {
+      const due = new Date();
+      due.setDate(due.getDate() + 14);
+      return due.toISOString().slice(0, 10);
+    })();
+    const invoiceLineItemsText = preparedDraft.invoiceLineItemsText || [
+      item?.service_type || item?.job_type || item?.title || item?.name || row.title,
+      item?.address || item?.job_address || item?.service_address || "",
+    ].filter(Boolean).join(" — ");
 
     setEditingSelection(selection);
     setEditingDraft({
@@ -2685,7 +2751,11 @@ function SmartHubBoxModal({
       ownerNote: preparedDraft.ownerNote || "",
       customerMessage: preparedDraft.customerMessage || "",
       workerChoice: preparedDraft.workerChoice || selection?.item?.assigned_worker_id || selection?.item?.worker_id || selection?.item?.recommended_worker_id || "",
+      invoiceClientName,
+      invoiceTitle: preparedDraft.invoiceTitle || `Invoice draft for ${invoiceClientName}`,
       invoiceAmount,
+      invoiceDueDate,
+      invoiceLineItemsText,
       invoiceDescription,
       invoiceStatus,
     });
