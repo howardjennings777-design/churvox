@@ -3632,3 +3632,110 @@ button {
   font-weight: 950;
 }
 
+
+/* ===== Deep workspace cleanup ===== */
+.cx-deep-workspace-hidden {
+  display: none !important;
+}
+
+.cx-deep-workspace-brief {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 16px;
+  border: 1px solid rgba(37,99,235,0.12);
+  border-radius: 28px;
+  padding: 18px 20px;
+  background: rgba(255,255,255,0.72);
+  box-shadow:
+    0 18px 46px rgba(16,32,51,0.07),
+    inset 0 1px 0 rgba(255,255,255,0.84);
+  backdrop-filter: blur(18px);
+}
+
+.cx-deep-workspace-brief span {
+  display: block;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cx-deep-workspace-brief h2 {
+  margin: 5px 0 0;
+  color: #102033;
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: -0.055em;
+  font-weight: 950;
+}
+
+.cx-deep-workspace-brief p {
+  max-width: 780px;
+  margin: 8px 0 0;
+  color: #5b7088;
+  font-size: 14px;
+  line-height: 1.52;
+  font-weight: 820;
+}
+
+.cx-deep-workspace-brief button {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 14px;
+  color: white;
+  background: linear-gradient(135deg, #102033, #2563eb);
+  font-size: 13px;
+  font-weight: 950;
+  box-shadow: 0 14px 30px rgba(37,99,235,0.16);
+}
+
+.cx-command-footer-record {
+  justify-content: flex-end;
+}
+
+.cx-command-footer-record button {
+  min-width: 120px;
+}
+
+.cx-command-footer-record button:first-child {
+  color: #173050;
+  background: rgba(37,99,235,0.08);
+}
+
+.cx-command-row {
+  text-align: left;
+}
+
+.cx-command-row::after {
+  content: "Open pop-up";
+  justify-self: end;
+  align-self: center;
+  border-radius: 999px;
+  padding: 7px 9px;
+  color: #1d4ed8;
+  background: rgba(37,99,235,0.10);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+@media (max-width: 760px) {
+  .cx-deep-workspace-brief {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .cx-deep-workspace-brief button,
+  .cx-command-footer-record button {
+    width: 100%;
+  }
+
+  .cx-command-row::after {
+    justify-self: start;
+  }
+}
+

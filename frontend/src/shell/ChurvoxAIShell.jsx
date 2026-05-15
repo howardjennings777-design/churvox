@@ -929,6 +929,17 @@ function Dashboard({ setPage, data }) {
         setPage={setPage}
       />
 
+      {page !== "dashboard" ? (
+        <section className="cx-deep-workspace-brief">
+          <div>
+            <span>{current.kicker}</span>
+            <h2>{current.title}</h2>
+            <p>{current.body}</p>
+          </div>
+          <button type="button" onClick={() => switchPage("dashboard")}>Back to Smart Hub</button>
+        </section>
+      ) : null}
+
       <section className={`cx-stats ${page === "dashboard" ? "cx-hide-on-smart-hub" : ""}`}>
         <Stat label="Jobs today" value={stats.jobsToday || String(jobs.length)} note="live workspace count" />
         <Stat label="Ready to invoice" value={stats.readyToInvoice || "$0"} note="drafts and follow-ups" />
@@ -1095,6 +1106,28 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
   if (!selection) return null;
 
   const row = rowText(selection.item, 0, selection.label || "Record");
+  const approvalText = String(selection.group || "").toLowerCase();
+  const isApprovalFlow = (
+    selection.fromSmartHubModal ||
+    approvalText.includes("approve") ||
+    approvalText.includes("dispatch") ||
+    approvalText.includes("cashflow") ||
+    approvalText.includes("ready to invoice") ||
+    approvalText.includes("messages ready") ||
+    approvalText.includes("to approve")
+  );
+
+  const workspaceName = {
+    dashboard: "Smart Hub",
+    queue: "Smart Hub",
+    jobs: "Jobs",
+    clients: "Clients",
+    team: "Team",
+    quotes: "Quotes",
+    invoices: "Invoices",
+    proof: "Proof-to-Paid",
+    settings: "Settings",
+  }[selection.page || "dashboard"] || "Workspace";
 
   function update(key, value) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -1112,7 +1145,7 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
       <section className="cx-command-modal" onClick={(event) => event.stopPropagation()}>
         <header>
           <div>
-            <span>{selection.group || "Owner command"}</span>
+            <span>{isApprovalFlow ? (selection.group || "Owner command") : workspaceName}</span>
             <h2>{draft.title}</h2>
             <p>{row.detail}</p>
           </div>
@@ -1158,25 +1191,34 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
         </section>
 
         <section className="cx-command-ai-box">
-          <span>AI recommendation</span>
-          <strong>{selection.recommendation || "Review, edit if needed, then approve only when it looks right."}</strong>
+          <span>{isApprovalFlow ? "AI recommendation" : "Record detail"}</span>
+          <strong>
+            {selection.recommendation || (
+              isApprovalFlow
+                ? "Review, edit if needed, then approve only when it looks right."
+                : "Review the record here first. Open the full workspace only if you need deeper controls."
+            )}
+          </strong>
           <p>
-            This hub keeps you on one page. You can inspect the record, edit the wording, save a command note, approve it,
-            or jump to the exact workspace if you need deeper controls.
+            {isApprovalFlow
+              ? "This hub keeps you on one page. You can inspect the record, edit the wording, save a command note, approve it, or jump to the exact workspace if you need deeper controls."
+              : "This keeps you in context. Tap into the full workspace only when you need to create, delete, or make deeper changes."}
           </p>
         </section>
 
-        <footer>
-          <button type="button" onClick={() => onSaveDraft(selection, draft)}>Save edit</button>
-          <button type="button" onClick={() => go(selection.page || "dashboard")}>Open workspace</button>
-          <button type="button" onClick={() => go("jobs")}>Jobs</button>
-          <button type="button" onClick={() => go("clients")}>Clients</button>
-          <button type="button" onClick={() => go("team")}>Team</button>
-          <button type="button" onClick={() => go("quotes")}>Quotes</button>
-          <button type="button" onClick={() => go("invoices")}>Invoices</button>
-          <button type="button" className="approve" onClick={() => onApprove(selection, draft)}>
-            Approve
+        <footer className={isApprovalFlow ? "cx-command-footer-approval" : "cx-command-footer-record"}>
+          <button type="button" onClick={() => onSaveDraft(selection, draft)}>
+            {isApprovalFlow ? "Save edit" : "Save note"}
           </button>
+          <button type="button" onClick={() => go(selection.page || "dashboard")}>
+            Open {workspaceName}
+          </button>
+          <button type="button" onClick={onClose}>Close</button>
+          {isApprovalFlow ? (
+            <button type="button" className="approve" onClick={() => onApprove(selection, draft)}>
+              Approve
+            </button>
+          ) : null}
         </footer>
       </section>
     </div>
@@ -1195,7 +1237,9 @@ function OwnerCommandRow({ item, index, page, group, onOpen }) {
         page,
         group,
         label: row.title,
-        recommendation: "Open this in the hub, check the detail, edit the wording, then approve or jump to the full workspace."
+        recommendation: page === "dashboard" || page === "queue"
+          ? "Open this in the hub, check the detail, edit the wording, then approve or jump to the full workspace."
+          : "Open this record in a pop-up first. Use the full workspace only when you need deeper controls."
       })}
     >
       <span>{row.lead}</span>
@@ -2197,7 +2241,8 @@ function Workspace({ page, setPage, data }) {
   }
 
   function saveDraft(selection, draft) {
-    logCommand("Edited", draft.title, "Saved in hub");
+    const isRecordNote = !String(selection.group || "").toLowerCase().includes("approve");
+    logCommand(isRecordNote ? "Record note" : "Edited", draft.title, isRecordNote ? "Saved" : "Saved in hub");
     setSelectedRecord({
       ...selection,
       item: [selection.group || "Owner edit", draft.title, draft.ownerNote || draft.detail, "Saved"],
@@ -2529,7 +2574,7 @@ function Workspace({ page, setPage, data }) {
         </section>
       ) : null}
 
-      <section className="cx-owner-command-strip">
+      <section className={`cx-owner-command-strip ${page !== "dashboard" ? "cx-deep-workspace-hidden" : ""}`}>
         <article>
           <span>Approve</span>
           <strong>AI actions, job decisions, invoice drafts</strong>
@@ -2544,7 +2589,7 @@ function Workspace({ page, setPage, data }) {
         </article>
       </section>
 
-      <section className={`cx-workspace-command-bar cx-owner-command-tabs ${page === "dashboard" ? "cx-hide-on-smart-hub" : ""}`}>
+      <section className={`cx-workspace-command-bar cx-owner-command-tabs cx-deep-workspace-hidden ${page === "dashboard" ? "cx-hide-on-smart-hub" : ""}`}>
         {[
           ["Smart Hub", "dashboard"],
           ["Jobs", "jobs"],
@@ -2690,11 +2735,13 @@ function Workspace({ page, setPage, data }) {
                 <div>
                   <span>{group}</span>
                   <h2>
-                    {group === "Today’s work"
-                      ? "Jobs and invoices needing attention"
-                      : sectionPage === "queue"
-                        ? "Prepared actions"
-                        : "Open, edit, approve"}
+                    {page === "dashboard"
+                      ? group === "Today’s work"
+                        ? "Jobs and invoices needing attention"
+                        : sectionPage === "queue"
+                          ? "Prepared actions"
+                          : "Open, edit, approve"
+                      : `Open ${current.kicker.toLowerCase()} records in pop-ups`}
                   </h2>
                 </div>
                 <button type="button" onClick={() => switchPage(sectionPage)}>View all</button>
@@ -2710,7 +2757,14 @@ function Workspace({ page, setPage, data }) {
                     onOpen={openCommand}
                     key={`${group}-${index}-${Array.isArray(item) ? item.join("-") : item?.id || item?._id || item?.title || index}`}
                   />
-                )) : <small>No records here yet.</small>}
+                )) : (
+                  <EmptyState
+                    title={`No ${current.kicker.toLowerCase()} records yet.`}
+                    body="Real records will appear here once they are added, imported, or created by Churvox."
+                    action={page === "dashboard" ? "" : "Open Smart Hub"}
+                    onAction={page === "dashboard" ? undefined : () => switchPage("dashboard")}
+                  />
+                )}
               </div>
             </section>
           ))}
