@@ -1195,11 +1195,11 @@ function Workspace({ page, setPage, data }) {
 
   const meta = {
     dashboard: {
-      kicker: "Owner Command Hub",
-      title: "Approve, edit, and run the business from one page.",
+      kicker: "Smart Hub",
+      title: "Today’s approvals, messages, and work — in one calm view.",
       body: data?.loading
         ? "Syncing live Churvox data..."
-        : data?.error || "AI lines up the admin. You inspect, edit, approve, or open the exact workspace without getting lost.",
+        : data?.error || "Start with what needs your decision. Everything else is one tap away.",
       rows: jobs,
     },
     queue: {
@@ -1320,14 +1320,24 @@ function Workspace({ page, setPage, data }) {
   }, []);
 
 
+  const workspaceRows = [
+    ["Jobs", "Jobs workspace", `${jobs.length} job records`, "Open"],
+    ["Invoices", "Invoices workspace", `${invoices.length} invoice records`, "Open"],
+    ["Quotes", "Quotes workspace", `${quotes.length} quote records`, "Open"],
+    ["Team", "Team workspace", `${team.length} team records`, "Open"],
+    ["Clients", "Clients workspace", `${clients.length} client records`, "Open"],
+  ];
+
+  const todayRows = [
+    ...jobs.slice(0, 3),
+    ...invoices.slice(0, 2),
+  ];
+
   const commandSections = page === "dashboard"
     ? [
-        ["AI approvals", "queue", actions.map((item) => [item.type, item.title, item.body, item.action]).slice(0, 4)],
-        ["Jobs", "jobs", jobs.slice(0, 5)],
-        ["Invoices", "invoices", invoices.slice(0, 5)],
-        ["Quotes", "quotes", quotes.slice(0, 4)],
-        ["Team", "team", team.slice(0, 4)],
-        ["Clients", "clients", clients.slice(0, 4)],
+        ["Needs approval now", "queue", actions.map((item) => [item.type, item.title, item.body, item.action]).slice(0, 4)],
+        ["Today’s work", "jobs", todayRows.slice(0, 5)],
+        ["Workspaces", "dashboard", workspaceRows],
       ]
     : [[current.kicker, page, current.rows]];
 
@@ -1675,7 +1685,17 @@ function Workspace({ page, setPage, data }) {
               <header>
                 <div>
                   <span>{group}</span>
-                  <h2>{sectionPage === "queue" ? "Prepared actions" : "Open, edit, approve"}</h2>
+                  <h2>
+                    {group === "Needs approval now"
+                      ? "AI-prepared decisions"
+                      : group === "Today’s work"
+                        ? "Jobs and invoices needing attention"
+                        : group === "Workspaces"
+                          ? "Open the full area"
+                          : sectionPage === "queue"
+                            ? "Prepared actions"
+                            : "Open, edit, approve"}
+                  </h2>
                 </div>
                 <button type="button" onClick={() => switchPage(sectionPage)}>View all</button>
               </header>
@@ -1700,8 +1720,8 @@ function Workspace({ page, setPage, data }) {
           <section className="cx-panel">
             <header>
               <div>
-                <span>Owner controls</span>
-                <h2>Quick actions</h2>
+                <span>Fast actions</span>
+                <h2>Create or open</h2>
               </div>
             </header>
 
@@ -1721,88 +1741,93 @@ function Workspace({ page, setPage, data }) {
             </div>
           </section>
 
-          <section className="cx-panel cx-owner-log cx-owner-send-center">
+          <section className="cx-panel cx-owner-log cx-owner-prepared-messages">
             <header>
               <div>
-                <span>Send Center</span>
-                <h2>Ready to send</h2>
-                {sendCenterStatus ? <p>{sendCenterStatus}</p> : null}
-              </div>
-              <button type="button" onClick={() => switchPage("invoices")}>
-                Open invoices
-              </button>
-            </header>
-
-            <div>
-              {sendCenterItems.length ? sendCenterItems.map((item, index) => (
-                <article key={`${item.id || index}-${item.title}`}>
-                  <span>{item.kind || "Ready draft"}</span>
-                  <strong>{item.client_name || "Client"}</strong>
-                  <small>{item.message || item.title || "Ready to send"}</small>
-                  <b>{item.send_status || "ready_to_send"}</b>
-                  <button
-                    type="button"
-                    className="cx-owner-draft-copy"
-                    onClick={() => copyDraftMessage(item, "send")}
-                  >
-                    Copy message
-                  </button>
-                  <button
-                    type="button"
-                    className="cx-owner-draft-ready"
-                    onClick={() => markDraftManuallySent(item)}
-                  >
-                    Mark sent
-                  </button>
-                </article>
-              )) : <p>No drafts ready to send.</p>}
-            </div>
-          </section>
-
-          <section className="cx-panel cx-owner-log cx-owner-drafts">
-            <header>
-              <div>
-                <span>Approved drafts</span>
-                <h2>Ready to review/send</h2>
-                {approvedDraftsStatus ? <p>{approvedDraftsStatus}</p> : null}
+                <span>Prepared messages</span>
+                <h2>Ready drafts</h2>
+                <p>
+                  {sendCenterItems.length
+                    ? sendCenterStatus
+                    : approvedDrafts.length
+                      ? approvedDraftsStatus
+                      : "No prepared messages yet"}
+                </p>
               </div>
               <button type="button" onClick={() => switchPage("quotes")}>
-                Open quotes
+                Open messages
               </button>
             </header>
 
-            <div>
-              {approvedDrafts.length ? approvedDrafts.map((item, index) => (
-                <article key={`${item.id || index}-${item.title}`}>
-                  <span>{item.kind || "Draft"}</span>
-                  <strong>{item.client_name || "Client"}</strong>
-                  <small>{item.message || item.title || "Approved draft ready"}</small>
-                  <b>{item.send_status || item.status || "not_sent"}</b>
-                  <button
-                    type="button"
-                    className="cx-owner-draft-copy"
-                    onClick={() => copyDraftMessage(item, "approved")}
-                  >
-                    Copy message
-                  </button>
-                  <button
-                    type="button"
-                    className="cx-owner-draft-ready"
-                    onClick={() => markDraftReadyToSend(item)}
-                    disabled={String(item.send_status || item.status || "").includes("ready_to_send")}
-                  >
-                    {String(item.send_status || item.status || "").includes("ready_to_send") ? "Ready" : "Mark ready"}
-                  </button>
-                </article>
-              )) : <p>No approved message drafts yet.</p>}
+            <div className="cx-prepared-message-group">
+              {sendCenterItems.length ? (
+                <>
+                  <strong className="cx-prepared-message-heading">Ready to send</strong>
+                  {sendCenterItems.slice(0, 4).map((item, index) => (
+                    <article key={`${item.id || index}-${item.title}`}>
+                      <span>{item.kind || "Ready draft"}</span>
+                      <strong>{item.client_name || "Client"}</strong>
+                      <small>{item.message || item.title || "Ready to send"}</small>
+                      <b>{item.send_status || "ready_to_send"}</b>
+                      <button
+                        type="button"
+                        className="cx-owner-draft-copy"
+                        onClick={() => copyDraftMessage(item, "send")}
+                      >
+                        Copy
+                      </button>
+                      <button
+                        type="button"
+                        className="cx-owner-draft-ready"
+                        onClick={() => markDraftManuallySent(item)}
+                      >
+                        Mark sent
+                      </button>
+                    </article>
+                  ))}
+                </>
+              ) : null}
+
+              {approvedDrafts.length ? (
+                <>
+                  <strong className="cx-prepared-message-heading">Approved drafts</strong>
+                  {approvedDrafts.slice(0, 4).map((item, index) => (
+                    <article key={`${item.id || index}-${item.title}`}>
+                      <span>{item.kind || "Draft"}</span>
+                      <strong>{item.client_name || "Client"}</strong>
+                      <small>{item.message || item.title || "Approved draft ready"}</small>
+                      <b>{item.send_status || item.status || "not_sent"}</b>
+                      <button
+                        type="button"
+                        className="cx-owner-draft-copy"
+                        onClick={() => copyDraftMessage(item, "approved")}
+                      >
+                        Copy
+                      </button>
+                      <button
+                        type="button"
+                        className="cx-owner-draft-ready"
+                        onClick={() => markDraftReadyToSend(item)}
+                        disabled={String(item.send_status || item.status || "").includes("ready_to_send")}
+                      >
+                        {String(item.send_status || item.status || "").includes("ready_to_send") ? "Ready" : "Mark ready"}
+                      </button>
+                    </article>
+                  ))}
+                </>
+              ) : null}
+
+              {!sendCenterItems.length && !approvedDrafts.length ? (
+                <p>No approved message drafts yet.</p>
+              ) : null}
             </div>
           </section>
 
           <section className="cx-panel cx-owner-log">
             <header>
               <div>
-                <span>Command log</span>
-                <h2>Saved approvals</h2>
+                <span>Recent approvals</span>
+                <h2>Saved decisions</h2>
                 {backendApprovalStatus ? <p>{backendApprovalStatus}</p> : null}
               </div>
               {(approvalLog.length || backendApprovalLog.length) ? (
