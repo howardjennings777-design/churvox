@@ -1210,6 +1210,7 @@ function SmartHubBoxModal({
   onCopyMessage,
   onMarkReady,
   onMarkSent,
+  onResetBox,
   onOpenFull,
 }) {
   const [editingSelection, setEditingSelection] = useState(null);
@@ -1401,7 +1402,10 @@ function SmartHubBoxModal({
             <h2>{box.title}</h2>
             <p>{intro}</p>
           </div>
-          <button type="button" onClick={onClose}>×</button>
+          <div className="cx-smart-modal-header-actions">
+            <button type="button" onClick={() => onResetBox(box)}>Reset this box</button>
+            <button type="button" aria-label="Close Smart Hub pop-up" onClick={onClose}>×</button>
+          </div>
         </header>
 
         <section className="cx-smart-modal-summary">
@@ -2094,6 +2098,23 @@ function Workspace({ page, setPage, data }) {
     saveOwnerCommandLog([]);
     setApprovalLog([]);
     logCommand("Smart Hub", "Session reset", "Cleared");
+  }
+
+  function resetHubBox(box) {
+    const key = box?.key || "";
+    if (!key) return;
+
+    setHubItemStatus((current) => {
+      const next = { ...current };
+      Object.keys(next).forEach((itemKey) => {
+        if (itemKey.startsWith(`${key}::`)) {
+          delete next[itemKey];
+        }
+      });
+      return next;
+    });
+
+    logCommand(box?.title || "Smart Hub", "Box reset", "Restored");
   }
 
   const selectedHubRows = selectedHubBox
@@ -2812,6 +2833,7 @@ function Workspace({ page, setPage, data }) {
         onCopyMessage={copyHubMessage}
         onMarkReady={markHubMessageReady}
         onMarkSent={markHubMessageSent}
+        onResetBox={resetHubBox}
         onOpenFull={(nextPage) => {
           setSelectedHubBox(null);
           switchPage(nextPage);

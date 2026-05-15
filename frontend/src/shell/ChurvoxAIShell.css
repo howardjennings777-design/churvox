@@ -3554,3 +3554,35 @@ button {
   overscroll-behavior: contain;
 }
 
+
+/* ===== Smart Hub modal header actions ===== */
+.cx-smart-modal-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.cx-smart-modal-header-actions button:first-child {
+  min-height: 42px;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 13px;
+  color: #173050;
+  background: rgba(37,99,235,0.08);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+@media (max-width: 760px) {
+  .cx-smart-modal-header-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .cx-smart-modal-header-actions button:first-child {
+    flex: 1 1 auto;
+  }
+}
+
