@@ -1317,3 +1317,147 @@ button.resolve {
     min-height: 170px;
   }
 }
+
+
+/* Phase 5: workspace logic panels */
+.cx-workspace-operator-panel {
+  border-radius: 30px;
+  padding: 20px;
+  border: 1px solid rgba(116,247,255,.13);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(32,217,255,.08), transparent 18rem),
+    linear-gradient(180deg, rgba(13, 26, 38, .94), rgba(5, 12, 18, .90));
+  box-shadow: var(--cx-calm-shadow), inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.cx-workspace-operator-panel > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 16px;
+}
+
+.cx-workspace-operator-panel span {
+  color: var(--cx-cyan);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.cx-workspace-operator-panel h2 {
+  margin: 6px 0 0;
+  color: var(--cx-text);
+  font-size: clamp(24px, 3vw, 38px);
+  line-height: 1.02;
+  letter-spacing: -.06em;
+  font-weight: 950;
+}
+
+.cx-workspace-operator-panel p {
+  max-width: 780px;
+  margin: 10px 0 0;
+  color: var(--cx-text-soft);
+  line-height: 1.55;
+  font-weight: 750;
+}
+
+.cx-workspace-operator-panel > header button {
+  min-height: 46px;
+  white-space: nowrap;
+  border-radius: 16px;
+  padding: 0 16px;
+  color: #031018;
+  font-weight: 950;
+  border: 1px solid rgba(116,247,255,.42);
+  background:
+    radial-gradient(circle at 28% 0%, rgba(255,255,255,.74), transparent 28%),
+    linear-gradient(135deg, #74f7ff, #35b7ff 48%, #18e3c2);
+  box-shadow: 0 16px 36px rgba(32, 217, 255, 0.18);
+}
+
+.cx-workspace-operator-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cx-workspace-operator-grid article {
+  border-radius: 22px;
+  padding: 16px;
+  background: rgba(4,10,16,.48);
+  border: 1px solid rgba(116,247,255,.10);
+}
+
+.cx-workspace-operator-grid ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--cx-text-soft);
+  line-height: 1.75;
+  font-weight: 750;
+}
+
+.cx-workspace-operator-jobs {
+  border-color: rgba(53, 183, 255, .18);
+}
+
+.cx-workspace-operator-clients {
+  border-color: rgba(116, 247, 255, .16);
+}
+
+.cx-workspace-operator-team,
+.cx-workspace-operator-proof {
+  border-color: rgba(24, 227, 194, .20);
+}
+
+.cx-workspace-operator-quotes {
+  border-color: rgba(166, 139, 255, .20);
+}
+
+.cx-workspace-operator-invoices {
+  border-color: rgba(255, 204, 102, .18);
+}
+
+/* Deep pages should read like machine workspaces, not generic lists */
+.cx-owner-section > header h2 {
+  color: var(--cx-text);
+  letter-spacing: -.045em;
+}
+
+.cx-owner-section > header button {
+  white-space: nowrap;
+}
+
+/* make page rows feel more actionable */
+.cx-command-row-ai {
+  min-height: 92px;
+}
+
+.cx-command-row-ai > small {
+  color: var(--cx-text-soft);
+  line-height: 1.45;
+  font-weight: 750;
+}
+
+/* settings setup guide should match Teach Churvox idea */
+.cx-setup-guide header span::after {
+  content: " / Teach Churvox";
+}
+
+/* Plans should not look like generic records while full pricing page is still being rebuilt */
+.cx-workspace-operator-plans .cx-workspace-operator-grid article {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(32,217,255,.08), transparent 12rem),
+    rgba(4,10,16,.52);
+}
+
+@media (max-width: 900px) {
+  .cx-workspace-operator-panel > header {
+    display: grid;
+  }
+
+  .cx-workspace-operator-grid {
+    grid-template-columns: 1fr;
+  }
+}

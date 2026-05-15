@@ -4569,6 +4569,264 @@ function SmartHubBoxModal({
 }
 
 
+
+function workspaceOperatorConfig(page, counts = {}) {
+  const configs = {
+    jobs: {
+      label: "Jobs machine",
+      title: "Churvox turns job records into prepared owner decisions.",
+      watches: [
+        "unassigned jobs",
+        "schedule conflicts",
+        "worker progress",
+        "completion notes",
+        "proof photos",
+      ],
+      prepares: [
+        "worker assignment recommendations",
+        "job instructions",
+        "completion summaries",
+        "invoice-ready proof",
+      ],
+      owner: [
+        "approve worker assignment",
+        "edit job details",
+        "review completed work",
+      ],
+      next: counts.unassignedJobs ? `${counts.unassignedJobs} job${counts.unassignedJobs === 1 ? "" : "s"} need worker assignment.` : "No unassigned jobs waiting right now.",
+      primary: "Create or review jobs",
+      open: "jobs",
+    },
+    clients: {
+      label: "Client intelligence",
+      title: "Churvox keeps client data useful for jobs, invoices and follow-ups.",
+      watches: [
+        "missing phone/email",
+        "duplicate client records",
+        "open quotes",
+        "unpaid invoices",
+        "recent jobs",
+      ],
+      prepares: [
+        "client cleanup actions",
+        "next-best follow-up",
+        "job/invoice context",
+        "CSV import checks",
+      ],
+      owner: [
+        "fix missing details",
+        "approve import cleanup",
+        "open client history in-place",
+      ],
+      next: counts.clients ? `${counts.clients} client record${counts.clients === 1 ? "" : "s"} available for Churvox context.` : "Add or import clients so Churvox can prepare real work.",
+      primary: "Add or import clients",
+      open: "clients",
+    },
+    team: {
+      label: "Crew intelligence",
+      title: "Churvox uses team data to recommend the right worker.",
+      watches: [
+        "worker availability",
+        "region / service area",
+        "assigned workload",
+        "role permissions",
+        "job fit",
+      ],
+      prepares: [
+        "best worker match",
+        "conflict warning",
+        "worker instructions",
+        "crew workload context",
+      ],
+      owner: [
+        "approve assignment",
+        "edit worker details",
+        "add workers or roles",
+      ],
+      next: counts.team ? `${counts.team} worker${counts.team === 1 ? "" : "s"} available for dispatch context.` : "Add workers so Churvox can recommend assignments.",
+      primary: "Add or review workers",
+      open: "team",
+    },
+    quotes: {
+      label: "Quote operator",
+      title: "Churvox keeps quote follow-up moving without auto-sending.",
+      watches: [
+        "sent quotes",
+        "open quotes",
+        "stale quotes",
+        "quote value",
+        "client contact",
+      ],
+      prepares: [
+        "quote follow-up message",
+        "convert-to-job path",
+        "customer response summary",
+        "owner approval draft",
+      ],
+      owner: [
+        "edit follow-up wording",
+        "approve message",
+        "convert quote to job",
+      ],
+      next: counts.quotes ? `${counts.quotes} quote${counts.quotes === 1 ? "" : "s"} in the quote workspace.` : "Create quotes so Churvox can prepare follow-ups.",
+      primary: "Review quotes",
+      open: "quotes",
+    },
+    invoices: {
+      label: "Invoice operator",
+      title: "Churvox turns completed work into owner-approved invoice drafts.",
+      watches: [
+        "completed jobs",
+        "draft invoices",
+        "unpaid invoices",
+        "overdue payments",
+        "missing amounts",
+      ],
+      prepares: [
+        "invoice wording",
+        "line item draft",
+        "payment reminder",
+        "cashflow follow-up",
+      ],
+      owner: [
+        "check amount",
+        "edit wording",
+        "approve invoice or reminder",
+      ],
+      next: counts.invoices ? `${counts.invoices} invoice${counts.invoices === 1 ? "" : "s"} available for review.` : "Completed jobs and invoice drafts will appear here.",
+      primary: "Review invoices",
+      open: "invoices",
+    },
+    proof: {
+      label: "Proof-to-paid",
+      title: "Churvox connects worker proof to invoice-ready admin.",
+      watches: [
+        "completed jobs",
+        "worker notes",
+        "proof photos",
+        "time records",
+        "client details",
+      ],
+      prepares: [
+        "completion summary",
+        "customer proof message",
+        "invoice description",
+        "owner approval card",
+      ],
+      owner: [
+        "review proof",
+        "edit invoice description",
+        "approve draft invoice",
+      ],
+      next: counts.completedJobs ? `${counts.completedJobs} completed job${counts.completedJobs === 1 ? "" : "s"} can feed proof-to-paid.` : "Worker-completed jobs will feed this workspace.",
+      primary: "Review proof",
+      open: "proof",
+    },
+    settings: {
+      label: "Teach Churvox",
+      title: "Settings teach the AI how the business should run.",
+      watches: [
+        "business profile",
+        "service area",
+        "pricing rules",
+        "invoice/quote wording",
+        "approval rules",
+      ],
+      prepares: [
+        "better job matches",
+        "cleaner invoices",
+        "safer owner approvals",
+        "new-user guidance",
+      ],
+      owner: [
+        "set guardrails",
+        "connect integrations",
+        "train business context",
+      ],
+      next: "Complete setup so Churvox prepares specific actions instead of guessing.",
+      primary: "Teach Churvox",
+      open: "settings",
+    },
+    plans: {
+      label: "Plan control",
+      title: "Choose the capacity Churvox can run with.",
+      watches: [
+        "client limits",
+        "team access",
+        "AI workflow access",
+        "MYOB availability",
+      ],
+      prepares: [
+        "plan selection",
+        "upgrade path",
+        "feature access clarity",
+      ],
+      owner: [
+        "choose plan",
+        "confirm billing",
+        "unlock needed workflow",
+      ],
+      next: "Plan choice controls capacity and integrations.",
+      primary: "Review plans",
+      open: "plans",
+    },
+  };
+
+  return configs[page] || configs.jobs;
+}
+
+function WorkspaceOperatorPanel({ page, counts, onOpen }) {
+  const config = workspaceOperatorConfig(page, counts);
+
+  return (
+    <section className={`cx-workspace-operator-panel cx-workspace-operator-${page}`}>
+      <header>
+        <div>
+          <span>{config.label}</span>
+          <h2>{config.title}</h2>
+          <p>{config.next}</p>
+        </div>
+        <button type="button" onClick={() => onOpen(config.open)}>
+          {config.primary}
+        </button>
+      </header>
+
+      <div className="cx-workspace-operator-grid">
+        <article>
+          <span>Churvox watches</span>
+          <ul>
+            {config.watches.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </article>
+
+        <article>
+          <span>Churvox prepares</span>
+          <ul>
+            {config.prepares.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </article>
+
+        <article>
+          <span>Owner approves / edits</span>
+          <ul>
+            {config.owner.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function workspaceMachineEmptyCopy(page) {
+  const config = workspaceOperatorConfig(page, {});
+  return {
+    title: `${config.label} needs real data.`,
+    body: config.next || "Add real records so Churvox can prepare useful owner actions.",
+  };
+}
+
+
+
 function Workspace({ page, setPage, data }) {
   const actions = data?.actions || [];
   const jobs = data?.jobs || [];
@@ -4598,10 +4856,10 @@ function Workspace({ page, setPage, data }) {
   const meta = {
     dashboard: {
       kicker: "Smart Hub",
-      title: "Your business at a glance.",
+      title: "AI has prepared today’s business actions.",
       body: data?.loading
         ? "Syncing live Churvox data..."
-        : data?.error || "AI sorts the day into approvals, blockers, invoices, messages, cashflow, quotes and crew.",
+        : data?.error || "Churvox checks the exact jobs, clients, workers, quotes and invoices, then prepares the next action for owner approval.",
       rows: jobs,
     },
     queue: {
@@ -4612,38 +4870,38 @@ function Workspace({ page, setPage, data }) {
     },
     jobs: {
       kicker: "Jobs",
-      title: "Dispatch, edit, and inspect job work.",
-      body: "See jobs that need action. Open only what matters, approve prepared work, and keep the crew moving.",
+      title: "Jobs become prepared dispatch and proof-to-paid actions.",
+      body: "Churvox checks each job for worker assignment, schedule risk, proof, notes and invoice readiness. Owner reviews/edit/approves in-place.",
       rows: jobs,
     },
     clients: {
       kicker: "Clients",
-      title: "Client history and follow-up control.",
-      body: "See client history, recent work, quotes and invoices without digging through pages.",
+      title: "Clients feed every prepared job, quote and invoice.",
+      body: "Churvox watches missing details, duplicate clients, open quotes and unpaid invoices so owner actions are prepared from real context.",
       rows: clients,
     },
     team: {
       kicker: "Team",
-      title: "Crew availability and assignment decisions.",
-      body: "Review worker fit, workload, region, and role before approving assignment work.",
+      title: "Team data powers worker recommendations.",
+      body: "Churvox checks worker role, region, workload and availability before preparing assignment decisions.",
       rows: team,
     },
     quotes: {
       kicker: "Quotes",
-      title: "Quote follow-ups ready for approval.",
-      body: "Review quote status and approve follow-ups Churvox has prepared.",
+      title: "Quotes turn into prepared follow-ups or jobs.",
+      body: "Churvox checks quote age, value, client contact and status, then prepares owner-approved follow-ups.",
       rows: quotes,
     },
     invoices: {
       kicker: "Invoices",
-      title: "Drafts, overdue reminders, and cashflow.",
-      body: "Review invoice drafts, overdue reminders and cashflow actions prepared by Churvox.",
+      title: "Invoices are prepared from proof, notes and payment status.",
+      body: "Churvox prepares invoice wording, payment reminders and cashflow actions. Owner edits/approves before anything sends.",
       rows: invoices,
     },
     proof: {
       kicker: "Proof-to-Paid",
-      title: "Completed work into invoice-ready admin.",
-      body: "Review job proof, completion context, notes, and invoice-readiness in one place.",
+      title: "Proof-to-paid turns worker proof into owner-approved invoice admin.",
+      body: "Worker notes, photos and completion status feed this flow so Churvox prepares the invoice/proof package for approval.",
       rows: [...jobs.slice(0, 4), ...invoices.slice(0, 4)],
     },
     plans: {
@@ -4659,8 +4917,8 @@ function Workspace({ page, setPage, data }) {
     },
     settings: {
       kicker: "Settings",
-      title: "Business controls and guardrails.",
-      body: "Set up business details, roles, permissions, integrations, owner safety and launch controls.",
+      title: "Teach Churvox how the business should run.",
+      body: "Set service area, pricing, roles, approval rules and integrations so AI prepares specific work safely.",
       rows: [
         ["Plan", "Billing", "Roles and owner controls", "Review"],
         ["MYOB", "Integration", "Accounting sync settings", "Review"],
@@ -5089,6 +5347,18 @@ function Workspace({ page, setPage, data }) {
 
   const setupCompleteChecks = setupChecks.map((item) => item.done);
   const setupScore = Math.round((setupCompleteChecks.filter(Boolean).length / Math.max(setupCompleteChecks.length, 1)) * 100);
+
+  const workspaceCounts = {
+    jobs: jobs.length,
+    clients: clients.length,
+    team: team.length,
+    quotes: quotes.length,
+    invoices: invoices.length,
+    completedJobs: completedJobs.length,
+    unassignedJobs: unassignedJobRows.length,
+    readyInvoices: readyInvoiceRows.length,
+    messages: preparedMessageRows.length,
+  };
 
   const moneyToCollect = collectRows.reduce((sum, invoice) => {
     const raw = invoice?.balance || invoice?.total || invoice?.amount || 0;
@@ -6113,8 +6383,8 @@ function Workspace({ page, setPage, data }) {
                   />
                 )) : (
                   <EmptyState
-                    title={`No ${current.kicker.toLowerCase()} records yet.`}
-                    body="Add or import records so Churvox can prepare real work instead of empty suggestions."
+                    title={workspaceMachineEmptyCopy(page).title}
+                    body={workspaceMachineEmptyCopy(page).body}
                     action={page === "dashboard" ? "" : "Return to Smart Hub"}
                     onAction={page === "dashboard" ? undefined : () => switchPage("dashboard")}
                   />
