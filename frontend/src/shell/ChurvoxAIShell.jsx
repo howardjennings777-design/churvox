@@ -2230,6 +2230,8 @@ function Workspace({ page, setPage, data }) {
                   : "This approval is now saved on the backend.",
         });
       }
+
+      return true;
     } catch (err) {
       logCommand(selection.group || "Approve failed", title, "Backend error");
       if (!selection?.fromSmartHubModal) {
@@ -2244,6 +2246,8 @@ function Workspace({ page, setPage, data }) {
           recommendation: "The front-end stayed safe, but the backend did not accept this approval. Check Render logs if this repeats.",
         });
       }
+
+      return false;
     }
   }
 
@@ -2788,19 +2792,19 @@ function Workspace({ page, setPage, data }) {
           setSelectedHubBox(null);
           openCommand(selection);
         }}
-        onApprove={(selection, draft) => {
-          if (selection?.hubBoxKey && selection?.item) {
-            const key = hubItemKey(selection.hubBoxKey, selection.item);
-            setHubItemStatus((current) => ({ ...current, [key]: "approved" }));
-          }
-
-          approveSelection(
+        onApprove={async (selection, draft) => {
+          const saved = await approveSelection(
             {
               ...selection,
               fromSmartHubModal: true,
             },
             draft
           );
+
+          if (saved && selection?.hubBoxKey && selection?.item) {
+            const key = hubItemKey(selection.hubBoxKey, selection.item);
+            setHubItemStatus((current) => ({ ...current, [key]: "approved" }));
+          }
         }}
         onSnooze={snoozeHubItem}
         onDismiss={dismissHubItem}
