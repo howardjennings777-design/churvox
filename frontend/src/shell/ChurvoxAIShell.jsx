@@ -25,7 +25,6 @@ const APP_PATHS = {
 
 const NAV = [
   ["dashboard", "Smart Hub", "AI command centre"],
-  ["queue", "AI Work Queue", "Prepared actions"],
   ["jobs", "Jobs", "Dispatch board"],
   ["clients", "Clients", "Customer history"],
   ["team", "Team", "Crew availability"],
@@ -766,7 +765,7 @@ function Landing({ authMode, setAuthMode, onLogin }) {
         </div>
 
         <div className="cx-feature-list">
-          {["Smart Hub", "AI Work Queue", "Jobs", "Clients", "Team", "Quotes", "Invoices", "Proof-to-Paid", "Worker App", "Settings"].map((feature) => (
+          {["Smart Hub", "Owner approvals", "Jobs", "Clients", "Team", "Quotes", "Invoices", "Proof-to-Paid", "Worker App", "Settings"].map((feature) => (
             <article key={feature}>{feature}</article>
           ))}
         </div>
@@ -821,8 +820,8 @@ function Shell({ page, setPage, onLogout, data }) {
 
           <input placeholder="Search jobs, clients, invoices..." />
 
-          <button type="button" onClick={() => setPage("queue")}>
-            AI Queue
+          <button type="button" onClick={() => setPage("dashboard")}>
+            Smart Hub
           </button>
           <button type="button" className="cx-top-primary" onClick={() => setPage("jobs")}>
             New job
@@ -861,7 +860,7 @@ function WorkspaceHero({ kicker, title, body, metric, action, setPage }) {
         <span>AI Operator</span>
         <strong>{metric}</strong>
         <p>{action}</p>
-        <button type="button" onClick={() => setPage("queue")}>Review queue</button>
+        <button type="button" onClick={() => setPage("dashboard")}>Open Smart Hub</button>
       </aside>
     </section>
   );
@@ -1803,7 +1802,6 @@ function Workspace({ page, setPage, data }) {
       <section className={`cx-workspace-command-bar cx-owner-command-tabs ${page === "dashboard" ? "cx-hide-on-smart-hub" : ""}`}>
         {[
           ["Smart Hub", "dashboard"],
-          ["AI Queue", "queue"],
           ["Jobs", "jobs"],
           ["Clients", "clients"],
           ["Team", "team"],
@@ -1858,7 +1856,7 @@ function Workspace({ page, setPage, data }) {
                   <span>Needs approval now</span>
                   <h2>Review these first</h2>
                 </div>
-                <button type="button" onClick={() => switchPage("queue")}>View all</button>
+                <button type="button" onClick={() => setHubFocus("approvals")}>Viewing</button>
               </header>
 
               <div className="cx-owner-queue-grid">
