@@ -2995,7 +2995,7 @@ function SmartHubBoxModal({
                   />
 
                   <div>
-                    <button type="button" onClick={() => startEdit(selection, controlDraft)}>Details / edit</button>
+                    <button type="button" onClick={() => startEdit(selection, controlDraft)}>Review / approve</button>
                     <button
                       type="button"
                       className="approve"
@@ -3049,10 +3049,10 @@ function SmartHubBoxModal({
                 <p>
                   {editingNeedsInvoiceDraft()
                     ? "This is the invoice draft the owner is approving. Check client, amount, due date, line item and wording."
-                    : "Adjust the title, note, or message before Churvox saves the approval."}
+                    : "Review what Churvox prepared, adjust only if needed, then approve here."}
                 </p>
               </div>
-              <button type="button" onClick={() => setEditingSelection(null)}>Close edit</button>
+              <button type="button" onClick={() => setEditingSelection(null)}>Back</button>
             </header>
 
             {editingNeedsInvoiceDraft() ? (
@@ -3229,8 +3229,7 @@ function SmartHubBoxModal({
             )}
 
             <footer>
-              <button type="button" onClick={() => setEditingSelection(null)}>Cancel</button>
-              <button type="button" onClick={() => onOpen(editingSelection)}>Open full editor</button>
+              <button type="button" onClick={() => setEditingSelection(null)}>Back to list</button>
               <button type="button" className="approve" onClick={approveEditedSelection}>
                 {editingNeedsInvoiceDraft() ? "Approve invoice draft" : "Approve edited action"}
               </button>
