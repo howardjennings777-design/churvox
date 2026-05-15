@@ -14235,6 +14235,9 @@ def _owner_command_money_value(record: dict) -> float:
         return 0.0
 
     for key in [
+        "invoiceAmount",
+        "invoice_amount",
+        "amount_due",
         "total",
         "amount",
         "price",
@@ -14243,9 +14246,16 @@ def _owner_command_money_value(record: dict) -> float:
         "estimated_price",
         "quote_total",
         "invoice_total",
+        "balance",
     ]:
         try:
-            value = float(record.get(key) or 0)
+            raw = record.get(key)
+            if raw is None or raw == "":
+                continue
+            if isinstance(raw, (int, float)):
+                value = float(raw)
+            else:
+                value = float(str(raw).replace("$", "").replace(",", "").strip() or 0)
             if value > 0:
                 return value
         except Exception:
@@ -14329,11 +14339,26 @@ async def approve_owner_invoice_command(payload: dict, current_user: dict = Depe
         or "Client"
     )
 
-    amount = _owner_command_money_value(job) or _owner_command_money_value(draft)
+    amount = (
+        _owner_command_money_value({
+            "invoiceAmount": draft.get("invoiceAmount"),
+            "invoice_amount": draft.get("invoice_amount") or payload.get("invoice_amount"),
+            "amount": draft.get("amount"),
+            "total": draft.get("total"),
+        })
+        or _owner_command_money_value(job)
+        or _owner_command_money_value(draft)
+    )
+
     description = (
-        draft.get("detail")
+        payload.get("invoice_description")
+        or draft.get("invoiceDescription")
+        or draft.get("invoice_description")
         or draft.get("description")
+        or draft.get("detail")
         or draft.get("ownerNote")
+        or job.get("ai_invoice_description")
+        or job.get("invoice_description_draft")
         or _format_invoice_description_from_job(job, client_name)
     )
 

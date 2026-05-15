@@ -7257,3 +7257,21 @@ button.primary,
   letter-spacing: 0;
   text-transform: none;
 }
+
+/* ===== AI invoice prep polish ===== */
+.cx-smart-control-invoice {
+  border-color: rgba(37, 99, 235, 0.18) !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(37,99,235,0.14), transparent 34%),
+    linear-gradient(145deg, rgba(255,255,255,0.90), rgba(239,247,255,0.72)) !important;
+}
+
+.cx-smart-control-panel header p {
+  margin: 6px 0 0;
+  color: #526b82;
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 820;
+  letter-spacing: 0;
+  text-transform: none;
+}
