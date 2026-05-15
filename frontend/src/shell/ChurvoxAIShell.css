@@ -2837,3 +2837,225 @@ button {
     font-size: 38px !important;
   }
 }
+
+
+/* ===== Smart Hub full pop-up modal ===== */
+.cx-smart-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(6, 15, 30, 0.46);
+  backdrop-filter: blur(16px);
+}
+
+.cx-smart-modal {
+  width: min(1120px, 100%);
+  max-height: min(880px, calc(100vh - 36px));
+  overflow: auto;
+  border-radius: 34px;
+  border: 1px solid rgba(255,255,255,0.76);
+  background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(242,247,255,0.96));
+  box-shadow: 0 44px 130px rgba(6, 15, 30, 0.32);
+  padding: 22px;
+}
+
+.cx-smart-modal > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.cx-smart-modal > header span,
+.cx-smart-modal-summary span,
+.cx-smart-modal-item > div > span {
+  display: block;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.cx-smart-modal > header h2 {
+  margin: 6px 0 0;
+  color: #102033;
+  font-size: clamp(32px, 5vw, 58px);
+  line-height: 0.95;
+  letter-spacing: -0.07em;
+}
+
+.cx-smart-modal > header p {
+  max-width: 720px;
+  margin: 10px 0 0;
+  color: #5b7088;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.cx-smart-modal > header button {
+  min-width: 46px;
+  min-height: 46px;
+  border: 0;
+  border-radius: 16px;
+  color: #102033;
+  background: rgba(37,99,235,0.09);
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.cx-smart-modal-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.cx-smart-modal-summary article {
+  border-radius: 22px;
+  padding: 14px;
+  border: 1px solid rgba(37,99,235,0.11);
+  background: rgba(255,255,255,0.72);
+}
+
+.cx-smart-modal-summary strong {
+  display: block;
+  margin-top: 7px;
+  color: #102033;
+  font-size: 22px;
+  font-weight: 950;
+}
+
+.cx-smart-modal-summary small {
+  display: block;
+  margin-top: 3px;
+  color: #5b7088;
+  font-weight: 800;
+}
+
+.cx-smart-modal-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.cx-smart-modal-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.76fr);
+  gap: 14px;
+  border-radius: 24px;
+  padding: 16px;
+  border: 1px solid rgba(37,99,235,0.11);
+  background: rgba(255,255,255,0.74);
+  box-shadow: 0 16px 40px rgba(16,32,51,0.07);
+}
+
+.cx-smart-modal-item h3 {
+  margin: 7px 0 0;
+  color: #102033;
+  font-size: 22px;
+  letter-spacing: -0.04em;
+}
+
+.cx-smart-modal-item p {
+  margin: 8px 0 0;
+  color: #5b7088;
+  font-weight: 780;
+  line-height: 1.5;
+}
+
+.cx-smart-modal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.cx-smart-modal-tags b,
+.cx-smart-modal-tags small {
+  border-radius: 999px;
+  padding: 7px 9px;
+  background: rgba(37,99,235,0.08);
+  color: #173050;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.cx-smart-modal-tags b {
+  color: #065f46;
+  background: rgba(20,184,166,0.12);
+}
+
+.cx-smart-modal-item aside {
+  border-radius: 20px;
+  padding: 14px;
+  background: rgba(37,99,235,0.06);
+}
+
+.cx-smart-modal-item aside strong {
+  color: #102033;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.cx-smart-modal-item aside div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.cx-smart-modal-item aside button {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 12px;
+  color: #173050;
+  background: rgba(255,255,255,0.78);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.cx-smart-modal-item aside button.approve {
+  color: white;
+  background: linear-gradient(135deg, #102033, #2563eb);
+  box-shadow: 0 14px 30px rgba(37,99,235,0.18);
+}
+
+.cx-smart-modal-empty {
+  border-radius: 24px;
+  padding: 22px;
+  border: 1px dashed rgba(37,99,235,0.24);
+  background: rgba(255,255,255,0.62);
+}
+
+.cx-smart-modal-empty h3 {
+  margin: 0;
+  color: #102033;
+  font-size: 24px;
+}
+
+.cx-smart-modal-empty p {
+  margin: 8px 0 0;
+  color: #5b7088;
+  font-weight: 800;
+}
+
+@media (max-width: 820px) {
+  .cx-smart-modal-summary,
+  .cx-smart-modal-item {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-smart-modal {
+    padding: 16px;
+    border-radius: 28px;
+  }
+
+  .cx-smart-modal-item aside div {
+    flex-direction: column;
+  }
+}
+

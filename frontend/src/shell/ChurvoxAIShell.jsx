@@ -1174,6 +1174,155 @@ function OwnerCommandRow({ item, index, page, group, onOpen }) {
   );
 }
 
+
+function SmartHubBoxModal({
+  box,
+  rows = [],
+  approved = {},
+  onClose,
+  onOpen,
+  onApprove,
+  onSnooze,
+  onDismiss,
+  onOpenFull,
+}) {
+  if (!box) return null;
+
+  const workspaceForBox = {
+    approvals: "dashboard",
+    fix: "dashboard",
+    invoice: "invoices",
+    messages: "quotes",
+    work: "jobs",
+    collect: "invoices",
+    quotes: "quotes",
+    crew: "team",
+  }[box.key] || "dashboard";
+
+  const intro = {
+    approvals: "Churvox prepared these actions for your review. Edit first if needed, then approve.",
+    fix: "These are blockers or missing details that may slow the day down.",
+    invoice: "Completed work and draft invoices that can turn into money.",
+    messages: "Customer follow-ups and reminders prepared for review.",
+    work: "Jobs and invoice work worth checking today.",
+    collect: "Unpaid or overdue invoices that need follow-up.",
+    quotes: "Open quotes and follow-ups that may need a nudge.",
+    crew: "Worker capacity and team records available for assignment.",
+  }[box.key] || "Review the items Churvox found.";
+
+  function riskFor(row) {
+    const text = `${row.lead} ${row.title} ${row.detail} ${row.status}`.toLowerCase();
+    if (text.includes("missing") || text.includes("failed")) return "Missing info";
+    if (text.includes("overdue") || text.includes("unassigned") || text.includes("block")) return "Urgent";
+    if (text.includes("draft") || text.includes("ready") || text.includes("complete")) return "Ready";
+    return "Needs owner check";
+  }
+
+  function reasonFor(row) {
+    const text = `${row.lead} ${row.title} ${row.detail} ${row.status}`.toLowerCase();
+
+    if (text.includes("unassigned")) return "AI found work that has not been assigned to a worker yet.";
+    if (text.includes("invoice") || text.includes("completed job")) return "AI found completed or draft invoice work that may be ready for owner approval.";
+    if (text.includes("quote")) return "AI found a quote or follow-up that may need attention.";
+    if (text.includes("payment") || text.includes("overdue") || text.includes("collect")) return "AI found unpaid or overdue money that may need a reminder.";
+    if (text.includes("worker") || text.includes("crew")) return "AI found team capacity or worker context that may help with assignment.";
+    if (text.includes("message") || text.includes("follow")) return "AI prepared communication for review before anything is sent.";
+
+    return "AI surfaced this because it may need an owner decision.";
+  }
+
+  return (
+    <div className="cx-smart-modal-backdrop" onClick={onClose}>
+      <section className="cx-smart-modal" onClick={(event) => event.stopPropagation()}>
+        <header>
+          <div>
+            <span>Smart Hub</span>
+            <h2>{box.title}</h2>
+            <p>{intro}</p>
+          </div>
+          <button type="button" onClick={onClose}>×</button>
+        </header>
+
+        <section className="cx-smart-modal-summary">
+          <article>
+            <span>Found</span>
+            <strong>{box.count}</strong>
+            <small>{box.label}</small>
+          </article>
+          <article>
+            <span>Mode</span>
+            <strong>Review</strong>
+            <small>Owner approves first</small>
+          </article>
+          <article>
+            <span>Safety</span>
+            <strong>No auto-send</strong>
+            <small>You stay in control</small>
+          </article>
+        </section>
+
+        <section className="cx-smart-modal-list">
+          {rows.length ? rows.map((item, index) => {
+            const row = rowText(item, index, box.title);
+            const selection = {
+              item,
+              page: workspaceForBox,
+              group: box.title,
+              label: row.title,
+              recommendation: reasonFor(row),
+            };
+            const isApproved = approved[row.title];
+
+            return (
+              <article className="cx-smart-modal-item" key={`${box.key}-${index}-${row.title}`}>
+                <div>
+                  <span>{row.lead}</span>
+                  <h3>{row.title}</h3>
+                  <p>{row.detail}</p>
+                  <div className="cx-smart-modal-tags">
+                    <b>{riskFor(row)}</b>
+                    <small>{row.status}</small>
+                    {isApproved ? <small>Approved</small> : null}
+                  </div>
+                </div>
+
+                <aside>
+                  <strong>Why AI found this</strong>
+                  <p>{reasonFor(row)}</p>
+                  <div>
+                    <button type="button" onClick={() => onOpen(selection)}>Details / edit</button>
+                    <button
+                      type="button"
+                      className="approve"
+                      onClick={() => onApprove(selection, {
+                        title: row.title,
+                        detail: row.detail,
+                        status: row.status,
+                        ownerNote: "",
+                      })}
+                    >
+                      {isApproved ? "Approved" : "Approve"}
+                    </button>
+                    <button type="button" onClick={() => onSnooze(box, item)}>Snooze</button>
+                    <button type="button" onClick={() => onDismiss(box, item)}>Dismiss</button>
+                    <button type="button" onClick={() => onOpenFull(workspaceForBox)}>Open full record</button>
+                  </div>
+                </aside>
+              </article>
+            );
+          }) : (
+            <div className="cx-smart-modal-empty">
+              <h3>Nothing here right now.</h3>
+              <p>Churvox will fill this when there is something useful to review.</p>
+            </div>
+          )}
+        </section>
+      </section>
+    </div>
+  );
+}
+
+
 function Workspace({ page, setPage, data }) {
   const actions = data?.actions?.length ? data.actions : AI_ACTIONS;
   const jobs = data?.jobs?.length ? data.jobs : JOBS;
@@ -1192,6 +1341,7 @@ function Workspace({ page, setPage, data }) {
   const [sendCenterItems, setSendCenterItems] = useState([]);
   const [sendCenterStatus, setSendCenterStatus] = useState("");
   const [hubFocus, setHubFocus] = useState("");
+  const [selectedHubBox, setSelectedHubBox] = useState(null);
 
   const meta = {
     dashboard: {
@@ -1524,6 +1674,35 @@ function Workspace({ page, setPage, data }) {
       ? []
       : [[current.kicker, page, current.rows]];
 
+
+  function hubRowsForKey(key) {
+    if (key === "approvals") {
+      return actions.map((item) => [item.type, item.title, item.body, item.action]);
+    }
+    if (key === "messages") return preparedMessageRows;
+    if (key === "fix") return attentionRows;
+    if (key === "work") return todayRows.slice(0, 5);
+    if (key === "invoice") return readyInvoiceRows;
+    if (key === "collect") return collectRows;
+    if (key === "quotes") return quoteRows;
+    if (key === "crew") return crewRows;
+    return [];
+  }
+
+  function snoozeHubItem(box, item) {
+    const row = rowText(item, 0, box?.title || "Smart Hub");
+    logCommand(box?.title || "Smart Hub", row.title, "Snoozed");
+    setSelectedHubBox(null);
+  }
+
+  function dismissHubItem(box, item) {
+    const row = rowText(item, 0, box?.title || "Smart Hub");
+    logCommand(box?.title || "Smart Hub", row.title, "Dismissed");
+    setSelectedHubBox(null);
+  }
+
+  const selectedHubRows = selectedHubBox ? hubRowsForKey(selectedHubBox.key) : [];
+
   function openCommand(selection) {
     setSelectedRecord(selection);
   }
@@ -1834,14 +2013,17 @@ function Workspace({ page, setPage, data }) {
             <button
               type="button"
               key={box.key}
-              className={`cx-hub-box ${hubFocus === box.key ? "active" : ""}`}
-              onClick={() => setHubFocus(hubFocus === box.key ? "" : box.key)}
+              className={`cx-hub-box ${selectedHubBox?.key === box.key ? "active" : ""}`}
+              onClick={() => {
+                setHubFocus("");
+                setSelectedHubBox(box);
+              }}
             >
               <span>{box.title}</span>
               <strong className={String(box.count).includes("$") ? "money" : ""}>{box.count}</strong>
               <b>{box.label}</b>
               <small>{box.body}</small>
-              <em>{hubFocus === box.key ? "Hide" : box.action}</em>
+              <em>{box.action}</em>
             </button>
           ))}
         </section>
@@ -2064,6 +2246,27 @@ function Workspace({ page, setPage, data }) {
           </section>
         </aside>
       </section>
+
+      <SmartHubBoxModal
+        box={selectedHubBox}
+        rows={selectedHubRows}
+        approved={approved}
+        onClose={() => setSelectedHubBox(null)}
+        onOpen={(selection) => {
+          setSelectedHubBox(null);
+          openCommand(selection);
+        }}
+        onApprove={(selection, draft) => {
+          setSelectedHubBox(null);
+          approveSelection(selection, draft);
+        }}
+        onSnooze={snoozeHubItem}
+        onDismiss={dismissHubItem}
+        onOpenFull={(nextPage) => {
+          setSelectedHubBox(null);
+          switchPage(nextPage);
+        }}
+      />
 
       <OwnerCommandModal
         selection={selectedRecord}
