@@ -1461,11 +1461,18 @@ function SmartHubBoxModal({
                       ? "Message"
                       : box.title;
 
+            const actionId = item?.id || item?._id || item?.action_id || "";
+            const sourceType = item?.source_type || item?.kind || item?.type || row.lead;
+            const sourceId = item?.source_id || item?.job_id || item?.invoice_id || item?.quote_id || "";
+
             const selection = {
               item,
               page: workspaceForBox,
               group: actionGroup,
               hubBoxKey: box.key,
+              actionId,
+              sourceType,
+              sourceId,
               label: row.title,
               recommendation: reasonFor(row),
             };
@@ -2063,7 +2070,7 @@ function Workspace({ page, setPage, data }) {
 
   function hubRowsForKey(key) {
     if (key === "approvals") {
-      return actions.map((item) => [item.type, item.title, item.body, item.action]);
+      return actions;
     }
     if (key === "messages") return preparedMessageRows;
     if (key === "fix") return attentionRows;
@@ -2211,10 +2218,17 @@ function Workspace({ page, setPage, data }) {
         status: draft?.status || "approved",
         page: selection.page || page,
         draft: draft || {},
+        action_id: selection.actionId || selection?.item?.id || selection?.item?._id || "",
+        source_type: selection.sourceType || selection?.item?.source_type || "",
+        source_id: selection.sourceId || selection?.item?.source_id || "",
         selection: {
           label: selection.label,
           group: selection.group,
           page: selection.page,
+          hubBoxKey: selection.hubBoxKey,
+          actionId: selection.actionId || "",
+          sourceType: selection.sourceType || "",
+          sourceId: selection.sourceId || "",
           item: selection.item,
         },
       };
@@ -2223,31 +2237,37 @@ function Workspace({ page, setPage, data }) {
       const isDispatchApproval = approvalType.includes("dispatch");
       const isInvoiceApproval = approvalType.includes("invoice");
       const isQuoteApproval = approvalType.includes("quote");
-      const isCashflowApproval = approvalType.includes("cashflow") || approvalType.includes("payment") || approvalType.includes("overdue");
+      const isCashflowApproval = approvalType.includes("cashflow") || approvalType.includes("payment") || approvalType.includes("overdue") || approvalType.includes("collect");
+      const directActionId = selection.hubBoxKey === "approvals"
+        ? String(selection.actionId || selection?.item?.id || selection?.item?._id || "").trim()
+        : "";
 
-      const approvalPath = isDispatchApproval
-        ? "/ai/owner-command/dispatch/approve"
-        : isInvoiceApproval
-          ? "/ai/owner-command/invoice/approve"
-          : isQuoteApproval
-            ? "/ai/owner-command/quote/approve"
-            : isCashflowApproval
-              ? "/ai/owner-command/cashflow/approve"
-              : "/ai/owner-command/approve";
+      const approvalPath = directActionId
+        ? `/ai/actions/${encodeURIComponent(directActionId)}/approve`
+        : isDispatchApproval
+          ? "/ai/owner-command/dispatch/approve"
+          : isInvoiceApproval
+            ? "/ai/owner-command/invoice/approve"
+            : isQuoteApproval
+              ? "/ai/owner-command/quote/approve"
+              : isCashflowApproval
+                ? "/ai/owner-command/cashflow/approve"
+                : "/ai/owner-command/approve";
 
       const result = await apiPost(approvalPath, payload);
+      const performedMessage = result?.performed_result?.message || result?.message || "";
 
       logCommand(
         selection.group || "Approved",
         title,
         isDispatchApproval
-          ? "Worker assigned"
+          ? (performedMessage || "Worker assigned")
           : isInvoiceApproval
-            ? "Invoice draft created"
+            ? (performedMessage || "Invoice draft created")
             : isQuoteApproval
-              ? "Quote follow-up saved"
+              ? (performedMessage || "Quote follow-up saved")
               : isCashflowApproval
-                ? "Payment reminder saved"
+                ? (performedMessage || "Payment reminder saved")
                 : "Saved to backend"
       );
 
@@ -2257,7 +2277,7 @@ function Workspace({ page, setPage, data }) {
           item: [
             selection.group || "Owner approval",
             `${title} approved`,
-            result?.message || "Approval saved to backend.",
+            performedMessage || result?.message || "Approval saved to backend.",
             "Backend saved",
           ],
           recommendation: String(selection.group || "").toLowerCase().includes("dispatch")
