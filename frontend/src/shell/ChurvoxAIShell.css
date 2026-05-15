@@ -3387,3 +3387,24 @@ button {
     display: none !important;
   }
 }
+
+/* ===== Remove Smart Hub box corner circles ===== */
+.cx-hub-box::after,
+.cx-hub-box:nth-child(1)::after,
+.cx-hub-box:nth-child(2)::after,
+.cx-hub-box:nth-child(3)::after,
+.cx-hub-box:nth-child(4)::after,
+.cx-hub-box:nth-child(5)::after,
+.cx-hub-box:nth-child(6)::after,
+.cx-hub-box:nth-child(7)::after,
+.cx-hub-box:nth-child(8)::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+/* keep the cards clean */
+.cx-hub-box {
+  overflow: hidden;
+}
