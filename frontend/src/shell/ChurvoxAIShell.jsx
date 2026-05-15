@@ -34,7 +34,7 @@ const NAV = [
   ["settings", "Settings", "Business setup"],
 ];
 
-const AI_ACTIONS = [
+const PUBLIC_AI_PREVIEW = [
   {
     type: "Dispatch",
     title: "Unassigned job found",
@@ -65,38 +65,13 @@ const AI_ACTIONS = [
   },
 ];
 
-const JOBS = [
-  ["8:00", "Kitchen renovation", "Acme Property", "In progress"],
-  ["10:30", "Pool pump repair", "Blue Lagoon Pools", "Scheduled"],
-  ["12:45", "Fence repair", "Westside Carpentry", "Assigned"],
-  ["2:30", "Lawns and grounds", "ECB Property Maintenance", "Needs worker"],
-];
+const AI_ACTIONS = [];
 
-const CLIENTS = [
-  ["AC", "Acme Property", "3 active jobs", "Active"],
-  ["BL", "Blue Lagoon Pools", "Quote follow-up due", "Follow-up"],
-  ["EC", "ECB Property Maintenance", "Invoice draft ready", "Ready"],
-  ["WC", "Westside Carpentry", "Recent work completed", "Active"],
-];
-
-const TEAM = [
-  ["J", "Jay Morgan", "Lawn care · Available nearby", "Best match"],
-  ["M", "Mia Taylor", "Cleaning · On site", "Busy"],
-  ["K", "Kahu Brown", "Handyman · Free after 1pm", "Available"],
-  ["S", "Sarah Lee", "Admin · In office", "Online"],
-];
-
-const QUOTES = [
-  ["Q-1207", "Blue Lagoon Pools", "$3,450", "Sent"],
-  ["Q-1208", "Acme Property", "$8,900", "Draft"],
-  ["Q-1209", "Westside Carpentry", "$1,250", "Follow-up"],
-];
-
-const INVOICES = [
-  ["INV-1042", "ECB Property Maintenance", "$2,850", "Draft"],
-  ["INV-1041", "Acme Property", "$1,250", "Overdue"],
-  ["INV-1040", "Blue Lagoon Pools", "$4,600", "Paid"],
-];
+const JOBS = [];
+const CLIENTS = [];
+const TEAM = [];
+const QUOTES = [];
+const INVOICES = [];
 
 const AI_APPROVAL_LOG_KEY = "churvox_ai_shell_approval_log";
 
@@ -422,24 +397,24 @@ function buildLiveActions(raw) {
     });
   }
 
-  return actions.length ? actions : AI_ACTIONS;
+  return actions;
 }
 
 function useLiveChurvoxData(authed) {
   const [state, setState] = useState({
     loading: false,
     error: "",
-    jobs: JOBS,
-    clients: CLIENTS,
-    team: TEAM,
-    quotes: QUOTES,
-    invoices: INVOICES,
-    actions: AI_ACTIONS,
+    jobs: [],
+    clients: [],
+    team: [],
+    quotes: [],
+    invoices: [],
+    actions: [],
     stats: {
-      jobsToday: "14",
-      readyToInvoice: "$8.7k",
-      openQuotes: "7",
-      crewOnline: "4",
+      jobsToday: "0",
+      readyToInvoice: "$0",
+      openQuotes: "0",
+      crewOnline: "0",
     },
     raw: {
       jobs: [],
@@ -504,19 +479,19 @@ function useLiveChurvoxData(authed) {
       setState({
         loading: false,
         error: results.some((result) => result.status === "rejected") ? "Some live data is still syncing." : "",
-        jobs: mappedJobs.length ? mappedJobs : JOBS,
-        clients: mappedClients.length ? mappedClients : CLIENTS,
-        team: mappedTeam.length ? mappedTeam : TEAM,
-        quotes: mappedQuotes.length ? mappedQuotes : QUOTES,
-        invoices: mappedInvoices.length ? mappedInvoices : INVOICES,
+        jobs: mappedJobs,
+        clients: mappedClients,
+        team: mappedTeam,
+        quotes: mappedQuotes,
+        invoices: mappedInvoices,
         actions: liveActions,
         stats: {
-          jobsToday: String(rawJobs.length || JOBS.length),
+          jobsToday: String(rawJobs.length),
           readyToInvoice: invoiceTotal > 0
             ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD", maximumFractionDigits: 0 }).format(invoiceTotal)
-            : `$${Math.max(rawInvoices.length, INVOICES.length)}`,
-          openQuotes: String(rawQuotes.length || QUOTES.length),
-          crewOnline: String(rawTeam.length || TEAM.length),
+            : "$0",
+          openQuotes: String(rawQuotes.length),
+          crewOnline: String(rawTeam.length),
         },
         raw: {
           jobs: rawJobs,
@@ -732,7 +707,7 @@ function Landing({ authMode, setAuthMode, onLogin }) {
         </div>
 
         <div className="cx-ai-card-grid">
-          {AI_ACTIONS.map((item) => (
+          {PUBLIC_AI_PREVIEW.map((item) => (
             <article className={`cx-ai-card ${item.tone}`} key={item.title}>
               <div className="cx-ai-status">Ready for approval</div>
               <h3>{item.title}</h3>
@@ -802,7 +777,7 @@ function Shell({ page, setPage, onLogout, data }) {
 
         <section className="cx-side-operator">
           <span>AI Operator</span>
-          <strong>{(data?.actions?.length || AI_ACTIONS.length)} actions ready</strong>
+          <strong>{(data?.actions?.length || 0)} actions ready</strong>
           <p>Prepared for owner approval.</p>
         </section>
       </aside>
@@ -874,17 +849,33 @@ function MiniRow({ item }) {
   );
 }
 
-function ActionQueue({ actions = AI_ACTIONS }) {
+function EmptyState({ title, body, action, onAction }) {
+  return (
+    <article className="cx-empty-state">
+      <span>Ready when you are</span>
+      <h3>{title}</h3>
+      <p>{body}</p>
+      {action ? <button type="button" onClick={onAction}>{action}</button> : null}
+    </article>
+  );
+}
+
+function ActionQueue({ actions = [] }) {
   return (
     <section className="cx-action-board">
-      {actions.map((item) => (
+      {actions.length ? actions.map((item) => (
         <article className={`cx-work-action ${item.tone || "blue"}`} key={item.title}>
           <span>{item.type}</span>
           <h3>{item.title}</h3>
           <p>{item.body}</p>
           <button type="button">{item.action}</button>
         </article>
-      ))}
+      )) : (
+        <EmptyState
+          title="No AI approvals waiting."
+          body="When jobs, invoices, quotes, or payment follow-ups need a decision, Churvox will show them here."
+        />
+      )}
     </section>
   );
 }
@@ -908,7 +899,12 @@ function Board({ title, body, columns, setPage }) {
             <h3>{name}</h3>
             {rows.length ? rows.map((row, index) => (
               <MiniRow item={row} key={`${name}-${index}-${row[1]}`} />
-            )) : <small>No records in this stage.</small>}
+            )) : (
+              <EmptyState
+                title={`No ${name.toLowerCase()} records yet.`}
+                body="Real business records will appear here once they are added or imported."
+              />
+            )}
           </article>
         ))}
       </section>
@@ -917,9 +913,9 @@ function Board({ title, body, columns, setPage }) {
 }
 
 function Dashboard({ setPage, data }) {
-  const actions = data?.actions?.length ? data.actions : AI_ACTIONS;
-  const jobs = data?.jobs?.length ? data.jobs : JOBS;
-  const team = data?.team?.length ? data.team : TEAM;
+  const actions = data?.actions || [];
+  const jobs = data?.jobs || [];
+  const team = data?.team || [];
   const stats = data?.stats || {};
 
   return (
@@ -946,14 +942,28 @@ function Dashboard({ setPage, data }) {
         <section className="cx-panel">
           <header><div><span>Live field work</span><h2>Today’s run sheet</h2></div></header>
           <div className="cx-panel-list">
-            {jobs.map((item, index) => <MiniRow item={item} key={`job-${index}-${item[1]}`} />)}
+            {jobs.length ? jobs.map((item, index) => <MiniRow item={item} key={`job-${index}-${item[1]}`} />) : (
+              <EmptyState
+                title="No jobs yet."
+                body="Create your first job and Churvox will start building today’s run sheet."
+                action="Open jobs"
+                onAction={() => setPage("jobs")}
+              />
+            )}
           </div>
         </section>
 
         <section className="cx-panel">
           <header><div><span>AI worker matching</span><h2>Crew status</h2></div></header>
           <div className="cx-panel-list">
-            {team.map((item, index) => <MiniRow item={item} key={`team-${index}-${item[1]}`} />)}
+            {team.length ? team.map((item, index) => <MiniRow item={item} key={`team-${index}-${item[1]}`} />) : (
+              <EmptyState
+                title="No workers added yet."
+                body="Add workers so Churvox can recommend assignments and show crew capacity."
+                action="Open team"
+                onAction={() => setPage("team")}
+              />
+            )}
           </div>
         </section>
       </section>
@@ -1595,12 +1605,12 @@ function SmartHubBoxModal({
 
 
 function Workspace({ page, setPage, data }) {
-  const actions = data?.actions?.length ? data.actions : AI_ACTIONS;
-  const jobs = data?.jobs?.length ? data.jobs : JOBS;
-  const clients = data?.clients?.length ? data.clients : CLIENTS;
-  const team = data?.team?.length ? data.team : TEAM;
-  const quotes = data?.quotes?.length ? data.quotes : QUOTES;
-  const invoices = data?.invoices?.length ? data.invoices : INVOICES;
+  const actions = data?.actions || [];
+  const jobs = data?.jobs || [];
+  const clients = data?.clients || [];
+  const team = data?.team || [];
+  const quotes = data?.quotes || [];
+  const invoices = data?.invoices || [];
   const stats = data?.stats || {};
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [approved, setApproved] = useState({});

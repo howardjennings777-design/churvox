@@ -3586,3 +3586,49 @@ button {
   }
 }
 
+
+/* ===== Real empty states, no fake data ===== */
+.cx-empty-state {
+  border: 1px dashed rgba(37,99,235,0.22);
+  border-radius: 22px;
+  padding: 18px;
+  background: rgba(255,255,255,0.64);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.74);
+}
+
+.cx-empty-state span {
+  display: block;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.cx-empty-state h3 {
+  margin: 7px 0 0;
+  color: #102033;
+  font-size: 20px;
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+  font-weight: 950;
+}
+
+.cx-empty-state p {
+  margin: 8px 0 0;
+  color: #5b7088;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 800;
+}
+
+.cx-empty-state button {
+  margin-top: 12px;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 13px;
+  color: white;
+  background: linear-gradient(135deg, #102033, #2563eb);
+  font-weight: 950;
+}
+
