@@ -2850,3 +2850,47 @@ button {
 .cx-owner-command-layout.cx-hub-single-column .cx-owner-queue {
   max-width: none;
 }
+
+
+/* ===== Smart Hub box-first cleanup ===== */
+.cx-hide-on-smart-hub {
+  display: none !important;
+}
+
+.cx-owner-command-shell .cx-owner-command-hero {
+  margin-bottom: 18px;
+}
+
+.cx-owner-command-shell .cx-owner-command-hero > div {
+  max-width: 880px;
+}
+
+.cx-owner-command-shell .cx-owner-command-hero h1 {
+  max-width: 820px;
+}
+
+.cx-owner-command-shell .cx-hub-box-grid {
+  margin-top: 0;
+}
+
+.cx-owner-command-shell .cx-hub-box {
+  min-height: 190px;
+}
+
+.cx-owner-command-shell .cx-hub-box strong {
+  font-size: 58px;
+}
+
+.cx-owner-command-shell .cx-owner-command-layout {
+  margin-top: 12px;
+}
+
+@media (max-width: 760px) {
+  .cx-owner-command-shell .cx-owner-command-hero h1 {
+    font-size: 38px;
+  }
+
+  .cx-owner-command-shell .cx-hub-box {
+    min-height: 150px;
+  }
+}

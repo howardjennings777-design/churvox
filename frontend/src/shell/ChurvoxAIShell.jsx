@@ -937,7 +937,7 @@ function Dashboard({ setPage, data }) {
         setPage={setPage}
       />
 
-      <section className="cx-stats">
+      <section className={`cx-stats ${page === "dashboard" ? "cx-hide-on-smart-hub" : ""}`}>
         <Stat label="Jobs today" value={stats.jobsToday || String(jobs.length)} note="live workspace count" />
         <Stat label="Ready to invoice" value={stats.readyToInvoice || "$0"} note="drafts and follow-ups" />
         <Stat label="Open quotes" value={stats.openQuotes || "0"} note="pipeline watched" />
@@ -1200,7 +1200,7 @@ function Workspace({ page, setPage, data }) {
       title: "Your business at a glance.",
       body: data?.loading
         ? "Syncing live Churvox data..."
-        : data?.error || "Tap a box to approve, fix, send, or review. Nothing opens until you choose it.",
+        : data?.error || "Tap a box. Churvox opens only what needs your attention.",
       rows: jobs,
     },
     queue: {
@@ -1625,12 +1625,14 @@ function Workspace({ page, setPage, data }) {
           <p>{current.body}</p>
         </div>
 
-        <aside>
-          <span>AI Operator</span>
-          <strong>{actions.length} ready</strong>
-          <p>Approve/edit from this page first. Open full workspaces only when needed.</p>
-          <button type="button" onClick={() => switchPage("queue")}>Review AI queue</button>
-        </aside>
+        {page !== "dashboard" ? (
+          <aside>
+            <span>AI Operator</span>
+            <strong>{actions.length} ready</strong>
+            <p>Approve/edit from this page first. Open full workspaces only when needed.</p>
+            <button type="button" onClick={() => switchPage("queue")}>Review AI queue</button>
+          </aside>
+        ) : null}
       </section>
 
       <section className="cx-owner-command-strip">
@@ -1648,7 +1650,7 @@ function Workspace({ page, setPage, data }) {
         </article>
       </section>
 
-      <section className="cx-workspace-command-bar cx-owner-command-tabs">
+      <section className={`cx-workspace-command-bar cx-owner-command-tabs ${page === "dashboard" ? "cx-hide-on-smart-hub" : ""}`}>
         {[
           ["Smart Hub", "dashboard"],
           ["AI Queue", "queue"],
