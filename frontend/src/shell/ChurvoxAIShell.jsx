@@ -1257,7 +1257,7 @@ function PublicJobRequestPage() {
   return (
     <main className="cx-public cx-public-landing cx-public-tool-page" id="top">
       <PublicNav />
-      <section className="cx-public-tool-shell">
+      <section className="cx-public-tool-shell cx-customer-intake-shell">
         <aside>
           <span>Online job request</span>
           <h1>Customers request work. Churvox prepares the draft job.</h1>
@@ -1273,7 +1273,7 @@ function PublicJobRequestPage() {
         </aside>
 
         <form className="cx-public-request-form" onSubmit={submit}>
-          <h2>Request work</h2>
+          <h2>Send job request</h2>
 
           <label>
             Name
@@ -1319,7 +1319,7 @@ function PublicJobRequestPage() {
             <textarea required value={form.notes} onChange={(event) => update("notes", event.target.value)} />
           </label>
 
-          <button type="submit" disabled={busy}>{busy ? "Sending..." : "Send request"}</button>
+          <button type="submit" disabled={busy}>{busy ? "Sending..." : "Send request to Churvox"}</button>
           {status ? <p className="cx-public-form-status">{status}</p> : null}
         </form>
       </section>
@@ -1448,7 +1448,7 @@ function PublicClientPortalPage({ token }) {
     return (
       <main className="cx-public cx-public-landing cx-public-tool-page">
         <PublicNav />
-        <section className="cx-public-tool-shell"><aside><h1>Loading client portal...</h1></aside></section>
+        <section className="cx-public-tool-shell cx-customer-intake-shell"><aside><h1>Loading client portal...</h1></aside></section>
       </main>
     );
   }
@@ -1457,7 +1457,7 @@ function PublicClientPortalPage({ token }) {
     return (
       <main className="cx-public cx-public-landing cx-public-tool-page">
         <PublicNav />
-        <section className="cx-public-tool-shell"><aside><h1>Portal link not found.</h1><p>{state.error}</p></aside></section>
+        <section className="cx-public-tool-shell cx-customer-intake-shell"><aside><h1>Portal link not found.</h1><p>{state.error}</p></aside></section>
       </main>
     );
   }
@@ -1465,7 +1465,7 @@ function PublicClientPortalPage({ token }) {
   return (
     <main className="cx-public cx-public-landing cx-public-tool-page" id="top">
       <PublicNav />
-      <section className="cx-public-tool-shell">
+      <section className="cx-public-tool-shell cx-customer-intake-shell">
         <aside>
           <span>Proof-to-paid client link</span>
           <h1>{title}</h1>
@@ -1487,36 +1487,36 @@ function PublicClientPortalPage({ token }) {
           </div>
         </aside>
 
-        <section className="cx-client-portal-card">
+        <section className="cx-client-portal-card cx-client-portal-machine">
           <div className="cx-client-portal-grid">
             <article>
               <span>Job</span>
               <strong>{job.title || job.name || record.job_title || "Job details"}</strong>
-              <p>{job.address || job.description || record.address || "No job address shown."}</p>
+              <p>{job.address || job.description || record.address || "Address will appear here once the business confirms the job."}</p>
             </article>
 
             <article>
               <span>Quote</span>
               <strong>{quote.quote_number || quote.title || "Quote"}</strong>
-              <p>{quote.status || quote.quote_status || "Ready for customer review when attached."}</p>
+              <p>{quote.status || quote.quote_status || "Quote status appears here when the business shares it."}</p>
             </article>
 
             <article>
               <span>Invoice</span>
               <strong>{invoice.invoice_number || record.invoice_number || "Invoice"}</strong>
-              <p>{invoice.status || invoice.payment_status || record.payment_status || "Payment status will show here."}</p>
+              <p>{invoice.status || invoice.payment_status || record.payment_status || "Payment status appears here when the business shares it."}</p>
             </article>
 
             <article>
               <span>Proof</span>
               <strong>{Array.isArray(proof.photos) ? proof.photos.length : 0} photos</strong>
-              <p>{proof.summary || "Job proof will show here once attached."}</p>
+              <p>{proof.summary || "Proof appears here after the worker/owner attaches job photos or completion details."}</p>
             </article>
           </div>
 
           <section className="cx-client-payment-panel">
-            <h2>Payment tracking</h2>
-            <p>Use this if you have paid already, need the payment link, or want to send a payment note to the business.</p>
+            <h2>Payment / approval tracking</h2>
+            <p>Use this to report payment, ask a question, or send a note back into the business workflow.</p>
             {portal.actions?.pay_url ? (
               <a href={portal.actions.pay_url} target="_blank" rel="noreferrer">Open Pay Now</a>
             ) : null}
@@ -1532,10 +1532,10 @@ function PublicClientPortalPage({ token }) {
           </section>
 
           <form className="cx-client-portal-message" onSubmit={sendMessage}>
-            <h2>Send a message</h2>
+            <h2>Send a message into Churvox</h2>
             <input value={message.name} onChange={(event) => updateMessage("name", event.target.value)} placeholder="Your name" />
             <input type="email" value={message.email} onChange={(event) => updateMessage("email", event.target.value)} placeholder="Email" />
-            <textarea required value={message.message} onChange={(event) => updateMessage("message", event.target.value)} placeholder="Message or approval note..." />
+            <textarea required value={message.message} onChange={(event) => updateMessage("message", event.target.value)} placeholder="Message, approval note, payment note, or question..." />
             <button type="submit">Send message</button>
             {status ? <p className="cx-public-form-status">{status}</p> : null}
           </form>
@@ -1579,7 +1579,7 @@ function Landing({ authMode, setAuthMode, onLogin }) {
               See the AI loop
             </a>
             <a href="/request" className="cx-secondary">
-              Customer request demo
+              Customer request intake demo
             </a>
           </div>
 
@@ -4125,7 +4125,7 @@ function SmartHubBoxModal({
     collect: "Unpaid or overdue invoices that need follow-up.",
     quotes: "Quotes and follow-ups that may need a nudge.",
     crew: "Worker capacity and team records available for assignment.",
-    requests: "Customer requests that can become draft jobs or quotes.",
+    requests: "Customer request intakes that can become draft jobs or quotes.",
     dispatch: "Dispatch decisions, unassigned jobs and possible schedule conflicts.",
     recurring: "Recurring jobs that may need the next job generated.",
     templates: "Service templates that can speed up job creation and proof/invoice wording.",
@@ -7130,7 +7130,7 @@ function Workspace({ page, setPage, data }) {
       ...item,
       type: "Job request",
       title: item?.service_type || item?.title || `Request from ${item?.name || "customer"}`,
-      message: item?.notes || item?.address || "Customer request waiting for owner review",
+      message: item?.notes || item?.address || "Customer request intake waiting for owner review",
       status: "Create draft job",
       source_type: "public_job_request",
       source_id: item?.id || item?.request_id || item?._id || "",
@@ -7364,7 +7364,7 @@ function Workspace({ page, setPage, data }) {
       count: requestRows.length,
       label: "new",
       title: "Request inbox",
-      body: "Customer requests ready to become draft jobs or quotes.",
+      body: "Customer request intakes ready to become draft jobs or quotes.",
       action: "Prepare",
     },
     {
@@ -8236,7 +8236,7 @@ function Workspace({ page, setPage, data }) {
 
           <div>
             {[
-              ["requests", "Request inbox", requestRows.length, "Customer requests waiting"],
+              ["requests", "Request inbox", requestRows.length, "Customer request intakes waiting"],
               ["dispatch", "Dispatch board", dispatchRows.length, "Unassigned jobs / conflicts"],
               ["recurring", "Recurring jobs", recurringRows.length, "Repeat work due"],
               ["templates", "Service templates", templateRows.length, "Reusable job presets"],
