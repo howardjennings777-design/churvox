@@ -5093,3 +5093,71 @@ body:has(.cx-public-landing) .ai-action-dock {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== Public quote acceptance + payment tracking ===== */
+.cx-client-portal-actions button.secondary,
+.cx-client-payment-panel button.secondary {
+  color: #102033;
+  background: rgba(255,255,255,0.78);
+  border: 1px solid rgba(37,99,235,0.16);
+}
+
+.cx-client-payment-panel {
+  display: grid;
+  gap: 12px;
+  border-radius: 24px;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 90% 10%, rgba(103,232,249,0.18), transparent 34%),
+    rgba(255,255,255,0.62);
+  border: 1px solid rgba(37,99,235,0.10);
+}
+
+.cx-client-payment-panel h2 {
+  margin: 0;
+  color: #102033;
+  font-size: 26px;
+  letter-spacing: -0.055em;
+  font-weight: 950;
+}
+
+.cx-client-payment-panel p {
+  margin: 0;
+  color: #526b82;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 820;
+}
+
+.cx-client-payment-panel textarea {
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+  border: 1px solid rgba(37,99,235,0.14);
+  border-radius: 17px;
+  color: #102033;
+  background: rgba(255,255,255,0.88);
+  padding: 13px;
+  font-size: 14px;
+  font-weight: 820;
+  outline: none;
+}
+
+.cx-client-payment-panel > a,
+.cx-client-payment-panel button {
+  border: 0;
+  border-radius: 999px;
+  padding: 13px 16px;
+  color: white;
+  background: linear-gradient(135deg, #102033, #2563eb);
+  font-size: 14px;
+  font-weight: 950;
+  text-decoration: none;
+  text-align: center;
+}
+
+.cx-client-payment-panel > div {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}

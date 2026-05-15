@@ -15357,6 +15357,304 @@ async def public_client_portal_approve(token: str, request: Request):
 # =================== END CHURVOX PUBLIC CLIENT PORTAL + JOB REQUEST ROUTES ===================
 
 
+
+
+# ===================== CHURVOX PUBLIC QUOTE ACCEPTANCE + PAYMENT TRACKING ROUTES =====================
+
+async def _public_quote_from_token(token: str):
+    collection_name, record = await _find_public_record_by_token(token)
+
+    if not record:
+        return None, None
+
+    if collection_name == "quotes":
+        return collection_name, record
+
+    business_id = str(record.get("business_id") or "")
+    quote_id = str(record.get("quote_id") or record.get("source_quote_id") or "")
+
+    if business_id and quote_id:
+        quote = await _public_find_by_business_and_id("quotes", business_id, quote_id)
+        if quote:
+            return "quotes", quote
+
+    return collection_name, record
+
+async def _public_invoice_from_token(token: str):
+    collection_name, record = await _find_public_record_by_token(token)
+
+    if not record:
+        return None, None
+
+    if collection_name == "invoices":
+        return collection_name, record
+
+    business_id = str(record.get("business_id") or "")
+    invoice_id = str(record.get("invoice_id") or record.get("source_invoice_id") or "")
+
+    if business_id and invoice_id:
+        invoice = await _public_find_by_business_and_id("invoices", business_id, invoice_id)
+        if invoice:
+            return "invoices", invoice
+
+    return collection_name, record
+
+async def _insert_public_ai_action(business_id: str, action_type: str, title: str, body: str, action: str, source_type: str, source_id: str):
+    if not business_id:
+        return None
+
+    now = datetime.now(timezone.utc)
+    doc = {
+        "business_id": str(business_id),
+        "type": action_type,
+        "title": title,
+        "body": body,
+        "action": action,
+        "status": "pending",
+        "source_type": source_type,
+        "source_id": source_id,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    await db.ai_actions.insert_one(doc)
+    return doc
+
+@api_router.post("/public/quotes/{token}/accept")
+async def public_accept_quote(token: str, request: Request):
+    collection_name, quote = await _public_quote_from_token(token)
+
+    if not quote or collection_name != "quotes":
+        raise HTTPException(status_code=404, detail="Quote link not found")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    name = _public_clean_text(payload.get("name"), 160)
+    email = _public_clean_text(payload.get("email"), 220)
+    note = _public_clean_text(payload.get("note"), 1200)
+    now = datetime.now(timezone.utc)
+
+    quote_id = str(quote.get("id") or quote.get("_id") or "")
+    business_id = str(quote.get("business_id") or "")
+
+    await db.quotes.update_one(
+        {"_id": quote.get("_id")},
+        {
+            "$set": {
+                "status": "accepted",
+                "quote_status": "accepted",
+                "customer_acceptance": {
+                    "name": name,
+                    "email": email,
+                    "note": note,
+                    "accepted_at": now,
+                },
+                "accepted_at": now,
+                "updated_at": now,
+            }
+        },
+    )
+
+    approval = {
+        "id": secrets.token_urlsafe(10),
+        "portal_token": token,
+        "source_collection": "quotes",
+        "source_id": quote_id,
+        "business_id": business_id,
+        "approval_type": "quote_accepted",
+        "name": name,
+        "email": email,
+        "note": note,
+        "status": "accepted",
+        "created_at": now,
+    }
+
+    await db.client_portal_approvals.insert_one(approval)
+
+    await _insert_public_ai_action(
+        business_id,
+        "Quote accepted",
+        f"Quote accepted by {name or 'customer'}",
+        note or "Customer accepted the quote through the portal.",
+        "Convert to job",
+        "quote_acceptance",
+        approval["id"],
+    )
+
+    return {
+        "ok": True,
+        "message": "Quote accepted. The business has been notified.",
+        "quote_status": "accepted",
+        "approval": safe_doc(approval),
+    }
+
+@api_router.post("/public/quotes/{token}/decline")
+async def public_decline_quote(token: str, request: Request):
+    collection_name, quote = await _public_quote_from_token(token)
+
+    if not quote or collection_name != "quotes":
+        raise HTTPException(status_code=404, detail="Quote link not found")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    name = _public_clean_text(payload.get("name"), 160)
+    email = _public_clean_text(payload.get("email"), 220)
+    reason = _public_clean_text(payload.get("reason") or payload.get("note"), 1200)
+    now = datetime.now(timezone.utc)
+
+    quote_id = str(quote.get("id") or quote.get("_id") or "")
+    business_id = str(quote.get("business_id") or "")
+
+    await db.quotes.update_one(
+        {"_id": quote.get("_id")},
+        {
+            "$set": {
+                "status": "declined",
+                "quote_status": "declined",
+                "customer_decline": {
+                    "name": name,
+                    "email": email,
+                    "reason": reason,
+                    "declined_at": now,
+                },
+                "declined_at": now,
+                "updated_at": now,
+            }
+        },
+    )
+
+    decline = {
+        "id": secrets.token_urlsafe(10),
+        "portal_token": token,
+        "source_collection": "quotes",
+        "source_id": quote_id,
+        "business_id": business_id,
+        "approval_type": "quote_declined",
+        "name": name,
+        "email": email,
+        "note": reason,
+        "status": "declined",
+        "created_at": now,
+    }
+
+    await db.client_portal_approvals.insert_one(decline)
+
+    await _insert_public_ai_action(
+        business_id,
+        "Quote declined",
+        f"Quote declined by {name or 'customer'}",
+        reason or "Customer declined the quote through the portal.",
+        "Review quote",
+        "quote_decline",
+        decline["id"],
+    )
+
+    return {
+        "ok": True,
+        "message": "Quote response saved. The business has been notified.",
+        "quote_status": "declined",
+        "decline": safe_doc(decline),
+    }
+
+@api_router.get("/public/invoices/{token}/payment-status")
+async def public_invoice_payment_status(token: str):
+    collection_name, invoice = await _public_invoice_from_token(token)
+
+    if not invoice or collection_name != "invoices":
+        raise HTTPException(status_code=404, detail="Invoice link not found")
+
+    balance = invoice.get("balance", invoice.get("amount_due", invoice.get("total", invoice.get("amount", 0))))
+    payment_status = invoice.get("payment_status") or invoice.get("status") or invoice.get("invoice_status") or "unpaid"
+
+    return {
+        "ok": True,
+        "invoice": safe_doc(invoice),
+        "payment": {
+            "status": payment_status,
+            "balance": balance,
+            "payment_url": invoice.get("payment_url") or invoice.get("pay_url") or "",
+            "customer_reported_paid": invoice.get("customer_reported_paid") is True,
+            "last_customer_payment_note": invoice.get("last_customer_payment_note") or "",
+        },
+    }
+
+@api_router.post("/public/invoices/{token}/payment-note")
+async def public_invoice_payment_note(token: str, request: Request):
+    collection_name, invoice = await _public_invoice_from_token(token)
+
+    if not invoice or collection_name != "invoices":
+        raise HTTPException(status_code=404, detail="Invoice link not found")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    name = _public_clean_text(payload.get("name"), 160)
+    email = _public_clean_text(payload.get("email"), 220)
+    note = _public_clean_text(payload.get("note"), 1200)
+    reported_paid = bool(payload.get("reported_paid"))
+
+    if not note and not reported_paid:
+        raise HTTPException(status_code=400, detail="Payment note is required")
+
+    now = datetime.now(timezone.utc)
+    invoice_id = str(invoice.get("id") or invoice.get("_id") or "")
+    business_id = str(invoice.get("business_id") or "")
+
+    doc = {
+        "id": secrets.token_urlsafe(10),
+        "portal_token": token,
+        "source_collection": "invoices",
+        "source_id": invoice_id,
+        "business_id": business_id,
+        "name": name,
+        "email": email,
+        "note": note,
+        "reported_paid": reported_paid,
+        "status": "customer_reported_paid" if reported_paid else "payment_note",
+        "created_at": now,
+    }
+
+    await db.client_portal_payment_notes.insert_one(doc)
+
+    await db.invoices.update_one(
+        {"_id": invoice.get("_id")},
+        {
+            "$set": {
+                "customer_reported_paid": reported_paid or invoice.get("customer_reported_paid") is True,
+                "last_customer_payment_note": note,
+                "last_customer_payment_note_at": now,
+                "updated_at": now,
+            }
+        },
+    )
+
+    await _insert_public_ai_action(
+        business_id,
+        "Payment update",
+        f"Payment update from {name or 'customer'}",
+        note or "Customer reported payment through the portal.",
+        "Review payment",
+        "payment_note",
+        doc["id"],
+    )
+
+    return {
+        "ok": True,
+        "message": "Payment update saved. The business has been notified.",
+        "payment_note": safe_doc(doc),
+    }
+
+# =================== END CHURVOX PUBLIC QUOTE ACCEPTANCE + PAYMENT TRACKING ROUTES ===================
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")

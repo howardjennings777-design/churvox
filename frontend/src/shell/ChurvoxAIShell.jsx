@@ -985,6 +985,7 @@ function PublicJobRequestPage() {
 function PublicClientPortalPage({ token }) {
   const [state, setState] = useState({ loading: true, error: "", portal: null });
   const [message, setMessage] = useState({ name: "", email: "", message: "" });
+  const [paymentNote, setPaymentNote] = useState("");
   const [status, setStatus] = useState("");
 
   useEffect(() => {
@@ -1051,6 +1052,53 @@ function PublicClientPortalPage({ token }) {
     }
   }
 
+  async function acceptQuote() {
+    setStatus("Accepting quote...");
+
+    try {
+      const result = await publicApiPost(`/public/quotes/${encodeURIComponent(token)}/accept`, {
+        name: message.name,
+        email: message.email,
+        note: message.message,
+      });
+      setStatus(result?.message || "Quote accepted.");
+    } catch (err) {
+      setStatus(err.message || "Could not accept quote.");
+    }
+  }
+
+  async function declineQuote() {
+    setStatus("Saving quote response...");
+
+    try {
+      const result = await publicApiPost(`/public/quotes/${encodeURIComponent(token)}/decline`, {
+        name: message.name,
+        email: message.email,
+        reason: message.message,
+      });
+      setStatus(result?.message || "Quote response saved.");
+    } catch (err) {
+      setStatus(err.message || "Could not decline quote.");
+    }
+  }
+
+  async function reportPayment(reportedPaid = false) {
+    setStatus(reportedPaid ? "Reporting payment..." : "Sending payment note...");
+
+    try {
+      const result = await publicApiPost(`/public/invoices/${encodeURIComponent(token)}/payment-note`, {
+        name: message.name,
+        email: message.email,
+        note: paymentNote || message.message,
+        reported_paid: reportedPaid,
+      });
+      setStatus(result?.message || "Payment update saved.");
+      setPaymentNote("");
+    } catch (err) {
+      setStatus(err.message || "Could not save payment update.");
+    }
+  }
+
   if (state.loading) {
     return (
       <main className="cx-public cx-public-landing cx-public-tool-page">
@@ -1083,7 +1131,10 @@ function PublicClientPortalPage({ token }) {
               <a href={portal.actions.pay_url} target="_blank" rel="noreferrer">Pay now</a>
             ) : null}
             {portal.actions?.can_accept_quote ? (
-              <button type="button" onClick={() => approve("quote_accepted")}>Accept quote</button>
+              <>
+                <button type="button" onClick={acceptQuote}>Accept quote</button>
+                <button type="button" className="secondary" onClick={declineQuote}>Decline quote</button>
+              </>
             ) : null}
             {portal.actions?.can_approve_work ? (
               <button type="button" onClick={() => approve("work_approved")}>Approve work</button>
@@ -1117,6 +1168,23 @@ function PublicClientPortalPage({ token }) {
               <p>{proof.summary || "Job proof will show here once attached."}</p>
             </article>
           </div>
+
+          <section className="cx-client-payment-panel">
+            <h2>Payment tracking</h2>
+            <p>Use this if you have paid already, need the payment link, or want to send a payment note to the business.</p>
+            {portal.actions?.pay_url ? (
+              <a href={portal.actions.pay_url} target="_blank" rel="noreferrer">Open Pay Now</a>
+            ) : null}
+            <textarea
+              value={paymentNote}
+              onChange={(event) => setPaymentNote(event.target.value)}
+              placeholder="Payment note, reference, or question..."
+            />
+            <div>
+              <button type="button" onClick={() => reportPayment(false)}>Send payment note</button>
+              <button type="button" className="secondary" onClick={() => reportPayment(true)}>I have paid</button>
+            </div>
+          </section>
 
           <form className="cx-client-portal-message" onSubmit={sendMessage}>
             <h2>Send a message</h2>
