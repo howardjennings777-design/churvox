@@ -7633,3 +7633,160 @@ button.primary,
     padding: 14px !important;
   }
 }
+
+/* ===== Owner sees complete invoice draft before approval ===== */
+.cx-invoice-owner-preview-wrap {
+  display: grid !important;
+  grid-template-columns: minmax(300px, 0.95fr) minmax(280px, 0.75fr) !important;
+  gap: 14px !important;
+  padding: 16px 22px !important;
+}
+
+.cx-invoice-owner-preview {
+  border-radius: 24px !important;
+  border: 1px solid rgba(37, 99, 235, 0.14) !important;
+  background: #ffffff !important;
+  padding: 18px !important;
+  box-shadow: 0 16px 44px rgba(16, 32, 51, 0.08) !important;
+}
+
+.cx-invoice-owner-preview-head {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding-bottom: 14px !important;
+  border-bottom: 1px solid rgba(37, 99, 235, 0.10) !important;
+}
+
+.cx-invoice-owner-preview-head span,
+.cx-invoice-owner-preview-meta span,
+.cx-invoice-owner-line span,
+.cx-invoice-owner-total span {
+  display: block !important;
+  color: #2563eb !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+}
+
+.cx-invoice-owner-preview-head h4 {
+  margin: 6px 0 0 !important;
+  color: #102033 !important;
+  font-size: clamp(24px, 2.7vw, 36px) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.06em !important;
+  font-weight: 950 !important;
+}
+
+.cx-invoice-owner-preview-head b {
+  border-radius: 999px !important;
+  background: rgba(37,99,235,0.10) !important;
+  color: #102033 !important;
+  padding: 9px 12px !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  text-transform: uppercase !important;
+}
+
+.cx-invoice-owner-preview-meta {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  padding: 14px 0 !important;
+}
+
+.cx-invoice-owner-preview-meta article {
+  border-radius: 16px !important;
+  background: rgba(241, 248, 255, 0.86) !important;
+  border: 1px solid rgba(37,99,235,0.08) !important;
+  padding: 12px !important;
+}
+
+.cx-invoice-owner-preview-meta strong {
+  display: block !important;
+  margin-top: 6px !important;
+  color: #102033 !important;
+  font-size: 15px !important;
+  font-weight: 950 !important;
+  line-height: 1.2 !important;
+}
+
+.cx-invoice-owner-line {
+  border-radius: 18px !important;
+  border: 1px solid rgba(37,99,235,0.10) !important;
+  background: rgba(255,255,255,0.9) !important;
+  padding: 14px !important;
+}
+
+.cx-invoice-owner-line strong {
+  display: block !important;
+  margin-top: 7px !important;
+  color: #102033 !important;
+  font-size: 17px !important;
+  font-weight: 950 !important;
+}
+
+.cx-invoice-owner-line p {
+  margin: 8px 0 0 !important;
+  color: #24415f !important;
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+  font-weight: 800 !important;
+}
+
+.cx-invoice-owner-total {
+  margin-top: 14px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  border-radius: 18px !important;
+  background: linear-gradient(135deg, #102033, #2563eb) !important;
+  color: white !important;
+  padding: 16px !important;
+}
+
+.cx-invoice-owner-total span,
+.cx-invoice-owner-total strong {
+  color: white !important;
+}
+
+.cx-invoice-owner-total strong {
+  font-size: 24px !important;
+  font-weight: 950 !important;
+}
+
+.cx-invoice-owner-edit-fields {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+  align-content: start !important;
+}
+
+.cx-invoice-owner-edit-fields .wide {
+  grid-column: 1 / -1 !important;
+}
+
+.cx-invoice-owner-edit-fields input,
+.cx-invoice-owner-edit-fields select,
+.cx-invoice-owner-edit-fields textarea {
+  width: 100% !important;
+  min-height: 40px !important;
+}
+
+.cx-invoice-owner-edit-fields textarea {
+  min-height: 86px !important;
+  max-height: 150px !important;
+}
+
+@media (max-width: 880px) {
+  .cx-invoice-owner-preview-wrap {
+    grid-template-columns: 1fr !important;
+    padding: 14px !important;
+  }
+
+  .cx-invoice-owner-preview-meta {
+    grid-template-columns: 1fr !important;
+  }
+}

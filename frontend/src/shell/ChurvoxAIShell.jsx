@@ -2155,6 +2155,65 @@ function cxCleanInvoiceText(value) {
   return String(value || "").trim();
 }
 
+function cxLooksWeakInvoiceDescription(value) {
+  const text = cxCleanInvoiceText(value).toLowerCase();
+
+  if (!text) return true;
+
+  return (
+    text.includes("ai can help") ||
+    text.includes("turn notes") ||
+    text.includes("invoice draft") ||
+    text.includes("ready for invoice review") ||
+    text.includes("completed work details") ||
+    text === "completed job" ||
+    text === "service completed"
+  );
+}
+
+function cxCleanInvoiceTitle(value) {
+  const text = cxCleanInvoiceText(value)
+    .replace(/^prepare invoice(?: path)? for\s+/i, "")
+    .replace(/^invoice draft for\s+/i, "")
+    .replace(/^completed service for\s+/i, "")
+    .trim();
+
+  return text || "Completed service";
+}
+
+function cxCustomerInvoiceWording(item = {}, fallback = "") {
+  const client = cxInvoiceClientFromDraftOrItem({}, item, item?.title || item?.name || fallback);
+  const line = cxCleanInvoiceTitle(
+    item.invoice_line_item ||
+    item.line_item ||
+    item.service_type ||
+    item.job_type ||
+    item.title ||
+    item.name ||
+    fallback ||
+    "Completed service"
+  );
+  const address = cxCleanInvoiceText(item.address || item.job_address || item.service_address);
+  const workerNotes = cxCleanInvoiceText(item.completion_notes || item.worker_notes || item.job_notes || item.notes);
+  const proofCount = Array.isArray(item.photos || item.worker_photos || item.proof_photos)
+    ? (item.photos || item.worker_photos || item.proof_photos).length
+    : 0;
+
+  const parts = [];
+
+  parts.push(address ? `${line} completed at ${address}.` : `${line} completed.`);
+
+  if (workerNotes && !cxLooksWeakInvoiceDescription(workerNotes)) {
+    parts.push(workerNotes.endsWith(".") ? workerNotes : `${workerNotes}.`);
+  }
+
+  if (proofCount > 0) {
+    parts.push(`${proofCount} proof photo${proofCount === 1 ? "" : "s"} recorded with the job.`);
+  }
+
+  return parts.join(" ").replace(/\s+/g, " ").trim() || `${line} completed for ${client}.`;
+}
+
 function cxInvoiceDescription(item = {}, fallback = "") {
   const existing = cxCleanInvoiceText(
     item.ai_invoice_description ||
@@ -2165,25 +2224,11 @@ function cxInvoiceDescription(item = {}, fallback = "") {
     item.description
   );
 
-  if (existing && existing.length > 18) return existing;
+  if (existing && existing.length > 18 && !cxLooksWeakInvoiceDescription(existing)) {
+    return existing;
+  }
 
-  const client = cxCleanInvoiceText(item.client_name || item.customer_name || item.client || item.customer);
-  const title = cxCleanInvoiceText(item.title || item.name || item.service_type || item.job_type || "Service");
-  const address = cxCleanInvoiceText(item.address || item.job_address || item.service_address);
-  const notes = cxCleanInvoiceText(item.completion_notes || item.worker_notes || item.job_notes || item.notes || fallback);
-  const worker = cxCleanInvoiceText(item.assigned_worker_name || item.worker_name);
-  const photos = Array.isArray(item.photos || item.worker_photos || item.proof_photos)
-    ? (item.photos || item.worker_photos || item.proof_photos).length
-    : 0;
-
-  const parts = [];
-  parts.push(`${title} completed${client ? ` for ${client}` : ""}${address ? ` at ${address}` : ""}.`);
-
-  if (notes) parts.push(notes.endsWith(".") ? notes : `${notes}.`);
-  if (worker) parts.push(`Completed by ${worker}.`);
-  if (photos > 0) parts.push(`${photos} proof photo${photos === 1 ? "" : "s"} attached.`);
-
-  return parts.join(" ").replace(/\s+/g, " ").trim();
+  return cxCustomerInvoiceWording(item, fallback);
 }
 
 function cxInvoiceStatus(item = {}) {
@@ -2224,13 +2269,12 @@ function cxInvoiceLineItem(item = {}, title = "") {
     item.service_type ||
     item.job_type ||
     item.title ||
-    item.name
+    item.name ||
+    title
   );
 
-  if (direct) return direct.replace(/^prepare invoice(?: path)? for\s+/i, "Completed service for ");
-
-  const cleanTitle = cxCleanInvoiceText(title).replace(/^prepare invoice(?: path)? for\s+/i, "Completed service for ");
-  return cleanTitle || "Completed service";
+  const clean = cxCleanInvoiceTitle(direct);
+  return clean || "Completed service";
 }
 
 function cxInvoiceDueDate(item = {}) {
@@ -3012,81 +3056,113 @@ function SmartHubBoxModal({
             </header>
 
             {editingNeedsInvoiceDraft() ? (
-              <div className="cx-edit-invoice-draft cx-edit-invoice-draft-real">
-                <section className="cx-edit-invoice-preview-card">
-                  <span>Invoice draft prepared</span>
-                  <h4>{editingDraft.invoiceTitle || `Invoice draft for ${editingDraft.invoiceClientName || "client"}`}</h4>
-                  <p>{editingDraft.invoiceDescription || "Churvox prepared this invoice draft from the completed work."}</p>
+              <div className="cx-edit-invoice-draft cx-edit-invoice-draft-real cx-invoice-owner-preview-wrap">
+                <section className="cx-invoice-owner-preview">
+                  <div className="cx-invoice-owner-preview-head">
+                    <div>
+                      <span>Draft invoice</span>
+                      <h4>{editingDraft.invoiceTitle || `Invoice draft for ${editingDraft.invoiceClientName || "client"}`}</h4>
+                    </div>
+                    <b>{editingDraft.invoiceStatus || "Draft"}</b>
+                  </div>
+
+                  <div className="cx-invoice-owner-preview-meta">
+                    <article>
+                      <span>Bill to</span>
+                      <strong>{editingDraft.invoiceClientName || "Client name needed"}</strong>
+                    </article>
+                    <article>
+                      <span>Due date</span>
+                      <strong>{String(editingDraft.invoiceDueDate || "").slice(0, 10) || "Set due date"}</strong>
+                    </article>
+                    <article>
+                      <span>Amount due</span>
+                      <strong>{editingDraft.invoiceAmount ? `$${editingDraft.invoiceAmount}` : "Add amount"}</strong>
+                    </article>
+                  </div>
+
+                  <div className="cx-invoice-owner-line">
+                    <span>Line item</span>
+                    <strong>{editingDraft.invoiceLineItemsText || "Completed service"}</strong>
+                    <p>{editingDraft.invoiceDescription || "Invoice wording needed before approval."}</p>
+                  </div>
+
+                  <div className="cx-invoice-owner-total">
+                    <span>Total</span>
+                    <strong>{editingDraft.invoiceAmount ? `$${editingDraft.invoiceAmount}` : "Amount required"}</strong>
+                  </div>
                 </section>
 
-                <label>
-                  Client
-                  <input
-                    value={editingDraft.invoiceClientName || ""}
-                    onChange={(event) => {
-                      updateEditingDraft("invoiceClientName", event.target.value);
-                      updateEditingDraft("invoiceTitle", `Invoice draft for ${event.target.value || "client"}`);
-                    }}
-                    placeholder="Client name"
-                  />
-                </label>
+                <section className="cx-invoice-owner-edit-fields">
+                  <label>
+                    Client
+                    <input
+                      value={editingDraft.invoiceClientName || ""}
+                      onChange={(event) => {
+                        updateEditingDraft("invoiceClientName", event.target.value);
+                        updateEditingDraft("invoiceTitle", `Invoice draft for ${event.target.value || "client"}`);
+                      }}
+                      placeholder="Client name"
+                    />
+                  </label>
 
-                <label>
-                  Amount
-                  <input
-                    value={editingDraft.invoiceAmount || ""}
-                    onChange={(event) => updateEditingDraft("invoiceAmount", event.target.value)}
-                    placeholder="Add amount"
-                  />
-                </label>
+                  <label>
+                    Amount
+                    <input
+                      value={editingDraft.invoiceAmount || ""}
+                      onChange={(event) => updateEditingDraft("invoiceAmount", event.target.value)}
+                      placeholder="Add amount"
+                    />
+                  </label>
 
-                <label>
-                  Due date
-                  <input
-                    type="date"
-                    value={String(editingDraft.invoiceDueDate || "").slice(0, 10)}
-                    onChange={(event) => updateEditingDraft("invoiceDueDate", event.target.value)}
-                  />
-                </label>
+                  <label>
+                    Due date
+                    <input
+                      type="date"
+                      value={String(editingDraft.invoiceDueDate || "").slice(0, 10)}
+                      onChange={(event) => updateEditingDraft("invoiceDueDate", event.target.value)}
+                    />
+                  </label>
 
-                <label>
-                  Status
-                  <select
-                    value={editingDraft.invoiceStatus || "draft"}
-                    onChange={(event) => updateEditingDraft("invoiceStatus", event.target.value)}
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="ready">Ready</option>
-                    <option value="approved">Approved</option>
-                  </select>
-                </label>
+                  <label>
+                    Status
+                    <select
+                      value={editingDraft.invoiceStatus || "draft"}
+                      onChange={(event) => updateEditingDraft("invoiceStatus", event.target.value)}
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="ready">Ready</option>
+                      <option value="approved">Approved</option>
+                    </select>
+                  </label>
 
-                <label className="wide">
-                  Line item
-                  <input
-                    value={editingDraft.invoiceLineItemsText || ""}
-                    onChange={(event) => updateEditingDraft("invoiceLineItemsText", event.target.value)}
-                    placeholder="Completed service"
-                  />
-                </label>
+                  <label className="wide">
+                    Line item
+                    <input
+                      value={editingDraft.invoiceLineItemsText || ""}
+                      onChange={(event) => updateEditingDraft("invoiceLineItemsText", event.target.value)}
+                      placeholder="Completed service"
+                    />
+                  </label>
 
-                <label className="wide">
-                  Invoice wording owner will approve
-                  <textarea
-                    value={editingDraft.invoiceDescription || ""}
-                    onChange={(event) => updateEditingDraft("invoiceDescription", event.target.value)}
-                    placeholder="Invoice wording should be prepared here..."
-                  />
-                </label>
+                  <label className="wide">
+                    Invoice wording owner will approve
+                    <textarea
+                      value={editingDraft.invoiceDescription || ""}
+                      onChange={(event) => updateEditingDraft("invoiceDescription", event.target.value)}
+                      placeholder="Customer-facing invoice wording..."
+                    />
+                  </label>
 
-                <label className="wide">
-                  Owner note
-                  <textarea
-                    value={editingDraft.ownerNote || ""}
-                    onChange={(event) => updateEditingDraft("ownerNote", event.target.value)}
-                    placeholder="Optional internal note..."
-                  />
-                </label>
+                  <label className="wide">
+                    Owner note
+                    <textarea
+                      value={editingDraft.ownerNote || ""}
+                      onChange={(event) => updateEditingDraft("ownerNote", event.target.value)}
+                      placeholder="Optional internal note..."
+                    />
+                  </label>
+                </section>
               </div>
             ) : (
               <div>
