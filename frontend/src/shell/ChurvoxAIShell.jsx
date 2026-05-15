@@ -4040,7 +4040,7 @@ function SmartHubBoxModal({
     return {
       label: "Owner approval",
       title: "AI prepared this action",
-      body: "Review what Churvox prepared, adjust only if needed, then approve here.",
+      body: "Review what Churvox prepared, adjust only if needed, then approve here. Approval rules keep sensitive actions owner-controlled.",
     };
   }
 
@@ -4503,7 +4503,7 @@ function SmartHubBoxModal({
                 <p>
                   {editingNeedsInvoiceDraft()
                     ? "This is the invoice draft the owner is approving. Check client, amount, due date, line item and wording."
-                    : "Review what Churvox prepared, adjust only if needed, then approve here."}
+                    : "Review what Churvox prepared, adjust only if needed, then approve here. Approval rules keep sensitive actions owner-controlled."}
                 </p>
               </div>
               <button type="button" onClick={() => setEditingSelection(null)}>Back</button>
@@ -5481,6 +5481,222 @@ function DecisionLedgerPanel({ recent = [], backend = [], session = [], onClear,
   );
 }
 
+
+
+
+
+const CX_AI_RULES_STORAGE_KEY = "churvox_ai_approval_rules_v1";
+
+const DEFAULT_AI_APPROVAL_RULES = {
+  prepare: {
+    assignments: true,
+    invoices: true,
+    quoteFollowups: true,
+    paymentReminders: true,
+    clientCleanup: true,
+    proofToPaid: true,
+  },
+  requireApproval: {
+    assignWorkers: true,
+    sendMessages: true,
+    createInvoices: true,
+    changePricing: true,
+    syncAccounting: true,
+    deleteRecords: true,
+  },
+  locked: {
+    chargeCustomers: true,
+    changePayroll: true,
+    legalTaxDecisions: true,
+    exposeOwnerDataToWorkers: true,
+    exposePricingToWorkers: true,
+  },
+};
+
+function readAiApprovalRules() {
+  try {
+    const raw = localStorage.getItem(CX_AI_RULES_STORAGE_KEY);
+    if (!raw) return DEFAULT_AI_APPROVAL_RULES;
+    const parsed = JSON.parse(raw);
+
+    return {
+      prepare: { ...DEFAULT_AI_APPROVAL_RULES.prepare, ...(parsed.prepare || {}) },
+      requireApproval: { ...DEFAULT_AI_APPROVAL_RULES.requireApproval, ...(parsed.requireApproval || {}) },
+      locked: { ...DEFAULT_AI_APPROVAL_RULES.locked, ...(parsed.locked || {}) },
+    };
+  } catch {
+    return DEFAULT_AI_APPROVAL_RULES;
+  }
+}
+
+function saveAiApprovalRulesLocal(rules) {
+  try {
+    localStorage.setItem(CX_AI_RULES_STORAGE_KEY, JSON.stringify(rules));
+  } catch {
+    // local storage may be unavailable
+  }
+}
+
+function ApprovalRuleToggle({ active, title, body, locked, onToggle }) {
+  return (
+    <button
+      type="button"
+      className={`cx-approval-rule-toggle ${active ? "active" : ""} ${locked ? "locked" : ""}`}
+      onClick={locked ? undefined : onToggle}
+      aria-pressed={active}
+    >
+      <span>{locked ? "Locked" : active ? "On" : "Off"}</span>
+      <strong>{title}</strong>
+      <small>{body}</small>
+    </button>
+  );
+}
+
+function AiApprovalRulesPanel() {
+  const [rules, setRules] = useState(() => readAiApprovalRules());
+  const [status, setStatus] = useState("");
+
+  const prepareRules = [
+    ["assignments", "Prepare worker assignments", "Churvox can recommend the best worker using role, region, workload and job fit."],
+    ["invoices", "Prepare invoice drafts", "Churvox can draft invoices from completed jobs, notes, proof photos and pricing context."],
+    ["quoteFollowups", "Prepare quote follow-ups", "Churvox can write follow-up drafts for stale or open quotes."],
+    ["paymentReminders", "Prepare payment reminders", "Churvox can draft polite reminders for unpaid or overdue invoices."],
+    ["clientCleanup", "Prepare client cleanup", "Churvox can find missing fields, duplicates and CSV cleanup actions."],
+    ["proofToPaid", "Prepare proof-to-paid", "Churvox can turn worker notes/photos into invoice-ready owner approval packages."],
+  ];
+
+  const approvalRules = [
+    ["assignWorkers", "Assign or reassign workers", "Owner approval is required before dispatch changes are saved."],
+    ["sendMessages", "Send SMS/email/customer messages", "Owner approval is required before anything customer-facing is sent."],
+    ["createInvoices", "Create or send invoices", "Owner approval is required before invoices are created, sent or marked ready."],
+    ["changePricing", "Change pricing or totals", "Owner approval is required before prices, totals or line items change."],
+    ["syncAccounting", "Sync MYOB/accounting changes", "Owner approval is required before accounting sync actions happen."],
+    ["deleteRecords", "Delete business records", "Owner approval is required before records are removed."],
+  ];
+
+  const lockedRules = [
+    ["chargeCustomers", "Charge customers automatically", "Churvox must never charge customers without explicit owner action."],
+    ["changePayroll", "Change payroll blindly", "Payroll changes stay locked behind owner/payroll review."],
+    ["legalTaxDecisions", "Make legal/tax decisions", "Churvox can help organise data, but not make legal or tax decisions."],
+    ["exposeOwnerDataToWorkers", "Show owner-only data to workers", "Workers stay in My Run and do not see owner financial/admin areas."],
+    ["exposePricingToWorkers", "Show pricing to workers", "Worker job flows do not expose pricing, invoices, quotes or billing."],
+  ];
+
+  function toggle(section, key) {
+    setStatus("");
+    setRules((current) => {
+      const next = {
+        ...current,
+        [section]: {
+          ...current[section],
+          [key]: !current[section][key],
+        },
+      };
+      saveAiApprovalRulesLocal(next);
+      return next;
+    });
+  }
+
+  async function saveRules() {
+    setStatus("Saving AI approval rules...");
+    saveAiApprovalRulesLocal(rules);
+
+    const payload = {
+      ai_approval_rules: rules,
+      source: "operator_os_settings",
+    };
+
+    const endpoints = [
+      "/settings/ai-approval-rules",
+      "/business/ai-approval-rules",
+      "/ai/settings/approval-rules",
+      "/settings/ai-guardrails",
+    ];
+
+    let lastError = null;
+
+    for (const endpoint of endpoints) {
+      try {
+        const result = await apiPost(endpoint, payload);
+        setStatus(result?.message || "AI approval rules saved.");
+        notifyChurvoxLiveRefresh("AI approval rules saved");
+        return;
+      } catch (err) {
+        lastError = err;
+      }
+    }
+
+    setStatus(lastError?.message ? `Saved locally. Backend did not accept yet: ${lastError.message}` : "Saved locally.");
+  }
+
+  return (
+    <section className="cx-ai-rules-panel">
+      <header>
+        <div>
+          <span>AI approval rules</span>
+          <h2>Teach Churvox what it can prepare and what needs approval.</h2>
+          <p>
+            This is the control layer. Churvox can do the prep work, but owner-sensitive actions stay locked
+            behind review, edit and approval.
+          </p>
+        </div>
+
+        <button type="button" onClick={saveRules}>
+          Save rules
+        </button>
+      </header>
+
+      <section className="cx-ai-rules-grid">
+        <article>
+          <span>Churvox may prepare</span>
+          <div>
+            {prepareRules.map(([key, title, body]) => (
+              <ApprovalRuleToggle
+                key={key}
+                active={rules.prepare[key]}
+                title={title}
+                body={body}
+                onToggle={() => toggle("prepare", key)}
+              />
+            ))}
+          </div>
+        </article>
+
+        <article className="approval">
+          <span>Always needs owner approval</span>
+          <div>
+            {approvalRules.map(([key, title, body]) => (
+              <ApprovalRuleToggle
+                key={key}
+                active={rules.requireApproval[key]}
+                title={title}
+                body={body}
+                onToggle={() => toggle("requireApproval", key)}
+              />
+            ))}
+          </div>
+        </article>
+
+        <article className="locked">
+          <span>Locked safety rules</span>
+          <div>
+            {lockedRules.map(([key, title, body]) => (
+              <ApprovalRuleToggle
+                key={key}
+                active={rules.locked[key]}
+                title={title}
+                body={body}
+                locked
+              />
+            ))}
+          </div>
+        </article>
+      </section>
+
+      {status ? <p className="cx-ai-rules-status">{status}</p> : null}
+    </section>
+  );
+}
 
 
 
@@ -7852,6 +8068,10 @@ function Workspace({ page, setPage, data }) {
           onOpenInvoices={() => switchPage("invoices")}
           onOpenClients={() => openQuickAction("clients")}
         />
+      ) : null}
+
+      {page === "settings" ? (
+        <AiApprovalRulesPanel />
       ) : null}
 
       {page === "dashboard" && hubNotice ? (
