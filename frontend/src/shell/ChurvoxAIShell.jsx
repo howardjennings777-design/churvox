@@ -4987,6 +4987,317 @@ function workspaceOperatorConfig(page, counts = {}) {
 }
 
 
+
+const CHURVOX_PLAN_FALLBACKS = [
+  {
+    id: "solo",
+    name: "Solo",
+    price: "$30",
+    period: "/ month",
+    badge: "Owner operator",
+    clientCap: "Up to 20 clients",
+    description: "For one operator who wants Churvox to prepare the admin without team workflow.",
+    aiRole: "Churvox prepares job/admin context and keeps the owner guided.",
+    includes: [
+      "Smart Hub command view",
+      "Clients, jobs, quotes and invoices",
+      "AI prepared next actions",
+      "Owner approval-first workflow",
+      "Mobile-ready workspace",
+    ],
+    limits: [
+      "No team workflow",
+      "No MYOB sync",
+    ],
+    cta: "Choose Solo",
+  },
+  {
+    id: "team",
+    name: "Team",
+    price: "$70",
+    period: "/ month",
+    badge: "Small crew",
+    clientCap: "Up to 30 clients",
+    description: "For small teams that need workers tied into the same Churvox machine.",
+    aiRole: "Churvox prepares worker runs and owner assignment decisions.",
+    includes: [
+      "Everything in Solo",
+      "Worker My Run",
+      "Team and role workflow",
+      "Job assignment approval",
+      "Proof notes and photos feeding owner approval",
+    ],
+    limits: [
+      "No MYOB sync",
+    ],
+    cta: "Choose Team",
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    price: "$110",
+    period: "/ month",
+    badge: "AI Operator",
+    clientCap: "Up to 40 clients",
+    description: "For growing businesses that want Churvox preparing invoices, follow-ups and dispatch decisions.",
+    aiRole: "Churvox prepares specific invoice, quote, cashflow and dispatch actions for approval.",
+    includes: [
+      "Everything in Team",
+      "AI Operator approval queue",
+      "Proof-to-paid workflow",
+      "Advanced prepared actions",
+      "Optional MYOB add-on",
+    ],
+    limits: [],
+    cta: "Choose Pro",
+    featured: true,
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    price: "$240",
+    period: "/ month",
+    badge: "Scale",
+    clientCap: "Up to 50 clients",
+    description: "For larger teams needing stronger controls, more capacity and included MYOB workflow.",
+    aiRole: "Churvox acts as the command layer across admin, workers, proof, invoices and sync.",
+    includes: [
+      "Everything in Pro",
+      "MYOB included",
+      "Larger team capacity",
+      "Advanced controls",
+      "Extra 50-user blocks available",
+    ],
+    limits: [],
+    cta: "Choose Enterprise",
+  },
+];
+
+function normalisePlanCatalog(payload) {
+  const raw = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload?.plans)
+      ? payload.plans
+      : Array.isArray(payload?.items)
+        ? payload.items
+        : Array.isArray(payload?.data)
+          ? payload.data
+          : [];
+
+  return raw
+    .map((plan) => {
+      const id = String(plan.id || plan.key || plan.slug || plan.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "_");
+      const fallback = CHURVOX_PLAN_FALLBACKS.find((item) => item.id === id || item.name.toLowerCase() === String(plan.name || "").toLowerCase()) || {};
+
+      const amount = plan.price || plan.display_price || plan.monthly_price || plan.amount || plan.amount_display || fallback.price;
+      const price = typeof amount === "number"
+        ? new Intl.NumberFormat("en-NZ", { style: "currency", currency: "NZD", maximumFractionDigits: 0 }).format(amount)
+        : String(amount || fallback.price || "");
+
+      return {
+        ...fallback,
+        ...plan,
+        id: id || fallback.id || String(plan.name || "plan").toLowerCase(),
+        name: plan.name || fallback.name || "Plan",
+        price,
+        period: plan.period || plan.interval_label || fallback.period || "/ month",
+        badge: plan.badge || plan.label || fallback.badge || "Plan",
+        clientCap: plan.clientCap || plan.client_cap_label || plan.client_limit_label || fallback.clientCap || "",
+        description: plan.description || fallback.description || "",
+        aiRole: plan.aiRole || plan.ai_role || fallback.aiRole || "",
+        includes: Array.isArray(plan.includes) ? plan.includes : Array.isArray(plan.features) ? plan.features : fallback.includes || [],
+        limits: Array.isArray(plan.limits) ? plan.limits : Array.isArray(plan.not_included) ? plan.not_included : fallback.limits || [],
+        cta: plan.cta || fallback.cta || `Choose ${plan.name || fallback.name || "plan"}`,
+        featured: Boolean(plan.featured || plan.recommended || fallback.featured),
+      };
+    })
+    .filter((plan) => plan.name && plan.price);
+}
+
+function useChurvoxPlanCatalog(enabled) {
+  const [state, setState] = useState({
+    loading: false,
+    source: "fallback",
+    plans: CHURVOX_PLAN_FALLBACKS,
+    error: "",
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPlans() {
+      if (!enabled || !readToken()) return;
+
+      setState((current) => ({ ...current, loading: true, error: "" }));
+
+      const endpoints = [
+        "/billing/plans",
+        "/plans",
+        "/billing/prices",
+        "/subscriptions/plans",
+      ];
+
+      let lastError = null;
+
+      for (const endpoint of endpoints) {
+        try {
+          const payload = await apiGet(endpoint);
+          const plans = normalisePlanCatalog(payload);
+
+          if (plans.length) {
+            if (!cancelled) {
+              setState({
+                loading: false,
+                source: endpoint,
+                plans,
+                error: "",
+              });
+            }
+            return;
+          }
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      if (!cancelled) {
+        setState({
+          loading: false,
+          source: "fallback",
+          plans: CHURVOX_PLAN_FALLBACKS,
+          error: lastError?.message || "",
+        });
+      }
+    }
+
+    loadPlans();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled]);
+
+  return state;
+}
+
+function ChurvoxPlansWorkspace({ planCatalog, onChoosePlan, onOpenSettings }) {
+  const plans = Array.isArray(planCatalog?.plans) && planCatalog.plans.length
+    ? planCatalog.plans
+    : CHURVOX_PLAN_FALLBACKS;
+
+  return (
+    <section className="cx-plans-machine">
+      <header className="cx-plans-machine-hero">
+        <div>
+          <span>Plan control</span>
+          <h2>Choose how much of the business Churvox can run.</h2>
+          <p>
+            Plans should not feel like a generic pricing table. Each plan controls how far the AI Operator
+            can prepare work, tie in workers, and support owner-approved admin.
+          </p>
+        </div>
+
+        <aside>
+          <span>Pricing source</span>
+          <strong>{planCatalog?.source === "fallback" ? "Fallback" : "Live"}</strong>
+          <p>
+            {planCatalog?.loading
+              ? "Checking live billing plans..."
+              : planCatalog?.source === "fallback"
+                ? "Using local fallback pricing until backend billing plans return data."
+                : `Loaded from ${planCatalog.source}`}
+          </p>
+        </aside>
+      </header>
+
+      <section className="cx-plans-ai-rule">
+        <article>
+          <span>What Churvox does</span>
+          <strong>AI prepares the work.</strong>
+          <p>Jobs, quotes, invoices, proof, messages and worker actions become prepared decisions.</p>
+        </article>
+        <article>
+          <span>What the owner does</span>
+          <strong>Review, edit, approve.</strong>
+          <p>No risky sends, pricing changes, accounting syncs or worker assignments happen blindly.</p>
+        </article>
+        <article>
+          <span>What workers do</span>
+          <strong>Complete work and send proof.</strong>
+          <p>Worker notes/photos feed the proof-to-paid flow so admin is prepared properly.</p>
+        </article>
+      </section>
+
+      <section className="cx-plans-grid">
+        {plans.map((plan) => (
+          <article className={`cx-plan-card ${plan.featured ? "featured" : ""}`} key={plan.id || plan.name}>
+            {plan.featured ? <b className="cx-plan-featured">Recommended</b> : null}
+
+            <div className="cx-plan-card-head">
+              <span>{plan.badge}</span>
+              <h3>{plan.name}</h3>
+              <p>{plan.description}</p>
+            </div>
+
+            <div className="cx-plan-price">
+              <strong>{plan.price}</strong>
+              <small>{plan.period}</small>
+            </div>
+
+            <div className="cx-plan-ai-role">
+              <span>AI role</span>
+              <p>{plan.aiRole}</p>
+            </div>
+
+            <div className="cx-plan-cap">
+              <span>Capacity</span>
+              <strong>{plan.clientCap}</strong>
+            </div>
+
+            <section className="cx-plan-includes">
+              <span>Included</span>
+              <ul>
+                {(plan.includes || []).map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </section>
+
+            {plan.limits?.length ? (
+              <section className="cx-plan-limits">
+                <span>Not included</span>
+                <ul>
+                  {plan.limits.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+
+            <button type="button" onClick={() => onChoosePlan(plan)}>
+              {plan.cta}
+            </button>
+          </article>
+        ))}
+      </section>
+
+      <footer className="cx-plans-machine-footer">
+        <div>
+          <span>Owner safety</span>
+          <strong>Plan changes should unlock workflow, not confuse the owner.</strong>
+          <p>
+            The owner should always understand what Churvox can prepare, what still needs approval,
+            and which integrations are available.
+          </p>
+        </div>
+        <button type="button" onClick={onOpenSettings}>Review business guardrails</button>
+      </footer>
+    </section>
+  );
+}
+
+
+
 function TeachChurvoxPanel({
   setupChecks = [],
   setupScore = 0,
@@ -5156,6 +5467,7 @@ function Workspace({ page, setPage, data }) {
   const [hubNotice, setHubNotice] = useState(null);
   const [setupProfile, setSetupProfile] = useState(() => readChurvoxSetupProfile());
   const [setupSaved, setSetupSaved] = useState("");
+  const planCatalog = useChurvoxPlanCatalog(page === "plans");
   const workerMode = isWorkerSession();
 
   const meta = {
@@ -5850,7 +6162,9 @@ function Workspace({ page, setPage, data }) {
     }) || hubBoxes[0];
 
 
-  const commandSections = page === "dashboard"
+  const commandSections = page === "plans"
+    ? []
+    : page === "dashboard"
     ? hubFocus === "messages"
       ? [["Messages ready", "quotes", preparedMessageRows]]
       : hubFocus === "fix"
