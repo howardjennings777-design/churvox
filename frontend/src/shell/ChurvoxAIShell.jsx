@@ -2921,7 +2921,6 @@ function SmartHubBoxModal({
             <p>{intro}</p>
           </div>
           <div className="cx-smart-modal-header-actions">
-            <button type="button" onClick={() => onResetBox(box)}>Reset this box</button>
             <button type="button" aria-label="Close Smart Hub pop-up" onClick={onClose}>×</button>
           </div>
         </header>
@@ -2983,47 +2982,27 @@ function SmartHubBoxModal({
                 </div>
 
                 <aside>
-                  <strong>Why AI found this</strong>
-                  <p>{reasonFor(row)}</p>
+                  <section className="cx-ai-prepared-brief">
+                    <span>Prepared action</span>
+                    <h4>{primaryActionLabel(row)}</h4>
+                    <p>{reasonFor(row)}</p>
+                    <small>Review the prepared details in this Smart Hub pop-up. No page jump needed.</small>
+                  </section>
 
-                  <SmartHubActionControl
-                    boxKey={box.key}
-                    row={row}
-                    draft={controlDraft}
-                    onChange={(key, value) => updateControlDraft(controlKey, key, value)}
-                    team={team}
-                  />
-
-                  <div>
-                    <button type="button" onClick={() => startEdit(selection, controlDraft)}>Review / approve</button>
+                  <div className="cx-ai-prepared-actions">
                     <button
                       type="button"
                       className="approve"
-                      onClick={() => onApprove(selection, approvalDraftFromControl(row, controlDraft))}
+                      onClick={() => startEdit(selection, controlDraft)}
                     >
-                      {isApproved ? "Approved" : primaryActionLabel(row)}
+                      Review / approve
                     </button>
+                    <button type="button" onClick={() => onSnooze(box, item)}>Later</button>
                     {canResolveBox() ? (
                       <button type="button" className="resolve" onClick={() => onResolve(box, item)}>
                         {resolveLabel()}
                       </button>
                     ) : null}
-                    {isMessageBox() ? (
-                      <>
-                        <button type="button" className="message-action" onClick={() => onCopyMessage(item, messageArea(item))}>
-                          Copy message
-                        </button>
-                        <button type="button" className="message-action" onClick={() => onMarkReady(item)}>
-                          Mark ready
-                        </button>
-                        <button type="button" className="message-action" onClick={() => onMarkSent(item)}>
-                          Mark sent
-                        </button>
-                      </>
-                    ) : null}
-                    <button type="button" onClick={() => onSnooze(box, item)}>Snooze</button>
-                    <button type="button" onClick={() => onDismiss(box, item)}>Dismiss</button>
-                    <button type="button" onClick={() => onOpenFull(workspaceForBox)}>{fullRecordLabel()}</button>
                   </div>
                 </aside>
               </article>

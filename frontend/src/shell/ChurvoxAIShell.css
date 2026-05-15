@@ -8298,3 +8298,87 @@ button.primary,
     padding: 16px !important;
   }
 }
+
+/* ===== Clean Smart Hub list cards: one AI operator, no generic form clutter ===== */
+.cx-ai-prepared-brief {
+  display: grid !important;
+  gap: 8px !important;
+  padding: 18px !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(37, 99, 235, 0.12) !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(37,99,235,0.12), transparent 34%),
+    rgba(255,255,255,0.86) !important;
+}
+
+.cx-ai-prepared-brief span {
+  color: #2563eb !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+}
+
+.cx-ai-prepared-brief h4 {
+  margin: 0 !important;
+  color: #102033 !important;
+  font-size: clamp(22px, 2.3vw, 34px) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.055em !important;
+  font-weight: 950 !important;
+}
+
+.cx-ai-prepared-brief p {
+  margin: 0 !important;
+  color: #24415f !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  font-weight: 820 !important;
+}
+
+.cx-ai-prepared-brief small {
+  display: inline-flex !important;
+  width: fit-content !important;
+  border-radius: 999px !important;
+  background: rgba(37, 99, 235, 0.08) !important;
+  color: #1d4ed8 !important;
+  padding: 7px 10px !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+}
+
+.cx-ai-prepared-actions {
+  margin-top: auto !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  padding-top: 14px !important;
+  border-top: 1px solid rgba(37, 99, 235, 0.10) !important;
+}
+
+.cx-ai-prepared-actions button {
+  min-height: 42px !important;
+  border-radius: 999px !important;
+  padding: 0 16px !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+}
+
+.cx-ai-prepared-actions .approve {
+  min-height: 48px !important;
+  padding: 0 22px !important;
+  background: linear-gradient(135deg, #102033, #2563eb) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.24) !important;
+}
+
+.cx-smart-modal-item aside > .cx-ai-prepared-actions {
+  border-top: 1px solid rgba(37, 99, 235, 0.10) !important;
+}
+
+.cx-smart-modal-header-actions button[aria-label] {
+  width: 46px !important;
+  height: 46px !important;
+  min-height: 46px !important;
+}
