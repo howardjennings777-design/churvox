@@ -3537,3 +3537,20 @@ button {
   background: rgba(37,99,235,0.12);
 }
 
+
+/* ===== Smart Hub modal focus polish ===== */
+.cx-smart-modal button:focus-visible,
+.cx-smart-modal input:focus-visible,
+.cx-smart-modal textarea:focus-visible {
+  outline: 3px solid rgba(37,99,235,0.28);
+  outline-offset: 2px;
+}
+
+.cx-smart-modal-backdrop {
+  overscroll-behavior: contain;
+}
+
+.cx-smart-modal {
+  overscroll-behavior: contain;
+}
+

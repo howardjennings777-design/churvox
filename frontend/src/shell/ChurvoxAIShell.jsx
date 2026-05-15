@@ -1106,7 +1106,7 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
             <h2>{draft.title}</h2>
             <p>{row.detail}</p>
           </div>
-          <button type="button" onClick={onClose}>×</button>
+          <button type="button" aria-label="Close Smart Hub pop-up" onClick={onClose}>×</button>
         </header>
 
         <section className="cx-command-modal-grid">
@@ -1220,6 +1220,31 @@ function SmartHubBoxModal({
     ownerNote: "",
     customerMessage: "",
   });
+
+  useEffect(() => {
+    if (!box) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleKeyDown(event) {
+      if (event.key !== "Escape") return;
+
+      if (editingSelection) {
+        setEditingSelection(null);
+        return;
+      }
+
+      onClose();
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [box, editingSelection, onClose]);
 
   if (!box) return null;
 
@@ -1363,7 +1388,13 @@ function SmartHubBoxModal({
 
   return (
     <div className="cx-smart-modal-backdrop" onClick={onClose}>
-      <section className="cx-smart-modal" onClick={(event) => event.stopPropagation()}>
+      <section
+        className="cx-smart-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={box.title}
+        onClick={(event) => event.stopPropagation()}
+      >
         <header>
           <div>
             <span>Smart Hub</span>
