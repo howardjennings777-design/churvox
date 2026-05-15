@@ -102,6 +102,44 @@ function clearApprovalLogStorage() {
 
 
 
+
+const CHURVOX_SETUP_PROFILE_KEY = "churvox_setup_profile";
+
+const DEFAULT_SETUP_PROFILE = {
+  businessName: "",
+  industry: "",
+  region: "",
+  serviceArea: "",
+  invoiceEmail: "",
+  invoicePrefix: "INV",
+  quotePrefix: "Q",
+  ownerApprovalMode: "approval_first",
+};
+
+function readChurvoxSetupProfile() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(CHURVOX_SETUP_PROFILE_KEY) || "{}");
+    return {
+      ...DEFAULT_SETUP_PROFILE,
+      ...(parsed && typeof parsed === "object" ? parsed : {}),
+    };
+  } catch {
+    return { ...DEFAULT_SETUP_PROFILE };
+  }
+}
+
+function saveChurvoxSetupProfile(profile) {
+  try {
+    localStorage.setItem(CHURVOX_SETUP_PROFILE_KEY, JSON.stringify({
+      ...DEFAULT_SETUP_PROFILE,
+      ...(profile || {}),
+    }));
+  } catch {
+    // ignore
+  }
+}
+
+
 function hasSavedLogin() {
   try {
     return Boolean(
@@ -940,6 +978,21 @@ function Dashboard({ setPage, data }) {
         </section>
       ) : null}
 
+      {page === "settings" ? (
+        <SetupGuide
+          profile={setupProfile}
+          setupChecks={setupChecks}
+          setupScore={setupScore}
+          setupSaved={setupSaved}
+          onChange={updateSetupProfileField}
+          onSave={saveSetupProfileLocal}
+          onOpenClients={() => switchPage("clients")}
+          onOpenTeam={() => switchPage("team")}
+          onOpenJobs={() => switchPage("jobs")}
+          onOpenQuotes={() => switchPage("quotes")}
+        />
+      ) : null}
+
       <section className={`cx-stats ${page === "dashboard" ? "cx-hide-on-smart-hub" : ""}`}>
         <Stat label="Jobs today" value={stats.jobsToday || String(jobs.length)} note="live workspace count" />
         <Stat label="Ready to invoice" value={stats.readyToInvoice || "$0"} note="drafts and follow-ups" />
@@ -982,6 +1035,125 @@ function Dashboard({ setPage, data }) {
   );
 }
 
+
+
+
+function SetupGuide({
+  profile,
+  setupChecks,
+  setupScore,
+  setupSaved,
+  onChange,
+  onSave,
+  onOpenClients,
+  onOpenTeam,
+  onOpenJobs,
+  onOpenQuotes,
+}) {
+  const missing = setupChecks.filter((item) => !item.done);
+
+  return (
+    <section className="cx-setup-guide">
+      <header>
+        <div>
+          <span>Setup Guide</span>
+          <h2>Teach Churvox how your business runs.</h2>
+          <p>These details help AI make better worker, invoice, quote and reminder recommendations.</p>
+        </div>
+        <aside>
+          <strong>{setupScore}%</strong>
+          <small>setup complete</small>
+        </aside>
+      </header>
+
+      <section className="cx-setup-grid">
+        <label>
+          Business name
+          <input value={profile.businessName} onChange={(e) => onChange("businessName", e.target.value)} placeholder="Your business name" />
+        </label>
+
+        <label>
+          Industry / trade
+          <select value={profile.industry} onChange={(e) => onChange("industry", e.target.value)}>
+            <option value="">Choose industry</option>
+            <option value="lawn_care">Lawn Care</option>
+            <option value="landscaping">Landscaping</option>
+            <option value="cleaning">Cleaning</option>
+            <option value="handyman">Handyman</option>
+            <option value="painting">Painting</option>
+            <option value="plumbing">Plumbing</option>
+            <option value="electrical">Electrical</option>
+            <option value="pest_control">Pest Control</option>
+            <option value="gardening">Gardening</option>
+            <option value="property_maintenance">Property Maintenance</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+
+        <label>
+          Main region
+          <input value={profile.region} onChange={(e) => onChange("region", e.target.value)} placeholder="e.g. Wellington" />
+        </label>
+
+        <label>
+          Service area
+          <input value={profile.serviceArea} onChange={(e) => onChange("serviceArea", e.target.value)} placeholder="e.g. Lower Hutt, Porirua, Wellington" />
+        </label>
+
+        <label>
+          Invoice email
+          <input type="email" value={profile.invoiceEmail} onChange={(e) => onChange("invoiceEmail", e.target.value)} placeholder="accounts@business.co.nz" />
+        </label>
+
+        <label>
+          Invoice prefix
+          <input value={profile.invoicePrefix} onChange={(e) => onChange("invoicePrefix", e.target.value)} placeholder="INV" />
+        </label>
+
+        <label>
+          Quote prefix
+          <input value={profile.quotePrefix} onChange={(e) => onChange("quotePrefix", e.target.value)} placeholder="Q" />
+        </label>
+
+        <label>
+          AI approval mode
+          <select value={profile.ownerApprovalMode} onChange={(e) => onChange("ownerApprovalMode", e.target.value)}>
+            <option value="approval_first">Approval-first</option>
+            <option value="draft_only">Draft-only</option>
+          </select>
+        </label>
+      </section>
+
+      <footer>
+        <button type="button" onClick={onSave}>Save setup</button>
+        {setupSaved ? <p>{setupSaved}</p> : null}
+      </footer>
+
+      <section className="cx-setup-checklist">
+        <header>
+          <span>AI readiness checklist</span>
+          <h3>{missing.length ? `${missing.length} setup item${missing.length === 1 ? "" : "s"} left` : "Setup is looking strong"}</h3>
+        </header>
+
+        <div>
+          {setupChecks.map((item) => (
+            <article className={item.done ? "done" : ""} key={item.key}>
+              <b>{item.done ? "✓" : "!"}</b>
+              <div>
+                <strong>{item.title}</strong>
+                <p>{item.body}</p>
+              </div>
+              {item.action === "clients" ? <button type="button" onClick={onOpenClients}>Open clients</button> : null}
+              {item.action === "team" ? <button type="button" onClick={onOpenTeam}>Open team</button> : null}
+              {item.action === "jobs" ? <button type="button" onClick={onOpenJobs}>Open jobs</button> : null}
+              {item.action === "quotes" ? <button type="button" onClick={onOpenQuotes}>Open quotes</button> : null}
+            </article>
+          ))}
+        </div>
+      </section>
+    </section>
+  );
+}
 
 
 const OWNER_COMMAND_LOG_KEY = "churvox_owner_command_log";
@@ -1743,6 +1915,32 @@ function Workspace({ page, setPage, data }) {
 
   const current = meta[page] || meta.dashboard;
 
+  function updateSetupProfileField(key, value) {
+    setSetupProfile((currentProfile) => ({
+      ...currentProfile,
+      [key]: value,
+    }));
+    setSetupSaved("");
+  }
+
+  function saveSetupProfileLocal() {
+    const cleaned = {
+      ...DEFAULT_SETUP_PROFILE,
+      ...setupProfile,
+      businessName: String(setupProfile.businessName || "").trim(),
+      industry: String(setupProfile.industry || "").trim(),
+      region: String(setupProfile.region || "").trim(),
+      serviceArea: String(setupProfile.serviceArea || "").trim(),
+      invoiceEmail: String(setupProfile.invoiceEmail || "").trim(),
+      invoicePrefix: String(setupProfile.invoicePrefix || "INV").trim() || "INV",
+      quotePrefix: String(setupProfile.quotePrefix || "Q").trim() || "Q",
+    };
+
+    setSetupProfile(cleaned);
+    saveChurvoxSetupProfile(cleaned);
+    setSetupSaved("Setup saved on this device.");
+  }
+
   useEffect(() => {
     saveSmartHubItemStatus(hubItemStatus);
   }, [hubItemStatus]);
@@ -1925,24 +2123,24 @@ function Workspace({ page, setPage, data }) {
 
   const crewRows = team.slice(0, 6);
 
-  const setupRows = [
-    clients.length ? null : ["Setup", "Import or add clients", "Clients help AI connect jobs, quotes and invoices.", "Missing info"],
-    team.length ? null : ["Setup", "Add workers", "Workers let AI recommend job assignments.", "Missing info"],
-    jobs.length ? null : ["Setup", "Create first job", "Jobs are the centre of the daily Smart Hub workflow.", "Missing info"],
-    invoices.length ? null : ["Setup", "Set invoice details", "Invoice settings help AI prepare clean drafts.", "Needs owner check"],
-    quotes.length ? null : ["Setup", "Create or import quotes", "Quotes allow AI to prepare follow-ups.", "Needs owner check"],
-    ["Setup", "Review business settings", "Check business details, roles, SMS, MYOB and invoice preferences.", "Review"],
-  ].filter(Boolean).slice(0, 6);
-
-  const setupCompleteChecks = [
-    clients.length > 0,
-    team.length > 0,
-    jobs.length > 0,
-    invoices.length > 0,
-    quotes.length > 0,
+  const setupChecks = [
+    { key: "business", done: Boolean(setupProfile.businessName), title: "Add business name", body: "This keeps quotes, invoices and messages branded.", action: "settings" },
+    { key: "industry", done: Boolean(setupProfile.industry), title: "Choose industry / trade", body: "Trade context helps AI prepare better actions.", action: "settings" },
+    { key: "region", done: Boolean(setupProfile.region && setupProfile.serviceArea), title: "Set region and service area", body: "Location context helps worker matching.", action: "settings" },
+    { key: "invoice", done: Boolean(setupProfile.invoiceEmail && setupProfile.invoicePrefix && setupProfile.quotePrefix), title: "Set invoice and quote details", body: "Invoice and quote details help AI prepare cleaner drafts.", action: "settings" },
+    { key: "clients", done: clients.length > 0, title: "Import or add clients", body: "Clients connect jobs, quotes, invoices and follow-ups.", action: "clients" },
+    { key: "team", done: team.length > 0, title: "Add workers", body: "Workers let AI recommend assignments.", action: "team" },
+    { key: "jobs", done: jobs.length > 0, title: "Create first job", body: "Jobs are the centre of Smart Hub.", action: "jobs" },
+    { key: "quotes", done: quotes.length > 0, title: "Create or import quotes", body: "Quotes let AI prepare follow-ups.", action: "quotes" },
   ];
 
-  const setupScore = Math.round((setupCompleteChecks.filter(Boolean).length / setupCompleteChecks.length) * 100);
+  const setupRows = setupChecks
+    .filter((item) => !item.done)
+    .map((item) => ["Setup", item.title, item.body, item.action === "settings" ? "Missing info" : "Needs owner check"])
+    .slice(0, 6);
+
+  const setupCompleteChecks = setupChecks.map((item) => item.done);
+  const setupScore = Math.round((setupCompleteChecks.filter(Boolean).length / Math.max(setupCompleteChecks.length, 1)) * 100);
 
   const moneyToCollect = collectRows.reduce((sum, invoice) => {
     const raw = invoice?.balance || invoice?.total || invoice?.amount || 0;
