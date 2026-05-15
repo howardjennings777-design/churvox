@@ -882,7 +882,31 @@ function Landing({ authMode, setAuthMode, onLogin }) {
           </div>
         </div>
 
-        <AuthCard authMode={authMode} setAuthMode={setAuthMode} onLogin={onLogin} />
+        <div className="cx-hero-side">
+          <AuthCard authMode={authMode} setAuthMode={setAuthMode} onLogin={onLogin} />
+
+          <section className="cx-public-control-card" aria-label="How Churvox works">
+            <span>Owner-safe AI loop</span>
+            <h3>Churvox prepares the day before you touch the admin.</h3>
+
+            <div>
+              <article>
+                <b>Find</b>
+                <p>Jobs, overdue invoices, quiet quotes and worker gaps are spotted automatically.</p>
+              </article>
+
+              <article>
+                <b>Prepare</b>
+                <p>AI drafts the worker match, invoice, follow-up or reminder for review.</p>
+              </article>
+
+              <article>
+                <b>Approve</b>
+                <p>Nothing important sends or changes until the owner says yes.</p>
+              </article>
+            </div>
+          </section>
+        </div>
       </section>
 
       <section className="cx-operator-preview" id="operator">

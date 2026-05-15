@@ -4267,3 +4267,112 @@ body:has(.cx-public-landing) .ai-action-dock {
   color: #102033;
   background: rgba(37,99,235,0.10);
 }
+
+/* ===== Logo cleanup + public hero side fill ===== */
+.cx-public-landing .cx-logo-link,
+.cx-public-landing .cx-logo {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.cx-public-landing .cx-logo-link {
+  display: inline-flex;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+.cx-public-landing .cx-logo > div:not(.cx-logo-mark) {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+.cx-public-landing .cx-hero-side {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.cx-public-control-card {
+  border: 1px solid rgba(255,255,255,0.72);
+  border-radius: 30px;
+  padding: 20px;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(103,232,249,0.22), transparent 34%),
+    linear-gradient(145deg, rgba(255,255,255,0.64), rgba(239,247,255,0.44));
+  box-shadow:
+    0 22px 58px rgba(16,32,51,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.78);
+  backdrop-filter: blur(20px);
+}
+
+.cx-public-control-card > span {
+  display: block;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cx-public-control-card h3 {
+  margin: 8px 0 16px;
+  color: #102033;
+  font-size: 24px;
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+  font-weight: 950;
+}
+
+.cx-public-control-card div {
+  display: grid;
+  gap: 10px;
+}
+
+.cx-public-control-card article {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.54);
+  border: 1px solid rgba(37,99,235,0.08);
+}
+
+.cx-public-control-card b {
+  display: inline-flex;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 8px 10px;
+  color: white;
+  background: linear-gradient(135deg, #102033, #2563eb);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.cx-public-control-card p {
+  margin: 0;
+  color: #526b82;
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+@media (max-width: 980px) {
+  .cx-public-landing .cx-hero-side {
+    gap: 14px;
+  }
+}
+
+@media (max-width: 560px) {
+  .cx-public-control-card article {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-public-control-card b {
+    width: fit-content;
+  }
+}
