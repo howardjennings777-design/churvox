@@ -5442,6 +5442,263 @@ function workspaceMachineEmptyCopy(page) {
 
 
 
+
+function cxProofPhotoCount(item = {}) {
+  for (const key of ["photos", "worker_photos", "proof_photos", "job_photos", "images"]) {
+    if (Array.isArray(item[key])) return item[key].length;
+  }
+  const raw = Number(item.photo_count || item.photos_count || item.proof_count || 0);
+  return Number.isFinite(raw) ? raw : 0;
+}
+
+function cxProofNote(item = {}) {
+  return textValue(item.completion_notes, item.worker_notes, item.job_notes, item.notes, item.description, item.message);
+}
+
+function cxProofClient(item = {}) {
+  return textValue(item.client_name, item.customer_name, item.client?.name, item.customer?.name, item.name, "Client");
+}
+
+function cxProofTitle(item = {}, fallback = "Completed work") {
+  return textValue(item.title, item.job_title, item.name, item.service_type, fallback);
+}
+
+function cxProofAddress(item = {}) {
+  return textValue(item.address, item.job_address, item.service_address, item.location);
+}
+
+function cxProofStatus(item = {}) {
+  return String(textValue(item.status, item.job_status, item.workflow_status, item.state, item.invoice_status, "Ready")).toLowerCase();
+}
+
+function buildProofToPaidPackages({ jobs = [], invoices = [] } = {}) {
+  const invoiceJobIds = new Set(
+    invoices
+      .map((invoice) => String(invoice.job_id || invoice.source_job_id || invoice.ai_source_job_id || "").trim())
+      .filter(Boolean)
+  );
+
+  const completedJobs = jobs.filter((job) => {
+    const status = cxProofStatus(job);
+    return status.includes("complete") || status.includes("done") || job.completed === true || Boolean(job.completed_at);
+  });
+
+  const completedPackages = completedJobs.map((job, index) => {
+    const id = String(job.id || job._id || job.job_id || "").trim();
+    const title = cxProofTitle(job, `Completed job ${index + 1}`);
+    const client = cxProofClient(job);
+    const address = cxProofAddress(job);
+    const photos = cxProofPhotoCount(job);
+    const note = cxProofNote(job);
+    const amount = cxInvoiceAmount(job);
+    const invoiceDescription = cxInvoiceDescription(job, note || title);
+    const alreadyInvoiced = id && invoiceJobIds.has(id);
+
+    return {
+      kind: "completed_job",
+      source_type: "completed_job",
+      source_id: id,
+      id: id || `completed-${index}`,
+      title: `Proof-to-paid for ${client}`,
+      jobTitle: title,
+      client,
+      address,
+      photos,
+      note,
+      amount,
+      invoiceDescription,
+      status: alreadyInvoiced ? "Invoice linked" : amount ? "Ready for invoice draft" : "Needs amount",
+      missing: [
+        photos ? "" : "proof photo",
+        note ? "" : "completion note",
+        amount ? "" : "invoice amount",
+      ].filter(Boolean),
+      raw: job,
+    };
+  });
+
+  const draftPackages = invoices
+    .filter((invoice) => /draft|ready|pending/i.test(String(invoice.status || invoice.invoice_status || invoice.payment_status || "")))
+    .map((invoice, index) => {
+      const id = String(invoice.id || invoice._id || invoice.invoice_id || "").trim();
+      const client = cxProofClient(invoice);
+      const amount = cxInvoiceAmount(invoice);
+      const invoiceDescription = cxInvoiceDescription(invoice, invoice.description || invoice.invoice_description || "Draft invoice ready for owner review.");
+
+      return {
+        kind: "invoice_draft",
+        source_type: "invoice",
+        source_id: id,
+        id: id || `invoice-${index}`,
+        title: `Review invoice draft for ${client}`,
+        jobTitle: textValue(invoice.title, invoice.invoice_number, invoice.number, "Draft invoice"),
+        client,
+        address: cxProofAddress(invoice),
+        photos: cxProofPhotoCount(invoice),
+        note: cxProofNote(invoice),
+        amount,
+        invoiceDescription,
+        status: textValue(invoice.status, invoice.invoice_status, invoice.payment_status, "Draft"),
+        missing: [amount ? "" : "invoice amount"].filter(Boolean),
+        raw: invoice,
+      };
+    });
+
+  return [...completedPackages, ...draftPackages].slice(0, 12);
+}
+
+function ProofToPaidWorkspace({ jobs = [], invoices = [], onOpenRecord, onApproveProof }) {
+  const packages = buildProofToPaidPackages({ jobs, invoices });
+  const readyCount = packages.filter((item) => !item.missing.length).length;
+  const needsInputCount = packages.filter((item) => item.missing.length).length;
+
+  function reviewPackage(item) {
+    onOpenRecord?.({
+      item: {
+        ...item.raw,
+        ...item,
+        title: item.title,
+        body: item.invoiceDescription,
+        message: item.invoiceDescription,
+        source_type: item.source_type,
+        source_id: item.source_id,
+      },
+      page: "proof",
+      group: "Invoice",
+      label: item.title,
+      sourceType: item.source_type,
+      sourceId: item.source_id,
+      recommendation: `Churvox prepared this proof-to-paid package for ${item.client}. Review proof, edit invoice wording, then approve.`,
+    });
+  }
+
+  function approvePackage(item) {
+    onApproveProof?.({
+      item: {
+        ...item.raw,
+        ...item,
+        title: item.title,
+        body: item.invoiceDescription,
+        source_type: item.source_type,
+        source_id: item.source_id,
+      },
+      page: "proof",
+      group: "Invoice",
+      label: item.title,
+      sourceType: item.source_type,
+      sourceId: item.source_id,
+    }, {
+      title: item.title,
+      detail: item.invoiceDescription,
+      invoiceClientName: item.client,
+      invoiceAmount: item.amount,
+      invoiceDescription: item.invoiceDescription,
+      invoiceLineItemsText: item.jobTitle,
+      invoiceStatus: "draft",
+      ownerNote: "",
+    });
+  }
+
+  return (
+    <section className="cx-proof-machine">
+      <header className="cx-proof-machine-hero">
+        <div>
+          <span>Proof-to-Paid</span>
+          <h2>Worker proof becomes owner-approved invoice admin.</h2>
+          <p>
+            Churvox checks completed jobs, worker notes, proof photos and invoice data. It prepares the invoice package,
+            then the owner reviews, edits and approves without jumping pages.
+          </p>
+        </div>
+
+        <aside>
+          <span>Ready</span>
+          <strong>{readyCount}</strong>
+          <p>{needsInputCount ? `${needsInputCount} need owner input before approval.` : "Proof packages are ready for owner review."}</p>
+        </aside>
+      </header>
+
+      <section className="cx-proof-flow">
+        <article>
+          <b>1</b>
+          <span>Worker completes</span>
+          <p>Worker adds note, photos and completion status from My Run.</p>
+        </article>
+        <article>
+          <b>2</b>
+          <span>Churvox prepares</span>
+          <p>AI creates proof summary, invoice wording and owner approval context.</p>
+        </article>
+        <article>
+          <b>3</b>
+          <span>Owner approves</span>
+          <p>Owner checks amount and wording, then approves the draft invoice.</p>
+        </article>
+      </section>
+
+      <section className="cx-proof-package-grid">
+        {packages.length ? packages.map((item) => (
+          <article className={`cx-proof-package ${item.missing.length ? "needs-input" : "ready"}`} key={`${item.kind}-${item.id}-${item.title}`}>
+            <div className="cx-proof-package-head">
+              <span>{item.kind === "invoice_draft" ? "Invoice draft" : "Completed job"}</span>
+              <h3>{item.title}</h3>
+              <p>{item.jobTitle}{item.address ? ` · ${item.address}` : ""}</p>
+            </div>
+
+            <section className="cx-proof-checks">
+              <article>
+                <span>Proof</span>
+                <strong>{item.photos} photo{item.photos === 1 ? "" : "s"}</strong>
+              </article>
+              <article>
+                <span>Note</span>
+                <strong>{item.note ? "Found" : "Missing"}</strong>
+              </article>
+              <article>
+                <span>Amount</span>
+                <strong>{item.amount ? `$${item.amount}` : "Needs input"}</strong>
+              </article>
+            </section>
+
+            <section className="cx-proof-prepared">
+              <span>Churvox prepared</span>
+              <p>{item.invoiceDescription}</p>
+            </section>
+
+            {item.missing.length ? (
+              <div className="cx-proof-missing">
+                <b>Needs owner input</b>
+                <span>{item.missing.join(" · ")}</span>
+              </div>
+            ) : (
+              <div className="cx-proof-ready">
+                <b>Ready for approval</b>
+                <span>Owner can approve the draft invoice package.</span>
+              </div>
+            )}
+
+            <footer>
+              <button type="button" onClick={() => reviewPackage(item)}>
+                Review / edit
+              </button>
+              <button type="button" className="approve" onClick={() => approvePackage(item)}>
+                Approve draft
+              </button>
+            </footer>
+          </article>
+        )) : (
+          <EmptyState
+            title="No proof-to-paid packages yet."
+            body="When workers complete jobs with notes or photos, Churvox will prepare invoice-ready proof packages here."
+          />
+        )}
+      </section>
+    </section>
+  );
+}
+
+
+
 function OwnerQuickActionModal({ area, onClose, onSaved }) {
   const [form, setForm] = useState({});
   const [csvFile, setCsvFile] = useState(null);
@@ -6439,7 +6696,7 @@ function Workspace({ page, setPage, data }) {
     }) || hubBoxes[0];
 
 
-  const commandSections = page === "plans"
+  const commandSections = (page === "plans" || page === "proof")
     ? []
     : page === "dashboard"
     ? hubFocus === "messages"

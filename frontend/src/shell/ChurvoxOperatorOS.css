@@ -2520,3 +2520,227 @@ button.resolve {
     display: grid;
   }
 }
+
+
+/* Phase 11: Proof-to-Paid owner workflow */
+.cx-proof-machine {
+  display: grid;
+  gap: 16px;
+}
+
+.cx-proof-machine-hero,
+.cx-proof-flow,
+.cx-proof-package {
+  border-radius: 30px;
+  border: 1px solid rgba(116,247,255,.13);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(24,227,194,.08), transparent 20rem),
+    linear-gradient(180deg, rgba(13, 26, 38, .94), rgba(5, 12, 18, .90));
+  box-shadow: var(--cx-calm-shadow), inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.cx-proof-machine-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  gap: 16px;
+  padding: 24px;
+}
+
+.cx-proof-machine span,
+.cx-proof-package span {
+  color: var(--cx-cyan);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.cx-proof-machine h2 {
+  margin: 8px 0 0;
+  color: var(--cx-text);
+  font-size: clamp(30px, 4vw, 56px);
+  line-height: .98;
+  letter-spacing: -.07em;
+  font-weight: 950;
+}
+
+.cx-proof-machine p {
+  color: var(--cx-text-soft);
+  line-height: 1.6;
+  font-weight: 750;
+}
+
+.cx-proof-machine-hero aside {
+  border-radius: 24px;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(116,247,255,.15), transparent 12rem),
+    rgba(4,10,16,.52);
+  border: 1px solid rgba(116,247,255,.10);
+}
+
+.cx-proof-machine-hero aside strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--cx-text);
+  font-size: 48px;
+  line-height: .9;
+  letter-spacing: -.07em;
+  font-weight: 950;
+}
+
+.cx-proof-flow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px;
+}
+
+.cx-proof-flow article {
+  border-radius: 22px;
+  padding: 16px;
+  background: rgba(4,10,16,.48);
+  border: 1px solid rgba(116,247,255,.10);
+}
+
+.cx-proof-flow b {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: #031018;
+  background: linear-gradient(135deg, #38e8a4, #74f7ff);
+  font-weight: 950;
+}
+
+.cx-proof-flow span {
+  display: block;
+  margin-top: 12px;
+}
+
+.cx-proof-package-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.cx-proof-package {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+}
+
+.cx-proof-package.ready {
+  border-color: rgba(56,232,164,.22);
+}
+
+.cx-proof-package.needs-input {
+  border-color: rgba(255,204,102,.22);
+}
+
+.cx-proof-package h3 {
+  margin: 8px 0 0;
+  color: var(--cx-text);
+  font-size: 24px;
+  line-height: 1.05;
+  letter-spacing: -.05em;
+  font-weight: 950;
+}
+
+.cx-proof-checks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cx-proof-checks article,
+.cx-proof-prepared,
+.cx-proof-missing,
+.cx-proof-ready {
+  border-radius: 18px;
+  padding: 13px;
+  background: rgba(4,10,16,.50);
+  border: 1px solid rgba(116,247,255,.10);
+}
+
+.cx-proof-checks strong {
+  display: block;
+  margin-top: 7px;
+  color: var(--cx-text);
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.cx-proof-prepared p {
+  margin: 8px 0 0;
+  font-size: 13px;
+}
+
+.cx-proof-missing {
+  border-color: rgba(255,204,102,.20);
+  background: rgba(255,204,102,.08);
+}
+
+.cx-proof-missing b,
+.cx-proof-ready b {
+  display: block;
+  color: var(--cx-warning);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.cx-proof-ready {
+  border-color: rgba(56,232,164,.18);
+  background: rgba(56,232,164,.08);
+}
+
+.cx-proof-ready b {
+  color: var(--cx-success);
+}
+
+.cx-proof-missing span,
+.cx-proof-ready span {
+  display: block;
+  margin-top: 6px;
+  color: var(--cx-text-soft);
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.cx-proof-package footer {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.cx-proof-package footer button {
+  flex: 1;
+  min-height: 48px;
+  border-radius: 16px;
+  color: var(--cx-text);
+  background: rgba(13,29,42,.86);
+  border: 1px solid rgba(116,247,255,.16);
+  font-weight: 950;
+}
+
+.cx-proof-package footer button.approve {
+  color: #031018 !important;
+}
+
+@media (max-width: 860px) {
+  .cx-proof-machine-hero,
+  .cx-proof-flow,
+  .cx-proof-checks {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-proof-package footer {
+    display: grid;
+  }
+}
