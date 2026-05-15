@@ -1120,7 +1120,7 @@ function AuthCard({ authMode, setAuthMode, onLogin }) {
       <div className="cx-auth-head">
         <div>
           <span>Secure workspace</span>
-          <h2>{signup ? "Create account" : "Open Churvox"}</h2>
+          <h2>{signup ? "Create account" : "Enter Operator OS"}</h2>
         </div>
         <div className="cx-auth-orb" />
       </div>
@@ -1530,43 +1530,42 @@ function Landing({ authMode, setAuthMode, onLogin }) {
         <div className="cx-hero-copy">
           <p className="cx-pill">
             <span />
-            AI command centre for trade and service businesses
+            AI Operator OS for trade and service businesses
           </p>
 
           <h1>
-            AI runs the admin.
+            AI prepares the admin.
             <em>You approve the work.</em>
           </h1>
 
           <p className="cx-hero-text">
-            Churvox watches the busy parts of the business, finds what needs doing, prepares the admin,
-            and puts it in one owner-safe approval flow.
+            Churvox watches jobs, workers, quotes, invoices and proof. It prepares the next business action, then the owner reviews, edits if needed, and approves.
           </p>
 
           <div className="cx-hero-actions">
             <a href="#login" className="cx-primary" onClick={() => setAuthMode("login")}>
-              Open Churvox
+              Enter Operator OS
             </a>
             <a href="#operator" className="cx-secondary">
-              See AI Operator
+              See the AI loop
             </a>
             <a href="/request" className="cx-secondary">
-              Request work demo
+              Customer request demo
             </a>
           </div>
 
           <div className="cx-proof-strip">
             <article>
-              <strong>1 queue</strong>
-              <span>Everything ready for approval</span>
+              <strong>1 control room</strong>
+              <span>Every prepared action in one place</span>
             </article>
             <article>
-              <strong>Less admin</strong>
-              <span>AI prepares the boring work</span>
+              <strong>AI prep</strong>
+              <span>Specific actions from real records</span>
             </article>
             <article>
-              <strong>Owner safe</strong>
-              <span>No risky auto-send</span>
+              <strong>Approval safe</strong>
+              <span>No blind sends or changes</span>
             </article>
           </div>
         </div>
@@ -1575,13 +1574,13 @@ function Landing({ authMode, setAuthMode, onLogin }) {
           <AuthCard authMode={authMode} setAuthMode={setAuthMode} onLogin={onLogin} />
 
           <section className="cx-public-control-card" aria-label="How Churvox works">
-            <span>Owner-safe AI loop</span>
-            <h3>Churvox prepares the day before you touch the admin.</h3>
+            <span>The Churvox loop</span>
+            <h3>Churvox prepares the admin before the owner touches it.</h3>
 
             <div>
               <article>
                 <b>Find</b>
-                <p>Jobs, overdue invoices, quiet quotes and worker gaps are spotted automatically.</p>
+                <p>Unassigned jobs, completed work, overdue invoices, stale quotes and worker gaps are found.</p>
               </article>
 
               <article>
@@ -1618,10 +1617,10 @@ function Landing({ authMode, setAuthMode, onLogin }) {
 
       <section className="cx-flow" id="flow">
         {[
-          ["1", "Work comes in", "Jobs, notes, photos, clients, quotes and invoices stay connected."],
-          ["2", "AI checks the day", "It finds missing workers, overdue invoices, quote follow-ups and completed jobs."],
-          ["3", "AI prepares actions", "Worker matches, invoice drafts, quote nudges and reminders are prepared for review."],
-          ["4", "Owner approves", "Nothing important sends, changes or moves until the owner approves it."],
+          ["1", "Work comes in", "Jobs, notes, photos, clients, quotes, invoices and workers stay connected."],
+          ["2", "Churvox checks the day", "It checks exact records: job status, proof, client details, invoice status, quote age and worker fit."],
+          ["3", "Churvox prepares actions", "Assignments, invoice drafts, quote nudges, payment reminders and proof-to-paid actions are prepared."],
+          ["4", "Owner approves", "Nothing sends, syncs, assigns or changes until the owner approves it."],
         ].map(([num, title, body]) => (
           <article key={num}>
             <b>{num}</b>
@@ -1634,10 +1633,9 @@ function Landing({ authMode, setAuthMode, onLogin }) {
       <section className="cx-features" id="features">
         <div>
           <span>Inside Churvox</span>
-          <h2>One AI-powered workspace for the whole business.</h2>
+          <h2>One AI command machine for the whole business.</h2>
           <p className="cx-features-story">
-            Everything connects. Jobs create proof. Proof creates invoices. Invoices create follow-ups.
-            AI keeps the owner in control from the first job to the final payment.
+            Everything connects. Workers complete jobs and add proof. Churvox turns that proof into invoice-ready admin. The owner stays in control from first request to final payment.
           </p>
 
           <div className="cx-flowline">
@@ -1661,7 +1659,7 @@ function Landing({ authMode, setAuthMode, onLogin }) {
         </div>
 
         <div className="cx-feature-list">
-          {["Smart Hub", "Owner approvals", "Jobs", "Clients", "Team", "Quotes", "Invoices", "Proof-to-Paid", "Worker App", "Settings"].map((feature) => (
+          {["AI Operator", "Owner approvals", "Jobs", "Clients", "Team", "Quotes", "Invoices", "Proof-to-Paid", "Worker My Run", "Teach Churvox"].map((feature) => (
             <article key={feature}>{feature}</article>
           ))}
         </div>
