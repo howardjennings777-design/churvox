@@ -1877,9 +1877,11 @@ function workspacePathForPage(page) {
 
 function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage }) {
   const [draft, setDraft] = useState(() => draftFromSelection(selection));
+  const [portalLinkStatus, setPortalLinkStatus] = useState("");
 
   useEffect(() => {
     setDraft(draftFromSelection(selection));
+    setPortalLinkStatus("");
   }, [selection]);
 
   if (!selection) return null;
@@ -1917,6 +1919,67 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
     window.history.pushState({}, "", workspacePathForPage(page));
     window.dispatchEvent(new PopStateEvent("popstate"));
     onClose();
+  }
+
+  function portalRecordType() {
+    const page = selection.page || "";
+    const group = String(selection.group || "").toLowerCase();
+    const sourceType = String(selection.sourceType || selection.item?.source_type || "").toLowerCase();
+
+    if (page === "quotes" || group.includes("quote") || sourceType.includes("quote")) return "quote";
+    if (page === "invoices" || group.includes("invoice") || group.includes("cashflow") || sourceType.includes("invoice")) return "invoice";
+    if (page === "jobs" || page === "proof" || group.includes("job") || group.includes("work") || group.includes("dispatch") || sourceType.includes("job")) return "job";
+
+    return "";
+  }
+
+  function portalRecordId() {
+    const item = selection.item || {};
+    if (Array.isArray(item)) return selection.sourceId || selection.actionId || "";
+    return (
+      selection.sourceId ||
+      selection.actionId ||
+      item.id ||
+      item._id ||
+      item.job_id ||
+      item.quote_id ||
+      item.invoice_id ||
+      item.source_id ||
+      ""
+    );
+  }
+
+  const canCreatePortalLink = Boolean(portalRecordType() && portalRecordId());
+
+  async function copyPortalLink() {
+    const type = portalRecordType();
+    const id = portalRecordId();
+
+    if (!type || !id) {
+      setPortalLinkStatus("This record needs to be saved before a portal link can be created.");
+      return;
+    }
+
+    setPortalLinkStatus("Preparing portal link...");
+
+    try {
+      const result = await apiPost(`/portal-links/${encodeURIComponent(type)}/${encodeURIComponent(String(id))}/ensure`, {});
+      const path = result?.portal_path || (result?.token ? `/portal/${result.token}` : "");
+      const link = path ? `${window.location.origin}${path}` : "";
+
+      if (!link) {
+        setPortalLinkStatus("Portal link could not be created.");
+        return;
+      }
+
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(link);
+      }
+
+      setPortalLinkStatus(`Portal link copied: ${link}`);
+    } catch (err) {
+      setPortalLinkStatus(err?.message || "Could not create portal link.");
+    }
   }
 
   return (
@@ -1985,6 +2048,13 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
           </p>
         </section>
 
+        {portalLinkStatus ? (
+          <section className="cx-portal-link-status">
+            <span>Client portal</span>
+            <p>{portalLinkStatus}</p>
+          </section>
+        ) : null}
+
         <footer className={isApprovalFlow ? "cx-command-footer-approval" : "cx-command-footer-record"}>
           <button type="button" onClick={() => onSaveDraft(selection, draft)}>
             {isApprovalFlow ? "Save edit" : "Save note"}
@@ -1992,6 +2062,11 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
           <button type="button" onClick={() => go(selection.page || "dashboard")}>
             Open {workspaceName}
           </button>
+          {canCreatePortalLink ? (
+            <button type="button" className="cx-portal-link-btn" onClick={copyPortalLink}>
+              Copy portal link
+            </button>
+          ) : null}
           <button type="button" onClick={onClose}>Close</button>
           {isApprovalFlow ? (
             <button type="button" className="approve" onClick={() => onApprove(selection, draft)}>
@@ -2033,15 +2108,46 @@ function OwnerCommandRow({ item, index, page, group, onOpen }) {
 function SmartHubActionControl({ boxKey, row, draft, onChange }) {
   const text = `${boxKey || ""} ${row?.lead || ""} ${row?.title || ""} ${row?.detail || ""} ${row?.status || ""}`.toLowerCase();
 
-  const mode = text.includes("unassigned") || text.includes("assign")
-    ? "dispatch"
-    : boxKey === "invoice" || text.includes("invoice") || text.includes("completed job")
-      ? "invoice"
-      : boxKey === "collect" || text.includes("overdue") || text.includes("payment")
-        ? "collect"
-        : boxKey === "quotes" || boxKey === "messages" || text.includes("quote") || text.includes("follow")
-          ? "message"
-          : "review";
+  const mode = boxKey === "templates"
+    ? "template"
+    : boxKey === "reports"
+      ? "report"
+      : boxKey === "dispatch" || text.includes("unassigned") || text.includes("assign")
+        ? "dispatch"
+        : boxKey === "invoice" || text.includes("invoice") || text.includes("completed job")
+          ? "invoice"
+          : boxKey === "collect" || text.includes("overdue") || text.includes("payment")
+            ? "collect"
+            : boxKey === "quotes" || boxKey === "messages" || text.includes("quote") || text.includes("follow")
+              ? "message"
+              : "review";
+
+  if (mode === "template") {
+    return (
+      <section className="cx-smart-control-panel cx-smart-control-template">
+        <header><span>Service template</span><h4>Create a job from this preset</h4></header>
+        <div className="cx-smart-control-grid">
+          <label>Job title<input value={draft.templateJobTitle} onChange={(e) => onChange("templateJobTitle", e.target.value)} placeholder="Job title" /></label>
+          <label>Client name<input value={draft.templateClientName} onChange={(e) => onChange("templateClientName", e.target.value)} placeholder="Client name" /></label>
+          <label className="wide">Address<input value={draft.templateAddress} onChange={(e) => onChange("templateAddress", e.target.value)} placeholder="Job address" /></label>
+          <label className="wide">Job notes<textarea value={draft.templateNotes} onChange={(e) => onChange("templateNotes", e.target.value)} placeholder="Notes for the new job..." /></label>
+        </div>
+      </section>
+    );
+  }
+
+  if (mode === "report") {
+    return (
+      <section className="cx-smart-control-panel cx-smart-control-report">
+        <header><span>Owner report</span><h4>Review the numbers and choose the next action</h4></header>
+        <div className="cx-smart-control-grid">
+          <label>Decision<select value={draft.reportDecision} onChange={(e) => onChange("reportDecision", e.target.value)}><option value="reviewed">Mark reviewed</option><option value="follow_up_quotes">Follow up quotes</option><option value="collect_money">Collect money</option><option value="check_workers">Check worker load</option></select></label>
+          <label>Follow-up<input value={draft.reportFollowUp} onChange={(e) => onChange("reportFollowUp", e.target.value)} placeholder="e.g. Review again Friday" /></label>
+          <label className="wide">Owner report note<textarea value={draft.ownerNote} onChange={(e) => onChange("ownerNote", e.target.value)} placeholder="Decision, cashflow note, quote follow-up note, or worker workload note..." /></label>
+        </div>
+      </section>
+    );
+  }
 
   if (mode === "dispatch") {
     return (
@@ -2240,6 +2346,11 @@ function SmartHubBoxModal({
 
   function actionGroupForBox(boxKey, row) {
     const text = `${boxKey || ""} ${row?.lead || ""} ${row?.title || ""} ${row?.detail || ""} ${row?.status || ""}`.toLowerCase();
+    if (boxKey === "requests") return "Request inbox";
+    if (boxKey === "dispatch") return "Dispatch";
+    if (boxKey === "recurring") return "Recurring job";
+    if (boxKey === "templates") return "Service template";
+    if (boxKey === "reports") return "Owner report";
     if (text.includes("unassigned") || text.includes("assign")) return "Dispatch";
     if (boxKey === "invoice" || text.includes("invoice") || text.includes("completed job")) return "Invoice";
     if (boxKey === "collect" || text.includes("payment") || text.includes("overdue")) return "Cashflow";
@@ -2274,6 +2385,12 @@ function SmartHubBoxModal({
       quoteMessage: `Hi, just following up on the quote for ${title}. Happy to answer any questions or help book the work in.`,
       followupStatus: "draft",
       followupTiming: "Today",
+      templateJobTitle: title,
+      templateClientName: "",
+      templateAddress: "",
+      templateNotes: detail,
+      reportDecision: "reviewed",
+      reportFollowUp: "",
     };
   }
 
@@ -2311,10 +2428,10 @@ function SmartHubBoxModal({
     if (box.key === "quotes") return "Follow up";
     if (box.key === "crew") return "Review worker";
     if (box.key === "requests") return "Create draft job";
-    if (box.key === "dispatch") return "Review dispatch";
+    if (box.key === "dispatch") return "Assign worker";
     if (box.key === "recurring") return "Generate job";
-    if (box.key === "templates") return "Review template";
-    if (box.key === "reports") return "Review report";
+    if (box.key === "templates") return "Create job";
+    if (box.key === "reports") return "Mark reviewed";
     if (box.key === "work") return "Review work";
 
     if (text.includes("worker") || text.includes("assign")) return "Approve worker";
@@ -2359,6 +2476,11 @@ function SmartHubBoxModal({
     if (box.key === "messages") return "No messages ready right now.";
     if (box.key === "collect") return "No collection actions right now.";
     if (box.key === "setup") return "Setup is looking good.";
+    if (box.key === "requests") return "No customer requests waiting.";
+    if (box.key === "dispatch") return "Dispatch is clear right now.";
+    if (box.key === "recurring") return "No recurring jobs due.";
+    if (box.key === "templates") return "No service templates found.";
+    if (box.key === "reports") return "Reports are ready when live data arrives.";
     return "Nothing here right now.";
   }
 
@@ -3505,6 +3627,57 @@ function Workspace({ page, setPage, data }) {
         const result = await apiPost(`/recurring-jobs/${encodeURIComponent(selectedSourceId)}/generate`, {});
 
         logCommand("Recurring jobs", title, result?.message || "Next job generated");
+        return true;
+      }
+
+      if (selection.hubBoxKey === "dispatch" && selectedSourceId) {
+        const workerChoice = String(
+          draft?.workerChoice ||
+          selection?.item?.recommended_worker_id ||
+          selection?.item?.assigned_worker_id ||
+          selection?.item?.worker_id ||
+          selection?.item?.recommended_worker_name ||
+          selection?.item?.assigned_worker_name ||
+          ""
+        ).trim();
+
+        if (!workerChoice) {
+          throw new Error("Choose a worker before approving dispatch.");
+        }
+
+        const result = await apiPost("/dispatch/assign", {
+          job_id: selectedSourceId,
+          worker_id: workerChoice,
+          worker_name: workerChoice,
+          scheduled_start: selection?.item?.scheduled_start || selection?.item?.start_time || "",
+          scheduled_end: selection?.item?.scheduled_end || selection?.item?.end_time || "",
+          force: draft?.conflictStatus === "clear",
+        });
+
+        if (result?.conflict) {
+          throw new Error(result.message || "Worker has a schedule conflict.");
+        }
+
+        logCommand("Dispatch", title, result?.message || "Job assigned");
+        return true;
+      }
+
+      if (selection.hubBoxKey === "templates" && selectedSourceId) {
+        const result = await apiPost("/jobs/from-template", {
+          template_id: selectedSourceId,
+          title: draft?.templateJobTitle || title,
+          client_name: draft?.templateClientName || "",
+          address: draft?.templateAddress || "",
+          notes: draft?.templateNotes || draft?.detail || "",
+          description: draft?.templateNotes || draft?.detail || "",
+        });
+
+        logCommand("Service templates", title, result?.message || "Job created from template");
+        return true;
+      }
+
+      if (selection.hubBoxKey === "reports") {
+        logCommand("Owner reports", title, draft?.reportDecision || "Reviewed");
         return true;
       }
 

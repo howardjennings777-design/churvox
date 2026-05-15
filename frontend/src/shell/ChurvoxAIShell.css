@@ -5686,3 +5686,48 @@ body:has(.cx-public-landing) .ai-action-dock {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== Finish Smart Hub action wiring: portal / dispatch / templates / reports ===== */
+.cx-portal-link-status {
+  margin: 14px 0 0;
+  border: 1px solid rgba(37,99,235,0.14);
+  border-radius: 20px;
+  padding: 13px 14px;
+  background: rgba(239,247,255,0.78);
+}
+
+.cx-portal-link-status span {
+  display: block;
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cx-portal-link-status p {
+  margin: 5px 0 0;
+  color: #102033;
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 850;
+  word-break: break-word;
+}
+
+.cx-command-footer-approval .cx-portal-link-btn,
+.cx-command-footer-record .cx-portal-link-btn {
+  color: #102033;
+  background: rgba(255,255,255,0.82);
+  border: 1px solid rgba(37,99,235,0.16);
+}
+
+.cx-smart-control-template {
+  border-color: rgba(37,99,235,0.18);
+}
+
+.cx-smart-control-report {
+  border-color: rgba(16,32,51,0.14);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(37,99,235,0.12), transparent 34%),
+    rgba(255,255,255,0.68);
+}
