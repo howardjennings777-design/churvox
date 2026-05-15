@@ -5731,3 +5731,976 @@ body:has(.cx-public-landing) .ai-action-dock {
     radial-gradient(circle at 100% 0%, rgba(37,99,235,0.12), transparent 34%),
     rgba(255,255,255,0.68);
 }
+
+/* ===== Migrated old newos CSS before final cleanup ===== */
+/* Source: frontend/src/newos/logoBlueOverride.css */
+:root {
+  --logo-blue: #0B72FF;
+  --logo-cyan: #00C8FF;
+  --logo-blue-soft: #EAF4FF;
+  --logo-blue-soft-2: #F1F8FF;
+  --logo-blue-line: #B8DFFF;
+}
+
+html,
+body,
+#root {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(11,114,255,.11), transparent 32rem),
+    radial-gradient(circle at 92% 0%, rgba(0,200,255,.10), transparent 32rem),
+    linear-gradient(180deg, #ffffff 0%, #f4f8fb 100%) !important;
+}
+
+.sx-brand span,
+.nvx-brand span,
+.ux-logo,
+.cx-logo,
+.chx-mark,
+.op-logo-mark {
+  background: linear-gradient(135deg, var(--logo-blue-soft), #ffffff) !important;
+  border-color: var(--logo-blue-line) !important;
+}
+
+.primary,
+button.primary,
+.sx-actions .primary,
+.sx-topbar button.primary,
+.sx-auth-card button.primary,
+.sx-ai-grid button,
+.sx-public-nav > button.primary,
+.nvx-actions .primary,
+.nvx-top-actions .primary {
+  background: linear-gradient(135deg, var(--logo-blue), var(--logo-cyan)) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 16px 36px rgba(11,114,255,.25) !important;
+}
+
+.sx-sidebar nav button:hover,
+.sx-sidebar nav button.active,
+.sx-bottom-nav button.active,
+.nvx-sidebar nav button:hover,
+.nvx-sidebar nav button.active,
+.nvx-bottom-nav button.active {
+  background: var(--logo-blue-soft) !important;
+  color: var(--logo-blue) !important;
+  box-shadow: inset 3px 0 0 var(--logo-blue) !important;
+}
+
+.sx-landing-hero p,
+.sx-auth-copy p,
+.sx-hero p,
+.sx-panel header p,
+.sx-ai-grid span,
+.sx-column > span,
+.sx-mini-grid span,
+.sx-invoice-preview p,
+.sx-product-card span,
+.sx-feature-grid span,
+.sx-side-ai p,
+.sx-sidebar nav p,
+.nvx-hero p,
+.nvx-panel header p,
+.nvx-ai-card span,
+.nvx-column > span,
+.nvx-mini span,
+.nvx-invoice-preview p,
+.nvx-side-card p,
+.nvx-sidebar nav p {
+  color: var(--logo-blue) !important;
+}
+
+.sx-pill,
+.nvx-pill,
+.ux-pill,
+.cx-pill,
+.chx-pill,
+.op-status {
+  background: #EFF8FF !important;
+  color: var(--logo-blue) !important;
+  border-color: #B9E0FF !important;
+}
+
+.sx-stat small,
+.nvx-stat small {
+  color: var(--logo-blue) !important;
+}
+
+.sx-hero,
+.sx-landing-hero .sx-product-card,
+.nvx-hero {
+  background:
+    radial-gradient(circle at 82% 18%, rgba(11,114,255,.16), transparent 26rem),
+    linear-gradient(135deg, #ffffff, #F1F8FF) !important;
+}
+
+
+/* Source: frontend/src/newos/churvoxAiIdentity.css */
+:root {
+  --brand-blue: #0B72FF;
+  --brand-cyan: #00C8FF;
+  --brand-glow: #78F7FF;
+  --brand-navy: #071B3A;
+  --brand-ink: #071327;
+  --brand-soft: #EAF4FF;
+  --brand-soft-2: #F3FAFF;
+  --brand-line: #B8DFFF;
+}
+
+/* full identity background */
+html,
+body,
+#root {
+  background:
+    radial-gradient(circle at 13% 8%, rgba(11,114,255,.18), transparent 30rem),
+    radial-gradient(circle at 84% 3%, rgba(0,200,255,.18), transparent 34rem),
+    radial-gradient(circle at 50% 92%, rgba(120,247,255,.10), transparent 28rem),
+    linear-gradient(180deg, #ffffff 0%, #f2f8ff 48%, #eef7fb 100%) !important;
+}
+
+/* logo system */
+.sx-brand span,
+.sx-sidebar .sx-brand span,
+.sx-public-nav .sx-brand span,
+.sx-auth-copy .sx-brand span {
+  position: relative !important;
+  background:
+    radial-gradient(circle at 28% 18%, rgba(255,255,255,.95), transparent 27%),
+    linear-gradient(135deg, var(--brand-blue), var(--brand-cyan) 62%, var(--brand-glow)) !important;
+  border: 0 !important;
+  box-shadow:
+    0 18px 38px rgba(11,114,255,.28),
+    inset 0 1px 0 rgba(255,255,255,.45) !important;
+  overflow: hidden !important;
+}
+
+.sx-brand span::after {
+  content: "";
+  position: absolute;
+  width: 56%;
+  height: 56%;
+  border-radius: 999px;
+  right: -18%;
+  top: -18%;
+  background: rgba(255,255,255,.22);
+  filter: blur(2px);
+}
+
+.sx-brand img {
+  width: 26px !important;
+  height: 26px !important;
+  filter: drop-shadow(0 8px 16px rgba(7,27,58,.30)) !important;
+  position: relative;
+  z-index: 1;
+}
+
+.sx-brand b {
+  color: var(--brand-ink) !important;
+  letter-spacing: -.04em !important;
+}
+
+.sx-brand small {
+  color: #486078 !important;
+}
+
+/* nav identity */
+.sx-public-nav {
+  border-color: rgba(184,223,255,.9) !important;
+  background: rgba(255,255,255,.84) !important;
+  backdrop-filter: blur(22px) saturate(140%) !important;
+  box-shadow:
+    0 24px 80px rgba(11,114,255,.12),
+    inset 0 1px 0 rgba(255,255,255,.8) !important;
+}
+
+.sx-public-nav nav button:hover,
+.sx-sidebar nav button:hover,
+.sx-sidebar nav button.active,
+.sx-bottom-nav button.active {
+  background: linear-gradient(135deg, #EAF4FF, #F7FCFF) !important;
+  color: var(--brand-blue) !important;
+  box-shadow: inset 3px 0 0 var(--brand-blue) !important;
+}
+
+/* premium landing */
+.sx-landing-hero {
+  max-width: 1200px !important;
+  min-height: calc(100vh - 150px) !important;
+  grid-template-columns: minmax(0, .86fr) minmax(470px, 1.14fr) !important;
+  gap: 42px !important;
+  margin-top: 28px !important;
+}
+
+.sx-landing-hero > div {
+  position: relative !important;
+  padding: 38px 0 !important;
+}
+
+.sx-landing-hero > div::before {
+  content: "AI OPERATOR FOR TRADE BUSINESSES";
+  width: fit-content;
+  display: inline-flex;
+  margin-bottom: 20px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #EAF4FF, #FFFFFF);
+  border: 1px solid var(--brand-line);
+  color: var(--brand-blue);
+  box-shadow: 0 12px 28px rgba(11,114,255,.10);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .13em;
+}
+
+.sx-landing-hero > div > p {
+  display: none !important;
+}
+
+.sx-landing-hero h1 {
+  max-width: 650px !important;
+  color: var(--brand-ink) !important;
+  font-size: clamp(60px, 8vw, 112px) !important;
+  line-height: .84 !important;
+  letter-spacing: -.095em !important;
+}
+
+.sx-landing-hero h1::after {
+  content: "Approve.";
+  display: block;
+  width: fit-content;
+  margin-top: 4px;
+  padding-right: 10px;
+  background: linear-gradient(120deg, var(--brand-blue), var(--brand-cyan), var(--brand-glow));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.sx-landing-hero > div > span {
+  max-width: 590px !important;
+  color: #3F526A !important;
+  font-size: 18.5px !important;
+  line-height: 1.66 !important;
+}
+
+/* buttons */
+.primary,
+button.primary,
+.sx-actions .primary,
+.sx-public-nav > button.primary,
+.sx-auth-card button.primary,
+.sx-topbar button.primary,
+.sx-ai-grid button {
+  background:
+    linear-gradient(135deg, var(--brand-blue), var(--brand-cyan)) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow:
+    0 18px 46px rgba(11,114,255,.30),
+    inset 0 1px 0 rgba(255,255,255,.36) !important;
+}
+
+.sx-actions button:not(.primary),
+.sx-public-nav nav button,
+.sx-topbar button:not(.primary),
+.sx-auth-card button:not(.primary) {
+  background: rgba(255,255,255,.92) !important;
+  border-color: #D5E7F4 !important;
+  color: #1D2D44 !important;
+}
+
+/* AI-powered product preview */
+.sx-product-card {
+  min-height: 600px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  padding: 24px !important;
+  border-radius: 42px !important;
+  background:
+    radial-gradient(circle at 76% 12%, rgba(120,247,255,.36), transparent 18rem),
+    radial-gradient(circle at 6% 18%, rgba(11,114,255,.42), transparent 20rem),
+    linear-gradient(145deg, #061733 0%, #092B5C 46%, #0B72FF 140%) !important;
+  border: 1px solid rgba(184,223,255,.42) !important;
+  box-shadow:
+    0 42px 110px rgba(7,27,58,.32),
+    inset 0 1px 0 rgba(255,255,255,.14) !important;
+}
+
+.sx-product-card::before {
+  content: "";
+  position: absolute;
+  inset: 18px;
+  border-radius: 32px;
+  border: 1px solid rgba(255,255,255,.11);
+  background:
+    linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,.9), rgba(0,0,0,.15));
+  pointer-events: none;
+}
+
+.sx-product-card::after {
+  content: "";
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  right: -70px;
+  bottom: -80px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(120,247,255,.38), transparent 62%);
+  filter: blur(2px);
+}
+
+.sx-product-top,
+.sx-preview-stats,
+.sx-ai-stack {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.sx-product-top span,
+.sx-product-card > span,
+.sx-product-card p,
+.sx-ai-stack article span {
+  color: #9EEBFF !important;
+}
+
+.sx-product-card strong,
+.sx-product-card h2,
+.sx-preview-stats .sx-stat strong,
+.sx-ai-stack article strong {
+  color: #ffffff !important;
+}
+
+.sx-product-card small,
+.sx-preview-stats .sx-stat span,
+.sx-preview-stats .sx-stat small,
+.sx-ai-stack article small {
+  color: rgba(232,247,255,.78) !important;
+}
+
+.sx-preview-stats .sx-stat,
+.sx-ai-stack article {
+  background: rgba(255,255,255,.115) !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(18px) saturate(130%) !important;
+}
+
+/* feature identity */
+.sx-feature-grid article,
+.sx-panel,
+.sx-stat,
+.sx-ai-grid article,
+.sx-row,
+.sx-column,
+.sx-mini-grid article,
+.sx-invoice-preview,
+.sx-auth-shell,
+.sx-auth-card {
+  border-color: #D8E9F5 !important;
+  box-shadow: 0 18px 52px rgba(15,23,42,.06) !important;
+}
+
+.sx-feature-grid article {
+  min-height: 190px !important;
+  background:
+    radial-gradient(circle at 88% 12%, rgba(11,114,255,.08), transparent 9rem),
+    linear-gradient(180deg, rgba(255,255,255,.99), rgba(247,251,255,.96)) !important;
+}
+
+.sx-feature-grid article strong {
+  font-size: 20px !important;
+  letter-spacing: -.045em !important;
+}
+
+/* app shell: AI command centre */
+.sx-app {
+  background:
+    radial-gradient(circle at 16% 4%, rgba(11,114,255,.15), transparent 32rem),
+    radial-gradient(circle at 88% 0%, rgba(0,200,255,.14), transparent 30rem),
+    linear-gradient(180deg, #ffffff 0%, #F4F8FB 100%) !important;
+}
+
+.sx-sidebar {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.98), rgba(247,251,255,.96)) !important;
+  border-right-color: #D8E9F5 !important;
+}
+
+.sx-side-ai {
+  background:
+    radial-gradient(circle at 86% 0%, rgba(0,200,255,.20), transparent 8rem),
+    linear-gradient(145deg, #061733, #0A2A54) !important;
+  border-color: rgba(184,223,255,.28) !important;
+}
+
+.sx-side-ai p {
+  color: #9EEBFF !important;
+}
+
+.sx-side-ai strong {
+  color: #ffffff !important;
+}
+
+.sx-side-ai span {
+  color: rgba(232,247,255,.76) !important;
+}
+
+.sx-topbar {
+  background: rgba(255,255,255,.86) !important;
+  border-color: #D8E9F5 !important;
+  box-shadow: 0 18px 56px rgba(11,114,255,.10) !important;
+}
+
+.sx-hero {
+  border-color: #D8E9F5 !important;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(11,114,255,.18), transparent 26rem),
+    linear-gradient(135deg, #ffffff, #F1F8FF) !important;
+}
+
+.sx-hero h1 {
+  color: var(--brand-ink) !important;
+}
+
+/* status pills */
+.sx-pill {
+  background: #EFF8FF !important;
+  color: var(--brand-blue) !important;
+  border-color: #B9E0FF !important;
+}
+
+.sx-pill.good {
+  background: #EAF4FF !important;
+  color: var(--brand-blue) !important;
+  border-color: var(--brand-line) !important;
+}
+
+.sx-pill.warn {
+  background: #FFF8E7 !important;
+  color: #B45309 !important;
+  border-color: #FDE68A !important;
+}
+
+/* auth identity */
+.sx-auth-shell {
+  border-radius: 42px !important;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(11,114,255,.14), transparent 26rem),
+    radial-gradient(circle at 90% 12%, rgba(0,200,255,.12), transparent 24rem),
+    linear-gradient(135deg, #ffffff, #F4F9FF) !important;
+  box-shadow: 0 38px 110px rgba(11,114,255,.14) !important;
+}
+
+.sx-auth-card {
+  border-radius: 32px !important;
+}
+
+/* create AI circuit accent cards on dashboard */
+.sx-ai-grid article {
+  position: relative;
+  overflow: hidden;
+}
+
+.sx-ai-grid article::after {
+  content: "";
+  position: absolute;
+  width: 92px;
+  height: 92px;
+  right: -34px;
+  top: -34px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(11,114,255,.14), transparent 66%);
+}
+
+@media (max-width: 980px) {
+  .sx-landing-hero {
+    min-height: auto !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .sx-product-card {
+    min-height: auto !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .sx-landing-hero h1 {
+    font-size: clamp(48px, 16vw, 76px) !important;
+  }
+}
+
+
+/* Source: frontend/src/newos/newos.css */
+:root {
+  --nvx-bg: #f5f8fb;
+  --nvx-card: #fff;
+  --nvx-soft: #f8fbfd;
+  --nvx-soft-blue: #F1F8FF;
+  --nvx-line: #dbe7ee;
+  --nvx-ink: #101828;
+  --nvx-text: #233044;
+  --nvx-muted: #66788a;
+  --nvx-teal: #0B72FF;
+  --nvx-teal2: #00C8FF;
+  --nvx-green: #16a34a;
+  --nvx-amber: #d97706;
+  --nvx-shadow: 0 20px 60px rgba(15, 23, 42, .075);
+  --nvx-shadow-soft: 0 10px 28px rgba(15, 23, 42, .055);
+}
+
+html, body, #root {
+  background: linear-gradient(180deg, #fff, var(--nvx-bg)) !important;
+}
+
+.nvx-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(11, 114, 255, .11), transparent 32rem),
+    radial-gradient(circle at 92% 0%, rgba(0, 200, 255, .10), transparent 32rem),
+    linear-gradient(180deg, #fff 0%, var(--nvx-bg) 100%);
+  color: var(--nvx-text);
+}
+
+.nvx-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: rgba(248, 251, 253, .98);
+  border-right: 1px solid var(--nvx-line);
+  box-shadow: 10px 0 32px rgba(15, 23, 42, .035);
+}
+
+.nvx-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nvx-brand span {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #EAF4FF, #F6FBFF);
+  border: 1px solid #B8DFFF;
+}
+
+.nvx-brand img {
+  width: 24px;
+  height: 24px;
+}
+
+.nvx-brand b {
+  color: var(--nvx-ink);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.nvx-brand small {
+  display: block;
+  color: var(--nvx-muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.nvx-sidebar nav {
+  display: grid;
+  gap: 5px;
+}
+
+.nvx-sidebar nav button {
+  min-height: 42px;
+  width: 100%;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 13px;
+  background: transparent;
+  color: var(--nvx-text);
+  text-align: left;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.nvx-sidebar nav button:hover,
+.nvx-sidebar nav button.active {
+  background: #EAF4FF;
+  color: var(--nvx-teal);
+  box-shadow: inset 3px 0 0 var(--nvx-teal);
+}
+
+.nvx-side-card,
+.nvx-topbar,
+.nvx-hero,
+.nvx-panel,
+.nvx-stat,
+.nvx-ai-card,
+.nvx-column,
+.nvx-row,
+.nvx-mini,
+.nvx-invoice-preview {
+  background: rgba(255,255,255,.96);
+  border: 1px solid var(--nvx-line);
+  box-shadow: var(--nvx-shadow-soft);
+}
+
+.nvx-side-card {
+  margin-top: auto;
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 20px;
+}
+
+.nvx-side-card p,
+.nvx-hero p,
+.nvx-panel header p,
+.nvx-ai-card span,
+.nvx-column > span,
+.nvx-mini span,
+.nvx-invoice-preview p {
+  margin: 0 0 10px;
+  color: var(--nvx-teal);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.nvx-side-card strong,
+.nvx-topbar strong,
+.nvx-hero h1,
+.nvx-panel h2,
+.nvx-stat strong,
+.nvx-ai-card strong,
+.nvx-column h3,
+.nvx-row strong,
+.nvx-mini strong,
+.nvx-invoice-preview h2,
+.nvx-invoice-preview strong {
+  color: var(--nvx-ink);
+}
+
+.nvx-side-card span,
+.nvx-topbar span,
+.nvx-hero > div > span,
+.nvx-panel header span,
+.nvx-row small,
+.nvx-mini small,
+.nvx-ai-card small,
+.nvx-invoice-preview span,
+.nvx-invoice-preview small {
+  color: var(--nvx-muted);
+}
+
+.nvx-main {
+  min-width: 0;
+  padding: 18px 22px 90px;
+}
+
+.nvx-topbar {
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: minmax(170px, auto) minmax(260px, 520px) auto;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 12px 16px;
+  border-radius: 22px;
+}
+
+.nvx-topbar input {
+  min-height: 42px;
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid var(--nvx-line);
+  background: #fff;
+  color: var(--nvx-ink);
+  padding: 0 15px;
+}
+
+.nvx-page {
+  max-width: 1220px;
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+}
+
+.nvx-hero {
+  min-height: 300px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 28px;
+  align-items: stretch;
+  padding: 34px;
+  border-radius: 34px;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(11, 114, 255, .16), transparent 26rem),
+    linear-gradient(135deg, #fff, #eef9fd);
+}
+
+.nvx-hero h1 {
+  max-width: 860px;
+  margin: 0;
+  font-size: clamp(42px, 6vw, 76px);
+  line-height: .94;
+  letter-spacing: -.075em;
+}
+
+.nvx-hero aside {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  padding: 20px;
+  border-radius: 28px;
+  background: rgba(255,255,255,.92);
+  border: 1px solid var(--nvx-line);
+}
+
+.nvx-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+button,
+.nvx-actions button {
+  min-height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--nvx-line);
+  background: #fff;
+  color: var(--nvx-text);
+  font-weight: 850;
+  padding: 0 16px;
+  cursor: pointer;
+}
+
+button.primary,
+.nvx-actions .primary,
+.nvx-ai-card button,
+.nvx-invoice-preview .primary {
+  background: linear-gradient(135deg, var(--nvx-teal), var(--nvx-teal2));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 14px 32px rgba(11,114,255,.24);
+}
+
+.nvx-stats,
+.nvx-card-grid.four {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.nvx-stat {
+  min-height: 112px;
+  display: grid;
+  gap: 7px;
+  padding: 18px;
+  border-radius: 22px;
+}
+
+.nvx-stat span {
+  color: var(--nvx-muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.nvx-stat strong {
+  font-size: 32px;
+  letter-spacing: -.055em;
+}
+
+.nvx-stat small {
+  color: var(--nvx-teal);
+  font-weight: 850;
+}
+
+.nvx-ai-grid,
+.nvx-card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.nvx-ai-card,
+.nvx-mini {
+  display: grid;
+  gap: 9px;
+  padding: 16px;
+  border-radius: 18px;
+}
+
+.nvx-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(330px, .92fr);
+  gap: 16px;
+}
+
+.nvx-panel {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border-radius: 26px;
+}
+
+.nvx-panel header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.nvx-panel h2 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: -.055em;
+}
+
+.nvx-list {
+  display: grid;
+  gap: 10px;
+}
+
+.nvx-row {
+  width: 100%;
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 18px;
+  text-align: left;
+}
+
+.nvx-avatar {
+  min-width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #EAF4FF;
+  color: var(--nvx-teal);
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.nvx-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #B9E0FF;
+  background: #EFF8FF;
+  color: var(--nvx-teal);
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.nvx-pill.good {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+.nvx-pill.warn {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+.nvx-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.nvx-column {
+  min-height: 360px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding: 16px;
+  border-radius: 24px;
+}
+
+.nvx-column h3 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -.04em;
+}
+
+.nvx-invoice-preview {
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border-radius: 26px;
+}
+
+.nvx-invoice-preview strong {
+  font-size: 48px;
+  letter-spacing: -.06em;
+}
+
+@media (max-width: 980px) {
+  .nvx-shell,
+  .nvx-hero,
+  .nvx-split,
+  .nvx-board,
+  .nvx-topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .nvx-sidebar {
+    display: none;
+  }
+
+  .nvx-main {
+    padding: 14px 14px 96px;
+  }
+
+  .nvx-stats,
+  .nvx-ai-grid,
+  .nvx-card-grid,
+  .nvx-card-grid.four {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .nvx-hero {
+    padding: 22px;
+    border-radius: 24px;
+  }
+
+  .nvx-stats,
+  .nvx-ai-grid,
+  .nvx-card-grid,
+  .nvx-card-grid.four {
+    grid-template-columns: 1fr;
+  }
+}
+

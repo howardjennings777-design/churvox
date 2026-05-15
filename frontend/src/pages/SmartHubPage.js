@@ -1,3 +1,1 @@
-import SmartHubExactPage from "./SmartHubExactPage";
-
-export default SmartHubExactPage;
+export { default } from "./DashboardPage";
