@@ -15655,6 +15655,573 @@ async def public_invoice_payment_note(token: str, request: Request):
 # =================== END CHURVOX PUBLIC QUOTE ACCEPTANCE + PAYMENT TRACKING ROUTES ===================
 
 
+
+
+# ===================== CHURVOX DISPATCH BOARD + RECURRING JOBS =====================
+
+def _dispatch_clean_text(value, limit=1000):
+    return str(value or "").strip()[:limit]
+
+def _dispatch_iso_date(value):
+    raw = str(value or "").strip()
+    if not raw:
+        return datetime.now(timezone.utc).date().isoformat()
+
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).date().isoformat()
+    except Exception:
+        pass
+
+    try:
+        return datetime.strptime(raw[:10], "%Y-%m-%d").date().isoformat()
+    except Exception:
+        return datetime.now(timezone.utc).date().isoformat()
+
+def _dispatch_parse_dt(value):
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+def _dispatch_job_date(job):
+    for key in ["scheduled_date", "date", "job_date", "start_date", "due_date"]:
+        val = job.get(key)
+        if val:
+            return _dispatch_iso_date(val)
+
+    for key in ["scheduled_start", "start_time", "starts_at"]:
+        val = job.get(key)
+        if val:
+            return _dispatch_iso_date(val)
+
+    created = job.get("created_at")
+    if created:
+        return _dispatch_iso_date(created)
+
+    return ""
+
+def _dispatch_worker_id(worker):
+    return str(worker.get("id") or worker.get("_id") or worker.get("worker_id") or worker.get("user_id") or "")
+
+def _dispatch_worker_name(worker):
+    return _dispatch_clean_text(
+        worker.get("name")
+        or worker.get("full_name")
+        or worker.get("worker_name")
+        or worker.get("email")
+        or "Worker",
+        160,
+    )
+
+def _dispatch_assigned_worker_id(job):
+    return str(
+        job.get("assigned_worker_id")
+        or job.get("worker_id")
+        or job.get("assigned_to")
+        or job.get("assigned_worker")
+        or ""
+    )
+
+def _dispatch_assigned_worker_name(job):
+    return _dispatch_clean_text(
+        job.get("assigned_worker_name")
+        or job.get("worker_name")
+        or job.get("assigned_worker")
+        or "",
+        160,
+    )
+
+def _dispatch_times_overlap(a_start, a_end, b_start, b_end):
+    if not a_start or not a_end or not b_start or not b_end:
+        return False
+    return a_start < b_end and b_start < a_end
+
+def _dispatch_job_window(job):
+    start = _dispatch_parse_dt(job.get("scheduled_start") or job.get("start_time") or job.get("starts_at"))
+    end = _dispatch_parse_dt(job.get("scheduled_end") or job.get("end_time") or job.get("ends_at"))
+
+    if start and not end:
+        end = start + timedelta(hours=1)
+    if end and not start:
+        start = end - timedelta(hours=1)
+
+    return start, end
+
+def _dispatch_safe_job(job):
+    item = safe_doc(job)
+    item["dispatch_date"] = _dispatch_job_date(job)
+    item["assigned_worker_id"] = _dispatch_assigned_worker_id(job)
+    item["assigned_worker_name"] = _dispatch_assigned_worker_name(job)
+    return make_json_safe(item)
+
+async def _dispatch_workers_for_business(business_id: str):
+    workers = []
+
+    try:
+        users = await db.users.find({
+            "business_id": str(business_id),
+            "role": {"$in": ["worker", "employee", "field_worker"]},
+        }).limit(200).to_list(length=200)
+        workers.extend(users or [])
+    except Exception:
+        pass
+
+    try:
+        worker_docs = await db.workers.find({"business_id": str(business_id)}).limit(200).to_list(length=200)
+        workers.extend(worker_docs or [])
+    except Exception:
+        pass
+
+    seen = set()
+    cleaned = []
+
+    for worker in workers:
+        wid = _dispatch_worker_id(worker)
+        key = wid or str(worker.get("email") or worker.get("name") or "")
+        if not key or key in seen:
+            continue
+
+        seen.add(key)
+        item = safe_doc(worker)
+        item["id"] = wid or item.get("id")
+        item["name"] = _dispatch_worker_name(worker)
+        item["region"] = worker.get("region") or worker.get("service_area") or ""
+        item["skills"] = worker.get("skills") or worker.get("trade_skills") or []
+        cleaned.append(make_json_safe(item))
+
+    return cleaned
+
+async def _dispatch_jobs_for_date(business_id: str, target_date: str):
+    jobs = await db.jobs.find({"business_id": str(business_id)}).sort("created_at", -1).limit(500).to_list(length=500)
+
+    visible = []
+    for job in jobs:
+        job_date = _dispatch_job_date(job)
+        status = str(job.get("status") or job.get("job_status") or "").lower()
+        if "cancel" in status:
+            continue
+
+        if job_date == target_date:
+            visible.append(job)
+            continue
+
+        # Keep unassigned jobs visible because they still need dispatch.
+        if not _dispatch_assigned_worker_id(job) and "complete" not in status:
+            visible.append(job)
+
+    return visible
+
+async def _dispatch_detect_conflicts(jobs):
+    conflicts = []
+    by_worker = {}
+
+    for job in jobs:
+        worker_id = _dispatch_assigned_worker_id(job)
+        if not worker_id:
+            continue
+        by_worker.setdefault(worker_id, []).append(job)
+
+    for worker_id, worker_jobs in by_worker.items():
+        for i in range(len(worker_jobs)):
+            for j in range(i + 1, len(worker_jobs)):
+                a = worker_jobs[i]
+                b = worker_jobs[j]
+                a_start, a_end = _dispatch_job_window(a)
+                b_start, b_end = _dispatch_job_window(b)
+
+                if _dispatch_times_overlap(a_start, a_end, b_start, b_end):
+                    conflicts.append({
+                        "worker_id": worker_id,
+                        "worker_name": _dispatch_assigned_worker_name(a) or _dispatch_assigned_worker_name(b),
+                        "job_a": str(a.get("id") or a.get("_id") or ""),
+                        "job_b": str(b.get("id") or b.get("_id") or ""),
+                        "message": "Worker has overlapping scheduled jobs.",
+                    })
+
+    return conflicts
+
+def _recurring_next_date(current_date: str, frequency: str, custom_days=None):
+    base = datetime.strptime(_dispatch_iso_date(current_date), "%Y-%m-%d").date()
+    freq = str(frequency or "weekly").lower().strip()
+
+    if freq in ["weekly", "week"]:
+        return (base + timedelta(days=7)).isoformat()
+
+    if freq in ["fortnightly", "biweekly", "two_weekly"]:
+        return (base + timedelta(days=14)).isoformat()
+
+    if freq in ["monthly", "month"]:
+        month = base.month + 1
+        year = base.year
+        if month > 12:
+            month = 1
+            year += 1
+
+        try:
+            from calendar import monthrange
+            day = min(base.day, monthrange(year, month)[1])
+            return base.replace(year=year, month=month, day=day).isoformat()
+        except Exception:
+            return (base + timedelta(days=30)).isoformat()
+
+    if freq in ["custom", "custom_days"]:
+        try:
+            days = max(1, int(custom_days or 7))
+        except Exception:
+            days = 7
+        return (base + timedelta(days=days)).isoformat()
+
+    return (base + timedelta(days=7)).isoformat()
+
+async def _recurring_due_for_date(business_id: str, target_date: str):
+    items = await db.recurring_jobs.find({
+        "business_id": str(business_id),
+        "active": {"$ne": False},
+    }).limit(500).to_list(length=500)
+
+    due = []
+    for item in items:
+        next_due = _dispatch_iso_date(item.get("next_due_date") or item.get("start_date"))
+        if next_due <= target_date:
+            safe = safe_doc(item)
+            safe["next_due_date"] = next_due
+            safe["ai_summary"] = f"Recurring job due {next_due}. Churvox can generate the next job and suggest assignment."
+            due.append(make_json_safe(safe))
+
+    return due
+
+@api_router.get("/dispatch/board")
+async def get_dispatch_board(request: Request, date: str = Query("")):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    target_date = _dispatch_iso_date(date)
+    workers = await _dispatch_workers_for_business(business_id)
+    jobs = await _dispatch_jobs_for_date(business_id, target_date)
+    conflicts = await _dispatch_detect_conflicts(jobs)
+    recurring_due = await _recurring_due_for_date(business_id, target_date)
+
+    unassigned = []
+    assigned = []
+
+    for job in jobs:
+        status = str(job.get("status") or job.get("job_status") or "").lower()
+        if _dispatch_assigned_worker_id(job):
+            assigned.append(_dispatch_safe_job(job))
+        elif "complete" not in status and "cancel" not in status:
+            unassigned.append(_dispatch_safe_job(job))
+
+    return {
+        "ok": True,
+        "date": target_date,
+        "workers": workers,
+        "jobs": [_dispatch_safe_job(job) for job in jobs],
+        "assigned": assigned,
+        "unassigned": unassigned,
+        "conflicts": conflicts,
+        "recurring_due": recurring_due,
+        "summary": {
+            "worker_count": len(workers),
+            "job_count": len(jobs),
+            "assigned_count": len(assigned),
+            "unassigned_count": len(unassigned),
+            "conflict_count": len(conflicts),
+            "recurring_due_count": len(recurring_due),
+        },
+    }
+
+@api_router.post("/dispatch/assign")
+async def assign_dispatch_job(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    job_id = _dispatch_clean_text(payload.get("job_id"), 120)
+    worker_id = _dispatch_clean_text(payload.get("worker_id"), 120)
+    worker_name = _dispatch_clean_text(payload.get("worker_name"), 180)
+    scheduled_start = _dispatch_clean_text(payload.get("scheduled_start"), 120)
+    scheduled_end = _dispatch_clean_text(payload.get("scheduled_end"), 120)
+    force = bool(payload.get("force"))
+
+    if not job_id or not worker_id:
+        raise HTTPException(status_code=400, detail="job_id and worker_id are required")
+
+    job_query = [{"id": job_id}, {"job_id": job_id}]
+    try:
+        if ObjectId.is_valid(job_id):
+            job_query.append({"_id": ObjectId(job_id)})
+    except Exception:
+        pass
+
+    job = await db.jobs.find_one({"business_id": str(business_id), "$or": job_query})
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    target_start = _dispatch_parse_dt(scheduled_start)
+    target_end = _dispatch_parse_dt(scheduled_end)
+
+    conflict_jobs = []
+    if target_start and target_end:
+        existing = await db.jobs.find({
+            "business_id": str(business_id),
+            "$or": [
+                {"assigned_worker_id": worker_id},
+                {"worker_id": worker_id},
+                {"assigned_to": worker_id},
+            ],
+        }).limit(200).to_list(length=200)
+
+        for existing_job in existing:
+            existing_id = str(existing_job.get("id") or existing_job.get("_id") or "")
+            if existing_id == str(job.get("id") or job.get("_id") or ""):
+                continue
+
+            start, end = _dispatch_job_window(existing_job)
+            if _dispatch_times_overlap(target_start, target_end, start, end):
+                conflict_jobs.append(_dispatch_safe_job(existing_job))
+
+    if conflict_jobs and not force:
+        return {
+            "ok": False,
+            "conflict": True,
+            "message": "Worker has a schedule conflict. Send force=true to assign anyway.",
+            "conflicts": conflict_jobs,
+        }
+
+    update = {
+        "assigned_worker_id": worker_id,
+        "assigned_worker_name": worker_name,
+        "worker_id": worker_id,
+        "status": "assigned",
+        "job_status": "assigned",
+        "updated_at": datetime.now(timezone.utc),
+    }
+
+    if scheduled_start:
+        update["scheduled_start"] = scheduled_start
+        update["scheduled_date"] = _dispatch_iso_date(scheduled_start)
+    if scheduled_end:
+        update["scheduled_end"] = scheduled_end
+
+    await db.jobs.update_one({"_id": job.get("_id")}, {"$set": update})
+
+    return {
+        "ok": True,
+        "message": "Job assigned.",
+        "conflict_overridden": bool(conflict_jobs and force),
+        "conflicts": conflict_jobs,
+    }
+
+@api_router.get("/recurring-jobs")
+async def list_recurring_jobs(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    items = await db.recurring_jobs.find({"business_id": str(business_id)}).sort("created_at", -1).limit(500).to_list(length=500)
+
+    return {
+        "ok": True,
+        "recurring_jobs": make_json_safe(safe_docs(items)),
+        "count": len(items),
+    }
+
+@api_router.post("/recurring-jobs")
+async def create_recurring_job(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    title = _dispatch_clean_text(payload.get("title") or payload.get("name") or "Recurring job", 180)
+    client_name = _dispatch_clean_text(payload.get("client_name") or payload.get("customer_name"), 180)
+    address = _dispatch_clean_text(payload.get("address"), 300)
+    service_type = _dispatch_clean_text(payload.get("service_type") or payload.get("job_type"), 160)
+    notes = _dispatch_clean_text(payload.get("notes") or payload.get("description"), 1600)
+    frequency = _dispatch_clean_text(payload.get("frequency") or "weekly", 80)
+    custom_days = payload.get("custom_days")
+    start_date = _dispatch_iso_date(payload.get("start_date") or payload.get("next_due_date"))
+    assigned_worker_id = _dispatch_clean_text(payload.get("assigned_worker_id"), 120)
+    assigned_worker_name = _dispatch_clean_text(payload.get("assigned_worker_name"), 180)
+
+    now = datetime.now(timezone.utc)
+    recurring_id = secrets.token_urlsafe(10)
+
+    doc = {
+        "id": recurring_id,
+        "business_id": str(business_id),
+        "title": title,
+        "client_name": client_name,
+        "address": address,
+        "service_type": service_type,
+        "notes": notes,
+        "frequency": frequency,
+        "custom_days": custom_days,
+        "start_date": start_date,
+        "next_due_date": start_date,
+        "assigned_worker_id": assigned_worker_id,
+        "assigned_worker_name": assigned_worker_name,
+        "active": True,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    await db.recurring_jobs.insert_one(doc)
+
+    return {
+        "ok": True,
+        "message": "Recurring job created.",
+        "recurring_job": make_json_safe(safe_doc(doc)),
+    }
+
+@api_router.post("/recurring-jobs/{recurring_id}/generate")
+async def generate_recurring_job(recurring_id: str, request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    recurring = await db.recurring_jobs.find_one({
+        "business_id": str(business_id),
+        "$or": [{"id": recurring_id}],
+    })
+
+    if not recurring:
+        try:
+            recurring = await db.recurring_jobs.find_one({
+                "business_id": str(business_id),
+                "_id": ObjectId(str(recurring_id)),
+            })
+        except Exception:
+            recurring = None
+
+    if not recurring:
+        raise HTTPException(status_code=404, detail="Recurring job not found")
+
+    due_date = _dispatch_iso_date(recurring.get("next_due_date") or recurring.get("start_date"))
+    now = datetime.now(timezone.utc)
+    job_id = secrets.token_urlsafe(10)
+
+    job_doc = {
+        "id": job_id,
+        "business_id": str(business_id),
+        "title": recurring.get("title") or "Recurring job",
+        "name": recurring.get("title") or "Recurring job",
+        "client_name": recurring.get("client_name") or "",
+        "address": recurring.get("address") or "",
+        "service_type": recurring.get("service_type") or "",
+        "description": recurring.get("notes") or "",
+        "notes": recurring.get("notes") or "",
+        "status": "assigned" if recurring.get("assigned_worker_id") else "pending",
+        "job_status": "assigned" if recurring.get("assigned_worker_id") else "pending",
+        "scheduled_date": due_date,
+        "assigned_worker_id": recurring.get("assigned_worker_id") or "",
+        "assigned_worker_name": recurring.get("assigned_worker_name") or "",
+        "recurring_job_id": str(recurring.get("id") or recurring.get("_id")),
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    await db.jobs.insert_one(job_doc)
+
+    next_due = _recurring_next_date(
+        due_date,
+        recurring.get("frequency") or "weekly",
+        recurring.get("custom_days"),
+    )
+
+    await db.recurring_jobs.update_one(
+        {"_id": recurring.get("_id")},
+        {
+            "$set": {
+                "last_generated_job_id": job_id,
+                "last_generated_date": due_date,
+                "next_due_date": next_due,
+                "updated_at": now,
+            }
+        },
+    )
+
+    return {
+        "ok": True,
+        "message": "Recurring job generated.",
+        "job": make_json_safe(safe_doc(job_doc)),
+        "next_due_date": next_due,
+    }
+
+@api_router.patch("/recurring-jobs/{recurring_id}")
+async def update_recurring_job(recurring_id: str, request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    allowed = [
+        "title",
+        "client_name",
+        "address",
+        "service_type",
+        "notes",
+        "frequency",
+        "custom_days",
+        "next_due_date",
+        "assigned_worker_id",
+        "assigned_worker_name",
+        "active",
+    ]
+
+    update = {}
+    for key in allowed:
+        if key in payload:
+            update[key] = payload[key]
+
+    if "next_due_date" in update:
+        update["next_due_date"] = _dispatch_iso_date(update["next_due_date"])
+
+    update["updated_at"] = datetime.now(timezone.utc)
+
+    query = {"business_id": str(business_id), "$or": [{"id": recurring_id}]}
+    try:
+        if ObjectId.is_valid(str(recurring_id)):
+            query["$or"].append({"_id": ObjectId(str(recurring_id))})
+    except Exception:
+        pass
+
+    result = await db.recurring_jobs.update_one(query, {"$set": update})
+
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Recurring job not found")
+
+    return {
+        "ok": True,
+        "message": "Recurring job updated.",
+    }
+
+# =================== END CHURVOX DISPATCH BOARD + RECURRING JOBS ===================
+
+
 app.include_router(api_router)
 
 @app.get("/api/admin/platform-stats")
