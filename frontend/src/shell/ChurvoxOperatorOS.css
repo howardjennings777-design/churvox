@@ -920,3 +920,400 @@ textarea::placeholder {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Phase 4: final design control pass
+   Goal: premium AI machine, not noisy dashboard.
+   Normal records stay calm. AI approval/proof moments get the glow.
+*/
+
+:root {
+  --cx-focus-glow: 0 0 0 1px rgba(116,247,255,.10), 0 22px 70px rgba(32,217,255,.12);
+  --cx-calm-shadow: 0 18px 48px rgba(0,0,0,.28);
+  --cx-hard-line: rgba(116,247,255,.10);
+}
+
+/* overall rhythm */
+.cx-owner-command-shell,
+.cx-worker-run {
+  gap: 18px;
+}
+
+/* calm normal panels so the app does not look like every box is screaming */
+.cx-panel,
+.cx-column,
+.cx-stat,
+.cx-feature-list article,
+.cx-client-portal-grid article,
+.cx-client-payment-panel,
+.cx-client-portal-message,
+.cx-worker-panel,
+.cx-worker-run-board,
+.cx-worker-run-log {
+  background:
+    linear-gradient(180deg, rgba(14, 26, 37, 0.9), rgba(7, 14, 21, 0.88)) !important;
+  border-color: var(--cx-hard-line) !important;
+  box-shadow: var(--cx-calm-shadow), inset 0 1px 0 rgba(255,255,255,.03) !important;
+}
+
+/* AI areas keep the machine glow */
+.cx-work-hero,
+.cx-owner-command-hero,
+.cx-ai-daily-brief,
+.cx-hub-box,
+.cx-work-action,
+.cx-smart-modal,
+.cx-command-modal,
+.cx-ai-prepared-machine,
+.cx-ai-approval-preview-machine article,
+.cx-worker-run-hero,
+.cx-worker-drawer,
+.cx-worker-job-machine article,
+.cx-worker-needs-panel {
+  box-shadow: var(--cx-shadow), var(--cx-focus-glow), inset 0 1px 0 rgba(255,255,255,.05) !important;
+}
+
+/* Smart Hub box layout: powerful, readable, not dumped */
+.cx-hub-box-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+}
+
+.cx-hub-box {
+  min-height: 210px;
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  overflow: hidden;
+  text-align: left;
+  border-radius: 28px;
+  padding: 18px;
+  color: var(--cx-text);
+  border: 1px solid rgba(116,247,255,.14);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(32,217,255,.09), transparent 12rem),
+    linear-gradient(180deg, rgba(15, 30, 43, .96), rgba(5, 12, 18, .92));
+}
+
+.cx-hub-box::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(116,247,255,.7), transparent);
+  opacity: .55;
+}
+
+.cx-hub-box span {
+  color: var(--cx-cyan);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.cx-hub-box strong {
+  color: var(--cx-text);
+  font-size: clamp(34px, 4vw, 52px);
+  line-height: .95;
+  letter-spacing: -.07em;
+  font-weight: 950;
+}
+
+.cx-hub-box strong.money {
+  font-size: clamp(28px, 3vw, 42px);
+}
+
+.cx-hub-box b {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: #031018;
+  background: linear-gradient(135deg, #74f7ff, #35b7ff);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.cx-hub-box small {
+  display: block;
+  margin-top: 4px;
+  color: var(--cx-text-soft);
+  line-height: 1.45;
+  font-weight: 750;
+}
+
+.cx-hub-box em {
+  margin-top: auto;
+  color: var(--cx-cyan);
+  font-style: normal;
+  font-weight: 950;
+}
+
+.cx-hub-box:hover,
+.cx-hub-box.active {
+  transform: translateY(-2px);
+  border-color: rgba(116,247,255,.36);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(32,217,255,.16), transparent 14rem),
+    linear-gradient(180deg, rgba(21, 41, 58, .98), rgba(5, 12, 18, .94));
+}
+
+/* top brief should feel like command intelligence */
+.cx-ai-daily-brief,
+.cx-smart-hub-notice,
+.cx-owner-command-strip,
+.cx-operator-expansion-panel,
+.cx-ai-decision-history {
+  border-radius: 28px;
+  border: 1px solid rgba(116,247,255,.13);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(32,217,255,.08), transparent 18rem),
+    linear-gradient(180deg, rgba(14, 27, 38, .94), rgba(6, 13, 20, .9));
+  box-shadow: var(--cx-calm-shadow), inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.cx-ai-daily-brief {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px;
+}
+
+.cx-ai-daily-brief span,
+.cx-owner-command-strip span,
+.cx-operator-expansion-panel span,
+.cx-ai-decision-history span,
+.cx-smart-hub-notice span {
+  color: var(--cx-cyan);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.cx-ai-daily-brief h2,
+.cx-operator-expansion-panel h2,
+.cx-ai-decision-history h2 {
+  margin: 6px 0 0;
+  color: var(--cx-text);
+  letter-spacing: -.05em;
+  font-weight: 950;
+}
+
+.cx-ai-daily-brief p,
+.cx-operator-expansion-panel p,
+.cx-ai-decision-history p {
+  color: var(--cx-text-soft);
+  line-height: 1.55;
+  font-weight: 750;
+}
+
+.cx-ai-daily-brief button,
+.cx-smart-hub-notice button,
+.cx-operator-expansion-panel button,
+.cx-ai-decision-history button,
+.cx-owner-section header button,
+.cx-owner-log header button {
+  min-height: 44px;
+  border-radius: 15px;
+  padding: 0 14px;
+  color: var(--cx-text);
+  background: rgba(13, 29, 42, 0.86);
+  border: 1px solid rgba(116,247,255,.16);
+  font-weight: 950;
+}
+
+.cx-ai-daily-brief button {
+  color: #031018;
+  background: linear-gradient(135deg, #74f7ff, #35b7ff 48%, #18e3c2);
+}
+
+/* command strip becomes short principle cards, not random decoration */
+.cx-owner-command-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px;
+}
+
+.cx-owner-command-strip article {
+  border-radius: 20px;
+  padding: 16px;
+  background: rgba(4, 10, 16, .44);
+  border: 1px solid rgba(116,247,255,.09);
+}
+
+.cx-owner-command-strip strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--cx-text);
+  line-height: 1.35;
+  font-weight: 950;
+}
+
+/* expansion panel cleaner */
+.cx-operator-expansion-panel {
+  padding: 18px;
+}
+
+.cx-operator-expansion-panel > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.cx-operator-expansion-panel > div button {
+  min-height: 130px;
+  display: grid;
+  gap: 7px;
+  align-content: start;
+  text-align: left;
+  border-radius: 22px;
+  padding: 16px;
+  background: rgba(4, 10, 16, .5);
+  border: 1px solid rgba(116,247,255,.10);
+}
+
+.cx-operator-expansion-panel > div button strong {
+  color: var(--cx-text);
+  font-size: 28px;
+}
+
+/* action modal hierarchy */
+.cx-smart-modal {
+  width: min(1180px, calc(100vw - 28px));
+}
+
+.cx-smart-modal > header,
+.cx-command-modal > header,
+.cx-worker-drawer > header {
+  border-bottom: 1px solid rgba(116,247,255,.10);
+  padding-bottom: 14px;
+}
+
+.cx-smart-modal-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cx-smart-modal-summary article {
+  border-radius: 20px;
+  padding: 14px;
+  background: rgba(4,10,16,.48);
+  border: 1px solid rgba(116,247,255,.10);
+}
+
+.cx-smart-modal-summary span,
+.cx-smart-modal-summary small {
+  color: var(--cx-text-soft);
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.cx-smart-modal-summary strong {
+  display: block;
+  margin: 6px 0;
+  color: var(--cx-text);
+  font-size: 28px;
+  letter-spacing: -.05em;
+}
+
+/* list records calmer */
+.cx-command-row,
+.cx-row {
+  border-color: rgba(116,247,255,.08) !important;
+  background: rgba(4, 10, 16, 0.46) !important;
+  box-shadow: none !important;
+}
+
+.cx-command-row:hover,
+.cx-row:hover {
+  border-color: rgba(116,247,255,.22) !important;
+  background: rgba(10, 23, 34, .72) !important;
+}
+
+/* approval buttons must dominate, secondary actions must calm down */
+button.approve,
+.cx-work-action button.approve,
+.cx-command-modal button.approve,
+.cx-worker-proof-actions .complete {
+  color: #031018 !important;
+  background:
+    radial-gradient(circle at 28% 0%, rgba(255,255,255,.74), transparent 28%),
+    linear-gradient(135deg, #74f7ff, #35b7ff 48%, #18e3c2) !important;
+  border-color: rgba(116,247,255,.45) !important;
+}
+
+button.resolve {
+  color: #d8ffe9 !important;
+  border-color: rgba(56,232,164,.22) !important;
+  background: rgba(56,232,164,.08) !important;
+}
+
+/* empty states become guidance, not cheap gaps */
+.cx-empty-state {
+  background:
+    radial-gradient(circle at 0 0, rgba(32,217,255,.07), transparent 12rem),
+    rgba(4,10,16,.48) !important;
+  border-style: dashed !important;
+}
+
+.cx-empty-state span {
+  color: var(--cx-cyan) !important;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.cx-empty-state h3::before {
+  content: "Teach Churvox what to prepare next";
+}
+
+/* worker should feel connected but simpler */
+.cx-worker-run-hero {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(24,227,194,.12), transparent 20rem),
+    radial-gradient(circle at 100% 0%, rgba(32,217,255,.08), transparent 20rem),
+    linear-gradient(180deg, rgba(16, 34, 46, .96), rgba(5, 12, 18, .93)) !important;
+}
+
+.cx-worker-job-card {
+  box-shadow: var(--cx-calm-shadow) !important;
+}
+
+.cx-worker-job-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(116,247,255,.28);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(24,227,194,.10), transparent 14rem),
+    rgba(8, 18, 27, .82);
+}
+
+/* mobile should stay simple */
+@media (max-width: 900px) {
+  .cx-ai-daily-brief,
+  .cx-owner-command-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-ai-daily-brief {
+    display: grid;
+  }
+
+  .cx-smart-modal-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-hub-box {
+    min-height: 170px;
+  }
+}

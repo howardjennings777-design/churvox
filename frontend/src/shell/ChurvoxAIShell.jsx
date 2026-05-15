@@ -871,7 +871,7 @@ function buildLiveActions(raw) {
       source_type: "setup",
       source_id: "team",
       priority: "high",
-      approval_preview: "Open team setup so Churvox can prepare worker matches.",
+      approval_preview: "Team setup so Churvox can prepare worker matches.",
     });
   }
 
@@ -2230,7 +2230,7 @@ function Shell({ page, setPage, onLogout, data }) {
           <input placeholder={workerMode ? "Search my assigned jobs..." : "Search jobs, clients, invoices..."} />
 
           <button type="button" className="cx-top-primary" onClick={() => choosePage(workerMode ? "dashboard" : "jobs")}>
-            {workerMode ? "Open my run" : "Open jobs"}
+            {workerMode ? "Open my run" : "Jobs"}
           </button>
           <button type="button" className="cx-logout" onClick={onLogout}>
             Logout
@@ -2270,7 +2270,7 @@ function WorkspaceHero({ kicker, title, body, metric, action, setPage }) {
         <span>AI Operator</span>
         <strong>{metric}</strong>
         <p>{action}</p>
-        <button type="button" onClick={() => setPage("dashboard")}>Open Smart Hub</button>
+        <button type="button" onClick={() => setPage("dashboard")}>Return to Smart Hub</button>
       </aside>
     </section>
   );
@@ -2396,7 +2396,7 @@ function Dashboard({ setPage, data }) {
       <section className={`cx-stats ${page === "dashboard" ? "cx-hide-on-smart-hub" : ""}`}>
         <Stat label="Jobs today" value={stats.jobsToday || String(jobs.length)} note="live workspace count" />
         <Stat label="Ready to invoice" value={stats.readyToInvoice || "$0"} note="drafts and follow-ups" />
-        <Stat label="Open quotes" value={stats.openQuotes || "0"} note="pipeline watched" />
+        <Stat label="Quotes" value={stats.openQuotes || "0"} note="pipeline watched" />
         <Stat label="Crew online" value={stats.crewOnline || String(team.length)} note="team records" />
       </section>
 
@@ -2410,7 +2410,7 @@ function Dashboard({ setPage, data }) {
               <EmptyState
                 title="No jobs yet."
                 body="Create your first job and Churvox will start building today’s run sheet."
-                action="Open jobs"
+                action="Jobs"
                 onAction={() => setPage("jobs")}
               />
             )}
@@ -2424,7 +2424,7 @@ function Dashboard({ setPage, data }) {
               <EmptyState
                 title="No workers added yet."
                 body="Add workers so Churvox can recommend assignments and show crew capacity."
-                action="Open team"
+                action="Team"
                 onAction={() => setPage("team")}
               />
             )}
@@ -2544,9 +2544,9 @@ function SetupGuide({
                 <p>{item.body}</p>
               </div>
               {item.action === "clients" ? <button type="button" onClick={onOpenClients}>Open clients</button> : null}
-              {item.action === "team" ? <button type="button" onClick={onOpenTeam}>Open team</button> : null}
-              {item.action === "jobs" ? <button type="button" onClick={onOpenJobs}>Open jobs</button> : null}
-              {item.action === "quotes" ? <button type="button" onClick={onOpenQuotes}>Open quotes</button> : null}
+              {item.action === "team" ? <button type="button" onClick={onOpenTeam}>Team</button> : null}
+              {item.action === "jobs" ? <button type="button" onClick={onOpenJobs}>Jobs</button> : null}
+              {item.action === "quotes" ? <button type="button" onClick={onOpenQuotes}>Quotes</button> : null}
             </article>
           ))}
         </div>
@@ -3759,7 +3759,7 @@ function SmartHubBoxModal({
     messages: "Customer follow-ups and reminders prepared for review.",
     work: "Jobs and invoice work worth checking today.",
     collect: "Unpaid or overdue invoices that need follow-up.",
-    quotes: "Open quotes and follow-ups that may need a nudge.",
+    quotes: "Quotes and follow-ups that may need a nudge.",
     crew: "Worker capacity and team records available for assignment.",
     requests: "Customer requests that can become draft jobs or quotes.",
     dispatch: "Dispatch decisions, unassigned jobs and possible schedule conflicts.",
@@ -3929,12 +3929,12 @@ function SmartHubBoxModal({
   }
 
   function fullRecordLabel() {
-    if (workspaceForBox === "jobs") return "Open jobs";
-    if (workspaceForBox === "invoices") return "Open invoices";
-    if (workspaceForBox === "quotes") return "Open quotes";
-    if (workspaceForBox === "team") return "Open team";
-    if (workspaceForBox === "settings") return "Open settings";
-    return "Open Smart Hub";
+    if (workspaceForBox === "jobs") return "Jobs";
+    if (workspaceForBox === "invoices") return "Invoices";
+    if (workspaceForBox === "quotes") return "Quotes";
+    if (workspaceForBox === "team") return "Team";
+    if (workspaceForBox === "settings") return "Settings";
+    return "Return to Smart Hub";
   }
 
   function canResolveBox() {
@@ -5027,7 +5027,7 @@ function Workspace({ page, setPage, data }) {
     {
       type: "Quotes",
       title: "Quote follow-up report",
-      message: quoteReport.ai_summary || "Open quotes and follow-up opportunities",
+      message: quoteReport.ai_summary || "Quotes and follow-up opportunities",
       status: `${quoteSummary.needs_followup || 0} follow-ups`,
       source_type: "quote_report",
       source_id: "quotes",
@@ -5154,7 +5154,7 @@ function Workspace({ page, setPage, data }) {
       count: quoteRows.length,
       label: "waiting",
       title: "Quotes waiting",
-      body: "Open quotes and follow-ups that may need a nudge.",
+      body: "Quotes and follow-ups that may need a nudge.",
       action: "Open",
     },
     {
@@ -5824,7 +5824,7 @@ function Workspace({ page, setPage, data }) {
             <span>AI Operator</span>
             <strong>{actions.length} ready</strong>
             <p>Approve/edit from this page first. Open full workspaces only when needed.</p>
-            <button type="button" onClick={() => switchPage("dashboard")}>Open Smart Hub</button>
+            <button type="button" onClick={() => switchPage("dashboard")}>Return to Smart Hub</button>
           </aside>
         ) : null}
       </section>
@@ -5884,7 +5884,7 @@ function Workspace({ page, setPage, data }) {
         </article>
         <article>
           <span>Navigate</span>
-          <strong>Jobs, clients, team, quotes, invoices from one hub</strong>
+          <strong>Stay in context — no page jumping</strong>
         </article>
       </section>
 
@@ -5913,7 +5913,7 @@ function Workspace({ page, setPage, data }) {
       <section className={`cx-stats ${page === "dashboard" ? "cx-hide-on-smart-hub" : ""}`}>
         <Stat label="Jobs today" value={stats.jobsToday || String(jobs.length)} note="tap jobs below to inspect" />
         <Stat label="Ready to invoice" value={stats.readyToInvoice || "$0"} note="drafts and reminders" />
-        <Stat label="Open quotes" value={stats.openQuotes || String(quotes.length)} note="follow-ups watched" />
+        <Stat label="Quotes" value={stats.openQuotes || String(quotes.length)} note="follow-ups watched" />
         <Stat label="Crew online" value={stats.crewOnline || String(team.length)} note="assignment context" />
       </section>
 
@@ -5943,9 +5943,9 @@ function Workspace({ page, setPage, data }) {
         <section className="cx-operator-expansion-panel">
           <header>
             <div>
-              <span>Connected operator systems</span>
-              <h2>New backend features are now feeding Smart Hub.</h2>
-              <p>Requests, dispatch, recurring jobs, templates, setup cleanup and reports are visible from one board.</p>
+              <span>Connected work streams</span>
+              <h2>Churvox is watching the business from one control board.</h2>
+              <p>Requests, dispatch, recurring work, setup health and reports all feed into the same AI approval flow.</p>
             </div>
           </header>
 
@@ -6094,8 +6094,8 @@ function Workspace({ page, setPage, data }) {
                         ? "Jobs and invoices needing attention"
                         : sectionPage === "queue"
                           ? "Prepared actions"
-                          : "Open, edit, approve"
-                      : `Open ${current.kicker.toLowerCase()} records in pop-ups`}
+                          : "Review, edit, approve in-place"
+                      : `Review ${current.kicker.toLowerCase()} records in-place`}
                   </h2>
                 </div>
                 <button type="button" onClick={() => switchPage(sectionPage)}>View all</button>
@@ -6114,8 +6114,8 @@ function Workspace({ page, setPage, data }) {
                 )) : (
                   <EmptyState
                     title={`No ${current.kicker.toLowerCase()} records yet.`}
-                    body="Real records will appear here once they are added, imported, or created by Churvox."
-                    action={page === "dashboard" ? "" : "Open Smart Hub"}
+                    body="Add or import records so Churvox can prepare real work instead of empty suggestions."
+                    action={page === "dashboard" ? "" : "Return to Smart Hub"}
                     onAction={page === "dashboard" ? undefined : () => switchPage("dashboard")}
                   />
                 )}
@@ -6139,7 +6139,7 @@ function Workspace({ page, setPage, data }) {
                 </p>
               </div>
               <button type="button" onClick={() => switchPage("quotes")}>
-                Open quotes
+                Quotes
               </button>
             </header>
 
@@ -6202,7 +6202,7 @@ function Workspace({ page, setPage, data }) {
               ) : null}
 
               {!sendCenterItems.length && !approvedDrafts.length ? (
-                <p>No approved message drafts yet.</p>
+                <p>No approved message drafts yet. Quote follow-ups and payment reminders will appear here after owner approval.</p>
               ) : null}
             </div>
           </section>
@@ -6246,7 +6246,7 @@ function Workspace({ page, setPage, data }) {
                 </article>
               )) : null}
 
-              {!backendApprovalLog.length && !approvalLog.length ? <p>No owner approvals yet.</p> : null}
+              {!backendApprovalLog.length && !approvalLog.length ? <p>No owner approvals yet. Once Churvox prepares work and you approve it, the decision trail appears here.</p> : null}
             </div>
           </section>
         </aside>
