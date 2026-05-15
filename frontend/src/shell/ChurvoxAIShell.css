@@ -4477,3 +4477,17 @@ body:has(.cx-public-landing) .ai-action-dock {
     width: fit-content;
   }
 }
+
+/* ===== Remove repeated AI found/prepared/approve ribbon ===== */
+.cx-public-landing .cx-ai-card::before {
+  content: none !important;
+  display: none !important;
+}
+
+.cx-public-landing .cx-ai-card {
+  padding-top: 20px;
+}
+
+.cx-public-landing .cx-ai-status {
+  margin-bottom: 16px;
+}
