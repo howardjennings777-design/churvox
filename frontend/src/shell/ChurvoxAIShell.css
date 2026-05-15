@@ -5733,7 +5733,7 @@ body:has(.cx-public-landing) .ai-action-dock {
 }
 
 /* ===== Migrated old newos CSS before final cleanup ===== */
-/* Source: frontend/src/newos/logoBlueOverride.css */
+/* Migrated identity styles: logo blue override */
 :root {
   --logo-blue: #0B72FF;
   --logo-cyan: #00C8FF;
@@ -5835,7 +5835,7 @@ button.primary,
 }
 
 
-/* Source: frontend/src/newos/churvoxAiIdentity.css */
+/* Migrated identity styles: AI identity */
 :root {
   --brand-blue: #0B72FF;
   --brand-cyan: #00C8FF;
@@ -6233,7 +6233,7 @@ button.primary,
 }
 
 
-/* Source: frontend/src/newos/newos.css */
+/* Migrated identity styles: old global polish */
 :root {
   --nvx-bg: #f5f8fb;
   --nvx-card: #fff;
