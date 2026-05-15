@@ -3445,3 +3445,162 @@ a,
   font-size: 11px;
   font-weight: 950;
 }
+
+
+/* Phase 16: decision ledger / audit trail */
+.cx-decision-ledger {
+  border-radius: 30px;
+  padding: 20px;
+  border: 1px solid rgba(116,247,255,.13);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(32,217,255,.08), transparent 20rem),
+    linear-gradient(180deg, rgba(13, 26, 38, .94), rgba(5, 12, 18, .90));
+  box-shadow: var(--cx-calm-shadow), inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.cx-decision-ledger > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 16px;
+}
+
+.cx-decision-ledger span {
+  color: var(--cx-cyan);
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.cx-decision-ledger h2 {
+  margin: 8px 0 0;
+  color: var(--cx-text);
+  font-size: clamp(26px, 3vw, 42px);
+  line-height: 1;
+  letter-spacing: -.06em;
+  font-weight: 950;
+}
+
+.cx-decision-ledger p {
+  max-width: 780px;
+  color: var(--cx-text-soft);
+  line-height: 1.6;
+  font-weight: 750;
+}
+
+.cx-decision-ledger-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.cx-decision-ledger-actions button {
+  min-height: 44px;
+  border-radius: 15px;
+  padding: 0 14px;
+  color: var(--cx-text);
+  background: rgba(13,29,42,.86);
+  border: 1px solid rgba(116,247,255,.16);
+  font-weight: 950;
+}
+
+.cx-decision-ledger-actions button:first-child {
+  color: #031018;
+  background:
+    radial-gradient(circle at 28% 0%, rgba(255,255,255,.74), transparent 28%),
+    linear-gradient(135deg, #74f7ff, #35b7ff 48%, #18e3c2);
+}
+
+.cx-decision-ledger-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.cx-decision-ledger-grid article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 210px;
+  gap: 14px;
+  align-items: center;
+  border-radius: 22px;
+  padding: 16px;
+  background: rgba(4,10,16,.50);
+  border: 1px solid rgba(116,247,255,.10);
+}
+
+.cx-decision-ledger-grid article.empty {
+  grid-template-columns: 1fr;
+  border-style: dashed;
+}
+
+.cx-decision-ledger-grid strong {
+  display: block;
+  margin-top: 7px;
+  color: var(--cx-text);
+  font-size: 18px;
+  line-height: 1.2;
+  letter-spacing: -.035em;
+  font-weight: 950;
+}
+
+.cx-decision-ledger-grid p {
+  margin: 6px 0 0;
+  font-size: 13px;
+}
+
+.cx-decision-ledger-grid aside {
+  display: grid;
+  gap: 7px;
+  justify-items: end;
+  text-align: right;
+}
+
+.cx-decision-ledger-grid b,
+.cx-decision-ledger-grid small,
+.cx-decision-ledger-grid em {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.cx-decision-ledger-grid b {
+  color: var(--cx-cyan);
+  background: rgba(32,217,255,.08);
+  border: 1px solid rgba(116,247,255,.14);
+}
+
+.cx-decision-ledger-grid small {
+  color: #bfffea;
+  background: rgba(56,232,164,.10);
+  border: 1px solid rgba(56,232,164,.15);
+}
+
+.cx-decision-ledger-grid em {
+  color: var(--cx-text-soft);
+  background: rgba(143,164,183,.10);
+  border: 1px solid rgba(143,164,183,.13);
+}
+
+@media (max-width: 900px) {
+  .cx-decision-ledger > header,
+  .cx-decision-ledger-grid article {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .cx-decision-ledger-actions,
+  .cx-decision-ledger-grid aside {
+    justify-items: start;
+    justify-content: start;
+    text-align: left;
+  }
+
+  .cx-decision-ledger-actions button {
+    width: 100%;
+  }
+}

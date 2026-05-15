@@ -5330,6 +5330,89 @@ function ChurvoxPlansWorkspace({ planCatalog, onChoosePlan, onOpenSettings }) {
 
 
 
+
+function DecisionLedgerPanel({ recent = [], backend = [], session = [], onClear, onOpenSmartHub }) {
+  const items = [
+    ...backend.map((item, index) => ({
+      id: item.id || item._id || `backend-${index}`,
+      time: item.approved_at
+        ? new Date(item.approved_at).toLocaleString([], { dateStyle: "short", timeStyle: "short" })
+        : "Saved",
+      type: item.type || "Approval",
+      title: item.title || "Owner command approved",
+      status: item.status || "saved",
+      source: "Backend",
+      detail: item.message || item.summary || item.result || "Saved to Churvox.",
+    })),
+    ...session.map((item, index) => ({
+      id: `session-${index}-${item.time || ""}`,
+      time: item.time || "Session",
+      type: item.type || "Smart Hub",
+      title: item.title || "Owner decision",
+      status: item.status || "saved",
+      source: "This session",
+      detail: item.detail || item.message || "Handled in this browser session.",
+    })),
+    ...recent.map((item, index) => ({
+      id: item.id || `recent-${index}`,
+      time: item.time || "Recent",
+      type: item.type || "Decision",
+      title: item.title || "Owner action",
+      status: item.status || "saved",
+      source: "Recent",
+      detail: item.detail || "Recent Churvox activity.",
+    })),
+  ].slice(0, 10);
+
+  return (
+    <section className="cx-decision-ledger">
+      <header>
+        <div>
+          <span>Decision ledger</span>
+          <h2>Every AI-prepared action should leave a clear trail.</h2>
+          <p>
+            This is where the owner can see approvals, saved drafts, worker proof updates,
+            dispatch changes and Smart Hub decisions. Churvox should feel powerful and accountable.
+          </p>
+        </div>
+
+        <div className="cx-decision-ledger-actions">
+          <button type="button" onClick={onOpenSmartHub}>Smart Hub</button>
+          {items.length ? <button type="button" onClick={onClear}>Clear session</button> : null}
+        </div>
+      </header>
+
+      <section className="cx-decision-ledger-grid">
+        {items.length ? items.map((item) => (
+          <article key={item.id}>
+            <div>
+              <span>{item.source}</span>
+              <strong>{item.title}</strong>
+              <p>{item.detail}</p>
+            </div>
+
+            <aside>
+              <b>{item.type}</b>
+              <small>{item.status}</small>
+              <em>{item.time}</em>
+            </aside>
+          </article>
+        )) : (
+          <article className="empty">
+            <div>
+              <span>No decisions yet</span>
+              <strong>Approvals will appear here.</strong>
+              <p>Once Churvox prepares work and the owner approves, edits, snoozes or dismisses it, the history will show here.</p>
+            </div>
+          </article>
+        )}
+      </section>
+    </section>
+  );
+}
+
+
+
 function OwnerGuardrailsPanel({ onOpenSettings }) {
   const canPrepare = [
     "worker assignment recommendations",
@@ -7161,7 +7244,7 @@ function Workspace({ page, setPage, data }) {
   async function approveSelection(selection, draft) {
     const title = draft?.title || selection?.label || "Owner command approved";
     setApproved((currentApproved) => ({ ...currentApproved, [title]: true }));
-    logCommand(selection.group || "Approved", title, "Saving...");
+    logCommand(selection.group || "Approved", title, "Saving owner-approved action...");
 
     try {
       const payload = {
@@ -7347,7 +7430,7 @@ function Workspace({ page, setPage, data }) {
 
       return true;
     } catch (err) {
-      logCommand(selection.group || "Approve failed", title, "Backend error");
+      logCommand(selection.group || "Approve failed", title, "Backend did not save");
       if (!selection?.fromSmartHubModal) {
         setSelectedRecord({
           ...selection,
@@ -7721,35 +7804,17 @@ function Workspace({ page, setPage, data }) {
         </section>
       ) : null}
 
-      {page === "dashboard" && recentDecisionItems.length ? (
-        <section className="cx-ai-decision-history">
-          <header>
-            <div>
-              <span>Recent AI decisions</span>
-              <h2>What Churvox has handled</h2>
-              <p>Approvals, snoozes and dismissals appear here so the owner can see what changed.</p>
-            </div>
-            {approvalLog.length ? (
-              <button
-                type="button"
-                onClick={clearSmartHubSession}
-              >
-                Reset handled items
-              </button>
-            ) : null}
-          </header>
-
-          <div>
-            {recentDecisionItems.map((item) => (
-              <article key={item.id}>
-                <span>{item.time}</span>
-                <strong>{item.type}</strong>
-                <p>{item.title}</p>
-                <b>{item.status}</b>
-              </article>
-            ))}
-          </div>
-        </section>
+      {page === "dashboard" ? (
+        <DecisionLedgerPanel
+          recent={recentDecisionItems}
+          backend={backendApprovalLog}
+          session={approvalLog}
+          onClear={clearSmartHubSession}
+          onOpenSmartHub={() => {
+            setHubFocus("");
+            setSelectedHubBox(topBriefBox);
+          }}
+        />
       ) : null}
 
       <section className={`cx-owner-command-layout ${page === "dashboard" ? "cx-smart-hub-popup-only" : ""} ${page === "dashboard" && (!hubFocus || hubFocus === "fix" || hubFocus === "work") ? "cx-hub-single-column" : ""}`}>
@@ -7996,6 +8061,7 @@ function Workspace({ page, setPage, data }) {
         onClose={() => setQuickActionArea(null)}
         onSaved={(message) => {
           logCommand("Quick add", message || "Saved", "Churvox context updated");
+          notifyChurvoxLiveRefresh("quick add saved");
           setQuickActionArea(null);
         }}
       />
