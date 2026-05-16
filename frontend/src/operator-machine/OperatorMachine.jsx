@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_102_REMOVE_DASHBOARD_FEATURE_STACK
 import TopPlayerFeatureStack from "./TopPlayerFeatureStack";
 // PHASE_100_FILL_PUBLIC_ACCESS_EMPTY_BOX
 // PHASE_96_MOBILE_RESPONSIVE_INSTALLABLE_PWA
@@ -4699,7 +4700,15 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
           ))}
         </section>
 
-        <TopPlayerFeatureStack data={data || {}} />
+        <section className="om-dashboard-quiet-tools" data-phase="PHASE_102_REMOVE_DASHBOARD_FEATURE_STACK">
+          <span>Advanced tools ready</span>
+          <b>Customer links</b>
+          <b>Growth loop</b>
+          <b>Dispatch</b>
+          <b>Margin guard</b>
+          <b>Work packs</b>
+          <small>Kept in the background. Churvox brings them forward only when they need owner action.</small>
+        </section>
 
         <section className="om-machine-grid">
           <MachineLane

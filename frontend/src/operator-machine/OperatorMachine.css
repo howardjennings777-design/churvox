@@ -6092,3 +6092,59 @@ select {
     min-height: auto !important;
   }
 }
+
+
+/* PHASE_102_REMOVE_DASHBOARD_FEATURE_STACK */
+.om-dashboard-quiet-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(28, 27, 23, .08);
+  background: rgba(247, 243, 235, .72);
+  box-shadow: 0 12px 35px rgba(31, 28, 21, .05);
+}
+
+.om-dashboard-quiet-tools span {
+  color: var(--om-copper);
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-size: .68rem;
+  margin-right: 4px;
+}
+
+.om-dashboard-quiet-tools b {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: var(--om-charcoal);
+  color: var(--om-lime);
+  font-size: .7rem;
+  font-weight: 950;
+}
+
+.om-dashboard-quiet-tools small {
+  flex-basis: 100%;
+  color: var(--om-muted);
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+@media (max-width: 820px) {
+  .om-dashboard-quiet-tools {
+    padding: 9px;
+    border-radius: 17px;
+    gap: 6px;
+  }
+
+  .om-dashboard-quiet-tools b {
+    min-height: 26px;
+    padding: 0 8px;
+    font-size: .66rem;
+  }
+}
