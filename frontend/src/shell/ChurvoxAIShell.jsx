@@ -6098,7 +6098,21 @@ function AskChurvoxCommand({ onRunCommand }) {
   }
 
   function run(raw = query) {
-    const command = classifyCommand(raw);
+    const value = String(raw || "").toLowerCase().trim();
+    const wantsCreate =
+      value.includes("add") ||
+      value.includes("new") ||
+      value.includes("create") ||
+      value.includes("make");
+
+    const forcedQuick =
+      wantsCreate && value.includes("quote")
+        ? { type: "quick", area: "quotes", label: "Add quote" }
+        : wantsCreate && value.includes("invoice")
+          ? { type: "quick", area: "invoices", label: "Add invoice" }
+          : null;
+
+    const command = forcedQuick || classifyCommand(raw);
     onRunCommand?.(command, raw);
     setHint(command.label);
     setQuery("");
