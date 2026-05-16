@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_114_PROPER_INVOICE_DOCUMENT
 // PHASE_113_PROPER_INVOICE_TEMPLATE
 // PHASE_112_FIX_JOB_BRIEF_SYNTAX
 // PHASE_111B_SAFE_JOB_BRIEF_TEMPLATE
@@ -4684,21 +4685,23 @@ function phase113InvoiceValues(draft = {}, slip = {}) {
   );
 
   const dueDate = phase111bValue(draft.dueDate, draft.payment_due_date, slip.dueDate, "Due date to confirm");
-  const businessName = phase111bValue(draft.businessName, slip.businessName, "Your business name");
-  const subject = phase111bValue(draft.invoiceSubject, `Invoice for ${lineItem}`);
+  const issueDate = phase111bValue(draft.issueDate, draft.invoiceDate, slip.issueDate, phase114Today());
+  const invoiceNumber = phase114InvoiceNumber(slip, draft);
+  const businessName = phase114BusinessName(draft, slip);
+  const subject = phase111bValue(draft.invoiceSubject, `${invoiceNumber} from ${businessName}`);
 
   const emailText = [
     `Hi ${phase113FirstName(client)},`,
     "",
-    "Thanks for choosing us. Your invoice is ready.",
+    "Thanks for choosing us. Your invoice is ready for review and payment.",
     "",
-    "Invoice summary:",
-    `- Work: ${lineItem}`,
-    `- Amount due: ${amount}`,
-    `- Due date: ${dueDate}`,
-    `- Details: ${description}`,
+    `Invoice: ${invoiceNumber}`,
+    `Work completed: ${lineItem}`,
+    `Amount due: ${amount}`,
+    `Due date: ${dueDate}`,
     "",
-    "Payment:",
+    description,
+    "",
     "Please use the payment link or bank details shown on the invoice. Reply to this email if anything needs checking.",
     "",
     "Thanks,",
@@ -4711,11 +4714,48 @@ function phase113InvoiceValues(draft = {}, slip = {}) {
     description,
     amount,
     dueDate,
+    issueDate,
+    invoiceNumber,
     businessName,
     subject,
     emailText,
   };
 }
+
+
+function phase114InvoiceNumber(slip = {}, draft = {}) {
+  const raw = phase111bValue(
+    draft.invoiceNumber,
+    draft.invoice_number,
+    slip.invoiceNumber,
+    slip.invoice_number,
+    slip.sourceId,
+    slip.id
+  );
+  if (!raw) return `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`;
+  const cleaned = clean(raw).replace(/^invoices?-?/i, "").replace(/^invoice-?/i, "");
+  return cleaned.toUpperCase().startsWith("INV") ? cleaned.toUpperCase() : `INV-${cleaned.toUpperCase()}`;
+}
+
+function phase114BusinessName(draft = {}, slip = {}) {
+  return phase111bValue(
+    draft.businessName,
+    draft.companyName,
+    draft.business_name,
+    slip.businessName,
+    slip.business_name,
+    "Churvox business"
+  );
+}
+
+function phase114Today() {
+  try {
+    return new Date().toISOString().slice(0, 10);
+  } catch {
+    return "";
+  }
+}
+
 
 function phase113InvoiceEmailText(draft = {}, slip = {}) {
   return phase113InvoiceValues(draft, slip).emailText;
@@ -4727,56 +4767,87 @@ function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "" }) {
   const invoice = phase113InvoiceValues(draft, slip);
 
   return (
-    <section className="om-invoice-template" data-phase="PHASE_113_PROPER_INVOICE_TEMPLATE">
-      <header>
+    <section className="om-invoice-template om-invoice-document-template" data-phase="PHASE_114_PROPER_INVOICE_DOCUMENT">
+      <header className="om-invoice-doc-top">
         <div className="om-invoice-brand">
           {businessLogoUrl ? <img src={businessLogoUrl} alt="" /> : <i />}
           <div>
             <span>AI-prepared invoice</span>
-            <strong>{invoice.subject}</strong>
-            <small>Customer email, invoice summary and owner approval in one clean slip.</small>
+            <strong>{invoice.businessName}</strong>
+            <small>Owner-approved invoice draft prepared from job, client and pricing context.</small>
           </div>
         </div>
-        <em>Draft</em>
+
+        <aside>
+          <b>Invoice</b>
+          <strong>{invoice.invoiceNumber}</strong>
+          <small>Issued {invoice.issueDate}</small>
+        </aside>
       </header>
 
-      <section className="om-invoice-paper">
-        <div className="om-invoice-paper-head">
-          <div>
-            <span>Invoice to</span>
+      <section className="om-invoice-doc">
+        <section className="om-invoice-doc-grid">
+          <article>
+            <span>Bill to</span>
             <strong>{invoice.client}</strong>
-            <small>{invoice.lineItem}</small>
-          </div>
-          <article className="om-invoice-total">
-            <b>Amount due</b>
-            <strong>{invoice.amount}</strong>
-            <small>Due: {invoice.dueDate}</small>
+            <small>Customer invoice recipient</small>
           </article>
-        </div>
 
-        <div className="om-invoice-summary">
           <article>
-            <b>Work completed</b>
+            <span>Work completed</span>
             <strong>{invoice.lineItem}</strong>
+            <small>{invoice.description}</small>
           </article>
-          <article>
-            <b>Invoice details</b>
-            <p>{invoice.description}</p>
-          </article>
-          <article>
-            <b>Owner check</b>
-            <p>{draft.ownerNote || "Confirm amount, due date, customer wording and payment details before approval."}</p>
-          </article>
-        </div>
 
-        <section className="om-invoice-email-preview">
-          <b>Email to customer</b>
-          <div>
-            {invoice.emailText.split("\n").map((line, index) => (
-              <p key={`${line}-${index}`}>{line || "\u00A0"}</p>
-            ))}
-          </div>
+          <article className="om-invoice-doc-total">
+            <span>Amount due</span>
+            <strong>{invoice.amount}</strong>
+            <small>Due {invoice.dueDate}</small>
+          </article>
         </section>
+
+        <section className="om-invoice-line-table" aria-label="Invoice line items">
+          <div className="head">
+            <b>Description</b>
+            <b>Amount</b>
+          </div>
+          <div>
+            <span>{invoice.description}</span>
+            <strong>{invoice.amount}</strong>
+          </div>
+          <footer>
+            <b>Total due</b>
+            <strong>{invoice.amount}</strong>
+          </footer>
+        </section>
+
+        <section className="om-invoice-payment-box">
+          <div>
+            <span>Payment note</span>
+            <strong>Payment details stay on the invoice.</strong>
+            <p>Churvox prepares the email and invoice wording. The owner checks payment link, bank details and amount before approval.</p>
+          </div>
+          <button type="button" onClick={() => update("customerMessage", invoice.emailText)}>
+            Use customer email
+          </button>
+        </section>
+      </section>
+
+      <section className="om-invoice-email-card">
+        <header>
+          <div>
+            <span>Email preview</span>
+            <strong>{invoice.subject}</strong>
+            <small>To: {invoice.client}</small>
+          </div>
+          <em>Draft email</em>
+        </header>
+
+        <div className="om-invoice-email-body">
+          {invoice.emailText.split("\n").map((line, index) => (
+            <p key={`${line}-${index}`}>{line || "\u00A0"}</p>
+          ))}
+        </div>
       </section>
 
       <label className="wide om-invoice-message-editor">
@@ -4788,17 +4859,18 @@ function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "" }) {
         />
       </label>
 
-      <footer>
+      <footer className="om-invoice-template-actions">
         <button
           type="button"
           onClick={() => {
             update("invoiceDescription", invoice.description);
             update("customerMessage", invoice.emailText);
+            update("invoiceNumber", invoice.invoiceNumber);
           }}
         >
-          Use this template
+          Use this invoice template
         </button>
-        <small>Owner still approves before invoice action, email, reminder or admin save.</small>
+        <small>Nothing sends until the owner approves.</small>
       </footer>
     </section>
   );
