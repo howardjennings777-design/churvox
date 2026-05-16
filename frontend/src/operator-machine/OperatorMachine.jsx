@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_84_FIX_DUPLICATE_DASHBOARD_HERO_JSX
 // PHASE_83_FIX_OLD_JOBS_ORPHAN_CHUNK
 // PHASE_82_FIX_OLD_WORKSLIP_ORPHAN_CHUNK
 // PHASE_80_FINISH_JOBS_OPERATOR_MACHINE
@@ -1784,7 +1785,6 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
 
       <section className="om-main">
         {page === "dashboard" ? (
-        {page === "dashboard" ? (
         <header className="om-hero">
           <div>
             <span>Churvox Operator Machine</span>
@@ -1801,8 +1801,6 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
             <article><span>Approval</span><strong>{machine.counts.approval}</strong></article>
           </section>
         </header>
-
-        ) : null}
 
         ) : null}
 
