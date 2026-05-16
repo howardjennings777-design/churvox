@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_89_FINISH_LAST_OPERATOR_MACHINE_PAGES
 // PHASE_88_FINISH_QUOTES_OPERATOR_MACHINE_ALL_IN_ONE
 // PHASE_87_FINISH_TEAM_OPERATOR_MACHINE_ALL_IN_ONE
 // PHASE_85_FINISH_CLIENTS_OPERATOR_MACHINE
@@ -487,12 +488,16 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove, onChoo
   const isJobReview = slip.kind === "job";
   const isDispatch = slip.kind === "dispatch";
   const isInvoiceLike = slip.kind === "invoice" || slip.kind === "cashflow" || slip.kind === "proof";
+  const isPayrollLike = slip.kind === "payroll";
+  const isSettingsLike = slip.kind === "settings";
   const isQuoteLike = slip.kind === "quote";
   const isNewQuote = isQuoteLike && String(slip.id || "").startsWith("new-quote");
   const primaryLabel =
     isJobIntake ? "Create job" :
     isNewQuote ? "Create quote draft" :
     isQuoteLike ? "Approve quote action" :
+    isPayrollLike ? "Save payroll review" :
+    isSettingsLike ? "Save setting review" :
     isDispatch ? "Approve dispatch" :
     slip.kind === "invoice" ? "Approve invoice draft" :
     slip.kind === "cashflow" ? "Approve follow-up" :
@@ -749,6 +754,39 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove, onChoo
               <label className="wide">
                 Invoice description
                 <textarea value={draft.invoiceDescription || ""} onChange={(event) => update("invoiceDescription", event.target.value)} />
+              </label>
+            </>
+          ) : null}
+
+          {isPayrollLike ? (
+            <>
+              <label>
+                Worker name
+                <input value={draft.payrollWorkerName || draft.title || ""} onChange={(event) => update("payrollWorkerName", event.target.value)} placeholder="Worker name" />
+              </label>
+
+              <label>
+                Role
+                <input value={draft.payrollRole || ""} onChange={(event) => update("payrollRole", event.target.value)} placeholder="Role" />
+              </label>
+
+              <label>
+                Hours
+                <input value={draft.payrollHours || ""} onChange={(event) => update("payrollHours", event.target.value)} placeholder="Approved hours" />
+              </label>
+
+              <label>
+                Rate
+                <input value={draft.payrollRate || ""} onChange={(event) => update("payrollRate", event.target.value)} placeholder="Pay rate" />
+              </label>
+            </>
+          ) : null}
+
+          {isSettingsLike ? (
+            <>
+              <label className="wide">
+                Setting / rule
+                <input value={draft.title || ""} onChange={(event) => update("title", event.target.value)} placeholder="Setting name" />
               </label>
             </>
           ) : null}
@@ -1490,6 +1528,601 @@ function ClientsRecordBoard({ data, machine, onOpen }) {
 }
 
 
+
+
+
+function ProofToPaidBoard({ data, machine, onOpen }) {
+  const proofRows = rowsForPage("proof", machine, data || {});
+  const raw = (data && data.raw) || {};
+  const jobs = arrayFrom(raw.jobs, data?.jobs);
+  const completedJobs = jobs.filter((job) => isCompletedJob(job));
+  const withPhotos = jobs.filter((job) => photoCount(job) > 0);
+  const invoiceReady = machine.approval.filter((item) => item.kind === "invoice");
+  const [proofFilter, setProofFilter] = useState("priority");
+  const [proofQuery, setProofQuery] = useState("");
+
+  const proofFromJobs = completedJobs.map((job, index) => {
+    const id = itemId(job, `proof-job-${index}`);
+    const client = clean(job.client_name || job.customer_name || job.client?.name, "Client");
+    const title = clean(job.title || job.job_title || job.service_type || job.name, `Completed job ${index + 1}`);
+    const prepared = invoiceDescription(job);
+
+    return {
+      id: `proof-job-${id}`,
+      sourceId: id,
+      kind: "proof",
+      eyebrow: photoCount(job) ? "Proof package" : "Completed work",
+      title: `Proof package for ${client}`,
+      need: "Completed work can feed invoice wording and owner review.",
+      prepared,
+      draft: {
+        title,
+        ownerNote: clean(job.completion_notes || job.worker_notes || job.notes),
+        customerMessage: prepared,
+        invoiceDescription: prepared,
+        amount: invoiceAmount(job),
+      },
+      item: job,
+    };
+  });
+
+  const allProofRows = [
+    ...proofRows,
+    ...proofFromJobs,
+  ].filter((row, index, arr) => arr.findIndex((item) => item.id === row.id) === index);
+
+  const withPhotoRows = allProofRows.filter((row) => photoCount(row.item || {}) > 0);
+  const needsInvoiceRows = allProofRows.filter((row) => invoiceAmount(row.item || {}) || isCompletedJob(row.item || {}));
+
+  const sourceRows =
+    proofFilter === "photos" ? withPhotoRows :
+    proofFilter === "invoice" ? needsInvoiceRows :
+    proofFilter === "all" ? allProofRows :
+    [...needsInvoiceRows, ...withPhotoRows, ...allProofRows].filter((row, index, arr) => arr.findIndex((item) => item.id === row.id) === index);
+
+  const filteredRows = sourceRows
+    .filter((row) => {
+      const item = row.item || {};
+      const haystack = [
+        row.title,
+        row.need,
+        row.prepared,
+        item.title,
+        item.job_title,
+        item.client_name,
+        item.customer_name,
+        item.address,
+        item.notes,
+        item.worker_notes,
+        item.completion_notes,
+      ].map((value) => clean(value).toLowerCase()).join(" ");
+
+      return !proofQuery.trim() || haystack.includes(proofQuery.trim().toLowerCase());
+    })
+    .slice(0, 18);
+
+  const stats = [
+    ["Proof items", allProofRows.length],
+    ["Photos", withPhotos.length],
+    ["Completed", completedJobs.length],
+    ["Invoice ready", invoiceReady.length],
+  ];
+
+  const steps = [
+    ["Complete", "Worker finishes the job"],
+    ["Proof", "Notes and photos are gathered"],
+    ["Prepare", "Invoice wording is drafted"],
+    ["Approve", "Owner reviews before sending"],
+  ];
+
+  const filters = [
+    ["priority", "Priority"],
+    ["photos", "With photos"],
+    ["invoice", "Invoice ready"],
+    ["all", "All proof"],
+  ];
+
+  return (
+    <section className="om-proof-board" data-phase="PHASE_89_FINISH_LAST_OPERATOR_MACHINE_PAGES">
+      <header className="om-proof-hero om-proof-hero-final">
+        <div>
+          <span>Churvox Operator Machine · Proof-to-Paid</span>
+          <h1>Proof goes in. Invoice wording comes out ready.</h1>
+          <p>
+            Worker notes, completion proof and job context should not sit hidden. Churvox turns proof into owner-approved invoice and customer update drafts.
+          </p>
+        </div>
+
+        <aside>
+          {stats.map(([label, value]) => (
+            <article key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+            </article>
+          ))}
+        </aside>
+      </header>
+
+      <section className="om-proof-flow-strip compact">
+        {steps.map(([label, body], index) => (
+          <article key={label} className={index === 2 ? "active" : ""}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <strong>{label}</strong>
+            <small>{body}</small>
+          </article>
+        ))}
+      </section>
+
+      <section className="om-proof-layout">
+        <section className="om-proof-list">
+          <header>
+            <div>
+              <span>Proof Queue</span>
+              <h2>Completed work that can become admin.</h2>
+              <p>Open one Work Slip to review proof, wording, amount or invoice context.</p>
+            </div>
+            <b>{filteredRows.length}</b>
+          </header>
+
+          <section className="om-proof-tools">
+            <div className="om-proof-filter-tabs">
+              {filters.map(([key, label]) => (
+                <button type="button" key={key} className={proofFilter === key ? "active" : ""} onClick={() => setProofFilter(key)}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <input
+              value={proofQuery}
+              onChange={(event) => setProofQuery(event.target.value)}
+              placeholder="Search proof, client, job, notes..."
+            />
+          </section>
+
+          <div>
+            {filteredRows.length ? filteredRows.map((row) => {
+              const photos = photoCount(row.item || {});
+              const amount = invoiceAmount(row.item || {});
+
+              return (
+                <button type="button" key={row.id} className={`om-proof-ticket ${photos ? "photos" : "ready"}`} onClick={() => onOpen(row)}>
+                  <span>{photos ? `${photos} photo${photos === 1 ? "" : "s"}` : "Proof ready"}</span>
+                  <strong>{row.title}</strong>
+                  <small>{row.need}</small>
+                  <em>{amount ? money(amount) : "Review proof"}</em>
+                </button>
+              );
+            }) : (
+              <article className="om-proof-empty">
+                <strong>No proof items match this view.</strong>
+                <p>Completed jobs and worker proof will appear here.</p>
+              </article>
+            )}
+          </div>
+        </section>
+
+        <aside className="om-proof-side">
+          <section>
+            <span>Invoice ready</span>
+            <strong>{invoiceReady.length}</strong>
+            <p>Completed jobs that can become invoice drafts.</p>
+          </section>
+
+          <section>
+            <span>Worker proof</span>
+            <strong>{withPhotos.length}</strong>
+            <p>Photo and note proof gives better invoice wording.</p>
+          </section>
+
+          <section>
+            <span>Machine rule</span>
+            <h3>Proof should feed payment.</h3>
+            <p>Churvox should turn job completion evidence into clear invoice and customer update drafts.</p>
+          </section>
+        </aside>
+      </section>
+    </section>
+  );
+}
+
+function PayrollWorkspaceBoard({ data, machine, onOpen }) {
+  const raw = (data && data.raw) || {};
+  const team = arrayFrom(raw.team, raw.workers, data?.team);
+  const jobs = arrayFrom(raw.jobs, data?.jobs);
+  const [payrollFilter, setPayrollFilter] = useState("priority");
+  const [payrollQuery, setPayrollQuery] = useState("");
+
+  function workerName(item = {}) {
+    return clean(item.name || item.full_name || item.worker_name || item.display_name || item.email || item.phone, "Worker");
+  }
+
+  function workerRole(item = {}) {
+    return clean(item.role || item.worker_role || item.position || item.type, "Worker");
+  }
+
+  function hoursFor(worker = {}) {
+    const id = clean(worker.id || worker._id || worker.worker_id || worker.user_id).toLowerCase();
+    const name = workerName(worker).toLowerCase();
+    let total = 0;
+
+    jobs.forEach((job) => {
+      const assigned = [
+        job.assigned_worker_id,
+        job.worker_id,
+        job.assigned_worker,
+        job.assigned_worker_name,
+        job.worker_name,
+      ].map((value) => clean(value).toLowerCase()).join(" ");
+
+      if ((id && assigned.includes(id)) || (name && assigned.includes(name))) {
+        const hours = Number(String(job.billable_hours || job.worked_hours || job.total_hours || job.hours || 0).replace(/[^0-9.-]/g, ""));
+        if (Number.isFinite(hours) && hours > 0) total += hours;
+      }
+    });
+
+    return Math.round(total * 100) / 100;
+  }
+
+  const missingRole = team.filter((worker) => !clean(worker.role || worker.worker_role || worker.position || worker.type));
+  const activeWorkers = team.filter((worker) => hoursFor(worker) > 0);
+  const payrollReady = team.filter((worker) => clean(worker.pay_rate || worker.hourly_rate || worker.rate) || hoursFor(worker) > 0);
+
+  const sourceRows =
+    payrollFilter === "active" ? activeWorkers :
+    payrollFilter === "rate" ? payrollReady :
+    payrollFilter === "role" ? missingRole :
+    payrollFilter === "all" ? team :
+    [...activeWorkers, ...payrollReady, ...missingRole, ...team].filter((item, index, arr) => arr.findIndex((worker) => itemId(worker, workerName(worker)) === itemId(item, workerName(item))) === index);
+
+  const filteredWorkers = sourceRows
+    .filter((worker) => {
+      const haystack = [
+        workerName(worker),
+        workerRole(worker),
+        worker.email,
+        worker.phone,
+        worker.region,
+        worker.area,
+        worker.pay_rate,
+        worker.hourly_rate,
+      ].map((value) => clean(value).toLowerCase()).join(" ");
+
+      return !payrollQuery.trim() || haystack.includes(payrollQuery.trim().toLowerCase());
+    })
+    .slice(0, 18);
+
+  const stats = [
+    ["Workers", team.length],
+    ["Active", activeWorkers.length],
+    ["Payroll ready", payrollReady.length],
+    ["Need role", missingRole.length],
+  ];
+
+  const steps = [
+    ["Collect", "Time and worker context"],
+    ["Check", "Roles, hours and notes"],
+    ["Prepare", "Pay summary draft"],
+    ["Approve", "Owner/payroll review"],
+  ];
+
+  const filters = [
+    ["priority", "Priority"],
+    ["active", "Active"],
+    ["rate", "Payroll ready"],
+    ["role", "Need role"],
+    ["all", "All workers"],
+  ];
+
+  function makePayrollSlip(worker, index) {
+    const name = workerName(worker);
+    const role = workerRole(worker);
+    const hours = hoursFor(worker);
+    const rate = clean(worker.pay_rate || worker.hourly_rate || worker.rate);
+    const summary = `${name} payroll context. Role: ${role}. Hours found: ${hours}. ${rate ? `Rate: ${rate}.` : "Rate not set."}`;
+
+    return {
+      id: `payroll-${itemId(worker, index)}`,
+      sourceId: itemId(worker, index),
+      kind: "payroll",
+      eyebrow: hours ? "Hours found" : "Payroll review",
+      title: `Payroll review for ${name}`,
+      need: hours ? "Worker has time context ready for payroll review." : "Review payroll setup, role and pay context.",
+      prepared: summary,
+      draft: {
+        title: `Payroll review for ${name}`,
+        payrollWorkerName: name,
+        payrollRole: role,
+        payrollHours: hours ? String(hours) : "",
+        payrollRate: rate,
+        ownerNote: clean(worker.notes || worker.internal_note || ""),
+        customerMessage: "",
+        invoiceDescription: "",
+      },
+      item: worker,
+    };
+  }
+
+  return (
+    <section className="om-payroll-board" data-phase="PHASE_89_FINISH_LAST_OPERATOR_MACHINE_PAGES">
+      <header className="om-payroll-hero om-payroll-hero-final">
+        <div>
+          <span>Churvox Operator Machine · Payroll</span>
+          <h1>Payroll stays locked down and review-first.</h1>
+          <p>
+            Payroll should not be mixed with normal job admin. Churvox prepares hours, roles and pay summaries for approval without exposing payroll to the wrong users.
+          </p>
+        </div>
+
+        <aside>
+          {stats.map(([label, value]) => (
+            <article key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+            </article>
+          ))}
+        </aside>
+      </header>
+
+      <section className="om-payroll-flow-strip compact">
+        {steps.map(([label, body], index) => (
+          <article key={label} className={index === 3 ? "active" : ""}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <strong>{label}</strong>
+            <small>{body}</small>
+          </article>
+        ))}
+      </section>
+
+      <section className="om-payroll-layout">
+        <section className="om-payroll-list">
+          <header>
+            <div>
+              <span>Payroll Workspace</span>
+              <h2>Worker pay context for review.</h2>
+              <p>Open one Work Slip to review worker hours, rate context and payroll notes.</p>
+            </div>
+            <b>{filteredWorkers.length}</b>
+          </header>
+
+          <section className="om-payroll-tools">
+            <div className="om-payroll-filter-tabs">
+              {filters.map(([key, label]) => (
+                <button type="button" key={key} className={payrollFilter === key ? "active" : ""} onClick={() => setPayrollFilter(key)}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <input
+              value={payrollQuery}
+              onChange={(event) => setPayrollQuery(event.target.value)}
+              placeholder="Search worker, role, pay rate..."
+            />
+          </section>
+
+          <div>
+            {filteredWorkers.length ? filteredWorkers.map((worker, index) => {
+              const name = workerName(worker);
+              const hours = hoursFor(worker);
+              const rate = clean(worker.pay_rate || worker.hourly_rate || worker.rate);
+
+              return (
+                <button type="button" key={itemId(worker, index)} className={`om-payroll-ticket ${hours ? "active" : "setup"}`} onClick={() => onOpen(makePayrollSlip(worker, index))}>
+                  <span>{hours ? "Hours found" : "Setup review"}</span>
+                  <strong>{name}</strong>
+                  <small>{workerRole(worker)}</small>
+                  <em>{hours ? `${hours} hrs` : rate ? `Rate ${rate}` : "Review"}</em>
+                </button>
+              );
+            }) : (
+              <article className="om-payroll-empty">
+                <strong>No payroll records match this view.</strong>
+                <p>Workers and approved time context will appear here.</p>
+              </article>
+            )}
+          </div>
+        </section>
+
+        <aside className="om-payroll-side">
+          <section>
+            <span>Payroll ready</span>
+            <strong>{payrollReady.length}</strong>
+            <p>Workers with time or pay context ready for review.</p>
+          </section>
+
+          <section>
+            <span>Locked area</span>
+            <strong>Safe</strong>
+            <p>Payroll should stay separate from worker and general admin access.</p>
+          </section>
+
+          <section>
+            <span>Machine rule</span>
+            <h3>Prepare, do not pay blindly.</h3>
+            <p>Churvox prepares payroll summaries, exports and notes. Owner/payroll approval stays in control.</p>
+          </section>
+        </aside>
+      </section>
+    </section>
+  );
+}
+
+function SettingsMachineBoard({ data, machine, onOpen }) {
+  const currentPlan = currentPlanKey(data || {});
+  const raw = (data && data.raw) || {};
+  const business = raw.business || raw.company || data?.business || {};
+  const user = raw.user || raw.profile || data?.user || {};
+  const [settingsFilter, setSettingsFilter] = useState("priority");
+
+  const settingsRows = [
+    {
+      id: "settings-business",
+      kind: "settings",
+      eyebrow: "Business setup",
+      title: "Business details",
+      need: "Business name, industry, region and public contact should be clean.",
+      prepared: `Business: ${clean(business.name || business.business_name || user.business_name, "not set")}. Industry: ${clean(business.industry || user.industry, "not set")}.`,
+      draft: {
+        title: "Business details",
+        ownerNote: "Review business name, industry, region and public contact details.",
+        customerMessage: "",
+        invoiceDescription: "",
+      },
+    },
+    {
+      id: "settings-roles",
+      kind: "settings",
+      eyebrow: "Access",
+      title: "Roles and permissions",
+      need: "Owner, manager, worker, office admin and payroll access should stay clean.",
+      prepared: "Churvox keeps payroll, owner billing, workers and office admin access separated.",
+      draft: {
+        title: "Roles and permissions",
+        ownerNote: "Review role access and make sure sensitive areas are locked.",
+        customerMessage: "",
+        invoiceDescription: "",
+      },
+    },
+    {
+      id: "settings-ai",
+      kind: "settings",
+      eyebrow: "AI approval",
+      title: "AI Operator approval rules",
+      need: "Sensitive actions should remain approval-first.",
+      prepared: "Churvox can prepare invoices, quotes, reminders and dispatch actions, but owner approval should stay in front of sensitive changes.",
+      draft: {
+        title: "AI Operator approval rules",
+        ownerNote: "Keep customer messages, invoice sending, MYOB sync, pricing and payroll approval-first.",
+        customerMessage: "",
+        invoiceDescription: "",
+      },
+    },
+    {
+      id: "settings-billing",
+      kind: "settings",
+      eyebrow: "Plan",
+      title: `Current plan: ${planLabel(currentPlan)}`,
+      need: "Plan, add-ons, MYOB and SMS credits should be easy to review.",
+      prepared: `Current Churvox plan is ${planLabel(currentPlan)} at ${planPrice(currentPlan)}/month + GST.`,
+      draft: {
+        title: `Current plan: ${planLabel(currentPlan)}`,
+        ownerNote: "Review plan level, Growth Pack, MYOB add-on and SMS credits.",
+        customerMessage: "",
+        invoiceDescription: "",
+      },
+    },
+  ];
+
+  const priorityRows = settingsRows;
+  const sourceRows =
+    settingsFilter === "access" ? settingsRows.filter((row) => row.id.includes("roles")) :
+    settingsFilter === "ai" ? settingsRows.filter((row) => row.id.includes("ai")) :
+    settingsFilter === "billing" ? settingsRows.filter((row) => row.id.includes("billing")) :
+    priorityRows;
+
+  const stats = [
+    ["Plan", planLabel(currentPlan)],
+    ["Approval", "On"],
+    ["Roles", "Locked"],
+    ["SMS", "Credits"],
+  ];
+
+  const steps = [
+    ["Business", "Identity and trade context"],
+    ["Access", "Roles and permissions"],
+    ["Approval", "AI rules stay safe"],
+    ["Billing", "Plan and add-ons"],
+  ];
+
+  const filters = [
+    ["priority", "Priority"],
+    ["access", "Access"],
+    ["ai", "AI rules"],
+    ["billing", "Billing"],
+  ];
+
+  return (
+    <section className="om-settings-board" data-phase="PHASE_89_FINISH_LAST_OPERATOR_MACHINE_PAGES">
+      <header className="om-settings-hero om-settings-hero-final">
+        <div>
+          <span>Churvox Operator Machine · Settings</span>
+          <h1>Settings control how the machine behaves.</h1>
+          <p>
+            Keep setup simple, but make the rules strong. Business context, roles, approval rules, plan and add-ons all affect what Churvox can prepare.
+          </p>
+        </div>
+
+        <aside>
+          {stats.map(([label, value]) => (
+            <article key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+            </article>
+          ))}
+        </aside>
+      </header>
+
+      <section className="om-settings-flow-strip compact">
+        {steps.map(([label, body], index) => (
+          <article key={label} className={index === 2 ? "active" : ""}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <strong>{label}</strong>
+            <small>{body}</small>
+          </article>
+        ))}
+      </section>
+
+      <section className="om-settings-layout">
+        <section className="om-settings-list">
+          <header>
+            <div>
+              <span>Setup Queue</span>
+              <h2>Controls that matter.</h2>
+              <p>Open one Work Slip to review how Churvox should run the business admin.</p>
+            </div>
+            <b>{sourceRows.length}</b>
+          </header>
+
+          <section className="om-settings-tools">
+            <div className="om-settings-filter-tabs">
+              {filters.map(([key, label]) => (
+                <button type="button" key={key} className={settingsFilter === key ? "active" : ""} onClick={() => setSettingsFilter(key)}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <div>
+            {sourceRows.map((row) => (
+              <button type="button" key={row.id} className="om-settings-ticket" onClick={() => onOpen(row)}>
+                <span>{row.eyebrow}</span>
+                <strong>{row.title}</strong>
+                <small>{row.need}</small>
+                <em>Review</em>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <aside className="om-settings-side">
+          <section>
+            <span>Safety</span>
+            <strong>Approval</strong>
+            <p>Customer sends, pricing, payroll and MYOB/accounting actions stay owner-approved.</p>
+          </section>
+
+          <section>
+            <span>Machine rule</span>
+            <h3>Power in the background.</h3>
+            <p>Settings should make Churvox smarter without making the app harder to use.</p>
+          </section>
+        </aside>
+      </section>
+    </section>
+  );
+}
 
 
 function QuotesPipelineBoard({ data, machine, onOpen }) {
@@ -2579,6 +3212,18 @@ function FeatureWorkspace({ page, machine, data, currentPlan, onOpen, onPlans })
 
   if (page === "quotes") {
     return <QuotesPipelineBoard data={data} machine={machine} onOpen={onOpen} />;
+  }
+
+  if (page === "proof") {
+    return <ProofToPaidBoard data={data} machine={machine} onOpen={onOpen} />;
+  }
+
+  if (page === "payroll") {
+    return <PayrollWorkspaceBoard data={data} machine={machine} onOpen={onOpen} />;
+  }
+
+  if (page === "settings") {
+    return <SettingsMachineBoard data={data} machine={machine} onOpen={onOpen} />;
   }
 
   return (

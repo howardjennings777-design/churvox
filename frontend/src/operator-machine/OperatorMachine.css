@@ -3373,3 +3373,463 @@
     min-height: auto;
   }
 }
+
+
+/* PHASE_89_FINISH_LAST_OPERATOR_MACHINE_PAGES */
+.om-proof-board,
+.om-payroll-board,
+.om-settings-board {
+  display: grid;
+  gap: 18px;
+}
+
+.om-proof-hero,
+.om-payroll-hero,
+.om-settings-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, .5fr);
+  gap: 18px;
+  align-items: stretch;
+  padding: 28px;
+  border-radius: 34px;
+  border: 1px solid var(--om-border);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.82), rgba(255,253,247,.95)),
+    var(--om-paper);
+  box-shadow: var(--om-shadow);
+}
+
+.om-proof-hero span,
+.om-payroll-hero span,
+.om-settings-hero span,
+.om-proof-flow-strip span,
+.om-payroll-flow-strip span,
+.om-settings-flow-strip span,
+.om-proof-list header span,
+.om-payroll-list header span,
+.om-settings-list header span,
+.om-proof-ticket span,
+.om-payroll-ticket span,
+.om-settings-ticket span,
+.om-proof-side span,
+.om-payroll-side span,
+.om-settings-side span {
+  color: var(--om-copper);
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-size: .72rem;
+}
+
+.om-proof-hero h1,
+.om-payroll-hero h1,
+.om-settings-hero h1 {
+  margin: 8px 0 10px;
+  color: var(--om-charcoal);
+  font-size: clamp(2.2rem, 4vw, 4.6rem);
+  line-height: .9;
+  letter-spacing: -0.078em;
+}
+
+.om-proof-hero p,
+.om-payroll-hero p,
+.om-settings-hero p {
+  margin: 0;
+  max-width: 820px;
+  color: var(--om-muted);
+  line-height: 1.55;
+  font-size: 1.02rem;
+}
+
+.om-proof-hero aside,
+.om-payroll-hero aside,
+.om-settings-hero aside {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.om-proof-hero aside article,
+.om-payroll-hero aside article,
+.om-settings-hero aside article {
+  min-height: 96px;
+  border-radius: 22px;
+  padding: 16px;
+  background: var(--om-charcoal);
+  color: #fff8e9;
+  display: grid;
+  align-content: end;
+}
+
+.om-proof-hero aside article span,
+.om-payroll-hero aside article span,
+.om-settings-hero aside article span {
+  color: rgba(255, 248, 233, .66);
+}
+
+.om-proof-hero aside article strong,
+.om-payroll-hero aside article strong,
+.om-settings-hero aside article strong {
+  color: var(--om-lime);
+  font-size: 2.15rem;
+  line-height: .85;
+  letter-spacing: -0.07em;
+}
+
+.om-proof-flow-strip,
+.om-payroll-flow-strip,
+.om-settings-flow-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.om-proof-flow-strip article,
+.om-payroll-flow-strip article,
+.om-settings-flow-strip article {
+  border: 1px solid var(--om-border);
+  background: rgba(255, 253, 247, .72);
+  border-radius: 24px;
+  padding: 18px;
+  display: grid;
+  gap: 7px;
+  min-height: 92px;
+}
+
+.om-proof-flow-strip article.active,
+.om-payroll-flow-strip article.active,
+.om-settings-flow-strip article.active {
+  background: var(--om-charcoal);
+  color: #fff8e9;
+  border-color: var(--om-charcoal);
+}
+
+.om-proof-flow-strip article.active span,
+.om-payroll-flow-strip article.active span,
+.om-settings-flow-strip article.active span,
+.om-proof-flow-strip article.active small,
+.om-payroll-flow-strip article.active small,
+.om-settings-flow-strip article.active small {
+  color: var(--om-lime);
+}
+
+.om-proof-flow-strip small,
+.om-payroll-flow-strip small,
+.om-settings-flow-strip small {
+  color: var(--om-muted);
+  font-weight: 800;
+}
+
+.om-proof-layout,
+.om-payroll-layout,
+.om-settings-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, .34fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.om-proof-list,
+.om-payroll-list,
+.om-settings-list,
+.om-proof-side section,
+.om-payroll-side section,
+.om-settings-side section {
+  border: 1px solid var(--om-border);
+  border-radius: 30px;
+  background: rgba(255, 253, 247, .78);
+  box-shadow: 0 20px 55px rgba(70, 54, 35, .08);
+}
+
+.om-proof-list,
+.om-payroll-list,
+.om-settings-list {
+  overflow: hidden;
+}
+
+.om-proof-list > header,
+.om-payroll-list > header,
+.om-settings-list > header {
+  padding: 20px;
+  border-bottom: 1px solid var(--om-border);
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.om-proof-list h2,
+.om-payroll-list h2,
+.om-settings-list h2 {
+  margin: 6px 0 6px;
+  color: var(--om-charcoal);
+  font-size: clamp(1.6rem, 2.6vw, 2.6rem);
+  line-height: .95;
+  letter-spacing: -0.065em;
+}
+
+.om-proof-list p,
+.om-payroll-list p,
+.om-settings-list p {
+  margin: 0;
+  color: var(--om-muted);
+}
+
+.om-proof-list header b,
+.om-payroll-list header b,
+.om-settings-list header b {
+  width: 50px;
+  height: 50px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: var(--om-charcoal);
+  color: var(--om-lime);
+}
+
+.om-proof-tools,
+.om-payroll-tools,
+.om-settings-tools {
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, .36fr);
+  gap: 12px;
+  border-bottom: 1px solid var(--om-border);
+  background: rgba(255, 250, 240, .54);
+}
+
+.om-settings-tools {
+  grid-template-columns: 1fr;
+}
+
+.om-proof-filter-tabs,
+.om-payroll-filter-tabs,
+.om-settings-filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.om-proof-filter-tabs button,
+.om-payroll-filter-tabs button,
+.om-settings-filter-tabs button {
+  border: 1px solid var(--om-border);
+  border-radius: 999px;
+  background: #fffaf0;
+  color: var(--om-charcoal);
+  padding: 9px 12px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.om-proof-filter-tabs button.active,
+.om-payroll-filter-tabs button.active,
+.om-settings-filter-tabs button.active {
+  background: var(--om-charcoal);
+  color: var(--om-lime);
+  border-color: var(--om-charcoal);
+}
+
+.om-proof-tools input,
+.om-payroll-tools input {
+  min-height: 42px;
+  border: 1px solid var(--om-border);
+  border-radius: 999px;
+  padding: 0 14px;
+  background: var(--om-paper);
+  color: var(--om-charcoal);
+  font-weight: 800;
+}
+
+.om-proof-list > div,
+.om-payroll-list > div,
+.om-settings-list > div {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.om-proof-ticket,
+.om-payroll-ticket,
+.om-settings-ticket,
+.om-proof-empty,
+.om-payroll-empty {
+  min-height: 150px;
+  border: 1px solid var(--om-border);
+  border-radius: 22px;
+  background: var(--om-paper);
+  color: var(--om-charcoal);
+  padding: 16px;
+  text-align: left;
+}
+
+.om-proof-ticket,
+.om-payroll-ticket,
+.om-settings-ticket {
+  cursor: pointer;
+  display: grid;
+  gap: 7px;
+}
+
+.om-proof-ticket:hover,
+.om-payroll-ticket:hover,
+.om-settings-ticket:hover {
+  border-color: var(--om-copper);
+  box-shadow: 0 16px 34px rgba(93, 71, 43, .12);
+  transform: translateY(-2px);
+}
+
+.om-proof-ticket.photos,
+.om-payroll-ticket.active {
+  border-color: rgba(88, 127, 69, .42);
+}
+
+.om-payroll-ticket.setup {
+  border-color: rgba(189, 116, 65, .45);
+  background:
+    linear-gradient(135deg, rgba(189, 116, 65, .10), rgba(255, 250, 240, 1)),
+    var(--om-paper);
+}
+
+.om-proof-ticket strong,
+.om-payroll-ticket strong,
+.om-settings-ticket strong {
+  font-size: 1.08rem;
+  letter-spacing: -0.035em;
+}
+
+.om-proof-ticket small,
+.om-payroll-ticket small,
+.om-settings-ticket small {
+  color: var(--om-muted);
+  line-height: 1.45;
+}
+
+.om-proof-ticket em,
+.om-payroll-ticket em,
+.om-settings-ticket em {
+  width: fit-content;
+  margin-top: auto;
+  border-radius: 999px;
+  padding: 8px 11px;
+  background: var(--om-lime);
+  color: var(--om-charcoal);
+  font-style: normal;
+  font-size: .74rem;
+  font-weight: 950;
+}
+
+.om-proof-side,
+.om-payroll-side,
+.om-settings-side {
+  position: sticky;
+  top: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.om-proof-side section,
+.om-payroll-side section,
+.om-settings-side section {
+  padding: 18px;
+}
+
+.om-proof-side strong,
+.om-payroll-side strong,
+.om-settings-side strong {
+  display: block;
+  margin: 8px 0;
+  color: var(--om-charcoal);
+  font-size: clamp(2.2rem, 4vw, 3.2rem);
+  line-height: .85;
+  letter-spacing: -0.08em;
+}
+
+.om-proof-side h3,
+.om-payroll-side h3,
+.om-settings-side h3 {
+  margin: 8px 0;
+  color: var(--om-charcoal);
+  font-size: 1.45rem;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.om-proof-side p,
+.om-payroll-side p,
+.om-settings-side p,
+.om-proof-empty p,
+.om-payroll-empty p {
+  margin: 0;
+  color: var(--om-muted);
+  line-height: 1.5;
+}
+
+@media (max-width: 1080px) {
+  .om-proof-hero,
+  .om-payroll-hero,
+  .om-settings-hero,
+  .om-proof-layout,
+  .om-payroll-layout,
+  .om-settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .om-proof-side,
+  .om-payroll-side,
+  .om-settings-side {
+    position: static;
+  }
+}
+
+@media (max-width: 900px) {
+  .om-proof-tools,
+  .om-payroll-tools {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .om-proof-hero aside,
+  .om-payroll-hero aside,
+  .om-settings-hero aside,
+  .om-proof-flow-strip,
+  .om-payroll-flow-strip,
+  .om-settings-flow-strip,
+  .om-proof-list > div,
+  .om-payroll-list > div,
+  .om-settings-list > div {
+    grid-template-columns: 1fr;
+  }
+
+  .om-proof-filter-tabs,
+  .om-payroll-filter-tabs,
+  .om-settings-filter-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .om-proof-filter-tabs button,
+  .om-payroll-filter-tabs button,
+  .om-settings-filter-tabs button {
+    width: 100%;
+  }
+
+  .om-proof-hero,
+  .om-payroll-hero,
+  .om-settings-hero,
+  .om-proof-list,
+  .om-payroll-list,
+  .om-settings-list,
+  .om-proof-side section,
+  .om-payroll-side section,
+  .om-settings-side section {
+    border-radius: 24px;
+  }
+
+  .om-proof-ticket,
+  .om-payroll-ticket,
+  .om-settings-ticket {
+    min-height: auto;
+  }
+}
