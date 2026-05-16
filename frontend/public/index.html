@@ -27,6 +27,47 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/logo192.png" />
     <link rel="apple-touch-startup-image" href="/logo512.png" />
 <title>Churvox</title>
+    <script>
+      (function () {
+        if (window.__CHURVOX_CSS_RECOVERY__) return;
+        window.__CHURVOX_CSS_RECOVERY__ = true;
+
+        async function clearChurvoxCaches() {
+          try {
+            if ("serviceWorker" in navigator) {
+              var regs = await navigator.serviceWorker.getRegistrations();
+              await Promise.all(regs.map(function (reg) { return reg.unregister(); }));
+            }
+          } catch (e) {}
+
+          try {
+            if (window.caches && caches.keys) {
+              var keys = await caches.keys();
+              await Promise.all(keys.map(function (key) { return caches.delete(key); }));
+            }
+          } catch (e) {}
+        }
+
+        window.addEventListener("error", function (event) {
+          var target = event && event.target;
+          if (!target || target.tagName !== "LINK") return;
+
+          var href = target.getAttribute("href") || "";
+          if (href.indexOf("/static/css/") === -1) return;
+
+          try {
+            if (sessionStorage.getItem("churvox_css_recovery_done") === "1") return;
+            sessionStorage.setItem("churvox_css_recovery_done", "1");
+          } catch (e) {}
+
+          clearChurvoxCaches().finally(function () {
+            var cleanPath = window.location.pathname || "/";
+            window.location.replace(cleanPath + "?cache-fixed=" + Date.now());
+          });
+        }, true);
+      })();
+    </script>
+
     <style>
       /* Branded pre-React launch surface: white base + very subtle pale-blue dot grid
          to match the new app icon. Prevents any black flash on PWA cold-start. */

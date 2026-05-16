@@ -5,6 +5,36 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
+
+async function resetStalePwaCacheOnce() {
+  if (typeof window === "undefined") return;
+
+  const version = "css-mime-cache-fix-2026-05-16";
+  const key = "churvox_cache_fix_version";
+
+  try {
+    if (localStorage.getItem(key) === version) return;
+    localStorage.setItem(key, version);
+
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+    }
+
+    if (window.caches && typeof window.caches.keys === "function") {
+      const keys = await window.caches.keys();
+      await Promise.all(keys.map((cacheKey) => window.caches.delete(cacheKey)));
+    }
+
+    if (!new URLSearchParams(window.location.search || "").has("cache-fixed")) {
+      window.location.replace(`${window.location.pathname || "/"}?cache-fixed=${Date.now()}`);
+    }
+  } catch (err) {
+    console.warn("Churvox stale cache reset skipped:", err);
+  }
+}
+
+
 async function resetOldPwaShellIfRequested() {
   if (typeof window === "undefined") return;
 
@@ -49,6 +79,7 @@ function registerChurvoxPwa() {
 }
 
 resetOldPwaShellIfRequested();
+resetStalePwaCacheOnce();
 registerChurvoxPwa();
 
 const root = ReactDOM.createRoot(document.getElementById("root"));

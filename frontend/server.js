@@ -36,22 +36,44 @@ function safeJoin(base, requestedPath) {
 function sendFile(res, filePath) {
   const ext = path.extname(filePath).toLowerCase();
   const contentType = mimeTypes[ext] || "application/octet-stream";
+  const baseName = path.basename(filePath);
 
   const headers = {
     "Content-Type": contentType,
     "X-Content-Type-Options": "nosniff",
   };
 
-  if (filePath.includes(`${path.sep}static${path.sep}`)) {
-    headers["Cache-Control"] = "public, max-age=31536000, immutable";
-  } else if (path.basename(filePath) === "index.html") {
+  if (baseName === "sw.js" || baseName === "service-worker.js") {
     headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+    headers["Service-Worker-Allowed"] = "/";
+  } else if (baseName === "index.html") {
+    headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+  } else if (filePath.includes(`${path.sep}static${path.sep}`)) {
+    headers["Cache-Control"] = "public, max-age=31536000, immutable";
   } else {
     headers["Cache-Control"] = "public, max-age=3600";
   }
 
   res.writeHead(200, headers);
   fs.createReadStream(filePath).pipe(res);
+}
+
+function sendMissingAsset(res, requestedPath) {
+  const ext = path.extname(requestedPath).toLowerCase();
+  const contentType = mimeTypes[ext] || "text/plain; charset=utf-8";
+  const body =
+    ext === ".css"
+      ? "/* Churvox asset expired. Refresh the page. */"
+      : ext === ".js" || ext === ".mjs"
+        ? "console.warn('Churvox asset expired. Refresh the page.');"
+        : "Asset not found";
+
+  res.writeHead(404, {
+    "Content-Type": contentType,
+    "X-Content-Type-Options": "nosniff",
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+  });
+  res.end(body);
 }
 
 const server = http.createServer((req, res) => {
@@ -72,12 +94,7 @@ const server = http.createServer((req, res) => {
 
   const looksLikeAsset = path.extname(urlPath) || urlPath.startsWith("/static/");
   if (looksLikeAsset) {
-    res.writeHead(404, {
-      "Content-Type": "text/plain; charset=utf-8",
-      "X-Content-Type-Options": "nosniff",
-      "Cache-Control": "no-cache",
-    });
-    res.end("Asset not found");
+    sendMissingAsset(res, urlPath);
     return;
   }
 
