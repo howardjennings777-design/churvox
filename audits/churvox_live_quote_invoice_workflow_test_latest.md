@@ -1,0 +1,36 @@
+# Churvox Live Quote + Invoice Workflow Test
+
+Generated: 2026-05-16 21:28:06 UTC
+
+## Summary
+
+- HIGH: 0
+- MED: 0
+- LOW: 0
+- Backend: https://grassley-backend.onrender.com
+
+## Checks
+
+- ✅ **Owner login** — status `200` — {"id": "69d5c63456d9106e0dcfd2c8", "email": "hello@churvox.com", "name": "Howard", "business_name": "Churvox Platform", "role": "owner", "plan": "enterprise", "plan_status": "active", "subscription_status": "active", "trial_ends_at": null, "stripe_subscription_id": null, "gst_rate": 15.0, "trade_type": "other", "business_id": "69d5c63456d9106e0dcfd2c8", "onboarding_completed": false, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWQ1YzYzNDU2ZDkxMDZlMGRjZmQyYzgiLCJlbWFpbCI6ImhlbGxvQGNodXJ2b3guY29tIiwiZXhwIjoxNzc5MDUzMjc1LCJ0eXBlIjoiYWNjZXNzIn0.a4fX7ZpM4vB19ZHuxQDCoEJVmro1728yYPoFku8fGv4"}
+- ✅ **Create test client** — status `200` — id=6a08e15c6ceadd6806c28b1d {"success": true, "id": "6a08e15c6ceadd6806c28b1d", "message": "Client created"}
+- ✅ **Create test quote** — status `200` — POST /api/quotes => 200 {"success": true, "id": "6a08e15d6ceadd6806c28b1e", "message": "Quote created"}
+- ✅ **Read/open test quote** — status `200` — GET /api/quotes/6a08e15d6ceadd6806c28b1e => 200 {"id": "6a08e15d6ceadd6806c28b1e", "client_id": "6a08e15c6ceadd6806c28b1d", "customer_name": "Quote Invoice Test Client 20260516212755", "customer_email": "quote-invoice-test-20260516212755@example.com", "address": "10 Quote Invoice Test Street, Wellington", "job_type": "other", "job_description": "Live quote workflow test work. Safe test only.", "price": 250.0, "pricing_type": "fixed", "hourly_rate": 0.0, "extras": [], "valid_until": "2026-05-30", "status": "draft", "public_token": "4NJ0np3Fc5Feaw1dY226cwGUoHEYA", "public_quote_url": "https://www.churvox.com/public/quote/4NJ0np3Fc5Feaw1dY226cwGUoHEYA", "created_at": "2026-05-16T21:27:57.269000", "updated_at": "2026-05-16T21:27:58.132000"}
+- ✅ **Open public quote link** — status `200` — url=https://www.churvox.com/public/quote/4NJ0np3Fc5Feaw1dY226cwGUoHEYA "<!doctype html><html lang=\"en\"><head><link rel=\"icon\" type=\"image/svg+xml\" href=\"/brand/churvox-holo-c.svg\"/><link rel=\"apple-touch-icon\" href=\"/brand/churvox-holo-c.svg\"/><meta charset=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1\"/><meta name=\"description\" content=\"Churvox - Jobs, quotes, invoices and team management for trade contractors\"/><meta name=\"apple-mobile-web-app-capable\" content=\"yes\"/><meta name=\"apple-mobile-web-app-status-bar-style\" content=\"default\"/><meta name=\"apple-mobile-web-app-title\" content=\"Churvox\"/><meta name=\"mobile-web-app-capable\" content=\"yes\"/><meta name=\"theme-color\" media=\"(prefers-color-scheme: light)\" content=\"#24221d\"/><meta name=\"theme-color\" media=\"(prefers-color-scheme: dark)\" content=\"#"
+- ✅ **Create test invoice** — status `200` — POST /api/invoices => 200 {"success": true, "id": "6a08e15f6ceadd6806c28b20", "message": "Invoice created"}
+- ✅ **Read/open test invoice** — status `200` — GET /api/invoices/6a08e15f6ceadd6806c28b20 => 200 {"id": "6a08e15f6ceadd6806c28b20", "invoice_number": "INV-1778966879", "job_id": "", "source_job_id": "", "linked_job_id": "", "client_id": "6a08e15c6ceadd6806c28b1d", "customer_name": "Quote Invoice Test Client 20260516212755", "customer_email": "quote-invoice-test-20260516212755@example.com", "address": "10 Quote Invoice Test Street, Wellington", "description": "Live invoice workflow test work. Safe test only.", "subtotal": 300.0, "gst_rate": 15.0, "gst_amount": 45.0, "total": 345.0, "status": "draft", "public_token": "", "public_invoice_url": "", "payment_link": "", "pricing_type": "fixed", "hourly_rate": 0.0, "hours_worked": 0.0, "extras": [], "notes": "", "myob_sync_status": "not_synced", "myob_invoice_id": "", "myob_invoice_number": "", "myob_last_synced_at": null, "myob_error": "", "myob_payment_status": "", "myob_invoice_url": "", "official_invoice_source": "churvox", "source": "
+- ✅ **Open public invoice/payment link** — status `0` — Skipped: invoice response did not expose a public/payment URL.
+- ✅ **Quotes list after create** — status `200` — [{"id": "6a08e15d6ceadd6806c28b1e", "client_id": "6a08e15c6ceadd6806c28b1d", "customer_name": "Quote Invoice Test Client 20260516212755", "customer_email": "quote-invoice-test-20260516212755@example.com", "address": "10 Quote Invoice Test Street, Wellington", "job_type": "other", "job_description": "Live quote workflow test work. Safe test only.", "price": 250.0, "pricing_type": "fixed", "hourly_rate": 0, "extras": [], "valid_until": "2026-05-30", "status": "draft", "business_id": "69d5c63456d9106e0dcfd2c8", "created_at": "2026-05-16T21:27:57.269000", "updated_at": "2026-05-16T21:27:58.132000"}, {"id": "6a00dacc8ea90bb453146aba", "client_id": null, "customer_name": "PW Quote Client 1778440899903", "customer_email": "pw-quote-1778440899903@example.com", "address": "2 Playwright Quote Street, Wellington", "job_type": "other", "job_description": "Playwright quote test work", "price": 250.0,
+- ✅ **Invoices list after create** — status `200` — [{"id": "6a08e15f6ceadd6806c28b20", "invoice_number": "INV-1778966879", "job_id": "", "source_job_id": "", "linked_job_id": "", "client_id": "6a08e15c6ceadd6806c28b1d", "customer_name": "Quote Invoice Test Client 20260516212755", "customer_email": "quote-invoice-test-20260516212755@example.com", "address": "10 Quote Invoice Test Street, Wellington", "description": "Live invoice workflow test work. Safe test only.", "subtotal": 300.0, "gst_rate": 15.0, "gst_amount": 45.0, "total": 345.0, "status": "draft", "public_token": "", "public_invoice_url": "", "payment_link": "", "pricing_type": "fixed", "hourly_rate": 0.0, "hours_worked": 0.0, "extras": [], "notes": "", "myob_sync_status": "not_synced", "myob_invoice_id": "", "myob_invoice_number": "", "myob_last_synced_at": null, "myob_error": "", "myob_payment_status": "", "myob_invoice_url": "", "official_invoice_source": "churvox", "source": 
+- ✅ **Delete test invoice cleanup** — status `200` — DELETE /api/invoices/6a08e15f6ceadd6806c28b20 => 200 {"success": true, "message": "Invoice deleted"}
+- ✅ **Delete test quote cleanup** — status `200` — DELETE /api/quotes/6a08e15d6ceadd6806c28b1e => 200 {"success": true, "message": "Quote deleted"}
+- ✅ **Delete test client cleanup** — status `200` — DELETE /api/clients/6a08e15c6ceadd6806c28b1d => 200 {"success": true, "message": "Client deleted"}
+
+## Findings
+
+No live quote/invoice workflow blockers found in this API smoke test.
+
+## Notes
+
+- This test creates and then deletes one client, quote, and invoice where supported.
+- It does not email customers, send SMS, create Stripe charges, or sync MYOB.
+- Public document/payment links are only opened if the API exposes them.
