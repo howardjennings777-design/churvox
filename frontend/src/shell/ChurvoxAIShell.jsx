@@ -4961,7 +4961,7 @@ function workspaceOperatorConfig(page, counts = {}) {
   const configs = {
     jobs: {
       label: "Jobs machine",
-      title: "Churvox turns job records into prepared owner decisions.",
+      title: "Jobs machine: Churvox turns job records into prepared owner decisions.",
       watches: [
         "unassigned jobs",
         "schedule conflicts",
@@ -8262,6 +8262,24 @@ function Workspace({ page, setPage, data }) {
         <Stat label="Quotes" value={stats.openQuotes || String(quotes.length)} note="follow-ups watched" />
         <Stat label="Crew online" value={stats.crewOnline || String(team.length)} note="assignment context" />
       </section>
+
+      {(page !== "dashboard" && page !== "plans" && page !== "proof") ? (
+        <WorkspaceOperatorPanel
+          page={page}
+          counts={{
+            jobs: jobs.length,
+            clients: clients.length,
+            team: team.length,
+            quotes: quotes.length,
+            invoices: invoices.length,
+            completedJobs: completedJobs.length,
+            unassignedJobs: unassignedJobRows.length,
+            readyInvoices: readyInvoiceRows.length,
+            messages: preparedMessageRows.length,
+          }}
+          onOpen={openQuickAction}
+        />
+      ) : null}
 
       {page === "dashboard" ? (
         <section className="cx-hub-box-grid">

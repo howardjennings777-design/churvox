@@ -4848,3 +4848,96 @@ a,
     min-height: 150px !important;
   }
 }
+
+
+/* Phase 33: force visible workspace operator panels */
+.cx-workspace-operator-panel {
+  border-radius: 30px;
+  padding: 20px;
+  border: 1px solid rgba(116,247,255,.16);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(32,217,255,.12), transparent 20rem),
+    radial-gradient(circle at 100% 0%, rgba(24,227,194,.07), transparent 18rem),
+    linear-gradient(180deg, rgba(12, 26, 39, .97), rgba(3, 10, 16, .95)) !important;
+  box-shadow:
+    0 26px 88px rgba(0,0,0,.44),
+    inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+.cx-workspace-operator-panel > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.cx-workspace-operator-panel span {
+  color: #74f7ff !important;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.cx-workspace-operator-panel h2 {
+  margin: 8px 0 0;
+  color: #eef7ff !important;
+  font-size: clamp(26px, 3vw, 42px);
+  line-height: 1;
+  letter-spacing: -.06em;
+  font-weight: 950;
+}
+
+.cx-workspace-operator-panel p {
+  max-width: 820px;
+  color: #a8bac9 !important;
+  line-height: 1.6;
+  font-weight: 760;
+}
+
+.cx-workspace-operator-panel > header button {
+  min-height: 46px;
+  white-space: nowrap;
+  border-radius: 16px;
+  padding: 0 16px;
+  color: #031018;
+  font-weight: 950;
+  border: 1px solid rgba(116,247,255,.42);
+  background:
+    radial-gradient(circle at 28% 0%, rgba(255,255,255,.74), transparent 28%),
+    linear-gradient(135deg, #74f7ff, #35b7ff 48%, #18e3c2);
+}
+
+.cx-workspace-operator-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cx-workspace-operator-grid article {
+  border-radius: 22px;
+  padding: 16px;
+  background: rgba(3,10,16,.58) !important;
+  border: 1px solid rgba(116,247,255,.12) !important;
+}
+
+.cx-workspace-operator-grid ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #a8bac9;
+  line-height: 1.75;
+  font-weight: 760;
+}
+
+@media (max-width: 900px) {
+  .cx-workspace-operator-panel > header,
+  .cx-workspace-operator-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .cx-workspace-operator-panel > header button {
+    width: 100%;
+  }
+}
