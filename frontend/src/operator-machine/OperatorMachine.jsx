@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_87_FINISH_TEAM_OPERATOR_MACHINE_ALL_IN_ONE
 // PHASE_85_FINISH_CLIENTS_OPERATOR_MACHINE
 // PHASE_84_FIX_DUPLICATE_DASHBOARD_HERO_JSX
 // PHASE_83_FIX_OLD_JOBS_ORPHAN_CHUNK
@@ -625,6 +626,40 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove, onChoo
                 })}
               </select>
             </label>
+          ) : null}
+
+          {slip.kind === "team-member" ? (
+            <>
+              <label>
+                Worker name
+                <input value={draft.workerName || draft.title || ""} onChange={(event) => update("workerName", event.target.value)} placeholder="Worker or team member name" />
+              </label>
+
+              <label>
+                Email
+                <input value={draft.workerEmail || ""} onChange={(event) => update("workerEmail", event.target.value)} placeholder="Worker email" />
+              </label>
+
+              <label>
+                Phone
+                <input value={draft.workerPhone || ""} onChange={(event) => update("workerPhone", event.target.value)} placeholder="Worker phone" />
+              </label>
+
+              <label>
+                Role
+                <select value={draft.workerRole || "worker"} onChange={(event) => update("workerRole", event.target.value)}>
+                  <option value="worker">Worker</option>
+                  <option value="manager">Manager</option>
+                  <option value="office_admin">Office Admin</option>
+                  <option value="payroll">Payroll</option>
+                </select>
+              </label>
+
+              <label>
+                Region / area
+                <input value={draft.workerRegion || ""} onChange={(event) => update("workerRegion", event.target.value)} placeholder="Region, suburb, area..." />
+              </label>
+            </>
           ) : null}
 
           {slip.kind === "client" ? (
@@ -1421,6 +1456,323 @@ function ClientsRecordBoard({ data, machine, onOpen }) {
 }
 
 
+
+function TeamCrewBoard({ data, machine, onOpen }) {
+  const teamRows = rowsForPage("team", machine, data || {});
+  const [teamFilter, setTeamFilter] = useState("priority");
+  const [teamQuery, setTeamQuery] = useState("");
+
+  const raw = (data && data.raw) || {};
+  const jobs = arrayFrom(raw.jobs, data?.jobs);
+
+  function workerName(item = {}) {
+    return clean(
+      item.name ||
+      item.full_name ||
+      item.worker_name ||
+      item.display_name ||
+      item.email ||
+      item.phone,
+      "Team member"
+    );
+  }
+
+  function workerRole(item = {}) {
+    return clean(item.role || item.worker_role || item.position || item.type, "Worker");
+  }
+
+  function workerRegion(item = {}) {
+    return clean(item.region || item.area || item.zone || item.location);
+  }
+
+  function workerContact(item = {}) {
+    return clean(item.email || item.phone || item.mobile);
+  }
+
+  function hasContact(item = {}) {
+    return Boolean(workerContact(item));
+  }
+
+  function hasRole(item = {}) {
+    return Boolean(clean(item.role || item.worker_role || item.position || item.type));
+  }
+
+  function hasRegion(item = {}) {
+    return Boolean(workerRegion(item));
+  }
+
+  function assignedCount(worker = {}) {
+    const id = clean(worker.id || worker._id || worker.worker_id || worker.user_id).toLowerCase();
+    const name = workerName(worker).toLowerCase();
+
+    return jobs.filter((job) => {
+      const text = [
+        job.assigned_worker_id,
+        job.worker_id,
+        job.assigned_worker,
+        job.assigned_worker_name,
+        job.worker_name,
+        job.worker?.name,
+      ].map((value) => clean(value).toLowerCase()).join(" ");
+
+      return (id && text.includes(id)) || (name && text.includes(name));
+    }).length;
+  }
+
+  const missingContactRows = teamRows.filter((row) => !hasContact(row.item || {}));
+  const missingRoleRows = teamRows.filter((row) => !hasRole(row.item || {}));
+  const missingRegionRows = teamRows.filter((row) => !hasRegion(row.item || {}));
+  const activeRows = teamRows.filter((row) => assignedCount(row.item || {}) > 0);
+
+  const priorityRows = [
+    ...missingContactRows,
+    ...missingRoleRows,
+    ...missingRegionRows,
+    ...activeRows,
+    ...teamRows,
+  ].filter((row, index, arr) => arr.findIndex((item) => item.id === row.id) === index);
+
+  const sourceRows =
+    teamFilter === "contact" ? missingContactRows :
+    teamFilter === "role" ? missingRoleRows :
+    teamFilter === "region" ? missingRegionRows :
+    teamFilter === "active" ? activeRows :
+    teamFilter === "all" ? teamRows :
+    priorityRows;
+
+  const filteredRows = sourceRows
+    .filter((row) => {
+      const item = row.item || {};
+      const haystack = [
+        row.title,
+        row.need,
+        item.name,
+        item.full_name,
+        item.worker_name,
+        item.email,
+        item.phone,
+        item.mobile,
+        item.role,
+        item.worker_role,
+        item.position,
+        item.region,
+        item.area,
+        item.zone,
+      ].map((value) => clean(value).toLowerCase()).join(" ");
+
+      return !teamQuery.trim() || haystack.includes(teamQuery.trim().toLowerCase());
+    })
+    .slice(0, 18);
+
+  const teamStats = [
+    ["Team", teamRows.length],
+    ["Need contact", missingContactRows.length],
+    ["Need region", missingRegionRows.length],
+    ["Active jobs", activeRows.length],
+  ];
+
+  const machineSteps = [
+    ["Record", "Worker enters once"],
+    ["Check", "Role, region and contact are checked"],
+    ["Match", "Jobs can use worker fit"],
+    ["Proof", "Worker updates feed owner approval"],
+  ];
+
+  const filters = [
+    ["priority", "Priority"],
+    ["contact", "Need contact"],
+    ["role", "Need role"],
+    ["region", "Need region"],
+    ["active", "Active"],
+    ["all", "All team"],
+  ];
+
+  function makeNewTeamSlip() {
+    return {
+      id: `new-team-${Date.now()}`,
+      sourceId: "",
+      kind: "team-member",
+      eyebrow: "New team intake",
+      title: "Invite team member",
+      need: "Add the worker once. Churvox will use the role, region and contact for job matching.",
+      prepared: "Churvox will use this team record for dispatch, worker matching, job proof and owner-approved workflow.",
+      draft: {
+        title: "",
+        workerName: "",
+        workerEmail: "",
+        workerPhone: "",
+        workerRole: "worker",
+        workerRegion: "",
+        ownerNote: "",
+        customerMessage: "",
+        invoiceDescription: "",
+      },
+    };
+  }
+
+  function makeTeamSlip(row) {
+    const item = row.item || {};
+    const name = workerName(item);
+    const role = workerRole(item);
+    const region = workerRegion(item);
+    const contact = workerContact(item);
+    const count = assignedCount(item);
+    const needsContact = !hasContact(item);
+    const needsRole = !hasRole(item);
+    const needsRegion = !hasRegion(item);
+
+    return {
+      ...row,
+      kind: "team-member",
+      eyebrow:
+        needsContact ? "Needs contact" :
+        needsRole ? "Needs role" :
+        needsRegion ? "Needs region" :
+        "Team record",
+      title: name,
+      need:
+        needsContact ? "Add phone or email so invites, updates and worker workflow can work cleanly." :
+        needsRole ? "Add a role so Churvox knows what this person can access." :
+        needsRegion ? "Add a region so worker matching is cleaner." :
+        "Review team details and keep worker matching clean.",
+      prepared:
+        `Churvox checked this worker for dispatch context. Role: ${role}. Region: ${region || "not set"}. Assigned jobs found: ${count}.` +
+        `${contact ? ` Contact: ${contact}.` : ""}`,
+      draft: {
+        title: name,
+        workerName: name,
+        workerEmail: clean(item.email),
+        workerPhone: clean(item.phone || item.mobile),
+        workerRole: clean(item.role || item.worker_role || item.position || "worker"),
+        workerRegion: region,
+        ownerNote: clean(item.notes || item.internal_note || row.need),
+        customerMessage: "",
+        invoiceDescription: "",
+      },
+    };
+  }
+
+  return (
+    <section className="om-team-board" data-phase="PHASE_87_FINISH_TEAM_OPERATOR_MACHINE_ALL_IN_ONE">
+      <header className="om-team-hero om-team-hero-final">
+        <div>
+          <span>Churvox Operator Machine · Team</span>
+          <h1>Team records power worker matching.</h1>
+          <p>
+            Keep crew details simple. Churvox checks role, region, contact and active work in the background,
+            then uses that context to prepare cleaner dispatch decisions.
+          </p>
+
+          <button type="button" className="om-team-hero-action inline" onClick={() => onOpen(makeNewTeamSlip())}>
+            New team intake
+          </button>
+        </div>
+
+        <aside>
+          {teamStats.map(([label, value]) => (
+            <article key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+            </article>
+          ))}
+        </aside>
+      </header>
+
+      <section className="om-team-flow-strip compact">
+        {machineSteps.map(([label, body], index) => (
+          <article key={label} className={index === 2 ? "active" : ""}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <strong>{label}</strong>
+            <small>{body}</small>
+          </article>
+        ))}
+      </section>
+
+      <section className="om-team-layout">
+        <section className="om-team-list">
+          <header className="om-team-list-head">
+            <div>
+              <span>Team Records</span>
+              <h2>Who can do the work.</h2>
+              <p>Filter workers, then open one Work Slip to review role, contact or region.</p>
+            </div>
+            <b>{filteredRows.length}</b>
+          </header>
+
+          <section className="om-team-tools">
+            <div className="om-team-filter-tabs">
+              {filters.map(([key, label]) => (
+                <button type="button" key={key} className={teamFilter === key ? "active" : ""} onClick={() => setTeamFilter(key)}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <input
+              value={teamQuery}
+              onChange={(event) => setTeamQuery(event.target.value)}
+              placeholder="Search worker, role, region, phone, email..."
+            />
+          </section>
+
+          <div>
+            {filteredRows.length ? filteredRows.map((row) => {
+              const item = row.item || {};
+              const name = workerName(item);
+              const contact = workerContact(item);
+              const role = workerRole(item);
+              const region = workerRegion(item);
+              const needsContact = !hasContact(item);
+              const needsRole = !hasRole(item);
+              const needsRegion = !hasRegion(item);
+
+              return (
+                <button
+                  type="button"
+                  key={row.id}
+                  className={`om-team-ticket ${needsContact ? "needs-contact" : needsRole ? "needs-role" : needsRegion ? "needs-region" : "active"}`}
+                  onClick={() => onOpen(makeTeamSlip(row))}
+                >
+                  <span>{needsContact ? "Needs contact" : needsRole ? "Needs role" : needsRegion ? "Needs region" : role}</span>
+                  <strong>{name}</strong>
+                  <small>{contact || region || row.need}</small>
+                  <em>{needsContact ? "Add contact" : needsRole ? "Set role" : needsRegion ? "Set region" : "Open Work Slip"}</em>
+                </button>
+              );
+            }) : (
+              <article className="om-team-empty">
+                <strong>No team records match this view.</strong>
+                <p>Try another filter or add a new team intake.</p>
+              </article>
+            )}
+          </div>
+        </section>
+
+        <aside className="om-team-side">
+          <section>
+            <span>Needs contact</span>
+            <strong>{missingContactRows.length}</strong>
+            <p>Email or phone is needed for invites, updates and worker workflow.</p>
+          </section>
+
+          <section>
+            <span>Needs region</span>
+            <strong>{missingRegionRows.length}</strong>
+            <p>Region helps Churvox suggest better worker matches for jobs.</p>
+          </section>
+
+          <section>
+            <span>Machine rule</span>
+            <h3>Worker fit should be prepared.</h3>
+            <p>Churvox should check role, region, workload and job context before the owner approves dispatch.</p>
+          </section>
+        </aside>
+      </section>
+    </section>
+  );
+}
+
+
 function JobsQueueBoard({ data, machine, onOpen }) {
   const jobRows = rowsForPage("jobs", machine, data || {});
   const team = arrayFrom(data?.raw?.team, data?.raw?.workers, data?.team);
@@ -1863,6 +2215,10 @@ function FeatureWorkspace({ page, machine, data, currentPlan, onOpen, onPlans })
     );
   }
 
+  if (page === "team") {
+    return <TeamCrewBoard data={data} machine={machine} onOpen={onOpen} />;
+  }
+
   return (
     <section className="om-feature-workspace" data-phase="PHASE_69_OPERATOR_MACHINE_ALL_PAGES">
       <header className="om-feature-hero">
@@ -1997,6 +2353,57 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
 
   async function approveSlip(slip, draft) {
     setOutputStatus("Saving owner-approved action...");
+
+    if (slip.kind === "team-member" && String(slip.id || "").startsWith("new-team")) {
+      const teamPayload = {
+        name: draft.workerName || draft.title || "Team member",
+        full_name: draft.workerName || draft.title || "Team member",
+        worker_name: draft.workerName || draft.title || "Team member",
+        email: draft.workerEmail || "",
+        phone: draft.workerPhone || "",
+        mobile: draft.workerPhone || "",
+        role: draft.workerRole || "worker",
+        worker_role: draft.workerRole || "worker",
+        region: draft.workerRegion || "",
+        area: draft.workerRegion || "",
+        notes: draft.ownerNote || "",
+      };
+
+      let lastError = null;
+      for (const path of ["/team/workers", "/team/workers/", "/team/invite", "/owner/team"]) {
+        try {
+          const result = await apiPost(path, teamPayload);
+          const message = result?.message || "Team member saved to Churvox.";
+          setOutputStatus(message);
+          setOutputLog((current) => [
+            {
+              id: `${Date.now()}-${slip.id}`,
+              type: "Team member created",
+              title: teamPayload.name,
+              detail: message,
+            },
+            ...current,
+          ].slice(0, 8));
+          setActiveSlip(null);
+          return;
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      const message = lastError?.message || "Team member could not be saved yet.";
+      setOutputStatus(message);
+      setOutputLog((current) => [
+        {
+          id: `${Date.now()}-${slip.id}`,
+          type: "Team create needs backend check",
+          title: teamPayload.name,
+          detail: message,
+        },
+        ...current,
+      ].slice(0, 8));
+      return;
+    }
 
     const payload = {
       type: slip.kind,
