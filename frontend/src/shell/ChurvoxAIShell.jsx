@@ -5339,6 +5339,50 @@ function useChurvoxPlanCatalog(enabled) {
   return state;
 }
 
+
+function PublicPlansPage({ setAuthMode }) {
+  const planCatalog = useChurvoxPlanCatalog(true);
+
+  function startPlan(plan) {
+    setAuthMode("signup");
+    try {
+      window.history.pushState({}, "", "/signup");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch {
+      window.location.href = "/signup";
+    }
+  }
+
+  return (
+    <main className="cx-public cx-public-landing cx-public-plans-page" id="top">
+      <PublicNav />
+
+      <section className="cx-public-plans-hero">
+        <span>Churvox plans</span>
+        <h1>Choose how much of the business Churvox can run.</h1>
+        <p>
+          AI prepares the admin, workers feed proof back in, and the owner reviews, edits and approves.
+          Pick the plan that matches your team size and workflow.
+        </p>
+      </section>
+
+      <ChurvoxPlansWorkspace
+        planCatalog={planCatalog}
+        onChoosePlan={startPlan}
+        onOpenSettings={() => {
+          setAuthMode("signup");
+          try {
+            window.history.pushState({}, "", "/signup");
+          } catch {
+            window.location.href = "/signup";
+          }
+        }}
+      />
+    </main>
+  );
+}
+
+
 function ChurvoxPlansWorkspace({ planCatalog, onChoosePlan, onOpenSettings }) {
   const plans = Array.isArray(planCatalog?.plans) && planCatalog.plans.length
     ? planCatalog.plans
@@ -8662,13 +8706,17 @@ export default function ChurvoxAIShell() {
   if (showPublic) {
     const publicPath = window.location.pathname.replace(/\/+$/, "") || "/";
 
-    if (publicPath === "/request" || publicPath === "/job-request") {
+    if (publicPath === "/request" || publicPath === "/job-request" || publicPath === "/request-work") {
       return <PublicJobRequestPage />;
     }
 
     if (publicPath.startsWith("/portal/")) {
       const token = decodeURIComponent(publicPath.replace("/portal/", ""));
       return <PublicClientPortalPage token={token} />;
+    }
+
+    if (publicPath === "/plans" || publicPath === "/pricing") {
+      return <PublicPlansPage setAuthMode={setAuthMode} />;
     }
 
     return <Landing authMode={authMode} setAuthMode={setAuthMode} onLogin={onLogin} />;
