@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_92_OPERATOR_APPROVAL_CONFIRMATION_BOX
 // PHASE_91_WIRE_PLANS_TO_CHECKOUT
 // PHASE_90_FINISH_INVOICES_OPERATOR_MACHINE_ALL_IN_ONE
 // PHASE_89_FINISH_LAST_OPERATOR_MACHINE_PAGES
@@ -3732,6 +3733,47 @@ function FeatureWorkspace({ page, machine, data, currentPlan, onOpen, onPlans })
 }
 
 
+
+function receiptTimeFromEntry(entry = {}) {
+  const raw = String(entry.id || "").split("-")[0];
+  const stamp = Number(raw);
+
+  if (Number.isFinite(stamp) && stamp > 1000000000000) {
+    try {
+      return new Date(stamp).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    } catch {
+      return "just now";
+    }
+  }
+
+  return "just now";
+}
+
+function OperatorActionReceipt({ entry }) {
+  if (!entry) return null;
+
+  const type = clean(entry.type || "Approved");
+  const title = clean(entry.title || "Action");
+  const detail = clean(entry.detail || "Churvox recorded the approved action.");
+
+  return (
+    <section className="om-action-receipt" data-phase="PHASE_92_OPERATOR_APPROVAL_CONFIRMATION_BOX">
+      <div>
+        <span>Confirmed</span>
+        <h2>Churvox sent it to the Output Log.</h2>
+        <p>{title}</p>
+      </div>
+
+      <aside>
+        <b>{type}</b>
+        <small>{receiptTimeFromEntry(entry)}</small>
+      </aside>
+
+      <em>{detail}</em>
+    </section>
+  );
+}
+
 export default function OperatorMachine({ page = "dashboard", setPage, onLogout, data }) {
   const currentPlan = currentPlanKey(data || {});
   const machine = useMemo(() => buildMachine(data || {}), [data]);
@@ -3912,7 +3954,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
       for (const path of ["/team/workers", "/team/workers/", "/team/invite", "/owner/team"]) {
         try {
           const result = await apiPost(path, teamPayload);
-          const message = result?.message || "Team member saved to Churvox.";
+          const message = result?.message || "Churvox saved the team member and sent it to the Output Log.";
           setOutputStatus(message);
           setOutputLog((current) => [
             {
@@ -3967,7 +4009,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
       for (const path of ["/quotes", "/quotes/", "/owner/quotes"]) {
         try {
           const result = await apiPost(path, quotePayload);
-          const message = result?.message || "Quote draft saved to Churvox.";
+          const message = result?.message || "Churvox saved the quote draft and sent it to the Output Log.";
           setOutputStatus(message);
           setOutputLog((current) => [
             {
@@ -4022,7 +4064,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
       for (const path of ["/invoices", "/invoices/", "/owner/invoices"]) {
         try {
           const result = await apiPost(path, invoicePayload);
-          const message = result?.message || "Invoice draft saved to Churvox.";
+          const message = result?.message || "Churvox saved the invoice draft and sent it to the Output Log.";
           setOutputStatus(message);
           setOutputLog((current) => [
             {
@@ -4098,6 +4140,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
           },
           ...current,
         ].slice(0, 8));
+        setActiveSlip(null);
         return;
       } catch (err) {
         lastError = err;
@@ -4178,6 +4221,8 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
         ) : null}
 
         {data?.error ? <section className="om-warning"><b>Machine warning</b><span>{data.error}</span></section> : null}
+
+        <OperatorActionReceipt entry={outputLog[0]} />
 
         {page === "dashboard" ? (
           <>
