@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_111B_SAFE_JOB_BRIEF_TEMPLATE
 // PHASE_110_HARD_FIX_BUSINESS_LOGO_CRASH
 // PHASE_108_FIX_BUSINESS_LOGO_URL_SCOPE
 // PHASE_107_BUSINESS_LOGO_UPLOAD
@@ -1063,6 +1064,7 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
         </section>
 
         <section className="om-slip-fields">
+          <JobBriefTemplateCard slip={slip} draft={draft} update={update} />
           <label className={isJobIntake ? "wide" : ""}>
             Clear title
             <input value={draft.title || ""} onChange={(event) => update("title", event.target.value)} placeholder={isJobIntake ? "Example: Lawn mowing at 14 King Street" : ""} />
@@ -4538,6 +4540,118 @@ function ChurvoxInstallPrompt() {
     </section>
   );
 }
+
+
+function phase111bValue(...values) {
+  for (const value of values) {
+    const cleaned = clean(value);
+    if (cleaned) return cleaned;
+  }
+  return "";
+}
+
+function phase111bIsInvoiceSlip(slip = {}) {
+  const kind = clean(slip.kind).toLowerCase();
+  const title = clean(slip.title).toLower this safer version. It does not rely on that missing old block. It injects the Job Brief card into the Work Slip area and hides the plain direct fields only when the Job Brief card is showing.
+
+```bash
+cd /workCase();
+  const eyebrow = clean(slip.eyebrow).toLowerCase();
+
+  return (
+    kind.includes("invoice") ||
+    kind.includes("cashflow") ||
+    kind.includes("proof") ||
+    title.includes("invoice") ||
+    eyebrow.includes("invoice")
+  );
+}
+
+function phase111bIsJobSlip(slip = {}) {
+  const kind = clean(slip.kind).toLowerCase();
+  const title = clean(slip.title).toLowerCase();
+  const eyebrow = clean(slip.eyebrow).toLowerCase();
+
+  return (
+    kind.includes("job") ||
+    kind.includes("input") ||
+    kind.includes("dispatch") ||
+    kind.includes("worker") ||
+    title.includes("job") ||
+    title.includes("worker") ||
+    eyebrow.includes("job")
+  );
+}
+
+function phase111bJobBriefText(draft = {}, slip = {}) {
+  const title = phase111bValue(draft.title, slip.title, "Job input");
+  const client = phase111bValue(draft.clientName, draft.invoiceClientName, "Client");
+  const address = phase111bValue(draft.address, "Address not confirmed");
+  const work = phase111bValue(draft.serviceType, draft.invoiceLineItem, "Work details need owner check");
+  const worker = phase111bValue(draft.workerChoice, "Worker not chosen yet");
+
+  return [
+    `Job: ${title}`,
+    `Client: ${client}`,
+    `Site: ${address}`,
+    `Work: ${work}`,
+    `Worker: ${worker}`,
+    "",
+    "Churvox checked the job input and prepared it for owner review.",
+    "Owner should confirm the job details, choose the worker if needed, then approve."
+  ].join("\\n");
+}
+
+function JobBriefTemplateCard({ slip, draft, update }) {
+  if (!phase111bIsJobSlip(slip) || phase111bIsInvoiceSlip(slip)) return null;
+
+  const title = phase111bValue(draft.title, slip.title, "Job input");
+  const client = phase111bValue(draft.clientName, "Client");
+  const address = phase111bValue(draft.address, "Address not confirmed");
+  const work = phase111bValue(draft.serviceType, draft.invoiceLineItem, "Work details need owner check");
+  const worker = phase111bValue(draft.workerChoice, "Choose worker before dispatch");
+
+  return (
+    <section className="om-job-brief-template" data-phase="PHASE_111B_SAFE_JOB_BRIEF_TEMPLATE">
+      <header>
+        <span>AI job brief</span>
+        <strong>Ready for owner review</strong>
+        <small>Churvox prepares the job clearly before it goes to dispatch, worker assignment or admin prep.</small>
+      </header>
+
+      <div className="om-job-brief-grid">
+        <article><b>Job</b><strong>{title}</strong></article>
+        <article><b>Client</b><strong>{client}</strong></article>
+        <article><b>Site</b><strong>{address}</strong></article>
+        <article><b>Worker</b><strong>{worker}</strong></article>
+      </div>
+
+      <label className="wide">
+        Job brief / worker instruction
+        <textarea
+          value={draft.customerMessage || phase111bJobBriefText(draft, slip)}
+          onChange={(event) => update("customerMessage", event.target.value)}
+          placeholder="AI-prepared job brief..."
+        />
+      </label>
+
+      <label className="wide">
+        Owner check before approval
+        <textarea
+          value={draft.ownerNote || ""}
+          onChange={(event) => update("ownerNote", event.target.value)}
+          placeholder="Add anything the owner wants checked before this goes to the worker or admin..."
+        />
+      </label>
+
+      <footer>
+        <b>Approval rule</b>
+        <p>Approving a worker assignment should assign the job, show it in the worker app, create a notification and record it in the Output Log.</p>
+      </footer>
+    </section>
+  );
+}
+
 
 export default function OperatorMachine({ page = "dashboard", setPage, onLogout, data }) {
   const currentPlan = currentPlanKey(data || {});
