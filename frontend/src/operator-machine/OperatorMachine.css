@@ -6519,3 +6519,152 @@ select {
     min-height: 135px;
   }
 }
+
+
+/* PHASE_112_FIX_JOB_BRIEF_SYNTAX */
+.om-slip-fields:has(.om-job-brief-template) > label {
+  display: none !important;
+}
+
+.om-job-brief-template {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(28, 27, 23, .1);
+  background:
+    linear-gradient(135deg, rgba(255, 252, 244, .96), rgba(244, 239, 230, .92));
+  box-shadow: 0 16px 45px rgba(31, 28, 21, .06);
+}
+
+.om-job-brief-template header {
+  display: grid;
+  gap: 5px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(28, 27, 23, .08);
+}
+
+.om-job-brief-template header span {
+  color: var(--om-copper);
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-size: .7rem;
+}
+
+.om-job-brief-template header strong {
+  color: var(--om-charcoal);
+  font-size: clamp(1.35rem, 2.4vw, 2rem);
+  line-height: .95;
+  letter-spacing: -.06em;
+}
+
+.om-job-brief-template header small {
+  color: var(--om-muted);
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.om-job-brief-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.om-job-brief-grid article {
+  min-height: 86px;
+  padding: 12px;
+  border-radius: 17px;
+  background: rgba(255, 255, 255, .72);
+  border: 1px solid rgba(28, 27, 23, .08);
+  display: grid;
+  align-content: start;
+  gap: 6px;
+}
+
+.om-job-brief-grid b {
+  color: var(--om-copper);
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  font-size: .65rem;
+  font-weight: 950;
+}
+
+.om-job-brief-grid strong {
+  color: var(--om-charcoal);
+  font-size: .92rem;
+  line-height: 1.15;
+  font-weight: 950;
+}
+
+.om-job-brief-template label {
+  display: grid;
+  gap: 6px;
+  color: rgba(23, 23, 19, .72);
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: .68rem;
+}
+
+.om-job-brief-template textarea {
+  width: 100%;
+  min-height: 150px;
+  border: 1px solid rgba(28, 27, 23, .12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .76);
+  color: var(--om-charcoal);
+  padding: 12px 13px;
+  font: inherit;
+  font-size: .95rem;
+  font-weight: 750;
+  line-height: 1.45;
+  outline: none;
+  resize: vertical;
+  white-space: pre-wrap;
+}
+
+.om-job-brief-template footer {
+  display: grid;
+  gap: 4px;
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(184, 227, 95, .16);
+  border: 1px solid rgba(184, 227, 95, .35);
+}
+
+.om-job-brief-template footer b {
+  color: var(--om-charcoal);
+  font-size: .82rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.om-job-brief-template footer p {
+  margin: 0;
+  color: var(--om-muted);
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+@media (max-width: 820px) {
+  .om-job-brief-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .om-job-brief-template {
+    padding: 13px;
+    border-radius: 18px;
+  }
+
+  .om-job-brief-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .om-job-brief-template textarea {
+    min-height: 135px;
+  }
+}

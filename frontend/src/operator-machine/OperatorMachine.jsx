@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_112_FIX_JOB_BRIEF_SYNTAX
 // PHASE_111B_SAFE_JOB_BRIEF_TEMPLATE
 // PHASE_110_HARD_FIX_BUSINESS_LOGO_CRASH
 // PHASE_108_FIX_BUSINESS_LOGO_URL_SCOPE
@@ -4542,6 +4543,7 @@ function ChurvoxInstallPrompt() {
 }
 
 
+
 function phase111bValue(...values) {
   for (const value of values) {
     const cleaned = clean(value);
@@ -4552,10 +4554,7 @@ function phase111bValue(...values) {
 
 function phase111bIsInvoiceSlip(slip = {}) {
   const kind = clean(slip.kind).toLowerCase();
-  const title = clean(slip.title).toLower this safer version. It does not rely on that missing old block. It injects the Job Brief card into the Work Slip area and hides the plain direct fields only when the Job Brief card is showing.
-
-```bash
-cd /workCase();
+  const title = clean(slip.title).toLowerCase();
   const eyebrow = clean(slip.eyebrow).toLowerCase();
 
   return (
@@ -4612,7 +4611,7 @@ function JobBriefTemplateCard({ slip, draft, update }) {
   const worker = phase111bValue(draft.workerChoice, "Choose worker before dispatch");
 
   return (
-    <section className="om-job-brief-template" data-phase="PHASE_111B_SAFE_JOB_BRIEF_TEMPLATE">
+    <section className="om-job-brief-template" data-phase="PHASE_112_FIX_JOB_BRIEF_SYNTAX">
       <header>
         <span>AI job brief</span>
         <strong>Ready for owner review</strong>
