@@ -6171,6 +6171,22 @@ function AskChurvoxCommand({ onRunCommand, onQuickOpen }) {
               form?.querySelector?.("input")?.value ||
               query;
 
+            const safeValue = String(value || "").toLowerCase();
+
+            if (safeValue.includes("add") && safeValue.includes("quote") && typeof onQuickOpen === "function") {
+              onQuickOpen("quotes", "Add quote");
+              setHint("Add quote");
+              setQuery("");
+              return;
+            }
+
+            if (safeValue.includes("add") && safeValue.includes("invoice") && typeof onQuickOpen === "function") {
+              onQuickOpen("invoices", "Add invoice");
+              setHint("Add invoice");
+              setQuery("");
+              return;
+            }
+
             run(value);
           }}
         >
@@ -6183,7 +6199,23 @@ function AskChurvoxCommand({ onRunCommand, onQuickOpen }) {
           <button
             type="button"
             key={command}
-            onClick={() => run(label)}
+            onClick={() => {
+              if (command === "add_quote" && typeof onQuickOpen === "function") {
+                onQuickOpen("quotes", "Add quote");
+                setHint("Add quote");
+                setQuery("");
+                return;
+              }
+
+              if (command === "add_invoice" && typeof onQuickOpen === "function") {
+                onQuickOpen("invoices", "Add invoice");
+                setHint("Add invoice");
+                setQuery("");
+                return;
+              }
+
+              run(label);
+            }}
           >
             {label}
           </button>
