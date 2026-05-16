@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
+import OperatorMachine, { OperatorLanding } from "../operator-machine/OperatorMachine";
 
 function cxSafeText(value, fallback = "") {
   if (value === null || value === undefined) return fallback;
@@ -166,18 +167,20 @@ const APP_PATHS = {
   quotes: "/quotes",
   invoices: "/invoices",
   proof: "/proof-to-paid",
+  payroll: "/payroll",
   plans: "/plans",
   settings: "/settings",
 };
 
 const NAV = [
-  ["dashboard", "Smart Hub", "AI command centre"],
+  ["dashboard", "Operator Machine", "AI admin machine"],
   ["jobs", "Jobs", "Dispatch board"],
   ["clients", "Clients", "Customer history"],
   ["team", "Team", "Crew availability"],
   ["quotes", "Quotes", "Sales pipeline"],
   ["invoices", "Invoices", "Cashflow"],
   ["proof", "Proof-to-Paid", "Completed work"],
+  ["payroll", "Payroll", "Pay periods and hours"],
   ["plans", "Plans", "Billing and trial"],
   ["settings", "Settings", "Business setup"],
 ];
@@ -3014,6 +3017,7 @@ function workspacePathForPage(page) {
     quotes: "/quotes",
     invoices: "/invoices",
     proof: "/proof-to-paid",
+    payroll: "/payroll",
     settings: "/settings",
   };
   return paths[page] || "/dashboard";
@@ -3214,6 +3218,7 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
     quotes: "Quotes",
     invoices: "Invoices",
     proof: "Proof-to-Paid",
+    payroll: "Payroll",
     settings: "Settings",
   }[selection.page || "dashboard"] || "Workspace";
 
@@ -8558,6 +8563,7 @@ function Workspace({ page, setPage, data }) {
           ["Quotes", "quotes"],
           ["Invoices", "invoices"],
           ["Proof-to-Paid", "proof"],
+          ["Payroll", "payroll"],
           ["Settings", "settings"],
         ].map(([label, nextPage]) => (
           <button
@@ -9014,6 +9020,7 @@ export default function ChurvoxAIShell() {
         "/quotes": "quotes",
         "/invoices": "invoices",
         "/proof-to-paid": "proof",
+        "/payroll": "payroll",
         "/plans": "plans",
         "/billing": "plans",
         "/settings": "settings",
@@ -9089,7 +9096,11 @@ export default function ChurvoxAIShell() {
       return <PublicPlansPage setAuthMode={setAuthMode} />;
     }
 
-    return <Landing authMode={authMode} setAuthMode={setAuthMode} onLogin={onLogin} />;
+    return <OperatorLanding authMode={authMode} setAuthMode={setAuthMode} onLogin={onLogin} />;
+  }
+
+  if (page === "dashboard") {
+    return <OperatorMachine setPage={setPage} onLogout={onLogout} data={liveData} />;
   }
 
   return <Shell page={page} setPage={setPage} onLogout={onLogout} data={liveData} />;
