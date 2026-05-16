@@ -1,18 +1,22 @@
 # Churvox Deep Bug + Wiring Audit
 
-Generated: 2026-05-16 22:09:00 UTC
+Generated: 2026-05-16 22:28:05 UTC
 
 ## Summary
 
 - HIGH: 0
 - MED: 0
-- LOW: 0
+- LOW: 1
 - Frontend API calls found: 49
 - Backend effective routes found: 374
 
 ## Findings
 
-No active-code deep wiring blockers found.
+### 1. [LOW] Post-launch cleanup — Runtime force patches still live in index.js
+
+**Where:** `frontend/src/index.js`
+
+**Detail:** Works for launch, but should later move into normal React components.
 
 ## Notes
 
@@ -21,5 +25,5 @@ No active-code deep wiring blockers found.
 - Lower-risk dependency audit warnings are not changed here to avoid risky package upgrades before launch.
 
 
-REPORT_FILE=audits/churvox_deep_audit_20260516_220900.md
+REPORT_FILE=audits/churvox_deep_audit_20260516_222805.md
 LATEST_FILE=audits/churvox_deep_audit_latest.md

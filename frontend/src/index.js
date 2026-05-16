@@ -364,6 +364,127 @@ import App from "./App";
 import "./index.css";
 
 
+// PHASE_179_SIMPLIFY_JOBS_PANEL_NO_QUEUE
+// Owner-facing cleanup: no "Job Queue" language and no manual dispatch-style filters.
+// Jobs show as normal jobs with search. The Operator Machine handles crew/proof/invoice
+// decisions in the background.
+(function churvoxSimplifyJobsPanel() {
+  try {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    function cleanText(value) {
+      return String(value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function setTextIfExact(oldText, newText) {
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+
+      nodes.forEach((node) => {
+        if (cleanText(node.nodeValue) === oldText) {
+          node.nodeValue = String(node.nodeValue).replace(oldText, newText);
+        }
+      });
+    }
+
+    function setTextIfContains(matchText, newText) {
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+
+      nodes.forEach((node) => {
+        if (cleanText(node.nodeValue).includes(matchText)) {
+          node.nodeValue = newText;
+        }
+      });
+    }
+
+    function hideChipByText(text) {
+      const wanted = String(text).toLowerCase();
+      const items = Array.from(document.querySelectorAll("button, a, [role='button'], span, div"));
+      items.forEach((el) => {
+        if (cleanText(el.textContent).toLowerCase() !== wanted) return;
+
+        const clickable = el.closest("button, a, [role='button']") || el;
+        clickable.style.display = "none";
+        clickable.setAttribute("aria-hidden", "true");
+      });
+    }
+
+    function patchJobsPanel() {
+      if (!document.body) return;
+
+      setTextIfExact("JOB QUEUE", "JOBS");
+      setTextIfExact("Job Queue", "Jobs");
+      setTextIfExact("What needs job attention.", "Jobs");
+      setTextIfExact("What needs job attention", "Jobs");
+
+      setTextIfContains(
+        "Filter the work, then open one Work Slip to review, edit, dispatch or invoice.",
+        "Search jobs, then open a Work Slip. The machine handles crew, proof and invoices in the background."
+      );
+
+      setTextIfContains(
+        "Filter the work, then open one Work Slip",
+        "Search jobs, then open a Work Slip. The machine handles crew, proof and invoices in the background."
+      );
+
+      setTextIfExact("Needs dispatch", "Needs crew");
+      setTextIfExact("DISPATCH NEEDED", "READY TO ASSIGN");
+      setTextIfExact("Dispatch needed", "Ready to assign");
+
+      setTextIfExact("No jobs match this view.", "No jobs found.");
+      setTextIfExact("Try another filter or add a new job intake.", "Use search or add a new job intake.");
+
+      ["Priority", "Needs dispatch", "Needs crew", "Active", "Completed", "All jobs"].forEach(hideChipByText);
+
+      Array.from(document.querySelectorAll("input")).forEach((input) => {
+        const placeholder = cleanText(input.getAttribute("placeholder"));
+        if (/search jobs/i.test(placeholder)) {
+          input.setAttribute("placeholder", "Search jobs");
+        }
+      });
+
+      if (!document.getElementById("churvox-phase-179-jobs-panel-css")) {
+        const style = document.createElement("style");
+        style.id = "churvox-phase-179-jobs-panel-css";
+        style.textContent = `
+          /* PHASE_179_SIMPLIFY_JOBS_PANEL_NO_QUEUE */
+          [data-churvox-hidden-job-filter="true"] {
+            display: none !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
+
+    let timer = null;
+    function schedulePatch() {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(patchJobsPanel, 80);
+    }
+
+    window.addEventListener("load", schedulePatch);
+    document.addEventListener("click", schedulePatch, true);
+    document.addEventListener("input", schedulePatch, true);
+
+    const observer = new MutationObserver(schedulePatch);
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    schedulePatch();
+  } catch {
+    // Keep app boot safe.
+  }
+})();
+
+
+
+
 // PHASE_147_PROFESSIONAL_INVOICE_OVERLAY
 // This sits on top of the forced Phase 146 invoice and replaces the visual with
 // a cleaner, professional A4-style invoice while keeping the same approval buttons.
