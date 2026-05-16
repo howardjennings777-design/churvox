@@ -5994,7 +5994,7 @@ function OwnerGuardrailsPanel({ onOpenSettings }) {
 
 
 
-function AskChurvoxCommand({ onRunCommand }) {
+function AskChurvoxCommand({ onRunCommand, onQuickOpen }) {
   const [query, setQuery] = useState("");
   const [hint, setHint] = useState("");
 
@@ -6113,6 +6113,13 @@ function AskChurvoxCommand({ onRunCommand }) {
         : wantsCreate && value.includes("invoice")
           ? { type: "quick", area: "invoices", label: "Add invoice" }
           : null;
+
+    if (forcedQuick && typeof onQuickOpen === "function") {
+      onQuickOpen(forcedQuick.area, forcedQuick.label);
+      setHint(forcedQuick.label);
+      setQuery("");
+      return;
+    }
 
     const command = forcedQuick || classifyCommand(raw);
     onRunCommand?.(command, raw);
@@ -8217,7 +8224,14 @@ function Workspace({ page, setPage, data }) {
       ) : null}
 
       {page === "dashboard" ? (
-        <AskChurvoxCommand onRunCommand={runAskChurvoxCommand} />
+        <AskChurvoxCommand
+          onRunCommand={runAskChurvoxCommand}
+          onQuickOpen={(area, label) => {
+            openQuickAction(area);
+            setAskNotice(label);
+            logCommand("Ask Churvox", label, "Opened quick add");
+          }}
+        />
       ) : null}
 
       {page === "dashboard" && askNotice ? (
