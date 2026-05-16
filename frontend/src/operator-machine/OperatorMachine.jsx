@@ -5524,7 +5524,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
   ];
 
   return (
-    <main className="om-shell">
+    <main className="om-shell" data-render-deploy={churvoxRenderDeployMarker}>
       <aside className="om-nav">
         <button type="button" className="om-brand" onClick={() => go("dashboard")}>
           <i><b /></i>
