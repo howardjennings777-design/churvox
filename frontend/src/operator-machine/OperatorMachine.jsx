@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_134_REAL_AI_PREPARED_WORK
 // PHASE_130_REAL_INVOICE_LAYOUT
 // PHASE_128_INVOICE_OWING_SUMMARY
 // PHASE_127_REDO_INVOICE_EMAIL_CONTACT_TEMPLATE
@@ -579,13 +580,206 @@ function buildMachine(data = {}) {
   const processing = [];
   const approval = [];
 
+  const today = new Date();
+  const due14 = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const invoiceDate = today.toISOString().slice(0, 10);
+
+  function first(...values) {
+    for (const value of values) {
+      const cleaned = clean(value);
+      if (cleaned) return cleaned;
+    }
+    return "";
+  }
+
+  function clientName(item = {}, fallback = "Client") {
+    return first(
+      item.client_name,
+      item.customer_name,
+      item.client?.name,
+      item.customer?.name,
+      item.name,
+      fallback
+    );
+  }
+
+  function clientEmail(item = {}) {
+    return first(
+      item.client_email,
+      item.customer_email,
+      item.billing_email,
+      item.invoice_email,
+      item.email,
+      item.client?.email,
+      item.customer?.email
+    );
+  }
+
+  function clientPhone(item = {}) {
+    return first(
+      item.client_phone,
+      item.customer_phone,
+      item.phone,
+      item.mobile,
+      item.client?.phone,
+      item.customer?.phone
+    );
+  }
+
+  function addressOf(item = {}) {
+    return first(
+      item.address,
+      item.job_address,
+      item.service_address,
+      item.site_address,
+      item.client_address,
+      item.billing_address,
+      item.location
+    );
+  }
+
+  function serviceOf(item = {}, fallback = "Work completed") {
+    return first(
+      item.service_type,
+      item.job_type,
+      item.trade,
+      item.category,
+      item.title,
+      item.job_title,
+      item.name,
+      fallback
+    );
+  }
+
+  function dateOf(item = {}) {
+    return first(
+      item.scheduled_date,
+      item.scheduled_time,
+      item.start_time,
+      item.completed_at,
+      item.completed_date,
+      item.due_date,
+      item.payment_due_date,
+      item.created_at
+    );
+  }
+
+  function pricingSource(item = {}) {
+    const direct = [
+      ["invoice amount", item.invoice_amount],
+      ["amount due", item.amount_due],
+      ["balance", item.balance],
+      ["total", item.total],
+      ["amount", item.amount],
+      ["job price", item.job_price],
+      ["fixed price", item.fixed_price],
+      ["quote total", item.quote_total],
+      ["estimated price", item.estimated_price],
+    ];
+
+    for (const [label, value] of direct) {
+      const amount = invoiceAmount({ amount: value });
+      if (amount) return { amount, label };
+    }
+
+    const rate = Number(String(item.hourly_rate || item.rate || "").replace(/[^0-9.-]/g, ""));
+    const hours = Number(String(item.billable_hours || item.worked_hours || item.total_hours || item.hours || "").replace(/[^0-9.-]/g, ""));
+
+    if (Number.isFinite(rate) && Number.isFinite(hours) && rate > 0 && hours > 0) {
+      return {
+        amount: String(Math.round(rate * hours * 100) / 100),
+        label: `${hours} hours × ${money(rate) || `$${rate}`}`,
+      };
+    }
+
+    return { amount: "", label: "owner amount required" };
+  }
+
+  function workerName(worker = {}, fallback = "Worker") {
+    return first(worker.name, worker.full_name, worker.worker_name, worker.email, fallback);
+  }
+
+  function workerId(worker = {}, fallback = "") {
+    return first(worker.id, worker._id, worker.worker_id, worker.email, worker.name, fallback);
+  }
+
+  function scoreWorkersForJob(job = {}) {
+    const jobRegion = first(job.region, job.service_area, job.area, job.suburb, job.city, addressOf(job)).toLowerCase();
+    const jobSkill = first(job.service_type, job.job_type, job.trade, job.category, job.title, job.job_title).toLowerCase();
+
+    return team.map((worker, index) => {
+      const name = workerName(worker, `Worker ${index + 1}`);
+      const status = first(worker.status, worker.availability, "available").toLowerCase();
+      const region = first(worker.region, worker.service_area, worker.area, worker.suburb, worker.city).toLowerCase();
+      const role = first(worker.role, worker.trade, worker.skill, worker.skills, worker.position).toLowerCase();
+      const contact = first(worker.email, worker.phone, worker.mobile);
+
+      let score = 0;
+      const reasons = [];
+
+      if (!status.includes("busy") && !status.includes("off") && !status.includes("leave")) {
+        score += 3;
+        reasons.push("available");
+      } else {
+        reasons.push(`status: ${status || "unknown"}`);
+      }
+
+      if (jobRegion && region && (jobRegion.includes(region) || region.includes(jobRegion))) {
+        score += 3;
+        reasons.push(`area match: ${region}`);
+      }
+
+      if (jobSkill && role && (jobSkill.includes(role) || role.includes(jobSkill))) {
+        score += 2;
+        reasons.push(`skill match: ${role}`);
+      }
+
+      if (contact) {
+        score += 1;
+        reasons.push("contact saved");
+      }
+
+      return { worker, name, score, reasons };
+    }).sort((a, b) => b.score - a.score);
+  }
+
+  function invoiceNumberFor(item = {}, fallback = "") {
+    const existing = first(item.invoice_number, item.number, item.invoice_id);
+    if (existing) return existing;
+    const id = itemId(item, fallback || String(Date.now()));
+    const digits = String(id).replace(/\D/g, "").slice(-4) || String(Date.now()).slice(-4);
+    return `INV-${new Date().getFullYear()}-${digits.padStart(4, "0")}`;
+  }
+
+  function proofSummary(item = {}) {
+    const notes = first(item.completion_notes, item.worker_notes, item.job_notes, item.notes);
+    const photos = photoCount(item);
+    const parts = [];
+    if (notes) parts.push(`worker note: ${notes}`);
+    if (photos) parts.push(`${photos} proof photo${photos === 1 ? "" : "s"}`);
+    return parts.join(" · ");
+  }
+
+  function preparationText(lines = []) {
+    return lines.filter(Boolean).join("\n");
+  }
+
+  const invoicedJobIds = new Set(
+    invoices
+      .map((invoice) => first(invoice.job_id, invoice.source_job_id, invoice.ai_source_job_id))
+      .filter(Boolean)
+  );
+
   jobs.slice(0, 30).forEach((job, index) => {
     const id = itemId(job, `job-${index}`);
-    const client = clean(job.client_name || job.customer_name || job.client?.name, "Client");
-    const title = clean(job.title || job.job_title || job.service_type || job.name, `Job ${index + 1}`);
-    const address = clean(job.address || job.job_address || job.service_address || job.location);
-    const notes = clean(job.completion_notes || job.worker_notes || job.job_notes || job.notes);
+    const client = clientName(job);
+    const title = serviceOf(job, `Job ${index + 1}`);
+    const address = addressOf(job);
+    const status = statusOf(job);
+    const notes = first(job.completion_notes, job.worker_notes, job.job_notes, job.notes);
     const photos = photoCount(job);
+    const when = dateOf(job);
+    const price = pricingSource(job);
 
     input.push({
       id: `input-${id}`,
@@ -595,58 +789,141 @@ function buildMachine(data = {}) {
       eyebrow: "Job input",
       client,
       detail: `${client}${address ? ` · ${address}` : ""}`,
-      state: statusOf(job),
+      state: status,
+      need: `Job loaded for ${client}${address ? ` at ${address}` : ""}.`,
+      prepared: preparationText([
+        `Checked client: ${client}`,
+        address ? `Checked site: ${address}` : "Site address missing",
+        when ? `Checked date/time: ${when}` : "Schedule not confirmed",
+        price.amount ? `Found pricing: ${money(price.amount)} from ${price.label}` : "No reliable price found yet",
+      ]),
+      draft: {
+        title,
+        clientName: client,
+        clientEmail: clientEmail(job),
+        clientPhone: clientPhone(job),
+        address,
+        serviceType: title,
+        jobStatus: status || "new",
+        amount: price.amount,
+        ownerNote: notes || `Check ${client}${address ? ` at ${address}` : ""} before approval.`,
+        customerMessage: "",
+      },
       item: job,
     });
 
     if (!hasWorker(job) && !isCompletedJob(job)) {
-      const worker = team[0] || {};
-      processing.push({
+      const ranked = scoreWorkersForJob(job);
+      const best = ranked[0] || {};
+      const bestWorker = best.worker || {};
+      const bestName = best.name || "Choose worker";
+      const reasons = best.reasons?.length ? best.reasons.join(", ") : "no strong worker data yet";
+      const workerChoice = workerId(bestWorker);
+
+      approval.push({
         id: `dispatch-${id}`,
         sourceId: id,
         kind: "dispatch",
-        title: `Assign worker for ${title}`,
-        eyebrow: "Worker fit",
+        title: `Assign ${bestName} to ${title}`,
+        eyebrow: "Dispatch prepared",
         client,
-        need: "This job needs a worker before the day can run cleanly.",
-        prepared: `Churvox checked the job, client and available crew. Suggested worker: ${clean(worker.name || worker.full_name || worker.worker_name, "choose worker")}.`,
+        need: `Worker match prepared for ${client}${address ? ` at ${address}` : ""}.`,
+        prepared: preparationText([
+          `Checked job: ${title}`,
+          `Checked client: ${client}`,
+          address ? `Checked site: ${address}` : "Site address missing",
+          when ? `Checked schedule: ${when}` : "Schedule not confirmed",
+          team.length ? `Compared ${team.length} worker${team.length === 1 ? "" : "s"}` : "No workers loaded",
+          bestName ? `Recommended worker: ${bestName}` : "",
+          `Reason: ${reasons}`,
+          "Owner approval will assign the worker and prepare the worker job brief.",
+        ]),
         draft: {
-          title: `Assign worker for ${title}`,
-          workerChoice: clean(worker.id || worker._id || worker.name || worker.full_name || ""),
-          ownerNote: address ? `Assign based on job address: ${address}` : "Assign the best available worker.",
-          customerMessage: "",
-          invoiceDescription: "",
-          amount: "",
+          title: `Assign ${bestName} to ${title}`,
+          clientName: client,
+          clientEmail: clientEmail(job),
+          clientPhone: clientPhone(job),
+          address,
+          serviceType: title,
+          workerChoice,
+          jobStatus: "assigned",
+          ownerNote: `AI recommends ${bestName}. Reason: ${reasons}. Confirm before dispatch.`,
+          customerMessage: preparationText([
+            `Job brief: ${title}`,
+            `Client: ${client}`,
+            address ? `Site: ${address}` : "",
+            when ? `Scheduled: ${when}` : "",
+            notes ? `Notes: ${notes}` : "",
+          ]),
         },
         item: job,
       });
     }
 
     if (isCompletedJob(job)) {
-      const amount = invoiceAmount(job);
+      const alreadyInvoiced = id && invoicedJobIds.has(id);
       const preparedDescription = invoiceDescription(job);
+      const proof = proofSummary(job);
+      const invoiceClientEmail = clientEmail(job);
+      const invoiceClientAddress = addressOf(job);
+      const invoiceNumber = invoiceNumberFor(job, id);
 
-      approval.push({
-        id: `invoice-${id}`,
-        sourceId: id,
-        kind: "invoice",
-        title: `Approve invoice draft for ${client}`,
-        eyebrow: amount ? "Invoice ready" : "Owner input needed",
-        client,
-        need: amount ? "Completed work is ready for invoice approval." : "Completed work is ready, but the amount needs owner input.",
-        prepared: preparedDescription,
-        draft: {
-          title: `Invoice for ${title}`,
-          invoiceClientName: client,
-          invoiceLineItem: title,
-          invoiceDescription: preparedDescription,
-          amount,
-          dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-          ownerNote: notes,
-          customerMessage: preparedDescription,
-        },
-        item: job,
-      });
+      if (!alreadyInvoiced) {
+        approval.push({
+          id: `invoice-${id}`,
+          sourceId: id,
+          kind: "invoice",
+          title: `Invoice for ${client}`,
+          eyebrow: price.amount ? "Invoice ready" : "Amount needed",
+          client,
+          need: price.amount
+            ? `Invoice prepared for ${client} using job, proof and pricing.`
+            : `Invoice prepared for ${client}, but the amount needs owner input.`,
+          prepared: preparationText([
+            `Checked completed job: ${title}`,
+            `Checked client: ${client}`,
+            invoiceClientEmail ? `Customer email found: ${invoiceClientEmail}` : "Customer email missing",
+            invoiceClientAddress ? `Billing/site address found: ${invoiceClientAddress}` : "Address missing",
+            proof || "No worker proof note/photo found",
+            price.amount ? `Amount found: ${money(price.amount)} from ${price.label}` : "Amount still needs owner input",
+            `Draft invoice number: ${invoiceNumber}`,
+            `Due date prepared: ${due14}`,
+          ]),
+          draft: {
+            title: `Invoice for ${client}`,
+            invoiceNumber,
+            issueDate: invoiceDate,
+            dueDate: due14,
+            reference: id,
+            invoiceClientName: client,
+            invoiceClientEmail,
+            invoiceClientAddress,
+            clientName: client,
+            clientEmail: invoiceClientEmail,
+            clientAddress: invoiceClientAddress,
+            invoiceLineItem: title,
+            invoiceDescription: preparedDescription,
+            quantity: "1",
+            unitPrice: price.amount,
+            amount: price.amount,
+            subtotal: price.amount,
+            gstRate: "15",
+            gstAmount: "",
+            total: price.amount,
+            amountPaid: "0",
+            amountOwing: price.amount,
+            invoiceStatus: price.amount ? "Amount owing" : "Needs amount",
+            paymentTerms: "Due on receipt unless agreed otherwise.",
+            paymentNote: "Bank account / payment link goes here. Please pay by the due date.",
+            ownerNote: preparationText([
+              price.amount ? `Price source: ${price.label}` : "Owner must add amount before sending.",
+              proof || "",
+            ]),
+            customerMessage: preparedDescription,
+          },
+          item: job,
+        });
+      }
 
       if (notes || photos) {
         processing.push({
@@ -656,14 +933,19 @@ function buildMachine(data = {}) {
           title: `Proof package for ${client}`,
           eyebrow: "Proof-to-Paid",
           client,
-          need: "Worker proof can feed invoice wording and owner review.",
-          prepared: `${photos} proof photo${photos === 1 ? "" : "s"}${notes ? ` · ${notes}` : ""}`,
+          need: "Proof package prepared for invoice wording.",
+          prepared: preparationText([
+            `Job: ${title}`,
+            notes ? `Worker note: ${notes}` : "",
+            photos ? `Photos uploaded: ${photos}` : "",
+            price.amount ? `Pricing found: ${money(price.amount)}` : "Pricing still needs check",
+          ]),
           draft: {
             title: `Proof reviewed for ${title}`,
-            ownerNote: notes || "Proof reviewed.",
+            ownerNote: proof || "Proof reviewed.",
             customerMessage: preparedDescription,
             invoiceDescription: preparedDescription,
-            amount,
+            amount: price.amount,
           },
           item: job,
         });
@@ -674,23 +956,91 @@ function buildMachine(data = {}) {
   invoices.slice(0, 20).forEach((invoice, index) => {
     const status = statusOf(invoice);
     const id = itemId(invoice, `invoice-${index}`);
-    const client = clean(invoice.client_name || invoice.customer_name || invoice.client?.name, "Client");
-    if (status.includes("unpaid") || status.includes("overdue") || status.includes("draft") || status.includes("sent")) {
+    const client = clientName(invoice);
+    const amount = pricingSource(invoice);
+    const number = invoiceNumberFor(invoice, id);
+    const due = first(invoice.due_date, invoice.payment_due_date, invoice.invoice_due_date);
+    const email = clientEmail(invoice);
+    const address = addressOf(invoice);
+
+    if (status.includes("unpaid") || status.includes("overdue") || status.includes("sent")) {
       approval.push({
         id: `reminder-${id}`,
         sourceId: id,
         kind: "cashflow",
-        title: `Review payment follow-up for ${client}`,
-        eyebrow: status.includes("overdue") ? "Copper warning" : "Cashflow",
+        title: `Payment follow-up for ${number}`,
+        eyebrow: status.includes("overdue") ? "Overdue invoice" : "Cashflow",
         client,
-        need: "This invoice may need a reminder or owner review.",
-        prepared: reminderMessage(invoice),
+        need: `Payment follow-up prepared for ${client}.`,
+        prepared: preparationText([
+          `Checked invoice: ${number}`,
+          `Checked customer: ${client}`,
+          email ? `Customer email found: ${email}` : "Customer email missing",
+          amount.amount ? `Outstanding amount: ${money(amount.amount)}` : "Outstanding amount needs owner check",
+          due ? `Due date: ${due}` : "Due date missing",
+          `Current status: ${status || "unknown"}`,
+          "Owner approval will save/send the follow-up, not auto-send blindly.",
+        ]),
         draft: {
           title: `Payment reminder for ${client}`,
-          ownerNote: clean(invoice.notes || invoice.internal_note),
+          invoiceNumber: number,
+          invoiceClientName: client,
+          invoiceClientEmail: email,
+          invoiceClientAddress: address,
+          dueDate: due,
+          amount: amount.amount,
+          total: amount.amount,
+          amountPaid: first(invoice.amount_paid, invoice.paid, "0"),
+          amountOwing: amount.amount,
+          invoiceStatus: status.includes("overdue") ? "Overdue" : "Amount owing",
+          invoiceDescription: first(invoice.description, invoice.invoice_description, `Invoice ${number}`),
+          ownerNote: `AI found ${number} for ${client}. ${amount.amount ? `Amount owing: ${money(amount.amount)}.` : "Amount needs checking."}`,
           customerMessage: reminderMessage(invoice),
-          invoiceDescription: clean(invoice.description || invoice.invoice_description),
-          amount: invoiceAmount(invoice),
+          messageChannel: "email_draft",
+        },
+        item: invoice,
+      });
+    }
+
+    if (status.includes("draft") || status.includes("ready")) {
+      approval.push({
+        id: `invoice-draft-${id}`,
+        sourceId: id,
+        kind: "invoice",
+        title: `Review draft invoice ${number}`,
+        eyebrow: "Invoice draft",
+        client,
+        need: `Draft invoice prepared for ${client}.`,
+        prepared: preparationText([
+          `Checked draft invoice: ${number}`,
+          email ? `Customer email found: ${email}` : "Customer email missing",
+          address ? `Address found: ${address}` : "Address missing",
+          amount.amount ? `Amount found: ${money(amount.amount)}` : "Amount missing",
+          due ? `Due date: ${due}` : "Due date missing",
+        ]),
+        draft: {
+          title: `Invoice for ${client}`,
+          invoiceNumber: number,
+          issueDate: first(invoice.issue_date, invoice.created_at, invoiceDate),
+          dueDate: due || due14,
+          reference: first(invoice.reference, id),
+          invoiceClientName: client,
+          invoiceClientEmail: email,
+          invoiceClientAddress: address,
+          invoiceLineItem: first(invoice.line_item, invoice.title, number),
+          invoiceDescription: first(invoice.invoice_description, invoice.description, `Invoice ${number}`),
+          quantity: first(invoice.quantity, "1"),
+          unitPrice: amount.amount,
+          amount: amount.amount,
+          subtotal: first(invoice.subtotal, amount.amount),
+          gstRate: first(invoice.gst_rate, invoice.tax_rate, "15"),
+          gstAmount: first(invoice.gst_amount, invoice.tax_amount),
+          total: first(invoice.total_due, invoice.total, amount.amount),
+          amountPaid: first(invoice.amount_paid, "0"),
+          amountOwing: first(invoice.amount_owing, invoice.balance, amount.amount),
+          invoiceStatus: first(invoice.invoice_status, invoice.payment_status, "Amount owing"),
+          paymentTerms: first(invoice.payment_terms, "Due on receipt unless agreed otherwise."),
+          paymentNote: first(invoice.payment_note, "Bank account / payment link goes here. Please pay by the due date."),
         },
         item: invoice,
       });
@@ -700,23 +1050,39 @@ function buildMachine(data = {}) {
   quotes.slice(0, 20).forEach((quote, index) => {
     const status = statusOf(quote);
     const id = itemId(quote, `quote-${index}`);
-    const client = clean(quote.client_name || quote.customer_name || quote.client?.name, "Client");
+    const client = clientName(quote);
+    const amount = pricingSource(quote);
+    const number = first(quote.quote_number, quote.number, quote.title, `Quote ${index + 1}`);
+    const sent = first(quote.sent_at, quote.created_at, quote.updated_at);
+    const email = clientEmail(quote);
+
     if (!status.includes("accepted") && !status.includes("declined") && !status.includes("won")) {
       approval.push({
         id: `quote-${id}`,
         sourceId: id,
         kind: "quote",
-        title: `Approve quote follow-up for ${client}`,
+        title: `Quote follow-up for ${client}`,
         eyebrow: "Quote follow-up",
         client,
-        need: "Quote is still open. Churvox prepared a follow-up for owner review.",
-        prepared: quoteFollowup(quote),
+        need: `Follow-up prepared for open quote ${number}.`,
+        prepared: preparationText([
+          `Checked quote: ${number}`,
+          `Checked client: ${client}`,
+          email ? `Customer email found: ${email}` : "Customer email missing",
+          amount.amount ? `Quote value: ${money(amount.amount)}` : "Quote amount missing",
+          sent ? `Last activity: ${sent}` : "No sent date found",
+          `Current status: ${status || "open"}`,
+        ]),
         draft: {
           title: `Quote follow-up for ${client}`,
-          ownerNote: clean(quote.notes || quote.description),
+          clientName: client,
+          clientEmail: email,
+          quoteLineItem: number,
+          quoteDescription: first(quote.quote_description, quote.description, quote.scope, ""),
+          amount: amount.amount,
+          ownerNote: `AI prepared follow-up for ${number}. Check wording before sending.`,
           customerMessage: quoteFollowup(quote),
-          invoiceDescription: "",
-          amount: invoiceAmount(quote),
+          messageChannel: "email_draft",
         },
         item: quote,
       });
@@ -725,20 +1091,39 @@ function buildMachine(data = {}) {
 
   clients.slice(0, 12).forEach((client, index) => {
     const id = itemId(client, `client-${index}`);
-    const name = clean(client.client_name || client.customer_name || client.name, `Client ${index + 1}`);
-    if (!clean(client.email || client.phone || client.client_email || client.client_phone)) {
+    const name = clientName(client, `Client ${index + 1}`);
+    const email = clientEmail(client);
+    const phone = clientPhone(client);
+    const address = addressOf(client);
+    const missing = [
+      email ? "" : "email",
+      phone ? "" : "phone",
+      address ? "" : "address",
+    ].filter(Boolean);
+
+    if (missing.length) {
       processing.push({
         id: `client-${id}`,
         sourceId: id,
         kind: "client",
-        title: `Client details need cleanup: ${name}`,
-        eyebrow: "Client update",
+        title: `Complete client record for ${name}`,
+        eyebrow: "Client cleanup",
         client: name,
-        need: "Missing contact details can block reminders, invoices and quote follow-ups.",
-        prepared: "Churvox flagged this client so owner/admin can add missing phone or email.",
+        need: `Missing ${missing.join(", ")} blocks proper AI prep.`,
+        prepared: preparationText([
+          `Checked client: ${name}`,
+          email ? `Email saved: ${email}` : "Email missing",
+          phone ? `Phone saved: ${phone}` : "Phone missing",
+          address ? `Address saved: ${address}` : "Address missing",
+          "Fixing this helps invoices, quote follow-ups and reminders stop being generic.",
+        ]),
         draft: {
           title: `Update client details for ${name}`,
-          ownerNote: "Add missing contact details.",
+          clientName: name,
+          clientEmail: email,
+          clientPhone: phone,
+          clientAddress: address,
+          ownerNote: `Add missing ${missing.join(", ")} for ${name}.`,
           customerMessage: "",
           invoiceDescription: "",
           amount: "",
@@ -764,6 +1149,7 @@ function buildMachine(data = {}) {
     approval,
   };
 }
+
 
 
 
@@ -1147,7 +1533,7 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
 
         <section className="om-slip-context om-ai-prefill-context">
           <span>AI prepared context</span>
-          <p>{slip.prepared || draft.ownerNote || "Churvox prepared this Work Slip for owner review."}</p>
+          <p className="om-ai-prep-list">{slip.prepared || draft.ownerNote || "Churvox prepared this Work Slip for owner review."}</p>
           <button type="button" onClick={() => setDraft(smartWorkSlipDraft(slip || {}, team || []))}>
             Refill with AI prep
           </button>

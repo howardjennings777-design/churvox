@@ -8753,3 +8753,23 @@ select {
     width: 100% !important;
   }
 }
+
+
+/* PHASE_134_REAL_AI_PREPARED_WORK */
+.om-ai-prep-list {
+  white-space: pre-line;
+  line-height: 1.5;
+}
+
+.om-ai-prefill-context {
+  background:
+    linear-gradient(135deg, rgba(184, 227, 95, .18), rgba(255, 250, 241, .92));
+}
+
+.om-ai-prefill-context span::after {
+  content: " — checked live job/client/pricing data";
+  color: var(--om-muted);
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: none;
+}
