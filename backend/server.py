@@ -523,6 +523,12 @@ async def churvox_force_cors_headers(request: Request, call_next):
 
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# PHASE_151_FIX_REMAINING_DUPLICATE_PUBLIC_BACKEND_ROUTES
+# Duplicate public backend routes found by the deep audit were normalized here:
+# first public registration remains live; later duplicate registrations are moved
+# under /legacy/... to avoid FastAPI route shadowing and confusing launch behavior.
+
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
 BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", "https://grassley-backend.onrender.com").rstrip("/")
 
@@ -14559,7 +14565,7 @@ async def cvx_worker_add_photo(job_id: str, request: Request, current_user: dict
     await _cvx_worker_notify(updated, current_user, "photo", f"Worker added a photo to {updated.get('title') or updated.get('name') or 'a job'}.")
     return {"ok": True, "success": True, "job": _cvx_worker_safe_job(updated), "photos": photos}
 
-@api_router.get("/worker/office-contact")
+@api_router.get("/legacy/worker/office-contact")
 async def cvx_worker_office_contact(current_user: dict = Depends(get_current_user)):
     business_id = await _cvx_worker_business_id(current_user)
     contacts = []
@@ -14603,7 +14609,7 @@ async def cvx_worker_office_contact(current_user: dict = Depends(get_current_use
         "message": "" if deduped else "No office contact has been set yet.",
     }
 
-@api_router.post("/worker/contact-office")
+@api_router.post("/legacy/worker/contact-office")
 async def cvx_worker_contact_office(request: Request, current_user: dict = Depends(get_current_user)):
     payload = await _cvx_worker_json(request)
     message = str(payload.get("message") or "").strip()
@@ -14668,7 +14674,7 @@ async def _read_csv_upload(file: UploadFile):
     return rows
 
 
-@api_router.post("/clients/import-csv")
+@api_router.post("/legacy/clients/import-csv")
 async def import_clients_csv(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
     owner_id = _resolve_owner_id(current_user)
@@ -14739,7 +14745,7 @@ async def import_clients_csv(file: UploadFile = File(...), current_user: dict = 
 
 
 @api_router.post("/team/workers/import-csv")
-@api_router.post("/team/import-csv")
+@api_router.post("/legacy/team/import-csv")
 @api_router.post("/workers/import-csv")
 async def import_workers_csv(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
     business_id = await get_user_business_id(current_user)
@@ -19283,7 +19289,7 @@ async def proof_pack_archive(proof_pack_id: str, current_user: dict = Depends(ge
     await db.job_proof_packs.update_one({"_id": pack["_id"]}, {"$set": {"status": "archived", "updated_at": now}})
     return {"success": True}
 
-@api_router.get("/public/client-portal/{token}")
+@api_router.get("/legacy/public/client-portal/{token}")
 async def public_client_portal(token: str):
     now = datetime.now(timezone.utc)
     pack = await db.job_proof_packs.find_one({"public_token": token})

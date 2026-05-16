@@ -1,350 +1,350 @@
 # Churvox Deep Bug + Wiring Audit
 
-Generated: 2026-05-16 20:34:45 UTC
+Generated: 2026-05-16 20:36:09 UTC
 
 ## Summary
 
-- HIGH: 7
-- MED: 45
-- LOW: 117
+- HIGH: 2
+- MED: 49
+- LOW: 123
 - Frontend API calls found: 49
 - Backend routes found: 375
 
 ## Findings
 
-### 1. [HIGH] Backend routes — Duplicate backend route GET /public/client-portal/{token}
+### 1. [HIGH] Backend routes — Duplicate backend route POST /ai-operator/run-daily-plan
 
-**Where:** `backend/server.py:19286`
+**Where:** `backend/server.py:19185`
 
-**Detail:** Also defined at line 16280. Last registration may shadow earlier handler.
+**Detail:** Also defined at line 19046. Last registration may shadow earlier handler.
 
-### 2. [HIGH] Backend routes — Duplicate backend route GET /worker/office-contact
+### 2. [HIGH] Backend routes — Duplicate backend route POST /billing/webhook
 
-**Where:** `backend/server.py:14562`
+**Where:** `backend/server.py:10115`
 
-**Detail:** Also defined at line 10259. Last registration may shadow earlier handler.
+**Detail:** Also defined at line 10053. Last registration may shadow earlier handler.
 
-### 3. [HIGH] Backend routes — Duplicate backend route POST /ai-operator/run-daily-plan
-
-**Where:** `backend/server.py:19179`
-
-**Detail:** Also defined at line 19040. Last registration may shadow earlier handler.
-
-### 4. [HIGH] Backend routes — Duplicate backend route POST /billing/webhook
-
-**Where:** `backend/server.py:10109`
-
-**Detail:** Also defined at line 10047. Last registration may shadow earlier handler.
-
-### 5. [HIGH] Backend routes — Duplicate backend route POST /clients/import-csv
-
-**Where:** `backend/server.py:14671`
-
-**Detail:** Also defined at line 9647. Last registration may shadow earlier handler.
-
-### 6. [HIGH] Backend routes — Duplicate backend route POST /team/import-csv
-
-**Where:** `backend/server.py:14742`
-
-**Detail:** Also defined at line 9425. Last registration may shadow earlier handler.
-
-### 7. [HIGH] Backend routes — Duplicate backend route POST /worker/contact-office
-
-**Where:** `backend/server.py:14606`
-
-**Detail:** Also defined at line 10352. Last registration may shadow earlier handler.
-
-### 8. [MED] Brand — Old Grassley brand text
+### 3. [MED] Brand — Old Grassley brand text
 
 **Where:** `test_result.md:153`
 
 **Detail:** Found `Grassley`
 
-### 9. [MED] Brand — Old Grassley brand text
+### 4. [MED] Brand — Old Grassley brand text
 
 **Where:** `login_debug.txt:105`
 
 **Detail:** Found `Grassley`
 
-### 10. [MED] Brand — Old Grassley brand text
+### 5. [MED] Brand — Old Grassley brand text
 
 **Where:** `package-lock.json:2`
 
 **Detail:** Found `Grassley`
 
-### 11. [MED] Brand — Old Grassley brand text
+### 6. [MED] Brand — Old Grassley brand text
 
 **Where:** `CHURVOX_PLAN_PAYMENT_AUDIT.txt:5`
 
 **Detail:** Found `Grassley`
 
-### 12. [MED] Brand — Old Grassley brand text
+### 7. [MED] Brand — Old Grassley brand text
 
 **Where:** `backend/server.py:472`
 
 **Detail:** Found `Grassley`
 
-### 13. [MED] Brand — Old Grassley brand text
+### 8. [MED] Brand — Old Grassley brand text
 
-**Where:** `audits/churvox_deep_audit_latest.md:93`
+**Where:** `audits/churvox_deep_audit_latest.md:57`
 
 **Detail:** Found `Grassley`
 
-### 14. [MED] Brand — Old Grassley brand text
+### 9. [MED] Brand — Old Grassley brand text
+
+**Where:** `audits/churvox_deep_audit_20260516_203445.md:57`
+
+**Detail:** Found `Grassley`
+
+### 10. [MED] Brand — Old Grassley brand text
 
 **Where:** `audits/churvox_deep_audit_20260516_203036.md:111`
 
 **Detail:** Found `Grassley`
 
-### 15. [MED] Brand — Old Grassley brand text
+### 11. [MED] Brand — Old Grassley brand text
 
 **Where:** `audits/churvox_deep_audit_20260516_203242.md:93`
 
 **Detail:** Found `Grassley`
 
-### 16. [MED] Brand — Old Grassley brand text
+### 12. [MED] Brand — Old Grassley brand text
 
 **Where:** `scripts/churvox_deep_audit.py:229`
 
 **Detail:** Found `Grassley`
 
-### 17. [MED] Brand — Old Grassley brand text
+### 13. [MED] Brand — Old Grassley brand text
 
 **Where:** `frontend/src/index.js:1386`
 
 **Detail:** Found `Grassley`
 
-### 18. [MED] Brand — Old Grassley brand text
+### 14. [MED] Brand — Old Grassley brand text
 
 **Where:** `frontend/src/operator-machine/TopPlayerFeatureStack.jsx:9`
 
 **Detail:** Found `Grassley`
 
-### 19. [MED] Brand — Old Grassley brand text
+### 15. [MED] Brand — Old Grassley brand text
 
 **Where:** `frontend/src/operator-machine/OperatorMachine.jsx:63`
 
 **Detail:** Found `Grassley`
 
-### 20. [MED] Brand — Old Grassley brand text
+### 16. [MED] Brand — Old Grassley brand text
 
 **Where:** `frontend/src/customer-command/PublicCustomerCommandPage.jsx:9`
 
 **Detail:** Found `Grassley`
 
-### 21. [MED] Brand — Old Grassley brand text
+### 17. [MED] Brand — Old Grassley brand text
 
 **Where:** `frontend/src/pages/AutomationPage.js:10`
 
 **Detail:** Found `Grassley`
 
-### 22. [MED] Brand — Old Grassley brand text
+### 18. [MED] Brand — Old Grassley brand text
 
 **Where:** `frontend/src/shell/ChurvoxAIShell.jsx:128`
 
 **Detail:** Found `Grassley`
 
-### 23. [MED] Brand — Old Grassley brand text
+### 19. [MED] Brand — Old Grassley brand text
 
 **Where:** `frontend/src/lib/api.js:7`
 
 **Detail:** Found `Grassley`
 
-### 24. [MED] Brand — Old Grassley brand text
+### 20. [MED] Brand — Old Grassley brand text
 
 **Where:** `frontend/src/pages/worker/WorkerCockpitPage.js:6`
 
 **Detail:** Found `Grassley`
 
-### 25. [MED] Brand — Old Grassley brand text
+### 21. [MED] Brand — Old Grassley brand text
 
 **Where:** `frontend/tests/e2e/churvox-team-worker-route.spec.js:4`
 
 **Detail:** Found `Grassley`
 
-### 26. [MED] Brand — Old Grassley brand text
+### 22. [MED] Brand — Old Grassley brand text
 
 **Where:** `frontend/tests/e2e/churvox-public-quote-final.spec.js:4`
 
 **Detail:** Found `Grassley`
 
-### 27. [MED] Brand — Old Grassley brand text
+### 23. [MED] Brand — Old Grassley brand text
 
 **Where:** `frontend/tests/e2e/churvox-ai-backend-safe.spec.js:4`
 
 **Detail:** Found `Grassley`
 
-### 28. [MED] Brand — Old Grassley brand text
+### 24. [MED] Brand — Old Grassley brand text
 
 **Where:** `frontend/tests/e2e/churvox-billing-public-links.spec.js:4`
 
 **Detail:** Found `Grassley`
 
-### 29. [MED] Brand — Old Grassley brand text
+### 25. [MED] Brand — Old Grassley brand text
 
 **Where:** `backend/scripts/reset_owner_account.py:12`
 
 **Detail:** Found `Grassley`
 
-### 30. [MED] Brand — Old Grassley brand text
+### 26. [MED] Brand — Old Grassley brand text
 
 **Where:** `backend/scripts/fix_owner_upsert.py:12`
 
 **Detail:** Found `Grassley`
 
-### 31. [MED] Brand — Old Grassley brand text
+### 27. [MED] Brand — Old Grassley brand text
 
 **Where:** `backend/scripts/hard_fix_owner.py:25`
 
 **Detail:** Found `Grassley`
 
-### 32. [MED] Brand — Old Grassley brand text
+### 28. [MED] Brand — Old Grassley brand text
 
 **Where:** `backend/scripts/hard_reset_owner_login.py:29`
 
 **Detail:** Found `Grassley`
 
-### 33. [MED] Brand — Old Grassley brand text
+### 29. [MED] Brand — Old Grassley brand text
 
 **Where:** `backend/frontend_dist/static/js/main.ac3852af.js:2`
 
 **Detail:** Found `Grassley`
 
-### 34. [MED] Brand — Old Grassley brand text
+### 30. [MED] Brand — Old Grassley brand text
 
 **Where:** `shell-backup-20260514-024105/frontend/src/fresh/FreshAIPublicShell.jsx:9`
 
 **Detail:** Found `Grassley`
 
-### 35. [MED] Brand/Deploy — Old Grassley frontend reference
+### 31. [MED] Brand/Deploy — Old Grassley frontend reference
 
 **Where:** `backend/server.py:472`
 
 **Detail:** Found `grassley-frontend`
 
-### 36. [MED] Brand/Deploy — Old Grassley frontend reference
+### 32. [MED] Brand/Deploy — Old Grassley frontend reference
 
-**Where:** `audits/churvox_deep_audit_latest.md:253`
+**Where:** `audits/churvox_deep_audit_latest.md:223`
 
 **Detail:** Found `grassley-frontend`
 
-### 37. [MED] Brand/Deploy — Old Grassley frontend reference
+### 33. [MED] Brand/Deploy — Old Grassley frontend reference
+
+**Where:** `audits/churvox_deep_audit_20260516_203445.md:223`
+
+**Detail:** Found `grassley-frontend`
+
+### 34. [MED] Brand/Deploy — Old Grassley frontend reference
 
 **Where:** `audits/churvox_deep_audit_20260516_203036.md:259`
 
 **Detail:** Found `grassley-frontend`
 
-### 38. [MED] Brand/Deploy — Old Grassley frontend reference
+### 35. [MED] Brand/Deploy — Old Grassley frontend reference
 
 **Where:** `audits/churvox_deep_audit_20260516_203242.md:253`
 
 **Detail:** Found `grassley-frontend`
 
-### 39. [MED] Brand/Deploy — Old Grassley frontend reference
+### 36. [MED] Brand/Deploy — Old Grassley frontend reference
 
 **Where:** `scripts/churvox_deep_audit.py:229`
 
 **Detail:** Found `grassley-frontend`
 
-### 40. [MED] UX — Browser alert still used instead of in-page modal
+### 37. [MED] UX — Browser alert still used instead of in-page modal
 
 **Where:** `test_result.md:128`
 
 **Detail:** Found `alert(`
 
-### 41. [MED] UX — Browser alert still used instead of in-page modal
+### 38. [MED] UX — Browser alert still used instead of in-page modal
 
-**Where:** `audits/churvox_deep_audit_latest.md:277`
+**Where:** `audits/churvox_deep_audit_latest.md:253`
 
 **Detail:** Found `alert(`
 
-### 42. [MED] UX — Browser alert still used instead of in-page modal
+### 39. [MED] UX — Browser alert still used instead of in-page modal
+
+**Where:** `audits/churvox_deep_audit_20260516_203445.md:253`
+
+**Detail:** Found `alert(`
+
+### 40. [MED] UX — Browser alert still used instead of in-page modal
 
 **Where:** `audits/churvox_deep_audit_20260516_203036.md:271`
 
 **Detail:** Found `alert(`
 
-### 43. [MED] UX — Browser alert still used instead of in-page modal
+### 41. [MED] UX — Browser alert still used instead of in-page modal
 
 **Where:** `audits/churvox_deep_audit_20260516_203242.md:277`
 
 **Detail:** Found `alert(`
 
-### 44. [MED] UX — Browser alert still used instead of in-page modal
+### 42. [MED] UX — Browser alert still used instead of in-page modal
 
 **Where:** `scripts/churvox_deep_audit.py:238`
 
 **Detail:** Found `alert(`
 
-### 45. [MED] UX — Browser alert still used instead of in-page modal
+### 43. [MED] UX — Browser alert still used instead of in-page modal
 
 **Where:** `backend/frontend_dist/static/js/main.ac3852af.js:2`
 
 **Detail:** Found `alert(`
 
-### 46. [MED] UX — Browser confirm still used instead of in-page modal
+### 44. [MED] UX — Browser confirm still used instead of in-page modal
 
 **Where:** `test_result.md:118`
 
 **Detail:** Found `window.confirm`
 
-### 47. [MED] UX — Browser confirm still used instead of in-page modal
+### 45. [MED] UX — Browser confirm still used instead of in-page modal
 
-**Where:** `audits/churvox_deep_audit_latest.md:307`
+**Where:** `audits/churvox_deep_audit_latest.md:289`
 
 **Detail:** Found `window.confirm`
 
-### 48. [MED] UX — Browser confirm still used instead of in-page modal
+### 46. [MED] UX — Browser confirm still used instead of in-page modal
+
+**Where:** `audits/churvox_deep_audit_20260516_203445.md:289`
+
+**Detail:** Found `window.confirm`
+
+### 47. [MED] UX — Browser confirm still used instead of in-page modal
 
 **Where:** `audits/churvox_deep_audit_20260516_203036.md:289`
 
 **Detail:** Found `window.confirm`
 
-### 49. [MED] UX — Browser confirm still used instead of in-page modal
+### 48. [MED] UX — Browser confirm still used instead of in-page modal
 
 **Where:** `audits/churvox_deep_audit_20260516_203242.md:307`
 
 **Detail:** Found `window.confirm`
 
-### 50. [MED] UX — Browser confirm still used instead of in-page modal
+### 49. [MED] UX — Browser confirm still used instead of in-page modal
 
 **Where:** `scripts/churvox_deep_audit.py:237`
 
 **Detail:** Found `window.confirm`
 
-### 51. [MED] UX — Browser confirm still used instead of in-page modal
+### 50. [MED] UX — Browser confirm still used instead of in-page modal
 
 **Where:** `frontend/src/lib/confirmDialog.js:2`
 
 **Detail:** Found `window.confirm`
 
-### 52. [MED] UX — Browser confirm still used instead of in-page modal
+### 51. [MED] UX — Browser confirm still used instead of in-page modal
 
 **Where:** `backend/frontend_dist/static/js/main.ac3852af.js:2`
 
 **Detail:** Found `window.confirm`
 
-### 53. [LOW] Brand/Deploy — Backend URL still uses grassley-backend
+### 52. [LOW] Brand/Deploy — Backend URL still uses grassley-backend
 
 **Where:** `test_result.md:153`
 
 **Detail:** Found `grassley-backend`
 
-### 54. [LOW] Brand/Deploy — Backend URL still uses grassley-backend
+### 53. [LOW] Brand/Deploy — Backend URL still uses grassley-backend
 
 **Where:** `login_debug.txt:105`
 
 **Detail:** Found `grassley-backend`
 
+### 54. [LOW] Brand/Deploy — Backend URL still uses grassley-backend
+
+**Where:** `backend/server.py:533`
+
+**Detail:** Found `grassley-backend`
+
 ### 55. [LOW] Brand/Deploy — Backend URL still uses grassley-backend
 
-**Where:** `backend/server.py:527`
+**Where:** `audits/churvox_deep_audit_latest.md:327`
 
 **Detail:** Found `grassley-backend`
 
 ### 56. [LOW] Brand/Deploy — Backend URL still uses grassley-backend
 
-**Where:** `audits/churvox_deep_audit_latest.md:339`
+**Where:** `audits/churvox_deep_audit_20260516_203445.md:327`
 
 **Detail:** Found `grassley-backend`
 
@@ -452,575 +452,605 @@ Generated: 2026-05-16 20:34:45 UTC
 
 ### 74. [LOW] Code cleanup — FIXME marker remains
 
-**Where:** `audits/churvox_deep_audit_latest.md:459`
+**Where:** `audits/churvox_deep_audit_latest.md:453`
 
 **Detail:** Found `FIXME`
 
 ### 75. [LOW] Code cleanup — FIXME marker remains
 
-**Where:** `audits/churvox_deep_audit_20260516_203036.md:417`
+**Where:** `audits/churvox_deep_audit_20260516_203445.md:453`
 
 **Detail:** Found `FIXME`
 
 ### 76. [LOW] Code cleanup — FIXME marker remains
 
-**Where:** `audits/churvox_deep_audit_20260516_203242.md:459`
+**Where:** `audits/churvox_deep_audit_20260516_203036.md:417`
 
 **Detail:** Found `FIXME`
 
 ### 77. [LOW] Code cleanup — FIXME marker remains
 
+**Where:** `audits/churvox_deep_audit_20260516_203242.md:459`
+
+**Detail:** Found `FIXME`
+
+### 78. [LOW] Code cleanup — FIXME marker remains
+
 **Where:** `scripts/churvox_deep_audit.py:234`
 
 **Detail:** Found `FIXME`
 
-### 78. [LOW] Code cleanup — TODO marker remains
+### 79. [LOW] Code cleanup — TODO marker remains
 
 **Where:** `audits/churvox_deep_audit_latest.md:477`
 
 **Detail:** Found `TODO`
 
-### 79. [LOW] Code cleanup — TODO marker remains
-
-**Where:** `audits/churvox_deep_audit_20260516_203036.md:423`
-
-**Detail:** Found `TODO`
-
 ### 80. [LOW] Code cleanup — TODO marker remains
 
-**Where:** `audits/churvox_deep_audit_20260516_203242.md:477`
+**Where:** `audits/churvox_deep_audit_20260516_203445.md:477`
 
 **Detail:** Found `TODO`
 
 ### 81. [LOW] Code cleanup — TODO marker remains
 
+**Where:** `audits/churvox_deep_audit_20260516_203036.md:423`
+
+**Detail:** Found `TODO`
+
+### 82. [LOW] Code cleanup — TODO marker remains
+
+**Where:** `audits/churvox_deep_audit_20260516_203242.md:477`
+
+**Detail:** Found `TODO`
+
+### 83. [LOW] Code cleanup — TODO marker remains
+
 **Where:** `scripts/churvox_deep_audit.py:233`
 
 **Detail:** Found `TODO`
 
-### 82. [LOW] Launch polish — Coming Soon text still visible
+### 84. [LOW] Launch polish — Coming Soon text still visible
 
 **Where:** `test_churvox_validation.py:145`
 
 **Detail:** Found `Coming Soon`
 
-### 83. [LOW] Launch polish — Coming Soon text still visible
+### 85. [LOW] Launch polish — Coming Soon text still visible
 
 **Where:** `test_result.md:147`
 
 **Detail:** Found `Coming Soon`
 
-### 84. [LOW] Launch polish — Coming Soon text still visible
+### 86. [LOW] Launch polish — Coming Soon text still visible
 
 **Where:** `design_guidelines.json:130`
 
 **Detail:** Found `Coming Soon`
 
-### 85. [LOW] Launch polish — Coming Soon text still visible
-
-**Where:** `backend/server.py:2142`
-
-**Detail:** Found `Coming Soon`
-
-### 86. [LOW] Launch polish — Coming Soon text still visible
-
-**Where:** `audits/churvox_deep_audit_latest.md:495`
-
-**Detail:** Found `Coming Soon`
-
 ### 87. [LOW] Launch polish — Coming Soon text still visible
 
-**Where:** `audits/churvox_deep_audit_20260516_203036.md:429`
+**Where:** `backend/server.py:2148`
 
 **Detail:** Found `Coming Soon`
 
 ### 88. [LOW] Launch polish — Coming Soon text still visible
 
-**Where:** `audits/churvox_deep_audit_20260516_203242.md:495`
+**Where:** `audits/churvox_deep_audit_latest.md:501`
 
 **Detail:** Found `Coming Soon`
 
 ### 89. [LOW] Launch polish — Coming Soon text still visible
 
-**Where:** `test_reports/iteration_2.json:28`
+**Where:** `audits/churvox_deep_audit_20260516_203445.md:501`
 
 **Detail:** Found `Coming Soon`
 
 ### 90. [LOW] Launch polish — Coming Soon text still visible
 
-**Where:** `test_reports/iteration_1.json:24`
+**Where:** `audits/churvox_deep_audit_20260516_203036.md:429`
 
 **Detail:** Found `Coming Soon`
 
 ### 91. [LOW] Launch polish — Coming Soon text still visible
 
-**Where:** `scripts/churvox_deep_audit.py:232`
+**Where:** `audits/churvox_deep_audit_20260516_203242.md:495`
 
 **Detail:** Found `Coming Soon`
 
 ### 92. [LOW] Launch polish — Coming Soon text still visible
 
-**Where:** `frontend/src/pages/SMSPage.js:8`
+**Where:** `test_reports/iteration_2.json:28`
 
 **Detail:** Found `Coming Soon`
 
 ### 93. [LOW] Launch polish — Coming Soon text still visible
 
-**Where:** `frontend/src/shell/ChurvoxAIShell.jsx:6194`
+**Where:** `test_reports/iteration_1.json:24`
 
 **Detail:** Found `Coming Soon`
 
 ### 94. [LOW] Launch polish — Coming Soon text still visible
 
+**Where:** `scripts/churvox_deep_audit.py:232`
+
+**Detail:** Found `Coming Soon`
+
+### 95. [LOW] Launch polish — Coming Soon text still visible
+
+**Where:** `frontend/src/pages/SMSPage.js:8`
+
+**Detail:** Found `Coming Soon`
+
+### 96. [LOW] Launch polish — Coming Soon text still visible
+
+**Where:** `frontend/src/shell/ChurvoxAIShell.jsx:6194`
+
+**Detail:** Found `Coming Soon`
+
+### 97. [LOW] Launch polish — Coming Soon text still visible
+
 **Where:** `backend/frontend_dist/static/js/main.ac3852af.js:2`
 
 **Detail:** Found `Coming Soon`
 
-### 95. [LOW] Launch polish — Lorem/sample text remains
-
-**Where:** `audits/churvox_deep_audit_latest.md:567`
-
-**Detail:** Found `lorem`
-
-### 96. [LOW] Launch polish — Lorem/sample text remains
-
-**Where:** `audits/churvox_deep_audit_20260516_203036.md:489`
-
-**Detail:** Found `lorem`
-
-### 97. [LOW] Launch polish — Lorem/sample text remains
-
-**Where:** `audits/churvox_deep_audit_20260516_203242.md:567`
-
-**Detail:** Found `lorem`
-
 ### 98. [LOW] Launch polish — Lorem/sample text remains
 
-**Where:** `churvox-visual-audit-route-check/audit.js:40`
+**Where:** `audits/churvox_deep_audit_latest.md:579`
 
 **Detail:** Found `lorem`
 
 ### 99. [LOW] Launch polish — Lorem/sample text remains
 
-**Where:** `scripts/churvox_deep_audit.py:236`
+**Where:** `audits/churvox_deep_audit_20260516_203445.md:579`
 
 **Detail:** Found `lorem`
 
 ### 100. [LOW] Launch polish — Lorem/sample text remains
 
+**Where:** `audits/churvox_deep_audit_20260516_203036.md:489`
+
+**Detail:** Found `lorem`
+
+### 101. [LOW] Launch polish — Lorem/sample text remains
+
+**Where:** `audits/churvox_deep_audit_20260516_203242.md:567`
+
+**Detail:** Found `lorem`
+
+### 102. [LOW] Launch polish — Lorem/sample text remains
+
+**Where:** `churvox-visual-audit-route-check/audit.js:40`
+
+**Detail:** Found `lorem`
+
+### 103. [LOW] Launch polish — Lorem/sample text remains
+
+**Where:** `scripts/churvox_deep_audit.py:236`
+
+**Detail:** Found `lorem`
+
+### 104. [LOW] Launch polish — Lorem/sample text remains
+
 **Where:** `backend/scripts/cleanup_test_data.py:32`
 
 **Detail:** Found `lorem`
 
-### 101. [LOW] Launch polish — Placeholder wording remains
+### 105. [LOW] Launch polish — Placeholder wording remains
 
 **Where:** `CHURVOX_LAUNCH_TEST_CHECKLIST.md:27`
 
 **Detail:** Found `placeholder`
 
-### 102. [LOW] Launch polish — Placeholder wording remains
+### 106. [LOW] Launch polish — Placeholder wording remains
 
 **Where:** `CHURVOX_10_OUT_OF_10_AI_OPERATOR_ENGINE_SPEC.md:128`
 
 **Detail:** Found `placeholder`
 
-### 103. [LOW] Launch polish — Placeholder wording remains
+### 107. [LOW] Launch polish — Placeholder wording remains
 
 **Where:** `design_guidelines.json:79`
 
 **Detail:** Found `placeholder`
 
-### 104. [LOW] Launch polish — Placeholder wording remains
+### 108. [LOW] Launch polish — Placeholder wording remains
 
 **Where:** `frontend/package-lock.json:1967`
 
 **Detail:** Found `placeholder`
 
-### 105. [LOW] Launch polish — Placeholder wording remains
+### 109. [LOW] Launch polish — Placeholder wording remains
 
 **Where:** `backend/sms_report.txt:2320`
 
 **Detail:** Found `placeholder`
 
-### 106. [LOW] Launch polish — Placeholder wording remains
-
-**Where:** `backend/server.py:11176`
-
-**Detail:** Found `placeholder`
-
-### 107. [LOW] Launch polish — Placeholder wording remains
-
-**Where:** `audits/churvox_deep_audit_latest.md:597`
-
-**Detail:** Found `placeholder`
-
-### 108. [LOW] Launch polish — Placeholder wording remains
-
-**Where:** `audits/churvox_deep_audit_20260516_203036.md:507`
-
-**Detail:** Found `placeholder`
-
-### 109. [LOW] Launch polish — Placeholder wording remains
-
-**Where:** `audits/churvox_deep_audit_20260516_203242.md:597`
-
-**Detail:** Found `placeholder`
-
 ### 110. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `test_reports/iteration_8.json:21`
+**Where:** `backend/server.py:11182`
 
 **Detail:** Found `placeholder`
 
 ### 111. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `test_reports/iteration_15.json:76`
+**Where:** `audits/churvox_deep_audit_latest.md:615`
 
 **Detail:** Found `placeholder`
 
 ### 112. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `test_reports/iteration_14.json:101`
+**Where:** `audits/churvox_deep_audit_20260516_203445.md:615`
 
 **Detail:** Found `placeholder`
 
 ### 113. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `test_reports/iteration_13.json:85`
+**Where:** `audits/churvox_deep_audit_20260516_203036.md:507`
 
 **Detail:** Found `placeholder`
 
 ### 114. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `test_reports/iteration_11.json:105`
+**Where:** `audits/churvox_deep_audit_20260516_203242.md:597`
 
 **Detail:** Found `placeholder`
 
 ### 115. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `test_reports/iteration_12.json:74`
+**Where:** `test_reports/iteration_8.json:21`
 
 **Detail:** Found `placeholder`
 
 ### 116. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `test_reports/iteration_9.json:81`
+**Where:** `test_reports/iteration_15.json:76`
 
 **Detail:** Found `placeholder`
 
 ### 117. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `test_reports/iteration_10.json:56`
+**Where:** `test_reports/iteration_14.json:101`
 
 **Detail:** Found `placeholder`
 
 ### 118. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `test_reports/iteration_7.json:89`
+**Where:** `test_reports/iteration_13.json:85`
 
 **Detail:** Found `placeholder`
 
 ### 119. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `churvox-backend-save-audit-phase35/backend-save-test.js:36`
+**Where:** `test_reports/iteration_11.json:105`
 
 **Detail:** Found `placeholder`
 
 ### 120. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `scripts/churvox_deep_audit.py:235`
+**Where:** `test_reports/iteration_12.json:74`
 
 **Detail:** Found `placeholder`
 
 ### 121. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/e2e/churvox-deep-audit.spec.js:135`
+**Where:** `test_reports/iteration_9.json:81`
 
 **Detail:** Found `placeholder`
 
 ### 122. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/operator-machine/OperatorMachine.css:2141`
+**Where:** `test_reports/iteration_10.json:56`
 
 **Detail:** Found `placeholder`
 
 ### 123. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/operator-machine/OperatorMachine.jsx:1547`
+**Where:** `test_reports/iteration_7.json:89`
 
 **Detail:** Found `placeholder`
 
 ### 124. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/AIControlRoomActionPage.js:126`
+**Where:** `churvox-backend-save-audit-phase35/backend-save-test.js:36`
 
 **Detail:** Found `placeholder`
 
 ### 125. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/SettingsPage.js:306`
+**Where:** `scripts/churvox_deep_audit.py:235`
 
 **Detail:** Found `placeholder`
 
 ### 126. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/AutomationRunsPage.js:112`
+**Where:** `frontend/e2e/churvox-deep-audit.spec.js:135`
 
 **Detail:** Found `placeholder`
 
 ### 127. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/SMSPage.js:25`
+**Where:** `frontend/src/operator-machine/OperatorMachine.css:2141`
 
 **Detail:** Found `placeholder`
 
 ### 128. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/PayrollPage.js:406`
+**Where:** `frontend/src/operator-machine/OperatorMachine.jsx:1547`
 
 **Detail:** Found `placeholder`
 
 ### 129. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/OnboardingPage.js:37`
+**Where:** `frontend/src/pages/AIControlRoomActionPage.js:126`
 
 **Detail:** Found `placeholder`
 
 ### 130. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/AutomationPage.js:297`
+**Where:** `frontend/src/pages/SettingsPage.js:306`
 
 **Detail:** Found `placeholder`
 
 ### 131. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/CommandHubRealPage.js:159`
+**Where:** `frontend/src/pages/AutomationRunsPage.js:112`
 
 **Detail:** Found `placeholder`
 
 ### 132. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/TeamPage.js:602`
+**Where:** `frontend/src/pages/SMSPage.js:25`
 
 **Detail:** Found `placeholder`
 
 ### 133. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/CommandHubTopPlayerPage.js:102`
+**Where:** `frontend/src/pages/PayrollPage.js:406`
 
 **Detail:** Found `placeholder`
 
 ### 134. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/AIControlRoomCompletePage.js:542`
+**Where:** `frontend/src/pages/OnboardingPage.js:37`
 
 **Detail:** Found `placeholder`
 
 ### 135. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/PayrollPageClean.js:230`
+**Where:** `frontend/src/pages/AutomationPage.js:297`
 
 **Detail:** Found `placeholder`
 
 ### 136. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/shell/ChurvoxOperatorOS.css:151`
+**Where:** `frontend/src/pages/CommandHubRealPage.js:159`
 
 **Detail:** Found `placeholder`
 
 ### 137. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/shell/ChurvoxAIShell.jsx:1524`
+**Where:** `frontend/src/pages/TeamPage.js:602`
 
 **Detail:** Found `placeholder`
 
 ### 138. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/shell/ChurvoxAIShell.css:8842`
+**Where:** `frontend/src/pages/CommandHubTopPlayerPage.js:102`
 
 **Detail:** Found `placeholder`
 
 ### 139. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/public/PublicClientPortalPage.js:458`
+**Where:** `frontend/src/pages/AIControlRoomCompletePage.js:542`
 
 **Detail:** Found `placeholder`
 
 ### 140. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/invoices/InvoicesPage.js:227`
+**Where:** `frontend/src/pages/PayrollPageClean.js:230`
 
 **Detail:** Found `placeholder`
 
 ### 141. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/invoices/InvoiceFormPage.js:183`
+**Where:** `frontend/src/shell/ChurvoxOperatorOS.css:151`
 
 **Detail:** Found `placeholder`
 
 ### 142. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/admin/PlatformUnlock.jsx:44`
+**Where:** `frontend/src/shell/ChurvoxAIShell.jsx:1524`
 
 **Detail:** Found `placeholder`
 
 ### 143. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/quotes/QuotesPage.js:128`
+**Where:** `frontend/src/shell/ChurvoxAIShell.css:8842`
 
 **Detail:** Found `placeholder`
 
 ### 144. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/jobs/JobDetailPage.js:425`
+**Where:** `frontend/src/pages/public/PublicClientPortalPage.js:458`
 
 **Detail:** Found `placeholder`
 
 ### 145. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/jobs/JobsPage.js:200`
+**Where:** `frontend/src/pages/invoices/InvoicesPage.js:227`
 
 **Detail:** Found `placeholder`
 
 ### 146. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/worker/WorkerCockpitPage.js:1058`
+**Where:** `frontend/src/pages/invoices/InvoiceFormPage.js:183`
 
 **Detail:** Found `placeholder`
 
 ### 147. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/worker/WorkerJobDetailPage.js:389`
+**Where:** `frontend/src/pages/admin/PlatformUnlock.jsx:44`
 
 **Detail:** Found `placeholder`
 
 ### 148. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/clients/ClientsPage.js:263`
+**Where:** `frontend/src/pages/quotes/QuotesPage.js:128`
 
 **Detail:** Found `placeholder`
 
 ### 149. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/clients/ClientFormPage.js:138`
+**Where:** `frontend/src/pages/jobs/JobDetailPage.js:425`
 
 **Detail:** Found `placeholder`
 
 ### 150. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/auth/InviteSetupPage.js:169`
+**Where:** `frontend/src/pages/jobs/JobsPage.js:200`
 
 **Detail:** Found `placeholder`
 
 ### 151. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/auth/ResetPasswordPage.js:67`
+**Where:** `frontend/src/pages/worker/WorkerCockpitPage.js:1058`
 
 **Detail:** Found `placeholder`
 
 ### 152. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/auth/AdminLoginPage.js:89`
+**Where:** `frontend/src/pages/worker/WorkerJobDetailPage.js:389`
 
 **Detail:** Found `placeholder`
 
 ### 153. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/auth/LoginPage.js:76`
+**Where:** `frontend/src/pages/clients/ClientsPage.js:263`
 
 **Detail:** Found `placeholder`
 
 ### 154. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/auth/ForgotPasswordPage.js:57`
+**Where:** `frontend/src/pages/clients/ClientFormPage.js:138`
 
 **Detail:** Found `placeholder`
 
 ### 155. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/pages/auth/SignupPage.js:87`
+**Where:** `frontend/src/pages/auth/InviteSetupPage.js:169`
 
 **Detail:** Found `placeholder`
 
 ### 156. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/components/worker/WorkerContactOfficePanel.js:74`
+**Where:** `frontend/src/pages/auth/ResetPasswordPage.js:67`
 
 **Detail:** Found `placeholder`
 
 ### 157. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/components/automation/ActionForm.js:35`
+**Where:** `frontend/src/pages/auth/AdminLoginPage.js:89`
 
 **Detail:** Found `placeholder`
 
 ### 158. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/components/ui/select.jsx:17`
+**Where:** `frontend/src/pages/auth/LoginPage.js:76`
 
 **Detail:** Found `placeholder`
 
 ### 159. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/components/ui/input.jsx:10`
+**Where:** `frontend/src/pages/auth/ForgotPasswordPage.js:57`
 
 **Detail:** Found `placeholder`
 
 ### 160. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/components/ui/textarea.jsx:9`
+**Where:** `frontend/src/pages/auth/SignupPage.js:87`
 
 **Detail:** Found `placeholder`
 
 ### 161. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/src/components/ui/command.jsx:41`
+**Where:** `frontend/src/components/worker/WorkerContactOfficePanel.js:74`
 
 **Detail:** Found `placeholder`
 
 ### 162. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/tests/e2e/churvox-owner-worker-deep-v2.spec.js:49`
+**Where:** `frontend/src/components/automation/ActionForm.js:35`
 
 **Detail:** Found `placeholder`
 
 ### 163. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/tests/e2e/churvox-full-launch.spec.js:91`
+**Where:** `frontend/src/components/ui/select.jsx:17`
 
 **Detail:** Found `placeholder`
 
 ### 164. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `frontend/tests/e2e/churvox-owner-worker-deep.legacy.js:50`
+**Where:** `frontend/src/components/ui/input.jsx:10`
 
 **Detail:** Found `placeholder`
 
 ### 165. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `backend/frontend_dist/static/css/main.22e43127.css:5`
+**Where:** `frontend/src/components/ui/textarea.jsx:9`
 
 **Detail:** Found `placeholder`
 
 ### 166. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `backend/frontend_dist/static/js/main.ac3852af.js:2`
+**Where:** `frontend/src/components/ui/command.jsx:41`
 
 **Detail:** Found `placeholder`
 
 ### 167. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `shell-backup-20260514-024105/frontend/src/operatoros/OperatorShell.jsx:228`
+**Where:** `frontend/tests/e2e/churvox-owner-worker-deep-v2.spec.js:49`
 
 **Detail:** Found `placeholder`
 
 ### 168. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `shell-backup-20260514-024105/frontend/src/newos/ChurvoxNewShell.jsx:408`
+**Where:** `frontend/tests/e2e/churvox-full-launch.spec.js:91`
 
 **Detail:** Found `placeholder`
 
 ### 169. [LOW] Launch polish — Placeholder wording remains
+
+**Where:** `frontend/tests/e2e/churvox-owner-worker-deep.legacy.js:50`
+
+**Detail:** Found `placeholder`
+
+### 170. [LOW] Launch polish — Placeholder wording remains
+
+**Where:** `backend/frontend_dist/static/css/main.22e43127.css:5`
+
+**Detail:** Found `placeholder`
+
+### 171. [LOW] Launch polish — Placeholder wording remains
+
+**Where:** `backend/frontend_dist/static/js/main.ac3852af.js:2`
+
+**Detail:** Found `placeholder`
+
+### 172. [LOW] Launch polish — Placeholder wording remains
+
+**Where:** `shell-backup-20260514-024105/frontend/src/operatoros/OperatorShell.jsx:228`
+
+**Detail:** Found `placeholder`
+
+### 173. [LOW] Launch polish — Placeholder wording remains
+
+**Where:** `shell-backup-20260514-024105/frontend/src/newos/ChurvoxNewShell.jsx:408`
+
+**Detail:** Found `placeholder`
+
+### 174. [LOW] Launch polish — Placeholder wording remains
 
 **Where:** `shell-backup-20260514-024105/frontend/src/newos/ChurvoxSalesApp.jsx:256`
 
@@ -1035,5 +1065,5 @@ Generated: 2026-05-16 20:34:45 UTC
 5. Remove placeholder/Coming Soon text from launch-critical areas.
 
 
-REPORT_FILE=audits/churvox_deep_audit_20260516_203445.md
+REPORT_FILE=audits/churvox_deep_audit_20260516_203609.md
 LATEST_FILE=audits/churvox_deep_audit_latest.md
