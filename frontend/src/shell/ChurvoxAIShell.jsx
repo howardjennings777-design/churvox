@@ -6016,41 +6016,23 @@ function AskChurvoxCommand({ onRunCommand }) {
 
     if (!value) return { type: "help", label: "Show command help" };
 
-    const wantsCreate = value.includes("add") || value.includes("new") || value.includes("create") || value.includes("make");
-    const wantsImport = value.includes("import") || value.includes("upload");
+    const wantsCreate =
+      value.includes("add") ||
+      value.includes("new") ||
+      value.includes("create") ||
+      value.includes("make");
 
-    // Quick-add must win before general review/workspace commands.
-    if (wantsImport && value.includes("client")) {
-      return { type: "quick", area: "clients", label: "Import clients" };
-    }
+    const wantsImport =
+      value.includes("import") ||
+      value.includes("upload") ||
+      value.includes("csv");
 
-    if (wantsImport && (value.includes("worker") || value.includes("team") || value.includes("staff"))) {
-      return { type: "quick", area: "team", label: "Import team" };
-    }
-
-    if (wantsCreate && value.includes("client")) {
-      return { type: "quick", area: "clients", label: "Add client" };
-    }
-
-    if (wantsCreate && (value.includes("worker") || value.includes("team") || value.includes("staff"))) {
-      return { type: "quick", area: "team", label: "Add worker" };
-    }
-
-    if (wantsCreate && value.includes("job")) {
-      return { type: "quick", area: "jobs", label: "Add job" };
-    }
-
-    if (wantsCreate && value.includes("quote")) {
-      return { type: "quick", area: "quotes", label: "Add quote" };
-    }
-
-    if (wantsCreate && value.includes("invoice")) {
-      return { type: "quick", area: "invoices", label: "Add invoice" };
-    }
-
-
-    // Quick-add commands must win before general hub commands.
-    // Otherwise "add quote" opens quote follow-ups and "add invoice" opens ready invoices.
+    /*
+      IMPORTANT:
+      Quick-add commands must run BEFORE general hub/review commands.
+      Otherwise "add quote" gets caught by quote follow-ups,
+      and "add invoice" gets caught by ready invoices.
+    */
     if (wantsImport && value.includes("client")) {
       return { type: "quick", area: "clients", label: "Import clients" };
     }
@@ -6107,30 +6089,6 @@ function AskChurvoxCommand({ onRunCommand }) {
       return { type: "page", page: "settings", label: "Open Teach Churvox" };
     }
 
-    if ((value.includes("add") || value.includes("new")) && value.includes("client")) {
-      return { type: "quick", area: "clients", label: "Add client" };
-    }
-
-    if (value.includes("import") && value.includes("client")) {
-      return { type: "quick", area: "clients", label: "Import clients" };
-    }
-
-    if ((value.includes("add") || value.includes("invite") || value.includes("new")) && (value.includes("worker") || value.includes("team"))) {
-      return { type: "quick", area: "team", label: "Add worker" };
-    }
-
-    if ((value.includes("add") || value.includes("new") || value.includes("create")) && value.includes("job")) {
-      return { type: "quick", area: "jobs", label: "Add job" };
-    }
-
-    if ((value.includes("add") || value.includes("new") || value.includes("create")) && value.includes("quote")) {
-      return { type: "quick", area: "quotes", label: "Add quote" };
-    }
-
-    if ((value.includes("add") || value.includes("new") || value.includes("create")) && value.includes("invoice")) {
-      return { type: "quick", area: "invoices", label: "Add invoice" };
-    }
-
     if (value.includes("client")) return { type: "page", page: "clients", label: "Open clients" };
     if (value.includes("team") || value.includes("worker")) return { type: "page", page: "team", label: "Open team" };
     if (value.includes("job")) return { type: "page", page: "jobs", label: "Open jobs" };
@@ -6138,6 +6096,7 @@ function AskChurvoxCommand({ onRunCommand }) {
 
     return { type: "hub", key: "approvals", label: "Open approvals" };
   }
+
   function run(raw = query) {
     const command = classifyCommand(raw);
     onRunCommand?.(command, raw);
