@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_78_SMART_JOB_WORK_SLIPS
 // PHASE_77_COMBINE_FEATURE_HEADERS
 // PHASE_74_JOBS_QUEUE_BOARD
 // PHASE_73_PLANS_PRICING_BOARD
@@ -602,6 +603,13 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove }) {
             </>
           ) : null}
 
+          {slip.kind === "job" ? (
+            <label>
+              Job status / next step
+              <input value={draft.jobStatus || ""} onChange={(event) => update("jobStatus", event.target.value)} placeholder="new, assigned, in progress, completed..." />
+            </label>
+          ) : null}
+
           <label className="wide">
             Owner note / fix
             <textarea value={draft.ownerNote || ""} onChange={(event) => update("ownerNote", event.target.value)} placeholder="Add what matters before approval..." />
@@ -1051,6 +1059,7 @@ function featureConfig(page) {
 
 function JobsQueueBoard({ data, machine, onOpen }) {
   const jobRows = rowsForPage("jobs", machine, data || {});
+  const team = arrayFrom(data?.raw?.team, data?.raw?.workers, data?.team);
   const needsWorker = jobRows.filter((row) => !hasWorker(row.item || {}) && !isCompletedJob(row.item || {}));
   const activeJobs = jobRows.filter((row) => hasWorker(row.item || {}) && !isCompletedJob(row.item || {}));
   const completedJobs = jobRows.filter((row) => isCompletedJob(row.item || {}));
@@ -1076,6 +1085,85 @@ function JobsQueueBoard({ data, machine, onOpen }) {
     ["Proof", "Notes and photos feed admin"],
     ["Invoice", "Completed work becomes approval-ready"],
   ];
+
+  function makeJobSlip(row) {
+    const item = row.item || {};
+    const title = clean(item.title || item.job_title || item.service_type || item.name || row.title, "Job");
+    const client = clean(item.client_name || item.customer_name || item.client?.name, "Client");
+    const address = clean(item.address || item.job_address || item.service_address || item.location);
+    const notes = clean(item.completion_notes || item.worker_notes || item.job_notes || item.notes);
+    const completed = isCompletedJob(item);
+    const needsDispatch = !hasWorker(item) && !completed;
+
+    if (needsDispatch) {
+      const suggestedWorker = team[0] || {};
+      const workerLabel = clean(
+        suggestedWorker.name ||
+        suggestedWorker.full_name ||
+        suggestedWorker.worker_name ||
+        suggestedWorker.email,
+        "choose worker"
+      );
+
+      return {
+        ...row,
+        kind: "dispatch",
+        eyebrow: "Needs dispatch",
+        title: `Assign worker for ${title}`,
+        need: "This job needs a worker before the day can run cleanly.",
+        prepared: `Churvox checked the job record${address ? `, address at ${address}` : ""}, client context and available crew. Suggested worker: ${workerLabel}.`,
+        draft: {
+          title: `Assign worker for ${title}`,
+          workerChoice: clean(suggestedWorker.id || suggestedWorker._id || suggestedWorker.name || suggestedWorker.full_name || ""),
+          ownerNote: address ? `Assign based on job address: ${address}` : "Assign the best available worker.",
+          customerMessage: "",
+          invoiceDescription: "",
+          amount: "",
+        },
+      };
+    }
+
+    if (completed) {
+      const amount = invoiceAmount(item);
+      const prepared = invoiceDescription(item);
+
+      return {
+        ...row,
+        kind: "invoice",
+        eyebrow: amount ? "Invoice ready" : "Owner input needed",
+        title: `Approve invoice draft for ${client}`,
+        need: amount ? "Completed work is ready for invoice approval." : "Completed work is ready, but the amount needs owner input.",
+        prepared,
+        draft: {
+          title: `Invoice for ${title}`,
+          invoiceClientName: client,
+          invoiceLineItem: title,
+          invoiceDescription: prepared,
+          amount,
+          dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+          ownerNote: notes,
+          customerMessage: prepared,
+        },
+      };
+    }
+
+    return {
+      ...row,
+      kind: "job",
+      eyebrow: "Job review",
+      title,
+      need: "Review job details, next step, worker notes or owner instructions.",
+      prepared: `Churvox is using this job as machine input.${client ? ` Client: ${client}.` : ""}${address ? ` Address: ${address}.` : ""}`,
+      draft: {
+        title,
+        jobStatus: statusOf(item),
+        ownerNote: notes || row.need || "",
+        customerMessage: "",
+        invoiceDescription: address ? `Job address: ${address}` : "",
+        amount: invoiceAmount(item),
+      },
+    };
+  }
 
   return (
     <section className="om-jobs-board" data-phase="PHASE_74_JOBS_QUEUE_BOARD">
@@ -1129,7 +1217,7 @@ function JobsQueueBoard({ data, machine, onOpen }) {
               const needsDispatch = !hasWorker(item) && !completed;
 
               return (
-                <button type="button" key={row.id} className={`om-job-ticket ${needsDispatch ? "needs-worker" : completed ? "completed" : "active"}`} onClick={() => onOpen(row)}>
+                <button type="button" key={row.id} className={`om-job-ticket ${needsDispatch ? "needs-worker" : completed ? "completed" : "active"}`} onClick={() => onOpen(makeJobSlip(row))}>
                   <span>{needsDispatch ? "Needs dispatch" : completed ? "Completed" : status || "Active job"}</span>
                   <strong>{row.title}</strong>
                   <small>{row.need}</small>

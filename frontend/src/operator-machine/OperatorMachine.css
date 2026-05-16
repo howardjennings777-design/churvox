@@ -2091,3 +2091,31 @@
     min-height: auto;
   }
 }
+
+
+/* PHASE_78_SMART_JOB_WORK_SLIPS */
+.om-slip-row.job,
+.om-job-ticket.active {
+  border-color: rgba(36, 34, 29, .18);
+}
+
+.om-job-ticket.needs-worker em {
+  background: var(--om-charcoal);
+  color: var(--om-lime);
+}
+
+.om-job-ticket.completed em {
+  background: var(--om-lime);
+  color: var(--om-charcoal);
+}
+
+.om-slip-context p {
+  font-size: 1rem;
+  line-height: 1.58;
+}
+
+.om-slip-fields input,
+.om-slip-fields textarea,
+.om-slip-fields select {
+  font-size: .98rem;
+}
