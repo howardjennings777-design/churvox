@@ -6048,8 +6048,6 @@ function AskChurvoxCommand({ onRunCommand }) {
       return { type: "quick", area: "invoices", label: "Add invoice" };
     }
 
-    const wantsCreate = value.includes("add") || value.includes("new") || value.includes("create") || value.includes("make");
-    const wantsImport = value.includes("import") || value.includes("upload");
 
     // Quick-add commands must win before general hub commands.
     // Otherwise "add quote" opens quote follow-ups and "add invoice" opens ready invoices.
@@ -6140,7 +6138,6 @@ function AskChurvoxCommand({ onRunCommand }) {
 
     return { type: "hub", key: "approvals", label: "Open approvals" };
   }
-
   function run(raw = query) {
     const command = classifyCommand(raw);
     onRunCommand?.(command, raw);
