@@ -4302,3 +4302,42 @@
   background: var(--om-lime);
   color: var(--om-charcoal);
 }
+
+
+/* PHASE_94_SMS_CREDIT_GATE */
+.om-sms-credit-gate {
+  grid-column: 1 / -1;
+  border: 1px solid rgba(189, 116, 65, .42);
+  border-radius: 20px;
+  padding: 14px 16px;
+  background:
+    linear-gradient(135deg, rgba(189, 116, 65, .12), rgba(255, 250, 240, .96)),
+    var(--om-paper);
+}
+
+.om-sms-credit-gate span {
+  color: var(--om-copper);
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-size: .72rem;
+}
+
+.om-sms-credit-gate strong {
+  display: block;
+  margin: 6px 0 5px;
+  color: var(--om-charcoal);
+  font-size: 1rem;
+}
+
+.om-sms-credit-gate p {
+  margin: 0;
+  color: var(--om-muted);
+  line-height: 1.45;
+  font-weight: 750;
+}
+
+.om-slip-actions .approve:disabled {
+  opacity: .58;
+  cursor: not-allowed;
+}

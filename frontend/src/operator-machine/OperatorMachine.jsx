@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_94_SMS_CREDIT_GATE
 // PHASE_93_TRIAL_PLAN_ENTITLEMENT_BRAIN
 // PHASE_92_OPERATOR_APPROVAL_CONFIRMATION_BOX
 // PHASE_91_WIRE_PLANS_TO_CHECKOUT
@@ -259,6 +260,70 @@ function reminderMessage(invoice = {}) {
   return `Hi ${client}, just a friendly reminder that ${number}${amount ? ` for ${amount}` : ""}${due ? ` was due on ${due}` : " is still awaiting payment"}. Please let us know if you need anything from us.`;
 }
 
+
+function smsCreditBalance(data = {}) {
+  const raw = data.raw || {};
+  const billing = raw.billing || raw.subscription || data.billing || data.subscription || {};
+  const business = raw.business || raw.company || data.business || data.company || {};
+
+  let localCredits = 0;
+  try {
+    localCredits = Number(String(localStorage.getItem("churvox_sms_credits") || "0").replace(/[^0-9.-]/g, ""));
+  } catch {
+    localCredits = 0;
+  }
+
+  const candidates = [
+    billing.sms_credits,
+    billing.sms_balance,
+    billing.sms_credit_balance,
+    raw.sms_credits?.balance,
+    raw.sms_balance,
+    business.sms_credits,
+    business.sms_balance,
+    data.sms_credits,
+    data.sms_balance,
+    localCredits,
+  ];
+
+  for (const value of candidates) {
+    const parsed = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
+    if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  }
+
+  return 0;
+}
+
+function smsActionRequested(slip = {}, draft = {}) {
+  const channel = clean(
+    draft.messageChannel ||
+    draft.deliveryChannel ||
+    draft.channel ||
+    draft.sendChannel ||
+    slip.messageChannel ||
+    slip.deliveryChannel ||
+    slip.channel ||
+    ""
+  ).toLowerCase();
+
+  return (
+    channel === "sms" ||
+    channel === "text" ||
+    channel.includes("sms") ||
+    draft.sendSms === true ||
+    draft.send_sms === true ||
+    slip.sendSms === true ||
+    slip.send_sms === true
+  );
+}
+
+function slipCanChooseSms(slip = {}, draft = {}) {
+  const kind = clean(slip.kind).toLowerCase();
+  const hasMessage = Boolean(clean(draft.customerMessage || draft.message || draft.body));
+  return hasMessage && ["quote", "cashflow", "invoice", "proof"].includes(kind);
+}
+
+
 function quoteFollowup(quote = {}) {
   const client = clean(quote.client_name || quote.customer_name || quote.client?.name || "there");
   const title = clean(quote.title || quote.quote_number || quote.number || "your quote");
@@ -465,7 +530,7 @@ function buildMachine(data = {}) {
 }
 
 
-function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove, onChoosePlan }) {
+function WorkSlip({ slip, team, outputStatus, smsCredits = 0, onClose, onSave, onApprove, onChoosePlan }) {
   const [draft, setDraft] = useState(slip?.draft || {});
   const [busy, setBusy] = useState(false);
 
@@ -497,6 +562,8 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove, onChoo
   const isSettingsLike = slip.kind === "settings";
   const isQuoteLike = slip.kind === "quote";
   const isNewQuote = isQuoteLike && String(slip.id || "").startsWith("new-quote");
+  const canChooseSms = slipCanChooseSms(slip, draft);
+  const smsBlocked = smsActionRequested(slip, draft) && Number(smsCredits || 0) <= 0;
   const primaryLabel =
     isJobIntake ? "Create job" :
     isNewInvoice ? "Create invoice draft" :
@@ -820,6 +887,25 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove, onChoo
             Message / prepared wording
             <textarea value={draft.customerMessage || ""} onChange={(event) => update("customerMessage", event.target.value)} placeholder="Edit before anything is copied, saved, or sent..." />
           </label>
+
+          {canChooseSms ? (
+            <label>
+              Message delivery
+              <select value={draft.messageChannel || "save_only"} onChange={(event) => update("messageChannel", event.target.value)}>
+                <option value="save_only">Save draft only</option>
+                <option value="email_draft">Prepare email draft</option>
+                <option value="sms" disabled={Number(smsCredits || 0) <= 0}>Send SMS</option>
+              </select>
+            </label>
+          ) : null}
+
+          {smsBlocked ? (
+            <section className="om-sms-credit-gate">
+              <span>SMS locked</span>
+              <strong>Buy SMS credits before Churvox can send this as a text.</strong>
+              <p>Churvox can still save the message as a draft, but it will not send SMS with 0 credits.</p>
+            </section>
+          ) : null}
         </section>
 
         {outputStatus ? <p className="om-slip-status">{outputStatus}</p> : null}
@@ -827,7 +913,7 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove, onChoo
         <footer className="om-slip-actions">
           <button type="button" className="ghost" onClick={onClose}>Back</button>
           <button type="button" onClick={() => onSave(slip, draft)}>Save edit</button>
-          <button type="button" className="approve" disabled={busy} onClick={approve}>
+          <button type="button" className="approve" disabled={busy || smsBlocked} onClick={approve}>
             {busy ? "Saving..." : primaryLabel}
           </button>
         </footer>
@@ -1072,7 +1158,7 @@ function planEntitlementSnapshot(data = {}, planOverride = "") {
       growthPacks,
     },
     sms: {
-      credits: billing.sms_credits || 0,
+      credits: smsCreditBalance(data),
     },
   };
 }
@@ -1322,7 +1408,7 @@ function rowsForPage(page, machine, data = {}) {
         price: "$10",
         planName: "100 SMS credits",
         badge: "Active add-on",
-        prepared: "Buy 100 prepaid SMS credits. SMS credits are separate from the monthly plan and are used for reminders, customer updates and message actions inside Churvox.",
+        prepared: "Buy 100 prepaid SMS credits. SMS credits are separate from the monthly plan. Churvox will not send SMS unless credits have been purchased and are available in the SMS wallet.",
         features: ["100 SMS credits", "Prepaid pack", "Separate from plan", "Use for reminders", "Use for customer updates"],
         cta: "Buy credits",
       },
@@ -4164,6 +4250,21 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
   async function approveSlip(slip, draft) {
     setOutputStatus("Saving owner-approved action...");
 
+    if (smsActionRequested(slip, draft) && smsCreditBalance(data || {}) <= 0) {
+      const message = "SMS credits required. Churvox saved nothing to SMS because this account has 0 SMS credits. Buy a credit pack first, or change delivery to Save draft only.";
+      setOutputStatus(message);
+      setOutputLog((current) => [
+        {
+          id: `${Date.now()}-${slip.id}`,
+          type: "SMS blocked",
+          title: draft.title || slip.title || "SMS action",
+          detail: message,
+        },
+        ...current,
+      ].slice(0, 8));
+      return;
+    }
+
     if (slip.kind === "team-member" && String(slip.id || "").startsWith("new-team")) {
       const teamPayload = {
         name: draft.workerName || draft.title || "Team member",
@@ -4543,6 +4644,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
         slip={activeSlip}
         team={team}
         outputStatus={outputStatus}
+        smsCredits={smsCreditBalance(data || {})}
         onClose={() => setActiveSlip(null)}
         onSave={saveEdit}
         onApprove={approveSlip}
