@@ -437,3 +437,179 @@ button, a {
   }
 }
 
+
+/* PHASE_180_CARBON_CLAY_THEME_FOUNDATION
+   Churvox Carbon Clay: warm paper, carbon controls, moss AI highlights.
+   No blue/white SaaS feel. No retro neon overload.
+*/
+:root {
+  --cx-carbon: #14130f;
+  --cx-carbon-2: #211f19;
+  --cx-stone: #f3efe5;
+  --cx-paper: #fffaf0;
+  --cx-clay: #e7dcc8;
+  --cx-clay-2: #d8c8ac;
+  --cx-moss: #b8f24a;
+  --cx-moss-deep: #3f6f3a;
+  --cx-brass: #b67a32;
+  --cx-amber-clay: #b66a2e;
+  --cx-brick: #8f2f24;
+  --cx-ink-soft: #625d50;
+  --cx-line: rgba(20, 19, 15, 0.14);
+  --cx-shadow-soft: 0 18px 54px rgba(20, 19, 15, 0.12);
+  --cx-shadow-strong: 0 30px 90px rgba(20, 19, 15, 0.2);
+}
+
+html,
+body,
+#root {
+  background: var(--cx-stone) !important;
+  color: var(--cx-carbon) !important;
+}
+
+body {
+  color-scheme: light !important;
+}
+
+/* Main app surfaces */
+.cx-ai-shell,
+.churvox-ai-shell,
+.operator-machine,
+.operator-shell,
+.dashboard,
+main {
+  background:
+    radial-gradient(circle at top left, rgba(184, 242, 74, 0.12), transparent 34rem),
+    linear-gradient(135deg, #f3efe5 0%, #eee4d3 48%, #e7dcc8 100%) !important;
+  color: var(--cx-carbon) !important;
+}
+
+/* Premium cards / panels */
+.card,
+.panel,
+.sheet,
+.modal,
+.dialog,
+[class*="card"],
+[class*="panel"],
+[class*="Card"],
+[class*="Panel"] {
+  border-color: var(--cx-line) !important;
+}
+
+/* Approval / AI action style */
+[class*="approval"],
+[class*="Approval"],
+[class*="work-slip"],
+[class*="WorkSlip"],
+[class*="operator"],
+[class*="Operator"] {
+  --accent: var(--cx-moss);
+}
+
+/* Strong dark headers */
+.cx-carbon-panel,
+.cx-approval-hero,
+.cx-command-hero {
+  background: linear-gradient(135deg, var(--cx-carbon) 0%, var(--cx-carbon-2) 100%) !important;
+  color: var(--cx-paper) !important;
+  border: 1px solid rgba(184, 242, 74, 0.18) !important;
+  box-shadow: var(--cx-shadow-strong) !important;
+}
+
+/* Buttons */
+button,
+.button,
+[role="button"] {
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease !important;
+}
+
+button:hover,
+.button:hover,
+[role="button"]:hover {
+  transform: translateY(-1px);
+}
+
+/* Primary action feeling */
+button[class*="primary"],
+button[class*="approve"],
+button[class*="Approve"],
+button:has(span),
+a[class*="primary"] {
+  border-color: rgba(20, 19, 15, 0.18);
+}
+
+/* Inputs */
+input,
+select,
+textarea {
+  background: var(--cx-paper) !important;
+  color: var(--cx-carbon) !important;
+  border-color: rgba(20, 19, 15, 0.18) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid rgba(184, 242, 74, 0.42) !important;
+  border-color: rgba(20, 19, 15, 0.32) !important;
+}
+
+/* Status badges */
+[class*="ready"],
+[class*="Ready"] {
+  border-color: rgba(184, 242, 74, 0.44) !important;
+}
+
+[class*="paid"],
+[class*="Paid"],
+[class*="complete"],
+[class*="Complete"] {
+  color: var(--cx-moss-deep) !important;
+}
+
+[class*="overdue"],
+[class*="Overdue"],
+[class*="danger"],
+[class*="Danger"] {
+  color: var(--cx-brick) !important;
+}
+
+/* Make old bright-blue UI feel less generic without touching logic */
+.bg-blue-50,
+.bg-sky-50,
+.bg-indigo-50 {
+  background-color: rgba(231, 220, 200, 0.72) !important;
+}
+
+.text-blue-600,
+.text-blue-700,
+.text-sky-600,
+.text-indigo-600 {
+  color: var(--cx-carbon) !important;
+}
+
+.border-blue-200,
+.border-sky-200,
+.border-indigo-200 {
+  border-color: rgba(184, 242, 74, 0.34) !important;
+}
+
+.bg-blue-600,
+.bg-sky-600,
+.bg-indigo-600 {
+  background-color: var(--cx-carbon) !important;
+  color: var(--cx-paper) !important;
+}
+
+/* New naming direction */
+.cx-approval-desk-title::after {
+  content: "Churvox prepares the admin. You approve the next move.";
+  display: block;
+  margin-top: 0.55rem;
+  color: var(--cx-ink-soft);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
