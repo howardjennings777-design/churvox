@@ -293,7 +293,7 @@ def audit():
 
         for term, severity, area, msg in [
             ("grassley-frontend", "MED", "Brand/Deploy", "Old Grassley frontend reference"),
-            ("Grassley", "MED", "Brand", "Old Grassley brand text"),
+
             ("Coming Soon", "LOW", "Launch polish", "Coming Soon text still visible"),
             ("TODO", "LOW", "Code cleanup", "TODO marker remains"),
             ("FIXME", "LOW", "Code cleanup", "FIXME marker remains"),
@@ -303,6 +303,41 @@ def audit():
             idx = text.lower().find(term.lower())
             if idx != -1:
                 add(findings, severity, area, msg, f"Found `{term}`", rel(path), line_no(text, idx))
+
+
+        # PHASE_156_FIX_BRAND_AUDIT_FALSE_POSITIVES
+        # Brand scan should catch visible old capitalized brand text only.
+        # Do not flag the live Render backend URL: grassley-backend.onrender.com.
+        # Do not flag old phase-marker names/comments from patch history.
+        if "Grassley" in text:
+            for m in re.finditer(r"\bGrassley\b", text):
+                line_start = text.rfind("\n", 0, m.start()) + 1
+                line_end = text.find("\n", m.start())
+                if line_end == -1:
+                    line_end = len(text)
+                line = text[line_start:line_end]
+
+                ignored_line_bits = [
+                    "PHASE_",
+                    "phase",
+                    "grassley-backend",
+                    "grassley-frontend",
+                    "howardjennings777-design/grassley",
+                ]
+
+                if any(bit.lower() in line.lower() for bit in ignored_line_bits):
+                    continue
+
+                add(
+                    findings,
+                    "MED",
+                    "Brand",
+                    "Old Grassley brand text",
+                    "Found visible capitalized old brand text.",
+                    rel(path),
+                    line_no(text, m.start()),
+                )
+                break
 
         # Placeholder wording should only flag visible copy, not normal input placeholder props.
         lowered = text.lower()

@@ -1,4 +1,4 @@
-# PHASE_153_CLEAN_ACTIVE_GRASSLEY_BRAND_TEXT
+# PHASE_153_CLEAN_ACTIVE_OLD_BRAND_TEXT
 import os
 import json
 import urllib.request
