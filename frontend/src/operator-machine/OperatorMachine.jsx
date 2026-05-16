@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_116_REMOVE_DUPLICATE_DASHBOARD
 import { churvoxRenderDeployMarker } from "./renderDeployMarker";
 // PHASE_114_PROPER_INVOICE_DOCUMENT
 // PHASE_113_PROPER_INVOICE_TEMPLATE
@@ -5459,34 +5460,6 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
   const visibleApprovals = showAllApprovals ? machine.approval.slice(0, 24) : machine.approval.slice(0, 5);
   const hiddenApprovalCount = Math.max(machine.approval.length - visibleApprovals.length, 0);
 
-  const dashboardFlowCounts = [
-    {
-      step: "01",
-      label: "Input Tray",
-      count: machine.input.length,
-      body: `${machine.input.length} work input${machine.input.length === 1 ? "" : "s"} waiting`,
-    },
-    {
-      step: "02",
-      label: "Processing Line",
-      count: machine.processing.length,
-      body: `${machine.processing.length} check${machine.processing.length === 1 ? "" : "s"} running`,
-    },
-    {
-      step: "03",
-      label: "Approval Desk",
-      count: machine.approval.length,
-      body: `${machine.approval.length} approval${machine.approval.length === 1 ? "" : "s"} waiting`,
-      active: true,
-    },
-    {
-      step: "04",
-      label: "Output Log",
-      count: outputLog.length,
-      body: `${outputLog.length} action${outputLog.length === 1 ? "" : "s"} recorded`,
-    },
-  ];
-
   const dashboardAdvancedTools = [
     {
       id: "advanced-customer-links",
@@ -5601,45 +5574,38 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
 
         {page === "dashboard" ? (
           <>
-        <section className="om-flow om-flow-real-counts" data-phase="PHASE_95_REAL_MACHINE_FLOW_COUNTS">
-          {dashboardFlowCounts.map((item) => (
-            <article key={item.label} className={item.active ? "active" : ""}>
-              <span>{item.step}</span>
-              <b className="om-flow-count">{item.count}</b>
-              <strong>{item.label}</strong>
-              <small>{item.body}</small>
-            </article>
-          ))}
-        </section>
-
-        <section className="om-dashboard-quiet-tools" data-phase="PHASE_103_TAPPABLE_DASHBOARD_ADVANCED_TOOLS">
+        <section className="om-dashboard-quiet-tools om-dashboard-tools-single" data-phase="PHASE_116_REMOVE_DUPLICATE_DASHBOARD">
           <span>Advanced tools ready</span>
           {dashboardAdvancedTools.map((tool) => (
             <button type="button" key={tool.id} onClick={() => openSlip(tool)}>
               {tool.title}
             </button>
           ))}
-          <small>Tap a tool to open one Work Slip. Churvox keeps the power in the background and brings it forward only when it needs owner action.</small>
+          <small>Tools stay tucked away. The owner works from one approval desk.</small>
         </section>
 
-        <section className="om-machine-grid">
-          <MachineLane
-            title="Input Tray"
-            subtitle="What came in"
-            items={machine.input}
-            empty="No live work input found yet."
-            onOpen={openSlip}
-          />
+        <section className="om-dashboard-focus" data-phase="PHASE_116_SINGLE_APPROVAL_DESK">
+          <aside className="om-dashboard-focus-card">
+            <span>Owner focus</span>
+            <h2>One desk. No duplicate boxes.</h2>
+            <p>
+              Churvox keeps Input Tray, Processing Line and Output Log in the background.
+              The dashboard only shows what needs owner action now.
+            </p>
 
-          <MachineLane
-            title="Processing Line"
-            subtitle="What Churvox is checking"
-            items={machine.processing}
-            empty="Nothing needs processing right now."
-            onOpen={openSlip}
-          />
+            <div>
+              <article>
+                <b>{machine.approval.length}</b>
+                <small>Approval slips waiting</small>
+              </article>
+              <article>
+                <b>{outputLog.length}</b>
+                <small>Actions recorded this session</small>
+              </article>
+            </div>
+          </aside>
 
-          <section className="om-approval-desk">
+          <section className="om-approval-desk om-approval-desk-main">
             <header>
               <div>
                 <span>Open by default</span>
@@ -5661,7 +5627,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
                 <section className="om-done-state">
                   <span />
                   <strong>No approvals waiting.</strong>
-                  <p>When workers complete jobs, quotes age, invoices go unpaid, or a request comes in, the machine will prepare a work slip here.</p>
+                  <p>When workers complete jobs, quotes age, invoices go unpaid, or a request comes in, Churvox will prepare one clean work slip here.</p>
                 </section>
               )}
 
@@ -5678,20 +5644,6 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
               ) : null}
             </div>
           </section>
-
-          <MachineLane
-            title="Output Log"
-            subtitle="Quiet trail"
-            items={outputLog.map((item) => ({
-              ...item,
-              eyebrow: item.type,
-              need: item.detail,
-              kind: "output",
-            }))}
-            empty="Approved actions will appear here."
-            onOpen={() => {}}
-            quiet
-          />
         </section>
           </>
         ) : (
