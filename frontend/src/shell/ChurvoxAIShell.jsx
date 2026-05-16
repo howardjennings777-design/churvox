@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
 import "./ChurvoxOperatorOS.css";
+// PHASE_59_REMOVE_APPROVAL_CONTEXT_ROW
 // PHASE_58_REMOVE_MODAL_META_BOXES
 
 const API_BASE = (() => {
@@ -3157,33 +3158,7 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
           <button type="button" aria-label="Close Smart Hub pop-up" onClick={onClose}>×</button>
         </header>
 
-        <section className="cx-record-machine-panel">
-          <article className="cx-record-machine-primary">
-            <span>What Churvox found</span>
-            <h3>{recordContext.found}</h3>
-            <p>{recordContext.prepared}</p>
-            <AiReadinessBadge context={recordContext} />
-          </article>
-
-          <article>
-            <span>What Churvox checked</span>
-            <ul>
-              {recordContext.checked.map((point) => (
-                <li key={point}>{point}</li>
-              ))}
-            </ul>
-          </article>
-
-          <article>
-            <span>Owner decision</span>
-            <p>{recordContext.approvalPreview}</p>
-            {recordContext.missing?.length ? (
-              <b>Needs: {recordContext.missing.join(" · ")}</b>
-            ) : (
-              <b>{recordContext.confidenceLabel}</b>
-            )}
-          </article>
-        </section>
+        {/* Phase 59: removed noisy readiness/found/checked/prepared row */}
 
         <section className="cx-record-facts-panel">
           {recordFacts.map((fact) => (
@@ -3194,14 +3169,7 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
           ))}
         </section>
 
-        <section className="cx-record-next-panel">
-          <span>What the owner can do here</span>
-          <div>
-            {recordNextActions.map((action) => (
-              <b key={action}>{action}</b>
-            ))}
-          </div>
-        </section>
+        {/* Phase 59: removed noisy next-action strip */}
 
         <section className="cx-command-modal-grid">
           <label>

@@ -9948,3 +9948,37 @@ button.primary,
 .cx-command-modal-grid {
   margin-top: 14px;
 }
+
+
+/* PHASE_59_REMOVE_APPROVAL_CONTEXT_ROW */
+.cx-record-machine-panel,
+.cx-record-facts-panel,
+.cx-record-next-panel,
+.cx-command-modal .cx-record-machine-panel,
+.cx-command-modal .cx-record-facts-panel,
+.cx-command-modal .cx-record-next-panel,
+.cx-smart-hub-modal .cx-record-machine-panel,
+.cx-smart-hub-modal .cx-record-facts-panel,
+.cx-smart-hub-modal .cx-record-next-panel,
+.cx-command-modal [class*="readiness"],
+.cx-command-modal [class*="found"],
+.cx-command-modal [class*="checked"],
+.cx-command-modal [class*="prepared"],
+.cx-smart-hub-modal [class*="readiness"],
+.cx-smart-hub-modal [class*="found"],
+.cx-smart-hub-modal [class*="checked"],
+.cx-smart-hub-modal [class*="prepared"] {
+  display: none !important;
+}
+
+.cx-command-modal header {
+  margin-bottom: 18px !important;
+}
+
+.cx-command-modal-grid {
+  margin-top: 18px !important;
+}
+
+.cx-command-modal {
+  padding-top: 22px !important;
+}
