@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_103_TAPPABLE_DASHBOARD_ADVANCED_TOOLS
 // PHASE_102_REMOVE_DASHBOARD_FEATURE_STACK
 import TopPlayerFeatureStack from "./TopPlayerFeatureStack";
 // PHASE_100_FILL_PUBLIC_ACCESS_EMPTY_BOX
@@ -4625,6 +4626,54 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
     },
   ];
 
+  const dashboardAdvancedTools = [
+    {
+      id: "advanced-customer-links",
+      kind: "settings",
+      eyebrow: "Advanced tool",
+      title: "Customer links",
+      need: "Customer portal links and proof links stay in the background until the owner needs to share or review them.",
+      customerMessage: "Churvox can prepare customer-facing links for jobs, quotes, invoices and proof, then the owner approves what gets shared.",
+      ownerNote: "Use this when customer access, proof links or portal sharing needs owner review.",
+    },
+    {
+      id: "advanced-growth-loop",
+      kind: "cashflow",
+      eyebrow: "Advanced tool",
+      title: "Growth loop",
+      need: "Reviews, referrals and follow-ups can be prepared after completed work.",
+      customerMessage: "Churvox can prepare review requests, referral nudges and follow-up wording from real completed job context.",
+      ownerNote: "Approval-first. Nothing is sent unless the owner approves.",
+    },
+    {
+      id: "advanced-dispatch",
+      kind: "dispatch",
+      eyebrow: "Advanced tool",
+      title: "Dispatch",
+      need: "Unassigned jobs and worker-fit checks can become owner-approved dispatch slips.",
+      customerMessage: "Churvox can recommend worker assignment using job context, workload and missing worker checks.",
+      ownerNote: "Use this when jobs need workers or schedule attention.",
+    },
+    {
+      id: "advanced-margin-guard",
+      kind: "invoice",
+      eyebrow: "Advanced tool",
+      title: "Margin guard",
+      need: "Churvox can flag missing amounts, weak pricing context and invoice risks before approval.",
+      customerMessage: "Churvox can prepare invoice checks so the owner sees missing amounts, job proof and pricing notes before approving.",
+      ownerNote: "This protects pricing and cashflow. Owner approves before invoice action.",
+    },
+    {
+      id: "advanced-work-packs",
+      kind: "proof",
+      eyebrow: "Advanced tool",
+      title: "Work packs",
+      need: "Proof, job notes and invoice wording can be bundled into a clean owner-approved pack.",
+      customerMessage: "Churvox can prepare job proof, notes, photos and invoice wording into one reviewable work pack.",
+      ownerNote: "Useful for proof-to-paid admin and customer-ready records.",
+    },
+  ];
+
   const nav = [
     ["Operator Machine", "dashboard"],
     ["Jobs", "jobs"],
@@ -4700,14 +4749,14 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
           ))}
         </section>
 
-        <section className="om-dashboard-quiet-tools" data-phase="PHASE_102_REMOVE_DASHBOARD_FEATURE_STACK">
+        <section className="om-dashboard-quiet-tools" data-phase="PHASE_103_TAPPABLE_DASHBOARD_ADVANCED_TOOLS">
           <span>Advanced tools ready</span>
-          <b>Customer links</b>
-          <b>Growth loop</b>
-          <b>Dispatch</b>
-          <b>Margin guard</b>
-          <b>Work packs</b>
-          <small>Kept in the background. Churvox brings them forward only when they need owner action.</small>
+          {dashboardAdvancedTools.map((tool) => (
+            <button type="button" key={tool.id} onClick={() => openSlip(tool)}>
+              {tool.title}
+            </button>
+          ))}
+          <small>Tap a tool to open one Work Slip. Churvox keeps the power in the background and brings it forward only when it needs owner action.</small>
         </section>
 
         <section className="om-machine-grid">
