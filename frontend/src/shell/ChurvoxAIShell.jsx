@@ -6120,7 +6120,13 @@ function AskChurvoxCommand({ onRunCommand }) {
 
   function submit(event) {
     event.preventDefault();
-    run();
+
+    const formValue =
+      event.currentTarget?.elements?.askCommand?.value ||
+      event.currentTarget?.querySelector?.("input")?.value ||
+      query;
+
+    run(formValue);
   }
 
   return (
@@ -6133,12 +6139,13 @@ function AskChurvoxCommand({ onRunCommand }) {
 
       <form onSubmit={submit}>
         <input
+          name="askCommand"
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
             setHint("");
           }}
-          placeholder="Try: what needs approval, add client, import clients, ready invoices..."
+          placeholder="Try: what needs approval, add client, add quote, add invoice..."
         />
         <button type="submit">Run</button>
       </form>
