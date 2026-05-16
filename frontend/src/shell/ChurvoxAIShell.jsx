@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
 import "./ChurvoxOperatorOS.css";
+// PHASE_58_REMOVE_MODAL_META_BOXES
 
 const API_BASE = (() => {
   const raw =
@@ -4522,23 +4523,9 @@ function SmartHubBoxModal({
           </div>
         </header>
 
-        <section className="cx-smart-modal-summary">
-          <article>
-            <span>Found</span>
-            <strong>{modalCount}</strong>
-            <small>{modalCountLabel}</small>
-          </article>
-          <article>
-            <span>Mode</span>
-            <strong>Review</strong>
-            <small>Owner approves first</small>
-          </article>
-          <article>
-            <span>Safety</span>
-            <strong>No auto-send</strong>
-            <small>Owner controls decisions</small>
-          </article>
-        </section>
+        
+        {/* Phase 58: removed noisy Found / Mode / Safety summary boxes */}
+
 
         <section className="cx-smart-modal-list">
           {rows.length ? rows.map((item, index) => {

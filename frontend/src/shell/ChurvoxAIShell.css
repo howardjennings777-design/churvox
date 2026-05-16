@@ -9916,3 +9916,35 @@ button.primary,
     min-height: 180px;
   }
 }
+
+
+/* PHASE_58_REMOVE_MODAL_META_BOXES */
+.cx-smart-hub-modal-summary,
+.cx-hub-modal-summary,
+.cx-hub-box-modal-summary,
+.cx-smart-modal-summary,
+.cx-modal-summary-grid,
+.cx-command-summary-strip,
+.cx-command-modal-summary,
+.cx-approval-summary-strip,
+.cx-approval-meta-strip,
+.cx-owner-command-summary,
+.cx-modal-meta-grid {
+  display: none !important;
+}
+
+.cx-command-modal header,
+.cx-smart-hub-modal header,
+.cx-hub-box-modal header {
+  margin-bottom: 12px;
+}
+
+.cx-command-modal,
+.cx-smart-hub-modal,
+.cx-hub-box-modal {
+  overflow: auto;
+}
+
+.cx-command-modal-grid {
+  margin-top: 14px;
+}
