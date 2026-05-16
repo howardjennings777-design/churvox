@@ -362,6 +362,447 @@ import App from "./App";
 import "./index.css";
 
 
+// PHASE_147_PROFESSIONAL_INVOICE_OVERLAY
+// This sits on top of the forced Phase 146 invoice and replaces the visual with
+// a cleaner, professional A4-style invoice while keeping the same approval buttons.
+(function churvoxProfessionalInvoiceOverlay() {
+  try {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    function text(el, fallback = "") {
+      return String(el?.textContent || fallback || "").replace(/\s+/g, " ").trim();
+    }
+
+    function moneyNumber(value) {
+      const raw = String(value || "").replace(/[^0-9.]/g, "");
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function money(value) {
+      const n = moneyNumber(value);
+      if (!n || n <= 0) return "$0.00";
+      return new Intl.NumberFormat("en-NZ", {
+        style: "currency",
+        currency: "NZD",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(n);
+    }
+
+    function ensureStyle() {
+      if (document.getElementById("churvox-phase-147-professional-invoice-style")) return;
+
+      const style = document.createElement("style");
+      style.id = "churvox-phase-147-professional-invoice-style";
+      style.textContent = `
+        .cx-phase-146-invoice-paper {
+          display: none !important;
+        }
+
+        .cx-phase-147-invoice-paper {
+          width: min(100%, 920px) !important;
+          min-height: 1040px !important;
+          margin: 18px auto 24px !important;
+          background: #fffef9 !important;
+          color: #151510 !important;
+          border: 1px solid rgba(21,21,16,0.16) !important;
+          border-radius: 14px !important;
+          overflow: hidden !important;
+          box-shadow: 0 24px 70px rgba(21,21,16,0.18) !important;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+        }
+
+        .cx-phase-147-top-strip {
+          height: 12px !important;
+          background: linear-gradient(90deg, #151510 0%, #151510 76%, #c8ff42 76%, #c8ff42 100%) !important;
+        }
+
+        .cx-phase-147-header {
+          display: grid !important;
+          grid-template-columns: 1fr 280px !important;
+          gap: 36px !important;
+          padding: 42px 52px 28px !important;
+          border-bottom: 1px solid rgba(21,21,16,0.12) !important;
+        }
+
+        .cx-phase-147-business h2 {
+          margin: 0 0 10px !important;
+          color: #151510 !important;
+          font-size: 30px !important;
+          line-height: 1 !important;
+          letter-spacing: -0.05em !important;
+          font-weight: 950 !important;
+        }
+
+        .cx-phase-147-business p,
+        .cx-phase-147-meta p,
+        .cx-phase-147-card p,
+        .cx-phase-147-payment p {
+          margin: 4px 0 !important;
+          color: #625d50 !important;
+          font-size: 13px !important;
+          line-height: 1.45 !important;
+          font-weight: 650 !important;
+        }
+
+        .cx-phase-147-title {
+          text-align: right !important;
+        }
+
+        .cx-phase-147-title span,
+        .cx-phase-147-label,
+        .cx-phase-147-payment span {
+          display: block !important;
+          color: #6f6a5b !important;
+          font-size: 10px !important;
+          line-height: 1 !important;
+          font-weight: 950 !important;
+          letter-spacing: 0.14em !important;
+          text-transform: uppercase !important;
+        }
+
+        .cx-phase-147-title h1 {
+          margin: 8px 0 16px !important;
+          color: #151510 !important;
+          font-size: 54px !important;
+          line-height: 0.9 !important;
+          letter-spacing: -0.085em !important;
+          font-weight: 950 !important;
+        }
+
+        .cx-phase-147-meta {
+          display: grid !important;
+          gap: 8px !important;
+          padding: 16px !important;
+          background: #f7efd9 !important;
+          border: 1px solid rgba(21,21,16,0.12) !important;
+          border-radius: 14px !important;
+          text-align: left !important;
+        }
+
+        .cx-phase-147-meta div {
+          display: flex !important;
+          justify-content: space-between !important;
+          gap: 14px !important;
+        }
+
+        .cx-phase-147-meta strong {
+          color: #151510 !important;
+          font-size: 13px !important;
+          font-weight: 950 !important;
+        }
+
+        .cx-phase-147-parties {
+          display: grid !important;
+          grid-template-columns: 1fr 1fr !important;
+          gap: 18px !important;
+          padding: 28px 52px !important;
+        }
+
+        .cx-phase-147-card {
+          min-height: 170px !important;
+          padding: 22px !important;
+          background: #fbf6ea !important;
+          border: 1px solid rgba(21,21,16,0.11) !important;
+          border-radius: 14px !important;
+        }
+
+        .cx-phase-147-card strong {
+          display: block !important;
+          margin: 12px 0 10px !important;
+          color: #151510 !important;
+          font-size: 22px !important;
+          line-height: 1.08 !important;
+          font-weight: 950 !important;
+          letter-spacing: -0.04em !important;
+        }
+
+        .cx-phase-147-table {
+          margin: 8px 52px 28px !important;
+          border: 1px solid rgba(21,21,16,0.16) !important;
+          border-radius: 12px !important;
+          overflow: hidden !important;
+        }
+
+        .cx-phase-147-table-head,
+        .cx-phase-147-table-row {
+          display: grid !important;
+          grid-template-columns: minmax(280px, 1fr) 70px 120px 120px !important;
+        }
+
+        .cx-phase-147-table-head {
+          background: #151510 !important;
+          color: #fffef9 !important;
+        }
+
+        .cx-phase-147-table-head span {
+          padding: 14px 16px !important;
+          color: #fffef9 !important;
+          font-size: 10px !important;
+          font-weight: 950 !important;
+          letter-spacing: 0.12em !important;
+          text-transform: uppercase !important;
+        }
+
+        .cx-phase-147-table-row {
+          min-height: 170px !important;
+          background: #fffef9 !important;
+        }
+
+        .cx-phase-147-table-row > div,
+        .cx-phase-147-table-row > span {
+          padding: 22px 16px !important;
+          color: #151510 !important;
+          border-top: 1px solid rgba(21,21,16,0.08) !important;
+          font-size: 13px !important;
+          font-weight: 800 !important;
+        }
+
+        .cx-phase-147-table-row > span {
+          text-align: right !important;
+        }
+
+        .cx-phase-147-table-row strong {
+          display: block !important;
+          margin: 0 0 8px !important;
+          color: #151510 !important;
+          font-size: 16px !important;
+          font-weight: 950 !important;
+        }
+
+        .cx-phase-147-table-row p {
+          margin: 0 !important;
+          color: #625d50 !important;
+          font-size: 13px !important;
+          line-height: 1.45 !important;
+          font-weight: 650 !important;
+        }
+
+        .cx-phase-147-bottom {
+          display: grid !important;
+          grid-template-columns: 1fr 330px !important;
+          gap: 28px !important;
+          padding: 0 52px 52px !important;
+        }
+
+        .cx-phase-147-payment {
+          padding: 20px !important;
+          background: #fbf6ea !important;
+          border: 1px solid rgba(21,21,16,0.11) !important;
+          border-radius: 14px !important;
+        }
+
+        .cx-phase-147-totals {
+          padding: 18px 20px !important;
+          background: #fbf6ea !important;
+          border: 1px solid rgba(21,21,16,0.13) !important;
+          border-radius: 14px !important;
+        }
+
+        .cx-phase-147-totals div {
+          display: flex !important;
+          justify-content: space-between !important;
+          gap: 18px !important;
+          padding: 11px 0 !important;
+          color: #6f6a5b !important;
+          border-bottom: 1px solid rgba(21,21,16,0.1) !important;
+          font-size: 13px !important;
+          font-weight: 850 !important;
+        }
+
+        .cx-phase-147-totals strong {
+          color: #151510 !important;
+          font-weight: 950 !important;
+        }
+
+        .cx-phase-147-totals .total {
+          align-items: center !important;
+          margin-top: 8px !important;
+          padding-top: 18px !important;
+          border-top: 2px solid #151510 !important;
+          border-bottom: 0 !important;
+          color: #151510 !important;
+          font-size: 17px !important;
+        }
+
+        .cx-phase-147-totals .total strong {
+          min-width: 145px !important;
+          padding: 10px 13px !important;
+          background: #151510 !important;
+          color: #fffef9 !important;
+          border-radius: 12px !important;
+          text-align: right !important;
+          font-size: 21px !important;
+          letter-spacing: -0.04em !important;
+        }
+
+        @media (max-width: 860px) {
+          .cx-phase-147-invoice-paper {
+            min-height: auto !important;
+          }
+
+          .cx-phase-147-header,
+          .cx-phase-147-parties,
+          .cx-phase-147-bottom {
+            grid-template-columns: 1fr !important;
+            padding-left: 24px !important;
+            padding-right: 24px !important;
+          }
+
+          .cx-phase-147-title {
+            text-align: left !important;
+          }
+
+          .cx-phase-147-table {
+            margin-left: 24px !important;
+            margin-right: 24px !important;
+            overflow-x: auto !important;
+          }
+
+          .cx-phase-147-table-head,
+          .cx-phase-147-table-row {
+            min-width: 680px !important;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    function buildOverlay() {
+      ensureStyle();
+
+      const oldPaper = document.querySelector(".cx-phase-146-invoice-paper");
+      if (!oldPaper) return;
+
+      const modal = oldPaper.closest(".cx-phase-146-invoice-modal") || oldPaper.parentElement;
+      if (!modal) return;
+
+      let newPaper = modal.querySelector(".cx-phase-147-invoice-paper");
+      if (!newPaper) {
+        newPaper = document.createElement("section");
+        newPaper.className = "cx-phase-147-invoice-paper";
+        oldPaper.insertAdjacentElement("beforebegin", newPaper);
+      }
+
+      const infoCards = oldPaper.querySelectorAll(".cx-phase-146-invoice-info article");
+      const businessCard = infoCards[0];
+      const clientCard = infoCards[1];
+
+      const businessName = text(businessCard?.querySelector("strong"), "Your business");
+      const businessLines = Array.from(businessCard?.querySelectorAll("p") || []).map((p) => text(p)).filter(Boolean);
+      const clientName = text(clientCard?.querySelector("strong"), "Client name needed");
+      const clientLines = Array.from(clientCard?.querySelectorAll("p") || []).map((p) => text(p)).filter(Boolean);
+
+      const amountText = text(oldPaper.querySelector(".cx-phase-146-totals .total strong"), "$0.00");
+      const amount = moneyNumber(amountText);
+      const subtotal = amount > 0 ? amount / 1.15 : 0;
+      const gst = amount > 0 ? amount - subtotal : 0;
+      const lineTitle = text(oldPaper.querySelector(".cx-phase-146-line-row strong"), "Completed service");
+      const lineDescription = text(oldPaper.querySelector(".cx-phase-146-line-row p"), "Completed service prepared for owner approval.");
+      const reference = text(oldPaper.querySelector(".cx-phase-146-invoice-no strong"), "DRAFT");
+
+      newPaper.innerHTML = `
+        <div class="cx-phase-147-top-strip"></div>
+
+        <header class="cx-phase-147-header">
+          <section class="cx-phase-147-business">
+            <h2>${businessName}</h2>
+            <p>${businessLines[0] || "hello@yourbusiness.co.nz"}</p>
+            <p>${businessLines[1] || "Business phone"}</p>
+            <p>${businessLines[2] && businessLines[2] !== "15" ? businessLines[2] : "GST / tax details not set"}</p>
+          </section>
+
+          <section class="cx-phase-147-title">
+            <span>Tax invoice</span>
+            <h1>Invoice</h1>
+            <div class="cx-phase-147-meta">
+              <div><p>Invoice #</p><strong>${reference}</strong></div>
+              <div><p>Issue date</p><strong>${new Date().toISOString().slice(0, 10)}</strong></div>
+              <div><p>Due date</p><strong>Due on receipt</strong></div>
+            </div>
+          </section>
+        </header>
+
+        <section class="cx-phase-147-parties">
+          <article class="cx-phase-147-card">
+            <span class="cx-phase-147-label">Bill to</span>
+            <strong>${clientName}</strong>
+            <p>${clientLines[0] || "client@email.co.nz"}</p>
+            <p>${clientLines[1] || "Client address"}</p>
+            <p>${clientLines[2] || ""}</p>
+          </article>
+
+          <article class="cx-phase-147-card">
+            <span class="cx-phase-147-label">Job / work details</span>
+            <strong>${lineTitle}</strong>
+            <p>${lineDescription}</p>
+          </article>
+        </section>
+
+        <section class="cx-phase-147-table">
+          <div class="cx-phase-147-table-head">
+            <span>Description</span>
+            <span>Qty</span>
+            <span>Rate</span>
+            <span>Amount</span>
+          </div>
+
+          <div class="cx-phase-147-table-row">
+            <div>
+              <strong>${lineTitle}</strong>
+              <p>${lineDescription}</p>
+            </div>
+            <span>1</span>
+            <span>${amount > 0 ? money(amount) : "Set amount"}</span>
+            <span>${amount > 0 ? money(amount) : "Set amount"}</span>
+          </div>
+        </section>
+
+        <section class="cx-phase-147-bottom">
+          <article class="cx-phase-147-payment">
+            <span>Payment details</span>
+            <p>Add bank account, payment link, or payment instructions before sending.</p>
+            <span>Notes</span>
+            <p>Thank you for your business.</p>
+          </article>
+
+          <article class="cx-phase-147-totals">
+            <div><span>Subtotal</span><strong>${amount > 0 ? money(subtotal) : "$0.00"}</strong></div>
+            <div><span>GST 15%</span><strong>${amount > 0 ? money(gst) : "$0.00"}</strong></div>
+            <div class="total"><span>Total due</span><strong>${amount > 0 ? money(amount) : "Amount required"}</strong></div>
+          </article>
+        </section>
+      `;
+    }
+
+    let timer = null;
+    function schedule() {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(buildOverlay, 120);
+    }
+
+    window.addEventListener("load", schedule);
+    document.addEventListener("click", schedule, true);
+    document.addEventListener("input", schedule, true);
+    document.addEventListener("change", schedule, true);
+
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    schedule();
+  } catch {
+    // keep app boot safe
+  }
+})();
+
+
+
+
 // PHASE_146_FORCE_EXACT_OLD_INVOICE_READY_MODAL
 // This targets the OLD visible invoice modal from the screenshot:
 // "Invoice ready" + "Approve & email PDF" + "Amount owing".
