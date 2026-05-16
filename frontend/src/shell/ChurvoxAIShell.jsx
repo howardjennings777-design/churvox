@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
+// PHASE_133_HIDE_NON_CRITICAL_SYNC_WARNING
 // PHASE_132_FAST_LOADING_LIVE_CACHE
 import OperatorMachine, { OperatorLanding } from "../operator-machine/OperatorMachine";
 
@@ -1122,7 +1123,7 @@ function useLiveChurvoxData(authed) {
           return {
             ...cached,
             loading: true,
-            error: "Refreshing latest data...",
+            error: "",
           };
         }
 
@@ -1190,6 +1191,19 @@ function useLiveChurvoxData(authed) {
         }),
       ].slice(0, 12);
 
+      const coreResults = results.slice(0, 5);
+      const coreAllFailed = coreResults.every((result) => result.status === "rejected");
+      const coreHasData = Boolean(
+        rawJobs.length ||
+        rawClients.length ||
+        rawTeam.length ||
+        rawQuotes.length ||
+        rawInvoices.length
+      );
+      const liveDataError = coreAllFailed && !coreHasData
+        ? "Live data is taking longer than expected. Refresh once or try again shortly."
+        : "";
+
       const readyInvoices = rawInvoices.filter((item) => {
         const status = statusText(item, "").toLowerCase();
         return status.includes("draft") || status.includes("ready") || status.includes("overdue");
@@ -1202,7 +1216,7 @@ function useLiveChurvoxData(authed) {
 
       const nextState = {
         loading: false,
-        error: results.some((result) => result.status === "rejected") ? "Some live data is still syncing." : "",
+        error: liveDataError,
         jobs: mappedJobs,
         clients: mappedClients,
         team: mappedTeam,
