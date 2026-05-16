@@ -488,6 +488,40 @@ app.add_middleware(
 
 
 
+
+# PHASE_140_PATCH_EXACT_BACKEND_CORS_ANCHOR
+# Final safety layer for browser CORS: stamp Churvox CORS headers on every response,
+# including auth errors / API errors / preflight requests.
+@app.middleware("http")
+async def churvox_force_cors_headers(request: Request, call_next):
+    origin = request.headers.get("origin") or request.headers.get("Origin") or ""
+    allowed_origins = set(CHURVOX_ALLOWED_ORIGINS + ALLOWED_ORIGINS)
+
+    allow_origin = ""
+    if origin in allowed_origins:
+        allow_origin = origin
+    elif origin.startswith("https://") and origin.endswith(".churvox.com"):
+        allow_origin = origin
+
+    if request.method.upper() == "OPTIONS":
+        response = Response(status_code=204)
+    else:
+        response = await call_next(request)
+
+    if allow_origin:
+        response.headers["Access-Control-Allow-Origin"] = allow_origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = request.headers.get(
+            "access-control-request-headers",
+            "Authorization,Content-Type,Accept,Origin,X-Requested-With"
+        )
+        response.headers["Access-Control-Expose-Headers"] = "*"
+        response.headers["Vary"] = "Origin"
+
+    return response
+
+
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://www.churvox.com").rstrip("/")
 BACKEND_PUBLIC_URL = os.environ.get("BACKEND_PUBLIC_URL", "https://grassley-backend.onrender.com").rstrip("/")
