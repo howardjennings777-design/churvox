@@ -1,3 +1,4 @@
+// PHASE_142_FORCE_PROPER_INVOICE_TEMPLATE_LIVE
 // PHASE_141_PROPER_A4_INVOICE_TEMPLATE
 // PHASE_138_FIX_EXACT_BAD_INVOICE_JSX_LINE
 // PHASE_136_REAL_EDITABLE_INVOICE_TEMPLATE
@@ -4886,7 +4887,7 @@ function SmartHubBoxModal({
                       <section className="cx-real-invoice-sheet" aria-label="Editable invoice template">
                         <header className="cx-real-invoice-top">
                           <div>
-                            <span>Churvox invoice draft</span>
+                            <span>Proper invoice template · PHASE 142</span>
                             <h4>INVOICE</h4>
                             <p>Work goes in. Churvox prepares the admin. Owner approves.</p>
                           </div>

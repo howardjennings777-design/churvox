@@ -4941,3 +4941,294 @@ a,
     width: 100%;
   }
 }
+
+
+/* PHASE_142_FORCE_PROPER_INVOICE_TEMPLATE_LIVE
+   Force the invoice Work Slip to render as a proper A4-style document.
+   Added to shell CSS files because ChurvoxAIShell imports these directly.
+*/
+.cx-smart-modal-edit .cx-edit-invoice-template-wrap,
+.cx-smart-modal-edit .cx-edit-invoice-draft {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-sheet {
+  width: min(100%, 920px) !important;
+  min-height: 1120px !important;
+  margin: 0 auto 24px !important;
+  background: #fffdf8 !important;
+  color: #161611 !important;
+  border: 1px solid rgba(22, 22, 17, 0.16) !important;
+  border-radius: 18px !important;
+  overflow: hidden !important;
+  box-shadow: 0 30px 110px rgba(22, 22, 17, 0.22) !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-top {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  gap: 28px !important;
+  align-items: start !important;
+  padding: 46px 52px 38px !important;
+  background: linear-gradient(90deg, #161611 0%, #161611 58%, #c8ff42 58%, #c8ff42 100%) !important;
+  color: #fffdf8 !important;
+  border-bottom: 0 !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-top span,
+.cx-smart-modal-edit .cx-real-invoice-top p {
+  color: rgba(255, 253, 248, 0.82) !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-top h4 {
+  margin: 8px 0 !important;
+  color: #fffdf8 !important;
+  font-size: clamp(58px, 8vw, 96px) !important;
+  line-height: 0.88 !important;
+  letter-spacing: -0.09em !important;
+  font-weight: 950 !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-top aside {
+  min-width: 190px !important;
+  padding: 18px !important;
+  background: #fffdf8 !important;
+  color: #161611 !important;
+  border: 0 !important;
+  border-radius: 18px !important;
+  text-align: right !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-top aside b {
+  display: inline-flex !important;
+  margin-bottom: 12px !important;
+  padding: 7px 12px !important;
+  border-radius: 999px !important;
+  background: #c8ff42 !important;
+  color: #161611 !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-top aside strong {
+  display: block !important;
+  color: #161611 !important;
+  font-size: 24px !important;
+  font-weight: 950 !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-parties {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 0.9fr !important;
+  gap: 18px !important;
+  padding: 38px 52px 22px !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-parties article {
+  min-height: 160px !important;
+  padding: 20px !important;
+  background: #f8f0dd !important;
+  border: 1px solid rgba(22, 22, 17, 0.12) !important;
+  border-radius: 18px !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-parties span,
+.cx-smart-modal-edit .cx-real-invoice-notes span,
+.cx-smart-modal-edit .cx-real-invoice-editor header span {
+  display: block !important;
+  color: #6f6a5b !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.13em !important;
+  text-transform: uppercase !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-parties strong {
+  display: block !important;
+  margin: 10px 0 8px !important;
+  color: #161611 !important;
+  font-size: 21px !important;
+  line-height: 1.05 !important;
+  font-weight: 950 !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-parties p {
+  margin: 5px 0 !important;
+  color: #6f6a5b !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  font-weight: 700 !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-date-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  padding: 10px 0 !important;
+  border-bottom: 1px solid rgba(22, 22, 17, 0.1) !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-table {
+  margin: 24px 52px 28px !important;
+  border: 1px solid rgba(22, 22, 17, 0.14) !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-table-head,
+.cx-smart-modal-edit .cx-real-invoice-table-row {
+  display: grid !important;
+  grid-template-columns: minmax(260px, 1fr) 74px 128px 128px !important;
+  align-items: stretch !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-table-head {
+  background: #161611 !important;
+  color: #fffdf8 !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-table-head span {
+  padding: 14px 16px !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-table-row {
+  min-height: 150px !important;
+  background: #fffdf8 !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-table-row > div,
+.cx-smart-modal-edit .cx-real-invoice-table-row > span {
+  padding: 24px 18px !important;
+  border-top: 1px solid rgba(22, 22, 17, 0.08) !important;
+  color: #161611 !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-table-row > span {
+  text-align: right !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-table-row strong {
+  display: block !important;
+  margin-bottom: 8px !important;
+  color: #161611 !important;
+  font-size: 17px !important;
+  font-weight: 950 !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-table-row p {
+  margin: 0 !important;
+  color: #6f6a5b !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+  font-weight: 650 !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-bottom {
+  display: grid !important;
+  grid-template-columns: 1fr minmax(280px, 360px) !important;
+  gap: 24px !important;
+  padding: 0 52px 52px !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-notes,
+.cx-smart-modal-edit .cx-real-invoice-totals {
+  padding: 20px !important;
+  border: 1px solid rgba(22, 22, 17, 0.13) !important;
+  border-radius: 18px !important;
+  background: #f8f0dd !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-notes p {
+  margin: 8px 0 18px !important;
+  color: #5f5a4d !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  font-weight: 700 !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-totals div {
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  padding: 10px 0 !important;
+  border-bottom: 1px solid rgba(22, 22, 17, 0.1) !important;
+  color: #6f6a5b !important;
+  font-weight: 850 !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-totals .grand {
+  align-items: center !important;
+  margin-top: 8px !important;
+  padding-top: 18px !important;
+  border-top: 2px solid #161611 !important;
+  border-bottom: 0 !important;
+  color: #161611 !important;
+  font-size: 18px !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-totals .grand strong {
+  min-width: 150px !important;
+  padding: 10px 14px !important;
+  border-radius: 15px !important;
+  background: #161611 !important;
+  color: #fffdf8 !important;
+  text-align: right !important;
+  font-size: 22px !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-editor {
+  width: min(100%, 920px) !important;
+  margin: 0 auto !important;
+  padding: 22px !important;
+  background: #f4ead4 !important;
+  border: 1px solid rgba(22, 22, 17, 0.12) !important;
+  border-radius: 22px !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-editor-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  margin-top: 18px !important;
+}
+
+.cx-smart-modal-edit .cx-real-invoice-editor-grid label.wide {
+  grid-column: 1 / -1 !important;
+}
+
+@media (max-width: 860px) {
+  .cx-smart-modal-edit .cx-real-invoice-top,
+  .cx-smart-modal-edit .cx-real-invoice-parties,
+  .cx-smart-modal-edit .cx-real-invoice-bottom,
+  .cx-smart-modal-edit .cx-real-invoice-editor-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cx-smart-modal-edit .cx-real-invoice-top,
+  .cx-smart-modal-edit .cx-real-invoice-parties,
+  .cx-smart-modal-edit .cx-real-invoice-bottom {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+
+  .cx-smart-modal-edit .cx-real-invoice-table {
+    margin-left: 24px !important;
+    margin-right: 24px !important;
+    overflow-x: auto !important;
+  }
+
+  .cx-smart-modal-edit .cx-real-invoice-table-head,
+  .cx-smart-modal-edit .cx-real-invoice-table-row {
+    min-width: 680px !important;
+  }
+}
+
