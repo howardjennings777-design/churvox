@@ -9156,3 +9156,362 @@ select {
   }
 }
 
+
+/* PHASE_136_REAL_EDITABLE_INVOICE_TEMPLATE */
+.cx-edit-invoice-template-wrap {
+  display: grid;
+  gap: 22px;
+  width: 100%;
+}
+
+.cx-real-invoice-sheet {
+  width: min(100%, 980px);
+  margin: 0 auto;
+  background: #fffdf7;
+  color: #161611;
+  border: 1px solid rgba(22, 22, 17, 0.14);
+  border-radius: 26px;
+  overflow: hidden;
+  box-shadow: 0 28px 90px rgba(22, 22, 17, 0.18);
+}
+
+.cx-real-invoice-top {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  padding: 34px;
+  background:
+    radial-gradient(circle at top right, rgba(200, 255, 66, 0.38), transparent 32%),
+    linear-gradient(135deg, #fff6df, #f3ead8);
+  border-bottom: 1px solid rgba(22, 22, 17, 0.12);
+}
+
+.cx-real-invoice-top span,
+.cx-real-invoice-parties span,
+.cx-real-invoice-notes span,
+.cx-real-invoice-editor header span {
+  display: block;
+  color: #6f6a5b;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.cx-real-invoice-top h4 {
+  margin: 8px 0 8px;
+  color: #161611;
+  font-size: clamp(46px, 7vw, 82px);
+  line-height: 0.9;
+  letter-spacing: -0.085em;
+  font-weight: 950;
+}
+
+.cx-real-invoice-top p {
+  max-width: 520px;
+  margin: 0;
+  color: #6f6a5b;
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+.cx-real-invoice-top aside {
+  min-width: 190px;
+  align-self: start;
+  padding: 18px;
+  border: 1px solid rgba(22, 22, 17, 0.14);
+  border-radius: 22px;
+  background: rgba(255, 253, 247, 0.78);
+  text-align: right;
+}
+
+.cx-real-invoice-top aside b {
+  display: inline-flex;
+  margin-bottom: 12px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #c8ff42;
+  color: #161611;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.cx-real-invoice-top aside strong {
+  display: block;
+  color: #161611;
+  font-size: 24px;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+.cx-real-invoice-top aside small {
+  color: #6f6a5b;
+  font-weight: 800;
+}
+
+.cx-real-invoice-parties {
+  display: grid;
+  grid-template-columns: 1fr 1fr 0.8fr;
+  gap: 16px;
+  padding: 28px 34px;
+  border-bottom: 1px solid rgba(22, 22, 17, 0.1);
+}
+
+.cx-real-invoice-parties article {
+  min-height: 160px;
+  padding: 20px;
+  border: 1px solid rgba(22, 22, 17, 0.11);
+  border-radius: 20px;
+  background: #fbf3e1;
+}
+
+.cx-real-invoice-parties strong {
+  display: block;
+  margin: 10px 0 8px;
+  color: #161611;
+  font-size: 21px;
+  line-height: 1.05;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+.cx-real-invoice-parties p {
+  margin: 5px 0;
+  color: #6f6a5b;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.cx-real-invoice-date-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(22, 22, 17, 0.1);
+}
+
+.cx-real-invoice-date-row:last-child {
+  border-bottom: 0;
+}
+
+.cx-real-invoice-date-row small {
+  color: #6f6a5b;
+  font-weight: 850;
+}
+
+.cx-real-invoice-date-row strong {
+  margin: 0;
+  font-size: 15px;
+  text-align: right;
+}
+
+.cx-real-invoice-table {
+  margin: 30px 34px 22px;
+  border: 1px solid rgba(22, 22, 17, 0.14);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.cx-real-invoice-table-head,
+.cx-real-invoice-table-row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 74px 128px 128px;
+  align-items: stretch;
+}
+
+.cx-real-invoice-table-head {
+  background: #161611;
+  color: #fffdf7;
+}
+
+.cx-real-invoice-table-head span {
+  padding: 14px 16px;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cx-real-invoice-table-row {
+  background: #fffdf7;
+}
+
+.cx-real-invoice-table-row > div,
+.cx-real-invoice-table-row > span {
+  padding: 18px 16px;
+  border-top: 1px solid rgba(22, 22, 17, 0.08);
+  color: #161611;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.cx-real-invoice-table-row > span {
+  text-align: right;
+}
+
+.cx-real-invoice-table-row strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #161611;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.cx-real-invoice-table-row p {
+  margin: 0;
+  color: #6f6a5b;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 650;
+}
+
+.cx-real-invoice-bottom {
+  display: grid;
+  grid-template-columns: 1fr minmax(280px, 360px);
+  gap: 24px;
+  padding: 0 34px 34px;
+}
+
+.cx-real-invoice-notes {
+  padding: 20px;
+  border: 1px solid rgba(22, 22, 17, 0.11);
+  border-radius: 20px;
+  background: rgba(200, 255, 66, 0.13);
+}
+
+.cx-real-invoice-notes p {
+  margin: 8px 0 18px;
+  color: #5f5a4d;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+.cx-real-invoice-notes p:last-child {
+  margin-bottom: 0;
+}
+
+.cx-real-invoice-totals {
+  padding: 20px;
+  border: 1px solid rgba(22, 22, 17, 0.13);
+  border-radius: 22px;
+  background: #fbf3e1;
+}
+
+.cx-real-invoice-totals div {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(22, 22, 17, 0.1);
+  color: #6f6a5b;
+  font-weight: 850;
+}
+
+.cx-real-invoice-totals div:last-child {
+  border-bottom: 0;
+}
+
+.cx-real-invoice-totals strong {
+  color: #161611;
+  font-weight: 950;
+}
+
+.cx-real-invoice-totals .grand {
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 18px;
+  color: #161611;
+  font-size: 18px;
+}
+
+.cx-real-invoice-totals .grand strong {
+  padding: 10px 14px;
+  border-radius: 15px;
+  background: #c8ff42;
+  color: #161611;
+  font-size: 22px;
+  letter-spacing: -0.04em;
+}
+
+.cx-real-invoice-editor {
+  width: min(100%, 980px);
+  margin: 0 auto;
+  padding: 22px;
+  border: 1px solid rgba(22, 22, 17, 0.12);
+  border-radius: 24px;
+  background: #f8efd9;
+}
+
+.cx-real-invoice-editor header h4 {
+  margin: 4px 0 0;
+  color: #161611;
+  font-size: 22px;
+  letter-spacing: -0.04em;
+}
+
+.cx-real-invoice-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.cx-real-invoice-editor-grid label {
+  display: grid;
+  gap: 7px;
+  color: #514d42;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cx-real-invoice-editor-grid label.wide {
+  grid-column: 1 / -1;
+}
+
+.cx-real-invoice-editor-grid input,
+.cx-real-invoice-editor-grid select,
+.cx-real-invoice-editor-grid textarea {
+  width: 100%;
+  border: 1px solid rgba(22, 22, 17, 0.14);
+  border-radius: 15px;
+  background: #fffdf7;
+  color: #161611;
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.cx-real-invoice-editor-grid textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+@media (max-width: 760px) {
+  .cx-real-invoice-top,
+  .cx-real-invoice-parties,
+  .cx-real-invoice-bottom,
+  .cx-real-invoice-editor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-real-invoice-top aside {
+    text-align: left;
+  }
+
+  .cx-real-invoice-table {
+    overflow-x: auto;
+  }
+
+  .cx-real-invoice-table-head,
+  .cx-real-invoice-table-row {
+    min-width: 680px;
+  }
+}
+

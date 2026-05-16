@@ -1,3 +1,4 @@
+// PHASE_136_REAL_EDITABLE_INVOICE_TEMPLATE
 // PHASE_135_CLASSIC_INVOICE_SHEET_POLISH
 import React, { useEffect, useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
@@ -4855,114 +4856,202 @@ function SmartHubBoxModal({
             ) : null}
 
             {editingNeedsInvoiceDraft() ? (
-              <div className="cx-edit-invoice-draft cx-edit-invoice-draft-real cx-invoice-owner-preview-wrap">
-                <section className="cx-invoice-owner-preview">
-                  <div className="cx-invoice-owner-preview-head">
-                    <div>
-                      <span>Draft invoice</span>
-                      <h4>{editingDraft.invoiceTitle || `Invoice draft for ${editingDraft.invoiceClientName || "client"}`}</h4>
-                    </div>
-                    <b>{editingDraft.invoiceStatus || "Draft"}</b>
-                  </div>
+              <div className="cx-edit-invoice-draft cx-edit-invoice-template-wrap">
+                {(() => {
+                  const amountNumber = cxMoneyValue(editingDraft.invoiceAmount);
+                  const subtotalNumber = amountNumber > 0 ? amountNumber / 1.15 : 0;
+                  const gstNumber = amountNumber > 0 ? amountNumber - subtotalNumber : 0;
+                  const formatMoney = (value) => {
+                    const number = Number(value || 0);
+                    if (!Number.isFinite(number) || number <= 0) return "$0.00";
+                    return new Intl.NumberFormat("en-NZ", {
+                      style: "currency",
+                      currency: "NZD",
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }).format(number);
+                  };
+                  const invoiceNo = editingDraft.invoiceNumber || editingSelection?.item?.invoice_number || editingSelection?.item?.number || "DRAFT";
+                  const clientName = editingDraft.invoiceClientName || "Client name needed";
+                  const dueDate = String(editingDraft.invoiceDueDate || "").slice(0, 10) || "Set due date";
+                  const issueDate = new Date().toISOString().slice(0, 10);
+                  const lineItem = editingDraft.invoiceLineItemsText || "Completed service";
+                  const invoiceDescription = editingDraft.invoiceDescription || "Invoice wording needed before approval.";
+                  const status = editingDraft.invoiceStatus || "draft";
 
-                  <div className="cx-invoice-owner-preview-meta">
-                    <article>
-                      <span>Bill to</span>
-                      <strong>{editingDraft.invoiceClientName || "Client name needed"}</strong>
-                    </article>
-                    <article>
-                      <span>Due date</span>
-                      <strong>{String(editingDraft.invoiceDueDate || "").slice(0, 10) || "Set due date"}</strong>
-                    </article>
-                    <article>
-                      <span>Amount due</span>
-                      <strong>{editingDraft.invoiceAmount ? `$${editingDraft.invoiceAmount}` : "Add amount"}</strong>
-                    </article>
-                  </div>
+                  return (
+                    <>
+                      <section className="cx-real-invoice-sheet" aria-label="Editable invoice template">
+                        <header className="cx-real-invoice-top">
+                          <div>
+                            <span>Churvox invoice draft</span>
+                            <h4>INVOICE</h4>
+                            <p>Work goes in. Churvox prepares the admin. Owner approves.</p>
+                          </div>
 
-                  <div className="cx-invoice-owner-line">
-                    <span>Line item</span>
-                    <strong>{editingDraft.invoiceLineItemsText || "Completed service"}</strong>
-                    <p>{editingDraft.invoiceDescription || "Invoice wording needed before approval."}</p>
-                  </div>
+                          <aside>
+                            <b>{String(status).replaceAll("_", " ")}</b>
+                            <strong>{invoiceNo}</strong>
+                            <small>Invoice number</small>
+                          </aside>
+                        </header>
 
-                  <div className="cx-invoice-owner-total">
-                    <span>Total</span>
-                    <strong>{editingDraft.invoiceAmount ? `$${editingDraft.invoiceAmount}` : "Amount required"}</strong>
-                  </div>
-                </section>
+                        <section className="cx-real-invoice-parties">
+                          <article>
+                            <span>From</span>
+                            <strong>Your business</strong>
+                            <p>Churvox Operator Machine</p>
+                            <p>New Zealand</p>
+                            <p>GST / tax details can be added in settings.</p>
+                          </article>
 
-                <section className="cx-invoice-owner-edit-fields">
-                  <label>
-                    Client
-                    <input
-                      value={editingDraft.invoiceClientName || ""}
-                      onChange={(event) => {
-                        updateEditingDraft("invoiceClientName", event.target.value);
-                        updateEditingDraft("invoiceTitle", `Invoice draft for ${event.target.value || "client"}`);
-                      }}
-                      placeholder="Client name"
-                    />
-                  </label>
+                          <article>
+                            <span>Bill to</span>
+                            <strong>{clientName}</strong>
+                            <p>{editingSelection?.item?.address || editingSelection?.item?.job_address || editingSelection?.item?.service_address || "Client address / job site"}</p>
+                            <p>{editingSelection?.item?.client_email || editingSelection?.item?.customer_email || editingSelection?.item?.email || "Client email"}</p>
+                            <p>{editingSelection?.item?.client_phone || editingSelection?.item?.customer_phone || editingSelection?.item?.phone || "Client phone"}</p>
+                          </article>
 
-                  <label>
-                    Amount
-                    <input
-                      value={editingDraft.invoiceAmount || ""}
-                      onChange={(event) => updateEditingDraft("invoiceAmount", event.target.value)}
-                      placeholder="Add amount"
-                    />
-                  </label>
+                          <article>
+                            <span>Invoice dates</span>
+                            <div className="cx-real-invoice-date-row">
+                              <small>Issue date</small>
+                              <strong>{issueDate}</strong>
+                            </div>
+                            <div className="cx-real-invoice-date-row">
+                              <small>Due date</small>
+                              <strong>{dueDate}</strong>
+                            </div>
+                          </article>
+                        </section>
 
-                  <label>
-                    Due date
-                    <input
-                      type="date"
-                      value={String(editingDraft.invoiceDueDate || "").slice(0, 10)}
-                      onChange={(event) => updateEditingDraft("invoiceDueDate", event.target.value)}
-                    />
-                  </label>
+                        <section className="cx-real-invoice-table">
+                          <div className="cx-real-invoice-table-head">
+                            <span>Description</span>
+                            <span>Qty</span>
+                            <span>Rate</span>
+                            <span>Amount</span>
+                          </div>
 
-                  <label>
-                    Status
-                    <select
-                      value={editingDraft.invoiceStatus || "draft"}
-                      onChange={(event) => updateEditingDraft("invoiceStatus", event.target.value)}
-                    >
-                      <option value="draft">Draft</option>
-                      <option value="ready">Ready</option>
-                      <option value="approved">Approved</option>
-                    </select>
-                  </label>
+                          <div className="cx-real-invoice-table-row">
+                            <div>
+                              <strong>{lineItem}</strong>
+                              <p>{invoiceDescription}</p>
+                            </div>
+                            <span>1</span>
+                            <span>{amountNumber > 0 ? formatMoney(amountNumber) : "Set amount"}</span>
+                            <span>{amountNumber > 0 ? formatMoney(amountNumber) : "Set amount"}</span>
+                          </div>
+                        </section>
 
-                  <label className="wide">
-                    Line item
-                    <input
-                      value={editingDraft.invoiceLineItemsText || ""}
-                      onChange={(event) => updateEditingDraft("invoiceLineItemsText", event.target.value)}
-                      placeholder="Completed service"
-                    />
-                  </label>
+                        <section className="cx-real-invoice-bottom">
+                          <article className="cx-real-invoice-notes">
+                            <span>Notes</span>
+                            <p>{editingDraft.ownerNote || "Thank you. Please pay by the due date shown on this invoice."}</p>
 
-                  <label className="wide">
-                    Invoice wording owner will approve
-                    <textarea
-                      value={editingDraft.invoiceDescription || ""}
-                      onChange={(event) => updateEditingDraft("invoiceDescription", event.target.value)}
-                      placeholder="Customer-facing invoice wording..."
-                    />
-                  </label>
+                            <span>Payment</span>
+                            <p>Payment link / bank details can appear here when connected. Owner approval is required before sending.</p>
+                          </article>
 
-                  <label className="wide">
-                    Owner note
-                    <textarea
-                      value={editingDraft.ownerNote || ""}
-                      onChange={(event) => updateEditingDraft("ownerNote", event.target.value)}
-                      placeholder="Optional internal note..."
-                    />
-                  </label>
-                </section>
-              </div>
+                          <article className="cx-real-invoice-totals">
+                            <div>
+                              <span>Subtotal</span>
+                              <strong>{amountNumber > 0 ? formatMoney(subtotalNumber) : "$0.00"}</strong>
+                            </div>
+                            <div>
+                              <span>GST 15%</span>
+                              <strong>{amountNumber > 0 ? formatMoney(gstNumber) : "$0.00"}</strong>
+                            </div>
+                            <div className="grand">
+                              <span>Total due</span>
+                              <strong>{amountNumber > 0 ? formatMoney(amountNumber) : "Amount required"}</strong>
+                            </div>
+                          </article>
+                        </section>
+                      </section>
+
+                      <section className="cx-real-invoice-editor">
+                        <header>
+                          <span>Edit invoice</span>
+                          <h4>Owner approval fields</h4>
+                        </header>
+
+                        <div className="cx-real-invoice-editor-grid">
+                          <label>
+                            Client
+                            <input
+                              value={editingDraft.invoiceClientName || ""}
+                              onChange={(event) => {
+                                updateEditingDraft("invoiceClientName", event.target.value);
+                                updateEditingDraft("invoiceTitle", `Invoice draft for ${event.target.value || "client"}`);
+                              }}
+                              placeholder="Client name"
+                            />
+                          </label>
+
+                          <label>
+                            Amount including GST
+                            <input
+                              value={editingDraft.invoiceAmount || ""}
+                              onChange={(event) => updateEditingDraft("invoiceAmount", event.target.value)}
+                              placeholder="Add amount"
+                            />
+                          </label>
+
+                          <label>
+                            Due date
+                            <input
+                              type="date"
+                              value={String(editingDraft.invoiceDueDate || "").slice(0, 10)}
+                              onChange={(event) => updateEditingDraft("invoiceDueDate", event.target.value)}
+                            />
+                          </label>
+
+                          <label>
+                            Status
+                            <select
+                              value={editingDraft.invoiceStatus || "draft"}
+                              onChange={(event) => updateEditingDraft("invoiceStatus", event.target.value)}
+                            >
+                              <option value="draft">Draft</option>
+                              <option value="ready">Ready</option>
+                              <option value="approved">Approved</option>
+                            </select>
+                          </label>
+
+                          <label className="wide">
+                            Line item
+                            <input
+                              value={editingDraft.invoiceLineItemsText || ""}
+                              onChange={(event) => updateEditingDraft("invoiceLineItemsText", event.target.value)}
+                              placeholder="Completed service"
+                            />
+                          </label>
+
+                          <label className="wide">
+                            Invoice wording
+                            <textarea
+                              value={editingDraft.invoiceDescription || ""}
+                              onChange={(event) => updateEditingDraft("invoiceDescription", event.target.value)}
+                              placeholder="Customer-facing invoice wording..."
+                            />
+                          </label>
+
+                          <label className="wide">
+                            Internal owner note
+                            <textarea
+                              value={editingDraft.ownerNote || ""}
+                              onChange={(event) => updateEditingDraft("ownerNote", event.target.value)}
+                              placeholder="Optional internal note..."
+                            />
+                          </label>
+                        </div>
+                      </section>
+                    </>
+                  );
+                })()}
+              </div>              </div>
             ) : (
               <div className={`cx-action-review cx-action-review-${editingApprovalMode()}`}>
                 <section className="cx-action-review-prepared">
