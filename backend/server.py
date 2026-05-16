@@ -1,3 +1,4 @@
+# PHASE_153_CLEAN_ACTIVE_GRASSLEY_BRAND_TEXT
 import os
 import json
 import urllib.request
@@ -469,7 +470,7 @@ async def churvox_options_preflight(rest_of_path: str):
 ALLOWED_ORIGINS = [
     "https://www.churvox.com",
     "https://churvox.com",
-    "https://grassley-frontend.onrender.com",
+    "https://churvox.com",
     "http://localhost:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3000",

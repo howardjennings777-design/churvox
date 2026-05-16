@@ -1,11 +1,11 @@
 # Churvox Deep Bug + Wiring Audit
 
-Generated: 2026-05-16 20:38:39 UTC
+Generated: 2026-05-16 20:42:06 UTC
 
 ## Summary
 
 - HIGH: 2
-- MED: 18
+- MED: 17
 - LOW: 16
 - Frontend API calls found: 49
 - Backend routes found: 375
@@ -14,19 +14,19 @@ Generated: 2026-05-16 20:38:39 UTC
 
 ### 1. [HIGH] Backend routes — Duplicate backend route POST /ai-operator/run-daily-plan
 
-**Where:** `backend/server.py:19185`
+**Where:** `backend/server.py:19186`
 
-**Detail:** Also defined at line 19046. Last registration may shadow earlier handler.
+**Detail:** Also defined at line 19047. Last registration may shadow earlier handler.
 
 ### 2. [HIGH] Backend routes — Duplicate backend route POST /billing/webhook
 
-**Where:** `backend/server.py:10115`
+**Where:** `backend/server.py:10116`
 
-**Detail:** Also defined at line 10053. Last registration may shadow earlier handler.
+**Detail:** Also defined at line 10054. Last registration may shadow earlier handler.
 
 ### 3. [MED] Brand — Old Grassley brand text
 
-**Where:** `backend/server.py:472`
+**Where:** `backend/server.py:1`
 
 **Detail:** Found `Grassley`
 
@@ -108,121 +108,115 @@ Generated: 2026-05-16 20:38:39 UTC
 
 **Detail:** Found `Grassley`
 
-### 17. [MED] Brand/Deploy — Old Grassley frontend reference
-
-**Where:** `backend/server.py:472`
-
-**Detail:** Found `grassley-frontend`
-
-### 18. [MED] UX — Browser alert still used instead of in-page modal
+### 17. [MED] UX — Browser alert still used instead of in-page modal
 
 **Where:** `backend/frontend_dist/static/js/main.ac3852af.js:2`
 
 **Detail:** Found `alert(`
 
-### 19. [MED] UX — Browser confirm still used instead of in-page modal
+### 18. [MED] UX — Browser confirm still used instead of in-page modal
 
 **Where:** `frontend/src/lib/confirmDialog.js:2`
 
 **Detail:** Found `window.confirm`
 
-### 20. [MED] UX — Browser confirm still used instead of in-page modal
+### 19. [MED] UX — Browser confirm still used instead of in-page modal
 
 **Where:** `backend/frontend_dist/static/js/main.ac3852af.js:2`
 
 **Detail:** Found `window.confirm`
 
-### 21. [LOW] Launch polish — Coming Soon text still visible
+### 20. [LOW] Launch polish — Coming Soon text still visible
 
-**Where:** `backend/server.py:2148`
+**Where:** `backend/server.py:2149`
 
 **Detail:** Found `Coming Soon`
 
-### 22. [LOW] Launch polish — Coming Soon text still visible
+### 21. [LOW] Launch polish — Coming Soon text still visible
 
 **Where:** `frontend/src/pages/SMSPage.js:8`
 
 **Detail:** Found `Coming Soon`
 
-### 23. [LOW] Launch polish — Coming Soon text still visible
+### 22. [LOW] Launch polish — Coming Soon text still visible
 
 **Where:** `frontend/src/shell/ChurvoxAIShell.jsx:6194`
 
 **Detail:** Found `Coming Soon`
 
-### 24. [LOW] Launch polish — Coming Soon text still visible
+### 23. [LOW] Launch polish — Coming Soon text still visible
 
 **Where:** `backend/frontend_dist/static/js/main.ac3852af.js:2`
 
 **Detail:** Found `Coming Soon`
 
-### 25. [LOW] Launch polish — Lorem/sample text remains
+### 24. [LOW] Launch polish — Lorem/sample text remains
 
 **Where:** `backend/scripts/cleanup_test_data.py:32`
 
 **Detail:** Found `lorem`
 
-### 26. [LOW] Launch polish — Placeholder wording remains
+### 25. [LOW] Launch polish — Placeholder wording remains
 
 **Where:** `CHURVOX_LAUNCH_TEST_CHECKLIST.md:27`
 
 **Detail:** Found visible `placeholder` wording outside normal form placeholder attributes.
 
-### 27. [LOW] Launch polish — Placeholder wording remains
+### 26. [LOW] Launch polish — Placeholder wording remains
 
 **Where:** `CHURVOX_10_OUT_OF_10_AI_OPERATOR_ENGINE_SPEC.md:128`
 
 **Detail:** Found visible `placeholder` wording outside normal form placeholder attributes.
 
-### 28. [LOW] Launch polish — Placeholder wording remains
+### 27. [LOW] Launch polish — Placeholder wording remains
 
-**Where:** `backend/server.py:11182`
+**Where:** `backend/server.py:11183`
 
 **Detail:** Found visible `placeholder` wording outside normal form placeholder attributes.
 
-### 29. [LOW] Launch polish — Placeholder wording remains
+### 28. [LOW] Launch polish — Placeholder wording remains
 
 **Where:** `frontend/src/operator-machine/OperatorMachine.css:7847`
 
 **Detail:** Found visible `placeholder` wording outside normal form placeholder attributes.
 
-### 30. [LOW] Launch polish — Placeholder wording remains
+### 29. [LOW] Launch polish — Placeholder wording remains
 
 **Where:** `frontend/src/pages/SMSPage.js:25`
 
 **Detail:** Found visible `placeholder` wording outside normal form placeholder attributes.
 
-### 31. [LOW] Launch polish — Placeholder wording remains
+### 30. [LOW] Launch polish — Placeholder wording remains
 
 **Where:** `frontend/src/pages/PayrollPage.js:468`
 
 **Detail:** Found visible `placeholder` wording outside normal form placeholder attributes.
 
-### 32. [LOW] Launch polish — Placeholder wording remains
+### 31. [LOW] Launch polish — Placeholder wording remains
 
 **Where:** `frontend/src/shell/ChurvoxOperatorOS.css:151`
 
 **Detail:** Found visible `placeholder` wording outside normal form placeholder attributes.
 
-### 33. [LOW] Launch polish — Placeholder wording remains
+### 32. [LOW] Launch polish — Placeholder wording remains
 
 **Where:** `frontend/src/shell/ChurvoxAIShell.css:8842`
 
 **Detail:** Found visible `placeholder` wording outside normal form placeholder attributes.
 
-### 34. [LOW] Launch polish — Placeholder wording remains
+### 33. [LOW] Launch polish — Placeholder wording remains
 
 **Where:** `frontend/src/components/ui/select.jsx:17`
 
 **Detail:** Found visible `placeholder` wording outside normal form placeholder attributes.
 
-### 35. [LOW] Launch polish — Placeholder wording remains
+### 34. [LOW] Launch polish — Placeholder wording remains
 
 **Where:** `backend/frontend_dist/static/css/main.22e43127.css:5`
 
 **Detail:** Found visible `placeholder` wording outside normal form placeholder attributes.
 
-### 36. [LOW] Launch polish — Placeholder wording remains
+### 35. [LOW] Launch polish — Placeholder wording remains
 
 **Where:** `backend/frontend_dist/static/js/main.ac3852af.js:2`
 
@@ -237,5 +231,5 @@ Generated: 2026-05-16 20:38:39 UTC
 5. Remove placeholder/Coming Soon text from launch-critical areas.
 
 
-REPORT_FILE=audits/churvox_deep_audit_20260516_203839.md
+REPORT_FILE=audits/churvox_deep_audit_20260516_204206.md
 LATEST_FILE=audits/churvox_deep_audit_latest.md
