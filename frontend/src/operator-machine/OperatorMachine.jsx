@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_105_OWNER_APPROVAL_PERFORMS_REAL_ACTIONS
 // PHASE_104_AI_PREFILL_WORK_SLIPS
 // PHASE_103_TAPPABLE_DASHBOARD_ADVANCED_TOOLS
 // PHASE_102_REMOVE_DASHBOARD_FEATURE_STACK
@@ -4701,12 +4702,50 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
       for (const path of ["/invoices", "/invoices/", "/owner/invoices"]) {
         try {
           const result = await apiPost(path, invoicePayload);
-          const message = result?.message || "Churvox saved the invoice draft and sent it to the Output Log.";
+          let message = result?.message || "Churvox saved the invoice draft and sent it to the Output Log.";
+
+          try {
+            const createdInvoiceId =
+              result?.id ||
+              result?._id ||
+              result?.invoice_id ||
+              result?.invoice?.id ||
+              result?.invoice?._id ||
+              result?.data?.id ||
+              result?.data?._id ||
+              "";
+
+            const approvalResult = await apiPost("/ai/owner-command/invoice/approve", {
+              type: "invoice",
+              kind: "invoice",
+              source_type: "invoice",
+              source_id: createdInvoiceId,
+              title: invoicePayload.title,
+              draft: {
+                ...draft,
+                ...invoicePayload,
+                title: invoicePayload.title,
+                amount: invoicePayload.amount,
+                invoice_amount: invoicePayload.invoice_amount,
+                invoiceDescription: invoicePayload.invoice_description,
+                customerMessage: draft.customerMessage || invoicePayload.invoice_description,
+                dueDate: invoicePayload.due_date,
+              },
+            });
+
+            message =
+              approvalResult?.performed_result?.message ||
+              approvalResult?.message ||
+              message;
+          } catch (approvalErr) {
+            message = `${message} Owner approval saved, but invoice email needs backend attention: ${approvalErr.message || approvalErr}`;
+          }
+
           setOutputStatus(message);
           setOutputLog((current) => [
             {
               id: `${Date.now()}-${slip.id}`,
-              type: "Invoice draft created",
+              type: message.toLowerCase().includes("emailed") ? "Invoice emailed" : "Invoice approved",
               title: invoicePayload.title,
               detail: message,
             },

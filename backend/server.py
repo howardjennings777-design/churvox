@@ -954,6 +954,615 @@ async def dismiss_ai_action(action_id: str, request: Request):
     )
 
     return {"ok": True, "id": action_id, "status": "dismissed"}
+
+
+# ===================== PHASE_105_OWNER_APPROVAL_PERFORMS_REAL_ACTIONS =====================
+def _phase105_clean(value, fallback=""):
+    value = str(value or "").strip()
+    return value if value else fallback
+
+
+def _phase105_money(value):
+    raw = _phase105_clean(value)
+    if not raw:
+        return ""
+    try:
+        amount = float(str(raw).replace("$", "").replace(",", "").strip())
+        return f"${amount:,.2f}"
+    except Exception:
+        return raw
+
+
+def _phase105_doc_id(doc):
+    if not isinstance(doc, dict):
+        return ""
+    return str(doc.get("_id") or doc.get("id") or doc.get("job_id") or doc.get("invoice_id") or "")
+
+
+async def _phase105_find_doc(collection, business_id: str, raw_id: str, extra=None):
+    raw_id = _phase105_clean(raw_id)
+    queries = []
+
+    if extra:
+        queries.append({"business_id": str(business_id), **extra})
+
+    if raw_id:
+        queries.extend([
+            {"business_id": str(business_id), "id": raw_id},
+            {"business_id": str(business_id), "job_id": raw_id},
+            {"business_id": str(business_id), "invoice_id": raw_id},
+            {"business_id": str(business_id), "quote_id": raw_id},
+            {"business_id": str(business_id), "source_id": raw_id},
+        ])
+
+        try:
+            queries.append({"business_id": str(business_id), "_id": ObjectId(raw_id)})
+        except Exception:
+            pass
+
+    for query in queries:
+        try:
+            doc = await collection.find_one(query)
+            if doc:
+                return doc
+        except Exception:
+            pass
+
+    return None
+
+
+async def _phase105_find_worker(business_id: str, worker_choice: str, job: dict | None = None):
+    worker_choice = _phase105_clean(worker_choice)
+
+    collections = []
+    try:
+        collections.append(db.users)
+    except Exception:
+        pass
+    try:
+        collections.append(db.workers)
+    except Exception:
+        pass
+
+    if worker_choice:
+        query_sets = [
+            {"business_id": str(business_id), "id": worker_choice},
+            {"business_id": str(business_id), "email": worker_choice},
+            {"business_id": str(business_id), "name": worker_choice},
+            {"business_id": str(business_id), "full_name": worker_choice},
+            {"business_id": str(business_id), "worker_name": worker_choice},
+        ]
+
+        try:
+            query_sets.insert(0, {"business_id": str(business_id), "_id": ObjectId(worker_choice)})
+        except Exception:
+            pass
+
+        for collection in collections:
+            for query in query_sets:
+                try:
+                    worker = await collection.find_one(query)
+                    if worker:
+                        return worker, "owner selected worker"
+                except Exception:
+                    pass
+
+    if job:
+        try:
+            worker, reason = await _ai_recommend_worker_for_job(str(business_id), job)
+            if worker:
+                return worker, reason or "AI recommended worker"
+        except Exception:
+            pass
+
+    return None, "No worker could be matched."
+
+
+async def _phase105_find_client_from_record(business_id: str, record: dict):
+    if not isinstance(record, dict):
+        return None
+
+    client_id = (
+        record.get("client_id")
+        or record.get("customer_id")
+        or record.get("clientId")
+        or record.get("customerId")
+    )
+
+    if client_id:
+        client = await _phase105_find_doc(db.clients, business_id, str(client_id))
+        if client:
+            return client
+
+    client_name = _phase105_clean(
+        record.get("client_name")
+        or record.get("customer_name")
+        or record.get("client")
+        or record.get("customer")
+    )
+
+    if client_name:
+        for key in ["name", "client_name", "customer_name", "business_name", "company"]:
+            try:
+                client = await db.clients.find_one({"business_id": str(business_id), key: client_name})
+                if client:
+                    return client
+            except Exception:
+                pass
+
+    return None
+
+
+def _phase105_email_from(*records):
+    keys = [
+        "email",
+        "client_email",
+        "customer_email",
+        "billing_email",
+        "invoice_email",
+        "to_email",
+    ]
+
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+
+        for key in keys:
+            value = _phase105_clean(record.get(key))
+            if "@" in value:
+                return value
+
+        for nested_key in ["client", "customer"]:
+            nested = record.get(nested_key)
+            if isinstance(nested, dict):
+                for key in keys:
+                    value = _phase105_clean(nested.get(key))
+                    if "@" in value:
+                        return value
+
+    return ""
+
+
+def _phase105_name_from(*records):
+    keys = ["name", "client_name", "customer_name", "business_name", "company", "title"]
+
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        for key in keys:
+            value = _phase105_clean(record.get(key))
+            if value:
+                return value
+
+        for nested_key in ["client", "customer"]:
+            nested = record.get(nested_key)
+            if isinstance(nested, dict):
+                for key in keys:
+                    value = _phase105_clean(nested.get(key))
+                    if value:
+                        return value
+
+    return "Customer"
+
+
+async def _phase105_create_notification(business_id: str, user_id: str, title: str, body: str, link: str = "", kind: str = "notification"):
+    now = datetime.now(timezone.utc)
+    doc = {
+        "business_id": str(business_id),
+        "user_id": str(user_id or ""),
+        "recipient_id": str(user_id or ""),
+        "title": title,
+        "body": body,
+        "message": body,
+        "kind": kind,
+        "type": kind,
+        "link": link,
+        "url": link,
+        "read": False,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    saved_any = False
+    for collection_name in ["notifications", "worker_notifications"]:
+        try:
+            await getattr(db, collection_name).insert_one(dict(doc))
+            saved_any = True
+        except Exception as exc:
+            logger.warning("PHASE105 notification insert failed collection=%s error=%s", collection_name, exc)
+
+    return saved_any
+
+
+async def _phase105_email_worker(worker: dict, job: dict, business_name: str = "Churvox"):
+    worker_email = _phase105_email_from(worker)
+    if not worker_email:
+        return {"sent": False, "reason": "Worker has no email saved."}
+
+    worker_name = _phase105_name_from(worker)
+    job_title = _phase105_clean(job.get("title") or job.get("job_title") or job.get("name") or job.get("service_type"), "New job")
+    client_name = _phase105_clean(job.get("client_name") or job.get("customer_name"), "Client")
+    address = _phase105_clean(job.get("address") or job.get("job_address") or job.get("service_address"))
+    job_id = _phase105_doc_id(job)
+    link = f"{FRONTEND_URL}/jobs"
+
+    subject = f"New Churvox job assigned: {job_title}"
+    html = f"""
+    <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111;padding:24px;">
+      <h2 style="margin:0 0 12px;">You have a new job assigned</h2>
+      <p>Hi {worker_name},</p>
+      <p><strong>{business_name}</strong> assigned you a job in Churvox.</p>
+      <div style="border:1px solid #ddd;border-radius:12px;padding:16px;margin:18px 0;">
+        <p><strong>Job:</strong> {job_title}</p>
+        <p><strong>Client:</strong> {client_name}</p>
+        <p><strong>Address:</strong> {address or "Check Churvox for the job address."}</p>
+      </div>
+      <p><a href="{link}" style="display:inline-block;background:#111;color:#fff;padding:12px 18px;border-radius:999px;text-decoration:none;font-weight:700;">Open job in Churvox</a></p>
+    </div>
+    """
+    text = f"You have a new Churvox job assigned: {job_title}. Client: {client_name}. Address: {address}. Open Churvox: {link}"
+
+    await send_email(worker_email, subject, html, text)
+    return {"sent": True, "to": worker_email, "job_id": job_id}
+
+
+async def _phase105_perform_worker_assignment(payload: dict, business_id: str, current_user: dict):
+    draft = payload.get("draft") if isinstance(payload.get("draft"), dict) else {}
+    source_id = _phase105_clean(payload.get("source_id") or payload.get("sourceId") or draft.get("source_id") or payload.get("id"))
+    title = _phase105_clean(payload.get("title") or draft.get("title"))
+
+    job = await _phase105_find_doc(db.jobs, business_id, source_id)
+    if not job and title:
+        job = await db.jobs.find_one({"business_id": str(business_id), "title": title})
+
+    if not job:
+        return {
+            "performed": False,
+            "message": "Worker assignment approved, but Churvox could not find the job record to update.",
+            "needs_backend_check": True,
+        }
+
+    worker_choice = _phase105_clean(
+        draft.get("workerChoice")
+        or draft.get("worker_choice")
+        or draft.get("assigned_worker_id")
+        or draft.get("worker_id")
+        or payload.get("worker_choice")
+    )
+
+    worker, reason = await _phase105_find_worker(business_id, worker_choice, job)
+    if not worker:
+        return {
+            "performed": False,
+            "needs_owner_choice": True,
+            "message": "Owner approval received, but no worker was selected or matched. Choose a worker before approving.",
+        }
+
+    worker_id = str(worker.get("_id") or worker.get("id") or worker.get("user_id") or worker.get("email") or "")
+    worker_name = _phase105_clean(
+        worker.get("name")
+        or worker.get("full_name")
+        or worker.get("worker_name")
+        or worker.get("email"),
+        "Assigned worker",
+    )
+
+    now = datetime.now(timezone.utc)
+    job_id = _phase105_doc_id(job)
+
+    job_query = {"business_id": str(business_id)}
+    if job.get("_id"):
+        job_query["_id"] = job["_id"]
+    else:
+        job_query["id"] = str(job.get("id") or job_id)
+
+    update = {
+        "assigned_worker_id": worker_id,
+        "assigned_worker": worker_id,
+        "assigned_worker_name": worker_name,
+        "worker_id": worker_id,
+        "worker_name": worker_name,
+        "status": "assigned",
+        "job_status": "assigned",
+        "workflow_status": "assigned",
+        "owner_approved_assignment": True,
+        "owner_approved_assignment_at": now,
+        "owner_approved_assignment_by": str(current_user.get("id") or current_user.get("_id") or ""),
+        "ai_assignment_reason": reason,
+        "updated_at": now,
+    }
+
+    await db.jobs.update_one(job_query, {"$set": update})
+
+    fresh_job = await db.jobs.find_one(job_query) or {**job, **update}
+
+    await _phase105_create_notification(
+        business_id,
+        worker_id,
+        "New job assigned",
+        f"{worker_name}, you have been assigned {fresh_job.get('title') or fresh_job.get('job_title') or 'a job'}.",
+        f"/jobs/{job_id}" if job_id else "/jobs",
+        "job_assignment",
+    )
+
+    email_result = {"sent": False, "reason": "Worker email not attempted."}
+    try:
+        email_result = await _phase105_email_worker(worker, fresh_job, _phase105_clean(current_user.get("business_name"), "Churvox"))
+    except Exception as exc:
+        email_result = {"sent": False, "reason": str(exc)}
+        logger.warning("PHASE105 worker assignment email failed: %s", exc)
+
+    message = f"Worker assigned. {worker_name} can now see the job in their worker app."
+    if email_result.get("sent"):
+        message += f" Email sent to {email_result.get('to')}."
+    else:
+        message += f" Email not sent: {email_result.get('reason')}"
+
+    return {
+        "performed": True,
+        "message": message,
+        "job_id": job_id,
+        "worker_id": worker_id,
+        "worker_name": worker_name,
+        "worker_notified": True,
+        "email": email_result,
+    }
+
+
+def _phase105_invoice_amount(invoice: dict, draft: dict):
+    return _phase105_clean(
+        draft.get("amount")
+        or draft.get("invoice_amount")
+        or invoice.get("amount")
+        or invoice.get("total")
+        or invoice.get("invoice_amount")
+        or invoice.get("amount_due")
+    )
+
+
+async def _phase105_find_or_create_invoice(payload: dict, business_id: str):
+    draft = payload.get("draft") if isinstance(payload.get("draft"), dict) else {}
+    source_id = _phase105_clean(payload.get("source_id") or payload.get("sourceId") or draft.get("source_id") or payload.get("id"))
+
+    invoice = await _phase105_find_doc(db.invoices, business_id, source_id)
+
+    if invoice:
+        return invoice, False
+
+    now = datetime.now(timezone.utc)
+    title = _phase105_clean(
+        draft.get("title")
+        or draft.get("invoiceLineItem")
+        or payload.get("title"),
+        "Invoice draft",
+    )
+
+    invoice_doc = {
+        "business_id": str(business_id),
+        "title": title,
+        "invoice_title": title,
+        "client_name": _phase105_clean(draft.get("invoiceClientName") or draft.get("clientName") or payload.get("client_name")),
+        "customer_name": _phase105_clean(draft.get("invoiceClientName") or draft.get("clientName") or payload.get("customer_name")),
+        "client_email": _phase105_clean(draft.get("invoiceClientEmail") or draft.get("clientEmail") or payload.get("client_email")),
+        "line_item": _phase105_clean(draft.get("invoiceLineItem") or title),
+        "description": _phase105_clean(draft.get("invoiceDescription") or draft.get("customerMessage") or draft.get("ownerNote")),
+        "invoice_description": _phase105_clean(draft.get("invoiceDescription") or draft.get("customerMessage") or draft.get("ownerNote")),
+        "amount": _phase105_invoice_amount({}, draft),
+        "total": _phase105_invoice_amount({}, draft),
+        "invoice_amount": _phase105_invoice_amount({}, draft),
+        "due_date": _phase105_clean(draft.get("dueDate")),
+        "payment_due_date": _phase105_clean(draft.get("dueDate")),
+        "status": "draft",
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    result = await db.invoices.insert_one(invoice_doc)
+    invoice_doc["_id"] = result.inserted_id
+    return invoice_doc, True
+
+
+async def _phase105_send_invoice_email(invoice: dict, client_doc: dict | None):
+    recipient = _phase105_email_from(invoice, client_doc or {})
+    if not recipient:
+        return {"sent": False, "blocked": True, "reason": "Client email is missing."}
+
+    amount = _phase105_invoice_amount(invoice, {})
+    if not amount:
+        return {"sent": False, "blocked": True, "reason": "Invoice amount is missing."}
+
+    customer_name = _phase105_name_from(invoice, client_doc or {})
+    invoice_title = _phase105_clean(invoice.get("title") or invoice.get("invoice_title") or invoice.get("invoice_number"), "Invoice")
+    description = _phase105_clean(invoice.get("invoice_description") or invoice.get("description"), "Work completed and approved for invoicing.")
+    due_date = _phase105_clean(invoice.get("due_date") or invoice.get("payment_due_date"))
+    invoice_id = _phase105_doc_id(invoice)
+    invoice_link = f"{FRONTEND_URL}/public/document-studio/invoice/{invoice_id}" if invoice_id else FRONTEND_URL
+
+    subject = f"Invoice from Churvox: {invoice_title}"
+    html = f"""
+    <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111;padding:24px;">
+      <h2 style="margin:0 0 12px;">Invoice ready</h2>
+      <p>Hi {customer_name},</p>
+      <p>Your invoice has been prepared and approved.</p>
+      <div style="border:1px solid #ddd;border-radius:12px;padding:16px;margin:18px 0;">
+        <p><strong>Invoice:</strong> {invoice_title}</p>
+        <p><strong>Amount:</strong> {_phase105_money(amount)}</p>
+        <p><strong>Due date:</strong> {due_date or "Shown on invoice"}</p>
+        <p><strong>Description:</strong> {description}</p>
+      </div>
+      <p><a href="{invoice_link}" style="display:inline-block;background:#111;color:#fff;padding:12px 18px;border-radius:999px;text-decoration:none;font-weight:700;">View invoice</a></p>
+      <p style="font-size:12px;color:#666;">This message was sent after owner approval in Churvox.</p>
+    </div>
+    """
+    text = f"Invoice ready: {invoice_title}. Amount: {_phase105_money(amount)}. Due: {due_date or 'shown on invoice'}. View: {invoice_link}"
+
+    await send_email(recipient, subject, html, text)
+    return {"sent": True, "to": recipient, "invoice_link": invoice_link}
+
+
+async def _phase105_perform_invoice_approval(payload: dict, business_id: str, current_user: dict):
+    invoice, created = await _phase105_find_or_create_invoice(payload, business_id)
+    draft = payload.get("draft") if isinstance(payload.get("draft"), dict) else {}
+    client_doc = await _phase105_find_client_from_record(business_id, {**invoice, **draft})
+
+    email_result = None
+    now = datetime.now(timezone.utc)
+    invoice_id = _phase105_doc_id(invoice)
+
+    # Save owner-approved wording/amount before send attempt.
+    patch = {
+        "owner_approved": True,
+        "owner_approved_at": now,
+        "owner_approved_by": str(current_user.get("id") or current_user.get("_id") or ""),
+        "updated_at": now,
+    }
+
+    for key, field in [
+        ("amount", "amount"),
+        ("invoice_amount", "invoice_amount"),
+        ("invoiceDescription", "invoice_description"),
+        ("customerMessage", "customer_message"),
+        ("ownerNote", "owner_note"),
+        ("dueDate", "due_date"),
+    ]:
+        value = _phase105_clean(draft.get(key))
+        if value:
+            patch[field] = value
+            if field == "amount":
+                patch["total"] = value
+                patch["invoice_amount"] = value
+
+    try:
+        email_result = await _phase105_send_invoice_email({**invoice, **patch}, client_doc)
+    except Exception as exc:
+        email_result = {"sent": False, "blocked": False, "reason": str(exc)}
+        logger.warning("PHASE105 invoice email failed: %s", exc)
+
+    if email_result.get("sent"):
+        patch.update({
+            "status": "sent",
+            "invoice_status": "sent",
+            "sent_at": now,
+            "emailed_at": now,
+            "email_sent": True,
+            "email_sent_to": email_result.get("to"),
+            "public_invoice_link": email_result.get("invoice_link"),
+        })
+        message = f"Invoice approved and emailed to {email_result.get('to')}."
+    else:
+        patch.update({
+            "status": "approved_not_sent",
+            "invoice_status": "approved_not_sent",
+            "email_sent": False,
+            "email_block_reason": email_result.get("reason"),
+        })
+        message = f"Invoice approved but email was not sent: {email_result.get('reason')}"
+
+    query = {"business_id": str(business_id)}
+    if invoice.get("_id"):
+        query["_id"] = invoice["_id"]
+    else:
+        query["id"] = str(invoice.get("id") or invoice_id)
+
+    await db.invoices.update_one(query, {"$set": patch})
+
+    await _phase105_create_notification(
+        business_id,
+        str(current_user.get("id") or current_user.get("_id") or ""),
+        "Invoice approval complete",
+        message,
+        f"/invoices/{invoice_id}" if invoice_id else "/invoices",
+        "invoice_approval",
+    )
+
+    return {
+        "performed": bool(email_result.get("sent")),
+        "created_invoice": created,
+        "invoice_id": invoice_id,
+        "email": email_result,
+        "message": message,
+    }
+
+
+@api_router.post("/ai/owner-command/dispatch/approve")
+async def phase105_owner_command_dispatch_approve(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    result = await _phase105_perform_worker_assignment(payload, business_id, current_user)
+    return {
+        "ok": True,
+        "status": "completed" if result.get("performed") else "approved_needs_attention",
+        "performed_result": result,
+        "message": result.get("message"),
+    }
+
+
+@api_router.post("/ai/owner-command/invoice/approve")
+async def phase105_owner_command_invoice_approve(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    result = await _phase105_perform_invoice_approval(payload, business_id, current_user)
+    return {
+        "ok": True,
+        "status": "completed" if result.get("performed") else "approved_not_sent",
+        "performed_result": result,
+        "message": result.get("message"),
+    }
+
+
+@api_router.post("/ai/owner-command/approve")
+async def phase105_owner_command_general_approve(request: Request):
+    current_user = await _ai_queue_current_user(request)
+    business_id = _ai_action_business_id(current_user)
+    if not business_id:
+        raise HTTPException(status_code=401, detail="Business not found")
+
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    kind = _phase105_clean(
+        payload.get("type")
+        or payload.get("kind")
+        or payload.get("source_type")
+        or payload.get("page")
+    ).lower()
+
+    if "dispatch" in kind or "job" in kind:
+        result = await _phase105_perform_worker_assignment(payload, business_id, current_user)
+    elif "invoice" in kind or "proof" in kind or "cashflow" in kind:
+        result = await _phase105_perform_invoice_approval(payload, business_id, current_user)
+    else:
+        result = {
+            "performed": False,
+            "message": "Owner approval saved, but this action type does not have an automatic performer yet.",
+        }
+
+    return {
+        "ok": True,
+        "status": "completed" if result.get("performed") else "approved",
+        "performed_result": result,
+        "message": result.get("message"),
+    }
+# =================== END PHASE_105_OWNER_APPROVAL_PERFORMS_REAL_ACTIONS ===================
+
 # =================== END CHURVOX AI ACTION QUEUE ROUTES ===================
 
 
