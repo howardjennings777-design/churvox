@@ -1237,3 +1237,99 @@
     border-radius: 24px;
   }
 }
+
+
+/* PHASE_70_PROPER_PLAN_SLIP */
+.om-plan-slip {
+  width: min(960px, calc(100vw - 44px));
+}
+
+.om-plan-slip-body {
+  padding: 24px;
+  display: grid;
+  grid-template-columns: minmax(260px, .75fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.om-plan-price-card,
+.om-plan-feature-card,
+.om-plan-machine-note {
+  border: 1px solid var(--om-border);
+  border-radius: 24px;
+  background: #fffaf0;
+  padding: 20px;
+}
+
+.om-plan-price-card {
+  background: var(--om-charcoal);
+  color: #fff8e9;
+}
+
+.om-plan-price-card span,
+.om-plan-feature-card span,
+.om-plan-machine-note span {
+  color: var(--om-copper);
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-size: .72rem;
+}
+
+.om-plan-price-card span {
+  color: var(--om-lime);
+}
+
+.om-plan-price-card strong {
+  display: block;
+  margin-top: 14px;
+  color: var(--om-lime);
+  font-size: clamp(2.4rem, 5vw, 4.4rem);
+  letter-spacing: -0.08em;
+  line-height: .9;
+}
+
+.om-plan-price-card small {
+  display: block;
+  margin-top: 6px;
+  color: rgba(255, 248, 233, .72);
+  font-size: .95rem;
+  letter-spacing: 0;
+}
+
+.om-plan-price-card p,
+.om-plan-machine-note p {
+  margin: 16px 0 0;
+  line-height: 1.58;
+}
+
+.om-plan-price-card p {
+  color: rgba(255, 248, 233, .78);
+}
+
+.om-plan-feature-card {
+  display: grid;
+  align-content: start;
+}
+
+.om-plan-feature-card div {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.om-plan-feature-card b {
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: #f3eadc;
+  color: var(--om-charcoal);
+}
+
+.om-plan-machine-note {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 760px) {
+  .om-plan-slip-body {
+    grid-template-columns: 1fr;
+  }
+}

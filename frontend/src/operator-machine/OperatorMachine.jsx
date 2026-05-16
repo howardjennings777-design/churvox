@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_70_PROPER_PLAN_SLIP
 // PHASE_68_OPERATOR_MACHINE_POLISH
 
 const API_BASE = (() => {
@@ -454,6 +455,71 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove }) {
 
   if (!slip) return null;
 
+  if (slip.kind === "plan") {
+    const features = Array.isArray(slip.features) ? slip.features : [];
+    return (
+      <div className="om-slip-backdrop" onClick={onClose}>
+        <section className="om-slip om-plan-slip" onClick={(event) => event.stopPropagation()}>
+          <header className="om-slip-head">
+            <div>
+              <span>{slip.badge || slip.eyebrow}</span>
+              <h2>{slip.title}</h2>
+              <p>{slip.need}</p>
+            </div>
+            <button type="button" onClick={onClose} aria-label="Close plan slip">×</button>
+          </header>
+
+          <section className="om-plan-slip-body">
+            <article className="om-plan-price-card">
+              <span>Plan price</span>
+              <strong>{slip.price}<small>/month + GST</small></strong>
+              <p>{slip.prepared}</p>
+            </article>
+
+            <article className="om-plan-feature-card">
+              <span>Included</span>
+              <div>
+                {features.map((feature) => (
+                  <b key={feature}>{feature}</b>
+                ))}
+              </div>
+            </article>
+
+            <article className="om-plan-machine-note">
+              <span>How this fits Churvox</span>
+              <p>
+                The plan controls how much of the Operator Machine Churvox can run for the business.
+                Owner approval still stays in front of sensitive actions.
+              </p>
+            </article>
+          </section>
+
+          <footer className="om-slip-actions">
+            <button type="button" className="ghost" onClick={onClose}>Back</button>
+            <button
+              type="button"
+              className="approve"
+              onClick={() => {
+                setOutputLog((current) => [
+                  {
+                    id: `${Date.now()}-${slip.id}`,
+                    type: "Plan reviewed",
+                    title: slip.title,
+                    detail: `${slip.planName || slip.eyebrow} selected for owner review.`,
+                  },
+                  ...current,
+                ].slice(0, 8));
+                setOutputStatus(`${slip.planName || "Plan"} selected. Checkout wiring can be connected next.`);
+              }}
+            >
+              {slip.cta || "Choose plan"}
+            </button>
+          </footer>
+        </section>
+      </div>
+    );
+  }
+
   function update(key, value) {
     setDraft((current) => ({ ...current, [key]: value }));
   }
@@ -589,10 +655,58 @@ function rowsForPage(page, machine, data = {}) {
 
   if (page === "plans") {
     return [
-      { id: "plan-start", eyebrow: "Start", title: "Start · $39/month + GST", need: "Solo operators. Jobs, clients, quotes, invoices and basic Smart Hub.", kind: "plan" },
-      { id: "plan-crew", eyebrow: "Crew", title: "Crew · $89/month + GST", need: "Small teams. Worker app, job assignment, notes, photos and time tracking.", kind: "plan" },
-      { id: "plan-operator", eyebrow: "Operator", title: "Operator · $149/month + GST", need: "Most Popular. AI Operator Actions, draft invoices, follow-ups and reminders.", kind: "plan" },
-      { id: "plan-command", eyebrow: "Command", title: "Command · $299/month + GST", need: "MYOB included, payroll workspace, advanced roles and automation.", kind: "plan" },
+      {
+        id: "plan-start",
+        eyebrow: "Start",
+        title: "Start · $39/month + GST",
+        need: "For solo operators who need the basics clean and simple.",
+        kind: "plan",
+        price: "$39",
+        planName: "Start",
+        badge: "Solo operators",
+        prepared: "Jobs, clients, quotes, invoices and basic Smart Hub. Best for one-person businesses that want the work organised without advanced AI Operator capacity.",
+        features: ["Jobs", "Clients", "Quotes", "Invoices", "Basic Smart Hub"],
+        cta: "Choose Start",
+      },
+      {
+        id: "plan-crew",
+        eyebrow: "Crew",
+        title: "Crew · $89/month + GST",
+        need: "For small teams that need worker workflow and job proof.",
+        kind: "plan",
+        price: "$89",
+        planName: "Crew",
+        badge: "Small teams",
+        prepared: "Worker app, job assignment, notes, proof photos and time tracking. Best when the business has crew in the field and the owner needs cleaner updates.",
+        features: ["Worker app", "Job assignment", "Notes", "Photos", "Time tracking"],
+        cta: "Choose Crew",
+      },
+      {
+        id: "plan-operator",
+        eyebrow: "Operator",
+        title: "Operator · $149/month + GST",
+        need: "Most Popular. The plan where Churvox starts preparing the admin.",
+        kind: "plan",
+        price: "$149",
+        planName: "Operator",
+        badge: "Most Popular",
+        prepared: "AI Operator Actions, draft invoices, quote follow-ups, payment reminders and approval-first admin. Best for owners who want Churvox doing the admin prep.",
+        features: ["AI Operator Actions", "Draft invoices", "Quote follow-ups", "Payment reminders", "Approval Desk"],
+        cta: "Choose Operator",
+      },
+      {
+        id: "plan-command",
+        eyebrow: "Command",
+        title: "Command · $299/month + GST",
+        need: "For growing teams that need the full operating machine.",
+        kind: "plan",
+        price: "$299",
+        planName: "Command",
+        badge: "Growing teams",
+        prepared: "MYOB included, payroll workspace, advanced roles, higher limits, stronger automation and Command Growth Packs for extra active team members.",
+        features: ["MYOB included", "Payroll workspace", "Advanced roles", "Higher limits", "Automation"],
+        cta: "Choose Command",
+      },
     ];
   }
 
