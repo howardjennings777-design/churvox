@@ -7,18 +7,18 @@ import { ChurvoxLogo } from "../components/ChurvoxLogo";
 import { PremiumButton, PremiumBadge } from "../components/premium";
 
 const fallbackPlans = [
-  { key: "solo", name: "Solo", price: "$30", period: "/month",
-    blurb: "For solo operators getting started.", badge: "",
-    limits: ["Up to 20 clients", "1 user included", "Jobs, quotes, invoices", "14-day free trial"] },
-  { key: "team", name: "Team", price: "$70", period: "/month",
-    blurb: "For growing teams that need staff access.", badge: "Most Popular",
-    limits: ["Up to 30 clients", "Up to 5 users", "Scheduling and team workflow", "Upgrade any time"] },
-  { key: "pro", name: "Pro", price: "$110", period: "/month",
-    blurb: "For busy businesses needing more room.", badge: "",
-    limits: ["Up to 40 clients", "Up to 10 users", "Advanced workflow tools", "Priority-ready setup"] },
-  { key: "enterprise", name: "Enterprise", price: "$240", period: "/month",
-    blurb: "For larger teams with heavier usage.", badge: "",
-    limits: ["Includes 50 users", "Buy extra 50-user blocks", "$100 per extra 50 users", "MYOB included by default"] },
+  { key: "solo", name: "Start", price: "$39", period: "/month + GST",
+    blurb: "For solo operators who want to stop losing jobs and paperwork.", badge: "",
+    limits: ["Up to 20 clients", "Clients, jobs, quotes and invoices", "Basic Smart Hub", "Basic reminders"] },
+  { key: "team", name: "Crew", price: "$89", period: "/month + GST",
+    blurb: "For small teams that need jobs, workers and admin in one place.", badge: "",
+    limits: ["Up to 30 clients", "Worker app", "Job assignment", "Photos, notes and time tracking"] },
+  { key: "pro", name: "Operator", price: "$149", period: "/month + GST",
+    blurb: "For businesses that want Churvox to prepare the admin so they only approve.", badge: "Most Popular",
+    limits: ["Up to 40 clients", "AI Operator Actions", "Draft invoices", "Quote follow-ups and invoice reminders", "Optional MYOB add-on +$39/month + GST"] },
+  { key: "enterprise", name: "Command", price: "$299", period: "/month + GST",
+    blurb: "For growing trade businesses that want control, automation and admin power.", badge: "",
+    limits: ["MYOB included", "Payroll workspace", "Advanced roles", "Priority support", "Command Growth Pack $99/month + GST per extra 50 active team members"] },
 ];
 
 export default function PlansPage() {
@@ -41,10 +41,10 @@ export default function PlansPage() {
           if (!m) return fb;
           return {
             ...fb,
-            name: m.name || fb.name, price: m.price || fb.price, period: m.period || fb.period,
-            blurb: m.blurb || m.description || fb.blurb,
-            limits: Array.isArray(m.limits) && m.limits.length > 0 ? m.limits : fb.limits,
-            badge: m.badge || fb.badge,
+            name: fb.name, price: fb.price, period: fb.period,
+            blurb: fb.blurb,
+            limits: fb.limits,
+            badge: fb.badge,
           };
         })
       : fallbackPlans;
@@ -131,7 +131,7 @@ export default function PlansPage() {
   const isEnterprise = currentPlan === "enterprise";
   const canBuyExtraUserBlock = isEnterprise && !isTrialExpired && (isPaid || isActiveTrial);
 
-  const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+  const cap = (s) => ({ solo: "Start", team: "Crew", pro: "Operator", enterprise: "Command" }[String(s || "").toLowerCase()] || (s ? s.charAt(0).toUpperCase() + s.slice(1) : ""));
 
   const getButtonState = (planKey) => {
     const isCurrent = planKey === currentPlan;
@@ -249,10 +249,10 @@ export default function PlansPage() {
               <CreditCard className="h-3 w-3" /> Plans & billing
             </span>
             <h1 className="font-heading text-3xl md:text-5xl font-bold tracking-tight leading-tight text-[#0d1b34] mt-3">
-              Pick the plan that fits your business
+              Churvox does the admin. You approve.
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-[14px] md:text-[15px] text-[#5b6c87] leading-relaxed">
-              Start with a 14-day free trial. No card required. Upgrade when you're ready.
+              Choose the plan that matches how much of the daily admin you want Churvox to prepare for you.
             </p>
             {currencyInfo?.currency && (
               <div className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full border border-[#d8e3f3] bg-white px-3 py-1 text-[12px] text-[#1a2c4d] shadow-sm" data-testid="currency-badge">

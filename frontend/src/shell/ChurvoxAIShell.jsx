@@ -5167,85 +5167,91 @@ function workspaceOperatorConfig(page, counts = {}) {
 const CHURVOX_PLAN_FALLBACKS = [
   {
     id: "solo",
-    name: "Solo",
-    price: "$30",
-    period: "/ month",
+    name: "Start",
+    price: "$39",
+    period: "/ month + GST",
     badge: "Owner operator",
     clientCap: "Up to 20 clients",
-    description: "For one operator who wants Churvox to prepare the admin without team workflow.",
-    aiRole: "Churvox prepares job/admin context and keeps the owner guided.",
+    description: "For solo operators who want to stop losing jobs and paperwork.",
+    aiRole: "Churvox keeps the owner guided with simple job, client, quote and invoice admin.",
     includes: [
-      "Smart Hub command view",
       "Clients, jobs, quotes and invoices",
-      "AI prepared next actions",
+      "Basic Smart Hub",
+      "Basic reminders",
       "Owner approval-first workflow",
       "Mobile-ready workspace",
     ],
     limits: [
       "No team workflow",
       "No MYOB sync",
+      "Limited AI Operator Actions",
     ],
-    cta: "Choose Solo",
+    cta: "Choose Start",
   },
   {
     id: "team",
-    name: "Team",
-    price: "$70",
-    period: "/ month",
+    name: "Crew",
+    price: "$89",
+    period: "/ month + GST",
     badge: "Small crew",
     clientCap: "Up to 30 clients",
-    description: "For small teams that need workers tied into the same Churvox machine.",
-    aiRole: "Churvox prepares worker runs and owner assignment decisions.",
+    description: "For small teams that need jobs, workers and admin in one place.",
+    aiRole: "Churvox prepares worker runs, job assignment context and proof for owner review.",
     includes: [
-      "Everything in Solo",
-      "Worker My Run",
-      "Team and role workflow",
-      "Job assignment approval",
-      "Proof notes and photos feeding owner approval",
+      "Everything in Start",
+      "Team members",
+      "Worker app",
+      "Job assignment",
+      "Photos, notes and time tracking",
     ],
     limits: [
       "No MYOB sync",
+      "Limited AI Operator Actions",
     ],
-    cta: "Choose Team",
+    cta: "Choose Crew",
   },
   {
     id: "pro",
-    name: "Pro",
-    price: "$110",
-    period: "/ month",
-    badge: "AI Operator",
+    name: "Operator",
+    price: "$149",
+    period: "/ month + GST",
+    badge: "Most Popular",
     clientCap: "Up to 40 clients",
-    description: "For growing businesses that want Churvox preparing invoices, follow-ups and dispatch decisions.",
-    aiRole: "Churvox prepares specific invoice, quote, cashflow and dispatch actions for approval.",
+    description: "For businesses that want Churvox to prepare the admin so they only approve.",
+    aiRole: "Churvox prepares AI Operator Actions: draft invoices, quote follow-ups, reminders and dispatch decisions.",
     includes: [
-      "Everything in Team",
-      "AI Operator approval queue",
-      "Proof-to-paid workflow",
-      "Advanced prepared actions",
-      "Optional MYOB add-on",
+      "Everything in Crew",
+      "AI Operator Actions",
+      "AI Work Queue",
+      "Draft invoices",
+      "Quote follow-ups and invoice reminders",
+      "Optional MYOB add-on +$39/month + GST",
     ],
     limits: [],
-    cta: "Choose Pro",
+    cta: "Choose Operator",
     featured: true,
   },
   {
     id: "enterprise",
-    name: "Enterprise",
-    price: "$240",
-    period: "/ month",
-    badge: "Scale",
-    clientCap: "Up to 50 clients",
-    description: "For larger teams needing stronger controls, more capacity and included MYOB workflow.",
-    aiRole: "Churvox acts as the command layer across admin, workers, proof, invoices and sync.",
+    name: "Command",
+    price: "$299",
+    period: "/ month + GST",
+    badge: "Command centre",
+    clientCap: "Up to 50 active team members",
+    description: "For growing trade businesses that want control, automation and admin power.",
+    aiRole: "Churvox acts as the command layer across admin, workers, proof, invoices, payroll workspace and MYOB sync.",
     includes: [
-      "Everything in Pro",
+      "Everything in Operator",
       "MYOB included",
-      "Larger team capacity",
-      "Advanced controls",
-      "Extra 50-user blocks available",
+      "Payroll workspace",
+      "Advanced roles",
+      "Priority support",
+      "Advanced automation",
     ],
-    limits: [],
-    cta: "Choose Enterprise",
+    limits: [
+      "Command Growth Pack: $99/month + GST per extra 50 active team members",
+    ],
+    cta: "Choose Command",
   },
 ];
 
@@ -5271,20 +5277,22 @@ function normalisePlanCatalog(payload) {
         : String(amount || fallback.price || "");
 
       return {
-        ...fallback,
         ...plan,
-        id: id || fallback.id || String(plan.name || "plan").toLowerCase(),
-        name: plan.name || fallback.name || "Plan",
-        price,
-        period: plan.period || plan.interval_label || fallback.period || "/ month",
-        badge: plan.badge || plan.label || fallback.badge || "Plan",
-        clientCap: plan.clientCap || plan.client_cap_label || plan.client_limit_label || fallback.clientCap || "",
-        description: plan.description || fallback.description || "",
-        aiRole: plan.aiRole || plan.ai_role || fallback.aiRole || "",
-        includes: Array.isArray(plan.includes) ? plan.includes : Array.isArray(plan.features) ? plan.features : fallback.includes || [],
-        limits: Array.isArray(plan.limits) ? plan.limits : Array.isArray(plan.not_included) ? plan.not_included : fallback.limits || [],
-        cta: plan.cta || fallback.cta || `Choose ${plan.name || fallback.name || "plan"}`,
-        featured: Boolean(plan.featured || plan.recommended || fallback.featured),
+        ...fallback,
+        id: fallback.id || id || String(plan.name || "plan").toLowerCase(),
+        backendName: plan.name || "",
+        backendPrice: price,
+        name: fallback.name || plan.name || "Plan",
+        price: fallback.price || price,
+        period: fallback.period || plan.period || plan.interval_label || "/ month + GST",
+        badge: fallback.badge || plan.badge || plan.label || "Plan",
+        clientCap: fallback.clientCap || plan.clientCap || plan.client_cap_label || plan.client_limit_label || "",
+        description: fallback.description || plan.description || "",
+        aiRole: fallback.aiRole || plan.aiRole || plan.ai_role || "",
+        includes: fallback.includes || (Array.isArray(plan.includes) ? plan.includes : Array.isArray(plan.features) ? plan.features : []),
+        limits: fallback.limits || (Array.isArray(plan.limits) ? plan.limits : Array.isArray(plan.not_included) ? plan.not_included : []),
+        cta: fallback.cta || plan.cta || `Choose ${fallback.name || plan.name || "plan"}`,
+        featured: Boolean(fallback.featured || plan.featured || plan.recommended),
       };
     })
     .filter((plan) => plan.name && plan.price);
@@ -5376,10 +5384,9 @@ function PublicPlansPage({ setAuthMode }) {
 
       <section className="cx-public-plans-hero">
         <span>Churvox plans</span>
-        <h1>Choose how much of the business Churvox can run.</h1>
+        <h1>Churvox does the admin. You approve.</h1>
         <p>
-          AI prepares the admin, workers feed proof back in, and the owner reviews, edits and approves.
-          Pick the plan that matches your team size and workflow.
+          Choose the plan that matches how much of the daily admin you want Churvox to prepare for you.
         </p>
       </section>
 
@@ -5410,10 +5417,9 @@ function ChurvoxPlansWorkspace({ planCatalog, onChoosePlan, onOpenSettings }) {
       <header className="cx-plans-machine-hero">
         <div>
           <span>Plan control</span>
-          <h2>Choose how much of the business Churvox can run.</h2>
+          <h2>Churvox does the admin. You approve.</h2>
           <p>
-            Plans should not feel like a generic pricing table. Each plan controls how far the AI Operator
-            can prepare work, tie in workers, and support owner-approved admin.
+            Start simple, then move into the AI Operator plan when you want Churvox preparing invoices, follow-ups, reminders and admin for approval.
           </p>
         </div>
 
@@ -5504,10 +5510,9 @@ function ChurvoxPlansWorkspace({ planCatalog, onChoosePlan, onOpenSettings }) {
       <footer className="cx-plans-machine-footer">
         <div>
           <span>Owner safety</span>
-          <strong>Plan changes should unlock workflow, not confuse the owner.</strong>
+          <strong>Only active team members count.</strong>
           <p>
-            The owner should always understand what Churvox can prepare, what still needs approval,
-            and which integrations are available.
+            Old staff and inactive records do not increase your bill. Add Command Growth Packs when the business needs more crew, jobs and AI Operator capacity.
           </p>
         </div>
         <button type="button" onClick={onOpenSettings}>Review business guardrails</button>
@@ -6996,10 +7001,10 @@ function Workspace({ page, setPage, data }) {
       title: "Choose your Churvox plan.",
       body: "Simple plans for trade and service businesses. AI runs the admin, owner approves the important parts.",
       rows: [
-        ["Solo", "$30 / month", "One operator, simple job control, up to 20 clients.", "Current"],
-        ["Team", "$70 / month", "Small crew, jobs, clients, quotes, invoices and team workflow.", "Choose"],
-        ["Pro", "$110 / month", "Stronger AI Operator workflows, automation and MYOB add-on option.", "Choose"],
-        ["Enterprise", "$240 / month", "Larger teams, advanced controls, MYOB included and more capacity.", "Choose"],
+        ["Start", "$39 / month + GST", "Solo operators, simple job control, up to 20 clients.", "Choose"],
+        ["Crew", "$89 / month + GST", "Small crew, worker app, jobs, proof, notes and time tracking.", "Choose"],
+        ["Operator", "$149 / month + GST", "Most Popular: AI Operator Actions, draft invoices, follow-ups and reminders.", "Choose"],
+        ["Command", "$299 / month + GST", "MYOB included, payroll workspace, advanced roles and higher limits.", "Choose"],
       ],
     },
     settings: {
