@@ -10162,3 +10162,196 @@ select {
   }
 }
 
+
+/* PHASE_183_OBSIDIAN_SAND_COPPER_SIGNAL_THEME
+   App-specific polish for Approval Desk.
+*/
+
+:root {
+  --cx-carbon: #12110d;
+  --cx-carbon-2: #1d1a14;
+  --cx-stone: #efe7d6;
+  --cx-paper: #f7f0e3;
+  --cx-clay: #dccbb0;
+  --cx-clay-2: #c9b590;
+  --cx-moss: #9fe870;
+  --cx-moss-deep: #527d45;
+  --cx-brass: #d8a441;
+  --cx-copper: #a96f2d;
+  --cx-amber-clay: #b87532;
+  --cx-brick: #8e3328;
+  --cx-ink-soft: #655d4c;
+  --cx-line: rgba(18, 17, 13, 0.14);
+  --cx-shadow-soft: 0 18px 54px rgba(18, 17, 13, 0.13);
+  --cx-shadow-strong: 0 34px 110px rgba(18, 17, 13, 0.25);
+}
+
+.om-shell {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(216, 164, 65, 0.18), transparent 28rem),
+    radial-gradient(circle at 90% 0%, rgba(159, 232, 112, 0.12), transparent 24rem),
+    linear-gradient(135deg, #efe7d6 0%, #e5d7bf 48%, #d8c3a1 100%) !important;
+  color: var(--cx-carbon) !important;
+}
+
+.om-nav {
+  background:
+    linear-gradient(180deg, rgba(18, 17, 13, 0.99) 0%, rgba(29, 26, 20, 0.99) 100%) !important;
+  border-right: 1px solid rgba(216, 164, 65, 0.2) !important;
+  box-shadow: 18px 0 60px rgba(18, 17, 13, 0.2) !important;
+}
+
+.om-brand {
+  background: rgba(247, 240, 227, 0.055) !important;
+  border: 1px solid rgba(216, 164, 65, 0.2) !important;
+}
+
+.om-brand i {
+  background:
+    radial-gradient(circle at 40% 35%, var(--cx-brass), transparent 42%),
+    radial-gradient(circle at 70% 68%, var(--cx-moss), transparent 38%),
+    linear-gradient(135deg, #2b2618, #090806) !important;
+  box-shadow:
+    0 0 34px rgba(216, 164, 65, 0.28),
+    0 0 22px rgba(159, 232, 112, 0.14) !important;
+}
+
+.om-nav nav button.active {
+  background:
+    linear-gradient(135deg, rgba(216, 164, 65, 0.18), rgba(247, 240, 227, 0.08)) !important;
+  border-color: rgba(216, 164, 65, 0.34) !important;
+}
+
+.om-hero {
+  background:
+    radial-gradient(circle at 85% 10%, rgba(216, 164, 65, 0.24), transparent 19rem),
+    linear-gradient(135deg, rgba(18, 17, 13, 0.99) 0%, rgba(29, 26, 20, 0.99) 60%, rgba(216, 164, 65, 0.9) 60%, rgba(216, 164, 65, 0.9) 100%) !important;
+  color: var(--cx-paper) !important;
+  border: 1px solid rgba(216, 164, 65, 0.24) !important;
+  box-shadow: var(--cx-shadow-strong) !important;
+}
+
+.om-hero::before {
+  background: rgba(216, 164, 65, 0.13) !important;
+}
+
+.om-hero span {
+  color: rgba(247, 240, 227, 0.7) !important;
+}
+
+.om-hero h1 {
+  color: var(--cx-paper) !important;
+}
+
+.om-hero p {
+  color: rgba(247, 240, 227, 0.74) !important;
+}
+
+.om-gauges article {
+  background: rgba(247, 240, 227, 0.92) !important;
+  color: var(--cx-carbon) !important;
+  border: 1px solid rgba(18, 17, 13, 0.14) !important;
+}
+
+.om-gauges article strong {
+  color: var(--cx-carbon) !important;
+}
+
+.om-dashboard-quiet-tools {
+  background: rgba(247, 240, 227, 0.68) !important;
+  border-color: rgba(18, 17, 13, 0.11) !important;
+}
+
+.om-dashboard-quiet-tools > span {
+  background:
+    linear-gradient(135deg, var(--cx-carbon), var(--cx-carbon-2)) !important;
+  color: var(--cx-paper) !important;
+}
+
+.om-dashboard-quiet-tools button {
+  background: var(--cx-paper) !important;
+  color: var(--cx-carbon) !important;
+  border-color: rgba(18, 17, 13, 0.14) !important;
+}
+
+.om-dashboard-focus-card {
+  background:
+    radial-gradient(circle at 80% 10%, rgba(216, 164, 65, 0.26), transparent 17rem),
+    radial-gradient(circle at 20% 90%, rgba(159, 232, 112, 0.1), transparent 14rem),
+    linear-gradient(160deg, var(--cx-carbon), #241f14) !important;
+  border-color: rgba(216, 164, 65, 0.24) !important;
+}
+
+.om-dashboard-focus-card::before {
+  background: rgba(216, 164, 65, 0.14) !important;
+  color: var(--cx-brass) !important;
+}
+
+.om-dashboard-focus-card::after {
+  background: radial-gradient(circle, rgba(216, 164, 65, 0.36), transparent 60%) !important;
+}
+
+.om-approval-desk-main {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(159, 232, 112, 0.1), transparent 18rem),
+    linear-gradient(180deg, rgba(247, 240, 227, 0.96), rgba(220, 203, 176, 0.9)) !important;
+  border-color: rgba(18, 17, 13, 0.13) !important;
+}
+
+.om-approval-desk-main > header span,
+.om-approval-ticket span {
+  color: var(--cx-copper) !important;
+}
+
+.om-approval-desk-main > header b {
+  background:
+    linear-gradient(135deg, var(--cx-carbon), var(--cx-carbon-2)) !important;
+  color: var(--cx-brass) !important;
+}
+
+.om-approval-ticket {
+  background:
+    linear-gradient(135deg, rgba(247, 240, 227, 0.99), rgba(239, 231, 214, 0.98)) !important;
+  border-color: rgba(18, 17, 13, 0.13) !important;
+}
+
+.om-approval-ticket::before {
+  background: var(--cx-brass) !important;
+  box-shadow: 0 0 18px rgba(216, 164, 65, 0.42) !important;
+}
+
+.om-approval-ticket:nth-child(2n)::before {
+  background: var(--cx-moss) !important;
+  box-shadow: 0 0 18px rgba(159, 232, 112, 0.26) !important;
+}
+
+.om-approval-ticket em,
+.om-view-all-approvals {
+  background:
+    linear-gradient(135deg, var(--cx-carbon), var(--cx-carbon-2)) !important;
+  color: var(--cx-paper) !important;
+}
+
+.om-approval-ticket:hover {
+  border-color: rgba(216, 164, 65, 0.5) !important;
+  box-shadow: 0 24px 60px rgba(18, 17, 13, 0.17) !important;
+}
+
+.om-done-state {
+  background:
+    linear-gradient(135deg, rgba(216, 164, 65, 0.14), rgba(247, 240, 227, 0.82)) !important;
+  border-color: rgba(216, 164, 65, 0.3) !important;
+}
+
+#churvox-phase-182-crew-match {
+  background:
+    radial-gradient(circle at 90% 0%, rgba(216, 164, 65, 0.24), transparent 10rem),
+    linear-gradient(145deg, #12110d, #241f14) !important;
+  border-color: rgba(216, 164, 65, 0.3) !important;
+}
+
+#churvox-phase-182-crew-match span {
+  background: rgba(216, 164, 65, 0.14) !important;
+  color: var(--cx-brass) !important;
+}
+
