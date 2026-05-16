@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_90_FINISH_INVOICES_OPERATOR_MACHINE_ALL_IN_ONE
 // PHASE_89_FINISH_LAST_OPERATOR_MACHINE_PAGES
 // PHASE_88_FINISH_QUOTES_OPERATOR_MACHINE_ALL_IN_ONE
 // PHASE_87_FINISH_TEAM_OPERATOR_MACHINE_ALL_IN_ONE
@@ -488,12 +489,14 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove, onChoo
   const isJobReview = slip.kind === "job";
   const isDispatch = slip.kind === "dispatch";
   const isInvoiceLike = slip.kind === "invoice" || slip.kind === "cashflow" || slip.kind === "proof";
+  const isNewInvoice = slip.kind === "invoice" && String(slip.id || "").startsWith("new-invoice");
   const isPayrollLike = slip.kind === "payroll";
   const isSettingsLike = slip.kind === "settings";
   const isQuoteLike = slip.kind === "quote";
   const isNewQuote = isQuoteLike && String(slip.id || "").startsWith("new-quote");
   const primaryLabel =
     isJobIntake ? "Create job" :
+    isNewInvoice ? "Create invoice draft" :
     isNewQuote ? "Create quote draft" :
     isQuoteLike ? "Approve quote action" :
     isPayrollLike ? "Save payroll review" :
@@ -735,6 +738,20 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove, onChoo
               <label className="wide">
                 Quote description
                 <textarea value={draft.quoteDescription || ""} onChange={(event) => update("quoteDescription", event.target.value)} placeholder="Describe the scope clearly..." />
+              </label>
+            </>
+          ) : null}
+
+          {isNewInvoice ? (
+            <>
+              <label>
+                Client name
+                <input value={draft.invoiceClientName || ""} onChange={(event) => update("invoiceClientName", event.target.value)} placeholder="Client or customer name" />
+              </label>
+
+              <label>
+                Invoice line item
+                <input value={draft.invoiceLineItem || draft.title || ""} onChange={(event) => update("invoiceLineItem", event.target.value)} placeholder="Service, job or invoice item" />
               </label>
             </>
           ) : null}
@@ -2125,6 +2142,331 @@ function SettingsMachineBoard({ data, machine, onOpen }) {
 }
 
 
+
+function InvoicesCashflowBoard({ data, machine, onOpen }) {
+  const invoiceRows = rowsForPage("invoices", machine, data || {});
+  const [invoiceFilter, setInvoiceFilter] = useState("priority");
+  const [invoiceQuery, setInvoiceQuery] = useState("");
+
+  function invoiceStatus(row = {}) {
+    return statusOf(row.item || {});
+  }
+
+  function invoiceClient(item = {}, fallback = "Client") {
+    return clean(item.client_name || item.customer_name || item.client?.name || item.customer?.name || item.name, fallback);
+  }
+
+  function invoiceTitle(item = {}, fallback = "Invoice") {
+    return clean(item.title || item.invoice_number || item.number || item.invoice_title || fallback);
+  }
+
+  function isDraft(row) {
+    const item = row.item || {};
+    const status = invoiceStatus(row);
+    return status.includes("draft") || status.includes("pending") || status === "new" || !invoiceAmount(item);
+  }
+
+  function isPaid(row) {
+    const status = invoiceStatus(row);
+    return status.includes("paid") || status.includes("settled") || status.includes("complete");
+  }
+
+  function isCollect(row) {
+    const status = invoiceStatus(row);
+    return !isPaid(row) && (
+      status.includes("overdue") ||
+      status.includes("unpaid") ||
+      status.includes("sent") ||
+      status.includes("due") ||
+      status.includes("awaiting")
+    );
+  }
+
+  const draftRows = invoiceRows.filter(isDraft);
+  const collectRows = invoiceRows.filter(isCollect);
+  const paidRows = invoiceRows.filter(isPaid);
+  const missingAmountRows = invoiceRows.filter((row) => !invoiceAmount(row.item || {}));
+
+  const priorityRows = [
+    ...missingAmountRows,
+    ...draftRows,
+    ...collectRows,
+    ...invoiceRows,
+  ].filter((row, index, arr) => arr.findIndex((item) => item.id === row.id) === index);
+
+  const sourceRows =
+    invoiceFilter === "drafts" ? draftRows :
+    invoiceFilter === "missing" ? missingAmountRows :
+    invoiceFilter === "collect" ? collectRows :
+    invoiceFilter === "paid" ? paidRows :
+    invoiceFilter === "all" ? invoiceRows :
+    priorityRows;
+
+  const filteredRows = sourceRows
+    .filter((row) => {
+      const item = row.item || {};
+      const haystack = [
+        row.title,
+        row.need,
+        item.title,
+        item.invoice_title,
+        item.invoice_number,
+        item.number,
+        item.client_name,
+        item.customer_name,
+        item.status,
+        item.invoice_status,
+        item.payment_status,
+        item.description,
+        item.invoice_description,
+        item.notes,
+      ].map((value) => clean(value).toLowerCase()).join(" ");
+
+      return !invoiceQuery.trim() || haystack.includes(invoiceQuery.trim().toLowerCase());
+    })
+    .slice(0, 18);
+
+  const approvalRows = machine.approval.filter((item) => item.kind === "invoice" || item.kind === "cashflow");
+
+  const stats = [
+    ["Invoices", invoiceRows.length],
+    ["Need amount", missingAmountRows.length],
+    ["To collect", collectRows.length],
+    ["Paid", paidRows.length],
+  ];
+
+  const steps = [
+    ["Draft", "Invoice is prepared"],
+    ["Check", "Amount and client are checked"],
+    ["Collect", "Reminder can be prepared"],
+    ["Sync", "MYOB stays approval-first"],
+  ];
+
+  const filters = [
+    ["priority", "Priority"],
+    ["drafts", "Drafts"],
+    ["missing", "Need amount"],
+    ["collect", "To collect"],
+    ["paid", "Paid"],
+    ["all", "All invoices"],
+  ];
+
+  function makeNewInvoiceSlip() {
+    return {
+      id: `new-invoice-${Date.now()}`,
+      sourceId: "",
+      kind: "invoice",
+      eyebrow: "New invoice draft",
+      title: "Create invoice draft",
+      need: "Create the invoice once. Churvox keeps sending, payment reminders and MYOB sync approval-first.",
+      prepared: "Churvox will use the client, line item, amount, due date and description to prepare a clean invoice draft.",
+      draft: {
+        title: "New invoice",
+        invoiceClientName: "",
+        invoiceLineItem: "",
+        invoiceDescription: "",
+        amount: "",
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        ownerNote: "",
+        customerMessage: "",
+      },
+    };
+  }
+
+  function makeInvoiceSlip(row) {
+    const item = row.item || {};
+    const client = invoiceClient(item, row.title);
+    const title = invoiceTitle(item, row.title);
+    const amount = invoiceAmount(item);
+    const status = invoiceStatus(row);
+    const description = clean(item.description || item.invoice_description || item.notes || row.need);
+    const dueDate = clean(item.due_date || item.payment_due_date || item.invoice_due_date);
+    const reminder = reminderMessage(item);
+    const paid = isPaid(row);
+    const collect = isCollect(row);
+
+    if (collect) {
+      return {
+        ...row,
+        kind: "cashflow",
+        eyebrow: status.includes("overdue") ? "Overdue" : "Payment follow-up",
+        title: `Review payment follow-up for ${client}`,
+        need: "This invoice may need a payment reminder or owner review.",
+        prepared: reminder,
+        draft: {
+          title: `Payment reminder for ${client}`,
+          invoiceClientName: client,
+          invoiceLineItem: title,
+          invoiceDescription: description,
+          amount,
+          dueDate,
+          ownerNote: clean(item.internal_note || item.notes || row.need),
+          customerMessage: reminder,
+        },
+      };
+    }
+
+    if (paid) {
+      return {
+        ...row,
+        kind: "invoice",
+        eyebrow: "Paid invoice",
+        title: `Review paid invoice for ${client}`,
+        need: "This invoice appears paid. Review record or MYOB/payment sync context.",
+        prepared: description || `Churvox found a paid invoice for ${client}.`,
+        draft: {
+          title,
+          invoiceClientName: client,
+          invoiceLineItem: title,
+          invoiceDescription: description,
+          amount,
+          dueDate,
+          ownerNote: "Paid invoice reviewed.",
+          customerMessage: "",
+        },
+      };
+    }
+
+    return {
+      ...row,
+      kind: "invoice",
+      eyebrow: amount ? "Invoice review" : "Owner input needed",
+      title: `Review invoice for ${client}`,
+      need: amount ? "Invoice is ready for owner review." : "Invoice amount is missing and needs owner input.",
+      prepared: description || `Churvox found ${title} for ${client}. Review the amount, description and due date before approval.`,
+      draft: {
+        title,
+        invoiceClientName: client,
+        invoiceLineItem: title,
+        invoiceDescription: description || `Invoice prepared for ${client}.`,
+        amount,
+        dueDate,
+        ownerNote: clean(item.internal_note || item.notes || row.need),
+        customerMessage: description || "",
+      },
+    };
+  }
+
+  return (
+    <section className="om-invoices-board" data-phase="PHASE_90_FINISH_INVOICES_OPERATOR_MACHINE_ALL_IN_ONE">
+      <header className="om-invoices-hero om-invoices-hero-final">
+        <div>
+          <span>Churvox Operator Machine · Invoices</span>
+          <h1>Invoices turn work into cashflow without the mess.</h1>
+          <p>
+            Churvox watches drafts, missing amounts, unpaid invoices and payment follow-ups.
+            The owner sees the next cashflow decision, not a confusing invoice wall.
+          </p>
+
+          <button type="button" className="om-invoice-hero-action inline" onClick={() => onOpen(makeNewInvoiceSlip())}>
+            New invoice draft
+          </button>
+        </div>
+
+        <aside>
+          {stats.map(([label, value]) => (
+            <article key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+            </article>
+          ))}
+        </aside>
+      </header>
+
+      <section className="om-invoice-flow-strip compact">
+        {steps.map(([label, body], index) => (
+          <article key={label} className={index === 2 ? "active" : ""}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <strong>{label}</strong>
+            <small>{body}</small>
+          </article>
+        ))}
+      </section>
+
+      <section className="om-invoices-layout">
+        <section className="om-invoice-list">
+          <header className="om-invoice-list-head">
+            <div>
+              <span>Invoice Queue</span>
+              <h2>What needs cashflow attention.</h2>
+              <p>Filter invoices, then open one Work Slip to review, edit, collect or approve.</p>
+            </div>
+            <b>{filteredRows.length}</b>
+          </header>
+
+          <section className="om-invoice-tools">
+            <div className="om-invoice-filter-tabs">
+              {filters.map(([key, label]) => (
+                <button type="button" key={key} className={invoiceFilter === key ? "active" : ""} onClick={() => setInvoiceFilter(key)}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <input
+              value={invoiceQuery}
+              onChange={(event) => setInvoiceQuery(event.target.value)}
+              placeholder="Search invoice, client, status, amount..."
+            />
+          </section>
+
+          <div>
+            {filteredRows.length ? filteredRows.map((row) => {
+              const item = row.item || {};
+              const client = invoiceClient(item, row.title);
+              const status = invoiceStatus(row);
+              const amount = invoiceAmount(item);
+              const missing = !amount;
+              const collect = isCollect(row);
+              const paid = isPaid(row);
+
+              return (
+                <button
+                  type="button"
+                  key={row.id}
+                  className={`om-invoice-ticket ${missing ? "missing" : collect ? "collect" : paid ? "paid" : "draft"}`}
+                  onClick={() => onOpen(makeInvoiceSlip(row))}
+                >
+                  <span>{missing ? "Needs amount" : collect ? "Collect" : paid ? "Paid" : status || "Invoice"}</span>
+                  <strong>{client}</strong>
+                  <small>{row.need}</small>
+                  <em>{amount ? money(amount) : "Add amount"}</em>
+                </button>
+              );
+            }) : (
+              <article className="om-invoice-empty">
+                <strong>No invoices match this view.</strong>
+                <p>Try another filter or create a new invoice draft.</p>
+              </article>
+            )}
+          </div>
+        </section>
+
+        <aside className="om-invoice-side">
+          <section>
+            <span>Ready approvals</span>
+            <strong>{approvalRows.length}</strong>
+            <p>Invoice drafts and payment follow-ups ready for owner review.</p>
+          </section>
+
+          <section>
+            <span>Money to collect</span>
+            <strong>{collectRows.length}</strong>
+            <p>Unpaid or overdue invoices that may need a reminder.</p>
+          </section>
+
+          <section>
+            <span>Machine rule</span>
+            <h3>No blind sending.</h3>
+            <p>Churvox can prepare invoice wording, payment reminders and MYOB sync actions, but the owner approves sensitive steps.</p>
+          </section>
+        </aside>
+      </section>
+    </section>
+  );
+}
+
+
 function QuotesPipelineBoard({ data, machine, onOpen }) {
   const quoteRows = rowsForPage("quotes", machine, data || {});
   const [quoteFilter, setQuoteFilter] = useState("priority");
@@ -3226,6 +3568,10 @@ function FeatureWorkspace({ page, machine, data, currentPlan, onOpen, onPlans })
     return <SettingsMachineBoard data={data} machine={machine} onOpen={onOpen} />;
   }
 
+  if (page === "invoices") {
+    return <InvoicesCashflowBoard data={data} machine={machine} onOpen={onOpen} />;
+  }
+
   return (
     <section className="om-feature-workspace" data-phase="PHASE_69_OPERATOR_MACHINE_ALL_PAGES">
       <header className="om-feature-hero">
@@ -3460,6 +3806,61 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
           id: `${Date.now()}-${slip.id}`,
           type: "Quote create needs backend check",
           title: quotePayload.title,
+          detail: message,
+        },
+        ...current,
+      ].slice(0, 8));
+      return;
+    }
+
+    if (slip.kind === "invoice" && String(slip.id || "").startsWith("new-invoice")) {
+      const invoicePayload = {
+        title: draft.title || draft.invoiceLineItem || "New invoice",
+        invoice_title: draft.title || draft.invoiceLineItem || "New invoice",
+        client_name: draft.invoiceClientName || draft.clientName || "",
+        customer_name: draft.invoiceClientName || draft.clientName || "",
+        line_item: draft.invoiceLineItem || draft.title || "",
+        service_type: draft.invoiceLineItem || draft.title || "",
+        description: draft.invoiceDescription || draft.ownerNote || "",
+        invoice_description: draft.invoiceDescription || draft.ownerNote || "",
+        amount: draft.amount || "",
+        total: draft.amount || "",
+        invoice_amount: draft.amount || "",
+        due_date: draft.dueDate || "",
+        payment_due_date: draft.dueDate || "",
+        notes: draft.ownerNote || "",
+        status: "draft",
+      };
+
+      let lastError = null;
+      for (const path of ["/invoices", "/invoices/", "/owner/invoices"]) {
+        try {
+          const result = await apiPost(path, invoicePayload);
+          const message = result?.message || "Invoice draft saved to Churvox.";
+          setOutputStatus(message);
+          setOutputLog((current) => [
+            {
+              id: `${Date.now()}-${slip.id}`,
+              type: "Invoice draft created",
+              title: invoicePayload.title,
+              detail: message,
+            },
+            ...current,
+          ].slice(0, 8));
+          setActiveSlip(null);
+          return;
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      const message = lastError?.message || "Invoice draft could not be saved yet.";
+      setOutputStatus(message);
+      setOutputLog((current) => [
+        {
+          id: `${Date.now()}-${slip.id}`,
+          type: "Invoice create needs backend check",
+          title: invoicePayload.title,
           detail: message,
         },
         ...current,
