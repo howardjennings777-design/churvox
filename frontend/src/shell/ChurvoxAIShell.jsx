@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
 import "./ChurvoxOperatorOS.css";
+// PHASE_61_RESTORE_READY_INVOICE_DRAFTS
 // PHASE_59_REMOVE_APPROVAL_CONTEXT_ROW
 // PHASE_58_REMOVE_MODAL_META_BOXES
 
@@ -7315,6 +7316,26 @@ function Workspace({ page, setPage, data }) {
       return type.includes("dispatch") || type.includes("cashflow") || type.includes("payment") || type.includes("overdue");
     })
     .map((item) => [item.type, item.title, item.body, item.action]);
+
+  // PHASE_61_RESTORE_READY_INVOICE_DRAFTS
+  const invoiceApprovalRows = actions
+    .filter((item) => {
+      const text = `${item?.type || ""} ${item?.title || ""} ${item?.body || ""} ${item?.message || ""}`.toLowerCase();
+      return text.includes("invoice") || text.includes("draft");
+    })
+    .map((item) => ({
+      ...item,
+      type: item.type || "Invoice draft approval",
+      title: item.title || "Invoice draft",
+      message: item.body || item.message || "Invoice draft ready for owner review",
+      status: item.action || item.status || "To approve",
+      source_type: item.source_type || "approval_action",
+      source_id: item.id || item._id || item.action_id || "",
+    }));
+
+  if (Array.isArray(readyInvoiceRows) && invoiceApprovalRows.length) {
+    readyInvoiceRows.unshift(...invoiceApprovalRows);
+  }
 
   const attentionRows = [
     ...unassignedJobRows,
