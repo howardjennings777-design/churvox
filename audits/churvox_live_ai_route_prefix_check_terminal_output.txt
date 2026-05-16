@@ -1,0 +1,43 @@
+# Churvox Live AI Route Prefix Check
+
+Generated: 2026-05-16 21:50:39 UTC
+
+## Summary
+
+- HIGH: 0
+- MED: 0
+- LOW: 0
+- Backend: https://grassley-backend.onrender.com
+
+## Checks
+
+- ✅ **Owner login** — status `200` — {"id": "69d5c63456d9106e0dcfd2c8", "email": "hello@churvox.com", "name": "Howard", "business_name": "Churvox Platform", "role": "owner", "plan": "enterprise", "plan_status": "active", "subscription_status": "active", "trial_ends_at": null, "stripe_subscription_id": null, "gst_rate": 15.0, "trade_type": "other", "business_id": "69d5c63456d9106e0dcfd2c8", "onboarding_completed": false, "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWQ1YzYzNDU2ZDkxMDZlMGRjZmQyYzgiLCJlbWFpbCI6ImhlbGxvQGNodXJ2b3guY29tIiwiZXhwIjoxNzc5MDU0NjMzLCJ0eXBlIjoiYWNjZXNzIn0.sLn3pR1jJbidT3Xm0X1XYkRSD8Wq3OA3kovmWHcITM0"}
+- ✅ **GET /api/ai/follow-ups** — status `200` — {"success": true, "actions": []}
+- ✅ **GET /api/ai/customer-updates** — status `200` — {"success": true, "updates": [{"business_id": "69d5c63456d9106e0dcfd2c8", "job_id": "6a08e0ea6ceadd6806c28b1a", "client_id": "", "type": "job_scheduled", "message": "Hi Worker Flow Test Client 20260516212601, your job has been scheduled. We'll keep you updated.", "channel": "copy", "status": "draft", "public_token": "v698YJrQZcHBD375h6G_Yw", "error": null, "created_at": "2026-05-16T21:26:04.540000", "updated_at": "2026-05-16T21:26:04.540000", "id": "6a08e0ec6ceadd6806c28b1c"}]}
+- ✅ **GET /api/ai-messages** — status `200` — {"success": true, "messages": []}
+- ✅ **GET /api/ai/quotes/drafts** — status `200` — {"success": true, "drafts": []}
+- ✅ **Safe existence probe GET /api/ai/follow-ups/generate** — status `405` — {"detail": "Method Not Allowed"}
+- ✅ **Safe existence probe GET /api/ai/customer-updates/prepare-for-job/test-job-id** — status `405` — {"detail": "Method Not Allowed"}
+- ✅ **Safe existence probe GET /api/ai/customer-updates/test-update-id/approve** — status `405` — {"detail": "Method Not Allowed"}
+- ✅ **Safe existence probe GET /api/ai/customer-updates/test-update-id/skip** — status `405` — {"detail": "Method Not Allowed"}
+- ✅ **Safe existence probe GET /api/ai-messages/prepare** — status `405` — {"detail": "Method Not Allowed"}
+- ✅ **Safe existence probe GET /api/ai-messages/test-message-id/send** — status `405` — {"detail": "Method Not Allowed"}
+- ✅ **Safe existence probe GET /api/ai/quotes/from-photos** — status `405` — {"detail": "Method Not Allowed"}
+- ✅ **Safe existence probe GET /api/ai/quotes/drafts/test-draft-id/approve** — status `405` — {"detail": "Method Not Allowed"}
+- ✅ **Safe existence probe GET /api/ai/quotes/drafts/test-draft-id/convert-to-quote** — status `405` — {"detail": "Method Not Allowed"}
+- ✅ **Safe existence probe GET /api/ai/quotes/drafts/test-draft-id/dismiss** — status `405` — {"detail": "Method Not Allowed"}
+- ✅ **Safe existence probe GET /api/ai/client-memory/test-client-id/refresh** — status `405` — {"detail": "Method Not Allowed"}
+
+## Findings
+
+No live AI route prefix blockers found.
+
+## Notes
+
+- GET routes are tested directly.
+- POST-only routes are probed safely with GET. A 405/422/401/403 means the path exists; 404 means likely missing.
+- This does not approve/send AI messages, customer updates, quotes, follow-ups, SMS, MYOB, or Stripe actions.
+
+
+LATEST_FILE=audits/churvox_live_ai_route_prefix_check_latest.md
+REPORT_FILE=audits/churvox_live_ai_route_prefix_check_20260516_215039.md
