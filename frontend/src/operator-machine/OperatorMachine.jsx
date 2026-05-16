@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_110_HARD_FIX_BUSINESS_LOGO_CRASH
 // PHASE_108_FIX_BUSINESS_LOGO_URL_SCOPE
 // PHASE_107_BUSINESS_LOGO_UPLOAD
 // PHASE_105_OWNER_APPROVAL_PERFORMS_REAL_ACTIONS
@@ -5294,7 +5295,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
         team={team}
         outputStatus={outputStatus}
         smsCredits={smsCreditBalance(data || {})}
-        businessLogoUrl={businessLogoUrl}
+        businessLogoUrl={businessLogoFromData(data || {})}
         onClose={() => setActiveSlip(null)}
         onSave={saveEdit}
         onApprove={approveSlip}
