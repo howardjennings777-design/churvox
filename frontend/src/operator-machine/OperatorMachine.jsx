@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_125_FORCE_RENDER_VISIBLE_DEPLOY_20260516112111
 // PHASE_122_COMPLETE_REAL_INVOICE_TEMPLATE
 // PHASE_121_ONE_INVOICE_ONLY
 // PHASE_120_SEND_INVOICE_AS_PDF_ATTACHMENT
@@ -46,6 +47,9 @@ import TopPlayerFeatureStack from "./TopPlayerFeatureStack";
 // PHASE_68_OPERATOR_MACHINE_POLISH
 
 void churvoxRenderDeployMarker;
+
+const CHURVOX_DEPLOY_MARKER = "PHASE_125_FORCE_RENDER_VISIBLE_DEPLOY_20260516112111";
+void CHURVOX_DEPLOY_MARKER;
 
 const API_BASE = (() => {
   const raw =
