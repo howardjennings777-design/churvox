@@ -1319,7 +1319,7 @@ function PublicJobRequestPage() {
             <textarea required value={form.notes} onChange={(event) => update("notes", event.target.value)} />
           </label>
 
-          <button type="submit" disabled={busy}>{busy ? "Sending..." : "Send request to Churvox to Churvox"}</button>
+          <button type="submit" disabled={busy}>{busy ? "Sending..." : "Send request to Churvox"}</button>
           {status ? <p className="cx-public-form-status">{status}</p> : null}
         </form>
       </section>
@@ -1532,7 +1532,7 @@ function PublicClientPortalPage({ token }) {
           </section>
 
           <form className="cx-client-portal-message" onSubmit={sendMessage}>
-            <h2>Send a message into Churvox into Churvox</h2>
+            <h2>Send a message into Churvox</h2>
             <input value={message.name} onChange={(event) => updateMessage("name", event.target.value)} placeholder="Your name" />
             <input type="email" value={message.email} onChange={(event) => updateMessage("email", event.target.value)} placeholder="Email" />
             <textarea required value={message.message} onChange={(event) => updateMessage("message", event.target.value)} placeholder="Message, approval note, payment note, or question..." />
@@ -1579,7 +1579,7 @@ function Landing({ authMode, setAuthMode, onLogin }) {
               See the AI loop
             </a>
             <a href="/request" className="cx-secondary">
-              Customer request intake intake demo
+              Customer request intake demo
             </a>
           </div>
 
@@ -4125,7 +4125,7 @@ function SmartHubBoxModal({
     collect: "Unpaid or overdue invoices that need follow-up.",
     quotes: "Quotes and follow-ups that may need a nudge.",
     crew: "Worker capacity and team records available for assignment.",
-    requests: "Customer request intake intakes that can become draft jobs or quotes.",
+    requests: "Customer request intakes that can become draft jobs or quotes.",
     dispatch: "Dispatch decisions, unassigned jobs and possible schedule conflicts.",
     recurring: "Recurring jobs that may need the next job generated.",
     templates: "Service templates that can speed up job creation and proof/invoice wording.",
@@ -7130,7 +7130,7 @@ function Workspace({ page, setPage, data }) {
       ...item,
       type: "Job request",
       title: item?.service_type || item?.title || `Request from ${item?.name || "customer"}`,
-      message: item?.notes || item?.address || "Customer request intake intake waiting for owner review",
+      message: item?.notes || item?.address || "Customer request intake waiting for owner review",
       status: "Create draft job",
       source_type: "public_job_request",
       source_id: item?.id || item?.request_id || item?._id || "",
@@ -7364,7 +7364,7 @@ function Workspace({ page, setPage, data }) {
       count: requestRows.length,
       label: "new",
       title: "Request inbox",
-      body: "Customer request intake intakes ready to become draft jobs or quotes.",
+      body: "Customer request intakes ready to become draft jobs or quotes.",
       action: "Prepare",
     },
     {
@@ -8236,7 +8236,7 @@ function Workspace({ page, setPage, data }) {
 
           <div>
             {[
-              ["requests", "Request inbox", requestRows.length, "Customer request intake intakes waiting"],
+              ["requests", "Request inbox", requestRows.length, "Customer request intakes waiting"],
               ["dispatch", "Dispatch board", dispatchRows.length, "Unassigned jobs / conflicts"],
               ["recurring", "Recurring jobs", recurringRows.length, "Repeat work due"],
               ["templates", "Service templates", templateRows.length, "Reusable job presets"],
