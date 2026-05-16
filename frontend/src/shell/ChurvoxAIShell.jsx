@@ -7668,6 +7668,12 @@ function Workspace({ page, setPage, data }) {
     ? [...baseHubBoxes, setupHealthBox]
     : baseHubBoxes;
 
+  // PHASE_57_SMART_HUB_PRIMARY_BOXES
+  const smartHubPrimaryKeys = ["approvals", "fix", "invoice", "dispatch"];
+  const smartHubPrimaryBoxes = smartHubPrimaryKeys
+    .map((key) => hubBoxes.find((box) => box.key === key))
+    .filter(Boolean);
+
 
   function hubRemainingCount(key) {
     return hubRowsForKey(key).filter((item) => {
@@ -8288,7 +8294,7 @@ function Workspace({ page, setPage, data }) {
   }
 
   return (
-    <section className="cx-workspace cx-owner-command-shell">
+    <section className={`cx-workspace cx-owner-command-shell ${page === "dashboard" ? "cx-dashboard-clean" : ""}`} data-smart-hub-phase={page === "dashboard" ? "PHASE_57_SMART_HUB_CALM" : undefined}>
       <section className="cx-work-hero cx-owner-command-hero">
         <div className={page === "dashboard" ? "cx-smart-hero-copy" : ""}>
           {page === "dashboard" ? (
@@ -8365,7 +8371,7 @@ function Workspace({ page, setPage, data }) {
         </section>
       ) : null}
 
-      {(page === "dashboard" || page === "settings") ? (
+      {page === "settings" ? (
         <TeachChurvoxPanel
           setupChecks={setupChecks}
           setupScore={setupScore}
@@ -8377,11 +8383,11 @@ function Workspace({ page, setPage, data }) {
         />
       ) : null}
 
-      {(page === "dashboard" || page === "settings") ? (
+      {page === "settings" ? (
         <OwnerGuardrailsPanel onOpenSettings={() => switchPage("settings")} />
       ) : null}
 
-      {(page === "dashboard" || page === "settings") ? (
+      {page === "settings" ? (
         <IntegrationControlPanel
           onOpenPlans={() => switchPage("plans")}
           onOpenSettings={() => switchPage("settings")}
@@ -8503,7 +8509,7 @@ function Workspace({ page, setPage, data }) {
 
       {page === "dashboard" ? (
         <section className="cx-hub-box-grid">
-          {hubBoxes.map((box) => (
+          {(page === "dashboard" ? smartHubPrimaryBoxes : hubBoxes).map((box) => (
             <button
               type="button"
               key={box.key}
@@ -8523,7 +8529,7 @@ function Workspace({ page, setPage, data }) {
         </section>
       ) : null}
 
-      {page === "dashboard" ? (
+      {false ? (
         <section className="cx-operator-expansion-panel">
           <header>
             <div>
@@ -8566,7 +8572,7 @@ function Workspace({ page, setPage, data }) {
         </section>
       ) : null}
 
-      {page === "dashboard" ? (
+      {false ? (
         <DecisionLedgerPanel
           recent={recentDecisionItems}
           backend={backendApprovalLog}

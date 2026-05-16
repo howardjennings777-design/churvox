@@ -9800,3 +9800,119 @@ button.primary,
     flex-direction: column;
   }
 }
+
+
+/* PHASE_57_SMART_HUB_CALM */
+.cx-dashboard-clean {
+  display: grid;
+  gap: 18px;
+}
+
+.cx-dashboard-clean .cx-owner-command-hero {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  padding: clamp(24px, 5vw, 46px);
+  border-radius: 34px;
+}
+
+.cx-dashboard-clean .cx-owner-command-hero aside {
+  display: none;
+}
+
+.cx-dashboard-clean .cx-smart-hero-copy h1 {
+  max-width: 760px;
+  font-size: clamp(42px, 6vw, 76px);
+  line-height: 0.92;
+}
+
+.cx-dashboard-clean .cx-smart-hero-copy p {
+  max-width: 680px;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.cx-dashboard-clean .cx-owner-command-strip,
+.cx-dashboard-clean .cx-stats,
+.cx-dashboard-clean .cx-operator-expansion-panel,
+.cx-dashboard-clean .cx-owner-command-side,
+.cx-dashboard-clean .cx-owner-section,
+.cx-dashboard-clean .cx-owner-log,
+.cx-dashboard-clean .cx-panel.cx-owner-log,
+.cx-dashboard-clean .cx-decision-ledger,
+.cx-dashboard-clean .cx-workspace-command-bar {
+  display: none !important;
+}
+
+.cx-dashboard-clean .cx-ai-daily-brief {
+  margin-top: 0;
+  border-radius: 28px;
+}
+
+.cx-dashboard-clean .cx-hub-box-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 0;
+}
+
+.cx-dashboard-clean .cx-hub-box-grid .cx-hub-box:nth-child(n+5) {
+  display: none !important;
+}
+
+.cx-dashboard-clean .cx-hub-box {
+  min-height: 230px;
+  border-radius: 28px;
+}
+
+.cx-dashboard-clean .cx-hub-box strong {
+  font-size: clamp(42px, 6vw, 70px);
+}
+
+.cx-dashboard-clean .cx-hub-box b {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.cx-dashboard-clean .cx-hub-box small {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.cx-dashboard-clean .cx-owner-command-layout {
+  display: block;
+}
+
+.cx-dashboard-clean .cx-owner-command-main {
+  display: block;
+}
+
+.cx-dashboard-clean .cx-smart-hub-popup-only {
+  display: block;
+}
+
+.cx-dashboard-clean .cx-ask-notice {
+  border-radius: 22px;
+}
+
+@media (max-width: 1100px) {
+  .cx-dashboard-clean .cx-hub-box-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .cx-dashboard-clean .cx-owner-command-hero {
+    min-height: auto;
+    padding: 24px;
+  }
+
+  .cx-dashboard-clean .cx-hub-box-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cx-dashboard-clean .cx-hub-box {
+    min-height: 180px;
+  }
+}
