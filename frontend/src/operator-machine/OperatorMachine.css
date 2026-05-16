@@ -7699,3 +7699,87 @@ select {
     text-align: left;
   }
 }
+
+
+/* PHASE_123_INVOICE_MODAL_SCROLL_BUTTONS */
+.om-slip-backdrop {
+  align-items: flex-start;
+  overflow-y: auto;
+  padding: 18px;
+}
+
+.om-one-invoice-slip {
+  max-height: calc(100vh - 36px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.om-one-invoice-slip-head {
+  flex: 0 0 auto;
+  padding: 20px 26px 16px;
+}
+
+.om-one-invoice-slip-head h2 {
+  font-size: clamp(1.8rem, 3vw, 3rem);
+}
+
+.om-one-invoice-slip-head p {
+  max-width: 760px;
+}
+
+.om-one-invoice-slip .om-single-invoice-template {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 16px 26px;
+  padding: 24px;
+}
+
+.om-one-invoice-actions {
+  flex: 0 0 auto;
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 26px 18px;
+  border-top: 1px solid rgba(36, 34, 29, 0.12);
+  background: #fbf6eb;
+  box-shadow: 0 -18px 40px rgba(57, 45, 29, 0.12);
+}
+
+.om-one-invoice-actions button {
+  min-height: 44px;
+}
+
+@media (max-width: 760px) {
+  .om-slip-backdrop {
+    padding: 8px;
+  }
+
+  .om-one-invoice-slip {
+    max-height: calc(100vh - 16px);
+    width: min(100%, 100vw - 16px);
+  }
+
+  .om-one-invoice-slip-head {
+    padding: 16px;
+  }
+
+  .om-one-invoice-slip .om-single-invoice-template {
+    margin: 10px;
+    padding: 14px;
+  }
+
+  .om-one-invoice-actions {
+    padding: 12px;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .om-one-invoice-actions button {
+    width: 100%;
+  }
+}
