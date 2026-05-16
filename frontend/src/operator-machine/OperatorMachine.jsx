@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_117_OWNER_FRIENDLY_DASHBOARD_WORDING
 // PHASE_116_REMOVE_DUPLICATE_DASHBOARD
 import { churvoxRenderDeployMarker } from "./renderDeployMarker";
 // PHASE_114_PROPER_INVOICE_DOCUMENT
@@ -5581,26 +5582,26 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
               {tool.title}
             </button>
           ))}
-          <small>Tools stay tucked away. The owner works from one approval desk.</small>
+          <small>Extra tools stay nearby, but your approval slips stay front and centre.</small>
         </section>
 
         <section className="om-dashboard-focus" data-phase="PHASE_116_SINGLE_APPROVAL_DESK">
           <aside className="om-dashboard-focus-card">
-            <span>Owner focus</span>
-            <h2>One desk. No duplicate boxes.</h2>
+            <span>Today’s command</span>
+            <h2>Here’s what needs your approval.</h2>
             <p>
-              Churvox keeps Input Tray, Processing Line and Output Log in the background.
-              The dashboard only shows what needs owner action now.
+              Churvox has already sorted the background work. Open the slips below to approve invoices,
+              assign workers, or fix anything holding the day up.
             </p>
 
             <div>
               <article>
                 <b>{machine.approval.length}</b>
-                <small>Approval slips waiting</small>
+                <small>Ready for you</small>
               </article>
               <article>
                 <b>{outputLog.length}</b>
-                <small>Actions recorded this session</small>
+                <small>Completed approvals</small>
               </article>
             </div>
           </aside>
