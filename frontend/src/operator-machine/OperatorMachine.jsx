@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_74_JOBS_QUEUE_BOARD
 // PHASE_73_PLANS_PRICING_BOARD
 // PHASE_72_ACTIVE_PLAN_ADDONS_SMS
 // PHASE_71_PLAN_FEATURE_LOCKS
@@ -1046,6 +1047,128 @@ function featureConfig(page) {
 }
 
 
+
+function JobsQueueBoard({ data, machine, onOpen }) {
+  const jobRows = rowsForPage("jobs", machine, data || {});
+  const needsWorker = jobRows.filter((row) => !hasWorker(row.item || {}) && !isCompletedJob(row.item || {}));
+  const activeJobs = jobRows.filter((row) => hasWorker(row.item || {}) && !isCompletedJob(row.item || {}));
+  const completedJobs = jobRows.filter((row) => isCompletedJob(row.item || {}));
+  const invoiceReady = machine.approval.filter((item) => item.kind === "invoice");
+
+  const priorityRows = [
+    ...needsWorker,
+    ...activeJobs,
+    ...completedJobs,
+    ...jobRows,
+  ].filter((row, index, arr) => arr.findIndex((item) => item.id === row.id) === index).slice(0, 12);
+
+  const jobStats = [
+    ["Total jobs", jobRows.length],
+    ["Need worker", needsWorker.length],
+    ["Active", activeJobs.length],
+    ["Completed", completedJobs.length],
+  ];
+
+  const machineSteps = [
+    ["New", "Job enters the tray"],
+    ["Dispatch", "Worker fit is checked"],
+    ["Proof", "Notes and photos feed admin"],
+    ["Invoice", "Completed work becomes approval-ready"],
+  ];
+
+  return (
+    <section className="om-jobs-board" data-phase="PHASE_74_JOBS_QUEUE_BOARD">
+      <header className="om-jobs-hero">
+        <div>
+          <span>Jobs</span>
+          <h1>Jobs feed the whole machine.</h1>
+          <p>
+            Keep the job simple. Churvox uses the job, worker, proof and client context to prepare dispatch,
+            invoice and follow-up actions for owner approval.
+          </p>
+        </div>
+
+        <aside>
+          {jobStats.map(([label, value]) => (
+            <article key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+            </article>
+          ))}
+        </aside>
+      </header>
+
+      <section className="om-job-flow-strip">
+        {machineSteps.map(([label, body], index) => (
+          <article key={label} className={index === 1 ? "active" : ""}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <strong>{label}</strong>
+            <small>{body}</small>
+          </article>
+        ))}
+      </section>
+
+      <section className="om-jobs-layout">
+        <section className="om-job-queue">
+          <header>
+            <div>
+              <span>Job Queue</span>
+              <h2>What needs job attention.</h2>
+              <p>Open one Work Slip to review, edit or approve the next move.</p>
+            </div>
+            <b>{priorityRows.length}</b>
+          </header>
+
+          <div>
+            {priorityRows.length ? priorityRows.map((row) => {
+              const item = row.item || {};
+              const status = statusOf(item);
+              const worker = clean(item.assigned_worker_name || item.worker_name || item.assigned_worker || item.worker_id);
+              const completed = isCompletedJob(item);
+              const needsDispatch = !hasWorker(item) && !completed;
+
+              return (
+                <button type="button" key={row.id} className={`om-job-ticket ${needsDispatch ? "needs-worker" : completed ? "completed" : "active"}`} onClick={() => onOpen(row)}>
+                  <span>{needsDispatch ? "Needs dispatch" : completed ? "Completed" : status || "Active job"}</span>
+                  <strong>{row.title}</strong>
+                  <small>{row.need}</small>
+                  <em>{worker ? `Worker: ${worker}` : needsDispatch ? "Choose worker" : "Open Work Slip"}</em>
+                </button>
+              );
+            }) : (
+              <article className="om-job-empty">
+                <strong>No jobs found yet.</strong>
+                <p>When jobs are added, Churvox will organise them into dispatch, proof and invoice-ready actions.</p>
+              </article>
+            )}
+          </div>
+        </section>
+
+        <aside className="om-job-side">
+          <section>
+            <span>Dispatch needed</span>
+            <strong>{needsWorker.length}</strong>
+            <p>Jobs without a worker should be handled first so the day can run cleanly.</p>
+          </section>
+
+          <section>
+            <span>Ready to invoice</span>
+            <strong>{invoiceReady.length}</strong>
+            <p>Completed work can become invoice drafts with job notes, proof and client context.</p>
+          </section>
+
+          <section>
+            <span>Machine rule</span>
+            <h3>One job record feeds many actions.</h3>
+            <p>Job details should stay simple. Churvox prepares the admin behind it.</p>
+          </section>
+        </aside>
+      </section>
+    </section>
+  );
+}
+
+
 function PlanPricingBoard({ data, currentPlan, onOpen }) {
   const rows = rowsForPage("plans", buildMachine(data || {}), data || {});
   const mainPlans = rows.filter((row) => row.kind === "plan");
@@ -1144,6 +1267,10 @@ function PlanPricingBoard({ data, currentPlan, onOpen }) {
 function FeatureWorkspace({ page, machine, data, currentPlan, onOpen, onPlans }) {
   if (page === "plans") {
     return <PlanPricingBoard data={data} currentPlan={currentPlan} onOpen={onOpen} />;
+  }
+
+  if (page === "jobs") {
+    return <JobsQueueBoard data={data} machine={machine} onOpen={onOpen} />;
   }
 
   const config = featureConfig(page);
