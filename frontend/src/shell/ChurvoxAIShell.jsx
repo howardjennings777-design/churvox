@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
 import "./ChurvoxOperatorOS.css";
+// PHASE_64_SAFE_REACT_TEXT
 // PHASE_63_REMOVE_GLOBAL_SMART_HUB_CONTEXT_CARDS
 // PHASE_61_RESTORE_READY_INVOICE_DRAFTS
 // PHASE_59_REMOVE_APPROVAL_CONTEXT_ROW
@@ -2492,10 +2493,10 @@ function ActionQueue({ actions = [] }) {
   return (
     <section className="cx-action-board">
       {actions.length ? actions.map((item) => (
-        <article className={`cx-work-action ${item.tone || "blue"}`} key={item.title}>
+        <article className={`cx-work-action ${item.tone || "blue"}`} key={safeReactText(item.title, "Item")}>
           <span>{item.type}</span>
-          <h3>{item.title}</h3>
-          <p>{item.body}</p>
+          <h3>{safeReactText(item.title, "Item")}</h3>
+          <p>{safeReactText(item.body, "")}</p>
           <button type="button">{item.action}</button>
         </article>
       )) : (
@@ -2747,8 +2748,8 @@ function SetupGuide({
             <article className={item.done ? "done" : ""} key={item.key}>
               <b>{item.done ? "✓" : "!"}</b>
               <div>
-                <strong>{item.title}</strong>
-                <p>{item.body}</p>
+                <strong>{safeReactText(item.title, "Item")}</strong>
+                <p>{safeReactText(item.body, "")}</p>
               </div>
               {item.action === "clients" ? <button type="button" onClick={onOpenClients}>Open clients</button> : null}
               {item.action === "team" ? <button type="button" onClick={onOpenTeam}>Team</button> : null}
@@ -2803,13 +2804,62 @@ function saveSmartHubItemStatus(items) {
 }
 
 
+
+function safeReactText(value, fallback = "") {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (value instanceof Date) return value.toLocaleString();
+
+  if (Array.isArray(value)) {
+    const clean = value
+      .map((item) => safeReactText(item, ""))
+      .filter(Boolean)
+      .join(", ");
+    return clean || fallback;
+  }
+
+  if (typeof value === "object") {
+    const preferred =
+      value.title ||
+      value.name ||
+      value.label ||
+      value.status ||
+      value.message ||
+      value.body ||
+      value.description ||
+      value.detail ||
+      value.text ||
+      value.value ||
+      value.id ||
+      value._id ||
+      "";
+
+    if (preferred && preferred !== value) {
+      return safeReactText(preferred, fallback);
+    }
+
+    try {
+      const values = Object.values(value)
+        .map((item) => safeReactText(item, ""))
+        .filter(Boolean);
+
+      return values.slice(0, 3).join(" · ") || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  return String(value || fallback);
+}
+
 function rowText(item, index, fallback = "Record") {
   if (Array.isArray(item)) {
     return {
-      lead: textValue(item[0], fallback),
-      title: textValue(item[1], `${fallback} ${index + 1}`),
-      detail: textValue(item[2], "No details yet"),
-      status: textValue(item[3], "Review"),
+      lead: safeReactText(textValue(item[0], fallback), fallback),
+      title: safeReactText(textValue(item[1], `${fallback} ${index + 1}`), `${fallback} ${index + 1}`),
+      detail: safeReactText(textValue(item[2], "No details yet"), "No details yet"),
+      status: safeReactText(textValue(item[3], "Review"), "Review"),
     };
   }
 
@@ -2841,10 +2891,10 @@ function rowText(item, index, fallback = "Record") {
   );
 
   return {
-    lead: textValue(item?.type, item?.role, fallback),
-    title,
-    detail,
-    status: statusText(item, "Review"),
+    lead: safeReactText(textValue(item?.type, item?.role, fallback), fallback),
+    title: safeReactText(title, `${fallback} ${index + 1}`),
+    detail: safeReactText(detail, "No details yet"),
+    status: safeReactText(statusText(item, "Review"), "Review"),
   };
 }
 
@@ -2917,11 +2967,11 @@ function cxRecordDetailFacts(selection = {}, draft = {}) {
   const item = selection.item || {};
   const row = rowText(item, 0, selection.label || selection.group || "Record");
   const page = selection.page || "";
-  const text = `${page} ${selection.group || ""} ${row.lead} ${row.title} ${row.detail} ${row.status} ${item.source_type || ""}`.toLowerCase();
+  const text = `${page} ${selection.group || ""} ${row.lead} ${row.title} ${safeReactText(row.detail, "No details yet")} ${row.status} ${item.source_type || ""}`.toLowerCase();
 
   function pick(label, value) {
-    const clean = value !== undefined && value !== null && String(value).trim() ? String(value).trim() : "";
-    return clean ? { label, value: clean } : null;
+    const clean = safeReactText(value, "").trim();
+    return clean ? { label: safeReactText(label, "Detail"), value: clean } : null;
   }
 
   const facts = [];
@@ -3154,8 +3204,8 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
         <header>
           <div>
             <span>{isApprovalFlow ? (selection.group || "Owner command") : workspaceName}</span>
-            <h2>{draft.title}</h2>
-            <p>{row.detail}</p>
+            <h2>{safeReactText(draft.title, "Untitled")}</h2>
+            <p>{safeReactText(row.detail, "No details yet")}</p>
           </div>
           <button type="button" aria-label="Close Smart Hub pop-up" onClick={onClose}>×</button>
         </header>
@@ -3168,12 +3218,12 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
         <section className="cx-command-modal-grid">
           <label>
             Title / summary
-            <input value={draft.title} onChange={(event) => update("title", event.target.value)} />
+            <input value={safeReactText(draft.title, "Untitled")} onChange={(event) => update("title", event.target.value)} />
           </label>
 
           <label>
             Status
-            <input value={draft.status} onChange={(event) => update("status", event.target.value)} />
+            <input value={safeReactText(draft.status, "Review")} onChange={(event) => update("status", event.target.value)} />
           </label>
 
           <label className="wide">
@@ -4210,7 +4260,7 @@ function SmartHubBoxModal({
       : "items remaining";
 
   function riskFor(row) {
-    const text = `${row.lead} ${row.title} ${row.detail} ${row.status}`.toLowerCase();
+    const text = `${row.lead} ${row.title} ${safeReactText(row.detail, "No details yet")} ${row.status}`.toLowerCase();
     if (text.includes("missing") || text.includes("failed")) return "Missing info";
     if (text.includes("overdue") || text.includes("unassigned") || text.includes("block")) return "Urgent";
     if (text.includes("draft") || text.includes("ready") || text.includes("complete")) return "Ready";
@@ -4226,7 +4276,7 @@ function SmartHubBoxModal({
   }
 
   function reasonFor(row) {
-    const text = `${row.lead} ${row.title} ${row.detail} ${row.status}`.toLowerCase();
+    const text = `${row.lead} ${row.title} ${safeReactText(row.detail, "No details yet")} ${row.status}`.toLowerCase();
 
     if (text.includes("unassigned")) return "AI found work that has not been assigned to a worker yet.";
     if (text.includes("invoice") || text.includes("completed job")) return "AI found completed or draft invoice work that may be ready for owner approval.";
@@ -4333,7 +4383,7 @@ function SmartHubBoxModal({
   }
 
   function primaryActionLabel(row) {
-    const text = `${box.key} ${row.lead} ${row.title} ${row.detail} ${row.status}`.toLowerCase();
+    const text = `${box.key} ${row.lead} ${row.title} ${safeReactText(row.detail, "No details yet")} ${row.status}`.toLowerCase();
 
     if (text.includes("unassigned") || text.includes("assign")) return "Assign worker";
     if (box.key === "setup") return "Fix setup";
@@ -4526,7 +4576,7 @@ function SmartHubBoxModal({
                 <div>
                   <span>{row.lead}</span>
                   <h3>{row.title}</h3>
-                  <p>{row.detail}</p>
+                  <p>{safeReactText(row.detail, "No details yet")}</p>
                   <div className="cx-smart-modal-tags">
                     <b className={`risk-${riskClassFor(row)}`}>{riskFor(row)}</b>
                     <small>{row.status}</small>
@@ -5594,13 +5644,13 @@ function DecisionLedgerPanel({ recent = [], backend = [], session = [], onClear,
           <article key={item.id}>
             <div>
               <span>{item.source}</span>
-              <strong>{item.title}</strong>
+              <strong>{safeReactText(item.title, "Item")}</strong>
               <p>{item.detail}</p>
             </div>
 
             <aside>
               <b>{item.type}</b>
-              <small>{item.status}</small>
+              <small>{safeReactText(item.status, "")}</small>
               <em>{item.time}</em>
             </aside>
           </article>
@@ -5907,11 +5957,11 @@ function IntegrationControlPanel({ onOpenPlans, onOpenSettings, onOpenInvoices, 
           <article className={`cx-integration-card ${item.tone}`} key={item.key}>
             <div className="cx-integration-card-head">
               <span>{item.label}</span>
-              <b>{item.status}</b>
+              <b>{safeReactText(item.status, "")}</b>
             </div>
 
-            <h3>{item.title}</h3>
-            <p>{item.body}</p>
+            <h3>{safeReactText(item.title, "Item")}</h3>
+            <p>{safeReactText(item.body, "")}</p>
 
             <div className="cx-integration-card-lists">
               <section>
@@ -6315,8 +6365,8 @@ function TeachChurvoxPanel({
           <article key={item.key}>
             <div>
               <span>Needed for better AI prep</span>
-              <h3>{item.title}</h3>
-              <p>{item.body}</p>
+              <h3>{safeReactText(item.title, "Item")}</h3>
+              <p>{safeReactText(item.body, "")}</p>
             </div>
             <button type="button" onClick={actionFor(item)}>
               {buttonLabel(item)}
@@ -6588,10 +6638,10 @@ function ProofToPaidWorkspace({ jobs = [], invoices = [], onOpenRecord, onApprov
 
       <section className="cx-proof-package-grid">
         {packages.length ? packages.map((item) => (
-          <article className={`cx-proof-package ${item.missing.length ? "needs-input" : "ready"}`} key={`${item.kind}-${item.id}-${item.title}`}>
+          <article className={`cx-proof-package ${item.missing.length ? "needs-input" : "ready"}`} key={`${item.kind}-${item.id}-${safeReactText(item.title, "Item")}`}>
             <div className="cx-proof-package-head">
               <span>{item.kind === "invoice_draft" ? "Invoice draft" : "Completed job"}</span>
-              <h3>{item.title}</h3>
+              <h3>{safeReactText(item.title, "Item")}</h3>
               <p>{item.jobTitle}{item.address ? ` · ${item.address}` : ""}</p>
             </div>
 
@@ -7712,7 +7762,7 @@ function Workspace({ page, setPage, data }) {
   function hubItemKey(boxKey, item) {
     const row = rowText(item, 0, boxKey || "Smart Hub");
     const rawId = item?.id || item?._id || item?.draft_id || item?.invoice_number || item?.quote_number || "";
-    return `${boxKey || "hub"}::${rawId || row.lead}::${row.title}::${row.detail}`;
+    return `${boxKey || "hub"}::${rawId || row.lead}::${row.title}::${safeReactText(row.detail, "No details yet")}`;
   }
 
   function hubRowsForKey(key) {
@@ -8548,10 +8598,10 @@ function Workspace({ page, setPage, data }) {
                   const isApproved = approved[item.title];
 
                   return (
-                    <article className={`cx-work-action ${item.tone || "blue"} cx-work-action-ai-machine`} key={item.title}>
+                    <article className={`cx-work-action ${item.tone || "blue"} cx-work-action-ai-machine`} key={safeReactText(item.title, "Item")}>
                       <span>{item.type}</span>
-                      <h3>{item.title}</h3>
-                      <p>{item.body}</p>
+                      <h3>{safeReactText(item.title, "Item")}</h3>
+                      <p>{safeReactText(item.body, "")}</p>
                       <section className="cx-work-action-context">
                         {(() => {
                           const row = rowText(item, 0, item.type || "AI action");
@@ -8666,7 +8716,7 @@ function Workspace({ page, setPage, data }) {
                 <>
                   <strong className="cx-prepared-message-heading">Ready to send</strong>
                   {sendCenterItems.slice(0, 4).map((item, index) => (
-                    <article key={`${item.id || index}-${item.title}`}>
+                    <article key={`${item.id || index}-${safeReactText(item.title, "Item")}`}>
                       <span>{item.kind || "Ready draft"}</span>
                       <strong>{item.client_name || "Client"}</strong>
                       <small>{item.message || item.title || "Ready to send"}</small>
@@ -8694,7 +8744,7 @@ function Workspace({ page, setPage, data }) {
                 <>
                   <strong className="cx-prepared-message-heading">Approved drafts</strong>
                   {approvedDrafts.slice(0, 4).map((item, index) => (
-                    <article key={`${item.id || index}-${item.title}`}>
+                    <article key={`${item.id || index}-${safeReactText(item.title, "Item")}`}>
                       <span>{item.kind || "Draft"}</span>
                       <strong>{item.client_name || "Client"}</strong>
                       <small>{item.message || item.title || "Approved draft ready"}</small>
@@ -8747,7 +8797,7 @@ function Workspace({ page, setPage, data }) {
 
             <div>
               {backendApprovalLog.length ? backendApprovalLog.map((item, index) => (
-                <article key={`${item.id || item._id || index}-${item.title}`}>
+                <article key={`${item.id || item._id || index}-${safeReactText(item.title, "Item")}`}>
                   <span>{item.approved_at ? new Date(item.approved_at).toLocaleString([], { dateStyle: "short", timeStyle: "short" }) : "Saved"}</span>
                   <strong>{item.type || "Approval"}</strong>
                   <small>{item.title || "Owner command approved"}</small>
@@ -8756,11 +8806,11 @@ function Workspace({ page, setPage, data }) {
               )) : null}
 
               {approvalLog.length ? approvalLog.map((item) => (
-                <article key={`${item.time}-${item.title}`}>
+                <article key={`${item.time}-${safeReactText(item.title, "Item")}`}>
                   <span>{item.time}</span>
                   <strong>{item.type}</strong>
-                  <small>{item.title}</small>
-                  <b>{item.status}</b>
+                  <small>{safeReactText(item.title, "Item")}</small>
+                  <b>{safeReactText(item.status, "")}</b>
                 </article>
               )) : null}
 
