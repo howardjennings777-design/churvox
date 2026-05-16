@@ -4891,3 +4891,571 @@ select {
     right: 10px;
   }
 }
+
+
+/* PHASE_97_TIGHTEN_PHONE_DISPLAY */
+@media (max-width: 820px) {
+  .om-shell {
+    padding-bottom: calc(66px + env(safe-area-inset-bottom));
+  }
+
+  .om-main {
+    padding: 10px 9px 12px;
+    gap: 10px;
+  }
+
+  .om-nav {
+    min-height: 58px;
+    padding: 6px 8px max(6px, env(safe-area-inset-bottom));
+    gap: 6px;
+  }
+
+  .om-brand i {
+    width: 36px;
+    height: 36px;
+    border-radius: 14px;
+  }
+
+  .om-brand i::before,
+  .om-brand i::after {
+    width: 6px;
+    height: 18px;
+  }
+
+  .om-brand i b {
+    width: 6px;
+    height: 6px;
+    bottom: 10px;
+  }
+
+  .om-nav nav {
+    gap: 5px;
+  }
+
+  .om-nav nav button {
+    min-height: 36px;
+    padding: 7px 10px;
+    font-size: .72rem;
+    border-radius: 999px;
+  }
+
+  .om-logout {
+    min-width: 38px;
+    min-height: 36px;
+    padding: 7px 9px;
+  }
+
+  .om-logout::after {
+    font-size: .72rem;
+  }
+
+  .om-hero,
+  .om-jobs-hero,
+  .om-clients-hero,
+  .om-team-hero,
+  .om-quotes-hero,
+  .om-invoices-hero,
+  .om-proof-hero,
+  .om-payroll-hero,
+  .om-settings-hero,
+  .om-plans-hero,
+  .om-feature-hero {
+    padding: 16px;
+    border-radius: 20px;
+    gap: 12px;
+  }
+
+  .om-hero h1,
+  .om-public-hero h1,
+  .om-jobs-hero h1,
+  .om-clients-hero h1,
+  .om-team-hero h1,
+  .om-quotes-hero h1,
+  .om-invoices-hero h1,
+  .om-proof-hero h1,
+  .om-payroll-hero h1,
+  .om-settings-hero h1,
+  .om-plans-hero h1,
+  .om-feature-hero h1 {
+    margin: 6px 0 8px;
+    font-size: clamp(1.75rem, 10.5vw, 2.65rem);
+    line-height: .9;
+    letter-spacing: -0.07em;
+  }
+
+  .om-hero p,
+  .om-public-hero p,
+  .om-jobs-hero p,
+  .om-clients-hero p,
+  .om-team-hero p,
+  .om-quotes-hero p,
+  .om-invoices-hero p,
+  .om-proof-hero p,
+  .om-payroll-hero p,
+  .om-settings-hero p,
+  .om-plans-hero p,
+  .om-feature-hero p {
+    font-size: .9rem;
+    line-height: 1.42;
+  }
+
+  .om-hero span,
+  .om-jobs-hero span,
+  .om-clients-hero span,
+  .om-team-hero span,
+  .om-quotes-hero span,
+  .om-invoices-hero span,
+  .om-proof-hero span,
+  .om-payroll-hero span,
+  .om-settings-hero span,
+  .om-plans-hero span {
+    font-size: .64rem;
+    letter-spacing: .085em;
+  }
+
+  .om-gauges {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .om-gauges article {
+    min-height: 68px;
+    padding: 10px;
+    border-radius: 15px;
+  }
+
+  .om-gauges span {
+    font-size: .62rem;
+  }
+
+  .om-gauges strong {
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+
+  .om-flow,
+  .om-job-flow-strip,
+  .om-client-flow-strip,
+  .om-team-flow-strip,
+  .om-quote-flow-strip,
+  .om-invoice-flow-strip,
+  .om-proof-flow-strip,
+  .om-payroll-flow-strip,
+  .om-settings-flow-strip {
+    gap: 8px;
+    margin-inline: -2px;
+    padding: 0 2px 2px;
+  }
+
+  .om-flow article,
+  .om-job-flow-strip article,
+  .om-client-flow-strip article,
+  .om-team-flow-strip article,
+  .om-quote-flow-strip article,
+  .om-invoice-flow-strip article,
+  .om-proof-flow-strip article,
+  .om-payroll-flow-strip article,
+  .om-settings-flow-strip article {
+    min-width: 166px;
+    min-height: 78px;
+    padding: 12px;
+    border-radius: 18px;
+    gap: 4px;
+  }
+
+  .om-flow article strong,
+  .om-job-flow-strip article strong,
+  .om-client-flow-strip article strong,
+  .om-team-flow-strip article strong,
+  .om-quote-flow-strip article strong,
+  .om-invoice-flow-strip article strong,
+  .om-proof-flow-strip article strong,
+  .om-payroll-flow-strip article strong,
+  .om-settings-flow-strip article strong {
+    font-size: .9rem;
+  }
+
+  .om-flow article small,
+  .om-job-flow-strip article small,
+  .om-client-flow-strip article small,
+  .om-team-flow-strip article small,
+  .om-quote-flow-strip article small,
+  .om-invoice-flow-strip article small,
+  .om-proof-flow-strip article small,
+  .om-payroll-flow-strip article small,
+  .om-settings-flow-strip article small {
+    font-size: .72rem;
+    line-height: 1.25;
+  }
+
+  .om-flow-count {
+    min-width: 30px;
+    height: 30px;
+    top: 9px;
+    right: 9px;
+    border-radius: 12px;
+    font-size: .92rem;
+  }
+
+  .om-flow-real-counts article strong,
+  .om-flow-real-counts article small {
+    padding-right: 36px;
+  }
+
+  .om-machine-grid,
+  .om-feature-layout,
+  .om-jobs-layout,
+  .om-clients-layout,
+  .om-team-layout,
+  .om-quotes-layout,
+  .om-invoices-layout,
+  .om-proof-layout,
+  .om-payroll-layout,
+  .om-settings-layout,
+  .om-plans-layout {
+    gap: 10px;
+  }
+
+  .om-lane,
+  .om-approval-desk,
+  .om-job-queue,
+  .om-client-list,
+  .om-team-list,
+  .om-quote-list,
+  .om-invoice-list,
+  .om-proof-list,
+  .om-payroll-list,
+  .om-settings-list,
+  .om-plan-board-section,
+  .om-job-side section,
+  .om-client-side section,
+  .om-team-side section,
+  .om-quote-side section,
+  .om-invoice-side section,
+  .om-proof-side section,
+  .om-payroll-side section,
+  .om-settings-side section {
+    border-radius: 20px;
+  }
+
+  .om-lane header,
+  .om-approval-desk header,
+  .om-job-queue > header,
+  .om-client-list > header,
+  .om-team-list > header,
+  .om-quote-list > header,
+  .om-invoice-list > header,
+  .om-proof-list > header,
+  .om-payroll-list > header,
+  .om-settings-list > header,
+  .om-plan-board-section > header {
+    padding: 13px;
+    gap: 10px;
+  }
+
+  .om-lane header h2,
+  .om-approval-desk header h2,
+  .om-job-queue h2,
+  .om-client-list h2,
+  .om-team-list h2,
+  .om-quote-list h2,
+  .om-invoice-list h2,
+  .om-proof-list h2,
+  .om-payroll-list h2,
+  .om-settings-list h2,
+  .om-plan-board-section h2 {
+    margin: 4px 0;
+    font-size: clamp(1.35rem, 8vw, 2rem);
+    line-height: .95;
+  }
+
+  .om-lane header p,
+  .om-approval-desk header p,
+  .om-job-queue p,
+  .om-client-list p,
+  .om-team-list p,
+  .om-quote-list p,
+  .om-invoice-list p,
+  .om-proof-list p,
+  .om-payroll-list p,
+  .om-settings-list p,
+  .om-plan-board-section p {
+    font-size: .82rem;
+    line-height: 1.35;
+  }
+
+  .om-job-tools,
+  .om-client-tools,
+  .om-team-tools,
+  .om-quote-tools,
+  .om-invoice-tools,
+  .om-proof-tools,
+  .om-payroll-tools,
+  .om-settings-tools {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .om-job-filter-tabs button,
+  .om-client-filter-tabs button,
+  .om-team-filter-tabs button,
+  .om-quote-filter-tabs button,
+  .om-invoice-filter-tabs button,
+  .om-proof-filter-tabs button,
+  .om-payroll-filter-tabs button,
+  .om-settings-filter-tabs button {
+    min-height: 34px;
+    padding: 7px 10px;
+    font-size: .72rem;
+  }
+
+  .om-job-tools input,
+  .om-client-tools input,
+  .om-team-tools input,
+  .om-quote-tools input,
+  .om-invoice-tools input,
+  .om-proof-tools input,
+  .om-payroll-tools input {
+    min-height: 38px;
+    border-radius: 14px;
+    font-size: .86rem;
+  }
+
+  .om-lane > div,
+  .om-approval-list,
+  .om-job-queue > div,
+  .om-client-list > div,
+  .om-team-list > div,
+  .om-quote-list > div,
+  .om-invoice-list > div,
+  .om-proof-list > div,
+  .om-payroll-list > div,
+  .om-settings-list > div,
+  .om-plan-board {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .om-slip-row,
+  .om-job-ticket,
+  .om-client-ticket,
+  .om-team-ticket,
+  .om-quote-ticket,
+  .om-invoice-ticket,
+  .om-proof-ticket,
+  .om-payroll-ticket,
+  .om-settings-ticket,
+  .om-plan-board-card,
+  .om-addon-card {
+    min-height: auto;
+    padding: 12px;
+    border-radius: 17px;
+    gap: 5px;
+  }
+
+  .om-slip-row strong,
+  .om-job-ticket strong,
+  .om-client-ticket strong,
+  .om-team-ticket strong,
+  .om-quote-ticket strong,
+  .om-invoice-ticket strong,
+  .om-proof-ticket strong,
+  .om-payroll-ticket strong,
+  .om-settings-ticket strong,
+  .om-plan-board-card strong,
+  .om-addon-card strong {
+    font-size: .95rem;
+    line-height: 1.08;
+  }
+
+  .om-slip-row small,
+  .om-job-ticket small,
+  .om-client-ticket small,
+  .om-team-ticket small,
+  .om-quote-ticket small,
+  .om-invoice-ticket small,
+  .om-proof-ticket small,
+  .om-payroll-ticket small,
+  .om-settings-ticket small,
+  .om-plan-board-card small,
+  .om-addon-card small {
+    font-size: .78rem;
+    line-height: 1.32;
+  }
+
+  .om-slip-row em,
+  .om-job-ticket em,
+  .om-client-ticket em,
+  .om-team-ticket em,
+  .om-quote-ticket em,
+  .om-invoice-ticket em,
+  .om-proof-ticket em,
+  .om-payroll-ticket em,
+  .om-settings-ticket em {
+    padding: 6px 9px;
+    font-size: .68rem;
+  }
+
+  .om-action-receipt {
+    padding: 13px;
+    border-radius: 20px;
+    gap: 8px;
+  }
+
+  .om-action-receipt h2 {
+    font-size: 1.22rem;
+    line-height: .96;
+  }
+
+  .om-action-receipt p,
+  .om-action-receipt em {
+    font-size: .78rem;
+  }
+
+  .om-slip-backdrop {
+    padding: 0;
+  }
+
+  .om-slip,
+  .om-plan-slip {
+    max-height: calc(100svh - 10px);
+    border-radius: 22px 22px 0 0;
+  }
+
+  .om-slip-head {
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .om-slip-head h2 {
+    font-size: clamp(1.45rem, 9vw, 2.25rem);
+    line-height: .94;
+  }
+
+  .om-slip-context {
+    margin: 0 12px 10px;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .om-slip-fields {
+    padding: 0 12px 12px;
+    gap: 9px;
+  }
+
+  .om-slip-fields label {
+    gap: 5px;
+    font-size: .72rem;
+  }
+
+  .om-slip-fields input,
+  .om-slip-fields textarea,
+  .om-slip-fields select {
+    min-height: 42px;
+    border-radius: 13px;
+    font-size: 16px;
+  }
+
+  .om-slip-fields textarea {
+    min-height: 94px;
+  }
+
+  .om-slip-actions {
+    gap: 8px;
+    padding: 10px 12px 12px;
+  }
+
+  .om-slip-actions button {
+    min-height: 42px;
+    padding: 0 12px;
+    font-size: .8rem;
+  }
+
+  .om-install-prompt {
+    left: 9px;
+    right: 9px;
+    bottom: calc(68px + env(safe-area-inset-bottom));
+    padding: 12px;
+    border-radius: 20px;
+    gap: 9px;
+  }
+
+  .om-install-prompt strong {
+    font-size: .9rem;
+  }
+
+  .om-install-prompt p {
+    font-size: .76rem;
+  }
+
+  .om-install-actions button,
+  .om-install-actions b {
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: .75rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .om-main {
+    padding-left: 7px;
+    padding-right: 7px;
+  }
+
+  .om-hero,
+  .om-jobs-hero,
+  .om-clients-hero,
+  .om-team-hero,
+  .om-quotes-hero,
+  .om-invoices-hero,
+  .om-proof-hero,
+  .om-payroll-hero,
+  .om-settings-hero,
+  .om-plans-hero,
+  .om-feature-hero {
+    padding: 14px;
+    border-radius: 19px;
+  }
+
+  .om-hero h1,
+  .om-jobs-hero h1,
+  .om-clients-hero h1,
+  .om-team-hero h1,
+  .om-quotes-hero h1,
+  .om-invoices-hero h1,
+  .om-proof-hero h1,
+  .om-payroll-hero h1,
+  .om-settings-hero h1,
+  .om-plans-hero h1,
+  .om-feature-hero h1 {
+    font-size: clamp(1.65rem, 10vw, 2.35rem);
+  }
+
+  .om-gauges article {
+    min-height: 58px;
+    padding: 8px;
+  }
+
+  .om-gauges strong {
+    font-size: 1.05rem;
+  }
+
+  .om-flow article,
+  .om-job-flow-strip article,
+  .om-client-flow-strip article,
+  .om-team-flow-strip article,
+  .om-quote-flow-strip article,
+  .om-invoice-flow-strip article,
+  .om-proof-flow-strip article,
+  .om-payroll-flow-strip article,
+  .om-settings-flow-strip article {
+    min-width: 150px;
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .om-nav nav button {
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+}
