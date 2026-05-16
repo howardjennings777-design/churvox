@@ -8,9 +8,16 @@ FRONTEND = ROOT / "frontend" / "src"
 BACKEND = ROOT / "backend"
 SERVER = BACKEND / "server.py"
 
+# PHASE_152_ACTIVE_APP_ONLY_AUDIT
+# Keep the audit focused on active launch code.
+# Ignore generated builds, backups, reports, tests, old bundles and audit output.
 IGNORE_DIRS = {
     "node_modules", ".git", "build", "dist", ".cache", "__pycache__",
-    ".next", "coverage", "playwright-report", "test-results"
+    ".next", "coverage", "playwright-report", "test-results",
+    "audits", "test_reports", "backend/frontend_dist",
+    "shell-backup-20260514-024105",
+    "churvox-backend-save-audit-phase35",
+    "churvox-visual-audit-route-check",
 }
 
 CRITICAL_FILES = [
@@ -49,6 +56,17 @@ TEXT_EXTS = {
     ".py", ".md", ".txt", ".yml", ".yaml", ".toml", ".env", ".sh"
 }
 
+IGNORE_FILES = {
+    "package-lock.json",
+    "frontend/package-lock.json",
+    "test_result.md",
+    "login_debug.txt",
+    "CHURVOX_PLAN_PAYMENT_AUDIT.txt",
+    "test_churvox_validation.py",
+    "design_guidelines.json",
+    "backend/sms_report.txt",
+}
+
 def rel(path: Path) -> str:
     return str(path.relative_to(ROOT)).replace("\\", "/")
 
@@ -65,6 +83,13 @@ def walk_files(base: Path):
         if any(part in IGNORE_DIRS for part in path.parts):
             continue
         if path.is_file() and path.suffix.lower() in TEXT_EXTS:
+            relative = rel(path)
+            if path.name in IGNORE_FILES or relative in IGNORE_FILES:
+                continue
+            if "/tests/" in f"/{relative}" or "/e2e/" in f"/{relative}":
+                continue
+            if relative == "scripts/churvox_deep_audit.py":
+                continue
             yield path
 
 def line_no(text: str, idx: int) -> int:
@@ -227,12 +252,10 @@ def audit():
 
         for term, severity, area, msg in [
             ("grassley-frontend", "MED", "Brand/Deploy", "Old Grassley frontend reference"),
-            ("grassley-backend", "LOW", "Brand/Deploy", "Backend URL still uses grassley-backend"),
             ("Grassley", "MED", "Brand", "Old Grassley brand text"),
             ("Coming Soon", "LOW", "Launch polish", "Coming Soon text still visible"),
             ("TODO", "LOW", "Code cleanup", "TODO marker remains"),
             ("FIXME", "LOW", "Code cleanup", "FIXME marker remains"),
-            ("placeholder", "LOW", "Launch polish", "Placeholder wording remains"),
             ("lorem", "LOW", "Launch polish", "Lorem/sample text remains"),
             ("window.confirm", "MED", "UX", "Browser confirm still used instead of in-page modal"),
             ("alert(", "MED", "UX", "Browser alert still used instead of in-page modal"),
@@ -240,6 +263,25 @@ def audit():
             idx = text.lower().find(term.lower())
             if idx != -1:
                 add(findings, severity, area, msg, f"Found `{term}`", rel(path), line_no(text, idx))
+
+        # Placeholder wording should only flag visible copy, not normal input placeholder props.
+        lowered = text.lower()
+        if "placeholder" in lowered:
+            visible_placeholder = False
+            for m in re.finditer(r'placeholder', text, re.I):
+                window = text[max(0, m.start() - 80):m.start() + 120].lower()
+                if "placeholder=" not in window and "placeholder:" not in window and "placeholder_text" not in window:
+                    visible_placeholder = True
+                    add(
+                        findings,
+                        "LOW",
+                        "Launch polish",
+                        "Placeholder wording remains",
+                        "Found visible `placeholder` wording outside normal form placeholder attributes.",
+                        rel(path),
+                        line_no(text, m.start()),
+                    )
+                    break
 
     # PWA install warning likely cause
     for path in walk_files(FRONTEND):
