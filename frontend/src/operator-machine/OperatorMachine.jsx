@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_85_FINISH_CLIENTS_OPERATOR_MACHINE
 // PHASE_84_FIX_DUPLICATE_DASHBOARD_HERO_JSX
 // PHASE_83_FIX_OLD_JOBS_ORPHAN_CHUNK
 // PHASE_82_FIX_OLD_WORKSLIP_ORPHAN_CHUNK
@@ -626,6 +627,30 @@ function WorkSlip({ slip, team, outputStatus, onClose, onSave, onApprove, onChoo
             </label>
           ) : null}
 
+          {slip.kind === "client" ? (
+            <>
+              <label>
+                Client name
+                <input value={draft.clientName || draft.title || ""} onChange={(event) => update("clientName", event.target.value)} placeholder="Client or business name" />
+              </label>
+
+              <label>
+                Email
+                <input value={draft.clientEmail || ""} onChange={(event) => update("clientEmail", event.target.value)} placeholder="Client email" />
+              </label>
+
+              <label>
+                Phone
+                <input value={draft.clientPhone || ""} onChange={(event) => update("clientPhone", event.target.value)} placeholder="Client phone" />
+              </label>
+
+              <label>
+                Service address
+                <input value={draft.clientAddress || ""} onChange={(event) => update("clientAddress", event.target.value)} placeholder="Client or job address" />
+              </label>
+            </>
+          ) : null}
+
           {isJobReview ? (
             <>
               <label>
@@ -1108,6 +1133,294 @@ function featureConfig(page) {
 
 
 
+
+function ClientsRecordBoard({ data, machine, onOpen }) {
+  const clientRows = rowsForPage("clients", machine, data || {});
+  const [clientFilter, setClientFilter] = useState("priority");
+  const [clientQuery, setClientQuery] = useState("");
+
+  const raw = (data && data.raw) || {};
+  const jobs = arrayFrom(raw.jobs, data?.jobs);
+  const quotes = arrayFrom(raw.quotes, data?.quotes);
+  const invoices = arrayFrom(raw.invoices, data?.invoices);
+
+  function clientName(item = {}) {
+    return clean(item.client_name || item.customer_name || item.name || item.business_name || item.company || item.email || item.phone, "Client");
+  }
+
+  function hasContact(item = {}) {
+    return Boolean(clean(item.email || item.client_email || item.customer_email || item.phone || item.client_phone || item.customer_phone || item.mobile));
+  }
+
+  function hasAddress(item = {}) {
+    return Boolean(clean(item.address || item.billing_address || item.service_address || item.location));
+  }
+
+  function relatedCount(client = {}, records = []) {
+    const name = clientName(client).toLowerCase();
+    const id = clean(client.id || client._id || client.client_id || client.customer_id).toLowerCase();
+
+    return records.filter((record) => {
+      const recordText = [
+        record.client_id,
+        record.customer_id,
+        record.client_name,
+        record.customer_name,
+        record.client?.name,
+        record.customer?.name,
+        record.name,
+        record.email,
+        record.phone,
+      ].map((value) => clean(value).toLowerCase()).join(" ");
+
+      return (id && recordText.includes(id)) || (name && recordText.includes(name));
+    }).length;
+  }
+
+  const missingContactRows = clientRows.filter((row) => !hasContact(row.item || {}));
+  const missingAddressRows = clientRows.filter((row) => !hasAddress(row.item || {}));
+  const activeRows = clientRows.filter((row) => relatedCount(row.item || {}, jobs) > 0);
+  const invoiceRows = clientRows.filter((row) => relatedCount(row.item || {}, invoices) > 0 || relatedCount(row.item || {}, quotes) > 0);
+
+  const priorityRows = [
+    ...missingContactRows,
+    ...missingAddressRows,
+    ...activeRows,
+    ...invoiceRows,
+    ...clientRows,
+  ].filter((row, index, arr) => arr.findIndex((item) => item.id === row.id) === index);
+
+  const sourceRows =
+    clientFilter === "contact" ? missingContactRows :
+    clientFilter === "address" ? missingAddressRows :
+    clientFilter === "active" ? activeRows :
+    clientFilter === "all" ? clientRows :
+    priorityRows;
+
+  const filteredRows = sourceRows
+    .filter((row) => {
+      const item = row.item || {};
+      const haystack = [
+        row.title,
+        row.need,
+        item.client_name,
+        item.customer_name,
+        item.name,
+        item.business_name,
+        item.company,
+        item.email,
+        item.phone,
+        item.mobile,
+        item.address,
+        item.billing_address,
+        item.service_address,
+      ].map((value) => clean(value).toLowerCase()).join(" ");
+
+      return !clientQuery.trim() || haystack.includes(clientQuery.trim().toLowerCase());
+    })
+    .slice(0, 18);
+
+  const clientStats = [
+    ["Clients", clientRows.length],
+    ["Need contact", missingContactRows.length],
+    ["Need address", missingAddressRows.length],
+    ["Active", activeRows.length],
+  ];
+
+  const machineSteps = [
+    ["Record", "Client enters once"],
+    ["Check", "Contact and address are checked"],
+    ["Use", "Jobs, quotes and invoices stay clean"],
+    ["Follow up", "Messages use real client context"],
+  ];
+
+  const filters = [
+    ["priority", "Priority"],
+    ["contact", "Need contact"],
+    ["address", "Need address"],
+    ["active", "Active"],
+    ["all", "All clients"],
+  ];
+
+  function makeNewClientSlip() {
+    return {
+      id: `new-client-${Date.now()}`,
+      sourceId: "",
+      kind: "client",
+      eyebrow: "New client intake",
+      title: "Create new client",
+      need: "Add the client once. Churvox will reuse it for jobs, quotes, invoices and reminders.",
+      prepared: "Churvox will use this client record as clean context across the Operator Machine.",
+      draft: {
+        title: "",
+        clientName: "",
+        clientEmail: "",
+        clientPhone: "",
+        clientAddress: "",
+        ownerNote: "",
+        customerMessage: "",
+        invoiceDescription: "",
+      },
+    };
+  }
+
+  function makeClientSlip(row) {
+    const item = row.item || {};
+    const name = clientName(item);
+    const email = clean(item.email || item.client_email || item.customer_email);
+    const phone = clean(item.phone || item.client_phone || item.customer_phone || item.mobile);
+    const address = clean(item.address || item.billing_address || item.service_address || item.location);
+    const jobsCount = relatedCount(item, jobs);
+    const quotesCount = relatedCount(item, quotes);
+    const invoicesCount = relatedCount(item, invoices);
+    const needsContact = !hasContact(item);
+    const needsAddress = !hasAddress(item);
+
+    return {
+      ...row,
+      kind: "client",
+      eyebrow: needsContact ? "Needs contact" : needsAddress ? "Needs address" : "Client record",
+      title: name,
+      need: needsContact
+        ? "Add phone or email so reminders, quotes and invoices can work cleanly."
+        : needsAddress
+          ? "Add a service address so jobs and worker matching are cleaner."
+          : "Review client details and keep the record clean.",
+      prepared:
+        `Churvox checked this client for machine context. Jobs: ${jobsCount}. Quotes: ${quotesCount}. Invoices: ${invoicesCount}.` +
+        `${email ? ` Email: ${email}.` : ""}${phone ? ` Phone: ${phone}.` : ""}${address ? ` Address: ${address}.` : ""}`,
+      draft: {
+        title: name,
+        clientName: name,
+        clientEmail: email,
+        clientPhone: phone,
+        clientAddress: address,
+        ownerNote: clean(item.notes || item.internal_note || row.need),
+        customerMessage: "",
+        invoiceDescription: address ? `Service address: ${address}` : "",
+      },
+    };
+  }
+
+  return (
+    <section className="om-clients-board" data-phase="PHASE_85_FINISH_CLIENTS_OPERATOR_MACHINE">
+      <header className="om-clients-hero om-clients-hero-final">
+        <div>
+          <span>Churvox Operator Machine · Clients</span>
+          <h1>Clients go in once. Jobs, quotes and invoices stay clean.</h1>
+          <p>
+            Keep client records simple. Churvox checks contact details, addresses and related work in the background,
+            then uses that context to prepare better jobs, invoices and follow-ups.
+          </p>
+
+          <button type="button" className="om-client-hero-action inline" onClick={() => onOpen(makeNewClientSlip())}>
+            New client intake
+          </button>
+        </div>
+
+        <aside>
+          {clientStats.map(([label, value]) => (
+            <article key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+            </article>
+          ))}
+        </aside>
+      </header>
+
+      <section className="om-client-flow-strip compact">
+        {machineSteps.map(([label, body], index) => (
+          <article key={label} className={index === 1 ? "active" : ""}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <strong>{label}</strong>
+            <small>{body}</small>
+          </article>
+        ))}
+      </section>
+
+      <section className="om-clients-layout">
+        <section className="om-client-list">
+          <header className="om-client-list-head">
+            <div>
+              <span>Client Records</span>
+              <h2>Who the business works for.</h2>
+              <p>Filter the records, then open one Work Slip to review or fix client details.</p>
+            </div>
+            <b>{filteredRows.length}</b>
+          </header>
+
+          <section className="om-client-tools">
+            <div className="om-client-filter-tabs">
+              {filters.map(([key, label]) => (
+                <button type="button" key={key} className={clientFilter === key ? "active" : ""} onClick={() => setClientFilter(key)}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <input
+              value={clientQuery}
+              onChange={(event) => setClientQuery(event.target.value)}
+              placeholder="Search client, phone, email, address..."
+            />
+          </section>
+
+          <div>
+            {filteredRows.length ? filteredRows.map((row) => {
+              const item = row.item || {};
+              const name = clientName(item);
+              const contact = clean(item.email || item.client_email || item.customer_email || item.phone || item.client_phone || item.customer_phone || item.mobile);
+              const address = clean(item.address || item.billing_address || item.service_address || item.location);
+              const needsContact = !hasContact(item);
+              const needsAddress = !hasAddress(item);
+
+              return (
+                <button
+                  type="button"
+                  key={row.id}
+                  className={`om-client-ticket ${needsContact ? "needs-contact" : needsAddress ? "needs-address" : "active"}`}
+                  onClick={() => onOpen(makeClientSlip(row))}
+                >
+                  <span>{needsContact ? "Needs contact" : needsAddress ? "Needs address" : "Client"}</span>
+                  <strong>{name}</strong>
+                  <small>{contact || address || row.need}</small>
+                  <em>{needsContact ? "Add contact" : needsAddress ? "Add address" : "Open Work Slip"}</em>
+                </button>
+              );
+            }) : (
+              <article className="om-client-empty">
+                <strong>No clients match this view.</strong>
+                <p>Try another filter or add a new client intake.</p>
+              </article>
+            )}
+          </div>
+        </section>
+
+        <aside className="om-client-side">
+          <section>
+            <span>Needs contact</span>
+            <strong>{missingContactRows.length}</strong>
+            <p>Phone or email is needed before reminders, quotes and invoices can work cleanly.</p>
+          </section>
+
+          <section>
+            <span>Needs address</span>
+            <strong>{missingAddressRows.length}</strong>
+            <p>Service address helps jobs, worker matching and invoice wording.</p>
+          </section>
+
+          <section>
+            <span>Machine rule</span>
+            <h3>Enter client details once.</h3>
+            <p>Churvox reuses clean client context across jobs, quotes, invoices, SMS and proof-to-paid.</p>
+          </section>
+        </aside>
+      </section>
+    </section>
+  );
+}
+
+
 function JobsQueueBoard({ data, machine, onOpen }) {
   const jobRows = rowsForPage("jobs", machine, data || {});
   const team = arrayFrom(data?.raw?.team, data?.raw?.workers, data?.team);
@@ -1497,6 +1810,10 @@ function FeatureWorkspace({ page, machine, data, currentPlan, onOpen, onPlans })
 
   if (page === "jobs") {
     return <JobsQueueBoard data={data} machine={machine} onOpen={onOpen} />;
+  }
+
+  if (page === "clients") {
+    return <ClientsRecordBoard data={data} machine={machine} onOpen={onOpen} />;
   }
 
   const config = featureConfig(page);
