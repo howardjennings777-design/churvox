@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_113_PROPER_INVOICE_TEMPLATE
 // PHASE_112_FIX_JOB_BRIEF_SYNTAX
 // PHASE_111B_SAFE_JOB_BRIEF_TEMPLATE
 // PHASE_110_HARD_FIX_BUSINESS_LOGO_CRASH
@@ -910,6 +911,19 @@ function smartWorkSlipDraft(slip = {}, team = []) {
     if (kind === "invoice" || kind === "proof") {
       return smartField(
         existing.customerMessage,
+        phase113InvoiceEmailText(
+          {
+            ...existing,
+            title,
+            invoiceClientName: client,
+            clientName: client,
+            invoiceLineItem: service || title,
+            invoiceDescription: invoiceText,
+            amount,
+            dueDate,
+          },
+          slip
+        ),
         invoiceText,
         `${service} completed for ${client}${address ? ` at ${address}` : ""}.`
       );
@@ -974,6 +988,7 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
   const isDispatch = slip.kind === "dispatch";
   const isInvoiceLike = slip.kind === "invoice" || slip.kind === "cashflow" || slip.kind === "proof";
   const isNewInvoice = slip.kind === "invoice" && String(slip.id || "").startsWith("new-invoice");
+  const showsInvoiceTemplate = phase113ShouldShowInvoiceTemplate(slip);
   const isPayrollLike = slip.kind === "payroll";
   const isSettingsLike = slip.kind === "settings";
   const isQuoteLike = slip.kind === "quote";
@@ -1065,6 +1080,7 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
         </section>
 
         <section className="om-slip-fields">
+          <InvoiceTemplateCard slip={slip} draft={draft} update={update} businessLogoUrl={businessLogoUrl} />
           <JobBriefTemplateCard slip={slip} draft={draft} update={update} />
           <label className={isJobIntake ? "wide" : ""}>
             Clear title
@@ -1303,10 +1319,12 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
             <textarea value={draft.ownerNote || ""} onChange={(event) => update("ownerNote", event.target.value)} placeholder="Add what matters before approval..." />
           </label>
 
-          <label className="wide">
-            Message / prepared wording
-            <textarea value={draft.customerMessage || ""} onChange={(event) => update("customerMessage", event.target.value)} placeholder="Edit before anything is copied, saved, or sent..." />
-          </label>
+          {!showsInvoiceTemplate ? (
+            <label className="wide">
+              Message / prepared wording
+              <textarea value={draft.customerMessage || ""} onChange={(event) => update("customerMessage", event.target.value)} placeholder="Edit before anything is copied, saved, or sent..." />
+            </label>
+          ) : null}
 
           {canChooseSms ? (
             <label>
@@ -4554,15 +4572,33 @@ function phase111bValue(...values) {
 
 function phase111bIsInvoiceSlip(slip = {}) {
   const kind = clean(slip.kind).toLowerCase();
+  const id = clean(slip.id).toLowerCase();
   const title = clean(slip.title).toLowerCase();
   const eyebrow = clean(slip.eyebrow).toLowerCase();
+  const need = clean(slip.need).toLowerCase();
+  const prepared = clean(slip.prepared).toLowerCase();
+  const combined = [kind, id, title, eyebrow, need, prepared].join(" ");
+
+  const hardJobOnly =
+    kind === "job" ||
+    kind === "new-job" ||
+    kind === "dispatch" ||
+    kind === "input";
+
+  if (hardJobOnly && !combined.includes("invoice") && !combined.includes("proof")) {
+    return false;
+  }
 
   return (
     kind.includes("invoice") ||
     kind.includes("cashflow") ||
     kind.includes("proof") ||
+    id.includes("invoice") ||
     title.includes("invoice") ||
-    eyebrow.includes("invoice")
+    title.includes("payment") ||
+    eyebrow.includes("invoice") ||
+    combined.includes("amount due") ||
+    combined.includes("due date")
   );
 }
 
@@ -4581,6 +4617,193 @@ function phase111bIsJobSlip(slip = {}) {
     eyebrow.includes("job")
   );
 }
+
+
+function phase113Money(value) {
+  const raw = clean(value);
+  if (!raw) return "Amount to confirm";
+  if (raw.includes("$")) return raw;
+
+  const parsed = Number(raw.replace(/[^0-9.-]/g, ""));
+  if (!Number.isFinite(parsed) || parsed <= 0) return raw;
+
+  return `$${parsed.toLocaleString(undefined, {
+    minimumFractionDigits: parsed % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function phase113FirstName(value) {
+  const name = clean(value, "there");
+  return name.split(/\s+/).filter(Boolean)[0] || "there";
+}
+
+function phase113ShouldShowInvoiceTemplate(slip = {}) {
+  const kind = clean(slip.kind).toLowerCase();
+  const id = clean(slip.id).toLowerCase();
+  const title = clean(slip.title).toLowerCase();
+  const eyebrow = clean(slip.eyebrow).toLowerCase();
+  const text = [kind, id, title, eyebrow].join(" ");
+
+  return (
+    kind === "invoice" ||
+    kind === "proof" ||
+    id.startsWith("new-invoice") ||
+    text.includes("invoice draft") ||
+    text.includes("approve invoice") ||
+    text.includes("invoice ready")
+  );
+}
+
+function phase113InvoiceValues(draft = {}, slip = {}) {
+  const client = phase111bValue(
+    draft.invoiceClientName,
+    draft.clientName,
+    draft.customerName,
+    slip.clientName,
+    "Client"
+  );
+
+  const lineItem = phase111bValue(
+    draft.invoiceLineItem,
+    draft.serviceType,
+    draft.title,
+    slip.title,
+    "Completed work"
+  );
+
+  const description = phase111bValue(
+    draft.invoiceDescription,
+    slip.prepared,
+    slip.need,
+    `${lineItem} completed for ${client}.`
+  );
+
+  const amount = phase113Money(
+    phase111bValue(draft.amount, draft.invoice_amount, draft.total, slip.amount)
+  );
+
+  const dueDate = phase111bValue(draft.dueDate, draft.payment_due_date, slip.dueDate, "Due date to confirm");
+  const businessName = phase111bValue(draft.businessName, slip.businessName, "Your business name");
+  const subject = phase111bValue(draft.invoiceSubject, `Invoice for ${lineItem}`);
+
+  const emailText = [
+    `Hi ${phase113FirstName(client)},`,
+    "",
+    "Thanks for choosing us. Your invoice is ready.",
+    "",
+    "Invoice summary:",
+    `- Work: ${lineItem}`,
+    `- Amount due: ${amount}`,
+    `- Due date: ${dueDate}`,
+    `- Details: ${description}`,
+    "",
+    "Payment:",
+    "Please use the payment link or bank details shown on the invoice. Reply to this email if anything needs checking.",
+    "",
+    "Thanks,",
+    businessName,
+  ].join("\n");
+
+  return {
+    client,
+    lineItem,
+    description,
+    amount,
+    dueDate,
+    businessName,
+    subject,
+    emailText,
+  };
+}
+
+function phase113InvoiceEmailText(draft = {}, slip = {}) {
+  return phase113InvoiceValues(draft, slip).emailText;
+}
+
+function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "" }) {
+  if (!phase113ShouldShowInvoiceTemplate(slip)) return null;
+
+  const invoice = phase113InvoiceValues(draft, slip);
+
+  return (
+    <section className="om-invoice-template" data-phase="PHASE_113_PROPER_INVOICE_TEMPLATE">
+      <header>
+        <div className="om-invoice-brand">
+          {businessLogoUrl ? <img src={businessLogoUrl} alt="" /> : <i />}
+          <div>
+            <span>AI-prepared invoice</span>
+            <strong>{invoice.subject}</strong>
+            <small>Customer email, invoice summary and owner approval in one clean slip.</small>
+          </div>
+        </div>
+        <em>Draft</em>
+      </header>
+
+      <section className="om-invoice-paper">
+        <div className="om-invoice-paper-head">
+          <div>
+            <span>Invoice to</span>
+            <strong>{invoice.client}</strong>
+            <small>{invoice.lineItem}</small>
+          </div>
+          <article className="om-invoice-total">
+            <b>Amount due</b>
+            <strong>{invoice.amount}</strong>
+            <small>Due: {invoice.dueDate}</small>
+          </article>
+        </div>
+
+        <div className="om-invoice-summary">
+          <article>
+            <b>Work completed</b>
+            <strong>{invoice.lineItem}</strong>
+          </article>
+          <article>
+            <b>Invoice details</b>
+            <p>{invoice.description}</p>
+          </article>
+          <article>
+            <b>Owner check</b>
+            <p>{draft.ownerNote || "Confirm amount, due date, customer wording and payment details before approval."}</p>
+          </article>
+        </div>
+
+        <section className="om-invoice-email-preview">
+          <b>Email to customer</b>
+          <div>
+            {invoice.emailText.split("\n").map((line, index) => (
+              <p key={`${line}-${index}`}>{line || "\u00A0"}</p>
+            ))}
+          </div>
+        </section>
+      </section>
+
+      <label className="wide om-invoice-message-editor">
+        Customer email template
+        <textarea
+          value={draft.customerMessage || invoice.emailText}
+          onChange={(event) => update("customerMessage", event.target.value)}
+          placeholder="AI-prepared invoice email..."
+        />
+      </label>
+
+      <footer>
+        <button
+          type="button"
+          onClick={() => {
+            update("invoiceDescription", invoice.description);
+            update("customerMessage", invoice.emailText);
+          }}
+        >
+          Use this template
+        </button>
+        <small>Owner still approves before invoice action, email, reminder or admin save.</small>
+      </footer>
+    </section>
+  );
+}
+
 
 function phase111bJobBriefText(draft = {}, slip = {}) {
   const title = phase111bValue(draft.title, slip.title, "Job input");
