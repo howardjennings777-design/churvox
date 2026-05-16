@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_127_REDO_INVOICE_EMAIL_CONTACT_TEMPLATE
 // PHASE_125_FORCE_RENDER_VISIBLE_DEPLOY_20260516112111
 // PHASE_122_COMPLETE_REAL_INVOICE_TEMPLATE
 // PHASE_121_ONE_INVOICE_ONLY
@@ -4936,17 +4937,7 @@ function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "", busine
               aria-label="Business name"
               placeholder="Business name"
             />
-            <textarea
-              value={businessAddress}
-              onChange={(event) => update("businessAddress", event.target.value)}
-              aria-label="Business address"
-              placeholder="Business address"
-            />
-            <div className="om-invoice-business-contact">
-              <input value={businessEmail} onChange={(event) => update("businessEmail", event.target.value)} placeholder="Business email" />
-              <input value={businessPhone} onChange={(event) => update("businessPhone", event.target.value)} placeholder="Business phone" />
-              <input value={gstNumber} onChange={(event) => update("gstNumber", event.target.value)} placeholder="GST / tax number" />
-            </div>
+            <small>Editable customer invoice</small>
           </div>
         </div>
 
@@ -4966,6 +4957,45 @@ function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "", busine
           </label>
         </aside>
       </header>
+
+      <section className="om-invoice-business-details" data-phase="PHASE_127_REDO_INVOICE_EMAIL_CONTACT_TEMPLATE">
+        <label className="wide">
+          Business address
+          <textarea
+            value={businessAddress}
+            onChange={(event) => update("businessAddress", event.target.value)}
+            aria-label="Business address"
+            placeholder="Business address shown on invoice"
+          />
+        </label>
+
+        <label>
+          Business email
+          <input
+            value={businessEmail}
+            onChange={(event) => update("businessEmail", event.target.value)}
+            placeholder="hello@yourbusiness.co.nz"
+          />
+        </label>
+
+        <label>
+          Business phone
+          <input
+            value={businessPhone}
+            onChange={(event) => update("businessPhone", event.target.value)}
+            placeholder="Phone number"
+          />
+        </label>
+
+        <label>
+          GST / tax number
+          <input
+            value={gstNumber}
+            onChange={(event) => update("gstNumber", event.target.value)}
+            placeholder="GST / tax number"
+          />
+        </label>
+      </section>
 
       <section className="om-single-invoice-details om-complete-invoice-details">
         <label>
