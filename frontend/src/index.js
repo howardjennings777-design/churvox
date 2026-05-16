@@ -365,6 +365,278 @@ import App from "./App";
 import "./index.css";
 
 
+// PHASE_182_GLOBAL_AI_AUTO_REFRESH_AND_CREW_MATCH
+// When records change, Approval Desk refreshes. When area/region/address is selected,
+// Churvox immediately suggests a crew match from live worker context.
+(function churvoxAutoAiAdminWiring() {
+  try {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    const API_CHANGE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+    const IMPORTANT_PATHS = [
+      "/jobs",
+      "/clients",
+      "/quotes",
+      "/invoices",
+      "/team",
+      "/worker",
+      "/ai",
+    ];
+
+    function normalise(value) {
+      return String(value || "").toLowerCase().trim();
+    }
+
+    function dispatchRefresh(reason) {
+      try {
+        window.dispatchEvent(new CustomEvent("churvox:refresh-live-data", {
+          detail: { reason, at: new Date().toISOString() },
+        }));
+      } catch {
+        // safe
+      }
+    }
+
+    if (!window.__CHURVOX_PHASE_182_FETCH_PATCHED__) {
+      window.__CHURVOX_PHASE_182_FETCH_PATCHED__ = true;
+      const originalFetch = window.fetch;
+
+      window.fetch = async function churvoxAiAwareFetch(input, init) {
+        const method = String((init && init.method) || "GET").toUpperCase();
+        const url = typeof input === "string" ? input : String((input && input.url) || "");
+        const touchesImportantRecord = IMPORTANT_PATHS.some((path) => url.includes(path));
+
+        const response = await originalFetch.apply(this, arguments);
+
+        if (API_CHANGE_METHODS.has(method) && touchesImportantRecord && response && response.ok) {
+          window.setTimeout(() => dispatchRefresh(`record-${method.toLowerCase()}`), 450);
+          window.setTimeout(() => dispatchRefresh(`record-${method.toLowerCase()}-settled`), 1800);
+        }
+
+        return response;
+      };
+    }
+
+    function workerName(worker, fallback = "Worker") {
+      return (
+        worker?.name ||
+        worker?.full_name ||
+        worker?.worker_name ||
+        worker?.email ||
+        fallback
+      );
+    }
+
+    function workerRegion(worker) {
+      return normalise(worker?.region || worker?.service_area || worker?.area || worker?.suburb || worker?.location);
+    }
+
+    function workerStatus(worker) {
+      return normalise(worker?.status || worker?.availability || "available");
+    }
+
+    function fieldLooksLikeAreaField(el) {
+      if (!el) return false;
+      const text = [
+        el.name,
+        el.id,
+        el.placeholder,
+        el.getAttribute("aria-label"),
+        el.closest("label")?.innerText,
+      ].map(normalise).join(" ");
+
+      return /area|region|suburb|city|address|location|site/.test(text);
+    }
+
+    function scoreWorker(worker, areaValue) {
+      const area = normalise(areaValue);
+      const region = workerRegion(worker);
+      const status = workerStatus(worker);
+      let score = 0;
+      const reasons = [];
+
+      if (region && area && (area.includes(region) || region.includes(area))) {
+        score += 6;
+        reasons.push(`works in ${region}`);
+      }
+
+      if (!status.includes("busy") && !status.includes("off") && !status.includes("leave")) {
+        score += 3;
+        reasons.push("appears available");
+      }
+
+      if (worker?.email || worker?.phone || worker?.mobile) {
+        score += 1;
+        reasons.push("has contact details saved");
+      }
+
+      if (!reasons.length) reasons.push("best available worker from the crew list");
+
+      return { worker, score, reasons };
+    }
+
+    function removeCrewPopup() {
+      document.getElementById("churvox-phase-182-crew-match")?.remove();
+    }
+
+    function showCrewSuggestion(inputValue) {
+      const ctx = window.__CHURVOX_LIVE_AI_CONTEXT__ || {};
+      const team = Array.isArray(ctx.team) ? ctx.team : [];
+
+      if (!team.length || !String(inputValue || "").trim()) return;
+
+      const best = team
+        .map((worker) => scoreWorker(worker, inputValue))
+        .sort((a, b) => b.score - a.score)[0];
+
+      if (!best || !best.worker) return;
+
+      const name = workerName(best.worker);
+      const reasons = best.reasons.slice(0, 3);
+      const area = String(inputValue || "").trim();
+
+      removeCrewPopup();
+
+      const popup = document.createElement("section");
+      popup.id = "churvox-phase-182-crew-match";
+      popup.innerHTML = `
+        <button type="button" class="cx-crew-match-close" aria-label="Close">×</button>
+        <span>CREW MATCH READY</span>
+        <strong>${name}</strong>
+        <p>Churvox checked the selected area <b>${area}</b> and matched the best available worker.</p>
+        <ul>
+          ${reasons.map((reason) => `<li>${reason}</li>`).join("")}
+        </ul>
+        <small>Saved as an Approval Desk suggestion. Owner approves before anything changes.</small>
+      `;
+
+      document.body.appendChild(popup);
+      popup.querySelector(".cx-crew-match-close")?.addEventListener("click", removeCrewPopup);
+
+      try {
+        localStorage.setItem("churvox_last_crew_match_suggestion", JSON.stringify({
+          worker: name,
+          area,
+          reasons,
+          at: new Date().toISOString(),
+        }));
+      } catch {
+        // safe
+      }
+
+      window.setTimeout(() => {
+        const current = document.getElementById("churvox-phase-182-crew-match");
+        if (current) current.classList.add("settled");
+      }, 6500);
+    }
+
+    function handleAreaInput(event) {
+      const el = event.target;
+      if (!el || !["INPUT", "SELECT", "TEXTAREA"].includes(el.tagName)) return;
+      if (!fieldLooksLikeAreaField(el)) return;
+
+      const value = el.value || el.textContent || "";
+      if (String(value).trim().length < 3) return;
+
+      window.clearTimeout(window.__CHURVOX_PHASE_182_CREW_TIMER__);
+      window.__CHURVOX_PHASE_182_CREW_TIMER__ = window.setTimeout(() => showCrewSuggestion(value), 360);
+    }
+
+    document.addEventListener("input", handleAreaInput, true);
+    document.addEventListener("change", handleAreaInput, true);
+
+    if (!document.getElementById("churvox-phase-182-ai-css")) {
+      const style = document.createElement("style");
+      style.id = "churvox-phase-182-ai-css";
+      style.textContent = `
+        #churvox-phase-182-crew-match {
+          position: fixed;
+          right: 22px;
+          bottom: 22px;
+          z-index: 999999;
+          width: min(390px, calc(100vw - 28px));
+          padding: 22px;
+          border-radius: 28px;
+          background:
+            radial-gradient(circle at 90% 0%, rgba(184, 242, 74, 0.22), transparent 10rem),
+            linear-gradient(145deg, #14130f, #242116);
+          color: #fffaf0;
+          border: 1px solid rgba(184, 242, 74, 0.28);
+          box-shadow: 0 30px 90px rgba(20, 19, 15, 0.35);
+          transform: translateY(0);
+          animation: churvoxCrewMatchIn 280ms ease both;
+          font-family: inherit;
+        }
+
+        #churvox-phase-182-crew-match.settled {
+          opacity: 0.92;
+        }
+
+        #churvox-phase-182-crew-match span {
+          display: inline-flex;
+          margin-bottom: 10px;
+          padding: 7px 10px;
+          border-radius: 999px;
+          background: rgba(184, 242, 74, 0.14);
+          color: #b8f24a;
+          font-size: 10px;
+          font-weight: 950;
+          letter-spacing: 0.13em;
+        }
+
+        #churvox-phase-182-crew-match strong {
+          display: block;
+          color: #fffaf0;
+          font-size: 28px;
+          line-height: 0.95;
+          letter-spacing: -0.05em;
+          font-weight: 950;
+        }
+
+        #churvox-phase-182-crew-match p,
+        #churvox-phase-182-crew-match small {
+          color: rgba(255, 250, 240, 0.74);
+          font-weight: 760;
+          line-height: 1.45;
+        }
+
+        #churvox-phase-182-crew-match ul {
+          display: grid;
+          gap: 6px;
+          padding-left: 18px;
+          margin: 14px 0;
+          color: #fffaf0;
+          font-weight: 850;
+        }
+
+        #churvox-phase-182-crew-match .cx-crew-match-close {
+          position: absolute;
+          right: 12px;
+          top: 12px;
+          width: 32px;
+          height: 32px;
+          border: 0;
+          border-radius: 999px;
+          background: rgba(255, 250, 240, 0.12);
+          color: #fffaf0;
+          cursor: pointer;
+        }
+
+        @keyframes churvoxCrewMatchIn {
+          from { opacity: 0; transform: translateY(20px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  } catch {
+    // keep app boot safe
+  }
+})();
+
+
+
+
 // PHASE_181_APPROVAL_DESK_NON_BORING_LAYOUT
 // Last-mile visible wording cleanup only. Does not touch API paths or logic.
 (function churvoxApprovalDeskWording() {

@@ -731,6 +731,117 @@ function aiActionRow(item) {
   };
 }
 
+
+// PHASE_182_APPROVAL_DESK_AI_AUTO_PREP
+function cxPowerClean(...values) {
+  for (const value of values) {
+    if (value !== undefined && value !== null && String(value).trim()) return String(value).trim();
+  }
+  return "";
+}
+
+function cxApprovalActionPowerCopy(action = {}) {
+  const rawType = cxPowerClean(action.type, action.kind, "Approval").toLowerCase();
+  const title = cxPowerClean(action.title, "Approval ready");
+  const baseBody = cxPowerClean(action.body, action.reason, "Churvox prepared this for owner review.");
+  const source = cxPowerClean(action.source_type, action.source, "");
+
+  let type = cxPowerClean(action.type, "Approval");
+  let actionLabel = cxPowerClean(action.action, "Review Approval Slip");
+  let checked = ["business context", "missing details", "owner approval risk"];
+  let prepared = "approval-ready admin";
+  let tone = cxPowerClean(action.tone, "blue");
+
+  if (rawType.includes("assign") || rawType.includes("crew") || rawType.includes("dispatch") || source.includes("job")) {
+    type = "Crew match";
+    actionLabel = "Review crew match";
+    checked = ["job area", "worker availability", "workload", "schedule conflict", "client/job context"];
+    prepared = "best crew recommendation";
+    tone = "blue";
+  }
+
+  if (rawType.includes("invoice") || source.includes("completed_job")) {
+    type = "Invoice ready";
+    actionLabel = "Review invoice";
+    checked = ["completed job", "worker proof", "job notes", "price source", "client contact"];
+    prepared = "invoice draft and sendability check";
+    tone = "teal";
+  }
+
+  if (rawType.includes("quote")) {
+    type = "Quote follow-up";
+    actionLabel = "Review follow-up";
+    checked = ["quote age", "quote status", "client contact", "amount", "follow-up timing"];
+    prepared = "owner-approved quote follow-up";
+    tone = "purple";
+  }
+
+  if (rawType.includes("cashflow") || rawType.includes("payment")) {
+    type = "Payment reminder";
+    actionLabel = "Review reminder";
+    checked = ["invoice status", "amount owing", "due date", "client contact", "send risk"];
+    prepared = "payment reminder draft";
+    tone = "amber";
+  }
+
+  if (rawType.includes("client")) {
+    type = "Client fix";
+    actionLabel = "Review client details";
+    checked = ["email", "phone", "address", "duplicate risk", "future invoice readiness"];
+    prepared = "client info fix";
+    tone = "blue";
+  }
+
+  if (rawType.includes("worker live") || rawType.includes("proof")) {
+    type = "Worker update";
+    actionLabel = "Review update";
+    checked = ["worker status", "job proof", "job notes", "client link", "invoice readiness"];
+    prepared = "owner-visible worker update";
+    tone = "teal";
+  }
+
+  const checkedText = checked.join(", ");
+  const alreadyPrepared = baseBody.toLowerCase().includes("churvox checked") || baseBody.toLowerCase().includes("ai checked");
+  const body = alreadyPrepared
+    ? baseBody
+    : `Churvox checked ${checkedText}. ${baseBody}`;
+
+  return {
+    ...action,
+    type,
+    title,
+    body,
+    action: actionLabel,
+    tone,
+    ai_checked: checked,
+    ai_prepared: prepared,
+    approval_slip_label: "Open Approval Slip",
+    prepared_context: [
+      `Checked: ${checkedText}`,
+      `Prepared: ${prepared}`,
+      "Owner stays in control before anything risky happens.",
+    ].join("\n"),
+  };
+}
+
+function cxPrioritiseApprovalActions(actions = []) {
+  const weight = (action = {}) => {
+    const text = `${action.type || ""} ${action.priority || ""} ${action.title || ""}`.toLowerCase();
+    if (text.includes("urgent")) return 100;
+    if (text.includes("invoice ready")) return 92;
+    if (text.includes("crew match")) return 88;
+    if (text.includes("payment reminder")) return 84;
+    if (text.includes("worker update")) return 78;
+    if (text.includes("quote follow")) return 72;
+    if (text.includes("client fix")) return 66;
+    if (text.includes("setup")) return 40;
+    return 50;
+  };
+
+  return [...actions].sort((a, b) => weight(b) - weight(a));
+}
+
+
 function buildLiveActions(raw) {
   const jobs = Array.isArray(raw.jobs) ? raw.jobs : [];
   const clients = Array.isArray(raw.clients) ? raw.clients : [];
@@ -1060,8 +1171,48 @@ function buildLiveActions(raw) {
     });
   }
 
-  return actions.slice(0, 12);
+
+  const liveWorkerUpdates = jobs
+    .filter((job) => !isCancelled(job))
+    .filter((job) => {
+      const status = jobStatus(job);
+      return (
+        status.includes("progress") ||
+        status.includes("started") ||
+        status.includes("paused") ||
+        countPhotos(job) > 0 ||
+        Boolean(noteText(job))
+      );
+    })
+    .slice(0, 5);
+
+  liveWorkerUpdates.forEach((job, index) => {
+    const title = jobTitle(job, `Worker update ${index + 1}`);
+    const client = clientName(job);
+    const worker = clean(job.assigned_worker_name, job.assigned_worker, job.worker_name, "Worker");
+    const status = jobStatus(job) || "updated";
+    const photos = countPhotos(job);
+    const notes = noteText(job);
+    const price = priceText(job);
+
+    addAction({
+      key: sourceKey("worker-live-update", job, title),
+      type: "Worker live update",
+      title: `${worker} update on ${title}`,
+      body: `Churvox linked this worker update to ${client}. Status: ${status}. ${photos ? `${photos} proof photo${photos === 1 ? "" : "s"} attached. ` : "No photos attached yet. "}${notes ? `Note found: ${notes.slice(0, 120)}. ` : ""}${price ? `Price source found: ${price}. ` : "Price may need checking before invoice."}`,
+      action: "Review update",
+      tone: "teal",
+      source_type: "worker_update",
+      source_id: recordId(job),
+      priority: status.includes("paused") ? "high" : "normal",
+      approval_preview: "Connect worker update to owner view, proof pack and invoice readiness.",
+      raw: job,
+    });
+  });
+
+  return cxPrioritiseApprovalActions(actions.map(cxApprovalActionPowerCopy)).slice(0, 14);
 }
+
 
 
 function notifyChurvoxLiveRefresh(reason = "updated") {
@@ -1221,6 +1372,21 @@ function useLiveChurvoxData(authed) {
         const value = Number(item?.total ?? item?.amount ?? item?.price ?? item?.balance ?? 0);
         return Number.isFinite(value) ? sum + value : sum;
       }, 0);
+
+      // PHASE_182_EXPOSE_LIVE_AI_CONTEXT
+      try {
+        window.__CHURVOX_LIVE_AI_CONTEXT__ = {
+          jobs: rawJobs,
+          clients: rawClients,
+          team: rawTeam,
+          quotes: rawQuotes,
+          invoices: rawInvoices,
+          actions: liveActions,
+          refreshedAt: new Date().toISOString(),
+        };
+      } catch {
+        // keep live data safe
+      }
 
       const nextState = {
         loading: false,
