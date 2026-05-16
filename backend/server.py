@@ -19038,6 +19038,10 @@ async def _platform_stats_impl(current_user: dict):
 
 # CORS_HARD_FIX_20260412
 
+# PHASE_157_CLEAN_STALE_BUNDLE_FINAL_ROUTE_AUDIT
+# Cleaned stale route-prefix issues: api_router is already mounted at /api.
+
+
 # PHASE_155_FIX_AI_ROUTE_PREFIX_AND_ROUTE_AUDIT
 # Fixed late api_router routes that accidentally included /api even though api_router
 # is already mounted under /api. Also removed orphan ai-operator decorator.
