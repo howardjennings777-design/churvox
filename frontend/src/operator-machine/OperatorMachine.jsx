@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_108_FIX_BUSINESS_LOGO_URL_SCOPE
 // PHASE_107_BUSINESS_LOGO_UPLOAD
 // PHASE_105_OWNER_APPROVAL_PERFORMS_REAL_ACTIONS
 // PHASE_104_AI_PREFILL_WORK_SLIPS
