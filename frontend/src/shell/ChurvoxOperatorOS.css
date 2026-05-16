@@ -4447,3 +4447,206 @@ a,
 .cx-public-plans-page .cx-workspace-operator-panel {
   display: none !important;
 }
+
+
+/* Phase 30: logged-in plans + visual hardening */
+.cx-app {
+  background:
+    radial-gradient(circle at 12% -10%, rgba(32, 217, 255, 0.16), transparent 34rem),
+    radial-gradient(circle at 92% 0%, rgba(24, 227, 194, 0.09), transparent 34rem),
+    linear-gradient(135deg, #03070b 0%, #061018 52%, #091722 100%) !important;
+}
+
+/* kill pale/white logged-in hero panels */
+.cx-app .cx-work-hero,
+.cx-app .cx-owner-command-hero,
+.cx-app .cx-worker-run-hero,
+.cx-app .cx-plans-machine-hero,
+.cx-app .cx-proof-machine-hero {
+  color: #eef7ff !important;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(32,217,255,.16), transparent 24rem),
+    radial-gradient(circle at 100% 0%, rgba(24,227,194,.08), transparent 24rem),
+    linear-gradient(145deg, rgba(14, 29, 43, .98), rgba(4, 10, 16, .96)) !important;
+  border: 1px solid rgba(116,247,255,.16) !important;
+  box-shadow:
+    0 34px 110px rgba(0,0,0,.50),
+    0 0 0 1px rgba(116,247,255,.06),
+    inset 0 1px 0 rgba(255,255,255,.04) !important;
+}
+
+.cx-app .cx-work-hero h1,
+.cx-app .cx-owner-command-hero h1,
+.cx-app .cx-worker-run-hero h1,
+.cx-app .cx-plans-machine h2,
+.cx-app .cx-proof-machine h2 {
+  color: #eef7ff !important;
+  opacity: 1 !important;
+  text-shadow: 0 18px 50px rgba(32,217,255,.14);
+}
+
+.cx-app .cx-work-hero h1 em,
+.cx-app .cx-owner-command-hero h1 em,
+.cx-app .cx-worker-run-hero h1 em {
+  color: #35b7ff !important;
+}
+
+.cx-app .cx-work-hero p,
+.cx-app .cx-owner-command-hero p,
+.cx-app .cx-worker-run-hero p {
+  color: #a8bac9 !important;
+}
+
+/* darken dashboard cards, stats, rows, and workspace records */
+.cx-app .cx-hub-box,
+.cx-app .cx-stat,
+.cx-app .cx-panel,
+.cx-app .cx-column,
+.cx-app .cx-work-action,
+.cx-app .cx-row,
+.cx-app .cx-command-row,
+.cx-app .cx-owner-command-strip article,
+.cx-app .cx-operator-expansion-panel button,
+.cx-app .cx-decision-ledger-grid article,
+.cx-app .cx-workspace-operator-panel,
+.cx-app .cx-worker-panel,
+.cx-app .cx-proof-package,
+.cx-app .cx-plan-card,
+.cx-app .cx-smart-modal-summary article,
+.cx-app .cx-record-machine-panel article,
+.cx-app .cx-record-facts-panel article,
+.cx-app .cx-record-next-panel,
+.cx-app .cx-ai-rules-grid > article,
+.cx-app .cx-integration-card,
+.cx-app .cx-teach-churvox-flow article,
+.cx-app .cx-teach-churvox-missing article,
+.cx-app .cx-owner-guardrails-grid article {
+  color: #eef7ff !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(32,217,255,.08), transparent 13rem),
+    linear-gradient(180deg, rgba(12, 26, 39, .96), rgba(3, 10, 16, .94)) !important;
+  border: 1px solid rgba(116,247,255,.13) !important;
+  box-shadow:
+    0 20px 64px rgba(0,0,0,.38),
+    inset 0 1px 0 rgba(255,255,255,.035) !important;
+}
+
+.cx-app .cx-hub-box:hover,
+.cx-app .cx-command-row:hover,
+.cx-app .cx-row:hover,
+.cx-app .cx-work-action:hover {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(32,217,255,.14), transparent 14rem),
+    linear-gradient(180deg, rgba(16, 34, 49, .98), rgba(4, 12, 18, .96)) !important;
+  border-color: rgba(116,247,255,.28) !important;
+}
+
+.cx-app .cx-hub-box strong,
+.cx-app .cx-stat strong,
+.cx-app .cx-panel h2,
+.cx-app .cx-column h3,
+.cx-app .cx-work-action h3,
+.cx-app .cx-command-row strong,
+.cx-app .cx-row strong,
+.cx-app .cx-decision-ledger-grid strong,
+.cx-app .cx-plan-card h3,
+.cx-app .cx-proof-package h3 {
+  color: #eef7ff !important;
+}
+
+.cx-app .cx-hub-box small,
+.cx-app .cx-stat small,
+.cx-app .cx-panel p,
+.cx-app .cx-panel small,
+.cx-app .cx-column p,
+.cx-app .cx-work-action p,
+.cx-app .cx-command-row small,
+.cx-app .cx-row small,
+.cx-app .cx-decision-ledger-grid p,
+.cx-app .cx-plan-card p,
+.cx-app .cx-proof-package p {
+  color: #9fb4c4 !important;
+}
+
+/* rows should not look like pale dumped pills */
+.cx-app .cx-command-list {
+  gap: 10px !important;
+}
+
+.cx-app .cx-command-row,
+.cx-app .cx-row {
+  min-height: 76px;
+  border-radius: 18px !important;
+  padding: 13px 14px !important;
+}
+
+.cx-app .cx-command-row span,
+.cx-app .cx-row span,
+.cx-app .cx-hub-box span,
+.cx-app .cx-panel span,
+.cx-app .cx-work-action span {
+  color: #74f7ff !important;
+}
+
+.cx-app .cx-command-row b,
+.cx-app .cx-row b,
+.cx-app .cx-hub-box b,
+.cx-app .cx-work-action b {
+  color: #031018 !important;
+  background: linear-gradient(135deg, #74f7ff, #35b7ff) !important;
+  border-color: rgba(116,247,255,.35) !important;
+}
+
+/* logged-in plans page must show pricing as the real content */
+.cx-app .cx-plans-machine {
+  display: grid !important;
+  gap: 18px !important;
+  margin-bottom: 18px !important;
+}
+
+.cx-app .cx-plans-grid {
+  display: grid !important;
+}
+
+.cx-app .cx-plan-card {
+  min-height: 620px !important;
+}
+
+.cx-app .cx-plan-price strong {
+  color: #eef7ff !important;
+}
+
+/* make forms dark/readable */
+.cx-app input,
+.cx-app textarea,
+.cx-app select {
+  color: #eef7ff !important;
+  background: rgba(3,10,16,.76) !important;
+  border: 1px solid rgba(116,247,255,.16) !important;
+}
+
+.cx-app input::placeholder,
+.cx-app textarea::placeholder {
+  color: rgba(168,186,201,.62) !important;
+}
+
+/* top bar polish */
+.cx-app .cx-topbar {
+  background:
+    linear-gradient(180deg, rgba(10,22,33,.95), rgba(3,10,16,.90)) !important;
+  border-color: rgba(116,247,255,.12) !important;
+}
+
+@media (max-width: 760px) {
+  .cx-app .cx-work-hero,
+  .cx-app .cx-owner-command-hero,
+  .cx-app .cx-worker-run-hero,
+  .cx-app .cx-plans-machine-hero,
+  .cx-app .cx-proof-machine-hero {
+    border-radius: 24px !important;
+  }
+
+  .cx-app .cx-hub-box {
+    min-height: 150px !important;
+  }
+}

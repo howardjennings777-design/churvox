@@ -2493,6 +2493,23 @@ function Dashboard({ setPage, data }) {
         />
       ) : null}
 
+      {page === "plans" ? (
+        <ChurvoxPlansWorkspace
+          planCatalog={planCatalog}
+          onChoosePlan={(plan) => {
+            logCommand("Plans", `Selected ${plan.name}`, "Plan choice opened");
+            setSelectedRecord({
+              item: ["Plan", plan.name, `${plan.price} ${plan.period} · ${plan.description}`, "Review"],
+              page: "plans",
+              group: "Plan",
+              label: plan.name,
+              recommendation: `${plan.name} controls Churvox capacity and workflow access. Review billing before confirming changes.`,
+            });
+          }}
+          onOpenSettings={() => switchPage("settings")}
+        />
+      ) : null}
+
       <section className={`cx-stats ${page === "dashboard" ? "cx-hide-on-smart-hub" : ""}`}>
         <Stat label="Jobs today" value={stats.jobsToday || String(jobs.length)} note="live workspace count" />
         <Stat label="Ready to invoice" value={stats.readyToInvoice || "$0"} note="drafts and follow-ups" />
@@ -8093,7 +8110,7 @@ function Workspace({ page, setPage, data }) {
               </h1>
               <p>Approve work, fix blockers, review messages, and keep the day moving from one simple board.</p>
               <div className="cx-smart-hero-pills">
-                <small>Approval-first</small>
+                <small>AI prepares</small>
                 <small>Approval-first</small>
                 <small>Owner controls decisions</small>
               </div>
@@ -8164,7 +8181,7 @@ function Workspace({ page, setPage, data }) {
         <OwnerGuardrailsPanel onOpenSettings={() => switchPage("settings")} />
       ) : null}
 
-      {(page === "dashboard" || page === "settings" || page === "plans") ? (
+      {(page === "dashboard" || page === "settings") ? (
         <IntegrationControlPanel
           onOpenPlans={() => switchPage("plans")}
           onOpenSettings={() => switchPage("settings")}
