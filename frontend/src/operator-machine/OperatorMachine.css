@@ -2055,3 +2055,39 @@
     min-height: auto;
   }
 }
+
+
+/* PHASE_77_COMBINE_FEATURE_HEADERS */
+.om-main > .om-feature-workspace:first-child,
+.om-main > .om-jobs-board:first-child,
+.om-main > .om-invoices-board:first-child,
+.om-main > .om-clients-board:first-child,
+.om-main > .om-plans-board:first-child {
+  margin-top: 0;
+}
+
+.om-jobs-hero {
+  min-height: 250px;
+}
+
+.om-jobs-hero h1 {
+  max-width: 860px;
+}
+
+.om-jobs-hero p {
+  max-width: 850px;
+}
+
+.om-jobs-board {
+  padding-top: 0;
+}
+
+.om-main > .om-warning:first-child {
+  margin-bottom: 18px;
+}
+
+@media (max-width: 760px) {
+  .om-jobs-hero {
+    min-height: auto;
+  }
+}

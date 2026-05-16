@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_77_COMBINE_FEATURE_HEADERS
 // PHASE_74_JOBS_QUEUE_BOARD
 // PHASE_73_PLANS_PRICING_BOARD
 // PHASE_72_ACTIVE_PLAN_ADDONS_SMS
@@ -1080,11 +1081,11 @@ function JobsQueueBoard({ data, machine, onOpen }) {
     <section className="om-jobs-board" data-phase="PHASE_74_JOBS_QUEUE_BOARD">
       <header className="om-jobs-hero">
         <div>
-          <span>Jobs</span>
-          <h1>Jobs feed the whole machine.</h1>
+          <span>Churvox Operator Machine · Jobs</span>
+          <h1>Jobs go in. Dispatch, proof and invoices come out ready.</h1>
           <p>
-            Keep the job simple. Churvox uses the job, worker, proof and client context to prepare dispatch,
-            invoice and follow-up actions for owner approval.
+            Keep the job record simple. Churvox checks worker fit, proof, client context and invoice readiness
+            in the background, then shows only the decisions the owner needs to make.
           </p>
         </div>
 
@@ -1534,6 +1535,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
       </aside>
 
       <section className="om-main">
+        {page === "dashboard" ? (
         <header className="om-hero">
           <div>
             <span>Churvox Operator Machine</span>
@@ -1550,6 +1552,8 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
             <article><span>Approval</span><strong>{machine.counts.approval}</strong></article>
           </section>
         </header>
+
+        ) : null}
 
         {data?.error ? <section className="om-warning"><b>Machine warning</b><span>{data.error}</span></section> : null}
 
