@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
+// PHASE_132_FAST_LOADING_LIVE_CACHE
 import OperatorMachine, { OperatorLanding } from "../operator-machine/OperatorMachine";
 
 function cxSafeText(value, fallback = "") {
@@ -194,6 +195,69 @@ const QUOTES = [];
 const INVOICES = [];
 
 const AI_APPROVAL_LOG_KEY = "churvox_ai_shell_approval_log";
+
+const CHURVOX_LIVE_CACHE_KEY = "churvox_fast_live_data_cache_v1";
+const CHURVOX_LIVE_CACHE_MAX_AGE_MS = 10 * 60 * 1000;
+
+function readFastLiveCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(CHURVOX_LIVE_CACHE_KEY) || "null");
+    if (!cached || typeof cached !== "object") return null;
+    if (!cached.savedAt || Date.now() - Number(cached.savedAt) > CHURVOX_LIVE_CACHE_MAX_AGE_MS) return null;
+    if (!cached.state || typeof cached.state !== "object") return null;
+    return {
+      ...cached.state,
+      loading: false,
+      error: "",
+      fromCache: true,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveFastLiveCache(nextState) {
+  try {
+    const safe = {
+      ...nextState,
+      loading: false,
+      error: "",
+      fromCache: false,
+    };
+    localStorage.setItem(CHURVOX_LIVE_CACHE_KEY, JSON.stringify({
+      savedAt: Date.now(),
+      state: safe,
+    }));
+  } catch {
+    // ignore cache errors
+  }
+}
+
+function fastTimeout(ms, label) {
+  return new Promise((_, reject) => {
+    window.setTimeout(() => reject(new Error(`${label} timed out`)), ms);
+  });
+}
+
+function fastApiGet(path, ms = 4500) {
+  return Promise.race([
+    apiGet(path),
+    fastTimeout(ms, path),
+  ]);
+}
+
+function stateHasLiveRows(state) {
+  return Boolean(
+    state?.raw?.jobs?.length ||
+    state?.raw?.clients?.length ||
+    state?.raw?.team?.length ||
+    state?.raw?.quotes?.length ||
+    state?.raw?.invoices?.length ||
+    state?.actions?.length
+  );
+}
+
+
 
 function readApprovalLog() {
   try {
@@ -1052,24 +1116,35 @@ function useLiveChurvoxData(authed) {
         return;
       }
 
-      setState((current) => ({ ...current, loading: true, error: "" }));
+      setState((current) => {
+        const cached = readFastLiveCache();
+        if (cached && !stateHasLiveRows(current)) {
+          return {
+            ...cached,
+            loading: true,
+            error: "Refreshing latest data...",
+          };
+        }
+
+        return { ...current, loading: true, error: "" };
+      });
 
       const results = await Promise.allSettled([
-        apiGet("/jobs"),
-        apiGet("/clients"),
-        apiGet("/team/workers"),
-        apiGet("/quotes"),
-        apiGet("/invoices"),
-        apiGet("/ai/actions"),
-        apiGet("/dispatch/board"),
-        apiGet("/recurring-jobs"),
-        apiGet("/service-templates"),
-        apiGet("/setup/ai-audit"),
-        apiGet("/reports/owner-summary"),
-        apiGet("/reports/cashflow"),
-        apiGet("/reports/workers"),
-        apiGet("/reports/quotes"),
-        apiGet("/public-job-requests"),
+        fastApiGet("/jobs", 4500),
+        fastApiGet("/clients", 4500),
+        fastApiGet("/team/workers", 4500),
+        fastApiGet("/quotes", 4500),
+        fastApiGet("/invoices", 4500),
+        fastApiGet("/ai/actions", 4500),
+        fastApiGet("/dispatch/board", 2800),
+        fastApiGet("/recurring-jobs", 2800),
+        fastApiGet("/service-templates", 2800),
+        fastApiGet("/setup/ai-audit", 2800),
+        fastApiGet("/reports/owner-summary", 2800),
+        fastApiGet("/reports/cashflow", 2800),
+        fastApiGet("/reports/workers", 2800),
+        fastApiGet("/reports/quotes", 2800),
+        fastApiGet("/public-job-requests", 2800),
       ]);
 
       if (cancelled) return;
@@ -1125,7 +1200,7 @@ function useLiveChurvoxData(authed) {
         return Number.isFinite(value) ? sum + value : sum;
       }, 0);
 
-      setState({
+      const nextState = {
         loading: false,
         error: results.some((result) => result.status === "rejected") ? "Some live data is still syncing." : "",
         jobs: mappedJobs,
@@ -1160,7 +1235,10 @@ function useLiveChurvoxData(authed) {
           quotes: rawQuotes,
           invoices: rawInvoices,
         },
-      });
+      };
+
+      saveFastLiveCache(nextState);
+      setState(nextState);
     }
 
     load();
@@ -1175,7 +1253,7 @@ function useLiveChurvoxData(authed) {
       if (!document.hidden) {
         load();
       }
-    }, 120000);
+    }, 300000);
 
     return () => {
       cancelled = true;

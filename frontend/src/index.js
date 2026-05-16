@@ -5,6 +5,30 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
+// PHASE_132_FAST_LOADING_PRECONNECT
+function preconnectChurvoxBackend() {
+  if (typeof document === "undefined") return;
+
+  try {
+    const href = "https://grassley-backend.onrender.com";
+    if (document.querySelector(`link[rel="preconnect"][href="${href}"]`)) return;
+
+    const preconnect = document.createElement("link");
+    preconnect.rel = "preconnect";
+    preconnect.href = href;
+    preconnect.crossOrigin = "anonymous";
+    document.head.appendChild(preconnect);
+
+    const dns = document.createElement("link");
+    dns.rel = "dns-prefetch";
+    dns.href = href;
+    document.head.appendChild(dns);
+  } catch {
+    // keep boot safe
+  }
+}
+
+
 
 async function resetStalePwaCacheOnce() {
   if (typeof window === "undefined") return;
@@ -78,6 +102,7 @@ function registerChurvoxPwa() {
   });
 }
 
+preconnectChurvoxBackend();
 resetOldPwaShellIfRequested();
 resetStalePwaCacheOnce();
 registerChurvoxPwa();
