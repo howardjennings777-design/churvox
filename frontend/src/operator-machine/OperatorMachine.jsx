@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_104_AI_PREFILL_WORK_SLIPS
 // PHASE_103_TAPPABLE_DASHBOARD_ADVANCED_TOOLS
 // PHASE_102_REMOVE_DASHBOARD_FEATURE_STACK
 import TopPlayerFeatureStack from "./TopPlayerFeatureStack";
@@ -536,13 +537,211 @@ function buildMachine(data = {}) {
 }
 
 
+
+function smartField(...values) {
+  for (const value of values) {
+    const cleaned = clean(value);
+    if (cleaned) return cleaned;
+  }
+  return "";
+}
+
+function smartJobClient(item = {}, fallback = "Client") {
+  return smartField(
+    item.client_name,
+    item.customer_name,
+    item.client?.name,
+    item.customer?.name,
+    item.name,
+    fallback
+  );
+}
+
+function smartJobAddress(item = {}) {
+  return smartField(
+    item.address,
+    item.job_address,
+    item.service_address,
+    item.site_address,
+    item.location
+  );
+}
+
+function smartJobService(item = {}, fallback = "job") {
+  return smartField(
+    item.service_type,
+    item.job_type,
+    item.trade,
+    item.category,
+    item.title,
+    item.job_title,
+    fallback
+  );
+}
+
+function smartWorkerName(item = {}, fallback = "worker") {
+  return smartField(
+    item.assigned_worker_name,
+    item.worker_name,
+    item.assigned_worker,
+    item.worker?.name,
+    item.worker,
+    fallback
+  );
+}
+
+function smartWorkSlipDraft(slip = {}, team = []) {
+  const item = slip.item || {};
+  const existing = slip.draft && typeof slip.draft === "object" ? slip.draft : {};
+  const kind = clean(slip.kind).toLowerCase();
+
+  const title = smartField(
+    existing.title,
+    slip.title,
+    item.title,
+    item.job_title,
+    item.invoice_title,
+    item.quote_title,
+    item.name,
+    "Work Slip"
+  );
+
+  const client = smartJobClient(item, smartField(existing.clientName, existing.invoiceClientName, existing.quoteClientName, slip.client, "Client"));
+  const address = smartJobAddress(item);
+  const service = smartJobService(item, title);
+  const amount = smartField(existing.amount, invoiceAmount(item));
+  const dueDate = smartField(
+    existing.dueDate,
+    item.due_date,
+    item.payment_due_date,
+    item.invoice_due_date,
+    kind.includes("invoice") || kind.includes("cashflow")
+      ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+      : ""
+  );
+  const notes = smartField(
+    existing.ownerNote,
+    item.owner_note,
+    item.internal_note,
+    item.completion_notes,
+    item.worker_notes,
+    item.job_notes,
+    item.notes,
+    slip.need
+  );
+  const prepared = smartField(existing.prepared, slip.prepared, slip.need);
+
+  const suggestedWorker = team[0] || {};
+  const suggestedWorkerName = smartField(
+    existing.workerChoice,
+    suggestedWorker.name,
+    suggestedWorker.full_name,
+    suggestedWorker.worker_name,
+    suggestedWorker.email,
+    smartWorkerName(item, "")
+  );
+
+  const baseOwnerNote = (() => {
+    if (kind === "dispatch") {
+      return `Churvox checked this job for dispatch. ${client ? `Client: ${client}. ` : ""}${address ? `Site: ${address}. ` : ""}${suggestedWorkerName ? `Suggested worker: ${suggestedWorkerName}. ` : ""}Owner should confirm the worker before the job is assigned.`;
+    }
+
+    if (kind === "input") {
+      return `Churvox found a new job input. ${client ? `Client: ${client}. ` : ""}${address ? `Address: ${address}. ` : ""}Review the job details, then send it into dispatch or admin prep.`;
+    }
+
+    if (kind === "job" || kind === "new-job") {
+      return `Churvox prepared this job as clean machine input. ${client ? `Client: ${client}. ` : ""}${address ? `Address: ${address}. ` : ""}${service ? `Work: ${service}. ` : ""}Owner can edit before approval.`;
+    }
+
+    if (kind === "invoice" || kind === "cashflow" || kind === "proof") {
+      return `Churvox prepared this from job, client, proof and pricing context. ${amount ? `Amount found: ${money(amount)}. ` : "Amount still needs owner check. "}${dueDate ? `Due date: ${dueDate}. ` : ""}Owner should review wording before approval.`;
+    }
+
+    if (kind === "quote") {
+      return `Churvox prepared quote wording for ${client}. ${amount ? `Estimate: ${money(amount)}. ` : ""}Owner should review the scope and wording before sending or saving.`;
+    }
+
+    if (kind === "client") {
+      return `Churvox checked this client record. Add missing contact or address details so quotes, invoices and reminders have the right context.`;
+    }
+
+    if (kind === "team-member") {
+      return `Churvox checked this team record. Confirm role, contact and region so worker matching and invites work cleanly.`;
+    }
+
+    return prepared || notes || "Churvox prepared this action for owner review.";
+  })();
+
+  const invoiceText = (() => {
+    if (kind === "invoice" || kind === "cashflow" || kind === "proof") {
+      return smartField(
+        existing.invoiceDescription,
+        item.invoice_description,
+        item.description,
+        invoiceDescription(item),
+        `${service} completed for ${client}${address ? ` at ${address}` : ""}.`
+      );
+    }
+
+    return smartField(existing.invoiceDescription, item.invoice_description, item.description, "");
+  })();
+
+  const messageText = (() => {
+    if (kind === "cashflow") {
+      return smartField(existing.customerMessage, reminderMessage(item));
+    }
+
+    if (kind === "quote") {
+      return smartField(existing.customerMessage, quoteFollowup(item));
+    }
+
+    if (kind === "invoice" || kind === "proof") {
+      return smartField(
+        existing.customerMessage,
+        invoiceText,
+        `${service} completed for ${client}${address ? ` at ${address}` : ""}.`
+      );
+    }
+
+    if (kind === "dispatch" || kind === "input" || kind === "job") {
+      return smartField(
+        existing.customerMessage,
+        `${title}. ${client ? `Client: ${client}. ` : ""}${address ? `Address: ${address}. ` : ""}${service ? `Work: ${service}. ` : ""}Prepared for owner approval.`
+      );
+    }
+
+    return smartField(existing.customerMessage, prepared, baseOwnerNote);
+  })();
+
+  return {
+    ...existing,
+    title,
+    clientName: smartField(existing.clientName, client),
+    invoiceClientName: smartField(existing.invoiceClientName, client),
+    quoteClientName: smartField(existing.quoteClientName, client),
+    address: smartField(existing.address, address),
+    serviceType: smartField(existing.serviceType, service),
+    workerChoice: smartField(existing.workerChoice, suggestedWorker.id, suggestedWorker._id, suggestedWorkerName),
+    amount,
+    dueDate,
+    invoiceLineItem: smartField(existing.invoiceLineItem, service, title),
+    quoteLineItem: smartField(existing.quoteLineItem, service, title),
+    invoiceDescription: invoiceText,
+    quoteDescription: smartField(existing.quoteDescription, item.quote_description, item.description, prepared),
+    ownerNote: smartField(existing.ownerNote, baseOwnerNote, notes),
+    customerMessage: smartField(existing.customerMessage, messageText),
+  };
+}
+
+
 function WorkSlip({ slip, team, outputStatus, smsCredits = 0, onClose, onSave, onApprove, onChoosePlan }) {
-  const [draft, setDraft] = useState(slip?.draft || {});
+  const [draft, setDraft] = useState(() => smartWorkSlipDraft(slip || {}, team || []));
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    setDraft(slip?.draft || {});
-  }, [slip]);
+    setDraft(smartWorkSlipDraft(slip || {}, team || []));
+  }, [slip, team]);
 
   if (!slip) return null;
 
@@ -646,9 +845,12 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, onClose, onSave, o
           <button type="button" onClick={onClose} aria-label="Close work slip">×</button>
         </header>
 
-        <section className="om-slip-context">
-          <span>Prepared context</span>
-          <p>{slip.prepared}</p>
+        <section className="om-slip-context om-ai-prefill-context">
+          <span>AI prepared context</span>
+          <p>{slip.prepared || draft.ownerNote || "Churvox prepared this Work Slip for owner review."}</p>
+          <button type="button" onClick={() => setDraft(smartWorkSlipDraft(slip || {}, team || []))}>
+            Refill with AI prep
+          </button>
         </section>
 
         <section className="om-slip-fields">

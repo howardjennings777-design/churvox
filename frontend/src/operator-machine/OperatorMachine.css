@@ -6182,3 +6182,52 @@ select {
     font-size: .66rem;
   }
 }
+
+
+/* PHASE_104_AI_PREFILL_WORK_SLIPS */
+.om-ai-prefill-context {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+.om-ai-prefill-context span,
+.om-ai-prefill-context p {
+  grid-column: 1;
+}
+
+.om-ai-prefill-context button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  min-height: 38px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 14px;
+  background: var(--om-charcoal);
+  color: var(--om-lime);
+  font-weight: 950;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.om-ai-prefill-context button:hover {
+  background: #000;
+}
+
+@media (max-width: 720px) {
+  .om-ai-prefill-context {
+    grid-template-columns: 1fr;
+  }
+
+  .om-ai-prefill-context span,
+  .om-ai-prefill-context p,
+  .om-ai-prefill-context button {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .om-ai-prefill-context button {
+    width: fit-content;
+  }
+}
