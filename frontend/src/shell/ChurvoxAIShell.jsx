@@ -2510,7 +2510,7 @@ function Dashboard({ setPage, data }) {
         />
       ) : null}
 
-      <section className={`cx-stats ${page === "dashboard" ? "cx-hide-on-smart-hub" : ""}`}>
+      <section className={`cx-stats ${(page === "dashboard" || page === "plans") ? "cx-hide-on-smart-hub" : ""}`}>
         <Stat label="Jobs today" value={stats.jobsToday || String(jobs.length)} note="live workspace count" />
         <Stat label="Ready to invoice" value={stats.readyToInvoice || "$0"} note="drafts and follow-ups" />
         <Stat label="Quotes" value={stats.openQuotes || "0"} note="pipeline watched" />
@@ -8256,7 +8256,7 @@ function Workspace({ page, setPage, data }) {
         ))}
       </section>
 
-      <section className={`cx-stats ${page === "dashboard" ? "cx-hide-on-smart-hub" : ""}`}>
+      <section className={`cx-stats ${(page === "dashboard" || page === "plans") ? "cx-hide-on-smart-hub" : ""}`}>
         <Stat label="Jobs today" value={stats.jobsToday || String(jobs.length)} note="tap jobs below to inspect" />
         <Stat label="Ready to invoice" value={stats.readyToInvoice || "$0"} note="drafts and reminders" />
         <Stat label="Quotes" value={stats.openQuotes || String(quotes.length)} note="follow-ups watched" />
