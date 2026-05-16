@@ -1,6 +1,38 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./ChurvoxAIShell.css";
+
+function cxSafeText(value, fallback = "") {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => cxSafeText(item, ""))
+      .filter(Boolean)
+      .join(", ") || fallback;
+  }
+
+  if (typeof value === "object") {
+    return (
+      value.title ||
+      value.name ||
+      value.label ||
+      value.message ||
+      value.body ||
+      value.description ||
+      value.status ||
+      value.text ||
+      fallback ||
+      ""
+    );
+  }
+
+  return fallback;
+}
+
 import "./ChurvoxOperatorOS.css";
+// PHASE_64_FIX_OBJECT_TEXT_CRASH
 // PHASE_64_SAFE_REACT_TEXT
 // PHASE_63_REMOVE_GLOBAL_SMART_HUB_CONTEXT_CARDS
 // PHASE_61_RESTORE_READY_INVOICE_DRAFTS
@@ -7346,9 +7378,9 @@ function Workspace({ page, setPage, data }) {
     .map((item) => ({
       ...item,
       type: item.type || "Invoice draft approval",
-      title: item.title || "Invoice draft",
-      message: item.body || item.message || "Invoice draft ready for owner review",
-      status: item.action || item.status || "To approve",
+      title: cxSafeText(item.title, "Invoice draft"),
+      message: cxSafeText(item.body || item.message, "Invoice draft ready for owner review"),
+      status: cxSafeText(item.action || item.status, "To approve"),
       source_type: item.source_type || "approval_action",
       source_id: item.id || item._id || item.action_id || "",
     }));
