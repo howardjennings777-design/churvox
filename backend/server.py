@@ -14988,6 +14988,11 @@ async def buy_sms_pack(payload: dict = Body(default={}), current_user: dict = De
         "order_id": order["id"],
         "message": f"SMS pack order saved: {pack_data['credits']} credits for ${pack_data['price']:.0f}. Add STRIPE_PRICE_SMS_{pack} to enable checkout.",
     }
+
+# PHASE_149_FIX_DUPLICATE_OWNER_COMMAND_ROUTES
+# The real owner-command performers are registered earlier and are the public routes.
+# These later duplicate handlers are kept available under /legacy/... so FastAPI no
+# longer has duplicate public route registrations for approval, dispatch, and invoice.
 setup_ai_operator_routes(api_router, db, JWT_SECRET, JWT_ALGORITHM)
 setup_ai_operator_power_routes(api_router, db, JWT_SECRET, JWT_ALGORITHM)
 
@@ -14995,7 +15000,7 @@ setup_ai_operator_power_routes(api_router, db, JWT_SECRET, JWT_ALGORITHM)
 # Keep this before 
 
 # ===== Owner Command Hub approvals =====
-@api_router.post("/ai/owner-command/approve")
+@api_router.post("/legacy/ai/owner-command/approve")
 async def approve_owner_command(payload: dict, current_user: dict = Depends(get_current_user)):
     """
     Persist an owner-approved AI command from the Smart Hub.
@@ -15201,7 +15206,7 @@ async def _owner_command_find_unassigned_job(business_id: str, job_id: str = "")
     return await db.jobs.find_one(query)
 
 
-@api_router.post("/ai/owner-command/dispatch/approve")
+@api_router.post("/legacy/ai/owner-command/dispatch/approve")
 async def approve_owner_dispatch_command(payload: dict, current_user: dict = Depends(get_current_user)):
     role = str(current_user.get("role") or current_user.get("user_role") or "").lower()
     if role == "worker":
@@ -15361,7 +15366,7 @@ def _owner_command_invoice_number(now):
     return "INV-AI-" + now.strftime("%Y%m%d%H%M%S")
 
 
-@api_router.post("/ai/owner-command/invoice/approve")
+@api_router.post("/legacy/ai/owner-command/invoice/approve")
 async def approve_owner_invoice_command(payload: dict, current_user: dict = Depends(get_current_user)):
     role = str(current_user.get("role") or current_user.get("user_role") or "").lower()
     if role == "worker":
