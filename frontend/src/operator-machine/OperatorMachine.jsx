@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_96_MOBILE_RESPONSIVE_INSTALLABLE_PWA
 // PHASE_95_REAL_MACHINE_FLOW_COUNTS
 // PHASE_94_SMS_CREDIT_GATE
 // PHASE_93_TRIAL_PLAN_ENTITLEMENT_BRAIN
@@ -4023,6 +4024,105 @@ function OperatorActionReceipt({ entry }) {
   );
 }
 
+
+function ChurvoxInstallPrompt() {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [show, setShow] = useState(false);
+  const [isIos, setIsIos] = useState(false);
+  const [installed, setInstalled] = useState(false);
+
+  useEffect(() => {
+    const standalone =
+      window.matchMedia?.("(display-mode: standalone)")?.matches ||
+      window.navigator?.standalone === true;
+
+    const ios =
+      /iphone|ipad|ipod/i.test(window.navigator?.userAgent || "") &&
+      !standalone;
+
+    setIsIos(ios);
+    setInstalled(Boolean(standalone));
+
+    if (standalone) {
+      setShow(false);
+      return;
+    }
+
+    const hidden = localStorage.getItem("churvox_install_prompt_hidden") === "1";
+    if (ios && !hidden) {
+      setShow(true);
+    }
+
+    function beforeInstall(event) {
+      event.preventDefault();
+      setDeferredPrompt(event);
+      if (!localStorage.getItem("churvox_install_prompt_hidden")) {
+        setShow(true);
+      }
+    }
+
+    function appInstalled() {
+      setInstalled(true);
+      setShow(false);
+      setDeferredPrompt(null);
+      try {
+        localStorage.setItem("churvox_install_prompt_hidden", "1");
+      } catch {}
+    }
+
+    window.addEventListener("beforeinstallprompt", beforeInstall);
+    window.addEventListener("appinstalled", appInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", beforeInstall);
+      window.removeEventListener("appinstalled", appInstalled);
+    };
+  }, []);
+
+  async function install() {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      try {
+        await deferredPrompt.userChoice;
+      } catch {}
+      setDeferredPrompt(null);
+      setShow(false);
+      return;
+    }
+
+    setShow(true);
+  }
+
+  function hide() {
+    setShow(false);
+    try {
+      localStorage.setItem("churvox_install_prompt_hidden", "1");
+    } catch {}
+  }
+
+  if (installed || !show) return null;
+
+  return (
+    <section className="om-install-prompt" data-phase="PHASE_96_MOBILE_RESPONSIVE_INSTALLABLE_PWA">
+      <div>
+        <span>Install Churvox</span>
+        <strong>{isIos ? "Add Churvox to your iPhone Home Screen." : "Download Churvox to this device."}</strong>
+        <p>
+          {isIos
+            ? "Tap Share in Safari, then Add to Home Screen. It opens like an app after that."
+            : "Install the Churvox app for faster access on Android, desktop and supported browsers."}
+        </p>
+      </div>
+
+      <div className="om-install-actions">
+        {deferredPrompt ? <button type="button" onClick={install}>Install app</button> : null}
+        {isIos ? <b>Share → Add to Home Screen</b> : null}
+        <button type="button" className="ghost" onClick={hide}>Not now</button>
+      </div>
+    </section>
+  );
+}
+
 export default function OperatorMachine({ page = "dashboard", setPage, onLogout, data }) {
   const currentPlan = currentPlanKey(data || {});
   const machine = useMemo(() => buildMachine(data || {}), [data]);
@@ -4673,6 +4773,8 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
           <FeatureWorkspace page={page} machine={machine} data={data} currentPlan={currentPlan} onOpen={openSlip} onPlans={() => go("plans")} />
         )}
       </section>
+
+      <ChurvoxInstallPrompt />
 
       <WorkSlip
         slip={activeSlip}

@@ -1,37 +1,58 @@
-// Churvox Service Worker — lightweight, network-first, hard refresh friendly
-// Keeps PWA installability while avoiding stale dashboard JS/CSS after deploys.
+/* PHASE_96_MOBILE_RESPONSIVE_INSTALLABLE_PWA */
+const CHURVOX_CACHE = "churvox-pwa-v96";
+const APP_SHELL = [
+  "/",
+  "/dashboard",
+  "/manifest.json",
+  "/logo192.png",
+  "/logo512.png"
+];
 
-const CACHE_NAME = "churvox-ai-control-room-v4-force-top-player";
-
-self.addEventListener("install", () => {
+self.addEventListener("install", (event) => {
   self.skipWaiting();
+  event.waitUntil(
+    caches.open(CHURVOX_CACHE).then((cache) => cache.addAll(APP_SHELL).catch(() => undefined))
+  );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((key) => key !== CHURVOX_CACHE).map((key) => caches.delete(key)))
+    ).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener("fetch", (event) => {
-  if (!event.request.url.startsWith(self.location.origin)) return;
+  const request = event.request;
+  const url = new URL(request.url);
 
-  const url = new URL(event.request.url);
-  const isAppAsset =
-    event.request.mode === "navigate" ||
-    url.pathname.endsWith(".js") ||
-    url.pathname.endsWith(".css") ||
-    url.pathname.endsWith(".html") ||
-    url.pathname === "/";
+  if (request.method !== "GET") return;
+  if (url.origin !== self.location.origin) return;
 
-  if (isAppAsset) {
+  if (request.mode === "navigate") {
     event.respondWith(
-      fetch(new Request(event.request, { cache: "no-store" })).catch(() => fetch(event.request))
+      fetch(request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CHURVOX_CACHE).then((cache) => cache.put(request, copy)).catch(() => undefined);
+          return response;
+        })
+        .catch(() => caches.match(request).then((cached) => cached || caches.match("/")))
     );
     return;
   }
 
-  event.respondWith(fetch(event.request));
+  if (url.pathname.startsWith("/static/") || url.pathname.endsWith(".css") || url.pathname.endsWith(".js") || url.pathname.endsWith(".png") || url.pathname.endsWith(".svg")) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((response) => {
+          const copy = response.clone();
+          caches.open(CHURVOX_CACHE).then((cache) => cache.put(request, copy)).catch(() => undefined);
+          return response;
+        });
+      })
+    );
+  }
 });
