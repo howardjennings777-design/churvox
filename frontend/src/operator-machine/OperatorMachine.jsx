@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_121_ONE_INVOICE_ONLY
 // PHASE_120_SEND_INVOICE_AS_PDF_ATTACHMENT
 // PHASE_118_CLEAN_OWNER_FOCUS_CARD
 // PHASE_117_OWNER_FRIENDLY_DASHBOARD_WORDING
@@ -990,7 +991,7 @@ function smartWorkSlipDraft(slip = {}, team = []) {
 }
 
 
-function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = "", onClose, onSave, onApprove, onChoosePlan }) {
+function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = "", businessName = "", onClose, onSave, onApprove, onChoosePlan }) {
   const [draft, setDraft] = useState(() => smartWorkSlipDraft(slip || {}, team || []));
   const [busy, setBusy] = useState(false);
 
@@ -1082,6 +1083,41 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
             <button type="button" className="ghost" onClick={onClose}>Back</button>
             <button type="button" className="approve" onClick={() => onChoosePlan?.(slip)}>
               {slip.cta || "Choose plan"}
+            </button>
+          </footer>
+        </section>
+      </div>
+    );
+  }
+
+  if (showsInvoiceTemplate) {
+    return (
+      <div className="om-slip-backdrop" onClick={onClose}>
+        <section className="om-slip om-one-invoice-slip" onClick={(event) => event.stopPropagation()}>
+          <header className="om-one-invoice-slip-head">
+            <div>
+              <span>Invoice ready</span>
+              <h2>{draft.title || slip.title || "Invoice draft"}</h2>
+              <p>Edit the invoice below, then save or approve. Approval emails the customer with the PDF invoice attached when an email is supplied.</p>
+            </div>
+            <button type="button" onClick={onClose} aria-label="Close invoice slip">×</button>
+          </header>
+
+          <InvoiceTemplateCard
+            slip={slip}
+            draft={draft}
+            update={update}
+            businessLogoUrl={businessLogoUrl}
+            businessName={businessName}
+          />
+
+          {outputStatus ? <p className="om-slip-status">{outputStatus}</p> : null}
+
+          <footer className="om-slip-actions om-one-invoice-actions">
+            <button type="button" className="ghost" onClick={onClose}>Back</button>
+            <button type="button" onClick={() => onSave(slip, draft)}>Save edit</button>
+            <button type="button" className="approve" disabled={busy || smsBlocked} onClick={approve}>
+              {busy ? "Saving..." : primaryLabel}
             </button>
           </footer>
         </section>
@@ -4673,15 +4709,14 @@ function phase113ShouldShowInvoiceTemplate(slip = {}) {
   const id = clean(slip.id).toLowerCase();
   const title = clean(slip.title).toLowerCase();
   const eyebrow = clean(slip.eyebrow).toLowerCase();
-  const text = [kind, id, title, eyebrow].join(" ");
+  const combined = [kind, id, title, eyebrow].join(" ");
 
   return (
     kind === "invoice" ||
     kind === "proof" ||
-    id.startsWith("new-invoice") ||
-    text.includes("invoice draft") ||
-    text.includes("approve invoice") ||
-    text.includes("invoice ready")
+    kind === "cashflow" ||
+    id.includes("invoice") ||
+    combined.includes("invoice")
   );
 }
 
@@ -4790,121 +4825,149 @@ function phase113InvoiceEmailText(draft = {}, slip = {}) {
   return phase113InvoiceValues(draft, slip).emailText;
 }
 
-function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "" }) {
+
+
+function phase115BusinessNameFromData(data = {}) {
+  const raw = data.raw || {};
+  const business = raw.business || raw.company || data.business || data.company || {};
+  const user = raw.user || raw.profile || data.user || data.profile || {};
+  return phase111bValue(
+    business.business_name,
+    business.name,
+    business.company_name,
+    user.business_name,
+    user.company_name,
+    data.business_name,
+    data.company_name,
+    "Your business"
+  );
+}
+
+function phase121InvoiceNumber(slip = {}, draft = {}) {
+  const existing = phase111bValue(draft.invoiceNumber, draft.invoice_number, slip.invoiceNumber, slip.invoice_number);
+  if (existing && /^INV-\d{4}-\d{3,6}$/i.test(existing)) return existing.toUpperCase();
+
+  const source = phase111bValue(slip.sourceId, slip.id, String(Date.now()));
+  const digits = clean(source).replace(/\D/g, "");
+  const suffix = (digits.slice(-4) || String(Date.now()).slice(-4)).padStart(4, "0");
+  return `INV-${new Date().getFullYear()}-${suffix}`;
+}
+
+function phase121BusinessName(dataName = "", draft = {}, slip = {}) {
+  return phase111bValue(dataName, draft.businessName, draft.companyName, slip.businessName, "Your business");
+}
+
+function phase121AmountRaw(value) {
+  const raw = clean(value);
+  if (!raw) return "";
+  return raw.replace(/^\$/, "");
+}
+
+
+function InvoiceTemplateCard({ slip, draft, update, businessLogoUrl = "", businessName = "" }) {
   if (!phase113ShouldShowInvoiceTemplate(slip)) return null;
 
-  const invoice = phase113InvoiceValues(draft, slip);
+  const invoice = phase113InvoiceValues({ ...draft, businessName: businessName || draft.businessName }, slip);
+  const invoiceNumber = draft.invoiceNumber || phase121InvoiceNumber(slip, draft);
+  const business = phase121BusinessName(businessName, draft, slip);
+  const issueDate = draft.issueDate || invoice.issueDate || new Date().toISOString().slice(0, 10);
+  const client = draft.invoiceClientName || draft.clientName || invoice.client || "";
+  const clientEmail = draft.invoiceClientEmail || draft.clientEmail || draft.customerEmail || "";
+  const lineItem = draft.invoiceLineItem || draft.serviceType || invoice.lineItem || "Work completed";
+  const description = draft.invoiceDescription || invoice.description || "";
+  const amount = phase121AmountRaw(draft.amount || invoice.amount || "");
+  const dueDate = draft.dueDate || invoice.dueDate || "";
+  const paymentNote = draft.paymentNote || "Payment details are shown on this invoice. Please pay by the due date.";
 
   return (
-    <section className="om-invoice-template om-invoice-document-template" data-phase="PHASE_114_PROPER_INVOICE_DOCUMENT">
-      <header className="om-invoice-doc-top">
-        <div className="om-invoice-brand">
+    <section className="om-single-invoice-template" data-phase="PHASE_121_ONE_INVOICE_ONLY">
+      <header className="om-single-invoice-header">
+        <div className="om-single-invoice-brand">
           {businessLogoUrl ? <img src={businessLogoUrl} alt="" /> : <i />}
           <div>
-            <span>AI-prepared invoice</span>
-            <strong>{invoice.businessName}</strong>
-            <small>Owner-approved invoice draft prepared from job, client and pricing context.</small>
+            <input
+              value={business}
+              onChange={(event) => update("businessName", event.target.value)}
+              aria-label="Business name"
+            />
+            <small>Editable invoice</small>
           </div>
         </div>
 
         <aside>
-          <b>Invoice</b>
-          <strong>{invoice.invoiceNumber}</strong>
-          <small>Issued {invoice.issueDate}</small>
+          <strong>INVOICE</strong>
+          <label>
+            Number
+            <input value={invoiceNumber} onChange={(event) => update("invoiceNumber", event.target.value)} />
+          </label>
+          <label>
+            Date
+            <input value={issueDate} onChange={(event) => update("issueDate", event.target.value)} placeholder="YYYY-MM-DD" />
+          </label>
         </aside>
       </header>
 
-      <section className="om-invoice-doc">
-        <section className="om-invoice-doc-grid">
-          <article>
-            <span>Bill to</span>
-            <strong>{invoice.client}</strong>
-            <small>Customer invoice recipient</small>
-          </article>
+      <section className="om-single-invoice-details">
+        <label>
+          Bill to
+          <input value={client} onChange={(event) => update("invoiceClientName", event.target.value)} placeholder="Client name" />
+        </label>
 
-          <article>
-            <span>Work completed</span>
-            <strong>{invoice.lineItem}</strong>
-            <small>{invoice.description}</small>
-          </article>
+        <label>
+          Customer email
+          <input value={clientEmail} onChange={(event) => update("invoiceClientEmail", event.target.value)} placeholder="customer@email.com" />
+        </label>
 
-          <article className="om-invoice-doc-total">
-            <span>Amount due</span>
-            <strong>{invoice.amount}</strong>
-            <small>Due {invoice.dueDate}</small>
-          </article>
-        </section>
-
-        <section className="om-invoice-line-table" aria-label="Invoice line items">
-          <div className="head">
-            <b>Description</b>
-            <b>Amount</b>
-          </div>
-          <div>
-            <span>{invoice.description}</span>
-            <strong>{invoice.amount}</strong>
-          </div>
-          <footer>
-            <b>Total due</b>
-            <strong>{invoice.amount}</strong>
-          </footer>
-        </section>
-
-        <section className="om-invoice-payment-box">
-          <div>
-            <span>Payment note</span>
-            <strong>Payment details stay on the invoice.</strong>
-            <p>Churvox prepares the email and invoice wording. The owner checks payment link, bank details and amount before approval.</p>
-          </div>
-          <button type="button" onClick={() => update("customerMessage", invoice.emailText)}>
-            Use customer email
-          </button>
-        </section>
+        <label>
+          Due date
+          <input value={dueDate} onChange={(event) => update("dueDate", event.target.value)} placeholder="YYYY-MM-DD" />
+        </label>
       </section>
 
-      <section className="om-invoice-email-card">
-        <header>
-          <div>
-            <span>Email preview</span>
-            <strong>{invoice.subject}</strong>
-            <small>To: {invoice.client}</small>
-          </div>
-          <em>Draft email</em>
-        </header>
-
-        <div className="om-invoice-email-body">
-          {invoice.emailText.split("\n").map((line, index) => (
-            <p key={`${line}-${index}`}>{line || "\u00A0"}</p>
-          ))}
+      <section className="om-single-invoice-table">
+        <div className="om-single-invoice-table-head">
+          <b>Description</b>
+          <b>Amount</b>
         </div>
+
+        <div className="om-single-invoice-line">
+          <div>
+            <input
+              value={lineItem}
+              onChange={(event) => update("invoiceLineItem", event.target.value)}
+              placeholder="Work completed"
+            />
+            <textarea
+              value={description}
+              onChange={(event) => update("invoiceDescription", event.target.value)}
+              placeholder="Describe the work completed"
+            />
+          </div>
+
+          <input
+            value={amount}
+            onChange={(event) => update("amount", event.target.value)}
+            placeholder="0.00"
+          />
+        </div>
+
+        <footer>
+          <span>Total due</span>
+          <strong>{phase113Money(amount)}</strong>
+        </footer>
       </section>
 
-      <label className="wide om-invoice-message-editor">
-        Customer email template
+      <label className="om-single-invoice-payment">
+        Payment / invoice note
         <textarea
-          value={draft.customerMessage || invoice.emailText}
-          onChange={(event) => update("customerMessage", event.target.value)}
-          placeholder="AI-prepared invoice email..."
+          value={paymentNote}
+          onChange={(event) => update("paymentNote", event.target.value)}
+          placeholder="Payment instructions or notes"
         />
       </label>
-
-      <footer className="om-invoice-template-actions">
-        <button
-          type="button"
-          onClick={() => {
-            update("invoiceDescription", invoice.description);
-            update("customerMessage", invoice.emailText);
-            update("invoiceNumber", invoice.invoiceNumber);
-          }}
-        >
-          Use this invoice template
-        </button>
-        <small>Nothing sends until the owner approves.</small>
-      </footer>
     </section>
   );
 }
-
 
 function phase111bJobBriefText(draft = {}, slip = {}) {
   const title = phase111bValue(draft.title, slip.title, "Job input");
@@ -5334,6 +5397,12 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
         client_email: draft.invoiceClientEmail || draft.clientEmail || draft.customerEmail || "",
         customer_email: draft.invoiceClientEmail || draft.clientEmail || draft.customerEmail || "",
         invoice_number: draft.invoiceNumber || "",
+        issue_date: draft.issueDate || "",
+        payment_note: draft.paymentNote || "",
+        business_name: draft.businessName || "",
+        client_email: draft.invoiceClientEmail || draft.clientEmail || draft.customerEmail || "",
+        customer_email: draft.invoiceClientEmail || draft.clientEmail || draft.customerEmail || "",
+        invoice_number: draft.invoiceNumber || "",
         payment_note: draft.paymentNote || "",
         line_item: draft.invoiceLineItem || draft.title || "",
         service_type: draft.invoiceLineItem || draft.title || "",
@@ -5681,6 +5750,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
         outputStatus={outputStatus}
         smsCredits={smsCreditBalance(data || {})}
         businessLogoUrl={businessLogoFromData(data || {})}
+        businessName={phase115BusinessNameFromData(data || {})}
         onClose={() => setActiveSlip(null)}
         onSave={saveEdit}
         onApprove={approveSlip}
