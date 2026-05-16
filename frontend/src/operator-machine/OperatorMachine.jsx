@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_100_FILL_PUBLIC_ACCESS_EMPTY_BOX
 // PHASE_96_MOBILE_RESPONSIVE_INSTALLABLE_PWA
 // PHASE_95_REAL_MACHINE_FLOW_COUNTS
 // PHASE_94_SMS_CREDIT_GATE
@@ -4978,12 +4979,39 @@ export function OperatorLanding({ authMode, setAuthMode, onLogin }) {
         </div>
       </section>
 
-      <section className="om-public-access">
-        <div>
+      <section className="om-public-access" data-phase="PHASE_100_FILL_PUBLIC_ACCESS_EMPTY_BOX">
+        <div className="om-public-access-copy">
           <span>Secure workspace</span>
           <h2>Open Churvox Operator Machine.</h2>
-          <p>Start a trial or log in to your existing workspace.</p>
+          <p>Start a trial or log in. Churvox will keep the powerful stuff in the background and show the owner what needs approval.</p>
+
+          <section className="om-public-access-board" aria-label="Churvox trial setup">
+            <article>
+              <b>14 days</b>
+              <strong>Free trial</strong>
+              <small>No card needed to start.</small>
+            </article>
+
+            <article>
+              <b>AI</b>
+              <strong>Prepares admin</strong>
+              <small>Jobs, quotes, invoices, reminders and proof.</small>
+            </article>
+
+            <article>
+              <b>Owner</b>
+              <strong>Approves first</strong>
+              <small>No blind sends, pricing, payroll or MYOB changes.</small>
+            </article>
+
+            <article>
+              <b>SMS</b>
+              <strong>Credit locked</strong>
+              <small>Texts only send after SMS credits are bought.</small>
+            </article>
+          </section>
         </div>
+
         <OperatorAuth authMode={authMode} setAuthMode={setAuthMode} onLogin={onLogin} />
       </section>
     </main>
