@@ -1158,22 +1158,22 @@ class PlanType(str, Enum):
 
 PLAN_LIMITS = {
     "solo": {
-        "price": 30, "max_workers": 0, "max_clients": 20,
+        "price": 39, "max_workers": 0, "max_clients": 20,
         "sms": False, "myob": False, "team": False,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
     },
     "team": {
-        "price": 70, "max_workers": 5, "max_clients": 30,
+        "price": 89, "max_workers": 5, "max_clients": 30,
         "sms": True, "myob": False, "team": True,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
     },
     "pro": {
-        "price": 110, "max_workers": 20, "max_clients": 40,
+        "price": 149, "max_workers": 20, "max_clients": 40,
         "sms": True, "myob": True, "team": True,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
     },
     "enterprise": {
-        "price": 240, "max_workers": 50, "max_clients": 50,
+        "price": 299, "max_workers": 50, "max_clients": 50,
         "sms": True, "myob": True, "team": True,
         "quotes": True, "invoices": True, "time_tracking": True, "scheduling": True,
         "extra_blocks": True,
@@ -1451,9 +1451,9 @@ SMS_CREDITS_PER_MESSAGE = 2
 
 ENTERPRISE_USER_BLOCK = {
     "users": 50,
-    "price": 100.00,
+    "price": 99.00,
     "currency": "nzd",
-    "label": "+50 users",
+    "label": "Command Growth Pack (+50 active team members)",
 }
 
 # ===================== HELPERS =====================
@@ -12268,15 +12268,15 @@ async def ai_operator_v3_reject(action_id: str, body: dict = Body(default=None),
 
 # ===== FINAL V3 BILLING UPGRADES START =====
 V3_FINAL_SMS_PACKS = {
-    "100": {"credits": 100, "price": 10.00},
-    "500": {"credits": 500, "price": 45.00},
-    "1000": {"credits": 1000, "price": 80.00},
+    "100": {"credits": 100, "price": 10.00, "price_cents": 1000, "label": "100 SMS credits"},
+    "500": {"credits": 500, "price": 45.00, "price_cents": 4500, "label": "500 SMS credits"},
+    "1000": {"credits": 1000, "price": 80.00, "price_cents": 8000, "label": "1000 SMS credits"},
 }
 
 V3_FINAL_PLANS = {
-    "team": {"label": "Churvox Team", "price_cents": 7000, "price_id": STRIPE_PRICE_TEAM},
-    "pro": {"label": "Churvox Pro", "price_cents": 11000, "price_id": STRIPE_PRICE_PRO},
-    "enterprise": {"label": "Churvox Enterprise", "price_cents": 24000, "price_id": STRIPE_PRICE_ENTERPRISE},
+    "team": {"label": "Churvox Crew", "price_cents": 8900, "price_id": STRIPE_PRICE_TEAM},
+    "pro": {"label": "Churvox Operator", "price_cents": 14900, "price_id": STRIPE_PRICE_PRO},
+    "enterprise": {"label": "Churvox Command", "price_cents": 29900, "price_id": STRIPE_PRICE_ENTERPRISE},
 }
 
 def _v3_final_role(user):
@@ -12355,9 +12355,9 @@ async def _v3_final_status(current_user):
         "myob_enabled": bool(features.get("myob") or PLAN_LIMITS.get(plan, {}).get("myob")),
         "billing_locked": not _v3_final_billing_allowed(current_user),
         "plans": {
-            "team": {"price": 70, "label": "Team"},
-            "pro": {"price": 110, "label": "Pro"},
-            "enterprise": {"price": 240, "label": "Enterprise"},
+            "team": {"price": 89, "label": "Crew"},
+            "pro": {"price": 149, "label": "Operator"},
+            "enterprise": {"price": 299, "label": "Command"},
         },
         "sms_packs": V3_FINAL_SMS_PACKS,
     }
@@ -12530,7 +12530,7 @@ async def billing_v3_extra_50_user_block(current_user: dict = Depends(get_curren
         session = stripe.checkout.Session.create(
             mode="payment",
             payment_method_types=["card"],
-            line_items=[_v3_final_checkout_line_item("Churvox extra 50-user block", 10000)],
+            line_items=[_v3_final_checkout_line_item("Churvox Command Growth Pack (+50 active team members)", 9900)],
             success_url=success_url,
             cancel_url=cancel_url,
             metadata=metadata,
@@ -17548,6 +17548,22 @@ async def ensure_public_portal_link(record_type: str, record_id: str, request: R
     }
 
 # =================== END CHURVOX OWNER REQUEST INBOX + PORTAL LINK ACTIONS ===================
+
+
+
+# Register Churvox top-player feature stack routes
+try:
+    from top_player_features import register_top_player_features
+    register_top_player_features(
+        api_router=api_router,
+        db=db,
+        get_current_user=get_current_user,
+        get_user_business_id=get_user_business_id,
+        frontend_url=FRONTEND_URL,
+    )
+    logger.info("Top-player feature stack routes registered")
+except Exception as top_player_exc:
+    logger.exception("Top-player feature stack route registration failed: %s", top_player_exc)
 
 
 app.include_router(api_router)

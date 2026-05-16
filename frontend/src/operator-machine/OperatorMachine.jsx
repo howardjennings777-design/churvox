@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+import TopPlayerFeatureStack from "./TopPlayerFeatureStack";
 // PHASE_100_FILL_PUBLIC_ACCESS_EMPTY_BOX
 // PHASE_96_MOBILE_RESPONSIVE_INSTALLABLE_PWA
 // PHASE_95_REAL_MACHINE_FLOW_COUNTS
@@ -4697,6 +4698,8 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
             </article>
           ))}
         </section>
+
+        <TopPlayerFeatureStack />
 
         <section className="om-machine-grid">
           <MachineLane
