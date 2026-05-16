@@ -1,0 +1,53 @@
+# Churvox Live Smoke Audit
+
+Generated: 2026-05-16 21:03:41 UTC
+
+## Summary
+
+- HIGH: 0
+- MED: 2
+- LOW: 0
+- Frontend: https://www.churvox.com
+- Backend: https://grassley-backend.onrender.com
+- Live CSS: `/static/css/main.a4a470be.css`
+- Live JS: `/static/js/main.d86fa3c1.js`
+
+## Checks
+
+- ✅ **Frontend HTML** — status `200` — HTML fetched
+- ✅ **Live CSS path** — status `0` — /static/css/main.a4a470be.css
+- ✅ **Live JS path** — status `0` — /static/js/main.d86fa3c1.js
+- ✅ **CSS MIME** — status `200` — Content-Type: text/css; charset=utf-8
+- ✅ **JS MIME** — status `200` — Content-Type: application/javascript
+- ❌ **JS marker PHASE_147_PROFESSIONAL_INVOICE_OVERLAY** — status `200` — Missing
+- ❌ **JS marker PHASE_146_FORCE_EXACT_OLD_INVOICE_READY_MODAL** — status `200` — Missing
+- ✅ **CORS OPTIONS /api/jobs** — status `204` — allow-origin=https://www.churvox.com allow-credentials=true
+- ✅ **CORS OPTIONS /api/clients** — status `204` — allow-origin=https://www.churvox.com allow-credentials=true
+- ✅ **CORS OPTIONS /api/invoices** — status `204` — allow-origin=https://www.churvox.com allow-credentials=true
+- ✅ **CORS OPTIONS /api/quotes** — status `204` — allow-origin=https://www.churvox.com allow-credentials=true
+- ✅ **CORS OPTIONS /api/team/workers** — status `204` — allow-origin=https://www.churvox.com allow-credentials=true
+- ✅ **CORS OPTIONS /api/reports/owner-summary** — status `204` — allow-origin=https://www.churvox.com allow-credentials=true
+- ✅ **CORS OPTIONS /api/ai/actions** — status `204` — allow-origin=https://www.churvox.com allow-credentials=true
+- ✅ **CORS OPTIONS /api/dispatch/board** — status `204` — allow-origin=https://www.churvox.com allow-credentials=true
+- ✅ **Backend GET /api/jobs** — status `401` — origin=https://www.churvox.com error=HTTP Error 401: Unauthorized
+- ✅ **Backend GET /api/clients** — status `401` — origin=https://www.churvox.com error=HTTP Error 401: Unauthorized
+- ✅ **Backend GET /api/invoices** — status `401` — origin=https://www.churvox.com error=HTTP Error 401: Unauthorized
+- ✅ **Backend GET /api/quotes** — status `401` — origin=https://www.churvox.com error=HTTP Error 401: Unauthorized
+- ✅ **Backend GET /api/team/workers** — status `401` — origin=https://www.churvox.com error=HTTP Error 401: Unauthorized
+- ✅ **Backend GET /api/reports/owner-summary** — status `401` — origin=https://www.churvox.com error=HTTP Error 401: Unauthorized
+- ✅ **Backend GET /api/ai/actions** — status `401` — origin=https://www.churvox.com error=HTTP Error 401: Unauthorized
+- ✅ **Backend GET /api/dispatch/board** — status `401` — origin=https://www.churvox.com error=HTTP Error 401: Unauthorized
+
+## Findings
+
+### 1. [MED] Live JS missing PHASE_147_PROFESSIONAL_INVOICE_OVERLAY
+
+Render may be serving older bundle or marker was removed.
+
+### 2. [MED] Live JS missing PHASE_146_FORCE_EXACT_OLD_INVOICE_READY_MODAL
+
+Render may be serving older bundle or marker was removed.
+
+
+REPORT_FILE=audits/churvox_live_smoke_audit_20260516_210341.md
+LATEST_FILE=audits/churvox_live_smoke_audit_latest.md
