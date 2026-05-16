@@ -1,3 +1,7 @@
+
+# PHASE_174_FIX_ALL_API_ROUTER_DOUBLE_API_PREFIXES
+# api_router is already mounted under /api, so api_router decorators must not
+# start with /api/. This normalizes all remaining double-prefix routes.
 # PHASE_163_FORCE_FRONTEND_BACKEND_RENDER_DEPLOY_20260516211617
 
 # PHASE_158_FINALISE_ROUTE_AND_AUDIT_CLEANUP
@@ -4730,7 +4734,7 @@ async def patch_ai_auto_send_settings(payload: dict, current_user: dict = Depend
     return {"success": True, "settings": await _get_ai_auto_send_settings_for_business(business_id)}
 
 
-@api_router.get("/api/ai-messages")
+@api_router.get("/ai-messages")
 async def list_ai_messages(current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or "").lower())
     business_id = await get_user_business_id(current_user)
@@ -4738,7 +4742,7 @@ async def list_ai_messages(current_user: dict = Depends(get_current_user)):
     return {"success": True, "messages": rows}
 
 
-@api_router.post("/api/ai-messages/{message_id}/dismiss")
+@api_router.post("/ai-messages/{message_id}/dismiss")
 async def dismiss_ai_message(message_id: str, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or "").lower())
     business_id = await get_user_business_id(current_user)
@@ -4750,7 +4754,7 @@ async def dismiss_ai_message(message_id: str, current_user: dict = Depends(get_c
     return {"success": True, "message": serialize_doc(row)}
 
 
-@api_router.post("/api/ai/customer-updates/prepare-for-job/{job_id}")
+@api_router.post("/ai/customer-updates/prepare-for-job/{job_id}")
 async def prepare_customer_updates_for_job(job_id: str, current_user: dict = Depends(get_current_user)):
     role = str((current_user or {}).get("role") or "").lower()
     _owner_roles_only(role)
@@ -4766,7 +4770,7 @@ async def prepare_customer_updates_for_job(job_id: str, current_user: dict = Dep
     return {"success": True, "updates": created}
 
 
-@api_router.post("/api/ai/customer-updates/{update_id}/approve")
+@api_router.post("/ai/customer-updates/{update_id}/approve")
 async def approve_customer_update(update_id: str, payload: dict = Body(default={}), current_user: dict = Depends(get_current_user)):
     role = str((current_user or {}).get("role") or "").lower()
     _owner_roles_only(role)
@@ -4784,7 +4788,7 @@ async def approve_customer_update(update_id: str, payload: dict = Body(default={
     return {"success": True, "update": serialize_doc(row), "sent": False}
 
 
-@api_router.post("/api/ai/customer-updates/{update_id}/skip")
+@api_router.post("/ai/customer-updates/{update_id}/skip")
 async def skip_customer_update(update_id: str, current_user: dict = Depends(get_current_user)):
     role = str((current_user or {}).get("role") or "").lower()
     _owner_roles_only(role)
@@ -4794,7 +4798,7 @@ async def skip_customer_update(update_id: str, current_user: dict = Depends(get_
     return {"success": True}
 
 
-@api_router.post("/api/ai-messages/prepare")
+@api_router.post("/ai-messages/prepare")
 async def prepare_ai_message(payload: dict, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or "").lower())
     business_id = await get_user_business_id(current_user)
@@ -4835,7 +4839,7 @@ async def prepare_ai_message(payload: dict, current_user: dict = Depends(get_cur
     return {"success": True, "message": {"id": str(ins.inserted_id), **doc}}
 
 
-@api_router.post("/api/ai-messages/{message_id}/send")
+@api_router.post("/ai-messages/{message_id}/send")
 async def send_ai_message(message_id: str, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or "").lower())
     business_id = await get_user_business_id(current_user)
@@ -4865,7 +4869,7 @@ def _build_quote_from_photo_inputs(payload: dict, client: dict | None = None, hi
     return {"ai_scope_summary": summary, "suggested_line_items": line_items, "suggested_price_range": price_range, "suggested_terms": "Final price subject to on-site confirmation and exclusions listed in quote."}
 
 
-@api_router.post("/api/ai/quotes/from-photos")
+@api_router.post("/ai/quotes/from-photos")
 async def ai_quote_from_photos(payload: dict, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or "").lower())
     business_id = await get_user_business_id(current_user)
@@ -4878,14 +4882,14 @@ async def ai_quote_from_photos(payload: dict, current_user: dict = Depends(get_c
     ins = await db.ai_quote_drafts.insert_one(doc)
     return {"success": True, "draft": {"id": str(ins.inserted_id), **doc}}
 
-@api_router.get("/api/ai/quotes/drafts")
+@api_router.get("/ai/quotes/drafts")
 async def ai_quote_drafts(current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or "").lower())
     business_id = await get_user_business_id(current_user)
     rows = [serialize_doc(r) async for r in db.ai_quote_drafts.find({"business_id": business_id}).sort("created_at", -1).limit(200)]
     return {"success": True, "drafts": rows}
 
-@api_router.get("/api/ai/quotes/drafts/{draft_id}")
+@api_router.get("/ai/quotes/drafts/{draft_id}")
 async def ai_quote_draft_detail(draft_id: str, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or "").lower())
     business_id = await get_user_business_id(current_user)
@@ -4894,7 +4898,7 @@ async def ai_quote_draft_detail(draft_id: str, current_user: dict = Depends(get_
         raise HTTPException(status_code=404, detail="Draft not found")
     return {"success": True, "draft": serialize_doc(row)}
 
-@api_router.post("/api/ai/quotes/drafts/{draft_id}/approve")
+@api_router.post("/ai/quotes/drafts/{draft_id}/approve")
 async def ai_quote_draft_approve(draft_id: str, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or "").lower())
     business_id = await get_user_business_id(current_user)
@@ -4902,7 +4906,7 @@ async def ai_quote_draft_approve(draft_id: str, current_user: dict = Depends(get
     await db.ai_quote_drafts.update_one({"_id": ObjectId(draft_id), "business_id": business_id}, {"$set": {"status": "approved", "approved_at": now, "updated_at": now}})
     return {"success": True}
 
-@api_router.post("/api/ai/quotes/drafts/{draft_id}/convert-to-quote")
+@api_router.post("/ai/quotes/drafts/{draft_id}/convert-to-quote")
 async def ai_quote_draft_convert(draft_id: str, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or "").lower())
     business_id = await get_user_business_id(current_user)
@@ -4915,7 +4919,7 @@ async def ai_quote_draft_convert(draft_id: str, current_user: dict = Depends(get
     await db.ai_quote_drafts.update_one({"_id": row["_id"]}, {"$set": {"status": "converted_to_quote", "converted_quote_id": str(ins.inserted_id), "updated_at": now}})
     return {"success": True, "quote_id": str(ins.inserted_id)}
 
-@api_router.post("/api/ai/quotes/drafts/{draft_id}/dismiss")
+@api_router.post("/ai/quotes/drafts/{draft_id}/dismiss")
 async def ai_quote_draft_dismiss(draft_id: str, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str((current_user or {}).get("role") or "").lower())
     business_id = await get_user_business_id(current_user)
@@ -4924,23 +4928,23 @@ async def ai_quote_draft_dismiss(draft_id: str, current_user: dict = Depends(get
     return {"success": True}
 
 
-@api_router.post("/api/ai/follow-ups/generate")
+@api_router.post("/ai/follow-ups/generate")
 async def ai_follow_ups_generate(current_user: dict = Depends(get_current_user)):
     return await smart_hub_scan(current_user)
 
 
-@api_router.post("/api/ai/follow-ups/{action_id}/approve")
+@api_router.post("/ai/follow-ups/{action_id}/approve")
 async def ai_follow_up_approve(action_id: str, request: Request, current_user: dict = Depends(get_current_user)):
     payload = await request.json() if request else {}
     return await ai_operator_approve(action_id, current_user)
 
 
-@api_router.post("/api/ai/follow-ups/{action_id}/dismiss")
+@api_router.post("/ai/follow-ups/{action_id}/dismiss")
 async def ai_follow_up_dismiss(action_id: str, current_user: dict = Depends(get_current_user)):
     return await ai_operator_reject(action_id, current_user)
 
 
-@api_router.get("/api/ai/client-memory/{client_id}")
+@api_router.get("/ai/client-memory/{client_id}")
 async def get_client_memory(client_id: str, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str(current_user.get("role") or "").lower())
     business_id = await get_user_business_id(current_user)
@@ -4948,7 +4952,7 @@ async def get_client_memory(client_id: str, current_user: dict = Depends(get_cur
     return {"success": True, "data": memory}
 
 
-@api_router.post("/api/ai/client-memory/{client_id}/refresh")
+@api_router.post("/ai/client-memory/{client_id}/refresh")
 async def refresh_client_memory(client_id: str, current_user: dict = Depends(get_current_user)):
     _owner_roles_only(str(current_user.get("role") or "").lower())
     business_id = await get_user_business_id(current_user)

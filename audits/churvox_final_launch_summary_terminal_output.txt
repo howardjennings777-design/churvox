@@ -1,12 +1,24 @@
 # Churvox Final Launch Test Summary
 
-Generated: 2026-05-16 21:43:27 UTC
+Generated: 2026-05-16 21:45:30 UTC
 
 ## Current result
 
-Launch is **not fully clear yet** because these blockers remain:
+Core launch smoke testing is **clear** based on the current automated checks.
 
-- Deep wiring audit: 1 HIGH
+Passed areas:
+- Owner login and live owner API workflow
+- Clients load/create/open/delete
+- Jobs load/create/assign/open/delete
+- Team workers load
+- Quotes create/open/list/delete
+- Invoices create/open/list/delete
+- Smart Hub / AI action endpoints
+- Dispatch board / owner summary endpoints
+- Browser routes for main app pages
+- CSS MIME fixed as text/css
+- JS bundle loads
+- PWA manifest loads
 
 ## Report matrix
 
@@ -17,7 +29,7 @@ Launch is **not fully clear yet** because these blockers remain:
 | Quote + invoice workflow | PASS | 0 | 0 | 0 | `audits/churvox_live_quote_invoice_workflow_test_latest.md` |
 | Browser routes | PASS | 0 | 0 | 0 | `audits/churvox_live_browser_route_check_latest.md` |
 | Launch workflow audit | PASS | 0 | 0 | 1 | `audits/churvox_launch_workflow_audit_latest.md` |
-| Deep wiring audit | CHECK | 1 | 0 | 0 | `audits/churvox_deep_audit_latest.md` |
+| Deep wiring audit | PASS | 0 | 0 | 0 | `audits/churvox_deep_audit_latest.md` |
 
 ## Honest remaining notes
 
@@ -38,4 +50,4 @@ Launch is **not fully clear yet** because these blockers remain:
 
 
 LATEST_FILE=audits/churvox_final_launch_summary_latest.md
-REPORT_FILE=audits/churvox_final_launch_summary_20260516_214327.md
+REPORT_FILE=audits/churvox_final_launch_summary_20260516_214530.md
