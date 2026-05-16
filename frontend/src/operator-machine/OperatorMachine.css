@@ -9674,3 +9674,491 @@ select {
   }
 }
 
+
+
+/* PHASE_181_APPROVAL_DESK_NON_BORING_LAYOUT
+   Approval Desk: not a boring dashboard. A live AI admin desk with
+   carbon controls, warm paper, moss highlights and stacked approval slips.
+*/
+
+:root {
+  --cx-carbon: #14130f;
+  --cx-carbon-2: #211f19;
+  --cx-stone: #f3efe5;
+  --cx-paper: #fffaf0;
+  --cx-clay: #e7dcc8;
+  --cx-clay-2: #d8c8ac;
+  --cx-moss: #b8f24a;
+  --cx-moss-deep: #3f6f3a;
+  --cx-brass: #b67a32;
+  --cx-brick: #8f2f24;
+  --cx-ink-soft: #625d50;
+  --cx-line: rgba(20, 19, 15, 0.14);
+  --cx-shadow-soft: 0 18px 54px rgba(20, 19, 15, 0.13);
+  --cx-shadow-strong: 0 34px 110px rgba(20, 19, 15, 0.23);
+}
+
+.om-shell {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(184, 242, 74, 0.18), transparent 28rem),
+    radial-gradient(circle at 90% 0%, rgba(182, 122, 50, 0.15), transparent 24rem),
+    linear-gradient(135deg, #f3efe5 0%, #eee4d3 48%, #e2d3bb 100%) !important;
+  color: var(--cx-carbon) !important;
+}
+
+.om-nav {
+  background:
+    linear-gradient(180deg, rgba(20, 19, 15, 0.98) 0%, rgba(33, 31, 25, 0.98) 100%) !important;
+  border-right: 1px solid rgba(184, 242, 74, 0.16) !important;
+  box-shadow: 18px 0 60px rgba(20, 19, 15, 0.18) !important;
+}
+
+.om-brand {
+  background: rgba(255, 250, 240, 0.06) !important;
+  border: 1px solid rgba(184, 242, 74, 0.16) !important;
+  border-radius: 22px !important;
+}
+
+.om-brand i {
+  background:
+    radial-gradient(circle at 40% 35%, var(--cx-moss), transparent 45%),
+    linear-gradient(135deg, #2b2a22, #090907) !important;
+  box-shadow: 0 0 34px rgba(184, 242, 74, 0.28) !important;
+}
+
+.om-brand strong,
+.om-brand small,
+.om-nav button span,
+.om-nav button small {
+  color: var(--cx-paper) !important;
+}
+
+.om-nav nav button {
+  border-radius: 18px !important;
+  border: 1px solid transparent !important;
+}
+
+.om-nav nav button.active {
+  background: linear-gradient(135deg, rgba(184, 242, 74, 0.18), rgba(255, 250, 240, 0.08)) !important;
+  border-color: rgba(184, 242, 74, 0.28) !important;
+  box-shadow: inset 0 0 0 1px rgba(184, 242, 74, 0.09) !important;
+}
+
+.om-main {
+  background: transparent !important;
+}
+
+.om-hero {
+  position: relative !important;
+  overflow: hidden !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr) !important;
+  gap: 28px !important;
+  padding: clamp(28px, 4vw, 56px) !important;
+  margin-bottom: 26px !important;
+  background:
+    linear-gradient(135deg, rgba(20, 19, 15, 0.98) 0%, rgba(33, 31, 25, 0.98) 58%, rgba(184, 242, 74, 0.88) 58%, rgba(184, 242, 74, 0.88) 100%) !important;
+  color: var(--cx-paper) !important;
+  border: 1px solid rgba(20, 19, 15, 0.18) !important;
+  border-radius: 34px !important;
+  box-shadow: var(--cx-shadow-strong) !important;
+}
+
+.om-hero::before {
+  content: "";
+  position: absolute;
+  inset: -35% auto auto 42%;
+  width: 340px;
+  height: 340px;
+  border-radius: 999px;
+  background: rgba(184, 242, 74, 0.12);
+  filter: blur(16px);
+  pointer-events: none;
+}
+
+.om-hero > div {
+  position: relative;
+  z-index: 1;
+}
+
+.om-hero span {
+  color: rgba(255, 250, 240, 0.72) !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  font-weight: 950 !important;
+}
+
+.om-hero h1 {
+  max-width: 880px !important;
+  margin: 14px 0 18px !important;
+  color: var(--cx-paper) !important;
+  font-size: clamp(46px, 7vw, 96px) !important;
+  line-height: 0.88 !important;
+  letter-spacing: -0.09em !important;
+  font-weight: 950 !important;
+}
+
+.om-hero p {
+  max-width: 680px !important;
+  color: rgba(255, 250, 240, 0.74) !important;
+  font-size: clamp(15px, 1.5vw, 18px) !important;
+  line-height: 1.55 !important;
+  font-weight: 750 !important;
+}
+
+.om-gauges {
+  position: relative;
+  z-index: 1;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 12px !important;
+  align-self: stretch !important;
+}
+
+.om-gauges article {
+  min-height: 118px !important;
+  padding: 18px !important;
+  background: rgba(255, 250, 240, 0.9) !important;
+  border: 1px solid rgba(20, 19, 15, 0.14) !important;
+  border-radius: 22px !important;
+  color: var(--cx-carbon) !important;
+  box-shadow: 0 12px 34px rgba(20, 19, 15, 0.12) !important;
+}
+
+.om-gauges article span {
+  color: var(--cx-ink-soft) !important;
+}
+
+.om-gauges article strong {
+  color: var(--cx-carbon) !important;
+  font-size: clamp(25px, 3vw, 42px) !important;
+  letter-spacing: -0.07em !important;
+}
+
+.om-dashboard-quiet-tools {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 0 0 24px !important;
+  padding: 12px !important;
+  background: rgba(255, 250, 240, 0.62) !important;
+  border: 1px solid rgba(20, 19, 15, 0.1) !important;
+  border-radius: 24px !important;
+  box-shadow: var(--cx-shadow-soft) !important;
+  overflow-x: auto !important;
+}
+
+.om-dashboard-quiet-tools > span {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: var(--cx-carbon);
+  color: var(--cx-paper) !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+.om-dashboard-quiet-tools button {
+  flex: 0 0 auto;
+  border-radius: 999px !important;
+  border: 1px solid rgba(20, 19, 15, 0.14) !important;
+  background: var(--cx-paper) !important;
+  color: var(--cx-carbon) !important;
+  font-weight: 900 !important;
+}
+
+.om-dashboard-quiet-tools small {
+  color: var(--cx-ink-soft) !important;
+  font-weight: 750 !important;
+}
+
+.om-dashboard-focus {
+  display: grid !important;
+  grid-template-columns: minmax(260px, 0.74fr) minmax(0, 1.5fr) !important;
+  gap: 26px !important;
+  align-items: stretch !important;
+}
+
+.om-dashboard-focus-card {
+  position: sticky !important;
+  top: 20px !important;
+  min-height: 520px !important;
+  overflow: hidden !important;
+  padding: 30px !important;
+  background:
+    radial-gradient(circle at 80% 10%, rgba(184, 242, 74, 0.28), transparent 17rem),
+    linear-gradient(160deg, var(--cx-carbon), #262318) !important;
+  color: var(--cx-paper) !important;
+  border: 1px solid rgba(184, 242, 74, 0.22) !important;
+  border-radius: 32px !important;
+  box-shadow: var(--cx-shadow-strong) !important;
+}
+
+.om-dashboard-focus-card::before {
+  content: "LIVE ADMIN DESK";
+  display: inline-flex;
+  margin-bottom: 28px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  background: rgba(184, 242, 74, 0.14);
+  color: var(--cx-moss);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+}
+
+.om-dashboard-focus-card::after {
+  content: "";
+  position: absolute;
+  right: -60px;
+  bottom: -70px;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(184, 242, 74, 0.42), transparent 60%);
+  pointer-events: none;
+}
+
+.om-dashboard-focus-card span {
+  color: rgba(255, 250, 240, 0.64) !important;
+}
+
+.om-dashboard-focus-card h2 {
+  color: var(--cx-paper) !important;
+  font-size: clamp(38px, 4.2vw, 66px) !important;
+  line-height: 0.9 !important;
+  letter-spacing: -0.08em !important;
+  font-weight: 950 !important;
+}
+
+.om-dashboard-focus-card p {
+  color: rgba(255, 250, 240, 0.73) !important;
+  font-size: 16px !important;
+  line-height: 1.58 !important;
+  font-weight: 750 !important;
+}
+
+.om-approval-desk-main {
+  position: relative !important;
+  padding: clamp(20px, 3vw, 34px) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 0.94), rgba(231, 220, 200, 0.88)) !important;
+  border: 1px solid rgba(20, 19, 15, 0.13) !important;
+  border-radius: 32px !important;
+  box-shadow: var(--cx-shadow-soft) !important;
+}
+
+.om-approval-desk-main > header {
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: 22px !important;
+  align-items: flex-start !important;
+  margin-bottom: 22px !important;
+}
+
+.om-approval-desk-main > header span {
+  color: var(--cx-brass) !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+}
+
+.om-approval-desk-main > header h2 {
+  margin: 8px 0 !important;
+  color: var(--cx-carbon) !important;
+  font-size: clamp(34px, 4vw, 58px) !important;
+  line-height: 0.94 !important;
+  letter-spacing: -0.08em !important;
+  font-weight: 950 !important;
+}
+
+.om-approval-desk-main > header p {
+  max-width: 620px !important;
+  color: var(--cx-ink-soft) !important;
+  font-weight: 760 !important;
+}
+
+.om-approval-desk-main > header b {
+  min-width: 86px !important;
+  min-height: 86px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 24px !important;
+  background: var(--cx-carbon) !important;
+  color: var(--cx-moss) !important;
+  font-size: 42px !important;
+  line-height: 1 !important;
+  box-shadow: 0 18px 40px rgba(20, 19, 15, 0.18) !important;
+}
+
+.om-approval-list {
+  display: grid !important;
+  gap: 15px !important;
+}
+
+.om-approval-ticket {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  gap: 8px 18px !important;
+  align-items: center !important;
+  min-height: 136px !important;
+  padding: 22px 24px 22px 28px !important;
+  text-align: left !important;
+  background:
+    linear-gradient(135deg, rgba(255, 250, 240, 0.98), rgba(244, 236, 220, 0.98)) !important;
+  color: var(--cx-carbon) !important;
+  border: 1px solid rgba(20, 19, 15, 0.13) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 14px 34px rgba(20, 19, 15, 0.1) !important;
+}
+
+.om-approval-ticket::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 16px;
+  bottom: 16px;
+  width: 7px;
+  border-radius: 0 999px 999px 0;
+  background: var(--cx-moss);
+  box-shadow: 0 0 18px rgba(184, 242, 74, 0.44);
+}
+
+.om-approval-ticket:nth-child(2n)::before {
+  background: var(--cx-brass);
+  box-shadow: 0 0 18px rgba(182, 122, 50, 0.28);
+}
+
+.om-approval-ticket span {
+  grid-column: 1 / -1;
+  color: var(--cx-brass) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  font-weight: 950 !important;
+}
+
+.om-approval-ticket strong {
+  color: var(--cx-carbon) !important;
+  font-size: clamp(20px, 2vw, 27px) !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.045em !important;
+  font-weight: 950 !important;
+}
+
+.om-approval-ticket small {
+  color: var(--cx-ink-soft) !important;
+  font-weight: 730 !important;
+  line-height: 1.45 !important;
+}
+
+.om-approval-ticket em {
+  justify-self: end !important;
+  align-self: center !important;
+  padding: 12px 16px !important;
+  border-radius: 999px !important;
+  background: var(--cx-carbon) !important;
+  color: var(--cx-paper) !important;
+  font-style: normal !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+}
+
+.om-approval-ticket:hover {
+  transform: translateY(-3px) rotate(-0.25deg) !important;
+  border-color: rgba(184, 242, 74, 0.44) !important;
+  box-shadow: 0 24px 60px rgba(20, 19, 15, 0.16) !important;
+}
+
+.om-view-all-approvals {
+  min-height: 58px !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(20, 19, 15, 0.14) !important;
+  background: rgba(20, 19, 15, 0.92) !important;
+  color: var(--cx-paper) !important;
+  font-weight: 950 !important;
+}
+
+.om-view-all-approvals.secondary {
+  background: rgba(255, 250, 240, 0.78) !important;
+  color: var(--cx-carbon) !important;
+}
+
+.om-done-state {
+  padding: 36px !important;
+  border-radius: 26px !important;
+  background:
+    linear-gradient(135deg, rgba(184, 242, 74, 0.14), rgba(255, 250, 240, 0.8)) !important;
+  border: 1px solid rgba(184, 242, 74, 0.28) !important;
+}
+
+.om-done-state strong {
+  color: var(--cx-carbon) !important;
+  font-size: 28px !important;
+}
+
+.om-done-state p {
+  color: var(--cx-ink-soft) !important;
+  font-weight: 750 !important;
+}
+
+/* Approval Slip modal/panel polish */
+.om-slip,
+.om-work-slip,
+[class*="WorkSlip"],
+[class*="work-slip"] {
+  background: var(--cx-paper) !important;
+  border-color: rgba(20, 19, 15, 0.14) !important;
+  box-shadow: var(--cx-shadow-strong) !important;
+}
+
+/* Keep Work/Jobs pages simpler and searchable, not queue-like */
+.om-jobs-board header span,
+.om-job-list header span {
+  color: var(--cx-brass) !important;
+}
+
+@media (max-width: 980px) {
+  .om-hero,
+  .om-dashboard-focus {
+    grid-template-columns: 1fr !important;
+  }
+
+  .om-dashboard-focus-card {
+    position: relative !important;
+    min-height: auto !important;
+  }
+
+  .om-gauges {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .om-hero {
+    padding: 26px !important;
+    border-radius: 26px !important;
+  }
+
+  .om-hero h1 {
+    font-size: 42px !important;
+  }
+
+  .om-gauges {
+    grid-template-columns: 1fr !important;
+  }
+
+  .om-approval-ticket {
+    grid-template-columns: 1fr !important;
+  }
+
+  .om-approval-ticket em {
+    justify-self: start !important;
+  }
+}
+

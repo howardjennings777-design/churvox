@@ -1,4 +1,4 @@
-// PHASE_178_FIX_DISPATCH_WORDING_PATCH_SYNTAX_BREAK
+// PHASE_181_APPROVAL_DESK_NON_BORING_LAYOUT\n// PHASE_178_FIX_DISPATCH_WORDING_PATCH_SYNTAX_BREAK
 // PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
@@ -933,7 +933,7 @@ function buildMachine(data = {}) {
           sourceId: id,
           kind: "proof",
           title: `Proof package for ${client}`,
-          eyebrow: "Proof-to-Paid",
+          eyebrow: "Proof & Pay",
           client,
           need: "Proof package prepared for invoice wording.",
           prepared: preparationText([
@@ -1220,7 +1220,7 @@ function smartWorkSlipDraft(slip = {}, team = []) {
     item.invoice_title,
     item.quote_title,
     item.name,
-    "Work Slip"
+    "Approval Slip"
   );
 
   const client = smartJobClient(item, smartField(existing.clientName, existing.invoiceClientName, existing.quoteClientName, slip.client, "Client"));
@@ -1470,7 +1470,7 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
               <p>
                 {slip.kind === "addon"
                   ? "Add-ons extend Churvox without changing the main plan. Growth Packs add scale, MYOB adds accounting sync, and SMS credits add prepaid messaging capacity."
-                  : "The plan controls how much of the Operator Machine Churvox can run for the business. Owner approval still stays in front of sensitive actions."}
+                  : "The plan controls how much of the Approval Desk Churvox can run for the business. Owner approval still stays in front of sensitive actions."}
               </p>
             </article>
           </section>
@@ -1530,12 +1530,12 @@ function WorkSlip({ slip, team, outputStatus, smsCredits = 0, businessLogoUrl = 
             <h2>{slip.title}</h2>
             <p>{slip.need}</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close work slip">×</button>
+          <button type="button" onClick={onClose} aria-label="Close approval slip">×</button>
         </header>
 
         <section className="om-slip-context om-ai-prefill-context">
           <span>AI prepared context</span>
-          <p className="om-ai-prep-list">{slip.prepared || draft.ownerNote || "Churvox prepared this Work Slip for owner review."}</p>
+          <p className="om-ai-prep-list">{slip.prepared || draft.ownerNote || "Churvox prepared this Approval Slip for owner review."}</p>
           <button type="button" onClick={() => setDraft(smartWorkSlipDraft(slip || {}, team || []))}>
             Refill with AI prep
           </button>
@@ -1854,13 +1854,13 @@ const OM_PLAN_DEFS = {
     label: "Start",
     price: "$39",
     rank: 1,
-    includes: ["Jobs", "Clients", "Quotes", "Invoices", "Basic Operator Machine"],
+    includes: ["Jobs", "Clients", "Quotes", "Invoices", "Basic Approval Desk"],
   },
   crew: {
     label: "Crew",
     price: "$89",
     rank: 2,
-    includes: ["Everything in Start", "Team", "Worker workflow", "Proof-to-Paid", "Time tracking"],
+    includes: ["Everything in Start", "Team", "Worker workflow", "Proof & Pay", "Time tracking"],
   },
   operator: {
     label: "Operator",
@@ -2195,7 +2195,7 @@ function featureLockedMessage(page) {
   const required = requiredPlanForPage(page);
   const labels = {
     team: "Team and worker workflow starts on Crew.",
-    proof: "Proof-to-Paid starts on Crew because it depends on worker notes, photos and completion flow.",
+    proof: "Proof & Pay starts on Crew because it depends on worker notes, photos and completion flow.",
     payroll: "Payroll is a Command feature because it needs locked-down payroll access, timesheets and pay review.",
   };
 
@@ -2230,8 +2230,8 @@ function rowsForPage(page, machine, data = {}) {
         price: "$39",
         planName: "Start",
         badge: "Solo operators",
-        prepared: "Jobs, clients, quotes, invoices and basic Operator Machine. Best for one-person businesses that want the work organised without advanced AI Operator capacity.",
-        features: ["Jobs", "Clients", "Quotes", "Invoices", "Basic Operator Machine"],
+        prepared: "Jobs, clients, quotes, invoices and basic Approval Desk. Best for one-person businesses that want the work organised without advanced AI Operator capacity.",
+        features: ["Jobs", "Clients", "Quotes", "Invoices", "Basic Approval Desk"],
         cta: "Start checkout",
       },
       {
@@ -2277,7 +2277,7 @@ function rowsForPage(page, machine, data = {}) {
         id: "addon-growth-pack",
         eyebrow: "Growth add-on",
         title: "Command Growth Pack · $99/month + GST",
-        need: "Add more active team capacity and more Operator Machine power as the business grows.",
+        need: "Add more active team capacity and more Approval Desk power as the business grows.",
         kind: "addon",
         price: "$99",
         planName: "Command Growth Pack",
@@ -2343,7 +2343,7 @@ function rowsForPage(page, machine, data = {}) {
 
   if (page === "settings") {
     return [
-      { id: "settings-business", eyebrow: "Business setup", title: "Business details", need: "Business name, trade type, region and invoice wording feed the Operator Machine.", kind: "settings" },
+      { id: "settings-business", eyebrow: "Business setup", title: "Business details", need: "Business name, trade type, region and invoice wording feed the Approval Desk.", kind: "settings" },
       { id: "settings-guardrails", eyebrow: "Owner controls", title: "Approval guardrails", need: "Churvox prepares admin, but sensitive actions stay owner-approved.", kind: "settings" },
       { id: "settings-integrations", eyebrow: "Connected systems", title: "MYOB, email, SMS and imports", need: "Integrations should feed prepared actions, not send blindly.", kind: "settings" },
     ];
@@ -2373,7 +2373,7 @@ function rowsForPage(page, machine, data = {}) {
       item.invoice_status ||
       item.quote_status ||
       item.job_status,
-      "Open the work slip to review details."
+      "Open the approval slip to review details."
     );
 
     return {
@@ -2412,8 +2412,8 @@ function featureConfig(page) {
   const configs = {
     jobs: {
       label: "Jobs",
-      title: "Jobs feed the Operator Machine.",
-      body: "Create, assign and complete work here. Churvox uses the job data to prepare dispatch, proof-to-paid and invoice actions.",
+      title: "Jobs feed the Approval Desk.",
+      body: "Create, assign and complete work here. Churvox uses the job data to prepare dispatch, proof and pay and invoice actions.",
       primary: "Open job slip",
       empty: "No jobs found yet.",
       machine: ["Assign crew", "Proof", "Invoice prep"],
@@ -2451,7 +2451,7 @@ function featureConfig(page) {
       machine: ["Amount check", "Payment status", "Reminder draft"],
     },
     proof: {
-      label: "Proof-to-Paid",
+      label: "Proof & Pay",
       title: "Worker proof becomes invoice-ready admin.",
       body: "Notes, photos and completion details feed better invoice descriptions and owner approval.",
       primary: "Open proof slip",
@@ -2607,7 +2607,7 @@ function ClientsRecordBoard({ data, machine, onOpen }) {
       eyebrow: "New client intake",
       title: "Create new client",
       need: "Add the client once. Churvox will reuse it for jobs, quotes, invoices and reminders.",
-      prepared: "Churvox will use this client record as clean context across the Operator Machine.",
+      prepared: "Churvox will use this client record as clean context across the Approval Desk.",
       draft: {
         title: "",
         clientName: "",
@@ -2663,7 +2663,7 @@ function ClientsRecordBoard({ data, machine, onOpen }) {
     <section className="om-clients-board" data-phase="PHASE_85_FINISH_CLIENTS_OPERATOR_MACHINE">
       <header className="om-clients-hero om-clients-hero-final">
         <div>
-          <span>Churvox Operator Machine · Clients</span>
+          <span>Churvox Approval Desk · Clients</span>
           <h1>Clients go in once. Jobs, quotes and invoices stay clean.</h1>
           <p>
             Keep client records simple. Churvox checks contact details, addresses and related work in the background,
@@ -2701,7 +2701,7 @@ function ClientsRecordBoard({ data, machine, onOpen }) {
             <div>
               <span>Client Records</span>
               <h2>Who the business works for.</h2>
-              <p>Filter the records, then open one Work Slip to review or fix client details.</p>
+              <p>Filter the records, then open one Approval Slip to review or fix client details.</p>
             </div>
             <b>{filteredRows.length}</b>
           </header>
@@ -2741,7 +2741,7 @@ function ClientsRecordBoard({ data, machine, onOpen }) {
                   <span>{needsContact ? "Needs contact" : needsAddress ? "Needs address" : "Client"}</span>
                   <strong>{name}</strong>
                   <small>{contact || address || row.need}</small>
-                  <em>{needsContact ? "Add contact" : needsAddress ? "Add address" : "Open Work Slip"}</em>
+                  <em>{needsContact ? "Add contact" : needsAddress ? "Add address" : "Open Approval Slip"}</em>
                 </button>
               );
             }) : (
@@ -2769,7 +2769,7 @@ function ClientsRecordBoard({ data, machine, onOpen }) {
           <section>
             <span>Machine rule</span>
             <h3>Enter client details once.</h3>
-            <p>Churvox reuses clean client context across jobs, quotes, invoices, SMS and proof-to-paid.</p>
+            <p>Churvox reuses clean client context across jobs, quotes, invoices, SMS and proof and pay.</p>
           </section>
         </aside>
       </section>
@@ -2876,7 +2876,7 @@ function ProofToPaidBoard({ data, machine, onOpen }) {
     <section className="om-proof-board" data-phase="PHASE_89_FINISH_LAST_OPERATOR_MACHINE_PAGES">
       <header className="om-proof-hero om-proof-hero-final">
         <div>
-          <span>Churvox Operator Machine · Proof-to-Paid</span>
+          <span>Churvox Approval Desk · Proof & Pay</span>
           <h1>Proof goes in. Invoice wording comes out ready.</h1>
           <p>
             Worker notes, completion proof and job context should not sit hidden. Churvox turns proof into owner-approved invoice and customer update drafts.
@@ -2909,7 +2909,7 @@ function ProofToPaidBoard({ data, machine, onOpen }) {
             <div>
               <span>Proof Queue</span>
               <h2>Completed work that can become admin.</h2>
-              <p>Open one Work Slip to review proof, wording, amount or invoice context.</p>
+              <p>Open one Approval Slip to review proof, wording, amount or invoice context.</p>
             </div>
             <b>{filteredRows.length}</b>
           </header>
@@ -3097,7 +3097,7 @@ function PayrollWorkspaceBoard({ data, machine, onOpen }) {
     <section className="om-payroll-board" data-phase="PHASE_89_FINISH_LAST_OPERATOR_MACHINE_PAGES">
       <header className="om-payroll-hero om-payroll-hero-final">
         <div>
-          <span>Churvox Operator Machine · Payroll</span>
+          <span>Churvox Approval Desk · Payroll</span>
           <h1>Payroll stays locked down and review-first.</h1>
           <p>
             Payroll should not be mixed with normal job admin. Churvox prepares hours, roles and pay summaries for approval without exposing payroll to the wrong users.
@@ -3130,7 +3130,7 @@ function PayrollWorkspaceBoard({ data, machine, onOpen }) {
             <div>
               <span>Payroll Workspace</span>
               <h2>Worker pay context for review.</h2>
-              <p>Open one Work Slip to review worker hours, rate context and payroll notes.</p>
+              <p>Open one Approval Slip to review worker hours, rate context and payroll notes.</p>
             </div>
             <b>{filteredWorkers.length}</b>
           </header>
@@ -3297,7 +3297,7 @@ function SettingsMachineBoard({ data, machine, onOpen }) {
     <section className="om-settings-board" data-phase="PHASE_89_FINISH_LAST_OPERATOR_MACHINE_PAGES">
       <header className="om-settings-hero om-settings-hero-final">
         <div>
-          <span>Churvox Operator Machine · Settings</span>
+          <span>Churvox Approval Desk · Settings</span>
           <h1>Settings control how the machine behaves.</h1>
           <p>
             Keep setup simple, but make the rules strong. Business context, roles, approval rules, plan and add-ons all affect what Churvox can prepare.
@@ -3330,7 +3330,7 @@ function SettingsMachineBoard({ data, machine, onOpen }) {
             <div>
               <span>Setup Queue</span>
               <h2>Controls that matter.</h2>
-              <p>Open one Work Slip to review how Churvox should run the business admin.</p>
+              <p>Open one Approval Slip to review how Churvox should run the business admin.</p>
             </div>
             <b>{sourceRows.length}</b>
           </header>
@@ -3366,7 +3366,7 @@ function SettingsMachineBoard({ data, machine, onOpen }) {
 
           <section>
             <span>Machine rule</span>
-            <h3>Power in the background.</h3>
+            <h3>Admin prepared in the background.</h3>
             <p>Settings should make Churvox smarter without making the app harder to use.</p>
           </section>
         </aside>
@@ -3585,7 +3585,7 @@ function InvoicesCashflowBoard({ data, machine, onOpen }) {
     <section className="om-invoices-board" data-phase="PHASE_90_FINISH_INVOICES_OPERATOR_MACHINE_ALL_IN_ONE">
       <header className="om-invoices-hero om-invoices-hero-final">
         <div>
-          <span>Churvox Operator Machine · Invoices</span>
+          <span>Churvox Approval Desk · Invoices</span>
           <h1>Invoices turn work into cashflow without the mess.</h1>
           <p>
             Churvox watches drafts, missing amounts, unpaid invoices and payment follow-ups.
@@ -3623,7 +3623,7 @@ function InvoicesCashflowBoard({ data, machine, onOpen }) {
             <div>
               <span>Invoice Queue</span>
               <h2>What needs cashflow attention.</h2>
-              <p>Filter invoices, then open one Work Slip to review, edit, collect or approve.</p>
+              <p>Filter invoices, then open one Approval Slip to review, edit, collect or approve.</p>
             </div>
             <b>{filteredRows.length}</b>
           </header>
@@ -3909,7 +3909,7 @@ function QuotesPipelineBoard({ data, machine, onOpen }) {
     <section className="om-quotes-board" data-phase="PHASE_88_FINISH_QUOTES_OPERATOR_MACHINE_ALL_IN_ONE">
       <header className="om-quotes-hero om-quotes-hero-final">
         <div>
-          <span>Churvox Operator Machine · Quotes</span>
+          <span>Churvox Approval Desk · Quotes</span>
           <h1>Quotes stay simple. Follow-ups come prepared.</h1>
           <p>
             Churvox keeps quote scope, price, status and client context tidy in the background,
@@ -3947,7 +3947,7 @@ function QuotesPipelineBoard({ data, machine, onOpen }) {
             <div>
               <span>Quote Queue</span>
               <h2>What needs quote attention.</h2>
-              <p>Filter quotes, then open one Work Slip to review, edit, follow up or convert.</p>
+              <p>Filter quotes, then open one Approval Slip to review, edit, follow up or convert.</p>
             </div>
             <b>{filteredRows.length}</b>
           </header>
@@ -4223,7 +4223,7 @@ function TeamCrewBoard({ data, machine, onOpen }) {
     <section className="om-team-board" data-phase="PHASE_87_FINISH_TEAM_OPERATOR_MACHINE_ALL_IN_ONE">
       <header className="om-team-hero om-team-hero-final">
         <div>
-          <span>Churvox Operator Machine · Team</span>
+          <span>Churvox Approval Desk · Team</span>
           <h1>Team records power worker matching.</h1>
           <p>
             Keep crew details simple. Churvox checks role, region, contact and active work in the background,
@@ -4261,7 +4261,7 @@ function TeamCrewBoard({ data, machine, onOpen }) {
             <div>
               <span>Team Records</span>
               <h2>Who can do the work.</h2>
-              <p>Filter workers, then open one Work Slip to review role, contact or region.</p>
+              <p>Filter workers, then open one Approval Slip to review role, contact or region.</p>
             </div>
             <b>{filteredRows.length}</b>
           </header>
@@ -4303,7 +4303,7 @@ function TeamCrewBoard({ data, machine, onOpen }) {
                   <span>{needsContact ? "Needs contact" : needsRole ? "Needs role" : needsRegion ? "Needs region" : role}</span>
                   <strong>{name}</strong>
                   <small>{contact || region || row.need}</small>
-                  <em>{needsContact ? "Add contact" : needsRole ? "Set role" : needsRegion ? "Set region" : "Open Work Slip"}</em>
+                  <em>{needsContact ? "Add contact" : needsRole ? "Set role" : needsRegion ? "Set region" : "Open Approval Slip"}</em>
                 </button>
               );
             }) : (
@@ -4418,7 +4418,7 @@ function JobsQueueBoard({ data, machine, onOpen }) {
       eyebrow: "New job intake",
       title: "Create new job",
       need: "Enter the job once. Churvox will use it for dispatch, proof and invoice prep.",
-      prepared: "Churvox will turn this job record into machine input for worker assignment, proof-to-paid and owner-approved invoice actions.",
+      prepared: "Churvox will turn this job record into machine input for worker assignment, proof and pay and owner-approved invoice actions.",
       draft: {
         title: "",
         clientName: "",
@@ -4517,7 +4517,7 @@ function JobsQueueBoard({ data, machine, onOpen }) {
     <section className="om-jobs-board" data-phase="PHASE_80_FINISH_JOBS_OPERATOR_MACHINE">
       <header className="om-jobs-hero om-jobs-hero-final">
         <div>
-          <span>Churvox Operator Machine · Jobs</span>
+          <span>Churvox Approval Desk · Jobs</span>
           <h1>Jobs go in. Crew, proof and invoices come out ready.</h1>
           <p>
             Keep the job record simple. Churvox checks worker fit, proof, client context and invoice readiness
@@ -4553,9 +4553,9 @@ function JobsQueueBoard({ data, machine, onOpen }) {
         <section className="om-job-queue">
           <header className="om-job-queue-head">
             <div>
-              <span>Job Queue</span>
-              <h2>What needs job attention.</h2>
-              <p>Filter the work, then open one Work Slip to review, edit, dispatch or invoice.</p>
+              <span>Work</span>
+              <h2>Search work. Churvox handles the admin flow in the background.</h2>
+              <p>Filter the work, then open one Approval Slip to review, edit, dispatch or invoice.</p>
             </div>
             <b>{filteredRows.length}</b>
           </header>
@@ -4590,7 +4590,7 @@ function JobsQueueBoard({ data, machine, onOpen }) {
                   <span>{needsDispatch ? "Needs dispatch" : completed ? "Completed" : status || "Active job"}</span>
                   <strong>{row.title}</strong>
                   <small>{address || row.need}</small>
-                  <em>{worker ? `Worker: ${worker}` : needsDispatch ? "Choose worker" : completed ? "Prepare invoice" : "Open Work Slip"}</em>
+                  <em>{worker ? `Worker: ${worker}` : needsDispatch ? "Choose worker" : completed ? "Prepare invoice" : "Open Approval Slip"}</em>
                 </button>
               );
             }) : (
@@ -4840,7 +4840,7 @@ function FeatureWorkspace({ page, machine, data, currentPlan, onOpen, onPlans })
             <div>
               <span>Records</span>
               <h2>{config.label}</h2>
-              <p>Simple list first. Details open in one Work Slip.</p>
+              <p>Simple list first. Details open in one Approval Slip.</p>
             </div>
             <b>{rows.length}</b>
           </header>
@@ -4866,7 +4866,7 @@ function FeatureWorkspace({ page, machine, data, currentPlan, onOpen, onPlans })
           <span>How this feeds the machine</span>
           <h2>Power stays in the background.</h2>
           <p>
-            This page keeps the full feature available, but the Operator Machine only surfaces what needs owner action.
+            This page keeps the full feature available, but the Approval Desk only surfaces what needs owner action.
           </p>
 
           <div>
@@ -4909,7 +4909,7 @@ function OperatorActionReceipt({ entry }) {
     <section className="om-action-receipt" data-phase="PHASE_92_OPERATOR_APPROVAL_CONFIRMATION_BOX">
       <div>
         <span>Confirmed</span>
-        <h2>Churvox sent it to the Output Log.</h2>
+        <h2>Churvox sent it to the Done Log.</h2>
         <p>{title}</p>
       </div>
 
@@ -5659,7 +5659,7 @@ function JobBriefTemplateCard({ slip, draft, update }) {
 
       <footer>
         <b>Approval rule</b>
-        <p>Approving a worker assignment should assign the job, show it in the worker app, create a notification and record it in the Output Log.</p>
+        <p>Approving a worker assignment should assign the job, show it in the worker app, create a notification and record it in the Done Log.</p>
       </footer>
     </section>
   );
@@ -5687,7 +5687,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
       team: "/team",
       quotes: "/quotes",
       invoices: "/invoices",
-      proof: "/proof-to-paid",
+      proof: "/proof and pay",
       payroll: "/payroll",
       plans: "/plans",
       settings: "/settings",
@@ -5879,13 +5879,13 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
 
 
   function saveEdit(slip, draft) {
-    setOutputStatus("Edit saved in this Operator Machine session.");
+    setOutputStatus("Edit saved in this Approval Desk session.");
     setOutputLog((current) => [
       {
         id: `${Date.now()}-${slip.id}`,
         type: "Saved edit",
         title: draft.title || slip.title,
-        detail: "Owner edited the work slip before approval.",
+        detail: "Owner edited the approval slip before approval.",
       },
       ...current,
     ].slice(0, 8));
@@ -5928,7 +5928,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
       for (const path of ["/team/workers", "/team/workers/", "/team/invite", "/owner/team"]) {
         try {
           const result = await apiPost(path, teamPayload);
-          const message = result?.message || "Churvox saved the team member and sent it to the Output Log.";
+          const message = result?.message || "Churvox saved the team member and sent it to the Done Log.";
           setOutputStatus(message);
           setOutputLog((current) => [
             {
@@ -5983,7 +5983,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
       for (const path of ["/quotes", "/quotes/", "/owner/quotes"]) {
         try {
           const result = await apiPost(path, quotePayload);
-          const message = result?.message || "Churvox saved the quote draft and sent it to the Output Log.";
+          const message = result?.message || "Churvox saved the quote draft and sent it to the Done Log.";
           setOutputStatus(message);
           setOutputLog((current) => [
             {
@@ -6066,7 +6066,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
       for (const path of ["/invoices", "/invoices/", "/owner/invoices"]) {
         try {
           const result = await apiPost(path, invoicePayload);
-          let message = result?.message || "Churvox saved the invoice draft and sent it to the Output Log.";
+          let message = result?.message || "Churvox saved the invoice draft and sent it to the Done Log.";
 
           try {
             const createdInvoiceId =
@@ -6251,18 +6251,18 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
       title: "Work packs",
       need: "Proof, job notes and invoice wording can be bundled into a clean owner-approved pack.",
       customerMessage: "Churvox can prepare job proof, notes, photos and invoice wording into one reviewable work pack.",
-      ownerNote: "Useful for proof-to-paid admin and customer-ready records.",
+      ownerNote: "Useful for proof and pay admin and customer-ready records.",
     },
   ];
 
   const nav = [
-    ["Operator Machine", "dashboard"],
-    ["Jobs", "jobs"],
+    ["Approval Desk", "dashboard"],
+    ["Work", "jobs"],
     ["Clients", "clients"],
-    ["Team", "team"],
+    ["Crew", "team"],
     ["Quotes", "quotes"],
     ["Invoices", "invoices"],
-    ["Proof-to-Paid", "proof"],
+    ["Proof & Pay", "proof"],
     ["Payroll", "payroll"],
     ["Plans", "plans"],
     ["Settings", "settings"],
@@ -6275,7 +6275,7 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
           <i><b /></i>
           <span>
             <strong>Churvox</strong>
-            <small>Operator Machine</small>
+            <small>Approval Desk</small>
           </span>
         </button>
 
@@ -6295,8 +6295,8 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
         {page === "dashboard" ? (
         <header className="om-hero">
           <div>
-            <span>Churvox Operator Machine</span>
-            <h1>Work goes in. Churvox prepares the admin. You approve.</h1>
+            <span>Churvox Approval Desk</span>
+            <h1>Churvox prepared the admin. Approve the next move.</h1>
             <p>
               Jobs, proof, quotes, invoices, reminders and worker updates feed the machine in the background.
               The owner sees only the slips that need approval, edits, or a fix.
@@ -6334,9 +6334,9 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
         <section className="om-dashboard-focus" data-phase="PHASE_116_SINGLE_APPROVAL_DESK">
           <aside className="om-dashboard-focus-card">
             <span>Owner approvals</span>
-            <h2>Your approvals are ready.</h2>
+            <h2>Churvox prepared the next moves.</h2>
             <p>
-              Churvox has prepared today’s invoices, worker decisions and follow-ups.
+              Invoices, crew matches, customer updates and follow-ups are prepared for approval.
               Open each slip, check it, then approve or edit.
             </p>
           </aside>
@@ -6357,13 +6357,13 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
                   <span>{item.eyebrow}</span>
                   <strong>{item.title}</strong>
                   <small>{item.need}</small>
-                  <em>Open Work Slip</em>
+                  <em>Open Approval Slip</em>
                 </button>
               )) : (
                 <section className="om-done-state">
                   <span />
                   <strong>No approvals waiting.</strong>
-                  <p>When workers complete jobs, quotes age, invoices go unpaid, or a request comes in, Churvox will prepare one clean work slip here.</p>
+                  <p>When workers complete jobs, quotes age, invoices go unpaid, or a request comes in, Churvox will prepare one clean approval slip here.</p>
                 </section>
               )}
 
@@ -6473,8 +6473,8 @@ function OperatorAuth({ authMode, setAuthMode, onLogin }) {
 
   return (
     <section className="om-auth" id="login">
-      <span>{signup ? "Start the machine" : "Secure owner login"}</span>
-      <h2>{signup ? "Create Churvox workspace" : "Open Operator Machine"}</h2>
+      <span>{signup ? "Start the approval desk" : "Secure owner login"}</span>
+      <h2>{signup ? "Create Churvox workspace" : "Open Churvox"}</h2>
       {error ? <p className="om-auth-error">{error}</p> : null}
 
       <form onSubmit={submit}>
@@ -6521,7 +6521,7 @@ export function OperatorLanding({ authMode, setAuthMode, onLogin }) {
       <header className="om-public-nav">
         <a href="#top" className="om-public-brand">
           <i><b /></i>
-          <span><strong>Churvox</strong><small>Operator Machine</small></span>
+          <span><strong>Churvox</strong><small>Approval Desk</small></span>
         </a>
         <nav>
           <a href="#machine">How it works</a>
@@ -6536,7 +6536,7 @@ export function OperatorLanding({ authMode, setAuthMode, onLogin }) {
           <h1>Turn trade work into owner-approved admin without the dashboard mess.</h1>
           <p>
             Work goes in. Churvox checks it, prepares invoices, reminders, quote follow-ups,
-            worker assignments and proof-to-paid admin. You approve, edit, or fix only what matters.
+            worker assignments and proof and pay admin. You approve, edit, or fix only what matters.
           </p>
           <div className="om-public-actions">
             <button type="button" onClick={signup}>Start free trial</button>
@@ -6545,7 +6545,7 @@ export function OperatorLanding({ authMode, setAuthMode, onLogin }) {
         </div>
 
         <section className="om-public-machine" id="machine">
-          {["Input Tray", "Processing Line", "Approval Desk", "Output Log"].map((label, index) => (
+          {["Work In", "AI Preparing", "Approval Desk", "Done Log"].map((label, index) => (
             <article key={label} className={index === 2 ? "active" : ""}>
               <span>{String(index + 1).padStart(2, "0")}</span>
               <strong>{label}</strong>
@@ -6566,8 +6566,8 @@ export function OperatorLanding({ authMode, setAuthMode, onLogin }) {
       <section className="om-public-proof">
         <article>
           <span>Not a normal dashboard</span>
-          <strong>Complex features feed one simple machine.</strong>
-          <p>Jobs, clients, team, quotes, invoices, proof-to-paid, payroll, plans and settings stay powerful. The first screen only shows the work that needs owner action.</p>
+          <strong>Complex admin feeds one simple approval desk.</strong>
+          <p>Jobs, clients, team, quotes, invoices, proof and pay, payroll, plans and settings stay powerful. The first screen only shows the work that needs owner action.</p>
         </article>
         <article>
           <span>Approval-first AI</span>
@@ -6596,8 +6596,8 @@ export function OperatorLanding({ authMode, setAuthMode, onLogin }) {
       <section className="om-public-access" data-phase="PHASE_100_FILL_PUBLIC_ACCESS_EMPTY_BOX">
         <div className="om-public-access-copy">
           <span>Secure workspace</span>
-          <h2>Open Churvox Operator Machine.</h2>
-          <p>Start a trial or log in. Churvox will keep the powerful stuff in the background and show the owner what needs approval.</p>
+          <h2>Open Churvox.</h2>
+          <p>Start a trial or log in. Churvox will keep the powerful admin in the background and show the owner what needs approval.</p>
 
           <section className="om-public-access-board" aria-label="Churvox trial setup">
             <article>

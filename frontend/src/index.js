@@ -365,6 +365,61 @@ import App from "./App";
 import "./index.css";
 
 
+// PHASE_181_APPROVAL_DESK_NON_BORING_LAYOUT
+// Last-mile visible wording cleanup only. Does not touch API paths or logic.
+(function churvoxApprovalDeskWording() {
+  try {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    const replacements = new Map([
+      ["Operator Machine", "Approval Desk"],
+      ["Smart Hub", "Approval Desk"],
+      ["AI admin machine", "AI-prepared admin"],
+      ["Work Slip", "Approval Slip"],
+      ["Open Work Slip", "Open Approval Slip"],
+      ["Job Queue", "Work"],
+      ["JOB QUEUE", "WORK"],
+      ["Proof-to-Paid", "Proof & Pay"],
+      ["Start the machine", "Start the approval desk"],
+      ["Open Operator Machine", "Open Approval Desk"],
+    ]);
+
+    function patchText() {
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+
+      nodes.forEach((node) => {
+        let text = node.nodeValue || "";
+        let next = text;
+        replacements.forEach((value, key) => {
+          next = next.split(key).join(value);
+        });
+        if (next !== text) node.nodeValue = next;
+      });
+    }
+
+    let timer = null;
+    function schedule() {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(patchText, 80);
+    }
+
+    window.addEventListener("load", schedule);
+    document.addEventListener("click", schedule, true);
+
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+
+    schedule();
+  } catch {
+    // keep app boot safe
+  }
+})();
+
+
+
+
 // PHASE_179_SIMPLIFY_JOBS_PANEL_NO_QUEUE
 // Owner-facing cleanup: no "Job Queue" language and no manual dispatch-style filters.
 // Jobs show as normal jobs with search. The Operator Machine handles crew/proof/invoice

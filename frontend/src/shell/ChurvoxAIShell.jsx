@@ -1,4 +1,4 @@
-// PHASE_178_FIX_DISPATCH_WORDING_PATCH_SYNTAX_BREAK
+// PHASE_181_APPROVAL_DESK_NON_BORING_LAYOUT\n// PHASE_178_FIX_DISPATCH_WORDING_PATCH_SYNTAX_BREAK
 // PHASE_177_HIDE_DISPATCH_WORDING_BEHIND_AI_CREW_ASSIGNMENT
 // PHASE_143_FORCE_REAL_PROPER_INVOICE_COMPONENT
 // PHASE_142_FORCE_PROPER_INVOICE_TEMPLATE_LIVE
@@ -140,20 +140,20 @@ const APP_PATHS = {
   team: "/team",
   quotes: "/quotes",
   invoices: "/invoices",
-  proof: "/proof-to-paid",
+  proof: "/proof and pay",
   payroll: "/payroll",
   plans: "/plans",
   settings: "/settings",
 };
 
 const NAV = [
-  ["dashboard", "Operator Machine", "AI admin machine"],
-  ["jobs", "Jobs", "Crew assignment board"],
+  ["dashboard", "Approval Desk", "AI-prepared admin"],
+  ["jobs", "Work", "Jobs, proof and next admin"],
   ["clients", "Clients", "Customer history"],
-  ["team", "Team", "Crew availability"],
+  ["team", "Crew", "Live workers and workload"],
   ["quotes", "Quotes", "Sales pipeline"],
   ["invoices", "Invoices", "Cashflow"],
-  ["proof", "Proof-to-Paid", "Completed work"],
+  ["proof", "Proof & Pay", "Completed work to invoice"],
   ["payroll", "Payroll", "Pay periods and hours"],
   ["plans", "Plans", "Billing and trial"],
   ["settings", "Settings", "Business setup"],
@@ -1933,7 +1933,7 @@ function Landing({ authMode, setAuthMode, onLogin }) {
             ["Jobs", "Create, assign and track work."],
             ["Worker app", "Start jobs, add notes, upload photos and complete work."],
             ["AI Operator Actions", "Prepared admin actions waiting for approval."],
-            ["Proof-to-Paid", "Worker proof becomes invoice-ready admin."],
+            ["Proof & Pay", "Worker proof becomes invoice-ready admin."],
             ["Quotes", "Follow-ups prepared before opportunities go cold."],
             ["Invoices", "Drafts and reminders prepared from job data."],
             ["MYOB", "Optional on Operator. Included in Command."],
@@ -2123,7 +2123,7 @@ function WorkerRoleClarityPanel() {
           <span>Churvox uses this for</span>
           <ul>
             <li>job completion summary</li>
-            <li>proof-to-paid package</li>
+            <li>proof and pay package</li>
             <li>invoice wording source</li>
             <li>owner review context</li>
             <li>team accountability trail</li>
@@ -3106,7 +3106,7 @@ function workspacePathForPage(page) {
     team: "/team",
     quotes: "/quotes",
     invoices: "/invoices",
-    proof: "/proof-to-paid",
+    proof: "/proof and pay",
     payroll: "/payroll",
     settings: "/settings",
   };
@@ -3307,7 +3307,7 @@ function OwnerCommandModal({ selection, onClose, onSaveDraft, onApprove, setPage
     team: "Team",
     quotes: "Quotes",
     invoices: "Invoices",
-    proof: "Proof-to-Paid",
+    proof: "Proof & Pay",
     payroll: "Payroll",
     settings: "Settings",
   }[selection.page || "dashboard"] || "Workspace";
@@ -3862,7 +3862,7 @@ function cxPreparedActionContext({ item = {}, row = {}, boxKey = "", group = "",
 
   let mode = "review";
   if (allText.includes("dispatch") || allText.includes("assign") || allText.includes("unassigned")) mode = "dispatch";
-  else if (allText.includes("invoice") || allText.includes("completed job") || allText.includes("proof-to-paid") || allText.includes("proof")) mode = "invoice";
+  else if (allText.includes("invoice") || allText.includes("completed job") || allText.includes("proof and pay") || allText.includes("proof")) mode = "invoice";
   else if (allText.includes("cashflow") || allText.includes("payment") || allText.includes("overdue") || allText.includes("collect")) mode = "cashflow";
   else if (allText.includes("quote") || allText.includes("follow-up") || allText.includes("follow up")) mode = "quote";
   else if (allText.includes("client cleanup") || allText.includes("missing client") || allText.includes("duplicate")) mode = "client";
@@ -4113,7 +4113,7 @@ function SmartHubActionControl({ boxKey, row, draft, onChange, team = [] }) {
 
   if (mode === "invoice") {
     return (
-      <section className="cx-smart-control-panel cx-smart-control-invoice cx-smart-control-proof-to-paid">
+      <section className="cx-smart-control-panel cx-smart-control-invoice cx-smart-control-proof and pay">
         <header>
           <span>Invoice draft</span>
           <h4>AI prepared this invoice</h4>
@@ -5456,7 +5456,7 @@ function workspaceOperatorConfig(page, counts = {}) {
         "edit invoice description",
         "approve draft invoice",
       ],
-      next: counts.completedJobs ? `${counts.completedJobs} completed job${counts.completedJobs === 1 ? "" : "s"} can feed proof-to-paid.` : "Worker-completed jobs will feed this workspace.",
+      next: counts.completedJobs ? `${counts.completedJobs} completed job${counts.completedJobs === 1 ? "" : "s"} can feed proof and pay.` : "Worker-completed jobs will feed this workspace.",
       primary: "Review proof",
       open: "proof",
     },
@@ -5801,7 +5801,7 @@ function ChurvoxPlansWorkspace({ planCatalog, onChoosePlan, onOpenSettings }) {
         <article>
           <span>What workers do</span>
           <strong>Complete work and send proof.</strong>
-          <p>Worker notes/photos feed the proof-to-paid flow so admin is prepared properly.</p>
+          <p>Worker notes/photos feed the proof and pay flow so admin is prepared properly.</p>
         </article>
       </section>
 
@@ -6038,7 +6038,7 @@ function AiApprovalRulesPanel() {
     ["quoteFollowups", "Prepare quote follow-ups", "Churvox can write follow-up drafts for stale or open quotes."],
     ["paymentReminders", "Prepare payment reminders", "Churvox can draft polite reminders for unpaid or overdue invoices."],
     ["clientCleanup", "Prepare client cleanup", "Churvox can find missing fields, duplicates and CSV cleanup actions."],
-    ["proofToPaid", "Prepare proof-to-paid", "Churvox can turn worker notes/photos into invoice-ready owner approval packages."],
+    ["proofToPaid", "Prepare proof and pay", "Churvox can turn worker notes/photos into invoice-ready owner approval packages."],
   ];
 
   const approvalRules = [
@@ -6287,7 +6287,7 @@ function OwnerGuardrailsPanel({ onOpenSettings }) {
     "quote follow-up drafts",
     "payment reminder drafts",
     "client cleanup suggestions",
-    "proof-to-paid summaries",
+    "proof and pay summaries",
   ];
 
   const mustApprove = [
@@ -6440,7 +6440,7 @@ function AskChurvoxCommand({ onRunCommand, onQuickOpen }) {
     }
 
     if (value.includes("proof") || value.includes("paid") || value.includes("complete")) {
-      return { type: "page", page: "proof", label: "Open proof-to-paid" };
+      return { type: "page", page: "proof", label: "Open proof and pay" };
     }
 
     if (value.includes("teach") || value.includes("setup") || value.includes("setting") || value.includes("guardrail")) {
@@ -6857,7 +6857,7 @@ function ProofToPaidWorkspace({ jobs = [], invoices = [], onOpenRecord, onApprov
       label: item.title,
       sourceType: item.source_type,
       sourceId: item.source_id,
-      recommendation: `Churvox prepared this proof-to-paid package for ${item.client}. Review proof, edit invoice wording, then approve.`,
+      recommendation: `Churvox prepared this proof and pay package for ${item.client}. Review proof, edit invoice wording, then approve.`,
     });
   }
 
@@ -6892,7 +6892,7 @@ function ProofToPaidWorkspace({ jobs = [], invoices = [], onOpenRecord, onApprov
     <section className="cx-proof-machine">
       <header className="cx-proof-machine-hero">
         <div>
-          <span>Proof-to-Paid</span>
+          <span>Proof & Pay</span>
           <h2>Worker proof becomes owner-approved invoice admin.</h2>
           <p>
             Churvox checks completed jobs, worker notes, proof photos and invoice data. It prepares the invoice package,
@@ -6977,7 +6977,7 @@ function ProofToPaidWorkspace({ jobs = [], invoices = [], onOpenRecord, onApprov
           </article>
         )) : (
           <EmptyState
-            title="No proof-to-paid packages yet."
+            title="No proof and pay packages yet."
             body="When workers complete jobs with notes or photos, Churvox will prepare invoice-ready proof packages here."
           />
         )}
@@ -7221,7 +7221,7 @@ function OwnerQuickActionModal({ area, onClose, onSaved }) {
           </article>
           <article>
             <span>What happens next</span>
-            <p>The record becomes part of Smart Hub, worker matching, proof-to-paid, invoices or follow-ups.</p>
+            <p>The record becomes part of Smart Hub, worker matching, proof and pay, invoices or follow-ups.</p>
           </article>
         </section>
 
@@ -7313,7 +7313,7 @@ function Workspace({ page, setPage, data }) {
     },
     jobs: {
       kicker: "Jobs",
-      title: "Jobs become prepared dispatch and proof-to-paid actions.",
+      title: "Jobs become prepared dispatch and proof and pay actions.",
       body: "Churvox checks each job for worker assignment, schedule risk, proof, notes and invoice readiness. Owner reviews/edit/approves in-place.",
       rows: jobs,
     },
@@ -7342,7 +7342,7 @@ function Workspace({ page, setPage, data }) {
       rows: invoices,
     },
     proof: {
-      kicker: "Proof-to-Paid",
+      kicker: "Proof & Pay",
       title: "Proof-to-paid turns worker proof into owner-approved invoice admin.",
       body: "Worker notes, photos and completion status feed this flow so Churvox prepares the invoice/proof package for approval.",
       rows: [...jobs.slice(0, 4), ...invoices.slice(0, 4)],
@@ -8208,7 +8208,7 @@ function Workspace({ page, setPage, data }) {
       return;
     }
 
-    setAskNotice("Try approvals, ready invoices, add client, import clients, workers, quotes, proof-to-paid or settings.");
+    setAskNotice("Try approvals, ready invoices, add client, import clients, workers, quotes, proof and pay or settings.");
   }
 
   function pageForCommandType(type) {
@@ -8752,7 +8752,7 @@ function Workspace({ page, setPage, data }) {
           ["Team", "team"],
           ["Quotes", "quotes"],
           ["Invoices", "invoices"],
-          ["Proof-to-Paid", "proof"],
+          ["Proof & Pay", "proof"],
           ["Payroll", "payroll"],
           ["Settings", "settings"],
         ].map(([label, nextPage]) => (
@@ -9209,7 +9209,7 @@ export default function ChurvoxAIShell() {
         "/team": "team",
         "/quotes": "quotes",
         "/invoices": "invoices",
-        "/proof-to-paid": "proof",
+        "/proof and pay": "proof",
         "/payroll": "payroll",
         "/plans": "plans",
         "/billing": "plans",
