@@ -4341,3 +4341,55 @@
   opacity: .58;
   cursor: not-allowed;
 }
+
+
+/* PHASE_95_REAL_MACHINE_FLOW_COUNTS */
+.om-flow-real-counts article {
+  position: relative;
+  min-height: 118px;
+}
+
+.om-flow-count {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  min-width: 42px;
+  height: 42px;
+  padding: 0 10px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--om-charcoal);
+  color: var(--om-lime);
+  font-size: 1.2rem;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  box-shadow: 0 12px 26px rgba(36, 34, 29, .16);
+}
+
+.om-flow-real-counts article.active .om-flow-count {
+  background: var(--om-lime);
+  color: var(--om-charcoal);
+}
+
+.om-flow-real-counts article strong,
+.om-flow-real-counts article small {
+  padding-right: 54px;
+}
+
+.om-flow-real-counts article small {
+  line-height: 1.3;
+}
+
+@media (max-width: 760px) {
+  .om-flow-real-counts article {
+    min-height: 96px;
+  }
+
+  .om-flow-count {
+    top: 12px;
+    right: 12px;
+    min-width: 38px;
+    height: 38px;
+  }
+}

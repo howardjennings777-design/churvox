@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+// PHASE_95_REAL_MACHINE_FLOW_COUNTS
 // PHASE_94_SMS_CREDIT_GATE
 // PHASE_93_TRIAL_PLAN_ENTITLEMENT_BRAIN
 // PHASE_92_OPERATOR_APPROVAL_CONFIRMATION_BOX
@@ -4493,6 +4494,34 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
   const visibleApprovals = showAllApprovals ? machine.approval.slice(0, 24) : machine.approval.slice(0, 5);
   const hiddenApprovalCount = Math.max(machine.approval.length - visibleApprovals.length, 0);
 
+  const dashboardFlowCounts = [
+    {
+      step: "01",
+      label: "Input Tray",
+      count: machine.input.length,
+      body: `${machine.input.length} work input${machine.input.length === 1 ? "" : "s"} waiting`,
+    },
+    {
+      step: "02",
+      label: "Processing Line",
+      count: machine.processing.length,
+      body: `${machine.processing.length} check${machine.processing.length === 1 ? "" : "s"} running`,
+    },
+    {
+      step: "03",
+      label: "Approval Desk",
+      count: machine.approval.length,
+      body: `${machine.approval.length} approval${machine.approval.length === 1 ? "" : "s"} waiting`,
+      active: true,
+    },
+    {
+      step: "04",
+      label: "Output Log",
+      count: outputLog.length,
+      body: `${outputLog.length} action${outputLog.length === 1 ? "" : "s"} recorded`,
+    },
+  ];
+
   const nav = [
     ["Operator Machine", "dashboard"],
     ["Jobs", "jobs"],
@@ -4543,8 +4572,9 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
 
           <section className="om-gauges" aria-label="Machine counts">
             <article><span>Plan</span><strong>{planLabel(currentPlan)}</strong></article>
-            <article><span>Processing</span><strong>{machine.counts.processing}</strong></article>
-            <article><span>Approval</span><strong>{machine.counts.approval}</strong></article>
+            <article><span>Input</span><strong>{machine.input.length}</strong></article>
+            <article><span>Processing</span><strong>{machine.processing.length}</strong></article>
+            <article><span>Approval</span><strong>{machine.approval.length}</strong></article>
           </section>
         </header>
 
@@ -4556,11 +4586,15 @@ export default function OperatorMachine({ page = "dashboard", setPage, onLogout,
 
         {page === "dashboard" ? (
           <>
-        <section className="om-flow">
-          <article><span>01</span><strong>Input Tray</strong><small>Work arrives</small></article>
-          <article><span>02</span><strong>Processing Line</strong><small>Churvox checks</small></article>
-          <article className="active"><span>03</span><strong>Approval Desk</strong><small>Owner decides</small></article>
-          <article><span>04</span><strong>Output Log</strong><small>Actions recorded</small></article>
+        <section className="om-flow om-flow-real-counts" data-phase="PHASE_95_REAL_MACHINE_FLOW_COUNTS">
+          {dashboardFlowCounts.map((item) => (
+            <article key={item.label} className={item.active ? "active" : ""}>
+              <span>{item.step}</span>
+              <b className="om-flow-count">{item.count}</b>
+              <strong>{item.label}</strong>
+              <small>{item.body}</small>
+            </article>
+          ))}
         </section>
 
         <section className="om-machine-grid">
