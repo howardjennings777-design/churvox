@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./OperatorMachine.css";
+import { churvoxRenderDeployMarker } from "./renderDeployMarker";
 // PHASE_114_PROPER_INVOICE_DOCUMENT
 // PHASE_113_PROPER_INVOICE_TEMPLATE
 // PHASE_112_FIX_JOB_BRIEF_SYNTAX
@@ -37,6 +38,8 @@ import TopPlayerFeatureStack from "./TopPlayerFeatureStack";
 // PHASE_71_PLAN_FEATURE_LOCKS
 // PHASE_70_PROPER_PLAN_SLIP
 // PHASE_68_OPERATOR_MACHINE_POLISH
+
+void churvoxRenderDeployMarker;
 
 const API_BASE = (() => {
   const raw =
