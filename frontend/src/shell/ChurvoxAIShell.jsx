@@ -1,3 +1,4 @@
+// PHASE_141_PROPER_A4_INVOICE_TEMPLATE
 // PHASE_138_FIX_EXACT_BAD_INVOICE_JSX_LINE
 // PHASE_136_REAL_EDITABLE_INVOICE_TEMPLATE
 // PHASE_135_CLASSIC_INVOICE_SHEET_POLISH
@@ -4900,10 +4901,10 @@ function SmartHubBoxModal({
                         <section className="cx-real-invoice-parties">
                           <article>
                             <span>From</span>
-                            <strong>Your business</strong>
-                            <p>Churvox Operator Machine</p>
-                            <p>New Zealand</p>
-                            <p>GST / tax details can be added in settings.</p>
+                            <strong>{editingDraft.invoiceBusinessName || "Your business"}</strong>
+                            <p>{editingDraft.invoiceBusinessAddress || "Business address"}</p>
+                            <p>{editingDraft.invoiceBusinessEmail || "accounts@yourbusiness.co.nz"}</p>
+                            <p>{editingDraft.invoiceGstNumber || "GST number / tax details"}</p>
                           </article>
 
                           <article>
@@ -4952,7 +4953,7 @@ function SmartHubBoxModal({
                             <p>{editingDraft.ownerNote || "Thank you. Please pay by the due date shown on this invoice."}</p>
 
                             <span>Payment</span>
-                            <p>Payment link / bank details can appear here when connected. Owner approval is required before sending.</p>
+                            <p>{editingDraft.invoicePaymentDetails || "Bank account / payment link / payment instructions can appear here. Owner approval is required before sending."}</p>
                           </article>
 
                           <article className="cx-real-invoice-totals">
@@ -4979,6 +4980,15 @@ function SmartHubBoxModal({
                         </header>
 
                         <div className="cx-real-invoice-editor-grid">
+                          <label>
+                            Business name
+                            <input
+                              value={editingDraft.invoiceBusinessName || ""}
+                              onChange={(event) => updateEditingDraft("invoiceBusinessName", event.target.value)}
+                              placeholder="Your business name"
+                            />
+                          </label>
+
                           <label>
                             Client
                             <input
@@ -5036,6 +5046,42 @@ function SmartHubBoxModal({
                               value={editingDraft.invoiceDescription || ""}
                               onChange={(event) => updateEditingDraft("invoiceDescription", event.target.value)}
                               placeholder="Customer-facing invoice wording..."
+                            />
+                          </label>
+
+                          <label>
+                            Business email
+                            <input
+                              value={editingDraft.invoiceBusinessEmail || ""}
+                              onChange={(event) => updateEditingDraft("invoiceBusinessEmail", event.target.value)}
+                              placeholder="accounts@yourbusiness.co.nz"
+                            />
+                          </label>
+
+                          <label>
+                            GST / tax number
+                            <input
+                              value={editingDraft.invoiceGstNumber || ""}
+                              onChange={(event) => updateEditingDraft("invoiceGstNumber", event.target.value)}
+                              placeholder="GST number"
+                            />
+                          </label>
+
+                          <label className="wide">
+                            Business address
+                            <input
+                              value={editingDraft.invoiceBusinessAddress || ""}
+                              onChange={(event) => updateEditingDraft("invoiceBusinessAddress", event.target.value)}
+                              placeholder="Business address"
+                            />
+                          </label>
+
+                          <label className="wide">
+                            Payment details
+                            <textarea
+                              value={editingDraft.invoicePaymentDetails || ""}
+                              onChange={(event) => updateEditingDraft("invoicePaymentDetails", event.target.value)}
+                              placeholder="Bank account, payment link, payment terms..."
                             />
                           </label>
 
