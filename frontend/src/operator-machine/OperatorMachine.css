@@ -8314,3 +8314,442 @@ select {
     font-size: 1.7rem;
   }
 }
+
+
+/* PHASE_131_CLASSIC_REAL_INVOICE_SHEET */
+.om-slip-backdrop {
+  align-items: flex-start !important;
+  overflow-y: auto !important;
+  padding: 14px !important;
+}
+
+.om-one-invoice-slip {
+  width: min(1040px, calc(100vw - 28px)) !important;
+  max-height: calc(100vh - 28px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  background: #f6efe4 !important;
+  border-radius: 28px !important;
+}
+
+.om-one-invoice-slip-head {
+  flex: 0 0 auto !important;
+  padding: 18px 24px 14px !important;
+  background: #f6efe4 !important;
+  border-bottom: 1px solid rgba(36, 34, 29, .10) !important;
+}
+
+.om-one-invoice-slip-head h2 {
+  margin: 4px 0 4px !important;
+  font-size: clamp(1.7rem, 3vw, 2.5rem) !important;
+  line-height: 1 !important;
+  letter-spacing: -.05em !important;
+}
+
+.om-one-invoice-slip-head p {
+  margin: 0 !important;
+  font-size: .92rem !important;
+  line-height: 1.35 !important;
+  max-width: 680px !important;
+}
+
+.om-one-invoice-slip-head button {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 16px !important;
+}
+
+.om-one-invoice-slip .om-real-invoice,
+.om-one-invoice-slip .om-single-invoice-template {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  margin: 14px 22px !important;
+  padding: 30px !important;
+  background: #fffdf8 !important;
+  border: 1px solid rgba(36, 34, 29, .14) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 20px 48px rgba(57, 45, 29, .12) !important;
+  display: grid !important;
+  gap: 22px !important;
+}
+
+.om-real-invoice input,
+.om-real-invoice textarea,
+.om-single-invoice-template input,
+.om-single-invoice-template textarea {
+  width: 100% !important;
+  min-width: 0 !important;
+  border: 1px solid rgba(36, 34, 29, .13) !important;
+  background: #fff !important;
+  color: #24221d !important;
+  border-radius: 8px !important;
+  padding: 9px 10px !important;
+  font-size: .86rem !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0 !important;
+  box-shadow: none !important;
+}
+
+.om-real-invoice textarea,
+.om-single-invoice-template textarea {
+  min-height: 66px !important;
+  resize: vertical !important;
+}
+
+.om-real-invoice label,
+.om-single-invoice-template label {
+  display: grid !important;
+  gap: 5px !important;
+  min-width: 0 !important;
+}
+
+.om-real-invoice label span,
+.om-single-invoice-template label span,
+.om-real-invoice h4,
+.om-real-invoice-table-head span,
+.om-real-invoice-owing span,
+.om-real-invoice-totalbox small {
+  color: #8f5f4f !important;
+  font-size: .64rem !important;
+  font-weight: 900 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+}
+
+.om-real-invoice-top {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 290px !important;
+  gap: 34px !important;
+  align-items: start !important;
+  padding-bottom: 22px !important;
+  border-bottom: 2px solid rgba(36, 34, 29, .12) !important;
+}
+
+.om-real-invoice-brand {
+  display: grid !important;
+  gap: 12px !important;
+  min-width: 0 !important;
+}
+
+.om-real-invoice-brand-top {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+}
+
+.om-real-invoice-brand-top img,
+.om-real-invoice-brand-top i {
+  width: 52px !important;
+  height: 52px !important;
+  flex: 0 0 auto !important;
+  border-radius: 14px !important;
+  background: #11100d !important;
+  object-fit: cover !important;
+}
+
+.om-real-invoice-brand-top > input {
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font-size: 1.55rem !important;
+  font-weight: 950 !important;
+  letter-spacing: -.04em !important;
+}
+
+.om-real-invoice-business-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.om-real-invoice-meta {
+  display: grid !important;
+  gap: 9px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+.om-real-invoice-meta > strong {
+  display: block !important;
+  margin: 0 0 6px !important;
+  color: #11100d !important;
+  font-size: 2.35rem !important;
+  line-height: 1 !important;
+  letter-spacing: .14em !important;
+  text-align: right !important;
+}
+
+.om-real-invoice-meta label {
+  grid-template-columns: 92px minmax(0, 1fr) !important;
+  align-items: center !important;
+}
+
+.om-real-invoice-meta label span {
+  text-align: right !important;
+}
+
+.om-real-invoice-billrow {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 300px !important;
+  gap: 22px !important;
+  align-items: stretch !important;
+}
+
+.om-real-invoice-billto {
+  display: grid !important;
+  gap: 11px !important;
+  padding: 18px !important;
+  background: #f8efe3 !important;
+  border: 1px solid rgba(36, 34, 29, .10) !important;
+  border-radius: 14px !important;
+}
+
+.om-real-invoice-billto h4 {
+  margin: 0 !important;
+}
+
+.om-real-invoice-owing {
+  display: grid !important;
+  gap: 10px !important;
+  padding: 18px !important;
+  background: #11100d !important;
+  color: #fff8e9 !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+}
+
+.om-real-invoice-owing > strong {
+  color: #fff8e9 !important;
+  font-size: 1.1rem !important;
+  letter-spacing: -.02em !important;
+}
+
+.om-real-invoice-owing-grid {
+  display: grid !important;
+  gap: 8px !important;
+}
+
+.om-real-invoice-owing-grid div {
+  padding: 10px 12px !important;
+  border-radius: 10px !important;
+  background: rgba(255, 248, 233, .07) !important;
+}
+
+.om-real-invoice-owing-grid small {
+  display: block !important;
+  color: #d8cdbd !important;
+  font-size: .63rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .1em !important;
+}
+
+.om-real-invoice-owing-grid b {
+  display: block !important;
+  margin-top: 4px !important;
+  color: #fff8e9 !important;
+  font-size: 1rem !important;
+}
+
+.om-real-invoice-owing-grid .amount-owing b {
+  color: #b8e35f !important;
+  font-size: 1.55rem !important;
+}
+
+.om-real-invoice-table {
+  overflow: hidden !important;
+  border: 1px solid rgba(36, 34, 29, .14) !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+}
+
+.om-real-invoice-table-head,
+.om-real-invoice-table-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 80px 120px 130px !important;
+  gap: 0 !important;
+  align-items: stretch !important;
+}
+
+.om-real-invoice-table-head {
+  background: #eaddcb !important;
+}
+
+.om-real-invoice-table-head span {
+  padding: 12px !important;
+  color: #24221d !important;
+}
+
+.om-real-invoice-table-row {
+  min-height: 130px !important;
+  border-top: 1px solid rgba(36, 34, 29, .12) !important;
+}
+
+.om-real-invoice-table-row > input,
+.om-real-invoice-table-row .desc {
+  padding: 12px !important;
+  border-right: 1px solid rgba(36, 34, 29, .10) !important;
+}
+
+.om-real-invoice-table-row > input:last-child {
+  border-right: 0 !important;
+}
+
+.om-real-invoice-table-row .desc {
+  display: grid !important;
+  gap: 9px !important;
+}
+
+.om-real-invoice-table-row .desc textarea {
+  min-height: 76px !important;
+}
+
+.om-real-invoice-table-row > input {
+  text-align: right !important;
+  border-top: 0 !important;
+  border-left: 0 !important;
+  border-bottom: 0 !important;
+  border-radius: 0 !important;
+}
+
+.om-real-invoice-bottom {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 330px !important;
+  gap: 22px !important;
+  align-items: start !important;
+}
+
+.om-real-invoice-notes {
+  display: grid !important;
+  gap: 12px !important;
+  padding: 18px !important;
+  background: #f8efe3 !important;
+  border: 1px solid rgba(36, 34, 29, .10) !important;
+  border-radius: 14px !important;
+}
+
+.om-real-invoice-notes textarea {
+  min-height: 92px !important;
+}
+
+.om-real-invoice-totals {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 8px !important;
+  padding: 18px !important;
+  background: #fffaf2 !important;
+  border: 1px solid rgba(36, 34, 29, .12) !important;
+  border-radius: 14px !important;
+}
+
+.om-real-invoice-totals label {
+  display: grid !important;
+  grid-template-columns: 120px minmax(0, 1fr) !important;
+  align-items: center !important;
+}
+
+.om-real-invoice-totals label span {
+  text-align: right !important;
+}
+
+.om-real-invoice-totalbox {
+  margin-top: 8px !important;
+  padding: 16px !important;
+  border-radius: 12px !important;
+  background: #11100d !important;
+  text-align: right !important;
+}
+
+.om-real-invoice-totalbox small {
+  display: block !important;
+  color: #d8cdbd !important;
+}
+
+.om-real-invoice-totalbox strong {
+  display: block !important;
+  margin-top: 6px !important;
+  color: #b8e35f !important;
+  font-size: 2rem !important;
+  line-height: 1 !important;
+}
+
+.om-one-invoice-actions {
+  flex: 0 0 auto !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 30 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  padding: 14px 24px 18px !important;
+  background: #f6efe4 !important;
+  border-top: 1px solid rgba(36, 34, 29, .12) !important;
+  box-shadow: 0 -16px 38px rgba(57, 45, 29, .14) !important;
+}
+
+@media (max-width: 880px) {
+  .om-real-invoice-top,
+  .om-real-invoice-billrow,
+  .om-real-invoice-bottom {
+    grid-template-columns: 1fr !important;
+  }
+
+  .om-real-invoice-meta > strong,
+  .om-real-invoice-meta label span,
+  .om-real-invoice-totals label span,
+  .om-real-invoice-totalbox {
+    text-align: left !important;
+  }
+
+  .om-real-invoice-meta label,
+  .om-real-invoice-totals label,
+  .om-real-invoice-business-grid,
+  .om-real-invoice-table-head,
+  .om-real-invoice-table-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .om-real-invoice-table-row > input,
+  .om-real-invoice-table-row .desc {
+    border-right: 0 !important;
+    border-bottom: 1px solid rgba(36, 34, 29, .10) !important;
+    text-align: left !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .om-slip-backdrop {
+    padding: 8px !important;
+  }
+
+  .om-one-invoice-slip {
+    width: calc(100vw - 16px) !important;
+    max-height: calc(100vh - 16px) !important;
+  }
+
+  .om-one-invoice-slip-head {
+    padding: 14px !important;
+  }
+
+  .om-one-invoice-slip .om-real-invoice,
+  .om-one-invoice-slip .om-single-invoice-template {
+    margin: 10px !important;
+    padding: 16px !important;
+  }
+
+  .om-one-invoice-actions {
+    padding: 12px !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .om-one-invoice-actions button {
+    width: 100% !important;
+  }
+}
